@@ -1,0 +1,260 @@
+diff -Naur -x '*~' bazel/grpc_build_system.bzl bazel/grpc_build_system.bzl
+--- bazel/grpc_build_system.bzl
++++ bazel/grpc_build_system.bzl
+@@ -33,6 +33,14 @@
+       "//conditions:default": a,
+   })
+ 
++def if_use_pthread(a):
++  return select({
++      "//:windows": [],
++      "//:windows_msvc": [],
++      "@com_google_asylo//asylo": [],
++      "//conditions:default": a,
++  })
++
+ def _get_external_deps(external_deps):
+   ret = []
+   for dep in external_deps:
+@@ -82,7 +90,7 @@
+     copts = copts,
+     visibility = visibility,
+     testonly = testonly,
+-    linkopts = if_not_windows(["-pthread"]),
++    linkopts = if_use_pthread(["-pthread"]),
+     includes = [
+         "include"
+     ],
+@@ -121,7 +129,7 @@
+     'data': data,
+     'deps': deps + _get_external_deps(external_deps),
+     'copts': copts,
+-    'linkopts': if_not_windows(["-pthread"]),
++    'linkopts': if_use_pthread(["-pthread"]),
+     'size': size,
+     'timeout': timeout,
+   }
+@@ -157,7 +165,7 @@
+     linkshared = linkshared,
+     deps = deps + _get_external_deps(external_deps),
+     copts = copts,
+-    linkopts = if_not_windows(["-pthread"]) + linkopts,
++    linkopts = if_use_pthread(["-pthread"]) + linkopts,
+   )
+ 
+ def grpc_generate_one_off_targets():
+diff -Naur -x '*~' BUILD BUILD
+--- BUILD
++++ BUILD
+@@ -508,6 +508,7 @@
+         "src/core/lib/gpr/cpu_linux.cc",
+         "src/core/lib/gpr/cpu_posix.cc",
+         "src/core/lib/gpr/cpu_windows.cc",
++        "src/core/lib/gpr/env_asylo.cc",
+         "src/core/lib/gpr/env_linux.cc",
+         "src/core/lib/gpr/env_posix.cc",
+         "src/core/lib/gpr/env_windows.cc",
+@@ -528,6 +529,7 @@
+         "src/core/lib/gpr/sync_posix.cc",
+         "src/core/lib/gpr/sync_windows.cc",
+         "src/core/lib/gpr/time.cc",
++        "src/core/lib/gpr/time_asylo.cc",
+         "src/core/lib/gpr/time_posix.cc",
+         "src/core/lib/gpr/time_precise.cc",
+         "src/core/lib/gpr/time_windows.cc",
+diff -Naur -x '*~' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
+--- include/grpc/impl/codegen/port_platform.h
++++ include/grpc/impl/codegen/port_platform.h
+@@ -177,6 +177,26 @@
+ #else /* musl libc */
+ #define GPR_MUSL_LIBC_COMPAT 1
+ #endif
++#elif defined(__ASYLO__)
++#define GPR_ARCH_64 1
++#define GPR_CPU_POSIX 1
++#define GPR_GCC_TLS 1
++#define GPR_PLATFORM_STRING "asylo"
++#define GPR_GCC_SYNC 1
++#define GPR_POSIX_SYNC 1
++#define GPR_POSIX_STRING 1
++#define GPR_POSIX_LOG 1
++#define GPR_ASYLO_TIME 1
++#define GPR_ASYLO_ENV 1
++#define GPR_ASYLO 1
++#define GRPC_POSIX_SOCKET 1
++#define GRPC_POSIX_SOCKETADDR
++#define GRPC_POSIX_SOCKETUTILS 1
++#define GRPC_TIMER_USE_GENERIC 1
++#define GRPC_POSIX_NO_SPECIAL_WAKEUP_FD 1
++#define GRPC_POSIX_WAKEUP_FD 1
++#define GRPC_ARES 0
++#define GPR_NO_AUTODETECT_PLATFORM 1
+ #elif defined(__APPLE__)
+ #include <Availability.h>
+ #include <TargetConditionals.h>
+diff -Naur -x '*~' src/core/lib/gpr/env_asylo.cc src/core/lib/gpr/env_asylo.cc
+--- src/core/lib/gpr/env_asylo.cc
++++ src/core/lib/gpr/env_asylo.cc
+@@ -0,0 +1,52 @@
++/*
++ *
++ * Copyright 2017, Google Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *     * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++#include <grpc/support/port_platform.h>
++
++#include <stddef.h>
++
++#ifdef GPR_ASYLO_ENV
++
++char *gpr_getenv(const char *name) {
++  return NULL;
++}
++
++const char *gpr_getenv_silent(const char *name, char **dst) {
++  return NULL;
++}
++
++void gpr_setenv(const char *name, const char *value) {
++  return;
++}
++
++#endif /* GPR_LINUX_ENV */
+diff -Naur -x '*~' src/core/lib/gpr/time_asylo.cc src/core/lib/gpr/time_asylo.cc
+--- src/core/lib/gpr/time_asylo.cc
++++ src/core/lib/gpr/time_asylo.cc
+@@ -0,0 +1,83 @@
++/*
++ *
++ * Copyright 2017, Google Inc.
++ * All rights reserved.
++ *
++ * Redistribution and use in source and binary forms, with or without
++ * modification, are permitted provided that the following conditions are
++ * met:
++ *
++ *     * Redistributions of source code must retain the above copyright
++ * notice, this list of conditions and the following disclaimer.
++ *     * Redistributions in binary form must reproduce the above
++ * copyright notice, this list of conditions and the following disclaimer
++ * in the documentation and/or other materials provided with the
++ * distribution.
++ *     * Neither the name of Google Inc. nor the names of its
++ * contributors may be used to endorse or promote products derived from
++ * this software without specific prior written permission.
++ *
++ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
++ * "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
++ * LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR
++ * A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
++ * OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
++ * SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
++ * LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
++ * DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
++ * THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
++ * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
++ * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++ *
++ */
++
++/* Asylo code for gpr time support. */
++
++#include <time.h>
++
++#include <grpc/support/log.h>
++#include <grpc/support/port_platform.h>
++#include <grpc/support/sync.h>
++#include "src/core/lib/gpr/env.h"
++
++#ifdef GPR_ASYLO_TIME
++
++#include <grpc/support/time.h>
++
++void gpr_time_init(void) {
++}
++
++gpr_timespec gpr_now(gpr_clock_type clock_type) {
++  struct timespec ts;
++  gpr_timespec result;
++  clockid_t id = CLOCK_REALTIME;
++
++  switch (clock_type) {
++    case GPR_CLOCK_MONOTONIC:
++      id = CLOCK_MONOTONIC;
++      break;
++    case GPR_CLOCK_REALTIME:
++      id = CLOCK_REALTIME;
++      break;
++    case GPR_CLOCK_PRECISE:
++      id = CLOCK_REALTIME;
++      break;
++    case GPR_TIMESPAN:
++      id = CLOCK_REALTIME;
++      break;
++  }
++  clock_gettime(id, &ts);
++  result.clock_type = clock_type;
++  result.tv_sec = ts.tv_sec;
++  result.tv_nsec = ts.tv_nsec;
++  return result;
++}
++
++void gpr_sleep_until(gpr_timespec until) {
++  struct timespec ts;
++  ts.tv_nsec = until.tv_nsec;
++  ts.tv_sec = until.tv_sec;
++  nanosleep(&ts, NULL);
++}
++
++#endif /* GPR_ASYLO_TIME */
+diff -Naur -x '*~' test/core/end2end/generate_tests.bzl test/core/end2end/generate_tests.bzl
+--- test/core/end2end/generate_tests.bzl
++++ test/core/end2end/generate_tests.bzl
+@@ -242,6 +242,7 @@
+       'end2end_tests.h'
+     ],
+     language = "C++",
++    visibility = ["//visibility:public"],
+     deps = [
+       ':cq_verifier',
+       ':ssl_test_data',
+diff -Naur -x '*~' third_party/nanopb/pb.h third_party/nanopb/pb.h
+--- third_party/nanopb/pb.h
++++ third_party/nanopb/pb.h
+@@ -22,7 +22,7 @@
+ /* #define PB_MAX_REQUIRED_FIELDS 256 */
+ 
+ /* Add support for tag numbers > 255 and fields larger than 255 bytes. */
+-/* #define PB_FIELD_16BIT 1 */
++#define PB_FIELD_16BIT 1
+ 
+ /* Add support for tag numbers > 65536 and fields larger than 65536 bytes. */
+ /* #define PB_FIELD_32BIT 1 */ 

@@ -1,0 +1,208 @@
+/*
+ *
+ * Copyright 2018 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "asylo/identity/sgx/local_assertion_verifier.h"
+
+#include <string>
+
+#include "absl/synchronization/mutex.h"
+#include "asylo/identity/sgx/code_identity_constants.h"
+#include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/local_assertion.pb.h"
+#include "asylo/identity/util/trivial_object_util.h"
+#include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/crypto/sha256_hash.h"
+
+namespace asylo {
+namespace sgx {
+
+const char *const LocalAssertionVerifier::authority_type_ =
+    kSgxLocalAssertionAuthority;
+
+LocalAssertionVerifier::LocalAssertionVerifier() : initialized_(false) {}
+
+Status LocalAssertionVerifier::Initialize(const std::string &config) {
+  if (IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  "Already initialized");
+  }
+
+  auto config_result = GetEnclaveConfig();
+  if (!config_result.ok()) {
+    return config_result.status();
+  }
+
+  const EnclaveConfig *enclave_config = config_result.ValueOrDie();
+  if (!enclave_config->host_config().has_local_attestation_domain()) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Config is missing attestation domain");
+  }
+
+  attestation_domain_ =
+      enclave_config->host_config().local_attestation_domain();
+
+  absl::MutexLock lock(&initialized_mu_);
+  initialized_ = true;
+
+  return Status::OkStatus();
+}
+
+bool LocalAssertionVerifier::IsInitialized() const {
+  absl::MutexLock lock(&initialized_mu_);
+  return initialized_;
+}
+
+EnclaveIdentityType LocalAssertionVerifier::IdentityType() const {
+  return identity_type_;
+}
+
+std::string LocalAssertionVerifier::AuthorityType() const { return authority_type_; }
+
+Status LocalAssertionVerifier::CreateAssertionRequest(
+    AssertionRequest *request) const {
+  if (!IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+  }
+
+  request->mutable_description()->set_identity_type(identity_type_);
+  request->mutable_description()->set_authority_type(authority_type_);
+
+  LocalAssertionRequestAdditionalInfo additional_info;
+  additional_info.set_local_attestation_domain(attestation_domain_);
+
+  // The request contains a dump of the raw TARGETINFO structure, which
+  // specifies the verifier as the target for the requested assertion. Note that
+  // since the layout and endianness of the TARGETINFO structure is defined by
+  // the Intel SGX architecture, it is safe to exchange the raw bytes of the
+  // structure. An SGX enclave that receives the request can reconstruct the
+  // original structure directly from the byte field in the AssertionRequest
+  // proto.
+  Targetinfo targetinfo;
+  SetTargetinfoFromSelfIdentity(&targetinfo);
+  additional_info.set_targetinfo(reinterpret_cast<const char *>(&targetinfo),
+                                 sizeof(targetinfo));
+
+  if (!additional_info.SerializeToString(
+          request->mutable_additional_information())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to serialize LocalAssertionRequestAdditionalInfo");
+  }
+
+  return Status::OkStatus();
+}
+
+StatusOr<bool> LocalAssertionVerifier::CanVerify(
+    const AssertionOffer &offer) const {
+  if (!IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+  }
+
+  if (!IsCompatibleAssertionDescription(offer.description())) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "AssertionOffer has incompatible assertion description");
+  }
+
+  LocalAssertionOfferAdditionalInfo additional_info;
+  if (!additional_info.ParseFromString(offer.additional_information())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to parse offer additional information");
+  }
+
+  return additional_info.local_attestation_domain() == attestation_domain_;
+}
+
+Status LocalAssertionVerifier::Verify(const std::string &user_data,
+                                      const Assertion &assertion,
+                                      EnclaveIdentity *peer_identity) const {
+  if (!IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+  }
+
+  if (!IsCompatibleAssertionDescription(assertion.description())) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Assertion has incompatible assertion description");
+  }
+
+  LocalAssertion local_assertion;
+  if (!local_assertion.ParseFromString(assertion.assertion())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to parse LocalAssertion");
+  }
+
+  Report report;
+  if (local_assertion.report().size() != sizeof(report)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "REPORT from Assertion has incorrect size");
+  }
+
+  // First, verify the hardware REPORT embedded in the assertion. This will only
+  // succeed if the REPORT is targeted at this enclave. Note that since the
+  // layout and endianness of the REPORT structure is defined by the Intel SGX
+  // architecture, two SGX enclaves can exchange a REPORT by simply dumping the
+  // raw bytes of a REPORT structure into a proto. This code assumes that the
+  // assertion originates from a machine that supports the Intel SGX
+  // architecture and was copied into the assertion byte-for-byte, so is safe to
+  // restore the REPORT structure directly from the deserialized LocalAssertion.
+  report = TrivialObjectFromBinaryString<Report>(local_assertion.report());
+  Status status = VerifyHardwareReport(report);
+  if (!status.ok()) {
+    return status;
+  }
+
+  // Next, verify that the REPORT is cryptographically-bound to the provided
+  // |user_data|. This is done by re-constructing the expected REPORTDATA (a
+  // SHA256 hash of |user_data| padded with zeros), and comparing it to the
+  // actual REPORTDATA inside the REPORT.
+  Sha256Hash hash;
+  hash.Update(user_data.data(), user_data.size());
+  Reportdata expected_reportdata;
+  expected_reportdata.data = TrivialZeroObject<UnsafeBytes<kReportdataSize>>();
+  expected_reportdata.data.replace(/*pos=*/0, hash.Hash());
+
+  if (expected_reportdata.data != report.reportdata.data) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Assertion is not bound to the provided user-data");
+  }
+
+  // Serialize the protobuf representation of the peer's SGX code identity and
+  // save it in |peer_identity|.
+  CodeIdentity code_identity;
+  status = ParseIdentityFromHardwareReport(report, &code_identity);
+  if (!status.ok()) {
+    return status;
+  }
+
+  if (!code_identity.SerializeToString(peer_identity->mutable_identity())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to serialize CodeIdentity");
+  }
+
+  peer_identity->mutable_description()->set_identity_type(identity_type_);
+  peer_identity->mutable_description()->set_authority_type(
+      kSgxAuthorizationAuthority);
+
+  return Status::OkStatus();
+}
+
+// Static registration of the LocalAssertionVerifier library.
+SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(AssertionVerifierMap,
+                                     LocalAssertionVerifier);
+
+}  // namespace sgx
+}  // namespace asylo

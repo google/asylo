@@ -1,0 +1,246 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/identity/identity.proto";
+
+// This file defines enums and messages used in the Enclave Key Exchange
+// Protocol (EKEP). For details on the protocol and its security properties,
+// see go/ekep.
+
+/////////////////////////////////////////////////////
+//               EKEP configuration                //
+/////////////////////////////////////////////////////
+
+// A HandshakeMessageType is used to identify an EKEP handshake message frame.
+enum HandshakeMessageType {
+  UNKNOWN_HANDSHAKE_MESSAGE = 0;
+  ABORT = 100;
+  CLIENT_PRECOMMIT = 101;
+  SERVER_PRECOMMIT = 102;
+  CLIENT_ID = 103;
+  SERVER_ID = 104;
+  SERVER_FINISH = 105;
+  CLIENT_FINISH = 106;
+}
+
+// A HandshakeCipher contains a Diffie-Hellman group and a cryptographic hash
+// function.
+enum HandshakeCipher {
+  UNKNOWN_HANDSHAKE_CIPHER = 0;
+
+  // A cipher suite that uses Curve25519 and SHA-256.
+  // Diffie-Hellman public parameters are 32 bytes. The encoding is 32 octets
+  // containing the u-coordinate of the curve25519 point, as per RFC 7748
+  // section 5.
+  CURVE25519_SHA256 = 1;
+}
+
+// A RecordProtocol specifies a cipher suite to use after an EKEP handshake
+// completes. This protocol uses key material established by an EKEP handshake.
+enum RecordProtocol {
+  UNKNOWN_RECORD_PROTOCOL = 0;
+
+  // The SEAL protocol. This protocol uses 128-bit AES keys in GCM mode. For
+  // details on framing, see go/loas2seal.
+  SEAL_AES128_GCM = 1;
+}
+
+// Additional data that is authenticated during the handshake. These bytes are
+// sent in the clear and consequently, should not contain any secrets.
+message AdditionalAuthenticatedData {
+  optional bytes data = 1;
+}
+
+// Version of the Enclave Key Exchange Protocol.
+message EkepVersion {
+  optional string name = 1;
+}
+
+
+/////////////////////////////////////////////////////
+//             EKEP handshake messages             //
+/////////////////////////////////////////////////////
+
+// An Abort messages is sent if a participant encounters an error during an
+// EKEP handshake. Aborts are always fatal. If an EKEP participant receives an
+// Abort message, it must immediately terminate the handshake without sending
+// any other messages.
+message Abort {
+  enum ErrorCode {
+    UNKNOWN_ERROR_CODE = 0;
+
+    // Indicates that a participant received an EKEP frame with a message type
+    // that it did not understand or that is unexpected at a point in the
+    // exchange.
+    BAD_MESSAGE = 1;
+
+    // Indicates that deserialization of a protocol buffer message failed.
+    DESERIALIZATION_FAILED = 2;
+
+    // Indicates that none of the peer's available EKEP protocol versions are
+    // acceptable.
+    BAD_PROTOCOL_VERSION = 3;
+
+    // Indicates that none of the peer's available handshake cipher suites
+    // are supported.
+    BAD_HANDSHAKE_CIPHER = 4;
+
+    // Indicates that none of the peer's available record protocols are
+    // supported.
+    BAD_RECORD_PROTOCOL = 5;
+
+    // Indicates that the peer's handshake authenticator value is incorrect.
+    BAD_AUTHENTICATOR = 6;
+
+    // Indicates that the none of the peer's available or requested
+    // combinations of assertion types and architecture types are supported.
+    BAD_ASSERTION_TYPE = 7;
+
+    // Indicates that an assertion could not be verified.
+    BAD_ASSERTION = 8;
+
+    // Indicates that an unexpected value was detected in an otherwise valid
+    // handshake message.
+    PROTOCOL_ERROR = 9;
+
+    // Indicates that an internal error occurred that prevents the handshake
+    // from continuing.
+    INTERNAL_ERROR = 10;
+  }
+  optional ErrorCode code = 1;
+
+  // An optional error message that provides more details about the cause of
+  // the Abort.
+  optional string message = 2;
+}
+
+// A ClientPrecommit is the first message sent in an EKEP handshake. It is sent
+// by the client.
+message ClientPrecommit {
+  // A list of the EKEP versions available to the client, in order of the
+  // client's preference.
+  repeated EkepVersion available_ekep_versions = 1;
+
+  // A list of cipher suites available to the client, in order of the client's
+  // preference.
+  repeated HandshakeCipher available_cipher_suites = 2;
+
+  // A list of record protocols available to the client, in order of the
+  // client's preference.
+  repeated RecordProtocol available_record_protocols = 3;
+
+  // Additional data that should be authenticated in the handshake.
+  optional AdditionalAuthenticatedData options = 4;
+
+  // A list of assertions offered by the client.
+  repeated AssertionOffer client_offers = 5;
+
+  // A list of assertions requested by the client. The server is required to
+  // present a subset of the assertions listed.
+  repeated AssertionRequest client_requests = 6;
+
+  // A random 32-byte nonce. This value should be sampled from a
+  // cryptographically-strong random-number generator that guarantees
+  // uniqueness (i.e. with high probability, no nonce is ever repeated).
+  optional bytes challenge = 7;
+}
+
+// A ServerPrecommit is sent by the server in response to a ClientPrecommit.
+message ServerPrecommit {
+  optional EkepVersion selected_ekep_version = 1;
+  optional HandshakeCipher selected_cipher_suite = 2;
+  optional RecordProtocol selected_record_protocol = 3;
+
+  // Additional data that should be authenticated during the handshake.
+  optional AdditionalAuthenticatedData options = 4;
+
+  // A list of assertions offered by the server. This must be a subset of the
+  // assertions that were requested by the client.
+  repeated AssertionOffer server_offers = 5;
+
+  // A list of assertions requested by the server. This must be a subset of the
+  // assertions that were offered by the client. The client is required to
+  // present all assertions listed.
+  repeated AssertionRequest server_requests = 6;
+
+  // A random 32-byte nonce. This value should be sampled from a
+  // cryptographically-strong random-number generator that guarantees
+  // uniqueness (i.e. with high probability, no nonce is ever repeated).
+  optional bytes challenge = 7;
+}
+
+// A ClientId is sent by the client in response to a ServerPrecommit.
+message ClientId {
+  // The client's public Diffie-Hellman key. For details on the expected size
+  // and encoding of |dh_public_key|, see the comment for HandshakeCipher.
+  optional bytes dh_public_key = 1;
+
+  // A list of assertions that were previously requested by the server.
+  repeated Assertion assertions = 2;
+}
+
+// A ServerId is sent by the server in response to a ClientId.
+message ServerId {
+  // The server's public Diffie-Hellman key. For details on the expected size
+  // and encoding of |dh_public_key|, see the comment for HandshakeCipher.
+  optional bytes dh_public_key = 1;
+
+  // A list of assertions that were previously offered by the server.
+  repeated Assertion assertions = 2;
+}
+
+// A ServerFinish is sent by the server immediately after a ServerId.
+message ServerFinish {
+  // An HMAC derived from the server's EKEP Authenticator Secret A, as follows:
+  //
+  //   handshake_authenticator = HMAC-H(A, T)
+  //
+  // Where T is "EKEP Handshake v1: Server Finish" as a non-null terminated,
+  // UTF-8 encoded string, and H is the hash function from the negotiated
+  // cipher suite.
+  //
+  // The client should verify the value of |handshake_authenticator| to ensure
+  // that both participants saw the same exchange.
+  //
+  // For details on the derivation of the Authenticator Secret and other
+  // cryptographic computations, see go/ekep. For a definition of the HMAC
+  // function, see RFC 4634.
+  optional bytes handshake_authenticator = 1;
+}
+
+// A ClientFinish is sent by the client in response to a ServerId and a
+// ServerFinish.
+message ClientFinish {
+  // An HMAC derived from the client's EKEP Authenticator Secret A, as follows:
+  //
+  //   handshake_authenticator = HMAC-H(A, T)
+  //
+  // Where T is "EKEP Handshake v1: Client Finish" as a non-null terminated,
+  // UTF-8 encoded string, and H is the hash function from the negotiated
+  // cipher suite.
+  //
+  // The server should verify the value of |handshake_authenticator| to ensure
+  // that both participants saw the same exchange.
+  //
+  // For details on the derivation of the Authenticator Secret and other
+  // cryptographic computations, see go/ekep. For a definition of the HMAC
+  // function, see RFC 4634.
+  optional bytes handshake_authenticator = 1;
+}

@@ -1,0 +1,39 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+message SockaddrProto {
+  required uint32 sa_family = 1;
+  required bytes sa_data = 2;
+}
+
+message AddrinfoProto {
+  required int32 ai_flags = 1;
+  required int32 ai_family = 2;
+  required int32 ai_socktype = 3;
+  required int32 ai_protocol = 4;
+
+  required uint32 ai_addrlen = 5;
+  optional SockaddrProto ai_addr = 6;  // Not required for hints
+  optional string ai_canonname = 7;  // Only if AI_CANONNAME in hints.ai_flags
+}
+
+message AddrinfosProto {
+  repeated AddrinfoProto addrinfos = 1;
+}

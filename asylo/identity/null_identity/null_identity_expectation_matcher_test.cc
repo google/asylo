@@ -1,0 +1,101 @@
+/*
+ *
+ * Copyright 2018 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "asylo/identity/null_identity/null_identity_expectation_matcher.h"
+
+#include <gtest/gtest.h>
+#include "asylo/identity/identity.pb.h"
+#include "asylo/identity/named_identity_expectation_matcher.h"
+#include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
+
+namespace asylo {
+
+namespace {
+
+using ::testing::Not;
+
+// A test fixture is used to initialize state consistently.
+class NullIdentityExpectationMatcherTest : public ::testing::Test {
+ protected:
+  NullIdentityExpectationMatcherTest() {
+    null_identity_.mutable_description()->set_identity_type(NULL_IDENTITY);
+    null_identity_.mutable_description()->set_authority_type(
+        kNullAuthorizationAuthority);
+    null_identity_.set_identity(kNullIdentity);
+    *null_expectation_.mutable_reference_identity() = null_identity_;
+
+    non_null_identity_.mutable_description()->set_identity_type(CODE_IDENTITY);
+    *non_null_expectation_.mutable_reference_identity() = non_null_identity_;
+  }
+
+  EnclaveIdentity null_identity_;
+  EnclaveIdentity non_null_identity_;
+  EnclaveIdentityExpectation null_expectation_;
+  EnclaveIdentityExpectation non_null_expectation_;
+};
+
+// Tests that the NullIdentityExpectationMatcher exists in the
+// IdentityExpectationMatchers' map.
+TEST_F(NullIdentityExpectationMatcherTest, MatcherExistsInStaticMap) {
+  auto matcher_it = IdentityExpectationMatcherMap::GetValue(
+      NamedIdentityExpectationMatcher::GetMatcherName(
+          null_identity_.description())
+          .ValueOrDie());
+  ASSERT_NE(matcher_it, IdentityExpectationMatcherMap::value_end());
+}
+
+// Tests that the NullIdentityExpectationMatcher has the correct description.
+TEST_F(NullIdentityExpectationMatcherTest, DescriptionCorrectness) {
+  NullIdentityExpectationMatcher matcher;
+  EXPECT_EQ(matcher.Description().identity_type(), NULL_IDENTITY);
+  EXPECT_EQ(matcher.Description().authority_type(),
+            kNullAuthorizationAuthority);
+}
+
+// Tests that null_identity_ matches null_expectation_.
+TEST_F(NullIdentityExpectationMatcherTest, MatchNullIdentityToNullExpectation) {
+  NullIdentityExpectationMatcher matcher;
+  StatusOr<bool> match_result =
+      matcher.Match(null_identity_, null_expectation_);
+  ASSERT_THAT(match_result, IsOk());
+  EXPECT_TRUE(match_result.ValueOrDie());
+}
+
+// Tests that attempt to match non_null_expectation_ using
+// NullIdentityExpectationMatcher results in a failure.
+TEST_F(NullIdentityExpectationMatcherTest,
+       MatchNullIdentityToNonNullExpectation) {
+  NullIdentityExpectationMatcher matcher;
+  ASSERT_THAT(matcher.Match(null_identity_, non_null_expectation_),
+              Not(IsOk()));
+}
+
+// Tests that an attempt to match non_null_identity_ using
+// NullIdentityExpectationMatcher results in a failure.
+TEST_F(NullIdentityExpectationMatcherTest,
+       MatchNonNullIdentityNullExpectation) {
+  NullIdentityExpectationMatcher matcher;
+  EXPECT_THAT(matcher.Match(non_null_identity_, null_expectation_),
+              Not(IsOk()));
+}
+
+}  // namespace
+}  // namespace asylo

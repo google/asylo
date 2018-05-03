@@ -1,0 +1,59 @@
+//
+// Copyright 2018 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/enclave.proto";
+
+// Input to a system call test case, specifying the test to run and parameters
+// (if applied) to pass.
+message SyscallsTestInput {
+  // The target syscall under test.
+  required string test_target = 1;
+  // Used by IO related syscalls.
+  optional string file_path = 2;
+  // Used by syscalls that accept a buffer.
+  optional bool provide_buffer = 3;
+  // Used by syscalls that accept a buffer.
+  optional int32 buffer_size = 4;
+}
+
+// The output contains the outputs from the syscalls inside enclave.
+message SyscallsTestOutput {
+  // Int value returned by system call.
+  optional int32 int_syscall_return = 1;
+  // String value from system call.
+  optional string string_syscall_return = 2;
+  // Bit mask from system call.
+  repeated uint64 bit_mask_syscall_outptr = 3;
+  enum ErrnoValue {
+    UNSUPPORTED = 0;
+    ERRNO_ZERO = 1;
+    ERRNO_EINVAL = 2;
+  }
+  // Value of |errno| from system call.
+  optional ErrnoValue errno_syscall_value = 4;
+}
+
+extend EnclaveInput {
+  optional SyscallsTestInput syscalls_test_input = 168889258;
+}
+
+extend EnclaveOutput {
+  optional SyscallsTestOutput syscalls_test_output = 168889258;
+}

@@ -1,0 +1,20 @@
+diff -Naur BUILD BUILD
+--- BUILD
++++ BUILD
+ posix_copts = [
+@@ -76,6 +84,7 @@
+ ]
+ 
+ boringssl_copts = select({
++    "@com_google_asylo//asylo": posix_copts + ["-DOPENSSL_NO_THREADS"],
+     ":linux_x86_64": posix_copts,
+     ":mac_x86_64": posix_copts,
+     ":windows_x86_64": [
+@@ -128,6 +137,7 @@
+         # Android supports pthreads, but does not provide a libpthread
+         # to link against.
+         ":android": [],
++        "@com_google_asylo//asylo": [],
+         "//conditions:default": ["-lpthread"],
+     }),
+     visibility = ["//visibility:public"],

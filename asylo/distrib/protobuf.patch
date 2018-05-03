@@ -1,0 +1,16 @@
+diff -Naur BUILD BUILD
+--- BUILD
++++ BUILD
+@@ -44,9 +44,11 @@
+     },
+ )
+ 
+-# Android and Windows builds do not need to link in a separate pthread library.
++# Android, Windows, and Asylo builds do not need to link in a separate
++# pthread library.
+ LINK_OPTS = select({
+     ":android": [],
++    "@com_google_asylo//asylo": [],
+     ":windows": [],
+     ":windows_msvc": [],
+     "//conditions:default": ["-lpthread", "-lm"],

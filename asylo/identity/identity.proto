@@ -1,0 +1,186 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+// $title: Identity, Identity Expectation, and Assertion
+// $overview: Representation of enclave identities, identity expectations, and identity assertions.
+// $location: https://asylo.dev/docs/reference/proto/identity/asylo.identity.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/identity/identity.html
+
+
+package asylo;
+
+// A categorization class of identity.
+enum EnclaveIdentityType {
+  UNKNOWN_IDENTITY = 0;
+
+  // An identity used by entities without cryptographic credentials.
+  NULL_IDENTITY = 1;
+
+  // A cryptographically-verifiable identity that can specify the code being
+  // run by an entity, the environment in which the code is run, and other
+  // parameters that may affect code execution.
+  CODE_IDENTITY = 2;
+
+  // An identity used by entities that possess credentials issued by a
+  // certificate authority.
+  CERT_IDENTITY = 3;
+}
+
+// Describes an enclave identity that is held by an entity.
+message EnclaveIdentityDescription {
+  // The type of enclave identity.
+  optional EnclaveIdentityType identity_type = 1;
+
+  // The combination of `authority_type` and `identity_type` uniquely identifies
+  // the authorization authority that handles the described identity (i.e. an
+  // authority that authorizes operations for entities possessing the described
+  // identity).
+  optional string authority_type = 2;
+}
+
+// An identity that is held by an enclave entity or an entity communicating with
+// an enclave entity.
+//
+// An [EnclaveIdentity][asylo.EnclaveIdentity] can be extracted from an
+// [Assertion][asylo.Assertion].
+message EnclaveIdentity {
+  // Describes the identity contained in `identity`.
+  optional EnclaveIdentityDescription description = 1;
+
+  // Bytes containing the identity. The interpretation of these bytes is up to
+  // the authorization authority that handles identities matching `description`.
+  optional bytes identity = 2;
+}
+
+// A collection of enclave identities held by an entity.
+message EnclaveIdentities {
+  repeated EnclaveIdentity identities = 1;
+}
+
+// Expectation about the identity held by an enclave entity or an entity
+// communicating with an enclave.
+//
+// An [EnclaveIdentityExpectation][asylo.EnclaveIdentityExpectation] can be
+// matched against an [EnclaveIdentity][asylo.EnclaveIdentity] by an
+// authorization authority of compatible type.
+message EnclaveIdentityExpectation {
+  // A reference identity against which a target identity is matched.
+  // `reference_identity`, when combined with `match_spec`, specifies the
+  // expected enclave identity that is authorized for a particular purpose
+  // (e.g., having access to a sealed secret, or being able to make a particular
+  // RPC).
+  optional EnclaveIdentity reference_identity = 1;
+
+  // Bytes describing how the `reference_identity` should be matched against the
+  // target identity. The interpretation of these bytes is specific to the
+  // authorization authority.
+  optional bytes match_spec = 2;
+}
+
+// Describes an assertion that is requested, offered, or presented.
+message AssertionDescription {
+  // The type of enclave identity that is asserted by this assertion.
+  optional EnclaveIdentityType identity_type = 1;
+
+  // The combination of `authority_type` and `identity_type` uniquely identifies
+  // the assertion authority that operates on this assertion. An assertion
+  // authority is responsible for generating, verifying, requesting, or offering
+  // assertions that originate from a particular enclave architecture or
+  // technology and that assert a particular type of enclave identity.
+  //
+  // `authority_type` is defined as a string for extensibility purposes and to
+  // allow the range of possible assertion types to be diversified.
+  // `authority_type` typically identifies the underlying enclave architecture
+  // or a third party authority, like a certification authority, but may also
+  // identify some additional feature of the authority. It is possible to define
+  // multiple assertion authorities for the same enclave technology and enclave
+  // identity type if these authorities differ in terms of some additional
+  // behavior.
+  //
+  // `authority_type` cannot contain the '#' character. Additionally, the
+  // authority type "Any" is reserved for assertions that are not associated
+  // with any particular authority (e.g. the null assertion).
+  optional string authority_type = 2;
+}
+
+// Describes an assertion that is offered by an entity.
+//
+// An [AssertionOffer][asylo.AssertionOffer] may optionally include any
+// additional information that is needed by the receiving party to process such
+// an offer.
+message AssertionOffer {
+  // Describes the offered assertion. `description.identity_type` is the type of
+  // enclave identity that is asserted in the offered assertion.
+  // `description.authority_type` is the type of assertion authority capable of
+  // verifying the assertion.
+  optional AssertionDescription description = 1;
+
+  // Additional information that is associated with an assertion that asserts
+  // `description.identity_type` and that is verified by the authority
+  // `description.authority_type` The interpretation of these bytes is up to the
+  // assertion-verification authority that processes assertions matching
+  // `description`.
+  //
+  // For example, this may contain any information that is needed by the
+  // receiving party to do any of the following:
+  //
+  //   * Determine whether an assertion of this type can be verified
+  //   * Verify an assertion of this type
+  //
+  optional bytes additional_information = 2;
+}
+
+// Describes an assertion that is requested by an entity.
+//
+// An [AssertionRequest][asylo.AssertionRequest] may optionally include any
+// additional information that is needed by the receiving party to handle such a
+// request.
+message AssertionRequest {
+  // Describes the requested assertion. `description.identity_type` is the type
+  // of enclave identity asserted in the requested assertion.
+  // `description.authority_type` is the type of assertion authority capable of
+  // generating the assertion.
+  optional AssertionDescription description = 1;
+
+  // Additional information that is associated with an assertion that asserts
+  // `description.identity_type` and that is verified by the authority
+  // `description.authority_type`. The interpretation of these bytes is up to
+  // the assertion-generation authority that processes assertions matching the
+  // `description`.
+  //
+  // For example, this may contain any information that is needed by the
+  // receiving party to do any of the following:
+  //
+  //   * Determine whether an assertion of this type is appropriate to generate
+  //   * Generate an assertion of this type
+  optional bytes additional_information = 2;
+}
+
+// A cryptographically-verifiable statement of an identity.
+message Assertion {
+  // Describes the presented assertion. `description.identity_type` is the type
+  // of enclave identity that is asserted. `description.authority_type` is the
+  // type of assertion authority that is capable of verifying the assertion.
+  optional AssertionDescription description = 1;
+
+  // Bytes containing the assertion. The interpretation of these bytes is up to
+  // the assertion-verification authority that verifies assertions matching
+  // `description`.
+  //
+  optional bytes assertion = 2;
+}

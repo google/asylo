@@ -1,0 +1,98 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.sgx;
+
+import "asylo/identity/util/bit_vector_128.proto";
+import "asylo/identity/util/sha256_hash.proto";
+
+// Signer-assigned identity of an enclave, as specified in SGX architecture.
+// Names of all fields come directly from the Intel Software Developer's Manual.
+// Also, all of the fields in this proto are required. If any of the fields
+// are missing, then the entire message is considered invalid.
+message SignerAssignedIdentity {
+  // Hash of the enclave-signer's public key.
+  optional Sha256HashProto mrsigner = 1;
+
+  // Product ID assigned by the enclave signer to this enclave.
+  optional uint32 isvprodid = 2;
+
+  // Security Version Number (SVN) assigned by the enclave signer to this
+  // enclave.
+  optional uint32 isvsvn = 3;
+}
+
+// An enclave's code identity as specified by the SGX architecture. Some of the
+// fields in this proto are required fields, while others are optional fields
+// (this is indicated in the comments for individual fields). If a required
+// field is missing, then the entire proto is considered invalid. On the other
+// hand, it is ok for an optional field to be missing, if the enclave identity
+// verifier does not care about matching that particular field (as specified
+// by the CodeIdentityMatchSpec proto).
+message CodeIdentity {
+  // SHA256 hash of a string representing the enclave build process (see Intel
+  // Software Developer's Manual for futher explanation). This is an optional
+  // field.
+  optional Sha256HashProto mrenclave = 1;
+
+  // Identity assigned by the signer of the enclave to this enclave. This is an
+  // optional field.
+  optional SignerAssignedIdentity signer_assigned_identity = 2;
+
+  // Extended information about the enclave (see Intel Software Developer's
+  // Manual for details). This is a required field.
+  optional uint32 miscselect = 3;
+
+  // ATTRIBUTES bit vector defined by SGX architecture. It holds various
+  // potentially security-sensitive attributes of the enclave. This is a
+  // required field.
+  optional BitVector128 attributes = 4;
+}
+
+// Specification of which fields from CodeIdentity to match.
+message CodeIdentityMatchSpec {
+  // Flag indicating whether to perform a match on mrenclave.
+  optional bool is_mrenclave_match_required = 1;
+
+  // Flag indicating whether to perform a match on mrsigner.
+  optional bool is_mrsigner_match_required = 2;
+
+  // Mask indicating which bits from miscselect must be matched. A value of
+  // one in a bit position implies the corresponding bit in miscselect must be
+  // matched. Value of zero implies the corresponding bit must be ignored.
+  // Note that this is a required field.  If this field is skipped, no
+  // CodeIdentity will match this identity expectation.
+  optional uint32 miscselect_match_mask = 4;
+
+  // Mask indicating which bits from ATTRIBUTES should be matched. Semantics
+  // similar to the miscselect mask.  Note that this is a required field. If
+  // this field is skipped, no CodeIdentity will match this identity
+  // expectation.
+  optional BitVector128 attributes_match_mask = 6;
+}
+
+// The following protobuf defines a verifier's expectation on an enclave's
+// code identity.
+message CodeIdentityExpectation {
+  // Reference identity that is matched against target identity per the
+  // match_spec below.
+  optional CodeIdentity reference_identity = 1;
+
+  // Specification of which fields from enclave identity to match.
+  optional CodeIdentityMatchSpec match_spec = 2;
+}

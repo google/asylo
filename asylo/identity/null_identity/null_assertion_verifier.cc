@@ -1,0 +1,141 @@
+/*
+ *
+ * Copyright 2017 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "asylo/identity/null_identity/null_assertion_verifier.h"
+
+#include "asylo/util/logging.h"
+#include "absl/synchronization/mutex.h"
+#include "asylo/identity/null_identity/null_assertion.pb.h"
+#include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/platform/common/static_map.h"
+
+namespace asylo {
+
+const char *const NullAssertionVerifier::authority_type_ =
+    kNullAssertionAuthority;
+
+NullAssertionVerifier::NullAssertionVerifier() : initialized_(false) {}
+
+Status NullAssertionVerifier::Initialize(const std::string &config) {
+  // Verify that this verifier has not already been initialized.
+  if (IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  "Already initialized");
+  }
+
+  absl::MutexLock lock(&initialized_mu_);
+  initialized_ = true;
+  return Status::OkStatus();
+}
+
+bool NullAssertionVerifier::IsInitialized() const {
+  absl::MutexLock lock(&initialized_mu_);
+  return initialized_;
+}
+
+EnclaveIdentityType NullAssertionVerifier::IdentityType() const {
+  return identity_type_;
+}
+
+std::string NullAssertionVerifier::AuthorityType() const { return authority_type_; }
+
+Status NullAssertionVerifier::CreateAssertionRequest(
+    AssertionRequest *request) const {
+  // Verify that this verifier has been initialized.
+  if (!IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+  }
+
+  // Set the identity type and authority type of the requested assertion to be
+  // the identity type and authority type of this verifier.
+  request->mutable_description()->set_identity_type(IdentityType());
+  request->mutable_description()->set_authority_type(AuthorityType());
+
+  // Assertion requests originating from a NullAssertionVerifier always contain
+  // the same additional information. The fixed string is also known to
+  // NullAssertionGenerator, which processes requests from this verifier.
+  request->set_additional_information(kNullAssertionRequestAdditionalInfo);
+  return Status::OkStatus();
+}
+
+StatusOr<bool> NullAssertionVerifier::CanVerify(
+    const AssertionOffer &offer) const {
+  // Verify that this verifier has been initialized.
+  if (!IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+  }
+
+  // Check that the identity type and authority type of the offered assertion
+  // match the identity type and authority type of this verifier.
+  return IsCompatibleAssertionDescription(offer.description()) &&
+         (offer.additional_information() == kNullAssertionOfferAdditionalInfo);
+}
+
+Status NullAssertionVerifier::Verify(const std::string &user_data,
+                                     const Assertion &assertion,
+                                     EnclaveIdentity *peer_identity) const {
+  // Verify that this verifier has been initialized.
+  if (!IsInitialized()) {
+    return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
+  }
+
+  // Check that the assertion has the identity type and authority type of this
+  // verifier.
+  if (!IsCompatibleAssertionDescription(assertion.description())) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Invalid assertion description");
+  }
+
+  // Verify that the body of the assertion is a serialized NullAssertion
+  // containing the user-provided data blob.
+  NullAssertion null_assertion;
+  if (!null_assertion.ParseFromString(assertion.assertion())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Assertion deserialization failed");
+  }
+  if (null_assertion.user_data() != user_data) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        "Assertion verification failed: assertion is not bound to user_data");
+  }
+
+  // If verification of the assertion succeeds, then the identity is extracted.
+  // The description of the extracted identity takes on the same identity type
+  // as is handled by the verifier. In this particular case, the authorization
+  // authority type associated with the identity also happens to be the same as
+  // the assertion authority type associated with the assertion, but this is not
+  // required.
+  peer_identity->mutable_description()->set_identity_type(IdentityType());
+  peer_identity->mutable_description()->set_authority_type(
+      kNullAuthorizationAuthority);
+
+  // Null assertions do not carry any specific identity information and
+  // consequently, the peer's identity is a fixed string that is constant in
+  // all null assertions. In contrast, a non-trivial verifier would extract some
+  // meaningful identity information from the assertion.
+  peer_identity->set_identity(kNullIdentity);
+
+  // Verification succeeded.
+  return Status::OkStatus();
+}
+
+// Static registration of the NullAssertionVerifier library.
+SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(AssertionVerifierMap,
+                                     NullAssertionVerifier);
+
+}  // namespace asylo

@@ -1,0 +1,525 @@
+#
+# Copyright 2018 Asylo authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This file lists the set of system calls for which to generate bridge
+# and serialization code across the enclave boundary in Asylo.
+#
+# The format for this file can be found at:
+# third_party/asylo/platform/arch/sgx/host_calls_generator/host_calls.proto
+
+######################################
+##                IO                ##
+######################################
+
+host_calls {
+  name: "access"
+  return_type: "int"
+  parameters {
+    name: "path_name"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "mode"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "chown"
+  return_type: "int"
+  parameters {
+    name: "path"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "owner"
+    type: "uint32_t"
+  }
+  parameters {
+    name: "group"
+    type: "uint32_t"
+  }
+}
+
+host_calls {
+  name: "close"
+  return_type: "int"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "free"
+  return_type: "void"
+  failure_sets_errno: false
+  parameters {
+    name: "ptr"
+    type: "void *"
+    pointer_attributes {
+      attribute: USER_CHECK
+    }
+  }
+}
+
+host_calls {
+  name: "fsync"
+  return_type: "int"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "isatty"
+  return_type: "off_t"
+  failure_return_expression: "0"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "link"
+  return_type: "int"
+  parameters {
+    name: "target"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "link_name"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+}
+
+host_calls {
+  name: "lseek"
+  return_type: "off_t"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+  parameters {
+    name: "offset"
+    type: "off_t"
+  }
+  parameters {
+    name: "whence"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "read"
+  return_type: "int32_t"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+  parameters {
+    name: "buf"
+    type: "void *"
+    pointer_attributes {
+      attribute: OUT
+    }
+    pointer_attributes {
+      attribute: SIZE
+      attribute_expression: "len"
+    }
+  }
+  parameters {
+    name: "len"
+    type: "size_t"
+  }
+}
+
+host_calls {
+  name: "readlink"
+  return_type: "int32_t"
+  parameters {
+    name: "path"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "buf"
+    type: "char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "bufsize"
+    type: "size_t"
+  }
+}
+
+host_calls {
+  name: "realloc"
+  return_type: "void *"
+  failure_return_expression: "nullptr"
+  parameters {
+    name: "ptr"
+    type: "void *"
+    pointer_attributes {
+      attribute: USER_CHECK
+    }
+  }
+  parameters {
+    name: "size"
+    type: "size_t"
+  }
+}
+
+host_calls {
+  name: "symlink"
+  return_type: "int"
+  parameters {
+    name: "target"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "link_name"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+}
+
+host_calls {
+  name: "write"
+  return_type: "int32_t"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+  parameters {
+    name: "buf"
+    type: "const void *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: SIZE
+      attribute_expression: "len"
+    }
+  }
+  parameters {
+    name: "len"
+    type: "size_t"
+  }
+}
+
+host_calls {
+  name: "unlink"
+  return_type: "int"
+  parameters {
+    name: "path_name"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+}
+
+######################################
+##             sched.h              ##
+######################################
+
+host_calls {
+  name: "sched_yield"
+  return_type: "int"
+}
+
+######################################
+##             Sockets              ##
+######################################
+
+host_calls {
+  name: "inet_pton"
+  return_type: "int"
+  parameters {
+    name: "af"
+    type: "int"
+  }
+  parameters {
+    name: "src"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "dst"
+    type: "void *"
+    pointer_attributes {
+      attribute: OUT
+    }
+    pointer_attributes {
+      attribute: SIZE
+      # Since |dst| stores an instance of either struct in_addr or struct
+      # in6_addr, |size| should be:
+      # max(sizeof(struct in_addr), sizeof(struct in6_addr)) = 16.
+      attribute_expression: "16"
+    }
+  }
+}
+
+host_calls {
+  name: "listen"
+  return_type: "int"
+  parameters {
+    name: "sockfd"
+    type: "int"
+  }
+  parameters {
+    name: "backlog"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "send"
+  return_type: "ssize_t"
+  parameters {
+    name: "sockfd"
+    type: "int"
+  }
+  parameters {
+    name: "buf"
+    type: "const void *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: SIZE
+      attribute_expression: "len"
+    }
+  }
+  parameters {
+    name: "len"
+    type: "size_t"
+  }
+  parameters {
+    name: "flags"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "setsockopt"
+  return_type: "int"
+  parameters {
+    name: "socket"
+    type: "int"
+  }
+  parameters {
+    name: "level"
+    type: "int"
+  }
+  parameters {
+    name: "option_name"
+    type: "int"
+  }
+  parameters {
+    name: "option_value"
+    type: "const void *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: SIZE
+      attribute_expression: "option_len"
+    }
+  }
+  parameters {
+    name: "option_len"
+    type: "size_t"
+  }
+}
+
+host_calls {
+  name: "shutdown"
+  return_type: "int"
+  parameters {
+    name: "sockfd"
+    type: "int"
+  }
+  parameters {
+    name: "how"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "socket"
+  return_type: "int"
+  parameters {
+    name: "domain"
+    type: "int"
+  }
+  parameters {
+    name: "type"
+    type: "int"
+  }
+  parameters {
+    name: "protocol"
+    type: "int"
+  }
+}
+
+######################################
+##            sys/stat.h            ##
+######################################
+
+host_calls {
+  name: "mkdir"
+  return_type: "int"
+  parameters {
+    name: "path"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "mode"
+    type: "int"
+  }
+}
+
+host_calls {
+  name: "umask"
+  return_type: "mode_t"
+  parameters {
+    name: "mask"
+    type: "mode_t"
+  }
+}
+
+######################################
+##             unistd.h             ##
+######################################
+
+host_calls {
+  name: "usleep"
+  return_type: "int"
+  parameters {
+    name: "usec"
+    type: "uint32_t"
+  }
+}
+
+host_calls {
+  name: "getuid"
+  return_type: "uid_t"
+}
+
+host_calls {
+  name: "geteuid"
+  return_type: "uid_t"
+}
+
+host_calls {
+  name: "getgid"
+  return_type: "gid_t"
+}
+
+host_calls {
+  name: "getegid"
+  return_type: "gid_t"
+}
+
+host_calls {
+  name: "getpid"
+  return_type: "pid_t"
+}
+
+host_calls {
+  name: "getppid"
+  return_type: "pid_t"
+}
+
+######################################
+##              wait.h              ##
+######################################
+
+host_calls {
+  name: "wait"
+  return_type: "pid_t"
+  failure_sets_errno: false
+  parameters {
+    name: "wstatus"
+    type: "int *"
+    pointer_attributes {
+      attribute: OUT
+    }
+  }
+}

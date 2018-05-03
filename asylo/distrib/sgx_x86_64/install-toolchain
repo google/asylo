@@ -1,0 +1,469 @@
+#!/bin/bash
+#
+# Copyright 2018 Asylo authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+# This script builds and installs the sgx-enclave toolchain.
+
+set -e
+
+# Installation default destination
+readonly install_default=/opt/asylo/toolchains/sgx_x86_64
+
+# Dependency source files to use when fetching from online.
+readonly gcc_tag=gcc-7_3_0-release
+readonly gcc_default="gcc-${gcc_tag}.tar.gz"  # github renames the archive.
+readonly gcc_default_sha="af11c397296cab69996723b9d828c98a9bb749447ac8f7ed67458bcdb60311ed"
+readonly binutils_default=binutils-2.24.tar.gz
+readonly binutils_default_sha="4930b2886309112c00a279483eaef2f0f8e1b1b62010e0239c16b22af7c346d4"
+readonly newlib_default=newlib-2.5.0.20170922.tar.gz
+readonly newlib_default_sha="16ccacbb9155b89a8333da057bfd2952d334795a38dfffcef6a4d83ae12e7275"
+
+# Writes an message to stderr.
+err() {
+  echo "[$(date +'%Y-%m-%dT%H:%M:%S%z')]: $*" >&2
+}
+
+function usage {
+cat <<EOF
+
+Usage:  $0 [FLAGS]
+
+FLAGS:   <-h,--help> ...        Print this message.
+         <--bin_utils> ...      Specify the path to sources for binutils.
+                                May be a directory or a path to an archive X.ext
+                                that unpacks sources to a subdirectory X. See
+                                below for supported archive extensions.
+                                [default unpacked from binutils-2.24.tar.gz,
+                                 which is fetched from online if it does not
+                                 exist.]
+         <--gcc> ...            Specify the path to sources for gcc
+                                May be a directory or a path to an archive X.ext
+                                that unpacks sources to a subdirectory X. See
+                                below for supported archive extensions.
+                                [default unpacked from
+                                 gcc-gcc-7_3_0-release.tar.gz which is fetched
+                                 from online if it does not exist.]
+         <--newlib> ...         Specify the path to sources for newlib
+                                May be a directory or a path to an archive X.ext
+                                that unpacks sources to a subdirectory X. See
+                                below for supported archive extensions.
+                                NOT RECOMMENDED. Asylo-specific patches are
+                                necessary for the toolchain to work properly.
+                                [default will fetch the correct source and apply
+                                 ${newlib_default%.tar.gz}.patch]
+         <--prefix> ...         Specify the install path
+                                [default ${install_default}]
+         <--build_root> ...     Specify a path to existing builds of the
+                                toolchain dependencies.
+         <--user>               The installation path will be stored in
+                                ${HOME}/.asylo/
+                                [Default]
+         <--system>             The installation path will be stored in
+                                /usr/local/share/asylo/
+         <--no_install>         Do not store the installation path.
+         <--no_build>           Do not build the toolchain.
+         <--no_fetch>           Do not fetch dependencies from online.
+
+Install the Asylo compiler toolchain.
+
+Supported archive extensions are .tar.gz, .gz, .tar, .tgz, .zip, and .7z.
+To uninstall, delete the --prefix directory and the files
+/usr/local/share/asylo/sgx_toolchain_location
+${HOME}/.asylo/sgx_toolchain_location
+
+EOF
+}
+
+function set_directory() {
+  local readonly DIRECTORY="$1"
+  local readonly DIR_PATH="$2"
+  if [[ "${DIR_PATH}" =~ \.tar\.gz$ ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH%.tar.gz}\"";
+    tar xzf "${DIR_PATH}"
+  elif [[ "${DIR_PATH}" =~ \.tgz$ ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH%.tgz}\"";
+    tar xzf "${DIR_PATH}"
+  elif [[ "${DIR_PATH}" =~ \.gz$ ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH%.gz}\"";
+    gunzip "${DIR_PATH}"
+  elif [[ "${DIR_PATH}" =~ \.tar$ ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH%.tar}\"";
+    tar xf "${DIR_PATH}"
+  elif [[ "${DIR_PATH}" =~ \.zip$ ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH%.zip}\"";
+    unzip "${DIR_PATH}"
+  elif [[ "${DIR_PATH}" =~ \.7z$ ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH%.7z}\"";
+    7z x "${DIR_PATH}"
+  elif [[ -d "${DIR_PATH}" ]]; then
+    eval "export ${DIRECTORY}=\"${DIR_PATH}\"";
+  else
+    echo "Unsupported archive file: ${DIR_PATH}"
+    exit 1
+  fi
+}
+
+function check_which() {
+  if [[ -z $(which "$1") ]]; then
+    echo "Missing supporting tool to fetch dependencies: $1" >&2
+    return 1
+  fi
+  return 0
+}
+
+function verify_sha() {
+  local readonly FILE="$1"
+  local readonly SHA="$2"
+
+  if ! sha256sum --status -c <(echo "${SHA} -") < ${FILE}; then
+    echo "${FILE} checksum mismatch" >&2
+    return 1
+  fi
+  return 0
+}
+
+function write_install_path() {
+  # Write $2 to $1 (creating (dirname "$1") if needed) if permitted to do so.
+  local readonly INSTALL_PATH="$1"
+  local readonly CONTENTS="$2"
+
+  local readonly DIRECTORY=$(dirname "${INSTALL_PATH}")
+  fail=
+  mkdir -p "${DIRECTORY}" 2>/dev/null || fail=1
+  touch "${INSTALL_PATH}" 2>/dev/null || fail=1
+  if [[ -n "${fail}" ]]; then
+    echo "Cannot write install location to ${INSTALL_PATH}." >&2
+    return 1
+  fi
+  echo "${CONTENTS}" > "${INSTALL_PATH}"
+}
+
+function do_install() {
+  if [[ -n "${system_install}" ]]; then
+    write_install_path "/usr/local/share/asylo/sgx_toolchain_location" \
+                       "${prefix}"
+  fi
+  if [[ -n "${user_install}" ]]; then
+    write_install_path "${HOME}/.asylo/sgx_toolchain_location" "${prefix}"
+  fi
+}
+
+# Only use interaction when run with no flags or the -i|--interactive flag is
+# given.
+INTERACTIVE=
+[[ "$@" = "" ]] && INTERACTIVE=1
+
+readonly TAKE_ARGS=bin_utils:,gcc:,newlib:,build_root:,prefix:
+readonly NO_ARGS=no_fetch,help,user,system,interactive,no_build,no_install
+readonly LONG_FLAGS="${TAKE_ARGS},${NO_ARGS}"
+readonly opts=`getopt -a -o hius --long ${LONG_FLAGS} -n $0 -- "$@"`
+eval set -- "$opts"
+
+binutils=
+build_root=
+gcc=
+newlib=
+no_build=
+no_fetch=
+no_install=
+prefix=
+system_install=
+user_install=
+
+while true ; do
+  case "$1" in
+    --bin_utils)      set_directory binutils "$2"; shift 2 ;;
+    --build_root)     build_root="$2";             shift 2 ;;
+    --gcc)            set_directory gcc "$2";      shift 2 ;;
+    -h|--help)        usage;                       exit 0 ;;
+    -i|--interactive) INTERACTIVE=1;               shift ;;
+    --newlib)         set_directory newlib "$2";   shift 2 ;;
+    --no_fetch)       no_fetch=1;                  shift ;;
+    --no_build)       no_build=1;                  shift ;;
+    --no_install)     no_install=1;                shift ;;
+    --prefix)         prefix="$2";                 shift 2 ;;
+    -s|--system)      system_install=1;            shift ;;
+    -u|--user)        user_install=1;              shift ;;
+    --)               shift ; break ;;
+  esac
+done
+declare -r no_build no_fetch no_install system_install
+declare -r INTERACTIVE
+# build_root, user_install, and prefix are all possibly set with interaction or
+# defaults.
+
+#####################################
+#   Interaction for unset values    #
+#####################################
+
+if [[ -z "${INTERACTIVE}" ]]; then
+  # Set default install behavior.
+  [[ -z "${system_install}" ]] && user_install=1
+else
+  if [[ -z "${prefix}" ]]; then
+    echo -n "Install destination [${install_default}]: "
+    read prefix
+    echo
+  fi
+  cat <<EOF
+The Asylo WORKSPACE must know where the SGX toolchain is installed.
+
+You can specify the paths in WORKSPACE directly with
+
+    sgx_deps(installation_path = <path>)
+
+or indirectly with
+
+    sgx_deps()
+
+which will first check \$HOME/.asylo/, and then /usr/local/share/asylo/,
+and then finally ${install_default}.
+
+  1. [--user] Write to ${HOME}/.asylo/
+  2. [--system] Write to /usr/local/share/asylo/ (requires root)
+  3. [--no_install] Do nothing [sgx_deps() uses default path ${install_default}]
+
+EOF
+  echo -n "Choose [1]: "
+  read choice
+  case "${choice}" in
+    1|"") user_install=1 ;;
+    2) system_install=1 ;;
+    3) ;;
+    *) echo "Invalid choice" >&2
+       exit 1
+  esac
+fi
+declare -r user_install
+
+# If no_build, then install (if not no_install) and quit.
+if [[ -n "${no_build}" ]]; then
+  if [[ -z "${no_install}" ]]; then
+    do_install
+  fi
+  exit 0
+fi
+
+#####################################
+#         Build environment         #
+#####################################
+
+# Root of the sgx-enclave toolchain package.
+readonly toolchain_root=$(dirname "$0")
+
+# Directory to extract source packages from.
+readonly srcs_root=$(pwd)
+
+# Parallel build job count.
+readonly JOBS=$(grep '^processor' /proc/cpuinfo | wc -l)
+
+if [[ -z "${build_root}" ]]; then
+  build_root=$(mktemp -d /tmp/build-XXXX)
+fi
+declare -r build_root
+
+if [ ! -d "${build_root}" ]; then
+  err "Could not create build directory."
+  exit
+fi
+
+if [[ -z "${prefix}" ]]; then
+  prefix="${install_default}"
+fi
+declare -r prefix
+
+mkdir -p "${prefix}"
+
+# Create a simple BUILD file for the toolchain
+cp "${toolchain_root}/BUILD.tpl" "${prefix}/BUILD"
+# Make the CROSSTOOL available to the BUILD's crosstool target.
+cp "${toolchain_root}/CROSSTOOL.tpl" "${prefix}/CROSSTOOL"
+
+###################################
+#  Ensure source packages exist   #
+###################################
+
+if [[ -z "${gcc}" ]]; then
+  if [[ ! -f "${gcc_default}" ]] && [[ -z "${no_fetch}" ]]; then
+    check_which wget || exit 1
+    # The fetch URL is different from the file name actually fetched.
+    wget -nv "https://github.com/gcc-mirror/gcc/archive/${gcc_tag}.tar.gz" \
+      -O "${gcc_default}"
+  fi
+  if [[ -f "${gcc_default}" ]]; then
+    verify_sha "${gcc_default}" "${gcc_default_sha}"
+    set_directory gcc "${gcc_default}"
+  else
+    echo "Missing ${gcc_tag} dependency."
+    exit 1
+  fi
+fi
+
+if [[ -z "${binutils}" ]]; then
+  if [[ ! -f "${binutils_default}" ]] && [[ -z "${no_fetch}" ]]; then
+    check_which wget || exit 1
+    wget -nv "https://ftp.gnu.org/gnu/binutils/${binutils_default}"
+  fi
+  if [[ -f "${binutils_default}" ]]; then
+    verify_sha "${binutils_default}" "${binutils_default_sha}"
+    set_directory binutils "${binutils_default}"
+  else
+    echo "Missing ${binutils_default%.tar.gz} dependency."
+    exit 1
+  fi
+fi
+
+if [[ -z "${newlib}" ]]; then
+  if [[ ! -f "${newlib_default}" ]] && [[ -z "${no_fetch}" ]]; then
+    check_which wget || exit 1
+    wget -nv "ftp://sourceware.org/pub/newlib/${newlib_default}"
+  fi
+  if [[ -f "${newlib_default}" ]]; then
+    verify_sha "${newlib_default}" "${newlib_default_sha}"
+    set_directory newlib "${newlib_default}"
+    patch -d "${newlib_default%.tar.gz}" -p0 < \
+        "${toolchain_root}/${newlib_default%.tar.gz}.patch"
+  else
+    echo "Missing ${newlib_default%.tar.gz} dependency."
+    exit 1
+  fi
+fi
+
+declare -r binutils gcc newlib
+
+########################################
+#         Target configuration         #
+########################################
+
+readonly target=x86_64-elf
+
+cd "${build_root}"
+
+##############################################
+#         Build and install binutils         #
+##############################################
+
+if [[ ! -d build-binutils ]]; then
+  (mkdir build-binutils && cd build-binutils &&
+     CFLAGS="-Wno-error" "${srcs_root}/${binutils}/configure" \
+       --disable-werror --target="${target}" --prefix="${prefix}" &&
+     make -j"${JOBS}" && make install &&
+     echo "installed binutils")
+fi
+
+################################################
+#         Build and install stage1 gcc         #
+################################################
+
+GCC_CONFIG=(
+  --disable-cloog
+  --with-newlib
+  --disable-multilib
+  --disable-nls
+  --disable-werror
+  --enable-initfini-array
+  --prefix="${prefix}"
+  --target="${target}"
+  --with-pic
+)
+
+if [[ ! -d build-gcc ]]; then
+(mkdir build-gcc && cd build-gcc &&
+   "${srcs_root}/${gcc}/configure" "${GCC_CONFIG[@]}" --enable-languages=c &&
+   make configure-gcc &&
+   make -j"${JOBS}" all-gcc && make -j"${JOBS}" all-target-libgcc &&
+   make install-gcc && make install-target-libgcc &&
+   echo "installed stage1 compiler")
+fi
+
+############################################
+#         Build and install newlib         #
+############################################
+
+# The newlib above is configured with --target=x86_64-enclave, whereas we
+# configure a generic gcc with --target=x86_64-elf. The loop below builds links
+# to allow the newlib build to find its build tools under the prefix it expects.
+for i in $( ls "${prefix}"/bin); do
+  enclave_name="${prefix}/bin/$(echo "${i}" | sed s/elf/enclave/)"
+  if [ ! -e "${enclave_name}" ]; then
+    ln -s "${i}" "${enclave_name}"
+  fi;
+done
+
+readonly newlib_target=x86_64-enclave
+PATH="${prefix}"/bin:"${PATH}"
+if [[ ! -d build-newlib ]]; then
+  (mkdir build-newlib && cd build-newlib &&
+     CFLAGS_FOR_TARGET="-fPIC -g -O2" "${srcs_root}/${newlib}/configure" \
+         --with-pic --prefix="${prefix}" --target="${newlib_target}" &&
+     make -j && make install &&
+     echo "installed newlib") || exit 1
+
+# Merge newlib build artifacts into compiler installation.
+rsync -a "${prefix}/${newlib_target}/"* "${prefix}/${target}"
+
+# Cleanup symlinks and build artifacts.
+rm -rf "${prefix}/${newlib_target}" "${prefix}/bin/${newlib_target}"*
+
+fi
+
+#############################################################
+#         Build and install gcc, g++, and libstdc++         #
+#############################################################
+
+# GCC needs to know where to look for the newlib header files during build.
+# Otherwise, it will think the system doesn't have any other versions of some
+# headers and will not emit code that will #include_next it, leading to all of
+# the newlib contents to not be available (e.g., PATH_MAX in limits.h).
+GCC_CONFIG+=(
+  --with-build-sysroot="${prefix}/${target}/"
+  --with-native-system-header-dir=/include/
+)
+
+# Exporting these environment variables forces gcc to build the C++ library and
+# its dependencies with -fPIC, which out of the box it isn't configured to do
+# when building a static library for x86_64-elf. A more robust approach would be
+# to configure Asylo as a new gcc port with the correct flags hard coded,
+# however this require much more heavyweight and intrusive changes.
+GCC_FLAGS=(
+  -DNO_IMPLICIT_EXTERN_C
+  -DPIC
+  -fPIC
+  -D_POSIX_THREADS
+  -D_POSIX_PRIORITY_SCHEDULING
+  -D_POSIX_READER_WRITER_LOCKS
+  -D_UNIX98_THREAD_MUTEX_ATTRIBUTES
+  -DTARGET_ANDROID=0
+)
+
+export CFLAGS="${GCC_FLAGS[@]}"
+export CXXFLAGS="${GCC_FLAGS[@]}"
+export CFLAGS_FOR_TARGET="${CFLAGS}"
+export CXXFLAGS_FOR_TARGET="${CXXFLAGS}"
+
+(mkdir build-gcc2 && cd build-gcc2 &&
+   "${srcs_root}/${gcc}/configure" "${GCC_CONFIG[@]}" \
+     --disable-werror \
+     --enable-languages=c,c++ \
+     --enable-c99 \
+     --enable-threads=posix &&
+   make configure-gcc &&
+   make -j"${JOBS}" && make install &&
+   echo "installed compiler")
+
+if [[ -z "${no_install}" ]]; then
+  do_install
+fi

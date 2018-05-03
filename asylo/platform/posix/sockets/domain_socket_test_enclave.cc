@@ -1,0 +1,91 @@
+/*
+ *
+ * Copyright 2017 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "asylo/util/logging.h"
+#include "asylo/platform/posix/sockets/socket_client.h"
+#include "asylo/platform/posix/sockets/socket_server.h"
+#include "asylo/platform/posix/sockets/socket_test.pb.h"
+#include "asylo/platform/posix/sockets/socket_test_transmit.h"
+#include "asylo/test/util/enclave_test_application.h"
+
+namespace asylo {
+
+class DomainSocketTest : public EnclaveTestCase {
+ public:
+  Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
+    if (!input.HasExtension(socket_test_input)) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing domain socket test input");
+    }
+    SocketTestInput test_input = input.GetExtension(socket_test_input);
+    if (!test_input.has_action() || !test_input.has_socket_name()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "domain socket test input is incomplete");
+    }
+    SocketTestInput::SocketAction enc_command = test_input.action();
+    std::string socket_name = test_input.socket_name();
+
+    if (enc_command == SocketTestInput::INITSERVER) {
+      return EncSetupServer(socket_name);
+    } else if (enc_command == SocketTestInput::RUNSERVER) {
+      return EncRunServer();
+    } else if (enc_command == SocketTestInput::RUNCLIENT) {
+      return EncRunClient(socket_name);
+    } else {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Unrecognized command for domain socket test");
+    }
+  }
+
+ private:
+  // Sets up UNIX domain-socket server inside enclave.
+  Status EncSetupServer(const std::string &socket_name) {
+    if (!enc_socket_server_.ServerSetup(socket_name).ok()) {
+      return Status(error::GoogleError::INTERNAL, "Server setup failed");
+    }
+    return Status::OkStatus();
+  }
+
+  // Runs UNIX domain-socket server inside enclave.
+  Status EncRunServer() {
+    if (!enc_socket_server_.ServerAccept().ok()) {
+      return Status(error::GoogleError::INTERNAL, "Server accept failed");
+    }
+    if (!ServerTransmit(&enc_socket_server_).ok()) {
+      return Status(error::GoogleError::INTERNAL, "Server transmit failed");
+    }
+    return Status::OkStatus();
+  }
+
+  // Runs UNIX domain-socket client inside enclave.
+  Status EncRunClient(const std::string &socket_name) {
+    SocketClient enc_socket_client;
+    if (!enc_socket_client.ClientSetup(socket_name).ok()) {
+      return Status(error::GoogleError::INTERNAL, "Client setup failed");
+    }
+    if (!ClientTransmit(&enc_socket_client).ok()) {
+      return Status(error::GoogleError::INTERNAL, "Client transmit failed");
+    }
+    return Status::OkStatus();
+  }
+
+  SocketServer enc_socket_server_;
+};
+TrustedApplication *BuildTrustedApplication() { return new DomainSocketTest; }
+
+}  // namespace asylo

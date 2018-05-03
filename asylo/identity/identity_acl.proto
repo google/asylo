@@ -1,0 +1,77 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+// $title: Identity ACL
+// $overview: Representation of an enclave identity ACL (access control list).
+// $location: https://asylo.dev/docs/reference/proto/identity/asylo.identity_acl.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/identity/identity_acl.html
+
+
+// The following recursive protos allow for arbitrary nesting of logical
+// operators when constructing an `EnclaveIdentityExpectation`-based ACL. Such
+// ACLs can be evaluated against a set of identities belonging to an enclave
+// to make authorization decisions.
+//
+// An ACL is represented by a top-level `IdentityAclPredicate`. A predicate can
+// either be a singular `EnclaveIdentityExpectation`, or a nested
+// `IdentityAclGroup`, which contains a list of predicates as well as a logical
+// operator (`OR`, `AND`, or `NOT`):
+//
+//  - An `OR`-group is satisfied if any of the embedded predicates are
+//    satisfied.
+//  - An `AND`-group is satisfied if all of the embedded predicates are
+//    satisfied.
+//  - A `NOT`-group is required to have only a single embedded predicate and is
+//    satisfied if the embedded predicate is not satisfied.
+//
+// An `EnclaveIdentityExpectation` predicate is satisfied if it is matched by
+// any of a given set of enclave identities.
+package asylo;
+
+import "asylo/identity/identity.proto";
+
+// Represents either a group of predicates or a single expectation.
+message IdentityAclPredicate {
+  oneof item {
+    IdentityAclGroup acl_group = 1;
+    EnclaveIdentityExpectation expectation = 2;
+  }
+}
+
+// Represents a group of ACL predicates.
+message IdentityAclGroup {
+  // The predicates that make up this group. Must be non-empty.
+  repeated IdentityAclPredicate predicates = 1;
+
+  // Possible logical operators to use when evaluating the results of matching
+  // |predicates| against a set of identities.
+  enum GroupType {
+    // Evaluates to true iff any predicates match.
+    OR = 0;
+
+    // Evaluates to true iff all predicates match.
+    AND = 1;
+
+    // Evaluates to true iff no predicates match. |predicates| must have exactly
+    // one element.
+    NOT = 2;
+  }
+
+  // The type of this ACL group.
+  optional GroupType type = 2 [default = OR];
+}

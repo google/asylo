@@ -1,0 +1,277 @@
+#
+# Copyright 2018 Asylo authors
+#
+# Licensed under the Apache License, Version 2.0 (the "License");
+# you may not use this file except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#     http://www.apache.org/licenses/LICENSE-2.0
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#
+
+licenses(["notice"])  # Apache v2.0
+
+# Enclave test cases.
+
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "enclave_test",
+    "copy_from_host",
+    "cc_enclave_test",
+)
+
+# A protobuf used by syscalls test. The input contains the target syscall to
+# test, and the output contains the output of the syscall inside enclave.
+asylo_proto_library(
+    name = "syscalls_test_proto",
+    srcs = ["syscalls_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
+# Trivial SGX enclave.
+sgx_enclave(
+    name = "hello_world.so",
+    srcs = ["hello_world.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+# Enclave that attempts to forcibly create a global constructor/destructor; if
+# this fails to build, then our compiler's behaving improperly.
+sgx_enclave(
+    name = "initfini.so",
+    srcs = ["initfini.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+# SGX enclave used to test different syscalls.
+sgx_enclave(
+    name = "syscalls_test.so",
+    srcs = ["syscalls_test_enclave.cc"],
+    deps = [
+        ":syscalls_test_proto_cc",
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+        "@com_google_asylo//asylo/util:logging",
+    ],
+)
+
+# SGX enclave linked against the sgx_runtime that calls abort().
+sgx_enclave(
+    name = "die.so",
+    srcs = ["die.cc"],
+    deps = [
+        "//asylo:enclave_runtime",
+    ],
+)
+
+# SGX enclave throws exception.
+sgx_enclave(
+    name = "exception.so",
+    srcs = ["exception_enclave.cc"],
+    deps = [
+        ":exception",
+        "//asylo:enclave_runtime",
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+    ],
+)
+
+# SGX enclave testing logging.
+sgx_enclave(
+    name = "logging.so",
+    srcs = ["logging_test_enclave.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+        "@com_google_asylo//asylo/util:logging",
+    ],
+)
+
+# Common exception class for inside and outside enclave.
+cc_library(
+    name = "exception",
+    srcs = ["exception.cc"],
+    hdrs = ["exception.h"],
+)
+
+sgx_enclave(
+    name = "test_enclave_smoke.so",
+    srcs = ["hello_world.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+# SGX enclave that returns various errors across the enclave boundary.
+sgx_enclave(
+    name = "error_propagation_enclave.so",
+    srcs = ["error_propagation_enclave.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+        "@com_google_asylo//asylo/util:logging",
+    ],
+)
+
+TEST_DEPS_COMMON = [
+    "@com_google_googletest//:gtest",
+    "@com_google_absl//absl/memory",
+    "//asylo:enclave_client",
+    "@com_google_asylo//asylo/util:logging",
+    "//asylo/test/util:enclave_test",
+    "//asylo/test/util:status_matchers",
+    "//asylo/test/util:test_main",
+    "//asylo/util:status",
+]
+
+enclave_test(
+    name = "enclave_smoke_test",
+    srcs = ["hello_world_test.cc"],
+    enclave = ":test_enclave_smoke.so",
+    tags = ["regression"],
+    deps = TEST_DEPS_COMMON,
+)
+
+cc_enclave_test(
+    name = "threaded_test",
+    srcs = ["threaded_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_enclave_test(
+    name = "rdrand_test",
+    srcs = ["rdrand_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_enclave_test(
+    name = "nanosleep_test",
+    srcs = ["nanosleep_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_enclave_test(
+    name = "malloc_stress_test",
+    srcs = ["malloc_stress_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_enclave_test(
+    name = "mutex_test",
+    srcs = ["mutex_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_asylo//asylo/util:logging",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+enclave_test(
+    name = "syscalls_test",
+    srcs = ["syscalls_test_driver.cc"],
+    enclave = ":syscalls_test.so",
+    tags = ["regression"],
+    deps = [
+        ":syscalls_test_proto_cc",
+    ] + TEST_DEPS_COMMON,
+)
+
+enclave_test(
+    name = "error_propagation_test",
+    srcs = ["error_propagation_test.cc"],
+    enclave = ":error_propagation_enclave.so",
+    tags = ["regression"],
+    deps = TEST_DEPS_COMMON,
+)
+
+enclave_test(
+    name = "logging_test",
+    srcs = ["logging_test_driver.cc"],
+    enclave = ":logging.so",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:test_flags",
+    ] + TEST_DEPS_COMMON,
+)
+
+cc_binary(
+    name = "double_die",
+    testonly = 1,
+    srcs = ["double_die.cc"],
+    deps = [
+        "//asylo:enclave_client",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+copy_from_host(
+    output = "double_die_host_bin",
+    target = "double_die",
+)
+
+enclave_test(
+    name = "die_test",
+    srcs = ["die_test.cc"],
+    data = [":double_die_host_bin"],
+    enclave = ":die.so",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:exec_tester",
+    ] + TEST_DEPS_COMMON,
+)
+
+cc_binary(
+    name = "exception_app",
+    testonly = 1,
+    srcs = ["exception_app.cc"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test_launcher",
+    ],
+)
+
+copy_from_host(
+    output = "exception_app_host_bin",
+    target = "exception_app",
+)
+
+enclave_test(
+    name = "exception_test",
+    srcs = ["exception_test.cc"],
+    data = [":exception_app_host_bin"],
+    enclave = ":exception.so",
+    tags = ["regression"],
+    deps = [
+        ":exception",
+        "//asylo/test/util:exec_tester",
+    ] + TEST_DEPS_COMMON,
+)

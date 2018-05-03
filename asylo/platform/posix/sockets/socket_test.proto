@@ -1,0 +1,63 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+// socket_test.proto
+// Definition of SocketTestInput protocol buffers
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/enclave.proto";
+
+// Used by socket tests to send an input into the enclave
+message SocketTestInput {
+  enum SocketAction {
+    UNKNOWN = 0;
+    RUNSERVER = 1;
+    RUNCLIENT = 2;
+    INITSERVER = 3;
+    INITCLIENT = 4;
+    STATSERVER = 5;
+    STATCLIENT = 6;
+  }
+
+  optional SocketAction action = 1;  // Run server or client
+  optional string socket_name = 2;   // Domain socket name
+  optional int32 server_port = 3;    // IPv6 server port
+  optional int32 buf_len = 4;        // Size of buffer used in socket perf
+  optional int32 round_trip = 5;     // Amount of roundtrips in socket perf
+}
+
+// Used by socket tests to receive output from the enclave
+message SocketTestOutput {
+  optional int32 server_port = 1;  // Port on which IPv6 server is listening
+}
+
+// Used by addrinfo tests to specify whether or not hints should be passed to
+// the getaddrinfo() system call
+message AddrInfoTestInput {
+  required bool use_addrinfo_hints = 1;
+}
+
+extend EnclaveInput {
+  optional SocketTestInput socket_test_input = 161587976;
+  optional AddrInfoTestInput addrinfo_test_input = 161587977;
+}
+
+extend EnclaveOutput {
+  optional SocketTestOutput socket_test_output = 191972549;
+}

@@ -1,0 +1,135 @@
+//
+// Copyright 2017 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+// $title: Enclave Boundary Messages
+// $overview: Protobuf definitions to interact with enclave entry-points.
+// $location: https://asylo.dev/docs/reference/proto/asylo.enclave.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/enclave.html
+
+
+// This file defines the messages for communicating with a trusted application's
+// entry-points: [initialization][asylo.EnclaveConfig], (re-entrant)
+// execution [input][asylo.EnclaveInput] and
+// [output][asylo.EnclaveOutput], and [finalization][asylo.EnclaveFinal].
+package asylo;
+
+import "asylo/util/status.proto";
+import "asylo/identity/enclave_assertion_authority_config.proto";
+
+// A configuration message for the EnclaveManager to communicate with the
+// attestation daemon.
+message HostConfig {
+  // Local attestation domain of the enclave.
+  optional string local_attestation_domain = 1;
+}
+
+// Represents an environment variable's value to communicate a baseline
+// environment to `getenv`.
+message EnvironmentVariable {
+  // The name of the variable (e.g., as input to `getenv`).
+  optional string name = 1;
+
+  // The initial value of the variable. An enclave can change the value later
+  // with e.g., `setenv`. The environment variable's value is not changed by
+  // changes in the host environment. The host's environment variable values are
+  // not inherited from the enclave.
+  optional string value = 2;
+}
+
+// Initialization settings for the logging system in an enclave.
+message LoggingConfig {
+  // Enclave logging levels for VLOG. Any VLOG with levels below or equal to
+  // this level will be logged, others will be ignored.
+  optional int32 vlog_level = 1 [default = 0];
+
+  // Directory under which to store enclave log files. Default: `"/tmp/"`
+  optional string log_directory = 2;
+}
+
+// Configuration passed to an enclave during initialization. An enclave's
+// configuration (an instance of this message) is part of its identity. The base
+// configuration included in `EnclaveConfig` is used to support platform
+// capabilities such as the logging API and POSIX APIs.
+message EnclaveConfig {
+  // Host file descriptor to use for standard in. A negative value indicates no
+  // standard in should be opened.
+  optional int32 stdin_fd = 3 [default = 0];
+
+  // Host file descriptor to use for standard out. A negative value indicates no
+  // standard out should be opened.
+  optional int32 stdout_fd = 4 [default = 1];
+
+  // Host file descriptor to use for standard error. A negative value indicates
+  // no standard error should be opened.
+  optional int32 stderr_fd = 5 [default = 2];
+
+  // Host name of this enclave.
+  optional string host_name = 6;
+
+  // Initial current working directory in enclave.
+  optional string current_working_directory = 7;
+
+  // System-specific enclave configuration. This configuration is expected to be
+  // the same for all enclaves running under the same instance of an OS.
+  optional HostConfig host_config = 8;
+
+  // Enclave assertion authority configuration. If the enclave makes use of an
+  // assertion authority that requires configuration, a config should be listed
+  // here.
+  repeated EnclaveAssertionAuthorityConfig enclave_assertion_authority_configs =
+      9;
+
+  // Environment variables that getenv understands inside the enclave.
+  repeated EnvironmentVariable environment_variables = 10;
+
+  // Configuration needed to initialize logging.
+  optional LoggingConfig logging_config = 11;
+
+  // Allow user extensions.
+  extensions 1000 to max;
+}
+
+// Input passed to an enclave after it has been initialized with EnclaveConfig.
+message EnclaveInput {
+  // Allow user extensions.
+  extensions 1000 to max;
+}
+
+// Input passed to an enclave during finalization.
+message EnclaveFinal {
+  // Allow user extensions.
+  extensions 1000 to max;
+}
+
+// A POSIX signal event that is routed to an enclave signal handler.
+message EnclaveSignal {
+  // Number of the signal.
+  optional int32 signum = 1;
+}
+
+// An output message produced by an enclave for an invocation of its `Run`
+// entry-point. This message can be used to send information out of the enclave
+// back to an untrusted caller.
+message EnclaveOutput {
+  // Contains status information for the Run invocation. A non-OK status may
+  // indicate an error in either trusted or untrusted space.
+  optional StatusProto status = 1;
+
+  // Allow user extensions.
+  extensions 1000 to max;
+}
