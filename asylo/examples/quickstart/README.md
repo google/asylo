@@ -329,9 +329,10 @@ developers to use enclaves in a way that is most suitable to their needs.
 
 ## Building and running an enclave application
 
-Asylo implements an enclave backend for a simulator-based environment. To
-build our enclave application, we define several targets that utilize this
-backend.
+To build our enclave application, we define several targets that utilize a
+simulated backend. See the
+[overview](https://asylo.dev/about/overview.html#security-backends) for details
+on all supported backends.
 
 ```python
 asylo_proto_library(
