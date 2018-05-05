@@ -25,6 +25,7 @@ load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 package_group(
     name = "implementation",
     packages = [
+        "-//asylo/examples/...",
         "//asylo/...",
         "//third_party/unsupported_toolchains/enclave/toolchains",
     ],
