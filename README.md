@@ -28,7 +28,7 @@ well as Asylo's custom toolchain, which is required for compiling enclave
 applications for various enclave backends.
 
 ```bash
-docker run -it gcr.io/asylo-framework/asylo
+docker run -it --rm gcr.io/asylo-framework/asylo
 ```
 
 See the [Dockerfile](asylo/distrib/Dockerfile) for an in-depth view of what's
@@ -58,7 +58,7 @@ simulated enclave backend.
 
 ```bash
 NAMES="${USER}"
-docker run -it \
+docker run --rm \
     -v bazel-cache:/root/.cache/bazel \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
@@ -73,6 +73,8 @@ enclave's entry-point get invoked for each name.
 
 In the above example, we use the following Docker flags:
 
++   `--rm` is used to automatically delete the temporary container after the
+    command completes so that unnecessary images don't persist on disk.
 +   `-v` is used to map local files to paths inside the container.
     -   The example project files are mapped to `/opt/my-project`.
     -   The local Bazel cache is mapped to `/root/.cache/bazel`, enabling
@@ -115,7 +117,7 @@ tests that run inside a simulated enclave environment. You can run it with the
 following command:
 
 ```bash
-docker run -it \
+docker run --rm \
     -v "${ASYLO_SDK}:/opt/asylo/sdk" \
     -v bazel-cache:/root/.cache/bazel \
     -w "/opt/asylo/sdk" \
