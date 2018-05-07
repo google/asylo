@@ -26,17 +26,26 @@
 
 namespace asylo {
 
-// Uses |matcher| to evaluate whether |identities| satisfies |acl|. Returns a
-// non-OK status if |acl| is malformed or if |matcher|.Match() returns a non-OK
-// status when invoked with any of |identities|.
-//
-// An IdentityAclPredicate is a recursive proto, each layer of which must
-// conform to the following constraints:
-//  - A nested IdentityAclPredicate |predicate| must have |predicate|.item set.
-//  - A nested IdentityAclGroup |group| must have a non-empty
-//    |group|.predicates.
-//     - If |group|.type is GroupType::NOT, |group|.predicates must contain
-//       exactly one predicate.
+/// Uses `matcher` to evaluate whether `identities` satisfies `acl`.
+///
+/// The ACL is provided in the form of an `IdentityAclPredicate`. An
+/// `IdentityAclPredicate` is a recursive proto, each layer of which must
+/// conform to the following constraints:
+///
+///  * A nested IdentityAclPredicate `predicate` must have `predicate.item` set.
+///  * A nested IdentityAclGroup `group` must have a non-empty
+///    `group.predicates`.
+///     * If `group`.type is `GroupType::NOT`, `group.predicates` must contain
+///     exactly one predicate.
+///
+/// Returns a non-OK status if `acl` is malformed or if `matcher.Match()`
+/// returns a non-OK status when invoked with any of `identities`.
+///
+/// \param identities A list of identities to match against the ACL.
+/// \param acl An ACL specifying expectations on an identity.
+/// \param matcher The matcher to use to evaluate `identities` against `acl`.
+/// \return A bool indicating whether the ACL evaluated to true, or a non-OK
+///         Status if any if the inputs are invalid.
 StatusOr<bool> EvaluateIdentityAcl(
     const std::vector<EnclaveIdentity> &identities,
     const IdentityAclPredicate &acl, const IdentityExpectationMatcher &matcher);

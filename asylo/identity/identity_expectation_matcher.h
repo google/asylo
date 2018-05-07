@@ -24,25 +24,40 @@
 
 namespace asylo {
 
-// IdentityExpectationMatcher defines an abstract interface that describes how
-// to match an EnclaveIdentity against an EnclaveIdentityExpectation.
+/// Defines an abstract interface that describes how to match an
+/// `EnclaveIdentity` against an `EnclaveIdentityExpectation`.
+///
+/// All implementations of this interface are expected to be thread-safe.
 class IdentityExpectationMatcher {
  public:
   IdentityExpectationMatcher() = default;
   virtual ~IdentityExpectationMatcher() = default;
 
-  // Evaluates whether |identity| matches |expectation|. Returns false if
-  // |identity| does not match |expectation|. Returns a non-ok status if the
-  // matcher does not understand either |identity| or |expectation|. This can
-  // happen if:
-  //  1. |identity|.description() is unrecognized by the matcher
-  //  2. |expectation|.reference_identity().description() is unrecognized by the
-  //     matcher
-  //  3. |identity| and/or |expectation| is malformed
-  //
-  // It is up to the caller of this method to ensure that this method is called
-  // with parameters recognized by the matcher. All implementations of this
-  // function are expected to be thread-safe.
+  /// Evaluates whether `identity` matches `expectation`.
+  ///
+  /// Evaluating `identity` against `expectation` produces a boolean result
+  /// indicating whether `identity` matches `expectation`, but only if the
+  /// inputs are valid for this matcher. Otherwise, if `matcher` does not
+  /// understand either `identity` or `expectation`, this method returns a
+  /// non-OK Status. This can happen if any of the following is true:
+  ///
+  ///  * `identity.description()` is unrecognized by the matcher
+  ///  * `expectation.reference_identity().description()` is unrecognized by the
+  ///  matcher
+  ///  * `identity` and/or `expectation` is malformed
+  ///
+  /// An IdentityExpectationMatcher's Match() implementation is not obliged to
+  /// handle all possible `EnclaveIdentity` and `EnclaveIdentityExpectation`
+  /// protos. Rather, each implementation of IdentityExpectationMatcher is free
+  /// to refine expectations on what kinds of `EnclaveIdentity` and
+  /// `EnclaveIdentityExpectation` arguments it can handle. It is up to the
+  /// caller of this method to provide inputs that fit the expectations of the
+  /// underlying matcher implementation.
+  ///
+  /// \param identity An identity to match.
+  /// \param expectation The identity expectation to match against.
+  /// \return A bool indicating whether the match succeeded, or a non-OK Status
+  ///         in the case of invalid arguments.
   virtual StatusOr<bool> Match(
       const EnclaveIdentity &identity,
       const EnclaveIdentityExpectation &expectation) const = 0;
