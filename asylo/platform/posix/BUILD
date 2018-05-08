@@ -61,6 +61,7 @@ cc_library(
         "src/time.cc",
         "src/uio.cc",
         "src/unistd.cc",
+        "src/utsname.cc",
         "src/wait.cc",
     ],
     hdrs = [":posix_headers"] + select({
