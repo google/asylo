@@ -35,18 +35,17 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <string>
+#include <vector>
 
 #include "absl/memory/memory.h"
+#include "asylo/platform/arch/include/trusted/memory.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "common/inc/sgx_trts.h"
 
+namespace asylo {
 namespace {
-
-struct FreeDeleter {
-  inline void operator()(void *ptr) const { enc_untrusted_free(ptr); }
-};
 
 // Allocates untrusted memory and copies the buffer |data| of size |size| to it.
 // |addr| is updated to point to the address of the copied memory. It is the
@@ -80,11 +79,11 @@ class BridgeMsghdrWrapper {
   bool CopyMsgControl();
 
   const msghdr *msg_in_;
-  std::unique_ptr<bridge_msghdr, FreeDeleter> msg_out_;
-  std::unique_ptr<void, FreeDeleter> msg_name_ptr_;
-  std::unique_ptr<void, FreeDeleter> msg_iov_ptr_;
-  std::unique_ptr<void, FreeDeleter> msg_control_ptr_;
-  std::vector<std::unique_ptr<void, FreeDeleter>> msg_iov_base_ptrs_;
+  UntrustedUniquePtr<bridge_msghdr> msg_out_;
+  UntrustedUniquePtr<void> msg_name_ptr_;
+  UntrustedUniquePtr<void> msg_iov_ptr_;
+  UntrustedUniquePtr<void> msg_control_ptr_;
+  std::vector<UntrustedUniquePtr<void>> msg_iov_base_ptrs_;
 };
 
 BridgeMsghdrWrapper::BridgeMsghdrWrapper(const struct msghdr *in) {
@@ -168,6 +167,7 @@ bool BridgeMsghdrWrapper::CopyAllBuffers() {
 }
 
 }  // namespace
+}  // namespace asylo
 
 #ifdef __cplusplus
 extern "C" {
@@ -352,7 +352,7 @@ ssize_t enc_untrusted_writev(int fd, const struct iovec *iov, int iovcnt) {
   if (!serialize_iov(iov, iovcnt, &buf, &size)) {
     return -1;
   }
-  std::unique_ptr<char, FreeDeleter> tmp(buf);
+  asylo::UntrustedUniquePtr<char> tmp(buf);
   bridge_ssize_t ret;
 
   sgx_status_t status =
@@ -375,7 +375,7 @@ ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt) {
     return -1;
   }
 
-  std::unique_ptr<char, FreeDeleter> tmp(buf);
+  asylo::UntrustedUniquePtr<char> tmp(buf);
   bridge_ssize_t ret;
   sgx_status_t status =
       ocall_enc_untrusted_read_with_untrusted_ptr(&ret, fd, buf, size);
@@ -442,7 +442,7 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
 
 ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   bridge_ssize_t ret;
-  BridgeMsghdrWrapper tmp_wrapper(msg);
+  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
   if (!tmp_wrapper.CopyAllBuffers()) {
     errno = EFAULT;
     return -1;
@@ -460,7 +460,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
 
 ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   bridge_ssize_t ret;
-  BridgeMsghdrWrapper tmp_wrapper(msg);
+  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
   if (!tmp_wrapper.CopyAllBuffers()) {
     errno = EFAULT;
     return -1;

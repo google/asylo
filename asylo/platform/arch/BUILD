@@ -33,6 +33,7 @@ cc_library(
         "include/trusted/enclave_interface.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
+        "include/trusted/memory.h",
         "include/trusted/time.h",
     ],
     deps = select({
@@ -159,6 +160,7 @@ cc_library(
         "include/trusted/entry_points.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
+        "include/trusted/memory.h",
     ],
     copts = ["-mrdrnd"],
     linkstatic = 1,
@@ -187,6 +189,7 @@ cc_library(
         "include/trusted/enclave_interface.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
+        "include/trusted/memory.h",
     ],
     visibility = ["//visibility:private"],
     deps = ["//asylo/platform/core:shared_name"],
