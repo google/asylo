@@ -19,13 +19,14 @@
 # Name of the enclave gRPC test fixture.
 END2END_FIXTURE = "h2_enclave_security_test"
 
-# The gRPC end2end tests that we should run against the enclave gRPC stack.
+# A list of hand-selected gRPC end2end tests that should be run against the
+# enclave gRPC stack. Since we are primarily testing that channel establishment
+# is working, it is not necessary to run all the end2end tests.
 END2END_TESTS = [
     "invoke_large_request",
     "max_message_length",
     "payload",
     "simple_request",
-    "simple_delayed_request",
 ]
 
 def grpc_end2end_tests():
@@ -34,5 +35,6 @@ def grpc_end2end_tests():
             name = "%s@%s" % (END2END_FIXTURE, test),
             srcs = ["end2end_test.sh"],
             args = ["$(location %s)" % END2END_FIXTURE, test],
+            tags = ["regression"],
             data = [":%s" % END2END_FIXTURE],
         )

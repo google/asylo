@@ -28,14 +28,20 @@
 #include "include/grpc/support/log.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
-#include "test/core/util/port.h"
 #include "test/core/util/test_config.h"
 
 const char kClientAdditionalAuthenticatedData[] = "EKEP client";
 const char kServerAdditionalAuthenticatedData[] = "EKEP server";
 
+const char kAddress[] = "localhost";
+
 typedef struct enclave_fullstack_fixture_data {
+  // The address of the server.
   char *local_address;
+
+  // True if the |local_address| has been updated to contain the server's final
+  // port.
+  bool port_set;
 } enclave_fullstack_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
@@ -44,20 +50,18 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
 
-  // Get a local port for the server.
-  int port = grpc_pick_unused_port_or_die();
   enclave_fullstack_fixture_data *fixture_data =
       static_cast<enclave_fullstack_fixture_data *>(
-          gpr_malloc(sizeof(*fixture_data)));
+          gpr_zalloc(sizeof(*fixture_data)));
 
-  // This call allocs a string in |fixture_data->local_address| that must later
-  // be de-allocated.
-  gpr_join_host_port(&fixture_data->local_address, "localhost", port);
+  // A port of indicates that gRPC should auto-select a port for use. This
+  // address is updated with the final port after server initialization.
+  gpr_join_host_port(&fixture_data->local_address, kAddress, 0);
   f.fixture_data = fixture_data;
 
   // Create a completion queue for the server.
-  f.cq = grpc_completion_queue_create_for_next(NULL);
-  f.shutdown_cq = grpc_completion_queue_create_for_pluck(NULL);
+  f.cq = grpc_completion_queue_create_for_next(nullptr);
+  f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
   return f;
 }
 
@@ -66,9 +70,10 @@ static void chttp2_init_client_channel(grpc_end2end_test_fixture *f,
                                        grpc_channel_credentials *creds) {
   enclave_fullstack_fixture_data *fixture_data =
       static_cast<enclave_fullstack_fixture_data *>(f->fixture_data);
+  GPR_ASSERT(fixture_data->port_set);
   f->client = grpc_secure_channel_create(creds, fixture_data->local_address,
-                                         client_args, /*reserved=*/NULL);
-  GPR_ASSERT(f->client != NULL);
+                                         client_args, /*reserved=*/nullptr);
+  GPR_ASSERT(f->client != nullptr);
   grpc_channel_credentials_release(creds);
 }
 
@@ -105,11 +110,19 @@ static void chttp2_init_server(grpc_end2end_test_fixture *f,
                                grpc_server_credentials *creds) {
   enclave_fullstack_fixture_data *fixture_data =
       static_cast<enclave_fullstack_fixture_data *>(f->fixture_data);
-  f->server = grpc_server_create(server_args, /*reserved=*/NULL);
-  grpc_server_register_completion_queue(f->server, f->cq, /*reserved=*/NULL);
-  GPR_ASSERT(grpc_server_add_secure_http2_port(f->server,
+  f->server = grpc_server_create(server_args, /*reserved=*/nullptr);
+  grpc_server_register_completion_queue(f->server, f->cq, /*reserved=*/nullptr);
+
+  // Bind the server to the temporary address and update the address with the
+  // auto-selected port chosen by the system.
+  int port = grpc_server_add_secure_http2_port(f->server,
                                                fixture_data->local_address,
-                                               creds));
+                                               creds);
+  GPR_ASSERT(port != 0);
+  gpr_free(fixture_data->local_address);
+  gpr_join_host_port(&fixture_data->local_address, kAddress, port);
+  fixture_data->port_set = true;
+
   grpc_server_credentials_release(creds);
   grpc_server_start(f->server);
 }
