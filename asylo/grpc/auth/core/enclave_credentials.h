@@ -20,7 +20,7 @@
 #define ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_
 
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "include/grpc/grpc_security.h"
 
 #define GRPC_CREDENTIALS_TYPE_ENCLAVE "Enclave"
 

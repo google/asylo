@@ -21,6 +21,7 @@
 
 #include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/util/safe_string.h"
+#include "include/grpc/grpc_security.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 /* --- Enclave security connectors. --- */

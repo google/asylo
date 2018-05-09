@@ -28,18 +28,17 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-#include "src/core/lib/channel/handshaker.h"
 #include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/api_trace.h"
-#include "src/core/tsi/transport_security_adapter.h"
 
 /* -- Enclave security connectors. -- */
 
 typedef struct {
   grpc_channel_security_connector base;
+
 
   /* Additional authenticated data provided by the client. */
   safe_string additional_authenticated_data;

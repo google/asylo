@@ -26,7 +26,6 @@
 #include "asylo/identity/init.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-#include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gpr/host_port.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/port.h"

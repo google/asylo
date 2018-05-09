@@ -21,6 +21,7 @@
 #include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "asylo/grpc/auth/util/enclave_assertion_util.h"
 #include "asylo/grpc/auth/util/safe_string.h"
+#include "src/cpp/client/secure_credentials.h"
 
 namespace asylo {
 

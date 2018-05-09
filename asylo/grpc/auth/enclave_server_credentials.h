@@ -22,7 +22,7 @@
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 
 #include "asylo/grpc/auth/enclave_credentials_options.h"
-#include "src/cpp/server/secure_server_credentials.h"
+#include "include/grpcpp/security/server_credentials.h"
 
 namespace asylo {
 

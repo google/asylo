@@ -24,7 +24,7 @@
 #include <gtest/gtest.h>
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/posix_error_space.h"
-#include "include/grpcpp/impl/codegen/status.h"
+#include "include/grpcpp/support/status.h"
 
 namespace asylo {
 namespace {

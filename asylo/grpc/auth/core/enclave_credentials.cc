@@ -24,10 +24,8 @@
 #include "asylo/grpc/auth/core/enclave_security_connector.h"
 #include "asylo/grpc/auth/util/safe_string.h"
 #include "include/grpc/support/alloc.h"
-#include "include/grpc/support/log.h"
-#include "include/grpc/support/string_util.h"
 #include "src/core/lib/channel/channel_args.h"
-#include "src/core/lib/iomgr/executor.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 /* -- Enclave credentials. -- */
 
