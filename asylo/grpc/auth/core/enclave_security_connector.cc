@@ -51,11 +51,11 @@ typedef struct {
 
   /* The address of the server as a null-terminated std::string. */
   char *target;
-
 } grpc_enclave_channel_security_connector;
 
 typedef struct {
   grpc_server_security_connector base;
+
 
   /* Additional authenticated data provided by the server. */
   safe_string additional_authenticated_data;
@@ -65,7 +65,6 @@ typedef struct {
 
   /* Client assertions accepted by the server. */
   assertion_description_array accepted_peer_assertions;
-
 } grpc_enclave_server_security_connector;
 
 /* -- Enclave security connector implementation. -- */
@@ -76,6 +75,7 @@ static void enclave_channel_security_connector_destroy(
     grpc_security_connector *sc) {
   grpc_enclave_channel_security_connector *security_connector =
       reinterpret_cast<grpc_enclave_channel_security_connector *>(sc);
+  grpc_channel_credentials_unref(security_connector->base.channel_creds);
   grpc_call_credentials_unref(security_connector->base.request_metadata_creds);
   safe_string_free(&security_connector->additional_authenticated_data);
   assertion_description_array_free(&security_connector->self_assertions);
@@ -93,6 +93,7 @@ static void enclave_server_security_connector_destroy(
     grpc_security_connector *sc) {
   grpc_enclave_server_security_connector *security_connector =
       reinterpret_cast<grpc_enclave_server_security_connector *>(sc);
+  grpc_server_credentials_unref(security_connector->base.server_creds);
   safe_string_free(&security_connector->additional_authenticated_data);
   assertion_description_array_free(&security_connector->self_assertions);
   assertion_description_array_free(
@@ -191,6 +192,16 @@ static void enclave_channel_cancel_check_call_host(
   GRPC_ERROR_UNREF(error);
 }
 
+static int enclave_channel_security_connector_cmp(
+    grpc_security_connector *sc1, grpc_security_connector *sc2) {
+  return 1;
+}
+
+static int enclave_server_security_connector_cmp(
+    grpc_security_connector *sc1, grpc_security_connector *sc2) {
+  return 1;
+}
+
 static void enclave_channel_security_connector_add_handshaker(
     grpc_channel_security_connector *sc,
     grpc_handshake_manager *handshake_mgr) {
@@ -238,7 +249,9 @@ static grpc_security_connector_vtable
         enclave_channel_security_connector_destroy,
         /* Populates a tsi_peer object with information about the peer (server).
          */
-        enclave_security_connector_check_peer, nullptr};
+        enclave_security_connector_check_peer,
+        /* Compares this enclave channel security connector with another. */
+        enclave_channel_security_connector_cmp};
 
 static grpc_security_connector_vtable enclave_server_security_connector_vtable =
     {
@@ -246,11 +259,14 @@ static grpc_security_connector_vtable enclave_server_security_connector_vtable =
         enclave_server_security_connector_destroy,
         /* Populates a tsi_peer object with information about the peer (client).
          */
-        enclave_security_connector_check_peer, nullptr};
+        enclave_security_connector_check_peer,
+        /* Compares this enclave server security connector with another. */
+        enclave_server_security_connector_cmp};
 
 /* -- Enclave security connector creation functions -- */
 
 grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
+    grpc_channel_credentials *channel_credentials,
     grpc_call_credentials *request_metadata_creds, const char *target,
     const safe_string *additional_authenticated_data,
     const assertion_description_array *self_assertions,
@@ -296,21 +312,21 @@ grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
                   GPR_DUMP_ASCII)));
   }
 
-  // Initialize the base security connector object.
-  security_connector->base.base.vtable =
-      &enclave_channel_security_connector_vtable;
-  security_connector->base.request_metadata_creds =
-      grpc_call_credentials_ref(request_metadata_creds);
-  security_connector->base.check_call_host = enclave_channel_check_call_host;
-  security_connector->base.cancel_check_call_host =
-      enclave_channel_cancel_check_call_host;
-  security_connector->base.add_handshakers =
-      enclave_channel_security_connector_add_handshaker;
+  // Initialize the base channel security connector object.
+  grpc_channel_security_connector &base = security_connector->base;
+  base.base.vtable = &enclave_channel_security_connector_vtable;
+  base.channel_creds = grpc_channel_credentials_ref(channel_credentials);
+  base.request_metadata_creds = grpc_call_credentials_ref(
+      request_metadata_creds);
+  base.check_call_host = enclave_channel_check_call_host;
+  base.cancel_check_call_host = enclave_channel_cancel_check_call_host;
+  base.add_handshakers = enclave_channel_security_connector_add_handshaker;
 
   return &security_connector->base;
 }
 
 grpc_server_security_connector *grpc_enclave_server_security_connector_create(
+    grpc_server_credentials *server_credentials,
     const safe_string *additional_authenticated_data,
     const assertion_description_array *self_assertions,
     const assertion_description_array *accepted_peer_assertions) {
@@ -352,11 +368,11 @@ grpc_server_security_connector *grpc_enclave_server_security_connector_create(
                   GPR_DUMP_ASCII)));
   }
 
-  // Initialize the base security connector object.
-  security_connector->base.base.vtable =
-      &enclave_server_security_connector_vtable;
-  security_connector->base.add_handshakers =
-      enclave_server_security_connector_add_handshakers;
+  // Initialize the base server security connector object.
+  grpc_server_security_connector &base = security_connector->base;
+  base.base.vtable = &enclave_server_security_connector_vtable;
+  base.server_creds = grpc_server_credentials_ref(server_credentials);
+  base.add_handshakers = enclave_server_security_connector_add_handshakers;
 
   return &security_connector->base;
 }

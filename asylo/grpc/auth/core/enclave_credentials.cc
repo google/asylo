@@ -79,24 +79,27 @@ static void enclave_server_credentials_destruct(
 
 /* Creates an enclave channel security connector. */
 static grpc_security_status enclave_channel_security_connector_create(
-    grpc_channel_credentials *creds, grpc_call_credentials *call_creds,
+    grpc_channel_credentials *channel_creds, grpc_call_credentials *call_creds,
     const char *target, const grpc_channel_args *args,
-    grpc_channel_security_connector **sc, grpc_channel_args **new_args) {
+    grpc_channel_security_connector **security_connector,
+    grpc_channel_args **new_args) {
   grpc_enclave_channel_credentials *credentials =
-      reinterpret_cast<grpc_enclave_channel_credentials *>(creds);
-  *sc = grpc_enclave_channel_security_connector_create(
-      call_creds, target, &credentials->additional_authenticated_data,
+      reinterpret_cast<grpc_enclave_channel_credentials *>(channel_creds);
+  *security_connector = grpc_enclave_channel_security_connector_create(
+      channel_creds, call_creds, target,
+      &credentials->additional_authenticated_data,
       &credentials->self_assertions, &credentials->accepted_peer_assertions);
   return GRPC_SECURITY_OK;
 }
 
 /* Creates an enclave server security connector. */
 static grpc_security_status enclave_server_security_connector_create(
-    grpc_server_credentials *creds, grpc_server_security_connector **sc) {
+    grpc_server_credentials *server_creds,
+    grpc_server_security_connector **security_connector) {
   grpc_enclave_server_credentials *credentials =
-      reinterpret_cast<grpc_enclave_server_credentials *>(creds);
-  *sc = grpc_enclave_server_security_connector_create(
-      &credentials->additional_authenticated_data,
+      reinterpret_cast<grpc_enclave_server_credentials *>(server_creds);
+  *security_connector = grpc_enclave_server_security_connector_create(
+      server_creds, &credentials->additional_authenticated_data,
       &credentials->self_assertions, &credentials->accepted_peer_assertions);
   return GRPC_SECURITY_OK;
 }
