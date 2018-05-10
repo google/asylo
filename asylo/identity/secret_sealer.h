@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/util/byte_container_view.h"
 #include "asylo/platform/common/static_map.h"

@@ -87,6 +87,7 @@ cc_library(
     hdrs = ["secret_sealer.h"],
     visibility = ["//visibility:public"],
     deps = [
+        ":identity_proto_cc",
         ":sealed_secret_proto_cc",
         "//asylo/identity/util:byte_container_util",
         "//asylo/identity/util:byte_container_view",
