@@ -135,7 +135,7 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
       + `common/inc/internal/metadata.h`
     - *Changes:*
       + the first two headers change `STATIC_STACK_SIZE` from `8*100` to `8*1024`
-        to avoid crash in asylo signal handler.
+        to avoid crash in the Asylo signal handler.
       + The third header changes `STACK_SIZE_MIN` from `0x1000` to `0x3000` to
         make sure it's larger than the static stack size.
     - *Detail:* `STATIC_STACK_SIZE` of stack is allocated for each tcs, and when

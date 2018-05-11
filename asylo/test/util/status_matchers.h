@@ -126,7 +126,7 @@ class IsOkMatcherGenerator {
 
 }  // namespace internal
 
-// Returns a gMock matcher that expects a asylo::Status object to have the
+// Returns a gMock matcher that expects an asylo::Status object to have the
 // given |code|.
 template <typename Enum>
 ::testing::Matcher<const Status &> StatusIs(Enum code) {
