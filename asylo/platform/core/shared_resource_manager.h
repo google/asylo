@@ -24,7 +24,7 @@
 
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/core/shared_name.h"
-#include "asylo/util/status.h"  // IWYU: export
+#include "asylo/util/status.h"  // IWYU pragma: export
 
 namespace asylo {
 

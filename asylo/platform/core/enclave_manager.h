@@ -37,7 +37,7 @@
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"
-#include "asylo/util/status.h"  // IWYU: export
+#include "asylo/util/status.h"  // IWYU pragma: export
 #include "asylo/util/statusor.h"
 
 namespace asylo {

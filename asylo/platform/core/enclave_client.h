@@ -24,7 +24,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/core/shared_name.h"
-#include "asylo/util/status.h"  // IWYU: export
+#include "asylo/util/status.h"  // IWYU pragma: export
 
 namespace asylo {
 
