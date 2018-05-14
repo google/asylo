@@ -75,42 +75,132 @@ def copy_from_host(target, output, name = ""):
         testonly = 1,
     )
 
-def _enclave_args(enclaves):
-    """Collects enclave dependencies' paths with formatted argument string.
+def _enclave_list_to_dict_and_args(enclaves_list):
+    """Adapts a list of enclave dependencies to new-style named-enclave dicts.
 
-  Arguments:
-    enclaves: depset of enclave dependencies.
+  This function is a stop-gap measure during migration from lists of enclaves
+  to dictionaries that map labels to enclaves, and can be deleted once macro
+  callers are updated.
+
+  Deprecated functionality: A list of a single enclave causes the argument
+  `--enclave_path=<enclave_path>` to be passed to the loader. A list of
+  multiple enclaves causes `--<enclave_name>=<enclave_path>` to be passed
+  instead.
+
+  Modern functionality: BUILD macro callers explicitly provide a dictionary of
+  enclave names to enclave targets, as well as a list of arguments to pass to
+  the loader. Names are interpolated into the args list.
+
+  This function is used to transform a list of enclave dependencies such that
+  the old-and-deprecated documented behavior is preserved.
+
+  Args:
+    enclaves_list: List of enclave target dependencies.
+
   Returns:
-    string: If 1 enclave, "--enclave_path=<path>", otherwise
-            for each enclave, "--<enclave_name>=<path>" ...
+    (enclaves dict, loader_args list) A dictionary and args list that invokes
+      deprecated functionality.
   """
-    for enclave in enclaves:
-        if enclave_info not in enclave:
-            fail("Expected all arguments to have the enclave_info provider: " +
-                 enclave.label.name)
-    enclave_args = []
-    if len(enclaves) == 1:
-        enclave_args.append("--enclave_path=\"{path}\"".format(
-            path = enclaves[0].files.to_list()[0].short_path,
-        ))
+    if len(enclaves_list) == 1:
+        enclaves = {"enclave": enclaves_list[0]}
+        loader_args = ["--enclave_path=\"{enclave}\""]
     else:
-        for data in enclaves:
-            runpath = data.files.to_list()[0].path
-            enclave_args.append("--{name}={path}".format(
-                name = data.label.name,
-                path = runpath,
-            ))
-    return " ".join(enclave_args)
+        enclaves = {}
+        loader_args = []
 
-def _enclave_binary_wrapper_impl(ctx):
-    """Generates a runnable wrapper script around an enclave driver.
+        for enclave in enclaves_list:
+            _, local_name = _parse_label(enclave)
+            enclaves[local_name] = enclave
 
-  Given a binary and its data dependencies, call the binary with flags that
-  provide enclave dependencies' paths. A single enclave is given as the flag
-  --enclave_path=<path>. Multiple enclaves are disambiguated with their label
-  name as the flag. For example, given data dependencies on both //pkg0:enclave0
-  //pkg1:enclave1, the arguments passed are --enclave0=path/to/pkg0/enclave0.so
-  and --enclave1=path/to/pkg1/enclave1.so.
+            # This gnarly format string produces flag assignments to braced enclave
+            # names: '--enclave_name={enclave_name}'
+            loader_args.append("--{0}=\"{{{0}}}\"".format(local_name))
+
+    return enclaves, loader_args
+
+def _invert_enclave_name_mapping(names_to_targets):
+    """Inverts a name-to-target dict to target-to-name.
+
+  Skylark supports the `label_keyed_string_dict` attribute, which maps Targets
+  to strings. This attribute is used to associate enclave targets with enclave
+  names.
+
+  For macro users, it is more natural to declare mappings from enclave names to
+  enclave targets. As Skylark does not support an attribute that maps strings to
+  Targets, this function is used to invert user-supplied dictionaries such that
+  they can be passed to this file's custom Skylark rules.
+
+  This function will fail() if `enclaves` is not injective; no two names can map
+  to the same enclave target.
+
+  Args:
+    names_to_targets: {string: string} Dictionary from enclave names to targets.
+
+  Returns:
+    {string: string} Dictionary from enclave targets to names.
+  """
+    targets_to_names = {}
+
+    # It is an error if multiple names map to the same target. If this dict ends
+    # up non-empty this method will fail().
+    targets_with_multiple_names = {}
+
+    for name, target in names_to_targets.items():
+        existing_name = targets_to_names.get(target, None)
+        if existing_name:
+            targets_with_multiple_names[target] = \
+                targets_with_multiple_names.get(target, [existing_name]) + [name]
+        else:
+            targets_to_names[target] = name
+
+    if targets_with_multiple_names:
+        err_strs = [
+            "Enclave target \"%s\" mapped to by names %s" % (target, names)
+            for target, names in targets_with_multiple_names.items()
+        ]
+
+        fail("Cannot map multiple enclave names to the same enclave target.\n" +
+             "\n".join(err_strs))
+
+    return targets_to_names
+
+def _interpolate_enclave_paths(enclaves, args):
+    """Replaces {name}-style labels in `args` with enclave paths from `enclaves`.
+
+  `enclaves` maps enclave targets to names. `args` is a list of arguments,
+  which may contain the names in {name}-syntax. This function replaces
+  occurrences of {name} in `args` with the corresponding enclave's path.
+
+  Example: {Target_1: 'enclave_1'} turns ['--path={enclave_1}'] into
+  ['--path=<path/to/Target_1>']
+
+  Note that the paths are relative to the file's "root". In practice this is
+  beneath the "runfiles" directory.
+
+  Args:
+    enclaves: {Target: string} Mapping from enclave targets to names.
+    args: [string] List of arguments to the loader.
+
+  Returns:
+    [string] List of arguments to the loader, with names replaced with paths to
+      enclaves.
+  """
+
+    # It is assumed that `enclaves` is injective, that no two enclaves map to the
+    # same name. This is enforced by _invert_enclave_name_mapping.
+    names_to_paths = {
+        name: enclave.files.to_list()[0].short_path
+        for enclave, name in enclaves.items()
+    }
+
+    return [arg.format(**names_to_paths) for arg in args]
+
+def _enclave_runner_script_impl(ctx):
+    """Generates a runnable wrapper script around an enclave loader.
+
+  Given a loader and its enclave/data dependencies, call the loader with
+  user-provided arguments. Performs string interpolation over the arguments, to
+  populate paths to enclaves.
 
   Arguments:
     ctx: A blaze rule context
@@ -118,53 +208,113 @@ def _enclave_binary_wrapper_impl(ctx):
   Returns:
     The rule's providers. Indicates the data dependencies as runfiles.
   """
-    ctx.actions.write(
-        content = "#!/bin/bash\n" +
-                  "\n" +
-                  "exec \"./{bin}\" {args} \"$@\"\n".format(
-                      bin = ctx.executable.binary.short_path,
-                      args = _enclave_args(ctx.attr.enclaves),
-                  ),
-        is_executable = True,
-        output = ctx.outputs.executable,
+
+    # Braces in this string are doubled-up to escape them in str.format().
+    script_tmpl = """#!/bin/bash
+
+# Runfiles is hard. https://github.com/bazelbuild/bazel/issues/4054
+
+if [[ -z "${{RUNFILES}}" ]]; then
+  # Canonicalize the path to self.
+  pushd "$(dirname "$0")" > /dev/null
+  self="$(pwd -P)/$(basename "$0")"
+  popd > /dev/null
+
+  if [[ -e "${{self}}.runfiles" ]]; then
+    RUNFILES="${{self}}.runfiles"
+  elif [[ "${{self}}" == *".runfiles/"* ]]; then
+    # Runfiles dir found in self path, so select the nearest containing
+    # .runfiles directory.
+    RUNFILES="${{self%.runfiles/*}}.runfiles"
+  fi
+fi
+
+# The loader and argument paths are not relative to ${{RUNFILES}}. Rather, they
+# are relative to a directory in ${{RUNFILES}}. The name of this directory is
+# specified in "${{RUNFILES}}/MANIFEST", as the first path segment of any listed
+# file. For example, MANIFEST may have the contents
+# ```
+# foo/path/to/loader
+# foo/path/to/enclave
+# foo/path/to/data
+# ```
+# In this case, the loader and argument paths are relative to
+# "${{RUNFILES}}/foo".
+
+if [[ ! -z "${{RUNFILES}}" && -e "${{RUNFILES}}/MANIFEST" ]]; then
+  root_dir_name=$(head -n 1 "${{RUNFILES}}/MANIFEST" | cut -d "/" -f1)
+
+  # Test that the path to the loader is valid before cd'ing.
+  if [[ -e "${{RUNFILES}}/${{root_dir_name}}/{loader}" ]]; then
+    cd "${{RUNFILES}}/${{root_dir_name}}"
+  fi
+fi
+
+# This script will still function under `bazel run` even if the above algorithm
+# could not change to the proper root directory.
+
+exec "./{loader}" {args} "$@"
+"""
+
+    args = _interpolate_enclave_paths(ctx.attr.enclaves, ctx.attr.loader_args)
+
+    script_src = script_tmpl.format(
+        loader = ctx.executable.loader.short_path,
+        args = " ".join(args),
     )
 
-    return [DefaultInfo(runfiles = ctx.runfiles(files = [ctx.executable.binary] +
-                                                        ctx.files.data +
-                                                        ctx.files.enclaves))]
+    script_file = ctx.actions.declare_file(ctx.label.name)
 
-_enclave_binary_wrapper = rule(
-    implementation = _enclave_binary_wrapper_impl,
-    executable = True,
-    attrs = {
-        "binary": attr.label(
-            mandatory = True,
-            executable = True,
-            cfg = "host",
-            allow_single_file = True,
-        ),
-        "data": attr.label_list(allow_files = True),
-        "enclaves": attr.label_list(allow_files = True, providers = [enclave_info]),
-    },
-)
+    ctx.actions.write(
+        content = script_src,
+        is_executable = True,
+        output = script_file,
+    )
 
-_enclave_script_test = rule(
-    implementation = _enclave_binary_wrapper_impl,
-    test = True,
-    attrs = {
-        "binary": attr.label(
-            cfg = "host",
-            executable = True,
-            mandatory = True,
-            allow_single_file = True,
-        ),
-        "data": attr.label_list(allow_files = True),
-        "enclaves": attr.label_list(allow_files = True, providers = [enclave_info]),
-    },
-)
+    return [DefaultInfo(
+        executable = script_file,
+        runfiles = ctx.runfiles(files = [ctx.executable.loader] +
+                                        ctx.files.enclaves +
+                                        ctx.files.data),
+    )]
+
+def _make_enclave_runner_rule(test = False):
+    """Returns a rule that generates a script for executing enclave loaders.
+
+  Args:
+    test: Whether the rule should be executable as a test.
+
+  Returns:
+    The rule.
+  """
+
+    return rule(
+        implementation = _enclave_runner_script_impl,
+        executable = not test,
+        test = test,
+        attrs = {
+            "loader": attr.label(
+                executable = True,
+                cfg = "host",
+                mandatory = True,
+                allow_single_file = True,
+            ),
+            "loader_args": attr.string_list(),
+            "enclaves": attr.label_keyed_string_dict(
+                allow_files = True,
+                providers = [enclave_info],
+            ),
+            "data": attr.label_list(allow_files = True),
+        },
+    )
+
+_enclave_runner_script = _make_enclave_runner_rule()
+_enclave_runner_test = _make_enclave_runner_rule(test = True)
 
 def debug_enclave_driver(name, enclaves, **kwargs):
-    """Wraps cc_binary with dependency on enclave availability at runtime.
+    """Wraps a cc_binary with a dependency on enclave availability at runtime.
+
+  This rule is deprecated. Use `enclave_loader` instead.
 
   Creates a cc_binary for a given enclave. The cc_binary will be passed
   '--enclave_path=<path to instance of |enclave|>' for 1 enclave, or
@@ -177,20 +327,72 @@ def debug_enclave_driver(name, enclaves, **kwargs):
 
   This macro creates three build targets:
     1) name: shell script that runs the debug_enclave_driver.
-    2) name_driver: cc_binary used as driver in name. This is a normal
+    2) name_driver: cc_binary used as loader in `name`. This is a normal
                     native cc_binary. It cannot be directly run because there
                     is an undeclared dependency on the enclaves.
     3) name_host_driver: genrule that builds name_driver with host crosstool.
   """
-    binary_name = name + "_driver"
-    host_binary_name = name + "_host_driver"
-    native.cc_binary(name = binary_name, **_ensure_static_manual(kwargs))
-    copy_from_host(target = binary_name, output = host_binary_name)
-    _enclave_binary_wrapper(
+    loader_name = name + "_driver"
+    host_loader_name = name + "_host_driver"
+
+    native.cc_binary(
+        name = loader_name,
+        deprecation = ("`debug_enclave_driver` is deprecated. Use " +
+                       "`enclave_loader` instead."),
+        **_ensure_static_manual(kwargs)
+    )
+    copy_from_host(target = loader_name, output = host_loader_name)
+
+    enclave_dict, loader_args = _enclave_list_to_dict_and_args(enclaves)
+
+    _enclave_runner_script(
         name = name,
-        binary = host_binary_name,
+        loader = host_loader_name,
+        loader_args = loader_args,
+        enclaves = _invert_enclave_name_mapping(enclave_dict),
         data = kwargs.get("data", []),
-        enclaves = enclaves,
+    )
+
+def enclave_loader(name, enclaves, loader_args, **kwargs):
+    """Wraps a cc_binary with a dependency on enclave availability at runtime.
+
+  Creates a cc_binary for a given enclave. Passes flags according to
+  `loader_args`, which can contain references to targets from `enclaves`.
+
+  This macro creates three build targets:
+    1) name: shell script that runs `name_host_loader`.
+    2) name_loader: cc_binary used as loader in `name`. This is a normal
+                    native cc_binary. It cannot be directly run because there
+                    is an undeclared dependency on the enclaves.
+    3) name_host_loader: genrule that builds `name_loader` with the host
+                         crosstool.
+
+  Args:
+    name: Name for build target.
+    enclaves: Dictionary from enclave names to target dependencies. The
+      dictionary must be injective. This dictionary is used to format each
+      string in `loader_args` after each enclave target is interpreted as the
+      path to its output binary.
+    loader_args: List of arguments to be passed to `loader`. Arguments may
+      contain {enclave_name}-style references to keys from the `enclaves` dict,
+      each of which will be replaced with the path to the named enclave.
+    **kwargs: cc_binary arguments.
+  """
+    loader_name = name + "_loader"
+    loader_host_name = name + "_host_loader"
+
+    native.cc_binary(
+        name = loader_name,
+        **_ensure_static_manual(kwargs)
+    )
+    copy_from_host(target = loader_name, output = loader_host_name)
+
+    _enclave_runner_script(
+        name = name,
+        loader = loader_host_name,
+        loader_args = loader_args,
+        enclaves = _invert_enclave_name_mapping(enclaves),
+        data = kwargs.get("data", []),
     )
 
 def sim_enclave(name, **kwargs):
@@ -222,7 +424,7 @@ def enclave_test(name, enclave = False, enclaves = [], tags = [], **kwargs):
 
   This macro creates three build targets:
     1) name: sh_test that runs the enclave_test.
-    2) name_driver: cc_test used as test driver in name. This is a normal
+    2) name_driver: cc_test used as test loader in `name`. This is a normal
                     native cc_test. It cannot be directly run because there is
                     an undeclared dependency on enclave.
     3) name_host_driver: genrule that builds name_driver with host crosstool.
@@ -237,11 +439,15 @@ def enclave_test(name, enclave = False, enclaves = [], tags = [], **kwargs):
     )
     copy_from_host(target = test_name, output = host_test_name)
 
-    _enclave_script_test(
+    enclaves = enclaves + ([enclave] if enclave else [])
+    enclave_dict, loader_args = _enclave_list_to_dict_and_args(enclaves)
+
+    _enclave_runner_test(
         name = name,
+        loader = host_test_name,
+        loader_args = loader_args,
+        enclaves = _invert_enclave_name_mapping(enclave_dict),
         data = kwargs.get("data", []),
-        enclaves = enclaves + ([enclave] if enclave else []),
-        binary = host_test_name,
         testonly = 1,
         tags = ["enclave_test"] + tags,
     )
@@ -347,12 +553,18 @@ def cc_enclave_test(name, srcs, tags = [], deps = [], **kwargs):
         testonly = 1,
     )
 
+    # //asylo/bazel:test_shim_loader expects the path to
+    # :enclave_test_shim to be provided as the --enclave_path command-line flag.
+    enclaves = {"shim": enclave_target}
+    loader_args = ["--enclave_path=\"{shim}\""]
+
     # Execute the gtest enclave using the gtest enclave runner
-    _enclave_script_test(
+    _enclave_runner_test(
         name = name,
+        loader = host_test_name,
+        loader_args = loader_args,
+        enclaves = _invert_enclave_name_mapping(enclaves),
         data = kwargs.get("data", []),
-        enclaves = [enclave_target],
-        binary = host_test_name,
         testonly = 1,
         tags = ["enclave_test"] + tags,
     )
