@@ -41,7 +41,7 @@ ABSL_CONST_INIT thread_local asylo::EnclaveConfig *enclave_config = nullptr;
 }  // namespace
 
 void SetEnclaveName(const std::string &name) {
-  if (enclave_name) delete enclave_name;
+  delete enclave_name;
   enclave_name = new std::string(name);
 }
 
@@ -52,9 +52,7 @@ Status SetEnclaveConfig(const EnclaveConfig &config) {
   // most once. However, the fake implementation allows setting it multiple
   // times to simplify unit testing of enclave-identity libraries, where in a
   // single test, we emulate multiple enclaves.
-  if (enclave_config) {
-    delete enclave_config;
-  }
+  delete enclave_config;
   enclave_config = new EnclaveConfig(config);
   return Status::OkStatus();
 }

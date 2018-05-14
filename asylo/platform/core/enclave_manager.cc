@@ -206,9 +206,8 @@ Status EnclaveManager::Configure(const EnclaveManagerOptions &options) {
                   "Cannot configure the enclave manager after an instance has "
                   "been created");
   }
-  if (options_) {
-    delete options_;
-  }
+
+  delete options_;
   options_ = new EnclaveManagerOptions(options);
   configured_ = true;
   return Status::OkStatus();

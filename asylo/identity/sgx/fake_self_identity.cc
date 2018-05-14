@@ -33,9 +33,7 @@ const SelfIdentity *GetSelfIdentity() {
   // this function. Note that this part of the flow is only expected to be
   // invoked as a part of unit testing.
   thread_local SelfIdentity *self_identity = nullptr;
-  if (self_identity) {
-    delete self_identity;
-  }
+  delete self_identity;
   self_identity = new SelfIdentity();
   return self_identity;
 }

@@ -27,7 +27,7 @@ static std::string *global_enclave_name = nullptr;
 static asylo::EnclaveConfig *global_enclave_config = nullptr;
 
 void SetEnclaveName(const std::string &name) {
-  if (global_enclave_name) delete global_enclave_name;
+  delete global_enclave_name;
   global_enclave_name = new std::string(name);
 }
 
