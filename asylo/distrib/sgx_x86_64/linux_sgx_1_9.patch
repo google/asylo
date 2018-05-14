@@ -2239,7 +2239,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +};
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,253 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "enclave_info")
@@ -2341,8 +2341,10 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +      "-fstack-protector",
 +  ]
 +  lds_label = "@linux_sgx//:enclave_sim.lds"
++  kwargs["features"] = kwargs.get("features", []) + [
++      "fully_static_link",
++  ]
 +  kwargs["linkopts"] = kwargs.get("linkopts", []) + [
-+      "-static",
 +      "-Wl,-Bstatic",
 +      "-Wl,-Bsymbolic",
 +      "-Wl,-pie,-eenclave_entry",
