@@ -332,7 +332,7 @@ def cc_enclave_test(name, srcs, tags = [], deps = [], **kwargs):
     # Create a copy of the gtest enclave runner
     host_test_name = name + "_host_driver"
     copy_from_host(
-        target = "//asylo/bazel:enclave_runner",
+        target = "//asylo/bazel:test_shim_loader",
         output = host_test_name,
         name = name + "_as_host",
     )
@@ -343,7 +343,7 @@ def cc_enclave_test(name, srcs, tags = [], deps = [], **kwargs):
     sgx_enclave(
         name = enclave_name,
         srcs = srcs,
-        deps = deps + ["//asylo/bazel:enclave_test_shim"],
+        deps = deps + ["//asylo/bazel:test_shim_enclave"],
         testonly = 1,
     )
 

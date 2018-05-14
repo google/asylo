@@ -18,7 +18,7 @@
 
 #include <cstdlib>
 
-#include "asylo/bazel/enclave_test_shim.pb.h"
+#include "asylo/bazel/test_shim_enclave.pb.h"
 #include "asylo/client.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
@@ -28,7 +28,7 @@ DEFINE_string(enclave_path, "", "Path to enclave to load");
 
 namespace {
 
-constexpr char kEnclaveName[] = "/enclave_runner";
+constexpr char kEnclaveName[] = "/test_shim_enclave";
 
 }  // namespace
 
@@ -39,15 +39,15 @@ int main(int argc, char *argv[]) {
   asylo::EnclaveConfig config;
   char *output_file = std::getenv("GTEST_OUTPUT");
   if (output_file != nullptr && output_file[0] != '\0') {
-    asylo::EnclaveTestShimConfig *shim_config =
-        config.MutableExtension(asylo::enclave_test_shim_config);
+    asylo::TestShimEnclaveConfig *shim_config =
+        config.MutableExtension(asylo::test_shim_enclave_config);
     shim_config->set_output_file(output_file);
   }
 
   // If provided, pass the test temporary files directory into the enclave.
   if (!FLAGS_test_tmpdir.empty()) {
-    asylo::EnclaveTestShimConfig *shim_config =
-        config.MutableExtension(asylo::enclave_test_shim_config);
+    asylo::TestShimEnclaveConfig *shim_config =
+        config.MutableExtension(asylo::test_shim_enclave_config);
     shim_config->set_test_tmpdir(FLAGS_test_tmpdir);
   }
 

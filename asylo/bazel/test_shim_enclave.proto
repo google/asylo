@@ -21,7 +21,7 @@ package asylo;
 import "asylo/enclave.proto";
 
 // Used to pass information in to the test shim enclave.
-message EnclaveTestShimConfig {
+message TestShimEnclaveConfig {
   // GTest output file for detailed test results.
   optional string output_file = 1;
   // Location for all temporary test files.
@@ -29,5 +29,5 @@ message EnclaveTestShimConfig {
 }
 
 extend EnclaveConfig {
-  optional EnclaveTestShimConfig enclave_test_shim_config = 190514714;
+  optional TestShimEnclaveConfig test_shim_enclave_config = 190514714;
 }

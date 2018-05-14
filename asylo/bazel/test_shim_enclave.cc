@@ -19,7 +19,7 @@
 #include <string>
 
 #include <gtest/gtest.h>
-#include "asylo/bazel/enclave_test_shim.pb.h"
+#include "asylo/bazel/test_shim_enclave.pb.h"
 #include "gflags/gflags.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/test/util/test_flags.h"
@@ -27,14 +27,14 @@
 namespace asylo {
 
 // A TrustedApplication that runs a gtest test suite. Fails if tests fail.
-class EnclaveTestShim : public EnclaveTestCase {
+class TestShimEnclave : public EnclaveTestCase {
  public:
-  EnclaveTestShim() = default;
+  TestShimEnclave() = default;
 
   Status Initialize(const EnclaveConfig &config) override {
     // Let the test framework know where to write the results summary.
-    EnclaveTestShimConfig shim_config =
-        config.GetExtension(enclave_test_shim_config);
+    TestShimEnclaveConfig shim_config =
+        config.GetExtension(test_shim_enclave_config);
     if (shim_config.has_output_file()) {
       ::testing::GTEST_FLAG(output) = shim_config.output_file().c_str();
     }
@@ -55,6 +55,6 @@ class EnclaveTestShim : public EnclaveTestCase {
   }
 };
 
-TrustedApplication *BuildTrustedApplication() { return new EnclaveTestShim; }
+TrustedApplication *BuildTrustedApplication() { return new TestShimEnclave; }
 
 }  // namespace asylo

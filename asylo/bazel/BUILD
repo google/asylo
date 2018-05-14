@@ -41,22 +41,22 @@ cc_enclave_test(
     ],
 )
 
-# Used to pass configuration from enclave_runner to enclave_test_shim.
+# Used to pass configuration from test_shim_loader to test_shim_enclave.
 asylo_proto_library(
-    name = "enclave_test_shim_proto",
-    srcs = ["enclave_test_shim.proto"],
+    name = "test_shim_enclave_proto",
+    srcs = ["test_shim_enclave.proto"],
     deps = ["//asylo:enclave_proto"],
 )
 
 # Used by the cc_enclave_test rule to create enclaves that run gtest test
 # suites. Should not typically be used directly.
 cc_library(
-    name = "enclave_test_shim",
+    name = "test_shim_enclave",
     testonly = 1,
-    srcs = ["enclave_test_shim.cc"],
+    srcs = ["test_shim_enclave.cc"],
     visibility = ["//visibility:public"],
     deps = [
-        ":enclave_test_shim_proto_cc",
+        ":test_shim_enclave_proto_cc",
         "//asylo/test/util:enclave_test_application",
         "//asylo/test/util:test_flags",
         "@com_google_googletest//:gtest",
@@ -66,12 +66,12 @@ cc_library(
 # Used by the cc_enclave_test rule to execute gtest test suites inside enclaves.
 # Should not typically be used directly.
 cc_test(
-    name = "enclave_runner",
-    srcs = ["enclave_runner.cc"],
+    name = "test_shim_loader",
+    srcs = ["test_shim_loader.cc"],
     linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [
-        ":enclave_test_shim_proto_cc",
+        ":test_shim_enclave_proto_cc",
         "//asylo:enclave_client",
         "//asylo/test/util:test_flags",
         "@com_github_gflags_gflags//:gflags_nothreads",
