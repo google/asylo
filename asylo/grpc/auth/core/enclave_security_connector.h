@@ -28,35 +28,17 @@
 
 /* Creates an enclave channel security connector.
  *  |channel_credentials| is the channel credentials object.
- *  |request_metadata_creds| is the call credentials object.
- *  |target| is the address of the server as a null-terminated std::string.
- *  |additional_authenticated_data| is additional data provided by the client
- *    and should be authenticated during the EKEP handshake.
- *  |aad_size| is the size of the data pointed to by
- *    |additional_authenticated_data|.
- *  |self_assertions| is a list of enclave identities possessed by the client.
- *  |accepted_peer_assertions| is a list of peer assertion accepted by the
- *    client. */
+ *  |request_metadata_creds| is the call credentials object to use per call.
+ *  |target| is the server endpoint to which to connect.
+ */
 grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
     grpc_channel_credentials *channel_credentials,
-    grpc_call_credentials *request_metadata_creds, const char *target,
-    const safe_string *additional_authenticated_data,
-    const assertion_description_array *self_assertions,
-    const assertion_description_array *accepted_peer_assertions);
+    grpc_call_credentials *request_metadata_creds, const char *target);
 
 /* Creates an enclave server security connector.
  *  |server_credentials| is the server credentials object.
- *  |additional_authenticated_data| is additional data provided by the server
- *    and should be authenticated during the EKEP handshake.
- *  |aad_size| is the size of the data pointed to by
- *    |additional_authenticated_data|.
- *  |self_assertions| is a list of enclave identities possessed by the server.
- *  |accepted_peer_assertions| is a list of peer assertions accepted by the
- *    server. */
+ */
 grpc_server_security_connector *grpc_enclave_server_security_connector_create(
-    grpc_server_credentials *server_credentials,
-    const safe_string *additional_authenticated_data,
-    const assertion_description_array *self_assertions,
-    const assertion_description_array *accepted_peer_assertions);
+    grpc_server_credentials *server_credentials);
 
 #endif  // ASYLO_GRPC_AUTH_CORE_ENCLAVE_SECURITY_CONNECTOR_H_

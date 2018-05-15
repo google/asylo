@@ -22,13 +22,13 @@
 #include <string.h>
 
 #include "asylo/grpc/auth/core/assertion_description.h"
+#include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/core/enclave_grpc_security_constants.h"
 #include "asylo/grpc/auth/core/enclave_transport_security.h"
 #include "asylo/grpc/auth/util/safe_string.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
-#include "src/core/lib/gpr/string.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -39,32 +39,12 @@
 typedef struct {
   grpc_channel_security_connector base;
 
-
-  /* Additional authenticated data provided by the client. */
-  safe_string additional_authenticated_data;
-
-  /* Assertions offered by the client. */
-  assertion_description_array self_assertions;
-
-  /* Server assertions accepted by the client. */
-  assertion_description_array accepted_peer_assertions;
-
   /* The address of the server as a null-terminated std::string. */
   char *target;
 } grpc_enclave_channel_security_connector;
 
 typedef struct {
   grpc_server_security_connector base;
-
-
-  /* Additional authenticated data provided by the server. */
-  safe_string additional_authenticated_data;
-
-  /* Assertions offered by the server. */
-  assertion_description_array self_assertions;
-
-  /* Client assertions accepted by the server. */
-  assertion_description_array accepted_peer_assertions;
 } grpc_enclave_server_security_connector;
 
 /* -- Enclave security connector implementation. -- */
@@ -77,10 +57,6 @@ static void enclave_channel_security_connector_destroy(
       reinterpret_cast<grpc_enclave_channel_security_connector *>(sc);
   grpc_channel_credentials_unref(security_connector->base.channel_creds);
   grpc_call_credentials_unref(security_connector->base.request_metadata_creds);
-  safe_string_free(&security_connector->additional_authenticated_data);
-  assertion_description_array_free(&security_connector->self_assertions);
-  assertion_description_array_free(
-      &security_connector->accepted_peer_assertions);
   if (security_connector->target != nullptr) {
     gpr_free(security_connector->target);
   }
@@ -94,10 +70,6 @@ static void enclave_server_security_connector_destroy(
   grpc_enclave_server_security_connector *security_connector =
       reinterpret_cast<grpc_enclave_server_security_connector *>(sc);
   grpc_server_credentials_unref(security_connector->base.server_creds);
-  safe_string_free(&security_connector->additional_authenticated_data);
-  assertion_description_array_free(&security_connector->self_assertions);
-  assertion_description_array_free(
-      &security_connector->accepted_peer_assertions);
   gpr_free(sc);
 }
 
@@ -203,16 +175,17 @@ static int enclave_server_security_connector_cmp(
 }
 
 static void enclave_channel_security_connector_add_handshaker(
-    grpc_channel_security_connector *sc,
+    grpc_channel_security_connector *security_connector,
     grpc_handshake_manager *handshake_mgr) {
-  grpc_enclave_channel_security_connector *security_connector =
-      reinterpret_cast<grpc_enclave_channel_security_connector *>(sc);
-
   tsi_handshaker *tsi_handshaker = nullptr;
+  grpc_enclave_channel_credentials *channel_creds =
+      reinterpret_cast<grpc_enclave_channel_credentials *>(
+          security_connector->channel_creds);
   tsi_result result = tsi_enclave_handshaker_create(
-      /*is_client=*/true, &security_connector->self_assertions,
-      &security_connector->accepted_peer_assertions,
-      &security_connector->additional_authenticated_data, &tsi_handshaker);
+      /*is_client=*/true, &channel_creds->self_assertions,
+      &channel_creds->accepted_peer_assertions,
+      &channel_creds->additional_authenticated_data,
+      &tsi_handshaker);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
             tsi_result_to_string(result));
@@ -220,19 +193,21 @@ static void enclave_channel_security_connector_add_handshaker(
   }
 
   grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-                                                tsi_handshaker, &sc->base));
+      tsi_handshaker, &security_connector->base));
 }
 
 static void enclave_server_security_connector_add_handshakers(
-    grpc_server_security_connector *sc, grpc_handshake_manager *handshake_mgr) {
-  grpc_enclave_server_security_connector *security_connector =
-      reinterpret_cast<grpc_enclave_server_security_connector *>(sc);
-
+    grpc_server_security_connector *security_connector,
+    grpc_handshake_manager *handshake_mgr) {
   tsi_handshaker *tsi_handshaker = nullptr;
+  grpc_enclave_server_credentials *server_creds =
+      reinterpret_cast<grpc_enclave_server_credentials *>(
+          security_connector->server_creds);
   tsi_result result = tsi_enclave_handshaker_create(
-      /*is_client=*/false, &security_connector->self_assertions,
-      &security_connector->accepted_peer_assertions,
-      &security_connector->additional_authenticated_data, &tsi_handshaker);
+      /*is_client=*/false, &server_creds->self_assertions,
+      &server_creds->accepted_peer_assertions,
+      &server_creds->additional_authenticated_data,
+      &tsi_handshaker);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
             tsi_result_to_string(result));
@@ -240,7 +215,7 @@ static void enclave_server_security_connector_add_handshakers(
   }
 
   grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-                                                tsi_handshaker, &sc->base));
+      tsi_handshaker, &security_connector->base));
 }
 
 static grpc_security_connector_vtable
@@ -267,49 +242,21 @@ static grpc_security_connector_vtable enclave_server_security_connector_vtable =
 
 grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
     grpc_channel_credentials *channel_credentials,
-    grpc_call_credentials *request_metadata_creds, const char *target,
-    const safe_string *additional_authenticated_data,
-    const assertion_description_array *self_assertions,
-    const assertion_description_array *accepted_peer_assertions) {
+    grpc_call_credentials *request_metadata_creds, const char *target) {
   GRPC_API_TRACE(
       "grpc_enclave_channel_security_connector_create("
-      "grpc_call_credentials=%p, target=%s, additional_authenticated_data=%p, "
-      "self_assertions=%p, accepted_peer_assertions=%p)",
-      5,
-      (request_metadata_creds, target, additional_authenticated_data,
-       self_assertions, accepted_peer_assertions));
+      "grpc_channel_credentials=%p, grpc_call_credentials=%p, target=%s)", 3,
+      (channel_credentials, request_metadata_creds, target));
   grpc_enclave_channel_security_connector *security_connector =
       static_cast<grpc_enclave_channel_security_connector *>(
           gpr_malloc(sizeof(*security_connector)));
 
   // Initialize all members.
   gpr_ref_init(&security_connector->base.base.refcount, 1);
-  safe_string_init(&security_connector->additional_authenticated_data);
-  assertion_description_array_init(/*count=*/0,
-                                   &security_connector->self_assertions);
-  assertion_description_array_init(
-      /*count=*/0, &security_connector->accepted_peer_assertions);
 
   // Copy parameters.
-  safe_string_copy(/*dest=*/&security_connector->additional_authenticated_data,
-                   /*src=*/additional_authenticated_data);
-  assertion_description_array_copy(
-      /*src=*/self_assertions,
-      /*dest=*/&security_connector->self_assertions);
-  assertion_description_array_copy(
-      /*src=*/accepted_peer_assertions,
-      /*dest=*/&security_connector->accepted_peer_assertions);
   if (target != nullptr) {
     security_connector->target = gpr_strdup(target);
-  }
-
-  // For debugging purposes, if GRPC_TRACE is enabled.
-  if (security_connector->additional_authenticated_data.data != nullptr) {
-    GRPC_API_TRACE(
-        "AAD: %s", 1,
-        (gpr_dump(security_connector->additional_authenticated_data.data,
-                  security_connector->additional_authenticated_data.size,
-                  GPR_DUMP_ASCII)));
   }
 
   // Initialize the base channel security connector object.
@@ -326,47 +273,16 @@ grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
 }
 
 grpc_server_security_connector *grpc_enclave_server_security_connector_create(
-    grpc_server_credentials *server_credentials,
-    const safe_string *additional_authenticated_data,
-    const assertion_description_array *self_assertions,
-    const assertion_description_array *accepted_peer_assertions) {
+    grpc_server_credentials *server_credentials) {
   GRPC_API_TRACE(
       "grpc_enclave_server_security_connector_create("
-      "additional_authenticated_data=%p, self_assertions=%p, "
-      "accepted_peer_assertions=%p)",
-      3,
-      (additional_authenticated_data, self_assertions,
-       accepted_peer_assertions));
+      "grpc_server_credentials=%p)", 1, (server_credentials));
   grpc_enclave_server_security_connector *security_connector =
       static_cast<grpc_enclave_server_security_connector *>(
           gpr_malloc(sizeof(*security_connector)));
 
   // Initialize all members.
   gpr_ref_init(&security_connector->base.base.refcount, 1);
-  safe_string_init(&security_connector->additional_authenticated_data);
-  assertion_description_array_init(/*count=*/0,
-                                   &security_connector->self_assertions);
-  assertion_description_array_init(
-      /*count=*/0, &security_connector->accepted_peer_assertions);
-
-  // Copy parameters.
-  safe_string_copy(/*dest=*/&security_connector->additional_authenticated_data,
-                   /*src=*/additional_authenticated_data);
-  assertion_description_array_copy(
-      /*src=*/self_assertions,
-      /*dest=*/&security_connector->self_assertions);
-  assertion_description_array_copy(
-      /*src=*/accepted_peer_assertions,
-      /*dest=*/&security_connector->accepted_peer_assertions);
-
-  // For debugging purposes, if GRPC_TRACE is enabled.
-  if (security_connector->additional_authenticated_data.data != nullptr) {
-    GRPC_API_TRACE(
-        "AAD: %s", 1,
-        (gpr_dump(security_connector->additional_authenticated_data.data,
-                  security_connector->additional_authenticated_data.size,
-                  GPR_DUMP_ASCII)));
-  }
 
   // Initialize the base server security connector object.
   grpc_server_security_connector &base = security_connector->base;

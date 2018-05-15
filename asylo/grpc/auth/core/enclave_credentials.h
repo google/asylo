@@ -19,8 +19,10 @@
 #ifndef ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_
 #define ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_
 
+#include "asylo/grpc/auth/core/assertion_description.h"
+#include "asylo/grpc/auth/util/safe_string.h"
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
-#include "include/grpc/grpc_security.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 #define GRPC_CREDENTIALS_TYPE_ENCLAVE "Enclave"
 
@@ -39,5 +41,33 @@ grpc_channel_credentials *grpc_enclave_channel_credentials_create(
  * in a ::grpc::SecureServerCredentials object that handles its destruction. */
 grpc_server_credentials *grpc_enclave_server_credentials_create(
     const grpc_enclave_credentials_options *options);
+
+typedef struct {
+  grpc_channel_credentials base;
+
+  /* Additional authenticated data provided by the client. */
+  safe_string additional_authenticated_data;
+
+  /* Assertions offered by the client. */
+  assertion_description_array self_assertions;
+
+  /* Server assertions accepted by the client. */
+  assertion_description_array accepted_peer_assertions;
+
+} grpc_enclave_channel_credentials;
+
+typedef struct {
+  grpc_server_credentials base;
+
+  /* Additional authenticated data provided by the server. */
+  safe_string additional_authenticated_data;
+
+  /* Assertions offered by the server. */
+  assertion_description_array self_assertions;
+
+  /* Client assertions accepted by the server. */
+  assertion_description_array accepted_peer_assertions;
+
+} grpc_enclave_server_credentials;
 
 #endif  // ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_

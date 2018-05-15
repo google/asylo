@@ -24,36 +24,9 @@
 #include "asylo/grpc/auth/core/enclave_security_connector.h"
 #include "asylo/grpc/auth/util/safe_string.h"
 #include "include/grpc/support/alloc.h"
+#include "include/grpc/support/log.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/security/credentials/credentials.h"
-
-/* -- Enclave credentials. -- */
-
-typedef struct {
-  grpc_channel_credentials base;
-  /* Additional authenticated data provided by the client. */
-  safe_string additional_authenticated_data;
-
-  /* Assertions offered by the client. */
-  assertion_description_array self_assertions;
-
-  /* Server assertions accepted by the client. */
-  assertion_description_array accepted_peer_assertions;
-
-} grpc_enclave_channel_credentials;
-
-typedef struct {
-  grpc_server_credentials base;
-  /* Additional authenticated data provided by the server. */
-  safe_string additional_authenticated_data;
-
-  /* Assertions offered by the server. */
-  assertion_description_array self_assertions;
-
-  /* Client assertions accepted by the server. */
-  assertion_description_array accepted_peer_assertions;
-
-} grpc_enclave_server_credentials;
 
 /* Frees any memory allocated by this channel credentials object.
  * Note that this function does not destroy the credentials object itself. */
@@ -83,12 +56,8 @@ static grpc_security_status enclave_channel_security_connector_create(
     const char *target, const grpc_channel_args *args,
     grpc_channel_security_connector **security_connector,
     grpc_channel_args **new_args) {
-  grpc_enclave_channel_credentials *credentials =
-      reinterpret_cast<grpc_enclave_channel_credentials *>(channel_creds);
   *security_connector = grpc_enclave_channel_security_connector_create(
-      channel_creds, call_creds, target,
-      &credentials->additional_authenticated_data,
-      &credentials->self_assertions, &credentials->accepted_peer_assertions);
+      channel_creds, call_creds, target);
   return GRPC_SECURITY_OK;
 }
 
@@ -96,11 +65,8 @@ static grpc_security_status enclave_channel_security_connector_create(
 static grpc_security_status enclave_server_security_connector_create(
     grpc_server_credentials *server_creds,
     grpc_server_security_connector **security_connector) {
-  grpc_enclave_server_credentials *credentials =
-      reinterpret_cast<grpc_enclave_server_credentials *>(server_creds);
   *security_connector = grpc_enclave_server_security_connector_create(
-      server_creds, &credentials->additional_authenticated_data,
-      &credentials->self_assertions, &credentials->accepted_peer_assertions);
+      server_creds);
   return GRPC_SECURITY_OK;
 }
 
