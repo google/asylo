@@ -30,6 +30,7 @@
 // Once new functions are defined and generated, user-friendly wrappers need to
 // be added to untrusted/enclave_calls.* and trusted/host_calls.* respectively.
 enclave {
+  include "signal.h"
   include "asylo/platform/common/bridge_types.h"
   include "asylo/platform/core/shared_name_kind.h"
 
@@ -184,6 +185,14 @@ enclave {
         bridge_clockid_t clk_id,
         [out, size=16/*sizeof(struct timespec)*/] struct bridge_timespec *tp)
         propagate_errno;
+
+    //////////////////////////////////////
+    //            signal.h              //
+    //////////////////////////////////////
+
+    int ocall_enc_untrusted_register_signal_handler(
+        int signum, [user_check] const struct sigaction *act,
+        [in, size=len] const char *name, size_t len);
 
     //////////////////////////////////////
     //           sys/time.h             //

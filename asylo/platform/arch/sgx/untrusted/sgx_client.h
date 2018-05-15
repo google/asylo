@@ -33,6 +33,11 @@ class SGXClient : public EnclaveClient {
   explicit SGXClient(const std::string &name) : EnclaveClient(name) {}
   Status EnterAndRun(const EnclaveInput &input, EnclaveOutput *output) override;
 
+  // Returns true when a TCS is active in simulation mode. Always returns false
+  // in hardware mode, since TCS active/inactive state is only set and used in
+  // simulation mode.
+  bool IsTcsActive();
+
  private:
   friend class SGXLoader;
   SGXClient() = default;

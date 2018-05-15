@@ -321,6 +321,46 @@ class EnclaveLoader {
       const std::string &name) const = 0;
 };
 
+// Stores the mapping between signals and the enclave with a handler installed
+// for that signal.
+class EnclaveSignalDispatcher {
+ public:
+  static EnclaveSignalDispatcher *GetInstance();
+
+  // Associates a signal with an enclave which registers a handler for it.
+  // It's not supported for multiple enclaves to register the same signal. In
+  // that case, the latter will overwrite the former.
+  //
+  // Returns the enclave client that previous registered |signum|, or nullptr if
+  // no enclave has registered |signum| yet.
+  const EnclaveClient *RegisterSignal(int signum, EnclaveClient *client)
+      LOCKS_EXCLUDED(signal_enclave_map_lock_);
+
+  // Gets the enclave that registered a handler for |signum|.
+  StatusOr<EnclaveClient *> GetClientForSignal(int signum) const
+      LOCKS_EXCLUDED(signal_enclave_map_lock_);
+
+  // Deregisters all the signals registered by |client|.
+  Status DeregisterAllSignalsForClient(EnclaveClient *client)
+      LOCKS_EXCLUDED(signal_enclave_map_lock_);
+
+  // Looks for the enclave client that registered |signum|, and calls
+  // EnterAndHandleSignal() with that enclave client.
+  Status EnterEnclaveAndHandleSignal(int signum);
+
+ private:
+  EnclaveSignalDispatcher() = default;  // Private to enforce singleton.
+  EnclaveSignalDispatcher(EnclaveSignalDispatcher const &) = delete;
+  void operator=(EnclaveSignalDispatcher const &) = delete;
+
+  // Mapping of signal number to the enclave client that registered it.
+  std::unordered_map<int, EnclaveClient *> signal_to_client_map_
+      GUARDED_BY(signal_enclave_map_lock_);
+
+  // A mutex that guards signal_to_client_map_ and client_to_signal_map_.
+  mutable absl::Mutex signal_enclave_map_lock_;
+};
+
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_CORE_ENCLAVE_MANAGER_H_

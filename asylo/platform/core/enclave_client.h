@@ -63,8 +63,8 @@ class EnclaveClient {
 
  private:
   friend class EnclaveManager;
+  friend class EnclaveSignalDispatcher;
   friend void donate(EnclaveClient *client);
-  friend void EnterEnclaveToHandleSignal(int signum);
 
   // Enters the enclave and invokes its initialization entry point.
   virtual Status EnterAndInitialize(const EnclaveConfig &config) = 0;

@@ -365,18 +365,18 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
   }
   TrustedApplication *trusted_application = GetApplicationInstance();
   EnclaveState current_state = trusted_application->GetState();
-  SignalManager *signal_manager = SignalManager::GetInstance();
-  int signum = FromBridgeSignal(signal.signum());
-  if (signum < 0) {
-    LOG(ERROR) << "Failed to convert signum:" << signum << " to bridge signum";
-    return -1;
-  }
-  sighandler_t signal_handler = signal_manager->GetSignalHandler(signum);
   if (current_state != EnclaveState::kRunning &&
       current_state != EnclaveState::kFinalizing) {
     LOG(ERROR) << "Enclave not in state RUNNING";
     return EPERM;
   }
+  int signum = FromBridgeSignal(signal.signum());
+  if (signum < 0) {
+    LOG(ERROR) << "Failed to convert signum:" << signum << " to bridge signum";
+    return -1;
+  }
+  SignalManager *signal_manager = SignalManager::GetInstance();
+  sighandler_t signal_handler = signal_manager->GetSignalHandler(signum);
   if (!signal_handler) {
     LOG(ERROR) << "Signal handler not registered";
     return EPERM;

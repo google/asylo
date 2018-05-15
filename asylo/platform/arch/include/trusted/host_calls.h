@@ -142,6 +142,14 @@ int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
 int enc_untrusted_sched_yield();
 
 //////////////////////////////////////
+//            signal.h              //
+//////////////////////////////////////
+
+int enc_untrusted_register_signal_handler(int signum,
+                                          const struct sigaction *act,
+                                          const char *enclave_name, size_t len);
+
+//////////////////////////////////////
 //          sys/stat.h              //
 //////////////////////////////////////
 

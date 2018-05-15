@@ -24,6 +24,7 @@
 #include <netdb.h>
 #include <poll.h>
 #include <sched.h>
+#include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/socket.h>
@@ -36,12 +37,73 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
+#include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/util/status.h"
 
 #include "asylo/util/logging.h"
+
+namespace {
+
+// Stores a pointer to a function inside the enclave that translates
+// |bridge_signum| to a value inside the enclave and calls the registered signal
+// handler for that signal.
+static void (*handle_signal_inside_enclave)(int) = nullptr;
+
+// Translates host |signum| to |bridge_signum|, and calls the function
+// registered as the signal handler inside the enclave.
+void TranslateToBridgeAndHandleSignal(int signum) {
+  int bridge_signum = ToBridgeSignal(signum);
+  if (bridge_signum < 0) {
+    LOG(ERROR) << "Invalid signum value:" << signum
+               << " to convert to bridge_signum";
+    return;
+  }
+  if (handle_signal_inside_enclave) {
+    handle_signal_inside_enclave(bridge_signum);
+  } else {
+    LOG(ERROR) << "Signal translator inside enclave is not registered";
+  }
+}
+
+// Triggers an ecall to enter an enclave to handle the incoming signal.
+//
+// In hardware mode, this is registered as the signal handler.
+// In simulation mode, this is called if the signal arrives when the TCS is
+// inactive.
+void EnterEnclaveAndHandleSignal(int signum) {
+  asylo::Status status = asylo::EnclaveSignalDispatcher::GetInstance()
+                             ->EnterEnclaveAndHandleSignal(signum);
+  if (!status.ok()) {
+    LOG(ERROR) << "Faied to enter enclave to handle signal: " << status;
+  }
+}
+
+// Checks the enclave TCS state to determine which function to call to handle
+// the signal. If the TCS is active, calls the signal handler registered inside
+// the enclave directly. If the TCS is inactive, triggers an ecall to enter
+// enclave and handle the signal.
+//
+// In simulation mode, this is registered as the signal handler.
+void HandleSignalInSim(int signum) {
+  auto client_result =
+      asylo::EnclaveSignalDispatcher::GetInstance()->GetClientForSignal(signum);
+  if (!client_result.ok()) {
+    LOG(ERROR) << client_result.status();
+  }
+  asylo::SGXClient *client =
+      dynamic_cast<asylo::SGXClient *>(client_result.ValueOrDie());
+  if (client->IsTcsActive()) {
+    TranslateToBridgeAndHandleSignal(signum);
+  } else {
+    EnterEnclaveAndHandleSignal(signum);
+  }
+}
+
+}  // namespace
 
 // Threading implementation-defined untrusted thread donate routine.
 extern "C" int __asylo_donate_thread(const char *name);
@@ -319,6 +381,45 @@ int ocall_enc_untrusted_sched_getaffinity(int64_t pid, BridgeCpuSet *mask) {
   }
 
   return ret;
+}
+
+//////////////////////////////////////
+//          signal.h                //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_register_signal_handler(int signum,
+                                                const struct sigaction *act,
+                                                const char *name, size_t len) {
+  struct sigaction newact, oldact;
+  std::string enclave_name(name, len);
+  auto manager_result = asylo::EnclaveManager::Instance();
+  if (!manager_result.ok()) {
+    return -1;
+  }
+  // Registers the signal with an enclave so when the signal arrives,
+  // EnclaveManager knows which enclave to enter to handle the signal.
+  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::EnclaveClient *client = manager->GetClient(enclave_name);
+  const asylo::EnclaveClient *old_client =
+      asylo::EnclaveSignalDispatcher::GetInstance()->RegisterSignal(signum,
+                                                                    client);
+  if (old_client) {
+    LOG(WARNING) << "Overwriting the signal handler for signal: " << signum
+                 << " registered by enclave: " << manager->GetName(old_client);
+  }
+
+  if (!act) {
+    // Hardware mode: The registered signal handler triggers an ecall to enter
+    // the enclave and handle the signal.
+    newact.sa_handler = &EnterEnclaveAndHandleSignal;
+  } else {
+    // Simulation mode: The registered signal handler does the same as hardware
+    // mode if the TCS is active, or calls the signal handler registered inside
+    // the enclave directly if the TCS is inactive.
+    handle_signal_inside_enclave = act->sa_handler;
+    newact.sa_handler = &HandleSignalInSim;
+  }
+  return sigaction(signum, &newact, &oldact);
 }
 
 //////////////////////////////////////

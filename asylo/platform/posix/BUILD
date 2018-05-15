@@ -79,6 +79,7 @@ cc_library(
         "//asylo/platform/core:trusted_core",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/sockets",
+        "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/system",
         "//asylo/util:status",

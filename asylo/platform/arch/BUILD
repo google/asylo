@@ -34,6 +34,7 @@ cc_library(
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",
+        "include/trusted/register_signal.h",
         "include/trusted/time.h",
     ],
     deps = select({
@@ -153,6 +154,7 @@ cc_library(
         "sgx/trusted/host_calls.cc",
         "sgx/trusted/sbrk.cc",
         "sgx_sim/trusted/hardware_random.cc",
+        "sgx_sim/trusted/register_signal.cc",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
     ],
     hdrs = [
@@ -161,6 +163,7 @@ cc_library(
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",
+        "include/trusted/register_signal.h",
     ],
     copts = ["-mrdrnd"],
     linkstatic = 1,
@@ -170,6 +173,7 @@ cc_library(
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
+        "//asylo/platform/posix/signal:signal_manager",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",

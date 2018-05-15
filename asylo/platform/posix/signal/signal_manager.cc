@@ -30,12 +30,13 @@ void SignalManager::SetSignalHandler(int signum, sighandler_t handler) {
   signal_to_handler_[signum] = handler;
 }
 
-const sighandler_t SignalManager::GetSignalHandler(int signum) {
+const sighandler_t SignalManager::GetSignalHandler(int signum) const {
   absl::MutexLock lock(&signal_to_handler_lock_);
-  if (signal_to_handler_.find(signum) == signal_to_handler_.end()) {
+  auto handler_iterator = signal_to_handler_.find(signum);
+  if (handler_iterator == signal_to_handler_.end()) {
     return nullptr;
   }
-  return signal_to_handler_[signum];
+  return handler_iterator->second;
 }
 
 }  // namespace asylo

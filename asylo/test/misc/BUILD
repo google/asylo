@@ -66,6 +66,24 @@ sgx_enclave(
     ],
 )
 
+# SGX enclave used to test signal handling inside an enclave with an active TCS.
+sgx_enclave(
+    name = "active_enclave_signal_test.so",
+    srcs = ["active_enclave_signal_test_enclave.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+# SGX enclave used to test signal handling inside an enclave with no active TCS.
+sgx_enclave(
+    name = "inactive_enclave_signal_test.so",
+    srcs = ["inactive_enclave_signal_test_enclave.cc"],
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
 # SGX enclave linked against the sgx_runtime that calls abort().
 sgx_enclave(
     name = "die.so",
@@ -203,6 +221,24 @@ enclave_test(
     deps = [
         ":syscalls_test_proto_cc",
     ] + TEST_DEPS_COMMON,
+)
+
+enclave_test(
+    name = "active_enclave_signal_test",
+    srcs = ["active_enclave_signal_test_driver.cc"],
+    enclave = "active_enclave_signal_test.so",
+    tags = ["regression"],
+    deps = [
+        "@com_google_absl//absl/synchronization",
+    ] + TEST_DEPS_COMMON,
+)
+
+enclave_test(
+    name = "inactive_enclave_signal_test",
+    srcs = ["inactive_enclave_signal_test_driver.cc"],
+    enclave = "inactive_enclave_signal_test.so",
+    tags = ["regression"],
+    deps = TEST_DEPS_COMMON,
 )
 
 enclave_test(

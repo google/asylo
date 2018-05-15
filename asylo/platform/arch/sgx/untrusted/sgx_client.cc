@@ -297,4 +297,6 @@ Status SGXClient::DestroyEnclave() {
   return Status::OkStatus();
 }
 
+bool SGXClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
+
 }  //  namespace asylo

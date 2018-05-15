@@ -27,8 +27,8 @@
 
 namespace asylo {
 
-// SignalManager class is a singleton responsible for:
-// - Maintaining mapping between signum and registered signal handlers.
+// SignalManager class is a singleton responsible for maintaining mapping
+// between signum and registered signal handlers.
 class SignalManager {
  public:
   static SignalManager *GetInstance();
@@ -37,8 +37,8 @@ class SignalManager {
   void SetSignalHandler(int signum, sighandler_t)
       LOCKS_EXCLUDED(signal_to_handler_lock_);
 
-  // Gets a signal handler pointer for a specific signal |signum|.
-  const sighandler_t GetSignalHandler(int signum)
+  // Gets a signal handler for a specific signal |signum|.
+  const sighandler_t GetSignalHandler(int signum) const
       LOCKS_EXCLUDED(signal_to_handler_lock_);
 
  private:
@@ -46,7 +46,7 @@ class SignalManager {
   SignalManager(SignalManager const &) = delete;
   void operator=(SignalManager const &) = delete;
 
-  absl::Mutex signal_to_handler_lock_;
+  mutable absl::Mutex signal_to_handler_lock_;
   std::unordered_map<int, sighandler_t> signal_to_handler_
       GUARDED_BY(signal_to_handler_lock_);
 };

@@ -23,6 +23,8 @@
 #include <time.h>
 #include <thread>
 
+#include "absl/strings/str_cat.h"
+
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
 
@@ -172,6 +174,9 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
 
   status = client->DestroyEnclave();
   if (status.ok()) {
+    status =
+        EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
+            client);
     const auto &name = name_by_client_[client];
     client_by_name_.erase(name);
     name_by_client_.erase(client);
@@ -315,6 +320,83 @@ void EnclaveManager::WorkerLoop(std::mutex *unlock_when_ready) {
     Tick();
     next_tick += kClockPeriod;
   }
+}
+
+EnclaveSignalDispatcher *EnclaveSignalDispatcher::GetInstance() {
+  static EnclaveSignalDispatcher *instance = new EnclaveSignalDispatcher();
+  return instance;
+}
+
+StatusOr<EnclaveClient *> EnclaveSignalDispatcher::GetClientForSignal(
+    int signum) const {
+  absl::MutexLock lock(&signal_enclave_map_lock_);
+  auto it = signal_to_client_map_.find(signum);
+  if (it == signal_to_client_map_.end()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("No enclave has registered signal: ", signum));
+  }
+  return it->second;
+}
+
+const EnclaveClient *EnclaveSignalDispatcher::RegisterSignal(
+    int signum, EnclaveClient *client) {
+  // Block all signals when registering a signal handler to avoid deadlock.
+  sigset_t mask, oldmask;
+  sigfillset(&mask);
+  sigprocmask(SIG_SETMASK, &mask, &oldmask);
+  EnclaveClient *old_client = nullptr;
+  {
+    absl::MutexLock lock(&signal_enclave_map_lock_);
+    // If this signal is registered by another enclave, deregister it first.
+    auto client_iterator = signal_to_client_map_.find(signum);
+    if (client_iterator != signal_to_client_map_.end()) {
+      old_client = client_iterator->second;
+    }
+    signal_to_client_map_[signum] = client;
+  }
+  // Set the signal mask back to the original one to unblock the signals.
+  sigprocmask(SIG_SETMASK, &oldmask, nullptr);
+  return old_client;
+}
+
+Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
+    EnclaveClient *client) {
+  sigset_t mask, oldmask;
+  sigfillset(&mask);
+  sigprocmask(SIG_SETMASK, &mask, &oldmask);
+  Status status = Status::OkStatus();
+  {
+    absl::MutexLock lock(&signal_enclave_map_lock_);
+    // If this enclave has registered any signals, deregister them and set the
+    // signal handler to the default one.
+    for (auto iterator = signal_to_client_map_.begin();
+         iterator != signal_to_client_map_.end();) {
+      if (iterator->second == client) {
+        if (signal(iterator->first, SIG_DFL) == SIG_ERR) {
+          status = Status(
+              error::GoogleError::INVALID_ARGUMENT,
+              absl::StrCat(
+                  "Failed to deregister one or more handlers for signal: ",
+                  iterator->first));
+        }
+        iterator = signal_to_client_map_.erase(iterator);
+      } else {
+        ++iterator;
+      }
+    }
+  }
+  sigprocmask(SIG_SETMASK, &oldmask, nullptr);
+  return status;
+}
+
+Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum) {
+  StatusOr<EnclaveClient *> client_result = GetClientForSignal(signum);
+  if (!client_result.ok()) {
+    return client_result.status();
+  }
+  EnclaveSignal enclave_signal;
+  enclave_signal.set_signum(signum);
+  return client_result.ValueOrDie()->EnterAndHandleSignal(enclave_signal);
 }
 
 };  // namespace asylo
