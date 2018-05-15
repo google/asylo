@@ -350,10 +350,11 @@ sim_enclave(
     ],
 )
 
-debug_enclave_driver(
+enclave_loader(
     name = "quickstart",
     srcs = ["demo_driver.cc"],
-    enclaves = [":demo_enclave"],
+    enclaves = {"enclave": ":demo_enclave"},
+    loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_proto_cc",
         "@com_google_asylo//asylo:enclave_client",
@@ -369,15 +370,15 @@ implementation of `TrustedApplication` and is linked against the Asylo runtime.
 We use a `sim_enclave` rule to generate an enclave that can be run in simulation
 mode.
 
-The untrusted component is the target `demo_driver`, which contains code to
+The untrusted component is the target `:quickstart`, which contains code to
 handle the logic of initializing, running, and finalizing the enclave, as well
 as sending and receiving messages through the enclave boundary. In a non-enclave
-application, we would write `quickstart` as a *cc_binary* target, but the
-`debug_enclave_driver` rule streamlines the combination of driver and enclave
-targets. Specifically, it ensures that *demo_driver.cc* is compiled with the
-host crosstool, the enclave data dependencies are compiled with the
-enclave-backend-specific crosstool, and that `demo_driver` is invoked with the
-`--enclave_path` flag to specify the filepath to the enclave binary image.
+application, we would write `:quickstart` as a *cc_binary* target, but the
+`enclave_loader` rule streamlines the combination of driver and enclave targets.
+Specifically, it ensures that *demo_driver.cc* is compiled with the host
+crosstool, `:demo_enclave` is compiled with the enclave-backend-specific
+crosstool, and that the untrusted enclave loader is invoked with a flag that
+specifies the enclave's path.
 
 Let us now run the demo enclave inside the Docker image we
 downloaded [above](#getting-started-with-the-example-code). You can set the

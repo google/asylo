@@ -20,7 +20,7 @@ licenses(["notice"])  # Apache v2.0
 
 load(
     "@com_google_asylo//asylo/bazel:asylo.bzl",
-    "debug_enclave_driver",
+    "enclave_loader",
     "sim_enclave",
 )
 load("@com_google_asylo//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -48,10 +48,11 @@ sim_enclave(
     ],
 )
 
-debug_enclave_driver(
+enclave_loader(
     name = "hello_world",
     srcs = ["hello_driver.cc"],
-    enclaves = [":hello_enclave.so"],
+    enclaves = {"enclave": ":hello_enclave.so"},
+    loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":hello_proto_cc",
         "@com_github_gflags_gflags//:gflags_nothreads",
