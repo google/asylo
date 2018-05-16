@@ -34,6 +34,8 @@
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/statusor.h"
 #include "include/grpc/support/log.h"
+#include "src/core/lib/gpr/string.h"
+#include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/alts/frame_protector/alts_frame_protector.h"
 #include "src/core/tsi/transport_security.h"
 
@@ -373,6 +375,14 @@ tsi_result tsi_enclave_handshaker_create(
     const assertion_description_array *accepted_peer_assertions,
     const safe_string *additional_authenticated_data,
     tsi_handshaker **handshaker) {
+  GRPC_API_TRACE(
+      "tsi_enclave_handshaker_create(is_client=%d, self_assertions=%p, "
+      "accepted_peer_assertions=%p, additional_authenticated_data=%p, "
+      "handshaker=%p)",
+      5,
+      (is_client, self_assertions, accepted_peer_assertions,
+       additional_authenticated_data, handshaker));
+
   // Convert arguments to handshaker options.
   asylo::EkepHandshakerOptions options;
   options.additional_authenticated_data = std::string(
@@ -381,6 +391,19 @@ tsi_result tsi_enclave_handshaker_create(
       asylo::CreateAssertionDescriptionVector(*self_assertions);
   options.accepted_peer_assertions =
       asylo::CreateAssertionDescriptionVector(*accepted_peer_assertions);
+
+  if (!options.additional_authenticated_data.empty()) {
+    gpr_log(GPR_DEBUG, "additional authenticated data: %s",
+            options.additional_authenticated_data.c_str());
+  }
+  for (const asylo::AssertionDescription &desc : options.self_assertions) {
+    gpr_log(GPR_DEBUG, "self assertion: (%s)", desc.ShortDebugString().c_str());
+  }
+  for (const asylo::AssertionDescription &desc :
+       options.accepted_peer_assertions) {
+    gpr_log(GPR_DEBUG, "accepted peer assertion: (%s)",
+            desc.ShortDebugString().c_str());
+  }
 
   // Create an EkepHandshaker object and wrap it with a tsi_handshaker object.
   std::unique_ptr<asylo::EkepHandshaker> ekep_handshaker =
