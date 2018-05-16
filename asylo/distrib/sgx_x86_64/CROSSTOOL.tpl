@@ -728,21 +728,17 @@ toolchain {
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       flag_group {
-        expand_if_all_available: 'output_object_file'
-        flag: '-o'
-        flag: '%{output_object_file}'
+        flag: "-S"
+        expand_if_all_available: "output_assembly_file"
       }
       flag_group {
-        expand_if_all_available: 'output_assembly_file'
-        flag: '-S'
-        flag: '-o'
-        flag: '%{output_assembly_file}'
+        flag: "-E"
+        expand_if_all_available: "output_preprocess_file"
       }
       flag_group {
-        expand_if_all_available: 'output_preprocess_file'
-        flag: '-E'
-        flag: '-o'
-        flag: '%{output_preprocess_file}'
+        flag: "-o"
+        flag: "%{output_file}"
+        expand_if_all_available: "output_file"
       }
     }
   }
