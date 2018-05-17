@@ -21,10 +21,10 @@
 
 #include <type_traits>
 
-#include "grpcpp/grpcpp.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/test/grpc/service.grpc.pb.h"
+#include "include/grpcpp/grpcpp.h"
 
 namespace asylo {
 namespace test {

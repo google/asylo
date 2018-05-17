@@ -18,10 +18,10 @@
 
 #include <memory>
 
-#include "grpcpp/security/server_credentials.h"
 #include "absl/memory/memory.h"
 #include "asylo/grpc/util/enclave_server.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
+#include "include/grpcpp/security/server_credentials.h"
 
 namespace asylo {
 

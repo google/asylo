@@ -53,7 +53,6 @@ cc_binary(
         "//asylo/identity:enclave_assertion_authority_config_proto_cc",
         "//asylo/identity:init",
         "@com_github_grpc_grpc//:gpr_base",
-        "@com_github_grpc_grpc//:grpc_secure",
         "@com_github_grpc_grpc//test/core/end2end:end2end_tests",
         "@com_github_grpc_grpc//test/core/util:gpr_test_util",
     ],

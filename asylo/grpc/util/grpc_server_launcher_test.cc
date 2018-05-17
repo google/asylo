@@ -20,10 +20,6 @@
 
 #include <thread>
 
-#include "grpcpp/channel.h"
-#include "grpcpp/create_channel.h"
-#include "grpcpp/impl/codegen/service_type.h"
-#include "grpcpp/security/credentials.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
@@ -35,6 +31,10 @@
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
 #include "test/core/util/port.h"
+#include "include/grpcpp/channel.h"
+#include "include/grpcpp/create_channel.h"
+#include "include/grpcpp/impl/codegen/service_type.h"
+#include "include/grpcpp/security/credentials.h"
 
 namespace asylo {
 namespace {

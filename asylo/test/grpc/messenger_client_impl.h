@@ -23,11 +23,11 @@
 #include <string>
 #include <type_traits>
 
-#include "grpcpp/grpcpp.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/grpc/service.grpc.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
+#include "include/grpcpp/grpcpp.h"
 
 namespace asylo {
 namespace test {

@@ -20,13 +20,13 @@
 #include <memory>
 #include <string>
 
-#include "grpcpp/security/server_credentials.h"
 #include "absl/memory/memory.h"
 #include "asylo/grpc/auth/enclave_server_credentials.h"
 #include "asylo/grpc/util/enclave_server.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
+#include "include/grpcpp/security/server_credentials.h"
 
 namespace asylo {
 namespace {

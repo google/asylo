@@ -22,9 +22,9 @@
 #include <memory>
 #include <string>
 
-#include "grpcpp/grpcpp.h"
 #include "asylo/daemon/identity/attestation_domain.grpc.pb.h"
 #include "asylo/util/statusor.h"
+#include "include/grpcpp/grpcpp.h"
 
 namespace asylo {
 namespace daemon {

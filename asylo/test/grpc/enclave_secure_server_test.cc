@@ -20,9 +20,6 @@
 #include <thread>
 #include <vector>
 
-#include "grpcpp/channel.h"
-#include "grpcpp/create_channel.h"
-#include "grpcpp/security/credentials.h"
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
@@ -34,6 +31,9 @@
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
+#include "include/grpcpp/channel.h"
+#include "include/grpcpp/create_channel.h"
+#include "include/grpcpp/security/credentials.h"
 #include "test/core/util/port.h"
 
 namespace asylo {

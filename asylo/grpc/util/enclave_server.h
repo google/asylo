@@ -22,14 +22,14 @@
 #include <memory>
 #include <string>
 
-#include "grpcpp/impl/codegen/service_type.h"
-#include "grpcpp/security/server_credentials.h"
-#include "grpcpp/server.h"
-#include "grpcpp/server_builder.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/statusor.h"
+#include "include/grpcpp/impl/codegen/service_type.h"
+#include "include/grpcpp/security/server_credentials.h"
+#include "include/grpcpp/server.h"
+#include "include/grpcpp/server_builder.h"
 
 namespace asylo {
 
