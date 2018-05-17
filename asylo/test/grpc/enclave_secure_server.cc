@@ -56,8 +56,8 @@ std::shared_ptr<::grpc::ServerCredentials> GetServerCredentials() {
 // Creates an enclave application hosting a simple gRPC server with EKEP null
 // credentials.
 TrustedApplication *BuildTrustedApplication() {
-  return new EnclaveServer<test::MessengerServer1>(
-      absl::make_unique<test::MessengerServer1>(), GetServerCredentials());
+  return new EnclaveServer(absl::make_unique<test::MessengerServer1>(),
+                           GetServerCredentials());
 }
 
 }  // namespace asylo

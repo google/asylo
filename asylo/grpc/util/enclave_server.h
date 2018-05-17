@@ -22,6 +22,7 @@
 #include <memory>
 #include <string>
 
+#include "grpcpp/impl/codegen/service_type.h"
 #include "grpcpp/security/server_credentials.h"
 #include "grpcpp/server.h"
 #include "grpcpp/server_builder.h"
@@ -33,10 +34,9 @@
 namespace asylo {
 
 // Enclave for hosting a gRPC service.
-template <typename ServiceT>
 class EnclaveServer final : public TrustedApplication {
  public:
-  EnclaveServer(std::unique_ptr<ServiceT> service,
+  EnclaveServer(std::unique_ptr<::grpc::Service> service,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
       : service_{std::move(service)}, credentials_{credentials} {}
   ~EnclaveServer() = default;
@@ -127,7 +127,7 @@ class EnclaveServer final : public TrustedApplication {
   std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex);
 
   std::string address_;
-  std::unique_ptr<ServiceT> service_;
+  std::unique_ptr<::grpc::Service> service_;
   std::shared_ptr<::grpc::ServerCredentials> credentials_;
 };
 

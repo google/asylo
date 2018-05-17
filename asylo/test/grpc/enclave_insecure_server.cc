@@ -28,9 +28,8 @@ namespace asylo {
 // Creates an enclave application hosting a simple gRPC server with insecure
 // credentials.
 TrustedApplication *BuildTrustedApplication() {
-  return new EnclaveServer<test::MessengerServer1>(
-      absl::make_unique<test::MessengerServer1>(),
-      ::grpc::InsecureServerCredentials());
+  return new EnclaveServer(absl::make_unique<test::MessengerServer1>(),
+                           ::grpc::InsecureServerCredentials());
 }
 
 }  // namespace asylo
