@@ -407,7 +407,7 @@ readonly newlib_target=x86_64-enclave
 PATH="${prefix}"/bin:"${PATH}"
 if [[ ! -d build-newlib ]]; then
   (mkdir build-newlib && cd build-newlib &&
-     CFLAGS_FOR_TARGET="-fPIC -g -O2" "${srcs_root}/${newlib}/configure" \
+     CFLAGS_FOR_TARGET="-fPIC -g -O2 -D__ASYLO__" "${srcs_root}/${newlib}/configure" \
          --with-pic --prefix="${prefix}" --target="${newlib_target}" &&
      make -j && make install &&
      echo "installed newlib") || exit 1
@@ -446,6 +446,7 @@ GCC_FLAGS=(
   -D_POSIX_PRIORITY_SCHEDULING
   -D_POSIX_READER_WRITER_LOCKS
   -D_UNIX98_THREAD_MUTEX_ATTRIBUTES
+  -D__ASYLO__
   -DTARGET_ANDROID=0
 )
 
