@@ -1,3 +1,4 @@
+<!--jekyll-front-matter
 ---
 title: Asylo Quickstart Guide
 overview: Install Asylo, build, and run your first enclave!
@@ -10,6 +11,7 @@ type: markdown
 toc: true
 ---
 {% include home.html %}
+jekyll-front-matter-->
 This guide demonstrates using Asylo to protect secret data from an attacker
 with root privileges.
 
