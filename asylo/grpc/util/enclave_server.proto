@@ -26,13 +26,42 @@ package asylo;
 
 import "asylo/enclave.proto";
 
-// Configuration passed to an enclave gRPC server during initialization.
+// Represents an enclave gRPC server's configuration.
 message ServerConfig {
-  // The server's address, which is either an IPv6 address or a Unix domain
-  // socket.
-  required string address = 1;
+  // The host to run on in the form of IPv6 address minus the port.
+  optional string host = 1;
+
+  // The port to run on. A port of 0 indicates that the port should be
+  // auto-selected by the system.
+  optional int32 port = 2;
 }
 
 extend EnclaveConfig {
-  optional ServerConfig server_config = 174238459;
+  // Initial configuration for the gRPC server.
+  optional ServerConfig server_input_config = 174238459;
+}
+
+// A command provided to the enclave server.
+enum ServerCommand {
+  UNKNOWN = 0;
+
+  // Indicates that the enclave should build and prepare the gRPC server (e.g.
+  // determine the final server address). This does not actually launch the
+  // server.
+  INITIALIZE_SERVER = 1;
+
+  // Indicates that the enclave should start the gRPC server.
+  RUN_SERVER = 2;
+}
+
+extend EnclaveInput {
+  // The command to execute.
+  optional ServerCommand command = 196851825;
+}
+
+extend EnclaveOutput {
+  // The gRPC server's current configuration. This may be different than the
+  // address provided to the enclave at initialization if port auto-selection
+  // was used.
+  optional ServerConfig server_output_config = 196851825;
 }

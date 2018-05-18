@@ -39,14 +39,16 @@ using ::testing::Not;
 
 constexpr char kName[] = "test";
 
-constexpr const char kAddress[] = "[::1]:";
+constexpr const char kAddress[] = "[::1]";
 
 class EnclaveServerTest : public EnclaveTest {
  protected:
   void SetUp() override {
-    ServerConfig *config = config_.MutableExtension(server_config);
-    address_ = ::absl::StrCat(kAddress, grpc_pick_unused_port_or_die());
-    config->set_address(address_);
+    ServerConfig *config = config_.MutableExtension(server_input_config);
+    config->set_host(kAddress);
+    // Use a port of 0 for port auto-selection.
+    config->set_port(0);
+    address_ = absl::StrCat(config->host(), ":", config->port());
     EnclaveTest::SetUp();
   }
 
@@ -54,14 +56,28 @@ class EnclaveServerTest : public EnclaveTest {
 };
 
 TEST_F(EnclaveServerTest, SimpleEnd2EndTest) {
-  std::thread grpc_thread(
-      [this]() { EXPECT_THAT(client_->EnterAndRun({}, nullptr), IsOk()); });
+  // Initialize the gRPC server and gets its address.
+  EnclaveInput input;
+  input.SetExtension(command, ServerCommand::INITIALIZE_SERVER);
+  EnclaveOutput output;
+  ASSERT_THAT(client_->EnterAndRun(input, &output), IsOk());
+
+  const ServerConfig &config = output.GetExtension(server_output_config);
+  ASSERT_NE(config.port(), 0);
+  address_ = absl::StrCat(config.host(), ":", config.port());
+
+  // Launch the gRPC server.
+  std::thread grpc_thread([this]() {
+    EnclaveInput input;
+    input.SetExtension(command, ServerCommand::RUN_SERVER);
+    ASSERT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), IsOk());
+  });
   grpc_thread.detach();
 
-  auto channel =
-      ::grpc::CreateChannel(address_, ::grpc::InsecureChannelCredentials());
-
-  // Wait 30 seconds for channel to connect to server.
+  // Create a channel and wait 30 seconds for the channel to connect to the
+  // server.
+  auto channel = ::grpc::CreateChannel(address_,
+                                       ::grpc::InsecureChannelCredentials());
   gpr_timespec absolute_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME),
       gpr_time_from_micros(static_cast<int64_t>(30 * 1e6), GPR_TIMESPAN));
