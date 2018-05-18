@@ -68,7 +68,7 @@ class ActiveEnclaveSignalTest : public EnclaveTest {
  public:
   void SetUp() override {
     // Create a pipe for stdout.
-    pipe(pair_stdout);
+    CHECK_EQ(pipe(pair_stdout), 0);
     // Pass in the enclave side of the pair.
     set_stdout(pair_stdout[1]);
     SetUpBase();
