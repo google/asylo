@@ -58,22 +58,22 @@ class SyscallsEnclave : public EnclaveTestCase {
     } else if (test_input.test_target() == "getpid") {
       return RunGetPidTest(output);
     } else if (test_input.test_target() == "unlink") {
-      return RunUnlinkTest(test_input.file_path());
+      return RunUnlinkTest(test_input.path_name());
     } else if (test_input.test_target() == "fcntl") {
-      return RunFcntlTest(test_input.file_path());
+      return RunFcntlTest(test_input.path_name());
     } else if (test_input.test_target() == "mkdir") {
-      return RunMkdirTest(test_input.file_path());
+      return RunMkdirTest(test_input.path_name());
     } else if (test_input.test_target() == "dup") {
-      return RunDupTest(test_input.file_path());
+      return RunDupTest(test_input.path_name());
     } else if (test_input.test_target() == "gethostname") {
       return RunGetHostNameTest(output);
     } else if (test_input.test_target() == "link") {
-      return RunLinkTest(test_input.file_path());
+      return RunLinkTest(test_input.path_name());
     } else if (test_input.test_target() == "getcwd") {
       return RunGetCwdTest(test_input.provide_buffer(),
                            test_input.buffer_size(), output);
     } else if (test_input.test_target() == "umask") {
-      return RunUmaskTest(test_input.file_path());
+      return RunUmaskTest(test_input.path_name());
     } else if (test_input.test_target() == "getuid") {
       return RunGetUidTest(output);
     } else if (test_input.test_target() == "geteuid") {
@@ -90,10 +90,16 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunSchedGetAffinityFailureTest(output);
     } else if (test_input.test_target() == "CPU_SET macros") {
       return RunCpuSetMacrosTest(output);
+    } else if (test_input.test_target() == "stat") {
+      return RunStatTest(test_input.path_name(), output);
+    } else if (test_input.test_target() == "fstat") {
+      return RunFStatTest(test_input.path_name(), output);
+    } else if (test_input.test_target() == "lstat") {
+      return RunLStatTest(test_input.path_name(), output);
     } else if (test_input.test_target() == "writev") {
-      return RunWritevTest(test_input.file_path());
+      return RunWritevTest(test_input.path_name());
     } else if (test_input.test_target() == "readv") {
-      return RunReadvTest(test_input.file_path());
+      return RunReadvTest(test_input.path_name());
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -140,6 +146,34 @@ class SyscallsEnclave : public EnclaveTestCase {
             static_cast<uint64_t>(1) << bit_num;
       }
     }
+  }
+
+  // Encodes a struct stat in the stat_buffer_syscall_return field of a
+  // SyscallsTestOutput protobuf.
+  void EncodeStatBufferInTestOutput(const struct stat &stat_buffer,
+                                    SyscallsTestOutput *test_output) {
+    using google::protobuf::int64;
+
+    SyscallsTestOutput::StatValue *proto_stat_buffer =
+        test_output->mutable_stat_buffer_syscall_return();
+
+    proto_stat_buffer->set_st_dev(static_cast<int64>(stat_buffer.st_dev));
+    proto_stat_buffer->set_st_ino(static_cast<int64>(stat_buffer.st_ino));
+    proto_stat_buffer->set_st_mode(static_cast<int64>(stat_buffer.st_mode));
+    proto_stat_buffer->set_st_nlink(static_cast<int64>(stat_buffer.st_nlink));
+    proto_stat_buffer->set_st_uid(static_cast<int64>(stat_buffer.st_uid));
+    proto_stat_buffer->set_st_gid(static_cast<int64>(stat_buffer.st_gid));
+    proto_stat_buffer->set_st_rdev(static_cast<int64>(stat_buffer.st_rdev));
+    proto_stat_buffer->set_st_size(static_cast<int64>(stat_buffer.st_size));
+    proto_stat_buffer->set_st_atime_val(
+        static_cast<int64>(stat_buffer.st_atime));
+    proto_stat_buffer->set_st_mtime_val(
+        static_cast<int64>(stat_buffer.st_mtime));
+    proto_stat_buffer->set_st_ctime_val(
+        static_cast<int64>(stat_buffer.st_ctime));
+    proto_stat_buffer->set_st_blksize(
+        static_cast<int64>(stat_buffer.st_blksize));
+    proto_stat_buffer->set_st_blocks(static_cast<int64>(stat_buffer.st_blocks));
   }
 
   StatusOr<int> OpenFile(const std::string &path, int flags, mode_t mode) {
@@ -719,6 +753,59 @@ class SyscallsEnclave : public EnclaveTestCase {
           error::GoogleError::INTERNAL,
           absl::StrCat("CPU_EQUAL claims two different masks are equal."));
     }
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunStatTest(const std::string &path, EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+
+    struct stat stat_buffer;
+    output_ret.set_int_syscall_return(stat(path.c_str(), &stat_buffer));
+
+    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunFStatTest(const std::string &path, EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("open failed:", strerror(errno)));
+    }
+
+    struct stat stat_buffer;
+    output_ret.set_int_syscall_return(fstat(fd, &stat_buffer));
+
+    if (close(fd) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("close failed:", strerror(errno)));
+    }
+
+    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunLStatTest(const std::string &path, EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+
+    struct stat stat_buffer;
+    output_ret.set_int_syscall_return(lstat(path.c_str(), &stat_buffer));
+
+    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
 
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);

@@ -220,7 +220,12 @@ class IOManager {
       return -1;
     }
 
-    virtual int Stat(const char *file, struct stat *st) {
+    virtual int Stat(const char *pathname, struct stat *stat_buffer) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int LStat(const char *pathname, struct stat *stat_buffer) {
       errno = ENOSYS;
       return -1;
     }
@@ -334,9 +339,16 @@ class IOManager {
   // success, otherwise returns -1.
   int SymLink(const char *from, const char *to);
 
-  // Returns information about a file in the buffer pointed to by |st|. Returns
-  // 0 on success, otherwise returns -1.
-  int Stat(const char *file, struct stat *st);
+  // Returns information about a file in the buffer pointed to by |stat_buffer|.
+  // Returns 0 on success, otherwise returns -1. If |pathname| is a symlink,
+  // returns information about the target it points to.
+  int Stat(const char *pathname, struct stat *stat_buffer);
+
+  // Returns information about a file in the buffer pointed to by |stat_buffer|.
+  // Returns 0 on success, otherwise returns -1. Unlike Stat, if |pathname| is a
+  // symlink, returns information about the link itself, rather than the target
+  // it points to.
+  int LStat(const char *pathname, struct stat *stat_buffer);
 
   // Opens |path|, returning an enclave file descriptor or -1 on failure.
   int Open(const char *path, int flags, mode_t mode);
@@ -379,7 +391,7 @@ class IOManager {
   int Ioctl(int fd, int request, void *argp);
 
   // Implements fstat(2).
-  int FStat(int fd, struct stat *st);
+  int FStat(int fd, struct stat *stat_buffer);
 
   // Implements isatty(3).
   int Isatty(int fd);

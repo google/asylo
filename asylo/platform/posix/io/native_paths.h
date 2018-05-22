@@ -34,7 +34,7 @@ class IOContextNative : public IOManager::IOContext {
   int LSeek(off_t offset, int whence) override;
   int FCntl(int cmd, int64_t arg) override;
   int FSync() override;
-  int FStat(struct stat *st) override;
+  int FStat(struct stat *stat_buffer) override;
   int Isatty() override;
   int Close() override;
   ssize_t Writev(const struct iovec *iov, int iovcnt) override;
@@ -70,7 +70,8 @@ class NativePathHandler : public io::IOManager::VirtualPathHandler {
   int Unlink(const char *pathname) override;
   ssize_t ReadLink(const char *path_name, char *buf, size_t bufsize) override;
   int SymLink(const char *path1, const char *path2) override;
-  int Stat(const char *file, struct stat *st) override;
+  int Stat(const char *pathname, struct stat *stat_buffer) override;
+  int LStat(const char *pathname, struct stat *stat_buffer) override;
   int Mkdir(const char *path, mode_t mode) override;
   int Access(const char *path, int mode) override;
 };

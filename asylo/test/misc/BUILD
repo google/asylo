@@ -220,6 +220,7 @@ enclave_test(
     tags = ["regression"],
     deps = [
         ":syscalls_test_proto_cc",
+        "@com_google_absl//absl/strings",
     ] + TEST_DEPS_COMMON,
 )
 

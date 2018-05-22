@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,21 @@
  *
  */
 
-#include <sys/stat.h>
-#include <sys/types.h>
+#ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_
+#define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_
 
-#include "asylo/platform/posix/io/io_manager.h"
-
-using asylo::io::IOManager;
-
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-int lstat(const char *pathname, struct stat *stat_buffer) {
-  return IOManager::GetInstance().LStat(pathname, stat_buffer);
-}
+#include_next <sys/stat.h>
 
-int mkdir(const char *path, mode_t mode) {
-  return IOManager::GetInstance().Mkdir(path, mode);
-}
+// May retrieve the information placed in |stat_buffer| from the host, depending
+// on which access domain |pathname| lies in.
+int lstat(const char *pathname, struct stat *stat_buffer);
 
-mode_t umask(mode_t mask) { return IOManager::GetInstance().Umask(mask); }
-
+#ifdef __cplusplus
 }  // extern "C"
+#endif
+
+#endif  // ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_

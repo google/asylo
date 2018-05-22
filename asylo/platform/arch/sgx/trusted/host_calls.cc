@@ -272,29 +272,42 @@ int enc_untrusted_fcntl(int fd, int cmd, ...) {
   }
 }
 
-int enc_untrusted_stat(const char *file, struct stat *st) {
+int enc_untrusted_stat(const char *pathname, struct stat *stat_buffer) {
   int result;
-  struct bridge_stat tmp;
+  struct bridge_stat bridge_stat_buffer;
   sgx_status_t status =
-      ocall_enc_untrusted_stat(&result, file, ToBridgeStat(st, &tmp));
+      ocall_enc_untrusted_stat(&result, pathname, &bridge_stat_buffer);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
   }
-  FromBridgeStat(&tmp, st);
+  FromBridgeStat(&bridge_stat_buffer, stat_buffer);
   return result;
 }
 
-int enc_untrusted_fstat(int fd, struct stat *st) {
+int enc_untrusted_fstat(int fd, struct stat *stat_buffer) {
   int result;
-  struct bridge_stat tmp;
+  struct bridge_stat bridge_stat_buffer;
   sgx_status_t status =
-      ocall_enc_untrusted_fstat(&result, fd, ToBridgeStat(st, &tmp));
+      ocall_enc_untrusted_fstat(&result, fd, &bridge_stat_buffer);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
   }
-  FromBridgeStat(&tmp, st);
+  FromBridgeStat(&bridge_stat_buffer, stat_buffer);
+  return result;
+}
+
+int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer) {
+  int result;
+  struct bridge_stat bridge_stat_buffer;
+  sgx_status_t status =
+      ocall_enc_untrusted_lstat(&result, pathname, &bridge_stat_buffer);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  FromBridgeStat(&bridge_stat_buffer, stat_buffer);
   return result;
 }
 

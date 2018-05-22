@@ -17,12 +17,36 @@
  */
 
 #include <dirent.h>
+#include <fcntl.h>
 #include <sched.h>
+#include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <iostream>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/str_cat.h"
 #include "asylo/test/misc/syscalls_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
+
+// Enables gtest to print a struct stat on failure. This function needs to be in
+// the global namespace to override gtest's default PrintTo function in ADL
+// ordering.
+void PrintTo(const struct stat &stat_buffer, std::ostream *output_stream) {
+  *output_stream << absl::StrCat(
+      "struct stat { st_dev = ", stat_buffer.st_dev,
+      " , st_ino = ", stat_buffer.st_ino, " , st_mode = ", stat_buffer.st_mode,
+      " , st_nlink = ", stat_buffer.st_nlink,
+      " , st_uid = ", stat_buffer.st_uid, " , st_gid = ", stat_buffer.st_gid,
+      " , st_rdev = ", stat_buffer.st_rdev,
+      " , st_size = ", stat_buffer.st_size,
+      " , st_atime = ", stat_buffer.st_atime,
+      " , st_mtime = ", stat_buffer.st_mtime,
+      " , st_ctime = ", stat_buffer.st_ctime,
+      " , st_blksize = ", stat_buffer.st_blksize,
+      " , st_blocks = ", stat_buffer.st_blocks, " }");
+}
 
 namespace asylo {
 namespace {
@@ -40,7 +64,7 @@ bool RunEnclaveSyscall(EnclaveClient *client, const std::string &tested_syscall,
       enclave_input.MutableExtension(syscalls_test_input);
   test_input->set_test_target(tested_syscall);
   if (!file_path.empty()) {
-    test_input->set_file_path(file_path);
+    test_input->set_path_name(file_path);
   }
   test_input->set_provide_buffer(provide_buffer);
   test_input->set_buffer_size(buffer_size);
@@ -74,6 +98,47 @@ void ExtractCpuSetFromTestOutput(const SyscallsTestOutput &test_output,
       ++cpu;
     }
   }
+}
+
+// Extracts a struct stat from the stat_buffer_syscall_return field of a
+// SyscallsTestOutput protobuf.
+void ExtractStatBufferFromTestOutput(const SyscallsTestOutput &test_output,
+                                     struct stat *stat_buffer) {
+  const SyscallsTestOutput::StatValue &proto_stat_buffer =
+      test_output.stat_buffer_syscall_return();
+
+  stat_buffer->st_dev = static_cast<dev_t>(proto_stat_buffer.st_dev());
+  stat_buffer->st_ino = static_cast<ino_t>(proto_stat_buffer.st_ino());
+  stat_buffer->st_mode = static_cast<mode_t>(proto_stat_buffer.st_mode());
+  stat_buffer->st_nlink = static_cast<nlink_t>(proto_stat_buffer.st_nlink());
+  stat_buffer->st_uid = static_cast<uid_t>(proto_stat_buffer.st_uid());
+  stat_buffer->st_gid = static_cast<gid_t>(proto_stat_buffer.st_gid());
+  stat_buffer->st_rdev = static_cast<dev_t>(proto_stat_buffer.st_rdev());
+  stat_buffer->st_size = static_cast<off_t>(proto_stat_buffer.st_size());
+  stat_buffer->st_atime = static_cast<time_t>(proto_stat_buffer.st_atime_val());
+  stat_buffer->st_mtime = static_cast<time_t>(proto_stat_buffer.st_mtime_val());
+  stat_buffer->st_ctime = static_cast<time_t>(proto_stat_buffer.st_ctime_val());
+  stat_buffer->st_blksize =
+      static_cast<blksize_t>(proto_stat_buffer.st_blksize());
+  stat_buffer->st_blocks = static_cast<blkcnt_t>(proto_stat_buffer.st_blocks());
+}
+
+// Compares two struct stat objects, returning |true| if they are equal, and
+// |false| otherwise.
+MATCHER_P(EqualsStat, rhs_stat_buffer, "") {
+  return (arg.st_dev == rhs_stat_buffer.st_dev) &&
+         (arg.st_ino == rhs_stat_buffer.st_ino) &&
+         (arg.st_mode == rhs_stat_buffer.st_mode) &&
+         (arg.st_nlink == rhs_stat_buffer.st_nlink) &&
+         (arg.st_uid == rhs_stat_buffer.st_uid) &&
+         (arg.st_gid == rhs_stat_buffer.st_gid) &&
+         (arg.st_rdev == rhs_stat_buffer.st_rdev) &&
+         (arg.st_size == rhs_stat_buffer.st_size) &&
+         (arg.st_atime == rhs_stat_buffer.st_atime) &&
+         (arg.st_mtime == rhs_stat_buffer.st_mtime) &&
+         (arg.st_ctime == rhs_stat_buffer.st_ctime) &&
+         (arg.st_blksize == rhs_stat_buffer.st_blksize) &&
+         (arg.st_blocks == rhs_stat_buffer.st_blocks);
 }
 
 // class that runs syscall tests with default enclave config.
@@ -322,13 +387,13 @@ TEST_F(SyscallsTest, SchedGetAffinity) {
   SyscallsTestOutput test_output;
 
   cpu_set_t host_mask;
-  ASSERT_EQ(0, sched_getaffinity(getpid(), sizeof(cpu_set_t), &host_mask));
+  ASSERT_EQ(sched_getaffinity(getpid(), sizeof(cpu_set_t), &host_mask), 0);
 
   ASSERT_TRUE(RunSyscallInsideEnclave("sched_getaffinity", /*file_path=*/"",
                                       &test_output));
 
   ASSERT_TRUE(test_output.has_int_syscall_return());
-  EXPECT_EQ(0, test_output.int_syscall_return());
+  EXPECT_EQ(test_output.int_syscall_return(), 0);
 
   cpu_set_t enclave_mask;
 
@@ -347,11 +412,11 @@ TEST_F(SyscallsTest, SchedGetAffinityFailure) {
                                       /*file_path=*/"", &test_output));
 
   ASSERT_TRUE(test_output.has_int_syscall_return());
-  EXPECT_EQ(-1, test_output.int_syscall_return());
+  EXPECT_EQ(test_output.int_syscall_return(), -1);
 
   ASSERT_TRUE(test_output.has_errno_syscall_value());
-  EXPECT_EQ(SyscallsTestOutput::ERRNO_EINVAL,
-            test_output.errno_syscall_value());
+  EXPECT_EQ(test_output.errno_syscall_value(),
+            SyscallsTestOutput::ERRNO_EINVAL);
 }
 
 // Tests sched_getaffinity() as above, but changes the affinity mask beforehand.
@@ -361,7 +426,7 @@ TEST_F(SyscallsTest, SchedGetAffinityAfterSet) {
   SyscallsTestOutput test_output;
 
   cpu_set_t initial_mask;
-  ASSERT_EQ(0, sched_getaffinity(getpid(), sizeof(cpu_set_t), &initial_mask));
+  ASSERT_EQ(sched_getaffinity(getpid(), sizeof(cpu_set_t), &initial_mask), 0);
 
   int total_cpus = CPU_COUNT(&initial_mask);
   if (total_cpus < 2) {
@@ -379,17 +444,17 @@ TEST_F(SyscallsTest, SchedGetAffinityAfterSet) {
         ++cpus_so_far;
       }
     }
-    ASSERT_EQ(0, sched_setaffinity(getpid(), sizeof(cpu_set_t), &initial_mask));
+    ASSERT_EQ(sched_setaffinity(getpid(), sizeof(cpu_set_t), &initial_mask), 0);
 
     cpu_set_t host_mask;
-    ASSERT_EQ(0, sched_getaffinity(getpid(), sizeof(cpu_set_t), &host_mask));
+    ASSERT_EQ(sched_getaffinity(getpid(), sizeof(cpu_set_t), &host_mask), 0);
     ASSERT_TRUE(CPU_EQUAL(&initial_mask, &host_mask));
 
     ASSERT_TRUE(RunSyscallInsideEnclave("sched_getaffinity", /*file_path=*/"",
                                         &test_output));
 
     ASSERT_TRUE(test_output.has_int_syscall_return());
-    EXPECT_EQ(0, test_output.int_syscall_return());
+    EXPECT_EQ(test_output.int_syscall_return(), 0);
 
     cpu_set_t enclave_mask;
 
@@ -405,6 +470,226 @@ TEST_F(SyscallsTest, SchedGetAffinityAfterSet) {
 TEST_F(SyscallsTest, CpuSetMacros) {
   ASSERT_TRUE(RunSyscallInsideEnclave("CPU_SET macros", /*file_path=*/"",
                                       /*test_output=*/nullptr));
+}
+
+// Tests stat() by comparing the return value of stat() inside/outside the
+// enclave.
+TEST_F(SyscallsTest, Stat) {
+  SyscallsTestOutput test_output;
+  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/stat");
+
+  umask(S_IWGRP | S_IWOTH);
+  ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
+      << absl::StrCat("Failed to create ", test_dir);
+
+  struct stat host_stat_buffer;
+  ASSERT_EQ(stat(test_dir.c_str(), &host_stat_buffer), 0)
+      << absl::StrCat("stat(", test_dir, ", ...) failed on host");
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("stat", test_dir, &test_output))
+      << "Failed to execute stat() inside enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << absl::StrCat("stat(", test_dir, ", ...) failed in enclave");
+
+  ASSERT_TRUE(test_output.has_stat_buffer_syscall_return())
+      << "stat_buffer_syscall_return field not set";
+
+  struct stat enclave_stat_buffer;
+  ExtractStatBufferFromTestOutput(test_output, &enclave_stat_buffer);
+
+  EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
+      << "Host stat() and enclave stat() not equal";
+}
+
+// Tests stat() by comparing the return value of stat() inside/outside the
+// enclave, but calls it on a symlink to verify that it returns info about the
+// link target.
+TEST_F(SyscallsTest, StatOnSymlink) {
+  SyscallsTestOutput test_output;
+  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink");
+  const std::string test_link =
+      absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink_link");
+
+  umask(S_IWGRP | S_IWOTH);
+  ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
+      << absl::StrCat("Failed to create ", test_dir);
+
+  ASSERT_EQ(symlink(test_dir.c_str(), test_link.c_str()), 0)
+      << absl::StrCat("Failed to create link ", test_link, " to ", test_dir);
+
+  struct stat host_stat_buffer;
+  ASSERT_EQ(stat(test_link.c_str(), &host_stat_buffer), 0)
+      << absl::StrCat("stat(", test_link, ", ...) failed on host");
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("stat", test_link, &test_output))
+      << "Failed to execute stat() inside enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << absl::StrCat("stat(", test_link, ", ...) failed in enclave");
+
+  ASSERT_TRUE(test_output.has_stat_buffer_syscall_return())
+      << "stat_buffer_syscall_return field not set";
+
+  struct stat enclave_stat_buffer;
+  ExtractStatBufferFromTestOutput(test_output, &enclave_stat_buffer);
+
+  EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
+      << "Host stat() and enclave stat() not equal";
+}
+
+// Tests fstat() by comparing the return value of fstat() inside/outside the
+// enclave.
+TEST_F(SyscallsTest, FStat) {
+  SyscallsTestOutput test_output;
+  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/fstat");
+
+  umask(S_IWGRP | S_IWOTH);
+  ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
+      << absl::StrCat("Failed to create ", test_dir);
+
+  int fd = open(test_dir.c_str(), O_RDONLY);
+  ASSERT_NE(fd, -1) << absl::StrCat("Failed to open ", test_dir);
+
+  struct stat host_stat_buffer;
+  ASSERT_EQ(fstat(fd, &host_stat_buffer), 0)
+      << absl::StrCat("fstat([fd of ", test_dir, "], ...) failed on host");
+
+  ASSERT_EQ(close(fd), 0) << absl::StrCat("Failed to close ", test_dir);
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("fstat", test_dir, &test_output))
+      << "Failed to execute fstat() inside enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << absl::StrCat("fstat([fd of ", test_dir, "], ...) failed in enclave");
+
+  ASSERT_TRUE(test_output.has_stat_buffer_syscall_return())
+      << "stat_buffer_syscall_return field not set";
+
+  struct stat enclave_stat_buffer;
+  ExtractStatBufferFromTestOutput(test_output, &enclave_stat_buffer);
+
+  EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
+      << "Host fstat() and enclave fstat() not equal";
+}
+
+// Tests fstat() by comparing the return value of fstat() inside/outside the
+// enclave, but calls it on a symlink to verify that it returns info about the
+// link target.
+TEST_F(SyscallsTest, FStatOnSymlink) {
+  SyscallsTestOutput test_output;
+  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink");
+  const std::string test_link =
+      absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink_link");
+
+  umask(S_IWGRP | S_IWOTH);
+  ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
+      << absl::StrCat("Failed to create ", test_dir);
+
+  ASSERT_EQ(symlink(test_dir.c_str(), test_link.c_str()), 0)
+      << absl::StrCat("Failed to create link ", test_link, " to ", test_dir);
+
+  int fd = open(test_link.c_str(), O_RDONLY);
+  ASSERT_NE(fd, -1) << absl::StrCat("Failed to open ", test_link);
+
+  struct stat host_stat_buffer;
+  ASSERT_EQ(fstat(fd, &host_stat_buffer), 0)
+      << absl::StrCat("fstat([fd of ", test_link, "], ...) failed on host");
+
+  ASSERT_EQ(close(fd), 0) << absl::StrCat("Failed to close ", test_dir);
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("fstat", test_link, &test_output))
+      << "Failed to execute fstat() inside enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << absl::StrCat("fstat([fd of ", test_link, "], ...) failed in enclave");
+
+  ASSERT_TRUE(test_output.has_stat_buffer_syscall_return())
+      << "stat_buffer_syscall_return field not set";
+
+  struct stat enclave_stat_buffer;
+  ExtractStatBufferFromTestOutput(test_output, &enclave_stat_buffer);
+
+  EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
+      << "Host fstat() and enclave fstat() not equal";
+}
+
+// Tests lstat() by comparing the return value of lstat() inside/outside the
+// enclave.
+TEST_F(SyscallsTest, LStat) {
+  SyscallsTestOutput test_output;
+  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/lstat");
+
+  umask(S_IWGRP | S_IWOTH);
+  ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
+      << absl::StrCat("Failed to create ", test_dir);
+
+  struct stat host_stat_buffer;
+  ASSERT_EQ(lstat(test_dir.c_str(), &host_stat_buffer), 0)
+      << absl::StrCat("lstat(", test_dir, ", ...) failed on host");
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("lstat", test_dir, &test_output))
+      << "Failed to execute lstat() inside enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << absl::StrCat("lstat(", test_dir, ", ...) failed in enclave");
+
+  ASSERT_TRUE(test_output.has_stat_buffer_syscall_return())
+      << "stat_buffer_syscall_return field not set";
+
+  struct stat enclave_stat_buffer;
+  ExtractStatBufferFromTestOutput(test_output, &enclave_stat_buffer);
+
+  EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
+      << "Host lstat() and enclave lstat() not equal";
+}
+
+// Tests lstat() by comparing the return value of lstat() inside/outside the
+// enclave, but calls it on a symlink to verify that it returns info about the
+// link itself, rather than the link target.
+TEST_F(SyscallsTest, LStatOnSymlink) {
+  SyscallsTestOutput test_output;
+  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink");
+  const std::string test_link =
+      absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink_link");
+
+  umask(S_IWGRP | S_IWOTH);
+  ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
+      << absl::StrCat("Failed to create ", test_dir);
+
+  ASSERT_EQ(symlink(test_dir.c_str(), test_link.c_str()), 0)
+      << absl::StrCat("Failed to create link ", test_link, " to ", test_dir);
+
+  struct stat host_stat_buffer;
+  ASSERT_EQ(lstat(test_link.c_str(), &host_stat_buffer), 0)
+      << absl::StrCat("lstat(", test_link, ", ...) failed on host");
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("lstat", test_link, &test_output))
+      << "Failed to execute lstat() inside enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << absl::StrCat("lstat(", test_link, ", ...) failed in enclave");
+
+  ASSERT_TRUE(test_output.has_stat_buffer_syscall_return())
+      << "stat_buffer_syscall_return field not set";
+
+  struct stat enclave_stat_buffer;
+  ExtractStatBufferFromTestOutput(test_output, &enclave_stat_buffer);
+
+  EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
+      << "Host lstat() and enclave lstat() not equal";
 }
 
 // Tests writev() by write a scattered array to a file inside enclave, and then

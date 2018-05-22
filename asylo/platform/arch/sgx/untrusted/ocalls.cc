@@ -158,17 +158,26 @@ int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) {
   return ret;
 }
 
-int ocall_enc_untrusted_stat(const char *file, struct bridge_stat *st) {
-  struct stat tmp;
-  int ret = stat(file, FromBridgeStat(st, &tmp));
-  ToBridgeStat(&tmp, st);
+int ocall_enc_untrusted_stat(const char *pathname,
+                             struct bridge_stat *stat_buffer) {
+  struct stat host_stat_buffer;
+  int ret = stat(pathname, &host_stat_buffer);
+  ToBridgeStat(&host_stat_buffer, stat_buffer);
   return ret;
 }
 
-int ocall_enc_untrusted_fstat(int fd, struct bridge_stat *st) {
-  struct stat tmp;
-  int ret = fstat(fd, FromBridgeStat(st, &tmp));
-  ToBridgeStat(&tmp, st);
+int ocall_enc_untrusted_fstat(int fd, struct bridge_stat *stat_buffer) {
+  struct stat host_stat_buffer;
+  int ret = fstat(fd, &host_stat_buffer);
+  ToBridgeStat(&host_stat_buffer, stat_buffer);
+  return ret;
+}
+
+int ocall_enc_untrusted_lstat(const char *pathname,
+                              struct bridge_stat *stat_buffer) {
+  struct stat host_stat_buffer;
+  int ret = lstat(pathname, &host_stat_buffer);
+  ToBridgeStat(&host_stat_buffer, stat_buffer);
   return ret;
 }
 

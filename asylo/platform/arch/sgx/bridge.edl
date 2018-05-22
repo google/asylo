@@ -91,11 +91,13 @@ enclave {
     int ocall_enc_untrusted_open([in, string] const char *path_name,
                                  int flags, uint32_t mode) propagate_errno;
     int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) propagate_errno;
-    int ocall_enc_untrusted_stat([in, string] const char *file,
-                                 [in, out] struct bridge_stat *st)
+    int ocall_enc_untrusted_stat([in, string] const char *pathname,
+                                 [out] struct bridge_stat *stat_buffer)
                                  propagate_errno;
-
-    int ocall_enc_untrusted_fstat(int fd, [in, out] struct bridge_stat *st)
+    int ocall_enc_untrusted_fstat(int fd, [out] struct bridge_stat *stat_buffer)
+                                  propagate_errno;
+    int ocall_enc_untrusted_lstat([in, string] const char *pathname,
+                                  [out] struct bridge_stat *stat_buffer)
                                   propagate_errno;
     bridge_ssize_t ocall_enc_untrusted_write_with_untrusted_ptr(
         int fd, [user_check] const void *buf, int size) propagate_errno;

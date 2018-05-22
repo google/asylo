@@ -29,9 +29,9 @@
 namespace asylo {
 namespace {
 
-int GetStat(struct stat *st, bool is_urandom) {
-  // Set the values of st according to the values used in Linux random files
-  // (Documentation/admin-guide/devices.txt).
+int GetStat(struct stat *stat_buffer, bool is_urandom) {
+  // Set the values of |stat_buffer| according to the values used in Linux
+  // random files (Documentation/admin-guide/devices.txt).
   static constexpr unsigned int major_dev = 0;
   static constexpr unsigned int minor_dev = 0;
   static constexpr unsigned int major_rdev = 1;
@@ -41,16 +41,16 @@ int GetStat(struct stat *st, bool is_urandom) {
       S_IFCHR | S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH;
   static constexpr unsigned int blksize = 4096;
 
-  st->st_dev = makedev(major_dev, minor_dev);
-  st->st_ino = -1;
-  st->st_mode = mode;
-  st->st_nlink = 0;
-  st->st_uid = 0;
-  st->st_gid = 0;
-  st->st_rdev = makedev(major_rdev, minor_rdev);
-  st->st_size = 0;
-  st->st_blksize = blksize;
-  st->st_blocks = 0;
+  stat_buffer->st_dev = makedev(major_dev, minor_dev);
+  stat_buffer->st_ino = -1;
+  stat_buffer->st_mode = mode;
+  stat_buffer->st_nlink = 0;
+  stat_buffer->st_uid = 0;
+  stat_buffer->st_gid = 0;
+  stat_buffer->st_rdev = makedev(major_rdev, minor_rdev);
+  stat_buffer->st_size = 0;
+  stat_buffer->st_blksize = blksize;
+  stat_buffer->st_blocks = 0;
 
   return 0;
 }
@@ -83,7 +83,9 @@ int RandomIOContext::FSync() {
   return 0;
 }
 
-int RandomIOContext::FStat(struct stat *st) { return GetStat(st, IsURandom()); }
+int RandomIOContext::FStat(struct stat *stat_buffer) {
+  return GetStat(stat_buffer, IsURandom());
+}
 
 int RandomIOContext::Isatty() {
   // Returns 0 as our random devices are not terminals.
@@ -128,14 +130,18 @@ int RandomPathHandler::SymLink(const char *path1, const char *path2) {
   return -1;
 }
 
-int RandomPathHandler::Stat(const char *file, struct stat *st) {
-  bool is_random = strcmp(file, kRandomPath) == 0;
-  bool is_urandom = strcmp(file, kURandomPath) == 0;
+int RandomPathHandler::Stat(const char *pathname, struct stat *stat_buffer) {
+  bool is_random = strcmp(pathname, kRandomPath) == 0;
+  bool is_urandom = strcmp(pathname, kURandomPath) == 0;
   if (is_random || is_urandom) {
-    return GetStat(st, is_urandom);
+    return GetStat(stat_buffer, is_urandom);
   }
   errno = ENOENT;
   return -1;
+}
+
+int RandomPathHandler::LStat(const char *pathname, struct stat *stat_buffer) {
+  return Stat(pathname, stat_buffer);
 }
 
 }  // namespace asylo

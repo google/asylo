@@ -36,7 +36,7 @@ class RandomIOContext : public io::IOManager::IOContext {
   int Close() override;
   int LSeek(off_t offset, int whence) override;
   int FSync() override;
-  int FStat(struct stat *st) override;
+  int FStat(struct stat *stat_buffer) override;
   int Isatty() override;
 
  private:
@@ -62,7 +62,9 @@ class RandomPathHandler : public io::IOManager::VirtualPathHandler {
 
   int SymLink(const char *path1, const char *path2) override;
 
-  int Stat(const char *file, struct stat *st) override;
+  int Stat(const char *pathname, struct stat *stat_buffer) override;
+
+  int LStat(const char *pathname, struct stat *stat_buffer) override;
 
   int Unlink(const char *pathname) override;
 };

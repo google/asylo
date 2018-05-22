@@ -46,8 +46,8 @@ int IOContextNative::FCntl(int cmd, int64_t arg) {
 
 int IOContextNative::FSync() { return enc_untrusted_fsync(host_fd_); }
 
-int IOContextNative::FStat(struct stat *st) {
-  return enc_untrusted_fstat(host_fd_, st);
+int IOContextNative::FStat(struct stat *stat_buffer) {
+  return enc_untrusted_fstat(host_fd_, stat_buffer);
 }
 
 int IOContextNative::Isatty() { return enc_untrusted_isatty(host_fd_); }
@@ -146,8 +146,12 @@ int NativePathHandler::SymLink(const char *path1, const char *path2) {
   return enc_untrusted_symlink(path1, path2);
 }
 
-int NativePathHandler::Stat(const char *file, struct stat *st) {
-  return enc_untrusted_stat(file, st);
+int NativePathHandler::Stat(const char *pathname, struct stat *stat_buffer) {
+  return enc_untrusted_stat(pathname, stat_buffer);
+}
+
+int NativePathHandler::LStat(const char *pathname, struct stat *stat_buffer) {
+  return enc_untrusted_lstat(pathname, stat_buffer);
 }
 
 int NativePathHandler::Mkdir(const char *path, mode_t mode) {

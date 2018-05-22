@@ -25,10 +25,13 @@ import "asylo/enclave.proto";
 message SyscallsTestInput {
   // The target syscall under test.
   required string test_target = 1;
+
   // Used by IO related syscalls.
-  optional string file_path = 2;
+  optional string path_name = 2;
+
   // Used by syscalls that accept a buffer.
   optional bool provide_buffer = 3;
+
   // Used by syscalls that accept a buffer.
   optional int32 buffer_size = 4;
 }
@@ -37,17 +40,40 @@ message SyscallsTestInput {
 message SyscallsTestOutput {
   // Int value returned by system call.
   optional int32 int_syscall_return = 1;
+
   // String value from system call.
   optional string string_syscall_return = 2;
+
   // Bit mask from system call.
   repeated uint64 bit_mask_syscall_outptr = 3;
+
   enum ErrnoValue {
     UNSUPPORTED = 0;
     ERRNO_ZERO = 1;
     ERRNO_EINVAL = 2;
   }
+
   // Value of |errno| from system call.
   optional ErrnoValue errno_syscall_value = 4;
+
+  message StatValue {
+    optional int64 st_dev = 1;
+    optional int64 st_ino = 2;
+    optional int64 st_mode = 3;
+    optional int64 st_nlink = 4;
+    optional int64 st_uid = 5;
+    optional int64 st_gid = 6;
+    optional int64 st_rdev = 7;
+    optional int64 st_size = 8;
+    optional int64 st_atime_val = 9;
+    optional int64 st_mtime_val = 10;
+    optional int64 st_ctime_val = 11;
+    optional int64 st_blksize = 12;
+    optional int64 st_blocks = 13;
+  }
+
+  // Stat struct value from system call.
+  optional StatValue stat_buffer_syscall_return = 5;
 }
 
 extend EnclaveInput {

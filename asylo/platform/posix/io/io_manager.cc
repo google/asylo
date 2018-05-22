@@ -479,11 +479,18 @@ int IOManager::SymLink(const char *from, const char *to) {
       });
 }
 
-int IOManager::Stat(const char *file, struct stat *st) {
-  return CallWithHandler(
-      file, [st](VirtualPathHandler *handler, const char *canonical_path) {
-        return handler->Stat(canonical_path, st);
-      });
+int IOManager::Stat(const char *pathname, struct stat *stat_buffer) {
+  return CallWithHandler(pathname, [stat_buffer](VirtualPathHandler *handler,
+                                                 const char *canonical_path) {
+    return handler->Stat(canonical_path, stat_buffer);
+  });
+}
+
+int IOManager::LStat(const char *pathname, struct stat *stat_buffer) {
+  return CallWithHandler(pathname, [stat_buffer](VirtualPathHandler *handler,
+                                                 const char *canonical_path) {
+    return handler->LStat(canonical_path, stat_buffer);
+  });
 }
 
 int IOManager::LSeek(int fd, off_t offset, int whence) {
@@ -516,9 +523,10 @@ int IOManager::FSync(int fd) {
   return LockAndRoll(fd, [](IOContext *context) { return context->FSync(); });
 }
 
-int IOManager::FStat(int fd, struct stat *st) {
-  return LockAndRoll(fd,
-                     [st](IOContext *context) { return context->FStat(st); });
+int IOManager::FStat(int fd, struct stat *stat_buffer) {
+  return LockAndRoll(fd, [stat_buffer](IOContext *context) {
+    return context->FStat(stat_buffer);
+  });
 }
 
 int IOManager::Isatty(int fd) {
