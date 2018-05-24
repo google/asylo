@@ -812,6 +812,8 @@ asylo/platform/core/shared_name.h \
 asylo/platform/core/shared_name_kind.h \
 asylo/platform/core/shared_resource_manager.h \
 asylo/platform/core/trusted_application.h \
+asylo/platform/crypto/aes_gcm_siv.h \
+asylo/platform/crypto/nonce_generator.h \
 asylo/util/error_space.h \
 asylo/util/posix_error_space.h \
 asylo/util/logging.h \
