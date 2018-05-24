@@ -139,3 +139,25 @@ cc_library(
     hdrs = ["null_identity_constants.h"],
     visibility = ["//visibility:public"],
 )
+
+# Utility functions for operating on null identities and assertions.
+cc_library(
+    name = "null_identity_util",
+    hdrs = ["null_identity_util.h"],
+    deps = [
+        ":null_identity_constants",
+        "//asylo/identity:identity_proto_cc",
+    ],
+)
+
+cc_test(
+    name = "null_identity_util_test",
+    srcs = ["null_identity_util_test.cc"],
+    enclave_test_name = "null_identity_util_enclave_test",
+    deps = [
+        ":null_identity_constants",
+        ":null_identity_util",
+        "//asylo/identity:identity_proto_cc",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
