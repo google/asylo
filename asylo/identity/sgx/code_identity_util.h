@@ -29,6 +29,27 @@
 namespace asylo {
 namespace sgx {
 
+// Sets |assertion_description| to describe an SGX local assertion.
+inline void SetSgxLocalAssertionDescription(
+    AssertionDescription *assertion_description) {
+  assertion_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
+  assertion_description->set_authority_type(sgx::kSgxLocalAssertionAuthority);
+}
+
+// Sets |assertion_description| to describe an SGX remote assertion.
+inline void SetSgxRemoteAssertionDescription(
+    AssertionDescription *assertion_description) {
+  assertion_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
+  assertion_description->set_authority_type(sgx::kSgxRemoteAssertionAuthority);
+}
+
+// Sets |identity_description| to describe an SGX code identity.
+inline void SetSgxIdentityDescription(
+    EnclaveIdentityDescription *identity_description) {
+  identity_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
+  identity_description->set_authority_type(sgx::kSgxAuthorizationAuthority);
+}
+
 // Matches |identity| to given |expectation|. Returns true if there is no error
 // encountered, and if the match is successful. Else returns false.
 StatusOr<bool> MatchIdentityToExpectation(

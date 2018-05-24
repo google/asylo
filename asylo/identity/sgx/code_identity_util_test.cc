@@ -111,6 +111,30 @@ class CodeIdentityUtilTest : public ::testing::Test {
   FakeEnclave *enclave_;
 };
 
+TEST_F(CodeIdentityUtilTest, SetSgxIdentityDescription) {
+  EnclaveIdentityDescription description;
+  SetSgxIdentityDescription(&description);
+
+  EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
+  EXPECT_EQ(description.authority_type(), kSgxAuthorizationAuthority);
+}
+
+TEST_F(CodeIdentityUtilTest, SetSgxLocalAssertionDescription) {
+  AssertionDescription description;
+  SetSgxLocalAssertionDescription(&description);
+
+  EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
+  EXPECT_EQ(description.authority_type(), kSgxLocalAssertionAuthority);
+}
+
+TEST_F(CodeIdentityUtilTest, SetSgxRemoteAssertionDescription) {
+  AssertionDescription description;
+  SetSgxRemoteAssertionDescription(&description);
+
+  EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
+  EXPECT_EQ(description.authority_type(), kSgxRemoteAssertionAuthority);
+}
+
 // Tests to verify the correctness of IsValidSignerAssignedIdentity()
 
 TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositive1) {

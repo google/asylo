@@ -324,9 +324,7 @@ Status SerializeSgxIdentity(const CodeIdentity &sgx_identity,
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Invalid sgx_identity parameter");
   }
-  generic_identity->mutable_description()->set_identity_type(CODE_IDENTITY);
-  generic_identity->mutable_description()->set_authority_type(
-      kSgxAuthorizationAuthority);
+  SetSgxIdentityDescription(generic_identity->mutable_description());
   if (!sgx_identity.SerializeToString(generic_identity->mutable_identity())) {
     return Status(::asylo::error::GoogleError::INTERNAL,
                   "Could not serialize SGX identity to a string");
