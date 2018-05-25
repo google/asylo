@@ -27,6 +27,9 @@ cc_library(
     srcs = ["signal_manager.cc"],
     hdrs = ["signal_manager.h"],
     deps = [
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ],
 )

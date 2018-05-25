@@ -19,23 +19,57 @@
 #include <signal.h>
 
 #include <gtest/gtest.h>
+#include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace {
 
-class InactiveEnclaveSignalTest : public EnclaveTest {};
+class InactiveEnclaveSignalTest : public EnclaveTest {
+ protected:
+  Status RunSignalTest(const EnclaveInput &enclave_input) {
+    EnclaveOutput enclave_output;
+    // First run the enclave to register the signal handler, and close the
+    // frame. At this moment no signals have been delivered yet.
+    Status status = client_->EnterAndRun(enclave_input, &enclave_output);
+    if (!status.ok()) {
+      return status;
+    }
+    if (enclave_output.GetExtension(signal_received)) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Signal received in enclave before sent");
+    }
+    raise(SIGUSR1);
+    // Run the enclave again, this time a signal is raised and should have been
+    // sent to enclave, so enclave should return OK status.
+    status = client_->EnterAndRun(enclave_input, &enclave_output);
+    if (!status.ok()) {
+      return status;
+    }
+    if (!enclave_output.GetExtension(signal_received)) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Signal not received in enclave");
+    }
+    return Status::OkStatus();
+  }
+};
 
-TEST_F(InactiveEnclaveSignalTest, SignalTest) {
-  // First run the enclave to register the signal handler, and close the frame.
-  // At this moment no signals have been delivered yet, so enclave returns
-  // non-OK status.
-  EXPECT_THAT(client_->EnterAndRun({}, nullptr), testing::Not(IsOk()));
-  raise(SIGUSR1);
-  // Run the enclave again, this time a signal is raised and should have been
-  // sent to enclave, so enclave should return OK status.
-  EXPECT_THAT(client_->EnterAndRun({}, nullptr), IsOk());
+TEST_F(InactiveEnclaveSignalTest, HandlerTest) {
+  // Test signal handled by sa_handler.
+  EnclaveInput enclave_input;
+  enclave_input.MutableExtension(signal_test_input)
+      ->set_signal_test_type(SignalTestInput::HANDLER);
+  EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
+}
+
+TEST_F(InactiveEnclaveSignalTest, SigactionTest) {
+  // Test signal handled by sa_sigaction.
+  EnclaveInput enclave_input;
+  enclave_input.MutableExtension(signal_test_input)
+      ->set_signal_test_type(SignalTestInput::SIGACTION);
+  EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
 }
 
 }  // namespace

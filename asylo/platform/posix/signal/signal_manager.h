@@ -20,10 +20,11 @@
 #define ASYLO_PLATFORM_POSIX_SIGNAL_SIGNAL_MANAGER_H_
 
 #include <signal.h>
-
+#include <memory>
 #include <unordered_map>
 
 #include "absl/synchronization/mutex.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 
@@ -33,22 +34,25 @@ class SignalManager {
  public:
   static SignalManager *GetInstance();
 
+  // Locates and calls the handler registered for |signum|.
+  Status HandleSignal(int signum, siginfo_t *info, void *ucontext);
+
   // Sets a signal handler pointer for a specific signal |signum|.
-  void SetSignalHandler(int signum, sighandler_t)
-      LOCKS_EXCLUDED(signal_to_handler_lock_);
+  void SetSigAction(int signum, const struct sigaction *act)
+      LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Gets a signal handler for a specific signal |signum|.
-  const sighandler_t GetSignalHandler(int signum) const
-      LOCKS_EXCLUDED(signal_to_handler_lock_);
+  const struct sigaction *GetSigAction(int signum) const
+      LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
  private:
   SignalManager() = default;  // Private to enforce singleton.
   SignalManager(SignalManager const &) = delete;
   void operator=(SignalManager const &) = delete;
 
-  mutable absl::Mutex signal_to_handler_lock_;
-  std::unordered_map<int, sighandler_t> signal_to_handler_
-      GUARDED_BY(signal_to_handler_lock_);
+  mutable absl::Mutex signal_to_sigaction_lock_;
+  std::unordered_map<int, std::unique_ptr<struct sigaction>>
+      signal_to_sigaction_ GUARDED_BY(signal_to_sigaction_lock_);
 };
 
 }  // namespace asylo

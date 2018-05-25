@@ -20,6 +20,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/ucontext.h>
 #include <unistd.h>
 #include <cerrno>
 #include <string>
@@ -375,13 +376,20 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
     LOG(ERROR) << "Failed to convert signum:" << signum << " to bridge signum";
     return -1;
   }
-  SignalManager *signal_manager = SignalManager::GetInstance();
-  sighandler_t signal_handler = signal_manager->GetSignalHandler(signum);
-  if (!signal_handler) {
-    LOG(ERROR) << "Signal handler not registered";
-    return EPERM;
+  siginfo_t info;
+  info.si_signo = signum;
+  info.si_code = signal.code();
+  ucontext_t ucontext;
+  for (int greg_index = 0;
+       greg_index < NGREG && greg_index < signal.gregs_size(); ++greg_index) {
+    ucontext.uc_mcontext.gregs[greg_index] =
+        static_cast<greg_t>(signal.gregs(greg_index));
   }
-  signal_handler(signum);
+  Status status =
+      SignalManager::GetInstance()->HandleSignal(signum, &info, &ucontext);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+  }
   return 0;
 }
 

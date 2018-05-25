@@ -19,6 +19,7 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 
+#include <signal.h>
 #include <stdint.h>
 #include <sys/socket.h>
 
@@ -71,6 +72,15 @@ enum SignalNumber {
   BRIDGE_SIGSYS = 28,
   BRIDGE_SIGRTMIN = 32,
   BRIDGE_SIGRTMAX = 64,
+};
+
+// The code that describes the cause of a signal.
+enum SignalCode {
+  BRIDGE_SI_USER = 1,
+  BRIDGE_SI_QUEUE = 2,
+  BRIDGE_SI_TIMER = 3,
+  BRIDGE_SI_ASYNCIO = 4,
+  BRIDGE_SI_MESGQ = 5,
 };
 
 // All of the file operation flags that we allow to be called outside the
@@ -178,6 +188,15 @@ struct bridge_iovec {
   uint64_t iov_len;
 };
 
+struct bridge_siginfo_t {
+  int32_t si_signo;
+  int32_t si_code;
+};
+
+struct bridge_signal_handler {
+  void (*sigaction)(int, struct bridge_siginfo_t *, void *);
+};
+
 // The maximum number of CPUs we support. Chosen to be large enough to represent
 // as many CPUs as an enclave-native cpu_set_t.
 #define BRIDGE_CPU_SET_MAX_CPUS 1024
@@ -208,6 +227,22 @@ int FromBridgeSignal(int bridge_signum);
 
 // Converts |signum| to a bridge signal number. Returns -1 if unsuccessful.
 int ToBridgeSignal(int signum);
+
+// Converts |bridge_si_code| to a runtime signal code. Returns -1 if
+// unsuccessful.
+int FromBridgeSignalCode(int bridge_si_code);
+
+// Converts |si_code| to a bridge signal code. Returns -1 if unsuccessful.
+int ToBridgeSignalCode(int si_code);
+
+// Converts |bridge_siginfo| to a runtime siginfo_t. Returns nullptr if
+// unsuccessful.
+siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,
+                             siginfo_t *siginfo);
+
+// Converts |siginfo| to a bridge siginfo_t. Returns nullptr if unsuccessful.
+struct bridge_siginfo_t *ToBridgeSigInfo(
+    const siginfo_t *siginfo, struct bridge_siginfo_t *bridge_siginfo);
 
 // Converts |bridge_file_flag| to a runtime file flag.
 int FromBridgeFileFlags(int bridge_file_flag);

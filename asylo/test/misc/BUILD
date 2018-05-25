@@ -35,6 +35,15 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+# A protobuf used by signal tests. The input contains whether to register a
+# signal hander sa_handler, which takes a single argument signum, or
+# sa_sigaction, which takes three arguments: signum, siginfo, and ucontext.
+asylo_proto_library(
+    name = "signal_test_proto",
+    srcs = ["signal_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
 # Trivial SGX enclave.
 sgx_enclave(
     name = "hello_world.so",
@@ -71,6 +80,7 @@ sgx_enclave(
     name = "active_enclave_signal_test.so",
     srcs = ["active_enclave_signal_test_enclave.cc"],
     deps = [
+        ":signal_test_proto_cc",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -80,6 +90,7 @@ sgx_enclave(
     name = "inactive_enclave_signal_test.so",
     srcs = ["inactive_enclave_signal_test_enclave.cc"],
     deps = [
+        ":signal_test_proto_cc",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -230,6 +241,8 @@ enclave_test(
     enclave = "active_enclave_signal_test.so",
     tags = ["regression"],
     deps = [
+        ":signal_test_proto_cc",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ] + TEST_DEPS_COMMON,
 )
@@ -239,7 +252,9 @@ enclave_test(
     srcs = ["inactive_enclave_signal_test_driver.cc"],
     enclave = "inactive_enclave_signal_test.so",
     tags = ["regression"],
-    deps = TEST_DEPS_COMMON,
+    deps = [
+        ":signal_test_proto_cc",
+    ] + TEST_DEPS_COMMON,
 )
 
 enclave_test(

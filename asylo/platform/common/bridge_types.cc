@@ -121,6 +121,40 @@ int ToBridgeSignal(int signum) {
   return -1;
 }
 
+int FromBridgeSignalCode(int bridge_si_code) {
+  if (bridge_si_code == BRIDGE_SI_USER) return SI_USER;
+  if (bridge_si_code == BRIDGE_SI_QUEUE) return SI_QUEUE;
+  if (bridge_si_code == BRIDGE_SI_TIMER) return SI_TIMER;
+  if (bridge_si_code == BRIDGE_SI_ASYNCIO) return SI_ASYNCIO;
+  if (bridge_si_code == BRIDGE_SI_MESGQ) return SI_MESGQ;
+  return -1;
+}
+
+int ToBridgeSignalCode(int si_code) {
+  if (si_code == SI_USER) return BRIDGE_SI_USER;
+  if (si_code == SI_QUEUE) return BRIDGE_SI_QUEUE;
+  if (si_code == SI_TIMER) return BRIDGE_SI_TIMER;
+  if (si_code == SI_ASYNCIO) return BRIDGE_SI_ASYNCIO;
+  if (si_code == SI_MESGQ) return BRIDGE_SI_MESGQ;
+  return -1;
+}
+
+siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,
+                             siginfo_t *siginfo) {
+  if (!bridge_siginfo || !siginfo) return nullptr;
+  siginfo->si_signo = FromBridgeSignal(bridge_siginfo->si_signo);
+  siginfo->si_code = FromBridgeSignalCode(bridge_siginfo->si_code);
+  return siginfo;
+}
+
+struct bridge_siginfo_t *ToBridgeSigInfo(
+    const siginfo_t *siginfo, struct bridge_siginfo_t *bridge_siginfo) {
+  if (!siginfo || !bridge_siginfo) return nullptr;
+  bridge_siginfo->si_signo = ToBridgeSignal(siginfo->si_signo);
+  bridge_siginfo->si_code = ToBridgeSignalCode(siginfo->si_code);
+  return bridge_siginfo;
+}
+
 int FromBridgeFileFlags(int bridge_file_flag) {
   int file_flag = 0;
   if (bridge_file_flag & RDONLY) file_flag |= O_RDONLY;

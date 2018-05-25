@@ -146,9 +146,9 @@ int enc_untrusted_sched_yield();
 //            signal.h              //
 //////////////////////////////////////
 
-int enc_untrusted_register_signal_handler(int signum,
-                                          const struct sigaction *act,
-                                          const char *enclave_name, size_t len);
+int enc_untrusted_register_signal_handler(
+    int signum, const struct bridge_signal_handler *handler,
+    const char *enclave_name);
 
 //////////////////////////////////////
 //          sys/stat.h              //

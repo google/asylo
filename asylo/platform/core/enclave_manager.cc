@@ -20,6 +20,7 @@
 
 #include <signal.h>
 #include <stdint.h>
+#include <sys/ucontext.h>
 #include <time.h>
 #include <thread>
 
@@ -389,13 +390,22 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
   return status;
 }
 
-Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum) {
+Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
+                                                            siginfo_t *info,
+                                                            void *ucontext) {
   StatusOr<EnclaveClient *> client_result = GetClientForSignal(signum);
   if (!client_result.ok()) {
     return client_result.status();
   }
   EnclaveSignal enclave_signal;
   enclave_signal.set_signum(signum);
+  enclave_signal.set_code(info->si_code);
+  enclave_signal.clear_gregs();
+  ucontext_t *uc = reinterpret_cast<ucontext_t *>(ucontext);
+  for (int greg_index = 0; greg_index < NGREG; ++greg_index) {
+    enclave_signal.add_gregs(
+        static_cast<uint64_t>(uc->uc_mcontext.gregs[greg_index]));
+  }
   return client_result.ValueOrDie()->EnterAndHandleSignal(enclave_signal);
 }
 

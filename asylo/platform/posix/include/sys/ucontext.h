@@ -16,21 +16,36 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
-#define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
-
-#include <stddef.h>
+#ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_UCONTEXT_H_
+#define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_UCONTEXT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Calls enc_untrusted_register_handler to register a signal handler on the
-// host.
-int enc_register_signal(int signum, const char *enclave_name);
+#include <stdint.h>
+
+// Type for general register.
+typedef int64 greg_t;
+
+// Number of general registers.
+#define NGREG 23
+
+// Container for all general registers.
+typedef greg_t gregset_t[NGREG];
+
+// Context to describe whole processor state.
+typedef struct {
+  gregset_t gregs;
+} mcontext_t;
+
+// Userlevel context.
+typedef struct ucontext {
+  mcontext_t uc_mcontext;
+} ucontext_t;
 
 #ifdef __cplusplus
 }  // extern "C"
 #endif
 
-#endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
+#endif  // ASYLO_PLATFORM_POSIX_INCLUDE_SYS_UCONTEXT_H_

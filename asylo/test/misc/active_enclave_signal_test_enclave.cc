@@ -20,16 +20,23 @@
 #include <stdio.h>
 #include <unistd.h>
 
+#include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
 
-static thread_local volatile bool signal_received = false;
+static thread_local volatile bool signal_handled = false;
 
-void HandleSignal(int signum) {
+void HandleSignalWithHandler(int signum) {
   if (signum == SIGUSR1) {
-    signal_received = true;
+    signal_handled = true;
+  }
+}
+
+void HandleSignalWithSigAction(int signum, siginfo_t *info, void *ucontext) {
+  if (signum == SIGUSR1) {
+    signal_handled = true;
   }
 }
 
@@ -38,8 +45,25 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
   ActiveEnclaveSignalTest() = default;
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
+    if (!input.HasExtension(signal_test_input)) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing input extension");
+    }
+    SignalTestInput test_input = input.GetExtension(signal_test_input);
+    if (!test_input.has_signal_test_type()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing signal_handler_type");
+    }
     struct sigaction act, oldact;
-    act.sa_handler = &HandleSignal;
+    if (test_input.signal_test_type() == SignalTestInput::HANDLER) {
+      act.sa_handler = &HandleSignalWithHandler;
+    } else if (test_input.signal_test_type() == SignalTestInput::SIGACTION) {
+      act.sa_sigaction = &HandleSignalWithSigAction;
+      act.sa_flags |= SA_SIGINFO;
+    } else {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "No valid handler type");
+    }
     sigaction(SIGUSR1, &act, &oldact);
     // Print to the pipe so that the signal thread will start sending the
     // signal.
@@ -47,7 +71,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     fclose(stdout);
     // Wait till the signal is received. If it's not working, this test should
     // time out.
-    while (!signal_received) {
+    while (!signal_handled) {
       sleep(1);
     }
     return Status::OkStatus();

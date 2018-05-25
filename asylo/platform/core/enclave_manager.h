@@ -345,8 +345,10 @@ class EnclaveSignalDispatcher {
       LOCKS_EXCLUDED(signal_enclave_map_lock_);
 
   // Looks for the enclave client that registered |signum|, and calls
-  // EnterAndHandleSignal() with that enclave client.
-  Status EnterEnclaveAndHandleSignal(int signum);
+  // EnterAndHandleSignal() with that enclave client. |signum|, |info| and
+  // |ucontext| are passed into the enclave.
+  Status EnterEnclaveAndHandleSignal(int signum, siginfo_t *info,
+                                     void *ucontext);
 
  private:
   EnclaveSignalDispatcher() = default;  // Private to enforce singleton.

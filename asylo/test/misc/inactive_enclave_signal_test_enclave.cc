@@ -18,16 +18,23 @@
 
 #include <signal.h>
 
+#include "asylo/test/misc/signal_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
 
-static bool signal_received = false;
+static bool signal_handled = false;
 
-static void HandleSignal(int signum) {
+void HandleSignalWithHandler(int signum) {
   if (signum == SIGUSR1) {
-    signal_received = true;
+    signal_handled = true;
+  }
+}
+
+void HandleSignalWithSigAction(int signum, siginfo_t *info, void *ucontext) {
+  if (signum == SIGUSR1) {
+    signal_handled = true;
   }
 }
 
@@ -36,17 +43,31 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
   InactiveEnclaveSignalTest() = default;
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
-    struct sigaction act, oldact;
-    act.sa_handler = &HandleSignal;
-    sigaction(SIGUSR1, &act, &oldact);
-    // This enclave is run twice. The first time the signal handler is
-    // registered, but no signal has been sent, so it returns error. After this
-    // enclave run finishes, a |SIGUSR1| is sent from the host and handled by
-    // the enclave when the enclave is not actively running. Then this enclave
-    // is run again, this time |SIGUSR1| is handled so it should return success.
-    if (!signal_received) {
-      return Status(error::GoogleError::INTERNAL, "signal not handled!");
+    if (!input.HasExtension(signal_test_input)) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing input extension");
     }
+    SignalTestInput test_input = input.GetExtension(signal_test_input);
+    if (!test_input.has_signal_test_type()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing signal_handler_type");
+    }
+    struct sigaction act;
+    switch (test_input.signal_test_type()) {
+      case SignalTestInput::HANDLER:
+        act.sa_handler = &HandleSignalWithHandler;
+        break;
+      case SignalTestInput::SIGACTION:
+        act.sa_sigaction = &HandleSignalWithSigAction;
+        act.sa_flags |= SA_SIGINFO;
+        break;
+      default:
+        return Status(error::GoogleError::INVALID_ARGUMENT,
+                      "No valid test type");
+    }
+    struct sigaction oldact;
+    sigaction(SIGUSR1, &act, &oldact);
+    output->SetExtension(signal_received, signal_handled);
     return Status::OkStatus();
   }
 };

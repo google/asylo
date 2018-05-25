@@ -57,18 +57,19 @@ int sigaction(int signum, const struct sigaction *act,
     absl::MutexLock lock(&sigaction_lock);
     asylo::SignalManager *signal_manager = asylo::SignalManager::GetInstance();
     if (oldact) {
-      if (signal_manager->GetSignalHandler(signum)) {
-        oldact->sa_handler = signal_manager->GetSignalHandler(signum);
+      if (signal_manager->GetSigAction(signum)) {
+        oldact = const_cast<struct sigaction *>(
+            signal_manager->GetSigAction(signum));
       } else {
         oldact->sa_handler = SIG_DFL;
       }
     }
-    signal_manager->SetSignalHandler(signum, act->sa_handler);
+    signal_manager->SetSigAction(signum, act);
   }
   const std::string enclave_name = asylo::GetEnclaveName();
   // Pass a C string because enc_register_signal has C linkage. This string is
   // copied to untrusted memory when going across enclave boundary.
-  return enc_register_signal(signum, enclave_name.c_str(), enclave_name.size());
+  return enc_register_signal(signum, enclave_name.c_str());
 }
 
 }  // extern "C"

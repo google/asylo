@@ -29,23 +29,29 @@ namespace asylo {
 
 // Translates |bridge_signum| to the value inside the enclave, and passes it to
 // the signal handler registered inside enclave.
-void TranslateAndHandleSignal(int bridge_signum) {
+void TranslateAndHandleSignal(int bridge_signum,
+                              bridge_siginfo_t *bridge_siginfo,
+                              void *ucontext) {
   int signum = FromBridgeSignal(bridge_signum);
   if (signum < 0) {
     return;
   }
-  sighandler_t handler = SignalManager::GetInstance()->GetSignalHandler(signum);
-  if (!handler) {
+  siginfo_t info;
+  if (!FromBridgeSigInfo(bridge_siginfo, &info)) {
+    LOG(ERROR) << "Malformed siginfo struct for signal: " << signum;
     return;
   }
-  handler(signum);
+  Status status =
+      SignalManager::GetInstance()->HandleSignal(signum, &info, ucontext);
+  if (!status.ok()) {
+    LOG(ERROR) << status;
+  }
 }
 
 }  // namespace asylo
 
-extern "C" int enc_register_signal(int signum, const char *enclave_name,
-                                   size_t len) {
-  struct sigaction act;
-  act.sa_handler = &asylo::TranslateAndHandleSignal;
-  return enc_untrusted_register_signal_handler(signum, &act, enclave_name, len);
+extern "C" int enc_register_signal(int signum, const char *enclave_name) {
+  bridge_signal_handler handler;
+  handler.sigaction = &asylo::TranslateAndHandleSignal;
+  return enc_untrusted_register_signal_handler(signum, &handler, enclave_name);
 }

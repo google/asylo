@@ -659,10 +659,9 @@ int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
 //           signal.h               //
 //////////////////////////////////////
 
-int enc_untrusted_register_signal_handler(int signum,
-                                          const struct sigaction *act,
-                                          const char *enclave_name,
-                                          size_t len) {
+int enc_untrusted_register_signal_handler(
+    int signum, const struct bridge_signal_handler *handler,
+    const char *enclave_name) {
   int bridge_signum = ToBridgeSignal(signum);
   if (bridge_signum < 0) {
     errno = EINVAL;
@@ -670,7 +669,7 @@ int enc_untrusted_register_signal_handler(int signum,
   }
   int ret;
   sgx_status_t status = ocall_enc_untrusted_register_signal_handler(
-      &ret, bridge_signum, act, enclave_name, len);
+      &ret, bridge_signum, handler, enclave_name);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
