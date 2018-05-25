@@ -4829,6 +4829,50 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/regex.h ./newlib/libc/in
  
  /* types */
  typedef off_t regoff_t;
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h
++++ ./newlib/libc/include/sys/features.h
+@@ -384,6 +384,10 @@
+ # define _POSIX_VERSION 199009L
+ #endif
+ 
++#ifdef __ASYLO__
++#define _POSIX_REALTIME_SIGNALS   1
++#endif
++
+ #ifdef __CYGWIN__
+ 
+ #if __POSIX_VISIBLE >= 200809
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/libc/include/sys/signal.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h
++++ ./newlib/libc/include/sys/signal.h
+@@ -72,7 +72,7 @@
+ } siginfo_t;
+ #endif /* defined(_POSIX_REALTIME_SIGNALS) || __POSIX_VISIBLE >= 199309 */
+ 
+-#if defined(__rtems__)
++#if defined(__rtems__) || defined(__ASYLO__)
+ 
+ /*  3.3.8 Synchronously Accept a Signal, P1003.1b-1993, p. 76 */
+ 
+@@ -112,7 +112,7 @@
+ #define sa_sigaction  _signal_handlers._sigaction
+ #endif
+ 
+-#else /* defined(__rtems__) */
++#else /* defined(__rtems__) || defined(__ASYLO__) */
+ 
+ #define SA_NOCLDSTOP 1  /* only value supported now for sa_flags */
+ 
+@@ -124,7 +124,7 @@
+ 	sigset_t sa_mask;
+ 	int sa_flags;
+ };
+-#endif /* defined(__rtems__) */
++#endif /* defined(__rtems__) || defined(__ASYLO__) */
+ #endif /* defined(__CYGWIN__) */
+ 
+ #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h ./newlib/libc/include/sys/_types.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h
 +++ ./newlib/libc/include/sys/_types.h
