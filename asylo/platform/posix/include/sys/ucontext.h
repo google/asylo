@@ -26,7 +26,7 @@ extern "C" {
 #include <stdint.h>
 
 // Type for general register.
-typedef int64 greg_t;
+typedef int64_t greg_t;
 
 // Number of general registers.
 #define NGREG 23
