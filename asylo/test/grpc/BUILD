@@ -112,7 +112,7 @@ sgx_enclave(
 
 # Test for gRPC in Asylo.
 enclave_test(
-    name = "asylo_grpc_smoke_test",
+    name = "enclave_insecure_server_test",
     srcs = ["enclave_insecure_server_test.cc"],
     enclave = ":enclave_insecure_server.so",
     flaky = 1,
@@ -137,7 +137,7 @@ enclave_test(
 
 # Test for gRPC using enclave gRPC security.
 enclave_test(
-    name = "asylo_secure_grpc_smoke_test",
+    name = "enclave_secure_server_test",
     srcs = ["enclave_secure_server_test.cc"],
     enclave = ":enclave_secure_server.so",
     tags = ["regression"],
