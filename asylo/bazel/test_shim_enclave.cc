@@ -35,24 +35,43 @@ class TestShimEnclave : public EnclaveTestCase {
     // Let the test framework know where to write the results summary.
     TestShimEnclaveConfig shim_config =
         config.GetExtension(test_shim_enclave_config);
+
     if (shim_config.has_output_file()) {
       ::testing::GTEST_FLAG(output) = shim_config.output_file().c_str();
     }
+
     if (shim_config.has_test_tmpdir()) {
       FLAGS_test_tmpdir = shim_config.test_tmpdir();
+    }
+
+    if (shim_config.has_test_in_initialize() &&
+        shim_config.test_in_initialize()) {
+      test_in_initialize_ = true;
+      EnclaveRunAllTests();
+    } else {
+      test_in_initialize_ = false;
     }
 
     return Status::OkStatus();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
+    if (!test_in_initialize_) {
+      EnclaveRunAllTests();
+    }
+    return Status::OkStatus();
+  }
+
+ private:
+  void EnclaveRunAllTests() {
     int argc = 1;
     char argv0[] = "placeholder";
     char *argv[] = {argv0, nullptr};
     ::testing::InitGoogleTest(&argc, argv);
     CHECK_EQ(RUN_ALL_TESTS(), 0);
-    return Status::OkStatus();
   }
+
+  bool test_in_initialize_;
 };
 
 TrustedApplication *BuildTrustedApplication() { return new TestShimEnclave; }

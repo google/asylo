@@ -51,8 +51,9 @@ namespace {
 
 void LogError(const Status &status) {
   EnclaveState state = GetApplicationInstance()->GetState();
-  if (state <= EnclaveState::kInitializing) {
-    // Before the enclave is initialized LOG statements do not work.
+  if (state < EnclaveState::kUserInitializing) {
+    // LOG() is unavailable here because the I/O subsystem has not yet been
+    // initialized.
     enc_untrusted_puts(status.ToString().c_str());
   } else {
     LOG(ERROR) << status;
@@ -203,6 +204,12 @@ Status TrustedApplication::InitializeInternal(const EnclaveConfig &config) {
                  << status;
   }
 
+  status = VerifyAndSetState(EnclaveState::kInternalInitializing,
+                             EnclaveState::kUserInitializing);
+  if (!status.ok()) {
+    return status;
+  }
+
   return Initialize(config);
 }
 
@@ -246,8 +253,8 @@ void InitializeIO(const EnclaveConfig &config) {
 // documentation for each function.
 extern "C" {
 
-int __asylo_user_init(const char *name, const char *config,
-                         size_t config_len, char **output, size_t *output_len) {
+int __asylo_user_init(const char *name, const char *config, size_t config_len,
+                      char **output, size_t *output_len) {
   Status status = VerifyOutputArguments(output, output_len);
   if (!status.ok()) {
     return 1;
@@ -263,8 +270,8 @@ int __asylo_user_init(const char *name, const char *config,
   }
 
   TrustedApplication *trusted_application = GetApplicationInstance();
-  status = trusted_application->VerifyAndSetState(EnclaveState::kUninitialized,
-                                                  EnclaveState::kInitializing);
+  status = trusted_application->VerifyAndSetState(
+      EnclaveState::kUninitialized, EnclaveState::kInternalInitializing);
   if (!status.ok()) {
     return status_serializer.Serialize(status);
   }
@@ -282,7 +289,7 @@ int __asylo_user_init(const char *name, const char *config,
 }
 
 int __asylo_user_run(const char *input, size_t input_len, char **output,
-                        size_t *output_len) {
+                     size_t *output_len) {
   Status status = VerifyOutputArguments(output, output_len);
   if (!status.ok()) {
     return 1;
@@ -312,7 +319,7 @@ int __asylo_user_run(const char *input, size_t input_len, char **output,
 }
 
 int __asylo_user_fini(const char *input, size_t input_len, char **output,
-                         size_t *output_len) {
+                      size_t *output_len) {
   Status status = VerifyOutputArguments(output, output_len);
   if (!status.ok()) {
     return 1;
@@ -347,10 +354,10 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
 int __asylo_threading_donate() {
   TrustedApplication *trusted_application = GetApplicationInstance();
   EnclaveState current_state = trusted_application->GetState();
-  if (current_state != EnclaveState::kRunning &&
-      current_state != EnclaveState::kFinalizing) {
+  if (current_state < EnclaveState::kUserInitializing ||
+      current_state > EnclaveState::kFinalizing) {
     Status status = Status(error::GoogleError::FAILED_PRECONDITION,
-                           "Enclave not in state RUNNING");
+                           "Enclave ThreadManager has not been initialized");
     LOG(ERROR) << status;
     return EPERM;
   }
@@ -366,9 +373,9 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
   }
   TrustedApplication *trusted_application = GetApplicationInstance();
   EnclaveState current_state = trusted_application->GetState();
-  if (current_state != EnclaveState::kRunning &&
-      current_state != EnclaveState::kFinalizing) {
-    LOG(ERROR) << "Enclave not in state RUNNING";
+  if (current_state < EnclaveState::kRunning ||
+      current_state > EnclaveState::kFinalizing) {
+    LOG(ERROR) << "Enclave signal handling internals not available";
     return EPERM;
   }
   int signum = FromBridgeSignal(signal.signum());

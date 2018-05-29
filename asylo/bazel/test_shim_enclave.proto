@@ -26,6 +26,8 @@ message TestShimEnclaveConfig {
   optional string output_file = 1;
   // Location for all temporary test files.
   optional string test_tmpdir = 2;
+  // Run tests in Initialize, rather than Run, if set and true.
+  optional bool test_in_initialize = 3;
 }
 
 extend EnclaveConfig {

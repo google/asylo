@@ -521,7 +521,8 @@ def cc_test_and_cc_enclave_test(name, enclave_test_name = "", srcs = [], deps = 
         **kwargs
     )
 
-def cc_enclave_test(name, srcs, tags = [], deps = [], **kwargs):
+def cc_enclave_test(name, srcs, tags = [], deps = [], test_in_initialize=False,
+                    **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
   This macro creates two targets, one sgx_enclave target with the test source.
@@ -532,6 +533,9 @@ def cc_enclave_test(name, srcs, tags = [], deps = [], **kwargs):
     srcs: Same as cc_test srcs.
     tags: Same as cc_test tags.
     deps: Same as cc_test deps.
+    test_in_initialize: If True, tests run in Initialize, rather than Run. This
+        allows us to ensure the initialization and post-initialization execution
+        environments provide the same runtime behavior and semantics.
     **kwargs: cc_test arguments.
   """
 
@@ -557,6 +561,10 @@ def cc_enclave_test(name, srcs, tags = [], deps = [], **kwargs):
     # :enclave_test_shim to be provided as the --enclave_path command-line flag.
     enclaves = {"shim": enclave_target}
     loader_args = ["--enclave_path=\"{shim}\""]
+    if test_in_initialize:
+        loader_args.append("--test_in_initialize")
+    else:
+        loader_args.append("--notest_in_initialize")
 
     # Execute the gtest enclave using the gtest enclave runner
     _enclave_runner_test(

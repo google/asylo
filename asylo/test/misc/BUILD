@@ -183,6 +183,17 @@ cc_enclave_test(
 )
 
 cc_enclave_test(
+    name = "threaded_test_in_initialize",
+    srcs = ["threaded_test.cc"],
+    tags = ["regression"],
+    test_in_initialize = True,
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_enclave_test(
     name = "rdrand_test",
     srcs = ["rdrand_test.cc"],
     tags = ["regression"],

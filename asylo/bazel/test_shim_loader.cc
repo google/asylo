@@ -25,6 +25,8 @@
 #include "asylo/test/util/test_flags.h"
 
 DEFINE_string(enclave_path, "", "Path to enclave to load");
+DEFINE_bool(test_in_initialize, false,
+            "Run tests in Initialize, rather than Run");
 
 namespace {
 
@@ -50,6 +52,11 @@ int main(int argc, char *argv[]) {
         config.MutableExtension(asylo::test_shim_enclave_config);
     shim_config->set_test_tmpdir(FLAGS_test_tmpdir);
   }
+
+  // Pass |test_in_initialize| value to enclave.
+  asylo::TestShimEnclaveConfig *shim_config =
+      config.MutableExtension(asylo::test_shim_enclave_config);
+  shim_config->set_test_in_initialize(FLAGS_test_in_initialize);
 
   // Load the enclave
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
