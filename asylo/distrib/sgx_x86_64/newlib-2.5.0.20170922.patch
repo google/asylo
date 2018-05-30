@@ -4832,12 +4832,13 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/regex.h ./newlib/libc/in
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h
 +++ ./newlib/libc/include/sys/features.h
-@@ -384,6 +384,10 @@
+@@ -384,6 +384,11 @@
  # define _POSIX_VERSION 199009L
  #endif
  
 +#ifdef __ASYLO__
 +#define _POSIX_REALTIME_SIGNALS   1
++#define _POSIX_TIMERS             1
 +#endif
 +
  #ifdef __CYGWIN__
