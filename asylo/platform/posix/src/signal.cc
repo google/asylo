@@ -22,6 +22,7 @@
 #include <cstdlib>
 
 #include "absl/synchronization/mutex.h"
+#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/include/trusted/register_signal.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
@@ -70,6 +71,44 @@ int sigaction(int signum, const struct sigaction *act,
   // Pass a C string because enc_register_signal has C linkage. This string is
   // copied to untrusted memory when going across enclave boundary.
   return enc_register_signal(signum, enclave_name.c_str());
+}
+
+int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
+  if (how != SIG_BLOCK && how != SIG_UNBLOCK && how != SIG_SETMASK) {
+    errno = EINVAL;
+    return -1;
+  }
+  asylo::SignalManager *signal_manager = asylo::SignalManager::GetInstance();
+  if (oldset) {
+    *oldset = signal_manager->GetSignalMask();
+  }
+  if (!set) {
+    return 0;
+  }
+  sigset_t signals_to_block;
+  sigemptyset(&signals_to_block);
+  sigset_t signals_to_unblock;
+  sigemptyset(&signals_to_unblock);
+  if (how == SIG_BLOCK || how == SIG_SETMASK) {
+    signals_to_block = *set;
+  }
+
+  if (how == SIG_UNBLOCK) {
+    signals_to_unblock = *set;
+  } else if (how == SIG_SETMASK) {
+    signals_to_unblock = signal_manager->GetUnblockedSet(set);
+  }
+
+  // Unblock signals inside the enclave before unblocking signals on the host.
+  signal_manager->UnblockSignals(&signals_to_unblock);
+
+  // |oldset| is already filled with the signal mask inside the enclave.
+  int res = enc_untrusted_sigprocmask(how, set, /*oldset=*/nullptr);
+
+  // Block signals inside the enclave after the host.
+  signal_manager->BlockSignals(&signals_to_block);
+
+  return res;
 }
 
 }  // extern "C"

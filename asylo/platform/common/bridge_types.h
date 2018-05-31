@@ -30,14 +30,22 @@
 extern "C" {
 #endif
 
-// Replace size_t and ssize_t with types of known width for transmission across
-// the enclave boundary.
+// Replace size_t, ssize_t, and sigset_t with types of known width for
+// transmission across the enclave boundary.
 typedef uint64_t bridge_size_t;
 typedef int64_t bridge_ssize_t;
+typedef int64_t bridge_sigset_t;
 
 // This enum contains all of the sysconf name values that we allow to be called
 // outside the enclave.
 enum SysconfConstants { UNKNOWN = 0, NPROCESSORS_ONLN = 1 };
+
+// The possible actions when calling sigprocmask.
+enum SigMaskAction {
+  BRIDGE_SIG_SETMASK = 0,
+  BRIDGE_SIG_BLOCK = 1,
+  BRIDGE_SIG_UNBLOCK = 2,
+};
 
 // All the signals that are supported to be registered inside enclave (except
 // SIGSTOP and SIGKILL).
@@ -220,6 +228,22 @@ int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant);
 // Converts |sysconf_constant| to a bridge constant. Returns UNKNOWN if
 // unsuccessful.
 enum SysconfConstants ToSysconfConstants(int sysconf_constant);
+
+// Converts the sigpromask action |bridge_how| to a runtime signal mask action.
+// Returns -1 if unsuccessful.
+int FromBridgeSigMaskAction(int bridge_how);
+
+// Converts the sigprocmask action |how| to a bridge signal mask action. Returns
+// -1 if unsuccessful.
+int ToBridgeSigMaskAction(int how);
+
+// Converts |bridge_set| to a runtime signal mask set. Returns nullptr if
+// unsuccessful.
+sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set);
+
+// Converts |set| to a bridge signal mask set. Returns nullptr if unsuccessful.
+bridge_sigset_t *ToBridgeSigSet(const sigset_t *set,
+                                bridge_sigset_t *bridge_set);
 
 // Converts |bridge_signum| to a runtime signal number. Returns -1 if
 // unsuccessful.

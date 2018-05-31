@@ -375,12 +375,11 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
   EnclaveState current_state = trusted_application->GetState();
   if (current_state < EnclaveState::kRunning ||
       current_state > EnclaveState::kFinalizing) {
-    LOG(ERROR) << "Enclave signal handling internals not available";
+    enc_untrusted_puts("Enclave signal handling internals not available");
     return EPERM;
   }
   int signum = FromBridgeSignal(signal.signum());
   if (signum < 0) {
-    LOG(ERROR) << "Failed to convert signum:" << signum << " to bridge signum";
     return -1;
   }
   siginfo_t info;
@@ -392,10 +391,16 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
     ucontext.uc_mcontext.gregs[greg_index] =
         static_cast<greg_t>(signal.gregs(greg_index));
   }
-  Status status =
-      SignalManager::GetInstance()->HandleSignal(signum, &info, &ucontext);
-  if (!status.ok()) {
-    LOG(ERROR) << status;
+  SignalManager *signal_manager = SignalManager::GetInstance();
+  const sigset_t mask = signal_manager->GetSignalMask();
+
+  // If the signal is blocked and still passed into the enclave. The signal
+  // masks inside the enclave is out of sync with the untrusted signal mask.
+  if (sigismember(&mask, signum)) {
+    return EPERM;
+  }
+  if (!signal_manager->HandleSignal(signum, &info, &ucontext).ok()) {
+    return -1;
   }
   return 0;
 }

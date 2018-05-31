@@ -20,7 +20,6 @@
 
 #include <signal.h>
 
-#include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
@@ -38,11 +37,17 @@ void TranslateAndHandleSignal(int bridge_signum,
   }
   siginfo_t info;
   if (!FromBridgeSigInfo(bridge_siginfo, &info)) {
-    LOG(ERROR) << "Malformed siginfo struct for signal: " << signum;
+    // Malformed siginfo struct.
     return;
   }
-  Status status =
-      SignalManager::GetInstance()->HandleSignal(signum, &info, ucontext);
+  SignalManager *signal_manager = SignalManager::GetInstance();
+  sigset_t mask = signal_manager->GetSignalMask();
+  // If the signal is blocked and still passed into the enclave. The signal
+  // masks inside the enclave is out of sync with the untrusted signal mask.
+  if (sigismember(&mask, signum)) {
+    return;
+  }
+  Status status = signal_manager->HandleSignal(signum, &info, ucontext);
   if (!status.ok()) {
     LOG(ERROR) << status;
   }

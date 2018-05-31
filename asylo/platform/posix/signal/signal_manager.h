@@ -45,6 +45,18 @@ class SignalManager {
   const struct sigaction *GetSigAction(int signum) const
       LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
+  // Blocks all the signals in |set|.
+  void BlockSignals(const sigset_t *set);
+
+  // Unblocks all the signals in |set|.
+  void UnblockSignals(const sigset_t *set);
+
+  // Gets the enclave stored signal mask.
+  const sigset_t GetSignalMask() const;
+
+  // Gets the set of unblocked signals in |set|.
+  const sigset_t GetUnblockedSet(const sigset_t *set);
+
  private:
   SignalManager() = default;  // Private to enforce singleton.
   SignalManager(SignalManager const &) = delete;
@@ -53,6 +65,8 @@ class SignalManager {
   mutable absl::Mutex signal_to_sigaction_lock_;
   std::unordered_map<int, std::unique_ptr<struct sigaction>>
       signal_to_sigaction_ GUARDED_BY(signal_to_sigaction_lock_);
+
+  thread_local static sigset_t signal_mask_;
 };
 
 }  // namespace asylo

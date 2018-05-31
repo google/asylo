@@ -141,5 +141,17 @@ TEST_F(ActiveEnclaveSignalTest, SigactionTest) {
   EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
 }
 
+// Test signal mask. The signal is blocked inside the enclave when it's sent,
+// and checks that it's not delivered. Then the enclave unblocks the signal, and
+// the pending signal is delivered and handled inside the enclave. Meanwhile
+// another thread running inside the enclave keeps unblocking the signal, to
+// test that the signal mask is thread local.
+TEST_F(ActiveEnclaveSignalTest, SignalMaskTest) {
+  EnclaveInput enclave_input;
+  enclave_input.MutableExtension(signal_test_input)
+      ->set_signal_test_type(SignalTestInput::SIGMASK);
+  EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
+}
+
 }  // namespace
 }  // namespace asylo

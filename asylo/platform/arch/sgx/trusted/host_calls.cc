@@ -677,6 +677,21 @@ int enc_untrusted_register_signal_handler(
   return ret;
 }
 
+int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
+  bridge_sigset_t bridge_set;
+  ToBridgeSigSet(set, &bridge_set);
+  bridge_sigset_t bridge_old_set;
+  int ret;
+  sgx_status_t status = ocall_enc_untrusted_sigprocmask(
+      &ret, ToBridgeSigMaskAction(how), &bridge_set, &bridge_old_set);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  FromBridgeSigSet(&bridge_old_set, oldset);
+  return ret;
+}
+
 //////////////////////////////////////
 //           time.h                 //
 //////////////////////////////////////

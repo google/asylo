@@ -21,6 +21,19 @@
 #include "absl/strings/str_cat.h"
 
 namespace asylo {
+namespace {
+
+constexpr int kMaxSignalsInMask = sizeof(sigset_t) * 8;
+
+const sigset_t EmptySigSet() {
+  sigset_t set;
+  sigemptyset(&set);
+  return set;
+}
+
+}  // namespace
+
+thread_local sigset_t SignalManager::signal_mask_ = EmptySigSet();
 
 SignalManager *SignalManager::GetInstance() {
   static SignalManager *instance = new SignalManager();
@@ -60,6 +73,35 @@ const struct sigaction *SignalManager::GetSigAction(int signum) const {
     return nullptr;
   }
   return sigaction_iterator->second.get();
+}
+
+void SignalManager::BlockSignals(const sigset_t *set) {
+  for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
+    if (sigismember(set, signum)) {
+      sigaddset(&signal_mask_, signum);
+    }
+  }
+}
+
+void SignalManager::UnblockSignals(const sigset_t *set) {
+  for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
+    if (sigismember(set, signum)) {
+      sigdelset(&signal_mask_, signum);
+    }
+  }
+}
+
+const sigset_t SignalManager::GetSignalMask() const { return signal_mask_; }
+
+const sigset_t SignalManager::GetUnblockedSet(const sigset_t *set) {
+  sigset_t signals_to_unblock;
+  sigemptyset(&signals_to_unblock);
+  for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
+    if (!sigismember(set, signum)) {
+      sigaddset(&signals_to_unblock, signum);
+    }
+  }
+  return signals_to_unblock;
 }
 
 }  // namespace asylo

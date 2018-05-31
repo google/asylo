@@ -22,14 +22,123 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <signal.h>
+#include <stdint.h>
 #include <string.h>
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <unistd.h>
 
 #include <algorithm>
+#include <unordered_map>
 
 #include "asylo/util/logging.h"
+
+namespace {
+
+void BridgeSigAddSet(bridge_sigset_t *bridge_set, const int sig) {
+  *bridge_set |= (UINT64_C(1) << sig);
+}
+
+bool BridgeSigIsMember(const bridge_sigset_t *bridge_set, const int sig) {
+  return (*bridge_set & (UINT64_C(1) << sig)) != 0;
+}
+
+void BridgeSigEmptySet(bridge_sigset_t *bridge_set) { *bridge_set = 0; }
+
+// A singleton that maintains the mapping between bridge and native signal
+// number constants.
+class SignalBridgeSignalMap {
+ public:
+  static SignalBridgeSignalMap *GetInstance() {
+    static SignalBridgeSignalMap *instance = new SignalBridgeSignalMap();
+    return instance;
+  }
+
+  int GetSignal(int bridge_signum) {
+    for (auto signal : signal_to_bridge_signal_) {
+      if (bridge_signum == signal.second) {
+        return signal.first;
+      }
+    }
+    return -1;
+  }
+
+  int GetBridgeSignal(int signum) {
+    if (signal_to_bridge_signal_.find(signum) ==
+        signal_to_bridge_signal_.end()) {
+      return -1;
+    }
+    return signal_to_bridge_signal_[signum];
+  }
+
+  sigset_t *GetSigSet(const bridge_sigset_t *bridge_set, sigset_t *set) {
+    if (!bridge_set || !set) return nullptr;
+    sigemptyset(set);
+    for (auto signal : signal_to_bridge_signal_) {
+      if (BridgeSigIsMember(bridge_set, signal.second)) {
+        sigaddset(set, signal.first);
+      }
+    }
+    return set;
+  }
+
+  bridge_sigset_t *GetBridgeSigSet(const sigset_t *set,
+                                   bridge_sigset_t *bridge_set) {
+    if (!set || !bridge_set) return nullptr;
+    BridgeSigEmptySet(bridge_set);
+    for (auto signal : signal_to_bridge_signal_) {
+      if (sigismember(set, signal.first)) {
+        BridgeSigAddSet(bridge_set, signal.second);
+      }
+    }
+    return bridge_set;
+  }
+
+ private:
+  SignalBridgeSignalMap() { InitializeMap(); }
+
+  void InitializeMap() {
+    signal_to_bridge_signal_[SIGHUP] = BRIDGE_SIGHUP;
+    signal_to_bridge_signal_[SIGINT] = BRIDGE_SIGINT;
+    signal_to_bridge_signal_[SIGQUIT] = BRIDGE_SIGQUIT;
+    signal_to_bridge_signal_[SIGILL] = BRIDGE_SIGILL;
+    signal_to_bridge_signal_[SIGTRAP] = BRIDGE_SIGTRAP;
+    signal_to_bridge_signal_[SIGABRT] = BRIDGE_SIGABRT;
+    signal_to_bridge_signal_[SIGBUS] = BRIDGE_SIGBUS;
+    signal_to_bridge_signal_[SIGFPE] = BRIDGE_SIGFPE;
+    signal_to_bridge_signal_[SIGKILL] = BRIDGE_SIGKILL;
+    signal_to_bridge_signal_[SIGUSR1] = BRIDGE_SIGUSR1;
+    signal_to_bridge_signal_[SIGSEGV] = BRIDGE_SIGSEGV;
+    signal_to_bridge_signal_[SIGUSR2] = BRIDGE_SIGUSR2;
+    signal_to_bridge_signal_[SIGPIPE] = BRIDGE_SIGPIPE;
+    signal_to_bridge_signal_[SIGALRM] = BRIDGE_SIGALRM;
+    signal_to_bridge_signal_[SIGCHLD] = BRIDGE_SIGCHLD;
+    signal_to_bridge_signal_[SIGCONT] = BRIDGE_SIGCONT;
+    signal_to_bridge_signal_[SIGSTOP] = BRIDGE_SIGSTOP;
+    signal_to_bridge_signal_[SIGTSTP] = BRIDGE_SIGTSTP;
+    signal_to_bridge_signal_[SIGTTIN] = BRIDGE_SIGTTIN;
+    signal_to_bridge_signal_[SIGTTOU] = BRIDGE_SIGTTOU;
+    signal_to_bridge_signal_[SIGURG] = BRIDGE_SIGURG;
+    signal_to_bridge_signal_[SIGXCPU] = BRIDGE_SIGXCPU;
+    signal_to_bridge_signal_[SIGXFSZ] = BRIDGE_SIGXFSZ;
+    signal_to_bridge_signal_[SIGVTALRM] = BRIDGE_SIGVTALRM;
+    signal_to_bridge_signal_[SIGPROF] = BRIDGE_SIGPROF;
+    signal_to_bridge_signal_[SIGWINCH] = BRIDGE_SIGWINCH;
+    signal_to_bridge_signal_[SIGSYS] = BRIDGE_SIGSYS;
+#if defined(SIGRTMIN) && defined(SIGRTMAX)
+    for (int signal = SIGRTMIN; signal <= SIGRTMAX; ++signal) {
+      signal_to_bridge_signal_[signal] = signal - SIGRTMIN + BRIDGE_SIGRTMIN;
+    }
+#endif  // defined(SIGRTMIN) && defined(SIGRTMAX)
+  }
+
+  SignalBridgeSignalMap(SignalBridgeSignalMap const &) = delete;
+  void operator=(SignalBridgeSignalMap const &) = delete;
+
+  std::unordered_map<int, int> signal_to_bridge_signal_;
+};
+
+}  // namespace
 
 int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
   switch (bridge_sysconf_constant) {
@@ -50,75 +159,34 @@ enum SysconfConstants ToSysconfConstants(int sysconf_constant) {
 }
 
 int FromBridgeSignal(int bridge_signum) {
-  if (bridge_signum == BRIDGE_SIGHUP) return SIGHUP;
-  if (bridge_signum == BRIDGE_SIGINT) return SIGINT;
-  if (bridge_signum == BRIDGE_SIGQUIT) return SIGQUIT;
-  if (bridge_signum == BRIDGE_SIGILL) return SIGILL;
-  if (bridge_signum == BRIDGE_SIGTRAP) return SIGTRAP;
-  if (bridge_signum == BRIDGE_SIGABRT) return SIGABRT;
-  if (bridge_signum == BRIDGE_SIGBUS) return SIGBUS;
-  if (bridge_signum == BRIDGE_SIGFPE) return SIGFPE;
-  if (bridge_signum == BRIDGE_SIGKILL) return SIGKILL;
-  if (bridge_signum == BRIDGE_SIGUSR1) return SIGUSR1;
-  if (bridge_signum == BRIDGE_SIGSEGV) return SIGSEGV;
-  if (bridge_signum == BRIDGE_SIGUSR2) return SIGUSR2;
-  if (bridge_signum == BRIDGE_SIGPIPE) return SIGPIPE;
-  if (bridge_signum == BRIDGE_SIGALRM) return SIGALRM;
-  if (bridge_signum == BRIDGE_SIGTERM) return SIGTERM;
-  if (bridge_signum == BRIDGE_SIGCHLD) return SIGCHLD;
-  if (bridge_signum == BRIDGE_SIGCONT) return SIGCONT;
-  if (bridge_signum == BRIDGE_SIGSTOP) return SIGSTOP;
-  if (bridge_signum == BRIDGE_SIGTSTP) return SIGTSTP;
-  if (bridge_signum == BRIDGE_SIGTTIN) return SIGTTIN;
-  if (bridge_signum == BRIDGE_SIGTTOU) return SIGTTOU;
-  if (bridge_signum == BRIDGE_SIGURG) return SIGURG;
-  if (bridge_signum == BRIDGE_SIGXCPU) return SIGXCPU;
-  if (bridge_signum == BRIDGE_SIGXFSZ) return SIGXFSZ;
-  if (bridge_signum == BRIDGE_SIGVTALRM) return SIGVTALRM;
-  if (bridge_signum == BRIDGE_SIGPROF) return SIGPROF;
-  if (bridge_signum == BRIDGE_SIGWINCH) return SIGWINCH;
-  if (bridge_signum == BRIDGE_SIGSYS) return SIGSYS;
-#if defined(SIGRTMIN) && defined(SIGRTMAX)
-  if ((bridge_signum >= BRIDGE_SIGRTMIN) && (bridge_signum <= BRIDGE_SIGRTMAX))
-    return (bridge_signum - BRIDGE_SIGRTMIN + SIGRTMIN);
-#endif  // defined(SIGRTMIN) && defined(SIGRMAX)
-  return -1;
+  return SignalBridgeSignalMap::GetInstance()->GetSignal(bridge_signum);
 }
 
 int ToBridgeSignal(int signum) {
-  if (signum == SIGHUP) return BRIDGE_SIGHUP;
-  if (signum == SIGINT) return BRIDGE_SIGINT;
-  if (signum == SIGQUIT) return BRIDGE_SIGQUIT;
-  if (signum == SIGILL) return BRIDGE_SIGILL;
-  if (signum == SIGTRAP) return BRIDGE_SIGTRAP;
-  if (signum == SIGABRT) return BRIDGE_SIGABRT;
-  if (signum == SIGBUS) return BRIDGE_SIGBUS;
-  if (signum == SIGFPE) return BRIDGE_SIGFPE;
-  if (signum == SIGKILL) return BRIDGE_SIGKILL;
-  if (signum == SIGUSR1) return BRIDGE_SIGUSR1;
-  if (signum == SIGSEGV) return BRIDGE_SIGSEGV;
-  if (signum == SIGUSR2) return BRIDGE_SIGUSR2;
-  if (signum == SIGPIPE) return BRIDGE_SIGPIPE;
-  if (signum == SIGALRM) return BRIDGE_SIGALRM;
-  if (signum == SIGTERM) return BRIDGE_SIGTERM;
-  if (signum == SIGCHLD) return BRIDGE_SIGCHLD;
-  if (signum == SIGCONT) return BRIDGE_SIGCONT;
-  if (signum == SIGSTOP) return BRIDGE_SIGSTOP;
-  if (signum == SIGTSTP) return BRIDGE_SIGTSTP;
-  if (signum == SIGTTIN) return BRIDGE_SIGTTIN;
-  if (signum == SIGTTOU) return BRIDGE_SIGTTOU;
-  if (signum == SIGURG) return BRIDGE_SIGURG;
-  if (signum == SIGXCPU) return BRIDGE_SIGXCPU;
-  if (signum == SIGXFSZ) return BRIDGE_SIGXFSZ;
-  if (signum == SIGVTALRM) return BRIDGE_SIGVTALRM;
-  if (signum == SIGPROF) return BRIDGE_SIGPROF;
-  if (signum == SIGWINCH) return BRIDGE_SIGWINCH;
-  if (signum == SIGSYS) return BRIDGE_SIGSYS;
-#if defined(SIGRTMIN) && defined(SIGRTMAX)
-  if (signum >= SIGRTMIN && signum <= SIGRTMAX)
-    return (signum - SIGRTMIN + BRIDGE_SIGRTMIN);
-#endif  // defined(SIGRTMIN) && defined(SIGRTMAX)
+  return SignalBridgeSignalMap::GetInstance()->GetBridgeSignal(signum);
+}
+
+int FromBridgeSigMaskAction(int bridge_how) {
+  if (bridge_how == BRIDGE_SIG_BLOCK) return SIG_BLOCK;
+  if (bridge_how == BRIDGE_SIG_UNBLOCK) return SIG_UNBLOCK;
+  if (bridge_how == BRIDGE_SIG_SETMASK) return SIG_SETMASK;
   return -1;
+}
+
+int ToBridgeSigMaskAction(int how) {
+  if (how == SIG_BLOCK) return BRIDGE_SIG_BLOCK;
+  if (how == SIG_UNBLOCK) return BRIDGE_SIG_UNBLOCK;
+  if (how == SIG_SETMASK) return BRIDGE_SIG_SETMASK;
+  return -1;
+}
+
+sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set) {
+  return SignalBridgeSignalMap::GetInstance()->GetSigSet(bridge_set, set);
+}
+
+bridge_sigset_t *ToBridgeSigSet(const sigset_t *set,
+                                bridge_sigset_t *bridge_set) {
+  return SignalBridgeSignalMap::GetInstance()->GetBridgeSigSet(set, bridge_set);
 }
 
 int FromBridgeSignalCode(int bridge_si_code) {
@@ -393,7 +461,6 @@ struct iovec *FromBridgeIovec(const struct bridge_iovec *bridge_iov,
   iov->iov_len = bridge_iov->iov_len;
   return iov;
 }
-
 
 struct bridge_iovec *ToBridgeIovec(const struct iovec *iov,
                                    struct bridge_iovec *bridge_iov) {

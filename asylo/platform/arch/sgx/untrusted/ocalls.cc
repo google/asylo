@@ -60,16 +60,13 @@ void TranslateToBridgeAndHandleSignal(int signum, siginfo_t *info,
                                       void *ucontext) {
   int bridge_signum = ToBridgeSignal(signum);
   if (bridge_signum < 0) {
-    LOG(ERROR) << "Invalid signum value:" << signum
-               << " to convert to bridge_signum";
+    // Invalid incoming signal number.
     return;
   }
   struct bridge_siginfo_t bridge_siginfo;
   ToBridgeSigInfo(info, &bridge_siginfo);
   if (handle_signal_inside_enclave) {
     handle_signal_inside_enclave(bridge_signum, &bridge_siginfo, ucontext);
-  } else {
-    LOG(ERROR) << "Signal translator inside enclave is not registered";
   }
 }
 
@@ -79,12 +76,8 @@ void TranslateToBridgeAndHandleSignal(int signum, siginfo_t *info,
 // In simulation mode, this is called if the signal arrives when the TCS is
 // inactive.
 void EnterEnclaveAndHandleSignal(int signum, siginfo_t *info, void *ucontext) {
-  asylo::Status status =
-      asylo::EnclaveSignalDispatcher::GetInstance()
-          ->EnterEnclaveAndHandleSignal(signum, info, ucontext);
-  if (!status.ok()) {
-    LOG(ERROR) << "Faied to enter enclave to handle signal: " << status;
-  }
+  asylo::EnclaveSignalDispatcher::GetInstance()->EnterEnclaveAndHandleSignal(
+      signum, info, ucontext);
 }
 
 // Checks the enclave TCS state to determine which function to call to handle
@@ -97,7 +90,7 @@ void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
   auto client_result =
       asylo::EnclaveSignalDispatcher::GetInstance()->GetClientForSignal(signum);
   if (!client_result.ok()) {
-    LOG(ERROR) << client_result.status();
+    return;
   }
   asylo::SGXClient *client =
       dynamic_cast<asylo::SGXClient *>(client_result.ValueOrDie());
@@ -436,6 +429,16 @@ int ocall_enc_untrusted_register_signal_handler(
   newact.sa_flags |= SA_SIGINFO;
   struct sigaction oldact;
   return sigaction(signum, &newact, &oldact);
+}
+
+int ocall_enc_untrusted_sigprocmask(int how, const bridge_sigset_t *set,
+                                    bridge_sigset_t *oldset) {
+  sigset_t tmp_set;
+  FromBridgeSigSet(set, &tmp_set);
+  sigset_t tmp_oldset;
+  int ret = sigprocmask(FromBridgeSigMaskAction(how), &tmp_set, &tmp_oldset);
+  ToBridgeSigSet(&tmp_oldset, oldset);
+  return ret;
 }
 
 //////////////////////////////////////

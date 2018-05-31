@@ -150,6 +150,8 @@ int enc_untrusted_register_signal_handler(
     int signum, const struct bridge_signal_handler *handler,
     const char *enclave_name);
 
+int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+
 //////////////////////////////////////
 //          sys/stat.h              //
 //////////////////////////////////////

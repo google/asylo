@@ -29,6 +29,7 @@ message SignalTestInput {
     UNSUPPORTED = 0;
     HANDLER = 1;
     SIGACTION = 2;
+    SIGMASK = 3;
   }
   optional SignalTestType signal_test_type = 1;
 }
