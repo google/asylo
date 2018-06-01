@@ -16,6 +16,8 @@
  *
  */
 
+#include <signal.h>
+
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -62,8 +64,17 @@ Status SignalManager::HandleSignal(int signum, siginfo_t *info,
 }
 
 void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
-  absl::MutexLock lock(&signal_to_sigaction_lock_);
-  signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(act);
+  // To avoid deadlock, block all signals before registering a signal handler.
+  sigset_t mask;
+  sigfillset(&mask);
+  sigset_t old_mask;
+  sigprocmask(SIG_SETMASK, &mask, &old_mask);
+  {
+    absl::MutexLock lock(&signal_to_sigaction_lock_);
+    signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(act);
+  }
+  // Set the signal mask back to the original one to unblock the signals.
+  sigprocmask(SIG_SETMASK, &old_mask, nullptr);
 }
 
 const struct sigaction *SignalManager::GetSigAction(int signum) const {
@@ -105,3 +116,4 @@ const sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
 }
 
 }  // namespace asylo
+
