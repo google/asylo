@@ -134,6 +134,7 @@ cc_library(
     hdrs = ["exception.h"],
 )
 
+# Smoke tests for enclaves; currently identical to hello_world.so.
 sgx_enclave(
     name = "test_enclave_smoke.so",
     srcs = ["hello_world.cc"],
@@ -164,6 +165,7 @@ TEST_DEPS_COMMON = [
     "//asylo/util:status",
 ]
 
+# Smoke tests for enclaves; currently identical to hello_world_test.
 enclave_test(
     name = "enclave_smoke_test",
     srcs = ["hello_world_test.cc"],
