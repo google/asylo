@@ -1715,12 +1715,34 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
              *output = (char)(input | FIRST_BYTE_MARK[*length]);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,509 @@
+@@ -0,0 +1,531 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +package(default_visibility = ["//visibility:public"])
 +
-+licenses(["notice"])  # BSD
++# "notice" licenses present:
++# BSD (Intel SGX SDK, libunwind, libcxxrt),
++# NetBSD, FreeBSD, OpenBSD
++# zlib/libpng (Tinyxml)
++# UIUC (LLVM's compiler_rt library)
++# Apache v2 (EPID SDK)
++# STLPort
++# OpenSSL/SSLeay* (OpenSSL),
++
++# "reciprocal" licenses mentioned but unused:
++# Eclipse public license 1.0 (SGX Eclipse plugin)
++
++# "restricted" licenses present:
++# GPLv2 (ittnotify)
++
++# "restricted" licenses mentioned but unused:
++# Intel (precompiled signed enclaves),
++# Intel sample code license (rdrand)
++
++# "unencumbered" licenses present:
++# SQLite
++# CC0 1.0 (DLMalloc),
++licenses(["reciprocal"])  # Eclipse public license
 +
 +exports_files([
 +    "LICENSE",
