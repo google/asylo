@@ -34,7 +34,6 @@
 #include "include/grpcpp/channel.h"
 #include "include/grpcpp/create_channel.h"
 #include "include/grpcpp/security/credentials.h"
-#include "test/core/util/port.h"
 
 namespace asylo {
 namespace test {
