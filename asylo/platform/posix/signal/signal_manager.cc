@@ -61,9 +61,9 @@ Status SignalManager::HandleSignal(int signum, siginfo_t *info,
   return Status::OkStatus();
 }
 
-void SignalManager::SetSigAction(int signum, const struct sigaction *act) {
+void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
   absl::MutexLock lock(&signal_to_sigaction_lock_);
-  signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(*act);
+  signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(act);
 }
 
 const struct sigaction *SignalManager::GetSigAction(int signum) const {
@@ -75,17 +75,17 @@ const struct sigaction *SignalManager::GetSigAction(int signum) const {
   return sigaction_iterator->second.get();
 }
 
-void SignalManager::BlockSignals(const sigset_t *set) {
+void SignalManager::BlockSignals(const sigset_t &set) {
   for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
-    if (sigismember(set, signum)) {
+    if (sigismember(&set, signum)) {
       sigaddset(&signal_mask_, signum);
     }
   }
 }
 
-void SignalManager::UnblockSignals(const sigset_t *set) {
+void SignalManager::UnblockSignals(const sigset_t &set) {
   for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
-    if (sigismember(set, signum)) {
+    if (sigismember(&set, signum)) {
       sigdelset(&signal_mask_, signum);
     }
   }
@@ -93,11 +93,11 @@ void SignalManager::UnblockSignals(const sigset_t *set) {
 
 const sigset_t SignalManager::GetSignalMask() const { return signal_mask_; }
 
-const sigset_t SignalManager::GetUnblockedSet(const sigset_t *set) {
+const sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
   sigset_t signals_to_unblock;
   sigemptyset(&signals_to_unblock);
   for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
-    if (!sigismember(set, signum)) {
+    if (!sigismember(&set, signum)) {
       sigaddset(&signals_to_unblock, signum);
     }
   }

@@ -65,7 +65,7 @@ int sigaction(int signum, const struct sigaction *act,
         oldact->sa_handler = SIG_DFL;
       }
     }
-    signal_manager->SetSigAction(signum, act);
+    signal_manager->SetSigAction(signum, *act);
   }
   const std::string enclave_name = asylo::GetEnclaveName();
   // Pass a C string because enc_register_signal has C linkage. This string is
@@ -96,17 +96,17 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   if (how == SIG_UNBLOCK) {
     signals_to_unblock = *set;
   } else if (how == SIG_SETMASK) {
-    signals_to_unblock = signal_manager->GetUnblockedSet(set);
+    signals_to_unblock = signal_manager->GetUnblockedSet(*set);
   }
 
   // Unblock signals inside the enclave before unblocking signals on the host.
-  signal_manager->UnblockSignals(&signals_to_unblock);
+  signal_manager->UnblockSignals(signals_to_unblock);
 
   // |oldset| is already filled with the signal mask inside the enclave.
   int res = enc_untrusted_sigprocmask(how, set, /*oldset=*/nullptr);
 
   // Block signals inside the enclave after the host.
-  signal_manager->BlockSignals(&signals_to_block);
+  signal_manager->BlockSignals(signals_to_block);
 
   return res;
 }

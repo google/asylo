@@ -45,98 +45,48 @@ bool BridgeSigIsMember(const bridge_sigset_t *bridge_set, const int sig) {
 
 void BridgeSigEmptySet(bridge_sigset_t *bridge_set) { *bridge_set = 0; }
 
-// A singleton that maintains the mapping between bridge and native signal
-// number constants.
-class SignalBridgeSignalMap {
- public:
-  static SignalBridgeSignalMap *GetInstance() {
-    static SignalBridgeSignalMap *instance = new SignalBridgeSignalMap();
-    return instance;
-  }
-
-  int GetSignal(int bridge_signum) {
-    for (auto signal : signal_to_bridge_signal_) {
-      if (bridge_signum == signal.second) {
-        return signal.first;
-      }
-    }
-    return -1;
-  }
-
-  int GetBridgeSignal(int signum) {
-    if (signal_to_bridge_signal_.find(signum) ==
-        signal_to_bridge_signal_.end()) {
-      return -1;
-    }
-    return signal_to_bridge_signal_[signum];
-  }
-
-  sigset_t *GetSigSet(const bridge_sigset_t *bridge_set, sigset_t *set) {
-    if (!bridge_set || !set) return nullptr;
-    sigemptyset(set);
-    for (auto signal : signal_to_bridge_signal_) {
-      if (BridgeSigIsMember(bridge_set, signal.second)) {
-        sigaddset(set, signal.first);
-      }
-    }
-    return set;
-  }
-
-  bridge_sigset_t *GetBridgeSigSet(const sigset_t *set,
-                                   bridge_sigset_t *bridge_set) {
-    if (!set || !bridge_set) return nullptr;
-    BridgeSigEmptySet(bridge_set);
-    for (auto signal : signal_to_bridge_signal_) {
-      if (sigismember(set, signal.first)) {
-        BridgeSigAddSet(bridge_set, signal.second);
-      }
-    }
-    return bridge_set;
-  }
-
- private:
-  SignalBridgeSignalMap() { InitializeMap(); }
-
-  void InitializeMap() {
-    signal_to_bridge_signal_[SIGHUP] = BRIDGE_SIGHUP;
-    signal_to_bridge_signal_[SIGINT] = BRIDGE_SIGINT;
-    signal_to_bridge_signal_[SIGQUIT] = BRIDGE_SIGQUIT;
-    signal_to_bridge_signal_[SIGILL] = BRIDGE_SIGILL;
-    signal_to_bridge_signal_[SIGTRAP] = BRIDGE_SIGTRAP;
-    signal_to_bridge_signal_[SIGABRT] = BRIDGE_SIGABRT;
-    signal_to_bridge_signal_[SIGBUS] = BRIDGE_SIGBUS;
-    signal_to_bridge_signal_[SIGFPE] = BRIDGE_SIGFPE;
-    signal_to_bridge_signal_[SIGKILL] = BRIDGE_SIGKILL;
-    signal_to_bridge_signal_[SIGUSR1] = BRIDGE_SIGUSR1;
-    signal_to_bridge_signal_[SIGSEGV] = BRIDGE_SIGSEGV;
-    signal_to_bridge_signal_[SIGUSR2] = BRIDGE_SIGUSR2;
-    signal_to_bridge_signal_[SIGPIPE] = BRIDGE_SIGPIPE;
-    signal_to_bridge_signal_[SIGALRM] = BRIDGE_SIGALRM;
-    signal_to_bridge_signal_[SIGCHLD] = BRIDGE_SIGCHLD;
-    signal_to_bridge_signal_[SIGCONT] = BRIDGE_SIGCONT;
-    signal_to_bridge_signal_[SIGSTOP] = BRIDGE_SIGSTOP;
-    signal_to_bridge_signal_[SIGTSTP] = BRIDGE_SIGTSTP;
-    signal_to_bridge_signal_[SIGTTIN] = BRIDGE_SIGTTIN;
-    signal_to_bridge_signal_[SIGTTOU] = BRIDGE_SIGTTOU;
-    signal_to_bridge_signal_[SIGURG] = BRIDGE_SIGURG;
-    signal_to_bridge_signal_[SIGXCPU] = BRIDGE_SIGXCPU;
-    signal_to_bridge_signal_[SIGXFSZ] = BRIDGE_SIGXFSZ;
-    signal_to_bridge_signal_[SIGVTALRM] = BRIDGE_SIGVTALRM;
-    signal_to_bridge_signal_[SIGPROF] = BRIDGE_SIGPROF;
-    signal_to_bridge_signal_[SIGWINCH] = BRIDGE_SIGWINCH;
-    signal_to_bridge_signal_[SIGSYS] = BRIDGE_SIGSYS;
+const std::unordered_map<int, int> *CreateBridgeSignalMap() {
+  auto signal_map = new std::unordered_map<int, int>;
+  signal_map->insert({SIGHUP, BRIDGE_SIGHUP});
+  signal_map->insert({SIGINT, BRIDGE_SIGINT});
+  signal_map->insert({SIGQUIT, BRIDGE_SIGQUIT});
+  signal_map->insert({SIGILL, BRIDGE_SIGILL});
+  signal_map->insert({SIGTRAP, BRIDGE_SIGTRAP});
+  signal_map->insert({SIGABRT, BRIDGE_SIGABRT});
+  signal_map->insert({SIGBUS, BRIDGE_SIGBUS});
+  signal_map->insert({SIGFPE, BRIDGE_SIGFPE});
+  signal_map->insert({SIGKILL, BRIDGE_SIGKILL});
+  signal_map->insert({SIGUSR1, BRIDGE_SIGUSR1});
+  signal_map->insert({SIGSEGV, BRIDGE_SIGSEGV});
+  signal_map->insert({SIGUSR2, BRIDGE_SIGUSR2});
+  signal_map->insert({SIGPIPE, BRIDGE_SIGPIPE});
+  signal_map->insert({SIGALRM, BRIDGE_SIGALRM});
+  signal_map->insert({SIGCHLD, BRIDGE_SIGCHLD});
+  signal_map->insert({SIGCONT, BRIDGE_SIGCONT});
+  signal_map->insert({SIGSTOP, BRIDGE_SIGSTOP});
+  signal_map->insert({SIGTSTP, BRIDGE_SIGTSTP});
+  signal_map->insert({SIGTTIN, BRIDGE_SIGTTIN});
+  signal_map->insert({SIGTTOU, BRIDGE_SIGTTOU});
+  signal_map->insert({SIGURG, BRIDGE_SIGURG});
+  signal_map->insert({SIGXCPU, BRIDGE_SIGXCPU});
+  signal_map->insert({SIGXFSZ, BRIDGE_SIGXFSZ});
+  signal_map->insert({SIGVTALRM, BRIDGE_SIGVTALRM});
+  signal_map->insert({SIGPROF, BRIDGE_SIGPROF});
+  signal_map->insert({SIGWINCH, BRIDGE_SIGWINCH});
+  signal_map->insert({SIGSYS, BRIDGE_SIGSYS});
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
-    for (int signal = SIGRTMIN; signal <= SIGRTMAX; ++signal) {
-      signal_to_bridge_signal_[signal] = signal - SIGRTMIN + BRIDGE_SIGRTMIN;
-    }
-#endif  // defined(SIGRTMIN) && defined(SIGRTMAX)
+  for (int signal = SIGRTMIN; signal <= SIGRTMAX; ++signal) {
+    signal_map->insert({signal, signal - SIGRTMIN + BRIDGE_SIGRTMIN});
   }
+#endif  // defined(SIGRTMIN) && defined(SIGRTMAX)
+  return signal_map;
+}
 
-  SignalBridgeSignalMap(SignalBridgeSignalMap const &) = delete;
-  void operator=(SignalBridgeSignalMap const &) = delete;
-
-  std::unordered_map<int, int> signal_to_bridge_signal_;
-};
+const std::unordered_map<int, int> *GetSignalToBridgeSignalMap() {
+  static const std::unordered_map<int, int> *signal_to_bridge_signal_map =
+      CreateBridgeSignalMap();
+  return signal_to_bridge_signal_map;
+}
 
 }  // namespace
 
@@ -159,11 +109,20 @@ enum SysconfConstants ToSysconfConstants(int sysconf_constant) {
 }
 
 int FromBridgeSignal(int bridge_signum) {
-  return SignalBridgeSignalMap::GetInstance()->GetSignal(bridge_signum);
+  for (auto signal : *GetSignalToBridgeSignalMap()) {
+    if (bridge_signum == signal.second) {
+      return signal.first;
+    }
+  }
+  return -1;
 }
 
 int ToBridgeSignal(int signum) {
-  return SignalBridgeSignalMap::GetInstance()->GetBridgeSignal(signum);
+  auto iterator = GetSignalToBridgeSignalMap()->find(signum);
+  if (iterator == GetSignalToBridgeSignalMap()->end()) {
+    return -1;
+  }
+  return iterator->second;
 }
 
 int FromBridgeSigMaskAction(int bridge_how) {
@@ -181,12 +140,26 @@ int ToBridgeSigMaskAction(int how) {
 }
 
 sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set) {
-  return SignalBridgeSignalMap::GetInstance()->GetSigSet(bridge_set, set);
+  if (!bridge_set || !set) return nullptr;
+  sigemptyset(set);
+  for (auto signal : *GetSignalToBridgeSignalMap()) {
+    if (BridgeSigIsMember(bridge_set, signal.second)) {
+      sigaddset(set, signal.first);
+    }
+  }
+  return set;
 }
 
 bridge_sigset_t *ToBridgeSigSet(const sigset_t *set,
                                 bridge_sigset_t *bridge_set) {
-  return SignalBridgeSignalMap::GetInstance()->GetBridgeSigSet(set, bridge_set);
+  if (!set || !bridge_set) return nullptr;
+  BridgeSigEmptySet(bridge_set);
+  for (auto signal : *GetSignalToBridgeSignalMap()) {
+    if (sigismember(set, signal.first)) {
+      BridgeSigAddSet(bridge_set, signal.second);
+    }
+  }
+  return bridge_set;
 }
 
 int FromBridgeSignalCode(int bridge_si_code) {

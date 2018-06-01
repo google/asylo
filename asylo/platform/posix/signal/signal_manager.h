@@ -38,7 +38,7 @@ class SignalManager {
   Status HandleSignal(int signum, siginfo_t *info, void *ucontext);
 
   // Sets a signal handler pointer for a specific signal |signum|.
-  void SetSigAction(int signum, const struct sigaction *act)
+  void SetSigAction(int signum, const struct sigaction &act)
       LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Gets a signal handler for a specific signal |signum|.
@@ -46,16 +46,16 @@ class SignalManager {
       LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Blocks all the signals in |set|.
-  void BlockSignals(const sigset_t *set);
+  void BlockSignals(const sigset_t &set);
 
   // Unblocks all the signals in |set|.
-  void UnblockSignals(const sigset_t *set);
+  void UnblockSignals(const sigset_t &set);
 
   // Gets the enclave stored signal mask.
   const sigset_t GetSignalMask() const;
 
   // Gets the set of unblocked signals in |set|.
-  const sigset_t GetUnblockedSet(const sigset_t *set);
+  const sigset_t GetUnblockedSet(const sigset_t &set);
 
  private:
   SignalManager() = default;  // Private to enforce singleton.
