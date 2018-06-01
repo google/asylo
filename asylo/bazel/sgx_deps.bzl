@@ -28,18 +28,18 @@ load(
 def _instantiate_crosstool_impl(repository_ctx):
     """Instantiates the SGX crosstool template with the installation path.
 
-  The installation path can be an attribute or found from 1 of 3 canonical
-  locations (resolved in the following order):
-    * $HOME/.asylo/sgx_toolchain_location [first line has the path]
-    * /usr/local/share/asylo/sgx_toolchain_location [first line has the path]
-    * [default fallback] /opt/asylo/toolchains/sgx_x86_64
+    The installation path can be an attribute or found from 1 of 3 canonical
+    locations (resolved in the following order):
+      * $HOME/.asylo/sgx_toolchain_location [first line has the path]
+      * /usr/local/share/asylo/sgx_toolchain_location [first line has the path]
+      * [default fallback] /opt/asylo/toolchains/sgx_x86_64
 
-  Args:
-    repository_ctx: The repository_rule implementation object.
+    Args:
+      repository_ctx: The repository_rule implementation object.
 
-  Returns:
-    Void.
-  """
+    Returns:
+      Void.
+    """
     toolchain_location = installation_path(
         repository_ctx,
         "sgx_toolchain_location",
@@ -59,11 +59,11 @@ _instantiate_crosstool = repository_rule(
 def sgx_deps(installation_path = None):
     """Macro to include Asylo's SGX backend dependencies in a WORKSPACE.
 
-  Args:
-    installation_path: The absolute path to the installed SGX toolchain.
-                       This can be omitted if the path is the first line of
-                       /usr/local/share/asylo/sgx_toolchain_location
-  """
+    Args:
+      installation_path: The absolute path to the installed SGX toolchain.
+                         This can be omitted if the path is the first line of
+                         /usr/local/share/asylo/sgx_toolchain_location
+    """
     _instantiate_crosstool(
         name = "com_google_asylo_sgx_backend",
         installation_path = installation_path,

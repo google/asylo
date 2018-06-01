@@ -35,8 +35,7 @@ def _asylo_backend_deps_impl(repository_ctx):
         Label("@com_google_asylo//asylo/distrib/backend:WORKSPACE.tpl"),
     )
 
-    # Rule to include Asylo's backend support dependencies in a WORKSPACE.
-
+# Rule to include Asylo's backend support dependencies in a WORKSPACE.
 _asylo_backend_deps = repository_rule(
     implementation = _asylo_backend_deps_impl,
 )
@@ -98,7 +97,7 @@ cc_library(
             strip_prefix = "googletest-release-1.8.0",
         )
 
-        # gflags
+    # gflags
     if "com_github_gflags_gflags" not in native.existing_rules():
         native.http_archive(
             name = "com_github_gflags_gflags",
@@ -127,7 +126,7 @@ def asylo_deps():
             strip_prefix = "boringssl-241dc59bb90f8c45ebc8473fc7599b861a93bfa6",
         )
 
-        # CCTZ (Time-zone framework).
+    # CCTZ (Time-zone framework).
     if "com_googlesource_code_cctz" not in native.existing_rules():
         native.http_archive(
             name = "com_googlesource_code_cctz",
@@ -136,7 +135,7 @@ def asylo_deps():
             strip_prefix = "cctz-2.2",
         )
 
-        # RE2 regular-expression framework. Used by some unit-tests.
+    # RE2 regular-expression framework. Used by some unit-tests.
     if "com_googlesource_code_re2" not in native.existing_rules():
         native.http_archive(
             name = "com_googlesource_code_re2",
@@ -145,7 +144,7 @@ def asylo_deps():
             strip_prefix = "re2-2018-03-01",
         )
 
-        # Absl for C++
+    # Absl for C++
     if "com_google_absl" not in native.existing_rules():
         patch_repository(
             name = "com_google_absl",
@@ -158,7 +157,7 @@ def asylo_deps():
             strip_prefix = "abseil-cpp-94ce52d46c171683b1ee22d14277a6d3bdfd7c4c",
         )
 
-        # Absl for python
+    # Absl for python
     if "io_abseil_py" not in native.existing_rules():
         native.http_archive(
             name = "io_abseil_py",
@@ -167,7 +166,7 @@ def asylo_deps():
             strip_prefix = "abseil-py-5e343642d987268df199b4c851b7dd3d687ac316",
         )
 
-        # Protobuf
+    # Protobuf
     if "com_google_protobuf" not in native.existing_rules():
         patch_repository(
             name = "com_google_protobuf",
@@ -177,7 +176,7 @@ def asylo_deps():
             patch = "@com_google_asylo//asylo/distrib:protobuf.patch",
         )
 
-        # gRPC
+    # gRPC
     if "com_github_grpc_grpc" not in native.existing_rules():
         patch_repository(
             name = "com_github_grpc_grpc",
@@ -187,7 +186,7 @@ def asylo_deps():
             strip_prefix = "grpc-1.11.0",
         )
 
-        # Google certificate transparency has a merkletree implementation.
+    # Google certificate transparency has a merkletree implementation.
     if "com_google_certificate_transparency" not in native.existing_rules():
         native.new_http_archive(
             name = "com_google_certificate_transparency",
@@ -227,7 +226,7 @@ cc_library(
             strip_prefix = "certificate-transparency-335536d7276e375bdcfd740056506bf503221f03",
         )
 
-        # required by protobuf_python
+    # required by protobuf_python
     if "six_archive" not in native.existing_rules():
         native.new_http_archive(
             name = "six_archive",
@@ -265,7 +264,7 @@ def asylo_go_deps():
             sha256 = "4b14d8dd31c6dbaf3ff871adcd03f28c3274e42abc855cb8fb4d01233c0154dc",
         )
 
-        # go crypto for EKEP's go_binary usage.
+    # go crypto for EKEP's go_binary usage.
     if "com_github_golang_crypto" not in native.existing_rules():
         native.new_http_archive(
             name = "com_github_golang_crypto",

@@ -32,18 +32,18 @@ def _try_get_file_line1(repository_ctx, path):
 def installation_path(repository_ctx, file, user_defined, default, what):
     """Looks up an installation location.
 
-  Args:
-    repository_ctx: A repository_rule context object.
-    file: The file that should contain the installation location.
-    user_defined: A path that user may provide to override lookup (may be None).
-    default: When both |file| and |user_defined| are unavailable, fall back on
-             this value (may be None).
-    what: A string for the failure message to indicate which component could not
-          retrieve its installation location.
+    Args:
+      repository_ctx: A repository_rule context object.
+      file: The file that should contain the installation location.
+      user_defined: A path that user may provide to override lookup (may be None).
+      default: When both |file| and |user_defined| are unavailable, fall back on
+               this value (may be None).
+      what: A string for the failure message to indicate which component could not
+            retrieve its installation location.
 
-  Returns:
-    string: A path to a directory.
-  """
+    Returns:
+      string: A path to a directory.
+    """
     result = ""
     if user_defined:
         result = user_defined

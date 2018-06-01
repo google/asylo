@@ -28,20 +28,20 @@ def asylo_grpc_proto_library(
         **kwargs):
     """Generates proto targets in various languages for use by gRPC.
 
-  This macro produces two targets. The given name is for cc_library deps and
-  a derived name is for asylo_[grpc_]proto_library deps.
+    This macro produces two targets. The given name is for cc_library deps and
+    a derived name is for asylo_[grpc_]proto_library deps.
 
-  Args:
-    name: Name for cc_grpc_library that must be of the form
-          base_name + "_grpc_proto" for use in cc_library dependencies. The
-          macro will also produce a proto_library named base_name + "_proto"
-          for use in proto_library dependencies.
-    srcs: Same as proto_library srcs.
-    deps: Same as proto_library deps.
-    well_known_protos: Same as grpc_proto_library's well_known_protos.
-    generate_mocks: Same as grpc_proto_library's generate_mocks.
-    **kwargs: proto_library arguments.
-  """
+    Args:
+      name: Name for cc_grpc_library that must be of the form
+            base_name + "_grpc_proto" for use in cc_library dependencies. The
+            macro will also produce a proto_library named base_name + "_proto"
+            for use in proto_library dependencies.
+      srcs: Same as proto_library srcs.
+      deps: Same as proto_library deps.
+      well_known_protos: Same as grpc_proto_library's well_known_protos.
+      generate_mocks: Same as grpc_proto_library's generate_mocks.
+      **kwargs: proto_library arguments.
+    """
     if not name.endswith("_grpc_proto"):
         fail("Expected asylo_grpc_proto_library name to end with '_grpc_proto'.")
     base_name = name[0:-len("_grpc_proto")]
@@ -66,13 +66,13 @@ def asylo_grpc_proto_library(
 def asylo_proto_library(name, srcs = [], deps = [], **kwargs):
     """Generates proto targets in various languages.
 
-  Args:
-    name: Name for proto_library and base for the cc_proto_library name, name +
-          "_cc".
-    srcs: Same as proto_library deps.
-    deps: Same as proto_library deps.
-    **kwargs: proto_library arguments.
-  """
+    Args:
+      name: Name for proto_library and base for the cc_proto_library name, name +
+            "_cc".
+      srcs: Same as proto_library deps.
+      deps: Same as proto_library deps.
+      **kwargs: proto_library arguments.
+    """
     if kwargs.get("has_services", False):
         fail("Services are handled with asylo_grpc_proto_library.")
     native.proto_library(
@@ -90,12 +90,12 @@ def asylo_proto_library(name, srcs = [], deps = [], **kwargs):
 def asylo_py_proto_library(name, srcs = [], deps = [], **kwargs):
     """Generates proto targets for Python.
 
-  Args:
-    name: Name for proto_library.
-    srcs: Same as py_proto_library deps.
-    deps: Ignored, provided for compatibility only.
-    **kwargs: proto_library arguments.
-  """
+    Args:
+      name: Name for proto_library.
+      srcs: Same as py_proto_library deps.
+      deps: Ignored, provided for compatibility only.
+      **kwargs: proto_library arguments.
+    """
     _ignore = [deps]
     py_proto_library(
         name = name,

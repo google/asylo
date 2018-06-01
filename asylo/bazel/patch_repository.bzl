@@ -31,12 +31,11 @@ def _patch_repository_impl(repository_ctx):
         repository_ctx.path(repository_ctx.attr.patch),
     ])
 
-    # This is implemented as part of http_archive in
-    # @io_bazel//tools/build_defs/repo/http.bzl, but the bootstrapping of getting
-    # dependencies to define our dependencies is too cumbersome of an interface for
-    # users to depend on Asylo (A macro cannot use native.http_archive to fetch
-    # io_bazel and then call load. The load statement must be at the top level).
-
+# This is implemented as part of http_archive in
+# @io_bazel//tools/build_defs/repo/http.bzl, but the bootstrapping of getting
+# dependencies to define our dependencies is too cumbersome of an interface for
+# users to depend on Asylo (A macro cannot use native.http_archive to fetch
+# io_bazel and then call load. The load statement must be at the top level).
 patch_repository = repository_rule(
     implementation = _patch_repository_impl,
     local = True,
