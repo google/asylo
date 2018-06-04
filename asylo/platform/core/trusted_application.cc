@@ -331,6 +331,7 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
   if (!enclave_final.ParseFromArray(input, input_len)) {
     status = Status(error::GoogleError::INVALID_ARGUMENT,
                     "Failed to parse EnclaveFinal");
+    return status_serializer.Serialize(status);
   }
 
   TrustedApplication *trusted_application = GetApplicationInstance();
