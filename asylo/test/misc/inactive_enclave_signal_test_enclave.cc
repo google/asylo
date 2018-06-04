@@ -61,12 +61,17 @@ class InactiveEnclaveSignalTest : public EnclaveTestCase {
         act.sa_sigaction = &HandleSignalWithSigAction;
         act.sa_flags |= SA_SIGINFO;
         break;
+      case SignalTestInput::SIGNAL:
+        signal(SIGUSR1, &HandleSignalWithHandler);
+        break;
       default:
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "No valid test type");
     }
-    struct sigaction oldact;
-    sigaction(SIGUSR1, &act, &oldact);
+    if (test_input.signal_test_type() != SignalTestInput::SIGNAL) {
+      struct sigaction oldact;
+      sigaction(SIGUSR1, &act, &oldact);
+    }
     output->SetExtension(signal_received, signal_handled);
     return Status::OkStatus();
   }

@@ -64,6 +64,14 @@ TEST_F(InactiveEnclaveSignalTest, HandlerTest) {
   EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
 }
 
+TEST_F(InactiveEnclaveSignalTest, SignalTest) {
+  // Test signal registered by signal(2).
+  EnclaveInput enclave_input;
+  enclave_input.MutableExtension(signal_test_input)
+      ->set_signal_test_type(SignalTestInput::SIGNAL);
+  EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
+}
+
 TEST_F(InactiveEnclaveSignalTest, SigactionTest) {
   // Test signal handled by sa_sigaction.
   EnclaveInput enclave_input;

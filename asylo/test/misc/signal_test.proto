@@ -22,15 +22,20 @@ import "asylo/enclave.proto";
 
 // Input to a signal test case, specifying the type of signal handler.
 message SignalTestInput {
-  // Whether to register a signal with sa_handler, which takes a single argument
-  // signum, or sa_sigaction, which takes three arguments: signum, siginfo, and
-  // ucontext.
   enum SignalTestType {
     UNSUPPORTED = 0;
+    // Tests sigaction(2) that registers a signal with sa_handler, which takes
+    // a single argument signum.
     HANDLER = 1;
+    // Tests sigaction(2) that registers sa_sigaction, which takes three
+    // arguments: signum, siginfo, and ucontext.
     SIGACTION = 2;
+    // Tests sigprocmask(2) that blocks/unblocks signals.
     SIGMASK = 3;
+    // Tests signal(2) that registers a signal handler.
+    SIGNAL = 4;
   }
+  // The type of signal test.
   optional SignalTestType signal_test_type = 1;
 }
 

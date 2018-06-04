@@ -61,6 +61,8 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     switch (test_input.signal_test_type()) {
       case SignalTestInput::HANDLER:
         return RunSignalTest(SignalTestInput::HANDLER);
+      case SignalTestInput::SIGNAL:
+        return RunSignalTest(SignalTestInput::SIGNAL);
       case SignalTestInput::SIGACTION:
         return RunSignalTest(SignalTestInput::SIGACTION);
       case SignalTestInput::SIGMASK:
@@ -95,6 +97,9 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
       case SignalTestInput::HANDLER:
         act.sa_handler = &HandleSignalWithHandler;
         break;
+      case SignalTestInput::SIGNAL:
+        signal(SIGUSR1, &HandleSignalWithHandler);
+        break;
       case SignalTestInput::SIGACTION:
         act.sa_sigaction = &HandleSignalWithSigAction;
         act.sa_flags |= SA_SIGINFO;
@@ -106,7 +111,9 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "No valid test type");
     }
-    sigaction(SIGUSR1, &act, &oldact);
+    if (test_type != SignalTestInput::SIGNAL) {
+      sigaction(SIGUSR1, &act, &oldact);
+    }
     // Print to the pipe so that the signal thread will start sending the
     // signal.
     printf("ready to receive signal!");

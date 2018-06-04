@@ -31,10 +31,6 @@ extern "C" {
 
 int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) { abort(); }
 
-// Guards sigaction calls. This is to ensure that the signal handlers are not
-// overwritten between the time sigaction gets |oldact| and sets|act|.
-static absl::Mutex sigaction_lock;
-
 // Registers a signal handler for |signum|.
 //
 // This method registers a signal handler in two parts:
@@ -54,6 +50,9 @@ static absl::Mutex sigaction_lock;
 // registered inside the enclave directly.
 int sigaction(int signum, const struct sigaction *act,
               struct sigaction *oldact) {
+  // Guards sigaction calls. This is to ensure that signal handlers are not
+  // overwritten between the time sigaction gets |oldact| and sets |act|.
+  static absl::Mutex sigaction_lock;
   {
     absl::MutexLock lock(&sigaction_lock);
     asylo::SignalManager *signal_manager = asylo::SignalManager::GetInstance();
@@ -73,6 +72,19 @@ int sigaction(int signum, const struct sigaction *act,
   return enc_register_signal(signum, enclave_name.c_str());
 }
 
+// Sets the signal mask with |set|.
+//
+// This method sets the signal mask both inside the enclave and on the host.
+// If |how| is SIG_UNBLOCK, the signals to unblock are unblocked inside the
+// enclave first, then on the host.
+// If |how| is SIG_BLOCK, the signals to block are blocked on the host first,
+// then inside the enclave.
+// If |how| is SIG_SETMASK, |set| is separated to signals to block and to
+// unblock. The signals to unblock are processed inside the enclave first, then
+// on the host, and the signals to block are processed on the host first, then
+// inside the enclave.
+// |oldset| is set to the signal mask used inside the enclave prior to this
+// call.
 int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   if (how != SIG_BLOCK && how != SIG_UNBLOCK && how != SIG_SETMASK) {
     errno = EINVAL;
@@ -109,6 +121,21 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   signal_manager->BlockSignals(signals_to_block);
 
   return res;
+}
+
+// Registers a signal handler for |signum| with |handler|.
+//
+// This method is a special case of sigaction. It calls sigaction with only
+// sa_handler in |act| field set.
+sighandler_t signal(int signum, sighandler_t handler) {
+  struct sigaction act;
+  act.sa_handler = handler;
+  struct sigaction oldact;
+  if (sigaction(signum, &act, &oldact)) {
+    // Errno is set by sigaction.
+    return SIG_ERR;
+  }
+  return oldact.sa_handler;
 }
 
 }  // extern "C"
