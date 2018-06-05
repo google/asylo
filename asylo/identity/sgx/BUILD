@@ -204,6 +204,7 @@ cc_library(
         "code_identity_util.h",
         "self_identity.h",
     ],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":code_identity_constants",
         ":code_identity_proto_cc",

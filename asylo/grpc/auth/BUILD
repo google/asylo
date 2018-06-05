@@ -50,6 +50,32 @@ cc_library(
     ],
 )
 
+# Configuration for building null enclave credentials (used for unauthenticated gRPC
+# connections).
+cc_library(
+    name = "null_credentials_options",
+    srcs = ["null_credentials_options.cc"],
+    hdrs = ["null_credentials_options.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":grpc++_security_enclave",
+        "//asylo/identity/null_identity:null_identity_util",
+    ],
+)
+
+# Configuration for building SGX local enclave credentials (used for local gRPC
+# connections between SGX enclaves).
+cc_library(
+    name = "sgx_credentials_options",
+    srcs = ["sgx_credentials_options.cc"],
+    hdrs = ["sgx_credentials_options.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        ":grpc++_security_enclave",
+        "//asylo/identity/sgx:code_identity_util",
+    ],
+)
+
 cc_library(
     name = "enclave_auth_context",
     srcs = ["enclave_auth_context.cc"],

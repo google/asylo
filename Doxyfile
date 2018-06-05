@@ -795,6 +795,8 @@ asylo/grpc/auth/enclave_auth_context.h \
 asylo/grpc/auth/enclave_channel_credentials.h \
 asylo/grpc/auth/enclave_credentials_options.h \
 asylo/grpc/auth/enclave_server_credentials.h \
+asylo/grpc/auth/null_credentials_options.h \
+asylo/grpc/auth/sgx_credentials_options.h \
 asylo/identity/enclave_assertion_authority.h \
 asylo/identity/enclave_assertion_generator.h \
 asylo/identity/enclave_assertion_verifier.h \

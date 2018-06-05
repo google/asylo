@@ -144,6 +144,7 @@ cc_library(
 cc_library(
     name = "null_identity_util",
     hdrs = ["null_identity_util.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":null_identity_constants",
         "//asylo/identity:identity_proto_cc",
