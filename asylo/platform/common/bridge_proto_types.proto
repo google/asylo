@@ -31,7 +31,7 @@ message AddrinfoProto {
 
   required uint32 ai_addrlen = 5;
   optional SockaddrProto ai_addr = 6;  // Not required for hints
-  optional string ai_canonname = 7;  // Only if AI_CANONNAME in hints.ai_flags
+  optional string ai_canonname = 7;    // Only if AI_CANONNAME in hints.ai_flags
 }
 
 message AddrinfosProto {

@@ -162,8 +162,9 @@ TEST_P(LocalAssertionAuthorityTest, VerifyAssertionSameEnclave) {
   // Verify that the extracted code identity matches the generator's identity.
   EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(
       code_identity, GetSelfIdentity()->identity))
-      << "Extracted identity:\n" << code_identity.DebugString()
-      << "\nExpected identity:\n" << GetSelfIdentity()->identity.DebugString();
+      << "Extracted identity:\n"
+      << code_identity.DebugString() << "\nExpected identity:\n"
+      << GetSelfIdentity()->identity.DebugString();
 }
 
 }  // namespace

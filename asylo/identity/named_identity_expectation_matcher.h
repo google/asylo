@@ -42,8 +42,8 @@ class NamedIdentityExpectationMatcher : public IdentityExpectationMatcher {
   // non-movable.
   NamedIdentityExpectationMatcher(
       const NamedIdentityExpectationMatcher &other) = delete;
-  NamedIdentityExpectationMatcher(
-      NamedIdentityExpectationMatcher &&other) = delete;
+  NamedIdentityExpectationMatcher(NamedIdentityExpectationMatcher &&other) =
+      delete;
   NamedIdentityExpectationMatcher &operator=(
       const NamedIdentityExpectationMatcher &other) = delete;
   NamedIdentityExpectationMatcher &operator=(

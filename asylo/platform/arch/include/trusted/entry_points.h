@@ -43,22 +43,22 @@ extern "C" {
 //
 // The input type is asylo::EnclaveConfig.
 // The output type is asylo::StatusProto.
-int __asylo_user_init(const char *name, const char *config,
-                         size_t config_len, char **output, size_t *output_len);
+int __asylo_user_init(const char *name, const char *config, size_t config_len,
+                      char **output, size_t *output_len);
 
 // User-defined enclave execution routine.
 //
 // The input type is asylo::EnclaveInput.
 // The output type is asylo::EnclaveOutput.
 int __asylo_user_run(const char *input, size_t input_len, char **output,
-                        size_t *output_len);
+                     size_t *output_len);
 
 // User-defined enclave finalization routine.
 //
 // The input type is asylo::EnclaveFinal.
 // The output type is asylo::StatusProto.
 int __asylo_user_fini(const char *final_input, size_t len, char **output,
-                         size_t *output_len);
+                      size_t *output_len);
 
 // Threading-implementation defined enclave thread donate routine.
 int __asylo_threading_donate();

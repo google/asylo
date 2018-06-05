@@ -61,14 +61,12 @@ class ServerEkepHandshaker final : public EkepHandshaker {
   Result StartHandshake(std::string *output) override;
 
   // From EkepHandshaker interface.
-  void AbortHandshake(const Status &abort_status,
-                      std::string *output) override;
+  void AbortHandshake(const Status &abort_status, std::string *output) override;
 
   // From EkepHandshaker interface.
-  Result HandleHandshakeMessage(
-      HandshakeMessageType message_type,
-      const google::protobuf::Message &handshake_message,
-      std::string *output) override;
+  Result HandleHandshakeMessage(HandshakeMessageType message_type,
+                                const google::protobuf::Message &handshake_message,
+                                std::string *output) override;
 
   // From EkepHandshaker interface.
   void HandleAbortMessage(const Abort *abort_message) override;
@@ -80,14 +78,12 @@ class ServerEkepHandshaker final : public EkepHandshaker {
   // Validates the ClientPrecommit handshake message contained in |message|. If
   // validation succeeds, writes the ServerPrecommit message to |output| and
   // updates the handshake transcript with the outgoing ServerPrecommit frame.
-  Status HandleClientPrecommit(const google::protobuf::Message &message,
-                               std::string *output);
+  Status HandleClientPrecommit(const google::protobuf::Message &message, std::string *output);
 
   // Validates the ClientId handshake message contained in |message|. If
   // validation succeeds, writes the ServerId and ServerFinish messages to
   // |output| and updates the handshake transcript with both outgoing frames.
-  Status HandleClientId(const google::protobuf::Message &message,
-                        std::string *output);
+  Status HandleClientId(const google::protobuf::Message &message, std::string *output);
 
   // Validates the ClientFinish handshake message contained in |message|.
   Status HandleClientFinish(const google::protobuf::Message &message);

@@ -30,7 +30,7 @@ namespace {
 
 class BridgeTypesTest : public EnclaveTest {
  protected:
-  template<typename T>
+  template <typename T>
   void RunTest(const std::string &input) {
     // Test that the trusted implementation meets this test's expectation.
     EnclaveInput enclave_input;

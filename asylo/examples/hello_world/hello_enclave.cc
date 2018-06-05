@@ -29,10 +29,10 @@ class HelloApplication : public asylo::TrustedApplication {
   HelloApplication() : visitor_count_(0) {}
 
   asylo::Status Run(const asylo::EnclaveInput &input,
-                       asylo::EnclaveOutput *output) override {
+                    asylo::EnclaveOutput *output) override {
     if (!input.HasExtension(hello_world::enclave_input_hello)) {
       return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                              "Expected a HelloInput extension on input.");
+                           "Expected a HelloInput extension on input.");
     }
     std::string visitor =
         input.GetExtension(hello_world::enclave_input_hello).to_greet();

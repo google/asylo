@@ -21,7 +21,6 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/util/asylo.status.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/util/status.html
 
-
 package asylo;
 
 // Wire-format representation for a Status object.

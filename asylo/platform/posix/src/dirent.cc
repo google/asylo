@@ -18,8 +18,8 @@
 
 #include <dirent.h>
 
-#include <cstdlib>
 #include <cstdint>
+#include <cstdlib>
 
 int closedir(DIR *) { abort(); }
 

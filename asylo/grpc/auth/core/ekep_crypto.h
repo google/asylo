@@ -67,10 +67,11 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
 // If the ciphersuite is unsupported, returns BAD_HANDSHAKE_CIPHER.
 // If the record protocol is unsupported, returns BAD_RECORD_PROTOCOL.
 // Returns INTERNAL_ERROR on other errors.
-Status DeriveRecordProtocolKey(
-    const HandshakeCipher &ciphersuite, const RecordProtocol &record_protocol,
-    ByteContainerView transcript_hash, ByteContainerView master_secret,
-    CleansingVector<uint8_t> *record_protocol_key);
+Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
+                               const RecordProtocol &record_protocol,
+                               ByteContainerView transcript_hash,
+                               ByteContainerView master_secret,
+                               CleansingVector<uint8_t> *record_protocol_key);
 
 // The following two methods compute the handshake authenticator for the
 // client and the server using HMAC initialized with the hash function from

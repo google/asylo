@@ -30,10 +30,9 @@ class ExceptionTest : public ::testing::Test {
  protected:
   // Return the status of the test subprocess.
   void RunTest(const std::string &input, int *status) {
-    ExecTester test({ExecTester::BuildPath(FLAGS_enclave_path,
-                                           "exception_app_host_bin"),
-                     FLAGS_enclave_path,
-                    input});
+    ExecTester test(
+        {ExecTester::BuildPath(FLAGS_enclave_path, "exception_app_host_bin"),
+         FLAGS_enclave_path, input});
     ASSERT_TRUE(test.Run(status));
   }
 };

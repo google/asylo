@@ -75,8 +75,8 @@ TEST_F(EnclaveServerTest, SimpleEnd2EndTest) {
 
   // Create a channel and wait 30 seconds for the channel to connect to the
   // server.
-  auto channel = ::grpc::CreateChannel(address_,
-                                       ::grpc::InsecureChannelCredentials());
+  auto channel =
+      ::grpc::CreateChannel(address_, ::grpc::InsecureChannelCredentials());
   gpr_timespec absolute_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME),
       gpr_time_from_micros(static_cast<int64_t>(30 * 1e6), GPR_TIMESPAN));

@@ -378,8 +378,9 @@ void IOManager::DeregisterVirtualPathHandler(const std::string &path_prefix) {
 Status IOManager::SetCurrentWorkingDirectory(absl::string_view path) {
   StatusOr<std::string> working_directory = CanonicalizePath(path);
   Status status = working_directory.status();
-  if (status.ok())
+  if (status.ok()) {
     current_working_directory_ = working_directory.ValueOrDie();
+  }
 
   return status;
 }

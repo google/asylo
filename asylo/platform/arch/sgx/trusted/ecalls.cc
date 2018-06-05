@@ -48,9 +48,9 @@ int ecall_initialize(const char *name, const char *input,
   int result = 0;
   size_t enclave_output_len;
   try {
-    result = asylo::__asylo_user_init(name, input,
-                                            static_cast<size_t>(input_len),
-                                            output, &enclave_output_len);
+    result =
+        asylo::__asylo_user_init(name, input, static_cast<size_t>(input_len),
+                                 output, &enclave_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
@@ -66,8 +66,8 @@ int ecall_run(const char *input, bridge_size_t input_len, char **output,
   int result = 0;
   size_t enclave_output_len;
   try {
-    result = asylo::__asylo_user_run(
-        input, static_cast<size_t>(input_len), output, &enclave_output_len);
+    result = asylo::__asylo_user_run(input, static_cast<size_t>(input_len),
+                                     output, &enclave_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
     return 1;
@@ -82,8 +82,7 @@ int ecall_donate_thread() { return asylo::__asylo_threading_donate(); }
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
 int ecall_handle_signal(const char *input, bridge_size_t input_len) {
-  return asylo::__asylo_handle_signal(input,
-                                            static_cast<size_t>(input_len));
+  return asylo::__asylo_handle_signal(input, static_cast<size_t>(input_len));
 }
 
 // Invokes the enclave finalization entry-point. Returns a non-zero error code
@@ -93,8 +92,8 @@ int ecall_finalize(const char *input, bridge_size_t input_len, char **output,
   int result = 0;
   size_t enclave_output_len;
   try {
-    result = asylo::__asylo_user_fini(
-        input, static_cast<size_t>(input_len), output, &enclave_output_len);
+    result = asylo::__asylo_user_fini(input, static_cast<size_t>(input_len),
+                                      output, &enclave_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }

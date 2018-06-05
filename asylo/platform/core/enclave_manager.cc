@@ -419,8 +419,7 @@ int __asylo_donate_thread(const char *name) {
     LOG(ERROR) << manager_result.status();
     return -1;
   }
-  asylo::EnclaveClient *client =
-      manager_result.ValueOrDie()->GetClient(name);
+  asylo::EnclaveClient *client = manager_result.ValueOrDie()->GetClient(name);
   if (!client) {
     return -1;
   }

@@ -473,13 +473,9 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
   return 0;
 }
 
-int pthread_condattr_init(pthread_condattr_t* attr) {
-  return 0;
-}
+int pthread_condattr_init(pthread_condattr_t *attr) { return 0; }
 
-int pthread_condattr_destroy(pthread_condattr_t* attr) {
-  return 0;
-}
+int pthread_condattr_destroy(pthread_condattr_t *attr) { return 0; }
 
 // Wakes the first waiting thread on |cond|.
 int pthread_cond_signal(pthread_cond_t *cond) {

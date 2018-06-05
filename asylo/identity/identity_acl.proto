@@ -21,7 +21,6 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/identity/asylo.identity_acl.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/identity/identity_acl.html
 
-
 // The following recursive protos allow for arbitrary nesting of logical
 // operators when constructing an `EnclaveIdentityExpectation`-based ACL. Such
 // ACLs can be evaluated against a set of identities belonging to an enclave

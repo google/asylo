@@ -54,19 +54,19 @@ std::unique_ptr<EkepHandshaker> ServerEkepHandshaker::Create(
 }
 
 ServerEkepHandshaker::ServerEkepHandshaker(const EkepHandshakerOptions &options)
-  : EkepHandshaker(options.max_frame_size),
-    self_assertions_(options.self_assertions),
-    accepted_peer_assertions_(options.accepted_peer_assertions),
-    available_cipher_suites_({CURVE25519_SHA256}),
-    available_record_protocols_({SEAL_AES128_GCM}),
-    available_ekep_versions_({"EKEP v1"}),
-    additional_authenticated_data_(options.additional_authenticated_data),
-    selected_cipher_suite_(UNKNOWN_HANDSHAKE_CIPHER),
-    selected_record_protocol_(UNKNOWN_RECORD_PROTOCOL),
-    expected_message_type_(CLIENT_PRECOMMIT),
-    // The handshake is in progress for the server because it relies on the
-    // client to act first.
-    handshaker_state_(EkepHandshaker::HandshakeState::IN_PROGRESS) {}
+    : EkepHandshaker(options.max_frame_size),
+      self_assertions_(options.self_assertions),
+      accepted_peer_assertions_(options.accepted_peer_assertions),
+      available_cipher_suites_({CURVE25519_SHA256}),
+      available_record_protocols_({SEAL_AES128_GCM}),
+      available_ekep_versions_({"EKEP v1"}),
+      additional_authenticated_data_(options.additional_authenticated_data),
+      selected_cipher_suite_(UNKNOWN_HANDSHAKE_CIPHER),
+      selected_record_protocol_(UNKNOWN_RECORD_PROTOCOL),
+      expected_message_type_(CLIENT_PRECOMMIT),
+      // The handshake is in progress for the server because it relies on the
+      // client to act first.
+      handshaker_state_(EkepHandshaker::HandshakeState::IN_PROGRESS) {}
 
 bool ServerEkepHandshaker::IsHandshakeInProgress() const {
   return handshaker_state_ == HandshakeState::IN_PROGRESS;
@@ -90,9 +90,9 @@ HandshakeMessageType ServerEkepHandshaker::GetExpectedMessageType() const {
 ServerEkepHandshaker::Result ServerEkepHandshaker::StartHandshake(
     std::string *output) {
   LOG(DFATAL) << "StartHandshake() was called on a ServerEkepHandshaker";
-  AbortHandshake(
-      Status(Abort_ErrorCode_PROTOCOL_ERROR,
-             "Server cannot start an EKEP handshaker"), output);
+  AbortHandshake(Status(Abort_ErrorCode_PROTOCOL_ERROR,
+                        "Server cannot start an EKEP handshaker"),
+                 output);
   return Result::ABORTED;
 }
 
@@ -119,8 +119,7 @@ void ServerEkepHandshaker::AbortHandshake(const Status &abort_status,
 }
 
 ServerEkepHandshaker::Result ServerEkepHandshaker::HandleHandshakeMessage(
-    HandshakeMessageType message_type,
-    const google::protobuf::Message &handshake_message,
+    HandshakeMessageType message_type, const google::protobuf::Message &handshake_message,
     std::string *output) {
   Status status = Status::OkStatus();
 
@@ -158,9 +157,9 @@ ServerEkepHandshaker::Result ServerEkepHandshaker::HandleHandshakeMessage(
   // key. Any errors that occur during derivation of the record protocol key do
   // not result in an Abort message being sent to the peer.
   if (IsHandshakeCompleted()) {
-    if (!DeriveAndSetRecordProtocolKey(selected_cipher_suite_,
-                                       selected_record_protocol_,
-                                       master_secret_).ok()) {
+    if (!DeriveAndSetRecordProtocolKey(
+             selected_cipher_suite_, selected_record_protocol_, master_secret_)
+             .ok()) {
       handshaker_state_ = HandshakeState::ABORTED;
     }
   }
@@ -191,8 +190,7 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
   if (!client_precommit_ptr) {
     LOG(QFATAL) << "HandleClientPrecommit() was passed a non-ClientPrecommit "
                 << "handshake message";
-    return Status(Abort_ErrorCode_INTERNAL_ERROR,
-                  "Internal error");
+    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
   }
   const ClientPrecommit &client_precommit = *client_precommit_ptr;
 
@@ -222,7 +220,7 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
 
   // Choose the first compatible record protocol offered by the client.
   if (!SetSelectedRecordProtocol(
-      client_precommit.available_record_protocols())) {
+          client_precommit.available_record_protocols())) {
     return Status(Abort_ErrorCode_BAD_RECORD_PROTOCOL,
                   "No compatible record_protocol");
   }
@@ -273,8 +271,8 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
   return WriteServerPrecommit(output);
 }
 
-Status ServerEkepHandshaker::HandleClientId(
-    const google::protobuf::Message &message, std::string *output) {
+Status ServerEkepHandshaker::HandleClientId(const google::protobuf::Message &message,
+                                            std::string *output) {
   const auto *client_id_ptr = dynamic_cast<const ClientId *>(&message);
   if (!client_id_ptr) {
     LOG(QFATAL) << "HandleClientId() was passed a non-ClientId handshake "
@@ -365,14 +363,14 @@ Status ServerEkepHandshaker::HandleClientFinish(
 Status ServerEkepHandshaker::WriteServerPrecommit(std::string *output) {
   ServerPrecommit server_precommit;
 
-  server_precommit.mutable_selected_ekep_version()
-      ->set_name(selected_ekep_version_);
+  server_precommit.mutable_selected_ekep_version()->set_name(
+      selected_ekep_version_);
   server_precommit.set_selected_cipher_suite(selected_cipher_suite_);
   server_precommit.set_selected_record_protocol(selected_record_protocol_);
 
   if (!additional_authenticated_data_.empty()) {
-    server_precommit.mutable_options()
-        ->set_data(additional_authenticated_data_);
+    server_precommit.mutable_options()->set_data(
+        additional_authenticated_data_);
   }
 
   std::vector<uint8_t> challenge(kEkepChallengeSize);
@@ -386,20 +384,20 @@ Status ServerEkepHandshaker::WriteServerPrecommit(std::string *output) {
     // Note that assertion generators were verified during creation of the
     // handshaker so there is no need to check whether the call to
     // GetEnclaveAssertionGenerator() returns nullptr.
-    GetEnclaveAssertionGenerator(description)->CreateAssertionOffer(
-        server_precommit.add_server_offers());
+    GetEnclaveAssertionGenerator(description)
+        ->CreateAssertionOffer(server_precommit.add_server_offers());
   }
 
   for (const AssertionDescription &description : expected_peer_assertions_) {
     // Note that assertion verifiers were verified during creation of the
     // handshaker so there is no need to check whether the call to
     // GetEnclaveAssertionVerifier() returns nullptr.
-    GetEnclaveAssertionVerifier(description)->CreateAssertionRequest(
-        server_precommit.add_server_requests());
+    GetEnclaveAssertionVerifier(description)
+        ->CreateAssertionRequest(server_precommit.add_server_requests());
   }
 
-  Status status = WriteFrameAndUpdateTranscript(
-      SERVER_PRECOMMIT, server_precommit, output);
+  Status status =
+      WriteFrameAndUpdateTranscript(SERVER_PRECOMMIT, server_precommit, output);
   if (!status.ok()) {
     return status;
   }
@@ -486,9 +484,9 @@ Status ServerEkepHandshaker::WriteServerFinish(std::string *output) {
     return status;
   }
 
-  status = DeriveSecrets(selected_cipher_suite_, transcript_hash,
-                         client_public_key_, dh_private_key_,
-                         &master_secret_, &authenticator_secret_);
+  status =
+      DeriveSecrets(selected_cipher_suite_, transcript_hash, client_public_key_,
+                    dh_private_key_, &master_secret_, &authenticator_secret_);
   if (!status.ok()) {
     return status;
   }
@@ -501,8 +499,8 @@ Status ServerEkepHandshaker::WriteServerFinish(std::string *output) {
   }
 
   ServerFinish server_finish;
-  server_finish.set_handshake_authenticator(
-      authenticator.data(), authenticator.size());
+  server_finish.set_handshake_authenticator(authenticator.data(),
+                                            authenticator.size());
 
   return WriteFrameAndUpdateTranscript(SERVER_FINISH, server_finish, output);
 }
@@ -541,8 +539,7 @@ bool ServerEkepHandshaker::SetSelectedRecordProtocol(
   // Choose the first compatible record protocol offered by the client.
   auto protocol_it = std::find_first_of(
       record_protocols.cbegin(), record_protocols.cend(),
-      available_record_protocols_.cbegin(),
-      available_record_protocols_.cend());
+      available_record_protocols_.cbegin(), available_record_protocols_.cend());
   if (protocol_it == record_protocols.cend()) {
     return false;
   }

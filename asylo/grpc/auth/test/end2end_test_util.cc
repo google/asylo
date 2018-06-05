@@ -26,6 +26,6 @@
 void set_null_assertion(assertion_description *description) {
   assertion_description_assign(
       static_cast<int32_t>(asylo::EnclaveIdentityType::NULL_IDENTITY),
-      asylo::kNullAssertionAuthority,
-      strlen(asylo::kNullAssertionAuthority), description);
+      asylo::kNullAssertionAuthority, strlen(asylo::kNullAssertionAuthority),
+      description);
 }

@@ -369,10 +369,11 @@ TEST_F(LocalAssertionVerifierTest, VerifySuccess) {
   ASSERT_TRUE(code_identity.ParseFromString(identity.identity()));
 
   CodeIdentity expected_identity = GetSelfIdentity()->identity;
-  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(
-      code_identity, expected_identity))
-      << "Extracted identity:\n" << code_identity.DebugString()
-      << "\nExpected identity:\n" << expected_identity.DebugString();
+  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(code_identity,
+                                                       expected_identity))
+      << "Extracted identity:\n"
+      << code_identity.DebugString() << "\nExpected identity:\n"
+      << expected_identity.DebugString();
 }
 
 }  // namespace

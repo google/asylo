@@ -34,13 +34,12 @@ class EnclaveBridgeTypes : public EnclaveTestCase {
   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     std::string test = GetEnclaveInputTestString(input);
     size_t size = bridge_type_size(test);
-    #define TEST_SIZE(T)                         \
-      if (test == #T) {                          \
-        return (size == sizeof(T))               \
-          ? Status::OkStatus()                   \
-          : Status(error::GoogleError::INTERNAL, \
-                   "#T failed");                 \
-      }
+#define TEST_SIZE(T)                                                \
+  if (test == #T) {                                                 \
+    return (size == sizeof(T))                                      \
+               ? Status::OkStatus()                                 \
+               : Status(error::GoogleError::INTERNAL, "#T failed"); \
+  }
     TEST_SIZE(bridge_in_addr);
     TEST_SIZE(bridge_in6_addr);
     TEST_SIZE(bridge_sockaddr_in6);
@@ -51,9 +50,8 @@ class EnclaveBridgeTypes : public EnclaveTestCase {
     TEST_SIZE(bridge_timespec);
     TEST_SIZE(bridge_stat);
     TEST_SIZE(bridge_pollfd);
-    #undef TEST_SIZE
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Unknown test type");
+#undef TEST_SIZE
+    return Status(error::GoogleError::INVALID_ARGUMENT, "Unknown test type");
   }
 };
 

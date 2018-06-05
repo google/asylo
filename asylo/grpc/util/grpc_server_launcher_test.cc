@@ -30,11 +30,11 @@
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
-#include "test/core/util/port.h"
 #include "include/grpcpp/channel.h"
 #include "include/grpcpp/create_channel.h"
 #include "include/grpcpp/impl/codegen/service_type.h"
 #include "include/grpcpp/security/credentials.h"
+#include "test/core/util/port.h"
 
 namespace asylo {
 namespace {

@@ -72,8 +72,7 @@ int main(int argc, char *argv[]) {
   asylo::EnclaveOutput output;
 
   if (!FLAGS_message1.empty()) {
-    SetEnclaveUserMessage(&input, FLAGS_message1,
-                          guide::asylo::Demo::ENCRYPT);
+    SetEnclaveUserMessage(&input, FLAGS_message1, guide::asylo::Demo::ENCRYPT);
     status = client->EnterAndRun(input, &output);
     LOG_IF(QFATAL, !status.ok()) << "EnterAndRun failed with: " << status;
     std::cout << "Encrypted message1 from driver:" << std::endl
@@ -81,8 +80,7 @@ int main(int argc, char *argv[]) {
   }
 
   if (!FLAGS_message2.empty()) {
-    SetEnclaveUserMessage(&input, FLAGS_message2,
-                          guide::asylo::Demo::ENCRYPT);
+    SetEnclaveUserMessage(&input, FLAGS_message2, guide::asylo::Demo::ENCRYPT);
     status = client->EnterAndRun(input, &output);
     LOG_IF(QFATAL, !status.ok()) << "EnterAndRun failed with: " << status;
     std::cout << "Encrypted message2 from driver:" << std::endl

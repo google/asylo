@@ -110,13 +110,9 @@ const std::string get_log_directory() {
   return *log_file_directory;
 }
 
-void set_vlog_level(int level) {
-  vlog_level = level;
-}
+void set_vlog_level(int level) { vlog_level = level; }
 
-int get_vlog_level() {
-  return vlog_level;
-}
+int get_vlog_level() { return vlog_level; }
 
 bool EnsureDirectory(const char *path) {
   struct stat dirStat;

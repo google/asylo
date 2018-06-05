@@ -53,26 +53,24 @@ TEST(TimeTests, Conversions) {
   }
 }
 
-
 // Test of range checks.
 TEST(TimeTests, Range) {
-    for (int i = 0; i < 64; i++) {
-      struct timespec ts;
-      ts.tv_sec = INT64_C(1) << i;
-      EXPECT_EQ(IsRepresentableAsNanoseconds(&ts), i < 34);
-      ts.tv_sec *= -1;
-      EXPECT_EQ(IsRepresentableAsNanoseconds(&ts), i < 34);
-    }
+  for (int i = 0; i < 64; i++) {
+    struct timespec ts;
+    ts.tv_sec = INT64_C(1) << i;
+    EXPECT_EQ(IsRepresentableAsNanoseconds(&ts), i < 34);
+    ts.tv_sec *= -1;
+    EXPECT_EQ(IsRepresentableAsNanoseconds(&ts), i < 34);
+  }
 
-    for (int i = 0; i < 64; i++) {
-      struct timeval tv;
-      tv.tv_sec = INT64_C(1) << i;
-      EXPECT_EQ(IsRepresentableAsNanoseconds(&tv), i < 34);
-      tv.tv_sec *= -1;
-      EXPECT_EQ(IsRepresentableAsNanoseconds(&tv), i < 34);
-    }
+  for (int i = 0; i < 64; i++) {
+    struct timeval tv;
+    tv.tv_sec = INT64_C(1) << i;
+    EXPECT_EQ(IsRepresentableAsNanoseconds(&tv), i < 34);
+    tv.tv_sec *= -1;
+    EXPECT_EQ(IsRepresentableAsNanoseconds(&tv), i < 34);
+  }
 }
-
 
 }  // namespace
 }  // namespace asylo

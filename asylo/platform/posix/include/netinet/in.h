@@ -121,7 +121,7 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
 
 // Address to loopback in software to local host.
 #ifndef INADDR_LOOPBACK
-# define INADDR_LOOPBACK ((in_addr_t) 0x7f000001)  // Inet 127.0.0.1.
+#define INADDR_LOOPBACK ((in_addr_t)0x7f000001)  // Inet 127.0.0.1.
 #endif
 
 #ifdef __cplusplus

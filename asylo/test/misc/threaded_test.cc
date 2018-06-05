@@ -37,9 +37,7 @@ static pthread_key_t tls_key;
 static pthread_once_t once = PTHREAD_ONCE_INIT;
 static volatile int once_count = 0;
 
-void once_function() {
-  ++once_count;
-}
+void once_function() { ++once_count; }
 
 void *increment_count(void *arg) {
   printf("self: %lu\n", reinterpret_cast<uint64_t>(pthread_self()));

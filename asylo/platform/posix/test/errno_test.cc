@@ -52,9 +52,7 @@ TEST(EnclaveErrnoTest, ENOTDIRTest) {
   CheckHostErrno(path.c_str(), ENOTDIR);
 }
 
-TEST(EnclaveErrnoTest, ENOENTTest) {
-  CheckHostErrno(empty_path, ENOENT);
-}
+TEST(EnclaveErrnoTest, ENOENTTest) { CheckHostErrno(empty_path, ENOENT); }
 
 TEST(EnclaveErrnoTest, EISDIRTest) {
   CheckHostErrno(accessible_directory, EISDIR);

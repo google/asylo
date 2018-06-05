@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """A Python code generator to generate untrusted function call bridge code.
 
 This is a code generator script that, given a textproto function call
@@ -85,8 +84,8 @@ ATTRIBUTE_STRING_MAP = {
 
 
 def raise_host_call_error(host_call_name, error_message):
-  raise ValueError('Error found in host call "%s": %s' % (host_call_name,
-                                                          error_message))
+  raise ValueError(
+      'Error found in host call "%s": %s' % (host_call_name, error_message))
 
 
 def is_pointer_type(parameter_type):
@@ -115,14 +114,14 @@ def validate_attribute_expressions(other_parameter_names, parameter_proto):
       attribute_expression = attribute_proto.attribute_expression
       if (attribute_expression not in other_parameter_names and
           not attribute_expression.isdigit()):
-        raise ValueError('Invalid size attribute expression "%s" given for '
-                         'parameter "%s"!' % (attribute_expression,
-                                              parameter_proto.name))
+        raise ValueError(
+            'Invalid size attribute expression "%s" given for '
+            'parameter "%s"!' % (attribute_expression, parameter_proto.name))
     elif attribute_proto.attribute_expression:
-      raise ValueError('Unnecessary attribute expression "%s" given for '
-                       'non-size attribute of parameter "%s"!' % (
-                           attribute_proto.attribute_expression,
-                           parameter_proto.name))
+      raise ValueError(
+          'Unnecessary attribute expression "%s" given for '
+          'non-size attribute of parameter "%s"!' %
+          (attribute_proto.attribute_expression, parameter_proto.name))
 
 
 def validate_pointer_attributes(parameter_proto):
@@ -142,11 +141,11 @@ def validate_pointer_attributes(parameter_proto):
   """
   all_attributes = [p.attribute for p in parameter_proto.pointer_attributes]
   if len(all_attributes) != len(set(all_attributes)):
-    raise ValueError('Duplicate attributes given for parameter "%s"!' % (
-        parameter_proto.name))
+    raise ValueError('Duplicate attributes given for parameter "%s"!' %
+                     (parameter_proto.name))
   if not any(attr in [IN, OUT, USER_CHECK] for attr in all_attributes):
-    raise ValueError('Pointer copy annotation missing for parameter "%s"!' % (
-        parameter_proto.name))
+    raise ValueError('Pointer copy annotation missing for parameter "%s"!' %
+                     (parameter_proto.name))
   if (USER_CHECK in all_attributes and
       (IN in all_attributes or OUT in all_attributes)):
     raise ValueError('Invalid combination of pointer copy annotations given '
@@ -159,26 +158,29 @@ def validate_pointer_attributes(parameter_proto):
 def validate_host_calls_proto(host_calls_proto):
   """Check the given host calls proto for semantic errors."""
   if not host_calls_proto.IsInitialized():
-    raise ValueError('Textproto file "%s" has missing required fields!' % (
-        HOST_CALLS_TEXTPROTO_FILE))
+    raise ValueError('Textproto file "%s" has missing required fields!' %
+                     (HOST_CALLS_TEXTPROTO_FILE))
   for host_call_proto in host_calls_proto.host_calls:
     for parameter_proto in host_call_proto.parameters:
       if is_pointer_type(parameter_proto.type):
         if not parameter_proto.pointer_attributes:
-          raise_host_call_error(host_call_proto.name, 'Pointer attributes '
-                                'missing for parameter "%s"!' % (
-                                    parameter_proto.name))
+          raise_host_call_error(
+              host_call_proto.name, 'Pointer attributes '
+              'missing for parameter "%s"!' % (parameter_proto.name))
         try:
           validate_pointer_attributes(parameter_proto)
-          other_parameter_names = [p.name for p in host_call_proto.parameters
-                                   if p.name != parameter_proto.name]
+          other_parameter_names = [
+              p.name
+              for p in host_call_proto.parameters
+              if p.name != parameter_proto.name
+          ]
           validate_attribute_expressions(other_parameter_names, parameter_proto)
         except ValueError as error:
           raise_host_call_error(host_call_proto.name, error.message)
       elif parameter_proto.pointer_attributes:
-        raise_host_call_error(host_call_proto.name, 'Pointer attributes given '
-                              'for non-pointer parameter "%s"!' % (
-                                  parameter_proto.name))
+        raise_host_call_error(
+            host_call_proto.name, 'Pointer attributes given '
+            'for non-pointer parameter "%s"!' % (parameter_proto.name))
 
 
 def comma_delimit_items(items):

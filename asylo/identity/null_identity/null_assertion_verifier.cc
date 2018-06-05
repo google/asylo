@@ -18,8 +18,8 @@
 
 #include "asylo/identity/null_identity/null_assertion_verifier.h"
 
-#include "asylo/util/logging.h"
 #include "absl/synchronization/mutex.h"
+#include "asylo/util/logging.h"
 #include "asylo/identity/null_identity/null_assertion.pb.h"
 #include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/platform/common/static_map.h"

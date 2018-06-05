@@ -32,9 +32,7 @@ class Initfini : public EnclaveTestCase {
  public:
   Initfini() = default;
 
-  Status Initialize(const EnclaveConfig &config) {
-    return Status::OkStatus();
-  }
+  Status Initialize(const EnclaveConfig &config) { return Status::OkStatus(); }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     return Status::OkStatus();

@@ -28,7 +28,7 @@ class TestException {
  public:
   TestException(int code, const std::string &message);
   TestException(const TestException &);
-  TestException &operator=(const TestException&);
+  TestException &operator=(const TestException &);
 
   int Code() const { return code_; }
 

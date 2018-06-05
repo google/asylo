@@ -50,8 +50,7 @@ class RandomPathHandler : public io::IOManager::VirtualPathHandler {
   static constexpr const char *const kURandomPath = "/dev/urandom";
 
  protected:
-  std::unique_ptr<io::IOManager::IOContext> Open(const char *path,
-                                                 int flags,
+  std::unique_ptr<io::IOManager::IOContext> Open(const char *path, int flags,
                                                  mode_t mode) override;
 
   int Chown(const char *path, uid_t owner, gid_t group) override;

@@ -31,10 +31,8 @@
 #define COMPACT_ASYLO_LOG_INFO ::asylo::LogMessage(__FILE__, __LINE__)
 #define COMPACT_ASYLO_LOG_WARNING \
   ::asylo::LogMessage(__FILE__, __LINE__, WARNING)
-#define COMPACT_ASYLO_LOG_ERROR \
-  ::asylo::LogMessage(__FILE__, __LINE__, ERROR)
-#define COMPACT_ASYLO_LOG_FATAL \
-  ::asylo::LogMessage(__FILE__, __LINE__, FATAL)
+#define COMPACT_ASYLO_LOG_ERROR ::asylo::LogMessage(__FILE__, __LINE__, ERROR)
+#define COMPACT_ASYLO_LOG_FATAL ::asylo::LogMessage(__FILE__, __LINE__, FATAL)
 #define COMPACT_ASYLO_LOG_QFATAL COMPACT_ASYLO_LOG_FATAL
 
 #ifdef NDEBUG

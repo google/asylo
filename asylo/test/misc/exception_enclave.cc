@@ -36,9 +36,9 @@ class Exception : public EnclaveTestCase {
       try {
         Throw();
       } catch (TestException &e) {
-        return (e.Code() == 54)
-            ? Status::OkStatus()
-            : Status(error::GoogleError::INTERNAL, "Unexpected exception code");
+        return (e.Code() == 54) ? Status::OkStatus()
+                                : Status(error::GoogleError::INTERNAL,
+                                         "Unexpected exception code");
       }
     } else {
       return Status(error::GoogleError::INVALID_ARGUMENT,

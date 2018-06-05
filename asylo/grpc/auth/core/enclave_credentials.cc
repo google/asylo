@@ -65,8 +65,8 @@ static grpc_security_status enclave_channel_security_connector_create(
 static grpc_security_status enclave_server_security_connector_create(
     grpc_server_credentials *server_creds,
     grpc_server_security_connector **security_connector) {
-  *security_connector = grpc_enclave_server_security_connector_create(
-      server_creds);
+  *security_connector =
+      grpc_enclave_server_security_connector_create(server_creds);
   return GRPC_SECURITY_OK;
 }
 

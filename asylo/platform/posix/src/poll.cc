@@ -34,9 +34,8 @@ int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   return IOManager::GetInstance().Poll(fds, nfds, timeout);
 }
 
-
-int select(int __n, fd_set *__readfds, fd_set *__writefds,
-                fd_set *__exceptfds, struct timeval *__timeout) {
+int select(int __n, fd_set *__readfds, fd_set *__writefds, fd_set *__exceptfds,
+           struct timeval *__timeout) {
   abort();
 }
 

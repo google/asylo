@@ -77,8 +77,8 @@ class LocalSecretSealerTest : public ::testing::Test {
     // Construct a fake enclave that differs from enclave_ only in MRSIGNER.
     // A secret sealed to MRSIGNER from enclave_ cannot be unsealed by
     // enclave_copy_different_mrsigner_.
-    enclave_copy_different_mrsigner_ = absl::make_unique<FakeEnclave>(
-        *enclave_);
+    enclave_copy_different_mrsigner_ =
+        absl::make_unique<FakeEnclave>(*enclave_);
     enclave_copy_different_mrsigner_->set_mrsigner(
         TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>());
 

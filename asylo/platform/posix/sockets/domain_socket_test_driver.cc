@@ -88,9 +88,8 @@ TEST_F(DomainSocketDriver, EnclaveClientTest) {
   // If we can not provide a proper file for the test, the test just fails.
   if (app_server_socket.length() >= kMaxSocketNameLen) {
     struct stat stat_buf;
-    EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode)
-                && (stat_buf.st_mode & S_IRUSR)
-                && (stat_buf.st_mode & S_IWUSR));
+    EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode) &&
+                (stat_buf.st_mode & S_IRUSR) && (stat_buf.st_mode & S_IWUSR));
     app_server_socket = "/tmp/app_server_socket";
   }
   EXPECT_THAT(app_server_socket.length(), Lt(kMaxSocketNameLen));
@@ -118,9 +117,8 @@ TEST_F(DomainSocketDriver, EnclaveServerTest) {
   // If we can not provide a proper file for the test, the test just fails.
   if (enc_server_socket.length() >= kMaxSocketNameLen) {
     struct stat stat_buf;
-    EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode)
-                && (stat_buf.st_mode & S_IRUSR)
-                && (stat_buf.st_mode & S_IWUSR));
+    EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode) &&
+                (stat_buf.st_mode & S_IRUSR) && (stat_buf.st_mode & S_IWUSR));
     enc_server_socket = "/tmp/enc_server_socket";
   }
   EXPECT_THAT(enc_server_socket.length(), Lt(kMaxSocketNameLen));

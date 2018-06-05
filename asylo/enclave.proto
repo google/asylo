@@ -21,7 +21,6 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/asylo.enclave.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/enclave.html
 
-
 // This file defines the messages for communicating with a trusted application's
 // entry-points: [initialization][asylo.EnclaveConfig], (re-entrant)
 // execution [input][asylo.EnclaveInput] and

@@ -339,8 +339,7 @@ void EkepHandshaker::SetRecordProtocol(RecordProtocol record_protocol) {
 }
 
 Status EkepHandshaker::DeriveAndSetRecordProtocolKey(
-    HandshakeCipher cipher_suite,
-    RecordProtocol record_protocol,
+    HandshakeCipher cipher_suite, RecordProtocol record_protocol,
     ByteContainerView master_secret) {
   std::string final_transcript_hash;
   Status status = GetTranscriptHash(&final_transcript_hash);

@@ -260,8 +260,8 @@ struct ErrorSpaceNamer {
 // Static map providing a mapping from error-space name string to an error-space
 // singleton pointer.
 class AsyloErrorSpaceStaticMap
-    : public ::asylo::StaticMap<AsyloErrorSpaceStaticMap,
-                                   const ErrorSpace, ErrorSpaceNamer> {};
+    : public ::asylo::StaticMap<AsyloErrorSpaceStaticMap, const ErrorSpace,
+                                ErrorSpaceNamer> {};
 
 }  // namespace error_internal
 /// \endcond
@@ -331,8 +331,7 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
   }
 
  private:
-  using InserterType =
-      error_internal::AsyloErrorSpaceStaticMap::ValueInserter;
+  using InserterType = error_internal::AsyloErrorSpaceStaticMap::ValueInserter;
   InserterType *DoNotOptimize(InserterType *inserter) { return inserter; }
   static InserterType inserter_;
   std::unordered_map<int, std::pair<std::string, GoogleError>> code_translation_map_;

@@ -153,7 +153,7 @@ struct Keyrequest {
   SecsAttributeSet attributemask;
   UnsafeBytes<kKeyrequestKeyidSize> keyid;
   uint32_t miscmask;
-  UnsafeBytes<436> reserved2;        // Field size taken from the Intel SDM.
+  UnsafeBytes<436> reserved2;  // Field size taken from the Intel SDM.
 } __attribute__((packed));
 static_assert(sizeof(Keyrequest) == 512,
               "Size of struct Keyrequest is incorrect");
@@ -163,7 +163,7 @@ static_assert(sizeof(Keyrequest) == 512,
 using AlignedKeyrequestPtr = AlignedObjectPtr<Keyrequest, 512>;
 
 // TARGETINFO structure is used by software to define the identity of the
-// enclave to which an enclave identity report should be targetted. This
+// enclave to which an enclave identity report should be targeted. This
 // structure is provided as an input to the ENCLU[EREPORT] instruction.
 //
 // The TARGETINFO structure does not contain any security-sensitive/secret
@@ -174,7 +174,7 @@ struct Targetinfo {
   SecsAttributeSet attributes;
   UnsafeBytes<4> reserved1;  // Field size taken from the Intel SDM.
   uint32_t miscselect;
-  UnsafeBytes<456> reserved2;        // Field size taken from the Intel SDM.
+  UnsafeBytes<456> reserved2;  // Field size taken from the Intel SDM.
 } __attribute__((packed));
 static_assert(sizeof(Targetinfo) == 512,
               "Size of struct Targetinfo is incorrect");

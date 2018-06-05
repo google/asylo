@@ -41,7 +41,8 @@ class EnclaveServer final : public TrustedApplication {
  public:
   EnclaveServer(std::unique_ptr<::grpc::Service> service,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
-      : running_{false}, service_{std::move(service)},
+      : running_{false},
+        service_{std::move(service)},
         credentials_{credentials} {}
   ~EnclaveServer() = default;
 

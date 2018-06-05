@@ -28,7 +28,7 @@ namespace {
 
 class ExceptionTest {
  public:
-  ExceptionTest(): client_(nullptr) {}
+  ExceptionTest() : client_(nullptr) {}
 
   void Initialize(const std::string &enclave_path) {
     ::asylo::Status status = test_launcher_.SetUp(enclave_path, {}, "");

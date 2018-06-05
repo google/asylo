@@ -88,8 +88,7 @@ void TestSingleton(T **ptr, absl::Mutex *mu) {
 template <typename T>
 class TypedSingletonTest : public ::testing::Test {};
 
-typedef ::testing::Types<NumericConstant<0>,
-                         std::unordered_map<std::string, std::string>,
+typedef ::testing::Types<NumericConstant<0>, std::unordered_map<std::string, std::string>,
                          std::string, std::vector<uint8_t>>
     MyTypes;
 

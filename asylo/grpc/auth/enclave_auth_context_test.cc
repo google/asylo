@@ -67,7 +67,8 @@ class EnclaveAuthContextTest : public ::testing::Test {
 
   // Adds a record protocol property to |secure_auth_context| with
   // |record_protocol| as the value.
-  void AddRecordProtocolProperty(RecordProtocol record_protocol,
+  void AddRecordProtocolProperty(
+      RecordProtocol record_protocol,
       ::grpc::SecureAuthContext *secure_auth_context) {
     std::vector<uint8_t> serialized_record_protocol(sizeof(record_protocol));
     google::protobuf::io::CodedOutputStream::WriteLittleEndian32ToArray(
@@ -97,9 +98,8 @@ class EnclaveAuthContextTest : public ::testing::Test {
   // value GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE.
   void AddTransportSecurityTypeProperty(
       ::grpc::SecureAuthContext *secure_auth_context) {
-    secure_auth_context->AddProperty(
-        GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
-        GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE);
+    secure_auth_context->AddProperty(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+                                     GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE);
   }
 
   EnclaveIdentityDescription good_identity_description_;
@@ -111,9 +111,8 @@ class EnclaveAuthContextTest : public ::testing::Test {
 // Verify that an EnclaveAuthContext can be created successfully from a valid
 // auth context.
 TEST_F(EnclaveAuthContextTest, CreateSuccess) {
-  EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_),
-      IsOk());
+  EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_),
+              IsOk());
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context does not have
@@ -131,8 +130,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
                                   "foobar");
 
   EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context)
-          .status(),
+      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context).status(),
       StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -150,8 +148,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadTransportSecurityType) {
                                   "foobar");
 
   EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context)
-          .status(),
+      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context).status(),
       StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -162,8 +159,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsUnrecognizedAuthProperty) {
   secure_auth_context_->AddProperty("foo property", "foobar");
 
   EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_)
-          .status(),
+      EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_).status(),
       StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

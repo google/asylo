@@ -23,13 +23,13 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
+#include "asylo/util/status.h"
 #include "include/grpcpp/impl/codegen/service_type.h"
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server.h"
 #include "include/grpcpp/server_builder.h"
-#include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
-#include "asylo/util/status.h"
 
 namespace asylo {
 

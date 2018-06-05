@@ -80,8 +80,7 @@ TYPED_TEST(ByteContainerUtilTest, EmptySerializationAppend) {
 
 // Verify that a serialization contains all input strings and that the input
 // strings can be inferred from the serialization.
-TYPED_TEST(ByteContainerUtilTest,
-           SerializationContainsAllByteContainers) {
+TYPED_TEST(ByteContainerUtilTest, SerializationContainsAllByteContainers) {
   using ByteContainerT = typename TypeParam::first_type;
   using StringT = typename TypeParam::second_type;
 
@@ -118,12 +117,14 @@ TYPED_TEST(ByteContainerUtilTest, SerializationsAreUnique) {
   using ByteContainerT = typename TypeParam::first_type;
   using StringT = typename TypeParam::second_type;
 
-  std::vector<ByteContainerT> inputs1 = {  // [a, b, c]
+  std::vector<ByteContainerT> inputs1 = {
+      // [a, b, c]
       ByteContainerT(kStr1, kStr1 + sizeof(kStr1) - 1),
       ByteContainerT(kStr2, kStr2 + sizeof(kStr2) - 1),
       ByteContainerT(kStr3, kStr3 + sizeof(kStr3) - 1)};
 
-  std::vector<ByteContainerT> inputs2 = {  // [a || b, c]
+  std::vector<ByteContainerT> inputs2 = {
+      // [a || b, c]
       ByteContainerT(kStr4, kStr4 + sizeof(kStr4) - 1),
       ByteContainerT(kStr3, kStr3 + sizeof(kStr3) - 1)};
 

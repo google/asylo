@@ -23,14 +23,15 @@
 #include <iostream>
 
 void usage(int argc, char *argv[]) {
-  std::cerr << "Expected usage: " << argv[0] << " --TEST_NAME\n"
-      "Where TEST_NAME can be one of\n"
-      "  sigill\n"
-      "  segfault\n"
-      "  printA\n"
-      "  printB5\n"
-      "  exit3\n"
-      "\nGiven: ";
+  std::cerr << "Expected usage: " << argv[0]
+            << " --TEST_NAME\n"
+               "Where TEST_NAME can be one of\n"
+               "  sigill\n"
+               "  segfault\n"
+               "  printA\n"
+               "  printB5\n"
+               "  exit3\n"
+               "\nGiven: ";
   for (int i = 0; i < argc; ++i) {
     std::cerr << argv[i] << std::endl;
   }

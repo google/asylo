@@ -81,12 +81,10 @@ int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
   return IOManager::GetInstance().GetSockName(sockfd, addr, addrlen);
 }
 
-in_addr_t inet_addr(const char *cp) {
-  abort();
-}
+in_addr_t inet_addr(const char *cp) { abort(); }
 
-ssize_t recvfrom(int socket, void *buffer, size_t length,
-                 int flags, struct sockaddr *address, socklen_t *address_len) {
+ssize_t recvfrom(int socket, void *buffer, size_t length, int flags,
+                 struct sockaddr *address, socklen_t *address_len) {
   abort();
 }
 

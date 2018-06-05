@@ -23,17 +23,13 @@
 
 namespace asylo {
 
-void CopyAssertionDescriptions(
-    const std::vector<AssertionDescription> &src,
-    assertion_description_array *dest) {
+void CopyAssertionDescriptions(const std::vector<AssertionDescription> &src,
+                               assertion_description_array *dest) {
   assertion_description_array_init(/*count=*/src.size(), dest);
   for (size_t i = 0; i < src.size(); ++i) {
     assertion_description_array_assign_at(
-        /*index=*/i,
-        static_cast<int32_t>(src[i].identity_type()),
-        src[i].authority_type().data(),
-        src[i].authority_type().size(),
-        dest);
+        /*index=*/i, static_cast<int32_t>(src[i].identity_type()),
+        src[i].authority_type().data(), src[i].authority_type().size(), dest);
   }
 }
 

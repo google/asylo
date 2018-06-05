@@ -43,7 +43,9 @@ bool enc_is_outside_enclave(void const* address, size_t size);
 #ifdef __x86_64__
 #define enc_pause() __builtin_ia32_pause()
 #else
-#define enc_pause() do {} while (0)
+#define enc_pause() \
+  do {              \
+  } while (0)
 #endif
 
 #ifdef __cplusplus

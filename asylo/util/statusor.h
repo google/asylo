@@ -127,8 +127,7 @@ class StatusOr {
   /// matter of convenience.
   ///
   /// \param value The wrapped value to initialize to.
-  StatusOr(const T &value)
-      : variant_(value), has_value_(true) {}
+  StatusOr(const T &value) : variant_(value), has_value_(true) {}
 
   /// Constructs a StatusOr object that contains `value`. The resulting object
   /// is considered to have an OK status. The wrapped element can be accessed
@@ -140,8 +139,7 @@ class StatusOr {
   /// convenience.
   ///
   /// \param value The value to move-initialize to.
-  StatusOr(T &&value)
-      : variant_(std::move(value)), has_value_(true) {}
+  StatusOr(T &&value) : variant_(std::move(value)), has_value_(true) {}
 
   /// Copy constructor.
   StatusOr(const StatusOr &other) : has_value_(other.has_value_) {
@@ -221,17 +219,13 @@ class StatusOr {
   /// \return True if this StatusOr object's status is OK (i.e. a call to ok()
   /// returns true). If this function returns true, then it is safe to access
   /// the wrapped element through a call to ValueOrDie().
-  bool ok() const {
-    return has_value_;
-  }
+  bool ok() const { return has_value_; }
 
   /// Gets the stored status object, or an OK status if a `T` value is stored.
   ///
   /// \return The stored non-OK status object, or an OK status if this object
   ///         has a value.
-  Status status() const {
-    return ok() ? Status::OkStatus() : variant_.status_;
-  }
+  Status status() const { return ok() ? Status::OkStatus() : variant_.status_; }
 
   /// Gets the stored `T` value.
   ///

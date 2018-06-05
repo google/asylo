@@ -45,8 +45,7 @@ typedef struct enclave_fullstack_fixture_data {
 } enclave_fullstack_fixture_data;
 
 static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
-    grpc_channel_args *client_args,
-    grpc_channel_args *server_args) {
+    grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
   memset(&f, 0, sizeof(f));
 
@@ -78,8 +77,7 @@ static void chttp2_init_client_channel(grpc_end2end_test_fixture *f,
 }
 
 static void chttp2_init_client_enclave_secure_fullstack(
-    grpc_end2end_test_fixture *f,
-    grpc_channel_args *client_args) {
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   // Create enclave channel credentials.
   grpc_enclave_credentials_options options;
   grpc_enclave_credentials_options_init(&options);
@@ -115,9 +113,8 @@ static void chttp2_init_server(grpc_end2end_test_fixture *f,
 
   // Bind the server to the temporary address and update the address with the
   // auto-selected port chosen by the system.
-  int port = grpc_server_add_secure_http2_port(f->server,
-                                               fixture_data->local_address,
-                                               creds);
+  int port = grpc_server_add_secure_http2_port(
+      f->server, fixture_data->local_address, creds);
   GPR_ASSERT(port != 0);
   gpr_free(fixture_data->local_address);
   gpr_join_host_port(&fixture_data->local_address, kAddress, port);
@@ -128,8 +125,7 @@ static void chttp2_init_server(grpc_end2end_test_fixture *f,
 }
 
 static void chttp2_init_server_enclave_secure_fullstack(
-    grpc_end2end_test_fixture *f,
-    grpc_channel_args *server_args) {
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
   // Create enclave server credentials.
   grpc_enclave_credentials_options options;
   grpc_enclave_credentials_options_init(&options);
@@ -164,15 +160,14 @@ static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
 
 // All test configurations for the enclave gRPC stack.
 static grpc_end2end_test_config configs[] = {
-  {"enclave_secure_fullstack",
-   FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
-       FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
-       FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-   /*overridden_call_host=*/ nullptr,
-   chttp2_create_fixture_secure_fullstack,
-   chttp2_init_client_enclave_secure_fullstack,
-   chttp2_init_server_enclave_secure_fullstack,
-   chttp2_tear_down_secure_fullstack},
+    {"enclave_secure_fullstack",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     /*overridden_call_host=*/nullptr, chttp2_create_fixture_secure_fullstack,
+     chttp2_init_client_enclave_secure_fullstack,
+     chttp2_init_server_enclave_secure_fullstack,
+     chttp2_tear_down_secure_fullstack},
 };
 
 int main(int argc, char **argv) {

@@ -22,9 +22,7 @@
 
 namespace asylo {
 
-Sha256Hash::Sha256Hash() {
-  SHA256_Init(&context_);
-}
+Sha256Hash::Sha256Hash() { SHA256_Init(&context_); }
 
 void Sha256Hash::Update(const void *data, size_t len) {
   SHA256_Update(&context_, data, len);
@@ -37,8 +35,7 @@ std::string Sha256Hash::Hash() {
   uint8_t digest_bytes[SHA256_DIGEST_LENGTH];
   SHA256_CTX context_snapshot = context_;
   SHA256_Final(digest_bytes, &context_snapshot);
-  return std::string(reinterpret_cast<char *>(digest_bytes),
-                SHA256_DIGEST_LENGTH);
+  return std::string(reinterpret_cast<char *>(digest_bytes), SHA256_DIGEST_LENGTH);
 }
 
 }  // namespace asylo

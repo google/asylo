@@ -39,15 +39,11 @@ const char kAuthorityType3[] = "SGX Remote";
 class AssertionDescriptionTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    identity_types_ = {
-      EnclaveIdentityType::NULL_IDENTITY,
-      EnclaveIdentityType::CODE_IDENTITY,
-      EnclaveIdentityType::CODE_IDENTITY};
+    identity_types_ = {EnclaveIdentityType::NULL_IDENTITY,
+                       EnclaveIdentityType::CODE_IDENTITY,
+                       EnclaveIdentityType::CODE_IDENTITY};
 
-    authority_types_ = {
-      kAuthorityType1,
-      kAuthorityType2,
-      kAuthorityType3};
+    authority_types_ = {kAuthorityType1, kAuthorityType2, kAuthorityType3};
 
     // Create and default-initialize two description objects for use in tests.
     assertion_description_init(&desc1_);
@@ -70,18 +66,16 @@ class AssertionDescriptionTest : public ::testing::Test {
   // |index| in the test data pool.
   void SetAssertionDescription(int test_pool_index,
                                assertion_description *desc) {
-    assertion_description_assign(
-        identity_types_[test_pool_index],
-        authority_types_[test_pool_index].data(),
-        authority_types_[test_pool_index].size(),
-        desc);
+    assertion_description_assign(identity_types_[test_pool_index],
+                                 authority_types_[test_pool_index].data(),
+                                 authority_types_[test_pool_index].size(),
+                                 desc);
   }
 
   // Checks that |expected| is the same assertion_description as |actual|.
   void CheckDescriptionEquality(const assertion_description &expected,
                                 const assertion_description &actual) {
-    VerifyAssertionDescription(actual,
-                               expected.identity_type,
+    VerifyAssertionDescription(actual, expected.identity_type,
                                expected.authority_type.data,
                                expected.authority_type.size);
   }
@@ -92,16 +86,11 @@ class AssertionDescriptionTest : public ::testing::Test {
   void AddAndVerifyIdentities(int num_descriptions,
                               assertion_description_array *array) {
     ASSERT_LE(num_descriptions, kIdentitiesTestPoolSize);
-    assertion_description_array_init(/*count=*/kIdentitiesTestPoolSize,
-                                            array);
+    assertion_description_array_init(/*count=*/kIdentitiesTestPoolSize, array);
     for (int i = 0; i < kIdentitiesTestPoolSize; ++i) {
-      EXPECT_TRUE(
-          assertion_description_array_assign_at(
-              /*index=*/i,
-              static_cast<int32_t>(identity_types_[i]),
-              authority_types_[i].data(),
-              authority_types_[i].size(),
-              array));
+      EXPECT_TRUE(assertion_description_array_assign_at(
+          /*index=*/i, static_cast<int32_t>(identity_types_[i]),
+          authority_types_[i].data(), authority_types_[i].size(), array));
       VerifyAssertionDescription(/*test_pool_index=*/i, array->descriptions[i]);
     }
   }
@@ -122,8 +111,7 @@ class AssertionDescriptionTest : public ::testing::Test {
   void VerifyAssertionDescription(int test_pool_index,
                                   const assertion_description &desc) {
     VerifyAssertionDescription(
-        desc,
-        static_cast<int32_t>(identity_types_[test_pool_index]),
+        desc, static_cast<int32_t>(identity_types_[test_pool_index]),
         authority_types_[test_pool_index].data(),
         authority_types_[test_pool_index].size());
   }
@@ -138,8 +126,7 @@ class AssertionDescriptionTest : public ::testing::Test {
                                   size_t authority_type_size) {
     EXPECT_EQ(desc.identity_type, identity_type);
     EXPECT_EQ(desc.authority_type.size, authority_type_size);
-    EXPECT_EQ(0, memcmp(authority_type,
-                        desc.authority_type.data,
+    EXPECT_EQ(0, memcmp(authority_type, desc.authority_type.data,
                         desc.authority_type.size));
   }
 
@@ -212,12 +199,9 @@ TEST_F(AssertionDescriptionTest, EmptyArrayAssignAt) {
 TEST_F(AssertionDescriptionTest, PopulatedArrayAssignAt) {
   AddAndVerifyIdentities(/*num_descriptions=*/1, &array1_);
   EXPECT_TRUE(assertion_description_array_assign_at(
-      /*index=*/0,
-      identity_types_.back(),
-      authority_types_.back().data(),
-      authority_types_.back().size(),
-      &array1_));
-  VerifyAssertionDescription(/*test_pool_index=*/kIdentitiesTestPoolSize-1,
+      /*index=*/0, identity_types_.back(), authority_types_.back().data(),
+      authority_types_.back().size(), &array1_));
+  VerifyAssertionDescription(/*test_pool_index=*/kIdentitiesTestPoolSize - 1,
                              array1_.descriptions[0]);
 }
 
@@ -225,11 +209,8 @@ TEST_F(AssertionDescriptionTest, PopulatedArrayAssignAt) {
 // out of the array's bounds will fail.
 TEST_F(AssertionDescriptionTest, ArrayAssignAtOutOfBounds) {
   EXPECT_FALSE(assertion_description_array_assign_at(
-      /*index=*/1,
-      identity_types_.front(),
-      authority_types_.front().data(),
-      authority_types_.front().size(),
-      &array1_));
+      /*index=*/1, identity_types_.front(), authority_types_.front().data(),
+      authority_types_.front().size(), &array1_));
 }
 
 // Verify that copying an assertion_description_array to an empty array is
@@ -248,7 +229,7 @@ TEST_F(AssertionDescriptionTest, CopyAssertionDescriptionsArrayEmptyDest) {
 TEST_F(AssertionDescriptionTest, CopyAssertionDescriptionsArraySmallerDest) {
   AddAndVerifyIdentities(/*num_descriptions=*/kIdentitiesTestPoolSize,
                          &array1_);
-  AddAndVerifyIdentities(/*num_descriptions=*/kIdentitiesTestPoolSize-1,
+  AddAndVerifyIdentities(/*num_descriptions=*/kIdentitiesTestPoolSize - 1,
                          &array2_);
 
   assertion_description_array_copy(/*src=*/&array1_, /*dest=*/&array2_);
@@ -258,7 +239,7 @@ TEST_F(AssertionDescriptionTest, CopyAssertionDescriptionsArraySmallerDest) {
 // Verify that copy an assertion_description_array to a larger array is working
 // as expected.
 TEST_F(AssertionDescriptionTest, CopyAssertionDescriptionsArrayLargerDest) {
-  AddAndVerifyIdentities(/*num_descriptions=*/kIdentitiesTestPoolSize-1,
+  AddAndVerifyIdentities(/*num_descriptions=*/kIdentitiesTestPoolSize - 1,
                          &array1_);
   AddAndVerifyIdentities(/*num_descriptions=*/kIdentitiesTestPoolSize,
                          &array2_);

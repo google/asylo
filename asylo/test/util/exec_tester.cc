@@ -34,7 +34,7 @@ ExecTester::ExecTester(const std::vector<std::string> &args) : args_(args) {
   // Make sure we can actually execute the file.
   if (::access(args[0].c_str(), X_OK)) {
     std::cerr << "Cannot access file: " << args[0] << "\nError (" << errno
-        << "): " << strerror(errno) << std::endl;
+              << "): " << strerror(errno) << std::endl;
     abort();
   }
 }
@@ -63,7 +63,7 @@ std::string ExecTester::BuildPath(const std::string &path, const std::string &fi
       if (pos == std::string::npos) {
         arg0base.clear();
       } else {
-        arg0base.resize(pos+1);
+        arg0base.resize(pos + 1);
       }
     }
   }
@@ -88,9 +88,10 @@ void ExecTester::DoExec(int read_stdin, int write_stdin, int read_stdout,
   close(read_stdout);
 
   // No malloc allowed between fork/exec. We can get deadlocked.
-  char **argv = static_cast<char**>(alloca(sizeof(char*)*(args_.size() + 1)));
+  char **argv =
+      static_cast<char **>(alloca(sizeof(char *) * (args_.size() + 1)));
   for (int i = 0; i < args_.size(); ++i) {
-    argv[i] = const_cast<char*>(args_[i].c_str());
+    argv[i] = const_cast<char *>(args_[i].c_str());
   }
   argv[args_.size()] = nullptr;
 
@@ -172,9 +173,10 @@ void ExecTester::CheckFD(char *buf, size_t bufsize, std::stringstream *linebuf,
   ssize_t numread = read(fd, buf, bufsize);
 
   if (numread == -1) {
+    // Nothing to read.
     ASSERT_EQ(errno, EAGAIN) << "Read from fd " << fd << " failed (" << errno
                              << "): " << strerror(errno);
-    return;  // Nothing to read.
+    return;
   } else if (numread == 0) {  // The fd is closed. Test the rest of the line.
     std::string line = linebuf->str();
     if (!line.empty()) {

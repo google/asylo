@@ -134,8 +134,7 @@ class EnclaveDemo : public TrustedApplication {
   }
 
   // Retrieves user action from |input|.
-  guide::asylo::Demo::Action GetEnclaveUserAction(
-      const EnclaveInput &input) {
+  guide::asylo::Demo::Action GetEnclaveUserAction(const EnclaveInput &input) {
     return input.GetExtension(guide::asylo::quickstart_input).action();
   }
 

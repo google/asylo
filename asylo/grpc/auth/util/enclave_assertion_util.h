@@ -31,9 +31,8 @@ namespace asylo {
 // This function is provided to bridge instances of the AssertionDescription
 // proto to corresponding C structures. This is to enable passing information
 // about assertions through the C-layer of gRPC.
-void CopyAssertionDescriptions(
-    const std::vector<AssertionDescription> &src,
-    assertion_description_array *dest);
+void CopyAssertionDescriptions(const std::vector<AssertionDescription> &src,
+                               assertion_description_array *dest);
 
 }  // namespace asylo
 

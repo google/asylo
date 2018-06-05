@@ -21,7 +21,6 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/identity/asylo.enclave_assertion_authority_config.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/identity/enclave_assertion_authority_config.html
 
-
 package asylo;
 
 import "asylo/identity/identity.proto";

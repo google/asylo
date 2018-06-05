@@ -46,14 +46,11 @@ class AssertionUtilTest : public ::testing::Test {
  protected:
   void SetUp() override {
     std::vector<EnclaveIdentityType> identity_types = {
-      EnclaveIdentityType::NULL_IDENTITY,
-      EnclaveIdentityType::CODE_IDENTITY,
-      EnclaveIdentityType::CERT_IDENTITY};
+        EnclaveIdentityType::NULL_IDENTITY, EnclaveIdentityType::CODE_IDENTITY,
+        EnclaveIdentityType::CERT_IDENTITY};
 
-    std::vector<std::string> authority_types = {
-      kAuthorityType1,
-      kAuthorityType2,
-      kAuthorityType3};
+    std::vector<std::string> authority_types = {kAuthorityType1, kAuthorityType2,
+                                           kAuthorityType3};
 
     for (int i = 0; i < kIdentitiesTestPoolSize; ++i) {
       AssertionDescription assertion_desc;
@@ -79,8 +76,7 @@ class AssertionUtilTest : public ::testing::Test {
       const assertion_description &actual_assertion_desc =
           actual.descriptions[i];
 
-      EXPECT_EQ(static_cast<int32_t>(
-          expected_assertion_desc.identity_type()),
+      EXPECT_EQ(static_cast<int32_t>(expected_assertion_desc.identity_type()),
                 actual_assertion_desc.identity_type);
       EXPECT_EQ(expected_assertion_desc.authority_type().size(),
                 actual_assertion_desc.authority_type.size);

@@ -13,7 +13,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """Tests for asylo.platform.arch.sgx.host_calls_generator.code_generator."""
 
 from google.protobuf import text_format
@@ -61,10 +60,10 @@ class CodeGeneratorTest(TestCase):
                        'parameters { name: "fd" type: "int" }}')
     host_calls = code_generator.get_host_calls_dictionary(fsync_textproto)
     fsync_parameters = _get_parameters_proto(host_calls)
-    self.assertEqual(
-        'int fd', code_generator.comma_separate_parameters(fsync_parameters))
-    self.assertEqual(
-        'fd', code_generator.comma_separate_arguments(fsync_parameters))
+    self.assertEqual('int fd',
+                     code_generator.comma_separate_parameters(fsync_parameters))
+    self.assertEqual('fd',
+                     code_generator.comma_separate_arguments(fsync_parameters))
 
   def test_host_call_multiple_parameters(self):
     shutdown_textproto = ('host_calls { name: "shutdown" return_type: "int" '
@@ -88,12 +87,10 @@ class CodeGeneratorTest(TestCase):
                       'parameters { name: "group" type: "uint32_t" }}')
     host_calls = code_generator.get_host_calls_dictionary(read_textproto)
     read_parameters = _get_parameters_proto(host_calls)
-    self.assertEqual(
-        'const char * path, uint32_t owner, uint32_t group',
-        code_generator.comma_separate_parameters(read_parameters))
-    self.assertEqual(
-        'path, owner, group',
-        code_generator.comma_separate_arguments(read_parameters))
+    self.assertEqual('const char * path, uint32_t owner, uint32_t group',
+                     code_generator.comma_separate_parameters(read_parameters))
+    self.assertEqual('path, owner, group',
+                     code_generator.comma_separate_arguments(read_parameters))
     self.assertEqual(
         '[in, string] const char * path, uint32_t owner, uint32_t group',
         code_generator.comma_separate_bridge_parameters(read_parameters))
@@ -112,12 +109,10 @@ class CodeGeneratorTest(TestCase):
                        'parameters { name: "len" type: "size_t" }}')
     host_calls = code_generator.get_host_calls_dictionary(chown_textproto)
     chown_parameters = _get_parameters_proto(host_calls)
-    self.assertEqual(
-        'int fd, void * buf1, void * buf2, size_t len',
-        code_generator.comma_separate_parameters(chown_parameters))
-    self.assertEqual(
-        'fd, buf1, buf2, len',
-        code_generator.comma_separate_arguments(chown_parameters))
+    self.assertEqual('int fd, void * buf1, void * buf2, size_t len',
+                     code_generator.comma_separate_parameters(chown_parameters))
+    self.assertEqual('fd, buf1, buf2, len',
+                     code_generator.comma_separate_arguments(chown_parameters))
     self.assertEqual(
         'int fd, [out, size=100] void * buf1, [out, size=len] void * buf2, '
         'size_t len',

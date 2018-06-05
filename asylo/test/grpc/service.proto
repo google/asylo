@@ -43,7 +43,8 @@ service Messenger2 {
 service Messenger3 {
   // Hello is a simple RPC that requires the user submit a |name| in order to
   // get a |message|.
-  rpc Hello(HelloRequest) returns (HelloResponse) {}
+  rpc Hello(HelloRequest) returns (HelloResponse) {
+  }
 }
 
 message HelloRequest {

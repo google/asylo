@@ -73,12 +73,11 @@ std::vector<AssertionDescription> CreateAssertionDescriptionVector(
 class TsiEnclaveHandshakerResult {
  public:
   TsiEnclaveHandshakerResult(
-      bool is_client,
-      RecordProtocol record_protocol,
+      bool is_client, RecordProtocol record_protocol,
       const CleansingVector<uint8_t> &record_protocol_key,
-      std::unique_ptr<EnclaveIdentities> peer_identities,
-      std::string unused_bytes)
-      : is_client_(is_client), record_protocol_(record_protocol),
+      std::unique_ptr<EnclaveIdentities> peer_identities, std::string unused_bytes)
+      : is_client_(is_client),
+        record_protocol_(record_protocol),
         record_protocol_key_(record_protocol_key),
         peer_identities_(std::move(peer_identities)),
         unused_bytes_(std::move(unused_bytes)) {}
@@ -212,7 +211,7 @@ tsi_result enclave_handshaker_result_get_unused_bytes(
 void enclave_handshaker_result_destroy(tsi_handshaker_result *self) {
   tsi_enclave_handshaker_result *result =
       reinterpret_cast<tsi_enclave_handshaker_result *>(self);
-  delete(result);
+  delete (result);
 }
 
 const tsi_handshaker_result_vtable handshaker_result_vtable = {
@@ -230,8 +229,7 @@ tsi_result enclave_handshaker_result_create(
     return TSI_INVALID_ARGUMENT;
   }
 
-  tsi_enclave_handshaker_result *result =
-      new tsi_enclave_handshaker_result();
+  tsi_enclave_handshaker_result *result = new tsi_enclave_handshaker_result();
   result->base.vtable = &handshaker_result_vtable;
   result->impl = std::move(impl);
 
@@ -256,7 +254,7 @@ struct tsi_enclave_handshaker {
 void enclave_handshaker_destroy(tsi_handshaker *self) {
   tsi_enclave_handshaker *impl =
       reinterpret_cast<tsi_enclave_handshaker *>(self);
-  delete(impl);
+  delete (impl);
 }
 
 tsi_result enclave_handshaker_next(
@@ -264,11 +262,12 @@ tsi_result enclave_handshaker_next(
     size_t received_bytes_size, const unsigned char **bytes_to_send,
     size_t *bytes_to_send_size, tsi_handshaker_result **handshaker_result,
     tsi_handshaker_on_next_done_cb cb, void *user_data) {
-  if ((received_bytes_size > 0 && !received_bytes) ||
-      !bytes_to_send || !bytes_to_send_size || !handshaker_result) {
+  if ((received_bytes_size > 0 && !received_bytes) || !bytes_to_send ||
+      !bytes_to_send_size || !handshaker_result) {
     return TSI_INVALID_ARGUMENT;
   }
-  gpr_log(GPR_INFO, "enclave_handshaker_next(self=%p, received_bytes=%p, "
+  gpr_log(GPR_INFO,
+          "enclave_handshaker_next(self=%p, received_bytes=%p, "
           "received_bytes_size=%zu, bytes_to_send=%p, bytes_to_send_size=%p "
           "handshaker_result=%p, cb=%p, user_data=%p)",
           self, received_bytes, received_bytes_size, bytes_to_send,
@@ -279,10 +278,9 @@ tsi_result enclave_handshaker_next(
   EkepHandshaker *handshaker = tsi_handshaker->handshaker.get();
 
   // Run the next step of the handshake.
-  EkepHandshaker::Result handshake_step_result =
-      handshaker->NextHandshakeStep(
-          reinterpret_cast<const char *>(received_bytes),
-          received_bytes_size, &tsi_handshaker->outgoing_bytes);
+  EkepHandshaker::Result handshake_step_result = handshaker->NextHandshakeStep(
+      reinterpret_cast<const char *>(received_bytes), received_bytes_size,
+      &tsi_handshaker->outgoing_bytes);
 
   // Write the outgoing bytes.
   if (!tsi_handshaker->outgoing_bytes.empty()) {
@@ -297,53 +295,53 @@ tsi_result enclave_handshaker_next(
       return TSI_OK;
     case EkepHandshaker::Result::NOT_ENOUGH_DATA:
       return TSI_INCOMPLETE_DATA;
-    case EkepHandshaker::Result::COMPLETED:
-      {
-        // If the handshake has completed, extract the handshake results.
-        StatusOr<std::string> unused_bytes_result = handshaker->GetUnusedBytes();
-        if (!unused_bytes_result.ok()) {
-          gpr_log(GPR_ERROR, "Failed to retrieve unused bytes: %s",
-                  std::string(unused_bytes_result.status().error_message()).c_str());
-          return TSI_INTERNAL_ERROR;
-        }
-
-        StatusOr<RecordProtocol> record_protocol_result =
-            handshaker->GetRecordProtocol();
-        if (!record_protocol_result.ok()) {
-          gpr_log(
-              GPR_ERROR, "Failed to retrieve record protocol: %s",
-              std::string(record_protocol_result.status().error_message()).c_str());
-          return TSI_INTERNAL_ERROR;
-        }
-
-        StatusOr<CleansingVector<uint8_t>> key_result =
-            handshaker->GetRecordProtocolKey();
-        if (!key_result.ok()) {
-          gpr_log(GPR_ERROR, "Failed to retrieve record protocol key: %s",
-                  std::string(key_result.status().error_message()).c_str());
-          return TSI_INTERNAL_ERROR;
-        }
-
-        StatusOr<std::unique_ptr<EnclaveIdentities>> identities_result =
-            handshaker->GetPeerIdentities();
-        if (!identities_result.ok()) {
-          gpr_log(GPR_ERROR, "Failed to retrieve peer identities: %s",
-                  std::string(identities_result.status().error_message()).c_str());
-          return TSI_INTERNAL_ERROR;
-        }
-
-        // Create the handshaker result object.
-        tsi_result result = enclave_handshaker_result_create(
-            absl::make_unique<TsiEnclaveHandshakerResult>(
-                tsi_handshaker->is_client, record_protocol_result.ValueOrDie(),
-                key_result.ValueOrDie(),
-                std::move(identities_result).ValueOrDie(),
-                unused_bytes_result.ValueOrDie()), handshaker_result);
-        if (result == TSI_OK) {
-          self->handshaker_result_created = true;
-        }
-        return result;
+    case EkepHandshaker::Result::COMPLETED: {
+      // If the handshake has completed, extract the handshake results.
+      StatusOr<std::string> unused_bytes_result = handshaker->GetUnusedBytes();
+      if (!unused_bytes_result.ok()) {
+        gpr_log(GPR_ERROR, "Failed to retrieve unused bytes: %s",
+                std::string(unused_bytes_result.status().error_message()).c_str());
+        return TSI_INTERNAL_ERROR;
       }
+
+      StatusOr<RecordProtocol> record_protocol_result =
+          handshaker->GetRecordProtocol();
+      if (!record_protocol_result.ok()) {
+        gpr_log(
+            GPR_ERROR, "Failed to retrieve record protocol: %s",
+            std::string(record_protocol_result.status().error_message()).c_str());
+        return TSI_INTERNAL_ERROR;
+      }
+
+      StatusOr<CleansingVector<uint8_t>> key_result =
+          handshaker->GetRecordProtocolKey();
+      if (!key_result.ok()) {
+        gpr_log(GPR_ERROR, "Failed to retrieve record protocol key: %s",
+                std::string(key_result.status().error_message()).c_str());
+        return TSI_INTERNAL_ERROR;
+      }
+
+      StatusOr<std::unique_ptr<EnclaveIdentities>> identities_result =
+          handshaker->GetPeerIdentities();
+      if (!identities_result.ok()) {
+        gpr_log(GPR_ERROR, "Failed to retrieve peer identities: %s",
+                std::string(identities_result.status().error_message()).c_str());
+        return TSI_INTERNAL_ERROR;
+      }
+
+      // Create the handshaker result object.
+      tsi_result result = enclave_handshaker_result_create(
+          absl::make_unique<TsiEnclaveHandshakerResult>(
+              tsi_handshaker->is_client, record_protocol_result.ValueOrDie(),
+              key_result.ValueOrDie(),
+              std::move(identities_result).ValueOrDie(),
+              unused_bytes_result.ValueOrDie()),
+          handshaker_result);
+      if (result == TSI_OK) {
+        self->handshaker_result_created = true;
+      }
+      return result;
+    }
     case EkepHandshaker::Result::ABORTED:
     default:
       return TSI_PROTOCOL_FAILURE;
@@ -356,8 +354,7 @@ const tsi_handshaker_vtable handshaker_vtable = {
     nullptr /* get_result                -- deprecated */,
     nullptr /* extract_peer              -- deprecated */,
     nullptr /* create_frame_protector    -- deprecated */,
-    enclave_handshaker_destroy,
-    enclave_handshaker_next,
+    enclave_handshaker_destroy, enclave_handshaker_next,
 };
 
 tsi_enclave_handshaker::tsi_enclave_handshaker(
@@ -370,8 +367,7 @@ tsi_enclave_handshaker::tsi_enclave_handshaker(
 }  // namespace asylo
 
 tsi_result tsi_enclave_handshaker_create(
-    int is_client,
-    const assertion_description_array *self_assertions,
+    int is_client, const assertion_description_array *self_assertions,
     const assertion_description_array *accepted_peer_assertions,
     const safe_string *additional_authenticated_data,
     tsi_handshaker **handshaker) {
@@ -413,8 +409,7 @@ tsi_result tsi_enclave_handshaker_create(
     return TSI_INTERNAL_ERROR;
   }
   asylo::tsi_enclave_handshaker *tsi_handshaker =
-      new asylo::tsi_enclave_handshaker(is_client,
-                                           std::move(ekep_handshaker));
+      new asylo::tsi_enclave_handshaker(is_client, std::move(ekep_handshaker));
 
   *handshaker = &tsi_handshaker->base;
   return TSI_OK;

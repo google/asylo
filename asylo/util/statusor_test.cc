@@ -66,36 +66,28 @@ struct HeapAllocatedObject {
     other.value = nullptr;
   }
 
-  ~HeapAllocatedObject() {
-    delete value;
-  }
+  ~HeapAllocatedObject() { delete value; }
 };
 
 // Constructs a Foo.
 struct FooCtor {
   using value_type = Foo;
 
-  Foo operator()() {
-    return Foo(kIntElement);
-  }
+  Foo operator()() { return Foo(kIntElement); }
 };
 
 // Constructs a HeapAllocatedObject.
 struct HeapAllocatedObjectCtor {
   using value_type = HeapAllocatedObject;
 
-  HeapAllocatedObject operator()() {
-    return HeapAllocatedObject();
-  }
+  HeapAllocatedObject operator()() { return HeapAllocatedObject(); }
 };
 
 // Constructs an integer.
 struct IntCtor {
   using value_type = int;
 
-  int operator()() {
-    return kIntElement;
-  }
+  int operator()() { return kIntElement; }
 };
 
 // Constructs a string.
@@ -132,8 +124,9 @@ StatusOr<T> &&MoveStatusOr(StatusOr<T> *statusor) {
 template <typename T>
 class StatusOrTest : public ::testing::Test {};
 
-typedef ::testing::Types<IntCtor, FooCtor, StringCtor,
-        StringVectorCtor, HeapAllocatedObjectCtor> TestTypes;
+typedef ::testing::Types<IntCtor, FooCtor, StringCtor, StringVectorCtor,
+                         HeapAllocatedObjectCtor>
+    TestTypes;
 
 TYPED_TEST_CASE(StatusOrTest, TestTypes);
 
@@ -362,7 +355,7 @@ TYPED_TEST(StatusOrTest, IsOkMatcher) {
   EXPECT_THAT(statusor, IsOk());
 
   statusor = StatusOr<typename TypeParam::value_type>(
-    Status(kErrorCode, kErrorMessage));
+      Status(kErrorCode, kErrorMessage));
   EXPECT_THAT(statusor, Not(IsOk()));
 }
 

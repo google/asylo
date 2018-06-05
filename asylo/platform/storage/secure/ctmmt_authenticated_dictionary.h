@@ -20,8 +20,8 @@
 #define ASYLO_PLATFORM_STORAGE_SECURE_CTMMT_AUTHENTICATED_DICTIONARY_H_
 
 #include "absl/memory/memory.h"
-#include <merkletree/merkle_tree.h>
 #include "asylo/platform/storage/secure/authenticated_dictionary.h"
+#include <merkletree/merkle_tree.h>
 
 namespace asylo {
 namespace platform {

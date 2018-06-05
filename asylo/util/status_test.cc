@@ -36,24 +36,19 @@ constexpr char kErrorMessage2[] = "Internal foobar error";
 
 constexpr char kBadErrorSpace[] = "Foo bar error space";
 
-TEST(StatusTest, OkSuccess) {
-  EXPECT_TRUE(::asylo::Status::OkStatus().ok());
-}
+TEST(StatusTest, OkSuccess) { EXPECT_TRUE(::asylo::Status::OkStatus().ok()); }
 
 TEST(StatusTest, OkFailure) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   EXPECT_FALSE(status.ok());
 }
 
 TEST(StatusTest, GetErrorCodeOkStatus) {
-  EXPECT_EQ(::asylo::Status::OkStatus().error_code(),
-            error::GoogleError::OK);
+  EXPECT_EQ(::asylo::Status::OkStatus().error_code(), error::GoogleError::OK);
 }
 
 TEST(StatusTest, GetErrorCodeNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   EXPECT_EQ(status.error_code(), error::GoogleError::INVALID_ARGUMENT);
 }
 
@@ -62,8 +57,7 @@ TEST(StatusTest, GetErrorMessageOkStatus) {
 }
 
 TEST(StatusTest, GetErrorMessageNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   EXPECT_EQ(status.error_message(), kErrorMessage1);
 }
 
@@ -73,8 +67,7 @@ TEST(StatusTest, GetErrorSpaceOkStatus) {
 }
 
 TEST(StatusTest, GetErrorSpaceNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   const error::ErrorSpace *error_space = status.error_space();
   EXPECT_EQ(error_space->SpaceName(), error::kCanonicalErrorSpaceName);
 }
@@ -90,8 +83,7 @@ TEST(StatusTest, ToStringOkStatus) {
 }
 
 TEST(StatusTest, ToStringNonOkStatus) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   std::string error_code_name = status.error_space()->String(status.error_code());
   std::string error_space_name = status.error_space()->SpaceName();
   // The format of ToString() is subject to change for a non-ok Status, but it
@@ -115,9 +107,8 @@ TEST(StatusTest, Equality) {
 TEST(StatusTest, Inequality) {
   asylo::Status ok_status = Status::OkStatus();
   asylo::Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
-                                      kErrorMessage1);
-  asylo::Status internal_status(error::GoogleError::INTERNAL,
-                                   kErrorMessage2);
+                                   kErrorMessage1);
+  asylo::Status internal_status(error::GoogleError::INTERNAL, kErrorMessage2);
 
   EXPECT_FALSE(ok_status != ok_status);
   EXPECT_FALSE(invalid_arg_status != invalid_arg_status);
@@ -134,8 +125,7 @@ TEST(StatusTest, ToCanonicalOk) {
 }
 
 TEST(StatusTest, ToCanonicalNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   EXPECT_EQ(status.ToCanonical(), status);
 }
 
@@ -156,8 +146,7 @@ TEST(StatusTest, CanonicalCodeOk) {
 }
 
 TEST(StatusTest, CanonicalCodeNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   EXPECT_EQ(status.CanonicalCode(), status.error_code());
 }
 
@@ -167,8 +156,7 @@ TEST(StatusTest, CanonicalCodeNonOkNonCanonical) {
 }
 
 TEST(StatusTest, SaveTo) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   ::asylo::StatusProto status_proto;
   status.SaveTo(&status_proto);
 
@@ -274,8 +262,7 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceInvalid) {
 }
 
 TEST(StatusTest, SaveToRestoreFromEndToEnd) {
-  ::asylo::Status status1(error::GoogleError::INVALID_ARGUMENT,
-                             kErrorMessage1);
+  ::asylo::Status status1(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
 
   ::asylo::StatusProto status_proto;
   status1.SaveTo(&status_proto);
@@ -316,8 +303,7 @@ TEST(StatusTest, ConvertToGrpcStatusOk) {
 }
 
 TEST(StatusTest, ConvertToGrpcStatusNonOk) {
-  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT,
-                            kErrorMessage1);
+  ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
   ::grpc::Status grpc_status = status.ToOtherStatus<::grpc::Status>();
 
   EXPECT_EQ(status.ok(), grpc_status.ok());

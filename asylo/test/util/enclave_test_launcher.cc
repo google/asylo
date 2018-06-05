@@ -18,8 +18,8 @@
 
 #include "asylo/test/util/enclave_test_launcher.h"
 
-#include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/types.h>
 #include <unistd.h>
 
 #include "absl/memory/memory.h"

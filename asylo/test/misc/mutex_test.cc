@@ -136,7 +136,8 @@ void *StartRoutineMutexLock(void *) {
 // kExpectedResult.
 void *StartRoutineTryLock(void *) {
   // Run the routine under a MutexLock.
-  while (!mu3.TryLock()) { ;}
+  while (!mu3.TryLock()) {
+  }
   StartRoutine(&counter);
   mu3.Unlock();
   return nullptr;

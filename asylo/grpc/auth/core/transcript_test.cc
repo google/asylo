@@ -49,9 +49,7 @@ class FakeHash final : public HashInterface {
     data_.append(reinterpret_cast<const char *>(data), len);
   }
 
-  std::string Hash() override {
-    return data_;
-  }
+  std::string Hash() override { return data_; }
 
  private:
   std::string data_;

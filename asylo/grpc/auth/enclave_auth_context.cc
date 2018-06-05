@@ -54,15 +54,15 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "Ill-formed peer identity in auth context");
       }
-    } else if (
-        auth_property.first == GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) {
+    } else if (auth_property.first ==
+               GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME) {
       if (auth_property.second != GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE) {
         return Status(
             error::GoogleError::INVALID_ARGUMENT,
             absl::StrCat("Invalid transport security type: ",
                          std::string(auth_property.second.data(),
-                                auth_property.second.size()), "; expected ",
-                         GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE));
+                                auth_property.second.size()),
+                         "; expected ", GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE));
       }
     } else {
       std::string auth_property_name =

@@ -40,8 +40,8 @@ class StatusCodeMatcher : public ::testing::MatcherInterface<const Status &> {
   //
   // Describes the expected error code.
   void DescribeTo(std::ostream *os) const override {
-    *os << "error code " << error_space_->SpaceName() << "::"
-        << error_space_->String(static_cast<int>(code_));
+    *os << "error code " << error_space_->SpaceName()
+        << "::" << error_space_->String(static_cast<int>(code_));
   }
 
   // From testing::MatcherInterface.
@@ -77,9 +77,7 @@ class IsOkMatcherImpl : public ::testing::MatcherInterface<T> {
   // From testing::MatcherInterface.
   //
   // Describes the OK expectation.
-  void DescribeTo(std::ostream *os) const override {
-    *os << "is OK";
-  }
+  void DescribeTo(std::ostream *os) const override { *os << "is OK"; }
 
   // From testing::MatcherInterface.
   //

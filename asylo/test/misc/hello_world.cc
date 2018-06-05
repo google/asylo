@@ -45,8 +45,6 @@ class HelloWorld : public EnclaveTestCase {
   }
 };
 
-TrustedApplication *BuildTrustedApplication() {
-  return new HelloWorld;
-}
+TrustedApplication *BuildTrustedApplication() { return new HelloWorld; }
 
 }  // namespace asylo

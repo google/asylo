@@ -43,8 +43,7 @@ struct ValueTypeQualifier {
 // Class specialization for const-type template parameter.
 template <typename T>
 struct ValueTypeQualifier<const T> {
-  using value_type =
-      typename std::add_const<typename T::value_type>::type;
+  using value_type = typename std::add_const<typename T::value_type>::type;
   using const_value_type =
       typename std::add_const<typename T::value_type>::type;
 };

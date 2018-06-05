@@ -18,9 +18,9 @@
 
 #include "asylo/platform/crypto/sha256_hash.h"
 
-#include "absl/strings/escaping.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/escaping.h"
 
 namespace asylo {
 namespace {

@@ -169,8 +169,8 @@ static int enclave_channel_security_connector_cmp(
   return 1;
 }
 
-static int enclave_server_security_connector_cmp(
-    grpc_security_connector *sc1, grpc_security_connector *sc2) {
+static int enclave_server_security_connector_cmp(grpc_security_connector *sc1,
+                                                 grpc_security_connector *sc2) {
   return 1;
 }
 
@@ -184,16 +184,16 @@ static void enclave_channel_security_connector_add_handshaker(
   tsi_result result = tsi_enclave_handshaker_create(
       /*is_client=*/true, &channel_creds->self_assertions,
       &channel_creds->accepted_peer_assertions,
-      &channel_creds->additional_authenticated_data,
-      &tsi_handshaker);
+      &channel_creds->additional_authenticated_data, &tsi_handshaker);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
             tsi_result_to_string(result));
     return;
   }
 
-  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-      tsi_handshaker, &security_connector->base));
+  grpc_handshake_manager_add(handshake_mgr,
+                             grpc_security_handshaker_create(
+                                 tsi_handshaker, &security_connector->base));
 }
 
 static void enclave_server_security_connector_add_handshakers(
@@ -206,16 +206,16 @@ static void enclave_server_security_connector_add_handshakers(
   tsi_result result = tsi_enclave_handshaker_create(
       /*is_client=*/false, &server_creds->self_assertions,
       &server_creds->accepted_peer_assertions,
-      &server_creds->additional_authenticated_data,
-      &tsi_handshaker);
+      &server_creds->additional_authenticated_data, &tsi_handshaker);
   if (result != TSI_OK) {
     gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
             tsi_result_to_string(result));
     return;
   }
 
-  grpc_handshake_manager_add(handshake_mgr, grpc_security_handshaker_create(
-      tsi_handshaker, &security_connector->base));
+  grpc_handshake_manager_add(handshake_mgr,
+                             grpc_security_handshaker_create(
+                                 tsi_handshaker, &security_connector->base));
 }
 
 static grpc_security_connector_vtable
@@ -245,8 +245,8 @@ grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
     grpc_call_credentials *request_metadata_creds, const char *target) {
   GRPC_API_TRACE(
       "grpc_enclave_channel_security_connector_create("
-      "grpc_channel_credentials=%p, grpc_call_credentials=%p, target=%s)", 3,
-      (channel_credentials, request_metadata_creds, target));
+      "grpc_channel_credentials=%p, grpc_call_credentials=%p, target=%s)",
+      3, (channel_credentials, request_metadata_creds, target));
   grpc_enclave_channel_security_connector *security_connector =
       static_cast<grpc_enclave_channel_security_connector *>(
           gpr_malloc(sizeof(*security_connector)));
@@ -263,8 +263,8 @@ grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
   grpc_channel_security_connector &base = security_connector->base;
   base.base.vtable = &enclave_channel_security_connector_vtable;
   base.channel_creds = grpc_channel_credentials_ref(channel_credentials);
-  base.request_metadata_creds = grpc_call_credentials_ref(
-      request_metadata_creds);
+  base.request_metadata_creds =
+      grpc_call_credentials_ref(request_metadata_creds);
   base.check_call_host = enclave_channel_check_call_host;
   base.cancel_check_call_host = enclave_channel_cancel_check_call_host;
   base.add_handshakers = enclave_channel_security_connector_add_handshaker;
@@ -276,7 +276,8 @@ grpc_server_security_connector *grpc_enclave_server_security_connector_create(
     grpc_server_credentials *server_credentials) {
   GRPC_API_TRACE(
       "grpc_enclave_server_security_connector_create("
-      "grpc_server_credentials=%p)", 1, (server_credentials));
+      "grpc_server_credentials=%p)",
+      1, (server_credentials));
   grpc_enclave_server_security_connector *security_connector =
       static_cast<grpc_enclave_server_security_connector *>(
           gpr_malloc(sizeof(*security_connector)));

@@ -147,9 +147,9 @@ ClientEkepHandshaker::Result ClientEkepHandshaker::HandleHandshakeMessage(
   // key. Any errors that occur during derivation of the record protocol key do
   // not result in an Abort message being sent to the peer.
   if (IsHandshakeCompleted()) {
-    if (!DeriveAndSetRecordProtocolKey(selected_cipher_suite_,
-                                       selected_record_protocol_,
-                                       master_secret_).ok()) {
+    if (!DeriveAndSetRecordProtocolKey(
+             selected_cipher_suite_, selected_record_protocol_, master_secret_)
+             .ok()) {
       handshaker_state_ = HandshakeState::ABORTED;
     }
   }

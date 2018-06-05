@@ -106,8 +106,7 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     regex_t regex;
     if (regcomp(&regex, "", 0)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "recomp error");
+      return Status(error::GoogleError::INTERNAL, "recomp error");
     }
     regfree(&regex);
 
@@ -233,16 +232,16 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd = fd_or_error.ValueOrDie();
     close(fd);
     if (unlink(path.c_str()) == -1) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Unlink file ", path, "failed: ",
-                                 strerror(errno)));
+      return Status(
+          static_cast<error::PosixError>(errno),
+          absl::StrCat("Unlink file ", path, "failed: ", strerror(errno)));
     }
     fd = open(path.c_str(), O_RDWR);
     if (fd >= 0) {
       close(fd);
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("File ", path,
-                                 " is still available after unlink"));
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("File ", path, " is still available after unlink"));
     }
     return Status::OkStatus();
   }
@@ -273,15 +272,15 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (fcntl(fd, F_SETFD, FD_CLOEXEC) == -1) {
       close(fd);
       return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Fcntl set FD flags for file ",
-                                 path, "failed: ", strerror(errno)));
+                    absl::StrCat("Fcntl set FD flags for file ", path,
+                                 "failed: ", strerror(errno)));
     }
     int fd_flags = fcntl(fd, F_GETFD);
     if (!(fd_flags & FD_CLOEXEC)) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Fcntl get FD flags for file ",
-                                 path, "returned unexpected result: ",
-                                 strerror(errno)));
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Fcntl get FD flags for file ", path,
+                       "returned unexpected result: ", strerror(errno)));
     }
 
     // Test F_DUPFD.
