@@ -23,10 +23,10 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
+#include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/enclave_test.h"
@@ -44,11 +44,6 @@ using ::testing::Not;
 constexpr char kName[] = "test";
 
 constexpr const char kAddress[] = "[::1]";
-
-void SetNullAssertionDescription(AssertionDescription *assertion_description) {
-  assertion_description->set_identity_type(EnclaveIdentityType::NULL_IDENTITY);
-  assertion_description->set_authority_type(kNullAssertionAuthority);
-}
 
 // A simple end-to-end test for enclave gRPC security.
 class EnclaveSecureGrpcTest : public EnclaveTest {
@@ -74,7 +69,7 @@ class EnclaveSecureGrpcTest : public EnclaveTest {
 // Starts a gRPC server in an enclave and calls this server with an untrusted
 // gRPC client. Client and server use null-assertion-based enclave credentials.
 TEST_F(EnclaveSecureGrpcTest, SimpleEnd2EndTest) {
-  // Initialize the gRPC server and gets its address.
+  // Initialize the gRPC server and get its address.
   EnclaveInput input;
   input.SetExtension(command, ServerCommand::INITIALIZE_SERVER);
   EnclaveOutput output;
@@ -92,19 +87,10 @@ TEST_F(EnclaveSecureGrpcTest, SimpleEnd2EndTest) {
   });
   grpc_thread.detach();
 
-  // Set configurations options for the client's credentials:
-  //   * Client offers the null assertion
-  //   * Client accepts the null assertion
-  EnclaveCredentialsOptions options;
-  options.self_assertions.emplace_back();
-  SetNullAssertionDescription(&options.self_assertions.back());
-  options.accepted_peer_assertions.emplace_back();
-  SetNullAssertionDescription(&options.accepted_peer_assertions.back());
-
   // Create an EnclaveChannelCredentials object to configure the underlying
   // security mechanism for the channel.
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
-      EnclaveChannelCredentials(options);
+      EnclaveChannelCredentials(BidirectionalNullCredentialsOptions());
 
   // Create a channel using the secure credentials and wait 30 seconds for the
   // channel to connect to the server.
