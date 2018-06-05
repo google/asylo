@@ -39,6 +39,25 @@ inline void SetNullIdentityDescription(
   identity_description->set_authority_type(kNullAuthorizationAuthority);
 }
 
+// Returns true if |identity_description| describes a null identity.
+inline bool IsNullIdentityDescription(
+    const EnclaveIdentityDescription &identity_description) {
+  return identity_description.identity_type() ==
+      EnclaveIdentityType::NULL_IDENTITY &&
+      identity_description.authority_type() == kNullAuthorizationAuthority;
+}
+
+// Sets |expectation| to a default null identity expectation.
+inline void SetNullIdentityExpectation(
+    EnclaveIdentityExpectation *expectation) {
+  SetNullIdentityDescription(
+      expectation->mutable_reference_identity()->mutable_description());
+  expectation->mutable_reference_identity()->set_identity(kNullIdentity);
+  // The match spec is not set because there are no additional fields to
+  // compare.
+  expectation->clear_match_spec();
+}
+
 }  // namespace asylo
 
 #endif  // ASYLO_IDENTITY_NULL_IDENTITY_NULL_IDENTITY_UTIL_H_

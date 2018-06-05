@@ -42,5 +42,24 @@ TEST(NullIdentityUtilTest, SetNullAssertionDescription) {
   EXPECT_EQ(description.authority_type(), kNullAssertionAuthority);
 }
 
+TEST(NullIdentityUtilTest, IsNullIdentityDescription) {
+  EnclaveIdentityDescription description;
+  SetNullIdentityDescription(&description);
+  EXPECT_TRUE(IsNullIdentityDescription(description));
+
+  description.Clear();
+  EXPECT_FALSE(IsNullIdentityDescription(description));
+}
+
+TEST(NullIdentityUtilTest, SetNullIdentityExpectation) {
+  EnclaveIdentityExpectation expectation;
+  SetNullIdentityExpectation(&expectation);
+
+  EXPECT_TRUE(IsNullIdentityDescription(
+      expectation.reference_identity().description()));
+  EXPECT_EQ(expectation.reference_identity().identity(), kNullIdentity);
+  EXPECT_EQ(expectation.match_spec(), "");
+}
+
 }  // namespace
 }  // namespace asylo
