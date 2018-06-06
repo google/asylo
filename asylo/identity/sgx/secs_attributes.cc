@@ -50,6 +50,37 @@ constexpr size_t kNumSecsAttributeBits = kNumFlagsBits + kNumXfrmBits;
 // verification and seal-key derivation by default. Enclave writers can
 // override these lists during their invocation of the enclave-identity
 // libraries.
+//
+// Rationale for inclusion/exclusion in/from the list:
+// ===================================================
+// The XFRM attribute determine the availability of the
+// corresponding instruction-set features inside an enclave. For features
+// included in the following list, the x86-64 architecture provides fail-closed
+// semantics. That is, if the enclave tries to use a feature when the
+// corresponding bit is not set, the enclave gets a #UD exception, which cannot
+// be hidden from an enclave by the in-scope adversaries (see go/siee). On the
+// other hand, setting the bit when the enclave is not intending to use the
+// feature does not affect the enclave in any meaningful way.
+//
+// MPX, on the other hand, when enabled, turns some of the legacy NOP
+// instructions into memory-write operations. Consequently, it can be used
+// as an attack vector against enclaves that are written (or that rely on
+// libraries that are written) without knowledge of MPX. Consequently, MPX
+// bits are not included in the following list.
+//
+// Finally, page-protection keys allow an application to partition its own
+// address space into security domains, and if an adversary turns off this
+// feature without the enclave's knowledge, such a behavior *could* adversely
+// affect the enclave's security. Consequently, the PKRU bit is not included
+// in the following list.
+//
+// There are (somewhat contrived) cases where enclave writers may want to
+// assign different security properties to their enclave depending on
+// whether their enclave is using features included in the following list
+// (e.g., due to potentially different side-channel behavior, an enclave
+// writer may want to consider code paths that use AVX to be more trustworthy
+// than those that do not use AVX). In such situations, enclave writers can
+// override this list through the enclave-identity library.
 constexpr SecsAttributeBit kDefaultDoNotCareSecsAttributes[] = {
     SecsAttributeBit::FPU,       SecsAttributeBit::SSE,
     SecsAttributeBit::AVX,       SecsAttributeBit::OPMASK,

@@ -69,6 +69,7 @@ class ThreadManager {
     // Return value of start_routine.
     void *ret;
 
+    // Guards internal state of a Thread object.
     pthread_mutex_t lock;
     pthread_cond_t state_change_cond;
     pthread_t thread_id;
@@ -104,6 +105,7 @@ class ThreadManager {
   // Unlocks queued_threads_.
   void UnlockQueuedThreads();
 
+  // Guards queued_threads_.
   pthread_mutex_t scheduled_lock_;
 
   // Queue of start_routines waiting to be run.

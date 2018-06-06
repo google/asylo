@@ -539,6 +539,8 @@ int pthread_cancel(pthread_t unused) { return ENOSYS; }
 static pthread_mutex_t malloc_mutex = PTHREAD_MUTEX_RECURSIVE_INITIALIZER;
 
 void __malloc_lock(struct reent *) {
+  // If pthread_self() == nullptr Enclave is in initialization state and single
+  // threaded.
   if (!pthread_self()) {
     return;
   }
