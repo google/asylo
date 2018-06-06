@@ -19,7 +19,7 @@
 #include "asylo/identity/null_identity/null_identity_expectation_matcher.h"
 
 #include <google/protobuf/util/message_differencer.h>
-#include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/identity/null_identity/null_identity_util.h"
 
 namespace asylo {
 
@@ -42,8 +42,7 @@ StatusOr<bool> NullIdentityExpectationMatcher::Match(
 
 EnclaveIdentityDescription NullIdentityExpectationMatcher::Description() const {
   EnclaveIdentityDescription description;
-  description.set_identity_type(NULL_IDENTITY);
-  description.set_authority_type(kNullAuthorizationAuthority);
+  SetNullIdentityDescription(&description);
   return description;
 }
 

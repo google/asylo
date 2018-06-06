@@ -259,7 +259,6 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":code_identity_constants",
         ":code_identity_util",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/identity:identity_proto_cc",

@@ -103,7 +103,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
-        ":null_identity_constants",
+        ":null_identity_util",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/identity:identity_proto_cc",
         "@com_google_protobuf//:protobuf",
