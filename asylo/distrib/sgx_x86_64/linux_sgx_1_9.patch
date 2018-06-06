@@ -155,6 +155,9 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `external/epid/ext/ipp/sources/ippcp/src/pcpbnumisc.h` add `{}` to
   the `FIX_BNU` definition to appease `-Wmisleading-indentation`.
 * `external/crypto_px/sources/ippcp/src/pcptool.h` fix include guard typo
+* `psw/ae/common/proto/messages.proto` add syntax statement.
+* `psw/ae/common/src/ProtobufSerializer.h` remove unnecessary include of
+  protobuf's message.h.
 --
 diff -Nur -x '*.png' -x '*.gif' buildenv.mk buildenv.mk
 --- buildenv.mk
@@ -522,6 +525,18 @@ diff -Nur -x '*.png' -x '*.gif' psw/ae/common/inc/IAEMessage.h psw/ae/common/inc
  #pragma GCC diagnostic pop
  
  struct AEMessage{
+diff -Nur -x '*.png' -x '*.gif' psw/ae/common/proto/messages.proto psw/ae/common/proto/messages.proto
+--- psw/ae/common/proto/messages.proto
++++ psw/ae/common/proto/messages.proto
+@@ -30,6 +30,8 @@
+  */
+ 
+ 
++syntax = "proto2";
++
+ package aesm.message;
+ 
+ message Request{
 diff -Nur -x '*.png' -x '*.gif' psw/ae/common/src/NonBlockingUnixCommunicationSocket.cpp psw/ae/common/src/NonBlockingUnixCommunicationSocket.cpp
 --- psw/ae/common/src/NonBlockingUnixCommunicationSocket.cpp
 +++ psw/ae/common/src/NonBlockingUnixCommunicationSocket.cpp
@@ -591,6 +606,17 @@ diff -Nur -x '*.png' -x '*.gif' psw/ae/common/src/NonBlockingUnixCommunicationSo
          if (eventNum == -1)
          {
              errorDetected = true;
+diff -Nur -x '*.png' -x '*.gif' psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSerializer.cpp
+--- psw/ae/common/src/ProtobufSerializer.cpp
++++ psw/ae/common/src/ProtobufSerializer.cpp
+@@ -34,7 +34,6 @@
+  */
+ 
+ #include <ProtobufSerializer.h>
+-#include <google/protobuf/message.h>
+ #include <IAEMessage.h>
+ 
+ #include <IAERequest.h>
 diff -Nur -x '*.png' -x '*.gif' psw/ae/common/src/SocketTransporter.cpp psw/ae/common/src/SocketTransporter.cpp
 --- psw/ae/common/src/SocketTransporter.cpp
 +++ psw/ae/common/src/SocketTransporter.cpp
@@ -1715,7 +1741,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
              *output = (char)(input | FIRST_BYTE_MARK[*length]);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,531 @@
+@@ -0,0 +1,523 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +package(default_visibility = ["//visibility:public"])
@@ -1767,17 +1793,13 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +sgx_enclave_configuration(name = "enclave_debug_config")
 +
 +
-+# genrule is needed to compile third_party protobufs.
-+genrule(
++proto_library(
 +    name = "ipc_common_proto",
 +    srcs = ["psw/ae/common/proto/messages.proto"],
-+    outs = [
-+        "psw/ae/common/proto/messages.pb.h",
-+        "psw/ae/common/proto/messages.pb.cc",
-+    ],
-+    cmd = ("$(location @com_google_protobuf//:protoc) " +
-+           "--cpp_out=$(GENDIR) $(SRCS)"),
-+    tools = ["@com_google_protobuf//:protoc"],
++)
++cc_proto_library(
++    name = "ipc_common_proto_cc",
++    deps = [":ipc_common_proto"],
 +)
 +
 +cc_library(
@@ -1793,7 +1815,6 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +        "common/inc/internal/se_*.h",
 +    ]) + [
 +        "external/epid/epid/common/types.h",
-+        ":ipc_common_proto",
 +    ],
 +    hdrs = [
 +        "common/inc/internal/arch.h",
@@ -1819,9 +1840,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +        "-Iexternal/linux_sgx/psw/ae/common/proto",
 +    ],
 +    textual_hdrs = ["common/inc/internal/inst.h"],
-+    deps = [
-+        "@com_google_protobuf//:protobuf",
-+    ],
++    deps = [":ipc_common_proto_cc"],
 +)
 +
 +filegroup(
@@ -1906,7 +1925,6 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +        ":ittnotify_lib",
 +        ":se_wrapper",
 +        ":uae_service",
-+        "@com_google_protobuf//:protobuf",
 +    ],
 +)
 +
