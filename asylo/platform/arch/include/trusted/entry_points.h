@@ -66,7 +66,8 @@ int __asylo_threading_donate();
 // Enclave signal handler routine.
 //
 // The input type is asylo::EnclaveSignal.
-int __asylo_handle_signal(const char *input, size_t input_len);
+int __asylo_handle_signal(const char *input, size_t input_len, char **output,
+                          size_t *output_len);
 
 #ifdef __cplusplus
 }  // extern "C"

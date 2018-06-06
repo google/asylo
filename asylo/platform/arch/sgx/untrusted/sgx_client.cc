@@ -42,20 +42,18 @@ static Status initialize(sgx_enclave_id_t eid, const char *name,
                          const char *input, size_t input_len, char **output,
                          size_t *output_len) {
   int result;
-  bridge_size_t bridge_output_len;
   sgx_status_t sgx_status = ecall_initialize(
       eid, &result, name, input, static_cast<bridge_size_t>(input_len), output,
-      &bridge_output_len);
+      static_cast<bridge_size_t *>(output_len));
   if (sgx_status != SGX_SUCCESS) {
     // Return a Status object in the SGX error space.
     return Status(sgx_status, "Call to ecall_initialize failed");
-  } else if (result || bridge_output_len == 0) {
+  } else if (result || *output_len == 0) {
     // Non-zero return code indicates that the enclave was not able to return
     // any output from Initialize().
     return Status(error::GoogleError::INTERNAL, "No output from enclave");
   }
 
-  *output_len = static_cast<size_t>(bridge_output_len);
   return Status::OkStatus();
 }
 
@@ -67,21 +65,19 @@ static Status initialize(sgx_enclave_id_t eid, const char *name,
 static Status run(sgx_enclave_id_t eid, const char *input, size_t input_len,
                   char **output, size_t *output_len) {
   int result;
-  bridge_size_t bridge_output_len;
   sgx_status_t sgx_status =
       ecall_run(eid, &result, input, static_cast<bridge_size_t>(input_len),
-                output, &bridge_output_len);
+                output, static_cast<bridge_size_t *>(output_len));
   if (sgx_status != SGX_SUCCESS) {
     // Return a Status object in the SGX error space.
     return Status(sgx_status, "Call to ecall_run failed");
-  } else if (result || bridge_output_len == 0) {
+  } else if (result || *output_len == 0) {
     // Ecall succeeded but did not return a value. The indicates that the
     // trusted code failed to propagate error information over the enclave
     // boundary (e.g. serialization failure).
     return Status(error::GoogleError::INTERNAL, "No output from enclave");
   }
 
-  *output_len = static_cast<size_t>(bridge_output_len);
   return Status::OkStatus();
 }
 
@@ -93,20 +89,18 @@ static Status run(sgx_enclave_id_t eid, const char *input, size_t input_len,
 static Status finalize(sgx_enclave_id_t eid, const char *input,
                        size_t input_len, char **output, size_t *output_len) {
   int result;
-  bridge_size_t bridge_output_len;
   sgx_status_t sgx_status =
       ecall_finalize(eid, &result, input, static_cast<bridge_size_t>(input_len),
-                     output, &bridge_output_len);
+                     output, static_cast<bridge_size_t *>(output_len));
   if (sgx_status != SGX_SUCCESS) {
     // Return a Status object in the SGX error space.
     return Status(sgx_status, "Call to ecall_finalize failed");
-  } else if (result || bridge_output_len == 0) {
+  } else if (result || *output_len == 0) {
     // Non-zero return code indicates that the enclave was not able to return
     // any output from Finalize().
     return Status(error::GoogleError::INTERNAL, "No output from enclave");
   }
 
-  *output_len = static_cast<size_t>(bridge_output_len);
   return Status::OkStatus();
 }
 
@@ -123,21 +117,21 @@ static int donate_thread(sgx_enclave_id_t eid, sgx_status_t *status) {
 // Enters the enclave and invokes the signal handle entry-point. If the ecall
 // fails, returns a non-OK status.
 static Status handle_signal(sgx_enclave_id_t eid, const char *input,
-                            size_t input_len) {
+                            size_t input_len, char **output,
+                            size_t *output_len) {
   int result;
   sgx_status_t sgx_status = ecall_handle_signal(
-      eid, &result, input, static_cast<bridge_size_t>(input_len));
+      eid, &result, input, static_cast<bridge_size_t>(input_len), output,
+      static_cast<bridge_size_t *>(output_len));
   if (sgx_status != SGX_SUCCESS) {
     // Return a Status object in the SGX error space.
     return Status(sgx_status, "Call to ecall_handle_signal failed");
+  } else if (result || *output_len == 0) {
+    // Non-zero return code indicates that the enclave was not able to return
+    // any output from HandleSignal().
+    return Status(error::GoogleError::INTERNAL, "No output from enclave");
   }
-  if (result) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        result == -1
-            ? "Failed to parse input string"
-            : "Enclave is not running or signal handler not registered");
-  }
+
   return Status::OkStatus();
 }
 
@@ -285,8 +279,26 @@ Status SGXClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Failed to serialize EnclaveSignal");
   }
-  return handle_signal(id_, serialized_enclave_signal.data(),
-                       serialized_enclave_signal.size());
+  char *output = nullptr;
+  size_t output_len = 0;
+  Status status =
+      handle_signal(id_, serialized_enclave_signal.data(),
+                    serialized_enclave_signal.size(), &output, &output_len);
+  if (!status.ok()) {
+    return status;
+  }
+
+  // Enclave entry-point was successfully invoked. |output| is guaranteed to
+  // have a value.
+  StatusProto status_proto;
+  status_proto.ParseFromArray(output, output_len);
+  status.RestoreFrom(status_proto);
+
+  // |output| points to an untrusted memory buffer allocated by the enclave. It
+  // is the untrusted caller's responsibility to free this buffer.
+  free(output);
+
+  return status;
 }
 
 Status SGXClient::DestroyEnclave() {

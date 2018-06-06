@@ -74,7 +74,10 @@ enclave {
     //
     // Invokes signal handling entry point.
     exception_handler public int ecall_handle_signal(
-        [in, size=input_len] const char *input, bridge_size_t input_len);
+        [in, size=input_len] const char *input,
+        bridge_size_t input_len,
+        [out] char **output,
+        [out] bridge_size_t *output_len);
   };
 
   // Unless otherwise specified, each of the following calls invokes the

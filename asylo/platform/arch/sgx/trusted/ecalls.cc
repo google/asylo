@@ -46,16 +46,14 @@ int ecall_initialize(const char *name, const char *input,
                      bridge_size_t input_len, char **output,
                      bridge_size_t *output_len) {
   int result = 0;
-  size_t enclave_output_len;
   try {
     result =
         asylo::__asylo_user_init(name, input, static_cast<size_t>(input_len),
-                                 output, &enclave_output_len);
+                                 output, static_cast<size_t *>(output_len));
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
 
-  *output_len = static_cast<bridge_size_t>(enclave_output_len);
   return result;
 }
 
@@ -64,16 +62,13 @@ int ecall_initialize(const char *name, const char *input,
 int ecall_run(const char *input, bridge_size_t input_len, char **output,
               bridge_size_t *output_len) {
   int result = 0;
-  size_t enclave_output_len;
   try {
     result = asylo::__asylo_user_run(input, static_cast<size_t>(input_len),
-                                     output, &enclave_output_len);
+                                     output, static_cast<size_t *>(output_len));
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
-    return 1;
   }
 
-  *output_len = static_cast<bridge_size_t>(enclave_output_len);
   return result;
 }
 
@@ -81,8 +76,20 @@ int ecall_donate_thread() { return asylo::__asylo_threading_donate(); }
 
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
-int ecall_handle_signal(const char *input, bridge_size_t input_len) {
-  return asylo::__asylo_handle_signal(input, static_cast<size_t>(input_len));
+int ecall_handle_signal(const char *input, bridge_size_t input_len,
+                        char **output, bridge_size_t *output_len) {
+  int result = 0;
+  try {
+    result =
+        asylo::__asylo_handle_signal(input, static_cast<size_t>(input_len),
+                                     output, static_cast<size_t *>(output_len));
+  } catch (...) {
+    // Abort directly here instead of LOG(FATAL). LOG tries to obtain a mutex,
+    // and acquiring a non-reentrant mutex in signal handling may cause deadlock
+    // if the thread had already obtained that mutex when interrupted.
+    abort();
+  }
+  return result;
 }
 
 // Invokes the enclave finalization entry-point. Returns a non-zero error code
@@ -90,14 +97,13 @@ int ecall_handle_signal(const char *input, bridge_size_t input_len) {
 int ecall_finalize(const char *input, bridge_size_t input_len, char **output,
                    bridge_size_t *output_len) {
   int result = 0;
-  size_t enclave_output_len;
   try {
-    result = asylo::__asylo_user_fini(input, static_cast<size_t>(input_len),
-                                      output, &enclave_output_len);
+    result =
+        asylo::__asylo_user_fini(input, static_cast<size_t>(input_len), output,
+                                 static_cast<size_t *>(output_len));
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
 
-  *output_len = static_cast<bridge_size_t>(enclave_output_len);
   return result;
 }

@@ -367,21 +367,36 @@ int __asylo_threading_donate() {
   return thread_manager->StartThread();
 }
 
-int __asylo_handle_signal(const char *input, size_t input_len) {
+int __asylo_handle_signal(const char *input, size_t input_len, char **output,
+                          size_t *output_len) {
+  Status status = VerifyOutputArguments(output, output_len);
+  if (!status.ok()) {
+    return 1;
+  }
+
+  StatusSerializer<StatusProto> status_serializer(output, output_len);
+
   asylo::EnclaveSignal signal;
   if (!signal.ParseFromArray(input, input_len)) {
-    return -1;
+    status = Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Failed to parse EnclaveSignal");
+    return status_serializer.Serialize(status);
   }
   TrustedApplication *trusted_application = GetApplicationInstance();
   EnclaveState current_state = trusted_application->GetState();
   if (current_state < EnclaveState::kRunning ||
       current_state > EnclaveState::kFinalizing) {
-    enc_untrusted_puts("Enclave signal handling internals not available");
-    return EPERM;
+    status = Status(
+        error::GoogleError::FAILED_PRECONDITION,
+        ::absl::StrCat("Enclave unable to handle signal while in state: ",
+                       current_state));
+    return status_serializer.Serialize(status);
   }
   int signum = FromBridgeSignal(signal.signum());
   if (signum < 0) {
-    return -1;
+    status = Status(error::GoogleError::INVALID_ARGUMENT,
+                    ::absl::StrCat("Invalid incoming signal number: ", signum));
+    return status_serializer.Serialize(status);
   }
   siginfo_t info;
   info.si_signo = signum;
@@ -398,12 +413,13 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
   // If the signal is blocked and still passed into the enclave. The signal
   // masks inside the enclave is out of sync with the untrusted signal mask.
   if (sigismember(&mask, signum)) {
-    return EPERM;
+    status = Status(error::GoogleError::INTERNAL,
+                    ::absl::StrCat("Incoming signal: ", signum,
+                                   " is blocked inside the enclave."));
+    return status_serializer.Serialize(status);
   }
-  if (!signal_manager->HandleSignal(signum, &info, &ucontext).ok()) {
-    return -1;
-  }
-  return 0;
+  status = signal_manager->HandleSignal(signum, &info, &ucontext);
+  return status_serializer.Serialize(status);
 }
 
 }  // extern "C"
