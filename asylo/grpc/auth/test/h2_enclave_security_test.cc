@@ -18,12 +18,13 @@
 
 #include <string.h>
 
-#include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
-#include "asylo/grpc/auth/test/end2end_test_util.h"
+#include "asylo/grpc/auth/null_credentials_options.h"
+#include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
+#include "asylo/identity/null_identity/null_identity_util.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -78,26 +79,21 @@ static void chttp2_init_client_channel(grpc_end2end_test_fixture *f,
 
 static void chttp2_init_client_enclave_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
-  // Create enclave channel credentials.
-  grpc_enclave_credentials_options options;
-  grpc_enclave_credentials_options_init(&options);
+  // Set the client's credentials options. The client offers a null assertion
+  // and accepts null assertions.
+  asylo::EnclaveCredentialsOptions options =
+      asylo::BidirectionalNullCredentialsOptions();
 
   // The client's AAD is just a fixed string in this test.
-  safe_string_assign(&options.additional_authenticated_data,
-                     strlen(kClientAdditionalAuthenticatedData),
-                     kClientAdditionalAuthenticatedData);
+  options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
 
-  // The client offers a null assertion.
-  assertion_description_array_init(/*count=*/1, &options.self_assertions);
-  set_null_assertion(&options.self_assertions.descriptions[0]);
+  grpc_enclave_credentials_options c_options;
+  grpc_enclave_credentials_options_init(&c_options);
+  asylo::CopyEnclaveCredentialsOptions(options, &c_options);
 
-  // The client only accepts null assertions.
-  assertion_description_array_init(/*count=*/1,
-                                   &options.accepted_peer_assertions);
-  set_null_assertion(&options.accepted_peer_assertions.descriptions[0]);
-
+  // Create enclave gRPC channel credentials.
   grpc_channel_credentials *creds =
-      grpc_enclave_channel_credentials_create(&options);
+      grpc_enclave_channel_credentials_create(&c_options);
 
   // Initialize client.
   chttp2_init_client_channel(f, client_args, creds);
@@ -126,26 +122,21 @@ static void chttp2_init_server(grpc_end2end_test_fixture *f,
 
 static void chttp2_init_server_enclave_secure_fullstack(
     grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
-  // Create enclave server credentials.
-  grpc_enclave_credentials_options options;
-  grpc_enclave_credentials_options_init(&options);
+  // Set the server's credentials options. The server offers a null assertion
+  // and accepts null assertions.
+  asylo::EnclaveCredentialsOptions options =
+      asylo::BidirectionalNullCredentialsOptions();
 
   // The server's AAD is just a fixed string in this test.
-  safe_string_assign(&options.additional_authenticated_data,
-                     strlen(kServerAdditionalAuthenticatedData),
-                     kServerAdditionalAuthenticatedData);
+  options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
 
-  // The server offers a null assertion.
-  assertion_description_array_init(/*count=*/1, &options.self_assertions);
-  set_null_assertion(&options.self_assertions.descriptions[0]);
+  grpc_enclave_credentials_options c_options;
+  grpc_enclave_credentials_options_init(&c_options);
+  asylo::CopyEnclaveCredentialsOptions(options, &c_options);
 
-  // The server only accepts null assertions.
-  assertion_description_array_init(/*count=*/1,
-                                   &options.accepted_peer_assertions);
-  set_null_assertion(&options.accepted_peer_assertions.descriptions[0]);
-
+  // Create enclave gRPC server credentials.
   grpc_server_credentials *creds =
-      grpc_enclave_server_credentials_create(&options);
+      grpc_enclave_server_credentials_create(&c_options);
 
   // Initialize server.
   chttp2_init_server(f, server_args, creds);

@@ -25,20 +25,6 @@ package(
 
 load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
 
-# A utility library for end2end tests that bridges constants in the C++ layer
-# to the C layer.
-cc_library(
-    name = "end2end_test_util",
-    testonly = 1,
-    srcs = ["end2end_test_util.cc"],
-    hdrs = ["end2end_test_util.h"],
-    deps = [
-        "//asylo/grpc/auth/core:assertion_description",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/null_identity:null_identity_constants",
-    ],
-)
-
 # A binary that packages a test fixture for the enclave gRPC stack with the
 # gRPC end2end tests library.
 cc_binary(
@@ -46,12 +32,13 @@ cc_binary(
     testonly = 1,
     srcs = ["h2_enclave_security_test.cc"],
     deps = [
-        ":end2end_test_util",
-        "//asylo/grpc/auth/core:assertion_description",
+        "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/auth/core:enclave_credentials_options",
         "//asylo/grpc/auth/core:grpc_security_enclave",
+        "//asylo/grpc/auth/util:bridge_cpp_to_c",
         "//asylo/identity:enclave_assertion_authority_config_proto_cc",
         "//asylo/identity:init",
+        "//asylo/identity/null_identity:null_identity_util",
         "@com_github_grpc_grpc//:gpr_base",
         "@com_github_grpc_grpc//test/core/end2end:end2end_tests",
         "@com_github_grpc_grpc//test/core/util:gpr_test_util",
