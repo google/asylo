@@ -19,8 +19,7 @@
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 
 #include "asylo/grpc/auth/enclave_credentials_options.h"
-#include "asylo/grpc/auth/util/enclave_assertion_util.h"
-#include "asylo/grpc/auth/util/safe_string.h"
+#include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
 #include "src/cpp/client/secure_credentials.h"
 
 namespace asylo {
@@ -30,14 +29,7 @@ std::shared_ptr<grpc::ChannelCredentials> EnclaveChannelCredentials(
   // Translate C++ options struct to C options struct.
   grpc_enclave_credentials_options c_opts;
   grpc_enclave_credentials_options_init(&c_opts);
-  if (!options.additional_authenticated_data.empty()) {
-    safe_string_assign(&c_opts.additional_authenticated_data,
-                       options.additional_authenticated_data.size(),
-                       options.additional_authenticated_data.data());
-  }
-  CopyAssertionDescriptions(options.self_assertions, &c_opts.self_assertions);
-  CopyAssertionDescriptions(options.accepted_peer_assertions,
-                            &c_opts.accepted_peer_assertions);
+  CopyEnclaveCredentialsOptions(options, &c_opts);
 
   // Create a channel credentials object using the options.
   auto creds = std::shared_ptr<grpc::ChannelCredentials>(

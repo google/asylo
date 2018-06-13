@@ -46,26 +46,29 @@ cc_test(
     ],
 )
 
-# Utilities for working with the AssertionDescription proto.
+# Bridge utilities between the C++ and C layers of gRPC.
 cc_library(
-    name = "enclave_assertion_util",
-    srcs = ["enclave_assertion_util.cc"],
-    hdrs = ["enclave_assertion_util.h"],
+    name = "bridge_cpp_to_c",
+    srcs = ["bridge_cpp_to_c.cc"],
+    hdrs = ["bridge_cpp_to_c.h"],
     deps = [
+        "//asylo/grpc/auth:enclave_credentials_options",
         "//asylo/grpc/auth/core:assertion_description",
+        "//asylo/grpc/auth/core:enclave_credentials_options",
         "//asylo/identity:identity_proto_cc",
     ],
 )
 
-# Tests for the enclave assertion util library.
+# Tests for functions in the C++ to C bridge library.
 cc_test(
-    name = "enclave_assertion_util_test",
-    srcs = ["enclave_assertion_util_test.cc"],
+    name = "bridge_cpp_to_c_test",
+    srcs = ["bridge_cpp_to_c_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "enclave_assertion_util_enclave_test",
+    enclave_test_name = "bridge_cpp_to_c_enclave_test",
     tags = ["regression"],
     deps = [
-        ":enclave_assertion_util",
+        ":bridge_cpp_to_c",
+        "//asylo/grpc/auth:null_credentials_options",
         "//asylo/identity:identity_proto_cc",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

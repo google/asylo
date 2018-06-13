@@ -43,11 +43,16 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/grpc/auth/core:grpc_security_enclave",
-        "//asylo/grpc/auth/util:enclave_assertion_util",
-        "//asylo/grpc/auth/util:safe_string",
+        "//asylo/grpc/auth/util:bridge_cpp_to_c",
         "//asylo/identity:identity_proto_cc",
         "@com_github_grpc_grpc//:grpc++",
     ],
+)
+
+cc_library(
+    name = "enclave_credentials_options",
+    hdrs = ["enclave_credentials_options.h"],
+    deps = ["//asylo/identity:identity_proto_cc"],
 )
 
 # Configuration for building null enclave credentials (used for unauthenticated gRPC
