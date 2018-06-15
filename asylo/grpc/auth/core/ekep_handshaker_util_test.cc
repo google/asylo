@@ -22,7 +22,7 @@
 #include <gtest/gtest.h>
 #include "asylo/grpc/auth/core/ekep_handshaker.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/identity/null_identity/null_identity_util.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -35,8 +35,7 @@ const char kBadAuthorityType[] = "unknown authority";
 class EkepHandshakerUtilTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    null_assertion_description_.set_identity_type(NULL_IDENTITY);
-    null_assertion_description_.set_authority_type(kNullAssertionAuthority);
+    SetNullAssertionDescription(&null_assertion_description_);
 
     default_options_.self_assertions = {null_assertion_description_};
     default_options_.accepted_peer_assertions = {null_assertion_description_};
