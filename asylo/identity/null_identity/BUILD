@@ -138,7 +138,6 @@ cc_library(
     name = "null_identity_constants",
     srcs = ["null_identity_constants.cc"],
     hdrs = ["null_identity_constants.h"],
-    visibility = ["//visibility:public"],
 )
 
 # Utility functions for operating on null identities and assertions.

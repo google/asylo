@@ -47,7 +47,6 @@ cc_library(
     name = "code_identity_constants",
     srcs = ["code_identity_constants.cc"],
     hdrs = ["code_identity_constants.h"],
-    visibility = ["//visibility:public"],
 )
 
 cc_library(
