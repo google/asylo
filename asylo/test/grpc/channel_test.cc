@@ -22,12 +22,11 @@
 #include "absl/time/time.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
-#include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "asylo/grpc/auth/enclave_server_credentials.h"
+#include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/util/grpc_server_launcher.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/status_matchers.h"
@@ -53,16 +52,10 @@ struct InsecureCredentialsConfig : public CredentialsConfig {
 
 struct EnclaveCredentialsConfig : public CredentialsConfig {
   EnclaveCredentialsConfig() {
-    AssertionDescription null_assertion_description;
-    null_assertion_description.set_identity_type(NULL_IDENTITY);
-    null_assertion_description.set_authority_type(kNullAssertionAuthority);
-
-    EnclaveCredentialsOptions options;
-    options.self_assertions.push_back(null_assertion_description);
-    options.accepted_peer_assertions.push_back(null_assertion_description);
-
-    channel_credentials = EnclaveChannelCredentials(options);
-    server_credentials = EnclaveServerCredentials(options);
+    channel_credentials = EnclaveChannelCredentials(
+        BidirectionalNullCredentialsOptions());
+    server_credentials = EnclaveServerCredentials(
+        BidirectionalNullCredentialsOptions());
   }
 };
 
