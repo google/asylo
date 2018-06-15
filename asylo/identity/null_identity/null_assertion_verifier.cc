@@ -22,6 +22,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/null_identity/null_assertion.pb.h"
 #include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/identity/null_identity/null_identity_util.h"
 #include "asylo/platform/common/static_map.h"
 
 namespace asylo {
@@ -115,19 +116,14 @@ Status NullAssertionVerifier::Verify(const std::string &user_data,
   }
 
   // If verification of the assertion succeeds, then the identity is extracted.
-  // The description of the extracted identity takes on the same identity type
-  // as is handled by the verifier. In this particular case, the authorization
-  // authority type associated with the identity also happens to be the same as
-  // the assertion authority type associated with the assertion, but this is not
-  // required.
-  peer_identity->mutable_description()->set_identity_type(IdentityType());
-  peer_identity->mutable_description()->set_authority_type(
-      kNullAuthorizationAuthority);
-
-  // Null assertions do not carry any specific identity information and
-  // consequently, the peer's identity is a fixed string that is constant in
-  // all null assertions. In contrast, a non-trivial verifier would extract some
-  // meaningful identity information from the assertion.
+  // Null assertions do not carry any specific identity information and,
+  // consequently, the peer's identity is a fixed string that is constant
+  // between all null assertions. In contrast, a non-trivial verifier would
+  // extract some meaningful identity information from the assertion. Note that
+  // the description of the extracted identity is different from the description
+  // of the generator since the description represents an enclave identity, not
+  // an assertion.
+  SetNullIdentityDescription(peer_identity->mutable_description());
   peer_identity->set_identity(kNullIdentity);
 
   // Verification succeeded.

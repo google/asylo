@@ -59,6 +59,7 @@ cc_library(
     deps = [
         ":null_assertion_proto_cc",
         ":null_identity_constants",
+        ":null_identity_util",
         "//asylo/identity:enclave_assertion_verifier",
         "//asylo/platform/common:static_map",
         "@com_google_absl//absl/synchronization",

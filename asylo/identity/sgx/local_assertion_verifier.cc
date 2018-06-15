@@ -80,8 +80,8 @@ Status LocalAssertionVerifier::CreateAssertionRequest(
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
   }
 
-  request->mutable_description()->set_identity_type(identity_type_);
-  request->mutable_description()->set_authority_type(authority_type_);
+  request->mutable_description()->set_identity_type(IdentityType());
+  request->mutable_description()->set_authority_type(AuthorityType());
 
   LocalAssertionRequestAdditionalInfo additional_info;
   additional_info.set_local_attestation_domain(attestation_domain_);
@@ -193,9 +193,7 @@ Status LocalAssertionVerifier::Verify(const std::string &user_data,
                   "Failed to serialize CodeIdentity");
   }
 
-  peer_identity->mutable_description()->set_identity_type(identity_type_);
-  peer_identity->mutable_description()->set_authority_type(
-      kSgxAuthorizationAuthority);
+  SetSgxIdentityDescription(peer_identity->mutable_description());
 
   return Status::OkStatus();
 }
