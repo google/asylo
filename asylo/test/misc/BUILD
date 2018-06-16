@@ -169,8 +169,9 @@ TEST_DEPS_COMMON = [
 enclave_test(
     name = "enclave_smoke_test",
     srcs = ["hello_world_test.cc"],
-    enclave = ":test_enclave_smoke.so",
+    enclaves = {"enclave": ":test_enclave_smoke.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )
 
@@ -240,8 +241,9 @@ cc_enclave_test(
 enclave_test(
     name = "syscalls_test",
     srcs = ["syscalls_test_driver.cc"],
-    enclave = ":syscalls_test.so",
+    enclaves = {"enclave": ":syscalls_test.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":syscalls_test_proto_cc",
         "@com_google_absl//absl/strings",
@@ -251,8 +253,9 @@ enclave_test(
 enclave_test(
     name = "active_enclave_signal_test",
     srcs = ["active_enclave_signal_test_driver.cc"],
-    enclave = "active_enclave_signal_test.so",
+    enclaves = {"enclave": "active_enclave_signal_test.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_proto_cc",
         "@com_google_absl//absl/strings",
@@ -263,8 +266,9 @@ enclave_test(
 enclave_test(
     name = "inactive_enclave_signal_test",
     srcs = ["inactive_enclave_signal_test_driver.cc"],
-    enclave = "inactive_enclave_signal_test.so",
+    enclaves = {"enclave": "inactive_enclave_signal_test.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_proto_cc",
     ] + TEST_DEPS_COMMON,
@@ -273,16 +277,18 @@ enclave_test(
 enclave_test(
     name = "error_propagation_test",
     srcs = ["error_propagation_test.cc"],
-    enclave = ":error_propagation_enclave.so",
+    enclaves = {"enclave": ":error_propagation_enclave.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )
 
 enclave_test(
     name = "logging_test",
     srcs = ["logging_test_driver.cc"],
-    enclave = ":logging.so",
+    enclaves = {"enclave": ":logging.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo/test/util:test_flags",
     ] + TEST_DEPS_COMMON,
@@ -307,8 +313,9 @@ enclave_test(
     name = "die_test",
     srcs = ["die_test.cc"],
     data = [":double_die_host_bin"],
-    enclave = ":die.so",
+    enclaves = {"enclave": ":die.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo/test/util:exec_tester",
     ] + TEST_DEPS_COMMON,
@@ -333,8 +340,9 @@ enclave_test(
     name = "exception_test",
     srcs = ["exception_test.cc"],
     data = [":exception_app_host_bin"],
-    enclave = ":exception.so",
+    enclaves = {"enclave": ":exception.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":exception",
         "//asylo/test/util:exec_tester",

@@ -408,17 +408,21 @@ def sim_enclave(name, **kwargs):
     """
     sgx_enclave(name, **kwargs)
 
-def enclave_test(name, enclave = False, enclaves = [], tags = [], **kwargs):
+def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
     """Build target for testing one or more instances of 'sgx_enclave'.
 
-    Creates a cc_test for a given enclave. The cc_test will be passed
-    '--enclave_path=<path to instance of |enclave|>' for 1 enclave, or
-    '--<enclave_name>=<path to instance of |enclave_name.so|>' for many enclaves.
+    Creates a cc_test for a given enclave. Passes flags according to
+    `test_args`, which can contain references to targets from `enclaves`.
 
     Args:
       name: Name for build target.
-      enclave: [deprecated, use enclaves] The sgx_enclave target to test against.
-      enclaves: The sgx_enclave targets to test against.
+      enclaves: Dictionary from enclave names to target dependencies. The
+        dictionary must be injective. This dictionary is used to format each
+        string in `test_args` after each enclave target is interpreted as the
+        path to its output binary.
+      test_args: List of arguments to be passed to the test binary. Arguments may
+        contain {enclave_name}-style references to keys from the `enclaves` dict,
+        each of which will be replaced with the path to the named enclave.
       tags: Label attached to this test to allow for querying.
       **kwargs: cc_test arguments.
 
@@ -439,14 +443,11 @@ def enclave_test(name, enclave = False, enclaves = [], tags = [], **kwargs):
     )
     copy_from_host(target = test_name, output = host_test_name)
 
-    enclaves = enclaves + ([enclave] if enclave else [])
-    enclave_dict, loader_args = _enclave_list_to_dict_and_args(enclaves)
-
     _enclave_runner_test(
         name = name,
         loader = host_test_name,
-        loader_args = loader_args,
-        enclaves = _invert_enclave_name_mapping(enclave_dict),
+        loader_args = test_args,
+        enclaves = _invert_enclave_name_mapping(enclaves),
         data = kwargs.get("data", []),
         testonly = 1,
         tags = ["enclave_test"] + tags,

@@ -114,9 +114,10 @@ sgx_enclave(
 enclave_test(
     name = "enclave_insecure_server_test",
     srcs = ["enclave_insecure_server_test.cc"],
-    enclave = ":enclave_insecure_server.so",
+    enclaves = {"enclave": ":enclave_insecure_server.so"},
     flaky = 1,
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":messenger_client_impl",
         ":messenger_server_impl",
@@ -138,8 +139,9 @@ enclave_test(
 enclave_test(
     name = "enclave_secure_server_test",
     srcs = ["enclave_secure_server_test.cc"],
-    enclave = ":enclave_secure_server.so",
+    enclaves = {"enclave": ":enclave_secure_server.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":messenger_client_impl",
         ":messenger_server_impl",

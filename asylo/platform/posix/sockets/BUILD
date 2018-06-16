@@ -136,8 +136,9 @@ sgx_enclave(
 enclave_test(
     name = "domain_socket_test",
     srcs = ["domain_socket_test_driver.cc"],
-    enclave = ":domain_socket_test_enclave.so",
+    enclaves = {"enclave": ":domain_socket_test_enclave.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":socket_client",
         ":socket_server",
@@ -173,8 +174,9 @@ sgx_enclave(
 enclave_test(
     name = "inet6_socket_test",
     srcs = ["inet6_socket_test_driver.cc"],
-    enclave = ":inet6_socket_test_enclave.so",
+    enclaves = {"enclave": ":inet6_socket_test_enclave.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":socket_client",
         ":socket_server",
@@ -203,8 +205,9 @@ sgx_enclave(
 enclave_test(
     name = "addrinfo_test",
     srcs = ["addrinfo_test_driver.cc"],
-    enclave = ":addrinfo_test_enclave.so",
+    enclaves = {"enclave": ":addrinfo_test_enclave.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":socket_test_proto_cc",
         "//asylo/test/util:enclave_test",

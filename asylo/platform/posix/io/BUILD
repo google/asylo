@@ -138,8 +138,9 @@ enclave_test(
     name = "pipe_test",
     srcs = ["pipe_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave = ":test_pipe.so",
+    enclaves = {"enclave": ":test_pipe.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",

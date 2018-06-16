@@ -59,8 +59,9 @@ sgx_enclave(
 enclave_test(
     name = "proto_test",
     srcs = ["proto_test_driver.cc"],
-    enclave = ":test_proto.so",
+    enclaves = {"enclave": ":test_proto.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":config_test_proto_cc",
         "//asylo/test/util:enclave_test",
@@ -85,8 +86,9 @@ sgx_enclave(
 enclave_test(
     name = "getenv_test",
     srcs = ["getenv_test_driver.cc"],
-    enclave = ":getenv_test_enclave.so",
+    enclaves = {"enclave": ":getenv_test_enclave.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":config_test_proto_cc",
         "//asylo:enclave_proto_cc",
@@ -112,8 +114,9 @@ sgx_enclave(
 enclave_test(
     name = "enclave_api_test",
     srcs = ["enclave_api_test_driver.cc"],
-    enclave = ":enclave_api_test_proto.so",
+    enclaves = {"enclave": ":enclave_api_test_proto.so"},
     tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":config_test_proto_cc",
         "//asylo/test/util:enclave_test",
