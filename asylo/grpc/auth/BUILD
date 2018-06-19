@@ -64,6 +64,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":grpc++_security_enclave",
+        "//asylo/identity/null_identity:null_assertion_generator",  # alwayslink = 1
+        "//asylo/identity/null_identity:null_assertion_verifier",  # alwayslink = 1
         "//asylo/identity/null_identity:null_identity_util",
     ],
 )
@@ -78,6 +80,8 @@ cc_library(
     deps = [
         ":grpc++_security_enclave",
         "//asylo/identity/sgx:code_identity_util",
+        "//asylo/identity/sgx:local_assertion_generator",  # alwayslink = 1
+        "//asylo/identity/sgx:local_assertion_verifier",  # alwayslink = 1
     ],
 )
 
