@@ -75,6 +75,7 @@ cc_library(
     deps = [
         ":test_string_proto_cc",
         "//asylo:enclave_client",
+        "//asylo:enclave_proto_cc",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_asylo//asylo/util:logging",

@@ -21,6 +21,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
