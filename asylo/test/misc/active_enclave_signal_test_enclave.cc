@@ -28,7 +28,7 @@
 
 namespace asylo {
 
-constexpr int timeout = 10;
+constexpr int kTimeout = 10;
 
 static thread_local volatile bool signal_handled = false;
 static thread_local volatile bool blocked_signal_handled = false;
@@ -152,10 +152,11 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     bool all_signals_handled = false;
     // For SIGACTIONMASK tests, both SIGUSR1 and SIGUSR2 are sent, both should
     // be handled by the enclave. For all other cases only SIGUSR1 is expected.
-    while (!all_signals_handled && ++count < timeout) {
+    while (!all_signals_handled && ++count < kTimeout) {
       switch (test_type) {
         case SignalTestInput::SIGACTIONMASK:
           all_signals_handled = signal_handled && blocked_signal_handled;
+          break;
         default:
           all_signals_handled = signal_handled;
       }
@@ -195,7 +196,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     sigset_t set, oldset;
     sigemptyset(&set);
     sigaddset(&set, SIGUSR1);
-    for (int i = 0; i < timeout; ++i) {
+    for (int i = 0; i < kTimeout; ++i) {
       if (sigprocmask(SIG_UNBLOCK, &set, &oldset) != 0) {
         return Status(static_cast<error::PosixError>(errno),
                       "Failed to unblock signal");
