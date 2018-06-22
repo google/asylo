@@ -21,6 +21,7 @@
 
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/util/bytes.h"
@@ -196,7 +197,7 @@ class FakeEnclave {
 
     uint32_t miscselect;
     uint32_t miscmask;
-  } __attribute__((packed));
+  } ABSL_ATTRIBUTE_PACKED;
 
   // The Intel SDM  refers to a DeriveKey function, without describing the exact
   // cryptographic operation performed by that function. The function takes a

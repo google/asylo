@@ -113,6 +113,7 @@ sgx_enclave(
         "//asylo:enclave_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
     ],
 )
 

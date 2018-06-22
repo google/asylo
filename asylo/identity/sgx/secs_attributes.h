@@ -24,6 +24,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "asylo/identity/util/bit_vector_128.pb.h"
 
 namespace asylo {
@@ -36,7 +37,7 @@ namespace sgx {
 struct SecsAttributeSet {
   uint64_t flags;
   uint64_t xfrm;
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
 
 // The following enum defines the various attribute bits and assigns them a
 // value that is same as their bit position in the SECS attributes

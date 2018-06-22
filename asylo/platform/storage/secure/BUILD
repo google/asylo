@@ -63,6 +63,7 @@ cc_library(
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/storage/utils:offset_translator",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ],

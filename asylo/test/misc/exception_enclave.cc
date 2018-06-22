@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "absl/base/attributes.h"
 #include "asylo/test/misc/exception.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
@@ -47,9 +48,7 @@ class Exception : public EnclaveTestCase {
   }
 
  protected:
-  void __attribute__((__noreturn__)) Throw() {
-    throw TestException(54, "Nope");
-  }
+  void ABSL_ATTRIBUTE_NORETURN Throw() { throw TestException(54, "Nope"); }
 };
 
 TrustedApplication *BuildTrustedApplication() { return new Exception; }

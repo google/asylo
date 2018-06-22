@@ -19,9 +19,9 @@
 #ifndef ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
 #define ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
 
+#include "absl/base/attributes.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include <openssl/aes.h>
-
 
 namespace asylo {
 namespace sgx {
@@ -46,7 +46,7 @@ using AlignedHardwareKeyPtr = AlignedObjectPtr<HardwareKey, 16>;
 // at most 10 times (as recommended by Intel). If the execution of RDRAND fails
 // on all of those attempts, the function returns false, else the function
 // true.
-bool GetHardwareRand64(uint64_t *value) __attribute__((warn_unused_result));
+ABSL_MUST_USE_RESULT bool GetHardwareRand64(uint64_t *value);
 
 // Gets the hardware key described by the input KEYREQUEST struct. The function
 // passes the input KEYREQUEST structure to the hardware without any sanity
@@ -55,8 +55,8 @@ bool GetHardwareRand64(uint64_t *value) __attribute__((warn_unused_result));
 // and HardwareKey structures are correctly aligned (as specified by the SGX
 // architecture). The caller can use the AlignedKeyrequestPtr and
 // AlignedHardwareKeyPtr objects to correctly align the input structures.
-bool GetHardwareKey(const Keyrequest &request, HardwareKey *key)
-    __attribute__((warn_unused_result));
+ABSL_MUST_USE_RESULT bool GetHardwareKey(const Keyrequest &request,
+                                         HardwareKey *key);
 
 // Gets the enclave REPORT using the EREPORT instruction. The input parameters
 // (tinfo and reportdata) as well as the output parameter (report) are passed on
@@ -64,8 +64,9 @@ bool GetHardwareKey(const Keyrequest &request, HardwareKey *key)
 // parameters are correctly aligned as specified by the SGX architecture. The
 // alignment can be achieved by using the appropriate memory-aligned types
 // defined in the file identity_key_management_structs.h.
-bool GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
-                       Report *report) __attribute__((warn_unused_result));
+ABSL_MUST_USE_RESULT bool GetHardwareReport(const Targetinfo &tinfo,
+                                            const Reportdata &reportdata,
+                                            Report *report);
 
 }  // namespace sgx
 }  // namespace asylo

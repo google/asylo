@@ -24,6 +24,7 @@
 #include <string>
 #include <unordered_map>
 
+#include "absl/base/attributes.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/identity/util/bytes.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"
@@ -114,7 +115,7 @@ class AeadHandler {
 
     // Returns the address of the FileHeader instance.
     uint8_t* data() { return file_hash.data(); }
-  } __attribute__((packed));
+  } ABSL_ATTRIBUTE_PACKED;
 
   // Structure represents the file data digest from which the file hash used for
   // integrity validation is calculated.
@@ -127,7 +128,7 @@ class AeadHandler {
 
     // Returns the address of the DataDigest instance.
     uint8_t* data() { return file_digest.data(); }
-  } __attribute__((packed));
+  } ABSL_ATTRIBUTE_PACKED;
 
   // File (data set) control structure for an opened file.
   struct FileControl {

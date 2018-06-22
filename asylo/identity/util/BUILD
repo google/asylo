@@ -36,6 +36,7 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":aligned_object_ptr",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_googletest//:gtest_main",
     ],
 )
@@ -97,6 +98,7 @@ cc_library(
         ":trivial_object_util",
         "//asylo/util:cleansing_types",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_asylo//asylo/util:logging",
     ],
 )

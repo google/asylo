@@ -297,6 +297,7 @@ cc_library(
         "//asylo/identity/util:bit_vector_128_proto_cc",
         "//asylo/identity/util:bytes",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_asylo//asylo/util:logging",
     ],
 )
@@ -331,6 +332,7 @@ cc_library(
     }),
     deps = [
         ":hardware_types",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_asylo//asylo/util:logging",
         "//asylo/identity/util:bytes",
         "@boringssl//:crypto",

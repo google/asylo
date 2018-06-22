@@ -19,6 +19,7 @@
 #ifndef ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 #define ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 
+#include "absl/base/attributes.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/aligned_object_ptr.h"
 #include "asylo/identity/util/bytes.h"
@@ -72,7 +73,8 @@ struct Date {
   uint16_t year;
   uint8_t month;
   uint8_t day;
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 static_assert(sizeof(Date) == 4, "Size of struct Date is incorrect");
 
 // SIGSTRUCT defines the enclave signature structure, which is provided
@@ -104,7 +106,8 @@ struct Sigstruct {
   UnsafeBytes<12> reserved4;  // Field size taken from the Intel SDM.
   UnsafeBytes<kRsa3072ModulusSize> q1;
   UnsafeBytes<kRsa3072ModulusSize> q2;
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 static_assert(sizeof(Sigstruct) == 1808,
               "Size of struct Sigstruct is incorrect");
 
@@ -154,7 +157,8 @@ struct Keyrequest {
   UnsafeBytes<kKeyrequestKeyidSize> keyid;
   uint32_t miscmask;
   UnsafeBytes<436> reserved2;  // Field size taken from the Intel SDM.
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 static_assert(sizeof(Keyrequest) == 512,
               "Size of struct Keyrequest is incorrect");
 
@@ -175,7 +179,8 @@ struct Targetinfo {
   UnsafeBytes<4> reserved1;  // Field size taken from the Intel SDM.
   uint32_t miscselect;
   UnsafeBytes<456> reserved2;  // Field size taken from the Intel SDM.
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 static_assert(sizeof(Targetinfo) == 512,
               "Size of struct Targetinfo is incorrect");
 
@@ -193,7 +198,8 @@ constexpr int kReportdataSize = 64;
 // consequently, the data-safety policy is set to DataSafety::UNSAFE.
 struct Reportdata {
   UnsafeBytes<kReportdataSize> data;
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 static_assert(sizeof(Reportdata) == kReportdataSize,
               "Size of struct Reportdata is incorrect");
 
@@ -228,7 +234,8 @@ struct Report {
   Reportdata reportdata;
   UnsafeBytes<kReportKeyidSize> keyid;
   UnsafeBytes<kSgxMacSize> mac;
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 static_assert(sizeof(Report) == 432, "Size of struct Report is incorrect");
 
 // Aligned REPORT structure. SGX architecture requires this structure

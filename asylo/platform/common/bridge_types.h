@@ -23,6 +23,8 @@
 #include <stdint.h>
 #include <sys/socket.h>
 
+#include "absl/base/attributes.h"
+
 // This file provides a set of type definitions used both inside and outside the
 // enclave.
 
@@ -110,28 +112,28 @@ enum FileDescriptorFlags {
 
 struct bridge_in_addr {
   uint32_t inet_addr;
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_in6_addr {
   uint8_t inet6_addr[16];
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_sockaddr_in6 {
   uint16_t sin6_port;
   uint32_t sin6_flowinfo;
   struct bridge_in6_addr sin6_addr;
   uint32_t sin6_scope_id;
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_sockaddr_in {
   uint16_t sin_port;
   struct bridge_in_addr sin_addr;
   char sin_zero[8];
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_sockaddr_un {
   char sun_path[108];
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 // This is max(sizeof(struct sockaddr_in), sizeof(struct sockaddr_un)). Struct
 // bridge_sockaddr can be converted from/to struct sockaddr in ocalls. Since
@@ -144,20 +146,20 @@ struct bridge_sockaddr {
     struct bridge_sockaddr_in addr_in;
     struct bridge_sockaddr_in6 addr_in6;
     struct bridge_sockaddr_un addr_un;
-  } __attribute__((__packed__));
-} __attribute__((__packed__));
+  } ABSL_ATTRIBUTE_PACKED;
+} ABSL_ATTRIBUTE_PACKED;
 
 typedef int64_t bridge_clockid_t;
 
 struct bridge_timeval {
   int64_t tv_sec;
   int64_t tv_usec;
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_timespec {
   int64_t tv_sec;
   int64_t tv_nsec;
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_stat {
   int64_t st_dev;
@@ -173,7 +175,7 @@ struct bridge_stat {
   int64_t st_ctime_enc;
   int64_t st_blksize;
   int64_t st_blocks;
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_pollfd {
   int32_t fd;
@@ -220,7 +222,7 @@ typedef uint64_t BridgeCpuSetWord;
 // bit of words[i] corresponds to CPU no. sizeof(BridgeCpuSetWord) * i + n.
 struct BridgeCpuSet {
   BridgeCpuSetWord words[BRIDGE_CPU_SET_NUM_WORDS];
-} __attribute__((__packed__));
+} ABSL_ATTRIBUTE_PACKED;
 
 // Converts |bridge_sysconf_constant| to a runtime sysconf constant. Returns -1
 // if unsuccessful.

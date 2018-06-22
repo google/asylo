@@ -99,7 +99,10 @@ cc_library(
     name = "bridge_types",
     srcs = ["bridge_types.cc"],
     hdrs = ["bridge_types.h"],
-    deps = ["@com_google_asylo//asylo/util:logging"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_asylo//asylo/util:logging",
+    ],
 )
 
 # Types for arguments to be serialized and passed across the enclave boundary.

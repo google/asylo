@@ -24,6 +24,7 @@
 #include <cstring>
 #include <iterator>
 
+#include "absl/base/attributes.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/util/byte_container_view.h"
 #include "asylo/identity/util/template_util.h"
@@ -295,7 +296,8 @@ class Bytes {
                   "Offset of the member data_ within the class is incorrect.");
   }
   uint8_t data_[Size];
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 // Define SafeBytes.
 template <size_t Size>
 class SafeBytes final : public Bytes<Size, SafePolicy, SafeBytes<Size>> {
@@ -336,7 +338,8 @@ class SafeBytes final : public Bytes<Size, SafePolicy, SafeBytes<Size>> {
 
   // Cleanse the object before destruction.
   ~SafeBytes() { base_type::Cleanse(); }
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 // Define UnsafeBytes.
 template <size_t Size>
 class UnsafeBytes final : public Bytes<Size, UnsafePolicy, UnsafeBytes<Size>> {
@@ -379,7 +382,8 @@ class UnsafeBytes final : public Bytes<Size, UnsafePolicy, UnsafeBytes<Size>> {
   bool operator!=(const BytesT &other) const {
     return !(*this == other);
   }
-} __attribute__((packed));
+} ABSL_ATTRIBUTE_PACKED;
+
 // Stream-insertion operator for SafeBytes. Writes the hex representation of
 // |bytes| into the given |os| stream.
 template <size_t Size>

@@ -22,6 +22,7 @@
 #include <unordered_map>
 
 #include <gtest/gtest.h>
+#include "absl/base/attributes.h"
 
 namespace asylo {
 namespace {
@@ -29,9 +30,9 @@ namespace {
 struct TestStruct {
   uint64_t a;
   uint32_t b;
-} __attribute__((packed));  // Use __attribute__((packed)) to make sure that
-                            // the struct does not have a nice,
-                            // integer-power-of-two size.
+} ABSL_ATTRIBUTE_PACKED;  // Use ABSL_ATTRIBUTE_PACKED to make sure that the
+                          // struct does not have a nice, integer-power-of-two
+                          // size.
 
 class TestClass {
  public:
