@@ -19,6 +19,7 @@
 #ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
 #define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
 
+#include <signal.h>
 #include <stddef.h>
 
 #ifdef __cplusplus
@@ -27,7 +28,8 @@ extern "C" {
 
 // Calls enc_untrusted_register_handler to register a signal handler on the
 // host.
-int enc_register_signal(int signum, const char *enclave_name);
+int enc_register_signal(int signum, const sigset_t mask,
+                        const char *enclave_name);
 
 #ifdef __cplusplus
 }  // extern "C"

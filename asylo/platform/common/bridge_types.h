@@ -201,8 +201,9 @@ struct bridge_siginfo_t {
   int32_t si_code;
 };
 
-struct bridge_signal_handler {
+struct BridgeSignalHandler {
   void (*sigaction)(int, struct bridge_siginfo_t *, void *);
+  bridge_sigset_t mask;
 };
 
 // The maximum number of CPUs we support. Chosen to be large enough to represent

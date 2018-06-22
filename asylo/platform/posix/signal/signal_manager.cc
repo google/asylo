@@ -50,17 +50,21 @@ Status SignalManager::HandleSignal(int signum, siginfo_t *info,
         error::GoogleError::INTERNAL,
         absl::StrCat("No handler has been registered for signal: ", signum));
   }
+  Status status;
+  sigset_t old_mask = GetSignalMask();
+  BlockSignals(act->sa_mask);
   bool is_siginfo = act->sa_flags & SA_SIGINFO;
   if (is_siginfo && act->sa_sigaction) {
     act->sa_sigaction(signum, info, ucontext);
   } else if (!is_siginfo && act->sa_handler) {
     act->sa_handler(signum);
   } else {
-    return Status(
+    status = Status(
         error::GoogleError::INTERNAL,
         absl::StrCat("Handler registered for signal: ", signum, " is invalid"));
   }
-  return Status::OkStatus();
+  SetSignalMask(old_mask);
+  return status;
 }
 
 void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
@@ -103,6 +107,8 @@ void SignalManager::UnblockSignals(const sigset_t &set) {
 }
 
 const sigset_t SignalManager::GetSignalMask() const { return signal_mask_; }
+
+void SignalManager::SetSignalMask(const sigset_t &mask) { signal_mask_ = mask; }
 
 const sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
   sigset_t signals_to_unblock;

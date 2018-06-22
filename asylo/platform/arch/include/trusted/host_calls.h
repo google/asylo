@@ -147,8 +147,9 @@ int enc_untrusted_sched_yield();
 //////////////////////////////////////
 
 int enc_untrusted_register_signal_handler(
-    int signum, const struct bridge_signal_handler *handler,
-    const char *enclave_name);
+    int signum,
+    void (*bridge_sigaction)(int, struct bridge_siginfo_t *, void *),
+    const sigset_t mask, const char *enclave_name);
 
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 

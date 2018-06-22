@@ -56,6 +56,7 @@ void *RunEnclave(void *arg) {
 struct SendSignalThreadInput {
   pthread_t enclave_thread;
   int poll_fd;
+  SignalTestInput::SignalTestType signal_test_type;
 };
 
 // Waits till the enclave thread registers the signal handler, and sends a
@@ -72,6 +73,9 @@ void *SendSignal(void *arg) {
   EXPECT_NE(poll(fds, 1, 30000), -1);
   // Sends the signal to the enclave thread.
   pthread_kill(enclave_thread, SIGUSR1);
+  if (input->signal_test_type == SignalTestInput::SIGACTIONMASK) {
+    pthread_kill(enclave_thread, SIGUSR2);
+  }
   return nullptr;
 }
 
@@ -105,6 +109,8 @@ class ActiveEnclaveSignalTest : public EnclaveTest {
     SendSignalThreadInput send_signal_thread_input;
     send_signal_thread_input.enclave_thread = enclave_thread;
     send_signal_thread_input.poll_fd = pair_stdout[0];
+    send_signal_thread_input.signal_test_type =
+        enclave_input.GetExtension(signal_test_input).signal_test_type();
     if (pthread_create(&signal_thread, nullptr, SendSignal,
                        &send_signal_thread_input) != 0) {
       return Status(static_cast<error::PosixError>(errno),
@@ -158,6 +164,19 @@ TEST_F(ActiveEnclaveSignalTest, SignalMaskTest) {
   EnclaveInput enclave_input;
   enclave_input.MutableExtension(signal_test_input)
       ->set_signal_test_type(SignalTestInput::SIGMASK);
+  EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
+}
+
+// Test sigaction(2) that registers a signal handler and specifies signals to be
+// blocked during the execution of the handler. The enclave first registers a
+// handler for one signal and specifies another signal to be blocked. The signal
+// thread then sends both signals to the enclave. The handler of the first
+// signal waits to check whether the signal handling is interrupted by the other
+// signal.
+TEST_F(ActiveEnclaveSignalTest, SigactionMaskTest) {
+  EnclaveInput enclave_input;
+  enclave_input.MutableExtension(signal_test_input)
+      ->set_signal_test_type(SignalTestInput::SIGACTIONMASK);
   EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
 }
 

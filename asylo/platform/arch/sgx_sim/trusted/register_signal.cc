@@ -55,8 +55,8 @@ void TranslateAndHandleSignal(int bridge_signum,
 
 }  // namespace asylo
 
-extern "C" int enc_register_signal(int signum, const char *enclave_name) {
-  bridge_signal_handler handler;
-  handler.sigaction = &asylo::TranslateAndHandleSignal;
-  return enc_untrusted_register_signal_handler(signum, &handler, enclave_name);
+extern "C" int enc_register_signal(int signum, const sigset_t mask,
+                                   const char *enclave_name) {
+  return enc_untrusted_register_signal_handler(
+      signum, &asylo::TranslateAndHandleSignal, mask, enclave_name);
 }

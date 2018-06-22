@@ -395,7 +395,7 @@ int ocall_enc_untrusted_sched_getaffinity(int64_t pid, BridgeCpuSet *mask) {
 //////////////////////////////////////
 
 int ocall_enc_untrusted_register_signal_handler(
-    int signum, const struct bridge_signal_handler *handler, const char *name) {
+    int signum, const struct BridgeSignalHandler *handler, const char *name) {
   std::string enclave_name(name);
   auto manager_result = asylo::EnclaveManager::Instance();
   if (!manager_result.ok()) {
@@ -413,7 +413,7 @@ int ocall_enc_untrusted_register_signal_handler(
                  << " registered by enclave: " << manager->GetName(old_client);
   }
   struct sigaction newact;
-  if (!handler) {
+  if (!handler || !handler->sigaction) {
     // Hardware mode: The registered signal handler triggers an ecall to enter
     // the enclave and handle the signal.
     newact.sa_sigaction = &EnterEnclaveAndHandleSignal;
@@ -423,6 +423,9 @@ int ocall_enc_untrusted_register_signal_handler(
     // the enclave directly if the TCS is inactive.
     handle_signal_inside_enclave = handler->sigaction;
     newact.sa_sigaction = &HandleSignalInSim;
+  }
+  if (handler) {
+    FromBridgeSigSet(&handler->mask, &newact.sa_mask);
   }
   // Set the flag so that sa_sigaction is registered as the signal handler
   // instead of sa_handler.

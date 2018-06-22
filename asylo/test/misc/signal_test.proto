@@ -34,6 +34,9 @@ message SignalTestInput {
     SIGMASK = 3;
     // Tests signal(2) that registers a signal handler.
     SIGNAL = 4;
+    // Tests sigaction(2) that specifies signals to be blocked during the
+    // execution of the registered signal handler.
+    SIGACTIONMASK = 5;
   }
   // The type of signal test.
   optional SignalTestType signal_test_type = 1;

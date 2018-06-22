@@ -28,11 +28,27 @@
 
 namespace asylo {
 
+constexpr int timeout = 10;
+
 static thread_local volatile bool signal_handled = false;
+static thread_local volatile bool blocked_signal_handled = false;
+static thread_local volatile bool signal_handler_interrupted = false;
 
 void HandleSignalWithHandler(int signum) {
   if (signum == SIGUSR1) {
     signal_handled = true;
+  }
+  if (signum == SIGUSR2) {
+    blocked_signal_handled = true;
+  }
+}
+
+void HandleSignalWithSigActionMask(int signum) {
+  if (signum == SIGUSR1) {
+    signal_handled = true;
+  }
+  if (blocked_signal_handled) {
+    signal_handler_interrupted = true;
   }
 }
 
@@ -75,6 +91,8 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
           return mask_result.get();
         }
         return status;
+      case SignalTestInput::SIGACTIONMASK:
+        return RunSignalTest(SignalTestInput::SIGACTIONMASK);
       default:
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "No vaild test type");
@@ -107,6 +125,17 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
       case SignalTestInput::SIGMASK:
         act.sa_handler = &HandleSignalWithHandler;
         break;
+      case SignalTestInput::SIGACTIONMASK:
+        // Register a handler for SIGUSR2.
+        act.sa_handler = &HandleSignalWithHandler;
+        sigaction(SIGUSR2, &act, &oldact);
+        // Block SIGUSR2 during execution of SIGUSR1 handler.
+        act.sa_handler = &HandleSignalWithSigActionMask;
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGUSR2);
+        act.sa_mask = mask;
+        break;
       default:
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "No valid test type");
@@ -118,15 +147,29 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     // signal.
     printf("ready to receive signal!");
     fclose(stdout);
-    // Wait till the signal is received. Timed out in 10 seconds.
+    // Wait till the signal is received. Time out in 10 seconds.
     int count = 0;
-    int timeout = 10;
-    while (!signal_handled && ++count < timeout) {
+    bool all_signals_handled = false;
+    // For SIGACTIONMASK tests, both SIGUSR1 and SIGUSR2 are sent, both should
+    // be handled by the enclave. For all other cases only SIGUSR1 is expected.
+    while (!all_signals_handled && ++count < timeout) {
+      switch (test_type) {
+        case SignalTestInput::SIGACTIONMASK:
+          all_signals_handled = signal_handled && blocked_signal_handled;
+        default:
+          all_signals_handled = signal_handled;
+      }
       sleep(1);
     }
-    // For signal tests without masks, signal should have been handled by now.
+    if (test_type == SignalTestInput::SIGACTIONMASK &&
+        signal_handler_interrupted) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Signal handler interrupted by a masked signal");
+    }
+    // For signal tests other then SIGMASK, the signal should have been handled
+    // by now.
     if (test_type != SignalTestInput::SIGMASK) {
-      return signal_handled
+      return all_signals_handled
                  ? Status::OkStatus()
                  : Status(error::GoogleError::INTERNAL, "Signal not received");
     }
@@ -149,7 +192,6 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
   // Keeps unblocking the signal to test whether the signal mask in the other
   // thread is affected.
   Status SetSignalMask() {
-    const int timeout = 10;
     sigset_t set, oldset;
     sigemptyset(&set);
     sigaddset(&set, SIGUSR1);
