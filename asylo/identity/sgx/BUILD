@@ -39,6 +39,12 @@ asylo_proto_library(
 )
 
 asylo_proto_library(
+    name = "remote_assertion_proto",
+    srcs = ["remote_assertion.proto"],
+    deps = [":code_identity_proto"],
+)
+
+asylo_proto_library(
     name = "local_sealed_secret_proto",
     srcs = ["local_sealed_secret.proto"],
 )

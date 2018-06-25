@@ -16,7 +16,7 @@
 
 licenses(["notice"])  # Apache v2.0
 
-# This package defines proto libraries used in enclave auth{N,Z}.
+# This package defines libraries used in enclave auth{N,Z}.
 
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
