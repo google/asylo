@@ -55,6 +55,7 @@ cc_library(
         "src/poll.cc",
         "src/pthread.cc",
         "src/pwd.cc",
+        "src/resource.cc",
         "src/sched.cc",
         "src/signal.cc",
         "src/stat.cc",

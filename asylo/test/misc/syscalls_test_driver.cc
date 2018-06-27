@@ -706,5 +706,27 @@ TEST_F(SyscallsTest, Readv) {
       RunSyscallInsideEnclave("readv", FLAGS_test_tmpdir + "/readv", nullptr));
 }
 
+// Tests getrlimit() and setrlimit() with RLIMIT_NOFILE by setting the limit and
+// getting it to compare the result.
+TEST_F(SyscallsTest, RlimitNoFile) {
+  EXPECT_TRUE(RunSyscallInsideEnclave("rlimit nofile",
+                                      FLAGS_test_tmpdir + "/rlimit", nullptr));
+}
+
+// Tests setrlimit() with RLIMIT_NOFILE by setting the limit to a low number,
+// and checking whether it fails to open more files than that limit to confirm
+// that the limit is used correctly.
+TEST_F(SyscallsTest, RlimitLowNoFile) {
+  EXPECT_TRUE(RunSyscallInsideEnclave("rlimit low nofile",
+                                      FLAGS_test_tmpdir + "/rlimit", nullptr));
+}
+
+// Tests setrlimit() with RLIMIT_NOFILE by setting the limit to an invalid
+// value, and checking that the call fails and does not change the limit.
+TEST_F(SyscallsTest, RlimitInvalidNoFile) {
+  EXPECT_TRUE(RunSyscallInsideEnclave("rlimit invalid nofile",
+                                      FLAGS_test_tmpdir + "/rlimit", nullptr));
+}
+
 }  // namespace
 }  // namespace asylo

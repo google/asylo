@@ -35,6 +35,10 @@
 namespace asylo {
 namespace io {
 
+IOManager::FileDescriptorTable::FileDescriptorTable()
+    : maximum_fd_soft_limit(kMaxOpenFiles),
+      maximum_fd_hard_limit(kMaxOpenFiles) {}
+
 IOManager::IOContext *IOManager::FileDescriptorTable::Get(int fd) {
   if (!IsFileDescriptorValid(fd)) return nullptr;
   absl::MutexLock lock(&fd_table_lock_);
@@ -103,8 +107,40 @@ absl::Mutex *IOManager::FileDescriptorTable::GetLock(int fd) {
   return &(it->second);
 }
 
+bool IOManager::FileDescriptorTable::SetFileDescriptorLimits(
+    const struct rlimit *rlim) {
+  absl::MutexLock lock(&fd_table_lock_);
+  // The new limit should not exceed the absolute max file limit, and
+  // unprivileged process should not be allowed to increase the hard limit.
+  if (rlim->rlim_cur > rlim->rlim_max || rlim->rlim_max > kMaxOpenFiles ||
+      rlim->rlim_max <= GetHighestFileDescriptorUsed() ||
+      rlim->rlim_max > maximum_fd_hard_limit) {
+    return false;
+  }
+  maximum_fd_soft_limit = rlim->rlim_cur;
+  maximum_fd_hard_limit = rlim->rlim_max;
+  return true;
+}
+
+int IOManager::FileDescriptorTable::get_maximum_fd_soft_limit() {
+  return maximum_fd_soft_limit;
+}
+
+int IOManager::FileDescriptorTable::get_maximum_fd_hard_limit() {
+  return maximum_fd_hard_limit;
+}
+
 bool IOManager::FileDescriptorTable::IsFileDescriptorValid(int fd) {
   return fd >= 0 && fd < kMaxOpenFiles;
+}
+
+int IOManager::FileDescriptorTable::GetHighestFileDescriptorUsed() {
+  for (int i = kMaxOpenFiles - 1; i >= 0; --i) {
+    if (fd_table_[i]) {
+      return i;
+    }
+  }
+  return -1;
 }
 
 int IOManager::FileDescriptorTable::GetNextFreeFileDescriptor(int startfd) {
@@ -112,7 +148,7 @@ int IOManager::FileDescriptorTable::GetNextFreeFileDescriptor(int startfd) {
     return -1;
   }
   int fd = -1;
-  for (int i = startfd; i < kMaxOpenFiles; ++i) {
+  for (int i = startfd; i < maximum_fd_soft_limit; ++i) {
     if (!fd_table_[i]) {
       fd = i;
       break;
@@ -560,6 +596,44 @@ ssize_t IOManager::Readv(int fd, const struct iovec *iov, int iovcnt) {
 }
 
 mode_t IOManager::Umask(mode_t mask) { return enc_untrusted_umask(mask); }
+
+int IOManager::GetRLimit(int resource, struct rlimit *rlim) {
+  if (!rlim) {
+    errno = EFAULT;
+    return -1;
+  }
+  switch (resource) {
+    case RLIMIT_NOFILE:
+      rlim->rlim_cur = fd_table_.get_maximum_fd_soft_limit();
+      rlim->rlim_max = fd_table_.get_maximum_fd_hard_limit();
+      return 0;
+    default:
+      errno = ENOSYS;
+      return -1;
+  }
+}
+
+int IOManager::SetRLimit(int resource, const struct rlimit *rlim) {
+  if (!rlim) {
+    errno = EFAULT;
+    return -1;
+  }
+  if (rlim->rlim_cur > rlim->rlim_max || rlim->rlim_cur < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  switch (resource) {
+    case RLIMIT_NOFILE:
+      if (!fd_table_.SetFileDescriptorLimits(rlim)) {
+        errno = EPERM;
+        return -1;
+      }
+      return 0;
+    default:
+      errno = ENOSYS;
+      return -1;
+  }
+}
 
 int IOManager::SetSockOpt(int sockfd, int level, int option_name,
                           const void *option_value, socklen_t option_len) {

@@ -21,6 +21,7 @@
 #include <regex.h>
 #include <sched.h>
 #include <stdio.h>
+#include <sys/resource.h>
 #include <sys/uio.h>
 #include <unistd.h>
 #include <algorithm>
@@ -100,6 +101,12 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunWritevTest(test_input.path_name());
     } else if (test_input.test_target() == "readv") {
       return RunReadvTest(test_input.path_name());
+    } else if (test_input.test_target() == "rlimit nofile") {
+      return RunRlimitNoFileTest(test_input.path_name());
+    } else if (test_input.test_target() == "rlimit low nofile") {
+      return RunRlimitLowNoFileTest(test_input.path_name());
+    } else if (test_input.test_target() == "rlimit invalid nofile") {
+      return RunRlimitInvalidNoFileTest(test_input.path_name());
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -838,7 +845,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
 
     if (lseek(fd, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("Moving to beginning of fd:", fd,
                                  " failed: ", strerror(errno)));
     }
@@ -873,7 +880,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "Bytes written to file does not match message size");
     }
     if (lseek(fd, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
+      return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("Moving to beginning of fd:", fd,
                                  " failed: ", strerror(errno)));
     }
@@ -899,6 +906,125 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(error::GoogleError::INTERNAL,
                     "Messages from readv do not match the expected message.");
     }
+    return Status::OkStatus();
+  }
+
+  Status RunRlimitNoFileTest(const std::string &path) {
+    constexpr int soft_limit = 100;
+    constexpr int hard_limit = 200;
+    struct rlimit set_limit;
+    set_limit.rlim_cur = soft_limit;
+    set_limit.rlim_max = hard_limit;
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("setrlimit failed:", strerror(errno)));
+    }
+    struct rlimit get_limit;
+    if (getrlimit(RLIMIT_NOFILE, &get_limit) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getrlimit failed:", strerror(errno)));
+    }
+    if (get_limit.rlim_cur != soft_limit || get_limit.rlim_max != hard_limit) {
+      return Status(error::GoogleError::INTERNAL,
+                    "The file descriptor number limit from getrlimit is "
+                    "different from the value set");
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunRlimitLowNoFileTest(const std::string &path) {
+    constexpr int file_descriptor_used = 3;
+    struct rlimit set_limit;
+    // Set the fd limit to 3, no file descriptor should be available now, since
+    // the first 3 are for stdin, stdout, and stderr.
+    set_limit.rlim_cur = file_descriptor_used;
+    set_limit.rlim_max = file_descriptor_used;
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("setrlimit failed:", strerror(errno)));
+    }
+    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
+    if (fd_or_error.ok()) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("File descriptor: ", fd_or_error.ValueOrDie(),
+                                 " is used while the rlimit is set to: ",
+                                 file_descriptor_used));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunRlimitInvalidNoFileTest(const std::string &path) {
+    struct rlimit get_limit;
+    if (getrlimit(RLIMIT_NOFILE, &get_limit) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getrlimit failed:", strerror(errno)));
+    }
+    int old_soft_limit = get_limit.rlim_cur;
+    int old_hard_limit = get_limit.rlim_max;
+
+    constexpr int invalid_limit = 2;
+    struct rlimit set_limit;
+    set_limit.rlim_cur = invalid_limit;
+    set_limit.rlim_max = invalid_limit;
+    // There are already 3 file descriptors open: stdin, stdout, stderr, setting
+    // the limit to 2 should not succeed.
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
+      return Status(error::GoogleError::INTERNAL,
+                    "setrlimit to limit lower than current used file "
+                    "descriptors unexpectedly succeeded");
+    }
+    // Checks that the limit is unchanged after a failed setrlimit.
+    if (getrlimit(RLIMIT_NOFILE, &get_limit) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getrlimit failed:", strerror(errno)));
+    }
+
+    // setrlimit should fail if the soft limit is higher than the hard limit.
+    set_limit.rlim_cur = 200;
+    set_limit.rlim_max = 100;
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
+      return Status(error::GoogleError::INTERNAL,
+                    "setrlimit with soft limit higher than hard limit "
+                    "unexpectedly succeeded");
+    }
+
+    // setrlimit should fail if the limit is set to be greater than the maximum
+    // allowed file descriptor number inside the enclave.
+    set_limit.rlim_cur = 2000;
+    set_limit.rlim_max = 2000;
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
+      return Status(error::GoogleError::INTERNAL,
+                    "setrlimit with limit higher than the maximum allowed "
+                    "unexpectedly succeeded");
+    }
+
+    if (get_limit.rlim_cur != old_soft_limit ||
+        get_limit.rlim_max != old_hard_limit) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("NOFILE limit has changed after a series of"
+                                 "failed setrlimits. Original soft limit: ",
+                                 old_soft_limit,
+                                 " current soft limit: ", get_limit.rlim_cur,
+                                 " original hard limit: ", old_hard_limit,
+                                 " current hard limit: ", get_limit.rlim_max));
+    }
+
+    // Lower the hard limit first, and verify that increasing the hard limit
+    // should fail.
+    set_limit.rlim_cur = 100;
+    set_limit.rlim_max = 100;
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("setrlimit failed:", strerror(errno)));
+    }
+    set_limit.rlim_cur = 200;
+    set_limit.rlim_max = 200;
+    if (setrlimit(RLIMIT_NOFILE, &set_limit) != -1) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          "setrlimit to increase the hard limit unexpectedly succeeded");
+    }
+
     return Status::OkStatus();
   }
 };

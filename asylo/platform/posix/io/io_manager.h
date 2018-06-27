@@ -20,6 +20,7 @@
 #define ASYLO_PLATFORM_POSIX_IO_IO_MANAGER_H_
 
 #include <errno.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
@@ -252,6 +253,8 @@ class IOManager {
   // A table of virtual file descriptors managed by the IOManager.
   class FileDescriptorTable {
    public:
+    FileDescriptorTable();
+
     // Returns the IOContext associated with a file descriptor, or nullptr if
     // no such context exists.
     IOContext *Get(int fd) LOCKS_EXCLUDED(fd_table_lock_);
@@ -293,9 +296,20 @@ class IOManager {
 
     absl::Mutex *GetLock(int fd);
 
+    bool SetFileDescriptorLimits(const struct rlimit *rlim)
+        LOCKS_EXCLUDED(fd_table_lock_);
+
+    int get_maximum_fd_soft_limit();
+
+    int get_maximum_fd_hard_limit();
+
    private:
     // Returns whether |fd| is in expected range.
     bool IsFileDescriptorValid(int fd);
+
+    // Returns current highest file descriptor number. Returns -1 if no file
+    // descriptors are used.
+    int GetHighestFileDescriptorUsed() EXCLUSIVE_LOCKS_REQUIRED(fd_table_lock_);
 
     // Returns the lowest available file descriptor greater than or equal to
     // |startfd|. Returns -1 if there is no file descriptor available.
@@ -312,6 +326,12 @@ class IOManager {
     // A map from a fd to a lock. The corresponding lock needs to be owned
     // before manipulating the file.
     std::unordered_map<int, absl::Mutex> fd_to_lock_ GUARDED_BY(fd_table_lock_);
+
+    // The maximum file descriptor number allowed.
+    int maximum_fd_soft_limit;
+
+    // The ceiling for |maximum_fd_soft_limit|.
+    int maximum_fd_hard_limit;
   };
 
   // Accessor to the singleton instance.
@@ -413,6 +433,12 @@ class IOManager {
 
   // Implements umask(2).
   mode_t Umask(mode_t mask);
+
+  // Implements getrlimit(2).
+  int GetRLimit(int resource, struct rlimit *rlim);
+
+  // Implements setrlimit(2).
+  int SetRLimit(int resource, const struct rlimit *rlim);
 
   // Implements setsockopt(2).
   int SetSockOpt(int sockfd, int level, int option_name,
