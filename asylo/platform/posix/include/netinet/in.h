@@ -19,6 +19,7 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_NETINET_IN_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_NETINET_IN_H_
 
+#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/socket.h>
 
