@@ -26,7 +26,6 @@
 extern "C" {
 #endif
 
-typedef uint16_t sa_family_t;
 typedef uint16_t in_port_t;
 
 // Internet address.
@@ -48,7 +47,7 @@ struct sockaddr_in {
   in_port_t sin_port;
   struct in_addr sin_addr;
   char sin_zero[8];
-};
+} __attribute__((packed));
 
 struct sockaddr_in6 {
   sa_family_t sin6_family;
@@ -56,15 +55,7 @@ struct sockaddr_in6 {
   uint32_t sin6_flowinfo;
   struct in6_addr sin6_addr;
   uint32_t sin6_scope_id;
-};
-
-struct sockaddr_storage {
-  sa_family_t ss_family;
-  union {
-    struct sockaddr_in in;
-    struct sockaddr_in6 in6;
-  } _data;
-};
+} __attribute__((packed));
 
 // Global address variables to support IPv6
 extern const struct in6_addr in6addr_any;       // Inet6 "::"

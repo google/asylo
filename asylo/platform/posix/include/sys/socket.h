@@ -19,7 +19,6 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_SOCKET_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_SOCKET_H_
 
-#include <netinet/in.h>
 #include <stddef.h>
 #include <stdint.h>
 #include <sys/types.h>
@@ -31,11 +30,17 @@ extern "C" {
 
 typedef uint32_t __socklen_t;
 typedef __socklen_t socklen_t;
+typedef __sa_family_t sa_family_t;
 
 struct sockaddr {
-  uint16_t sa_family;
+  sa_family_t sa_family;
   char sa_data[14];
-};
+} __attribute__((packed));
+
+struct sockaddr_storage {
+  sa_family_t ss_family;
+  uint64_t __padding[4];
+} __attribute__((packed));
 
 typedef struct addrinfo {
   int ai_flags;
