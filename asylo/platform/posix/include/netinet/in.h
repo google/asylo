@@ -36,7 +36,11 @@ struct in_addr {
 };
 
 struct in6_addr {
-  uint8_t s6_addr[16];
+  union {
+    uint8_t s6_addr[16];
+    uint16_t s6_addr16[8];
+    uint32_t s6_addr32[4];
+  };
 };
 
 struct sockaddr_in {
