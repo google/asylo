@@ -19,7 +19,6 @@
 #ifndef ASYLO_UTIL_ERROR_SPACE_H_
 #define ASYLO_UTIL_ERROR_SPACE_H_
 
-#include <openssl/mem.h>
 #include <string>
 #include <unordered_map>
 

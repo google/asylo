@@ -51,7 +51,6 @@ cc_library(
         [
             ":status_proto_cc",
             "//asylo/platform/common:static_map",
-            "@boringssl//:crypto",
             "@com_google_absl//absl/meta:type_traits",
             "@com_google_absl//absl/strings",
             "@com_google_asylo//asylo/util:logging",
