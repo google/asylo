@@ -129,7 +129,7 @@ sgx_enclave(
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
-        "//asylo/grpc/auth:sgx_credentials_options",
+        "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/grpc/util:enclave_server",
         "//asylo/identity:identity_proto_cc",
         "//asylo/util:status",
@@ -146,7 +146,7 @@ sgx_enclave(
         ":messenger_client_impl",
         "//asylo:enclave_runtime",
         "//asylo/grpc/auth:grpc++_security_enclave",
-        "//asylo/grpc/auth:sgx_credentials_options",
+        "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:identity_proto_cc",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",

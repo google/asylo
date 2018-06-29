@@ -20,7 +20,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/grpc/auth/enclave_server_credentials.h"
-#include "asylo/grpc/auth/sgx_credentials_options.h"
+#include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/grpc/util/enclave_server.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 

@@ -22,7 +22,7 @@
 #include "absl/time/time.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
-#include "asylo/grpc/auth/sgx_credentials_options.h"
+#include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/trusted_application.h"

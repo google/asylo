@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/grpc/auth/sgx_credentials_options.h"
+#include "asylo/grpc/auth/sgx_local_credentials_options.h"
 
 #include "asylo/identity/sgx/code_identity_util.h"
 

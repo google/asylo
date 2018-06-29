@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_GRPC_AUTH_SGX_CREDENTIALS_OPTIONS_H_
-#define ASYLO_GRPC_AUTH_SGX_CREDENTIALS_OPTIONS_H_
+#ifndef ASYLO_GRPC_AUTH_SGX_LOCAL_CREDENTIALS_OPTIONS_H_
+#define ASYLO_GRPC_AUTH_SGX_LOCAL_CREDENTIALS_OPTIONS_H_
 
 #include "asylo/grpc/auth/enclave_credentials_options.h"
 
@@ -50,4 +50,4 @@ EnclaveCredentialsOptions BidirectionalSgxLocalCredentialsOptions();
 
 }  // namespace asylo
 
-#endif  // ASYLO_GRPC_AUTH_SGX_CREDENTIALS_OPTIONS_H_
+#endif  // ASYLO_GRPC_AUTH_SGX_LOCAL_CREDENTIALS_OPTIONS_H_

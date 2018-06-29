@@ -70,13 +70,12 @@ cc_library(
     ],
 )
 
-# Configuration for building SGX local enclave credentials (used for local gRPC
+# Configuration for building SGX local credentials (used for local gRPC
 # connections between SGX enclaves).
 cc_library(
-    name = "sgx_credentials_options",
-    srcs = ["sgx_credentials_options.cc"],
-    hdrs = ["sgx_credentials_options.h"],
-    visibility = ["//visibility:public"],
+    name = "sgx_local_credentials_options",
+    srcs = ["sgx_local_credentials_options.cc"],
+    hdrs = ["sgx_local_credentials_options.h"],
     deps = [
         ":grpc++_security_enclave",
         "//asylo/identity/sgx:code_identity_util",
