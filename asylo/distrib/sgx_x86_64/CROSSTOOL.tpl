@@ -188,6 +188,7 @@ toolchain {
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
      implies: 'force_pic_flags'
+     implies: 'user_link_flags'
      implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
@@ -203,6 +204,7 @@ toolchain {
      implies: 'runtime_library_search_directories'
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
+     implies: 'user_link_flags'
      implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
@@ -258,6 +260,7 @@ toolchain {
      implies: 'runtime_library_search_directories'
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
+     implies: 'user_link_flags'
      implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
@@ -462,6 +465,20 @@ toolchain {
              flag: '-pie'
          }
      }
+  }
+
+  feature {
+      name: 'user_link_flags'
+      flag_set {
+          expand_if_all_available: 'user_link_flags'
+          action: 'c++-link-executable'
+          action: 'c++-link-dynamic-library'
+          action: 'c++-link-nodeps-dynamic-library'
+          flag_group {
+              iterate_over: 'user_link_flags'
+              flag: '%{user_link_flags}'
+          }
+      }
   }
 
   feature {
