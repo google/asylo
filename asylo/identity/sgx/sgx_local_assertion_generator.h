@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_LOCAL_ASSERTION_GENERATOR_H_
-#define ASYLO_IDENTITY_SGX_LOCAL_ASSERTION_GENERATOR_H_
+#ifndef ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
+#define ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
 
 #include "asylo/identity/enclave_assertion_generator.h"
 
@@ -25,20 +25,19 @@
 #include "asylo/identity/sgx/local_assertion.pb.h"
 
 namespace asylo {
-namespace sgx {
 
 /// An implementation of the EnclaveAssertionGenerator interface for SGX local
 /// assertions.
 ///
-/// A LocalAssertionGenerator is capable of generating assertion offers and
+/// An SgxLocalAssertionGenerator is capable of generating assertion offers and
 /// assertions for SGX code identities that can be verified by SGX enclaves
 /// running within the same local attestation domain.
-class LocalAssertionGenerator final : public EnclaveAssertionGenerator {
+class SgxLocalAssertionGenerator final : public EnclaveAssertionGenerator {
  public:
-  /// Constructs an uninitialized LocalAssertionGenerator.
+  /// Constructs an uninitialized SgxLocalAssertionGenerator.
   ///
   /// The generator can be initialized via a call to Initialize().
-  LocalAssertionGenerator();
+  SgxLocalAssertionGenerator();
 
   ///////////////////////////////////////////
   //   From AssertionAuthority interface.  //
@@ -67,7 +66,7 @@ class LocalAssertionGenerator final : public EnclaveAssertionGenerator {
   // Parses additional information from the given |request|. Returns the
   // LocalAssertionRequestAdditionalInfo on success. Returns a non-OK status on
   // parsing failure.
-  StatusOr<LocalAssertionRequestAdditionalInfo> ParseAdditionalInfo(
+  StatusOr<sgx::LocalAssertionRequestAdditionalInfo> ParseAdditionalInfo(
       const AssertionRequest &request) const;
 
   // The identity type handled by this generator.
@@ -86,7 +85,6 @@ class LocalAssertionGenerator final : public EnclaveAssertionGenerator {
   mutable absl::Mutex initialized_mu_;
 };
 
-}  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_LOCAL_ASSERTION_GENERATOR_H_
+#endif  // ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_

@@ -56,10 +56,10 @@ cc_library(
 )
 
 cc_library(
-    name = "local_assertion_generator",
+    name = "sgx_local_assertion_generator",
     srcs = [
-        "local_assertion_generator.cc",
-        "local_assertion_generator.h",
+        "sgx_local_assertion_generator.cc",
+        "sgx_local_assertion_generator.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -77,18 +77,18 @@ cc_library(
 )
 
 cc_test(
-    name = "local_assertion_generator_test",
+    name = "sgx_local_assertion_generator_test",
     srcs = [
-        "local_assertion_generator.h",
-        "local_assertion_generator_test.cc",
+        "sgx_local_assertion_generator.h",
+        "sgx_local_assertion_generator_test.cc",
     ],
     tags = ["regression"],
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
         ":hardware_types",
-        ":local_assertion_generator",
         ":local_assertion_proto_cc",
+        ":sgx_local_assertion_generator",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/identity:identity_proto_cc",
@@ -96,19 +96,18 @@ cc_test(
         "//asylo/platform/core:trusted_global_state",
         "//asylo/platform/crypto:sha256_hash",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
     ],
 )
 
 cc_library(
-    name = "local_assertion_verifier",
+    name = "sgx_local_assertion_verifier",
     srcs = [
-        "local_assertion_verifier.cc",
-        "local_assertion_verifier.h",
+        "sgx_local_assertion_verifier.cc",
+        "sgx_local_assertion_verifier.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -126,10 +125,10 @@ cc_library(
 )
 
 cc_test(
-    name = "local_assertion_verifier_test",
+    name = "sgx_local_assertion_verifier_test",
     srcs = [
-        "local_assertion_verifier.h",
-        "local_assertion_verifier_test.cc",
+        "sgx_local_assertion_verifier.h",
+        "sgx_local_assertion_verifier_test.cc",
     ],
     tags = ["regression"],
     deps = [
@@ -138,7 +137,7 @@ cc_test(
         ":hardware_interface",
         ":hardware_types",
         ":local_assertion_proto_cc",
-        ":local_assertion_verifier",
+        ":sgx_local_assertion_verifier",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:enclave_assertion_verifier",
         "//asylo/identity:identity_proto_cc",
@@ -146,29 +145,28 @@ cc_test(
         "//asylo/platform/core:trusted_global_state",
         "//asylo/platform/crypto:sha256_hash",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
         "@com_google_protobuf//:protobuf",
     ],
 )
 
 cc_test(
-    name = "local_assertion_authority_test",
+    name = "sgx_local_assertion_authority_test",
     srcs = [
-        "local_assertion_authority_test.cc",
-        "local_assertion_generator.h",
-        "local_assertion_verifier.h",
+        "sgx_local_assertion_authority_test.cc",
+        "sgx_local_assertion_generator.h",
+        "sgx_local_assertion_verifier.h",
     ],
     tags = ["regression"],
     deps = [
         ":code_identity_proto_cc",
         ":code_identity_util",
         ":hardware_interface",
-        ":local_assertion_generator",
         ":local_assertion_proto_cc",
-        ":local_assertion_verifier",
+        ":sgx_local_assertion_generator",
+        ":sgx_local_assertion_verifier",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/identity:enclave_assertion_verifier",
         "//asylo/identity:identity_proto_cc",
@@ -235,11 +233,11 @@ cc_test(
     srcs = ["code_identity_util_test.cc"],
     deps = [
         ":code_identity_constants",
-        ":code_identity_expectation_matcher",
         ":code_identity_proto_cc",
         ":code_identity_test_util",
         ":code_identity_util",
         ":hardware_interface",
+        ":sgx_code_identity_expectation_matcher",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity/util:bit_vector_128_proto_cc",
@@ -257,10 +255,10 @@ cc_test(
 )
 
 cc_library(
-    name = "code_identity_expectation_matcher",
+    name = "sgx_code_identity_expectation_matcher",
     srcs = [
-        "code_identity_expectation_matcher.cc",
-        "code_identity_expectation_matcher.h",
+        "sgx_code_identity_expectation_matcher.cc",
+        "sgx_code_identity_expectation_matcher.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
@@ -272,17 +270,17 @@ cc_library(
 )
 
 cc_test(
-    name = "code_identity_expectation_matcher_test",
+    name = "sgx_code_identity_expectation_matcher_test",
     srcs = [
-        "code_identity_expectation_matcher.h",
-        "code_identity_expectation_matcher_test.cc",
+        "sgx_code_identity_expectation_matcher.h",
+        "sgx_code_identity_expectation_matcher_test.cc",
     ],
     tags = ["regression"],
     deps = [
         ":code_identity_constants",
-        ":code_identity_expectation_matcher",
         ":code_identity_proto_cc",
         ":code_identity_test_util",
+        ":sgx_code_identity_expectation_matcher",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/identity:identity_proto_cc",
         "//asylo/test/util:status_matchers",
@@ -402,9 +400,9 @@ cc_library(
 )
 
 cc_library(
-    name = "local_secret_sealer",
-    srcs = ["local_secret_sealer.cc"],
-    hdrs = ["local_secret_sealer.h"],
+    name = "sgx_local_secret_sealer",
+    srcs = ["sgx_local_secret_sealer.cc"],
+    hdrs = ["sgx_local_secret_sealer.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_proto_cc",
@@ -426,26 +424,24 @@ cc_library(
 )
 
 cc_test(
-    name = "local_secret_sealer_test",
-    srcs = ["local_secret_sealer_test.cc"],
+    name = "sgx_local_secret_sealer_test",
+    srcs = ["sgx_local_secret_sealer_test.cc"],
     tags = ["regression"],
     deps = [
         ":code_identity_proto_cc",
         ":code_identity_util",
         ":hardware_interface",
         ":local_sealed_secret_proto_cc",
-        ":local_secret_sealer",
         ":local_secret_sealer_helpers",
+        ":sgx_local_secret_sealer",
         "//asylo/identity:identity_acl_proto_cc",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity:sealed_secret_proto_cc",
-        "//asylo/identity:secret_sealer",
         "//asylo/identity/util:bytes",
         "//asylo/platform/common:singleton",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest",
+        "@com_google_googletest//:gtest_main",
     ],
 )

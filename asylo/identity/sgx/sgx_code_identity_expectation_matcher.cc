@@ -16,43 +16,43 @@
  *
  */
 
-#include "asylo/identity/sgx/code_identity_expectation_matcher.h"
+#include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
 
 #include "asylo/identity/sgx/code_identity_util.h"
 
 namespace asylo {
-namespace sgx {
 
-StatusOr<bool> CodeIdentityExpectationMatcher::Match(
+StatusOr<bool> SgxCodeIdentityExpectationMatcher::Match(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation) const {
-  CodeIdentity code_identity;
-  Status status = ParseSgxIdentity(identity, &code_identity);
+  sgx::CodeIdentity code_identity;
+  Status status = sgx::ParseSgxIdentity(identity, &code_identity);
   if (!status.ok()) {
     // |identity| either does not have the correct description, or is malformed.
     return status;
   }
 
-  CodeIdentityExpectation code_identity_expectation;
-  status = ParseSgxExpectation(expectation, &code_identity_expectation);
+  sgx::CodeIdentityExpectation code_identity_expectation;
+  status = sgx::ParseSgxExpectation(expectation, &code_identity_expectation);
   if (!status.ok()) {
     // |expectation|.reference_identity() either does not have the correct
     // description, or is malformed.
     return status;
   }
 
-  return MatchIdentityToExpectation(code_identity, code_identity_expectation);
+  return sgx::MatchIdentityToExpectation(code_identity,
+                                         code_identity_expectation);
 }
 
-EnclaveIdentityDescription CodeIdentityExpectationMatcher::Description() const {
+EnclaveIdentityDescription SgxCodeIdentityExpectationMatcher::Description()
+    const {
   EnclaveIdentityDescription description;
-  SetSgxIdentityDescription(&description);
+  sgx::SetSgxIdentityDescription(&description);
   return description;
 }
 
 // Static registration of the CodeIdentityExpectationMatcher library.
 SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(IdentityExpectationMatcherMap,
-                                     CodeIdentityExpectationMatcher);
+                                     SgxCodeIdentityExpectationMatcher);
 
-}  // namespace sgx
 }  // namespace asylo

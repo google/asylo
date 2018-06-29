@@ -16,28 +16,27 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_LOCAL_ASSERTION_VERIFIER_H_
-#define ASYLO_IDENTITY_SGX_LOCAL_ASSERTION_VERIFIER_H_
+#ifndef ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_VERIFIER_H_
+#define ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_VERIFIER_H_
 
 #include "asylo/identity/enclave_assertion_verifier.h"
 
 #include "absl/synchronization/mutex.h"
 
 namespace asylo {
-namespace sgx {
 
 /// An implemention of the EnclaveAssertionVerifier interface for SGX local
 /// assertions.
 ///
-/// A LocalAssertionVerifier is capable of verifying assertions of SGX code
+/// An SgxLocalAssertionVerifier is capable of verifying assertions of SGX code
 /// identity that originate from SGX enclaves running within the same local
 /// attestation domain.
-class LocalAssertionVerifier final : public EnclaveAssertionVerifier {
+class SgxLocalAssertionVerifier final : public EnclaveAssertionVerifier {
  public:
-  /// Constructs an uninitialized LocalAssertionVerifier.
+  /// Constructs an uninitialized SgxLocalAssertionVerifier.
   ///
   /// The verifier can be initialized via a call to Initialize().
-  LocalAssertionVerifier();
+  SgxLocalAssertionVerifier();
 
   ///////////////////////////////////////////
   //   From AssertionAuthority interface.  //
@@ -79,7 +78,6 @@ class LocalAssertionVerifier final : public EnclaveAssertionVerifier {
   mutable absl::Mutex initialized_mu_;
 };
 
-}  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_LOCAL_ASSERTION_VERIFIER_H_
+#endif  // ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_VERIFIER_H_

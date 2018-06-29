@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/local_assertion_verifier.h"
+#include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 
 #include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
@@ -37,7 +37,6 @@
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
-namespace sgx {
 namespace {
 
 using ::testing::Not;
@@ -54,7 +53,7 @@ const char kUserData[] = "User data";
 
 // A test fixture is used to contain common test setup logic and utility
 // methods.
-class LocalAssertionVerifierTest : public ::testing::Test {
+class SgxLocalAssertionVerifierTest : public ::testing::Test {
  protected:
   void SetUp() override {
     EnclaveConfig enclave_config;
@@ -66,7 +65,7 @@ class LocalAssertionVerifierTest : public ::testing::Test {
   // Sets |description| to the assertion description handled by the SGX local
   // assertion verifier.
   void SetAssertionDescription(AssertionDescription *description) {
-    SetAssertionDescription(CODE_IDENTITY, kSgxLocalAssertionAuthority,
+    SetAssertionDescription(CODE_IDENTITY, sgx::kSgxLocalAssertionAuthority,
                             description);
   }
 
@@ -86,7 +85,7 @@ class LocalAssertionVerifierTest : public ::testing::Test {
                           AssertionOffer *offer) {
     SetAssertionDescription(offer->mutable_description());
 
-    LocalAssertionOfferAdditionalInfo additional_info;
+    sgx::LocalAssertionOfferAdditionalInfo additional_info;
     additional_info.set_local_attestation_domain(
         local_attestation_domain.data(), local_attestation_domain.size());
 
@@ -94,53 +93,53 @@ class LocalAssertionVerifierTest : public ::testing::Test {
         offer->mutable_additional_information());
   }
 
-  // The config used to initialize a LocalAssertionVerifier.
+  // The config used to initialize a SgxLocalAssertionVerifier.
   std::string config_;
 };
 
-// Verify that the LocalAssertionVerifier can be found in the
+// Verify that the SgxLocalAssertionVerifier can be found in the
 // AssertionVerifierMap.
-TEST_F(LocalAssertionVerifierTest, VerifierFoundInStaticMap) {
+TEST_F(SgxLocalAssertionVerifierTest, VerifierFoundInStaticMap) {
   auto authority_id_result = EnclaveAssertionAuthority::GenerateAuthorityId(
-      CODE_IDENTITY, kSgxLocalAssertionAuthority);
+      CODE_IDENTITY, sgx::kSgxLocalAssertionAuthority);
 
   ASSERT_THAT(authority_id_result, IsOk());
   ASSERT_NE(AssertionVerifierMap::GetValue(authority_id_result.ValueOrDie()),
             AssertionVerifierMap::value_end());
 }
 
-TEST_F(LocalAssertionVerifierTest, IdentityType) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, IdentityType) {
+  SgxLocalAssertionVerifier verifier;
   EXPECT_EQ(verifier.IdentityType(), CODE_IDENTITY);
 }
 
-TEST_F(LocalAssertionVerifierTest, AuthorityType) {
-  LocalAssertionVerifier verifier;
-  EXPECT_EQ(verifier.AuthorityType(), kSgxLocalAssertionAuthority);
+TEST_F(SgxLocalAssertionVerifierTest, AuthorityType) {
+  SgxLocalAssertionVerifier verifier;
+  EXPECT_EQ(verifier.AuthorityType(), sgx::kSgxLocalAssertionAuthority);
 }
 
 // Verify that Initialize() succeeds only once.
-TEST_F(LocalAssertionVerifierTest, InitializeSucceedsOnce) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, InitializeSucceedsOnce) {
+  SgxLocalAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize(config_), IsOk());
   EXPECT_THAT(verifier.Initialize(config_), Not(IsOk()));
 }
 
 // Verify that Initialize() fails if the EnclaveConfig is missing the local
 // attestation domain.
-TEST_F(LocalAssertionVerifierTest, InitializeFailsMissingAttestationDomain) {
+TEST_F(SgxLocalAssertionVerifierTest, InitializeFailsMissingAttestationDomain) {
   // Override the config set during SetUp().
   EnclaveConfig enclave_config;
   SetEnclaveConfig(enclave_config);
 
-  LocalAssertionVerifier verifier;
+  SgxLocalAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize(config_), Not(IsOk()));
 }
 
 // Verify that IsInitialized() returns false before initialization, and true
 // after initialization.
-TEST_F(LocalAssertionVerifierTest, IsInitializedBeforeAfterInitialization) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, IsInitializedBeforeAfterInitialization) {
+  SgxLocalAssertionVerifier verifier;
   EXPECT_FALSE(verifier.IsInitialized());
   EXPECT_THAT(verifier.Initialize(config_), IsOk());
   EXPECT_TRUE(verifier.IsInitialized());
@@ -148,9 +147,9 @@ TEST_F(LocalAssertionVerifierTest, IsInitializedBeforeAfterInitialization) {
 
 // Verify that CreateAssertionRequest fails if the verifier is not yet
 // initialized.
-TEST_F(LocalAssertionVerifierTest,
+TEST_F(SgxLocalAssertionVerifierTest,
        CreateAssertionRequestFailsIfNotInitialized) {
-  LocalAssertionVerifier verifier;
+  SgxLocalAssertionVerifier verifier;
 
   AssertionRequest request;
   EXPECT_THAT(verifier.CreateAssertionRequest(&request), Not(IsOk()));
@@ -159,8 +158,8 @@ TEST_F(LocalAssertionVerifierTest,
 // Verify that CreateAssertionRequest() succeeds after initialization, and
 // creates a request with the expected description and with non-empty additional
 // information.
-TEST_F(LocalAssertionVerifierTest, CreateAssertionRequestSuccess) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, CreateAssertionRequestSuccess) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   AssertionRequest request;
@@ -168,9 +167,9 @@ TEST_F(LocalAssertionVerifierTest, CreateAssertionRequestSuccess) {
 
   const AssertionDescription &description = request.description();
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
-  EXPECT_EQ(description.authority_type(), kSgxLocalAssertionAuthority);
+  EXPECT_EQ(description.authority_type(), sgx::kSgxLocalAssertionAuthority);
 
-  LocalAssertionRequestAdditionalInfo additional_info;
+  sgx::LocalAssertionRequestAdditionalInfo additional_info;
   ASSERT_TRUE(
       additional_info.ParseFromString(request.additional_information()));
   EXPECT_EQ(additional_info.local_attestation_domain(),
@@ -178,8 +177,8 @@ TEST_F(LocalAssertionVerifierTest, CreateAssertionRequestSuccess) {
 }
 
 // Verify that CanVerify fails if the verifier is not yet initialized.
-TEST_F(LocalAssertionVerifierTest, CanVerifyFailsIfNotInitialized) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, CanVerifyFailsIfNotInitialized) {
+  SgxLocalAssertionVerifier verifier;
 
   AssertionOffer offer;
   MakeAssertionOffer(kLocalAttestationDomain1, &offer);
@@ -187,8 +186,9 @@ TEST_F(LocalAssertionVerifierTest, CanVerifyFailsIfNotInitialized) {
 }
 
 // Verify that CanVerify() fails if the AssertionOffer is unparseable.
-TEST_F(LocalAssertionVerifierTest, CanVerifyFailsIfUnparseableAssertionOffer) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest,
+       CanVerifyFailsIfUnparseableAssertionOffer) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   AssertionOffer offer;
@@ -199,9 +199,9 @@ TEST_F(LocalAssertionVerifierTest, CanVerifyFailsIfUnparseableAssertionOffer) {
 
 // Verify that CanVerify() fails if the AssertionOffer has an incompatible
 // assertion description.
-TEST_F(LocalAssertionVerifierTest,
+TEST_F(SgxLocalAssertionVerifierTest,
        CanVerifyFailsIfIncompatibleAssertionDescription) {
-  LocalAssertionVerifier verifier;
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   AssertionOffer offer;
@@ -212,9 +212,9 @@ TEST_F(LocalAssertionVerifierTest,
 
 // Verify that CanVerify() returns false if the AssertionOffer is for a
 // non-local attestation domain.
-TEST_F(LocalAssertionVerifierTest,
+TEST_F(SgxLocalAssertionVerifierTest,
        CanVerifyFailsIfNonMatchingLocalAttestationDomain) {
-  LocalAssertionVerifier verifier;
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   AssertionOffer offer;
@@ -226,8 +226,8 @@ TEST_F(LocalAssertionVerifierTest,
 }
 
 // Verify that Verify() fails if the verifier is not yet initialized.
-TEST_F(LocalAssertionVerifierTest, VerifyFailsIfNotInitialized) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfNotInitialized) {
+  SgxLocalAssertionVerifier verifier;
 
   Assertion assertion;
   EnclaveIdentity identity;
@@ -236,9 +236,9 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfNotInitialized) {
 
 // Verify that Verify() fails if the Assertion has an incompatible assertion
 // description.
-TEST_F(LocalAssertionVerifierTest,
+TEST_F(SgxLocalAssertionVerifierTest,
        VerifyFailsIfIncompatibleAssertionDescription) {
-  LocalAssertionVerifier verifier;
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   Assertion assertion;
@@ -249,8 +249,8 @@ TEST_F(LocalAssertionVerifierTest,
 }
 
 // Verify that Verify() fails if the Assertion is unparseable.
-TEST_F(LocalAssertionVerifierTest, VerifyFailsIfUnparseableAssertion) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfUnparseableAssertion) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   Assertion assertion;
@@ -261,15 +261,15 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfUnparseableAssertion) {
 }
 
 // Verify that Verify() fails if the embedded REPORT is malformed.
-TEST_F(LocalAssertionVerifierTest, VerifyFailsIfReportMalformed) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfReportMalformed) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   Assertion assertion;
   EnclaveIdentity identity;
   SetAssertionDescription(assertion.mutable_description());
 
-  LocalAssertion local_assertion;
+  sgx::LocalAssertion local_assertion;
   local_assertion.set_report(kBadReport);
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
 
@@ -277,8 +277,8 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfReportMalformed) {
 }
 
 // Verify that Verify() fails if the hardware REPORT is unverifiable.
-TEST_F(LocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   Assertion assertion;
@@ -286,17 +286,17 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
 
   Sha256Hash hash;
   hash.Update(kUserData, strlen(kUserData));
-  AlignedReportdataPtr reportdata;
-  *reportdata = TrivialZeroObject<Reportdata>();
+  sgx::AlignedReportdataPtr reportdata;
+  *reportdata = TrivialZeroObject<sgx::Reportdata>();
   reportdata->data.replace(/*pos=*/0, hash.Hash());
 
   // A REPORT with an empty target will not verifiable by this enclave.
-  AlignedTargetinfoPtr targetinfo;
-  *targetinfo = TrivialZeroObject<Targetinfo>();
+  sgx::AlignedTargetinfoPtr targetinfo;
+  *targetinfo = TrivialZeroObject<sgx::Targetinfo>();
 
-  AlignedReportPtr report;
-  ASSERT_TRUE(GetHardwareReport(*targetinfo, *reportdata, report.get()));
-  LocalAssertion local_assertion;
+  sgx::AlignedReportPtr report;
+  ASSERT_TRUE(sgx::GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  sgx::LocalAssertion local_assertion;
   local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
                              sizeof(*report));
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
@@ -307,8 +307,9 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
 
 // Verify that Verify() fails if the assertion is not bound to the provided
 // user-data.
-TEST_F(LocalAssertionVerifierTest, VerifyFailsIfAssertionIsNotBoundToUserData) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest,
+       VerifyFailsIfAssertionIsNotBoundToUserData) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   Assertion assertion;
@@ -316,15 +317,15 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfAssertionIsNotBoundToUserData) {
 
   // Use a random REPORTDATA, which certainly won't match the expected
   // REPORTDATA value when the user-data is kUserData.
-  AlignedReportdataPtr reportdata;
-  *reportdata = TrivialRandomObject<Reportdata>();
+  sgx::AlignedReportdataPtr reportdata;
+  *reportdata = TrivialRandomObject<sgx::Reportdata>();
 
-  AlignedTargetinfoPtr targetinfo;
-  SetTargetinfoFromSelfIdentity(targetinfo.get());
+  sgx::AlignedTargetinfoPtr targetinfo;
+  sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());
 
-  AlignedReportPtr report;
-  ASSERT_TRUE(GetHardwareReport(*targetinfo, *reportdata, report.get()));
-  LocalAssertion local_assertion;
+  sgx::AlignedReportPtr report;
+  ASSERT_TRUE(sgx::GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  sgx::LocalAssertion local_assertion;
   local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
                              sizeof(*report));
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
@@ -335,8 +336,8 @@ TEST_F(LocalAssertionVerifierTest, VerifyFailsIfAssertionIsNotBoundToUserData) {
 
 // Verify that Verify() succeeds when given a valid Assertion, and correctly
 // extracts the enclave's CodeIdentity.
-TEST_F(LocalAssertionVerifierTest, VerifySuccess) {
-  LocalAssertionVerifier verifier;
+TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
+  SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
   Assertion assertion;
@@ -344,16 +345,16 @@ TEST_F(LocalAssertionVerifierTest, VerifySuccess) {
 
   Sha256Hash hash;
   hash.Update(kUserData, strlen(kUserData));
-  AlignedReportdataPtr reportdata;
-  *reportdata = TrivialZeroObject<Reportdata>();
+  sgx::AlignedReportdataPtr reportdata;
+  *reportdata = TrivialZeroObject<sgx::Reportdata>();
   reportdata->data.replace(/*pos=*/0, hash.Hash());
 
-  AlignedTargetinfoPtr targetinfo;
-  SetTargetinfoFromSelfIdentity(targetinfo.get());
+  sgx::AlignedTargetinfoPtr targetinfo;
+  sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());
 
-  AlignedReportPtr report;
-  ASSERT_TRUE(GetHardwareReport(*targetinfo, *reportdata, report.get()));
-  LocalAssertion local_assertion;
+  sgx::AlignedReportPtr report;
+  ASSERT_TRUE(sgx::GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  sgx::LocalAssertion local_assertion;
   local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
                              sizeof(*report));
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
@@ -363,12 +364,12 @@ TEST_F(LocalAssertionVerifierTest, VerifySuccess) {
 
   const EnclaveIdentityDescription &description = identity.description();
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
-  EXPECT_EQ(description.authority_type(), kSgxAuthorizationAuthority);
+  EXPECT_EQ(description.authority_type(), sgx::kSgxAuthorizationAuthority);
 
-  CodeIdentity code_identity;
+  sgx::CodeIdentity code_identity;
   ASSERT_TRUE(code_identity.ParseFromString(identity.identity()));
 
-  CodeIdentity expected_identity = GetSelfIdentity()->identity;
+  sgx::CodeIdentity expected_identity = sgx::GetSelfIdentity()->identity;
   EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(code_identity,
                                                        expected_identity))
       << "Extracted identity:\n"
@@ -377,5 +378,4 @@ TEST_F(LocalAssertionVerifierTest, VerifySuccess) {
 }
 
 }  // namespace
-}  // namespace sgx
 }  // namespace asylo

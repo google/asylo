@@ -16,22 +16,21 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
-#define ASYLO_IDENTITY_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
+#ifndef ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
+#define ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
 
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
 
 namespace asylo {
-namespace sgx {
 
-// CodeIdentityExpectationMatcher is capable of matching SGX code identities
+// SgxCodeIdentityExpectationMatcher is capable of matching SGX code identities
 // with SGX code-identity expectations.
-class CodeIdentityExpectationMatcher final
+class SgxCodeIdentityExpectationMatcher final
     : public NamedIdentityExpectationMatcher {
  public:
-  CodeIdentityExpectationMatcher() = default;
-  ~CodeIdentityExpectationMatcher() override = default;
+  SgxCodeIdentityExpectationMatcher() = default;
+  ~SgxCodeIdentityExpectationMatcher() override = default;
 
   // From the IdentityExpectationMatcher interface.
   StatusOr<bool> Match(
@@ -42,7 +41,6 @@ class CodeIdentityExpectationMatcher final
   EnclaveIdentityDescription Description() const override;
 };
 
-}  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
+#endif  // ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_

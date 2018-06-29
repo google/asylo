@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/local_assertion_generator.h"
+#include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 
 #include <string>
 
@@ -38,7 +38,6 @@
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
-namespace sgx {
 namespace {
 
 using ::testing::Not;
@@ -53,7 +52,7 @@ const char kUserData[] = "User data";
 
 // A test fixture is used to contain common test setup logic and utility
 // methods.
-class LocalAssertionGeneratorTest : public ::testing::Test {
+class SgxLocalAssertionGeneratorTest : public ::testing::Test {
  protected:
   void SetUp() override {
     EnclaveConfig enclave_config;
@@ -66,7 +65,7 @@ class LocalAssertionGeneratorTest : public ::testing::Test {
   // assertion generator.
   void SetAssertionDescription(AssertionDescription *description) {
     description->set_identity_type(CODE_IDENTITY);
-    description->set_authority_type(kSgxLocalAssertionAuthority);
+    description->set_authority_type(sgx::kSgxLocalAssertionAuthority);
   }
 
   // Sets |description| to a description of the given |identity_type| and
@@ -87,7 +86,7 @@ class LocalAssertionGeneratorTest : public ::testing::Test {
                             AssertionRequest *request) {
     SetAssertionDescription(request->mutable_description());
 
-    LocalAssertionRequestAdditionalInfo additional_info;
+    sgx::LocalAssertionRequestAdditionalInfo additional_info;
     additional_info.set_targetinfo(targetinfo.data(), targetinfo.size());
     additional_info.set_local_attestation_domain(
         local_attestation_domain.data(), local_attestation_domain.size());
@@ -101,7 +100,7 @@ class LocalAssertionGeneratorTest : public ::testing::Test {
   // result in |request|.
   bool MakeAssertionRequestWithRandomTarget(
       absl::string_view local_attestation_domain, AssertionRequest *request) {
-    Targetinfo targetinfo = TrivialZeroObject<Targetinfo>();
+    sgx::Targetinfo targetinfo = TrivialZeroObject<sgx::Targetinfo>();
 
     // Only randomize the enclave measurement because the other fields in
     // Targetinfo have reserved sections that must be zeroed out.
@@ -114,15 +113,15 @@ class LocalAssertionGeneratorTest : public ::testing::Test {
         local_attestation_domain, request);
   }
 
-  // The config used to initialize a LocalAssertionGenerator.
+  // The config used to initialize a SgxLocalAssertionGenerator.
   const std::string config_;
 };
 
-// Verify that the LocalAssertionGenerator can be found in the
+// Verify that the SgxLocalAssertionGenerator can be found in the
 // AssertionGeneratorMap.
-TEST_F(LocalAssertionGeneratorTest, GeneratorFoundInStaticMap) {
+TEST_F(SgxLocalAssertionGeneratorTest, GeneratorFoundInStaticMap) {
   auto authority_id_result = EnclaveAssertionAuthority::GenerateAuthorityId(
-      CODE_IDENTITY, kSgxLocalAssertionAuthority);
+      CODE_IDENTITY, sgx::kSgxLocalAssertionAuthority);
 
   ASSERT_THAT(authority_id_result, IsOk());
   ASSERT_NE(AssertionGeneratorMap::GetValue(authority_id_result.ValueOrDie()),
@@ -130,45 +129,47 @@ TEST_F(LocalAssertionGeneratorTest, GeneratorFoundInStaticMap) {
 }
 
 // Verify that Initialize() succeeds only once.
-TEST_F(LocalAssertionGeneratorTest, InitializeSucceedsOnce) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, InitializeSucceedsOnce) {
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
   EXPECT_THAT(generator.Initialize(config_), Not(IsOk()));
 }
 
 // Verify that Initialize() fails if local_attestation_domain is not set in the
 // EnclaveConfig.
-TEST_F(LocalAssertionGeneratorTest, InitializeFailsMissingAttestationDomain) {
+TEST_F(SgxLocalAssertionGeneratorTest,
+       InitializeFailsMissingAttestationDomain) {
   EnclaveConfig enclave_config;
   SetEnclaveConfig(enclave_config);
 
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), Not(IsOk()));
 }
 
 // Verify that IsInitialized() returns false before initialization, and true
 // after initialization.
-TEST_F(LocalAssertionGeneratorTest, IsInitializedBeforeAfterInitialization) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, IsInitializedBeforeAfterInitialization) {
+  SgxLocalAssertionGenerator generator;
   EXPECT_FALSE(generator.IsInitialized());
   EXPECT_THAT(generator.Initialize(config_), IsOk());
   EXPECT_TRUE(generator.IsInitialized());
 }
 
-TEST_F(LocalAssertionGeneratorTest, IdentityType) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, IdentityType) {
+  SgxLocalAssertionGenerator generator;
   EXPECT_EQ(generator.IdentityType(), CODE_IDENTITY);
 }
 
-TEST_F(LocalAssertionGeneratorTest, AuthorityType) {
-  LocalAssertionGenerator generator;
-  EXPECT_EQ(generator.AuthorityType(), kSgxLocalAssertionAuthority);
+TEST_F(SgxLocalAssertionGeneratorTest, AuthorityType) {
+  SgxLocalAssertionGenerator generator;
+  EXPECT_EQ(generator.AuthorityType(), sgx::kSgxLocalAssertionAuthority);
 }
 
 // Verify that CreateAssertionOffer() fails if the generator is not yet
 // initialized.
-TEST_F(LocalAssertionGeneratorTest, CreateAssertionOfferFailsIfNotInitialized) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest,
+       CreateAssertionOfferFailsIfNotInitialized) {
+  SgxLocalAssertionGenerator generator;
   AssertionOffer assertion_offer;
   EXPECT_THAT(generator.CreateAssertionOffer(&assertion_offer), Not(IsOk()));
 }
@@ -176,8 +177,8 @@ TEST_F(LocalAssertionGeneratorTest, CreateAssertionOfferFailsIfNotInitialized) {
 // Verify that CreateAssertionOffer() succeeds after initialization, and creates
 // an offer with the expected description and with non-empty additional
 // information.
-TEST_F(LocalAssertionGeneratorTest, CreateAssertionOfferSuccess) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, CreateAssertionOfferSuccess) {
+  SgxLocalAssertionGenerator generator;
   ASSERT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionOffer assertion_offer;
@@ -185,9 +186,9 @@ TEST_F(LocalAssertionGeneratorTest, CreateAssertionOfferSuccess) {
 
   const AssertionDescription &description = assertion_offer.description();
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
-  EXPECT_EQ(description.authority_type(), kSgxLocalAssertionAuthority);
+  EXPECT_EQ(description.authority_type(), sgx::kSgxLocalAssertionAuthority);
 
-  LocalAssertionOfferAdditionalInfo additional_info;
+  sgx::LocalAssertionOfferAdditionalInfo additional_info;
   ASSERT_TRUE(additional_info.ParseFromString(
       assertion_offer.additional_information()));
   EXPECT_EQ(additional_info.local_attestation_domain(),
@@ -195,8 +196,8 @@ TEST_F(LocalAssertionGeneratorTest, CreateAssertionOfferSuccess) {
 }
 
 // Verify that CanGenerate() fails if the generator is not yet initialized.
-TEST_F(LocalAssertionGeneratorTest, CanGenerateFailsIfNotInitialized) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, CanGenerateFailsIfNotInitialized) {
+  SgxLocalAssertionGenerator generator;
   AssertionRequest assertion_request;
 
   // Create a valid AssertionRequest.
@@ -208,9 +209,9 @@ TEST_F(LocalAssertionGeneratorTest, CanGenerateFailsIfNotInitialized) {
 
 // Verify that CanGenerate() returns false if the AssertionRequest is for a
 // non-local attestation domain.
-TEST_F(LocalAssertionGeneratorTest,
+TEST_F(SgxLocalAssertionGeneratorTest,
        CanGenerateFailsIfNonMatchingLocalAttestationDomain) {
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest assertion_request;
@@ -225,9 +226,9 @@ TEST_F(LocalAssertionGeneratorTest,
 }
 
 // Verify that CanGenerate() fails if the AssertionRequest is unparseable.
-TEST_F(LocalAssertionGeneratorTest,
+TEST_F(SgxLocalAssertionGeneratorTest,
        CanGenerateFailsIfUnparseableAssertionRequest) {
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest assertion_request;
@@ -239,9 +240,9 @@ TEST_F(LocalAssertionGeneratorTest,
 
 // Verify that CanGenerate() fails if the AssertionRequest has an incompatible
 // assertion description.
-TEST_F(LocalAssertionGeneratorTest,
+TEST_F(SgxLocalAssertionGeneratorTest,
        CanGenerateFailsIfIncompatibleAssertionDescription) {
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   ASSERT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest request;
@@ -252,8 +253,8 @@ TEST_F(LocalAssertionGeneratorTest,
 
 // Verify that CanGenerate() succeeds when the AssertionRequest is valid and for
 // the local attestation domain.
-TEST_F(LocalAssertionGeneratorTest, CanGenerateSuccess) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, CanGenerateSuccess) {
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest assertion_request;
@@ -268,8 +269,8 @@ TEST_F(LocalAssertionGeneratorTest, CanGenerateSuccess) {
 }
 
 // Verify that Generate() fails if the generator is not yet initialized.
-TEST_F(LocalAssertionGeneratorTest, GenerateFailsIfNotInitialized) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, GenerateFailsIfNotInitialized) {
+  SgxLocalAssertionGenerator generator;
   AssertionRequest assertion_request;
 
   // Create a valid AssertionRequest.
@@ -283,9 +284,9 @@ TEST_F(LocalAssertionGeneratorTest, GenerateFailsIfNotInitialized) {
 
 // Verify that Generate() fails if the AssertionRequest has an incompatible
 // assertion description.
-TEST_F(LocalAssertionGeneratorTest,
+TEST_F(SgxLocalAssertionGeneratorTest,
        GenerateFailsIfIncompatibleAssertionDescription) {
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   AssertionRequest assertion_request;
 
   AssertionRequest request;
@@ -298,9 +299,9 @@ TEST_F(LocalAssertionGeneratorTest,
 
 // Verify that Generate() fails if the AssertionRequest is for a non-local
 // attestation domain.
-TEST_F(LocalAssertionGeneratorTest,
+TEST_F(SgxLocalAssertionGeneratorTest,
        GenerateFailsIfNonMatchingLocalAttestationDomain) {
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest assertion_request;
@@ -315,9 +316,9 @@ TEST_F(LocalAssertionGeneratorTest,
 }
 
 // Verify that Generate() fails if the AssertionRequest is unparseable.
-TEST_F(LocalAssertionGeneratorTest,
+TEST_F(SgxLocalAssertionGeneratorTest,
        GenerateFailsIfUnparseableAssertionRequest) {
-  LocalAssertionGenerator generator;
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest assertion_request;
@@ -331,13 +332,13 @@ TEST_F(LocalAssertionGeneratorTest,
 
 // Verify that Generate() succeeds when provided a valid AssertionRequest and
 // produces an assertion that can be verified by the same enclave.
-TEST_F(LocalAssertionGeneratorTest, GenerateSuccess) {
-  LocalAssertionGenerator generator;
+TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
+  SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
 
   AssertionRequest assertion_request;
-  Targetinfo targetinfo;
-  SetTargetinfoFromSelfIdentity(&targetinfo);
+  sgx::Targetinfo targetinfo;
+  sgx::SetTargetinfoFromSelfIdentity(&targetinfo);
 
   // Create a valid AssertionRequest that is targeted at the self identity.
   ASSERT_TRUE(MakeAssertionRequest(
@@ -351,31 +352,34 @@ TEST_F(LocalAssertionGeneratorTest, GenerateSuccess) {
 
   const AssertionDescription &description = assertion.description();
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
-  EXPECT_EQ(description.authority_type(), kSgxLocalAssertionAuthority);
+  EXPECT_EQ(description.authority_type(), sgx::kSgxLocalAssertionAuthority);
 
   // Verify that the report embedded in the assertion can be verified by the
   // same enclave. Note that this structure must be aligned, so AlignedReportPtr
   // is used instead of Report.
-  AlignedReportPtr report;
-  LocalAssertion local_assertion;
+  sgx::AlignedReportPtr report;
+  sgx::LocalAssertion local_assertion;
   ASSERT_TRUE(local_assertion.ParseFromString(assertion.assertion()));
 
-  *report = TrivialObjectFromBinaryString<Report>(local_assertion.report());
-  EXPECT_THAT(VerifyHardwareReport(*report), IsOk())
+  *report =
+      TrivialObjectFromBinaryString<sgx::Report>(local_assertion.report());
+  EXPECT_THAT(sgx::VerifyHardwareReport(*report), IsOk())
       << ConvertTrivialObjectToHexString(*report);
 
   // Verify that the assertion is bound to a hash of the user data.
   Sha256Hash hash;
   hash.Update(kUserData, strlen(kUserData));
-  auto expected_reportdata = TrivialZeroObject<UnsafeBytes<kReportdataSize>>();
+  auto expected_reportdata =
+      TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
   expected_reportdata.replace(/*pos=*/0, hash.Hash());
   EXPECT_EQ(report->reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.
-  CodeIdentity code_identity;
-  ASSERT_THAT(ParseIdentityFromHardwareReport(*report, &code_identity), IsOk());
+  sgx::CodeIdentity code_identity;
+  ASSERT_THAT(sgx::ParseIdentityFromHardwareReport(*report, &code_identity),
+              IsOk());
 
-  CodeIdentity expected_identity = GetSelfIdentity()->identity;
+  sgx::CodeIdentity expected_identity = sgx::GetSelfIdentity()->identity;
   EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(code_identity,
                                                        expected_identity))
       << "Extracted identity:\n"
@@ -384,5 +388,4 @@ TEST_F(LocalAssertionGeneratorTest, GenerateSuccess) {
 }
 
 }  // namespace
-}  // namespace sgx
 }  // namespace asylo

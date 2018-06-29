@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/code_identity_expectation_matcher.h"
+#include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -28,17 +28,16 @@
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
-namespace sgx {
 namespace {
 
 using ::testing::Not;
 
-// Tests that the CodeIdentityExpectationMatcher exists in the
+// Tests that the SgxCodeIdentityExpectationMatcher exists in the
 // IdentityExpectationMatcher map.
-TEST(CodeIdentityExpectationMatcherTest, MatcherExistsInStaticMap) {
+TEST(SgxCodeIdentityExpectationMatcherTest, MatcherExistsInStaticMap) {
   EnclaveIdentityDescription description;
   description.set_identity_type(CODE_IDENTITY);
-  description.set_authority_type(kSgxAuthorizationAuthority);
+  description.set_authority_type(sgx::kSgxAuthorizationAuthority);
 
   auto matcher_it = IdentityExpectationMatcherMap::GetValue(
       NamedIdentityExpectationMatcher::GetMatcherName(description)
@@ -46,23 +45,24 @@ TEST(CodeIdentityExpectationMatcherTest, MatcherExistsInStaticMap) {
   ASSERT_NE(matcher_it, IdentityExpectationMatcherMap::value_end());
 }
 
-// Tests that the CodeIdentityExpectationMatcher has correct description.
-TEST(CodeIdentityExpectationMatcherTest, MatcherCheckDescription) {
-  CodeIdentityExpectationMatcher matcher;
+// Tests that the SgxCodeIdentityExpectationMatcher has correct description.
+TEST(SgxCodeIdentityExpectationMatcherTest, MatcherCheckDescription) {
+  SgxCodeIdentityExpectationMatcher matcher;
   EXPECT_EQ(matcher.Description().identity_type(), CODE_IDENTITY);
-  EXPECT_EQ(matcher.Description().authority_type(), kSgxAuthorizationAuthority);
+  EXPECT_EQ(matcher.Description().authority_type(),
+            sgx::kSgxAuthorizationAuthority);
 }
 
-// Tests that CodeIdentityExpectationMatcher correctly matches reference
+// Tests that SgxCodeIdentityExpectationMatcher correctly matches reference
 // identity inside a valid code-identity expectation with that expectation.
-TEST(CodeIdentityExpectationMatcherTest, MatcherPositive) {
+TEST(SgxCodeIdentityExpectationMatcherTest, MatcherPositive) {
   EnclaveIdentityExpectation expectation;
-  CodeIdentityExpectation code_identity_expectation;
-  ASSERT_THAT(SetRandomValidGenericExpectation(&expectation,
-                                               &code_identity_expectation),
+  sgx::CodeIdentityExpectation code_identity_expectation;
+  ASSERT_THAT(sgx::SetRandomValidGenericExpectation(&expectation,
+                                                    &code_identity_expectation),
               IsOk());
 
-  CodeIdentityExpectationMatcher matcher;
+  SgxCodeIdentityExpectationMatcher matcher;
   StatusOr<bool> matcher_result =
       matcher.Match(expectation.reference_identity(), expectation);
   ASSERT_THAT(matcher_result, IsOk())
@@ -71,51 +71,51 @@ TEST(CodeIdentityExpectationMatcherTest, MatcherPositive) {
       << code_identity_expectation.ShortDebugString();
 }
 
-// Tests that CodeIdentityExpectationMatcher returns a non-ok status when
+// Tests that SgxCodeIdentityExpectationMatcher returns a non-ok status when
 // invoked with invalid code identity.
-TEST(CodeIdentityExpectationMatcherTest, MatcherInvalidIdentity) {
+TEST(SgxCodeIdentityExpectationMatcherTest, MatcherInvalidIdentity) {
   EnclaveIdentity identity;
-  SetRandomInvalidGenericIdentity(&identity);
+  sgx::SetRandomInvalidGenericIdentity(&identity);
 
   EnclaveIdentityExpectation expectation;
-  CodeIdentityExpectation code_identity_expectation;
-  SetRandomValidGenericExpectation(&expectation, &code_identity_expectation);
+  sgx::CodeIdentityExpectation code_identity_expectation;
+  sgx::SetRandomValidGenericExpectation(&expectation,
+                                        &code_identity_expectation);
 
-  CodeIdentityExpectationMatcher matcher;
+  SgxCodeIdentityExpectationMatcher matcher;
   EXPECT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
       << identity.ShortDebugString()
       << code_identity_expectation.ShortDebugString();
 }
 
-// Tests that CodeIdentityExpectationMatcher returns a non-ok status when
+// Tests that SgxCodeIdentityExpectationMatcher returns a non-ok status when
 // invoked with an invalid code-identity expectation.
-TEST(CodeIdentityExpectationMatcherTest, MatcherInvalidExpectation) {
+TEST(SgxCodeIdentityExpectationMatcherTest, MatcherInvalidExpectation) {
   EnclaveIdentity identity;
-  CodeIdentity code_identity;
-  SetRandomValidGenericIdentity(&identity, &code_identity);
+  sgx::CodeIdentity code_identity;
+  sgx::SetRandomValidGenericIdentity(&identity, &code_identity);
 
   EnclaveIdentityExpectation expectation;
-  ASSERT_THAT(SetRandomInvalidGenericExpectation(&expectation), IsOk());
+  ASSERT_THAT(sgx::SetRandomInvalidGenericExpectation(&expectation), IsOk());
 
-  CodeIdentityExpectationMatcher matcher;
+  SgxCodeIdentityExpectationMatcher matcher;
   ASSERT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
       << code_identity.ShortDebugString() << expectation.ShortDebugString();
 }
 
-// Tests that CodeIdentityExpectationMatcher returns a non-ok status when
+// Tests that SgxCodeIdentityExpectationMatcher returns a non-ok status when
 // invoked with invalid code identity and invalid code-identity expectation.
-TEST(CodeIdentityExpectationMatcherTest, MatcherInvalidIdentityExpectation) {
+TEST(SgxCodeIdentityExpectationMatcherTest, MatcherInvalidIdentityExpectation) {
   EnclaveIdentity identity;
-  SetRandomInvalidGenericIdentity(&identity);
+  sgx::SetRandomInvalidGenericIdentity(&identity);
 
   EnclaveIdentityExpectation expectation;
-  ASSERT_THAT(SetRandomInvalidGenericExpectation(&expectation), IsOk());
+  ASSERT_THAT(sgx::SetRandomInvalidGenericExpectation(&expectation), IsOk());
 
-  CodeIdentityExpectationMatcher matcher;
+  SgxCodeIdentityExpectationMatcher matcher;
   EXPECT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
       << identity.ShortDebugString() << expectation.ShortDebugString();
 }
 
 }  // namespace
-}  // namespace sgx
 }  // namespace asylo

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/local_assertion_generator.h"
+#include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 
 #include <string>
 
@@ -30,14 +30,14 @@
 #include "asylo/platform/crypto/sha256_hash.h"
 
 namespace asylo {
-namespace sgx {
 
-const char *const LocalAssertionGenerator::authority_type_ =
-    kSgxLocalAssertionAuthority;
+const char *const SgxLocalAssertionGenerator::authority_type_ =
+    sgx::kSgxLocalAssertionAuthority;
 
-LocalAssertionGenerator::LocalAssertionGenerator() : initialized_(false) {}
+SgxLocalAssertionGenerator::SgxLocalAssertionGenerator()
+    : initialized_(false) {}
 
-Status LocalAssertionGenerator::Initialize(const std::string &config) {
+Status SgxLocalAssertionGenerator::Initialize(const std::string &config) {
   if (IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION,
                   "Already initialized");
@@ -63,20 +63,20 @@ Status LocalAssertionGenerator::Initialize(const std::string &config) {
   return Status::OkStatus();
 }
 
-bool LocalAssertionGenerator::IsInitialized() const {
+bool SgxLocalAssertionGenerator::IsInitialized() const {
   absl::MutexLock lock(&initialized_mu_);
   return initialized_;
 }
 
-EnclaveIdentityType LocalAssertionGenerator::IdentityType() const {
+EnclaveIdentityType SgxLocalAssertionGenerator::IdentityType() const {
   return identity_type_;
 }
 
-std::string LocalAssertionGenerator::AuthorityType() const {
+std::string SgxLocalAssertionGenerator::AuthorityType() const {
   return authority_type_;
 }
 
-Status LocalAssertionGenerator::CreateAssertionOffer(
+Status SgxLocalAssertionGenerator::CreateAssertionOffer(
     AssertionOffer *offer) const {
   if (!IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
@@ -85,7 +85,7 @@ Status LocalAssertionGenerator::CreateAssertionOffer(
   offer->mutable_description()->set_identity_type(IdentityType());
   offer->mutable_description()->set_authority_type(AuthorityType());
 
-  LocalAssertionOfferAdditionalInfo additional_info;
+  sgx::LocalAssertionOfferAdditionalInfo additional_info;
   additional_info.set_local_attestation_domain(attestation_domain_);
   if (!additional_info.SerializeToString(
           offer->mutable_additional_information())) {
@@ -96,39 +96,39 @@ Status LocalAssertionGenerator::CreateAssertionOffer(
   return Status::OkStatus();
 }
 
-StatusOr<bool> LocalAssertionGenerator::CanGenerate(
+StatusOr<bool> SgxLocalAssertionGenerator::CanGenerate(
     const AssertionRequest &request) const {
   if (!IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
   }
 
-  StatusOr<LocalAssertionRequestAdditionalInfo> additional_info_result =
+  StatusOr<sgx::LocalAssertionRequestAdditionalInfo> additional_info_result =
       ParseAdditionalInfo(request);
 
   if (!additional_info_result.ok()) {
     return additional_info_result.status();
   }
 
-  LocalAssertionRequestAdditionalInfo additional_info =
+  sgx::LocalAssertionRequestAdditionalInfo additional_info =
       additional_info_result.ValueOrDie();
 
   return additional_info.local_attestation_domain() == attestation_domain_;
 }
 
-Status LocalAssertionGenerator::Generate(const std::string &user_data,
-                                         const AssertionRequest &request,
-                                         Assertion *assertion) const {
+Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
+                                            const AssertionRequest &request,
+                                            Assertion *assertion) const {
   if (!IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
   }
 
-  StatusOr<LocalAssertionRequestAdditionalInfo> additional_info_result =
+  StatusOr<sgx::LocalAssertionRequestAdditionalInfo> additional_info_result =
       ParseAdditionalInfo(request);
   if (!additional_info_result.ok()) {
     return additional_info_result.status();
   }
 
-  LocalAssertionRequestAdditionalInfo additional_info =
+  sgx::LocalAssertionRequestAdditionalInfo additional_info =
       additional_info_result.ValueOrDie();
 
   if (additional_info.local_attestation_domain() != attestation_domain_) {
@@ -136,7 +136,7 @@ Status LocalAssertionGenerator::Generate(const std::string &user_data,
                   "AssertionRequest specifies non-local attestation domain");
   }
 
-  AlignedTargetinfoPtr tinfo;
+  sgx::AlignedTargetinfoPtr tinfo;
   if (additional_info.targetinfo().size() != sizeof(*tinfo)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "TARGETINFO from AssertionRequest has incorrect size");
@@ -150,8 +150,8 @@ Status LocalAssertionGenerator::Generate(const std::string &user_data,
   // architecture, and was copied into the request byte-for-byte. Since the
   // LocalAssertionGenerator runs inside an SGX enclave, it is safe to restore
   // the TARGETINFO structure directly from the request.
-  *tinfo =
-      TrivialObjectFromBinaryString<Targetinfo>(additional_info.targetinfo());
+  *tinfo = TrivialObjectFromBinaryString<sgx::Targetinfo>(
+      additional_info.targetinfo());
 
   // The REPORTDATA is a user-provided input to the hardware report that is
   // included in the report's MAC. Use a SHA256 hash of |user_data| as the
@@ -159,16 +159,16 @@ Status LocalAssertionGenerator::Generate(const std::string &user_data,
   // to this user-provided data. Note that the SHA256 hash only occupies the
   // lower 32 bytes of the 64-byte REPORTDATA structure so the structure is
   // pre-filled with an additional 32 zeros.
-  AlignedReportdataPtr reportdata;
+  sgx::AlignedReportdataPtr reportdata;
   Sha256Hash hash;
   hash.Update(user_data.data(), user_data.size());
-  reportdata->data = TrivialZeroObject<UnsafeBytes<kReportdataSize>>();
+  reportdata->data = TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
   reportdata->data.replace(/*pos=*/0, hash.Hash());
 
   // Generate a REPORT that is bound to the provided |user_data| and is targeted
   // at the enclave described in the request.
-  AlignedReportPtr report;
-  if (!GetHardwareReport(*tinfo, *reportdata, report.get())) {
+  sgx::AlignedReportPtr report;
+  if (!sgx::GetHardwareReport(*tinfo, *reportdata, report.get())) {
     return Status(error::GoogleError::INTERNAL, "Failed to generate a REPORT");
   }
 
@@ -178,7 +178,7 @@ Status LocalAssertionGenerator::Generate(const std::string &user_data,
   // the raw bytes of the report is sufficient when the structure is sent
   // between two SGX-enabled machines. An SGX-enabled assertion verifier should
   // be able to restore these bytes into a valid REPORT structure.
-  LocalAssertion local_assertion;
+  sgx::LocalAssertion local_assertion;
   local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
                              sizeof(*report));
 
@@ -192,15 +192,15 @@ Status LocalAssertionGenerator::Generate(const std::string &user_data,
   return Status::OkStatus();
 }
 
-StatusOr<LocalAssertionRequestAdditionalInfo>
-LocalAssertionGenerator::ParseAdditionalInfo(
+StatusOr<sgx::LocalAssertionRequestAdditionalInfo>
+SgxLocalAssertionGenerator::ParseAdditionalInfo(
     const AssertionRequest &request) const {
   if (!IsCompatibleAssertionDescription(request.description())) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Incompatible assertion description");
   }
 
-  LocalAssertionRequestAdditionalInfo additional_info;
+  sgx::LocalAssertionRequestAdditionalInfo additional_info;
   if (!additional_info.ParseFromString(request.additional_information())) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to parse request additional information");
@@ -211,7 +211,6 @@ LocalAssertionGenerator::ParseAdditionalInfo(
 
 // Static registration of the LocalAssertionGenerator library.
 SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(AssertionGeneratorMap,
-                                     LocalAssertionGenerator);
+                                     SgxLocalAssertionGenerator);
 
-}  // namespace sgx
 }  // namespace asylo

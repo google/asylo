@@ -805,9 +805,9 @@ asylo/identity/identity_expectation_matcher.h \
 asylo/identity/null_identity/null_assertion_generator.h \
 asylo/identity/null_identity/null_assertion_verifier.h \
 asylo/identity/secret_sealer.h \
-asylo/identity/sgx/local_assertion_generator.h \
-asylo/identity/sgx/local_assertion_verifier.h \
-asylo/identity/sgx/local_secret_sealer.h \
+asylo/identity/sgx/sgx_local_assertion_generator.h \
+asylo/identity/sgx/sgx_local_assertion_verifier.h \
+asylo/identity/sgx/sgx_local_secret_sealer.h \
 asylo/platform/core/enclave_client.h \
 asylo/platform/core/enclave_config_util.h \
 asylo/platform/core/enclave_manager.h \

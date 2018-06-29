@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/local_assertion_verifier.h"
+#include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 
 #include <string>
 
@@ -30,14 +30,13 @@
 #include "asylo/platform/crypto/sha256_hash.h"
 
 namespace asylo {
-namespace sgx {
 
-const char *const LocalAssertionVerifier::authority_type_ =
-    kSgxLocalAssertionAuthority;
+const char *const SgxLocalAssertionVerifier::authority_type_ =
+    sgx::kSgxLocalAssertionAuthority;
 
-LocalAssertionVerifier::LocalAssertionVerifier() : initialized_(false) {}
+SgxLocalAssertionVerifier::SgxLocalAssertionVerifier() : initialized_(false) {}
 
-Status LocalAssertionVerifier::Initialize(const std::string &config) {
+Status SgxLocalAssertionVerifier::Initialize(const std::string &config) {
   if (IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION,
                   "Already initialized");
@@ -63,18 +62,20 @@ Status LocalAssertionVerifier::Initialize(const std::string &config) {
   return Status::OkStatus();
 }
 
-bool LocalAssertionVerifier::IsInitialized() const {
+bool SgxLocalAssertionVerifier::IsInitialized() const {
   absl::MutexLock lock(&initialized_mu_);
   return initialized_;
 }
 
-EnclaveIdentityType LocalAssertionVerifier::IdentityType() const {
+EnclaveIdentityType SgxLocalAssertionVerifier::IdentityType() const {
   return identity_type_;
 }
 
-std::string LocalAssertionVerifier::AuthorityType() const { return authority_type_; }
+std::string SgxLocalAssertionVerifier::AuthorityType() const {
+  return authority_type_;
+}
 
-Status LocalAssertionVerifier::CreateAssertionRequest(
+Status SgxLocalAssertionVerifier::CreateAssertionRequest(
     AssertionRequest *request) const {
   if (!IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
@@ -83,7 +84,7 @@ Status LocalAssertionVerifier::CreateAssertionRequest(
   request->mutable_description()->set_identity_type(IdentityType());
   request->mutable_description()->set_authority_type(AuthorityType());
 
-  LocalAssertionRequestAdditionalInfo additional_info;
+  sgx::LocalAssertionRequestAdditionalInfo additional_info;
   additional_info.set_local_attestation_domain(attestation_domain_);
 
   // The request contains a dump of the raw TARGETINFO structure, which
@@ -93,8 +94,8 @@ Status LocalAssertionVerifier::CreateAssertionRequest(
   // structure. An SGX enclave that receives the request can reconstruct the
   // original structure directly from the byte field in the AssertionRequest
   // proto.
-  Targetinfo targetinfo;
-  SetTargetinfoFromSelfIdentity(&targetinfo);
+  sgx::Targetinfo targetinfo;
+  sgx::SetTargetinfoFromSelfIdentity(&targetinfo);
   additional_info.set_targetinfo(reinterpret_cast<const char *>(&targetinfo),
                                  sizeof(targetinfo));
 
@@ -107,7 +108,7 @@ Status LocalAssertionVerifier::CreateAssertionRequest(
   return Status::OkStatus();
 }
 
-StatusOr<bool> LocalAssertionVerifier::CanVerify(
+StatusOr<bool> SgxLocalAssertionVerifier::CanVerify(
     const AssertionOffer &offer) const {
   if (!IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
@@ -118,7 +119,7 @@ StatusOr<bool> LocalAssertionVerifier::CanVerify(
                   "AssertionOffer has incompatible assertion description");
   }
 
-  LocalAssertionOfferAdditionalInfo additional_info;
+  sgx::LocalAssertionOfferAdditionalInfo additional_info;
   if (!additional_info.ParseFromString(offer.additional_information())) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to parse offer additional information");
@@ -127,9 +128,9 @@ StatusOr<bool> LocalAssertionVerifier::CanVerify(
   return additional_info.local_attestation_domain() == attestation_domain_;
 }
 
-Status LocalAssertionVerifier::Verify(const std::string &user_data,
-                                      const Assertion &assertion,
-                                      EnclaveIdentity *peer_identity) const {
+Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
+                                         const Assertion &assertion,
+                                         EnclaveIdentity *peer_identity) const {
   if (!IsInitialized()) {
     return Status(error::GoogleError::FAILED_PRECONDITION, "Not initialized");
   }
@@ -139,13 +140,13 @@ Status LocalAssertionVerifier::Verify(const std::string &user_data,
                   "Assertion has incompatible assertion description");
   }
 
-  LocalAssertion local_assertion;
+  sgx::LocalAssertion local_assertion;
   if (!local_assertion.ParseFromString(assertion.assertion())) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to parse LocalAssertion");
   }
 
-  Report report;
+  sgx::Report report;
   if (local_assertion.report().size() != sizeof(report)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "REPORT from Assertion has incorrect size");
@@ -159,8 +160,8 @@ Status LocalAssertionVerifier::Verify(const std::string &user_data,
   // assertion originates from a machine that supports the Intel SGX
   // architecture and was copied into the assertion byte-for-byte, so is safe to
   // restore the REPORT structure directly from the deserialized LocalAssertion.
-  report = TrivialObjectFromBinaryString<Report>(local_assertion.report());
-  Status status = VerifyHardwareReport(report);
+  report = TrivialObjectFromBinaryString<sgx::Report>(local_assertion.report());
+  Status status = sgx::VerifyHardwareReport(report);
   if (!status.ok()) {
     return status;
   }
@@ -171,8 +172,9 @@ Status LocalAssertionVerifier::Verify(const std::string &user_data,
   // actual REPORTDATA inside the REPORT.
   Sha256Hash hash;
   hash.Update(user_data.data(), user_data.size());
-  Reportdata expected_reportdata;
-  expected_reportdata.data = TrivialZeroObject<UnsafeBytes<kReportdataSize>>();
+  sgx::Reportdata expected_reportdata;
+  expected_reportdata.data =
+      TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
   expected_reportdata.data.replace(/*pos=*/0, hash.Hash());
 
   if (expected_reportdata.data != report.reportdata.data) {
@@ -182,8 +184,8 @@ Status LocalAssertionVerifier::Verify(const std::string &user_data,
 
   // Serialize the protobuf representation of the peer's SGX code identity and
   // save it in |peer_identity|.
-  CodeIdentity code_identity;
-  status = ParseIdentityFromHardwareReport(report, &code_identity);
+  sgx::CodeIdentity code_identity;
+  status = sgx::ParseIdentityFromHardwareReport(report, &code_identity);
   if (!status.ok()) {
     return status;
   }
@@ -193,14 +195,13 @@ Status LocalAssertionVerifier::Verify(const std::string &user_data,
                   "Failed to serialize CodeIdentity");
   }
 
-  SetSgxIdentityDescription(peer_identity->mutable_description());
+  sgx::SetSgxIdentityDescription(peer_identity->mutable_description());
 
   return Status::OkStatus();
 }
 
 // Static registration of the LocalAssertionVerifier library.
 SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(AssertionVerifierMap,
-                                     LocalAssertionVerifier);
+                                     SgxLocalAssertionVerifier);
 
-}  // namespace sgx
 }  // namespace asylo
