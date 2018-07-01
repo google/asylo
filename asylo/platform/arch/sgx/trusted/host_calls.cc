@@ -582,6 +582,22 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   return ret;
 }
 
+int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
+                              socklen_t *addrlen) {
+  int ret;
+  bridge_size_t tmp_addrlen = static_cast<bridge_size_t>(*addrlen);
+  struct bridge_sockaddr tmp;
+  sgx_status_t status =
+      ocall_enc_untrusted_getpeername(&ret, sockfd, &tmp, &tmp_addrlen);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  *addrlen = static_cast<socklen_t>(tmp_addrlen);
+  FromBridgeSockaddr(&tmp, addr);
+  return ret;
+}
+
 //////////////////////////////////////
 //           Threading              //
 //////////////////////////////////////

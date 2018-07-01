@@ -117,6 +117,8 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
                              socklen_t *optlen);
 int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen);
+int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
+                              socklen_t *addrlen);
 
 //////////////////////////////////////
 //            Threading             //

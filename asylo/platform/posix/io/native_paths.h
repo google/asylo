@@ -52,6 +52,7 @@ class IOContextNative : public IOManager::IOContext {
   ssize_t SendMsg(const struct msghdr *msg, int flags) override;
   ssize_t RecvMsg(struct msghdr *msg, int flags) override;
   int GetSockName(struct sockaddr *addr, socklen_t *addrlen) override;
+  int GetPeerName(struct sockaddr *addr, socklen_t *addrlen) override;
   int GetHostFileDescriptor() override;
 
  private:

@@ -79,6 +79,8 @@ int getsockopt(int sockfd, int level, int optname, void *optval,
 
 int getsockname(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
+int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
 int listen(int sockfd, int backlog);
 
 // No implemention provided.

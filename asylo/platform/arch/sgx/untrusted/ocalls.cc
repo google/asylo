@@ -338,6 +338,17 @@ int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr,
   return ret;
 }
 
+int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr,
+                                    bridge_size_t *addrlen) {
+  struct sockaddr_storage tmp;
+  socklen_t tmp_len = sizeof(tmp);
+  int ret =
+      getpeername(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
+  ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
+  *addrlen = static_cast<bridge_size_t>(tmp_len);
+  return ret;
+}
+
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////

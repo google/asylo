@@ -185,6 +185,12 @@ class IOManager {
       return -1;
     }
 
+    // Implements getpeername.
+    virtual int GetPeerName(struct sockaddr *addr, socklen_t *addrlen) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     virtual int GetHostFileDescriptor() { return -1; }
 
    private:
@@ -474,6 +480,9 @@ class IOManager {
 
   // Implements getsockname(2).
   int GetSockName(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+
+  // Implements getpeername(2).
+  int GetPeerName(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
   // Implements socket(2).
   int Socket(int domain, int type, int protocol);

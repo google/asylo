@@ -151,6 +151,11 @@ enclave {
                                         [in, out] bridge_size_t *addrlen)
                                         propagate_errno;
 
+    int ocall_enc_untrusted_getpeername(int sockfd,
+                                        [out] struct bridge_sockaddr *addr,
+                                        [in, out] bridge_size_t *addrlen)
+                                        propagate_errno;
+
     //////////////////////////////////////
     //           Threading              //
     //////////////////////////////////////

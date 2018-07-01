@@ -108,6 +108,10 @@ int IOContextNative::GetSockName(struct sockaddr *addr, socklen_t *addrlen) {
   return enc_untrusted_getsockname(host_fd_, addr, addrlen);
 }
 
+int IOContextNative::GetPeerName(struct sockaddr *addr, socklen_t *addrlen) {
+  return enc_untrusted_getpeername(host_fd_, addr, addrlen);
+}
+
 int IOContextNative::GetHostFileDescriptor() { return host_fd_; }
 
 std::unique_ptr<IOManager::IOContext> NativePathHandler::Open(const char *path,

@@ -728,6 +728,13 @@ int IOManager::GetSockName(int sockfd, struct sockaddr *addr,
   });
 }
 
+int IOManager::GetPeerName(int sockfd, struct sockaddr *addr,
+                           socklen_t *addrlen) {
+  return LockAndRoll(sockfd, [addr, addrlen](IOContext *context) {
+    return context->GetPeerName(addr, addrlen);
+  });
+}
+
 int IOManager::RegisterHostFileDescriptor(int host_fd) {
   auto context = ::absl::make_unique<IOContextNative>(host_fd);
   int fd = fd_table_.Insert(context.get());
