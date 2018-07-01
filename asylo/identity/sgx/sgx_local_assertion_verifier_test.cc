@@ -288,7 +288,7 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
   hash.Update(kUserData, strlen(kUserData));
   sgx::AlignedReportdataPtr reportdata;
   *reportdata = TrivialZeroObject<sgx::Reportdata>();
-  reportdata->data.replace(/*pos=*/0, hash.Hash());
+  reportdata->data.replace(/*pos=*/0, hash.CumulativeHash());
 
   // A REPORT with an empty target will not verifiable by this enclave.
   sgx::AlignedTargetinfoPtr targetinfo;
@@ -347,7 +347,7 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   hash.Update(kUserData, strlen(kUserData));
   sgx::AlignedReportdataPtr reportdata;
   *reportdata = TrivialZeroObject<sgx::Reportdata>();
-  reportdata->data.replace(/*pos=*/0, hash.Hash());
+  reportdata->data.replace(/*pos=*/0, hash.CumulativeHash());
 
   sgx::AlignedTargetinfoPtr targetinfo;
   sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());

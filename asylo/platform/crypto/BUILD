@@ -27,6 +27,7 @@ load("//asylo/bazel:asylo.bzl", "cc_test")
 cc_library(
     name = "hash_interface",
     hdrs = ["hash_interface.h"],
+    deps = ["//asylo/crypto:algorithms_proto_cc"],
 )
 
 # Implementation of HashInterface for SHA256.
@@ -49,6 +50,7 @@ cc_test(
     deps = [
         ":sha256_hash",
         "//asylo/test/util:test_main",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

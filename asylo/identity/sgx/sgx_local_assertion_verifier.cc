@@ -175,7 +175,7 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   sgx::Reportdata expected_reportdata;
   expected_reportdata.data =
       TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  expected_reportdata.data.replace(/*pos=*/0, hash.Hash());
+  expected_reportdata.data.replace(/*pos=*/0, hash.CumulativeHash());
 
   if (expected_reportdata.data != report.reportdata.data) {
     return Status(error::GoogleError::INTERNAL,

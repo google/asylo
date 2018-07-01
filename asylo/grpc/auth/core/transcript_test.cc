@@ -45,11 +45,16 @@ const int kInputStreamBlockSize = 4;
 // is simply a concatenation of all bytes that have been added.
 class FakeHash final : public HashInterface {
  public:
+  HashAlgorithm Algorithm() const override {
+    return HashAlgorithm::UNKNOWN_HASH_ALGORITHM;
+  }
+  size_t DigestSize() const override { return 0; }
+  void Init() override {}
   void Update(const void *data, size_t len) override {
     data_.append(reinterpret_cast<const char *>(data), len);
   }
 
-  std::string Hash() override { return data_; }
+  std::string CumulativeHash() override { return data_; }
 
  private:
   std::string data_;
@@ -96,7 +101,7 @@ TYPED_TEST(TranscriptTest, HashSameAsUnderlyingHash) {
   TypeParam hash;
   hash.Update(kData1, strlen(kData1));
   hash.Update(kData2, strlen(kData2));
-  std::string digest1 = hash.Hash();
+  std::string digest1 = hash.CumulativeHash();
 
   Transcript transcript;
   AddFromString(kData1, &transcript);

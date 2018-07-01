@@ -35,6 +35,7 @@ bool Transcript::SetHasher(HashInterface *hasher) {
     return false;
   }
   hasher_.reset(hasher);
+  hasher_->Init();
   hasher_->Update(bytes_to_hash_.data(), bytes_to_hash_.size());
   bytes_to_hash_.clear();
   return true;
@@ -44,7 +45,7 @@ bool Transcript::Hash(std::string *digest) {
   if (!hasher_) {
     return false;
   }
-  *digest = hasher_->Hash();
+  *digest = hasher_->CumulativeHash();
   return true;
 }
 

@@ -163,7 +163,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   Sha256Hash hash;
   hash.Update(user_data.data(), user_data.size());
   reportdata->data = TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  reportdata->data.replace(/*pos=*/0, hash.Hash());
+  reportdata->data.replace(/*pos=*/0, hash.CumulativeHash());
 
   // Generate a REPORT that is bound to the provided |user_data| and is targeted
   // at the enclave described in the request.

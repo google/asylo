@@ -16,8 +16,19 @@
 
 licenses(["notice"])  # Apache v2.0
 
+package(default_visibility = ["//asylo:implementation"])
+
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+
 # Asylo Crypto library
 
+# Defines an enum for various hashing algorithms.
+asylo_proto_library(
+    name = "algorithms_proto",
+    srcs = ["algorithms.proto"],
+)
+
+# AES-GCM-SIV cryptor
 cc_library(
     name = "aes_gcm_siv",
     hdrs = [

@@ -371,7 +371,7 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
   hash.Update(kUserData, strlen(kUserData));
   auto expected_reportdata =
       TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  expected_reportdata.replace(/*pos=*/0, hash.Hash());
+  expected_reportdata.replace(/*pos=*/0, hash.CumulativeHash());
   EXPECT_EQ(report->reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.

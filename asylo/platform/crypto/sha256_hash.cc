@@ -22,13 +22,19 @@
 
 namespace asylo {
 
-Sha256Hash::Sha256Hash() { SHA256_Init(&context_); }
+Sha256Hash::Sha256Hash() { Init(); }
+
+HashAlgorithm Sha256Hash::Algorithm() const { return HashAlgorithm::SHA256; }
+
+size_t Sha256Hash::DigestSize() const { return SHA256_DIGEST_LENGTH; }
+
+void Sha256Hash::Init() { SHA256_Init(&context_); }
 
 void Sha256Hash::Update(const void *data, size_t len) {
   SHA256_Update(&context_, data, len);
 }
 
-std::string Sha256Hash::Hash() {
+std::string Sha256Hash::CumulativeHash() {
   // Do not finalize the internally stored hash context. Instead, finalize a
   // copy of the current context so that the current context can be updated in
   // future calls to Update.

@@ -18,6 +18,8 @@
 
 #include "asylo/platform/crypto/sha256_hash.h"
 
+#include <openssl/sha.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
@@ -41,24 +43,41 @@ constexpr char kResult2[] =
 constexpr char kSuffix[] =
     "dbcdecdefdefgefghfghighijhijkijkljklmklmnlmnomnopnopq";
 
+TEST(Sha256HashTest, Algorithm) {
+  Sha256Hash hash;
+  EXPECT_EQ(hash.Algorithm(), HashAlgorithm::SHA256);
+}
+
+TEST(Sha256HashTest, DigestSize) {
+  Sha256Hash hash;
+  EXPECT_EQ(hash.DigestSize(), SHA256_DIGEST_LENGTH);
+}
+
 // The following two tests verify the correctness of the Sha256Hash wrapper
 // implementation by testing against standard SHA test vectors.
 
 TEST(Sha256HashTest, TestVector1) {
   Sha256Hash hash;
   hash.Update(kTestVector1, strlen(kTestVector1));
-  EXPECT_EQ(absl::BytesToHexString(hash.Hash()), kResult1);
+  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult1);
 }
 
 TEST(Sha256HashTest, TestVector2) {
   Sha256Hash hash;
   hash.Update(kTestVector2, strlen(kTestVector2));
-  EXPECT_EQ(absl::BytesToHexString(hash.Hash()), kResult2);
+  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult2);
 }
 
-TEST(Sha256HashTest, SmallInput) {
+// Verify that calling Init() after addition of some data resets the object to
+// a clean state, allowing a new hash operation to take place.
+TEST(Sha256HashTest, InitBetweenUpdates) {
   Sha256Hash hash;
-  hash.Update("User data", 9);
+  hash.Update(kTestVector1, strlen(kTestVector1));
+
+  hash.Init();
+
+  hash.Update(kTestVector2, strlen(kTestVector2));
+  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult2);
 }
 
 // Verify that the correct hash is computed when the input is added over several
@@ -66,10 +85,10 @@ TEST(Sha256HashTest, SmallInput) {
 TEST(Sha256HashTest, MultipleUpdates) {
   Sha256Hash hash;
   hash.Update(kTestVector1, strlen(kTestVector1));
-  EXPECT_EQ(absl::BytesToHexString(hash.Hash()), kResult1);
+  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult1);
 
   hash.Update(kSuffix, strlen(kSuffix));
-  EXPECT_EQ(absl::BytesToHexString(hash.Hash()), kResult2);
+  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult2);
 }
 
 }  // namespace
