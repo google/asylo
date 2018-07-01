@@ -34,7 +34,7 @@ void Sha256Hash::Update(const void *data, size_t len) {
   SHA256_Update(&context_, data, len);
 }
 
-std::string Sha256Hash::CumulativeHash() {
+std::string Sha256Hash::CumulativeHash() const {
   // Do not finalize the internally stored hash context. Instead, finalize a
   // copy of the current context so that the current context can be updated in
   // future calls to Update.

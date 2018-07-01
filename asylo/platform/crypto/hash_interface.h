@@ -59,8 +59,10 @@ class HashInterface {
   // Updates this hash object by adding |len| bytes from |data|.
   virtual void Update(const void *data, size_t len) = 0;
 
-  // Returns a string containing the current hash.
-  virtual std::string CumulativeHash() = 0;
+  // Returns a string containing the current hash. Note that the internal state
+  // of the object remains unchanged, and the object can continue to accumulate
+  // additional data via Update() operations.
+  virtual std::string CumulativeHash() const = 0;
 };
 
 }  // namespace asylo

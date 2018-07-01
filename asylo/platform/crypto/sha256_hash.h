@@ -37,7 +37,7 @@ class Sha256Hash final : public HashInterface {
   size_t DigestSize() const override;
   void Init() override;
   void Update(const void *data, size_t len) override;
-  std::string CumulativeHash() override;
+  std::string CumulativeHash() const override;
 
  private:
   SHA256_CTX context_;
