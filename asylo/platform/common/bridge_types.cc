@@ -196,6 +196,20 @@ struct bridge_siginfo_t *ToBridgeSigInfo(
   return bridge_siginfo;
 }
 
+int FromBridgeAddressInfoFlags(int bridge_ai_flag) {
+  int ai_flag = 0;
+  if (bridge_ai_flag & BRIDGE_AI_CANONNAME) ai_flag |= AI_CANONNAME;
+  if (bridge_ai_flag & BRIDGE_AI_NUMERICHOST) ai_flag |= AI_NUMERICHOST;
+  return ai_flag;
+}
+
+int ToBridgeAddressInfoFlags(int ai_flag) {
+  int bridge_ai_flag = 0;
+  if (ai_flag & AI_CANONNAME) bridge_ai_flag |= BRIDGE_AI_CANONNAME;
+  if (ai_flag & AI_NUMERICHOST) bridge_ai_flag |= BRIDGE_AI_NUMERICHOST;
+  return bridge_ai_flag;
+}
+
 int FromBridgeFileFlags(int bridge_file_flag) {
   int file_flag = 0;
   if (bridge_file_flag & RDONLY) file_flag |= O_RDONLY;

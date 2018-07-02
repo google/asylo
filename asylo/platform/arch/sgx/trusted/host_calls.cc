@@ -516,7 +516,16 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
                               const struct addrinfo *hints,
                               struct addrinfo **res) {
   std::string serialized_hints;
-  if (!asylo::SerializeAddrinfo(hints, &serialized_hints)) return -1;
+  struct addrinfo bridge_hints;
+  if (hints) {
+    bridge_hints = *hints;
+    bridge_hints.ai_flags = ToBridgeAddressInfoFlags(bridge_hints.ai_flags);
+  }
+  // Serialize an empty addrinfo if |hints| is nullptr.
+  if (!asylo::SerializeAddrinfo(hints ? &bridge_hints : nullptr,
+                                &serialized_hints)) {
+    return -1;
+  }
 
   int ret;
   char *tmp_serialized_res_start;

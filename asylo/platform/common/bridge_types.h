@@ -19,6 +19,7 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 
+#include <netdb.h>
 #include <signal.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -91,6 +92,12 @@ enum SignalCode {
   BRIDGE_SI_TIMER = 3,
   BRIDGE_SI_ASYNCIO = 4,
   BRIDGE_SI_MESGQ = 5,
+};
+
+// The address info flags that specifies options of an addrinfo struct.
+enum AddrInfoFlags {
+  BRIDGE_AI_CANONNAME = 0x0002,
+  BRIDGE_AI_NUMERICHOST = 0x0004,
 };
 
 // All of the file operation flags that we allow to be called outside the
@@ -270,6 +277,14 @@ siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,
 // Converts |siginfo| to a bridge siginfo_t. Returns nullptr if unsuccessful.
 struct bridge_siginfo_t *ToBridgeSigInfo(
     const siginfo_t *siginfo, struct bridge_siginfo_t *bridge_siginfo);
+
+// Converts |bridge_ai_flag| to a runtime file flag. Returns 0 if no supported
+// flags are provided.
+int FromBridgeAddressInfoFlags(int bridge_ai_flag);
+
+// Converts |ai_flag| to a bridge address info flag. Returns 0 if no supported
+// flags are provided.
+int ToBridgeAddressInfoFlags(int ai_flag);
 
 // Converts |bridge_file_flag| to a runtime file flag.
 int FromBridgeFileFlags(int bridge_file_flag);

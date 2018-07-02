@@ -31,7 +31,8 @@ const char *gai_strerror(int ecode);
 #include <netinet/in.h>
 
 /* Values for 'ai_flags' field in 'addrinfo' structure. */
-#define AI_CANONNAME 0x0002;
+#define AI_CANONNAME 0x0002
+#define AI_NUMERICHOST 0x0004
 
 // Description of data base entry for a single host.
 struct hostent {

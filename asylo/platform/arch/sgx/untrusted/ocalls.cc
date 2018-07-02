@@ -295,6 +295,9 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
   if (!asylo::DeserializeAddrinfo(&tmp_serialized_hints, &hints)) {
     return -1;
   }
+  if (hints) {
+    hints->ai_flags = FromBridgeAddressInfoFlags(hints->ai_flags);
+  }
 
   struct addrinfo *res;
   int ret = getaddrinfo(node, service, hints, &res);
