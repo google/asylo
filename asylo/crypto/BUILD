@@ -32,8 +32,8 @@ asylo_proto_library(
 cc_library(
     name = "aes_gcm_siv",
     hdrs = [
-        "aes_gcm_siv.h",
-        "nonce_generator.h",
+        "aes_gcm_siv_forwarder.h",
+        "nonce_generator_forwarder.h",
     ],
     visibility = ["//visibility:public"],
     deps = [
