@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/enclave_assertion_verifier.h"
 #include "asylo/identity/identity.pb.h"
@@ -33,7 +34,6 @@
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/util/trivial_object_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
-#include "asylo/platform/crypto/sha256_hash.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {

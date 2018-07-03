@@ -16,25 +16,33 @@
  *
  */
 
-#include "asylo/platform/crypto/aes_gcm_siv.h"
+#ifndef ASYLO_CRYPTO_SHA256_HASH_H_
+#define ASYLO_CRYPTO_SHA256_HASH_H_
 
-#include <openssl/rand.h>
+#include <openssl/sha.h>
+
 #include <string>
 
-#include "absl/strings/str_cat.h"
-#include "asylo/platform/crypto/util/bssl_util.h"
-#include "asylo/util/status.h"
+#include "asylo/crypto/hash_interface.h"
 
 namespace asylo {
 
-Status AesGcmSivNonceGenerator::NextNonce(
-    const std::vector<uint8_t> &key_id,
-    AesGcmSivNonceGenerator::AesGcmSivNonce *nonce) {
-  if (RAND_bytes(nonce->data(), nonce->size()) != 1) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("RAND_bytes failed", BsslLastErrorString()));
-  }
-  return Status::OkStatus();
-}
+// Sha256Hash implements HashInterface for the SHA-256 hash function.
+class Sha256Hash final : public HashInterface {
+ public:
+  Sha256Hash();
+
+  // From HashInterface.
+  HashAlgorithm Algorithm() const override;
+  size_t DigestSize() const override;
+  void Init() override;
+  void Update(const void *data, size_t len) override;
+  std::string CumulativeHash() const override;
+
+ private:
+  SHA256_CTX context_;
+};
 
 }  // namespace asylo
+
+#endif  // ASYLO_CRYPTO_SHA256_HASH_H_

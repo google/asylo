@@ -791,6 +791,8 @@ WARN_LOGFILE           =
 # Note: If this tag is empty the current directory is searched.
 
 INPUT                  = \
+asylo/crypto/aes_gcm_siv.h \
+asylo/crypto/nonce_generator.h \
 asylo/grpc/auth/enclave_auth_context.h \
 asylo/grpc/auth/enclave_channel_credentials.h \
 asylo/grpc/auth/enclave_credentials_options.h \
@@ -815,8 +817,6 @@ asylo/platform/core/shared_name.h \
 asylo/platform/core/shared_name_kind.h \
 asylo/platform/core/shared_resource_manager.h \
 asylo/platform/core/trusted_application.h \
-asylo/platform/crypto/aes_gcm_siv.h \
-asylo/platform/crypto/nonce_generator.h \
 asylo/util/error_space.h \
 asylo/util/posix_error_space.h \
 asylo/util/logging.h \

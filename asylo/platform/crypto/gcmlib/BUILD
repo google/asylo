@@ -38,9 +38,9 @@ cc_library(
     srcs = ["gcm_cryptor.cc"],
     hdrs = ["gcm_cryptor.h"],
     deps = [
+        "//asylo/crypto/util:bssl_util",
         "//asylo/identity/util:byte_container_view",
         "//asylo/identity/util:bytes",
-        "//asylo/platform/crypto/util:bssl_util",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",

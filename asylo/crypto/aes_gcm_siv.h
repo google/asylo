@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_CRYPTO_AES_GCM_SIV_H_
-#define ASYLO_PLATFORM_CRYPTO_AES_GCM_SIV_H_
+#ifndef ASYLO_CRYPTO_AES_GCM_SIV_H_
+#define ASYLO_CRYPTO_AES_GCM_SIV_H_
 
 #include <openssl/evp.h>
 #include <openssl/sha.h>
@@ -25,10 +25,10 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/nonce_generator.h"
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/util/bytes.h"
-#include "asylo/platform/crypto/nonce_generator.h"
-#include "asylo/platform/crypto/util/bssl_util.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -346,4 +346,4 @@ class AesGcmSivCryptor {
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_CRYPTO_AES_GCM_SIV_H_
+#endif  // ASYLO_CRYPTO_AES_GCM_SIV_H_

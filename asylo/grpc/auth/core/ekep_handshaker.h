@@ -23,6 +23,7 @@
 
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/message.h>
+#include "asylo/crypto/hash_interface.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/grpc/auth/core/transcript.h"
 #include "asylo/grpc/auth/util/multi_buffer_input_stream.h"

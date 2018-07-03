@@ -29,9 +29,9 @@
 #include <memory>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/ekep_error_space.h"
-#include "asylo/platform/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

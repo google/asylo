@@ -16,17 +16,18 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_CRYPTO_UTIL_BSSL_UTIL_H_
-#define ASYLO_PLATFORM_CRYPTO_UTIL_BSSL_UTIL_H_
+#include "asylo/crypto/util/bssl_util.h"
 
-#include <openssl/err.h>
 #include <string>
 
 namespace asylo {
 
-// Returns a string description of the last error encountered by BoringSSL.
-std::string BsslLastErrorString();
+std::string BsslLastErrorString() {
+  static constexpr int kErrorStringBufferLength = 256;
+  static char buffer[kErrorStringBufferLength];
+  ERR_error_string_n(ERR_get_error(), buffer, sizeof(buffer));
+  ERR_clear_error();
+  return std::string(buffer, sizeof(buffer));
+}
 
 }  // namespace asylo
-
-#endif  // ASYLO_PLATFORM_CRYPTO_UTIL_BSSL_UTIL_H_

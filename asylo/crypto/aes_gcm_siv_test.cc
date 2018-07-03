@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/crypto/aes_gcm_siv.h"
+#include "asylo/crypto/aes_gcm_siv.h"
 
 #include <string>
 #include <utility>
@@ -25,10 +25,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "asylo/crypto/nonce_generator.h"
 #include "asylo/identity/util/byte_container_view.h"
 #include "asylo/identity/util/bytes.h"
 #include "asylo/identity/util/trivial_object_util.h"
-#include "asylo/platform/crypto/nonce_generator.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 

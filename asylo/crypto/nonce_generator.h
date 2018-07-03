@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_CRYPTO_NONCE_GENERATOR_H_
-#define ASYLO_PLATFORM_CRYPTO_NONCE_GENERATOR_H_
+#ifndef ASYLO_CRYPTO_NONCE_GENERATOR_H_
+#define ASYLO_CRYPTO_NONCE_GENERATOR_H_
 
 #include <string>
 
@@ -65,4 +65,4 @@ class NonceGenerator {
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_CRYPTO_NONCE_GENERATOR_H_
+#endif  // ASYLO_CRYPTO_NONCE_GENERATOR_H_

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_CRYPTO_HASH_INTERFACE_H_
-#define ASYLO_PLATFORM_CRYPTO_HASH_INTERFACE_H_
+#ifndef ASYLO_CRYPTO_HASH_INTERFACE_H_
+#define ASYLO_CRYPTO_HASH_INTERFACE_H_
 
 #include <cstdint>
 #include <cstdlib>
@@ -67,4 +67,4 @@ class HashInterface {
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_CRYPTO_HASH_INTERFACE_H_
+#endif  // ASYLO_CRYPTO_HASH_INTERFACE_H_

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/crypto/sha256_hash.h"
+#include "asylo/crypto/sha256_hash.h"
 
 #include <openssl/sha.h>
 

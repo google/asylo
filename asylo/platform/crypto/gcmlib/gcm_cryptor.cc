@@ -29,10 +29,10 @@
 #include <ctime>
 
 #include "absl/memory/memory.h"
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/util/byte_container_view.h"
 #include "asylo/identity/util/bytes.h"
-#include "asylo/platform/crypto/util/bssl_util.h"
 
 namespace asylo {
 namespace platform {

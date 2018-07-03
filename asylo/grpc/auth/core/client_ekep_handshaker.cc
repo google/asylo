@@ -26,13 +26,13 @@
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/ekep_crypto.h"
 #include "asylo/grpc/auth/core/ekep_error_space.h"
 #include "asylo/grpc/auth/core/ekep_handshaker_util.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/platform/crypto/sha256_hash.h"
 #include "asylo/util/cleansing_types.h"
 
 namespace asylo {

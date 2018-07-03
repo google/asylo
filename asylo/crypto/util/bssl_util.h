@@ -16,33 +16,17 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_CRYPTO_SHA256_HASH_H_
-#define ASYLO_PLATFORM_CRYPTO_SHA256_HASH_H_
+#ifndef ASYLO_CRYPTO_UTIL_BSSL_UTIL_H_
+#define ASYLO_CRYPTO_UTIL_BSSL_UTIL_H_
 
-#include <openssl/sha.h>
-
+#include <openssl/err.h>
 #include <string>
-
-#include "asylo/platform/crypto/hash_interface.h"
 
 namespace asylo {
 
-// Sha256Hash implements HashInterface for the SHA-256 hash function.
-class Sha256Hash final : public HashInterface {
- public:
-  Sha256Hash();
-
-  // From HashInterface.
-  HashAlgorithm Algorithm() const override;
-  size_t DigestSize() const override;
-  void Init() override;
-  void Update(const void *data, size_t len) override;
-  std::string CumulativeHash() const override;
-
- private:
-  SHA256_CTX context_;
-};
+// Returns a string description of the last error encountered by BoringSSL.
+std::string BsslLastErrorString();
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_CRYPTO_SHA256_HASH_H_
+#endif  // ASYLO_CRYPTO_UTIL_BSSL_UTIL_H_

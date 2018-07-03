@@ -21,12 +21,12 @@
 
 #include <memory>
 
+#include "asylo/crypto/aes_gcm_siv.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/secret_sealer.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/util/bit_vector_128.pb.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
-#include "asylo/platform/crypto/aes_gcm_siv.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 

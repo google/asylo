@@ -16,8 +16,9 @@
 
 licenses(["notice"])  # Apache v2.0
 
-# Asylo Crypto Library
 package(default_visibility = ["//asylo:implementation"])
+
+# Asylo Crypto library utilities.
 
 cc_library(
     name = "bssl_util",

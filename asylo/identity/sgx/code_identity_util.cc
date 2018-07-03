@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
@@ -31,7 +32,6 @@
 #include "asylo/identity/util/bit_vector_128_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
-#include "asylo/platform/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

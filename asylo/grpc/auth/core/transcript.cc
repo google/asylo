@@ -19,6 +19,7 @@
 #include "asylo/grpc/auth/core/transcript.h"
 
 #include <google/protobuf/io/zero_copy_stream.h>
+#include "asylo/crypto/hash_interface.h"
 
 namespace asylo {
 

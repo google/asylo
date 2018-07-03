@@ -16,18 +16,25 @@
  *
  */
 
-#include "asylo/platform/crypto/util/bssl_util.h"
+#include "asylo/crypto/aes_gcm_siv.h"
 
+#include <openssl/rand.h>
 #include <string>
+
+#include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/bssl_util.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 
-std::string BsslLastErrorString() {
-  static constexpr int kErrorStringBufferLength = 256;
-  static char buffer[kErrorStringBufferLength];
-  ERR_error_string_n(ERR_get_error(), buffer, sizeof(buffer));
-  ERR_clear_error();
-  return std::string(buffer, sizeof(buffer));
+Status AesGcmSivNonceGenerator::NextNonce(
+    const std::vector<uint8_t> &key_id,
+    AesGcmSivNonceGenerator::AesGcmSivNonce *nonce) {
+  if (RAND_bytes(nonce->data(), nonce->size()) != 1) {
+    return Status(error::GoogleError::INTERNAL,
+                  absl::StrCat("RAND_bytes failed", BsslLastErrorString()));
+  }
+  return Status::OkStatus();
 }
 
 }  // namespace asylo

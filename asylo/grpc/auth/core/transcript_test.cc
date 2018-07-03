@@ -25,8 +25,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "asylo/platform/crypto/hash_interface.h"
-#include "asylo/platform/crypto/sha256_hash.h"
+#include "asylo/crypto/hash_interface.h"
+#include "asylo/crypto/sha256_hash.h"
 
 namespace asylo {
 namespace grpc {

@@ -39,7 +39,7 @@ cc_library(
     srcs = ["attestation_domain.cc"],
     hdrs = ["attestation_domain.h"],
     deps = [
-        "//asylo/platform/crypto/util:bssl_util",
+        "//asylo/crypto/util:bssl_util",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",

@@ -24,7 +24,7 @@
 #include <string>
 
 #include <google/protobuf/io/zero_copy_stream.h>
-#include "asylo/platform/crypto/hash_interface.h"
+#include "asylo/crypto/hash_interface.h"
 
 namespace asylo {
 

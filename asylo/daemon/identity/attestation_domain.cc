@@ -31,8 +31,8 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/crypto/util/bssl_util.h"
 #include "asylo/util/posix_error_space.h"
 
 namespace asylo {
