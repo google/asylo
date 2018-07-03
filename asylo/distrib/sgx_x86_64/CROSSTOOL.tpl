@@ -220,36 +220,6 @@ toolchain {
      implies: 'linker_param_file'
   }
   action_config {
-     config_name: 'c++-link-alwayslink-static-library'
-     action_name: 'c++-link-alwayslink-static-library'
-     tool {
-       tool_path: "bin/x86_64-elf-ar"
-     }
-     implies: 'archiver_flags'
-     implies: 'libraries_to_link'
-     implies: 'linker_param_file'
-  }
-  action_config {
-     config_name: 'c++-link-pic-static-library'
-     action_name: 'c++-link-pic-static-library'
-     tool {
-       tool_path: "bin/x86_64-elf-ar"
-     }
-     implies: 'archiver_flags'
-     implies: 'libraries_to_link'
-     implies: 'linker_param_file'
-  }
-  action_config {
-     config_name: 'c++-link-alwayslink-pic-static-library'
-     action_name: 'c++-link-alwayslink-pic-static-library'
-     tool {
-       tool_path: "bin/x86_64-elf-ar"
-     }
-     implies: 'archiver_flags'
-     implies: 'libraries_to_link'
-     implies: 'linker_param_file'
-  }
-  action_config {
      config_name: 'c++-link-nodeps-dynamic-library'
      action_name: 'c++-link-nodeps-dynamic-library'
      tool {
@@ -290,7 +260,6 @@ toolchain {
       action: 'c-compile'
       action: 'c++-compile'
       action: 'c++-header-parsing'
-      action: 'c++-header-preprocessing'
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       action: 'lto-backend'
@@ -326,9 +295,6 @@ toolchain {
        action: 'c++-link-dynamic-library'
        action: 'c++-link-nodeps-dynamic-library'
        action: 'c++-link-static-library'
-       action: 'c++-link-alwayslink-static-library'
-       action: 'c++-link-pic-static-library'
-       action: 'c++-link-alwayslink-pic-static-library'
        flag_group {
          iterate_over: 'runtime_library_search_directories'
          flag: '-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}'
@@ -346,9 +312,6 @@ toolchain {
          action: 'c++-link-dynamic-library'
          action: 'c++-link-nodeps-dynamic-library'
          action: 'c++-link-static-library'
-         action: 'c++-link-alwayslink-static-library'
-         action: 'c++-link-pic-static-library'
-         action: 'c++-link-alwayslink-pic-static-library'
          flag_group {
              iterate_over: 'library_search_directories'
              flag: "-L%{library_search_directories}"
@@ -362,9 +325,6 @@ toolchain {
       flag_set {
           expand_if_all_available: 'output_execpath'
           action: 'c++-link-static-library'
-          action: 'c++-link-alwayslink-static-library'
-          action: 'c++-link-pic-static-library'
-          action: 'c++-link-alwayslink-pic-static-library'
           flag_group {
               flag: 'rcsD'
               flag: '%{output_execpath}'
@@ -381,9 +341,6 @@ toolchain {
          action: 'c++-link-dynamic-library'
          action: 'c++-link-nodeps-dynamic-library'
          action: 'c++-link-static-library'
-         action: 'c++-link-alwayslink-static-library'
-         action: 'c++-link-pic-static-library'
-         action: 'c++-link-alwayslink-pic-static-library'
          flag_group {
              expand_if_all_available: 'libraries_to_link'
              iterate_over: 'libraries_to_link'
@@ -505,7 +462,6 @@ toolchain {
       action: "c-compile"
       action: "c++-compile"
       action: "c++-module-compile"
-      action: "c++-header-preprocessing"
       action: "c++-header-parsing"
       expand_if_all_available: "dependency_file"
       flag_group {
@@ -553,7 +509,6 @@ toolchain {
       action: "c-compile"
       action: "c++-compile"
       action: "c++-header-parsing"
-      action: "c++-header-preprocessing"
       action: "c++-module-compile"
       action: "clif-match"
       flag_group {
@@ -645,7 +600,6 @@ toolchain {
       action: 'c-compile'
       action: 'c++-compile'
       action: 'c++-header-parsing'
-      action: 'c++-header-preprocessing'
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       action: 'lto-backend'
@@ -667,7 +621,6 @@ toolchain {
       action: 'c-compile'
       action: 'c++-compile'
       action: 'c++-header-parsing'
-      action: 'c++-header-preprocessing'
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       action: 'lto-backend'
@@ -691,7 +644,6 @@ toolchain {
       action: 'c-compile'
       action: 'c++-compile'
       action: 'c++-header-parsing'
-      action: 'c++-header-preprocessing'
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       action: 'lto-backend'
@@ -721,7 +673,6 @@ toolchain {
       action: 'c-compile'
       action: 'c++-compile'
       action: 'c++-header-parsing'
-      action: 'c++-header-preprocessing'
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       flag_group {
@@ -741,7 +692,6 @@ toolchain {
       action: 'c-compile'
       action: 'c++-compile'
       action: 'c++-header-parsing'
-      action: 'c++-header-preprocessing'
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       flag_group {
@@ -776,9 +726,6 @@ toolchain {
       flag_set {
           expand_if_all_available: "linker_param_file"
           action: "c++-link-static-library"
-          action: "c++-link-alwayslink-static-library"
-          action: "c++-link-pic-static-library"
-          action: "c++-link-alwayslink-pic-static-library"
           flag_group {
               flag: "@%{linker_param_file}"
           }
