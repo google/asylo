@@ -23,6 +23,8 @@
 #include <iostream>
 #include <vector>
 
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include <openssl/cmac.h>

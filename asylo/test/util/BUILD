@@ -168,6 +168,7 @@ cc_library(
     ],
     visibility = ["//visibility:public"],
     deps = [
+        "//asylo/crypto/util:bytes",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],

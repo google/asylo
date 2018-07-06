@@ -27,9 +27,9 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
-#include "asylo/identity/util/bytes.h"
-#include "asylo/identity/util/trivial_object_util.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {

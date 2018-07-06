@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "absl/synchronization/mutex.h"
-#include "asylo/identity/util/bytes.h"
+#include "asylo/crypto/util/bytes.h"
 
 namespace asylo {
 namespace platform {

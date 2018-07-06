@@ -16,14 +16,14 @@
  *
  */
 
-#include "asylo/identity/util/byte_container_view.h"
+#include "asylo/crypto/util/byte_container_view.h"
 
 #include <string>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/identity/util/bytes.h"
+#include "asylo/crypto/util/bytes.h"
 
 namespace asylo {
 namespace {

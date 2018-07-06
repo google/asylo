@@ -24,6 +24,8 @@
 #include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
@@ -35,7 +37,6 @@
 #include "asylo/identity/util/bit_vector_128_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
-#include "asylo/identity/util/trivial_object_util.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"

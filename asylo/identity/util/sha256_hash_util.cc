@@ -22,9 +22,9 @@
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/strings/escaping.h"
-#include "asylo/identity/util/bytes.h"
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
-#include "asylo/identity/util/trivial_object_util.h"
 
 namespace asylo {
 

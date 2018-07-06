@@ -22,13 +22,13 @@
 // Note: This is an internal header; it must not be included in any files other
 // than self_identity.cc and fake_self_identity.cc.
 
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/self_identity.h"
 
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/util/trivial_object_util.h"
 
 namespace asylo {
 namespace sgx {

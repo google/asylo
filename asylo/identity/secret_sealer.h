@@ -23,9 +23,9 @@
 #include <string>
 #include <vector>
 
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
-#include "asylo/identity/util/byte_container_view.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"

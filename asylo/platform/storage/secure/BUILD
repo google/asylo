@@ -57,8 +57,8 @@ cc_library(
     hdrs = ["aead_handler.h"],
     deps = [
         ":authenticated_dictionary",
-        "//asylo/identity/util:byte_container_view",
-        "//asylo/identity/util:bytes",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/crypto/util:bytes",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/storage/utils:fd_closer",

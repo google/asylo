@@ -23,6 +23,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"

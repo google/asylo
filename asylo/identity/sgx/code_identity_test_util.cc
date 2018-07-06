@@ -18,6 +18,8 @@
 
 #include "asylo/identity/sgx/code_identity_test_util.h"
 
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"

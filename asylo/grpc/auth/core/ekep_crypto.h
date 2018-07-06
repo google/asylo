@@ -23,8 +23,8 @@
 #include <memory>
 #include <vector>
 
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
-#include "asylo/identity/util/byte_container_view.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 

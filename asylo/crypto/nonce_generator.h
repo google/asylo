@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "asylo/identity/util/bytes.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

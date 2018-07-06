@@ -26,7 +26,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/synchronization/mutex.h"
-#include "asylo/identity/util/bytes.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"
 #include "asylo/platform/storage/secure/authenticated_dictionary.h"
 #include "asylo/platform/storage/secure/ctmmt_authenticated_dictionary.h"

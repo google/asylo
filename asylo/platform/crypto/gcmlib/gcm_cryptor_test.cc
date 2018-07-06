@@ -22,8 +22,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/util/logging.h"
-#include "asylo/identity/util/bytes.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"
 
 namespace asylo {

@@ -22,6 +22,7 @@
 #include <ostream>
 
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {

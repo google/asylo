@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_UTIL_BYTES_H_
-#define ASYLO_IDENTITY_UTIL_BYTES_H_
+#ifndef ASYLO_CRYPTO_UTIL_BYTES_H_
+#define ASYLO_CRYPTO_UTIL_BYTES_H_
 
 #include <algorithm>
 #include <cstdlib>
@@ -25,10 +25,9 @@
 #include <iterator>
 
 #include "absl/base/attributes.h"
+#include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
-#include "asylo/identity/util/byte_container_view.h"
-#include "asylo/identity/util/template_util.h"
-#include "asylo/identity/util/trivial_object_util.h"
 #include "asylo/util/cleansing_allocator.h"
 #include <openssl/mem.h>
 
@@ -414,4 +413,4 @@ inline void PrintTo(const UnsafeBytes<Size> &bytes, std::ostream *os) {
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_UTIL_BYTES_H_
+#endif  // ASYLO_CRYPTO_UTIL_BYTES_H_

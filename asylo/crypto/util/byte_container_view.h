@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_UTIL_BYTE_CONTAINER_VIEW_H_
-#define ASYLO_IDENTITY_UTIL_BYTE_CONTAINER_VIEW_H_
+#ifndef ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_
+#define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_
 
 #include <cstdint>
 #include <cstdlib>
@@ -126,4 +126,4 @@ class ByteContainerView {
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_UTIL_BYTE_CONTAINER_VIEW_H_
+#endif  // ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_

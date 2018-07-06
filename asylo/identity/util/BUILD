@@ -68,53 +68,6 @@ cc_test(
     ],
 )
 
-cc_library(
-    name = "byte_container_view",
-    hdrs = ["byte_container_view.h"],
-    deps = ["@com_google_asylo//asylo/util:logging"],
-)
-
-cc_test(
-    name = "byte_container_view_test",
-    srcs = ["byte_container_view_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
-    deps = [
-        ":byte_container_view",
-        ":bytes",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "bytes",
-    hdrs = [
-        "bytes.h",
-        "template_util.h",
-    ],
-    deps = [
-        ":byte_container_view",
-        ":trivial_object_util",
-        "//asylo/util:cleansing_types",
-        "@boringssl//:crypto",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_asylo//asylo/util:logging",
-    ],
-)
-
-cc_test(
-    name = "bytes_test",
-    srcs = ["bytes_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
-    deps = [
-        ":bytes",
-        ":trivial_object_util",
-        "@com_google_googletest//:gtest_main",
-    ],
-)
-
 asylo_proto_library(
     name = "sha256_hash_proto",
     srcs = ["sha256_hash.proto"],
@@ -125,9 +78,9 @@ cc_library(
     srcs = ["sha256_hash_util.cc"],
     hdrs = ["sha256_hash_util.h"],
     deps = [
-        ":bytes",
         ":sha256_hash_proto_cc",
-        ":trivial_object_util",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
     ],
@@ -140,28 +93,6 @@ cc_test(
     deps = [
         ":sha256_hash_proto_cc",
         ":sha256_hash_util",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "trivial_object_util",
-    hdrs = ["trivial_object_util.h"],
-    deps = [
-        "@boringssl//:crypto",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test(
-    name = "trivial_object_util_test",
-    srcs = ["trivial_object_util_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
-    deps = [
-        ":bytes",
-        ":trivial_object_util",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],

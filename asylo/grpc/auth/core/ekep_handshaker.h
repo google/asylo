@@ -24,11 +24,11 @@
 #include <google/protobuf/io/zero_copy_stream.h>
 #include <google/protobuf/message.h>
 #include "asylo/crypto/hash_interface.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/grpc/auth/core/transcript.h"
 #include "asylo/grpc/auth/util/multi_buffer_input_stream.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/util/byte_container_view.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"

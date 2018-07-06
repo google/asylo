@@ -73,7 +73,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto/util:bssl_util",
-        "//asylo/identity/util:bytes",
+        "//asylo/crypto/util:bytes",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@boringssl//:crypto",
@@ -88,9 +88,9 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":aes_gcm_siv",
-        "//asylo/identity/util:byte_container_view",
-        "//asylo/identity/util:bytes",
-        "//asylo/identity/util:trivial_object_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

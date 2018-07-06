@@ -24,8 +24,8 @@
 
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/util/bit_vector_128.pb.h"
-#include "asylo/identity/util/trivial_object_util.h"
 
 namespace asylo {
 namespace sgx {

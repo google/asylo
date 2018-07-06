@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_UTIL_TRIVIAL_OBJECT_UTIL_H_
-#define ASYLO_IDENTITY_UTIL_TRIVIAL_OBJECT_UTIL_H_
+#ifndef ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_
+#define ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_
 
 #include <type_traits>
 
@@ -103,4 +103,4 @@ const T &TrivialObjectFromBinaryString(absl::string_view view) {
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_UTIL_TRIVIAL_OBJECT_UTIL_H_
+#endif  // ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_

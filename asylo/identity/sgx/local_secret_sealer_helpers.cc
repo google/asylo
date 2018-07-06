@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"

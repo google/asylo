@@ -30,9 +30,9 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/util/logging.h"
-#include "asylo/identity/util/byte_container_view.h"
-#include "asylo/identity/util/bytes.h"
 
 namespace asylo {
 namespace platform {

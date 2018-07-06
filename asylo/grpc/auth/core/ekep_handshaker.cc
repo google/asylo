@@ -28,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/hash_interface.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/ekep_crypto.h"
 #include "asylo/grpc/auth/core/ekep_error_space.h"

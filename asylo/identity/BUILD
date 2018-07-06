@@ -89,8 +89,8 @@ cc_library(
     deps = [
         ":identity_proto_cc",
         ":sealed_secret_proto_cc",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/identity/util:byte_container_util",
-        "//asylo/identity/util:byte_container_view",
         "//asylo/platform/common:static_map",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
@@ -126,8 +126,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":identity_proto_cc",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/identity/util:byte_container_util",
-        "//asylo/identity/util:byte_container_view",
         "//asylo/platform/common:static_map",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",

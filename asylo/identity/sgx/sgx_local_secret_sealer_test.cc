@@ -23,6 +23,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
@@ -32,7 +34,6 @@
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/util/bytes.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"

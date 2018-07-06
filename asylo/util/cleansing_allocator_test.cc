@@ -25,8 +25,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/identity/util/bytes.h"
-#include "asylo/identity/util/trivial_object_util.h"
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 
 namespace asylo {
 namespace {

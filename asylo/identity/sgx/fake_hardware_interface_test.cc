@@ -22,9 +22,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/util/trivial_object_util.h"
 #include <openssl/aes.h>
 #include <openssl/cmac.h>
 

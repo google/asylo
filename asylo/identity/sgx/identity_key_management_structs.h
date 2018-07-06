@@ -20,9 +20,9 @@
 #define ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 
 #include "absl/base/attributes.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/aligned_object_ptr.h"
-#include "asylo/identity/util/bytes.h"
 #include <openssl/aes.h>
 #include <openssl/sha.h>
 

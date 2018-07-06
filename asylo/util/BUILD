@@ -110,8 +110,8 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     tags = ["regression"],
     deps = [
-        "//asylo/identity/util:bytes",
-        "//asylo/identity/util:trivial_object_util",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",
         "@com_google_googletest//:gtest",

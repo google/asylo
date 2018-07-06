@@ -19,11 +19,11 @@
 #ifndef ASYLO_IDENTITY_SGX_LOCAL_SECRET_SEALER_HELPERS_H_
 #define ASYLO_IDENTITY_SGX_LOCAL_SECRET_SEALER_HELPERS_H_
 
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
-#include "asylo/identity/util/bytes.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 
