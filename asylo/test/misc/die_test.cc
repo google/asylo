@@ -47,8 +47,9 @@ TEST_F(DieTest, NoEntryAfterDie) {
   ExecTester run({app_, FLAGS_enclave_path});
   int status = 0;
   EXPECT_TRUE(run.Run(&status));
+  EXPECT_FALSE(WIFSIGNALED(status)) << "Terminated by signal "
+      << WTERMSIG(status);
   ASSERT_TRUE(WIFEXITED(status));
-  ASSERT_FALSE(WIFSIGNALED(status));
   EXPECT_EQ(EXIT_FAILURE, WEXITSTATUS(status));
 }
 
@@ -56,18 +57,20 @@ TEST_F(DieTest, CheckSIGILL) {
   ExecTester run({app_, std::string("--sigill")});
   int status = 0;
   EXPECT_TRUE(run.Run(&status));
+  EXPECT_FALSE(WIFEXITED(status)) << "Terminated by exit, not signal: "
+      << WEXITSTATUS(status);
   ASSERT_TRUE(WIFSIGNALED(status));
   EXPECT_EQ(SIGILL, WTERMSIG(status));
-  ASSERT_FALSE(WIFEXITED(status));
 }
 
 TEST_F(DieTest, DieRaisesSIGILL) {
   ExecTester run({app_, FLAGS_enclave_path, std::string("--die")});
   int status = 0;
   EXPECT_TRUE(run.Run(&status));
+  EXPECT_FALSE(WIFEXITED(status)) << "Terminated by exit, not signal: "
+      << WEXITSTATUS(status);
   ASSERT_TRUE(WIFSIGNALED(status));
   EXPECT_EQ(SIGILL, WTERMSIG(status));
-  ASSERT_FALSE(WIFEXITED(status));
 }
 
 }  // namespace
