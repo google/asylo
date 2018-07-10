@@ -31,6 +31,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/wait.h>
+#include <syslog.h>
 #include <time.h>
 #include <unistd.h>
 #include <algorithm>
@@ -456,6 +457,15 @@ int ocall_enc_untrusted_sigprocmask(int how, const bridge_sigset_t *set,
   int ret = sigprocmask(FromBridgeSigMaskAction(how), &tmp_set, &tmp_oldset);
   ToBridgeSigSet(&tmp_oldset, oldset);
   return ret;
+}
+
+//////////////////////////////////////
+//          sys/syslog.h            //
+//////////////////////////////////////
+
+void ocall_enc_untrusted_openlog(const char *ident, int option, int facility) {
+  openlog(ident, FromBridgeSysLogOption(option),
+          FromBridgeSysLogFacility(facility));
 }
 
 //////////////////////////////////////

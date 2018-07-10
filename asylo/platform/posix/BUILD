@@ -59,6 +59,7 @@ cc_library(
         "src/sched.cc",
         "src/signal.cc",
         "src/stat.cc",
+        "src/syslog.cc",
         "src/time.cc",
         "src/uio.cc",
         "src/unistd.cc",

@@ -208,6 +208,13 @@ enclave {
         [out] bridge_sigset_t *oldset);
 
     //////////////////////////////////////
+    //          sys/syslog.h            //
+    //////////////////////////////////////
+
+    void ocall_enc_untrusted_openlog([in, string] const char *ident, int option,
+                                     int facility);
+
+    //////////////////////////////////////
     //           sys/time.h             //
     //////////////////////////////////////
 

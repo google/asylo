@@ -210,6 +210,54 @@ int ToBridgeAddressInfoFlags(int ai_flag) {
   return bridge_ai_flag;
 }
 
+int FromBridgeSysLogOption(int bridge_syslog_option) {
+  int syslog_option = 0;
+  if (bridge_syslog_option & BRIDGE_LOG_PID) syslog_option |= LOG_PID;
+  if (bridge_syslog_option & BRIDGE_LOG_CONS) syslog_option |= LOG_CONS;
+  if (bridge_syslog_option & BRIDGE_LOG_ODELAY) syslog_option |= LOG_ODELAY;
+  if (bridge_syslog_option & BRIDGE_LOG_NDELAY) syslog_option |= LOG_NDELAY;
+  if (bridge_syslog_option & BRIDGE_LOG_NOWAIT) syslog_option |= LOG_NOWAIT;
+  if (bridge_syslog_option & BRIDGE_LOG_PERROR) syslog_option |= LOG_PERROR;
+  return syslog_option;
+}
+
+int ToBridgeSysLogOption(int syslog_option) {
+  int bridge_syslog_option = 0;
+  if (syslog_option & LOG_PID) bridge_syslog_option |= BRIDGE_LOG_PID;
+  if (syslog_option & LOG_CONS) bridge_syslog_option |= BRIDGE_LOG_CONS;
+  if (syslog_option & LOG_ODELAY) bridge_syslog_option |= BRIDGE_LOG_ODELAY;
+  if (syslog_option & LOG_NDELAY) bridge_syslog_option |= BRIDGE_LOG_NDELAY;
+  if (syslog_option & LOG_NOWAIT) bridge_syslog_option |= BRIDGE_LOG_NOWAIT;
+  if (syslog_option & LOG_PERROR) bridge_syslog_option |= BRIDGE_LOG_PERROR;
+  return bridge_syslog_option;
+}
+
+int FromBridgeSysLogFacility(int bridge_syslog_facility) {
+  if (bridge_syslog_facility == BRIDGE_LOG_USER) return LOG_USER;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL0) return LOG_LOCAL0;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL1) return LOG_LOCAL1;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL2) return LOG_LOCAL2;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL3) return LOG_LOCAL3;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL4) return LOG_LOCAL4;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL5) return LOG_LOCAL5;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL6) return LOG_LOCAL6;
+  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL7) return LOG_LOCAL7;
+  return 0;
+}
+
+int ToBridgeSysLogFacility(int syslog_facility) {
+  if (syslog_facility == LOG_USER) return BRIDGE_LOG_USER;
+  if (syslog_facility == LOG_LOCAL0) return BRIDGE_LOG_LOCAL0;
+  if (syslog_facility == LOG_LOCAL1) return BRIDGE_LOG_LOCAL1;
+  if (syslog_facility == LOG_LOCAL2) return BRIDGE_LOG_LOCAL2;
+  if (syslog_facility == LOG_LOCAL3) return BRIDGE_LOG_LOCAL3;
+  if (syslog_facility == LOG_LOCAL4) return BRIDGE_LOG_LOCAL4;
+  if (syslog_facility == LOG_LOCAL5) return BRIDGE_LOG_LOCAL5;
+  if (syslog_facility == LOG_LOCAL6) return BRIDGE_LOG_LOCAL6;
+  if (syslog_facility == LOG_LOCAL7) return BRIDGE_LOG_LOCAL7;
+  return 0;
+}
+
 int FromBridgeFileFlags(int bridge_file_flag) {
   int file_flag = 0;
   if (bridge_file_flag & RDONLY) file_flag |= O_RDONLY;

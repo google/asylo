@@ -721,6 +721,15 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
 }
 
 //////////////////////////////////////
+//          sys/syslog.h            //
+//////////////////////////////////////
+
+void enc_untrusted_openlog(const char *ident, int option, int facility) {
+  ocall_enc_untrusted_openlog(ident, ToBridgeSysLogOption(option),
+                              ToBridgeSysLogFacility(facility));
+}
+
+//////////////////////////////////////
 //           time.h                 //
 //////////////////////////////////////
 

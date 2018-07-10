@@ -23,6 +23,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <sys/socket.h>
+#include <syslog.h>
 
 #include "absl/base/attributes.h"
 
@@ -115,6 +116,31 @@ enum FileStatusFlags {
 
 enum FileDescriptorFlags {
   CLOEXEC = 0x01,
+};
+
+// All the supported syslog options that are allowed to be called outside the
+// enclave.
+enum SysLogOptions {
+  BRIDGE_LOG_PID = 0x01,
+  BRIDGE_LOG_CONS = 0x02,
+  BRIDGE_LOG_ODELAY = 0x04,
+  BRIDGE_LOG_NDELAY = 0x08,
+  BRIDGE_LOG_NOWAIT = 0x10,
+  BRIDGE_LOG_PERROR = 0x20,
+};
+
+// All the supported syslog facilities that are allowed to be called outside the
+// enclave.
+enum SysLogFacilities {
+  BRIDGE_LOG_USER = 1 << 3,
+  BRIDGE_LOG_LOCAL0 = 16 << 3,
+  BRIDGE_LOG_LOCAL1 = 17 << 3,
+  BRIDGE_LOG_LOCAL2 = 18 << 3,
+  BRIDGE_LOG_LOCAL3 = 19 << 3,
+  BRIDGE_LOG_LOCAL4 = 20 << 3,
+  BRIDGE_LOG_LOCAL5 = 21 << 3,
+  BRIDGE_LOG_LOCAL6 = 22 << 3,
+  BRIDGE_LOG_LOCAL7 = 23 << 3,
 };
 
 struct bridge_in_addr {
@@ -285,6 +311,22 @@ int FromBridgeAddressInfoFlags(int bridge_ai_flag);
 // Converts |ai_flag| to a bridge address info flag. Returns 0 if no supported
 // flags are provided.
 int ToBridgeAddressInfoFlags(int ai_flag);
+
+// Converts |bridge_syslog_option| to a runtime syslog option. Returns 0 if
+// |bridge_syslog_option| does not contain any supported options.
+int FromBridgeSysLogOption(int bridge_syslog_option);
+
+// Converts |syslog_option| to a bridge syslog option. Returns 0 if
+// |syslog_option| does not contain any supported options.
+int ToBridgeSysLogOption(int syslog_option);
+
+// Converts |bridge_syslog_facility| to a runtime syslog facility. Returns 0 if
+// |bridge_syslog_facility| does not map to a supported facility.
+int FromBridgeSysLogFacility(int bridge_syslog_facility);
+
+// Converts |syslog_facility| to a bridge syslog facility. Returns 0 if
+// |syslog_facility| does not map to a supported facility.
+int ToBridgeSysLogFacility(int syslog_facility);
 
 // Converts |bridge_file_flag| to a runtime file flag.
 int FromBridgeFileFlags(int bridge_file_flag);

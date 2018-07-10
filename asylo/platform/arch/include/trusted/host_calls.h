@@ -163,6 +163,12 @@ int enc_untrusted_mkdir(const char *path, int mode);
 mode_t enc_untrusted_umask(mode_t mask);
 
 //////////////////////////////////////
+//         sys/syslog.h             //
+//////////////////////////////////////
+
+void enc_untrusted_openlog(const char *ident, int option, int facility);
+
+//////////////////////////////////////
 //            time.h                //
 //////////////////////////////////////
 
