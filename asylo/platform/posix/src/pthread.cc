@@ -274,6 +274,10 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   return 0;
 }
 
+int pthread_key_delete(pthread_key_t key) {
+  return 0;
+}
+
 void *pthread_getspecific(pthread_key_t key) {
   if (!tls_map) {
     init_tls_map();

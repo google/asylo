@@ -23,29 +23,51 @@
 
 #include "common/inc/internal/global_data.h"
 
+namespace {
+
+// Pointer to start of the heap.
+void *heap_base = nullptr;
+
+// Maximum size of the heap in bytes.
+size_t heap_max_size = 0;
+
+// Current size of the heap in bytes.
+size_t heap_size = 0;
+
+}  // namespace
+
 extern "C" {
 
 size_t g_peak_heap_used __attribute__((visibility("default"))) = 0;
 
+int heap_init(void *_heap_base, size_t _heap_max_size, size_t _heap_min_size,
+              int _is_edmm_supported) {
+  heap_base = _heap_base;
+  heap_max_size = _heap_max_size;
+  // EDDM not supported so _heap_min_size and _is_edmm_supported are unused.
+  return 0;
+}
+
 // sbrk implementation for SGX enclaves.
 void *enclave_sbrk(int n) {
-  static size_t heap_used = 0;
-  uintptr_t heap_base =
-      reinterpret_cast<uintptr_t>(&__ImageBase) + g_global_data.heap_offset;
+  if (!heap_base) {
+    heap_init(&__ImageBase + g_global_data.heap_offset, g_global_data.heap_size,
+              0, 0);
+  }
 
-  ssize_t new_heap_used = heap_used + n;
-  if (!heap_base || new_heap_used < 0 ||
-      new_heap_used > g_global_data.heap_size) {
+  ssize_t new_heap_size = heap_size + n;
+  if (heap_base == nullptr || new_heap_size < 0 ||
+      new_heap_size > heap_max_size) {
     errno = ENOMEM;
     return reinterpret_cast<void *>(-1);
   }
 
-  if (g_peak_heap_used < new_heap_used) {
-    g_peak_heap_used = new_heap_used;
+  if (g_peak_heap_used < new_heap_size) {
+    g_peak_heap_used = new_heap_size;
   }
 
-  uintptr_t prev_heap_end = heap_base + heap_used;
-  heap_used = new_heap_used;
+  uintptr_t prev_heap_end = reinterpret_cast<uintptr_t>(heap_base) + heap_size;
+  heap_size = new_heap_size;
   return reinterpret_cast<void *>(prev_heap_end);
 }
 
