@@ -566,12 +566,26 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   int ret;
   unsigned int host_optlen = *optlen;
   sgx_status_t status = ocall_enc_untrusted_getsockopt(
-      &ret, sockfd, level, optname, optval, host_optlen, &host_optlen);
+      &ret, sockfd, level, ToBridgeOptionName(level, optname), optval,
+      host_optlen, &host_optlen);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
   }
   *optlen = host_optlen;
+  return ret;
+}
+
+int enc_untrusted_setsockopt(int sockfd, int level, int optname,
+                             const void *optval, socklen_t optlen) {
+  int ret;
+  sgx_status_t status = ocall_enc_untrusted_setsockopt(
+      &ret, sockfd, level, FromBridgeOptionName(level, optname), optval,
+      static_cast<bridge_size_t>(optlen));
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
   return ret;
 }
 

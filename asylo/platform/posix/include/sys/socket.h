@@ -114,8 +114,6 @@ int socket(int domain, int type, int protocol);
 #define SO_BROADCAST 6
 #define SO_SNDBUF 7
 #define SO_RCVBUF 8
-#define SO_SNDBUFFORCE 32
-#define SO_RCVBUFFORCE 33
 #define SO_KEEPALIVE 9
 #define SO_OOBINLINE 10
 #define SO_NO_CHECK 11
@@ -123,6 +121,10 @@ int socket(int domain, int type, int protocol);
 #define SO_LINGER 13
 #define SO_BSDCOMPAT 14
 #define SO_REUSEPORT 15
+#define SO_RCVTIMEO 20
+#define SO_SNDTIMEO 21
+#define SO_SNDBUFFORCE 32
+#define SO_RCVBUFFORCE 33
 
 // Protocol families.
 #define PF_UNSPEC 0       // Unspecified.

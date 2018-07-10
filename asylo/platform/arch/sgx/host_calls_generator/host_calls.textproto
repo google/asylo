@@ -371,38 +371,6 @@ host_calls {
 }
 
 host_calls {
-  name: "setsockopt"
-  return_type: "int"
-  parameters {
-    name: "socket"
-    type: "int"
-  }
-  parameters {
-    name: "level"
-    type: "int"
-  }
-  parameters {
-    name: "option_name"
-    type: "int"
-  }
-  parameters {
-    name: "option_value"
-    type: "const void *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: SIZE
-      attribute_expression: "option_len"
-    }
-  }
-  parameters {
-    name: "option_len"
-    type: "size_t"
-  }
-}
-
-host_calls {
   name: "shutdown"
   return_type: "int"
   parameters {

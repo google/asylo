@@ -146,6 +146,11 @@ enclave {
                                        [out] unsigned int *optlen_out)
                                        propagate_errno;
 
+    int ocall_enc_untrusted_setsockopt(
+        int sockfd, int level, int optname,
+        [in, size=optlen] const void *optval, bridge_size_t optlen)
+        propagate_errno;
+
     int ocall_enc_untrusted_getsockname(int sockfd,
                                         [out] struct bridge_sockaddr *addr,
                                         [in, out] bridge_size_t *addrlen)

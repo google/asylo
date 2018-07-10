@@ -325,10 +325,16 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
 int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
                                    void *optval, unsigned int optlen_in,
                                    unsigned int *optlen_out) {
-  int ret = getsockopt(sockfd, level, optname, optval,
-                       reinterpret_cast<socklen_t *>(&optlen_in));
+  int ret = getsockopt(sockfd, level, FromBridgeOptionName(level, optname),
+                       optval, reinterpret_cast<socklen_t *>(&optlen_in));
   *optlen_out = optlen_in;
   return ret;
+}
+
+int ocall_enc_untrusted_setsockopt(int sockfd, int level, int optname,
+                                   const void *optval, bridge_size_t optlen) {
+  return setsockopt(sockfd, level, FromBridgeOptionName(level, optname), optval,
+                    static_cast<socklen_t>(optlen));
 }
 
 int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr,

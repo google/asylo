@@ -20,6 +20,7 @@
 #define ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 
 #include <netdb.h>
+#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdint.h>
 #include <sys/socket.h>
@@ -141,6 +142,37 @@ enum SysLogFacilities {
   BRIDGE_LOG_LOCAL5 = 21 << 3,
   BRIDGE_LOG_LOCAL6 = 22 << 3,
   BRIDGE_LOG_LOCAL7 = 23 << 3,
+};
+
+// All tcp option names supported inside the enclave.
+enum TcpOptionNames {
+  BRIDGE_TCP_NODELAY = 1,
+  BRIDGE_TCP_KEEPIDLE = 4,
+  BRIDGE_TCP_KEEPINTVL = 5,
+  BRIDGE_TCP_KEEPCNT = 6,
+};
+
+// All socket option names supported inside the enclave.
+enum SocketOptionNames {
+  BRIDGE_SO_DEBUG = 1,
+  BRIDGE_SO_REUSEADDR = 2,
+  BRIDGE_SO_TYPE = 3,
+  BRIDGE_SO_ERROR = 4,
+  BRIDGE_SO_DONTROUTE = 5,
+  BRIDGE_SO_BROADCAST = 6,
+  BRIDGE_SO_SNDBUF = 7,
+  BRIDGE_SO_RCVBUF = 8,
+  BRIDGE_SO_KEEPALIVE = 9,
+  BRIDGE_SO_OOBINLINE = 10,
+  BRIDGE_SO_NO_CHECK = 11,
+  BRIDGE_SO_PRIORITY = 12,
+  BRIDGE_SO_LINGER = 13,
+  BRIDGE_SO_BSDCOMPAT = 14,
+  BRIDGE_SO_REUSEPORT = 15,
+  BRIDGE_SO_RCVTIMEO = 20,
+  BRIDGE_SO_SNDTIMEO = 21,
+  BRIDGE_SO_SNDBUFFORCE = 32,
+  BRIDGE_SO_RCVBUFFORCE = 33,
 };
 
 struct bridge_in_addr {
@@ -339,6 +371,12 @@ int FromBridgeFDFlags(int bridge_fd_flag);
 
 // Converts |fd_flag| to a bridge FD flag.
 int ToBridgeFDFlags(int fd_flag);
+
+// Converts |bridge_option_name| to a runtime option name.
+int FromBridgeOptionName(int level, int bridge_option_name);
+
+// Converts |option_name| to a bridge option name.
+int ToBridgeOptionName(int level, int option_name);
 
 // Converts |bridge_st| to a runtime stat. Returns nullptr if unsuccessful.
 struct stat *FromBridgeStat(const struct bridge_stat *bridge_statbuf,

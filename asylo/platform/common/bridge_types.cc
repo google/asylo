@@ -88,6 +88,68 @@ const std::unordered_map<int, int> *GetSignalToBridgeSignalMap() {
   return signal_to_bridge_signal_map;
 }
 
+int FromBridgeTcpOptionName(int bridge_tcp_option_name) {
+  if (bridge_tcp_option_name == BRIDGE_TCP_NODELAY) return TCP_NODELAY;
+  if (bridge_tcp_option_name == BRIDGE_TCP_KEEPIDLE) return TCP_KEEPIDLE;
+  if (bridge_tcp_option_name == BRIDGE_TCP_KEEPINTVL) return TCP_KEEPINTVL;
+  if (bridge_tcp_option_name == BRIDGE_TCP_KEEPCNT) return TCP_KEEPCNT;
+  return -1;
+}
+
+int ToBridgeTcpOptionName(int tcp_option_name) {
+  if (tcp_option_name == TCP_NODELAY) return BRIDGE_TCP_NODELAY;
+  if (tcp_option_name == TCP_KEEPIDLE) return BRIDGE_TCP_KEEPIDLE;
+  if (tcp_option_name == TCP_KEEPINTVL) return BRIDGE_TCP_KEEPINTVL;
+  if (tcp_option_name == TCP_KEEPCNT) return BRIDGE_TCP_KEEPCNT;
+  return -1;
+}
+
+int FromBridgeSocketOptionName(int bridge_socket_option_name) {
+  if (bridge_socket_option_name == BRIDGE_SO_DEBUG) return SO_DEBUG;
+  if (bridge_socket_option_name == BRIDGE_SO_REUSEADDR) return SO_REUSEADDR;
+  if (bridge_socket_option_name == BRIDGE_SO_TYPE) return SO_TYPE;
+  if (bridge_socket_option_name == BRIDGE_SO_ERROR) return SO_ERROR;
+  if (bridge_socket_option_name == BRIDGE_SO_DONTROUTE) return SO_DONTROUTE;
+  if (bridge_socket_option_name == BRIDGE_SO_BROADCAST) return SO_BROADCAST;
+  if (bridge_socket_option_name == BRIDGE_SO_SNDBUF) return SO_SNDBUF;
+  if (bridge_socket_option_name == BRIDGE_SO_RCVBUF) return SO_RCVBUF;
+  if (bridge_socket_option_name == BRIDGE_SO_SNDTIMEO) return SO_SNDTIMEO;
+  if (bridge_socket_option_name == BRIDGE_SO_RCVTIMEO) return SO_RCVTIMEO;
+  if (bridge_socket_option_name == BRIDGE_SO_SNDBUFFORCE) return SO_SNDBUFFORCE;
+  if (bridge_socket_option_name == BRIDGE_SO_RCVBUFFORCE) return SO_RCVBUFFORCE;
+  if (bridge_socket_option_name == BRIDGE_SO_KEEPALIVE) return SO_KEEPALIVE;
+  if (bridge_socket_option_name == BRIDGE_SO_OOBINLINE) return SO_OOBINLINE;
+  if (bridge_socket_option_name == BRIDGE_SO_NO_CHECK) return SO_NO_CHECK;
+  if (bridge_socket_option_name == BRIDGE_SO_PRIORITY) return SO_PRIORITY;
+  if (bridge_socket_option_name == BRIDGE_SO_LINGER) return SO_LINGER;
+  if (bridge_socket_option_name == BRIDGE_SO_BSDCOMPAT) return SO_BSDCOMPAT;
+  if (bridge_socket_option_name == BRIDGE_SO_REUSEPORT) return SO_REUSEPORT;
+  return -1;
+}
+
+int ToBridgeSocketOptionName(int socket_option_name) {
+  if (socket_option_name == SO_DEBUG) return BRIDGE_SO_DEBUG;
+  if (socket_option_name == SO_REUSEADDR) return BRIDGE_SO_REUSEADDR;
+  if (socket_option_name == SO_TYPE) return BRIDGE_SO_TYPE;
+  if (socket_option_name == SO_ERROR) return BRIDGE_SO_ERROR;
+  if (socket_option_name == SO_DONTROUTE) return BRIDGE_SO_DONTROUTE;
+  if (socket_option_name == SO_BROADCAST) return BRIDGE_SO_BROADCAST;
+  if (socket_option_name == SO_SNDBUF) return BRIDGE_SO_SNDBUF;
+  if (socket_option_name == SO_RCVBUF) return BRIDGE_SO_RCVBUF;
+  if (socket_option_name == SO_SNDTIMEO) return BRIDGE_SO_SNDTIMEO;
+  if (socket_option_name == SO_RCVTIMEO) return BRIDGE_SO_RCVTIMEO;
+  if (socket_option_name == SO_SNDBUFFORCE) return BRIDGE_SO_SNDBUFFORCE;
+  if (socket_option_name == SO_RCVBUFFORCE) return BRIDGE_SO_RCVBUFFORCE;
+  if (socket_option_name == SO_KEEPALIVE) return BRIDGE_SO_KEEPALIVE;
+  if (socket_option_name == SO_OOBINLINE) return BRIDGE_SO_OOBINLINE;
+  if (socket_option_name == SO_NO_CHECK) return BRIDGE_SO_NO_CHECK;
+  if (socket_option_name == SO_PRIORITY) return BRIDGE_SO_PRIORITY;
+  if (socket_option_name == SO_LINGER) return BRIDGE_SO_LINGER;
+  if (socket_option_name == SO_BSDCOMPAT) return BRIDGE_SO_BSDCOMPAT;
+  if (socket_option_name == SO_REUSEPORT) return BRIDGE_SO_REUSEPORT;
+  return -1;
+}
+
 }  // namespace
 
 int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
@@ -294,6 +356,26 @@ int ToBridgeFDFlags(int fd_flag) {
   int bridge_fd_flag = 0;
   if (fd_flag & FD_CLOEXEC) bridge_fd_flag |= CLOEXEC;
   return bridge_fd_flag;
+}
+
+int FromBridgeOptionName(int level, int bridge_option_name) {
+  if (level == IPPROTO_TCP) {
+    return FromBridgeTcpOptionName(bridge_option_name);
+  }
+  if (level == SOL_SOCKET) {
+    return FromBridgeSocketOptionName(bridge_option_name);
+  }
+  return -1;
+}
+
+int ToBridgeOptionName(int level, int option_name) {
+  if (level == IPPROTO_TCP) {
+    return ToBridgeTcpOptionName(option_name);
+  }
+  if (level == SOL_SOCKET) {
+    return ToBridgeSocketOptionName(option_name);
+  }
+  return -1;
 }
 
 struct stat *FromBridgeStat(const struct bridge_stat *bridge_statbuf,
