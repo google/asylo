@@ -117,21 +117,30 @@ static int donate_thread(sgx_enclave_id_t eid, sgx_status_t *status) {
 // Enters the enclave and invokes the signal handle entry-point. If the ecall
 // fails, returns a non-OK status.
 static Status handle_signal(sgx_enclave_id_t eid, const char *input,
-                            size_t input_len, char **output,
-                            size_t *output_len) {
+                            size_t input_len) {
   int result;
   sgx_status_t sgx_status = ecall_handle_signal(
-      eid, &result, input, static_cast<bridge_size_t>(input_len), output,
-      static_cast<bridge_size_t *>(output_len));
+      eid, &result, input, static_cast<bridge_size_t>(input_len));
   if (sgx_status != SGX_SUCCESS) {
     // Return a Status object in the SGX error space.
     return Status(sgx_status, "Call to ecall_handle_signal failed");
-  } else if (result || *output_len == 0) {
-    // Non-zero return code indicates that the enclave was not able to return
-    // any output from HandleSignal().
-    return Status(error::GoogleError::INTERNAL, "No output from enclave");
+  } else if (result) {
+    std::string message;
+    switch (result) {
+      case 1:
+        message = "Invalid or unregistered incoming signal";
+        break;
+      case 2:
+        message = "Enclave unable to handle signal in current state";
+        break;
+      case -1:
+        message = "Incoming signal is blocked inside the enclave";
+        break;
+      default:
+        message = "Unexpected error while handling signal";
+    }
+    return Status(error::GoogleError::INTERNAL, message);
   }
-
   return Status::OkStatus();
 }
 
@@ -279,26 +288,8 @@ Status SGXClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Failed to serialize EnclaveSignal");
   }
-  char *output = nullptr;
-  size_t output_len = 0;
-  Status status =
-      handle_signal(id_, serialized_enclave_signal.data(),
-                    serialized_enclave_signal.size(), &output, &output_len);
-  if (!status.ok()) {
-    return status;
-  }
-
-  // Enclave entry-point was successfully invoked. |output| is guaranteed to
-  // have a value.
-  StatusProto status_proto;
-  status_proto.ParseFromArray(output, output_len);
-  status.RestoreFrom(status_proto);
-
-  // |output| points to an untrusted memory buffer allocated by the enclave. It
-  // is the untrusted caller's responsibility to free this buffer.
-  free(output);
-
-  return status;
+  return handle_signal(id_, serialized_enclave_signal.data(),
+                       serialized_enclave_signal.size());
 }
 
 Status SGXClient::DestroyEnclave() {

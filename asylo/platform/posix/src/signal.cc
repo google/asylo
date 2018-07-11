@@ -135,6 +135,7 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
 sighandler_t signal(int signum, sighandler_t handler) {
   struct sigaction act;
   act.sa_handler = handler;
+  sigemptyset(&act.sa_mask);
   struct sigaction oldact;
   if (sigaction(signum, &act, &oldact)) {
     // Errno is set by sigaction.

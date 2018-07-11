@@ -76,13 +76,11 @@ int ecall_donate_thread() { return asylo::__asylo_threading_donate(); }
 
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
-int ecall_handle_signal(const char *input, bridge_size_t input_len,
-                        char **output, bridge_size_t *output_len) {
+int ecall_handle_signal(const char *input, bridge_size_t input_len) {
   int result = 0;
   try {
     result =
-        asylo::__asylo_handle_signal(input, static_cast<size_t>(input_len),
-                                     output, static_cast<size_t *>(output_len));
+        asylo::__asylo_handle_signal(input, static_cast<size_t>(input_len));
   } catch (...) {
     // Abort directly here instead of LOG(FATAL). LOG tries to obtain a mutex,
     // and acquiring a non-reentrant mutex in signal handling may cause deadlock

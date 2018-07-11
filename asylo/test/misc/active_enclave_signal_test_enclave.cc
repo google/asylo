@@ -30,9 +30,9 @@ namespace asylo {
 
 constexpr int kTimeout = 10;
 
-static thread_local volatile bool signal_handled = false;
-static thread_local volatile bool blocked_signal_handled = false;
-static thread_local volatile bool signal_handler_interrupted = false;
+static volatile bool signal_handled = false;
+static volatile bool blocked_signal_handled = false;
+static volatile bool signal_handler_interrupted = false;
 
 void HandleSignalWithHandler(int signum) {
   if (signum == SIGUSR1) {
@@ -111,6 +111,7 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
       }
     }
     struct sigaction act, oldact;
+    sigemptyset(&act.sa_mask);
     switch (test_type) {
       case SignalTestInput::HANDLER:
         act.sa_handler = &HandleSignalWithHandler;
@@ -128,10 +129,13 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
       case SignalTestInput::SIGACTIONMASK:
         // Register a handler for SIGUSR2.
         act.sa_handler = &HandleSignalWithHandler;
+        sigset_t mask;
+        sigemptyset(&mask);
+        sigaddset(&mask, SIGUSR1);
+        act.sa_mask = mask;
         sigaction(SIGUSR2, &act, &oldact);
         // Block SIGUSR2 during execution of SIGUSR1 handler.
         act.sa_handler = &HandleSignalWithSigActionMask;
-        sigset_t mask;
         sigemptyset(&mask);
         sigaddset(&mask, SIGUSR2);
         act.sa_mask = mask;
@@ -150,8 +154,8 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
     // Wait till the signal is received. Time out in 10 seconds.
     int count = 0;
     bool all_signals_handled = false;
-    // For SIGACTIONMASK tests, both SIGUSR1 and SIGUSR2 are sent, both should
-    // be handled by the enclave. For all other cases only SIGUSR1 is expected.
+    // For SIGACTIONMASK tests, both SIGUSR1 and SIGUSR2 are sent. For all other
+    // cases only SIGUSR1 is expected.
     while (!all_signals_handled && ++count < kTimeout) {
       switch (test_type) {
         case SignalTestInput::SIGACTIONMASK:
