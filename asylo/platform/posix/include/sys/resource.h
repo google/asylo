@@ -27,9 +27,11 @@ extern "C" {
 
 #define RLIMIT_NOFILE 0 /* maximum file descriptor number */
 
+typedef uint64_t rlim_t;
+
 struct rlimit {
-  int64_t rlim_cur; /* current soft limit */
-  int64_t rlim_max; /* maximum value for rlim_cur */
+  rlim_t rlim_cur; /* current soft limit */
+  rlim_t rlim_max; /* maximum value for rlim_cur */
 };
 
 int getrlimit(int resource, struct rlimit *rlim);
