@@ -61,6 +61,7 @@ cc_library(
         "src/signal.cc",
         "src/stat.cc",
         "src/syslog.cc",
+        "src/termios.cc",
         "src/time.cc",
         "src/uio.cc",
         "src/unistd.cc",
