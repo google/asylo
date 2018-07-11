@@ -194,7 +194,9 @@ pid_t enc_untrusted_getppid();
 //////////////////////////////////////
 //           wait.h                 //
 //////////////////////////////////////
+
 int enc_untrusted_wait(int *wstatus);
+pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage);
 
 //////////////////////////////////////
 //            Runtime support       //

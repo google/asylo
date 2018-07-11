@@ -23,7 +23,9 @@
 #include <netinet/tcp.h>
 #include <signal.h>
 #include <stdint.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
+#include <sys/wait.h>
 #include <syslog.h>
 
 #include "absl/base/attributes.h"
@@ -41,9 +43,28 @@ typedef uint64_t bridge_size_t;
 typedef int64_t bridge_ssize_t;
 typedef int64_t bridge_sigset_t;
 
-// This enum contains all of the sysconf name values that we allow to be called
-// outside the enclave.
+// This enum contains all of the sysconf name values supported inside the
+// enclave.
 enum SysconfConstants { UNKNOWN = 0, NPROCESSORS_ONLN = 1 };
+
+// The wait options that are supported inside the enclave.
+enum WaitOptions {
+  BRIDGE_WNOHANG = 1,
+};
+
+// The code byte of wstatus that are supported inside the enclave. The last 8
+// bit of wstatus is the code byte. WIFEXITED returns true if the code byte is
+// 0. WIFSTOPPED returns true if the code byte is 0x7f. Otherwise WIFSIGNALED
+// returns true.
+enum WStatusCode {
+  BRIDGE_WCODEBYTE = 0xff,
+  BRIDGE_WSTOPPED = 0x7f,
+};
+
+struct BridgeWStatus {
+  uint8_t code;
+  uint8_t info;
+};
 
 // The possible actions when calling sigprocmask.
 enum SigMaskAction {
@@ -102,8 +123,7 @@ enum AddrInfoFlags {
   BRIDGE_AI_NUMERICHOST = 0x0004,
 };
 
-// All of the file operation flags that we allow to be called outside the
-// enclave.
+// All of the file operation flags supported inside the enclave.
 enum FileStatusFlags {
   RDONLY = 0x00,
   WRONLY = 0x01,
@@ -119,8 +139,7 @@ enum FileDescriptorFlags {
   CLOEXEC = 0x01,
 };
 
-// All the supported syslog options that are allowed to be called outside the
-// enclave.
+// All the syslog options supported inside the enclave.
 enum SysLogOptions {
   BRIDGE_LOG_PID = 0x01,
   BRIDGE_LOG_CONS = 0x02,
@@ -130,8 +149,7 @@ enum SysLogOptions {
   BRIDGE_LOG_PERROR = 0x20,
 };
 
-// All the supported syslog facilities that are allowed to be called outside the
-// enclave.
+// All the syslog facilities supported inside the enclave.
 enum SysLogFacilities {
   BRIDGE_LOG_USER = 1 << 3,
   BRIDGE_LOG_LOCAL0 = 16 << 3,
@@ -273,6 +291,11 @@ struct BridgeSignalHandler {
   bridge_sigset_t mask;
 };
 
+struct BridgeRUsage {
+  struct bridge_timeval ru_utime;
+  struct bridge_timeval ru_stime;
+};
+
 // The maximum number of CPUs we support. Chosen to be large enough to represent
 // as many CPUs as an enclave-native cpu_set_t.
 #define BRIDGE_CPU_SET_MAX_CPUS 1024
@@ -296,6 +319,14 @@ int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant);
 // Converts |sysconf_constant| to a bridge constant. Returns UNKNOWN if
 // unsuccessful.
 enum SysconfConstants ToSysconfConstants(int sysconf_constant);
+
+// Converts |bridge_wait_options| to runtime wait options. Returns 0 if no
+// supported wait options are provided.
+int FromBridgeWaitOptions(int bridge_wait_options);
+
+// Converts |wait_options| to bridge wait options. Returns 0 if no supported
+// wait options are provided.
+int ToBridgeWaitOptions(int wait_options);
 
 // Converts the sigpromask action |bridge_how| to a runtime signal mask action.
 // Returns -1 if unsuccessful.
@@ -404,6 +435,14 @@ struct timespec *FromBridgeTimespec(const struct bridge_timespec *bridge_tp,
 struct bridge_timespec *ToBridgeTimespec(const struct timespec *tp,
                                          struct bridge_timespec *bridge_tp);
 
+// Converts |bridge_tv| to a runtime timeval.
+struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
+                                  struct timeval *tv);
+
+// Converts |tv| to a bridge timeval.
+struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
+                                       struct bridge_timeval *bridge_tv);
+
 // Converts |fd| to a bridge pollfd. Returns nullptr if unsuccessful.
 struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,
                                 struct pollfd *fd);
@@ -443,6 +482,22 @@ struct iovec *FromBridgeIovec(const struct bridge_iovec *bridge_iov,
 // Converts |iov| to a bridge iovec. Returns nullptr if unsuccessful.
 struct bridge_iovec *ToBridgeIovec(const struct iovec *iov,
                                    struct bridge_iovec *bridge_iov);
+
+// Converts |host_wstatus| to a runtime wstatus.
+// This only works when converting into an enclave runtime wstatus, not on host.
+int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus);
+
+// Converts |wstatus| to a bridge wstatus.
+struct BridgeWStatus ToBridgeWStatus(int wstatus);
+
+// Converts |bridge_rusage| to a runtime rusage. Returns nullptr if
+// unsuccessful.
+struct rusage *FromBridgeRUsage(const struct BridgeRUsage *bridge_rusage,
+                                struct rusage *rusage);
+
+// Converts |rusage| to a bridge rusage. Returns nullptr if unsuccessful.
+struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
+                                    struct BridgeRUsage *bridge_rusage);
 
 // These functions follow the standard for the analogous functions in
 // http://man7.org/linux/man-pages/man3/CPU_SET.3.html.

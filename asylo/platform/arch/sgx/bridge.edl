@@ -237,6 +237,14 @@ enclave {
     uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);
 
     //////////////////////////////////////
+    //             wait.h               //
+    //////////////////////////////////////
+
+    pid_t ocall_enc_untrusted_wait3([out] struct BridgeWStatus *wstatus,
+                                    int options,
+                                    [out] struct BridgeRUsage *rusage);
+
+    //////////////////////////////////////
     //           Runtime support        //
     //////////////////////////////////////
 

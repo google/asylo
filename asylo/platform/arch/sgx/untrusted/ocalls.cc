@@ -521,6 +521,22 @@ int ocall_enc_untrusted_sysconf(enum SysconfConstants name) {
 uint32_t ocall_enc_untrusted_sleep(uint32_t seconds) { return sleep(seconds); }
 
 //////////////////////////////////////
+//             wait.h               //
+//////////////////////////////////////
+
+pid_t ocall_enc_untrusted_wait3(struct BridgeWStatus *wstatus, int options,
+                                struct BridgeRUsage *rusage) {
+  struct rusage tmp_rusage;
+  int tmp_wstatus;
+  pid_t ret = wait3(&tmp_wstatus, FromBridgeWaitOptions(options), &tmp_rusage);
+  ToBridgeRUsage(&tmp_rusage, rusage);
+  if (wstatus) {
+    *wstatus = ToBridgeWStatus(tmp_wstatus);
+  }
+  return ret;
+}
+
+//////////////////////////////////////
 //           Runtime support        //
 //////////////////////////////////////
 

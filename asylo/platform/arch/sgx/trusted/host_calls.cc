@@ -821,6 +821,27 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
 }
 
 //////////////////////////////////////
+//             wait.h               //
+//////////////////////////////////////
+
+pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage) {
+  pid_t ret;
+  struct BridgeWStatus bridge_wstatus;
+  BridgeRUsage bridge_rusage;
+  sgx_status_t status = ocall_enc_untrusted_wait3(
+      &ret, &bridge_wstatus, ToBridgeWaitOptions(options), &bridge_rusage);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  if (wstatus) {
+    *wstatus = FromBridgeWStatus(bridge_wstatus);
+  }
+  FromBridgeRUsage(&bridge_rusage, rusage);
+  return ret;
+}
+
+//////////////////////////////////////
 //           Runtime support        //
 //////////////////////////////////////
 

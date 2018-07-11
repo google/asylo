@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,16 +16,21 @@
  *
  */
 
-#include <sys/wait.h>
+#ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_
+#define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
-
+#ifdef __cplusplus
 extern "C" {
+#endif
 
-int enclave_wait(int *wstatus) { return enc_untrusted_wait(wstatus); }
+#include_next <sys/wait.h>
 
-pid_t wait3(int *wstatus, int options, struct rusage *rusage) {
-  return enc_untrusted_wait3(wstatus, options, rusage);
-}
+#define WNOHANG 1
 
+pid_t wait3(int *wstatus, int options, struct rusage *rusage);
+
+#ifdef __cplusplus
 }  // extern "C"
+#endif
+
+#endif  // ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_

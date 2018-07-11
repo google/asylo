@@ -35,6 +35,14 @@
 
 namespace {
 
+bool BridgeWIfExited(BridgeWStatus bridge_wstatus) {
+  return bridge_wstatus.code == 0;
+}
+
+bool BridgeWIfStopped(BridgeWStatus bridge_wstatus) {
+  return bridge_wstatus.code == BRIDGE_WSTOPPED;
+}
+
 void BridgeSigAddSet(bridge_sigset_t *bridge_set, const int sig) {
   *bridge_set |= (UINT64_C(1) << sig);
 }
@@ -168,6 +176,18 @@ enum SysconfConstants ToSysconfConstants(int sysconf_constant) {
     default:
       return UNKNOWN;
   }
+}
+
+int FromBridgeWaitOptions(int bridge_wait_options) {
+  int wait_options = 0;
+  if (bridge_wait_options & BRIDGE_WNOHANG) wait_options |= WNOHANG;
+  return wait_options;
+}
+
+int ToBridgeWaitOptions(int wait_options) {
+  int bridge_wait_options = 0;
+  if (wait_options & WNOHANG) bridge_wait_options |= BRIDGE_WNOHANG;
+  return bridge_wait_options;
 }
 
 int FromBridgeSignal(int bridge_signum) {
@@ -599,6 +619,64 @@ struct bridge_timespec *ToBridgeTimespec(const struct timespec *tp,
   bridge_tp->tv_sec = tp->tv_sec;
   bridge_tp->tv_nsec = tp->tv_nsec;
   return bridge_tp;
+}
+
+struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
+                                  struct timeval *tv) {
+  if (!bridge_tv || !tv) return nullptr;
+  tv->tv_sec = bridge_tv->tv_sec;
+  tv->tv_usec = bridge_tv->tv_usec;
+  return tv;
+}
+
+struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
+                                       struct bridge_timeval *bridge_tv) {
+  if (!tv || !bridge_tv) return nullptr;
+  bridge_tv->tv_sec = tv->tv_sec;
+  bridge_tv->tv_usec = tv->tv_usec;
+  return bridge_tv;
+}
+
+int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus) {
+  int wstatus = static_cast<int>(bridge_wstatus.info) << 8;
+  if (BridgeWIfExited(bridge_wstatus)) {
+    return wstatus;
+  }
+  if (BridgeWIfStopped(bridge_wstatus)) {
+    return wstatus + BRIDGE_WSTOPPED;
+  }
+  return wstatus + bridge_wstatus.code;
+}
+
+BridgeWStatus ToBridgeWStatus(int wstatus) {
+  BridgeWStatus bridge_wstatus;
+  // The info byte is the byte before the code byte, which is the 9 - 16 from
+  // the lowest bits.
+  bridge_wstatus.info = wstatus >> 8 & 0xff;
+  if (WIFEXITED(wstatus)) {
+    bridge_wstatus.code = 0;
+  } else if (WIFSTOPPED(wstatus)) {
+    bridge_wstatus.code = BRIDGE_WSTOPPED;
+  } else {
+    bridge_wstatus.code = wstatus & BRIDGE_WSTOPPED;
+  }
+  return bridge_wstatus;
+}
+
+struct rusage *FromBridgeRUsage(const struct BridgeRUsage *bridge_rusage,
+                                struct rusage *rusage) {
+  if (!bridge_rusage || !rusage) return nullptr;
+  FromBridgeTimeVal(&bridge_rusage->ru_utime, &rusage->ru_utime);
+  FromBridgeTimeVal(&bridge_rusage->ru_stime, &rusage->ru_stime);
+  return rusage;
+}
+
+struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
+                                    struct BridgeRUsage *bridge_rusage) {
+  if (!rusage || !bridge_rusage) return nullptr;
+  ToBridgeTimeVal(&rusage->ru_utime, &bridge_rusage->ru_utime);
+  ToBridgeTimeVal(&rusage->ru_stime, &bridge_rusage->ru_stime);
+  return bridge_rusage;
 }
 
 inline uint64_t BridgeWordNum(int cpu) {
