@@ -52,6 +52,7 @@ cc_library(
         "src/errno.cc",
         "src/grp.cc",
         "src/ioctl.cc",
+        "src/mman.cc",
         "src/poll.cc",
         "src/pthread.cc",
         "src/pwd.cc",
