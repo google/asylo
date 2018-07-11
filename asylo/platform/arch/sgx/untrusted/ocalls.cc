@@ -474,6 +474,10 @@ void ocall_enc_untrusted_openlog(const char *ident, int option, int facility) {
           FromBridgeSysLogFacility(facility));
 }
 
+void ocall_enc_untrusted_syslog(int priority, const char *message) {
+  syslog(FromBridgeSysLogPriority(priority), "%s", message);
+}
+
 //////////////////////////////////////
 //           time.h                 //
 //////////////////////////////////////

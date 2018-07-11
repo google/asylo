@@ -43,6 +43,30 @@ bool BridgeWIfStopped(BridgeWStatus bridge_wstatus) {
   return bridge_wstatus.code == BRIDGE_WSTOPPED;
 }
 
+int FromBridgeSysLogLevel(int bridge_syslog_level) {
+  if (bridge_syslog_level == BRIDGE_LOG_EMERG) return LOG_EMERG;
+  if (bridge_syslog_level == BRIDGE_LOG_ALERT) return LOG_ALERT;
+  if (bridge_syslog_level == BRIDGE_LOG_CRIT) return LOG_CRIT;
+  if (bridge_syslog_level == BRIDGE_LOG_ERR) return LOG_ERR;
+  if (bridge_syslog_level == BRIDGE_LOG_WARNING) return LOG_WARNING;
+  if (bridge_syslog_level == BRIDGE_LOG_NOTICE) return LOG_NOTICE;
+  if (bridge_syslog_level == BRIDGE_LOG_INFO) return LOG_INFO;
+  if (bridge_syslog_level == BRIDGE_LOG_DEBUG) return LOG_DEBUG;
+  return 0;
+}
+
+int ToBridgeSysLogLevel(int syslog_level) {
+  if (syslog_level == LOG_EMERG) return BRIDGE_LOG_EMERG;
+  if (syslog_level == LOG_ALERT) return BRIDGE_LOG_ALERT;
+  if (syslog_level == LOG_CRIT) return BRIDGE_LOG_CRIT;
+  if (syslog_level == LOG_ERR) return BRIDGE_LOG_ERR;
+  if (syslog_level == LOG_WARNING) return BRIDGE_LOG_WARNING;
+  if (syslog_level == LOG_NOTICE) return BRIDGE_LOG_NOTICE;
+  if (syslog_level == LOG_INFO) return BRIDGE_LOG_INFO;
+  if (syslog_level == LOG_DEBUG) return BRIDGE_LOG_DEBUG;
+  return 0;
+}
+
 void BridgeSigAddSet(bridge_sigset_t *bridge_set, const int sig) {
   *bridge_set |= (UINT64_C(1) << sig);
 }
@@ -338,6 +362,22 @@ int ToBridgeSysLogFacility(int syslog_facility) {
   if (syslog_facility == LOG_LOCAL6) return BRIDGE_LOG_LOCAL6;
   if (syslog_facility == LOG_LOCAL7) return BRIDGE_LOG_LOCAL7;
   return 0;
+}
+
+// Priorities are encoded into a single 32-bit integer. The bottom 3 bits are
+// the level and the rest are the facility.
+int FromBridgeSysLogPriority(int bridge_syslog_priority) {
+  int bridge_syslog_level = bridge_syslog_priority & 0x07;
+  int bridge_syslog_facility = bridge_syslog_priority & ~0x07;
+  return FromBridgeSysLogLevel(bridge_syslog_level) |
+         FromBridgeSysLogFacility(bridge_syslog_facility);
+}
+
+int ToBridgeSysLogPriority(int syslog_priority) {
+  int syslog_level = syslog_priority & 0x07;
+  int syslog_facility = syslog_priority & ~0x07;
+  return ToBridgeSysLogLevel(syslog_level) |
+         ToBridgeSysLogLevel(syslog_facility);
 }
 
 int FromBridgeFileFlags(int bridge_file_flag) {

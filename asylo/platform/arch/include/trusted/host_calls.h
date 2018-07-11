@@ -167,6 +167,7 @@ mode_t enc_untrusted_umask(mode_t mask);
 //////////////////////////////////////
 
 void enc_untrusted_openlog(const char *ident, int option, int facility);
+void enc_untrusted_syslog(int priority, const char *message);
 
 //////////////////////////////////////
 //            time.h                //

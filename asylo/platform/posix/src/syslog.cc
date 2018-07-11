@@ -16,7 +16,14 @@
  *
  */
 
+#ifndef THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_SYSLOG_H_
+#define THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_SYSLOG_H_
+
 #include <sys/syslog.h>
+
+#include <stdarg.h>
+#include <cstdio>
+#include <memory>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
@@ -28,6 +35,19 @@ void openlog(const char *ident, int option, int facility) {
   enc_untrusted_openlog(ident, option, facility);
 }
 
+void syslog(int priority, const char *format, ...) {
+  va_list args;
+  va_start(args, format);
+  // Get the size of the formatted string.
+  int size = vsnprintf(nullptr, 0, format, args);
+  // Create a buffer with the same size as the formatted string.
+  std::unique_ptr<char[]> buffer(new char[size]);
+  // Reads the formatted string to the buffer.
+  vsnprintf(buffer.get(), size, format, args);
+  enc_untrusted_syslog(priority, buffer.get());
+}
+
 #ifdef __cplusplus
 }
 #endif
+#endif  // THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_SYSLOG_H_

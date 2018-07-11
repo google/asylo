@@ -23,7 +23,7 @@
 extern "C" {
 #endif
 
-// Constants for openlog option flags.
+// Constants for log options.
 #define LOG_PID 0x01
 #define LOG_CONS 0x02
 #define LOG_ODELAY 0x04
@@ -31,7 +31,17 @@ extern "C" {
 #define LOG_NOWAIT 0x10
 #define LOG_PERROR 0x20
 
-// Constants for openlog facility flags.
+// Constants for log levels.
+#define LOG_EMERG 0
+#define LOG_ALERT 1
+#define LOG_CRIT 2
+#define LOG_ERR 3
+#define LOG_WARNING 4
+#define LOG_NOTICE 5
+#define LOG_INFO 6
+#define LOG_DEBUG 7
+
+// Constants for log facilities.
 #define LOG_USER (1 << 3)
 #define LOG_LOCAL0 (16 << 3)
 #define LOG_LOCAL1 (17 << 3)
@@ -43,6 +53,8 @@ extern "C" {
 #define LOG_LOCAL7 (23 << 3)
 
 void openlog(const char *ident, int option, int facility);
+
+void syslog(int priority, const char *format, ...);
 
 #ifdef __cplusplus
 }  // extern "C"

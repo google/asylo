@@ -162,6 +162,19 @@ enum SysLogFacilities {
   BRIDGE_LOG_LOCAL7 = 23 << 3,
 };
 
+// All the supported syslog level that are allowed to be called outside the
+// enclave.
+enum SysLogLevel {
+  BRIDGE_LOG_EMERG = 0,
+  BRIDGE_LOG_ALERT = 1,
+  BRIDGE_LOG_CRIT = 2,
+  BRIDGE_LOG_ERR = 3,
+  BRIDGE_LOG_WARNING = 4,
+  BRIDGE_LOG_NOTICE = 5,
+  BRIDGE_LOG_INFO = 6,
+  BRIDGE_LOG_DEBUG = 7,
+};
+
 // All tcp option names supported inside the enclave.
 enum TcpOptionNames {
   BRIDGE_TCP_NODELAY = 1,
@@ -390,6 +403,14 @@ int FromBridgeSysLogFacility(int bridge_syslog_facility);
 // Converts |syslog_facility| to a bridge syslog facility. Returns 0 if
 // |syslog_facility| does not map to a supported facility.
 int ToBridgeSysLogFacility(int syslog_facility);
+
+// Converts |bridge_syslog_priority| to a runtime syslog priority. Returns 0 if
+// |bridge_syslog_priority| does not contain a supported facility or level.
+int FromBridgeSysLogPriority(int bridge_syslog_priority);
+
+// Converts |syslog_priority| to a bridge syslog priority. Returns 0 if
+// |syslog_priority| does not contain a supported facility or level.
+int ToBridgeSysLogPriority(int syslog_priority);
 
 // Converts |bridge_file_flag| to a runtime file flag.
 int FromBridgeFileFlags(int bridge_file_flag);
