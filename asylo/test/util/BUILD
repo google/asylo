@@ -216,3 +216,13 @@ cc_library(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "grpc_debug_config",
+    srcs = ["grpc_debug_config.cc"],
+    hdrs = ["grpc_debug_config.h"],
+    deps = [
+        "//asylo:enclave_proto_cc",
+        "@com_google_absl//absl/strings",
+    ],
+)
