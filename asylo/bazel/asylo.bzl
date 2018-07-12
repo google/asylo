@@ -203,7 +203,7 @@ def _enclave_runner_script_impl(ctx):
     populate paths to enclaves.
 
     Arguments:
-      ctx: A blaze rule context
+      ctx: A bazel rule context
 
     Returns:
       The rule's providers. Indicates the data dependencies as runfiles.

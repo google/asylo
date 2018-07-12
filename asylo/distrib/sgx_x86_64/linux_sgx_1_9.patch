@@ -1,10 +1,10 @@
 # Google's Modifications to Intel's SGX Development Toolkit
 
 ## Top-level files added
-  * `BUILD` to build with Blaze/Bazel. Some targets use wrappers around
-      `make` defined in `sgx_sdk.bzl`.
-    - Changed `psw/ae/common/ProtobufSerializer` to work with a Blaze/Bazel-
-      controlled dependency instead of the system-installed `protobuf-compiler`.
+  * `BUILD` to build with Bazel. Some targets use wrappers around `make` defined
+    in `sgx_sdk.bzl`.
+    - Changed `psw/ae/common/ProtobufSerializer` to work with a Bazel-controlled
+      dependency instead of the system-installed `protobuf-compiler`.
   * `sgx_sdk.bzl` provides Skylark rules and macros to wrap `make` and provide
     tools to configure and sign enclave binaries with a debug test-only key.
   * `enclave_test_private.pem` is a DEBUG ONLY private key for signing test
