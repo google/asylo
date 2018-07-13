@@ -355,12 +355,14 @@ const tsi_handshaker_vtable handshaker_vtable = {
     nullptr /* extract_peer              -- deprecated */,
     nullptr /* create_frame_protector    -- deprecated */,
     enclave_handshaker_destroy, enclave_handshaker_next,
+    nullptr /* handshaker shutdown */,
 };
 
 tsi_enclave_handshaker::tsi_enclave_handshaker(
     bool is_client, std::unique_ptr<EkepHandshaker> ekep_handshaker)
     : is_client(is_client), handshaker(std::move(ekep_handshaker)) {
   base.handshaker_result_created = false;
+  base.handshake_shutdown = false;
   base.vtable = &handshaker_vtable;
 }
 
