@@ -157,6 +157,17 @@ cc_library(
     ],
 )
 
+# gMock matchers for Protocol Buffers.
+cc_library(
+    name = "proto_matchers",
+    testonly = 1,
+    hdrs = ["proto_matchers.h"],
+    deps = [
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
 # gMock matchers for asylo::Status and asylo::StatusOr<T> and a gtest
 # printer extension for asylo::StatusOr<T>.
 cc_library(
