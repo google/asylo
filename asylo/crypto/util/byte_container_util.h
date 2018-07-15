@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_UTIL_BYTE_CONTAINER_UTIL_H_
-#define ASYLO_IDENTITY_UTIL_BYTE_CONTAINER_UTIL_H_
+#ifndef ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_H_
+#define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_H_
 
 #include <algorithm>
 #include <cstdint>
@@ -110,4 +110,4 @@ Status SerializeByteContainers(const std::vector<ByteContainerT> &containers,
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_UTIL_BYTE_CONTAINER_UTIL_H_
+#endif  // ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_H_

@@ -30,6 +30,28 @@ cc_library(
 )
 
 cc_library(
+    name = "byte_container_util",
+    hdrs = ["byte_container_util.h"],
+    deps = [
+        "//asylo/util:status",
+        "@com_google_asylo//asylo/util:logging",
+    ],
+)
+
+cc_test(
+    name = "byte_container_util_test",
+    srcs = ["byte_container_util_test.cc"],
+    tags = ["regression"],
+    deps = [
+        ":byte_container_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "byte_container_view",
     hdrs = ["byte_container_view.h"],
     deps = ["@com_google_asylo//asylo/util:logging"],

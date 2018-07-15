@@ -22,7 +22,7 @@
 #include <string>
 #include <vector>
 
-#include "asylo/identity/util/byte_container_util.h"
+#include "asylo/crypto/util/byte_container_util.h"
 
 namespace asylo {
 

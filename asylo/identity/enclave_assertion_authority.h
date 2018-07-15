@@ -21,8 +21,8 @@
 
 #include <string>
 
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/util/byte_container_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

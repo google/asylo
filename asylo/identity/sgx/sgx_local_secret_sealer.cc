@@ -23,6 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/crypto/aes_gcm_siv.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity_acl.pb.h"
@@ -31,7 +32,6 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/util/byte_container_util.h"
 
 namespace asylo {
 

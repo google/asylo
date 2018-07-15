@@ -21,6 +21,7 @@
 #include <cstdint>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
@@ -29,7 +30,6 @@
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/util/byte_container_util.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/util/cleansing_types.h"
 
