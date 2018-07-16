@@ -26,6 +26,7 @@
 #include <iomanip>
 
 #include "absl/strings/escaping.h"
+#include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"

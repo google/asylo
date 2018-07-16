@@ -29,6 +29,7 @@
 #include <ctime>
 
 #include "absl/memory/memory.h"
+#include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"

@@ -17,6 +17,7 @@
  */
 
 #include "asylo/grpc/util/grpc_server_launcher.h"
+#include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 
 namespace asylo {

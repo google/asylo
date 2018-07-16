@@ -25,6 +25,7 @@
 #include <thread>
 
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
 
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"

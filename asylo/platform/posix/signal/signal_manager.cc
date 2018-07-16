@@ -18,9 +18,10 @@
 
 #include <signal.h>
 
-#include "asylo/platform/posix/signal/signal_manager.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
+#include "asylo/platform/posix/signal/signal_manager.h"
 
 namespace asylo {
 namespace {
