@@ -27,3 +27,13 @@ enum HashAlgorithm {
   SHA384 = 3;
   SHA512 = 4;
 };
+
+enum AeadScheme {
+  UNKNOWN_AEAD_SCHEME = 0;
+
+  AES128_GCM = 1;
+  AES256_GCM = 2;
+
+  AES128_GCM_SIV = 3;
+  AES256_GCM_SIV = 4;
+};

@@ -29,6 +29,18 @@ asylo_proto_library(
     srcs = ["algorithms.proto"],
 )
 
+# Defines a C++ interface for AEAD keys.
+cc_library(
+    name = "aead_key",
+    hdrs = ["aead_key.h"],
+    deps = [
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
+    ],
+)
+
 # Defines a C++ interface for hash functions.
 cc_library(
     name = "hash_interface",
