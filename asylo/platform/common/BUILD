@@ -134,3 +134,21 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+# Synchronized pool of tokens in shared memory.
+cc_library(
+    name = "shared_token_pool",
+    srcs = ["spin_lock.h"],
+    hdrs = ["shared_token_pool.h"],
+)
+
+cc_test(
+    name = "shared_token_pool_test",
+    size = "medium",
+    srcs = ["shared_token_pool_test.cc"],
+    deps = [
+        ":shared_token_pool",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)

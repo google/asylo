@@ -34,10 +34,10 @@ namespace asylo {
 // writers is not supported and will corrupt the buffer contents.
 //
 // NOTE: This code is written with security sensitive applications in mind, and
-// great care should be taken to ensure it never reads or writes outside the
-// buffer object itself. In particular, while we assume the integrity of the
-// code accessing the buffer, we make no assumptions about the integrity of the
-// data in the buffer itself.
+// care should be taken to ensure it never reads or writes outside the stack
+// object itself. In particular, while we assume the integrity of the code
+// accessing the buffer, we make no assumptions about the integrity of the data
+// in the buffer itself.
 //
 // This implementation is intended for applications which can't use operating
 // system synchronization primitives, for instance embedded applications on bare
@@ -54,17 +54,17 @@ namespace asylo {
 // between different compiler and source versions. If the layout of an instance
 // matches the expected layout of a type then:
 //
-// RingBuffer<Capacity>::TypeVersion() == instance->InstanceVersion();
+// RingBuffer<kCapacity>::TypeVersion() == instance->InstanceVersion();
 //
 
 // Exposes NonBlockingRead/Write for testing.
-template <size_t Capacity>
+template <size_t kCapacity>
 class RingBufferForTest;
 
-template <size_t Capacity>
+template <size_t kCapacity>
 class RingBuffer {
  public:
-  static_assert(Capacity > 1, "Minimum supported size is two elements.");
+  static_assert(kCapacity > 1, "Minimum supported size is two elements.");
 
   // C++11 does not provide a constexpr version of is_lock_free, so instead
   // check that an atomic size_t has the same size as regular size_t. This
@@ -74,18 +74,18 @@ class RingBuffer {
                 "std::atomic<size_t> is not lock free.");
 
   RingBuffer()
-      : instance_version_(RingBuffer<Capacity>::TypeVersion()),
+      : instance_version_(RingBuffer<kCapacity>::TypeVersion()),
         count_(0),
         read_pos_(0),
         write_pos_(0) {}
 
-  RingBuffer(const RingBuffer<Capacity> &) = delete;
+  RingBuffer(const RingBuffer<kCapacity> &) = delete;
 
-  RingBuffer(RingBuffer<Capacity> &&) = delete;
+  RingBuffer(RingBuffer<kCapacity> &&) = delete;
 
-  RingBuffer<Capacity> &operator=(const RingBuffer &) = delete;
+  RingBuffer<kCapacity> &operator=(const RingBuffer &) = delete;
 
-  RingBuffer<Capacity> &operator=(RingBuffer &&) = delete;
+  RingBuffer<kCapacity> &operator=(RingBuffer &&) = delete;
 
   // Reads from the buffer, blocking if data is unavailable.
   size_t Read(uint8_t *buf, size_t nbyte) {
@@ -113,7 +113,7 @@ class RingBuffer {
   }
 
   // Returns the maximum capacity of the buffer in bytes.
-  constexpr size_t capacity() const { return Capacity; }
+  constexpr size_t capacity() const { return kCapacity; }
 
   // Clears the buffer and leaves it empty. This operation is not synchronized
   // and its behavior in the presence of concurrent readers and writers is
@@ -125,7 +125,7 @@ class RingBuffer {
   }
 
   // Returns the number of bytes of empty space available for writing.
-  size_t available() const { return Capacity - count_; }
+  size_t available() const { return kCapacity - count_; }
 
   // Returns number of bytes stored in the buffer for reading.
   size_t size() const { return count_; }
@@ -134,7 +134,7 @@ class RingBuffer {
   bool empty() const { return count_ == 0; }
 
   // Returns true is the buffer is full.
-  bool full() const { return count_ == Capacity; }
+  bool full() const { return count_ == kCapacity; }
 
   // Returns a signature reflecting the layout of this concrete instance.
   uint64_t InstanceVersion() const { return instance_version_; }
@@ -148,7 +148,7 @@ class RingBuffer {
   }
 
  private:
-  friend class RingBufferForTest<Capacity>;
+  friend class RingBufferForTest<kCapacity>;
 
   // Reads up to |nbyte| bytes without blocking, returning the number
   // successfully read.
@@ -165,12 +165,12 @@ class RingBuffer {
     // wraps around to zero. The following calls to memcpy read those bytes into
     // |buf|.
     //
-    // Note that although read_ should already be in bounds, we double check
+    // Note that although read_pos_ should already be in bounds, we double check
     // when reading it into right_index. This is required to avoid a time-of-use
     // / time-of-check vulnerability in the event an attacker has corrupted the
     // shared buffer.
-    size_t right_index = read_pos_ % Capacity;
-    size_t right_count = std::min(size, Capacity - right_index);
+    size_t right_index = read_pos_ % kCapacity;
+    size_t right_count = std::min(size, kCapacity - right_index);
     memcpy(buf, buffer_.data() + right_index, right_count);
     if (size - right_count > 0) {
       // Reading from the left.
@@ -180,7 +180,7 @@ class RingBuffer {
     // Decrement the count of bytes in the buffer atomically since the writer
     // may be incrementing it concurrently.
     count_.fetch_add(-size);
-    read_pos_ = (read_pos_ + size) % Capacity;
+    read_pos_ = (read_pos_ + size) % kCapacity;
 
     return size;
   }
@@ -190,7 +190,7 @@ class RingBuffer {
   size_t NonBlockingWrite(const uint8_t *buf, size_t nbyte) {
     // Since there is only one writer, and since the reader will only ever
     // remove bytes from the buffer, we can write at least size bytes.
-    size_t size = std::min(nbyte, Capacity - count_);
+    size_t size = std::min(nbyte, kCapacity - count_);
     if (size == 0) {
       return 0;
     }
@@ -200,10 +200,10 @@ class RingBuffer {
     // gap wraps around to zero. The following calls to memcpy fill those gaps
     // from |buf|.
     //
-    // The "% Capacity" here is required and should not be removed. See
+    // The "% kCapacity" here is required and should not be removed. See
     // NonBlockingRead for a discussion.
-    size_t right_index = write_pos_ % Capacity;
-    size_t right_count = std::min(size, Capacity - right_index);
+    size_t right_index = write_pos_ % kCapacity;
+    size_t right_count = std::min(size, kCapacity - right_index);
     memcpy(buffer_.data() + right_index, buf, right_count);
     if (size - right_count > 0) {
       // Writing to the left.
@@ -213,7 +213,7 @@ class RingBuffer {
     // Increment the count of bytes in the buffer atomically since the reader
     // may be decrementing it concurrently.
     count_.fetch_add(size);
-    write_pos_ = (write_pos_ + size) % Capacity;
+    write_pos_ = (write_pos_ + size) % kCapacity;
 
     return size;
   }
@@ -223,10 +223,10 @@ class RingBuffer {
   // Number of bytes waiting in the queue.
   std::atomic<size_t> count_;
   // Read index into buffer_.
-  size_t read_pos_;
+  volatile size_t read_pos_;
   // Write index into buffer_.
-  size_t write_pos_;
-  std::array<uint8_t, Capacity> buffer_;
+  volatile size_t write_pos_;
+  std::array<uint8_t, kCapacity> buffer_;
 };
 
 }  // namespace asylo
