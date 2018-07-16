@@ -72,7 +72,7 @@ EnclaveManager *EnclaveManager::instance_ = nullptr;
 void donate(asylo::EnclaveClient *client) {
   Status status = client->EnterAndDonateThread();
   if (!status.ok()) {
-    LOG(ERROR) << "EnterAndDonateThread(): " << status.error_code();
+    LOG(ERROR) << "EnterAndDonateThread() failed: " << status;
   }
 }
 
