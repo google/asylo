@@ -110,3 +110,42 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "signing_key",
+    hdrs = ["signing_key.h"],
+    deps = [
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+    ],
+)
+
+cc_library(
+    name = "ecdsa_p256_sha256_signing_key",
+    srcs = ["ecdsa_p256_sha256_signing_key.cc"],
+    hdrs = ["ecdsa_p256_sha256_signing_key.h"],
+    deps = [
+        ":sha256_hash",
+        ":signing_key",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+cc_test(
+    name = "ecdsa_p256_sha256_signing_key_test",
+    srcs = ["ecdsa_p256_sha256_signing_key_test.cc"],
+    enclave_test_name = "ecdsa_p256_sha256_signing_key_enclave_test",
+    tags = ["regression"],
+    deps = [
+        ":ecdsa_p256_sha256_signing_key",
+        ":sha256_hash",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@boringssl//:crypto",
+        "@com_google_googletest//:gtest",
+    ],
+)

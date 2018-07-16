@@ -37,3 +37,8 @@ enum AeadScheme {
   AES128_GCM_SIV = 3;
   AES256_GCM_SIV = 4;
 };
+
+enum SignatureScheme {
+  UNKNOWN_SIGNATURE_SCHEME = 0;
+  ECDSA_P256_SHA256 = 1;
+};
