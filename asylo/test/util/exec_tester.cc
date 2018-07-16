@@ -21,7 +21,7 @@
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-
+#include <xmmintrin.h>
 #include <cstring>
 #include <sstream>
 
@@ -30,7 +30,8 @@
 
 namespace asylo {
 
-ExecTester::ExecTester(const std::vector<std::string> &args) : args_(args) {
+ExecTester::ExecTester(const std::vector<std::string> &args, int fd_to_check)
+    : args_(args), fd_to_check_(fd_to_check) {
   // Make sure we can actually execute the file.
   if (::access(args[0].c_str(), X_OK)) {
     std::cerr << "Cannot access file: " << args[0] << "\nError (" << errno
@@ -76,16 +77,16 @@ bool ExecTester::Run(int *status, const std::string &input) {
   return FinalCheck(result);
 }
 
-void ExecTester::DoExec(int read_stdin, int write_stdin, int read_stdout,
-                        int write_stdout) {
+void ExecTester::DoExec(int read_stdin, int write_stdin, int read_fd_to_check,
+                        int write_fd_to_check) {
   if (read_stdin >= 0) {
     ASSERT_NE(-1, dup2(read_stdin, STDIN_FILENO)) << strerror(errno);
     close(write_stdin);
   }
-  // Make STDOUT from the subprocess write to the pipe.
-  ASSERT_NE(-1, dup2(write_stdout, STDOUT_FILENO)) << strerror(errno);
+  // Make writes to fd_to_check_ from the subprocess write to the pipe.
+  ASSERT_NE(-1, dup2(write_fd_to_check, fd_to_check_)) << strerror(errno);
   // Only the host process needs to read from the pipe.
-  close(read_stdout);
+  close(read_fd_to_check);
 
   // No malloc allowed between fork/exec. We can get deadlocked.
   char **argv =
@@ -104,26 +105,27 @@ void ExecTester::RunWithAsserts(const std::string &input, bool *result,
   ASSERT_NE(nullptr, result);
   ASSERT_NE(nullptr, status);
 
-  int stdin_pipe[2] = {-1, 0};  // Use -1 to mean "no file descriptor".
-  int stdout_pipe[2];
-  ASSERT_EQ(0, pipe(stdout_pipe))
-      << "Could not establish pipe for subprocess output.";
+  // Use -1 to mean "no file descriptor".
+  int stdin_pipe[2] = {-1, STDIN_FILENO};
+  int fd_to_check_pipe[2];
+  ASSERT_EQ(0, pipe(fd_to_check_pipe))
+      << "Could not establish pipe for subprocess output: " << strerror(errno);
   ASSERT_TRUE(input.empty() || !pipe(stdin_pipe))
-      << "Could not establish pipe for subprocess input.";
+      << "Could not establish pipe for subprocess input: " << strerror(errno);
   constexpr int kReadEnd = 0;
   constexpr int kWriteEnd = 1;
   int read_stdin = stdin_pipe[kReadEnd];
   int write_stdin = stdin_pipe[kWriteEnd];
-  int read_stdout = stdout_pipe[kReadEnd];
-  int write_stdout = stdout_pipe[kWriteEnd];
+  int read_fd_to_check = fd_to_check_pipe[kReadEnd];
+  int write_fd_to_check = fd_to_check_pipe[kWriteEnd];
 
   pid_t pid = fork();
 
   ASSERT_NE(-1, pid);
   if (pid == 0) {  // Subprocess
-    DoExec(read_stdin, write_stdin, read_stdout, write_stdout);
+    DoExec(read_stdin, write_stdin, read_fd_to_check, write_fd_to_check);
   } else {  // Host process
-    close(write_stdout);
+    close(write_fd_to_check);
     close(read_stdin);
 
     // Write the input string to stdin if available.
@@ -133,29 +135,29 @@ void ExecTester::RunWithAsserts(const std::string &input, bool *result,
     }
 
     // Make the read end of the pipe non-blocking.
-    int flags = fcntl(read_stdout, F_GETFL, 0);
-    fcntl(read_stdout, F_SETFL, flags | O_NONBLOCK);
+    int flags = fcntl(read_fd_to_check, F_GETFL, 0);
+    fcntl(read_fd_to_check, F_SETFL, flags | O_NONBLOCK);
 
-    ReadCheckLoop(pid, read_stdout, result, status);
+    ReadCheckLoop(pid, read_fd_to_check, result, status);
   }
 }
 
-void ExecTester::ReadCheckLoop(pid_t pid, int stdout, bool *result,
-                               int *status) {
+void ExecTester::ReadCheckLoop(pid_t pid, int fd, bool *result, int *status) {
   ASSERT_NE(nullptr, status);
 
   bool conjunction = true;
   char buf[1024];
   std::stringstream linebuf;
 
-  // Read and check all subprocess output to stdout until it terminates.
-  while (1) {
-    __builtin_ia32_pause();
+  // Read and check all subprocess output to |fd| until the subprocess
+  // terminates.
+  while (true) {
+    _mm_pause();
     int changed_pid = waitpid(pid, status, WNOHANG);
     ASSERT_NE(-1, changed_pid)
-        << "Wait on subprocess status failed " << strerror(errno);
+        << "Wait on subprocess status failed: " << strerror(errno);
 
-    CheckFD(buf, sizeof(buf), &linebuf, stdout, &conjunction);
+    CheckFD(buf, sizeof(buf), &linebuf, fd, &conjunction);
 
     if (changed_pid && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
       *result = conjunction;

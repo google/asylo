@@ -16,6 +16,7 @@
  *
  */
 
+#include <unistd.h>
 #include <cstdlib>
 
 #include <gtest/gtest.h>
@@ -35,8 +36,9 @@ class ExecTesterTest : public ::testing::Test {
   class CheckLine : public ExecTester {
    public:
     CheckLine(const std::string& line, const std::vector<std::string>& args,
-              int minimum = 0, bool hard_limit = true)
-        : ExecTester(args),
+              int minimum = 0, bool hard_limit = true,
+              int fd_to_check = STDOUT_FILENO)
+        : ExecTester(args, fd_to_check),
           line_(line),
           count_(0),
           minimum_(minimum),
@@ -67,22 +69,6 @@ class ExecTesterTest : public ::testing::Test {
  protected:
   std::string app_;
 };
-
-TEST_F(ExecTesterTest, CheckSIGILL) {
-  ExecTester run({app_, std::string("--sigill")});
-  int status = 0;
-  EXPECT_TRUE(run.Run(&status));
-  ASSERT_TRUE(WIFSIGNALED(status));
-  EXPECT_EQ(SIGILL, WTERMSIG(status));
-}
-
-TEST_F(ExecTesterTest, CheckSIGSEGV) {
-  ExecTester run({app_, std::string("--segfault")});
-  int status = 0;
-  EXPECT_TRUE(run.Run(&status));
-  ASSERT_TRUE(WIFSIGNALED(status));
-  EXPECT_EQ(SIGSEGV, WTERMSIG(status));
-}
 
 TEST_F(ExecTesterTest, CheckExit3) {
   ExecTester run({app_, std::string("--exit3")});
@@ -118,6 +104,31 @@ TEST_F(ExecTesterTest, CheckPrintB5) {
 
 TEST_F(ExecTesterTest, CheckPrintB5Not3Times) {
   CheckLine run("B", {app_, std::string("--printB5")}, 3, false);
+  int status = 0;
+  EXPECT_TRUE(run.Run(&status));
+  EXPECT_TRUE(WIFEXITED(status));
+  EXPECT_EQ(0, WEXITSTATUS(status));
+}
+
+TEST_F(ExecTesterTest, CheckSIGSEGV) {
+  ExecTester run({app_, std::string("--segfault")});
+  int status = 0;
+  EXPECT_TRUE(run.Run(&status));
+  ASSERT_TRUE(WIFSIGNALED(status));
+  EXPECT_EQ(SIGSEGV, WTERMSIG(status));
+}
+
+TEST_F(ExecTesterTest, CheckSIGILL) {
+  ExecTester run({app_, std::string("--sigill")});
+  int status = 0;
+  EXPECT_TRUE(run.Run(&status));
+  ASSERT_TRUE(WIFSIGNALED(status));
+  EXPECT_EQ(SIGILL, WTERMSIG(status));
+}
+
+TEST_F(ExecTesterTest, CheckStderrFoo) {
+  CheckLine run("Foo", {app_, std::string("--stderrFoo")}, /*minimum=*/1,
+                /*hard_limit=*/true, /*fd_to_check=*/STDERR_FILENO);
   int status = 0;
   EXPECT_TRUE(run.Run(&status));
   EXPECT_TRUE(WIFEXITED(status));

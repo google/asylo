@@ -26,11 +26,13 @@ void usage(int argc, char *argv[]) {
   std::cerr << "Expected usage: " << argv[0]
             << " --TEST_NAME\n"
                "Where TEST_NAME can be one of\n"
-               "  sigill\n"
-               "  segfault\n"
+               "  exit3\n"
                "  printA\n"
                "  printB5\n"
-               "  exit3\n"
+               "  segfault\n"
+               "  sigill\n"
+               "  stderrFoo\n"
+               "  stdin\n"
                "\nGiven: ";
   for (int i = 0; i < argc; ++i) {
     std::cerr << argv[i] << std::endl;
@@ -43,18 +45,18 @@ int main(int argc, char *argv[]) {
     usage(argc, argv);
   }
 
-  if (strcmp(argv[1], "--sigill") == 0) {
-    raise(SIGILL);
-  } else if (strcmp(argv[1], "--exit3") == 0) {
+  if (strcmp(argv[1], "--exit3") == 0) {
     exit(3);
-  } else if (strcmp(argv[1], "--segfault") == 0) {
-    raise(SIGSEGV);
   } else if (strcmp(argv[1], "--printA") == 0) {
     std::cout << "A" << std::endl;
   } else if (strcmp(argv[1], "--printB5") == 0) {
     for (int i = 0; i < 5; ++i) {
       std::cout << "B" << std::endl;
     }
+  } else if (strcmp(argv[1], "--segfault") == 0) {
+    raise(SIGSEGV);
+  } else if (strcmp(argv[1], "--sigill") == 0) {
+    raise(SIGILL);
   } else if (strcmp(argv[1], "--stdin") == 0) {
     int number = 0;
     std::cin >> number;
@@ -63,6 +65,8 @@ int main(int argc, char *argv[]) {
     } else {
       std::cout << "Fail." << std::endl;
     }
+  } else if (strcmp(argv[1], "--stderrFoo") == 0) {
+    std::cerr << "Foo" << std::endl;
   } else {
     usage(argc, argv);
   }
