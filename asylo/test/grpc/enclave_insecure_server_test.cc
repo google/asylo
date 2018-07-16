@@ -55,7 +55,7 @@ class EnclaveServerTest : public EnclaveTest {
 };
 
 TEST_F(EnclaveServerTest, SimpleEnd2EndTest) {
-  // Initialize the gRPC server and gets its address.
+  // Launch the gRPC server and gets its address.
   EnclaveInput input;
   input.SetExtension(command, ServerCommand::INITIALIZE_SERVER);
   EnclaveOutput output;
@@ -64,14 +64,6 @@ TEST_F(EnclaveServerTest, SimpleEnd2EndTest) {
   const ServerConfig &config = output.GetExtension(server_output_config);
   ASSERT_NE(config.port(), 0);
   address_ = absl::StrCat(config.host(), ":", config.port());
-
-  // Launch the gRPC server.
-  std::thread grpc_thread([this]() {
-    EnclaveInput input;
-    input.SetExtension(command, ServerCommand::RUN_SERVER);
-    ASSERT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), IsOk());
-  });
-  grpc_thread.detach();
 
   // Create a channel and wait 30 seconds for the channel to connect to the
   // server.
