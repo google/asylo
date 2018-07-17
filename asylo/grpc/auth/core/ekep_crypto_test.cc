@@ -29,6 +29,7 @@
 #include <gtest/gtest.h>
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/grpc/auth/core/ekep_error_space.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -99,7 +100,7 @@ TEST(EkepCryptoTest, DeriveSecretsBadCiphersuite) {
                                 peer_dh_public_key, self_dh_private_key,
                                 &master_secret, &authenticator_secret);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_BAD_HANDSHAKE_CIPHER);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_BAD_HANDSHAKE_CIPHER));
 }
 
 // Verify that DeriveSecrets fails and returns PROTOCOL_ERROR when passed a
@@ -120,7 +121,7 @@ TEST(EkepCryptoTest, DeriveSecretsBadPublicParameterSize) {
       DeriveSecrets(CURVE25519_SHA256, transcript_hash, peer_dh_public_key,
                     self_dh_private_key, &master_secret, &authenticator_secret);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_PROTOCOL_ERROR);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_PROTOCOL_ERROR));
 }
 
 // Verify that DeriveSecrets fails and returns INTERNAL_ERROR when passed a
@@ -141,7 +142,7 @@ TEST(EkepCryptoTest, DeriveSecretsBadPrivateParameterSize) {
       DeriveSecrets(CURVE25519_SHA256, transcript_hash, peer_dh_public_key,
                     self_dh_private_key, &master_secret, &authenticator_secret);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_INTERNAL_ERROR);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_INTERNAL_ERROR));
 }
 
 // Verify success of DeriveSecrets using the ciphersuite consisting of
@@ -195,7 +196,7 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadCiphersuite) {
       DeriveRecordProtocolKey(UNKNOWN_HANDSHAKE_CIPHER, SEAL_AES128_GCM,
                               transcript_hash, master_secret, &key);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_BAD_HANDSHAKE_CIPHER);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_BAD_HANDSHAKE_CIPHER));
 }
 
 // Verify that DeriveRecordProtocolKey fails and returns BAD_RECORD_PROTOCOL
@@ -209,7 +210,7 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadRecordProtocol) {
       DeriveRecordProtocolKey(CURVE25519_SHA256, UNKNOWN_RECORD_PROTOCOL,
                               transcript_hash, master_secret, &key);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_BAD_RECORD_PROTOCOL);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_BAD_RECORD_PROTOCOL));
 }
 
 // Verify success of DeriveRecordProtocolKey when using the ciphersuite
@@ -248,7 +249,7 @@ TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorBadCipherSuite) {
   Status status = ComputeClientHandshakeAuthenticator(
       UNKNOWN_HANDSHAKE_CIPHER, authenticator_secret, &authenticator);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_BAD_HANDSHAKE_CIPHER);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_BAD_HANDSHAKE_CIPHER));
 }
 
 // Verify success of ComputeClientHandshakeAuthenticator when using the
@@ -287,7 +288,7 @@ TEST(EkepCryptoTest, ComputeServerHandshakeAuthenticatorBadCipherSuite) {
   Status status = ComputeServerHandshakeAuthenticator(
       UNKNOWN_HANDSHAKE_CIPHER, authenticator_secret, &authenticator);
   EXPECT_THAT(status, Not(IsOk()));
-  EXPECT_EQ(status.error_code(), Abort_ErrorCode_BAD_HANDSHAKE_CIPHER);
+  EXPECT_THAT(status, StatusIs(Abort_ErrorCode_BAD_HANDSHAKE_CIPHER));
 }
 
 // Verify success of ComputeServerHandshakeAuthenticator when using the

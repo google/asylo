@@ -169,6 +169,7 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":ekep_crypto",
+        ":ekep_error_space",
         ":handshake_proto_cc",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",

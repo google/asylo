@@ -147,10 +147,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootType) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -165,10 +164,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootName) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -183,10 +181,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadAdditionalInfo) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -204,10 +201,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadCpusvn) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -225,10 +221,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadCipherSuite) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -254,10 +249,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadClientAcl) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::INVALID_ARGUMENT);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRENCLAVE
@@ -318,10 +312,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsMrenclaveFailure) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::PERMISSION_DENIED);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::PERMISSION_DENIED));
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRSIGNER
@@ -405,10 +398,9 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsMrsignerFailure) {
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_EQ(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                header, &cpusvn, &cipher_suite, &sgx_expectation)
-                .error_code(),
-            error::GoogleError::PERMISSION_DENIED);
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+              StatusIs(error::GoogleError::PERMISSION_DENIED));
 }
 
 // Verify that a secret sealed to MRENCLAVE can be unsealed from the same
