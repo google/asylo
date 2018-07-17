@@ -54,7 +54,10 @@ cc_test(
 cc_library(
     name = "byte_container_view",
     hdrs = ["byte_container_view.h"],
-    deps = ["@com_google_asylo//asylo/util:logging"],
+    deps = [
+        "@boringssl//:crypto",
+        "@com_google_asylo//asylo/util:logging",
+    ],
 )
 
 cc_test(

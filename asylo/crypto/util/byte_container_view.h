@@ -19,11 +19,13 @@
 #ifndef ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_
 #define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_
 
+#include <string.h>
 #include <cstdint>
 #include <cstdlib>
 #include <iterator>
 
 #include "asylo/util/logging.h"
+#include <openssl/mem.h>
 
 namespace asylo {
 
@@ -76,6 +78,9 @@ class ByteContainerView {
   ByteContainerView(void const *data, size_t size)
       : data_{reinterpret_cast<const uint8_t *>(data)}, size_{size} {}
 
+  ByteContainerView(const char *cstr)
+      : data_{reinterpret_cast<const uint8_t *>(cstr)}, size_{strlen(cstr)} {}
+
   template <typename ByteContainerT>
   ByteContainerView(const ByteContainerT &container)
       : data_{reinterpret_cast<const uint8_t *>(container.data())},
@@ -117,6 +122,24 @@ class ByteContainerView {
       LOG(FATAL) << "Index out of bounds.";
     }
     return data_[offset];
+  }
+
+  // The equality operator. Compares the contents of this ByteContainerView
+  // with the contents of |other|.
+  bool operator==(ByteContainerView other) const {
+    return (size_ == other.size_) && (memcmp(data_, other.data_, size_) == 0);
+  }
+
+  // The inequality operator. Compares the contents of this ByteContainerView
+  // with the contents of |other|.
+  bool operator!=(ByteContainerView other) const { return !operator==(other); }
+
+  // Performs a side-channel-resistant comparison of contents of this
+  // ByteContainerView with the contents of |other|. Returns true if the
+  // contents are equal.
+  bool SafeEquals(ByteContainerView other) const {
+    return (size_ == other.size_) &&
+           (CRYPTO_memcmp(data_, other.data_, size_) == 0);
   }
 
  private:
