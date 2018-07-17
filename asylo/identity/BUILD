@@ -152,6 +152,30 @@ cc_test(
 )
 
 cc_library(
+    name = "assertion_description_util",
+    srcs = ["assertion_description_util.cc"],
+    hdrs = ["assertion_description_util.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":identity_proto_cc",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+    ],
+)
+
+cc_test(
+    name = "assertion_description_util_test",
+    srcs = ["assertion_description_util_test.cc"],
+    deps = [
+        ":assertion_description_util",
+        ":identity_proto_cc",
+        "//asylo/test/util:proto_matchers",
+        "@com_google_googletest//:gtest_main",
+    ],
+)
+
+cc_library(
     name = "enclave_assertion_authority",
     hdrs = ["enclave_assertion_authority.h"],
     visibility = ["//visibility:public"],
