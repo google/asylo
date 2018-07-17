@@ -40,24 +40,6 @@ extend EnclaveConfig {
   optional ServerConfig server_input_config = 174238459;
 }
 
-// A command provided to the enclave server.
-enum ServerCommand {
-  UNKNOWN = 0;
-
-  // Indicates that the enclave should build and prepare the gRPC server (e.g.
-  // determine the final server address). This does not actually launch the
-  // server.
-  INITIALIZE_SERVER = 1;
-
-  // Indicates that the enclave should start the gRPC server.
-  RUN_SERVER = 2;
-}
-
-extend EnclaveInput {
-  // The command to execute.
-  optional ServerCommand command = 196851825;
-}
-
 extend EnclaveOutput {
   // The gRPC server's current configuration. This may be different than the
   // address provided to the enclave at initialization if port auto-selection

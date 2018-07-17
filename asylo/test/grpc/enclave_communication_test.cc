@@ -70,13 +70,17 @@ class EnclaveCommunicationTest : public ::testing::Test {
       return status;
     }
 
-    // Initialize the gRPC server and get its address.
-    EnclaveInput input;
-    input.SetExtension(command, ServerCommand::INITIALIZE_SERVER);
+    // Get the gRPC server's address.
     EnclaveOutput output;
-    status = server_launcher_.mutable_client()->EnterAndRun(input, &output);
+    status =
+        server_launcher_.mutable_client()->EnterAndRun(/*input=*/{}, &output);
     if (!status.ok()) {
       return status;
+    }
+
+    if (!output.HasExtension(server_output_config)) {
+      return Status(error::GoogleError::INTERNAL,
+                    "EnclaveServer did not return a server_output_config");
     }
 
     const ServerConfig &final_server_config =

@@ -55,12 +55,11 @@ class EnclaveServerTest : public EnclaveTest {
 };
 
 TEST_F(EnclaveServerTest, SimpleEnd2EndTest) {
-  // Launch the gRPC server and gets its address.
-  EnclaveInput input;
-  input.SetExtension(command, ServerCommand::INITIALIZE_SERVER);
+  // The gRPC server was launched during initialization of the enclave.
+  // Get the gRPC server's address through the enclave's Run() entry-point.
   EnclaveOutput output;
-  ASSERT_THAT(client_->EnterAndRun(input, &output), IsOk());
-
+  ASSERT_THAT(client_->EnterAndRun(/*input=*/{}, &output), IsOk());
+  ASSERT_TRUE(output.HasExtension(server_output_config));
   const ServerConfig &config = output.GetExtension(server_output_config);
   ASSERT_NE(config.port(), 0);
   address_ = absl::StrCat(config.host(), ":", config.port());

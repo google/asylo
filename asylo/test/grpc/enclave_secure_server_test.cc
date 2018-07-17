@@ -69,12 +69,11 @@ class EnclaveSecureGrpcTest : public EnclaveTest {
 // Starts a gRPC server in an enclave and calls this server with an untrusted
 // gRPC client. Client and server use null-assertion-based enclave credentials.
 TEST_F(EnclaveSecureGrpcTest, SimpleEnd2EndTest) {
-  // Launch the gRPC server and get its address.
-  EnclaveInput input;
-  input.SetExtension(command, ServerCommand::INITIALIZE_SERVER);
+  // The gRPC server was launched during initialization of the enclave.
+  // Get the gRPC server's address through the enclave's Run() entry-point.
   EnclaveOutput output;
-  ASSERT_THAT(client_->EnterAndRun(input, &output), IsOk());
-
+  ASSERT_THAT(client_->EnterAndRun(/*input=*/{}, &output), IsOk());
+  ASSERT_TRUE(output.HasExtension(server_output_config));
   const ServerConfig &config = output.GetExtension(server_output_config);
   ASSERT_NE(config.port(), 0);
   address_ = absl::StrCat(config.host(), ":", config.port());

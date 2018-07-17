@@ -37,6 +37,22 @@
 namespace asylo {
 
 // Enclave for hosting a gRPC service.
+//
+// The gRPC service and credentials are configurable in the constructor.
+//
+// The server is initialized and started during Initialize(). Users of this
+// class are expected to set the server's host and port in the EnclaveConfig
+// provided to EnclaveManager::LoadEnclave() when loading their enclave.
+//
+// The Run() entry-point can be used to retrieve the server's host and port.
+// The port may be different than the value provided at enclave initialization
+// if the EnclaveConfig specified a port of 0 (indicates that the operating
+// system should select an available port).
+//
+// The server is shut down during Finalize(). To ensure proper server shutdown,
+// users of this class are expected to trigger enclave finalization by calling
+// EnclaveManager::DestroyEnclave() at some point during lifetime of their
+// application.
 class EnclaveServer final : public TrustedApplication {
  public:
   EnclaveServer(std::unique_ptr<::grpc::Service> service,
@@ -53,42 +69,29 @@ class EnclaveServer final : public TrustedApplication {
         config.GetExtension(server_input_config);
     host_ = config_server_proto.host();
     port_ = config_server_proto.port();
-    LOG(INFO) << "Server configured with address: " << host_ << ":" << port_;
-    return Status::OkStatus();
+    LOG(INFO) << "gRPC server configured with address: " << host_ << ":"
+              << port_;
+    return InitializeServer();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
-    switch (input.GetExtension(command)) {
-      case ServerCommand::INITIALIZE_SERVER:
-        return InitializeServer(output);
-      case ServerCommand::RUN_SERVER:
-        return RunServer();
-      case ServerCommand::UNKNOWN:
-        return Status(
-            error::GoogleError::INVALID_ARGUMENT,
-            absl::StrCat("Invalid command: ",
-                         ServerCommand_Name(input.GetExtension(command))));
-      default:
-        return Status(
-            error::GoogleError::INVALID_ARGUMENT,
-            absl::StrCat("Unrecognized command: ",
-                         ServerCommand_Name(input.GetExtension(command))));
-    }
+    GetServerAddress(output);
+    return Status::OkStatus();
   }
 
   Status Finalize(const EnclaveFinal &enclave_final) {
-    return FinalizeServer();
+    FinalizeServer();
+    return Status::OkStatus();
   }
 
  private:
-  // Initializes a gRPC server, returning the server configuration in |output|.
-  // If the server is already initialized, does not re-initialize it, but
-  // returns the server's configuration in |output|.
-  Status InitializeServer(EnclaveOutput *output) LOCKS_EXCLUDED(server_mutex_) {
+  // Initializes a gRPC server. If the server is already initialized, does
+  // nothing.
+  Status InitializeServer() LOCKS_EXCLUDED(server_mutex_) {
     // Ensure that the server is only created and initialized once.
     absl::MutexLock lock(&server_mutex_);
     if (server_) {
-      return GetServerAddress(output);
+      return Status::OkStatus();
     }
 
     StatusOr<std::unique_ptr<::grpc::Server>> server_result = CreateServer();
@@ -97,7 +100,7 @@ class EnclaveServer final : public TrustedApplication {
     }
 
     server_ = std::move(server_result.ValueOrDie());
-    return GetServerAddress(output);
+    return Status::OkStatus();
   }
 
   // Creates a gRPC server that hosts service_ on host_ and port_ with
@@ -109,61 +112,38 @@ class EnclaveServer final : public TrustedApplication {
     builder.AddListeningPort(absl::StrCat(host_, ":", port_), credentials_,
                              &port);
     if (!service_.get()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "service_ cannot be nullptr");
+      return Status(error::GoogleError::INTERNAL, "No gRPC service configured");
     }
     builder.RegisterService(service_.get());
     std::unique_ptr<::grpc::Server> server = builder.BuildAndStart();
     if (!server) {
-      return Status(error::GoogleError::INTERNAL, "Failed to start server");
+      return Status(error::GoogleError::INTERNAL,
+                    "Failed to start gRPC server");
     }
+
     port_ = port;
+    LOG(INFO) << "gRPC server is listening on " << host_ << ":" << port_;
+
     return std::move(server);
   }
 
   // Gets the address of the hosted gRPC server and writes it to
   // server_output_config extension of |output|.
-  Status GetServerAddress(EnclaveOutput *output)
+  void GetServerAddress(EnclaveOutput *output)
       EXCLUSIVE_LOCKS_REQUIRED(server_mutex_) {
     ServerConfig *config = output->MutableExtension(server_output_config);
     config->set_host(host_);
     config->set_port(port_);
-    return Status::OkStatus();
-  }
-
-  // Runs the gRPC server. The server must have been previously initialized.
-  // Returns an error if the server is already running.
-  Status RunServer() {
-    {
-      absl::MutexLock lock(&server_mutex_);
-      if (!server_) {
-        return Status(error::GoogleError::FAILED_PRECONDITION,
-                      "Server has not been initialized");
-      }
-
-      if (running_) {
-        return Status(error::GoogleError::INTERNAL,
-                      "Server is already running");
-      }
-      running_ = true;
-    }
-
-    LOG(INFO) << "Server is listening on " << host_ << ":" << port_;
-
-    // Block until process is killed or Shutdown() is called.
-    server_->Wait();
-    return Status::OkStatus();
   }
 
   // Finalizes the gRPC server by calling ::gprc::Server::Shutdown().
-  Status FinalizeServer() LOCKS_EXCLUDED(server_mutex_) {
+  void FinalizeServer() LOCKS_EXCLUDED(server_mutex_) {
     absl::MutexLock lock(&server_mutex_);
     if (server_) {
       LOG(INFO) << "Shutting down...";
       server_->Shutdown();
       server_ = nullptr;
     }
-    return Status::OkStatus();
   }
 
   // Guards state related to the gRPC server (|server_| and |port_|).
