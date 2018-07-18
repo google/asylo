@@ -41,12 +41,44 @@ asylo_proto_library(
 asylo_proto_library(
     name = "remote_assertion_proto",
     srcs = ["remote_assertion.proto"],
-    deps = [":code_identity_proto"],
+    deps = [
+        ":code_identity_proto",
+        "//asylo/crypto:algorithms_proto",
+    ],
 )
 
 asylo_proto_library(
     name = "local_sealed_secret_proto",
     srcs = ["local_sealed_secret.proto"],
+)
+
+cc_library(
+    name = "remote_assertion_util",
+    srcs = ["remote_assertion_util.cc"],
+    hdrs = ["remote_assertion_util.h"],
+    deps = [
+        ":code_identity_proto_cc",
+        ":remote_assertion_proto_cc",
+        "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto:signing_key",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "remote_assertion_util_test",
+    srcs = ["remote_assertion_util_test.cc"],
+    deps = [
+        ":code_identity_proto_cc",
+        ":code_identity_util",
+        ":remote_assertion_proto_cc",
+        ":remote_assertion_util",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "@com_google_googletest//:gtest_main",
+    ],
 )
 
 cc_library(

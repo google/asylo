@@ -18,13 +18,8 @@ syntax = "proto2";
 
 package asylo.sgx;
 
+import "asylo/crypto/algorithms.proto";
 import "asylo/identity/sgx/code_identity.proto";
-
-// Defines different signature schemes used in assertion generation.
-enum SignatureScheme {
-  UNKNOWN_SIGNATURE_SCHEME = 0;
-  ECDSA_P256_SHA256 = 1;
-}
 
 // A payload that is serialized and signed to produce an SGX remote assertion.
 message RemoteAssertionPayload {
