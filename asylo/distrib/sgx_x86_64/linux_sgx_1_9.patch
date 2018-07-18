@@ -164,6 +164,9 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `do_ecall`.
 * `sdk/trts/trts.cpp` pass `interrupted` argument to `do_ecall`. If `cssa`
   is 0, `interrupted` is false, otherwise it's true.
+* `psw/urts/linux/sig_handler.cpp` remove registering sgx signal
+  handlers for SIGSEGV, SIGFPE, SIGBUS, and SIGTRAP.
+
 --
 diff -Nur -x '*.png' -x '*.gif' buildenv.mk buildenv.mk
 --- buildenv.mk
@@ -821,6 +824,33 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/enter_enclave.S psw/urts/linux/en
  EENTER_PROLOG
      movl    frame_arg1, %edi                    /* fn */
  #if defined(__x86_64__)
+diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
+--- psw/urts/linux/sig_handler.cpp
++++ psw/urts/linux/sig_handler.cpp
+@@ -199,23 +199,11 @@
+     }
+     else
+     {
+-        sigdelset(&sig_act.sa_mask, SIGSEGV);
+-        sigdelset(&sig_act.sa_mask, SIGFPE);
+         sigdelset(&sig_act.sa_mask, SIGILL);
+-        sigdelset(&sig_act.sa_mask, SIGBUS);
+-        sigdelset(&sig_act.sa_mask, SIGTRAP);
+     }
+ 
+-    ret = sigaction(SIGSEGV, &sig_act, &g_old_sigact[SIGSEGV]);
+-    if (0 != ret) abort();
+-    ret = sigaction(SIGFPE, &sig_act, &g_old_sigact[SIGFPE]);
+-    if (0 != ret) abort();
+     ret = sigaction(SIGILL, &sig_act, &g_old_sigact[SIGILL]);
+     if (0 != ret) abort();
+-    ret = sigaction(SIGBUS, &sig_act, &g_old_sigact[SIGBUS]);
+-    if (0 != ret) abort();
+-    ret = sigaction(SIGTRAP, &sig_act, &g_old_sigact[SIGTRAP]);
+-    if (0 != ret) abort();
+ }
+ 
+ //trust_thread is saved at stack for ocall.
 diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 --- psw/urts/linux/urts.cpp
 +++ psw/urts/linux/urts.cpp

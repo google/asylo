@@ -50,6 +50,10 @@ int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) { abort(); }
 // registered inside the enclave directly.
 int sigaction(int signum, const struct sigaction *act,
               struct sigaction *oldact) {
+  if (signum == SIGILL) {
+    errno = EINVAL;
+    return -1;
+  }
   // Guards sigaction calls. This is to ensure that signal handlers are not
   // overwritten between the time sigaction gets |oldact| and sets |act|.
   static absl::Mutex sigaction_lock;
