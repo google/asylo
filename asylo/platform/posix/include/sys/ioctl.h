@@ -31,6 +31,15 @@
 // IOCTL to set a key on a secure file.
 #define ENCLAVE_STORAGE_SET_KEY (ENCLAVE_STORAGE_IOCTL_TYPE | 0x00000001)
 
+#define TIOCGWINSZ 0x5413
+
+struct winsize {
+  uint16_t ws_row;
+  uint16_t ws_col;
+  uint16_t ws_xpixel;
+  uint16_t ws_ypixel;
+};
+
 struct key_info {
   uint32_t length;
   uint8_t *data;
