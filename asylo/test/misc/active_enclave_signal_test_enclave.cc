@@ -30,9 +30,9 @@ namespace asylo {
 
 constexpr int kTimeout = 10;
 
-static volatile bool signal_handled = false;
-static volatile bool blocked_signal_handled = false;
-static volatile bool signal_handler_interrupted = false;
+static volatile thread_local bool signal_handled = false;
+static volatile thread_local bool blocked_signal_handled = false;
+static volatile thread_local bool signal_handler_interrupted = false;
 
 void HandleSignalWithHandler(int signum) {
   if (signum == SIGUSR1) {

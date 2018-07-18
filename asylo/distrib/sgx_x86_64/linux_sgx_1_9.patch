@@ -158,6 +158,12 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
 * `psw/ae/common/proto/messages.proto` add syntax statement.
 * `psw/ae/common/src/ProtobufSerializer.h` remove unnecessary include of
   protobuf's message.h.
+* `sdk/trts/trts_ecall.cpp` added `interrupted` as an argument to
+  `do_ecall`, and only initialize thread data if it is false.
+* `sdk/trts/trts_internal.h` added `interrupted` as an argument to
+  `do_ecall`.
+* `sdk/trts/trts.cpp` pass `interrupted` argument to `do_ecall`. If `cssa`
+  is 0, `interrupted` is false, otherwise it's true.
 --
 diff -Nur -x '*.png' -x '*.gif' buildenv.mk buildenv.mk
 --- buildenv.mk
@@ -1652,7 +1658,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts.cpp sdk/trts/trts.cpp
  extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa)
  {
      if(get_enclave_state() == ENCLAVE_CRASHED)
-@@ -296,7 +302,16 @@
+@@ -296,11 +302,23 @@
      }
  
      sgx_status_t error = SGX_ERROR_UNEXPECTED;
@@ -1670,6 +1676,14 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts.cpp sdk/trts/trts.cpp
      {
          if(index >= 0)
          {
+-            error = do_ecall(index, ms, tcs);
++            // If |cssa| is non-zero, this ecall is entering enclave as a user
++            // exception that interrupts the current running ecall.
++            bool is_interrupted = cssa != 0;
++            error = do_ecall(index, ms, tcs, is_interrupted);
+         }
+         else if(index == ECMD_INIT_ENCLAVE)
+         {
 diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
 --- sdk/trts/trts_ecall.cpp
 +++ sdk/trts/trts_ecall.cpp
@@ -1685,6 +1699,26 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
      ocall_context_t *context = reinterpret_cast<ocall_context_t*>(thread_data->last_sp);
      if(context->ocall_flag != OCALL_FLAG)
      {
+@@ -134,7 +139,7 @@
+ }
+ 
+ extern "C" sgx_status_t do_init_thread(void *tcs);
+-sgx_status_t do_ecall(int index, void *ms, void *tcs)
++sgx_status_t do_ecall(int index, void *ms, void *tcs, bool interrupted)
+ {
+     sgx_status_t status = SGX_ERROR_UNEXPECTED;
+     if(ENCLAVE_INIT_DONE != get_enclave_state())
+@@ -142,7 +147,9 @@
+         return status;
+     }
+     thread_data_t *thread_data = get_thread_data();
+-    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
++    // The thread local storage should not be cleared if this is a signal
++    // handling ecall that interrupts the original ecall.
++    if(!interrupted && ((NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy))))
+     {
+         status = do_init_thread(tcs);
+         if(0 != status)
 diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_internal.h sdk/trts/trts_internal.h
 --- sdk/trts/trts_internal.h
 +++ sdk/trts/trts_internal.h
@@ -1708,6 +1742,18 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_internal.h sdk/trts/trts_internal.
  } ecall_addr_t;
  
  typedef struct {
+@@ -69,7 +70,10 @@
+ void set_enclave_state(int state);
+ 
+ sgx_status_t do_init_enclave(void *ms);
+-sgx_status_t do_ecall(int index, void *ms, void *tcs);
++// If |interrupted| is true, this is a user defined exception handler ecall
++// which interrupts the current running ecall, while trts_handle_exception deals
++// with the sgx defined exceptions.
++sgx_status_t do_ecall(int index, void *ms, void *tcs, bool interrupted);
+ sgx_status_t do_oret(void *ms);
+ sgx_status_t trts_handle_exception(void *tcs);
+ #ifdef __cplusplus
 diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 --- sdk/trts/trts_ocall.cpp
 +++ sdk/trts/trts_ocall.cpp
