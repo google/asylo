@@ -139,6 +139,7 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_asylo//asylo/util:logging",
         "@linux_sgx//:common_inc",
+        "@linux_sgx//:common_inc_internal",
         "@linux_sgx//:urts_inc",
     ],
 )
