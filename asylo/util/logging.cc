@@ -206,9 +206,11 @@ void LogMessage::SendToLog(const std::string &message_text) {
     fprintf(stderr, "Failed to open log file : %s!\n", log_path.c_str());
   }
   if (severity_ >= ERROR) {
-    fprintf(stderr, "%s", message_text.c_str());
+    fprintf(stderr, "%s\n", message_text.c_str());
+    fflush(stderr);
   }
   printf("%s\n", message_text.c_str());
+  fflush(stdout);
 
   // if FATAL occurs, abort enclave.
   if (severity_ == FATAL) {
