@@ -27,7 +27,7 @@ std::string BsslLastErrorString() {
   static char buffer[kErrorStringBufferLength];
   ERR_error_string_n(ERR_get_error(), buffer, sizeof(buffer));
   ERR_clear_error();
-  return std::string(buffer, sizeof(buffer));
+  return std::string(buffer);
 }
 
 }  // namespace asylo
