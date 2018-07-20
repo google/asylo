@@ -75,6 +75,8 @@ class RingBuffer {
 
   RingBuffer()
       : instance_version_(RingBuffer<kCapacity>::TypeVersion()),
+        closed_for_read_(0),
+        closed_for_write_(0),
         count_(0),
         read_pos_(0),
         write_pos_(0) {}
@@ -89,9 +91,14 @@ class RingBuffer {
 
   // Reads from the buffer, blocking if data is unavailable.
   size_t Read(uint8_t *buf, size_t nbyte) {
+    if (closed_for_read_) {
+      return 0;
+    }
+
     size_t already_read = 0;
     while (nbyte - already_read > 0) {
       while (empty()) {
+        if (closed_for_write_) return already_read;
         std::this_thread::yield();
       }
       already_read += NonBlockingRead(buf + already_read, nbyte - already_read);
@@ -101,9 +108,14 @@ class RingBuffer {
 
   // Writes to the buffer, blocking if the buffer is full.
   size_t Write(const uint8_t *buf, size_t nbyte) {
+    if (closed_for_write_) {
+      return 0;
+    }
+
     size_t already_written = 0;
     while (nbyte - already_written > 0) {
       while (full()) {
+        if (closed_for_read_) return already_written;
         std::this_thread::yield();
       }
       already_written +=
@@ -112,13 +124,29 @@ class RingBuffer {
     return already_written;
   }
 
+  // Sets the closed-for-write flag, indicating that no more writes to this
+  // buffer are expected and the reader should not wait for more data.
+  void close_for_write() { closed_for_write_ = 1; }
+
+  // Sets the closed-for-read flag, indicating that no more reads to this buffer
+  // are expected and the writer should not wait to write more data.
+  void close_for_read() { closed_for_read_ = 1; }
+
+  // Returns the closed-for-write flag.
+  bool is_closed_for_write() const { return closed_for_write_ != 0; }
+
+  // Returns the closed-for-read flag.
+  bool is_closed_for_read() const { return closed_for_read_ != 0; }
+
   // Returns the maximum capacity of the buffer in bytes.
   constexpr size_t capacity() const { return kCapacity; }
 
   // Clears the buffer and leaves it empty. This operation is not synchronized
   // and its behavior in the presence of concurrent readers and writers is
   // undefined.
-  void UnsafeClear() {
+  void UnsynchronizedClear() {
+    closed_for_read_ = 0;
+    closed_for_write_ = 0;
     count_ = 0;
     read_pos_ = 0;
     write_pos_ = 0;
@@ -142,9 +170,11 @@ class RingBuffer {
   // Returns a signature reflecting the layout of this abstract type.
   static const uint64_t TypeVersion() {
     return offsetof(RingBuffer, count_) << 0 |
-           offsetof(RingBuffer, read_pos_) << 8 |
-           offsetof(RingBuffer, write_pos_) << 16 |
-           offsetof(RingBuffer, buffer_) << 24 | sizeof(RingBuffer) << 32;
+           offsetof(RingBuffer, closed_for_read_) << 8 |
+           offsetof(RingBuffer, closed_for_write_) << 16 |
+           offsetof(RingBuffer, read_pos_) << 24 |
+           offsetof(RingBuffer, write_pos_) << 32 |
+           offsetof(RingBuffer, buffer_) << 40 | sizeof(RingBuffer) << 48;
   }
 
  private:
@@ -162,13 +192,13 @@ class RingBuffer {
 
     // There are two contiguous runs of bytes we can read from the buffer: one
     // to the right of read_index, and potentially one on the left if the run
-    // wraps around to zero. The following calls to memcpy read those bytes into
-    // |buf|.
+    // wraps around to zero. The following calls to memcpy read those bytes
+    // into |buf|.
     //
-    // Note that although read_pos_ should already be in bounds, we double check
-    // when reading it into right_index. This is required to avoid a time-of-use
-    // / time-of-check vulnerability in the event an attacker has corrupted the
-    // shared buffer.
+    // Note that although read_pos_ should already be in bounds, we double
+    // check when reading it into right_index. This is required to avoid a
+    // time-of-use / time-of-check vulnerability in the event an attacker has
+    // corrupted the shared buffer.
     size_t right_index = read_pos_ % kCapacity;
     size_t right_count = std::min(size, kCapacity - right_index);
     memcpy(buf, buffer_.data() + right_index, right_count);
@@ -195,10 +225,10 @@ class RingBuffer {
       return 0;
     }
 
-    // There are two contiguous empty gaps where we can write to in the buffer:
-    // one to the right of right_index, and potentially one on the left if the
-    // gap wraps around to zero. The following calls to memcpy fill those gaps
-    // from |buf|.
+    // There are two contiguous empty gaps where we can write to in the
+    // buffer: one to the right of right_index, and potentially one on the
+    // left if the gap wraps around to zero. The following calls to memcpy
+    // fill those gaps from |buf|.
     //
     // The "% kCapacity" here is required and should not be removed. See
     // NonBlockingRead for a discussion.
@@ -218,16 +248,14 @@ class RingBuffer {
     return size;
   }
 
-  // Encodes the layout of the struct for version sanity checking.
-  const uint64_t instance_version_;
-  // Number of bytes waiting in the queue.
-  std::atomic<size_t> count_;
-  // Read index into buffer_.
-  volatile size_t read_pos_;
-  // Write index into buffer_.
-  volatile size_t write_pos_;
+  const uint64_t instance_version_;         // Layout of the struct.
+  std::atomic<uint32_t> closed_for_read_;   // Reader is done reading.
+  std::atomic<uint32_t> closed_for_write_;  // Writer is done writing.
+  std::atomic<size_t> count_;  // Number of bytes waiting in the queue.
+  volatile size_t read_pos_;   // Read index into buffer_.
+  volatile size_t write_pos_;  // Write index into buffer_.
   std::array<uint8_t, kCapacity> buffer_;
-};
+} __attribute__((aligned(8)));  // Ensure 64-bit alignment;
 
 }  // namespace asylo
 

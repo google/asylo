@@ -27,6 +27,8 @@
 
 namespace asylo {
 
+constexpr const size_t kDataSize = 4 * 1024 * 1024;
+
 // Exposes NonBlockingWrite and NonBlockingRead for testing.
 template <size_t Capacity>
 class RingBufferForTest : public RingBuffer<Capacity> {
@@ -39,8 +41,6 @@ class RingBufferForTest : public RingBuffer<Capacity> {
     return RingBuffer<Capacity>::NonBlockingRead(buf, nbyte);
   }
 };
-
-constexpr const size_t kDataSize = 4 * 1024 * 1024;
 
 // Generate a series of test data.
 std::vector<uint8_t> MakeTestData(size_t size) {
@@ -64,9 +64,23 @@ class RingBufferTest : public ::testing::Test {
     data_ = MakeTestData(kDataSize);
   }
 
-  void WriteTestData() { buf_.Write(data_.data(), kDataSize); }
+  void ReadTestData(std::vector<uint8_t> *out) {
+    size_t read_count = 0;
+    constexpr size_t kReadSize = 4096;
+    while (!(buf_.empty() && buf_.is_closed_for_write())) {
+      uint8_t read_buffer[kReadSize];
+      size_t sz = buf_.Read(read_buffer, kReadSize);
+      out->resize(read_count + sz);
+      memcpy(out->data() + read_count, read_buffer, sz);
+      read_count += sz;
+    }
+    buf_.close_for_read();
+  }
 
-  void ReadTestData() { buf_.Read(scratch_.data(), kDataSize); }
+  void WriteTestData() {
+    buf_.Write(data_.data(), kDataSize);
+    buf_.close_for_write();
+  }
 
   RingBufferForTest<kDataSize> buf_;
   std::vector<uint8_t> scratch_;
@@ -145,7 +159,7 @@ TEST_F(RingBufferTest, WriteFullBuffer) {
 }
 
 TEST_F(RingBufferTest, ReadEmptyBuffer) {
-  buf_.UnsafeClear();
+  buf_.UnsynchronizedClear();
   EXPECT_TRUE(buf_.empty());
   EXPECT_EQ(buf_.NonBlockingRead(scratch_.data(), 1), 0);
   EXPECT_TRUE(buf_.empty());
@@ -191,12 +205,38 @@ TEST_F(RingBufferTest, ReadNearlyEmpty) {
 }
 
 TEST_F(RingBufferTest, BlockingReadWriteTest) {
-  std::vector<uint8_t> copy;
+  std::vector<uint8_t> out;
   std::thread writer = std::thread([&]() { WriteTestData(); });
-  std::thread reader = std::thread([&]() { ReadTestData(); });
+  std::thread reader = std::thread([&]() { ReadTestData(&out); });
   writer.join();
   reader.join();
-  EXPECT_EQ(memcmp(data_.data(), scratch_.data(), kDataSize), 0);
+  EXPECT_EQ(memcmp(data_.data(), out.data(), kDataSize), 0);
+}
+
+// Check operations on the buffer closed flags.
+TEST_F(RingBufferTest, ClosedFlags) {
+  EXPECT_FALSE(buf_.is_closed_for_read());
+  EXPECT_FALSE(buf_.is_closed_for_write());
+
+  // Ensure the read and write flags are independent.
+  buf_.close_for_read();
+  EXPECT_TRUE(buf_.is_closed_for_read());
+  EXPECT_FALSE(buf_.is_closed_for_write());
+
+  buf_.close_for_write();
+  EXPECT_TRUE(buf_.is_closed_for_read());
+  EXPECT_TRUE(buf_.is_closed_for_write());
+
+  // Ensure we can close the buffer multiple times.
+  buf_.close_for_read();
+  buf_.close_for_write();
+  EXPECT_TRUE(buf_.is_closed_for_read());
+  EXPECT_TRUE(buf_.is_closed_for_write());
+
+  // Ensure clearing the buffer resets the flags.
+  buf_.UnsynchronizedClear();
+  EXPECT_FALSE(buf_.is_closed_for_read());
+  EXPECT_FALSE(buf_.is_closed_for_write());
 }
 
 }  // namespace asylo
