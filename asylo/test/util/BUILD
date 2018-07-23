@@ -30,8 +30,9 @@ cc_library(
     srcs = ["exec_tester.cc"],
     hdrs = ["exec_tester.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -16,19 +16,25 @@
  *
  */
 
+#include "asylo/test/util/exec_tester.h"
+
 #include <fcntl.h>
+#include <libgen.h>  // dirname()
+#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include <xmmintrin.h>
-#include <cstring>
+#include <cstdlib>
 #include <sstream>
+#include <thread>
 
 #include <gtest/gtest.h>
-#include "asylo/test/util/exec_tester.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
 
 namespace asylo {
+namespace experimental {
 
 ExecTester::ExecTester(const std::vector<std::string> &args, int fd_to_check)
     : args_(args), fd_to_check_(fd_to_check) {
@@ -40,38 +46,21 @@ ExecTester::ExecTester(const std::vector<std::string> &args, int fd_to_check)
   }
 }
 
-// NOTE: Only works on POSIX file systems because of '/' and absolute paths.
-std::string ExecTester::BuildPath(const std::string &path, const std::string &file_name) {
-  // If the base path is empty, or
-  // if file_name is an absolute path, just return file_name.
-  if (path.empty() || (!file_name.empty() && file_name[0] == '/')) {
-    return file_name;
-  }
+std::string ExecTester::BuildSiblingPath(const std::string &path,
+                                    const std::string &file_name) {
+  char *path_dup = strdup(path.c_str());
+  absl::string_view path_dirname(dirname(path_dup));
 
-  // If path ends in '/', we treat it as a directory.
-  // Otherwise we have to check if path is a directory to either chop off the
-  // file name or add a '/' at the end.
-  std::string arg0base = path;
+  // If path_dirname is "/", then we don't want to add a "/" between
+  // path_dirname and file_name.
+  std::string result =
+      absl::StrCat(path_dirname, (path_dirname == "/" ? "" : "/"), file_name);
 
-  if (arg0base[arg0base.size() - 1] != '/') {
-    // If path is a directory, add '/', otherwise, remove name until last '/'.
-    struct stat statbuf;
-    if (!::stat(path.c_str(), &statbuf) && S_ISDIR(statbuf.st_mode)) {
-      arg0base += "/";
-    } else {
-      // Chop to last '/'.
-      std::string::size_type pos = arg0base.rfind('/');
-      if (pos == std::string::npos) {
-        arg0base.clear();
-      } else {
-        arg0base.resize(pos + 1);
-      }
-    }
-  }
-  return arg0base + file_name;
+  free(path_dup);
+  return result;
 }
 
-bool ExecTester::Run(int *status, const std::string &input) {
+bool ExecTester::Run(const std::string &input, int *status) {
   bool result = false;
   RunWithAsserts(input, &result, status);
   return FinalCheck(result);
@@ -152,12 +141,12 @@ void ExecTester::ReadCheckLoop(pid_t pid, int fd, bool *result, int *status) {
   // Read and check all subprocess output to |fd| until the subprocess
   // terminates.
   while (true) {
-    _mm_pause();
+    std::this_thread::yield();
     int changed_pid = waitpid(pid, status, WNOHANG);
     ASSERT_NE(-1, changed_pid)
         << "Wait on subprocess status failed: " << strerror(errno);
 
-    CheckFD(buf, sizeof(buf), &linebuf, fd, &conjunction);
+    CheckFD(fd, buf, sizeof(buf), &linebuf, &conjunction);
 
     if (changed_pid && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
       *result = conjunction;
@@ -166,8 +155,8 @@ void ExecTester::ReadCheckLoop(pid_t pid, int fd, bool *result, int *status) {
   }
 }
 
-void ExecTester::CheckFD(char *buf, size_t bufsize, std::stringstream *linebuf,
-                         int fd, bool *result) {
+void ExecTester::CheckFD(int fd, char *buf, size_t bufsize,
+                         std::stringstream *linebuf, bool *result) {
   ASSERT_NE(nullptr, buf);
   ASSERT_LT(0, bufsize);
   ASSERT_NE(nullptr, linebuf);
@@ -183,7 +172,7 @@ void ExecTester::CheckFD(char *buf, size_t bufsize, std::stringstream *linebuf,
     std::string line = linebuf->str();
     if (!line.empty()) {
       linebuf->str("");
-      *result &= TestLine(line);
+      *result &= CheckLine(line);
     }
     return;
   }
@@ -203,11 +192,13 @@ void ExecTester::CheckFD(char *buf, size_t bufsize, std::stringstream *linebuf,
       linebuf->write(bufptr, line_size - 1);  // Don't include the \n character.
       std::string line = linebuf->str();
       linebuf->str("");  // Reset the line buffer.
-      *result &= TestLine(line);
+      *result &= CheckLine(line);
     } else {  // No new line. Copy rest of buffer.
       linebuf->write(bufptr, unconsumed);
       unconsumed = 0;
     }
   }
 }
+
+}  // namespace experimental
 }  // namespace asylo
