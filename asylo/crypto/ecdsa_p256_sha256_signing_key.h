@@ -25,6 +25,7 @@
 #include <memory>
 
 #include "asylo/crypto/signing_key.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -58,12 +59,21 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
   // Creates a random ECDSA P256 signing key.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> Create();
 
+  // Creates an ECDSA P256 signing key from the given DER-encoded
+  // |serialized_key|.
+  static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> CreateFromDer(
+      ByteContainerView serialized_key);
+
   // Creates an ECDSA P256 signing key from the given |private_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> Create(
       bssl::UniquePtr<EC_KEY> private_key);
 
   // From SigningKey.
   SignatureScheme GetSignatureScheme() const override;
+
+  // From SigningKey.
+  Status SerializeToDer(
+      CleansingVector<uint8_t> *serialized_key) const override;
 
   // From SigningKey.
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override;

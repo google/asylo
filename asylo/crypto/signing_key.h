@@ -23,6 +23,7 @@
 
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -51,6 +52,11 @@ class SigningKey {
 
   // Returns the signature scheme used by this SigningKey.
   virtual SignatureScheme GetSignatureScheme() const = 0;
+
+  // Serializes this SigningKey into a DER-encoded key structure and writes it
+  // to |serialized_key|.
+  virtual Status SerializeToDer(
+      CleansingVector<uint8_t> *serialized_key) const = 0;
 
   // Returns a VerifyingKey that can verify signatures produced by this
   // SigningKey.

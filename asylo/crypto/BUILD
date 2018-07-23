@@ -117,6 +117,7 @@ cc_library(
     deps = [
         ":algorithms_proto_cc",
         "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:cleansing_types",
         "//asylo/util:status",
     ],
 )
@@ -129,6 +130,7 @@ cc_library(
         ":sha256_hash",
         ":signing_key",
         "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
@@ -142,10 +144,13 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":ecdsa_p256_sha256_signing_key",
-        ":sha256_hash",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
         "@boringssl//:crypto",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/strings",
+        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )
