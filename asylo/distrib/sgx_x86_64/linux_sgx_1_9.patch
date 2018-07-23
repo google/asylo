@@ -2064,7 +2064,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ocall.cpp sdk/trts/trts_ocall.cpp
 +    ],
 +)
 +
-+# The following targets are designed with '.blazerc' and '--config=sgx'.
++# The following targets are designed with '.bazelrc' and '--config=sgx'.
 +cc_library(
 +    name = "common_inc",
 +    hdrs = glob([
