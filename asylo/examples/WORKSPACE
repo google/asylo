@@ -17,3 +17,5 @@ asylo_testonly_deps()
 load("@com_google_asylo//asylo/bazel:sgx_deps.bzl", "sgx_deps")
 sgx_deps()
 
+load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
+grpc_deps()

@@ -437,6 +437,9 @@ def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
     test_name = name + "_driver"
     host_test_name = name + "_host_driver"
 
+    data = kwargs.get("data", [])
+    kwargs.pop("data", None)
+
     native.cc_test(
         name = test_name,
         **_ensure_static_manual(kwargs)
@@ -448,7 +451,7 @@ def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
         loader = host_test_name,
         loader_args = test_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
-        data = kwargs.get("data", []),
+        data = data,
         testonly = 1,
         tags = ["enclave_test"] + tags,
     )
