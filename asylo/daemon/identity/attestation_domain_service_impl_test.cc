@@ -38,7 +38,7 @@ TEST(AttestationDomainServiceImplTest, GetAttestationDomain) {
 
   GetAttestationDomainRequest request;
   GetAttestationDomainResponse response;
-  grpc::ServerContext *server_context = nullptr;
+  ::grpc::ServerContext *server_context = nullptr;
   ASSERT_TRUE(
       impl.GetAttestationDomain(server_context, &request, &response).ok());
 

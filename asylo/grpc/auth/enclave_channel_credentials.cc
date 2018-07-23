@@ -24,7 +24,7 @@
 
 namespace asylo {
 
-std::shared_ptr<grpc::ChannelCredentials> EnclaveChannelCredentials(
+std::shared_ptr<::grpc::ChannelCredentials> EnclaveChannelCredentials(
     const EnclaveCredentialsOptions &options) {
   // Translate C++ options struct to C options struct.
   grpc_enclave_credentials_options c_opts;
@@ -32,8 +32,8 @@ std::shared_ptr<grpc::ChannelCredentials> EnclaveChannelCredentials(
   CopyEnclaveCredentialsOptions(options, &c_opts);
 
   // Create a channel credentials object using the options.
-  auto creds = std::shared_ptr<grpc::ChannelCredentials>(
-      new grpc::SecureChannelCredentials(
+  auto creds = std::shared_ptr<::grpc::ChannelCredentials>(
+      new ::grpc::SecureChannelCredentials(
           grpc_enclave_channel_credentials_create(&c_opts)));
   grpc_enclave_credentials_options_destroy(&c_opts);
   return creds;

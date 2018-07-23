@@ -39,7 +39,7 @@ namespace asylo {
 ///
 /// \param options Options for configuring the credentials.
 /// \return A gRPC channel credentials object.
-std::shared_ptr<grpc::ChannelCredentials> EnclaveChannelCredentials(
+std::shared_ptr<::grpc::ChannelCredentials> EnclaveChannelCredentials(
     const EnclaveCredentialsOptions &options);
 
 }  // namespace asylo

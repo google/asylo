@@ -42,14 +42,14 @@ class EnclaveAuthContext {
   ///
   /// \param server_context The server's authentication context.
   static StatusOr<EnclaveAuthContext> CreateFromServerContext(
-      const grpc::ServerContext &server_context);
+      const ::grpc::ServerContext &server_context);
 
   /// Creates an EnclaveAuthContext from the authentication properties in
   /// `auth_context`.
   ///
   /// \param auth_context An authentication context.
   static StatusOr<EnclaveAuthContext> CreateFromAuthContext(
-      const grpc::AuthContext &auth_context);
+      const ::grpc::AuthContext &auth_context);
 
   /// Gets the secure transport record-protocol used for securing frames over
   /// the connection.

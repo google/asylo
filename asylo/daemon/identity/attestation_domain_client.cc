@@ -24,12 +24,12 @@ namespace asylo {
 namespace daemon {
 
 StatusOr<std::string> AttestationDomainClient::GetAttestationDomain() {
-  grpc::ClientContext client_context;
+  ::grpc::ClientContext client_context;
 
   GetAttestationDomainRequest request;
   GetAttestationDomainResponse response;
 
-  grpc::Status grpc_status =
+  ::grpc::Status grpc_status =
       stub_->GetAttestationDomain(&client_context, request, &response);
   if (!grpc_status.ok()) {
     return Status(grpc_status);

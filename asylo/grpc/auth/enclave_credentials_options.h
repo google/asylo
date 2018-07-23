@@ -26,8 +26,8 @@
 
 namespace asylo {
 
-/// Options used to configure a `grpc::ChannelCredentials` object or a
-/// `grpc::ServerCredentials` object for use in an enclave system.
+/// Options used to configure a `::grpc::ChannelCredentials` object or a
+/// `::grpc::ServerCredentials` object for use in an enclave system.
 struct EnclaveCredentialsOptions {
   /// Additional data that is authenticated during establishment of the gRPC
   /// channel. This string does not need to be null-terminated.

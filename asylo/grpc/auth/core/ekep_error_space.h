@@ -26,7 +26,7 @@ namespace asylo {
 namespace error {
 
 // Returns a singleton instance of the ErrorSpace implementation corresponding
-// to the asylo::grpc::auth::Abort_ErrorCode enum.
+// to the asylo::Abort_ErrorCode enum.
 ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<Abort_ErrorCode> tag);
 
 }  // namespace error

@@ -37,7 +37,7 @@ class AttestationDomainServiceImpl final
 
   // Retrieves the attestation-domain name from domain_file_path_ and sets
   // |response| accordingly.
-  grpc::Status GetAttestationDomain(
+  ::grpc::Status GetAttestationDomain(
       ::grpc::ServerContext *context,
       const GetAttestationDomainRequest *request,
       GetAttestationDomainResponse *response) override;

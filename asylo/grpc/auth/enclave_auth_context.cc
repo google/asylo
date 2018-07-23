@@ -27,12 +27,12 @@
 namespace asylo {
 
 StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromServerContext(
-    const grpc::ServerContext &server_context) {
+    const ::grpc::ServerContext &server_context) {
   return CreateFromAuthContext(*server_context.auth_context().get());
 }
 
 StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
-    const grpc::AuthContext &auth_context) {
+    const ::grpc::AuthContext &auth_context) {
   if (!auth_context.IsPeerAuthenticated()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Peer is not authenticated");
@@ -41,7 +41,7 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
   EnclaveIdentities identities;
   uint32_t record_protocol;
   for (auto it = auth_context.begin(); it != auth_context.end(); ++it) {
-    grpc::AuthProperty auth_property = *it;
+    ::grpc::AuthProperty auth_property = *it;
 
     if (auth_property.first == GRPC_ENCLAVE_RECORD_PROTOCOL_PROPERTY_NAME) {
       google::protobuf::io::CodedInputStream::ReadLittleEndian32FromArray(

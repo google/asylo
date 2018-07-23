@@ -33,9 +33,9 @@ class AttestationDomainClient {
  public:
   // Constructs an AttestationDomainClient from |channel|.
   explicit AttestationDomainClient(
-      const std::shared_ptr<grpc::ChannelInterface> &channel)
+      const std::shared_ptr<::grpc::ChannelInterface> &channel)
       : stub_{AttestationDomainService::NewStub(
-            channel, grpc::StubOptions())} {}
+            channel, ::grpc::StubOptions())} {}
 
   // Constructs an AttestationDomainClient from |stub|.
   explicit AttestationDomainClient(

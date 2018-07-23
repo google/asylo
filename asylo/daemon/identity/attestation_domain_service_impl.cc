@@ -23,8 +23,8 @@
 namespace asylo {
 namespace daemon {
 
-grpc::Status AttestationDomainServiceImpl::GetAttestationDomain(
-    grpc::ServerContext *context, const GetAttestationDomainRequest *request,
+::grpc::Status AttestationDomainServiceImpl::GetAttestationDomain(
+    ::grpc::ServerContext *context, const GetAttestationDomainRequest *request,
     GetAttestationDomainResponse *response) {
   return ::asylo::daemon::GetAttestationDomain(
              domain_file_path_.c_str(), response->mutable_attestation_domain())

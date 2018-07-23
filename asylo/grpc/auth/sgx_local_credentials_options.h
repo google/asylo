@@ -29,17 +29,17 @@ namespace asylo {
 /// A credential configured with these options enforces bidirectional
 /// authentication using SGX enclave code identity.
 ///
-/// Sample usage for creating `grpc::ChannelCredentials`:
+/// Sample usage for creating `::grpc::ChannelCredentials`:
 ///
 /// ```
-/// std::shared_ptr<grpc::ChannelCredentials> creds =
+/// std::shared_ptr<::grpc::ChannelCredentials> creds =
 ///   EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
 /// ```
 ///
-/// Sample usage for creating `grpc::ServerCredentials`:
+/// Sample usage for creating `::grpc::ServerCredentials`:
 ///
 /// ```
-/// std::shared_ptr<grpc::ServerCredentials> creds =
+/// std::shared_ptr<::grpc::ServerCredentials> creds =
 ///   EnclaveServerCredentials(BidirectionalSgxLocalCredentialsOptions());
 /// ```
 ///
