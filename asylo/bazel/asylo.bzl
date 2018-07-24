@@ -75,49 +75,6 @@ def copy_from_host(target, output, name = ""):
         testonly = 1,
     )
 
-def _enclave_list_to_dict_and_args(enclaves_list):
-    """Adapts a list of enclave dependencies to new-style named-enclave dicts.
-
-    This function is a stop-gap measure during migration from lists of enclaves
-    to dictionaries that map labels to enclaves, and can be deleted once macro
-    callers are updated.
-
-    Deprecated functionality: A list of a single enclave causes the argument
-    `--enclave_path=<enclave_path>` to be passed to the loader. A list of
-    multiple enclaves causes `--<enclave_name>=<enclave_path>` to be passed
-    instead.
-
-    Modern functionality: BUILD macro callers explicitly provide a dictionary of
-    enclave names to enclave targets, as well as a list of arguments to pass to
-    the loader. Names are interpolated into the args list.
-
-    This function is used to transform a list of enclave dependencies such that
-    the old-and-deprecated documented behavior is preserved.
-
-    Args:
-      enclaves_list: List of enclave target dependencies.
-
-    Returns:
-      (enclaves dict, loader_args list) A dictionary and args list that invokes
-        deprecated functionality.
-    """
-    if len(enclaves_list) == 1:
-        enclaves = {"enclave": enclaves_list[0]}
-        loader_args = ['--enclave_path="{enclave}"']
-    else:
-        enclaves = {}
-        loader_args = []
-
-        for enclave in enclaves_list:
-            _, local_name = _parse_label(enclave)
-            enclaves[local_name] = enclave
-
-            # This gnarly format string produces flag assignments to braced enclave
-            # names: '--enclave_name={enclave_name}'
-            loader_args.append('--{0}="{{{0}}}"'.format(local_name))
-
-    return enclaves, loader_args
-
 def _invert_enclave_name_mapping(names_to_targets):
     """Inverts a name-to-target dict to target-to-name.
 
@@ -310,48 +267,6 @@ def _make_enclave_runner_rule(test = False):
 
 _enclave_runner_script = _make_enclave_runner_rule()
 _enclave_runner_test = _make_enclave_runner_rule(test = True)
-
-def debug_enclave_driver(name, enclaves, **kwargs):
-    """Wraps a cc_binary with a dependency on enclave availability at runtime.
-
-    This rule is deprecated. Use `enclave_loader` instead.
-
-    Creates a cc_binary for a given enclave. The cc_binary will be passed
-    '--enclave_path=<path to instance of |enclave|>' for 1 enclave, or
-    '--<enclave_name>=<path to instance of |enclave_name.so|>' for many enclaves.
-
-    Args:
-      name: Name for build target.
-      enclaves: Enclave target dependencies.
-      **kwargs: cc_binary arguments.
-
-    This macro creates three build targets:
-      1) name: shell script that runs the debug_enclave_driver.
-      2) name_driver: cc_binary used as loader in `name`. This is a normal
-                      native cc_binary. It cannot be directly run because there
-                      is an undeclared dependency on the enclaves.
-      3) name_host_driver: genrule that builds name_driver with host crosstool.
-    """
-    loader_name = name + "_driver"
-    host_loader_name = name + "_host_driver"
-
-    native.cc_binary(
-        name = loader_name,
-        deprecation = ("`debug_enclave_driver` is deprecated. Use " +
-                       "`enclave_loader` instead."),
-        **_ensure_static_manual(kwargs)
-    )
-    copy_from_host(target = loader_name, output = host_loader_name)
-
-    enclave_dict, loader_args = _enclave_list_to_dict_and_args(enclaves)
-
-    _enclave_runner_script(
-        name = name,
-        loader = host_loader_name,
-        loader_args = loader_args,
-        enclaves = _invert_enclave_name_mapping(enclave_dict),
-        data = kwargs.get("data", []),
-    )
 
 def enclave_loader(name, enclaves, loader_args, **kwargs):
     """Wraps a cc_binary with a dependency on enclave availability at runtime.
