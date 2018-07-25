@@ -37,20 +37,20 @@ class ExecTester {
   /// \param args The command-line arguments to the subprocess. The first
   ///             argument should be the executable to be run.
   /// \param fd_to_check The file descriptor from which output is sent to
-  ///                    TestLine().
+  ///                    CheckLine().
   ExecTester(const std::vector<std::string> &args, int fd_to_check = STDOUT_FILENO);
   virtual ~ExecTester() = default;
 
   /// Forks and execs the subprocess with the configured arguments. Redirects
   /// the subprocess's stdin from `input` if non-empty. Validates the
   /// subprocess's output to `fd_to_check` (from the constructor) with
-  /// TestLine() and FinalCheck(). Stores the process status in `status` after
+  /// CheckLine() and FinalCheck(). Stores the process status in `status` after
   /// exit or signal termination.
   ///
   /// \param input The input to give to the subprocess on its stdin.
   /// \param[out] status An output argument that is set to the subprocess's exit
-  ///                    code.
-  /// \return The logical "and" of all TestLine() results on the subprocess's
+  ///                    status information, as returned by `waitpid()`.
+  /// \return The logical "and" of all CheckLine() results on the subprocess's
   ///         output to the configured file descriptor.
   bool Run(const std::string &input, int *status);
 
@@ -75,11 +75,11 @@ class ExecTester {
   /// \return `true` if the property holds and `false` otherwise.
   virtual bool CheckLine(const std::string &line) { return true; }
 
-  /// Returns the final result given the accumulated TestLine() results. This is
-  /// useful e.g., for determining hard bounds that TestLine() soft-checks.
+  /// Returns the final result given the accumulated CheckLine() results. This
+  /// is useful e.g., for determining hard bounds that CheckLine() soft-checks.
   ///
   /// \param accumulated The conjunction (logical "and") of the return value of
-  ///                    TestLine() on each line of the subprocess's output to
+  ///                    CheckLine() on each line of the subprocess's output to
   ///                    the given file descriptor.
   /// \return Whether the test as a whole was successful.
   virtual bool FinalCheck(bool accumulated) { return accumulated; }
@@ -93,15 +93,15 @@ class ExecTester {
   void DoExec(int read_stdin, int write_stdin, int read_fd_to_check,
               int write_fd_to_check);
 
-  // Reads contents of `fd` into `buf` and runs TestLine() on each
+  // Reads contents of `fd` into `buf` and runs CheckLine() on each
   // newline-terminated piece of `buf` as written to `linebuf`. Stores any
   // unfinished line in `linebuf`, i.e., the characters in `buf` that follow the
-  // last newline. The accumulated TestLine() results are stored in `result`.
+  // last newline. The accumulated CheckLine() results are stored in `result`.
   void CheckFD(int fd, char *buf, size_t bufsize, std::stringstream *linebuf,
                bool *result);
 
   // Polls output from `pid` to `fd` and calls CheckFD() to accumulate
-  // TestLine() results. Sets `status` to `pid`'s termination status.
+  // CheckLine() results. Sets `status` to `pid`'s termination status.
   void ReadCheckLoop(pid_t pid, int fd, bool *result, int *status);
 
   std::vector<std::string> args_;
