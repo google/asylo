@@ -16,6 +16,7 @@
  *
  */
 
+#include <sys/wait.h>
 #include <memory>
 #include <regex>
 #include <string>
@@ -44,6 +45,10 @@ DEFINE_string(enclave_path, "",
 
 // The number of seconds to run the server for this test.
 constexpr int kServerLifetime = 1;
+
+// The number of seconds to wait for the server subprocess to print the server's
+// port number.
+constexpr int kServerPortDeadline = kServerLifetime + 3;
 
 // A regex matching the log message that contains the port.
 constexpr char kPortMessageRegex[] = "Server started on port [0-9]+";
@@ -132,9 +137,9 @@ class GrpcServerTest : public ::testing::Test {
         argv);
 
     // Wait until server_thread_ sets server_port_ with a deadline of
-    // kServerLifetime + 1 seconds.
+    // kServerPortDeadline seconds.
     absl::Duration server_port_waiter_timeout =
-        absl::Seconds(kServerLifetime + 1);
+        absl::Seconds(kServerPortDeadline);
     int port = GetServerPort(server_port_waiter_timeout);
 
     // Set up the client stub.
@@ -149,7 +154,8 @@ class GrpcServerTest : public ::testing::Test {
   void TearDown() override {
     server_thread_->join();
     ASSERT_TRUE(server_port_found_);
-    EXPECT_EQ(server_exit_status_, 0);
+    ASSERT_TRUE(WIFEXITED(server_exit_status_));
+    EXPECT_EQ(WEXITSTATUS(server_exit_status_), 0);
   }
 
   // Sends a GetTranslation RPC to the server. Returns the same grpc::Status as
