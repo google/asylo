@@ -26,11 +26,11 @@
 extern "C" {
 #endif
 
-inline uint16_t bswap_16(const uint16_t &n) { return __builtin_bswap16(n); }
+inline uint16_t bswap_16(uint16_t n) { return __builtin_bswap16(n); }
 
-inline uint32_t bswap_32(const uint32_t &n) { return __builtin_bswap32(n); }
+inline uint32_t bswap_32(uint32_t n) { return __builtin_bswap32(n); }
 
-inline uint64_t bswap_64(const uint64_t &n) { return __builtin_bswap64(n); }
+inline uint64_t bswap_64(uint64_t n) { return __builtin_bswap64(n); }
 
 #ifdef __cplusplus
 }
