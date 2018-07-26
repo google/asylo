@@ -83,7 +83,7 @@ cc_library(
 )
 
 sgx_enclave_configuration(
-    name = "grpc_debug_config",
+    name = "grpc_enclave_config",
     # gRPC needs more than the default amount of heap to run. ~1.2GB.
     heap_max_size = "0x47000000",
     tcs_num = "200",
@@ -94,7 +94,7 @@ sgx_enclave(
     name = "enclave_insecure_server.so",
     testonly = 1,
     srcs = ["enclave_insecure_server.cc"],
-    config = ":grpc_debug_config",
+    config = ":grpc_enclave_config",
     deps = [
         ":messenger_server_impl",
         "//asylo:enclave_runtime",
@@ -109,7 +109,7 @@ sgx_enclave(
     name = "enclave_secure_server.so",
     testonly = 1,
     srcs = ["enclave_secure_server.cc"],
-    config = ":grpc_debug_config",
+    config = ":grpc_enclave_config",
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
@@ -125,7 +125,7 @@ sgx_enclave(
     name = "server_enclave.so",
     testonly = 1,
     srcs = ["server_enclave.cc"],
-    config = ":grpc_debug_config",
+    config = ":grpc_enclave_config",
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
@@ -140,7 +140,7 @@ sgx_enclave(
     name = "client_enclave.so",
     testonly = 1,
     srcs = ["client_enclave.cc"],
-    config = ":grpc_debug_config",
+    config = ":grpc_enclave_config",
     deps = [
         ":client_enclave_proto_cc",
         ":messenger_client_impl",
