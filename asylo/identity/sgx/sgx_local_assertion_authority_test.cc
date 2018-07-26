@@ -16,7 +16,6 @@
  *
  */
 
-#include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/identity/identity.pb.h"
@@ -26,6 +25,7 @@
 #include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -159,8 +159,7 @@ TEST_P(SgxLocalAssertionAuthorityTest, VerifyAssertionSameEnclave) {
   sgx::FakeEnclave::EnterEnclave(generator_enclave_);
 
   // Verify that the extracted code identity matches the generator's identity.
-  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(
-      code_identity, sgx::GetSelfIdentity()->identity))
+  EXPECT_THAT(code_identity, EqualsProto(sgx::GetSelfIdentity()->identity))
       << "Extracted identity:\n"
       << code_identity.DebugString() << "\nExpected identity:\n"
       << sgx::GetSelfIdentity()->identity.DebugString();

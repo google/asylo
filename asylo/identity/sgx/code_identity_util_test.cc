@@ -21,7 +21,6 @@
 #include <string>
 #include <vector>
 
-#include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/crypto/util/bytes.h"
@@ -38,6 +37,7 @@
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
 #include "asylo/platform/common/singleton.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -46,7 +46,6 @@ namespace asylo {
 namespace sgx {
 namespace {
 
-using ::google::protobuf::util::MessageDifferencer;
 using ::testing::Not;
 
 constexpr uint32_t kLongAll0 = 0x0;
@@ -737,9 +736,8 @@ TEST_F(CodeIdentityUtilTest, SetDefaultCodeIdentityExpectation) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetDefaultCodeIdentityExpectation(&expectation), IsOk());
 
-  EXPECT_TRUE(MessageDifferencer::Equivalent(expectation.reference_identity(),
-                                             identity));
-  EXPECT_TRUE(MessageDifferencer::Equivalent(expectation.match_spec(), spec));
+  EXPECT_THAT(expectation.reference_identity(), EquivalentProto(identity));
+  EXPECT_THAT(expectation.match_spec(), EquivalentProto(spec));
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
@@ -750,8 +748,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
     CodeIdentity parsed_sgx_identity;
     ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity),
                 IsOk());
-    ASSERT_TRUE(MessageDifferencer::Equivalent(generated_sgx_identity,
-                                               parsed_sgx_identity));
+    ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity));
   }
 }
 
@@ -774,8 +771,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxMatchSpecSuccess) {
     SetRandomValidGenericMatchSpec(&generic_match_spec, &generated_sgx_spec);
     ASSERT_THAT(ParseSgxMatchSpec(generic_match_spec, &parsed_sgx_spec),
                 IsOk());
-    ASSERT_TRUE(
-        MessageDifferencer::Equivalent(generated_sgx_spec, parsed_sgx_spec));
+    ASSERT_THAT(generated_sgx_spec, EquivalentProto(parsed_sgx_spec));
   }
 }
 
@@ -805,8 +801,8 @@ TEST_F(CodeIdentityUtilTest, ParseSgxExpectationSuccess) {
     ASSERT_THAT(
         ParseSgxExpectation(generic_expectation, &parsed_sgx_expectation),
         IsOk());
-    ASSERT_TRUE(MessageDifferencer::Equivalent(generated_sgx_expectation,
-                                               parsed_sgx_expectation));
+    ASSERT_THAT(generated_sgx_expectation,
+                EquivalentProto(parsed_sgx_expectation));
   }
 }
 
@@ -834,8 +830,7 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityEndToEnd) {
               IsOk());
   CodeIdentity parsed_sgx_identity;
   ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity), IsOk());
-  ASSERT_TRUE(MessageDifferencer::Equivalent(generated_sgx_identity,
-                                             parsed_sgx_identity));
+  ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity));
 }
 
 TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxMatchSpecEndToEnd) {
@@ -848,8 +843,7 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxMatchSpecEndToEnd) {
   EXPECT_THAT(SerializeSgxMatchSpec(generated_sgx_spec, &generic_spec), IsOk());
   CodeIdentityMatchSpec parsed_sgx_spec;
   ASSERT_THAT(ParseSgxMatchSpec(generic_spec, &parsed_sgx_spec), IsOk());
-  ASSERT_TRUE(
-      MessageDifferencer::Equivalent(generated_sgx_spec, parsed_sgx_spec));
+  ASSERT_THAT(generated_sgx_spec, EquivalentProto(parsed_sgx_spec));
 }
 
 TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxExpectationEndToEnd) {
@@ -866,8 +860,8 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxExpectationEndToEnd) {
   CodeIdentityExpectation parsed_sgx_expectation;
   ASSERT_THAT(ParseSgxExpectation(generic_expectation, &parsed_sgx_expectation),
               IsOk());
-  ASSERT_TRUE(MessageDifferencer::Equivalent(generated_sgx_expectation,
-                                             parsed_sgx_expectation));
+  ASSERT_THAT(generated_sgx_expectation,
+              EquivalentProto(parsed_sgx_expectation));
 }
 
 TEST_F(CodeIdentityUtilTest, SetTargetinforFromSelfIdentity) {

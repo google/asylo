@@ -25,14 +25,13 @@
 #include "absl/memory/memory.h"
 #include "asylo/grpc/auth/core/enclave_grpc_security_constants.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/cpp/common/secure_auth_context.h"
 
 namespace asylo {
 namespace {
-
-using google::protobuf::util::MessageDifferencer;
 
 constexpr char kIdentity[] = "Identity";
 constexpr char kAuthorityType1[] = "Good Authority";
@@ -204,8 +203,7 @@ TEST_F(EnclaveAuthContextTest, FindEnclaveIdentitySuccess) {
 
   const EnclaveIdentity *identity = identity_result.ValueOrDie();
   EXPECT_EQ(identity->identity(), kIdentity);
-  EXPECT_TRUE(MessageDifferencer::Equals(identity->description(),
-                                         good_identity_description_));
+  EXPECT_THAT(identity->description(), EqualsProto(good_identity_description_));
 }
 
 // Verify that FindEnclaveIdentity() returns NOT_FOUND if the requested

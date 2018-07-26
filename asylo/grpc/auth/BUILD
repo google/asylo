@@ -109,6 +109,7 @@ cc_test(
         ":enclave_auth_context",
         "//asylo/grpc/auth/core:grpc_security_enclave",
         "//asylo/grpc/auth/core:handshake_proto_cc",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_github_grpc_grpc//:grpc++",

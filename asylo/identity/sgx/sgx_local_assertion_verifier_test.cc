@@ -34,6 +34,7 @@
 #include "asylo/identity/sgx/local_assertion.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -370,8 +371,7 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   ASSERT_TRUE(code_identity.ParseFromString(identity.identity()));
 
   sgx::CodeIdentity expected_identity = sgx::GetSelfIdentity()->identity;
-  EXPECT_TRUE(google::protobuf::util::MessageDifferencer::Equals(code_identity,
-                                                       expected_identity))
+  EXPECT_THAT(code_identity, EqualsProto(expected_identity))
       << "Extracted identity:\n"
       << code_identity.DebugString() << "\nExpected identity:\n"
       << expected_identity.DebugString();
