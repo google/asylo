@@ -142,7 +142,8 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":status",
-        "@com_google_googletest//:gtest_main",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
     ],
 )
 

@@ -78,17 +78,6 @@ cc_library(
     }),
     visibility = ["//visibility:public"],
 )
-
-cc_library(
-    name = "gtest_main",
-    srcs = ["googlemock/src/gmock_main.cc"],
-    linkopts = select({
-        "@com_google_asylo//asylo": [],
-        "//conditions:default": ["-pthread"],
-    }),
-    visibility = ["//visibility:public"],
-    deps = [":gtest"],
-)
 """,
             urls = [
                 "https://github.com/google/googletest/archive/release-1.8.0.tar.gz",

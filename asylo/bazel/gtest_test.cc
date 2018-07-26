@@ -24,6 +24,6 @@ namespace {
 using ::testing::Eq;
 
 // This test only confirms that the target links.
-TEST(GunitTest, Smoke) { EXPECT_THAT(1, Eq(1)); }
+TEST(GtestTest, Smoke) { EXPECT_THAT(1, Eq(1)); }
 
 }  // namespace

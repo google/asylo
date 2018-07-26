@@ -171,7 +171,8 @@ cc_test(
         ":assertion_description_util",
         ":identity_proto_cc",
         "//asylo/test/util:proto_matchers",
-        "@com_google_googletest//:gtest_main",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
     ],
 )
 

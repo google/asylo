@@ -77,7 +77,8 @@ cc_test(
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
-        "@com_google_googletest//:gtest_main",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
     ],
 )
 
@@ -130,9 +131,10 @@ cc_test(
         "//asylo/identity:identity_proto_cc",
         "//asylo/platform/core:trusted_global_state",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -180,9 +182,10 @@ cc_test(
         "//asylo/identity:identity_proto_cc",
         "//asylo/platform/core:trusted_global_state",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -481,8 +484,9 @@ cc_test(
         "//asylo/identity:sealed_secret_proto_cc",
         "//asylo/platform/common:singleton",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
     ],
 )

@@ -36,8 +36,9 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":aligned_object_ptr",
+        "//asylo/test/util:test_main",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_googletest//:gtest_main",
+        "@com_google_googletest//:gtest",
     ],
 )
 
