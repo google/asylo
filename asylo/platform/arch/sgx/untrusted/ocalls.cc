@@ -21,6 +21,7 @@
 #include <arpa/inet.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
 #include <netdb.h>
 #include <poll.h>
 #include <sched.h>
@@ -379,6 +380,27 @@ int ocall_enc_untrusted_poll(struct bridge_pollfd *fds, unsigned int nfds,
       return -1;
     }
   }
+  return ret;
+}
+
+//////////////////////////////////////
+//           ifaddrs.h              //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_getifaddrs(char **serialized_ifaddrs,
+                                   bridge_ssize_t *serialized_ifaddrs_len) {
+  struct ifaddrs *ifaddr_list = nullptr;
+  int ret = getifaddrs(&ifaddr_list);
+  if (ret != 0) {
+    return -1;
+  }
+  size_t len = 0;
+  if (!asylo::SerializeIfAddrs(ifaddr_list, serialized_ifaddrs, &len)) {
+    freeifaddrs(ifaddr_list);
+    return -1;
+  }
+  *serialized_ifaddrs_len = static_cast<bridge_ssize_t>(len);
+  freeifaddrs(ifaddr_list);
   return ret;
 }
 

@@ -116,7 +116,10 @@ cc_library(
     name = "bridge_proto_serializer",
     srcs = ["bridge_proto_serializer.cc"],
     hdrs = ["bridge_proto_serializer.h"],
-    deps = [":bridge_types_proto_cc"],
+    deps = [
+        ":bridge_types_proto_cc",
+        "@com_google_absl//absl/strings",
+    ],
 )
 
 # Synchronized bounded queue type.

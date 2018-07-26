@@ -664,6 +664,37 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 }
 
 //////////////////////////////////////
+//           ifaddrs.h              //
+//////////////////////////////////////
+
+int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
+  char *serialized_ifaddrs = nullptr;
+  bridge_ssize_t serialized_ifaddrs_len = 0;
+  int ret = 0;
+  int status = ocall_enc_untrusted_getifaddrs(&ret, &serialized_ifaddrs,
+                                              &serialized_ifaddrs_len);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  if (ret != 0) {
+    return ret;
+  }
+  if (!sgx_is_outside_enclave(serialized_ifaddrs,
+                              static_cast<size_t>(serialized_ifaddrs_len))) {
+    return -1;
+  }
+  asylo::UntrustedUniquePtr<char> ifaddrs_str_ptr(serialized_ifaddrs);
+  std::string ifaddrs_str(serialized_ifaddrs, serialized_ifaddrs_len);
+  if (!asylo::DeserializeIfAddrs(ifaddrs_str, ifap)) return -1;
+  return ret;
+}
+
+void enc_untrusted_freeifaddrs(struct ifaddrs *ifa) {
+  asylo::FreeDeserializedIfAddrs(ifa);
+}
+
+//////////////////////////////////////
 //           sched.h                //
 //////////////////////////////////////
 

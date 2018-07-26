@@ -18,15 +18,20 @@
 
 #include <dirent.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
+#include <net/if.h>
+#include <netinet/in.h>
 #include <sched.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
 #include <iostream>
+#include <unordered_set>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/test/misc/syscalls_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
 
@@ -53,6 +58,7 @@ namespace {
 
 const char *kCustomHostName = "CustomHostName";
 const char *kCustomWorkingDirectory = "/tmp/testworkingdir";
+const int kSinZeroPadSize = 8;
 
 // Invokes a system call from inside the enclave and returns its output (if
 // needed).
@@ -121,6 +127,44 @@ void ExtractStatBufferFromTestOutput(const SyscallsTestOutput &test_output,
   stat_buffer->st_blksize =
       static_cast<blksize_t>(proto_stat_buffer.st_blksize());
   stat_buffer->st_blocks = static_cast<blkcnt_t>(proto_stat_buffer.st_blocks());
+}
+
+// Ensure that two sockaddrs are equal. This is used for verifying the output
+// of getifaddrs, which returns a list of structs with sockaddr members.
+bool SockaddrsEqual(const struct sockaddr *sa1, const struct sockaddr *sa2) {
+  if (!sa1 || !sa2) return sa1 == sa2;
+  if (sa1->sa_family != sa2->sa_family) return false;
+  if (sa1->sa_family == AF_INET) {
+    const struct sockaddr_in *addr1 =
+        reinterpret_cast<const struct sockaddr_in *>(sa1);
+    const struct sockaddr_in *addr2 =
+        reinterpret_cast<const struct sockaddr_in *>(sa2);
+    return (addr1->sin_family == addr2->sin_family) &&
+           (addr1->sin_port == addr2->sin_port) &&
+           (addr1->sin_addr.s_addr == addr2->sin_addr.s_addr) &&
+           (memcmp(&(addr1->sin_zero), &(addr2->sin_zero), kSinZeroPadSize) ==
+            0);
+  } else if (sa1->sa_family == AF_INET6) {
+    const struct sockaddr_in6 *addr1 =
+        reinterpret_cast<const struct sockaddr_in6 *>(sa1);
+    const struct sockaddr_in6 *addr2 =
+        reinterpret_cast<const struct sockaddr_in6 *>(sa2);
+    return (addr1->sin6_family == addr2->sin6_family) &&
+           (addr1->sin6_port == addr2->sin6_port) &&
+           (addr1->sin6_flowinfo == addr2->sin6_flowinfo) &&
+           (memcmp(&(addr1->sin6_addr.s6_addr), &(addr2->sin6_addr.s6_addr),
+                   asylo::kIn6AddrNumBytes) == 0) &&
+           (addr1->sin6_scope_id == addr2->sin6_scope_id);
+  }
+  return false;
+}
+
+// Ensure that the bits for getifaddrs we support match between the two flags
+bool IfAddrsFlagsEqual(int flags1, int flags2) {
+  int supported_flags = IFF_UP | IFF_BROADCAST | IFF_DEBUG | IFF_LOOPBACK |
+                        IFF_POINTOPOINT | IFF_NOTRAILERS | IFF_RUNNING |
+                        IFF_NOARP | IFF_PROMISC | IFF_ALLMULTI;
+  return (flags1 & supported_flags) == (flags2 & supported_flags);
 }
 
 // Compares two struct stat objects, returning |true| if they are equal, and
@@ -726,6 +770,73 @@ TEST_F(SyscallsTest, RlimitLowNoFile) {
 TEST_F(SyscallsTest, RlimitInvalidNoFile) {
   EXPECT_TRUE(RunSyscallInsideEnclave("rlimit invalid nofile",
                                       FLAGS_test_tmpdir + "/rlimit", nullptr));
+}
+
+// Tests getifaddrs by calling it from inside the enclave and ensuring that
+// the result is equivalent to what is returned by a call to getifaddrs made
+// outside the enclave. There is a minor caveat: asylo doesn't support
+// sockaddr types that arent AF_INET (IPv4) or AF_INET6 (IPv6) -- as a result,
+// ifaddrs structs that have sockaddrs of this type are filtered out during
+// serialization. As a result, we skip over any such entries while comparing
+// the linked lists.
+TEST_F(SyscallsTest, GetIfAddrs) {
+  SyscallsTestOutput test_output;
+  ASSERT_TRUE(RunSyscallInsideEnclave("getifaddrs", "", &test_output));
+  ASSERT_EQ(test_output.int_syscall_return(), 0);
+  ASSERT_TRUE(test_output.has_serialized_proto_return());
+  struct ifaddrs *host_front = nullptr;
+  int ret = getifaddrs(&host_front);
+  ASSERT_EQ(ret, 0);
+  struct ifaddrs *enclave_front = nullptr;
+  std::string serialized_ifaddrs = test_output.serialized_proto_return();
+  asylo::DeserializeIfAddrs(serialized_ifaddrs, &enclave_front);
+  // Since we cannot rely on any sort of ordering in the linked lists, we will
+  // only verify that every IPv4/IPv6 entry in the enclave list also exists in
+  // the host list. Furthermore, we shall verify that all IPv4/IPv6 entries in
+  // the host list are indeed found in the enclave list. We shall also verify
+  // that there are no duplicates in the enclave list.
+  std::unordered_set<struct ifaddrs *> found_in_enclave;
+  for (struct ifaddrs *enclave_list_curr = enclave_front;
+       enclave_list_curr != nullptr;
+       enclave_list_curr = enclave_list_curr->ifa_next) {
+    bool entry_found = false;
+    for (struct ifaddrs *host_list_curr = host_front; host_list_curr != nullptr;
+         host_list_curr = host_list_curr->ifa_next) {
+      bool sockaddrs_eq = SockaddrsEqual(enclave_list_curr->ifa_addr,
+                                         host_list_curr->ifa_addr) &&
+                          SockaddrsEqual(enclave_list_curr->ifa_netmask,
+                                         host_list_curr->ifa_netmask) &&
+                          SockaddrsEqual(enclave_list_curr->ifa_ifu.ifu_dstaddr,
+                                         host_list_curr->ifa_ifu.ifu_dstaddr);
+      bool names_eq =
+          strcmp(enclave_list_curr->ifa_name, host_list_curr->ifa_name) == 0;
+      bool flags_eq = IfAddrsFlagsEqual(enclave_list_curr->ifa_flags,
+                                        host_list_curr->ifa_flags);
+      bool data_null =
+          !enclave_list_curr->ifa_data && !host_list_curr->ifa_data;
+      if (sockaddrs_eq && names_eq && flags_eq && data_null) {
+        entry_found = true;
+        // Check for duplicates: this should be the first time we encounter this
+        // particular entry.
+        EXPECT_TRUE(found_in_enclave.find(host_list_curr) ==
+                    found_in_enclave.end());
+        found_in_enclave.insert(host_list_curr);
+        break;
+      }
+    }
+    ASSERT_TRUE(entry_found);
+  }
+  // Make a second pass through the host list to ensure that all IPv4/IPv6
+  // entries encountered are in our set.
+  for (struct ifaddrs *host_list_curr = host_front; host_list_curr != nullptr;
+       host_list_curr = host_list_curr->ifa_next) {
+    if (IfAddrSupported(host_list_curr)) {
+      EXPECT_TRUE(found_in_enclave.find(host_list_curr) !=
+                  found_in_enclave.end());
+    }
+  }
+  asylo::FreeDeserializedIfAddrs(enclave_front);
+  freeifaddrs(host_front);
 }
 
 }  // namespace

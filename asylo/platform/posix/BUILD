@@ -51,6 +51,7 @@ cc_library(
         "src/dirent.cc",
         "src/errno.cc",
         "src/grp.cc",
+        "src/ifaddrs.cc",
         "src/ioctl.cc",
         "src/mman.cc",
         "src/poll.cc",

@@ -17,23 +17,60 @@
 syntax = "proto2";
 
 package asylo;
-
 message SockaddrProto {
-  required uint32 sa_family = 1;
-  required bytes sa_data = 2;
+  message SockaddrIn {
+    optional uint32 sin_port = 1;
+    optional uint32 sin_addr = 2;
+  }
+  message SockaddrIn6 {
+    optional uint32 sin6_port = 1;
+    optional uint32 sin6_flowinfo = 2;
+    optional bytes sin6_addr = 3;
+    optional uint32 sin6_scope_id = 4;
+  }
+  oneof family {
+    SockaddrIn sockaddr_in = 1;
+    SockaddrIn6 sockaddr_in6 = 2;
+  }
 }
 
 message AddrinfoProto {
-  required int32 ai_flags = 1;
-  required int32 ai_family = 2;
-  required int32 ai_socktype = 3;
-  required int32 ai_protocol = 4;
+  optional int32 ai_flags = 1;
+  optional int32 ai_family = 2;
+  optional int32 ai_socktype = 3;
+  optional int32 ai_protocol = 4;
 
-  required uint32 ai_addrlen = 5;
+  optional uint32 ai_addrlen = 5;
   optional SockaddrProto ai_addr = 6;  // Not required for hints
   optional string ai_canonname = 7;    // Only if AI_CANONNAME in hints.ai_flags
 }
 
 message AddrinfosProto {
   repeated AddrinfoProto addrinfos = 1;
+}
+
+message IfAddrProto {
+  enum IfAddrFlag {
+    DEFAULT = 0;
+    PROTO_UP = 1;
+    PROTO_BROADCAST = 2;
+    PROTO_DEBUG = 3;
+    PROTO_LOOPBACK = 4;
+    PROTO_POINTOPOINT = 5;
+    PROTO_NOTRAILERS = 6;
+    PROTO_RUNNING = 7;
+    PROTO_NOARP = 8;
+    PROTO_PROMISC = 9;
+    PROTO_ALLMULTI = 10;
+    PROTO_MULTICAST = 11;
+  }
+  optional string ifa_name = 1;
+  repeated IfAddrFlag ifa_flags = 2;
+  optional SockaddrProto ifa_addr = 3;
+  optional SockaddrProto ifa_netmask = 4;
+  optional SockaddrProto ifa_ifu = 5;
+}
+
+message IfAddrsProto {
+  repeated IfAddrProto ifaddrs = 1;
 }

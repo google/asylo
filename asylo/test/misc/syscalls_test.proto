@@ -74,6 +74,10 @@ message SyscallsTestOutput {
 
   // Stat struct value from system call.
   optional StatValue stat_buffer_syscall_return = 5;
+
+  // A serialization of a dynamically allocated structure returned/modified
+  // by a system call e.g. a linked list.
+  optional bytes serialized_proto_return = 6;
 }
 
 extend EnclaveInput {

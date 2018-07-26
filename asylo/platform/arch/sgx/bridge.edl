@@ -175,6 +175,14 @@ enclave {
         int timeout) propagate_errno;
 
     //////////////////////////////////////
+    //           ifaddrs.h              //
+    //////////////////////////////////////
+
+    int ocall_enc_untrusted_getifaddrs(
+        [out] char **serialized_ifaddrs,
+        [out] bridge_ssize_t *serialized_ifaddrs_len) propagate_errno;
+
+    //////////////////////////////////////
     //           sched.h                //
     //////////////////////////////////////
 

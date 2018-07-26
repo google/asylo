@@ -24,6 +24,7 @@
 // an adversarial implementation.
 
 #include <arpa/inet.h>
+#include <ifaddrs.h>
 #include <poll.h>
 #include <sched.h>
 #include <stddef.h>
@@ -133,6 +134,12 @@ int enc_untrusted_create_thread(const char *name);
 //////////////////////////////////////
 
 int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
+
+//////////////////////////////////////
+//            ifaddrs.h             //
+//////////////////////////////////////
+int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
+void enc_untrusted_freeifaddrs(struct ifaddrs *ifa);
 
 //////////////////////////////////////
 //            sched.h               //

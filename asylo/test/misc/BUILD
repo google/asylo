@@ -69,6 +69,7 @@ sgx_enclave(
     srcs = ["syscalls_test_enclave.cc"],
     deps = [
         ":syscalls_test_proto_cc",
+        "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
         "@com_google_asylo//asylo/util:logging",
@@ -248,6 +249,7 @@ enclave_test(
     deps = [
         ":syscalls_test_proto_cc",
         "@com_google_absl//absl/strings",
+        "//asylo/platform/common:bridge_proto_serializer",
     ] + TEST_DEPS_COMMON,
 )
 

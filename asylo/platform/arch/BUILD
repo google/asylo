@@ -40,10 +40,7 @@ cc_library(
     deps = select({
         "//asylo/platform/arch:sgx": ["trusted_sgx"],
         "//conditions:default": ["trusted_build_only"],
-    }) + [
-        "//asylo/platform/core:shared_name",
-        "//asylo/util:status",
-    ],
+    }) + ["//asylo/platform/core:shared_name"],
 )
 
 # Target exposing untrusted client components for all backends.
@@ -176,8 +173,8 @@ cc_library(
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
         "@com_google_asylo//asylo/util:logging",
         "@linux_sgx//:common_inc",
     ],

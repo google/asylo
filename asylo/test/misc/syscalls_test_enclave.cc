@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <fcntl.h>
+#include <ifaddrs.h>
 #include <regex.h>
 #include <sched.h>
 #include <stdio.h>
@@ -29,6 +30,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/misc/syscalls_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
@@ -107,6 +109,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunRlimitLowNoFileTest(test_input.path_name());
     } else if (test_input.test_target() == "rlimit invalid nofile") {
       return RunRlimitInvalidNoFileTest(test_input.path_name());
+    } else if (test_input.test_target() == "getifaddrs") {
+      return RunGetIfAddrsTest(output);
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1025,6 +1029,22 @@ class SyscallsEnclave : public EnclaveTestCase {
           "setrlimit to increase the hard limit unexpectedly succeeded");
     }
 
+    return Status::OkStatus();
+  }
+
+  Status RunGetIfAddrsTest(EnclaveOutput *output) {
+    struct ifaddrs *front = nullptr;
+    int ret = getifaddrs(&front);
+    char *serialized_ifaddrs = nullptr;
+    size_t len;
+    asylo::SerializeIfAddrs(front, &serialized_ifaddrs, &len);
+    freeifaddrs(front);
+    SyscallsTestOutput output_ret;
+    output_ret.set_serialized_proto_return(std::string(serialized_ifaddrs, len));
+    output_ret.set_int_syscall_return(ret);
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
     return Status::OkStatus();
   }
 };
