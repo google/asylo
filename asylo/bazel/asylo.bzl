@@ -371,7 +371,13 @@ def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
         tags = ["enclave_test"] + tags,
     )
 
-def cc_test(name, enclave_test_name = "", srcs = [], deps = [], **kwargs):
+def cc_test(
+        name,
+        enclave_test_name = "",
+        enclave_test_config = "",
+        srcs = [],
+        deps = [],
+        **kwargs):
     """Build macro that creates a cc_test target and a cc_enclave_test target.
 
     This macro generates a cc_test target, which will run a gtest test suite
@@ -381,6 +387,8 @@ def cc_test(name, enclave_test_name = "", srcs = [], deps = [], **kwargs):
     Args:
       name: Same as native cc_test name.
       enclave_test_name: Name for the generated cc_enclave_test. Optional.
+      enclave_test_config: An sgx_enclave_configuration target to be passed to
+          the enclave. Optional.
       srcs: Same as native cc_test srcs.
       deps: Same as native cc_test deps.
       **kwargs: cc_test arguments.
@@ -396,11 +404,18 @@ def cc_test(name, enclave_test_name = "", srcs = [], deps = [], **kwargs):
         cc_enclave_test(
             name = enclave_test_name,
             srcs = srcs,
+            enclave_config = enclave_test_config,
             deps = deps,
             **kwargs
         )
 
-def cc_test_and_cc_enclave_test(name, enclave_test_name = "", srcs = [], deps = [], **kwargs):
+def cc_test_and_cc_enclave_test(
+        name,
+        enclave_test_name = "",
+        enclave_test_config = "",
+        srcs = [],
+        deps = [],
+        **kwargs):
     """An alias for cc_test with a default enclave_test_name.
 
     This macro is identical to cc_test, except it passes in an enclave
@@ -423,6 +438,8 @@ def cc_test_and_cc_enclave_test(name, enclave_test_name = "", srcs = [], deps = 
           If not provided and name ends with "_test", then defaults to name with
           "_test" replaced with "_enclave_test". If not provided and name does
           not end with "_test", then defaults to name appended with "_enclave".
+      enclave_test_config: An sgx_enclave_configuration target to be passed to
+          the enclave. Optional.
       srcs: See documentation for srcs in native cc_test rule.
       deps: See documentation for deps in native cc_test rule.
       **kwargs: See documentation for **kwargs in native cc_test rule.
@@ -435,6 +452,7 @@ def cc_test_and_cc_enclave_test(name, enclave_test_name = "", srcs = [], deps = 
     cc_test(
         name = name,
         enclave_test_name = enclave_test_name,
+        enclave_test_config = enclave_test_config,
         srcs = srcs,
         deps = deps,
         **kwargs
@@ -443,6 +461,7 @@ def cc_test_and_cc_enclave_test(name, enclave_test_name = "", srcs = [], deps = 
 def cc_enclave_test(
         name,
         srcs,
+        enclave_config = "",
         tags = [],
         deps = [],
         test_in_initialize = False,
@@ -455,6 +474,8 @@ def cc_enclave_test(
     Args:
       name: Target name for will be <name>_enclave.
       srcs: Same as cc_test srcs.
+      enclave_config: An sgx_enclave_configuration target to be passed to the
+          enclave. Optional.
       tags: Same as cc_test tags.
       deps: Same as cc_test deps.
       test_in_initialize: If True, tests run in Initialize, rather than Run. This
@@ -474,11 +495,18 @@ def cc_enclave_test(
     # Build the gtest enclave using the test file and gtest "main" enclave shim
     enclave_name = name + ".so"
     enclave_target = ":" + enclave_name
+
+    # Collect any arguments to sgx_enclave that override the defaults
+    enclave_kwargs = {}
+    if enclave_config:
+        enclave_kwargs["config"] = enclave_config
+
     sgx_enclave(
         name = enclave_name,
         srcs = srcs,
         deps = deps + ["//asylo/bazel:test_shim_enclave"],
         testonly = 1,
+        **enclave_kwargs
     )
 
     # //asylo/bazel:test_shim_loader expects the path to
