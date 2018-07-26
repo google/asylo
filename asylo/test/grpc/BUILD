@@ -211,6 +211,7 @@ enclave_test(
 cc_test(
     name = "channel_test",
     srcs = ["channel_test.cc"],
+    enclave_test_config = ":grpc_enclave_config",
     enclave_test_name = "channel_enclave_test",
     tags = ["regression"],
     deps = [
