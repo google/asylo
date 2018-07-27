@@ -19,11 +19,11 @@ licenses(["notice"])  # Apache v2.0
 # Hello World project for Asylo.
 
 load(
-    "@com_google_asylo//asylo/bazel:asylo.bzl",
+    "//asylo/bazel:asylo.bzl",
     "enclave_loader",
     "sim_enclave",
 )
-load("@com_google_asylo//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -34,7 +34,7 @@ package(
 asylo_proto_library(
     name = "hello_proto",
     srcs = ["hello.proto"],
-    deps = ["@com_google_asylo//asylo:enclave_proto"],
+    deps = ["//asylo:enclave_proto"],
 )
 
 sim_enclave(
@@ -42,9 +42,9 @@ sim_enclave(
     srcs = ["hello_enclave.cc"],
     deps = [
         ":hello_proto_cc",
+        "//asylo:enclave_runtime",
+        "//asylo/util:status",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo:enclave_runtime",
-        "@com_google_asylo//asylo/util:status",
     ],
 )
 
@@ -55,9 +55,9 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":hello_proto_cc",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo:enclave_client",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )

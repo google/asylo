@@ -21,7 +21,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/aes_gcm_siv.h"
-#include "quickstart/solution/demo.pb.h"
+#include "asylo/examples/quickstart/solution/demo.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/statusor.h"

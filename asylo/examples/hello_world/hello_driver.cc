@@ -21,7 +21,7 @@
 #include <vector>
 #include "absl/strings/str_split.h"
 #include "asylo/client.h"
-#include "hello_world/hello.pb.h"
+#include "asylo/examples/hello_world/hello.pb.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 

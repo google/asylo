@@ -21,7 +21,7 @@
 
 #include <unordered_map>
 
-#include "grpc_server/translator_server.grpc.pb.h"
+#include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
 #include "include/grpcpp/grpcpp.h"
 #include "include/grpcpp/server.h"
 

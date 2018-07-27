@@ -340,7 +340,7 @@ on all supported backends.
 asylo_proto_library(
     name = "demo_proto",
     srcs = ["demo.proto"],
-    deps = ["@com_google_asylo//asylo:enclave_proto"],
+    deps = ["//asylo:enclave_proto"],
 )
 
 sim_enclave(
@@ -348,7 +348,7 @@ sim_enclave(
     srcs = ["demo_enclave.cc"],
     deps = [
         ":demo_proto_cc",
-        "@com_google_asylo//asylo:enclave_runtime",
+        "//asylo:enclave_runtime",
     ],
 )
 
@@ -359,9 +359,9 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_proto_cc",
-        "@com_google_asylo//asylo:enclave_client",
+        "//asylo:enclave_client",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
     ],
 )
 ```

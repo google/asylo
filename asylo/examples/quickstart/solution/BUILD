@@ -21,17 +21,17 @@ package(
 )
 
 load(
-    "@com_google_asylo//asylo/bazel:asylo.bzl",
+    "//asylo/bazel:asylo.bzl",
     "enclave_loader",
     "sim_enclave",
 )
-load("@com_google_asylo//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 # Example and exercise for using Asylo toolkits.
 asylo_proto_library(
     name = "demo_proto",
     srcs = ["demo.proto"],
-    deps = ["@com_google_asylo//asylo:enclave_proto"],
+    deps = ["//asylo:enclave_proto"],
 )
 
 sim_enclave(
@@ -39,11 +39,11 @@ sim_enclave(
     srcs = ["demo_enclave.cc"],
     deps = [
         ":demo_proto_cc",
+        "//asylo:enclave_runtime",
+        "//asylo/crypto:aes_gcm_siv",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo:enclave_runtime",
-        "@com_google_asylo//asylo/crypto:aes_gcm_siv",
-        "@com_google_asylo//asylo/util:cleansing_types",
-        "@com_google_asylo//asylo/util:status",
     ],
 )
 
@@ -54,8 +54,8 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_proto_cc",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_asylo//asylo:enclave_client",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )

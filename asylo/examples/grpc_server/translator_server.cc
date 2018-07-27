@@ -16,7 +16,7 @@
  *
  */
 
-#include "grpc_server/translator_server.h"
+#include "asylo/examples/grpc_server/translator_server.h"
 
 #include <unordered_map>
 

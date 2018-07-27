@@ -20,7 +20,7 @@
 #include <unordered_set>
 
 #include "absl/strings/str_cat.h"
-#include "hello_world/hello.pb.h"
+#include "asylo/examples/hello_world/hello.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
 

@@ -18,7 +18,7 @@
 #include "absl/synchronization/notification.h"
 #include "absl/time/time.h"
 #include "asylo/client.h"
-#include "grpc_server/grpc_server_config.pb.h"
+#include "asylo/examples/grpc_server/grpc_server_config.pb.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 

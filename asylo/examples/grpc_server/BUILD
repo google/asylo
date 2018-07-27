@@ -23,13 +23,13 @@ package(
 )
 
 load(
-    "@com_google_asylo//asylo/bazel:asylo.bzl",
+    "//asylo/bazel:asylo.bzl",
     "enclave_loader",
     "sim_enclave",
     "enclave_test",
 )
 load(
-    "@com_google_asylo//asylo/bazel:proto.bzl",
+    "//asylo/bazel:proto.bzl",
     "asylo_proto_library",
     "asylo_grpc_proto_library",
 )
@@ -56,7 +56,7 @@ cc_library(
 asylo_proto_library(
     name = "grpc_server_config_proto",
     srcs = ["grpc_server_config.proto"],
-    deps = ["@com_google_asylo//asylo:enclave_proto"],
+    deps = ["//asylo:enclave_proto"],
 )
 
 # The enclave hosting the translation server.
@@ -66,12 +66,12 @@ sim_enclave(
     deps = [
         ":grpc_server_config_proto_cc",
         ":translator_server",
+        "//asylo:enclave_runtime",
+        "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_reflection",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo:enclave_runtime",
-        "@com_google_asylo//asylo/util:status",
     ],
 )
 
@@ -83,11 +83,11 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":grpc_server_config_proto_cc",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
-        "@com_google_asylo//asylo:enclave_client",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -98,19 +98,20 @@ enclave_test(
     srcs = ["grpc_server_test.cc"],
     data = [":grpc_server_host_loader"],
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},
+    tags = ["regression"],
     test_args = ["--enclave_path='{server_enclave}'"],
     deps = [
         ":translator_server_grpc_proto",
+        "//asylo/test/util:exec_tester",
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:logging",
+        "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
-        "@com_google_asylo//asylo/test/util:exec_tester",
-        "@com_google_asylo//asylo/test/util:status_matchers",
-        "@com_google_asylo//asylo/util:logging",
-        "@com_google_asylo//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -339,7 +339,7 @@ The enclave requires the following additional targets:
 asylo_proto_library(
     name = "grpc_server_proto",
     srcs = ["grpc_server.proto"],
-    deps = ["@com_google_asylo//asylo:enclave_proto"],
+    deps = ["//asylo:enclave_proto"],
 )
 
 sim_enclave(
@@ -350,8 +350,8 @@ sim_enclave(
         ":translator_server",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo:enclave_runtime",
-        "@com_google_asylo//asylo/util:status",
+        "//asylo:enclave_runtime",
+        "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_reflection",
     ],
@@ -370,9 +370,9 @@ enclave_loader(
         ":grpc_server_proto_cc",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
-        "@com_google_asylo//asylo:enclave_client",
+        "//asylo:enclave_client",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
     ],
 )
 ```
@@ -383,7 +383,7 @@ You can run the server enclave using `bazel`. First, `cd` to the `examples`
 directory (or whatever folder contains the examples `WORKSPACE` file), then run:
 ```bash
 $ bazel run --config=enc-sim \
-    //grpc_server:grpc_server
+    //asylo/examples/grpc_server:grpc_server
 ```
 
 The above command starts the server and keeps it running for five minutes. If
@@ -396,7 +396,7 @@ For example, to keep the server running for ten seconds, run:
 
 ```bash
 $ bazel run --config=enc-sim \
-    //grpc_server:grpc_server -- --server_lifetime=10
+    //asylo/examples/grpc_server:grpc_server -- --server_lifetime=10
 ```
 
 For this example, use the

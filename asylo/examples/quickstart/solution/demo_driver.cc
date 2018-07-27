@@ -20,7 +20,7 @@
 #include <string>
 
 #include "asylo/client.h"
-#include "quickstart/solution/demo.pb.h"
+#include "asylo/examples/quickstart/solution/demo.pb.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 

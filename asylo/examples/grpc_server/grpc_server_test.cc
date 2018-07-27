@@ -30,7 +30,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/time/time.h"
-#include "grpc_server/translator_server.grpc.pb.h"
+#include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/exec_tester.h"
