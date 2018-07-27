@@ -20,6 +20,7 @@
 #define ASYLO_TEST_UTIL_STATUS_MATCHERS_H_
 
 #include <gmock/gmock-matchers.h>
+#include "absl/types/optional.h"
 #include "asylo/test/util/statusor_test_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -30,10 +31,11 @@ namespace internal {
 // Implements a gMock matcher for checking error-code expectations on
 // asylo::Status objects.
 template <typename Enum>
-class StatusCodeMatcher : public ::testing::MatcherInterface<const Status &> {
+class StatusMatcher : public ::testing::MatcherInterface<const Status &> {
  public:
-  StatusCodeMatcher(Enum code)
+  StatusMatcher(Enum code, absl::optional<absl::string_view> message)
       : code_(code),
+        message_(message),
         error_space_(error::error_enum_traits<Enum>::get_error_space()) {}
 
   // From testing::MatcherInterface.
@@ -42,11 +44,16 @@ class StatusCodeMatcher : public ::testing::MatcherInterface<const Status &> {
   void DescribeTo(std::ostream *os) const override {
     *os << "error code " << error_space_->SpaceName()
         << "::" << error_space_->String(static_cast<int>(code_));
+    if (message_.has_value()) {
+      *os << "::'" << message_.value() << "'";
+    }
   }
 
   // From testing::MatcherInterface.
   //
   // Tests whether |status| has an error code that meets this matcher's
+  // expectation. If an error message string is specified in this matcher, it
+  // also tests that |status| has an error message that matches that
   // expectation.
   bool MatchAndExplain(
       const Status &status,
@@ -56,15 +63,22 @@ class StatusCodeMatcher : public ::testing::MatcherInterface<const Status &> {
                 << "::" << status.error_space()->String(status.error_code());
       return false;
     }
+    if (message_.has_value() && status.error_message() != message_.value()) {
+      *listener << "whose error message is '" << status.error_message() << "'";
+      return false;
+    }
     return true;
   }
 
  private:
   // Expected error code.
-  Enum code_;
+  const Enum code_;
+
+  // Expected error message (empty if none expected and verified).
+  const absl::optional<std::string> message_;
 
   // Error space of the expected error code.
-  const error::ErrorSpace *error_space_;
+  const error::ErrorSpace *const error_space_;
 };
 
 // Implements a gMock matcher that checks whether a status container (e.g.
@@ -128,7 +142,17 @@ class IsOkMatcherGenerator {
 // given |code|.
 template <typename Enum>
 ::testing::Matcher<const Status &> StatusIs(Enum code) {
-  return ::testing::MakeMatcher(new internal::StatusCodeMatcher<Enum>(code));
+  return ::testing::MakeMatcher(
+      new internal::StatusMatcher<Enum>(code, absl::nullopt));
+}
+
+// Returns a gMock matcher that expects an asylo::Status object to have the
+// given |code| and |message|.
+template <typename Enum>
+::testing::Matcher<const Status &> StatusIs(Enum code,
+                                            absl::string_view message) {
+  return ::testing::MakeMatcher(
+      new internal::StatusMatcher<Enum>(code, message));
 }
 
 // Returns an internal::IsOkMatcherGenerator, which may be typecast to a

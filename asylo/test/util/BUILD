@@ -182,6 +182,7 @@ cc_library(
     deps = [
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
+        "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
     ],
 )

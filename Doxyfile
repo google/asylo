@@ -823,6 +823,7 @@ asylo/util/posix_error_space.h \
 asylo/util/logging.h \
 asylo/util/status.h \
 asylo/util/statusor.h \
+asylo/util/status_macros.h \
 README.md
 
 # This tag can be used to specify the character encoding of the source files

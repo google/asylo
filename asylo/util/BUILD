@@ -44,6 +44,7 @@ cc_library(
     hdrs = [
         "posix_error_space.h",
         "status.h",
+        "status_macros.h",
         "statusor.h",
     ],
     visibility = ["//visibility:public"],
@@ -51,6 +52,7 @@ cc_library(
         [
             ":status_proto_cc",
             "//asylo/platform/common:static_map",
+            "@com_google_absl//absl/base:core_headers",
             "@com_google_absl//absl/meta:type_traits",
             "@com_google_absl//absl/strings",
             "@com_google_asylo//asylo/util:logging",
@@ -86,6 +88,20 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Tests for the Status macros.
+cc_test(
+    name = "status_macros_test",
+    srcs = ["status_macros_test.cc"],
+    tags = ["regression"],
+    deps = [
+        ":status",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
 )
