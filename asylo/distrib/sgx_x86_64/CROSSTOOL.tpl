@@ -79,6 +79,7 @@ toolchain {
   compiler_flag: "-D__LITTLE_ENDIAN__"
   compiler_flag: "-DCOMPILER_GCC3"
   compiler_flag: "-D__LINUX_ERRNO_EXTENSIONS__"
+  compiler_flag: "-D_GLIBCXX_USE_C99"
   unfiltered_cxx_flag: "-no-canonical-prefixes"
   unfiltered_cxx_flag: "-fno-canonical-system-headers"
 
