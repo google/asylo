@@ -27,6 +27,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/util/sha256_hash.pb.h"
 #include <openssl/cmac.h>
 #include <openssl/rand.h>
 
@@ -51,14 +52,14 @@ FakeEnclave::FakeEnclave() {
 
 FakeEnclave *FakeEnclave::GetCurrentEnclave() { return current_; }
 
-void FakeEnclave::EnterEnclave(const FakeEnclave &value) {
+void FakeEnclave::EnterEnclave(const FakeEnclave &enclave) {
   if (current_) {
     // The SGX architecture throws an exception if EENTER is invoked from
     // inside an enclave. This behavior is simulated here via the
     // LOG(FATAL) macro.
     LOG(FATAL) << "Already inside an enclave.";
   }
-  current_ = new FakeEnclave(value);
+  current_ = new FakeEnclave(enclave);
 }
 
 void FakeEnclave::ExitEnclave() {
@@ -86,6 +87,19 @@ void FakeEnclave::SetRandomIdentity() {
   attributes_ = attributes_ | must_be_set_attributes;
   // All bits of MISCSELECT, except for bit 0, must be zero.
   miscselect_ = TrivialRandomObject<uint32_t>() & 0x1;
+}
+
+void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
+  mrenclave_.assign(identity.mrenclave().hash());
+  mrsigner_.assign(identity.signer_assigned_identity().mrsigner().hash());
+  isvprodid_ = identity.signer_assigned_identity().isvprodid();
+  isvsvn_ = identity.signer_assigned_identity().isvsvn();
+
+  if (!ConvertSecsAttributeRepresentation(identity.attributes(),
+                                          &attributes_)) {
+    LOG(FATAL) << "Error while reading attributes from identity.";
+  }
+  miscselect_ = identity.miscselect();
 }
 
 bool FakeEnclave::GetHardwareRand64(uint64_t *value) {

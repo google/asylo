@@ -26,6 +26,8 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/self_identity.h"
+#include "asylo/test/util/proto_matchers.h"
 #include <openssl/aes.h>
 #include <openssl/cmac.h>
 
@@ -130,6 +132,22 @@ TEST_F(FakeEnclaveTest, GetHardwareRand) {
     }
   }
   EXPECT_NE(collision_count, 3);
+}
+
+// Verify that FakeEnclave's identity can be set correctly from a CodeIdentity.
+TEST_F(FakeEnclaveTest, SetIdentity) {
+  FakeEnclave::EnterEnclave(enclave_);
+  CodeIdentity identity = GetSelfIdentity()->identity;
+
+  FakeEnclave enclave2;
+  enclave2.SetIdentity(identity);
+
+  FakeEnclave::ExitEnclave();
+  FakeEnclave::EnterEnclave(enclave2);
+  CodeIdentity identity2 = GetSelfIdentity()->identity;
+
+  EXPECT_THAT(identity, EqualsProto(identity2));
+  FakeEnclave::ExitEnclave();
 }
 
 // Verify that key-generation actually writes something in its output

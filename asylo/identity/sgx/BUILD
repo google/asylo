@@ -387,7 +387,11 @@ cc_library(
             "@linux_sgx//:common_inc",
             "@linux_sgx//:trts_inc",
         ],
-        "//conditions:default": ["//asylo/crypto/util:trivial_object_util"],
+        "//conditions:default": [
+            ":code_identity_proto_cc",
+            "//asylo/crypto/util:trivial_object_util",
+            "//asylo/identity/util:sha256_hash_proto_cc",
+        ],
     }),
 )
 
@@ -396,9 +400,11 @@ cc_test(
     srcs = ["fake_hardware_interface_test.cc"],
     tags = ["regression"],
     deps = [
+        ":code_identity_util",
         ":hardware_interface",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",

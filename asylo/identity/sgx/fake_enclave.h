@@ -24,6 +24,7 @@
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include <openssl/sha.h>
@@ -81,18 +82,24 @@ class FakeEnclave {
   FakeEnclave(const FakeEnclave &other) = default;
   FakeEnclave &operator=(const FakeEnclave &other) = default;
 
-  // Return a pointer to the current thread-local static-scoped instance of
+  // Returns a pointer to the current thread-local static-scoped instance of
   // FakeEnclave. The caller does not own the returned pointer, as a copy of the
   // pointer is still retained in the thread-local member current_, and may be
   // returned to other callers of GetCurrent.
   static FakeEnclave *GetCurrentEnclave();
 
-  // Copy the input FakeEnclave value to the current thread-local static-scoped
-  // instance of FakeEnclave. If no such instance is allocated, allocate one.
-  static void EnterEnclave(const FakeEnclave &value);
+  // Simulates enclave entry by allocating a thread-local static-scoped instance
+  // of FakeEnclave, and copying the contents of |enclave| to it. Note that SGX
+  // forbids an enclave entry if the CPU is already inside an enclave. This
+  // function emulates that behavior by invoking LOG(FATAL) if a static-scoped
+  // FakeEnclave instance is already allocated for the current thread.
+  static void EnterEnclave(const FakeEnclave &enclave);
 
-  // Free the current thread-local static-scoped instance of FakeEnclave,
-  // if one is allocated.
+  // Simulates enclave exit by freeing the current thread-local static-scoped
+  // instance of FakeEnclave. Note that SGX forbids enclave exit if the CPU is
+  // already outside an enclave. This function emulates this behavior by
+  // invoking LOG(FATAL) if a static-scoped FakeEnclave instance is not
+  // allocated for the current thread.
   static void ExitEnclave();
 
   // Mutators
@@ -137,9 +144,14 @@ class FakeEnclave {
   const SafeBytes<SHA256_DIGEST_LENGTH> &get_root_key() { return root_key_; }
   const SafeBytes<AES_BLOCK_SIZE> &get_seal_fuses() { return seal_fuses_; }
 
-  // Initialize data members that represent the enclave's identity to random
-  // values.
+  // Initializes data members that represent the enclave's identity to random
+  // values. Ensures that the random identity conforms to the various
+  // constraints specified by the SGX architecture.
   void SetRandomIdentity();
+
+  // Initializes data members that represent the enclave's identity according to
+  // the |identity|. Does not perform any consistency checks on |identity|.
+  void SetIdentity(const CodeIdentity &identity);
 
   // Equality operator--only needed for testing purposes.
   bool operator==(const FakeEnclave &rhs) const;
