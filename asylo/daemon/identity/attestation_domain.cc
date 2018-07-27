@@ -27,7 +27,7 @@
 #include <cerrno>
 #include <string>
 
-#include "absl/strings/ascii_ctype.h"
+#include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
@@ -46,7 +46,7 @@ constexpr size_t kAttestationDomainHexSize = 2 * kAttestationDomainSize;
 // string from the attestation-domain file, in case insufficient bytes are
 // present in the file. Such a situation can happen if the reader of the file is
 // racing with the writer of the file.
-constexpr size_t kMaxAttestationDomainReadAttempts = 5;
+constexpr int kMaxAttestationDomainReadAttempts = 5;
 
 // Generates a new random machine id and writes it to |domain|. All
 // encountered errors are fatal.
@@ -105,7 +105,8 @@ Status CreateAndWriteNewAttestationDomain(const char *domain_file_path,
     return status;
   }
   std::string domain_hex = absl::BytesToHexString(*domain);
-  if (write(fd, domain_hex.data(), domain_hex.size()) < domain_hex.size()) {
+  int result = write(fd, domain_hex.data(), domain_hex.size());
+  if (result < 0 || static_cast<size_t>(result) < domain_hex.size()) {
     Status status = Status(
         static_cast<error::PosixError>(errno),
         absl::StrCat("Unexpected error while writing machine id. The file ",
@@ -160,19 +161,20 @@ Status ReadExistingAttestationDomain(const char *domain_file_path,
           static_cast<error::PosixError>(errno),
           "Unexpected error while attempting to read attestation-domain file");
     }
-    if (retval < kAttestationDomainHexSize) {
+    if (static_cast<size_t>(retval) < kAttestationDomainHexSize) {
       // Could not read enough bytes. Most likely this is because this enclave
       // launch is racing against another enclave launch that is creating
       // domain. Sleep for 1 second and try again.
       sleep(1);
       continue;
     }
-    if (retval > kAttestationDomainHexSize) {
+    if (static_cast<size_t>(retval) > kAttestationDomainHexSize) {
       return Status(error::GoogleError::INTERNAL, "Machine id is too long");
     }
     return ParseAttestationDomain(
         domain_file_path,
-        absl::string_view(domain_hex.data(), domain_hex.size() - 1), domain);
+        absl::string_view(domain_hex.data(), kAttestationDomainHexSize),
+        domain);
   }
   // Exhausted all read attempts without being able to read sufficient number of
   // bytes from the attestation-domain file--most likely the file is damaged.

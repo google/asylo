@@ -27,8 +27,6 @@
 #include "asylo/daemon/identity/attestation_domain_mock.grpc.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
-#include "test/core/util/port.h"
-#include "util/time/clock.h"
 
 namespace asylo {
 namespace daemon {

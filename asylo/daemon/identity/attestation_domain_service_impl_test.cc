@@ -18,10 +18,15 @@
 
 #include "asylo/daemon/identity/attestation_domain_service_impl.h"
 
-#include "file/base/path.h"
+#include <string>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/str_cat.h"
 #include "asylo/daemon/identity/attestation_domain.h"
+#include "asylo/test/util/status_matchers.h"
+#include "asylo/test/util/test_flags.h"
+#include "include/grpcpp/server_context.h"
 
 namespace asylo {
 namespace daemon {
@@ -33,21 +38,24 @@ constexpr char kAttestationDomainFileName[] =
 // Verifies that the attestation domain name returned by
 // AttestationDomainServiceImpl is well-formed and consistent.
 TEST(AttestationDomainServiceImplTest, GetAttestationDomain) {
-  AttestationDomainServiceImpl impl(
-      file::JoinPath(FLAGS_test_tmpdir, kAttestationDomainFileName));
+  std::string domain_file_path =
+      absl::StrCat(FLAGS_test_tmpdir, "/", kAttestationDomainFileName);
+  AttestationDomainServiceImpl impl(domain_file_path);
 
   GetAttestationDomainRequest request;
   GetAttestationDomainResponse response;
   ::grpc::ServerContext *server_context = nullptr;
-  ASSERT_TRUE(
-      impl.GetAttestationDomain(server_context, &request, &response).ok());
+  ASSERT_THAT(
+      Status(impl.GetAttestationDomain(server_context, &request, &response)),
+      IsOk());
 
   std::string domain1 = response.attestation_domain();
   EXPECT_EQ(domain1.size(), kAttestationDomainNameSize);
 
   response.Clear();
-  ASSERT_TRUE(
-      impl.GetAttestationDomain(server_context, &request, &response).ok());
+  ASSERT_THAT(
+      Status(impl.GetAttestationDomain(server_context, &request, &response)),
+      IsOk());
 
   std::string domain2 = response.attestation_domain();
   EXPECT_EQ(domain1, domain2);
