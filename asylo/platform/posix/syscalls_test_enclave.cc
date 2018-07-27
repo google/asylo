@@ -56,8 +56,10 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
 
     SyscallsTestOutput output_ret;
-    if (test_input.test_target() == "sysconf") {
-      return RunSysconfTest(output);
+    if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_CONF)") {
+      return RunSysconfTest(output, _SC_NPROCESSORS_CONF);
+    } else if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_ONLN)") {
+      return RunSysconfTest(output, _SC_NPROCESSORS_ONLN);
     } else if (test_input.test_target() == "getpid") {
       return RunGetPidTest(output);
     } else if (test_input.test_target() == "unlink") {
@@ -217,9 +219,9 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunSysconfTest(EnclaveOutput *output) {
+  Status RunSysconfTest(EnclaveOutput *output, int name) {
     SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(sysconf(_SC_NPROCESSORS_ONLN));
+    output_ret.set_int_syscall_return(sysconf(name));
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }

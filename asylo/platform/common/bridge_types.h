@@ -45,7 +45,11 @@ typedef int64_t bridge_sigset_t;
 
 // This enum contains all of the sysconf name values supported inside the
 // enclave.
-enum SysconfConstants { UNKNOWN = 0, NPROCESSORS_ONLN = 1 };
+enum SysconfConstants {
+  UNKNOWN = 0,
+  NPROCESSORS_ONLN = 1,
+  NPROCESSORS_CONF = 2,
+};
 
 // The wait options that are supported inside the enclave.
 enum WaitOptions {

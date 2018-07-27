@@ -227,13 +227,22 @@ class CustomConfigSyscallsTest : public EnclaveTest {
   }
 };
 
-// Tests sysconf(). Currently only the parameter _SC_NPROCESSORS_ONLN is
-// implemented in the enclave. This test checks whether
-// sysconf(_SC_NPROCESSORS_ONLN) inside enclave gives the same result as outside
-// the enclave.
-TEST_F(SyscallsTest, Sysconf) {
+// Tests sysconf(). This test checks whether sysconf(_SC_NPROCESSORS_CONF)
+// inside enclave gives the same result as outside the enclave.
+TEST_F(SyscallsTest, SysconfScNprocessorsConf) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf", "", &test_output));
+  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf(_SC_NPROCESSORS_CONF)", "",
+                                      &test_output));
+  ASSERT_TRUE(test_output.has_int_syscall_return());
+  EXPECT_EQ(test_output.int_syscall_return(), sysconf(_SC_NPROCESSORS_CONF));
+}
+
+// Tests sysconf(). This test checks whether sysconf(_SC_NPROCESSORS_ONLN)
+// inside enclave gives the same result as outside the enclave.
+TEST_F(SyscallsTest, SysconfScNprocessorsOnln) {
+  SyscallsTestOutput test_output;
+  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf(_SC_NPROCESSORS_ONLN)", "",
+                                      &test_output));
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), sysconf(_SC_NPROCESSORS_ONLN));
 }

@@ -535,11 +535,11 @@ int ocall_enc_untrusted_pipe(int pipefd[2]) {
   return ret;
 }
 
-int ocall_enc_untrusted_sysconf(enum SysconfConstants name) {
-  int tmp = FromSysconfConstants(name);
-  int ret = -1;
-  if (tmp != -1) {
-    ret = sysconf(tmp);
+int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
+  int name = FromSysconfConstants(bridge_name);
+  int64_t ret = -1;
+  if (name != -1) {
+    ret = sysconf(name);
   }
   return ret;
 }

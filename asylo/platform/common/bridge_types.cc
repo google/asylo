@@ -27,7 +27,6 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 #include <unistd.h>
-
 #include <algorithm>
 #include <unordered_map>
 
@@ -186,6 +185,8 @@ int ToBridgeSocketOptionName(int socket_option_name) {
 
 int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
   switch (bridge_sysconf_constant) {
+    case NPROCESSORS_CONF:
+      return _SC_NPROCESSORS_CONF;
     case NPROCESSORS_ONLN:
       return _SC_NPROCESSORS_ONLN;
     default:
@@ -195,6 +196,8 @@ int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
 
 enum SysconfConstants ToSysconfConstants(int sysconf_constant) {
   switch (sysconf_constant) {
+    case _SC_NPROCESSORS_CONF:
+      return NPROCESSORS_CONF;
     case _SC_NPROCESSORS_ONLN:
       return NPROCESSORS_ONLN;
     default:

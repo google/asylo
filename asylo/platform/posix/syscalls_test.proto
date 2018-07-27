@@ -38,8 +38,8 @@ message SyscallsTestInput {
 
 // The output contains the outputs from the syscalls inside enclave.
 message SyscallsTestOutput {
-  // Int value returned by system call.
-  optional int32 int_syscall_return = 1;
+  // Integer-type value returned by system call.
+  optional int64 int_syscall_return = 1;
 
   // String value from system call.
   optional string string_syscall_return = 2;

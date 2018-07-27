@@ -74,10 +74,12 @@ int gethostname(char *name, size_t len) {
   return 0;
 }
 
-// Only argument _SC_NPROCESSORS_ONLN is implemented now, return value is from
-// sysconf on host. For any other arguments return -1.
-int64_t sysconf(int name) {
+// Only _SC_NPROCESSORS_ONLN and _SC_NPROCESSORS_CONF are supported for now. In
+// these cases, the return value is retrieved from the host. For any other
+// arguments, -1 is returned.
+long sysconf(int name) {
   switch (name) {
+    case _SC_NPROCESSORS_CONF:
     case _SC_NPROCESSORS_ONLN:
       return enc_untrusted_sysconf(name);
     default:

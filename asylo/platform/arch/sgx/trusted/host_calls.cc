@@ -834,14 +834,14 @@ int enc_untrusted_pipe(int pipefd[2]) {
   return ret;
 }
 
-int enc_untrusted_sysconf(int name) {
-  int ret;
-  enum SysconfConstants tmp = ToSysconfConstants(name);
-  if (tmp == UNKNOWN) {
+int64_t enc_untrusted_sysconf(int name) {
+  int64_t ret;
+  enum SysconfConstants bridge_name = ToSysconfConstants(name);
+  if (bridge_name == UNKNOWN) {
     errno = EINVAL;
     return -1;
   }
-  sgx_status_t status = ocall_enc_untrusted_sysconf(&ret, tmp);
+  sgx_status_t status = ocall_enc_untrusted_sysconf(&ret, bridge_name);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
