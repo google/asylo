@@ -32,7 +32,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
-#include "asylo/test/misc/syscalls_test.pb.h"
+#include "asylo/platform/posix/syscalls_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
 
 // Enables gtest to print a struct stat on failure. This function needs to be in

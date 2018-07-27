@@ -27,14 +27,6 @@ load(
     "cc_enclave_test",
 )
 
-# A protobuf used by syscalls test. The input contains the target syscall to
-# test, and the output contains the output of the syscall inside enclave.
-asylo_proto_library(
-    name = "syscalls_test_proto",
-    srcs = ["syscalls_test.proto"],
-    deps = ["//asylo:enclave_proto"],
-)
-
 # A protobuf used by signal tests. The input contains whether to register a
 # signal hander sa_handler, which takes a single argument signum, or
 # sa_sigaction, which takes three arguments: signum, siginfo, and ucontext.
@@ -60,19 +52,6 @@ sgx_enclave(
     srcs = ["initfini.cc"],
     deps = [
         "//asylo/test/util:enclave_test_application",
-    ],
-)
-
-# SGX enclave used to test different syscalls.
-sgx_enclave(
-    name = "syscalls_test.so",
-    srcs = ["syscalls_test_enclave.cc"],
-    deps = [
-        ":syscalls_test_proto_cc",
-        "//asylo/platform/common:bridge_proto_serializer",
-        "//asylo/test/util:enclave_test_application",
-        "//asylo/util:status",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -238,19 +217,6 @@ cc_enclave_test(
         "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
-)
-
-enclave_test(
-    name = "syscalls_test",
-    srcs = ["syscalls_test_driver.cc"],
-    enclaves = {"enclave": ":syscalls_test.so"},
-    tags = ["regression"],
-    test_args = ["--enclave_path='{enclave}'"],
-    deps = [
-        ":syscalls_test_proto_cc",
-        "@com_google_absl//absl/strings",
-        "//asylo/platform/common:bridge_proto_serializer",
-    ] + TEST_DEPS_COMMON,
 )
 
 enclave_test(

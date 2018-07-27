@@ -22,7 +22,13 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "enclave_test",
+    "cc_enclave_test",
+)
 
 # Note: this target cannot be a cc_library because the toolchain itself depends
 # on these headers, which creates a circular dependency when cc_library adds a
@@ -48,26 +54,26 @@ cc_library(
 cc_library(
     name = "posix",
     srcs = [
-        "src/dirent.cc",
-        "src/errno.cc",
-        "src/grp.cc",
-        "src/ifaddrs.cc",
-        "src/ioctl.cc",
-        "src/mman.cc",
-        "src/poll.cc",
-        "src/pthread.cc",
-        "src/pwd.cc",
-        "src/resource.cc",
-        "src/sched.cc",
-        "src/signal.cc",
-        "src/stat.cc",
-        "src/syslog.cc",
-        "src/termios.cc",
-        "src/time.cc",
-        "src/uio.cc",
-        "src/unistd.cc",
-        "src/utsname.cc",
-        "src/wait.cc",
+        "dirent.cc",
+        "errno.cc",
+        "grp.cc",
+        "ifaddrs.cc",
+        "ioctl.cc",
+        "mman.cc",
+        "poll.cc",
+        "pthread.cc",
+        "pwd.cc",
+        "resource.cc",
+        "sched.cc",
+        "signal.cc",
+        "stat.cc",
+        "syslog.cc",
+        "termios.cc",
+        "time.cc",
+        "uio.cc",
+        "unistd.cc",
+        "utsname.cc",
+        "wait.cc",
     ],
     hdrs = [":posix_headers"] + select({
         "//asylo/platform/arch:sgx": ["//asylo/third_party/intel:posix_sgx_headers"],
@@ -97,7 +103,7 @@ cc_library(
 # Test byteswap.h posix extension inside an enclave.
 cc_enclave_test(
     name = "bswap_test",
-    srcs = ["test/bswap_test.cc"],
+    srcs = ["bswap_test.cc"],
     tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
@@ -107,9 +113,49 @@ cc_enclave_test(
 # Test for errno inside an enclave.
 cc_enclave_test(
     name = "errno_test",
-    srcs = ["test/errno_test.cc"],
+    srcs = ["errno_test.cc"],
     tags = ["regression"],
     deps = [
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# A protobuf used by syscalls test. The input contains the target syscall to
+# test, and the output contains the output of the syscall inside enclave.
+asylo_proto_library(
+    name = "syscalls_test_proto",
+    srcs = ["syscalls_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
+# SGX enclave used to test different syscalls.
+sgx_enclave(
+    name = "syscalls_test.so",
+    srcs = ["syscalls_test_enclave.cc"],
+    deps = [
+        ":syscalls_test_proto_cc",
+        "//asylo/platform/common:bridge_proto_serializer",
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+        "@com_google_asylo//asylo/util:logging",
+    ],
+)
+
+enclave_test(
+    name = "syscalls_test",
+    srcs = ["syscalls_test_driver.cc"],
+    enclaves = {"enclave": ":syscalls_test.so"},
+    tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        ":syscalls_test_proto_cc",
+        "//asylo:enclave_client",
+        "//asylo/platform/common:bridge_proto_serializer",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )
