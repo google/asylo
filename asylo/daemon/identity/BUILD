@@ -97,7 +97,6 @@ cc_test(
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],

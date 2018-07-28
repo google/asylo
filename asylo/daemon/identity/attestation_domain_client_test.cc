@@ -23,7 +23,6 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
 #include "asylo/daemon/identity/attestation_domain_mock.grpc.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
@@ -39,7 +38,7 @@ using ::testing::SetArgPointee;
 constexpr char kAttestationDomain[] = "A 16-byte string";
 
 // Verifies that the client returns the attestation domain provided by the
-// server.
+// server in response to a GetAttestationDomain RPC.
 TEST(AttestationDomainClientMockTest, GeAttestationDomain) {
   auto mock_stub =
       absl::make_unique<MockAttestationDomainServiceStub>();
@@ -48,15 +47,36 @@ TEST(AttestationDomainClientMockTest, GeAttestationDomain) {
   response.set_attestation_domain(kAttestationDomain);
 
   EXPECT_CALL(*mock_stub, GetAttestationDomain(_, _, _))
-      .WillOnce(DoAll(SetArgPointee<2>(response), Return(grpc::Status::OK)));
+      .WillOnce(DoAll(SetArgPointee<2>(response), Return(::grpc::Status::OK)));
 
-  std::unique_ptr<AttestationDomainService::StubInterface> stub =
-      std::move(mock_stub);
-  AttestationDomainClient client(std::move(stub));
+  AttestationDomainClient client(
+      std::unique_ptr<AttestationDomainService::StubInterface>(
+          std::move(mock_stub)));
 
   StatusOr<std::string> domain_result = client.GetAttestationDomain();
   ASSERT_THAT(domain_result, IsOk());
   EXPECT_EQ(domain_result.ValueOrDie(), kAttestationDomain);
+}
+
+// Verifies that the client returns the RPC error from a failed
+// GetAttestationDomain RPC.
+TEST(AttestationDomainClientMockTest, GeAttestationDomainFails) {
+  auto mock_stub =
+      absl::make_unique<MockAttestationDomainServiceStub>();
+
+  GetAttestationDomainResponse response;
+  response.set_attestation_domain(kAttestationDomain);
+
+  EXPECT_CALL(*mock_stub, GetAttestationDomain(_, _, _))
+      .WillOnce(Return(::grpc::Status(::grpc::StatusCode::DEADLINE_EXCEEDED,
+                                      "Could not reach server")));
+
+  AttestationDomainClient client(
+      std::unique_ptr<AttestationDomainService::StubInterface>(
+          std::move(mock_stub)));
+
+  EXPECT_THAT(client.GetAttestationDomain().status(),
+              StatusIs(error::GoogleError::DEADLINE_EXCEEDED));
 }
 
 }  // namespace
