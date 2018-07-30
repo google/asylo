@@ -1,9 +1,7 @@
-# Asylo gRPC Server Example
-
 <!--jekyll-front-matter
 ---
-title: Asylo gRPC Server Example
-overview: Run a gRPC server inside an enclave
+title: gRPC Server Example
+overview: Run a gRPC server inside an enclave.
 
 location: /_docs/guides/grpc_server.md
 order: 10
@@ -33,8 +31,7 @@ Enclaves can then serve as secure nodes in your distributed systems and cloud
 applications.
 
 The source files for this example are located in the
-[asylo/examples/grpc_server]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server) folder.
+[asylo/examples/grpc_server](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server) folder.
 
 ## Defining the gRPC service
 
@@ -43,8 +40,7 @@ translation service inside an enclave. The service provides translations of some
 Greek words into English.
 
 This example uses the following service definition from
-[translator_server.proto]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.proto):
+[translator_server.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.proto):
 
 ```proto
 // A request message containing a word to be translated.
@@ -68,10 +64,8 @@ service Translator {
 
 This document doesn't include the server implementation because the details are
 mostly irrelevant to this example. To learn about the server implementation, see
-[translator_server.h]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.h)
-and [translator_server.cc]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.cc).
+[translator_server.h](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.h)
+and [translator_server.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.cc).
 
 ## Setting up a server enclave
 
@@ -79,14 +73,12 @@ This example features a step-by-step guide to writing a custom server enclave so
 that you can see how gRPC works within Asylo. However, if you want to skip the
 example and get a server up and running sooner, you can use the `EnclaveServer`
 utility included in Asylo. `EnclaveServer` is a whole enclave that runs a single
-gRPC service. You can find `EnclaveServer` in [enclave_server.h]
-(https://github.com/google/asylo/tree/master/asylo/grpc/util/enclave_server.h).
+gRPC service. You can find `EnclaveServer` in [enclave_server.h](https://github.com/google/asylo/tree/master/asylo/grpc/util/enclave_server.h).
 
 To set up the server, the enclave needs to know the desired server address. This
 information can be passed through the `Initialize` method, which accepts an
 `EnclaveConfig`. This example extends the `EnclaveConfig` in a new file named
-[grpc_server.proto]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server.proto):
+[grpc_server.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server.proto):
 
 ```proto
 extend asylo.EnclaveConfig {
@@ -106,8 +98,7 @@ of `TrustedApplication` as follows:
 * The `Finalize` method shuts down the gRPC server.
 
 The enclave keeps track of the server address and service object in member
-variables. This example defines the server enclave in [grpc_server_enclave.cc]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_enclave.cc):
+variables. This example defines the server enclave in [grpc_server_enclave.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_enclave.cc):
 
 ```cpp
 class GrpcServerEnclave final : public asylo::TrustedApplication {
@@ -227,8 +218,7 @@ The driver for the server enclave does the following:
 * Keeps the server open for a configurable amount of time
 * Finalizes the enclave cleanly at the end of that time
 
-This example implements the driver in [grpc_server_driver.cc]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_driver.cc).
+This example implements the driver in [grpc_server_driver.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_driver.cc).
 
 #### Driver setting definitions
 
@@ -304,8 +294,7 @@ LOG_IF(QFATAL, !status.ok())
 
 ## Building the application
 
-To build the gRPC service with Bazel, the [BUILD file]
-(https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/BUILD) needs the
+To build the gRPC service with Bazel, the [BUILD file](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/BUILD) needs the
 following targets:
 
 * An `asylo_grpc_proto_library` target that contains the generated service code
@@ -400,8 +389,7 @@ $ bazel run --config=enc-sim \
 ```
 
 For this example, use the
-[gRPC command-line interface]
-(https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md)to make RPCs to the translation server.
+[gRPC command-line interface](https://github.com/grpc/grpc/blob/master/doc/command_line_tool.md) to make RPCs to the translation server.
 
 In a **different** terminal window, compile the gRPC command-line interface and
 copy the binary to a temporary location:
