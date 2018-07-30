@@ -104,6 +104,7 @@ enclave_test(
         ":translator_server_grpc_proto",
         "//asylo/test/util:exec_tester",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",

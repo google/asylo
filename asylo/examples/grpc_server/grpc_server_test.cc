@@ -227,11 +227,3 @@ TEST_F(GrpcServerTest, OrkutTranslationNotFound) {
 }  // namespace
 }  // namespace grpc_server
 }  // namespace examples
-
-int main(int argc, char **argv) {
-  ::testing::InitGoogleTest(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv,
-                                  /*remove_flags=*/ true);
-
-  return RUN_ALL_TESTS();
-}
