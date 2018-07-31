@@ -17,6 +17,7 @@
  */
 
 #include <sys/wait.h>
+#include <iostream>
 #include <memory>
 #include <regex>
 #include <string>
@@ -85,12 +86,17 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
                           port_message_regex)) {
       std::cmatch port_match;
       EXPECT_TRUE(std::regex_search(port_message_match.str().c_str(),
-                                    port_match, port_regex));
+                                    port_match, port_regex))
+          << absl::StrCat("Could not find port number in \"",
+                          port_message_match.str(), "\"");
       server_port_found_ = true;
       absl::MutexLock lock(server_port_mutex_);
-      EXPECT_TRUE(absl::SimpleAtoi(port_match.str(), server_port_));
+      EXPECT_TRUE(absl::SimpleAtoi(port_match.str(), server_port_))
+          << absl::StrCat("Could not convert \"", port_match.str(),
+                          "\" to integer");
     }
-
+    // Print the line back to stdout to help with debugging.
+    std::cout << line << std::endl;
     return true;
   }
 
@@ -154,8 +160,14 @@ class GrpcServerTest : public ::testing::Test {
   void TearDown() override {
     server_thread_->join();
     ASSERT_TRUE(server_port_found_);
-    ASSERT_TRUE(WIFEXITED(server_exit_status_));
-    EXPECT_EQ(WEXITSTATUS(server_exit_status_), 0);
+    ASSERT_TRUE(WIFEXITED(server_exit_status_))
+        << (WIFSIGNALED(server_exit_status_)
+                ? absl::StrCat("Server subprocess killed by signal ",
+                               WTERMSIG(server_exit_status_))
+                : "Server subprocess ended abnormally");
+    EXPECT_EQ(WEXITSTATUS(server_exit_status_), 0)
+        << absl::StrCat("Server subprocess exited with non-zero status ",
+                        WEXITSTATUS(server_exit_status_));
   }
 
   // Sends a GetTranslation RPC to the server. Returns the same grpc::Status as
