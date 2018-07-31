@@ -17,6 +17,16 @@
 licenses(["notice"])  # Apache v2.0
 
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
+
+# An enclave configuration that should keep up with gRPC's resource usage.
+sgx_enclave_configuration(
+    name = "grpc_enclave_config",
+    # gRPC needs more than the default amount of heap to run. ~1.2GB.
+    heap_max_size = "0x47000000",
+    tcs_num = "200",
+    visibility = ["//visibility:public"],
+)
 
 # The GrpcServerLauncher library is used for launching a gRPC server that hosts
 # one or more services, each on its own thread.

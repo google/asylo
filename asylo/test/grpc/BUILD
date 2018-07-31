@@ -21,7 +21,7 @@ load(
     "cc_test",
     "enclave_test",
 )
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load(
     "//asylo/bazel:proto.bzl",
     "asylo_grpc_proto_library",
@@ -82,19 +82,12 @@ cc_library(
     ],
 )
 
-sgx_enclave_configuration(
-    name = "grpc_enclave_config",
-    # gRPC needs more than the default amount of heap to run. ~1.2GB.
-    heap_max_size = "0x47000000",
-    tcs_num = "200",
-)
-
 # Enclave with a service_proto server running.
 sgx_enclave(
     name = "enclave_insecure_server.so",
     testonly = 1,
     srcs = ["enclave_insecure_server.cc"],
-    config = ":grpc_enclave_config",
+    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":messenger_server_impl",
         "//asylo:enclave_runtime",
@@ -109,7 +102,7 @@ sgx_enclave(
     name = "enclave_secure_server.so",
     testonly = 1,
     srcs = ["enclave_secure_server.cc"],
-    config = ":grpc_enclave_config",
+    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
@@ -125,7 +118,7 @@ sgx_enclave(
     name = "server_enclave.so",
     testonly = 1,
     srcs = ["server_enclave.cc"],
-    config = ":grpc_enclave_config",
+    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
@@ -140,7 +133,7 @@ sgx_enclave(
     name = "client_enclave.so",
     testonly = 1,
     srcs = ["client_enclave.cc"],
-    config = ":grpc_enclave_config",
+    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":client_enclave_proto_cc",
         ":messenger_client_impl",
@@ -211,7 +204,7 @@ enclave_test(
 cc_test(
     name = "channel_test",
     srcs = ["channel_test.cc"],
-    enclave_test_config = ":grpc_enclave_config",
+    enclave_test_config = "//asylo/grpc/util:grpc_enclave_config",
     enclave_test_name = "channel_enclave_test",
     tags = ["regression"],
     deps = [
