@@ -58,7 +58,7 @@ simulated enclave backend.
 
 ```bash
 NAMES="${USER}"
-docker run --rm \
+docker run -it --rm \
     -v bazel-cache:/root/.cache/bazel \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
@@ -73,6 +73,8 @@ enclave's entry-point get invoked for each name.
 
 In the above example, we use the following Docker flags:
 
++   `-it` is used to allocate an interactive terminal in which the command is
+    run.
 +   `--rm` is used to automatically delete the temporary container after the
     command completes so that unnecessary images don't persist on disk.
 +   `-v` is used to map local files to paths inside the container.
@@ -117,7 +119,7 @@ tests that run inside a simulated enclave environment. You can run it with the
 following command:
 
 ```bash
-docker run --rm \
+docker run -it --rm \
     -v "${ASYLO_SDK}:/opt/asylo/sdk" \
     -v bazel-cache:/root/.cache/bazel \
     -w "/opt/asylo/sdk" \

@@ -391,7 +391,7 @@ you would like to encrypt.
 Note: The following command runs the enclave in simulation mode.
 
 ```bash
-docker run --rm \
+docker run -it --rm \
     -v bazel-cache:/root/.cache/bazel \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
