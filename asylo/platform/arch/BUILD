@@ -171,6 +171,7 @@ cc_library(
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
+        "//asylo/platform/core:shared_name",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",

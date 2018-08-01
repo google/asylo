@@ -82,6 +82,7 @@ cc_library(
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
+        "@com_google_absl//absl/synchronization",
         "@com_google_asylo//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:bridge_types",

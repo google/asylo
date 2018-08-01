@@ -32,7 +32,6 @@
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
-#include "asylo/util/status.pb.h"
 #include "common/inc/sgx_trts.h"
 
 // Edger8r does basic sanity checks for input and output pointers. The
