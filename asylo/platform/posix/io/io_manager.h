@@ -257,25 +257,27 @@ class IOManager {
   };
 
   // A table of virtual file descriptors managed by the IOManager.
+  // This class is not thread safe. IOManager is responsible for locking the
+  // access to objects of this class.
   class FileDescriptorTable {
    public:
     FileDescriptorTable();
 
     // Returns the IOContext associated with a file descriptor, or nullptr if
     // no such context exists.
-    IOContext *Get(int fd) LOCKS_EXCLUDED(fd_table_lock_);
+    std::shared_ptr<IOContext> Get(int fd);
 
     // Returns whether the IOContext for |fd| is shared by more than one
     // fd_table_ entry. Returns false if |fd| is not  valid.
-    bool HasSharedIOContext(int fd) LOCKS_EXCLUDED(fd_table_lock_);
+    bool HasSharedIOContext(int fd);
 
     // Removes an entry from the table, destroying the associated IOContext if
     // this is the last reference to the IOContext, and returns the file
     // descriptor to the free list.
-    void Delete(int fd) LOCKS_EXCLUDED(fd_table_lock_);
+    void Delete(int fd);
 
     // Returns true if a specified file descriptor is available.
-    bool IsFileDescriptorUnused(int fd) LOCKS_EXCLUDED(fd_table_lock_);
+    bool IsFileDescriptorUnused(int fd);
 
     // Inserts an I/O context into the table, assigning it the next available
     // file descriptor value and taking ownership of the pointer. Returns the
@@ -283,27 +285,22 @@ class IOManager {
     //
     // If the file descriptor table is full and the context can not be inserted,
     // returns -1 and does not take ownership of the passed context.
-    int Insert(IOContext *context) LOCKS_EXCLUDED(fd_table_lock_);
+    int Insert(IOContext *context);
 
     // Creates a copy of |oldfd| using the next available file descriptor value
     // greater than or equal to |startfd|.
     // The two file descriptors will reference the same I/O context. Returns the
     // new file descriptor on success, returns -1 if |oldfd| is not valid or no
     // file descriptor is available.
-    int CopyFileDescriptor(int oldfd, int startfd)
-        LOCKS_EXCLUDED(fd_table_lock_);
+    int CopyFileDescriptor(int oldfd, int startfd);
 
     // Creates a copy of |oldfd| using |newfd| for the new descriptor. The two
     // file descriptors will reference the same I/O context. Returns |newfd| on
     // success, returns -1 if either |oldfd| or |newfd| is not valid, or |newfd|
     // is already used.
-    int CopyFileDescriptorToSpecifiedTarget(int oldfd, int newfd)
-        LOCKS_EXCLUDED(fd_table_lock_);
+    int CopyFileDescriptorToSpecifiedTarget(int oldfd, int newfd);
 
-    absl::Mutex *GetLock(int fd);
-
-    bool SetFileDescriptorLimits(const struct rlimit *rlim)
-        LOCKS_EXCLUDED(fd_table_lock_);
+    bool SetFileDescriptorLimits(const struct rlimit *rlim);
 
     int get_maximum_fd_soft_limit();
 
@@ -315,23 +312,13 @@ class IOManager {
 
     // Returns current highest file descriptor number. Returns -1 if no file
     // descriptors are used.
-    int GetHighestFileDescriptorUsed() EXCLUSIVE_LOCKS_REQUIRED(fd_table_lock_);
+    int GetHighestFileDescriptorUsed();
 
     // Returns the lowest available file descriptor greater than or equal to
     // |startfd|. Returns -1 if there is no file descriptor available.
-    int GetNextFreeFileDescriptor(int startfd)
-        EXCLUSIVE_LOCKS_REQUIRED(fd_table_lock_);
+    int GetNextFreeFileDescriptor(int startfd);
 
-    std::array<std::shared_ptr<IOContext>, kMaxOpenFiles> fd_table_
-        GUARDED_BY(fd_table_lock_);
-
-    // A mutex that locks the fd_table_ and fd_to_lock_. This lock needs to be
-    // obtained before manipulating either of the tables.
-    absl::Mutex fd_table_lock_;
-
-    // A map from a fd to a lock. The corresponding lock needs to be owned
-    // before manipulating the file.
-    std::unordered_map<int, absl::Mutex> fd_to_lock_ GUARDED_BY(fd_table_lock_);
+    std::array<std::shared_ptr<IOContext>, kMaxOpenFiles> fd_table_;
 
     // The maximum file descriptor number allowed.
     int maximum_fd_soft_limit;
@@ -381,12 +368,12 @@ class IOManager {
 
   // Creates a copy of the file descriptor |oldfd| using the next available file
   // descriptor. Returns the new file descriptors on success, and -1 on error.
-  int Dup(int oldfd);
+  int Dup(int oldfd) LOCKS_EXCLUDED(fd_table_lock_);
 
   // Creates a copy of the file descriptor |oldfd| using the file descriptor
   // specified by |newfd|. Returns the new file descriptor on success, and -1 on
   // error.
-  int Dup2(int oldfd, int newfd);
+  int Dup2(int oldfd, int newfd) LOCKS_EXCLUDED(fd_table_lock_);
 
   // Creates a pipe. The array |pipefd| is used to return two file descriptors
   // referring to the ends of the pipe. |pipefd[0]| refers to the read end while
@@ -402,7 +389,7 @@ class IOManager {
   int Write(int fd, const char *buf, size_t count);
 
   // Closes and finalizes the stream, returning 0 on success or -1 on error.
-  int Close(int fd);
+  int Close(int fd) LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements lseek(2).
   int LSeek(int fd, off_t offset, int whence);
@@ -426,7 +413,8 @@ class IOManager {
   int Unlink(const char *pathname);
 
   // Implements poll(2).
-  int Poll(struct pollfd *fds, nfds_t nfds, int timeout);
+  int Poll(struct pollfd *fds, nfds_t nfds, int timeout)
+      LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements mkdir(2).
   int Mkdir(const char *pathname, mode_t mode);
@@ -441,10 +429,12 @@ class IOManager {
   mode_t Umask(mode_t mask);
 
   // Implements getrlimit(2).
-  int GetRLimit(int resource, struct rlimit *rlim);
+  int GetRLimit(int resource, struct rlimit *rlim)
+      LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements setrlimit(2).
-  int SetRLimit(int resource, const struct rlimit *rlim);
+  int SetRLimit(int resource, const struct rlimit *rlim)
+      LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements setsockopt(2).
   int SetSockOpt(int sockfd, int level, int option_name,
@@ -490,7 +480,7 @@ class IOManager {
   // Binds an enclave file descriptor to a host file descriptor, returning an
   // enclave file descriptor which will delegate all I/O operations to the host
   // operating system.
-  int RegisterHostFileDescriptor(int host_fd);
+  int RegisterHostFileDescriptor(int host_fd) LOCKS_EXCLUDED(fd_table_lock_);
 
   // Registers the handler responsible for a given path prefix.
   // When processing a path, the handler with the longest prefix shared with the
@@ -518,13 +508,20 @@ class IOManager {
   // relative paths and path normalization.
   StatusOr<std::string> CanonicalizePath(absl::string_view path) const;
 
+  // Closes a file descriptor by removing it from |fd_table_|, and closing the
+  // corresponding host file descriptor if this is the last reference to it.
+  // This method does not obtain a locker. Caller of this method is responsible
+  // for obtaining |fd_table_lock_|.
+  int CloseFileDescriptor(int fd) EXCLUSIVE_LOCKS_REQUIRED(fd_table_lock_);
+
   // Fetches the VirtualFileHandler associated with a given path, or
   // nullptr if no entry is found.
   VirtualPathHandler *HandlerForPath(absl::string_view path) const;
 
   // Locks the mutex corresponding to |fd| and perform thread safe action.
   template <typename IOAction>
-  int LockAndRoll(int fd, IOAction action);
+  typename std::result_of<IOAction(std::shared_ptr<IOContext>)>::type
+  CallWithContext(int fd, IOAction action) LOCKS_EXCLUDED(fd_table_lock_);
 
   // Looks up the appropriate VirtualPathHandler and calls the given function on
   // it.  Errors related to path resolution and handler lookups are handled.
@@ -546,6 +543,9 @@ class IOManager {
   std::map<std::string, std::unique_ptr<VirtualPathHandler>> prefix_to_handler_;
 
   FileDescriptorTable fd_table_;
+
+  // A mutex that locks the fd_table_.
+  absl::Mutex fd_table_lock_;
 
   std::string current_working_directory_;
 };

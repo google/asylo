@@ -39,77 +39,57 @@ IOManager::FileDescriptorTable::FileDescriptorTable()
     : maximum_fd_soft_limit(kMaxOpenFiles),
       maximum_fd_hard_limit(kMaxOpenFiles) {}
 
-IOManager::IOContext *IOManager::FileDescriptorTable::Get(int fd) {
+std::shared_ptr<IOManager::IOContext> IOManager::FileDescriptorTable::Get(
+    int fd) {
   if (!IsFileDescriptorValid(fd)) return nullptr;
-  absl::MutexLock lock(&fd_table_lock_);
-  return fd_table_[fd].get();
+  return fd_table_[fd];
 }
 
 bool IOManager::FileDescriptorTable::HasSharedIOContext(int fd) {
   if (!IsFileDescriptorValid(fd)) return false;
-  absl::MutexLock lock(&fd_table_lock_);
   return !fd_table_[fd].unique();
 }
 
 void IOManager::FileDescriptorTable::Delete(int fd) {
   if (!IsFileDescriptorValid(fd)) return;
-  absl::MutexLock lock(&fd_table_lock_);
   fd_table_[fd] = nullptr;
 }
 
 bool IOManager::FileDescriptorTable::IsFileDescriptorUnused(int fd) {
   if (!IsFileDescriptorValid(fd)) return false;
-  absl::MutexLock lock(&fd_table_lock_);
   return !fd_table_[fd];
 }
 
 int IOManager::FileDescriptorTable::Insert(IOContext *context) {
-  absl::MutexLock lock(&fd_table_lock_);
   int fd = GetNextFreeFileDescriptor(0);
   if (fd < 0) {
     return -1;
   }
   fd_table_[fd] = std::shared_ptr<IOContext>(context);
-  fd_to_lock_[fd];
   return fd;
 }
 
 int IOManager::FileDescriptorTable::CopyFileDescriptor(int oldfd, int startfd) {
-  absl::MutexLock lock(&fd_table_lock_);
   int newfd = GetNextFreeFileDescriptor(startfd);
   if (!IsFileDescriptorValid(oldfd) || newfd == -1) {
     return -1;
   }
   fd_table_[newfd] = fd_table_[oldfd];
-  // Insert a new Mutex lock corresponding to |newfd|.
-  fd_to_lock_[newfd];
   return newfd;
 }
 
 int IOManager::FileDescriptorTable::CopyFileDescriptorToSpecifiedTarget(
     int oldfd, int newfd) {
-  absl::MutexLock lock(&fd_table_lock_);
   if (!IsFileDescriptorValid(oldfd) || !IsFileDescriptorValid(newfd) ||
       fd_table_[newfd]) {
     return -1;
   }
   fd_table_[newfd] = fd_table_[oldfd];
-  // Insert a new Mutex lock corresponding to |newfd|.
-  fd_to_lock_[newfd];
   return newfd;
-}
-
-absl::Mutex *IOManager::FileDescriptorTable::GetLock(int fd) {
-  if (!IsFileDescriptorValid(fd)) return nullptr;
-  absl::MutexLock lock(&fd_table_lock_);
-  auto it = fd_to_lock_.find(fd);
-  if (it == fd_to_lock_.end()) return nullptr;
-  return &(it->second);
 }
 
 bool IOManager::FileDescriptorTable::SetFileDescriptorLimits(
     const struct rlimit *rlim) {
-  absl::MutexLock lock(&fd_table_lock_);
   // The new limit should not exceed the absolute max file limit, and
   // unprivileged process should not be allowed to increase the hard limit.
   if (rlim->rlim_cur > rlim->rlim_max || rlim->rlim_max > kMaxOpenFiles ||
@@ -164,24 +144,25 @@ int IOManager::Access(const char *path, int mode) {
       });
 }
 
-int IOManager::Close(int fd) {
-  absl::Mutex *fd_lock = fd_table_.GetLock(fd);
-  if (fd_lock) {
-    absl::MutexLock lock(fd_lock);
-    IOContext *context = fd_table_.Get(fd);
-    if (context) {
-      int ret = 0;
-      // Only close the host file descriptor if this is the last reference to
-      // it.
-      if (!fd_table_.HasSharedIOContext(fd)) {
-        ret = context->Close();
-      }
-      fd_table_.Delete(fd);
-      return ret;
+int IOManager::CloseFileDescriptor(int fd) {
+  std::shared_ptr<IOContext> context = fd_table_.Get(fd);
+  if (context) {
+    int ret = 0;
+    // Only close the host file descriptor if this is the last reference to
+    // it.
+    if (!fd_table_.HasSharedIOContext(fd)) {
+      ret = context->Close();
     }
+    fd_table_.Delete(fd);
+    return ret;
   }
   errno = EBADF;
   return -1;
+}
+
+int IOManager::Close(int fd) {
+  absl::WriterMutexLock lock(&fd_table_lock_);
+  return CloseFileDescriptor(fd);
 }
 
 IOManager::VirtualPathHandler *IOManager::HandlerForPath(
@@ -241,6 +222,7 @@ int IOManager::Open(const char *path, int flags, mode_t mode) {
         handler->Open(canonical_path, flags, mode);
 
     if (context) {
+      absl::WriterMutexLock lock(&fd_table_lock_);
       int fd = fd_table_.Insert(context.get());
       if (fd >= 0) {
         context.release();
@@ -253,38 +235,33 @@ int IOManager::Open(const char *path, int flags, mode_t mode) {
 }
 
 int IOManager::Dup(int oldfd) {
-  absl::Mutex *fd_lock = fd_table_.GetLock(oldfd);
-  if (fd_lock) {
-    absl::MutexLock lock(fd_lock);
-    if (!fd_table_.IsFileDescriptorUnused(oldfd)) {
-      int ret = fd_table_.CopyFileDescriptor(oldfd, 0);
-      if (ret < 0) {
-        errno = EINVAL;
-      }
-      return ret;
+  absl::WriterMutexLock lock(&fd_table_lock_);
+  if (!fd_table_.IsFileDescriptorUnused(oldfd)) {
+    int ret = fd_table_.CopyFileDescriptor(oldfd, 0);
+    if (ret < 0) {
+      errno = EINVAL;
     }
+    return ret;
   }
   errno = EBADF;
   return -1;
 }
 
 int IOManager::Dup2(int oldfd, int newfd) {
-  absl::Mutex *fd_lock = fd_table_.GetLock(oldfd);
-  if (fd_lock) {
-    absl::MutexLock lock(fd_lock);
-    if (!fd_table_.IsFileDescriptorUnused(oldfd)) {
-      if (oldfd == newfd) {
-        return newfd;
-      }
-      if (!fd_table_.IsFileDescriptorUnused(newfd) && Close(newfd) == -1) {
-        return -1;
-      }
-      int ret = fd_table_.CopyFileDescriptorToSpecifiedTarget(oldfd, newfd);
-      if (ret < 0) {
-        errno = EINVAL;
-      }
-      return ret;
+  absl::WriterMutexLock lock(&fd_table_lock_);
+  if (!fd_table_.IsFileDescriptorUnused(oldfd)) {
+    if (oldfd == newfd) {
+      return newfd;
     }
+    if (!fd_table_.IsFileDescriptorUnused(newfd) &&
+        CloseFileDescriptor(newfd) == -1) {
+      return -1;
+    }
+    int ret = fd_table_.CopyFileDescriptorToSpecifiedTarget(oldfd, newfd);
+    if (ret < 0) {
+      errno = EINVAL;
+    }
+    return ret;
   }
   errno = EBADF;
   return -1;
@@ -305,13 +282,16 @@ int IOManager::Pipe(int pipefd[2]) {
 
 int IOManager::Poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   std::vector<int> enclave_fd(nfds);
-  for (int i = 0; i < nfds; ++i) {
-    enclave_fd[i] = fds[i].fd;
-    IOContext *context = fd_table_.Get(enclave_fd[i]);
-    if (context) {
-      fds[i].fd = context->GetHostFileDescriptor();
-    } else {
-      fds[i].fd = -1;
+  {
+    absl::ReaderMutexLock lock(&fd_table_lock_);
+    for (int i = 0; i < nfds; ++i) {
+      enclave_fd[i] = fds[i].fd;
+      std::shared_ptr<IOContext> context = fd_table_.Get(enclave_fd[i]);
+      if (context) {
+        fds[i].fd = context->GetHostFileDescriptor();
+      } else {
+        fds[i].fd = -1;
+      }
     }
   }
   int ret = enc_untrusted_poll(fds, nfds, timeout);
@@ -322,14 +302,15 @@ int IOManager::Poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 }
 
 template <typename IOAction>
-int IOManager::LockAndRoll(int fd, IOAction action) {
-  absl::Mutex *fd_lock = fd_table_.GetLock(fd);
-  if (fd_lock) {
-    absl::MutexLock lock(fd_lock);
-    IOContext *context = fd_table_.Get(fd);
-    if (context) {
-      return action(context);
-    }
+typename std::result_of<IOAction(std::shared_ptr<IOManager::IOContext>)>::type
+IOManager::CallWithContext(int fd, IOAction action) {
+  std::shared_ptr<IOContext> context;
+  {
+    absl::ReaderMutexLock lock(&fd_table_lock_);
+    context = fd_table_.Get(fd);
+  }
+  if (context) {
+    return action(context);
   }
   errno = EBADF;
   return -1;
@@ -391,7 +372,7 @@ IOManager::CallWithHandler(const char *path1, const char *path2,
 }
 
 int IOManager::Read(int fd, char *buf, size_t count) {
-  return LockAndRoll(fd, [buf, count](IOContext *context) {
+  return CallWithContext(fd, [buf, count](std::shared_ptr<IOContext> context) {
     return context->Read(buf, count);
   });
 }
@@ -472,7 +453,7 @@ StatusOr<std::string> IOManager::CanonicalizePath(absl::string_view path) const 
 }
 
 int IOManager::Write(int fd, const char *buf, size_t count) {
-  return LockAndRoll(fd, [buf, count](IOContext *context) {
+  return CallWithContext(fd, [buf, count](std::shared_ptr<IOContext> context) {
     return context->Write(buf, count);
   });
 }
@@ -531,49 +512,51 @@ int IOManager::LStat(const char *pathname, struct stat *stat_buffer) {
 }
 
 int IOManager::LSeek(int fd, off_t offset, int whence) {
-  return LockAndRoll(fd, [offset, whence](IOContext *context) {
-    return context->LSeek(offset, whence);
-  });
+  return CallWithContext(fd,
+                         [offset, whence](std::shared_ptr<IOContext> context) {
+                           return context->LSeek(offset, whence);
+                         });
 }
 
 int IOManager::FCntl(int fd, int cmd, int64_t arg) {
   if (cmd == F_DUPFD) {
-    absl::Mutex *fd_lock = fd_table_.GetLock(fd);
-    if (fd_lock) {
-      absl::MutexLock lock(fd_lock);
-      if (!fd_table_.IsFileDescriptorUnused(fd)) {
-        int ret = fd_table_.CopyFileDescriptor(fd, arg);
-        if (ret < 0) {
-          errno = EINVAL;
-        }
-        return ret;
+    absl::WriterMutexLock lock(&fd_table_lock_);
+    if (!fd_table_.IsFileDescriptorUnused(fd)) {
+      int ret = fd_table_.CopyFileDescriptor(fd, arg);
+      if (ret < 0) {
+        errno = EINVAL;
       }
+      return ret;
     }
     errno = EBADF;
     return -1;
   }
-  return LockAndRoll(
-      fd, [cmd, arg](IOContext *context) { return context->FCntl(cmd, arg); });
+  return CallWithContext(fd, [cmd, arg](std::shared_ptr<IOContext> context) {
+    return context->FCntl(cmd, arg);
+  });
 }
 
 int IOManager::FSync(int fd) {
-  return LockAndRoll(fd, [](IOContext *context) { return context->FSync(); });
+  return CallWithContext(
+      fd, [](std::shared_ptr<IOContext> context) { return context->FSync(); });
 }
 
 int IOManager::FStat(int fd, struct stat *stat_buffer) {
-  return LockAndRoll(fd, [stat_buffer](IOContext *context) {
+  return CallWithContext(fd, [stat_buffer](std::shared_ptr<IOContext> context) {
     return context->FStat(stat_buffer);
   });
 }
 
 int IOManager::Isatty(int fd) {
-  return LockAndRoll(fd, [](IOContext *context) { return context->Isatty(); });
+  return CallWithContext(
+      fd, [](std::shared_ptr<IOContext> context) { return context->Isatty(); });
 }
 
 int IOManager::Ioctl(int fd, int request, void *argp) {
-  return LockAndRoll(fd, [request, argp](IOContext *context) {
-    return context->Ioctl(request, argp);
-  });
+  return CallWithContext(fd,
+                         [request, argp](std::shared_ptr<IOContext> context) {
+                           return context->Ioctl(request, argp);
+                         });
 }
 
 int IOManager::Mkdir(const char *path, mode_t mode) {
@@ -584,13 +567,13 @@ int IOManager::Mkdir(const char *path, mode_t mode) {
 }
 
 ssize_t IOManager::Writev(int fd, const struct iovec *iov, int iovcnt) {
-  return LockAndRoll(fd, [iov, iovcnt](IOContext *context) {
+  return CallWithContext(fd, [iov, iovcnt](std::shared_ptr<IOContext> context) {
     return context->Writev(iov, iovcnt);
   });
 }
 
 ssize_t IOManager::Readv(int fd, const struct iovec *iov, int iovcnt) {
-  return LockAndRoll(fd, [iov, iovcnt](IOContext *context) {
+  return CallWithContext(fd, [iov, iovcnt](std::shared_ptr<IOContext> context) {
     return context->Readv(iov, iovcnt);
   });
 }
@@ -604,9 +587,12 @@ int IOManager::GetRLimit(int resource, struct rlimit *rlim) {
   }
   switch (resource) {
     case RLIMIT_NOFILE:
-      rlim->rlim_cur = fd_table_.get_maximum_fd_soft_limit();
-      rlim->rlim_max = fd_table_.get_maximum_fd_hard_limit();
-      return 0;
+      {
+        absl::ReaderMutexLock lock(&fd_table_lock_);
+        rlim->rlim_cur = fd_table_.get_maximum_fd_soft_limit();
+        rlim->rlim_max = fd_table_.get_maximum_fd_hard_limit();
+        return 0;
+      }
     default:
       errno = ENOSYS;
       return -1;
@@ -624,11 +610,14 @@ int IOManager::SetRLimit(int resource, const struct rlimit *rlim) {
   }
   switch (resource) {
     case RLIMIT_NOFILE:
-      if (!fd_table_.SetFileDescriptorLimits(rlim)) {
-        errno = EPERM;
-        return -1;
+      {
+        absl::WriterMutexLock lock(&fd_table_lock_);
+        if (!fd_table_.SetFileDescriptorLimits(rlim)) {
+          errno = EPERM;
+          return -1;
+        }
+        return 0;
       }
-      return 0;
     default:
       errno = ENOSYS;
       return -1;
@@ -637,28 +626,31 @@ int IOManager::SetRLimit(int resource, const struct rlimit *rlim) {
 
 int IOManager::SetSockOpt(int sockfd, int level, int option_name,
                           const void *option_value, socklen_t option_len) {
-  return LockAndRoll(sockfd, [level, option_name, option_value,
-                              option_len](IOContext *context) {
+  return CallWithContext(sockfd, [level, option_name, option_value, option_len](
+                                     std::shared_ptr<IOContext> context) {
     return context->SetSockOpt(level, option_name, option_value, option_len);
   });
 }
 
 int IOManager::Connect(int sockfd, const struct sockaddr *addr,
                        socklen_t addrlen) {
-  return LockAndRoll(sockfd, [addr, addrlen](IOContext *context) {
-    return context->Connect(addr, addrlen);
-  });
+  return CallWithContext(sockfd,
+                         [addr, addrlen](std::shared_ptr<IOContext> context) {
+                           return context->Connect(addr, addrlen);
+                         });
 }
 
 int IOManager::Shutdown(int sockfd, int how) {
-  return LockAndRoll(
-      sockfd, [how](IOContext *context) { return context->Shutdown(how); });
+  return CallWithContext(sockfd, [how](std::shared_ptr<IOContext> context) {
+    return context->Shutdown(how);
+  });
 }
 
 ssize_t IOManager::Send(int sockfd, const void *buf, size_t len, int flags) {
-  return LockAndRoll(sockfd, [buf, len, flags](IOContext *context) {
-    return context->Send(buf, len, flags);
-  });
+  return CallWithContext(sockfd,
+                         [buf, len, flags](std::shared_ptr<IOContext> context) {
+                           return context->Send(buf, len, flags);
+                         });
 }
 
 int IOManager::Socket(int domain, int type, int protocol) {
@@ -676,16 +668,17 @@ int IOManager::Socket(int domain, int type, int protocol) {
 
 int IOManager::GetSockOpt(int sockfd, int level, int optname, void *optval,
                           socklen_t *optlen) {
-  return LockAndRoll(
-      sockfd, [level, optname, optval, optlen](IOContext *context) {
-        return context->GetSockOpt(level, optname, optval, optlen);
-      });
+  return CallWithContext(sockfd, [level, optname, optval,
+                                  optlen](std::shared_ptr<IOContext> context) {
+    return context->GetSockOpt(level, optname, optval, optlen);
+  });
 }
 
 int IOManager::Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
-  int ret = LockAndRoll(sockfd, [addr, addrlen](IOContext *context) {
-    return context->Accept(addr, addrlen);
-  });
+  int ret = CallWithContext(
+      sockfd, [addr, addrlen](std::shared_ptr<IOContext> context) {
+        return context->Accept(addr, addrlen);
+      });
   if (ret < 0) {
     return -1;
   }
@@ -698,44 +691,50 @@ int IOManager::Accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen) {
 
 int IOManager::Bind(int sockfd, const struct sockaddr *addr,
                     socklen_t addrlen) {
-  return LockAndRoll(sockfd, [addr, addrlen](IOContext *context) {
-    return context->Bind(addr, addrlen);
-  });
+  return CallWithContext(sockfd,
+                         [addr, addrlen](std::shared_ptr<IOContext> context) {
+                           return context->Bind(addr, addrlen);
+                         });
 }
 
 int IOManager::Listen(int sockfd, int backlog) {
-  return LockAndRoll(sockfd, [backlog](IOContext *context) {
+  return CallWithContext(sockfd, [backlog](std::shared_ptr<IOContext> context) {
     return context->Listen(backlog);
   });
 }
 
 ssize_t IOManager::SendMsg(int sockfd, const struct msghdr *msg, int flags) {
-  return LockAndRoll(sockfd, [msg, flags](IOContext *context) {
-    return context->SendMsg(msg, flags);
-  });
+  return CallWithContext(sockfd,
+                         [msg, flags](std::shared_ptr<IOContext> context) {
+                           return context->SendMsg(msg, flags);
+                         });
 }
 
 ssize_t IOManager::RecvMsg(int sockfd, struct msghdr *msg, int flags) {
-  return LockAndRoll(sockfd, [msg, flags](IOContext *context) {
-    return context->RecvMsg(msg, flags);
-  });
+  return CallWithContext(sockfd,
+                         [msg, flags](std::shared_ptr<IOContext> context) {
+                           return context->RecvMsg(msg, flags);
+                         });
 }
 
 int IOManager::GetSockName(int sockfd, struct sockaddr *addr,
                            socklen_t *addrlen) {
-  return LockAndRoll(sockfd, [addr, addrlen](IOContext *context) {
-    return context->GetSockName(addr, addrlen);
-  });
+  return CallWithContext(sockfd,
+                         [addr, addrlen](std::shared_ptr<IOContext> context) {
+                           return context->GetSockName(addr, addrlen);
+                         });
 }
 
 int IOManager::GetPeerName(int sockfd, struct sockaddr *addr,
                            socklen_t *addrlen) {
-  return LockAndRoll(sockfd, [addr, addrlen](IOContext *context) {
-    return context->GetPeerName(addr, addrlen);
-  });
+  return CallWithContext(sockfd,
+                         [addr, addrlen](std::shared_ptr<IOContext> context) {
+                           return context->GetPeerName(addr, addrlen);
+                         });
 }
 
 int IOManager::RegisterHostFileDescriptor(int host_fd) {
+  absl::WriterMutexLock lock(&fd_table_lock_);
   auto context = ::absl::make_unique<IOContextNative>(host_fd);
   int fd = fd_table_.Insert(context.get());
   if (fd >= 0) {
