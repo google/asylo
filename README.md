@@ -104,6 +104,27 @@ own enclave application instead. You can use the examples code in `MY_PROJECT`
 as the start of your own project, or simply change `MY_PROJECT` to point to your
 own Bazel project instead.
 
+#### Running an interactive terminal
+
+You can get an interactive terminal (instead of running a single command) by
+omitting the `bazel run ...` part of the `docker` invocation. For instance, to
+run the `hello_world` example as above but in an interactive terminal, run:
+
+```bash
+docker run -it --rm \
+    -v bazel-cache:/root/.cache/bazel \
+    -v "${MYPROJECT}":/opt/my-project \
+    -w /opt/my-project \
+    gcr.io/asylo-framework/asylo
+```
+
+This opens a terminal inside the Docker container. From this terminal, you can
+run Bazel as usual:
+
+```bash
+bazel run --config=enc-sim //hello_world -- --names="${NAMES}"
+```
+
 #### Running the regression tests
 
 To run our regression test suite, first clone the Asylo repository to a
