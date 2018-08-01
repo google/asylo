@@ -331,7 +331,9 @@ The enclave requires the following additional targets:
 
 * An `asylo_proto_library` target that contains the extensions to the enclave
   proto definitions
-* A `sim_enclave` target that contains the actual enclave
+* A `sim_enclave` target that contains the actual enclave. This enclave is
+  configured with `grpc_enclave_config`, which expands the heap size and maximum
+  number of threads to accommodate gRPC's resource requirements.
 
 ```python
 asylo_proto_library(
@@ -343,6 +345,7 @@ asylo_proto_library(
 sim_enclave(
     name = "grpc_server_enclave.so",
     srcs = ["grpc_server_enclave.cc"],
+    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":grpc_server_proto_cc",
         ":translator_server",

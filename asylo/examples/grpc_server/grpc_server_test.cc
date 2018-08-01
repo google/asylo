@@ -22,6 +22,7 @@
 #include <regex>
 #include <string>
 #include <thread>
+#include <tuple>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -47,10 +48,6 @@ DEFINE_string(enclave_path, "",
 // The number of seconds to run the server for this test.
 constexpr int kServerLifetime = 1;
 
-// The number of seconds to wait for the server subprocess to print the server's
-// port number.
-constexpr int kServerPortDeadline = kServerLifetime + 3;
-
 // A regex matching the log message that contains the port.
 constexpr char kPortMessageRegex[] = "Server started on port [0-9]+";
 
@@ -70,12 +67,12 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
                           absl::Mutex *server_port_mutex, int *server_port)
         : ExecTester(args),
         server_port_found_(false),
-        server_port_mutex_(server_port_mutex),
+        server_thread_state_mutex_(server_port_mutex),
         server_port_(server_port) {}
 
  protected:
   bool CheckLine(const std::string &line) override
-      LOCKS_EXCLUDED(*server_port_mutex_) {
+      LOCKS_EXCLUDED(*server_thread_state_mutex_) {
     const std::regex port_message_regex(kPortMessageRegex);
     const std::regex port_regex("[0-9]+");
 
@@ -90,7 +87,7 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
           << absl::StrCat("Could not find port number in \"",
                           port_message_match.str(), "\"");
       server_port_found_ = true;
-      absl::MutexLock lock(server_port_mutex_);
+      absl::MutexLock lock(server_thread_state_mutex_);
       EXPECT_TRUE(absl::SimpleAtoi(port_match.str(), server_port_))
           << absl::StrCat("Could not convert \"", port_match.str(),
                           "\" to integer");
@@ -101,20 +98,20 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
   }
 
   bool FinalCheck(bool accumulated) override
-      LOCKS_EXCLUDED(*server_port_mutex_) {
+      LOCKS_EXCLUDED(*server_thread_state_mutex_) {
     return accumulated && server_port_found_;
   }
 
   bool server_port_found_;
-  absl::Mutex *server_port_mutex_;
-  int *server_port_ PT_GUARDED_BY(*server_port_mutex_);
+  absl::Mutex *server_thread_state_mutex_;
+  int *server_port_ PT_GUARDED_BY(*server_thread_state_mutex_);
 };
 
 class GrpcServerTest : public ::testing::Test {
  public:
   // Spawns the enclave loader subprocess and waits for it to log the port
   // number. Fails if the log message is never seen.
-  void SetUp() override LOCKS_EXCLUDED(server_port_mutex_) {
+  void SetUp() override LOCKS_EXCLUDED(server_thread_state_mutex_) {
     ASSERT_NE(FLAGS_enclave_path, "");
 
     const std::vector<std::string> argv({
@@ -124,29 +121,33 @@ class GrpcServerTest : public ::testing::Test {
         absl::StrCat("--server_lifetime=", kServerLifetime),
     });
 
-    // Set server_port_ to -1 so that the Condition below knows when
-    // server_port_ has changed.
     server_port_found_ = false;
+
+    // Set server_port_ to -1 and server_thread_finished_ to false so that
+    // GetServerPort() knows when server_thread_ has either found the server
+    // port log message or terminated.
     {
-      absl::MutexLock lock(&server_port_mutex_);
+      absl::MutexLock lock(&server_thread_state_mutex_);
+      server_thread_finished_ = false;
       server_port_ = -1;
     }
 
     // Run the server ExecTester in a separate thread.
     server_thread_ = absl::make_unique<std::thread>(
         [this](const std::vector<std::string> &argv) {
-          ServerEnclaveExecTester server_runner(argv, &server_port_mutex_,
-                                                &server_port_);
+          ServerEnclaveExecTester server_runner(
+              argv, &server_thread_state_mutex_, &server_port_);
           server_port_found_ =
               server_runner.Run(/*input=*/"", &server_exit_status_);
+          absl::MutexLock lock(&server_thread_state_mutex_);
+          server_thread_finished_ = true;
         },
         argv);
 
-    // Wait until server_thread_ sets server_port_ with a deadline of
-    // kServerPortDeadline seconds.
-    absl::Duration server_port_waiter_timeout =
-        absl::Seconds(kServerPortDeadline);
-    int port = GetServerPort(server_port_waiter_timeout);
+    // Wait until server_thread_ sets server_port_ or terminates.
+    int port = GetServerPort();
+    ASSERT_NE(port, -1)
+        << "Server subprocess terminated without printing port log message";
 
     // Set up the client stub.
     std::shared_ptr<::grpc::ChannelCredentials> credentials =
@@ -188,13 +189,20 @@ class GrpcServerTest : public ::testing::Test {
   }
 
  private:
-  int GetServerPort(absl::Duration timeout) {
-    server_port_mutex_.LockWhenWithTimeout(
-        absl::Condition(+[](int *server_port) { return *server_port != -1; },
-                        &server_port_),
-        timeout);
+  // Waits for server_thread_ to either set server_port_ or terminate, then
+  // returns the value of server_port_.
+  int GetServerPort() LOCKS_EXCLUDED(server_thread_state_mutex_) {
+    std::tuple<int *, bool *> args =
+        std::make_tuple(&server_port_, &server_thread_finished_);
+    server_thread_state_mutex_.LockWhen(absl::Condition(
+        +[](std::tuple<int *, bool *> *args) {
+          int *server_port = std::get<0>(*args);
+          bool *server_thread_finished = std::get<1>(*args);
+          return *server_port != -1 || *server_thread_finished;
+        },
+        &args));
     int result = server_port_;
-    server_port_mutex_.Unlock();
+    server_thread_state_mutex_.Unlock();
     return result;
   }
 
@@ -205,8 +213,9 @@ class GrpcServerTest : public ::testing::Test {
   bool server_port_found_;
   int server_exit_status_;
 
-  absl::Mutex server_port_mutex_;
-  int server_port_ GUARDED_BY(server_port_mutex_);
+  absl::Mutex server_thread_state_mutex_;
+  bool server_thread_finished_ GUARDED_BY(server_thread_state_mutex_);
+  int server_port_ GUARDED_BY(server_thread_state_mutex_);
 
   std::unique_ptr<Translator::Stub> stub_;
 };

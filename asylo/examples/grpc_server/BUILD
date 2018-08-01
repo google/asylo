@@ -63,6 +63,7 @@ asylo_proto_library(
 sim_enclave(
     name = "grpc_server_enclave.so",
     srcs = ["grpc_server_enclave.cc"],
+    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":grpc_server_config_proto_cc",
         ":translator_server",
