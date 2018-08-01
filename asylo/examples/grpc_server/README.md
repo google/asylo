@@ -33,6 +33,15 @@ applications.
 The source files for this example are located in the
 [asylo/examples/grpc_server](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server) folder.
 
+## Setting up the environment
+
+To get started with the example code quickly, you can use the Asylo Docker
+image by following
+[the Docker instructions in the Asylo repository README.md](https://github.com/google/asylo/blob/master/README.md#running-an-interactive-terminal)
+and running the `bazel` commands below inside an interactive Docker terminal. If
+you'd like to run your code outside of Docker, you can
+follow [the manual installation instructions in the README.md](https://github.com/google/asylo/blob/master/README.md#manual-installation).
+
 ## Defining the gRPC service
 
 This example shows how to run a gRPC server that implements a simple
@@ -368,8 +377,8 @@ enclave_loader(
 
 ## Interacting with the server
 
-You can run the server enclave using `bazel`. First, `cd` to the `examples`
-directory (or whatever folder contains the examples `WORKSPACE` file), then run:
+You can run the server enclave using `bazel`:
+
 ```bash
 $ bazel run --config=enc-sim \
     //asylo/examples/grpc_server:grpc_server
