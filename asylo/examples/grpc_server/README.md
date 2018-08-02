@@ -87,7 +87,7 @@ gRPC service. You can find `EnclaveServer` in [enclave_server.h](https://github.
 To set up the server, the enclave needs to know the desired server address. This
 information can be passed through the `Initialize` method, which accepts an
 `EnclaveConfig`. This example extends the `EnclaveConfig` in a new file named
-[grpc_server.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server.proto):
+[grpc_server_config.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_config.proto):
 
 ```proto
 extend asylo.EnclaveConfig {
