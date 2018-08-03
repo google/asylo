@@ -18,6 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # Common utilities for trusted and untrusted targets.
 
+load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -168,4 +169,26 @@ asylo_proto_library(
     name = "status_proto",
     srcs = ["status.proto"],
     visibility = ["//visibility:public"],
+)
+
+# Library for manipulating file paths.
+cc_library(
+    name = "path",
+    srcs = ["path.cc"],
+    hdrs = ["path.h"],
+    visibility = ["//visibility:public"],
+    deps = ["@com_google_absl//absl/strings"],
+)
+
+# Test for the path library.
+cc_test(
+    name = "path_test",
+    srcs = ["path_test.cc"],
+    enclave_test_name = "path_enclave_test",
+    tags = ["regression"],
+    deps = [
+        ":path",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
 )
