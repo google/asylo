@@ -67,7 +67,7 @@ enclave_test(
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -95,7 +95,7 @@ enclave_test(
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -122,7 +122,7 @@ enclave_test(
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

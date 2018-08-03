@@ -50,7 +50,7 @@ cc_library(
     hdrs = ["socket_transmit.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/util:status",
     ] + select({
@@ -68,7 +68,7 @@ cc_library(
     hdrs = ["socket_server.h"],
     deps = [
         ":socket_transmit",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:status",
@@ -87,7 +87,7 @@ cc_library(
     hdrs = ["socket_client.h"],
     deps = [
         ":socket_transmit",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:status",
@@ -128,7 +128,7 @@ sgx_enclave(
         ":socket_test_proto_cc",
         ":socket_test_transmit",
         "//asylo/test/util:enclave_test_application",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
     ],
 )
 
@@ -150,8 +150,8 @@ enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
+        "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -166,7 +166,7 @@ sgx_enclave(
         ":socket_test_proto_cc",
         ":socket_test_transmit",
         "//asylo/test/util:enclave_test_application",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
     ],
 )
 

@@ -64,8 +64,8 @@ cc_library(
     srcs = ["static_map_internal.h"],
     hdrs = ["static_map.h"],
     deps = [
+        "//asylo/util:logging",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -100,8 +100,8 @@ cc_library(
     srcs = ["bridge_types.cc"],
     hdrs = ["bridge_types.h"],
     deps = [
+        "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 

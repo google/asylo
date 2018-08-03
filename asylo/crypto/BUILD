@@ -87,10 +87,10 @@ cc_library(
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:bytes",
         "//asylo/util:cleansing_types",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -147,10 +147,10 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
+        "//asylo/util:logging",
         "@boringssl//:crypto",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

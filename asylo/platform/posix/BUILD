@@ -83,7 +83,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:time_util",
@@ -137,8 +137,8 @@ sgx_enclave(
         ":syscalls_test_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
         "//asylo/util:status",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -154,9 +154,9 @@ enclave_test(
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:test_main",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

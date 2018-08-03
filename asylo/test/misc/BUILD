@@ -103,8 +103,8 @@ sgx_enclave(
     srcs = ["logging_test_enclave.cc"],
     deps = [
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
         "//asylo/util:status",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -130,8 +130,8 @@ sgx_enclave(
     srcs = ["error_propagation_enclave.cc"],
     deps = [
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
         "//asylo/util:status",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -139,7 +139,7 @@ TEST_DEPS_COMMON = [
     "@com_google_googletest//:gtest",
     "@com_google_absl//absl/memory",
     "//asylo:enclave_client",
-    "@com_google_asylo//asylo/util:logging",
+    "//asylo/util:logging",
     "//asylo/test/util:enclave_test",
     "//asylo/test/util:status_matchers",
     "//asylo/test/util:test_main",
@@ -211,10 +211,10 @@ cc_enclave_test(
     tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

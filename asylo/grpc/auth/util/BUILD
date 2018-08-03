@@ -83,7 +83,7 @@ cc_library(
     hdrs = ["multi_buffer_input_stream.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "@com_google_protobuf//:protobuf_lite",
     ],
 )

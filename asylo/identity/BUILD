@@ -60,8 +60,8 @@ cc_library(
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/identity:enclave_assertion_verifier",
+        "//asylo/util:logging",
         "//asylo/util:status",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 

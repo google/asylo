@@ -40,10 +40,10 @@ cc_library(
     hdrs = ["attestation_domain.h"],
     deps = [
         "//asylo/crypto/util:bssl_util",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 

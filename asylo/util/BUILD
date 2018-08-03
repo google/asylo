@@ -53,10 +53,10 @@ cc_library(
         [
             ":status_proto_cc",
             "//asylo/platform/common:static_map",
+            "//asylo/util:logging",
             "@com_google_absl//absl/base:core_headers",
             "@com_google_absl//absl/meta:type_traits",
             "@com_google_absl//absl/strings",
-            "@com_google_asylo//asylo/util:logging",
         ],
 )
 

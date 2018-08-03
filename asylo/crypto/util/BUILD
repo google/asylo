@@ -33,8 +33,8 @@ cc_library(
     name = "byte_container_util",
     hdrs = ["byte_container_util.h"],
     deps = [
+        "//asylo/util:logging",
         "//asylo/util:status",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -55,8 +55,8 @@ cc_library(
     name = "byte_container_view",
     hdrs = ["byte_container_view.h"],
     deps = [
+        "//asylo/util:logging",
         "@boringssl//:crypto",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -80,9 +80,9 @@ cc_library(
         ":byte_container_view",
         ":trivial_object_util",
         "//asylo/util:cleansing_types",
+        "//asylo/util:logging",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 

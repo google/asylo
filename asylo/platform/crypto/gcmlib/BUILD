@@ -41,10 +41,10 @@ cc_library(
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
+        "//asylo/util:logging",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 

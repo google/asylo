@@ -41,8 +41,8 @@ cc_library(
         ":null_identity_constants",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/platform/common:static_map",
+        "//asylo/util:logging",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
     alwayslink = 1,
 )
@@ -62,8 +62,8 @@ cc_library(
         ":null_identity_util",
         "//asylo/identity:enclave_assertion_verifier",
         "//asylo/platform/common:static_map",
+        "//asylo/util:logging",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
     alwayslink = 1,
 )

@@ -36,12 +36,12 @@ cc_library(
     hdrs = ["grpc_server_launcher.h"],
     visibility = ["//visibility:public"],
     deps = [
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_codegen_base",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -82,9 +82,9 @@ cc_library(
     deps = [
         ":enclave_server_proto_cc",
         "//asylo:enclave_runtime",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )

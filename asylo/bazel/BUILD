@@ -74,7 +74,7 @@ cc_test(
         ":test_shim_enclave_proto_cc",
         "//asylo:enclave_client",
         "//asylo/test/util:test_flags",
+        "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )

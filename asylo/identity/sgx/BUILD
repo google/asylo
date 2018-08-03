@@ -263,10 +263,10 @@ cc_library(
         "//asylo/identity/util:bit_vector_128_util",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/identity/util:sha256_hash_util",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -342,9 +342,9 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/identity/util:aligned_object_ptr",
         "//asylo/identity/util:bit_vector_128_proto_cc",
+        "//asylo/util:logging",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -380,7 +380,7 @@ cc_library(
         ":hardware_types",
         "@com_google_absl//absl/base:core_headers",
         "//asylo/crypto/util:bytes",
-        "@com_google_asylo//asylo/util:logging",
+        "//asylo/util:logging",
         "@boringssl//:crypto",
     ] + select({
         "@linux_sgx//:sgx_sim": [

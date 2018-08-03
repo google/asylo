@@ -63,9 +63,9 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":service_grpc_proto",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -217,9 +217,9 @@ cc_test(
         "//asylo/identity:init",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:logging",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/time",
-        "@com_google_asylo//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -39,13 +39,13 @@ cc_library(
         ":shared_resource_manager",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:time_util",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_absl//absl/types:variant",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
@@ -100,11 +100,11 @@ cc_library(
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_asylo//asylo/util:logging",
     ],
 )
 
