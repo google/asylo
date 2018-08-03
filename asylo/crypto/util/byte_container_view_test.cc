@@ -66,6 +66,14 @@ TYPED_TEST(TypedByteContainerViewTest, SizeMethod) {
 // being tested behave the same irrespective of how the ByteContainerView object
 // was constructed.
 
+TEST(ByteContainerViewTest, EmptyMethodPositive) {
+  EXPECT_TRUE(ByteContainerView("").empty());
+}
+
+TEST(ByteContainerViewTest, EmptyMethodNegative) {
+  EXPECT_FALSE(ByteContainerView(kData1).empty());
+}
+
 TEST(ByteContainerViewTest, SubscriptOperator) {
   ByteContainerView view(kData1);
 
@@ -82,6 +90,23 @@ TEST(ByteContainerViewTest, AtMethod) {
     EXPECT_EQ(static_cast<const void *>(&view.at(i)),
               static_cast<const void *>(&kData1[i]));
   }
+}
+
+TEST(ByteContainerViewTest, FrontMethod) {
+  ByteContainerView view(kData1);
+
+  auto ptr = &view.front();
+  EXPECT_EQ(static_cast<const void *>(ptr), static_cast<const void *>(kData1));
+  EXPECT_EQ(view.front(), std::string(kData1).front());
+}
+
+TEST(ByteContainerViewTest, BackMethod) {
+  ByteContainerView view(kData1);
+
+  auto ptr = &view.back();
+  EXPECT_EQ(static_cast<const void *>(ptr),
+            static_cast<const void *>(kData1 + kSize1 - 1));
+  EXPECT_EQ(view.back(), std::string(kData1).back());
 }
 
 TEST(ByteContainerViewTest, Iterator) {

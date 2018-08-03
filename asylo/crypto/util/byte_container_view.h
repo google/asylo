@@ -79,7 +79,8 @@ class ByteContainerView {
       : data_{reinterpret_cast<const uint8_t *>(data)}, size_{size} {}
 
   ByteContainerView(const char *cstr)
-      : data_{reinterpret_cast<const uint8_t *>(cstr)}, size_{strlen(cstr)} {}
+      : data_{reinterpret_cast<const uint8_t *>(cstr)},
+        size_{cstr ? strlen(cstr) : 0} {}
 
   template <typename ByteContainerT>
   ByteContainerView(const ByteContainerT &container)
@@ -92,6 +93,7 @@ class ByteContainerView {
 
   const uint8_t *data() const { return data_; }
   size_t size() const { return size_; }
+  bool empty() const { return size_ == 0; }
 
   const_iterator begin() const { return data_; }
   const_iterator end() const { return data_ + size_; }
@@ -123,6 +125,14 @@ class ByteContainerView {
     }
     return data_[offset];
   }
+
+  // Returns a const reference to the first element. The behavior is undefined
+  // if the empty() method returns true.
+  const uint8_t &front() const { return data_[0]; }
+
+  // Returns a const reference to the last element. The behavior is undefined
+  // if the empty() method returns true.
+  const uint8_t &back() const { return data_[size_ - 1]; }
 
   // The equality operator. Compares the contents of this ByteContainerView
   // with the contents of |other|.
