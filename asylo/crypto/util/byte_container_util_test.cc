@@ -120,5 +120,21 @@ TYPED_TEST(ByteContainerUtilTest, SerializationsAreUnique) {
   EXPECT_NE(ByteContainerView(output1), ByteContainerView(output2));
 }
 
+// Verify that CopyToByteContainer correctly copies the contents.
+TYPED_TEST(ByteContainerUtilTest, CopyToByteContainer) {
+  TypeParam container = CopyToByteContainer<TypeParam>(kStr1);
+  EXPECT_EQ(ByteContainerView(container), ByteContainerView(kStr1));
+}
+
+TYPED_TEST(ByteContainerUtilTest, SafeComparePositive) {
+  TypeParam container(kStr1, kStr1 + sizeof(kStr1) - 1);
+  EXPECT_TRUE(SafeCompareByteContainers(container, kStr1));
+}
+
+TYPED_TEST(ByteContainerUtilTest, SafeCompareNegative) {
+  TypeParam container(kStr1, kStr1 + sizeof(kStr1) - 1);
+  EXPECT_FALSE(SafeCompareByteContainers(container, kStr2));
+}
+
 }  // namespace
 }  // namespace asylo

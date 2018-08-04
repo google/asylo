@@ -97,6 +97,26 @@ Status SerializeByteContainers(const std::vector<ByteContainerView> &views,
   return AppendSerializedByteContainers(views, serialized);
 }
 
+// Copies the contents of a ByteContainerView to a newly created object of type
+// ByteContainerT and returns the object by value.
+//
+// ByteContainerT must have a value_type that is 1-byte in size. Additionally,
+// ByteContainerT must have a constructor that accepts an iterator range
+// comprising first and last iterators.
+template <class ByteContainerT>
+ByteContainerT CopyToByteContainer(ByteContainerView view) {
+  static_assert(sizeof(typename ByteContainerT::value_type) == 1,
+                "ByteContainerT must be a std::string that uses 1-byte characters");
+  return ByteContainerT(view.begin(), view.end());
+}
+
+// Performs a side-channel-resistant comparison of the contents of two
+// ByteContainerView objects. Returns true if the contents are equal.
+inline bool SafeCompareByteContainers(ByteContainerView lhs,
+                                      ByteContainerView rhs) {
+  return lhs.SafeEquals(rhs);
+}
+
 }  // namespace asylo
 
 #endif  // ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_H_
