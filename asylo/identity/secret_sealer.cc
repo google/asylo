@@ -42,7 +42,9 @@ Status SecretSealer::Reseal(const SealedSecret &old_sealed_secret,
 StatusOr<std::string> SecretSealer::GenerateSealerId(SealingRootType type,
                                                 const std::string &name) {
   std::string serialized;
-  std::vector<std::string> sealer_id_tokens = {SealingRootType_Name(type), name};
+  std::string sealing_root_type_name = SealingRootType_Name(type);
+  std::vector<ByteContainerView> sealer_id_tokens = {sealing_root_type_name,
+                                                     name};
   Status status = SerializeByteContainers(sealer_id_tokens, &serialized);
   if (!status.ok()) {
     return status;

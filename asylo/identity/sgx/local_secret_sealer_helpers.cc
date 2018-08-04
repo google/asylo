@@ -132,27 +132,31 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
   // hardware subkeys. This is done by constructing a sub-key-specific
   // |key_info| string, and hashing the contents of that string into
   // |req->key_id|.
-  std::vector<std::string> serializer_input;
+  std::vector<ByteContainerView> serializer_input;
 
   // Description of the sealing root.
-  serializer_input.emplace_back(SealingRootType_Name(LOCAL));
+  std::string sealing_root_type_name = SealingRootType_Name(LOCAL);
+  serializer_input.emplace_back(sealing_root_type_name);
   serializer_input.emplace_back(kSgxLocalSecretSealerRootName);
 
   // Cipher suite in which the key will be used.
-  serializer_input.emplace_back(CipherSuite_Name(cipher_suite));
+  std::string cipher_suite_name = CipherSuite_Name(cipher_suite);
+  serializer_input.emplace_back(cipher_suite_name);
 
   // Identifier of the key.
   serializer_input.emplace_back(key_id);
 
   // Size of the key.
-  serializer_input.emplace_back(::absl::StrCat(key_size));
+  std::string key_size_str = ::absl::StrCat(key_size);
+  serializer_input.emplace_back(key_size_str);
 
   key->resize(0);
   key->reserve(key_size);
 
   size_t remaining_key_bytes = key_size;
   size_t key_subscript = 0;
-  serializer_input.emplace_back(::absl::StrCat(key_subscript));
+  std::string key_subscript_str = ::absl::StrCat(key_subscript);
+  serializer_input.emplace_back(key_subscript_str);
   while (remaining_key_bytes > 0) {
     std::basic_string<uint8_t> key_info;
     Status status = SerializeByteContainers(serializer_input, &key_info);
@@ -174,7 +178,8 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
     std::copy(hardware_key->cbegin(), hardware_key->cbegin() + copy_size,
               std::back_inserter(*key));
     ++key_subscript;
-    serializer_input.back() = ::absl::StrCat(key_subscript);
+    key_subscript_str = ::absl::StrCat(key_subscript);
+    serializer_input.back() = key_subscript_str;
   }
   return Status::OkStatus();
 }

@@ -27,6 +27,7 @@
 #include <string>
 #include <vector>
 
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 
@@ -36,8 +37,8 @@ namespace internal {
 // Encodes |value| as a 32-bit little-endian encoded integer and appends the
 // resulting encoding to |buffer|. |value| must not exceed the max value of
 // uint32_t.
-template <class ContainerT>
-void AppendLittleEndianInt(size_t value, ContainerT *buffer) {
+template <class ByteContainerT>
+inline void AppendLittleEndianInt(size_t value, ByteContainerT *buffer) {
 // The following check is sufficient for both Clang and GCC.
 #ifdef __x86_64__
   std::uint32_t size = value;
@@ -50,45 +51,32 @@ void AppendLittleEndianInt(size_t value, ContainerT *buffer) {
 
 }  // namespace internal
 
-// Creates a unique string serialization of the containers in the |containers|
-// vector and appends the result to |serialized|. No container in |containers|
-// may have a length that exceeds the maximum value of a 32-bit integer,
-// otherwise this function returns a Status with an INVALID_ARGUMENT error code.
+// Creates a unique serialization of the views in the |views| vector and appends
+// the result to |serialized|. No view in |views| may have a length that exceeds
+// the maximum value of a 32-bit integer, otherwise this function returns a
+// Status with an INVALID_ARGUMENT error code.
 //
-// ByteContainerT must expose a value_type type alias and sizeof(typename
-// value_type) must be 1. Additionally, ByteContainerT must expose a size()
-// method, as well as cbegin() and cend() iterator generators.
+// ByteContainerT must be a container that has a 1-byte value_type.
+// Addtionally, ByteContainerT must support a push_back() method that pushes a
+// new element to the back of the container.
 //
-// StringT must be a specialization of std::basic_string, or some template that
-// has a compatible API. Additionally, StringT must use 1-byte characters.
-//
-// If |containers| is a vector V = [x, y, ...], then |serialized| will be set to
-// a string S = (len(x) || x || len(y) || y || ...), where len(x) is the length
-// of string x encoded as a 32-bit little-endian integer.
-template <class ByteContainerT, class StringT>
+// If |views| is a vector V = [x, y, ...], then |serialized| will be set to a
+// sequence of bytes S = (len(x) || x || len(y) || y || ...), where len(x) is
+// the length of string x encoded as a 32-bit little-endian integer.
+template <class ByteContainerT>
 Status AppendSerializedByteContainers(
-    const std::vector<ByteContainerT> &containers, StringT *serialized) {
+    const std::vector<ByteContainerView> &views, ByteContainerT *serialized) {
   static_assert(sizeof(typename ByteContainerT::value_type) == 1,
                 "ByteContainerT must be a std::string that uses 1-byte characters");
-  static_assert(sizeof(typename StringT::value_type) == 1,
-                "StringT must be a std::string that uses 1-byte characters");
 
-  std::vector<typename StringT::value_type, typename StringT::allocator_type>
-      buffer;
-
-  for (const ByteContainerT &container : containers) {
-    if (container.size() > std::numeric_limits<uint32_t>::max()) {
-      Status status(error::GoogleError::INVALID_ARGUMENT,
+  for (const ByteContainerView &view : views) {
+    if (view.size() > std::numeric_limits<uint32_t>::max()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
                     "Container size exceeds max size");
-      LOG(ERROR) << "AppendSerializedBytes failed: " << status;
-      return status;
     }
-    internal::AppendLittleEndianInt(container.size(), &buffer);
-    std::copy(container.cbegin(), container.cend(), std::back_inserter(buffer));
+    internal::AppendLittleEndianInt(view.size(), serialized);
+    std::copy(view.cbegin(), view.cend(), std::back_inserter(*serialized));
   }
-  *serialized +=
-      StringT(reinterpret_cast<typename StringT::value_type *>(buffer.data()),
-              buffer.size());
 
   return Status::OkStatus();
 }
@@ -96,16 +84,17 @@ Status AppendSerializedByteContainers(
 // SerializeByteContainers has the same behavior as
 // AppendSerializedByteContainers with one difference: the serialized sequence
 // is not appended to |serialized|. Instead, the contents of |serialized| are
-// overwritten with the string serialization.
+// overwritten with the serialization.
 //
-// Note that the requirements on ByteContainerT and StringT stated in the
-// contract for AppendSerializedStrings also apply to ByteContainerT and StringT
-// in this function.
-template <class ByteContainerT, class StringT>
-Status SerializeByteContainers(const std::vector<ByteContainerT> &containers,
-                               StringT *serialized) {
+// Note that all the requirements on ByteContainerT stated in the contract for
+// AppendSerializedContainers also apply to ByteContainerT in this function.
+// Additionally, ByteContainerT must support a clear() method that clears all
+// its contents.
+template <class ByteContainerT>
+Status SerializeByteContainers(const std::vector<ByteContainerView> &views,
+                               ByteContainerT *serialized) {
   serialized->clear();
-  return AppendSerializedByteContainers(containers, serialized);
+  return AppendSerializedByteContainers(views, serialized);
 }
 
 }  // namespace asylo

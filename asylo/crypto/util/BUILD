@@ -33,6 +33,7 @@ cc_library(
     name = "byte_container_util",
     hdrs = ["byte_container_util.h"],
     deps = [
+        ":byte_container_view",
         "//asylo/util:logging",
         "//asylo/util:status",
     ],
@@ -44,6 +45,7 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":byte_container_util",
+        ":byte_container_view",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",

@@ -79,8 +79,9 @@ class EnclaveAssertionAuthority {
   static StatusOr<std::string> GenerateAuthorityId(
       const EnclaveIdentityType& identity_type, const std::string& authority_type) {
     std::string serialized;
-    std::vector<std::string> authority_id_tokens = {
-        EnclaveIdentityType_Name(identity_type), authority_type};
+    std::string enclave_identity_type_name = EnclaveIdentityType_Name(identity_type);
+    std::vector<ByteContainerView> authority_id_tokens = {
+        enclave_identity_type_name, authority_type};
     Status status =
         asylo::SerializeByteContainers(authority_id_tokens, &serialized);
     if (!status.ok()) {

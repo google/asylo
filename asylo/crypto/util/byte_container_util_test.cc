@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
 
@@ -49,22 +50,17 @@ uint32_t EncodeLittleEndian(size_t value) {
 #endif
 }
 
-typedef ::testing::Types<
-    std::pair<std::string, std::string>, std::pair<std::vector<uint8_t>, std::string>,
-    std::pair<std::basic_string<char>, std::basic_string<char>>,
-    std::pair<std::string, CleansingString>, std::pair<CleansingString, std::string>,
-    std::pair<std::vector<uint8_t>, CleansingString>,
-    std::pair<CleansingVector<uint8_t>, std::string>,
-    std::pair<CleansingVector<uint8_t>, CleansingString>,
-    std::pair<CleansingString, CleansingString>>
-    TestTypes;
+// Types for the serialized output.
+typedef ::testing::Types<std::string, std::vector<uint8_t>, std::string,
+                         CleansingString, CleansingVector<uint8_t>>
+    OutputTypes;
 
-TYPED_TEST_CASE(ByteContainerUtilTest, TestTypes);
+TYPED_TEST_CASE(ByteContainerUtilTest, OutputTypes);
 
 // Verify that the serialization of no strings is an empty string.
 TYPED_TEST(ByteContainerUtilTest, EmptySerialization) {
-  std::vector<typename TypeParam::first_type> input = {};
-  typename TypeParam::second_type output(kStr4);
+  std::vector<ByteContainerView> input = {};
+  TypeParam output(kStr4, kStr4 + sizeof(kStr4) - 1);
   EXPECT_THAT(SerializeByteContainers(input, &output), IsOk());
   EXPECT_EQ(0, output.size());
 }
@@ -72,70 +68,56 @@ TYPED_TEST(ByteContainerUtilTest, EmptySerialization) {
 // Verify that appending the serialization of no strings to a non-empty string
 // does not alter the existing string.
 TYPED_TEST(ByteContainerUtilTest, EmptySerializationAppend) {
-  std::vector<typename TypeParam::first_type> input = {};
-  typename TypeParam::second_type output(kStr4);
+  std::vector<ByteContainerView> input = {};
+  TypeParam output(kStr4, kStr4 + sizeof(kStr4) - 1);
   EXPECT_THAT(AppendSerializedByteContainers(input, &output), IsOk());
-  EXPECT_EQ(kStr4, output);
+  EXPECT_EQ(ByteContainerView(kStr4), (output));
 }
 
 // Verify that a serialization contains all input strings and that the input
 // strings can be inferred from the serialization.
 TYPED_TEST(ByteContainerUtilTest, SerializationContainsAllByteContainers) {
-  using ByteContainerT = typename TypeParam::first_type;
-  using StringT = typename TypeParam::second_type;
+  std::vector<ByteContainerView> inputs = {kStr1, kStr2, kStr3};
 
-  std::vector<ByteContainerT> inputs = {
-      ByteContainerT(kStr1, kStr1 + sizeof(kStr1) - 1),
-      ByteContainerT(kStr2, kStr2 + sizeof(kStr2) - 1),
-      ByteContainerT(kStr3, kStr3 + sizeof(kStr3) - 1)};
-
-  StringT output1;
+  TypeParam output1;
   EXPECT_THAT(SerializeByteContainers(inputs, &output1), IsOk());
 
   int index = 0;
-  for (const ByteContainerT &str : inputs) {
-    uint32_t size = EncodeLittleEndian(str.size());
+  for (const auto &input : inputs) {
+    uint32_t size = EncodeLittleEndian(input.size());
     ASSERT_EQ(0, memcmp(output1.data() + index, &size, sizeof(size)));
     index += sizeof(size);
-    EXPECT_EQ(0, memcmp(output1.data() + index, str.data(), size));
+    EXPECT_EQ(0, memcmp(output1.data() + index, input.data(), size));
     index += size;
   }
 
-  StringT output2;
-  for (const ByteContainerT &str : inputs) {
-    std::vector<ByteContainerT> input = {str};
-    EXPECT_THAT(AppendSerializedByteContainers(input, &output2), IsOk());
+  TypeParam output2;
+  for (const auto &input : inputs) {
+    std::vector<ByteContainerView> single_input = {input};
+    EXPECT_THAT(AppendSerializedByteContainers(single_input, &output2), IsOk());
   }
 
   // serialized([a, b, c]) == (serialized(a) || serialized(b) || serialized(c))
-  EXPECT_EQ(output1, output2);
+  EXPECT_EQ(ByteContainerView(output1), ByteContainerView(output2));
 }
 
-// Verify that serializations are non-ambiguous, and unique per set of input
+// Verify that serializations are unambiguous, and unique per set of input
 // strings.
 TYPED_TEST(ByteContainerUtilTest, SerializationsAreUnique) {
-  using ByteContainerT = typename TypeParam::first_type;
-  using StringT = typename TypeParam::second_type;
+  // [a, b, c]
+  std::vector<ByteContainerView> inputs1 = {kStr1, kStr2, kStr3};
 
-  std::vector<ByteContainerT> inputs1 = {
-      // [a, b, c]
-      ByteContainerT(kStr1, kStr1 + sizeof(kStr1) - 1),
-      ByteContainerT(kStr2, kStr2 + sizeof(kStr2) - 1),
-      ByteContainerT(kStr3, kStr3 + sizeof(kStr3) - 1)};
+  // [a || b, c]
+  std::vector<ByteContainerView> inputs2 = {kStr3, kStr4};
 
-  std::vector<ByteContainerT> inputs2 = {
-      // [a || b, c]
-      ByteContainerT(kStr4, kStr4 + sizeof(kStr4) - 1),
-      ByteContainerT(kStr3, kStr3 + sizeof(kStr3) - 1)};
-
-  StringT output1;
-  StringT output2;
+  TypeParam output1;
+  TypeParam output2;
 
   EXPECT_THAT(SerializeByteContainers(inputs1, &output1), IsOk());
   EXPECT_THAT(SerializeByteContainers(inputs2, &output2), IsOk());
 
   // serialized(a, b, c) != serialized(a || b, c)
-  EXPECT_NE(output1, output2);
+  EXPECT_NE(ByteContainerView(output1), ByteContainerView(output2));
 }
 
 }  // namespace
