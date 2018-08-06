@@ -29,10 +29,6 @@ int lstat(const char *pathname, struct stat *stat_buffer) {
   return IOManager::GetInstance().LStat(pathname, stat_buffer);
 }
 
-int mkdir(const char *path, mode_t mode) {
-  return IOManager::GetInstance().Mkdir(path, mode);
-}
-
 mode_t umask(mode_t mask) { return IOManager::GetInstance().Umask(mask); }
 
 }  // extern "C"

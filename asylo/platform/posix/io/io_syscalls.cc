@@ -61,6 +61,10 @@ int enclave_link(char *existing, char *new_link) {
   return IOManager::GetInstance().Link(existing, new_link);
 }
 
+int enclave_mkdir(const char *pathname, mode_t mode) {
+  return IOManager::GetInstance().Mkdir(pathname, mode);
+}
+
 int enclave_stat(const char *file, struct stat *st) {
   return IOManager::GetInstance().Stat(file, st);
 }

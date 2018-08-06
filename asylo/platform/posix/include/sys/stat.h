@@ -19,6 +19,8 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_
 
+#define mkdir enclave_mkdir
+
 #ifdef __cplusplus
 extern "C" {
 #endif
