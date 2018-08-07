@@ -24,6 +24,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
@@ -38,7 +40,7 @@ constexpr char kStr4[] = "foobar";
 
 // A test fixture is required for defining typed tests.
 template <typename T>
-class ByteContainerUtilTest : public ::testing::Test {};
+class ByteContainerUtilTypedTest : public ::testing::Test {};
 
 // Returns |value| as a 32-bit little-endian encoded integer. |value| must not
 // exceed the max value of a uint32_t.
@@ -55,10 +57,10 @@ typedef ::testing::Types<std::string, std::vector<uint8_t>, std::string,
                          CleansingString, CleansingVector<uint8_t>>
     OutputTypes;
 
-TYPED_TEST_CASE(ByteContainerUtilTest, OutputTypes);
+TYPED_TEST_CASE(ByteContainerUtilTypedTest, OutputTypes);
 
 // Verify that the serialization of no strings is an empty string.
-TYPED_TEST(ByteContainerUtilTest, EmptySerialization) {
+TYPED_TEST(ByteContainerUtilTypedTest, EmptySerialization) {
   std::vector<ByteContainerView> input = {};
   TypeParam output(kStr4, kStr4 + sizeof(kStr4) - 1);
   EXPECT_THAT(SerializeByteContainers(input, &output), IsOk());
@@ -67,7 +69,7 @@ TYPED_TEST(ByteContainerUtilTest, EmptySerialization) {
 
 // Verify that appending the serialization of no strings to a non-empty string
 // does not alter the existing string.
-TYPED_TEST(ByteContainerUtilTest, EmptySerializationAppend) {
+TYPED_TEST(ByteContainerUtilTypedTest, EmptySerializationAppend) {
   std::vector<ByteContainerView> input = {};
   TypeParam output(kStr4, kStr4 + sizeof(kStr4) - 1);
   EXPECT_THAT(AppendSerializedByteContainers(input, &output), IsOk());
@@ -76,7 +78,7 @@ TYPED_TEST(ByteContainerUtilTest, EmptySerializationAppend) {
 
 // Verify that a serialization contains all input strings and that the input
 // strings can be inferred from the serialization.
-TYPED_TEST(ByteContainerUtilTest, SerializationContainsAllByteContainers) {
+TYPED_TEST(ByteContainerUtilTypedTest, SerializationContainsAllByteContainers) {
   std::vector<ByteContainerView> inputs = {kStr1, kStr2, kStr3};
 
   TypeParam output1;
@@ -103,7 +105,7 @@ TYPED_TEST(ByteContainerUtilTest, SerializationContainsAllByteContainers) {
 
 // Verify that serializations are unambiguous, and unique per set of input
 // strings.
-TYPED_TEST(ByteContainerUtilTest, SerializationsAreUnique) {
+TYPED_TEST(ByteContainerUtilTypedTest, SerializationsAreUnique) {
   // [a, b, c]
   std::vector<ByteContainerView> inputs1 = {kStr1, kStr2, kStr3};
 
@@ -121,19 +123,37 @@ TYPED_TEST(ByteContainerUtilTest, SerializationsAreUnique) {
 }
 
 // Verify that CopyToByteContainer correctly copies the contents.
-TYPED_TEST(ByteContainerUtilTest, CopyToByteContainer) {
+TYPED_TEST(ByteContainerUtilTypedTest, CopyToByteContainer) {
   TypeParam container = CopyToByteContainer<TypeParam>(kStr1);
   EXPECT_EQ(ByteContainerView(container), ByteContainerView(kStr1));
 }
 
-TYPED_TEST(ByteContainerUtilTest, SafeComparePositive) {
+TYPED_TEST(ByteContainerUtilTypedTest, SafeComparePositive) {
   TypeParam container(kStr1, kStr1 + sizeof(kStr1) - 1);
   EXPECT_TRUE(SafeCompareByteContainers(container, kStr1));
 }
 
-TYPED_TEST(ByteContainerUtilTest, SafeCompareNegative) {
+TYPED_TEST(ByteContainerUtilTypedTest, SafeCompareNegative) {
   TypeParam container(kStr1, kStr1 + sizeof(kStr1) - 1);
   EXPECT_FALSE(SafeCompareByteContainers(container, kStr2));
+}
+
+TEST(ByteContainerUtilTest, MakeStringView) {
+  absl::string_view view1 = MakeView<absl::string_view>(kStr1);
+  absl::string_view view2(kStr1);
+
+  EXPECT_EQ(view1.data(), view2.data());
+  EXPECT_EQ(view1.size(), view2.size());
+}
+
+TEST(ByteContainerUtilTest, MakeSpan) {
+  std::vector<uint8_t> data =
+      CopyToByteContainer<std::vector<uint8_t>>(kStr1);
+  auto span1 = MakeView<absl::Span<const uint8_t>>(data);
+  absl::Span<const uint8_t> span2(data);
+
+  EXPECT_EQ(span1.data(), span2.data());
+  EXPECT_EQ(span1.size(), span2.size());
 }
 
 }  // namespace

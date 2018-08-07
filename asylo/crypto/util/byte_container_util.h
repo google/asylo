@@ -110,6 +110,19 @@ ByteContainerT CopyToByteContainer(ByteContainerView view) {
   return ByteContainerT(view.begin(), view.end());
 }
 
+// Creates a ConstViewT from the contents of |view|.
+//
+// ConstViewT must have a 1-byte value_type, and must have a constructor that
+// takes const value_type * and size as its parameters.
+template <class ConstViewT>
+ConstViewT MakeView(ByteContainerView view) {
+  static_assert(sizeof(typename ConstViewT::value_type) == 1,
+                "ConstViewT must have a 1-byte value_type");
+  return ConstViewT(
+      reinterpret_cast<const typename ConstViewT::value_type *>(view.data()),
+      view.size());
+}
+
 // Performs a side-channel-resistant comparison of the contents of two
 // ByteContainerView objects. Returns true if the contents are equal.
 inline bool SafeCompareByteContainers(ByteContainerView lhs,
