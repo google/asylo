@@ -29,6 +29,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_assertion.pb.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -43,12 +44,9 @@ Status SgxLocalAssertionVerifier::Initialize(const std::string &config) {
                   "Already initialized");
   }
 
-  auto config_result = GetEnclaveConfig();
-  if (!config_result.ok()) {
-    return config_result.status();
-  }
+  const EnclaveConfig *enclave_config;
+  ASYLO_ASSIGN_OR_RETURN(enclave_config, GetEnclaveConfig());
 
-  const EnclaveConfig *enclave_config = config_result.ValueOrDie();
   if (!enclave_config->host_config().has_local_attestation_domain()) {
     return Status(error::GoogleError::INTERNAL,
                   "Config is missing attestation domain");

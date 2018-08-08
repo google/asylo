@@ -26,6 +26,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/test/util/test_string.pb.h"
 #include "asylo/util/posix_error_space.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -33,16 +34,10 @@ Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
                                   const EnclaveConfig &econfig,
                                   const std::string &enclave_url) {
   EnclaveManager::Configure(EnclaveManagerOptions());
-  StatusOr<EnclaveManager *> manager_result = EnclaveManager::Instance();
-  if (!manager_result.ok()) {
-    return manager_result.status();
-  }
-
-  manager_ = manager_result.ValueOrDie();
+  ASYLO_ASSIGN_OR_RETURN(manager_, EnclaveManager::Instance());
 
   loader_ = absl::make_unique<SGXLoader>(enclave_path, /*debug=*/true);
-  Status status = manager_->LoadEnclave(enclave_url, *loader_, econfig);
-  if (!status.ok()) return status;
+  ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(enclave_url, *loader_, econfig));
 
   client_ = manager_->GetClient(enclave_url);
   if (!client_) {

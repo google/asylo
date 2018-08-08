@@ -32,6 +32,7 @@
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace sgx {
@@ -77,12 +78,11 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
   if (!status.ok()) {
     return status;
   }
-  StatusOr<bool> result =
-      MatchIdentityToExpectation(GetSelfIdentity()->identity, *sgx_expectation);
-  if (!result.ok()) {
-    return result.status();
-  }
-  if (!result.ValueOrDie()) {
+  bool result;
+  ASYLO_ASSIGN_OR_RETURN(result,
+                         MatchIdentityToExpectation(GetSelfIdentity()->identity,
+                                                    *sgx_expectation));
+  if (!result) {
     return Status(::asylo::error::GoogleError::PERMISSION_DENIED,
                   "Identity of the current enclave does not match the ACL");
   }

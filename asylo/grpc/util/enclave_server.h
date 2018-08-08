@@ -28,6 +28,7 @@
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "include/grpcpp/impl/codegen/service_type.h"
 #include "include/grpcpp/security/server_credentials.h"
@@ -94,12 +95,7 @@ class EnclaveServer final : public TrustedApplication {
       return Status::OkStatus();
     }
 
-    StatusOr<std::unique_ptr<::grpc::Server>> server_result = CreateServer();
-    if (!server_result.ok()) {
-      return server_result.status();
-    }
-
-    server_ = std::move(server_result.ValueOrDie());
+    ASYLO_ASSIGN_OR_RETURN(server_, CreateServer());
     return Status::OkStatus();
   }
 
