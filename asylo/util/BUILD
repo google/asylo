@@ -107,6 +107,13 @@ cc_test(
     ],
 )
 
+# Defines ASYLO macros.
+cc_library(
+    name = "asylo_macros",
+    hdrs = ["asylo_macros.h"],
+    visibility = ["//asylo:implementation"],
+)
+
 # Container types that zero-out memory before freeing resources.
 cc_library(
     name = "cleansing_types",
