@@ -34,7 +34,7 @@
 namespace asylo {
 namespace sgx {
 
-thread_local FakeEnclave *FakeEnclave::current_ = nullptr;
+FakeEnclave *FakeEnclave::current_ = nullptr;
 
 FakeEnclave::FakeEnclave() {
   mrenclave_.fill(0);

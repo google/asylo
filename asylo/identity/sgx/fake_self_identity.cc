@@ -29,12 +29,11 @@ namespace sgx {
 const SelfIdentity *GetSelfIdentity() {
   // Outside an SGX enclave, enclave identity is simulated by the FakeEnclave
   // object, and it can change from one call to this function to the next.
-  // Consequently, the SelfIdentity object is constructed anew on each call to
+  // Consequently, the SelfIdentity object is populated anew on each call to
   // this function. Note that this part of the flow is only expected to be
   // invoked as a part of unit testing.
-  thread_local SelfIdentity *self_identity = nullptr;
-  delete self_identity;
-  self_identity = new SelfIdentity();
+  static SelfIdentity *self_identity = new SelfIdentity();
+  *self_identity = SelfIdentity();
   return self_identity;
 }
 

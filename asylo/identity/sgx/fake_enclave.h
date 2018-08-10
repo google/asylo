@@ -52,14 +52,13 @@ constexpr SecsAttributeSet kRequiredSealingAttributesMask = {0x3, 0x0};
 // attributes, etc., as well as many other under-the-hood components such as
 // CPUSVN, enclave's current KEYID for reporting purposes, seal-key-fuses, etc.
 //
-// The class implements a thread-local static pointer called current_, which
-// stores the pointer to a fake-enclave instance that represents the "currently
-// executing enclave". If current_ is set to nullptr, it indicates that the
-// thread is currently not executing inside any enclave. A thread can simulate
-// enclave entry by calling the FakeEnclave::EnterEnclave static method.
-// Similarly, a thread can simulate enclave exit by calling the
-// FakeEnclave::ExitEnclave static method. A thread can get access to the
-// pointer to the currently executing method by calling the
+// The class implements a static pointer called current_, which stores the
+// pointer to a fake-enclave instance that represents the "currently executing
+// enclave". If current_ is set to nullptr, it indicates that the code is
+// currently not executing inside any enclave. Enclave entry is simulated by the
+// FakeEnclave::EnterEnclave static method. Similarly, enclave exit simulated by
+// the FakeEnclave::ExitEnclave static method. Code can get access to the
+// pointer to the currently executing FakeEnclave by calling the
 // FakeEnclave::GetCurrentEnclave static method.
 //
 // The FakeEnclave class provides three public methods, GetHardwareRand64,
@@ -76,30 +75,31 @@ constexpr SecsAttributeSet kRequiredSealingAttributesMask = {0x3, 0x0};
 // simulate entry into an appropriate enclave, and then test out the library
 // interface. The fake_hardware_interface_test.cc file can be used as an example
 // of how this functionality can be leveraged.
+//
+// This class is not thread-safe.
 class FakeEnclave {
  public:
   FakeEnclave();
   FakeEnclave(const FakeEnclave &other) = default;
   FakeEnclave &operator=(const FakeEnclave &other) = default;
 
-  // Returns a pointer to the current thread-local static-scoped instance of
-  // FakeEnclave. The caller does not own the returned pointer, as a copy of the
-  // pointer is still retained in the thread-local member current_, and may be
-  // returned to other callers of GetCurrent.
+  // Returns a pointer to the current static-scoped instance of FakeEnclave. The
+  // caller does not own the returned pointer, as a copy of the pointer is still
+  // retained in the static member current_, and may be returned to other
+  // callers of GetCurrent.
   static FakeEnclave *GetCurrentEnclave();
 
-  // Simulates enclave entry by allocating a thread-local static-scoped instance
-  // of FakeEnclave, and copying the contents of |enclave| to it. Note that SGX
+  // Simulates enclave entry by allocating a static-scoped instance of
+  // FakeEnclave, and copying the contents of |enclave| to it. Note that SGX
   // forbids an enclave entry if the CPU is already inside an enclave. This
   // function emulates that behavior by invoking LOG(FATAL) if a static-scoped
-  // FakeEnclave instance is already allocated for the current thread.
+  // FakeEnclave instance is already allocated.
   static void EnterEnclave(const FakeEnclave &enclave);
 
-  // Simulates enclave exit by freeing the current thread-local static-scoped
-  // instance of FakeEnclave. Note that SGX forbids enclave exit if the CPU is
-  // already outside an enclave. This function emulates this behavior by
-  // invoking LOG(FATAL) if a static-scoped FakeEnclave instance is not
-  // allocated for the current thread.
+  // Simulates enclave exit by freeing the current static-scoped instance of
+  // FakeEnclave. Note that SGX forbids enclave exit if the CPU is already
+  // outside an enclave. This function emulates this behavior by invoking
+  // LOG(FATAL) if a static-scoped FakeEnclave instance is not allocated.
   static void ExitEnclave();
 
   // Mutators
@@ -260,8 +260,8 @@ class FakeEnclave {
   // in size.
   SafeBytes<AES_BLOCK_SIZE> seal_fuses_;
 
-  // Per-thread current fake enclave
-  thread_local static FakeEnclave *current_;
+  // Current fake enclave.
+  static FakeEnclave *current_;
 };
 
 // Constructs a randomly-initialized FakeEnclave. This factory object is useful
