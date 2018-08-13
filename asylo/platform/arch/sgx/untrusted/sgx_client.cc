@@ -25,6 +25,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/arch/sgx/untrusted/sgx_error_space.h"
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/util/posix_error_space.h"
 

@@ -40,6 +40,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/core/enclave_manager.h"
@@ -60,13 +61,13 @@ static void (*handle_signal_inside_enclave)(int, bridge_siginfo_t *,
 // registered as the signal handler inside the enclave.
 void TranslateToBridgeAndHandleSignal(int signum, siginfo_t *info,
                                       void *ucontext) {
-  int bridge_signum = ToBridgeSignal(signum);
+  int bridge_signum = asylo::ToBridgeSignal(signum);
   if (bridge_signum < 0) {
     // Invalid incoming signal number.
     return;
   }
   struct bridge_siginfo_t bridge_siginfo;
-  ToBridgeSigInfo(info, &bridge_siginfo);
+  asylo::ToBridgeSigInfo(info, &bridge_siginfo);
   if (handle_signal_inside_enclave) {
     handle_signal_inside_enclave(bridge_signum, &bridge_siginfo, ucontext);
   }
@@ -126,7 +127,7 @@ void *ocall_enc_untrusted_malloc(bridge_size_t size) {
 }
 
 int ocall_enc_untrusted_open(const char *path_name, int flags, uint32_t mode) {
-  int host_flags = FromBridgeFileFlags(flags);
+  int host_flags = asylo::FromBridgeFileFlags(flags);
   int ret = open(path_name, host_flags, mode);
   return ret;
 }
@@ -135,21 +136,21 @@ int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) {
   int ret;
   switch (cmd) {
     case F_SETFL:
-      ret = fcntl(fd, cmd, FromBridgeFileFlags(arg));
+      ret = fcntl(fd, cmd, asylo::FromBridgeFileFlags(arg));
       break;
     case F_SETFD:
-      ret = fcntl(fd, cmd, FromBridgeFDFlags(arg));
+      ret = fcntl(fd, cmd, asylo::FromBridgeFDFlags(arg));
       break;
     case F_GETFL:
       ret = fcntl(fd, cmd, arg);
       if (ret != -1) {
-        ret = ToBridgeFileFlags(ret);
+        ret = asylo::ToBridgeFileFlags(ret);
       }
       break;
     case F_GETFD:
       ret = fcntl(fd, cmd, arg);
       if (ret != -1) {
-        ret = ToBridgeFDFlags(ret);
+        ret = asylo::ToBridgeFDFlags(ret);
       }
       break;
     default:
@@ -162,14 +163,14 @@ int ocall_enc_untrusted_stat(const char *pathname,
                              struct bridge_stat *stat_buffer) {
   struct stat host_stat_buffer;
   int ret = stat(pathname, &host_stat_buffer);
-  ToBridgeStat(&host_stat_buffer, stat_buffer);
+  asylo::ToBridgeStat(&host_stat_buffer, stat_buffer);
   return ret;
 }
 
 int ocall_enc_untrusted_fstat(int fd, struct bridge_stat *stat_buffer) {
   struct stat host_stat_buffer;
   int ret = fstat(fd, &host_stat_buffer);
-  ToBridgeStat(&host_stat_buffer, stat_buffer);
+  asylo::ToBridgeStat(&host_stat_buffer, stat_buffer);
   return ret;
 }
 
@@ -177,7 +178,7 @@ int ocall_enc_untrusted_lstat(const char *pathname,
                               struct bridge_stat *stat_buffer) {
   struct stat host_stat_buffer;
   int ret = lstat(pathname, &host_stat_buffer);
-  ToBridgeStat(&host_stat_buffer, stat_buffer);
+  asylo::ToBridgeStat(&host_stat_buffer, stat_buffer);
   return ret;
 }
 
@@ -199,20 +200,20 @@ bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(int fd, void *buf,
 int ocall_enc_untrusted_connect(int sockfd, const struct bridge_sockaddr *addr,
                                 bridge_size_t addrlen) {
   struct bridge_sockaddr tmp;
-  int ret = connect(
-      sockfd,
-      FromBridgeSockaddr(addr, reinterpret_cast<struct sockaddr *>(&tmp)),
-      static_cast<socklen_t>(addrlen));
+  int ret = connect(sockfd,
+                    asylo::FromBridgeSockaddr(
+                        addr, reinterpret_cast<struct sockaddr *>(&tmp)),
+                    static_cast<socklen_t>(addrlen));
   return ret;
 }
 
 int ocall_enc_untrusted_bind(int sockfd, const struct bridge_sockaddr *addr,
                              bridge_size_t addrlen) {
   struct bridge_sockaddr tmp;
-  int ret =
-      bind(sockfd,
-           FromBridgeSockaddr(addr, reinterpret_cast<struct sockaddr *>(&tmp)),
-           static_cast<socklen_t>(addrlen));
+  int ret = bind(sockfd,
+                 asylo::FromBridgeSockaddr(
+                     addr, reinterpret_cast<struct sockaddr *>(&tmp)),
+                 static_cast<socklen_t>(addrlen));
   return ret;
 }
 
@@ -224,7 +225,7 @@ int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr,
   if (ret == -1) {
     return ret;
   }
-  ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
+  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
   *addrlen = static_cast<bridge_size_t>(tmp_len);
   return ret;
 }
@@ -233,13 +234,13 @@ bridge_ssize_t ocall_enc_untrusted_sendmsg(int sockfd,
                                            const struct bridge_msghdr *msg,
                                            int flags) {
   struct msghdr tmp;
-  if (!FromBridgeMsgHdr(msg, &tmp)) {
+  if (!asylo::FromBridgeMsgHdr(msg, &tmp)) {
     errno = EFAULT;
     return -1;
   }
   auto buf = absl::make_unique<struct iovec[]>(msg->msg_iovlen);
   for (int i = 0; i < msg->msg_iovlen; ++i) {
-    if (!FromBridgeIovec(&msg->msg_iov[i], &buf[i])) {
+    if (!asylo::FromBridgeIovec(&msg->msg_iov[i], &buf[i])) {
       errno = EFAULT;
       return -1;
     }
@@ -254,13 +255,13 @@ bridge_ssize_t ocall_enc_untrusted_recvmsg(int sockfd,
                                            struct bridge_msghdr *msg,
                                            int flags) {
   struct msghdr tmp;
-  if (!FromBridgeMsgHdr(msg, &tmp)) {
+  if (!asylo::FromBridgeMsgHdr(msg, &tmp)) {
     errno = EFAULT;
     return -1;
   }
   auto buf = absl::make_unique<struct iovec[]>(msg->msg_iovlen);
   for (int i = 0; i < msg->msg_iovlen; ++i) {
-    if (!FromBridgeIovec(&msg->msg_iov[i], &buf[i])) {
+    if (!asylo::FromBridgeIovec(&msg->msg_iov[i], &buf[i])) {
       errno = EFAULT;
       return -1;
     }
@@ -268,7 +269,7 @@ bridge_ssize_t ocall_enc_untrusted_recvmsg(int sockfd,
   tmp.msg_iov = buf.get();
   bridge_ssize_t ret =
       static_cast<bridge_ssize_t>(recvmsg(sockfd, &tmp, flags));
-  if (!ToBridgeIovecArray(&tmp, msg)) {
+  if (!asylo::ToBridgeIovecArray(&tmp, msg)) {
     errno = EFAULT;
     return -1;
   }
@@ -298,7 +299,7 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
     return -1;
   }
   if (hints) {
-    hints->ai_flags = FromBridgeAddressInfoFlags(hints->ai_flags);
+    hints->ai_flags = asylo::FromBridgeAddressInfoFlags(hints->ai_flags);
   }
 
   struct addrinfo *res;
@@ -326,16 +327,17 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
 int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
                                    void *optval, unsigned int optlen_in,
                                    unsigned int *optlen_out) {
-  int ret = getsockopt(sockfd, level, FromBridgeOptionName(level, optname),
-                       optval, reinterpret_cast<socklen_t *>(&optlen_in));
+  int ret =
+      getsockopt(sockfd, level, asylo::FromBridgeOptionName(level, optname),
+                 optval, reinterpret_cast<socklen_t *>(&optlen_in));
   *optlen_out = optlen_in;
   return ret;
 }
 
 int ocall_enc_untrusted_setsockopt(int sockfd, int level, int optname,
                                    const void *optval, bridge_size_t optlen) {
-  return setsockopt(sockfd, level, FromBridgeOptionName(level, optname), optval,
-                    static_cast<socklen_t>(optlen));
+  return setsockopt(sockfd, level, asylo::FromBridgeOptionName(level, optname),
+                    optval, static_cast<socklen_t>(optlen));
 }
 
 int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr,
@@ -344,7 +346,7 @@ int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr,
   socklen_t tmp_len = sizeof(tmp);
   int ret =
       getsockname(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
+  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
   *addrlen = static_cast<bridge_size_t>(tmp_len);
   return ret;
 }
@@ -355,7 +357,7 @@ int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr,
   socklen_t tmp_len = sizeof(tmp);
   int ret =
       getpeername(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
+  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
   *addrlen = static_cast<bridge_size_t>(tmp_len);
   return ret;
 }
@@ -368,14 +370,14 @@ int ocall_enc_untrusted_poll(struct bridge_pollfd *fds, unsigned int nfds,
                              int timeout) {
   auto tmp = absl::make_unique<pollfd[]>(nfds);
   for (int i = 0; i < nfds; ++i) {
-    if (!FromBridgePollfd(&fds[i], &tmp[i])) {
+    if (!asylo::FromBridgePollfd(&fds[i], &tmp[i])) {
       errno = EFAULT;
       return -1;
     }
   }
   int ret = poll(tmp.get(), nfds, timeout);
   for (int i = 0; i < nfds; ++i) {
-    if (!ToBridgePollfd(&tmp[i], &fds[i])) {
+    if (!asylo::ToBridgePollfd(&tmp[i], &fds[i])) {
       errno = EFAULT;
       return -1;
     }
@@ -422,10 +424,10 @@ int ocall_enc_untrusted_sched_getaffinity(int64_t pid, BridgeCpuSet *mask) {
 
   // Translate from host cpu_set_t to bridge_cpu_set_t.
   int total_cpus = CPU_COUNT(&host_mask);
-  BridgeCpuSetZero(mask);
+  asylo::BridgeCpuSetZero(mask);
   for (int cpu = 0, cpus_so_far = 0; cpus_so_far < total_cpus; ++cpu) {
     if (CPU_ISSET(cpu, &host_mask)) {
-      BridgeCpuSetAddBit(cpu, mask);
+      asylo::BridgeCpuSetAddBit(cpu, mask);
       ++cpus_so_far;
     }
   }
@@ -468,7 +470,7 @@ int ocall_enc_untrusted_register_signal_handler(
     newact.sa_sigaction = &HandleSignalInSim;
   }
   if (handler) {
-    FromBridgeSigSet(&handler->mask, &newact.sa_mask);
+    asylo::FromBridgeSigSet(&handler->mask, &newact.sa_mask);
   }
   // Set the flag so that sa_sigaction is registered as the signal handler
   // instead of sa_handler.
@@ -480,10 +482,11 @@ int ocall_enc_untrusted_register_signal_handler(
 int ocall_enc_untrusted_sigprocmask(int how, const bridge_sigset_t *set,
                                     bridge_sigset_t *oldset) {
   sigset_t tmp_set;
-  FromBridgeSigSet(set, &tmp_set);
+  asylo::FromBridgeSigSet(set, &tmp_set);
   sigset_t tmp_oldset;
-  int ret = sigprocmask(FromBridgeSigMaskAction(how), &tmp_set, &tmp_oldset);
-  ToBridgeSigSet(&tmp_oldset, oldset);
+  int ret =
+      sigprocmask(asylo::FromBridgeSigMaskAction(how), &tmp_set, &tmp_oldset);
+  asylo::ToBridgeSigSet(&tmp_oldset, oldset);
   return ret;
 }
 
@@ -492,12 +495,12 @@ int ocall_enc_untrusted_sigprocmask(int how, const bridge_sigset_t *set,
 //////////////////////////////////////
 
 void ocall_enc_untrusted_openlog(const char *ident, int option, int facility) {
-  openlog(ident, FromBridgeSysLogOption(option),
-          FromBridgeSysLogFacility(facility));
+  openlog(ident, asylo::FromBridgeSysLogOption(option),
+          asylo::FromBridgeSysLogFacility(facility));
 }
 
 void ocall_enc_untrusted_syslog(int priority, const char *message) {
-  syslog(FromBridgeSysLogPriority(priority), "%s", message);
+  syslog(asylo::FromBridgeSysLogPriority(priority), "%s", message);
 }
 
 //////////////////////////////////////
@@ -536,7 +539,7 @@ int ocall_enc_untrusted_pipe(int pipefd[2]) {
 }
 
 int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
-  int name = FromSysconfConstants(bridge_name);
+  int name = asylo::FromSysconfConstants(bridge_name);
   int64_t ret = -1;
   if (name != -1) {
     ret = sysconf(name);
@@ -554,10 +557,11 @@ pid_t ocall_enc_untrusted_wait3(struct BridgeWStatus *wstatus, int options,
                                 struct BridgeRUsage *rusage) {
   struct rusage tmp_rusage;
   int tmp_wstatus;
-  pid_t ret = wait3(&tmp_wstatus, FromBridgeWaitOptions(options), &tmp_rusage);
-  ToBridgeRUsage(&tmp_rusage, rusage);
+  pid_t ret =
+      wait3(&tmp_wstatus, asylo::FromBridgeWaitOptions(options), &tmp_rusage);
+  asylo::ToBridgeRUsage(&tmp_rusage, rusage);
   if (wstatus) {
-    *wstatus = ToBridgeWStatus(tmp_wstatus);
+    *wstatus = asylo::ToBridgeWStatus(tmp_wstatus);
   }
   return ret;
 }

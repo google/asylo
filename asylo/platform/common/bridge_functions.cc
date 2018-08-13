@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/common/bridge_functions.h"
 
 #include <fcntl.h>
 #include <netinet/in.h>
@@ -32,6 +32,7 @@
 
 #include "asylo/util/logging.h"
 
+namespace asylo {
 namespace {
 
 bool BridgeWIfExited(BridgeWStatus bridge_wstatus) {
@@ -748,3 +749,5 @@ int BridgeCpuSetCheckBit(int cpu, BridgeCpuSet *set) {
              ? 1
              : 0;
 }
+
+}  // namespace asylo

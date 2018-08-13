@@ -97,8 +97,11 @@ cc_test(
 # Shared types across bridge boundaries.
 cc_library(
     name = "bridge_types",
-    srcs = ["bridge_types.cc"],
-    hdrs = ["bridge_types.h"],
+    srcs = ["bridge_functions.cc"],
+    hdrs = [
+        "bridge_functions.h",
+        "bridge_types.h",
+    ],
     deps = [
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",

@@ -32,7 +32,7 @@
 #include "asylo/identity/init.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/include/trusted/time.h"
-#include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/shared_name_kind.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/io/io_manager.h"

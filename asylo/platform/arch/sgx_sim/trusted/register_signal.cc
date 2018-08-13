@@ -21,6 +21,7 @@
 #include <signal.h>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
 
