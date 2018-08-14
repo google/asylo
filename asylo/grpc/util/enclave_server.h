@@ -56,11 +56,22 @@ namespace asylo {
 // application.
 class EnclaveServer final : public TrustedApplication {
  public:
+  using GrpcServiceFactory =
+      std::function<StatusOr<std::unique_ptr<::grpc::Service>>()>;
+
   EnclaveServer(std::unique_ptr<::grpc::Service> service,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
       : running_{false},
         service_{std::move(service)},
+        service_factory_{NoFactory},
         credentials_{credentials} {}
+
+  EnclaveServer(GrpcServiceFactory service_factory,
+                std::shared_ptr<::grpc::ServerCredentials> credentials)
+      : running_{false},
+        service_factory_{service_factory},
+        credentials_{credentials} {}
+
   ~EnclaveServer() = default;
 
   // From TrustedApplication.
@@ -68,10 +79,22 @@ class EnclaveServer final : public TrustedApplication {
   Status Initialize(const EnclaveConfig &config) {
     const ServerConfig &config_server_proto =
         config.GetExtension(server_input_config);
+    if (!config_server_proto.has_host()) {
+      return Status(
+          error::GoogleError::FAILED_PRECONDITION,
+          "No host was set in server_input_config extension of EnclaveConfig");
+    }
+    if (!config_server_proto.has_port()) {
+      return Status(
+          error::GoogleError::FAILED_PRECONDITION,
+          "No port was set in server_input_config extension of EnclaveConfig");
+    }
     host_ = config_server_proto.host();
     port_ = config_server_proto.port();
+
     LOG(INFO) << "gRPC server configured with address: " << host_ << ":"
               << port_;
+
     return InitializeServer();
   }
 
@@ -107,7 +130,15 @@ class EnclaveServer final : public TrustedApplication {
     ::grpc::ServerBuilder builder;
     builder.AddListeningPort(absl::StrCat(host_, ":", port_), credentials_,
                              &port);
-    if (!service_.get()) {
+    if (service_ == nullptr) {
+      StatusOr<std::unique_ptr<::grpc::Service>> service_result =
+          service_factory_();
+      if (!service_result.ok()) {
+        return service_result.status();
+      }
+      service_ = std::move(service_result).ValueOrDie();
+    }
+    if (service_ == nullptr) {
       return Status(error::GoogleError::INTERNAL, "No gRPC service configured");
     }
     builder.RegisterService(service_.get());
@@ -142,6 +173,10 @@ class EnclaveServer final : public TrustedApplication {
     }
   }
 
+  static StatusOr<std::unique_ptr<::grpc::Service>> NoFactory() {
+    return Status(error::GoogleError::INTERNAL, "No factory configured");
+  }
+
   // Guards state related to the gRPC server (|server_| and |port_|).
   absl::Mutex server_mutex_;
 
@@ -156,6 +191,7 @@ class EnclaveServer final : public TrustedApplication {
   int port_;
 
   std::unique_ptr<::grpc::Service> service_;
+  GrpcServiceFactory service_factory_;
   std::shared_ptr<::grpc::ServerCredentials> credentials_;
 };
 
