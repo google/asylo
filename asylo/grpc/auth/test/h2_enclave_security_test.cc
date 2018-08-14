@@ -34,31 +34,29 @@
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
 
+namespace asylo {
 namespace {
 
 constexpr char kClientAdditionalAuthenticatedData[] = "EKEP client";
 constexpr char kServerAdditionalAuthenticatedData[] = "EKEP server";
-
 constexpr char kAddress[] = "[::1]";
-
 constexpr char kLocalAttestationDomain[] = "gRPC Test Domain";
 
-typedef struct enclave_fullstack_fixture_data {
+struct EnclaveFullStackFixtureData {
   // The address of the server.
   char *local_address;
 
   // True if the |local_address| has been updated to contain the server's final
   // port.
   bool port_set;
-} enclave_fullstack_fixture_data;
+};
 
-static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
+grpc_end2end_test_fixture CreateFixtureSecureFullstack(
     grpc_channel_args *client_args, grpc_channel_args *server_args) {
   grpc_end2end_test_fixture f;
-  memset(&f, 0, sizeof(f));
 
-  enclave_fullstack_fixture_data *fixture_data =
-      static_cast<enclave_fullstack_fixture_data *>(
+  EnclaveFullStackFixtureData *fixture_data =
+      static_cast<EnclaveFullStackFixtureData *>(
           gpr_zalloc(sizeof(*fixture_data)));
 
   // A port of indicates that gRPC should auto-select a port for use. This
@@ -69,15 +67,20 @@ static grpc_end2end_test_fixture chttp2_create_fixture_secure_fullstack(
   // Create a completion queue for the server.
   f.cq = grpc_completion_queue_create_for_next(nullptr);
   f.shutdown_cq = grpc_completion_queue_create_for_pluck(nullptr);
+
+  // The |client| and |server| are configured later in the test.
+  f.server = nullptr;
+  f.client = nullptr;
+
   return f;
 }
 
 // Initializes the channel in fixture |f| using |client_args| and |creds|.
-static void chttp2_init_client_channel(grpc_end2end_test_fixture *f,
-                                       grpc_channel_args *client_args,
-                                       grpc_channel_credentials *creds) {
-  enclave_fullstack_fixture_data *fixture_data =
-      static_cast<enclave_fullstack_fixture_data *>(f->fixture_data);
+void InitClientChannel(grpc_end2end_test_fixture *f,
+                       grpc_channel_args *client_args,
+                       grpc_channel_credentials *creds) {
+  EnclaveFullStackFixtureData *fixture_data =
+      static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
   GPR_ASSERT(fixture_data->port_set);
   f->client = grpc_secure_channel_create(creds, fixture_data->local_address,
                                          client_args, /*reserved=*/nullptr);
@@ -87,64 +90,60 @@ static void chttp2_init_client_channel(grpc_end2end_test_fixture *f,
 
 // Uses |options| to construct gRPC enclave channel credentials, and sets
 // |credentials| to point to the resulting credentials object.
-static void chttp2_init_client_enclave_credentials(
-    const asylo::EnclaveCredentialsOptions &options,
-    grpc_channel_credentials **credentials) {
+void InitClientEnclaveCredentials(const EnclaveCredentialsOptions &options,
+                                  grpc_channel_credentials **credentials) {
   grpc_enclave_credentials_options c_options;
   grpc_enclave_credentials_options_init(&c_options);
-  asylo::CopyEnclaveCredentialsOptions(options, &c_options);
+  CopyEnclaveCredentialsOptions(options, &c_options);
 
   *credentials = grpc_enclave_channel_credentials_create(&c_options);
 }
 
 // Initializes the client in fixture |f| with |server_args| and enclave null
 // credentials.
-static void chttp2_init_client_enclave_null_credentials(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+void InitClientEnclaveNullCredentials(grpc_end2end_test_fixture *f,
+                                      grpc_channel_args *client_args) {
   // Set the client's credentials options. The client supports bidirectional
   // authentication based on null assertions.
-  asylo::EnclaveCredentialsOptions options =
-      asylo::BidirectionalNullCredentialsOptions();
+  EnclaveCredentialsOptions options = BidirectionalNullCredentialsOptions();
 
   // The client's AAD is just a fixed string in this test.
   options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
 
   // Create enclave gRPC channel credentials.
   grpc_channel_credentials *creds = nullptr;
-  chttp2_init_client_enclave_credentials(options, &creds);
+  InitClientEnclaveCredentials(options, &creds);
   GPR_ASSERT(creds != nullptr);
 
   // Initialize client.
-  chttp2_init_client_channel(f, client_args, creds);
+  InitClientChannel(f, client_args, creds);
 }
 
 // Initializes the client in fixture |f| with |server_args| and enclave SGX
 // local credentials.
-static void chttp2_init_client_enclave_sgx_local_credentials(
-    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+void InitClientEnclaveSgxLocalCredentials(grpc_end2end_test_fixture *f,
+                                          grpc_channel_args *client_args) {
   // Set the client's credentials options. The client supports bidirectional
   // authentication based on SGX local attestation.
-  asylo::EnclaveCredentialsOptions options =
-      asylo::BidirectionalSgxLocalCredentialsOptions();
+  EnclaveCredentialsOptions options = BidirectionalSgxLocalCredentialsOptions();
 
   // The client's AAD is just a fixed string in this test.
   options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
 
   // Create enclave gRPC channel credentials.
   grpc_channel_credentials *creds = nullptr;
-  chttp2_init_client_enclave_credentials(options, &creds);
+  InitClientEnclaveCredentials(options, &creds);
   GPR_ASSERT(creds != nullptr);
 
   // Initialize client.
-  chttp2_init_client_channel(f, client_args, creds);
+  InitClientChannel(f, client_args, creds);
 }
 
 // Initializes the server in fixture |f| using |server_args| and |creds|.
-static void chttp2_init_server(grpc_end2end_test_fixture *f,
-                               grpc_channel_args *server_args,
-                               grpc_server_credentials *creds) {
-  enclave_fullstack_fixture_data *fixture_data =
-      static_cast<enclave_fullstack_fixture_data *>(f->fixture_data);
+void InitServer(grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
+                grpc_server_credentials *creds) {
+  EnclaveFullStackFixtureData *fixture_data =
+      static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
   f->server = grpc_server_create(server_args, /*reserved=*/nullptr);
   grpc_server_register_completion_queue(f->server, f->cq, /*reserved=*/nullptr);
 
@@ -163,12 +162,11 @@ static void chttp2_init_server(grpc_end2end_test_fixture *f,
 
 // Uses |options| to construct gRPC enclave server credentials, and sets
 // |credentials| to point to the resulting credentials object.
-static void chttp2_init_server_enclave_credentials(
-    const asylo::EnclaveCredentialsOptions &options,
-    grpc_server_credentials **credentials) {
+void InitServerEnclaveCredentials(const EnclaveCredentialsOptions &options,
+                                  grpc_server_credentials **credentials) {
   grpc_enclave_credentials_options c_options;
   grpc_enclave_credentials_options_init(&c_options);
-  asylo::CopyEnclaveCredentialsOptions(options, &c_options);
+  CopyEnclaveCredentialsOptions(options, &c_options);
 
   // Create enclave gRPC server credentials.
   *credentials = grpc_enclave_server_credentials_create(&c_options);
@@ -176,47 +174,45 @@ static void chttp2_init_server_enclave_credentials(
 
 // Initializes the server in fixture |f| with |server_args| and enclave null
 // credentials.
-static void chttp2_init_server_enclave_null_credentials(
-    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
+void InitServerEnclaveNullCredentials(grpc_end2end_test_fixture *f,
+                                      grpc_channel_args *server_args) {
   // Set the server's credentials options. The server supports bidirectional
   // authentication based on null assertions.
-  asylo::EnclaveCredentialsOptions options =
-      asylo::BidirectionalNullCredentialsOptions();
+  EnclaveCredentialsOptions options = BidirectionalNullCredentialsOptions();
 
   // The server's AAD is just a fixed string in this test.
   options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
 
   grpc_server_credentials *creds = nullptr;
-  chttp2_init_server_enclave_credentials(options, &creds);
+  InitServerEnclaveCredentials(options, &creds);
   GPR_ASSERT(creds != nullptr);
 
   // Initialize server.
-  chttp2_init_server(f, server_args, creds);
+  InitServer(f, server_args, creds);
 }
 
 // Initializes the server in fixture |f| with |server_args| and enclave SGX
 // local credentials.
-static void chttp2_init_server_enclave_sgx_local_credentials(
-    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
+void InitServerEnclaveSgxLocalCredentials(grpc_end2end_test_fixture *f,
+                                          grpc_channel_args *server_args) {
   // Set the server's credentials options. The server supports bidirectional
   // authentication based on SGX local attestation.
-  asylo::EnclaveCredentialsOptions options =
-      asylo::BidirectionalSgxLocalCredentialsOptions();
+  EnclaveCredentialsOptions options = BidirectionalSgxLocalCredentialsOptions();
 
   // The server's AAD is just a fixed string in this test.
   options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
 
   grpc_server_credentials *creds = nullptr;
-  chttp2_init_server_enclave_credentials(options, &creds);
+  InitServerEnclaveCredentials(options, &creds);
   GPR_ASSERT(creds != nullptr);
 
   // Initialize server.
-  chttp2_init_server(f, server_args, creds);
+  InitServer(f, server_args, creds);
 }
 
-static void chttp2_tear_down_secure_fullstack(grpc_end2end_test_fixture *f) {
-  enclave_fullstack_fixture_data *fixture_data =
-      static_cast<enclave_fullstack_fixture_data *>(f->fixture_data);
+void TearDownSecureFullstack(grpc_end2end_test_fixture *f) {
+  EnclaveFullStackFixtureData *fixture_data =
+      static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
   gpr_free(fixture_data->local_address);
   gpr_free(fixture_data);
 }
@@ -228,23 +224,22 @@ static grpc_end2end_test_config configs[] = {
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     /*overridden_call_host=*/nullptr, chttp2_create_fixture_secure_fullstack,
-     chttp2_init_client_enclave_null_credentials,
-     chttp2_init_server_enclave_null_credentials,
-     chttp2_tear_down_secure_fullstack},
+     /*overridden_call_host=*/nullptr, CreateFixtureSecureFullstack,
+     InitClientEnclaveNullCredentials, InitServerEnclaveNullCredentials,
+     TearDownSecureFullstack},
 
     // SGX local attestation.
     {"enclave_sgx_local_credentials",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
-     /*overridden_call_host=*/nullptr, chttp2_create_fixture_secure_fullstack,
-     chttp2_init_client_enclave_sgx_local_credentials,
-     chttp2_init_server_enclave_sgx_local_credentials,
-     chttp2_tear_down_secure_fullstack},
+     /*overridden_call_host=*/nullptr, CreateFixtureSecureFullstack,
+     InitClientEnclaveSgxLocalCredentials, InitServerEnclaveSgxLocalCredentials,
+     TearDownSecureFullstack},
 };
 
 }  // namespace
+}  // namespace asylo
 
 int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
@@ -254,7 +249,7 @@ int main(int argc, char **argv) {
   // Set the attestation domain in the global EnclaveConfig.
   asylo::EnclaveConfig enclave_config;
   enclave_config.mutable_host_config()->set_local_attestation_domain(
-      kLocalAttestationDomain);
+      asylo::kLocalAttestationDomain);
   asylo::SetEnclaveConfig(enclave_config);
 
   // Initialize all enclave assertion authorities. No configs are currently
@@ -267,9 +262,9 @@ int main(int argc, char **argv) {
                  .ok());
 
   size_t i;
-  for (i = 0; i < sizeof(configs) / sizeof(*configs); ++i) {
-    GPR_ASSERT(configs[i].feature_mask != 0);
-    grpc_end2end_tests(argc, argv, configs[i]);
+  for (i = 0; i < sizeof(asylo::configs) / sizeof(*asylo::configs); ++i) {
+    GPR_ASSERT(asylo::configs[i].feature_mask != 0);
+    grpc_end2end_tests(argc, argv, asylo::configs[i]);
   }
 
   grpc_shutdown();
