@@ -252,6 +252,11 @@ class IOManager {
       return -1;
     }
 
+    virtual char *RealPath(const char *path, char *resolved_path) {
+      errno = ENOSYS;
+      return nullptr;
+    }
+
    private:
     friend class IOManager;
   };
@@ -362,6 +367,10 @@ class IOManager {
   // symlink, returns information about the link itself, rather than the target
   // it points to.
   int LStat(const char *pathname, struct stat *stat_buffer);
+
+  // Provides a canonicalized absolute pathname that resolves symbolic links.
+  // Returns |resolved_path| on success, nullptr on failure.
+  char *RealPath(const char *path, char *resolved_path);
 
   // Opens |path|, returning an enclave file descriptor or -1 on failure.
   int Open(const char *path, int flags, mode_t mode);
@@ -518,26 +527,29 @@ class IOManager {
   // nullptr if no entry is found.
   VirtualPathHandler *HandlerForPath(absl::string_view path) const;
 
-  // Locks the mutex corresponding to |fd| and perform thread safe action.
-  template <typename IOAction>
-  typename std::result_of<IOAction(std::shared_ptr<IOContext>)>::type
-  CallWithContext(int fd, IOAction action) LOCKS_EXCLUDED(fd_table_lock_);
+  // Locks the mutex corresponding to |fd| and performs thread safe action.
+  template <typename IOAction, typename ReturnType = typename std::result_of<
+                                   IOAction(std::shared_ptr<IOContext>)>::type>
+  ReturnType CallWithContext(int fd, IOAction action)
+      LOCKS_EXCLUDED(fd_table_lock_);
 
   // Looks up the appropriate VirtualPathHandler and calls the given function on
   // it.  Errors related to path resolution and handler lookups are handled.
   // This is the single path variant.
-  template <typename IOAction>
-  typename std::result_of<IOAction(VirtualPathHandler *, const char *)>::type
-  CallWithHandler(const char *path, IOAction action);
+  template <typename IOAction,
+            typename ReturnType = typename std::result_of<
+                IOAction(IOManager::VirtualPathHandler *, const char *)>::type>
+  ReturnType CallWithHandler(const char *path, IOAction action);
 
   // Looks up the appropriate VirtualPathHandler and calls the given function on
   // it.  Errors related to path resolution and handler lookups are handled.
   // This is the double path variant.  Both paths must resolve to the same
   // handler.
-  template <typename IOAction>
-  typename std::result_of<IOAction(VirtualPathHandler *, const char *,
-                                   const char *)>::type
-  CallWithHandler(const char *path1, const char *path2, IOAction action);
+  template <typename IOAction,
+            typename ReturnType = typename std::result_of<IOAction(
+                VirtualPathHandler *, const char *, const char *)>::type>
+  ReturnType CallWithHandler(const char *path1, const char *path2,
+                             IOAction action);
 
   // A map from path prefix to VirtualPathHandler.
   std::map<std::string, std::unique_ptr<VirtualPathHandler>> prefix_to_handler_;

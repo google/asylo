@@ -25,6 +25,7 @@
 #include <sys/sysmacros.h>
 #include <unistd.h>
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
@@ -32,6 +33,8 @@
 
 namespace asylo {
 namespace {
+
+using ::testing::IsNull;
 
 // Tests changing working directory.
 TEST(CwdTest, SimpleChange) {
@@ -106,9 +109,13 @@ TEST(CwdTest, CrossHandlerResolve) {
   EXPECT_EQ(errno, EACCES);
 }
 
-// Tests opening a file using an empty path.
+// Tests opening a file and canonicalizing a path using an empty string.
 TEST(CwdTest, EmptyResolve) {
   EXPECT_EQ(open("", O_RDONLY), -1);
+  EXPECT_EQ(errno, ENOENT);
+
+  char buf[PATH_MAX];
+  EXPECT_THAT(realpath("", buf), IsNull());
   EXPECT_EQ(errno, ENOENT);
 }
 
@@ -148,6 +155,11 @@ TEST(CwdTest, SplitHandlerResolve) {
   // specific ioctl number that we could call here to identify it is our secure
   // device.
   EXPECT_EQ(ioctl(fd, 0, 0), -1);
+  EXPECT_EQ(errno, ENOSYS);
+
+  // Our /dev/urandom also doesn't implement realpath.
+  char buf[PATH_MAX];
+  EXPECT_THAT(realpath("/dev/notrandom/../urandom", buf), IsNull());
   EXPECT_EQ(errno, ENOSYS);
 }
 

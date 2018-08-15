@@ -67,6 +67,7 @@ cc_library(
         "sched.cc",
         "signal.cc",
         "stat.cc",
+        "stdlib.cc",
         "syslog.cc",
         "termios.cc",
         "time.cc",

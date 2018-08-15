@@ -301,9 +301,31 @@ int IOManager::Poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   return ret;
 }
 
-template <typename IOAction>
-typename std::result_of<IOAction(std::shared_ptr<IOManager::IOContext>)>::type
-IOManager::CallWithContext(int fd, IOAction action) {
+// Provide a proper error return value of different types for use in templates.
+namespace {
+
+template <typename Type, typename = void>
+struct ErrorValue;
+
+// Actions returning signed arithmetic types (e.g., int, ssize_t) indicate
+// error with -1.
+template <typename Type>
+struct ErrorValue<Type,
+                  typename std::enable_if<std::is_signed<Type>::value>::type> {
+  static constexpr Type value = -1;
+};
+
+// Actions returning pointer types indicate error with nullptr.
+template <typename Type>
+struct ErrorValue<Type,
+                  typename std::enable_if<std::is_pointer<Type>::value>::type> {
+  static constexpr Type value = nullptr;
+};
+
+}  // namespace
+
+template <typename IOAction, typename ReturnType>
+ReturnType IOManager::CallWithContext(int fd, IOAction action) {
   std::shared_ptr<IOContext> context;
   {
     absl::ReaderMutexLock lock(&fd_table_lock_);
@@ -313,17 +335,15 @@ IOManager::CallWithContext(int fd, IOAction action) {
     return action(context);
   }
   errno = EBADF;
-  return -1;
+  return ErrorValue<ReturnType>::value;
 }
 
-template <typename IOAction>
-typename std::result_of<IOAction(IOManager::VirtualPathHandler *,
-                                 const char *)>::type
-IOManager::CallWithHandler(const char *path, IOAction action) {
+template <typename IOAction, typename ReturnType>
+ReturnType IOManager::CallWithHandler(const char *path, IOAction action) {
   StatusOr<std::string> status = CanonicalizePath(path);
   if (!status.ok()) {
     errno = status.status().error_code();
-    return -1;
+    return ErrorValue<ReturnType>::value;
   }
 
   absl::string_view canonical_path = status.ValueOrDie();
@@ -334,23 +354,21 @@ IOManager::CallWithHandler(const char *path, IOAction action) {
   }
 
   errno = ENOENT;
-  return -1;
+  return ErrorValue<ReturnType>::value;
 }
 
-template <typename IOAction>
-typename std::result_of<IOAction(IOManager::VirtualPathHandler *, const char *,
-                                 const char *)>::type
-IOManager::CallWithHandler(const char *path1, const char *path2,
-                           IOAction action) {
+template <typename IOAction, typename ReturnType>
+ReturnType IOManager::CallWithHandler(const char *path1, const char *path2,
+                                      IOAction action) {
   StatusOr<std::string> status1 = CanonicalizePath(path1);
-  StatusOr<std::string> status2 = CanonicalizePath(path2);
   if (!status1.ok()) {
     errno = status1.status().error_code();
-    return -1;
+    return ErrorValue<ReturnType>::value;
   }
+  StatusOr<std::string> status2 = CanonicalizePath(path2);
   if (!status2.ok()) {
     errno = status2.status().error_code();
-    return -1;
+    return ErrorValue<ReturnType>::value;
   }
 
   absl::string_view canonical_path1 = status1.ValueOrDie();
@@ -359,7 +377,7 @@ IOManager::CallWithHandler(const char *path1, const char *path2,
   VirtualPathHandler *handler2 = HandlerForPath(canonical_path2);
   if (handler1 != handler2) {
     errno = EXDEV;
-    return -1;
+    return ErrorValue<ReturnType>::value;
   }
 
   if (handler1) {
@@ -368,7 +386,7 @@ IOManager::CallWithHandler(const char *path1, const char *path2,
   }
 
   errno = ENOENT;
-  return -1;
+  return ErrorValue<ReturnType>::value;
 }
 
 int IOManager::Read(int fd, char *buf, size_t count) {
@@ -508,6 +526,13 @@ int IOManager::LStat(const char *pathname, struct stat *stat_buffer) {
   return CallWithHandler(pathname, [stat_buffer](VirtualPathHandler *handler,
                                                  const char *canonical_path) {
     return handler->LStat(canonical_path, stat_buffer);
+  });
+}
+
+char *IOManager::RealPath(const char *path, char *resolved_path) {
+  return CallWithHandler(path, [resolved_path](VirtualPathHandler *handler,
+                                               const char *canonical_path) {
+    return handler->RealPath(canonical_path, resolved_path);
   });
 }
 
