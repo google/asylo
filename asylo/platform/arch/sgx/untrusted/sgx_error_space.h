@@ -20,7 +20,7 @@
 #define ASYLO_PLATFORM_ARCH_SGX_UNTRUSTED_SGX_ERROR_SPACE_H_
 
 #include "asylo/util/status.h"
-#include "common/inc/sgx_urts.h"
+#include "include/sgx_urts.h"
 
 namespace asylo {
 namespace error {

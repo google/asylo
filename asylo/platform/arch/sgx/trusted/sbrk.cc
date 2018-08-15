@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <stdlib.h>
 
-#include "common/inc/internal/global_data.h"
+#include "include/global_data.h"
 
 namespace {
 

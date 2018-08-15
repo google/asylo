@@ -39,7 +39,6 @@ cc_library(
     deps = [
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/posix/io:io_manager",
-        "@linux_sgx//:common_inc",
     ],
 )
 

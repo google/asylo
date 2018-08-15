@@ -168,7 +168,6 @@ enclave_test(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
-        "@linux_sgx//:urts_inc",
     ],
 )
 
@@ -196,7 +195,6 @@ enclave_test(
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
-        "@linux_sgx//:urts_inc",
     ],
 )
 

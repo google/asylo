@@ -20,7 +20,7 @@
 
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "common/inc/sgx.h"
+#include "include/sgx.h"
 
 // The following functions are defined by the Intel SGX SDK. However,
 // these are supposed to be internal functions, and are not supposed to

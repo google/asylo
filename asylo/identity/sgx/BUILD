@@ -386,8 +386,7 @@ cc_library(
         "@boringssl//:crypto",
     ] + select({
         "@linux_sgx//:sgx_sim": [
-            "@linux_sgx//:common_inc",
-            "@linux_sgx//:trts_inc",
+            "@linux_sgx//:trts",
         ],
         "//conditions:default": [
             ":code_identity_proto_cc",

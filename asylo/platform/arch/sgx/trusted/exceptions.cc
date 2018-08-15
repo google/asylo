@@ -18,8 +18,8 @@
 
 #include <stdlib.h>
 #include <unordered_map>
-#include "common/inc/sgx_cpuid.h"
-#include "common/inc/sgx_trts_exception.h"
+#include "include/sgx_cpuid.h"
+#include "include/sgx_trts_exception.h"
 
 // Handled opcodes
 static const uint16_t kCpuidOpcode = 0xA20F;

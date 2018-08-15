@@ -26,7 +26,7 @@
 #include "asylo/platform/arch/include/trusted/time.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/shared_name.h"
-#include "common/inc/sgx_trts.h"
+#include "include/sgx_trts.h"
 
 using asylo::NanosecondsToTimeSpec;
 using asylo::NanosecondsToTimeVal;

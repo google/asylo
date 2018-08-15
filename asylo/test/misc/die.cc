@@ -19,7 +19,7 @@
 #include <cstdlib>
 
 #include "asylo/trusted_application.h"
-#include "common/inc/sgx_trts.h"
+#include "include/sgx_trts.h"
 
 namespace asylo {
 

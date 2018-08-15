@@ -53,7 +53,7 @@ cc_library(
         ":untrusted_sgx",
         "//asylo/platform/core:untrusted_core",
         "//asylo/util:status",
-        "@linux_sgx//:common_inc",
+        "@linux_sgx//:urts",
     ],
 )
 
@@ -82,8 +82,8 @@ UPDATE_SDK_DEPS_COMMAND = (
     "-e '1s!^!// Generated file. See bridge.edl\\n!' " +
     "-e 's!bridge_u.h!generated_bridge_u.h!' " +
     "-e 's!bridge_t.h!generated_bridge_t.h!' " +
-    "-e 's!sgx_trts.h!" + SGX_PREFIX + "common/inc/sgx_trts.h!' " +
-    "-e 's!sgx_edger8r.h!" + SGX_PREFIX + "common/inc/sgx_edger8r.h!' " +
+    "-e 's!sgx_trts.h!" + SGX_PREFIX + "include/sgx_trts.h!' " +
+    "-e 's!sgx_edger8r.h!" + SGX_PREFIX + "include/sgx_edger8r.h!' " +
     "$$file && " +
     "mv $$file $$(dirname $$file)/generated_$$(basename $$file); " +
     "done"
@@ -135,9 +135,8 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@linux_sgx//:common_inc",
-        "@linux_sgx//:common_inc_internal",
-        "@linux_sgx//:urts_inc",
+        "@linux_sgx//:public",
+        "@linux_sgx//:urts",
     ],
 )
 
@@ -163,7 +162,9 @@ cc_library(
         "include/trusted/memory.h",
         "include/trusted/register_signal.h",
     ],
-    copts = ["-mrdrnd"],
+    copts = [
+        "-mrdrnd",
+    ],
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
@@ -177,7 +178,8 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@linux_sgx//:common_inc",
+        "@linux_sgx//:public",
+        "@linux_sgx//:trts",
     ],
 )
 
@@ -198,23 +200,6 @@ cc_library(
     deps = ["//asylo/platform/core:shared_name"],
 )
 
-# Trusted threading implementation for SGX.
-cc_library(
-    name = "trusted_sgx_threading",
-    srcs = [
-        "sgx/trusted/threading.cc",
-    ],
-    linkstatic = 1,
-    visibility = [
-        ":__pkg__",
-        "//asylo/test:__subpackages__",
-    ],
-    deps = [
-        ":trusted_sgx_bridge",
-        "@linux_sgx//:common_inc",
-    ],
-)
-
 # Trusted side of the SGX SDK generated bridge.
 cc_library(
     name = "trusted_sgx_bridge",
@@ -229,7 +214,8 @@ cc_library(
     deps = [
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/core:shared_name",
-        "@linux_sgx//:common_inc",
+        "@linux_sgx//:public",
+        "@linux_sgx//:trts",
     ],
 )
 

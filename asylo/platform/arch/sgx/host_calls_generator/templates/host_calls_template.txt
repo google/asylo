@@ -21,7 +21,7 @@
 #include <errno.h>
 #include <sys/types.h>
 
-#include "common/inc/sgx_trts.h"
+#include "include/sgx_trts.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 
 #ifdef __cplusplus

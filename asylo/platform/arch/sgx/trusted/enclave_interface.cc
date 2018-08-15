@@ -18,8 +18,8 @@
 
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 
-#include "common/inc/sgx_thread.h"
-#include "common/inc/sgx_trts.h"
+#include "include/sgx_thread.h"
+#include "include/sgx_trts.h"
 
 #ifdef __cplusplus
 extern "C" {

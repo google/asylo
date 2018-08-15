@@ -43,7 +43,7 @@
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
-#include "common/inc/sgx_trts.h"
+#include "include/sgx_trts.h"
 
 namespace asylo {
 namespace {

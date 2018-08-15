@@ -23,7 +23,7 @@
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
-#include "common/inc/sgx_urts.h"
+#include "include/sgx_urts.h"
 
 namespace asylo {
 

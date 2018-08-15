@@ -97,7 +97,7 @@ cc_library(
         "//asylo/platform/system",
         "//asylo/util:status",
     ] + select({
-        "//asylo/platform/arch:sgx": ["@linux_sgx//:common_inc"],
+        "//asylo/platform/arch:sgx": ["@linux_sgx//:trts"],
         "//conditions:default": [],
     }),
 )

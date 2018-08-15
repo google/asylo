@@ -81,6 +81,7 @@ sgx_enclave(
     srcs = ["die.cc"],
     deps = [
         "//asylo:enclave_runtime",
+        "@linux_sgx//:trts",
     ],
 )
 
