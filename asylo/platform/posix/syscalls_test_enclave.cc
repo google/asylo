@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <sys/resource.h>
 #include <sys/uio.h>
+#include <sys/utsname.h>
 #include <unistd.h>
 #include <algorithm>
 #include <unordered_set>
@@ -101,6 +102,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunFStatTest(test_input.path_name(), output);
     } else if (test_input.test_target() == "lstat") {
       return RunLStatTest(test_input.path_name(), output);
+    } else if (test_input.test_target() == "uname") {
+      return RunUnameTest(output);
     } else if (test_input.test_target() == "writev") {
       return RunWritevTest(test_input.path_name());
     } else if (test_input.test_target() == "readv") {
@@ -186,6 +189,27 @@ class SyscallsEnclave : public EnclaveTestCase {
     proto_stat_buffer->set_st_blksize(
         static_cast<int64>(stat_buffer.st_blksize));
     proto_stat_buffer->set_st_blocks(static_cast<int64>(stat_buffer.st_blocks));
+  }
+
+  // Encodes a struct utsname in the utsname_syscall_return field of a
+  // SyscallsTestOutput protobuf.
+  void EncodeUtsNameInTestOutput(struct utsname &utsname_buf,
+                                 SyscallsTestOutput *test_output) {
+    SyscallsTestOutput::UtsName *proto_utsname =
+        test_output->mutable_utsname_syscall_return();
+
+    proto_utsname->set_sysname(utsname_buf.sysname,
+                               sizeof(utsname_buf.sysname));
+    proto_utsname->set_nodename(utsname_buf.nodename,
+                                sizeof(utsname_buf.nodename));
+    proto_utsname->set_release(utsname_buf.release,
+                               sizeof(utsname_buf.release));
+    proto_utsname->set_version(utsname_buf.version,
+                               sizeof(utsname_buf.version));
+    proto_utsname->set_machine(utsname_buf.machine,
+                               sizeof(utsname_buf.machine));
+    proto_utsname->set_domainname(utsname_buf.domainname,
+                                  sizeof(utsname_buf.domainname));
   }
 
   StatusOr<int> OpenFile(const std::string &path, int flags, mode_t mode) {
@@ -818,6 +842,25 @@ class SyscallsEnclave : public EnclaveTestCase {
     output_ret.set_int_syscall_return(lstat(path.c_str(), &stat_buffer));
 
     EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunUnameTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    struct utsname utsname_buf;
+
+    int ret = uname(&utsname_buf);
+    output_ret.set_int_syscall_return(ret);
+
+    if (ret == 0) {
+      EncodeUtsNameInTestOutput(utsname_buf, &output_ret);
+    } else {
+      EncodeErrnoValueInTestOutput(errno, &output_ret);
+    }
 
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);

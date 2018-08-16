@@ -750,4 +750,9 @@ int BridgeCpuSetCheckBit(int cpu, BridgeCpuSet *set) {
              : 0;
 }
 
+bool CStringCopy(const char *source_buf, char *dest_buf, size_t size) {
+  int ret = snprintf(dest_buf, size, "%s", source_buf);
+  return ret >= 0 && ret < size;
+}
+
 }  // namespace asylo

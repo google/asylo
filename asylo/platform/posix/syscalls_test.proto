@@ -78,6 +78,18 @@ message SyscallsTestOutput {
   // A serialization of a dynamically allocated structure returned/modified
   // by a system call e.g. a linked list.
   optional bytes serialized_proto_return = 6;
+
+  message UtsName {
+    optional string sysname = 1;
+    optional string nodename = 2;
+    optional string release = 3;
+    optional string version = 4;
+    optional string machine = 5;
+    optional string domainname = 6;
+  }
+
+  // Value of struct utsname from system call.
+  optional UtsName utsname_syscall_return = 7;
 }
 
 extend EnclaveInput {

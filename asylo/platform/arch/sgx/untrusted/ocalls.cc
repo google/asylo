@@ -31,6 +31,10 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE  // For |domainname| field in struct utsname.
+#endif
+#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <time.h>
@@ -527,6 +531,30 @@ int ocall_enc_untrusted_clock_gettime(bridge_clockid_t clk_id,
 
 int ocall_enc_untrusted_gettimeofday(struct bridge_timeval *tv, void *tz) {
   return gettimeofday(reinterpret_cast<struct timeval *>(tv), nullptr);
+}
+
+//////////////////////////////////////
+//         sys/utsname.h            //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
+  if (!bridge_utsname_val) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  struct utsname utsname_val;
+  int ret = uname(&utsname_val);
+  if (ret != 0) {
+    return ret;
+  }
+
+  if (!asylo::ConvertUtsName(utsname_val, bridge_utsname_val)) {
+    errno = EINTR;
+    return -1;
+  }
+
+  return ret;
 }
 
 //////////////////////////////////////

@@ -17,6 +17,7 @@
  */
 
 #include <dirent.h>
+#include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <net/if.h>
@@ -24,7 +25,9 @@
 #include <sched.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <unistd.h>
+#include <cstring>
 #include <iostream>
 #include <unordered_set>
 
@@ -127,6 +130,77 @@ void ExtractStatBufferFromTestOutput(const SyscallsTestOutput &test_output,
   stat_buffer->st_blksize =
       static_cast<blksize_t>(proto_stat_buffer.st_blksize());
   stat_buffer->st_blocks = static_cast<blkcnt_t>(proto_stat_buffer.st_blocks());
+}
+
+// Extracts a struct utsname from the utsname_syscall_return field of a
+// SyscallsTestOutput protobuf.
+bool ExtractUtsNameFromTestOutput(const SyscallsTestOutput &test_output,
+                                  struct utsname *utsname_buf) {
+  if (!test_output.has_utsname_syscall_return()) {
+    return false;
+  }
+
+  const SyscallsTestOutput::UtsName &proto_utsname =
+      test_output.utsname_syscall_return();
+
+  if (proto_utsname.has_sysname()) {
+    proto_utsname.sysname().copy(utsname_buf->sysname,
+                                 sizeof(utsname_buf->sysname));
+  } else {
+    return false;
+  }
+
+  if (proto_utsname.has_nodename()) {
+    proto_utsname.nodename().copy(utsname_buf->nodename,
+                                  sizeof(utsname_buf->nodename));
+  } else {
+    return false;
+  }
+
+  if (proto_utsname.has_release()) {
+    proto_utsname.release().copy(utsname_buf->release,
+                                 sizeof(utsname_buf->release));
+  } else {
+    return false;
+  }
+
+  if (proto_utsname.has_version()) {
+    proto_utsname.version().copy(utsname_buf->version,
+                                 sizeof(utsname_buf->version));
+  } else {
+    return false;
+  }
+
+  if (proto_utsname.has_machine()) {
+    proto_utsname.machine().copy(utsname_buf->machine,
+                                 sizeof(utsname_buf->machine));
+  } else {
+    return false;
+  }
+
+  if (proto_utsname.has_domainname()) {
+    proto_utsname.domainname().copy(utsname_buf->domainname,
+                                    sizeof(utsname_buf->domainname));
+  }  // No else { return false; } because |domainname| isn't required.
+
+  return true;
+}
+
+// Compares two struct utsname objects, returning |true| if they are equal, and
+// |false| otherwise.
+MATCHER_P(EqualsUtsName, rhs_utsname_buf, "") {
+  return (strncmp(arg.sysname, rhs_utsname_buf.sysname, sizeof(arg.sysname)) ==
+          0) &&
+         (strncmp(arg.nodename, rhs_utsname_buf.nodename,
+                  sizeof(arg.nodename)) == 0) &&
+         (strncmp(arg.release, rhs_utsname_buf.release, sizeof(arg.release)) ==
+          0) &&
+         (strncmp(arg.version, rhs_utsname_buf.version, sizeof(arg.version)) ==
+          0) &&
+         (strncmp(arg.machine, rhs_utsname_buf.machine, sizeof(arg.machine)) ==
+          0) &&
+         (strncmp(arg.domainname, rhs_utsname_buf.domainname,
+                  sizeof(arg.domainname)) == 0);
 }
 
 // Ensure that two sockaddrs are equal. This is used for verifying the output
@@ -744,6 +818,34 @@ TEST_F(SyscallsTest, LStatOnSymlink) {
   EXPECT_THAT(host_stat_buffer, EqualsStat(enclave_stat_buffer))
       << "Host lstat() and enclave lstat() not equal";
 }
+
+// Tests uname() by comparing the return value and value of the utsname buffer
+// inside and outside the enclave. Transmits the utsname structure across the
+// enclave boundary using |utsname_syscall_return|.
+TEST_F(SyscallsTest, Uname) {
+  SyscallsTestOutput test_output;
+
+  struct utsname host_utsname_buf;
+  ASSERT_EQ(uname(&host_utsname_buf), 0) << "Could not fetch host utsname";
+
+  ASSERT_TRUE(RunSyscallInsideEnclave("uname", /*file_path=*/"", &test_output))
+      << "Failed to execute uname() inside the enclave";
+
+  ASSERT_TRUE(test_output.has_int_syscall_return())
+      << "int_syscall_return field not set";
+  EXPECT_EQ(test_output.int_syscall_return(), 0)
+      << "uname() failed inside the enclave: "
+      << (test_output.has_errno_syscall_value() ? strerror(errno)
+                                                : "(no errno)");
+
+  // Translate from |utsname_syscall_return| to host struct utsname.
+  struct utsname enclave_utsname_buf;
+  EXPECT_TRUE(ExtractUtsNameFromTestOutput(test_output, &enclave_utsname_buf))
+      << "Failed to convert UtsName message to struct utsname";
+
+  EXPECT_THAT(host_utsname_buf, EqualsUtsName(enclave_utsname_buf));
+}
+
 
 // Tests writev() by write a scattered array to a file inside enclave, and then
 // read from it to compare the content.

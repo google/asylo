@@ -237,6 +237,13 @@ enclave {
         [user_check] void *tz) propagate_errno;
 
     //////////////////////////////////////
+    //          sys/utsname.h           //
+    //////////////////////////////////////
+
+    int ocall_enc_untrusted_uname(
+        [out] struct BridgeUtsName *bridge_utsname_val) propagate_errno;
+
+    //////////////////////////////////////
     //            unistd.h              //
     //////////////////////////////////////
 

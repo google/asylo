@@ -33,7 +33,9 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/utsname.h>
 #include <unistd.h>
+#include <cstring>
 #include <string>
 #include <vector>
 
@@ -819,6 +821,34 @@ int enc_untrusted_gettimeofday(struct timeval *tv, void *tz) {
   if (status != SGX_SUCCESS) {
     return -1;
   }
+  return ret;
+}
+
+//////////////////////////////////////
+//         sys/utsname.h            //
+//////////////////////////////////////
+
+int enc_untrusted_uname(struct utsname *utsname_val) {
+  if (!utsname_val) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  struct BridgeUtsName bridge_utsname_val;
+  int ret;
+  sgx_status_t status = ocall_enc_untrusted_uname(&ret, &bridge_utsname_val);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  } else if (ret != 0) {
+    return ret;
+  }
+
+  if (!asylo::ConvertUtsName(bridge_utsname_val, utsname_val)) {
+    errno = EINTR;
+    return -1;
+  }
+
   return ret;
 }
 

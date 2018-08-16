@@ -25,7 +25,8 @@
 extern "C" {
 #endif
 
-int uname(struct utsname *buf) { abort(); }
+// Retrieves system information from the host.
+int uname(struct utsname *buf) { return enc_untrusted_uname(buf); }
 
 #ifdef __cplusplus
 }  // extern "C"

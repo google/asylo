@@ -330,6 +330,24 @@ struct BridgeCpuSet {
   BridgeCpuSetWord words[BRIDGE_CPU_SET_NUM_WORDS];
 } ABSL_ATTRIBUTE_PACKED;
 
+// According to IETF RFC 1035, fully qualified domain names, such as those held
+// in utsname::nodename, may contain up to 255 characters. Therefore, in Asylo,
+// the fields of BridgeUtsname are defined to have length 256 in order to hold
+// 255 characters and a null byte.
+#define BRIDGE_UTSNAME_FIELD_LENGTH 256
+
+struct BridgeUtsName {
+  char sysname[BRIDGE_UTSNAME_FIELD_LENGTH];
+  char nodename[BRIDGE_UTSNAME_FIELD_LENGTH];
+  char release[BRIDGE_UTSNAME_FIELD_LENGTH];
+  char version[BRIDGE_UTSNAME_FIELD_LENGTH];
+  char machine[BRIDGE_UTSNAME_FIELD_LENGTH];
+
+  // The |domainname| field is a GNU extension of POSIX. It is included
+  // unconditionally here for compatibility with code that assumes its presence.
+  char domainname[BRIDGE_UTSNAME_FIELD_LENGTH];
+};
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

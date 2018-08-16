@@ -23,11 +23,10 @@
 extern "C" {
 #endif
 
-// In glibc, struct utsname is defined to have fields of length 65 on Linux.
-// However, according to IETF RFC 1035, fully qualified domain names, such as
-// those held in utsname::nodename, may contain up to 255 characters. Therefore,
-// in Asylo, the fields of struct utsname are defined to have length 256 in
-// order to hold 255 characters and a null byte.
+// According to IETF RFC 1035, fully qualified domain names, such as those held
+// in utsname::nodename, may contain up to 255 characters. Therefore, in Asylo,
+// the fields of struct utsname are defined to have length 256 in order to hold
+// 255 characters and a null byte.
 #define UTSNAME_FIELD_LENGTH 256
 
 struct utsname {
