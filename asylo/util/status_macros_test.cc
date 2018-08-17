@@ -20,6 +20,7 @@
 
 #include <string>
 
+#include "absl/strings/str_cat.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
@@ -66,8 +67,8 @@ TEST(AssignOrReturn, AssignsMultipleVariablesInSequence) {
     int value4;
     ASYLO_ASSIGN_OR_RETURN(
         value4, StatusOr<int>(Status(error::GoogleError::UNKNOWN, "EXPECTED")));
-    value4 = 0;  // Prevent 'unused error' at compile time.
-    return Status(error::GoogleError::UNKNOWN, "ERROR");
+    return Status(error::GoogleError::UNKNOWN,
+                  absl::StrCat("ERROR: assigned value ", value4));
   };
 
   EXPECT_THAT(func(), StatusIs(error::GoogleError::UNKNOWN, "EXPECTED"));
