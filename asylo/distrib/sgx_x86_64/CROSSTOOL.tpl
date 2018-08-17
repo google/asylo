@@ -54,6 +54,9 @@ toolchain {
   compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
   compiler_flag: "-D__LITTLE_ENDIAN"
   cxx_flag: "-std=gnu++11"
+  objcopy_embed_flag: "--input-target=binary"
+  objcopy_embed_flag: "--output-target=elf64-x86-64"
+  objcopy_embed_flag: "--binary-architecture=i386:x86-64"
 
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/posix/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/system/include"
@@ -74,8 +77,8 @@ toolchain {
   compiler_flag: "-Wno-unused-but-set-variable"
   compiler_flag: "-Wno-unused-local-typedefs"
   compiler_flag: "-Wno-unused-function"
+  compiler_flag: "-Wno-return-type"
   compiler_flag: "-D__ASYLO__"
-  compiler_flag: "-D__SGX_ENCLAVE__"
   compiler_flag: "-D__LITTLE_ENDIAN__"
   compiler_flag: "-DCOMPILER_GCC3"
   compiler_flag: "-D__LINUX_ERRNO_EXTENSIONS__"
@@ -529,6 +532,21 @@ toolchain {
     }
   }
 
+  feature {
+    name: "preprocessor_defines"
+    flag_set {
+      action: "preprocess-assemble"
+      action: "c-compile"
+      action: "c++-compile"
+      action: "c++-header-parsing"
+      action: "c++-module-compile"
+      flag_group {
+        iterate_over: 'preprocessor_defines'
+        flag: "-D%{preprocessor_defines}"
+      }
+    }
+  }
+
   # This differs from default behavior because the flags groups are merged.
   feature {
     name: "fdo_instrument"
@@ -696,17 +714,17 @@ toolchain {
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       flag_group {
-        flag: "-S"
-        expand_if_all_available: "output_assembly_file"
+        expand_if_all_available: 'output_assembly_file'
+        flag: '-S'
       }
       flag_group {
-        flag: "-E"
-        expand_if_all_available: "output_preprocess_file"
+        expand_if_all_available: 'output_preprocess_file'
+        flag: '-E'
       }
       flag_group {
-        flag: "-o"
-        flag: "%{output_file}"
-        expand_if_all_available: "output_file"
+        expand_if_all_available: 'output_file'
+        flag: '-o'
+        flag: '%{output_file}'
       }
     }
   }
@@ -793,6 +811,10 @@ toolchain {
         flag: "-lenclave"
         flag: "-Wl,-shared"
         flag: "-Wl,-no-undefined"
+      }
+      action: "c++-link-dynamic-library"
+      flag_group {
+        flag: "-static"
       }
     }
   }
