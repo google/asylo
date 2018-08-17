@@ -37,7 +37,7 @@ You can manually install the toolchain by following these steps:
     *   bison
     *   build-essential
     *   flex
-    *   libisl-dev
+    *   libisl-0.18-dev
     *   libmpc-dev
     *   libmpfr-dev
     *   rsync
@@ -48,7 +48,7 @@ You can manually install the toolchain by following these steps:
     For example, on Debian:
 
     ```bash
-    sudo apt-get install bison build-essential flex libisl-dev libmpc-dev \
+    sudo apt install bison build-essential flex libisl-0.18-dev libmpc-dev \
         libmpfr-dev rsync texinfo wget zlib1g-dev
     ```
 
@@ -80,12 +80,12 @@ The Asylo framework is built with Bazel, Google's open source build tool.
 You can manually install Bazel by following these steps:
 
 ```bash
-sudo apt-get install curl gnupg
+sudo apt install curl gnupg
 curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | \
     sudo tee /etc/apt/sources.list.d/bazel.list
-sudo apt-get update
-sudo apt-get install bazel openjdk-8-jdk-headless
+sudo apt update
+sudo apt install bazel openjdk-8-jdk-headless
 ```
 
 ## Additional dependencies
@@ -100,11 +100,7 @@ installed.
 On Debian, these can be installed with the following command:
 
 ```bash
-sudo apt-get install \
-    build-essential \
-    ocaml-nox \
-    ocamlbuild \
-    python-jinja2
+sudo apt install ocaml-nox ocamlbuild python-jinja2
 ```
 
 ## Next steps
