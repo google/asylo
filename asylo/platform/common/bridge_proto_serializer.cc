@@ -83,10 +83,10 @@ bool ConvertToSockaddrProtobuf(const struct sockaddr *in, SockaddrProto *out) {
 
 // Addrinfo Conversion Functions
 bool SetAddrinfoCanonname(const std::string *canonname, struct addrinfo *info) {
-  char *ai_canonname = static_cast<char *>(malloc(canonname->length()));
-  if (ai_canonname == nullptr) return false;
-  memcpy(ai_canonname, canonname->c_str(), canonname->length());
-  info->ai_canonname = ai_canonname;
+  info->ai_canonname = strdup(canonname->c_str());
+  if (info->ai_canonname == nullptr) {
+    return false;
+  }
   return true;
 }
 
