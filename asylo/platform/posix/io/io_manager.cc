@@ -45,11 +45,6 @@ std::shared_ptr<IOManager::IOContext> IOManager::FileDescriptorTable::Get(
   return fd_table_[fd];
 }
 
-bool IOManager::FileDescriptorTable::HasSharedIOContext(int fd) {
-  if (!IsFileDescriptorValid(fd)) return false;
-  return !fd_table_[fd].unique();
-}
-
 void IOManager::FileDescriptorTable::Delete(int fd) {
   if (!IsFileDescriptorValid(fd)) return;
   fd_table_[fd] = nullptr;
@@ -75,6 +70,7 @@ int IOManager::FileDescriptorTable::CopyFileDescriptor(int oldfd, int startfd) {
     return -1;
   }
   fd_table_[newfd] = fd_table_[oldfd];
+  fd_table_[oldfd]->IncrementFdReference();
   return newfd;
 }
 
@@ -85,6 +81,7 @@ int IOManager::FileDescriptorTable::CopyFileDescriptorToSpecifiedTarget(
     return -1;
   }
   fd_table_[newfd] = fd_table_[oldfd];
+  fd_table_[oldfd]->IncrementFdReference();
   return newfd;
 }
 
@@ -150,7 +147,8 @@ int IOManager::CloseFileDescriptor(int fd) {
     int ret = 0;
     // Only close the host file descriptor if this is the last reference to
     // it.
-    if (!fd_table_.HasSharedIOContext(fd)) {
+    context->DecrementFdReference();
+    if (context->IsNoFdReference()) {
       ret = context->Close();
     }
     fd_table_.Delete(fd);
@@ -225,6 +223,7 @@ int IOManager::Open(const char *path, int flags, mode_t mode) {
       absl::WriterMutexLock lock(&fd_table_lock_);
       int fd = fd_table_.Insert(context.get());
       if (fd >= 0) {
+        context->IncrementFdReference();
         context.release();
         return fd;
       }

@@ -27,6 +27,7 @@
 
 #include <poll.h>
 #include <stdint.h>
+#include <atomic>
 #include <cstdlib>
 #include <functional>
 #include <map>
@@ -58,6 +59,8 @@ class IOManager {
   // transparent inline encryption.
   class IOContext {
    public:
+    IOContext() : fd_reference_(0){}
+
     virtual ~IOContext() = default;
 
    protected:
@@ -193,8 +196,17 @@ class IOManager {
 
     virtual int GetHostFileDescriptor() { return -1; }
 
+    void IncrementFdReference() { fd_reference_++; }
+
+    void DecrementFdReference() { fd_reference_--; }
+
+    bool IsNoFdReference() { return fd_reference_ == 0; }
+
    private:
     friend class IOManager;
+
+    // Number of file descriptors that refer to the IOContext.
+    std::atomic<int> fd_reference_;
   };
 
   // A VirtualPathHandler maps file paths to appropriate behavior
@@ -271,10 +283,6 @@ class IOManager {
     // Returns the IOContext associated with a file descriptor, or nullptr if
     // no such context exists.
     std::shared_ptr<IOContext> Get(int fd);
-
-    // Returns whether the IOContext for |fd| is shared by more than one
-    // fd_table_ entry. Returns false if |fd| is not  valid.
-    bool HasSharedIOContext(int fd);
 
     // Removes an entry from the table, destroying the associated IOContext if
     // this is the last reference to the IOContext, and returns the file
