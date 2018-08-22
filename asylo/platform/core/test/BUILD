@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # Enclave test cases.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 load(
     "//asylo/bazel:asylo.bzl",
     "enclave_test",
@@ -135,6 +135,22 @@ cc_test(
     deps = [
         "//asylo/platform/core:untrusted_core",
         "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+sgx_enclave_configuration(
+    name = "many_threads_enclave_config",
+    tcs_num = "1000",
+)
+
+cc_enclave_test(
+    name = "untrusted_mutex_test",
+    srcs = ["untrusted_mutex_test.cc"],
+    enclave_config = ":many_threads_enclave_config",
+    tags = ["regression"],
+    deps = [
+        "//asylo/platform/core:untrusted_mutex",
         "@com_google_googletest//:gtest",
     ],
 )

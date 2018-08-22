@@ -1,8 +1,6 @@
-{{ generated_file_warning }}
-
 /*
  *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,21 +16,20 @@
  *
  */
 
-#include <arpa/inet.h>
-#include <errno.h>
-#include <sched.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <unistd.h>
+#ifndef ASYLO_PLATFORM_COMMON_FUTEX_H_
+#define ASYLO_PLATFORM_COMMON_FUTEX_H_
 
-#include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
-#include "asylo/platform/common/futex.h"
+#include <cstdint>
 
-{% for ocall in host_calls -%}
-{{ ocall.return_type }} ocall_enc_untrusted_{{ ocall.name }}(
-    {{- comma_separate_parameters(ocall.parameters) }}) {
-  return {{ ocall.name }}({{ comma_separate_arguments(ocall.parameters) }});
+extern "C" {
+
+// Tests that the memory location `futex` contains the value `expected` and, if
+// so, suspends the calling thread until `futex` is notified by a call to
+// `futex_wake`. Otherwise returns immediately.
+void sys_futex_wait(int32_t *futex, int32_t expected);
+
+// Wakes at most one of the threads waiting on `futex`.
+void sys_futex_wake(int32_t *futex);
+
 }
-
-{% endfor %}
+#endif  // ASYLO_PLATFORM_COMMON_FUTEX_H_

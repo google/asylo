@@ -141,11 +141,16 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "spin_lock",
+    hdrs = ["spin_lock.h"],
+)
+
 # Synchronized pool of tokens in shared memory.
 cc_library(
     name = "shared_token_pool",
-    srcs = ["spin_lock.h"],
     hdrs = ["shared_token_pool.h"],
+    deps = [":spin_lock"],
 )
 
 cc_test(
@@ -157,4 +162,11 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
+)
+
+# Utility functions for working with Linux futex objects.
+cc_library(
+    name = "futex",
+    srcs = ["futex.cc"],
+    hdrs = ["futex.h"],
 )

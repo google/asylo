@@ -108,6 +108,20 @@ cc_library(
     ],
 )
 
+# An untrusted mutex object which depends on host kernel resources.
+cc_library(
+    name = "untrusted_mutex",
+    srcs = [
+        "untrusted_mutex.cc",
+    ],
+    hdrs = [
+        "untrusted_mutex.h",
+    ],
+    deps = [
+        "//asylo/platform/arch:trusted_arch",
+    ],
+)
+
 # Shared name data type used by both trusted and untrusted code.
 cc_library(
     name = "shared_name",

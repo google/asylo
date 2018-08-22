@@ -283,6 +283,38 @@ host_calls {
   }
 }
 
+####################################
+##             Futex              ##
+####################################
+
+host_calls {
+  name: "sys_futex_wait"
+  parameters {
+    name: "futex"
+    type: "int32_t *"
+    pointer_attributes {
+      attribute: USER_CHECK
+    }
+  }
+  parameters {
+    name: "expected"
+    type: "int32_t"
+  }
+  return_type: "void"
+}
+
+host_calls {
+  name: "sys_futex_wake"
+  parameters {
+    name: "futex"
+    type: "int32_t *"
+    pointer_attributes {
+      attribute: USER_CHECK
+    }
+  }
+  return_type: "void"
+}
+
 ######################################
 ##             sched.h              ##
 ######################################
