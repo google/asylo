@@ -35,6 +35,7 @@
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include <utime.h>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -911,6 +912,21 @@ pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage) {
     *wstatus = asylo::FromBridgeWStatus(bridge_wstatus);
   }
   asylo::FromBridgeRUsage(&bridge_rusage, rusage);
+  return ret;
+}
+
+//////////////////////////////////////
+//           utime.h                //
+//////////////////////////////////////
+
+int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
+  int ret;
+  struct bridge_utimbuf tmp_bridge_utimbuf;
+  sgx_status_t status = ocall_enc_untrusted_utime(
+      &ret, filename, asylo::ToBridgeUtimbuf(times, &tmp_bridge_utimbuf));
+  if (status != SGX_SUCCESS) {
+    return -1;
+  }
   return ret;
 }
 

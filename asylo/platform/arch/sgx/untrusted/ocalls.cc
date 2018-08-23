@@ -39,6 +39,7 @@
 #include <syslog.h>
 #include <time.h>
 #include <unistd.h>
+#include <utime.h>
 #include <algorithm>
 
 #include "absl/memory/memory.h"
@@ -592,6 +593,16 @@ pid_t ocall_enc_untrusted_wait3(struct BridgeWStatus *wstatus, int options,
     *wstatus = asylo::ToBridgeWStatus(tmp_wstatus);
   }
   return ret;
+}
+
+//////////////////////////////////////
+//           utime.h                //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_utime(const char *filename,
+                              const struct bridge_utimbuf *times) {
+  struct utimbuf tmp;
+  return utime(filename, asylo::FromBridgeUtimbuf(times, &tmp));
 }
 
 //////////////////////////////////////

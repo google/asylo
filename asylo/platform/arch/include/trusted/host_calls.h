@@ -216,6 +216,12 @@ pid_t enc_untrusted_getpid();
 pid_t enc_untrusted_getppid();
 
 //////////////////////////////////////
+//            utime.h               //
+//////////////////////////////////////
+
+int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
+
+//////////////////////////////////////
 //           wait.h                 //
 //////////////////////////////////////
 

@@ -262,6 +262,11 @@ struct bridge_timespec {
   int64_t tv_nsec;
 } ABSL_ATTRIBUTE_PACKED;
 
+struct bridge_utimbuf {
+  int64_t actime;
+  int64_t modtime;
+} ABSL_ATTRIBUTE_PACKED;
+
 struct bridge_stat {
   int64_t st_dev;
   int64_t st_ino;

@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/wait.h>
 #include <syslog.h>
+#include <utime.h>
 
 #include "asylo/platform/common/bridge_types.h"
 
@@ -164,6 +165,14 @@ struct timespec *FromBridgeTimespec(const struct bridge_timespec *bridge_tp,
 // Converts |tp| to a bridge timespec.
 struct bridge_timespec *ToBridgeTimespec(const struct timespec *tp,
                                          struct bridge_timespec *bridge_tp);
+
+// Converts |ut| to a runtime timespec.
+struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
+                                  struct utimbuf *ut);
+
+// Converts |ut| to a bridge timespec.
+struct bridge_utimbuf *ToBridgeUtimbuf(const struct utimbuf *ut,
+                                       struct bridge_utimbuf *bridge_ut);
 
 // Converts |bridge_tv| to a runtime timeval.
 struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,

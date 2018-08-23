@@ -75,6 +75,7 @@ cc_library(
         "time.cc",
         "uio.cc",
         "unistd.cc",
+        "utime.cc",
         "utsname.cc",
         "wait.cc",
     ],
