@@ -19,16 +19,21 @@
 #ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_ENCLAVE_INTERFACE_H_
 #define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_ENCLAVE_INTERFACE_H_
 
-#include <pthread.h>
-
+#include <cstdint>
+#include <cstdlib>
 #include <cstring>
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-// Returns the ID of the calling thread. Same as pthread_self(3).
-pthread_t enc_thread_self();
+// Returns a unique identifier for the calling thread, which is guaranteed to be
+// a 64-bit non-zero scalar value on all architectures.
+uint64_t enc_thread_self();
+
+// An invalid thread ID constant. This value will never be returned by
+// enc_thread_self.
+constexpr uint64_t kInvalidThread = 0;
 
 // Validates that the address-range [|address|, |address| +|size|) is fully
 // contained within the enclave.

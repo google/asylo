@@ -19,11 +19,11 @@
 #include <pthread.h>
 
 #include <signal.h>
-#include <sys/reent.h>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
+#include <type_traits>
 #include <unordered_map>
 
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
@@ -245,7 +245,13 @@ extern "C" {
 
 // Functions available via <pthread.h>
 
-pthread_t pthread_self() { return enc_thread_self(); }
+pthread_t pthread_self() {
+  static_assert(sizeof(pthread_t) == sizeof(uint64_t) &&
+                    (std::is_pointer<pthread_t>::value ||
+                     std::is_integral<pthread_t>::value),
+                "pthread_t must be a 64-bit integer or pointer type.");
+  return static_cast<pthread_t>(enc_thread_self());
+}
 
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
@@ -274,9 +280,7 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   return 0;
 }
 
-int pthread_key_delete(pthread_key_t key) {
-  return 0;
-}
+int pthread_key_delete(pthread_key_t key) { return 0; }
 
 void *pthread_getspecific(pthread_key_t key) {
   if (!tls_map) {
@@ -538,26 +542,5 @@ int pthread_attr_destroy(pthread_attr_t *attr) { return 0; }
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) { return 0; }
 
 int pthread_cancel(pthread_t unused) { return ENOSYS; }
-
-// Following functions are required to keep Newlib's malloc thread safe.
-static pthread_mutex_t malloc_mutex = PTHREAD_MUTEX_RECURSIVE_INITIALIZER;
-
-void __malloc_lock(struct reent *) {
-  // If pthread_self() == nullptr Enclave is in initialization state and single
-  // threaded.
-  if (!pthread_self()) {
-    return;
-  }
-  pthread_mutex_lock(&malloc_mutex);
-}
-
-void __malloc_unlock(struct reent *) {
-  // If pthread_self() == nullptr Enclave is in initialization state and single
-  // threaded.
-  if (!pthread_self()) {
-    return;
-  }
-  pthread_mutex_unlock(&malloc_mutex);
-}
 
 }  // extern "C"

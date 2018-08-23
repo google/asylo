@@ -59,6 +59,7 @@ cc_library(
         "grp.cc",
         "ifaddrs.cc",
         "ioctl.cc",
+        "malloc_lock.cc",
         "math.cc",
         "mman.cc",
         "poll.cc",

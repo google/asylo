@@ -25,7 +25,16 @@
 extern "C" {
 #endif
 
-pthread_t enc_thread_self() { return sgx_thread_self(); }
+// The SGX SDK function sgx_thread_self() returns nullptr during early
+// initialization. To return a non-zero, distinct value for each thread and
+// satisfy the specification of enc_thread_self(), return the address of a
+// thread-local variable instead. Since each thread is allocated a distinct
+// instance of this variable, and all instances are in the same address space,
+// this guarantees a distinct non-zero value is provisioned to each thread.
+uint64_t enc_thread_self() {
+  static thread_local int thread_identity;
+  return reinterpret_cast<uint64_t>(&thread_identity);
+}
 
 bool enc_is_within_enclave(void const* address, size_t size) {
   return sgx_is_within_enclave(address, size) == 1;

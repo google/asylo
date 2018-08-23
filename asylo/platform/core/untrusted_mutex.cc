@@ -46,8 +46,6 @@ constexpr int32_t kHeld = 1;  // The futex is locked and zero threads are
 constexpr int32_t kQueued = 2;  // The futex is locked and there may be threads
                                 // waiting on futex_wake.
 
-constexpr int32_t kInvalidThread = 0;  // Invalid thread ID constant.
-
 // Atomically compare the value at `location` to `expected` and, if-and-only-if
 // they match, replace the value at `location` with `desired`. Returns the value
 // stored `location` prior to the attempted exchange.
