@@ -512,7 +512,12 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
     errno = EINTR;
     return nullptr;
   }
-  return ret;
+  // Instead of returning |ret| (which points to untrusted memory), we return
+  // |dst| upon success (when |ret| is non-null) and nullptr upon failure.
+  if (!ret) {
+    return nullptr;
+  }
+  return dst;
 }
 
 int enc_untrusted_getaddrinfo(const char *node, const char *service,
