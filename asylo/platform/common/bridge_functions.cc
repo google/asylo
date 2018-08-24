@@ -107,6 +107,7 @@ const std::unordered_map<int, int> *CreateBridgeSignalMap() {
   signal_map->insert({SIGPROF, BRIDGE_SIGPROF});
   signal_map->insert({SIGWINCH, BRIDGE_SIGWINCH});
   signal_map->insert({SIGSYS, BRIDGE_SIGSYS});
+  signal_map->insert({SIGTERM, BRIDGE_SIGTERM});
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
   for (int signal = SIGRTMIN; signal <= SIGRTMAX; ++signal) {
     signal_map->insert({signal, signal - SIGRTMIN + BRIDGE_SIGRTMIN});
