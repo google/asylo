@@ -108,6 +108,12 @@ cc_library(
     ],
 )
 
+# Atomic utility functions.
+cc_library(
+    name = "atomic",
+    hdrs = ["atomic.h"],
+)
+
 # An untrusted mutex object which depends on host kernel resources.
 cc_library(
     name = "untrusted_mutex",
@@ -118,6 +124,22 @@ cc_library(
         "untrusted_mutex.h",
     ],
     deps = [
+        ":atomic",
+        "//asylo/platform/arch:trusted_arch",
+    ],
+)
+
+# An trusted spin lock object.
+cc_library(
+    name = "trusted_spin_lock",
+    srcs = [
+        "trusted_spin_lock.cc",
+    ],
+    hdrs = [
+        "trusted_spin_lock.h",
+    ],
+    deps = [
+        ":atomic",
         "//asylo/platform/arch:trusted_arch",
     ],
 )

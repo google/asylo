@@ -23,6 +23,7 @@
 
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/core/atomic.h"
 
 namespace asylo {
 
@@ -45,37 +46,6 @@ constexpr int32_t kHeld = 1;  // The futex is locked and zero threads are
 
 constexpr int32_t kQueued = 2;  // The futex is locked and there may be threads
                                 // waiting on futex_wake.
-
-// Atomically compare the value at `location` to `expected` and, if-and-only-if
-// they match, replace the value at `location` with `desired`. Returns the value
-// stored `location` prior to the attempted exchange.
-template <typename T>
-inline T CompareAndSwap(T *location, T expected, T desired) {
-  T previous = expected;
-  __atomic_compare_exchange_n(location,
-                              /*expected=*/&previous,
-                              /*desired=*/desired,
-                              /*weak=*/false,
-                              /*success_memorder=*/__ATOMIC_SEQ_CST,
-                              /*failure_memorder=*/__ATOMIC_SEQ_CST);
-  return previous;
-}
-
-// Atomically decrements the value at `location`, returning the value at
-// `location` prior to being decremented.
-template <typename T>
-inline T AtomicDecrement(T *location) {
-  return __atomic_fetch_sub(location, 1, __ATOMIC_SEQ_CST);
-}
-
-// Sets the value at location to zero using __ATOMIC_RELEASE memory ordering.
-template <typename T>
-inline void AtomicRelease(T *location) {
-  __atomic_clear(location, __ATOMIC_RELEASE);
-}
-
-// The size of an x86-64 cache line.
-constexpr size_t kCacheLineSize = 64;
 
 }  // namespace
 
@@ -169,7 +139,7 @@ void UntrustedMutex::Unlock() {
              "Invalid futex value in UntrustedMuted::Unlock: %i\n",
              *untrusted_futex_);
     enc_untrusted_puts(buf);
-    abort();
+    return;
   }
 
   // It is a fatal error to attempt to unlock a mutex the calling thread

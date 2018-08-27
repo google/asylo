@@ -20,46 +20,59 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/core/untrusted_mutex.h"
 
 namespace asylo {
 namespace {
 
-TEST(UntrustedMutexTest, RecursiveTest) {
-  UntrustedMutex mutex(true);
-  EXPECT_FALSE(mutex.Owned());
-  mutex.Lock();
-  EXPECT_TRUE(mutex.Owned());
-  mutex.Lock();
-  EXPECT_TRUE(mutex.Owned());
-  mutex.Lock();
-  EXPECT_TRUE(mutex.Owned());
-  mutex.Unlock();
-  EXPECT_TRUE(mutex.Owned());
-  mutex.Unlock();
-  EXPECT_TRUE(mutex.Owned());
-  mutex.Unlock();
-  EXPECT_FALSE(mutex.Owned());
-  ASSERT_TRUE(mutex.TryLock());
+constexpr int kManyThreads = 12;
+
+template <typename LockType>
+class LockTest : public ::testing::Test {
+ protected:
+  LockTest() : lock_(true), non_recursive_(false) {}
+  LockType lock_;
+  LockType non_recursive_;
+};
+
+typedef ::testing::Types<UntrustedMutex, TrustedSpinLock> Implementations;
+
+TYPED_TEST_CASE(LockTest, Implementations);
+
+TYPED_TEST(LockTest, RecursiveTest) {
+  EXPECT_FALSE(this->lock_.Owned());
+  this->lock_.Lock();
+  EXPECT_TRUE(this->lock_.Owned());
+  this->lock_.Lock();
+  EXPECT_TRUE(this->lock_.Owned());
+  this->lock_.Lock();
+  EXPECT_TRUE(this->lock_.Owned());
+  this->lock_.Unlock();
+  EXPECT_TRUE(this->lock_.Owned());
+  this->lock_.Unlock();
+  EXPECT_TRUE(this->lock_.Owned());
+  this->lock_.Unlock();
+  EXPECT_FALSE(this->lock_.Owned());
+  ASSERT_TRUE(this->lock_.TryLock());
 }
 
-TEST(UntrustedMutexTest, RecursiveManyThreadsTest) {
-  UntrustedMutex mutex(true);
+TYPED_TEST(LockTest, RecursiveManyThreadsTest) {
   int shared_counter = 0;
   std::vector<std::thread> threads;
-  for (int i = 0; i < 64; i++) {
+  for (int i = 0; i < kManyThreads; i++) {
     threads.emplace_back([&]() {
       for (int i = 0; i < 128 * 1024; i++) {
-        mutex.Lock();
-        mutex.Lock();
-        EXPECT_TRUE(mutex.TryLock());
+        this->lock_.Lock();
+        this->lock_.Lock();
+        EXPECT_TRUE(this->lock_.TryLock());
         EXPECT_EQ(shared_counter, 0);
         shared_counter++;
         EXPECT_EQ(shared_counter, 1);
         shared_counter--;
-        mutex.Unlock();
-        mutex.Unlock();
-        mutex.Unlock();
+        this->lock_.Unlock();
+        this->lock_.Unlock();
+        this->lock_.Unlock();
       }
     });
   }
@@ -71,21 +84,19 @@ TEST(UntrustedMutexTest, RecursiveManyThreadsTest) {
   EXPECT_EQ(shared_counter, 0);
 }
 
-
-TEST(UntrustedMutexTest, NonRecursiveManyThreadsTest) {
-  UntrustedMutex mutex(false);
+TYPED_TEST(LockTest, NonRecursiveManyThreadsTest) {
   int shared_counter = 0;
   std::vector<std::thread> threads;
-  for (int i = 0; i < 64; i++) {
+  for (int i = 0; i < kManyThreads; i++) {
     threads.emplace_back([&]() {
       for (int i = 0; i < 128 * 1024; i++) {
-        mutex.Lock();
-        EXPECT_FALSE(mutex.TryLock());
+        this->non_recursive_.Lock();
+        EXPECT_FALSE(this->non_recursive_.TryLock());
         EXPECT_EQ(shared_counter, 0);
         shared_counter++;
         EXPECT_EQ(shared_counter, 1);
         shared_counter--;
-        mutex.Unlock();
+        this->non_recursive_.Unlock();
       }
     });
   }
@@ -96,7 +107,6 @@ TEST(UntrustedMutexTest, NonRecursiveManyThreadsTest) {
 
   EXPECT_EQ(shared_counter, 0);
 }
-
 
 }  // namespace
 }  // namespace asylo

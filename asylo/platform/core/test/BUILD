@@ -145,11 +145,12 @@ sgx_enclave_configuration(
 )
 
 cc_enclave_test(
-    name = "untrusted_mutex_test",
-    srcs = ["untrusted_mutex_test.cc"],
+    name = "lock_test",
+    srcs = ["lock_test.cc"],
     enclave_config = ":many_threads_enclave_config",
     tags = ["regression"],
     deps = [
+        "//asylo/platform/core:trusted_spin_lock",
         "//asylo/platform/core:untrusted_mutex",
         "@com_google_googletest//:gtest",
     ],
