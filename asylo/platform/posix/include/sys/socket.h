@@ -67,10 +67,10 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
-// No implemention provided.
+// No implementation provided.
 void freeaddrinfo(struct addrinfo *res);
 
-// No implemention provided.
+// No implementation provided.
 int getaddrinfo(const char *node, const char *service,
                 const struct addrinfo *hints, struct addrinfo **res);
 
@@ -83,14 +83,14 @@ int getpeername(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 
 int listen(int sockfd, int backlog);
 
-// No implemention provided.
+// No implementation provided.
 ssize_t recv(int sockfd, void *buf, size_t len, int flags);
 
 // No implementation provided.
 ssize_t recvfrom(int sockfd, void *buf, size_t len, int flags,
                  struct sockaddr *src_addr, socklen_t *addrlen);
 
-// No implemention provided.
+// No implementation provided.
 ssize_t recvmsg(int sockfd, struct msghdr *msg, int flags);
 
 ssize_t send(int sockfd, const void *buf, size_t len, int flags);
@@ -99,9 +99,13 @@ ssize_t sendmsg(int sockfd, const struct msghdr *msg, int flags);
 int setsockopt(int socket, int level, int option_name, const void *option_value,
                socklen_t option_len);
 
-// No implemention provided.
+// No implementation provided.
 int shutdown(int sockfd, int how);
+
 int socket(int domain, int type, int protocol);
+
+// No implementation provided.
+int socketpair(int domain, int type, int protocol, int sv[2]);
 
 // For setsockopt(2)
 #define SOL_SOCKET 1

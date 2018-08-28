@@ -96,4 +96,8 @@ struct servent *getservbyport(int port, const char *proto) {
   abort();
 }
 
+int socketpair(int domain, int type, int protocol, int sv[2]) {
+  abort();
+}
+
 }  // extern "C"
