@@ -61,15 +61,13 @@ class EnclaveServer final : public TrustedApplication {
 
   EnclaveServer(std::unique_ptr<::grpc::Service> service,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
-      : running_{false},
-        service_{std::move(service)},
+      : service_{std::move(service)},
         service_factory_{NoFactory},
         credentials_{credentials} {}
 
   EnclaveServer(GrpcServiceFactory service_factory,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
-      : running_{false},
-        service_factory_{service_factory},
+      : service_factory_{service_factory},
         credentials_{credentials} {}
 
   ~EnclaveServer() = default;
@@ -182,9 +180,6 @@ class EnclaveServer final : public TrustedApplication {
 
   // A gRPC server hosting |messenger_|.
   std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex);
-
-  // Indicates whether the server has been started.
-  bool running_;
 
   // The host and port of the server's address.
   std::string host_;
