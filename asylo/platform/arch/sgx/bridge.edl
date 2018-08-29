@@ -119,7 +119,7 @@ enclave {
                                    [in, out] bridge_size_t *addrlen)
                                    propagate_errno;
     char *ocall_enc_untrusted_inet_ntop(int af,
-                                        [in, size=buf_size] const void *src,
+                                        [in, size=src_size] const void *src,
                                         bridge_size_t src_size,
                                         [out, size=buf_size] char *dst,
                                         bridge_size_t buf_size) propagate_errno;
