@@ -30,6 +30,9 @@
 
 namespace asylo {
 
+EnclaveTestLauncher::EnclaveTestLauncher()
+    : manager_(nullptr), client_(nullptr), loader_(nullptr) {}
+
 Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
                                   const EnclaveConfig &econfig,
                                   const std::string &enclave_url) {
@@ -50,6 +53,10 @@ Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
 
 Status EnclaveTestLauncher::Run(const EnclaveInput &input,
                                 EnclaveOutput *output) {
+  if (!client_) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  "No EnclaveClient available");
+  }
   return client_->EnterAndRun(input, output);
 }
 
@@ -57,6 +64,10 @@ Status EnclaveTestLauncher::TearDown(const EnclaveFinal &efinal,
                                      bool skipTearDown) {
   if (!client_) {
     return Status::OkStatus();
+  }
+  if (!manager_) {
+    EnclaveManager::Configure(EnclaveManagerOptions());
+    ASYLO_ASSIGN_OR_RETURN(manager_, EnclaveManager::Instance());
   }
   return manager_->DestroyEnclave(client_, efinal, skipTearDown);
 }

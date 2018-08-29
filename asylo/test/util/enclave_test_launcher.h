@@ -29,16 +29,21 @@ namespace asylo {
 // Handle setup and teardown of a single enclave .so for testing.
 class EnclaveTestLauncher {
  public:
+  EnclaveTestLauncher();
+
   // Loads and initializes the enclave passed in |enclave_path| and calls
   // EnterAndInitialize with |econfig|.
   Status SetUp(const std::string &enclave_path, const EnclaveConfig &econfig,
                const std::string &enclave_url);
 
-  // Calls the client's EnterAndRun method with input.
+  // Calls the client's EnterAndRun method with input. Returns
+  // PRECONDITION_FAILED if SetUp() has not yet been invoked successfully to
+  // initialize the enclave under test.
   Status Run(const EnclaveInput &input, EnclaveOutput *output);
 
   // Runs EnterAndFinalize with |efinal| unless |skipTearDown| is true, and then
-  // destroys the enclave.
+  // destroys the enclave. Returns OK if there is no enclave under test because
+  // SetUp() has not been called successfully.
   Status TearDown(const EnclaveFinal &efinal, bool skipTearDown = false);
 
   // Mutable access to the loaded client.
