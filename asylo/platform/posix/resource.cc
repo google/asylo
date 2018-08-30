@@ -21,6 +21,7 @@
 
 #include <sys/resource.h>
 
+#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 
 int getrlimit(int resource, struct rlimit *rlim) {
@@ -41,6 +42,10 @@ int setrlimit(int resource, const struct rlimit *rlim) {
       errno = ENOSYS;
       return -1;
   }
+}
+
+int getrusage(int who, struct rusage *usage) {
+  return enc_untrusted_getrusage(who, usage);
 }
 
 #endif  // THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_RESOURCE_H_

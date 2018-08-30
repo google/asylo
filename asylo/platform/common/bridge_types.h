@@ -52,6 +52,13 @@ enum SysconfConstants {
   NPROCESSORS_CONF = 2,
 };
 
+// The target for getrusage(2) that are supported inside the enclave.
+enum RUsageTarget {
+  TARGET_UNKNOWN = 0,
+  BRIDGE_RUSAGE_SELF = 1,
+  BRIDGE_RUSAGE_CHILDREN = 2,
+};
+
 // The wait options that are supported inside the enclave.
 enum WaitOptions {
   BRIDGE_WNOHANG = 1,

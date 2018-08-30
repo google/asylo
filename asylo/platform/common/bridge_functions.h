@@ -51,6 +51,14 @@ int FromBridgeWaitOptions(int bridge_wait_options);
 // wait options are provided.
 int ToBridgeWaitOptions(int wait_options);
 
+// Converts |bridge_rusage_target| to a runtime rusage target. Returns -1 if
+// unsuccessful.
+int FromBridgeRUsageTarget(enum RUsageTarget bridge_rusage_target);
+
+// Converts |rusage_target| to a bridge rusage target. Returns TARGET_UNKNOWN if
+// unsuccessful.
+enum RUsageTarget ToBridgeRUsageTarget(int rusage_target);
+
 // Converts the sigpromask action |bridge_how| to a runtime signal mask action.
 // Returns -1 if unsuccessful.
 int FromBridgeSigMaskAction(int bridge_how);

@@ -173,6 +173,12 @@ int enc_untrusted_register_signal_handler(
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 
 //////////////////////////////////////
+//        sys/resource.h            //
+//////////////////////////////////////
+
+int enc_untrusted_getrusage(int who, struct rusage *usage);
+
+//////////////////////////////////////
 //          sys/stat.h              //
 //////////////////////////////////////
 
