@@ -167,11 +167,12 @@ struct bridge_stat *ToBridgeStat(const struct stat *statbuf,
 // Copies |bridge_addr| to a runtime sockaddr up to sizeof(struct
 // bridge_sockaddr). Returns nullptr if unsuccessful.
 struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,
-                                    struct sockaddr *addr);
+                                    struct sockaddr *addr, socklen_t *addrlen);
 
 // Copies |addr| to a bridge sockaddr up to sizeof(struct bridge_sockaddr).
 // Returns nullptr if unsuccessful.
 struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,
+                                         socklen_t addrlen,
                                          struct bridge_sockaddr *bridge_addr);
 
 // Converts |bridge_tp| to a runtime timespec.

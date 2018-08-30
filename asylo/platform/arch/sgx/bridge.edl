@@ -109,14 +109,13 @@ enclave {
     //////////////////////////////////////
 
     int ocall_enc_untrusted_connect(int sockfd,
-                                    [in] const struct bridge_sockaddr *addr,
-                                    bridge_size_t addrlen) propagate_errno;
+                                    [in] const struct bridge_sockaddr *addr)
+                                    propagate_errno;
     int ocall_enc_untrusted_bind(int sockfd,
-                                 [in] const struct bridge_sockaddr *addr,
-                                 bridge_size_t addrlen) propagate_errno;
+                                 [in] const struct bridge_sockaddr *addr)
+                                 propagate_errno;
     int ocall_enc_untrusted_accept(int sockfd,
-                                   [out] struct bridge_sockaddr *addr,
-                                   [in, out] bridge_size_t *addrlen)
+                                   [out] struct bridge_sockaddr *addr)
                                    propagate_errno;
     char *ocall_enc_untrusted_inet_ntop(int af,
                                         [in, size=src_size] const void *src,
@@ -150,13 +149,11 @@ enclave {
         propagate_errno;
 
     int ocall_enc_untrusted_getsockname(int sockfd,
-                                        [out] struct bridge_sockaddr *addr,
-                                        [in, out] bridge_size_t *addrlen)
+                                        [out] struct bridge_sockaddr *addr)
                                         propagate_errno;
 
     int ocall_enc_untrusted_getpeername(int sockfd,
-                                        [out] struct bridge_sockaddr *addr,
-                                        [in, out] bridge_size_t *addrlen)
+                                        [out] struct bridge_sockaddr *addr)
                                         propagate_errno;
 
     //////////////////////////////////////

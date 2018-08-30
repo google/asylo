@@ -412,9 +412,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
                          socklen_t *addrlen) {
   int ret;
   struct bridge_sockaddr tmp;
-  bridge_size_t tmp_len = static_cast<bridge_size_t>(sizeof(tmp));
-  sgx_status_t status =
-      ocall_enc_untrusted_accept(&ret, sockfd, &tmp, &tmp_len);
+  sgx_status_t status = ocall_enc_untrusted_accept(&ret, sockfd, &tmp);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
@@ -423,8 +421,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
     return ret;
   }
   if (addr && addrlen) {
-    asylo::FromBridgeSockaddr(&tmp, addr);
-    *addrlen = static_cast<socklen_t>(tmp_len);
+    asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
   }
   return ret;
 }
@@ -434,8 +431,7 @@ int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
   int ret;
   struct bridge_sockaddr tmp;
   sgx_status_t status = ocall_enc_untrusted_bind(
-      &ret, sockfd, asylo::ToBridgeSockaddr(addr, &tmp),
-      static_cast<bridge_size_t>(addrlen));
+      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp));
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
@@ -448,8 +444,7 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
   int ret;
   struct bridge_sockaddr tmp;
   sgx_status_t status = ocall_enc_untrusted_connect(
-      &ret, sockfd, asylo::ToBridgeSockaddr(addr, &tmp),
-      static_cast<bridge_size_t>(addrlen));
+      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp));
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
@@ -602,32 +597,28 @@ int enc_untrusted_setsockopt(int sockfd, int level, int optname,
 int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen) {
   int ret;
-  bridge_size_t tmp_addrlen = static_cast<bridge_size_t>(*addrlen);
   struct bridge_sockaddr tmp;
   sgx_status_t status =
-      ocall_enc_untrusted_getsockname(&ret, sockfd, &tmp, &tmp_addrlen);
+      ocall_enc_untrusted_getsockname(&ret, sockfd, &tmp);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
   }
-  *addrlen = static_cast<socklen_t>(tmp_addrlen);
-  asylo::FromBridgeSockaddr(&tmp, addr);
+  asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
   return ret;
 }
 
 int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen) {
   int ret;
-  bridge_size_t tmp_addrlen = static_cast<bridge_size_t>(*addrlen);
   struct bridge_sockaddr tmp;
   sgx_status_t status =
-      ocall_enc_untrusted_getpeername(&ret, sockfd, &tmp, &tmp_addrlen);
+      ocall_enc_untrusted_getpeername(&ret, sockfd, &tmp);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;
   }
-  *addrlen = static_cast<socklen_t>(tmp_addrlen);
-  asylo::FromBridgeSockaddr(&tmp, addr);
+  asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
   return ret;
 }
 

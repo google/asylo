@@ -203,36 +203,35 @@ bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(int fd, void *buf,
 //             Sockets              //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_connect(int sockfd, const struct bridge_sockaddr *addr,
-                                bridge_size_t addrlen) {
+int ocall_enc_untrusted_connect(int sockfd,
+                                const struct bridge_sockaddr *addr) {
   struct bridge_sockaddr tmp;
-  int ret = connect(sockfd,
-                    asylo::FromBridgeSockaddr(
-                        addr, reinterpret_cast<struct sockaddr *>(&tmp)),
-                    static_cast<socklen_t>(addrlen));
+  socklen_t len = 0;
+  asylo::FromBridgeSockaddr(addr, reinterpret_cast<struct sockaddr *>(&tmp),
+                            &len);
+  int ret = connect(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), len);
   return ret;
 }
 
-int ocall_enc_untrusted_bind(int sockfd, const struct bridge_sockaddr *addr,
-                             bridge_size_t addrlen) {
+int ocall_enc_untrusted_bind(int sockfd, const struct bridge_sockaddr *addr) {
   struct bridge_sockaddr tmp;
+  socklen_t len = 0;
+  asylo::FromBridgeSockaddr(
+                     addr, reinterpret_cast<struct sockaddr *>(&tmp), &len);
   int ret = bind(sockfd,
-                 asylo::FromBridgeSockaddr(
-                     addr, reinterpret_cast<struct sockaddr *>(&tmp)),
-                 static_cast<socklen_t>(addrlen));
+                 reinterpret_cast<struct sockaddr *>(&tmp), len);
   return ret;
 }
 
-int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr,
-                               bridge_size_t *addrlen) {
+int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr) {
   struct sockaddr_storage tmp;
   socklen_t tmp_len = sizeof(tmp);
   int ret = accept(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
   if (ret == -1) {
     return ret;
   }
-  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
-  *addrlen = static_cast<bridge_size_t>(tmp_len);
+  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
+                          addr);
   return ret;
 }
 
@@ -346,25 +345,23 @@ int ocall_enc_untrusted_setsockopt(int sockfd, int level, int optname,
                     optval, static_cast<socklen_t>(optlen));
 }
 
-int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr,
-                                    bridge_size_t *addrlen) {
+int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr) {
   struct sockaddr_storage tmp;
   socklen_t tmp_len = sizeof(tmp);
   int ret =
       getsockname(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
-  *addrlen = static_cast<bridge_size_t>(tmp_len);
+  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
+                          addr);
   return ret;
 }
 
-int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr,
-                                    bridge_size_t *addrlen) {
+int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr) {
   struct sockaddr_storage tmp;
   socklen_t tmp_len = sizeof(tmp);
   int ret =
       getpeername(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), addr);
-  *addrlen = static_cast<bridge_size_t>(tmp_len);
+  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
+                          addr);
   return ret;
 }
 
