@@ -56,6 +56,7 @@ cc_library(
     srcs = [
         "dirent.cc",
         "errno.cc",
+        "file.cc",
         "grp.cc",
         "ifaddrs.cc",
         "ioctl.cc",

@@ -576,6 +576,12 @@ int IOManager::Isatty(int fd) {
       fd, [](std::shared_ptr<IOContext> context) { return context->Isatty(); });
 }
 
+int IOManager::FLock(int fd, int operation) {
+  return CallWithContext(fd, [operation](std::shared_ptr<IOContext> context) {
+    return context->FLock(operation);
+  });
+}
+
 int IOManager::Ioctl(int fd, int request, void *argp) {
   return CallWithContext(fd,
                          [request, argp](std::shared_ptr<IOContext> context) {

@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -505,6 +506,14 @@ int ocall_enc_untrusted_getrusage(enum RUsageTarget who,
   int ret = getrusage(asylo::FromBridgeRUsageTarget(who), &usage);
   asylo::ToBridgeRUsage(&usage, bridge_usage);
   return ret;
+}
+
+//////////////////////////////////////
+//           sys/file.h             //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_flock(int fd, int operation) {
+  return flock(fd, asylo::FromBridgeFLockOperation(operation));
 }
 
 //////////////////////////////////////

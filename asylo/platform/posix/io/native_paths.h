@@ -36,6 +36,7 @@ class IOContextNative : public IOManager::IOContext {
   int FSync() override;
   int FStat(struct stat *stat_buffer) override;
   int Isatty() override;
+  int FLock(int operation) override;
   int Close() override;
   ssize_t Writev(const struct iovec *iov, int iovcnt) override;
   ssize_t Readv(const struct iovec *iov, int iovcnt) override;

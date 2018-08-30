@@ -793,6 +793,21 @@ int enc_untrusted_getrusage(int who, struct rusage *usage) {
 }
 
 //////////////////////////////////////
+//           sys/file.h             //
+//////////////////////////////////////
+
+int enc_untrusted_flock(int fd, int operation) {
+  int ret;
+  sgx_status_t status = ocall_enc_untrusted_flock(
+      &ret, fd, asylo::ToBridgeFLockOperation(operation));
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
+
+//////////////////////////////////////
 //          sys/syslog.h            //
 //////////////////////////////////////
 

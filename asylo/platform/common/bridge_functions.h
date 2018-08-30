@@ -35,6 +35,14 @@
 
 namespace asylo {
 
+// Converts |bridge_flock_operation| to a runtime flock operation. Returns 0 if
+// unsuccessful.
+int FromBridgeFLockOperation(int bridge_flock_operation);
+
+// Converts |flock_operation| to bridge flock operation. Returns 0 if no
+// supported options are provided.
+int ToBridgeFLockOperation(int flock_operation);
+
 // Converts |bridge_sysconf_constant| to a runtime sysconf constant. Returns -1
 // if unsuccessful.
 int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant);

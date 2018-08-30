@@ -186,6 +186,24 @@ int ToBridgeSocketOptionName(int socket_option_name) {
 
 }  // namespace
 
+int FromBridgeFLockOperation(int bridge_flock_operation) {
+  int flock_operation = 0;
+  if (bridge_flock_operation & BRIDGE_LOCK_SH) flock_operation |= LOCK_SH;
+  if (bridge_flock_operation & BRIDGE_LOCK_EX) flock_operation |= LOCK_EX;
+  if (bridge_flock_operation & BRIDGE_LOCK_NB) flock_operation |= LOCK_NB;
+  if (bridge_flock_operation & BRIDGE_LOCK_UN) flock_operation |= LOCK_UN;
+  return flock_operation;
+}
+
+int ToBridgeFLockOperation(int flock_operation) {
+  int bridge_flock_operation = 0;
+  if (flock_operation & LOCK_SH) bridge_flock_operation |= BRIDGE_LOCK_SH;
+  if (flock_operation & LOCK_EX) bridge_flock_operation |= BRIDGE_LOCK_EX;
+  if (flock_operation & LOCK_NB) bridge_flock_operation |= BRIDGE_LOCK_NB;
+  if (flock_operation & LOCK_UN) bridge_flock_operation |= BRIDGE_LOCK_UN;
+  return bridge_flock_operation;
+}
+
 int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
   switch (bridge_sysconf_constant) {
     case NPROCESSORS_CONF:

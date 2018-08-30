@@ -52,6 +52,10 @@ int IOContextNative::FStat(struct stat *stat_buffer) {
 
 int IOContextNative::Isatty() { return enc_untrusted_isatty(host_fd_); }
 
+int IOContextNative::FLock(int operation) {
+  return enc_untrusted_flock(host_fd_, operation);
+}
+
 ssize_t IOContextNative::Writev(const struct iovec *iov, int iovcnt) {
   return enc_untrusted_writev(host_fd_, iov, iovcnt);
 }

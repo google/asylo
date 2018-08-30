@@ -179,6 +179,12 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
 
 //////////////////////////////////////
+//          sys/file.h              //
+//////////////////////////////////////
+
+int enc_untrusted_flock(int fd, int operation);
+
+//////////////////////////////////////
 //          sys/stat.h              //
 //////////////////////////////////////
 

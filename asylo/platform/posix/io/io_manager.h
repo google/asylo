@@ -103,6 +103,12 @@ class IOManager {
       return -1;
     }
 
+    // Implements IOManager::FLock.
+    virtual int FLock(int operation) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     // Implements IOManager::Ioctl.
     virtual int Ioctl(int request, void *argp) {
       errno = ENOSYS;
@@ -425,6 +431,9 @@ class IOManager {
 
   // Implements isatty(3).
   int Isatty(int fd);
+
+  // Implements flock(2).
+  int FLock(int fd, int operation);
 
   // Implements unlink(2).
   int Unlink(const char *pathname);

@@ -44,6 +44,14 @@ typedef uint64_t bridge_size_t;
 typedef int64_t bridge_ssize_t;
 typedef int64_t bridge_sigset_t;
 
+// The operations for flock that are supported inside the enclave.
+enum FLockOperations {
+  BRIDGE_LOCK_SH = 0x01,
+  BRIDGE_LOCK_EX = 0x02,
+  BRIDGE_LOCK_NB = 0x04,
+  BRIDGE_LOCK_UN = 0x08,
+};
+
 // This enum contains all of the sysconf name values supported inside the
 // enclave.
 enum SysconfConstants {
