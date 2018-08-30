@@ -526,6 +526,38 @@ host_calls {
   return_type: "pid_t"
 }
 
+host_calls {
+  name: "truncate"
+  return_type: "int"
+  parameters {
+    name: "path"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "length"
+    type: "off_t"
+  }
+}
+
+host_calls {
+  name: "ftruncate"
+  return_type: "int"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+  parameters {
+    name: "length"
+    type: "off_t"
+  }
+}
+
 ######################################
 ##              wait.h              ##
 ######################################

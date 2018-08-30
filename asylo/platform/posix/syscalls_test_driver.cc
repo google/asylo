@@ -961,5 +961,12 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   freeifaddrs(host_front);
 }
 
+// Tests truncate and ftruncate by truncating the file inside an enclave, and
+// read from it to ensure it's truncated to the correct size.
+TEST_F(SyscallsTest, Truncate) {
+  EXPECT_TRUE(RunSyscallInsideEnclave(
+      "truncate", FLAGS_test_tmpdir + "/truncate", nullptr));
+}
+
 }  // namespace
 }  // namespace asylo

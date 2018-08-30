@@ -126,6 +126,11 @@ class IOManager {
       return -1;
     }
 
+    virtual int FTruncate(off_t length) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     // Implements setsockopt.
     virtual int SetSockOpt(int level, int option_name, const void *option_value,
                            socklen_t option_len) {
@@ -266,6 +271,11 @@ class IOManager {
     }
 
     virtual int Access(const char *path, int mode) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int Truncate(const char *path, off_t length) {
       errno = ENOSYS;
       return -1;
     }
@@ -442,6 +452,12 @@ class IOManager {
 
   // Implements unlink(2).
   int Unlink(const char *pathname);
+
+  // Implements truncate(2).
+  int Truncate(const char *path, off_t length);
+
+  // Implements ftruncate(2).
+  int FTruncate(int fd, off_t length);
 
   // Implements poll(2).
   int Poll(struct pollfd *fds, nfds_t nfds, int timeout)

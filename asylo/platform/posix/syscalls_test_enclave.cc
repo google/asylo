@@ -118,6 +118,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunChModTest(test_input.path_name());
     } else if (test_input.test_target() == "getifaddrs") {
       return RunGetIfAddrsTest(output);
+    } else if (test_input.test_target() == "truncate") {
+      return RunTruncateTest(test_input.path_name());
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1099,6 +1101,74 @@ class SyscallsEnclave : public EnclaveTestCase {
     output_ret.set_int_syscall_return(ret);
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunTruncateTest(const std::string &path) {
+    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
+    if (!fd_or_error.ok()) {
+      return fd_or_error.status();
+    }
+    int fd = fd_or_error.ValueOrDie();
+    platform::storage::FdCloser fd_closer(fd);
+    const std::string message1 = "First message ";
+    const std::string message2 = "Second message ";
+    const std::string message3 = "Third message";
+    const std::string message = message1 + message2 + message3;
+    ssize_t rc = write(fd, message.c_str(), message.size());
+    if (rc != message.size()) {
+      return Status(
+          static_cast<error::PosixError>(errno),
+          absl::StrCat("write returns: ", rc,
+                       " does not match message size: ", message.size()));
+    }
+
+    // First call truncate to truncate the file to the size of message1 +
+    // message2.
+    std::string truncated_message = message1 + message2;
+    if (truncate(path.c_str(), truncated_message.size()) != 0) {
+      return Status(
+          static_cast<error::PosixError>(errno),
+          absl::StrCat("Truncate file: ", path, " failed: ", strerror(errno)));
+    }
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("Moving to beginning of fd:", fd,
+                                 " failed: ", strerror(errno)));
+    }
+    char buf1[1024];
+    rc = read(fd, buf1, message.size());
+    if (rc != truncated_message.size() ||
+        memcmp(buf1, truncated_message.c_str(), truncated_message.size()) !=
+            0) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Message read from truncated file is: ", buf1,
+                       " and does not match expected: ", truncated_message));
+    }
+
+    // Now call ftruncate to truncate the file to the size of only message1.
+    truncated_message = message1;
+    if (ftruncate(fd, truncated_message.size()) != 0) {
+      return Status(
+          static_cast<error::PosixError>(errno),
+          absl::StrCat("Ftruncate file: ", fd, " failed: ", strerror(errno)));
+    }
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("Moving to beginning of fd:", fd,
+                                 " failed: ", strerror(errno)));
+    }
+    char buf2[1024];
+    rc = read(fd, buf2, message.size());
+    if (rc != truncated_message.size() ||
+        memcmp(buf2, truncated_message.c_str(), truncated_message.size()) !=
+            0) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Message read from truncated file is: ", buf1,
+                       " and does not match expected: ", truncated_message));
     }
     return Status::OkStatus();
   }

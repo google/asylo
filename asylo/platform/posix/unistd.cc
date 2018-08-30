@@ -185,4 +185,12 @@ int enclave_unlink(const char *pathname) {
   return IOManager::GetInstance().Unlink(pathname);
 }
 
+int truncate(const char *path, off_t length) {
+  return IOManager::GetInstance().Truncate(path, length);
+}
+
+int ftruncate(int fd, off_t length) {
+  return IOManager::GetInstance().FTruncate(fd, length);
+}
+
 }  // extern "C"

@@ -38,6 +38,7 @@ class IOContextNative : public IOManager::IOContext {
   int Isatty() override;
   int FLock(int operation) override;
   int Close() override;
+  int FTruncate(off_t length) override;
   ssize_t Writev(const struct iovec *iov, int iovcnt) override;
   ssize_t Readv(const struct iovec *iov, int iovcnt) override;
   int SetSockOpt(int level, int option_name, const void *option_value,
@@ -72,6 +73,7 @@ class NativePathHandler : public io::IOManager::VirtualPathHandler {
   int Unlink(const char *pathname) override;
   ssize_t ReadLink(const char *path_name, char *buf, size_t bufsize) override;
   int SymLink(const char *path1, const char *path2) override;
+  int Truncate(const char *path, off_t length) override;
   int Stat(const char *pathname, struct stat *stat_buffer) override;
   int LStat(const char *pathname, struct stat *stat_buffer) override;
   int Mkdir(const char *path, mode_t mode) override;

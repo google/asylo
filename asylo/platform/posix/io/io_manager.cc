@@ -514,6 +514,19 @@ int IOManager::SymLink(const char *from, const char *to) {
       });
 }
 
+int IOManager::Truncate(const char *path, off_t length) {
+  return CallWithHandler(
+      path, [length](VirtualPathHandler *handler, const char *canonical_path) {
+        return handler->Truncate(canonical_path, length);
+      });
+}
+
+int IOManager::FTruncate(int fd, off_t length) {
+  return CallWithContext(fd, [length](std::shared_ptr<IOContext> context) {
+    return context->FTruncate(length);
+  });
+}
+
 int IOManager::Stat(const char *pathname, struct stat *stat_buffer) {
   return CallWithHandler(pathname, [stat_buffer](VirtualPathHandler *handler,
                                                  const char *canonical_path) {

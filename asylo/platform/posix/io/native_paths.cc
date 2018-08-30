@@ -50,6 +50,10 @@ int IOContextNative::FStat(struct stat *stat_buffer) {
   return enc_untrusted_fstat(host_fd_, stat_buffer);
 }
 
+int IOContextNative::FTruncate(off_t length) {
+  return enc_untrusted_ftruncate(host_fd_, length);
+}
+
 int IOContextNative::Isatty() { return enc_untrusted_isatty(host_fd_); }
 
 int IOContextNative::FLock(int operation) {
@@ -152,6 +156,10 @@ ssize_t NativePathHandler::ReadLink(const char *path_name, char *buf,
 
 int NativePathHandler::SymLink(const char *path1, const char *path2) {
   return enc_untrusted_symlink(path1, path2);
+}
+
+int NativePathHandler::Truncate(const char *path, off_t length) {
+  return enc_untrusted_truncate(path, length);
 }
 
 int NativePathHandler::Stat(const char *pathname, struct stat *stat_buffer) {
