@@ -527,6 +527,11 @@ host_calls {
 }
 
 host_calls {
+  name: "setsid"
+  return_type: "pid_t"
+}
+
+host_calls {
   name: "truncate"
   return_type: "int"
   parameters {

@@ -171,6 +171,8 @@ gid_t getegid() { return enc_untrusted_getegid(); }
 
 pid_t getppid() { return enc_untrusted_getppid(); }
 
+pid_t setsid() { return enc_untrusted_setsid(); }
+
 // The functions below are prefixed with |enclave_|, as they are plumbed in from
 // newlib.
 int enclave_getpid() { return enc_untrusted_getpid(); }
