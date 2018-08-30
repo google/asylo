@@ -883,6 +883,17 @@ TEST_F(SyscallsTest, RlimitInvalidNoFile) {
                                       FLAGS_test_tmpdir + "/rlimit", nullptr));
 }
 
+// Tests chmod() by changing the mode of a file inside an enclave, and verifies
+// the mode is changed correctly.
+TEST_F(SyscallsTest, ChMod) {
+  const std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/chmod");
+  ASSERT_NE(open(test_file.c_str(), O_CREAT | O_RDWR, 0777), -1);
+  ASSERT_TRUE(RunSyscallInsideEnclave("chmod", test_file, nullptr));
+  struct stat stat_buffer;
+  ASSERT_EQ(stat(test_file.c_str(), &stat_buffer), 0);
+  EXPECT_EQ(stat_buffer.st_mode & 0777, 0644);
+}
+
 // Tests getifaddrs by calling it from inside the enclave and ensuring that
 // the result is equivalent to what is returned by a call to getifaddrs made
 // outside the enclave. There is a minor caveat: asylo doesn't support

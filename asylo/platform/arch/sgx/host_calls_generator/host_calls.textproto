@@ -464,6 +464,25 @@ host_calls {
   }
 }
 
+host_calls {
+  name: "chmod"
+  return_type: "int"
+  parameters {
+    name: "pathname"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "mode"
+    type: "mode_t"
+  }
+}
+
 ######################################
 ##             unistd.h             ##
 ######################################

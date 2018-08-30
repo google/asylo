@@ -114,6 +114,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunRlimitLowNoFileTest(test_input.path_name());
     } else if (test_input.test_target() == "rlimit invalid nofile") {
       return RunRlimitInvalidNoFileTest(test_input.path_name());
+    } else if (test_input.test_target() == "chmod") {
+      return RunChModTest(test_input.path_name());
     } else if (test_input.test_target() == "getifaddrs") {
       return RunGetIfAddrsTest(output);
     }
@@ -1074,6 +1076,14 @@ class SyscallsEnclave : public EnclaveTestCase {
           "setrlimit to increase the hard limit unexpectedly succeeded");
     }
 
+    return Status::OkStatus();
+  }
+
+  Status RunChModTest(const std::string &path) {
+    if (chmod(path.c_str(), 0644) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("chmod failed: ", strerror(errno)));
+    }
     return Status::OkStatus();
   }
 

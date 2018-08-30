@@ -535,6 +535,13 @@ char *IOManager::RealPath(const char *path, char *resolved_path) {
   });
 }
 
+int IOManager::ChMod(const char *pathname, mode_t mode) {
+  return CallWithHandler(pathname, [mode](VirtualPathHandler *handler,
+                                          const char *canonical_path) {
+    return handler->ChMod(canonical_path, mode);
+  });
+}
+
 int IOManager::LSeek(int fd, off_t offset, int whence) {
   return CallWithContext(fd,
                          [offset, whence](std::shared_ptr<IOContext> context) {

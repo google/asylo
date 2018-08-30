@@ -31,4 +31,8 @@ int lstat(const char *pathname, struct stat *stat_buffer) {
 
 mode_t umask(mode_t mask) { return IOManager::GetInstance().Umask(mask); }
 
+int chmod(const char *pathname, mode_t mode) {
+  return IOManager::GetInstance().ChMod(pathname, mode);
+}
+
 }  // extern "C"

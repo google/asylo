@@ -275,6 +275,11 @@ class IOManager {
       return nullptr;
     }
 
+    virtual int ChMod(const char *pathname, mode_t mode) {
+      errno = ENOSYS;
+      return -1;
+    }
+
    private:
     friend class IOManager;
   };
@@ -453,6 +458,9 @@ class IOManager {
 
   // Implements umask(2).
   mode_t Umask(mode_t mask);
+
+  // Implements chmod(2).
+  int ChMod(const char *pathname, mode_t mode);
 
   // Implements getrlimit(2).
   int GetRLimit(int resource, struct rlimit *rlim)

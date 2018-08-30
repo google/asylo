@@ -170,5 +170,9 @@ int NativePathHandler::Access(const char *path, int mode) {
   return enc_untrusted_access(path, mode);
 }
 
+int NativePathHandler::ChMod(const char *path, mode_t mode) {
+  return enc_untrusted_chmod(path, mode);
+}
+
 }  // namespace io
 }  // namespace asylo
