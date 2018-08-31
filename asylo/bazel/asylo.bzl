@@ -323,6 +323,54 @@ def sim_enclave(name, **kwargs):
     """
     sgx_enclave(name, **kwargs)
 
+def embed_enclaves(name, elf_file, enclaves, **kwargs):
+    """Build rule for embedding one or more enclaves into an ELF file.
+
+    Each enclave is embedded in a new ELF section that does not get loaded into
+    memory automatically when the elf file is run.
+
+    If the original binary already has a section with the same name as one of
+    the given section names, objcopy (and the bazel invocation) will fail with
+    an error message stating that the file is in the wrong format.
+
+    Args:
+      name: The name of a new ELF file containing the contents of the original
+        ELF file and the embedded enclaves.
+      elf_file: The ELF file to embed the enclaves in. This target is built with
+        the host toolchain.
+      enclaves: A dictionary from new ELF section names to the enclave files
+        that should be embedded in those sections. The section names may not
+        start with ".", since section names starting with "." are reserved for
+        the system.
+      **kwargs: genrule arguments.
+    """
+    genrule_name = name + "_rule"
+
+    objcopy_flags = []
+    for section_name, enclave_file in enclaves.items():
+        if section_name[0] == ".":
+            fail("Section names may not begin with \".\"")
+        objcopy_flags += [
+            "--add-section",
+            "\"{section_name}\"=\"$(location {enclave_file})\"".format(
+                section_name = section_name,
+                enclave_file = enclave_file,
+            ),
+        ]
+
+    native.genrule(
+        name = genrule_name,
+        srcs = enclaves.values(),
+        outs = [name],
+        output_to_bindir = 1,
+        tools = [elf_file],
+        cmd = "$(OBJCOPY) {objcopy_flags} $(location {elf_file}) $@".format(
+            objcopy_flags = " ".join(objcopy_flags),
+            elf_file = elf_file,
+        ),
+        **kwargs
+    )
+
 def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
     """Build target for testing one or more instances of 'sgx_enclave'.
 

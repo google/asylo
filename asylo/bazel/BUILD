@@ -28,7 +28,11 @@ exports_files([
     "sgx_deps.bzl",
 ])
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_enclave_test",
+    "embed_enclaves",
+)
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 # This tests that gtest can work inside an enclave.
@@ -76,5 +80,38 @@ cc_test(
         "//asylo/test/util:test_flags",
         "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
+    ],
+)
+
+EMBED_ENCLAVES_TEST_SECTION = "foo_section"
+
+# A test binary for the embed_enclaves test.
+cc_binary(
+    name = "embed_enclaves_test_binary_plain",
+    srcs = ["embed_enclaves_test_binary.cc"],
+)
+
+# A rule to embed an "enclave" (really a text file) in
+# embed_enclaves_test_binary_plain.
+embed_enclaves(
+    name = "embed_enclaves_test_binary",
+    elf_file = ":embed_enclaves_test_binary_plain",
+    enclaves = {EMBED_ENCLAVES_TEST_SECTION: "embed_enclaves_test_data.txt"},
+    executable = 1,
+)
+
+# A test of embed_enclaves.
+sh_test(
+    name = "embed_enclaves_test",
+    srcs = ["embed_enclaves_test.sh"],
+    args = [
+        "$(OBJCOPY)",
+        "$(location :embed_enclaves_test_binary)",
+        EMBED_ENCLAVES_TEST_SECTION,
+        "$(location embed_enclaves_test_data.txt)",
+    ],
+    data = [
+        "embed_enclaves_test_data.txt",
+        ":embed_enclaves_test_binary",
     ],
 )
