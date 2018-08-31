@@ -24,17 +24,14 @@
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
-#include "include/grpcpp/channel.h"
-#include "include/grpcpp/create_channel.h"
+#include "include/grpcpp/grpcpp.h"
 #include "include/grpcpp/impl/codegen/service_type.h"
 #include "include/grpcpp/security/credentials.h"
-#include "test/core/util/port.h"
 
 namespace asylo {
 namespace {

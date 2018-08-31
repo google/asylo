@@ -16,6 +16,7 @@
 
 licenses(["notice"])  # Apache v2.0
 
+load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
 
@@ -50,6 +51,8 @@ cc_test(
     name = "grpc_server_launcher_test",
     size = "medium",
     srcs = ["grpc_server_launcher_test.cc"],
+    enclave_test_config = ":grpc_enclave_config",
+    enclave_test_name = "grpc_server_launcher_enclave_test",
     tags = ["regression"],
     deps = [
         ":grpc_server_launcher",
@@ -60,7 +63,6 @@ cc_test(
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_codegen_base",
-        "@com_github_grpc_grpc//test/core/util:grpc_test_util_base",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
