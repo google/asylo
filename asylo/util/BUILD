@@ -22,6 +22,31 @@ load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
+# Defines ASYLO macros.
+cc_library(
+    name = "asylo_macros",
+    hdrs = ["asylo_macros.h"],
+    visibility = ["//asylo:implementation"],
+)
+
+# A library for cleanup objects.
+cc_library(
+    name = "cleanup",
+    hdrs = ["cleanup.h"],
+    visibility = ["//asylo:implementation"],
+)
+
+cc_test(
+    name = "cleanup_test",
+    srcs = ["cleanup_test.cc"],
+    enclave_test_name = "cleanup_enclave_test",
+    deps = [
+        ":cleanup",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Minimal logging library implementation.
 cc_library(
     name = "logging",
@@ -106,13 +131,6 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
-)
-
-# Defines ASYLO macros.
-cc_library(
-    name = "asylo_macros",
-    hdrs = ["asylo_macros.h"],
-    visibility = ["//asylo:implementation"],
 )
 
 # Container types that zero-out memory before freeing resources.
