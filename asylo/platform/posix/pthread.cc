@@ -542,5 +542,7 @@ int pthread_attr_destroy(pthread_attr_t *attr) { return 0; }
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) { return 0; }
 
 int pthread_cancel(pthread_t unused) { return ENOSYS; }
+int pthread_setcancelstate(int state, int *oldstate) { return ENOSYS; }
+int pthread_setcanceltype(int type, int *oldtype) { return ENOSYS; }
 
 }  // extern "C"
