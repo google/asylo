@@ -22,6 +22,10 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:asylo.bzl", "enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_test",
+)
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -211,6 +215,17 @@ enclave_test(
         ":socket_test_proto_cc",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "inet_pton_test",
+    srcs = ["inet_pton_test.cc"],
+    enclave_test_name = "inet_pton_enclave_test",
+    tags = ["regression"],
+    deps = [
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],

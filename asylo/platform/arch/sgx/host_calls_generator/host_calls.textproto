@@ -329,39 +329,6 @@ host_calls {
 ######################################
 
 host_calls {
-  name: "inet_pton"
-  return_type: "int"
-  parameters {
-    name: "af"
-    type: "int"
-  }
-  parameters {
-    name: "src"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "dst"
-    type: "void *"
-    pointer_attributes {
-      attribute: OUT
-    }
-    pointer_attributes {
-      attribute: SIZE
-      # Since |dst| stores an instance of either struct in_addr or struct
-      # in6_addr, |size| should be:
-      # max(sizeof(struct in_addr), sizeof(struct in6_addr)) = 16.
-      attribute_expression: "16"
-    }
-  }
-}
-
-host_calls {
   name: "listen"
   return_type: "int"
   parameters {

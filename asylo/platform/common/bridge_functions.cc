@@ -617,6 +617,24 @@ struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,
   return bridge_addr;
 }
 
+AfFamily ToBridgeAfFamily(int af_family) {
+  if (af_family == AF_INET) {
+    return BRIDGE_AF_INET;
+  } else if (af_family == AF_INET6) {
+    return BRIDGE_AF_INET6;
+  }
+  return BRIDGE_AF_UNSUPPORTED;
+}
+
+int FromBridgeAfFamily(AfFamily bridge_af_family) {
+  if (bridge_af_family == BRIDGE_AF_INET) {
+    return AF_INET;
+  } else if (bridge_af_family == BRIDGE_AF_INET6) {
+    return AF_INET6;
+  }
+  return -1;
+}
+
 struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,
                                 struct pollfd *fd) {
   if (!bridge_fd || !fd) return nullptr;

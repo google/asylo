@@ -164,6 +164,14 @@ struct stat *FromBridgeStat(const struct bridge_stat *bridge_statbuf,
 struct bridge_stat *ToBridgeStat(const struct stat *statbuf,
                                  struct bridge_stat *bridge_statbuf);
 
+// Converts |af_family| to a bridge af family. If |af_family| is not supported,
+// we return a special value (BRIDGE_AF_UNSUPPORTED) to indicate this.
+AfFamily ToBridgeAfFamily(int af_family);
+
+// Converts |bridge_af_family| to a host af family. If this value is not
+// supported, we return -1.
+int FromBridgeAfFamily(AfFamily bridge_af_family);
+
 // Copies |bridge_addr| to a runtime sockaddr up to sizeof(struct
 // bridge_sockaddr). Returns nullptr if unsuccessful.
 struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,

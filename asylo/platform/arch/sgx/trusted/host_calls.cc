@@ -516,6 +516,26 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
   return dst;
 }
 
+int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
+  int ret = 0;
+  bridge_size_t dst_size = 0;
+  if (af == AF_INET) {
+    dst_size = static_cast<bridge_size_t>(sizeof(struct in_addr));
+  } else if (af == AF_INET6) {
+    dst_size = static_cast<bridge_size_t>(sizeof(struct in6_addr));
+  } else {
+    errno = EINVAL;
+    return -1;
+  }
+  sgx_status_t status = ocall_enc_untrusted_inet_pton(
+      &ret, asylo::ToBridgeAfFamily(af), src, dst, dst_size);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return 0;
+  }
+  return ret;
+}
+
 int enc_untrusted_getaddrinfo(const char *node, const char *service,
                               const struct addrinfo *hints,
                               struct addrinfo **res) {

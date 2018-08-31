@@ -226,6 +226,12 @@ enum SocketOptionNames {
   BRIDGE_SO_RCVBUFFORCE = 33,
 };
 
+enum AfFamily {
+  BRIDGE_AF_INET = 1,
+  BRIDGE_AF_INET6 = 2,
+  BRIDGE_AF_UNSUPPORTED = 3,
+};
+
 struct bridge_in_addr {
   uint32_t inet_addr;
 } ABSL_ATTRIBUTE_PACKED;

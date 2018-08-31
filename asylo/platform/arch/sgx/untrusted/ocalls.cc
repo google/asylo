@@ -292,6 +292,14 @@ char *ocall_enc_untrusted_inet_ntop(int af, const void *src,
   return const_cast<char *>(ret);
 }
 
+int ocall_enc_untrusted_inet_pton(AfFamily af, const char *src, void *dst,
+                                  bridge_size_t dst_size) {
+  // The line below is needed to surpress unused variable errors, as |dst_size|
+  // is needed for the edgr8r generated code.
+  (void) dst_size;
+  return inet_pton(asylo::FromBridgeAfFamily(af), src, dst);
+}
+
 int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
                                     const char *serialized_hints,
                                     bridge_size_t serialized_hints_len,
