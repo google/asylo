@@ -1,7 +1,7 @@
 diff -Naur absl/synchronization/BUILD.bazel absl/synchronization/BUILD.bazel
 --- absl/synchronization/BUILD.bazel
 +++ absl/synchronization/BUILD.bazel
-@@ -54,6 +54,9 @@
+@@ -55,6 +55,9 @@
          "internal/waiter.cc",
          "notification.cc",
      ] + select({

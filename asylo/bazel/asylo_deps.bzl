@@ -115,15 +115,6 @@ def asylo_deps():
             strip_prefix = "boringssl-241dc59bb90f8c45ebc8473fc7599b861a93bfa6",
         )
 
-    # CCTZ (Time-zone framework).
-    if "com_googlesource_code_cctz" not in native.existing_rules():
-        native.http_archive(
-            name = "com_googlesource_code_cctz",
-            urls = ["https://github.com/google/cctz/archive/v2.2.tar.gz"],
-            sha256 = "ab315d5beb18a65ace57f6ea91f9ea298ec163fee89f84a44e81732af4d07348",
-            strip_prefix = "cctz-2.2",
-        )
-
     # RE2 regular-expression framework. Used by some unit-tests.
     if "com_googlesource_code_re2" not in native.existing_rules():
         native.http_archive(
@@ -137,13 +128,13 @@ def asylo_deps():
     if "com_google_absl" not in native.existing_rules():
         patch_repository(
             name = "com_google_absl",
-            # Non-release commit from April 20, 2018
+            # The first release, 20180600
             urls = [
-                "https://github.com/abseil/abseil-cpp/archive/94ce52d46c171683b1ee22d14277a6d3bdfd7c4c.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/20180600.tar.gz",
             ],
             patch = "@com_google_asylo//asylo/distrib:absl_mutex.patch",
-            sha256 = "eadb5ae992b94102288647399a75ea36e4b112642c86b346b5b5720d8c345b30",
-            strip_prefix = "abseil-cpp-94ce52d46c171683b1ee22d14277a6d3bdfd7c4c",
+            sha256 = "794d483dd9a19c43dc1fbbe284ce8956eb7f2600ef350dac4c602f9b4eb26e90",
+            strip_prefix = "abseil-cpp-20180600",
         )
 
     # Absl for python
