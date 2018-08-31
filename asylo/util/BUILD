@@ -47,6 +47,37 @@ cc_test(
     ],
 )
 
+# A library for memory-mapping files.
+cc_library(
+    name = "file_mapping",
+    srcs = ["file_mapping.cc"],
+    hdrs = ["file_mapping.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":cleanup",
+        ":status",
+        "//asylo/util:logging",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+cc_test(
+    name = "file_mapping_test",
+    srcs = ["file_mapping_test.cc"],
+    args = ["--test_file=$(location file_mapping_test_data.txt)"],
+    data = ["file_mapping_test_data.txt"],
+    deps = [
+        ":file_mapping",
+        ":status",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Minimal logging library implementation.
 cc_library(
     name = "logging",
