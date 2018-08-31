@@ -120,6 +120,7 @@ cc_library(
 cc_test(
     name = "status_test",
     srcs = ["status_test.cc"],
+    enclave_test_name = "status_enclave_test",
     tags = ["regression"],
     deps = [
         ":status",
@@ -138,6 +139,7 @@ cc_test(
         "status_error_space.h",
         "statusor_test.cc",
     ],
+    enclave_test_name = "statusor_enclave_test",
     tags = ["regression"],
     deps = [
         ":status",
