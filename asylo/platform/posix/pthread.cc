@@ -540,6 +540,12 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *mutexattr, int type) {
 int pthread_attr_init(pthread_attr_t *attr) { return 0; }
 int pthread_attr_destroy(pthread_attr_t *attr) { return 0; }
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) { return 0; }
+int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
+  return ENOSYS;
+}
+int pthread_attr_setstacksize(pthread_attr_t *attr, size_t stacksize) {
+  return ENOSYS;
+}
 
 int pthread_cancel(pthread_t unused) { return ENOSYS; }
 int pthread_setcancelstate(int state, int *oldstate) { return ENOSYS; }
