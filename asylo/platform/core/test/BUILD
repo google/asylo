@@ -150,6 +150,7 @@ cc_enclave_test(
     enclave_config = ":many_threads_enclave_config",
     tags = ["regression"],
     deps = [
+        "//asylo/platform/core:trusted_mutex",
         "//asylo/platform/core:trusted_spin_lock",
         "//asylo/platform/core:untrusted_mutex",
         "@com_google_googletest//:gtest",

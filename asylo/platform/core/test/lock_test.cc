@@ -20,6 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/platform/core/trusted_mutex.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/core/untrusted_mutex.h"
 
@@ -36,7 +37,8 @@ class LockTest : public ::testing::Test {
   LockType non_recursive_;
 };
 
-typedef ::testing::Types<UntrustedMutex, TrustedSpinLock> Implementations;
+typedef ::testing::Types<UntrustedMutex, TrustedSpinLock, TrustedMutex>
+    Implementations;
 
 TYPED_TEST_CASE(LockTest, Implementations);
 

@@ -167,6 +167,17 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "trusted_mutex",
+    srcs = ["trusted_mutex.cc"],
+    hdrs = ["trusted_mutex.h"],
+    deps = [
+        ":trusted_spin_lock",
+        ":untrusted_mutex",
+        "//asylo/platform/arch:trusted_arch",
+    ],
+)
+
 # Sanity check test for enclave clock variables.
 cc_test(
     name = "enclave_clock_test",
