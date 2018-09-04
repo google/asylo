@@ -253,8 +253,8 @@ TYPED_TEST(StatusOrTest, MoveConstructorNonOkStatus) {
 
   // Verify that the status of the donor object was updated.
   EXPECT_FALSE(statusor1.ok());
-  EXPECT_EQ(statusor1.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor1.status(),
+              StatusIs(error::StatusError::MOVED, kStatusMoveConstructorMsg));
 
   // Verify that the destination object contains the status previously held by
   // the donor.
@@ -271,8 +271,8 @@ TYPED_TEST(StatusOrTest, MoveConstructorOkStatus) {
 
   // Verify that the donor object was updated to contain a non-ok status.
   EXPECT_FALSE(statusor1.ok());
-  EXPECT_EQ(statusor1.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor1.status(),
+              StatusIs(error::StatusError::MOVED, kValueMoveConstructorMsg));
 
   // The destination object should possess the value previously held by the
   // donor.
@@ -292,8 +292,8 @@ TYPED_TEST(StatusOrTest, MoveAssignmentOperatorNonOkStatus) {
 
   // Verify that the status of the donor object was updated.
   EXPECT_FALSE(statusor1.ok());
-  EXPECT_EQ(statusor1.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor1.status(),
+              StatusIs(error::StatusError::MOVED, kStatusMoveAssignmentMsg));
 
   // Verify that the destination object contains the status previously held by
   // the donor.
@@ -314,8 +314,8 @@ TYPED_TEST(StatusOrTest, MoveAssignmentOperatorOkStatus) {
 
   // Verify that the donor object was updated to contain a non-ok status.
   EXPECT_FALSE(statusor1.ok());
-  EXPECT_EQ(statusor1.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor1.status(),
+              StatusIs(error::StatusError::MOVED, kValueMoveAssignmentMsg));
 
   // The destination object should possess the value previously held by the
   // donor.
@@ -387,8 +387,8 @@ TEST(StatusOrTest, MoveConstructorMoveOnlyType) {
 
   // Verify that the donor object was updated to contain a non-ok status.
   EXPECT_FALSE(statusor1.ok());
-  EXPECT_EQ(statusor1.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor1.status(),
+              StatusIs(error::StatusError::MOVED, kValueMoveConstructorMsg));
 
   // The destination object should possess the value previously held by the
   // donor.
@@ -410,8 +410,8 @@ TEST(StatusOrTest, MoveAssignmentMoveOnlyType) {
 
   // Verify that the donor object was updated to contain a non-ok status.
   EXPECT_FALSE(statusor1.ok());
-  EXPECT_EQ(statusor1.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor1.status(),
+              StatusIs(error::StatusError::MOVED, kValueMoveAssignmentMsg));
 
   // The destination object should possess the value previously held by the
   // donor.
@@ -431,8 +431,8 @@ TEST(StatusOrTest, ValueOrDieMovedValue) {
 
   // Verify that the StatusOr object was invalidated after the value was moved.
   EXPECT_FALSE(statusor.ok());
-  EXPECT_EQ(statusor.status().error_code(),
-            static_cast<int>(error::StatusError::INVALID));
+  EXPECT_THAT(statusor.status(),
+              StatusIs(error::StatusError::MOVED, kValueOrDieMovedMsg));
 }
 
 }  // namespace

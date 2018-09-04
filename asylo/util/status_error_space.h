@@ -30,7 +30,13 @@ namespace error {
 // and StatusOr classes.
 enum class StatusError : int {
   OK = 0,
-  INVALID = 1,
+
+  // Indicates that the Status object was moved and is no longer valid.
+  MOVED = 1,
+
+  // Indicates that the source StatusProto from which this Status was restored
+  // was invalid.
+  RESTORE_ERROR = 2,
 };
 
 // Implementation of the ErrorSpace interface for the StatusError enum.

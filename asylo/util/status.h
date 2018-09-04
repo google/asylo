@@ -27,6 +27,7 @@
 #include "absl/strings/string_view.h"
 #include "asylo/util/error_space.h"  // IWYU: pragma export
 #include "asylo/util/status.pb.h"
+#include "asylo/util/status_error_space.h"
 #include "asylo/util/status_internal.h"
 
 namespace asylo {
@@ -58,6 +59,10 @@ class Status {
 
   Status(const Status &other) = default;
 
+  // Non-default move constructor since the moved status should be set to
+  // indicate an invalid state, which changes the code and error_space.
+  Status(Status &&other);
+
   /// Constructs a Status object from `StatusT`. `StatusT` must be a status-type
   /// object. I.e.,
   ///
@@ -79,6 +84,10 @@ class Status {
   }
 
   Status &operator=(const Status &other) = default;
+
+  // Non-default move assignment operator since the moved status should be set
+  // to indicate an invalid state, which changes the code and error_space.
+  Status &operator=(Status &&other);
 
   /// Constructs an OK status object.
   ///
@@ -170,8 +179,8 @@ class Status {
   /// Status.
   ///
   /// If the given `status_proto` is invalid, sets the error code of this
-  /// object to `error::StatusError::INVALID`. A StatusProto is valid if and
-  /// only if all the following conditions hold:
+  /// object to `error::StatusError::INVALID_STATUS_PROTO`. A StatusProto is
+  /// valid if and only if all the following conditions hold:
   ///
   ///   * If `code()` is 0, then `canonical_code()` is set to 0.
   ///   * If `canonical_code()` is 0, then `code()` is set to 0.
@@ -205,10 +214,6 @@ class Status {
   // Returns true if the error code for this object is in the canonical error
   // space.
   bool IsCanonical() const;
-
-  // Sets this object to a state indicating that it was populated from an
-  // invalid StatusProto.
-  void SetInvalid();
 
   const error::ErrorSpace *error_space_;
   int error_code_;

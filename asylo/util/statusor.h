@@ -25,6 +25,24 @@
 
 namespace asylo {
 
+#ifdef NDEBUG
+constexpr char kValueMoveConstructorMsg[] = "";
+constexpr char kValueMoveAssignmentMsg[] = "";
+constexpr char kValueOrDieMovedMsg[] = "";
+constexpr char kStatusMoveConstructorMsg[] = "";
+constexpr char kStatusMoveAssignmentMsg[] = "";
+#else
+constexpr char kValueMoveConstructorMsg[] =
+    "Value moved by StatusOr move constructor";
+constexpr char kValueMoveAssignmentMsg[] =
+    "Value moved by StatusOr move assignment";
+constexpr char kStatusMoveConstructorMsg[] =
+    "Status moved by StatusOr move constructor";
+constexpr char kValueOrDieMovedMsg[] = "Value moved by StatusOr::ValueOrDie";
+constexpr char kStatusMoveAssignmentMsg[] =
+    "Status moved by StatusOr move assignment";
+#endif
+
 /// A class for representing either a usable value, or an error.
 ///
 /// A StatusOr object either contains a value of type `T` or a Status object
@@ -170,26 +188,31 @@ class StatusOr {
 
   /// Move constructor.
   ///
-  /// Sets `other` to contain a non-OK status with a `StatusError::INVALID`
+  /// Sets `other` to contain a non-OK status with a`StatusError::MOVED`
   /// error code.
   ///
   /// \param other The StatusOr object to copy and set to a non-OK status.
   StatusOr(StatusOr &&other) : has_value_(other.has_value_) {
     if (has_value_) {
       new (&variant_) variant(std::move(other.variant_.value_));
+      other.OverwriteValueWithStatus(
+          Status(error::StatusError::MOVED, kValueMoveConstructorMsg));
     } else {
       new (&variant_) variant(std::move(other.variant_.status_));
+#ifndef NDEBUG
+      // The other.variant_.status_ gets moved and invalidated with a Status-
+      // specific error message above. To aid debugging, set the status to a
+      // StatusOr-specific error message.
+      other.variant_.status_ =
+          Status(error::StatusError::MOVED, kStatusMoveConstructorMsg);
+#endif
     }
-
-    // The donor object may have previously held a valid value that is now
-    // inaccessible. Clear its current state.
-    other.Clear();
   }
 
   /// Move-assignment operator.
   ///
-  /// Sets `other` to contain a non-OK status with a `StatusError::INVALID`
-  /// error code.
+  /// Sets `other` to contain a non-OK status with a `StatusError::MOVED` error
+  /// code.
   ///
   /// \param other The StatusOr object to assign from and set to a non-OK
   /// status.
@@ -202,13 +225,18 @@ class StatusOr {
     // Construct the variant object using the variant object of the donor.
     if (other.has_value_) {
       AssignValue(std::move(other.variant_.value_));
+      other.OverwriteValueWithStatus(
+          Status(error::StatusError::MOVED, kValueMoveAssignmentMsg));
     } else {
       AssignStatus(std::move(other.variant_.status_));
+#ifndef NDEBUG
+      // The other.variant_.status_ gets moved and invalidated with a Status-
+      // specific error message above. To aid debugging, set the status to a
+      // StatusOr-specific error message.
+      other.variant_.status_ =
+          Status(error::StatusError::MOVED, kStatusMoveAssignmentMsg);
+#endif
     }
-
-    // The donor object may have previously held a valid value that is now
-    // inaccessible. Clear its current state.
-    other.Clear();
 
     return *this;
   }
@@ -258,7 +286,7 @@ class StatusOr {
   /// This method should only be called if this StatusOr object's status is OK
   /// (i.e. a call to ok() returns true), otherwise this call will abort. The
   /// StatusOr object is invalidated after this call and will be updated to
-  /// contain a non-OK status with a `StatusError::INVALID` error code.
+  /// contain a non-OK status with a `StatusError::MOVED` error code.
   ///
   /// \return The stored `T` value.
   T ValueOrDie() && {
@@ -268,29 +296,35 @@ class StatusOr {
     T tmp(std::move(variant_.value_));
 
     // Invalidate this StatusOr object.
-    Clear();
+    OverwriteValueWithStatus(
+        Status(error::StatusError::MOVED, kValueOrDieMovedMsg));
     return std::move(tmp);
   }
 
  private:
-  // Clears the current state of the StatusOr object and sets it to contain a
-  // Status object with a StatusError::INVALID error code.
-  void Clear() {
-    AssignStatus(Status(error::StatusError::INVALID, "The object was moved"));
-  }
-
-  // Resets the |variant_| member to contain the |status| and sets |has_value_|
-  // to indicate that the StatusOr object does not have a value. Destroys the
-  // existing |variant_| member if necessary.
+  // Resets the |variant_| member to contain |status|.
   template <class U>
   void AssignStatus(U &&status) {
     if (ok()) {
-      variant_.value_.~T();
-      new (&variant_) variant(std::forward<U>(status));
+      OverwriteValueWithStatus(std::forward<U>(status));
     } else {
-      // Reuse the existing Status object.
+      // Reuse the existing Status object. has_value_ is already false.
       variant_.status_ = std::forward<U>(status);
     }
+  }
+
+  // Under the assumption that |this| is currently holding a value, resets the
+  // |variant_| member to contain |status| and sets |has_value_| to indicate
+  // that |this| does not have a value. Destroys the existing |variant_| member.
+  template <class U>
+  void OverwriteValueWithStatus(U &&status) {
+#ifndef NDEBUG
+    if (!ok()) {
+      LOG(FATAL) << "Object does not have a value to change from";
+    }
+#endif
+    variant_.value_.~T();
+    new (&variant_) variant(std::forward<U>(status));
     has_value_ = false;
   }
 

@@ -23,6 +23,21 @@
 
 namespace asylo {
 
+#ifdef NDEBUG
+constexpr char kMovedByConstructorErrorMsg[] = "";
+constexpr char kMovedByAssignmentErrorMsg[] = "";
+constexpr char kStatusProtoErrorSpaceMsg[] = "";
+constexpr char kStatusProtoOkMismatchMsg[] = "";
+#else
+constexpr char kMovedByConstructorErrorMsg[] =
+    "Invalidated by move-constructor";
+constexpr char kMovedByAssignmentErrorMsg[] = "Invalidated by move-assignment";
+constexpr char kStatusProtoErrorSpaceMsg[] =
+    "ErrorSpace canonical code mismatch";
+constexpr char kStatusProtoOkMismatchMsg[] =
+    "The ErrorSpace error_code equivalent of GoogleError::OK should be zero";
+#endif
+
 Status::Status()
     : error_space_(
           error::error_enum_traits<error::GoogleError>::get_error_space()),
@@ -30,6 +45,21 @@ Status::Status()
 
 Status::Status(const error::ErrorSpace *space, int code, std::string message)
     : error_space_(space), error_code_(code), message_(std::move(message)) {}
+
+Status::Status(Status &&other)
+    : error_space_(other.error_space_),
+      error_code_(other.error_code_),
+      message_(std::move(other.message_)) {
+  other.Set(error::StatusError::MOVED, kMovedByConstructorErrorMsg);
+}
+
+Status &Status::operator=(Status &&other) {
+  error_space_ = other.error_space_;
+  error_code_ = other.error_code_;
+  message_ = std::move(other.message_);
+  other.Set(error::StatusError::MOVED, kMovedByAssignmentErrorMsg);
+  return *this;
+}
 
 Status Status::OkStatus() { return Status(); }
 
@@ -73,7 +103,7 @@ void Status::RestoreFrom(const StatusProto &status_proto) {
     if (status_proto.has_canonical_code() &&
         (error_space_->GoogleErrorCode(status_proto.code()) !=
          status_proto.canonical_code())) {
-      SetInvalid();
+      Set(error::StatusError::RESTORE_ERROR, kStatusProtoErrorSpaceMsg);
       return;
     } else {
       error_code_ = status_proto.code();
@@ -86,7 +116,7 @@ void Status::RestoreFrom(const StatusProto &status_proto) {
     // Both error code and canonical code must be OK, or neither.
     if (status_proto.has_canonical_code() &&
         ((status_proto.code() == 0) != (status_proto.canonical_code() == 0))) {
-      SetInvalid();
+      Set(error::StatusError::RESTORE_ERROR, kStatusProtoOkMismatchMsg);
       return;
     }
     if (status_proto.has_canonical_code()) {
@@ -105,10 +135,6 @@ void Status::RestoreFrom(const StatusProto &status_proto) {
 
 bool Status::IsCanonical() const {
   return error_space_->SpaceName() == error::kCanonicalErrorSpaceName;
-}
-
-void Status::SetInvalid() {
-  Set(error::StatusError::INVALID, "Failed to parse invalid StatusProto");
 }
 
 bool operator==(const Status &lhs, const Status &rhs) {

@@ -205,7 +205,7 @@ TEST(StatusTest, RestoreFromNonOkInvalidCanonicalCode) {
   ::asylo::Status status;
   status.RestoreFrom(status_proto);
 
-  EXPECT_THAT(status, StatusIs(error::StatusError::INVALID));
+  EXPECT_THAT(status, StatusIs(error::StatusError::RESTORE_ERROR));
 }
 
 TEST(StatusTest, RestoreFromUnknownErrorSpace) {
@@ -248,7 +248,7 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceInvalid) {
   asylo::Status status;
   status.RestoreFrom(status_proto);
 
-  EXPECT_THAT(status, StatusIs(error::StatusError::INVALID));
+  EXPECT_THAT(status, StatusIs(error::StatusError::RESTORE_ERROR));
 
   // StatusProto with a non-OK error code from an unknown error space but an OK
   // canonical code.
@@ -258,7 +258,7 @@ TEST(StatusTest, RestoreFromUnknownErrorSpaceInvalid) {
 
   status.RestoreFrom(status_proto);
 
-  EXPECT_THAT(status, StatusIs(error::StatusError::INVALID));
+  EXPECT_THAT(status, StatusIs(error::StatusError::RESTORE_ERROR));
 }
 
 TEST(StatusTest, SaveToRestoreFromEndToEnd) {
@@ -365,6 +365,47 @@ TEST(StatusTest, IsOkMatcher) {
   // Negation of IsOk() matcher.
   Status einval_status(error::PosixError::P_EINVAL, kErrorMessage1);
   EXPECT_THAT(einval_status, Not(IsOk()));
+}
+
+TEST(StatusTest, MoveConstructorTest) {
+  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
+                            kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status,
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  Status that(std::move(invalid_arg_status));
+
+  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
+}
+
+TEST(StatusTest, MoveAssignmentTestNonOk) {
+  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
+                            kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status,
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  Status that(error::GoogleError::CANCELLED, kErrorMessage2);
+  that = std::move(invalid_arg_status);
+
+  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
+}
+
+TEST(StatusTest, MoveAssignmentTestOk) {
+  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
+                            kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status,
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  Status ok = Status::OkStatus();
+  invalid_arg_status = std::move(ok);
+
+  EXPECT_THAT(invalid_arg_status, StatusIs(error::GoogleError::OK, ""));
+
+  EXPECT_THAT(ok, StatusIs(error::StatusError::MOVED));
 }
 
 }  // namespace

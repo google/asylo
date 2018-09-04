@@ -29,8 +29,10 @@ ErrorSpace const *StatusErrorSpace::GetInstance() {
 StatusErrorSpace::StatusErrorSpace()
     : ErrorSpaceImplementationHelper<StatusErrorSpace>(
           "::asylo::error::StatusErrorSpace") {
-  AddTranslationMapEntry(static_cast<int>(StatusError::INVALID),
-                         "Invalid state", GoogleError::INTERNAL);
+  AddTranslationMapEntry(static_cast<int>(StatusError::MOVED), "MOVED",
+                         GoogleError::INTERNAL);
+  AddTranslationMapEntry(static_cast<int>(StatusError::RESTORE_ERROR),
+                         "RESTORE_ERROR", GoogleError::INTERNAL);
 }
 
 ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<StatusError> tag) {
