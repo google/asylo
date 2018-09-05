@@ -164,6 +164,12 @@ cc_test(
     ],
 )
 
+# Provide a unique pointer for malloc'd memory.
+cc_library(
+    name = "memory",
+    hdrs = ["memory.h"],
+)
+
 # Utility functions for working with Linux futex objects.
 cc_library(
     name = "futex",

@@ -35,6 +35,7 @@ package(
 cc_library(
     name = "io_manager",
     srcs = [
+        "io_context_epoll.cc",
         "io_manager.cc",
         "io_syscalls.cc",
         "native_paths.cc",
@@ -42,6 +43,7 @@ cc_library(
         "secure_paths.cc",
     ],
     hdrs = [
+        "io_context_epoll.h",
         "io_manager.h",
         "native_paths.h",
         "random_devices.h",
@@ -53,6 +55,7 @@ cc_library(
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
         "//asylo/platform/storage/secure:trusted_secure",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/algorithm:container",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
@@ -120,6 +123,18 @@ cc_enclave_test(
         ":io_manager",
         "//asylo/test/util:test_flags",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "epoll_test",
+    srcs = ["epoll_test.cc"],
+    enclave_test_name = "epoll_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )

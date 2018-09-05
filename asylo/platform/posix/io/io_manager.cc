@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/posix/io/io_context_epoll.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/util.h"
 #include "asylo/util/posix_error_space.h"
@@ -298,6 +299,44 @@ int IOManager::Poll(struct pollfd *fds, nfds_t nfds, int timeout) {
     fds[i].fd = enclave_fd[i];
   }
   return ret;
+}
+
+int IOManager::EpollCreate(int size) {
+  int hostfd = enc_untrusted_epoll_create(size);
+  auto context = ::absl::make_unique<IOContextEpoll>(hostfd);
+  absl::WriterMutexLock lock(&fd_table_lock_);
+  int fd = fd_table_.Insert(context.get());
+  if (fd >= 0) {
+    context.release();
+    return fd;
+  }
+  errno = EMFILE;
+  return -1;
+}
+
+int IOManager::EpollCtl(int epfd, int op, int fd, struct epoll_event *event) {
+  std::shared_ptr<IOContext> context;
+  {
+    absl::ReaderMutexLock lock(&fd_table_lock_);
+    context = fd_table_.Get(fd);
+  }
+  int hostfd = context ? context->GetHostFileDescriptor() : -1;
+  if (hostfd == -1) {
+    errno = EBADF;
+    return -1;
+  }
+  return CallWithContext(epfd, [op, hostfd, event]
+                           (std::shared_ptr<IOContext> epoll_context) {
+    return epoll_context->EpollCtl(op, hostfd, event);
+  });
+}
+
+int IOManager::EpollWait(int epfd, struct epoll_event *events, int maxevents,
+                         int timeout) {
+  return CallWithContext(epfd, [events, maxevents, timeout]
+                           (std::shared_ptr<IOContext> context) {
+    return context->EpollWait(events, maxevents, timeout);
+  });
 }
 
 // Provide a proper error return value of different types for use in templates.

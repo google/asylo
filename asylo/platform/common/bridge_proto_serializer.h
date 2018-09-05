@@ -46,6 +46,24 @@ void FreeDeserializedIfAddrs(struct ifaddrs *ifa);
 // IfAddrSupported is exposed here since it is used in tests.
 bool IfAddrSupported(const struct ifaddrs *entry);
 
+bool SerializeEpollCtlArgs(int epfd, int op, int fd, struct epoll_event *event,
+                           char **out, size_t *len);
+
+bool SerializeEpollWaitArgs(int epfd, int maxevents, int timeout, char **out,
+                            size_t *len);
+
+bool DeserializeEpollCtlArgs(absl::string_view in, int *epfd, int *op, int *fd,
+                             struct epoll_event *event);
+
+bool DeserializeEpollWaitArgs(absl::string_view in, int *epfd, int *maxevents,
+                              int *timeout);
+
+bool SerializeEvents(const struct epoll_event *events, int numevents,
+                     char **out, size_t *len);
+
+bool DeserializeEvents(absl::string_view in, struct epoll_event *events,
+                       int *numevents);
+
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_COMMON_BRIDGE_PROTO_SERIALIZER_H_

@@ -19,6 +19,7 @@
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
+#include <sys/epoll.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -153,6 +154,118 @@ bool ConvertToAddrinfoProtobuf(const struct addrinfo *in, AddrinfosProto *out) {
     }
   }
 
+  return true;
+}
+
+// Epoll conversion functions.
+void ConvertToEpollEventProtobuf(const struct epoll_event *event,
+                                 EpollEvent *event_proto) {
+  int flags = event->events;
+  if (flags & EPOLLIN) event_proto->add_event_flags(EpollEvent::PROTO_IN);
+  if (flags & EPOLLPRI) event_proto->add_event_flags(EpollEvent::PROTO_PRI);
+  if (flags & EPOLLOUT) event_proto->add_event_flags(EpollEvent::PROTO_OUT);
+  if (flags & EPOLLMSG) event_proto->add_event_flags(EpollEvent::PROTO_MSG);
+  if (flags & EPOLLERR) event_proto->add_event_flags(EpollEvent::PROTO_ERR);
+  if (flags & EPOLLHUP) event_proto->add_event_flags(EpollEvent::PROTO_HUP);
+  if (flags & EPOLLRDHUP) event_proto->add_event_flags(EpollEvent::PROTO_RDHUP);
+  if (flags & EPOLLWAKEUP)
+    event_proto->add_event_flags(EpollEvent::PROTO_WAKEUP);
+  if (flags & EPOLLONESHOT)
+    event_proto->add_event_flags(EpollEvent::PROTO_ONESHOT);
+  if (flags & EPOLLET) event_proto->add_event_flags(EpollEvent::PROTO_ET);
+  event_proto->set_data(event->data.u64);
+}
+
+void ConvertToEpollEvent(const EpollEvent &event_proto,
+                         struct epoll_event *event) {
+  int flags = 0;
+  for (int i = 0; i < event_proto.event_flags_size(); ++i) {
+    EpollEvent::EpollEventFlag curr_flag = event_proto.event_flags(i);
+    if (curr_flag == EpollEvent::PROTO_IN)
+      flags |= EPOLLIN;
+    else if (curr_flag == EpollEvent::PROTO_PRI)
+      flags |= EPOLLPRI;
+    else if (curr_flag == EpollEvent::PROTO_OUT)
+      flags |= EPOLLOUT;
+    else if (curr_flag == EpollEvent::PROTO_MSG)
+      flags |= EPOLLMSG;
+    else if (curr_flag == EpollEvent::PROTO_ERR)
+      flags |= EPOLLERR;
+    else if (curr_flag == EpollEvent::PROTO_HUP)
+      flags |= EPOLLHUP;
+    else if (curr_flag == EpollEvent::PROTO_RDHUP)
+      flags |= EPOLLRDHUP;
+    else if (curr_flag == EpollEvent::PROTO_WAKEUP)
+      flags |= EPOLLWAKEUP;
+    else if (curr_flag == EpollEvent::PROTO_ONESHOT)
+      flags |= EPOLLONESHOT;
+    else if (curr_flag == EpollEvent::PROTO_ET)
+      flags |= EPOLLET;
+  }
+  event->events = flags;
+  event->data.u64 = event_proto.data();
+}
+
+bool ConvertToEpollEventList(const struct epoll_event *events, int numevents,
+                             EpollEventList *event_list) {
+  if (!events || !event_list) return false;
+  for (int i = 0; i < numevents; i++) {
+    EpollEvent *event = event_list->add_events();
+    ConvertToEpollEventProtobuf(&events[i], event);
+  }
+  return true;
+}
+
+bool ConvertToEpollEventStructs(const EpollEventList &event_list,
+                                struct epoll_event *events, int *numevents) {
+  if (!events) {
+    return false;
+  }
+  *numevents = event_list.events().size();
+  for (int i = 0; i < *numevents; ++i) {
+    ConvertToEpollEvent(event_list.events(i), &events[i]);
+  }
+  return true;
+}
+
+EpollCtlArgs::EpollCtlOp ConvertToProtoOp(int host_op) {
+  if (host_op == EPOLL_CTL_ADD)
+    return EpollCtlArgs::PROTO_CTL_ADD;
+  else if (host_op == EPOLL_CTL_DEL)
+    return EpollCtlArgs::PROTO_CTL_DEL;
+  else if (host_op == EPOLL_CTL_MOD)
+    return EpollCtlArgs::PROTO_CTL_MOD;
+  return EpollCtlArgs::UNSUPPORTED;
+}
+
+int ConvertToHostOp(EpollCtlArgs::EpollCtlOp proto_op) {
+  if (proto_op == EpollCtlArgs::PROTO_CTL_ADD)
+    return EPOLL_CTL_ADD;
+  else if (proto_op == EpollCtlArgs::PROTO_CTL_DEL)
+    return EPOLL_CTL_DEL;
+  else if (proto_op == EpollCtlArgs::PROTO_CTL_MOD)
+    return EPOLL_CTL_MOD;
+  return -1;
+}
+
+bool ConvertToEpollCtlArgsProtobuf(int epfd, int op, int fd,
+                                   struct epoll_event *event,
+                                   EpollCtlArgs *args) {
+  if ((!event && op != EPOLL_CTL_DEL) || !args) return false;
+  args->set_epfd(epfd);
+  args->set_op(ConvertToProtoOp(op));
+  args->set_hostfd(fd);
+  EpollEvent *event_proto = args->mutable_event();
+  if (event) ConvertToEpollEventProtobuf(event, event_proto);
+  return true;
+}
+
+bool ConvertToEpollWaitArgsProtobuf(int epfd, int maxevents, int timeout,
+                                    EpollWaitArgs *args) {
+  if (!args) return false;
+  args->set_epfd(epfd);
+  args->set_maxevents(maxevents);
+  args->set_timeout(timeout);
   return true;
 }
 
@@ -291,6 +404,76 @@ void FreeDeserializedAddrinfo(struct addrinfo *in) {
     prev_info = info;
   }
   if (prev_info) free(prev_info);
+}
+
+bool SerializeEpollCtlArgs(int epfd, int op, int fd, struct epoll_event *event,
+                           char **out, size_t *len) {
+  if (!out || !len) return false;
+  EpollCtlArgs args_proto;
+  if (ConvertToEpollCtlArgsProtobuf(epfd, op, fd, event, &args_proto)) {
+    *len = args_proto.ByteSizeLong();
+    // The caller is responsible for freeing the memory allocated by malloc.
+    *out = static_cast<char *>(malloc(*len));
+    return args_proto.SerializeToArray(*out, *len);
+  }
+  return false;
+}
+
+bool DeserializeEpollCtlArgs(absl::string_view in, int *epfd, int *op, int *fd,
+                             struct epoll_event *event) {
+  if (!epfd || !op || !fd || (!event && *op == EPOLL_CTL_DEL)) return false;
+  EpollCtlArgs args_proto;
+  if (!args_proto.ParseFromArray(in.data(), in.length())) return false;
+  *epfd = args_proto.epfd();
+  *op = ConvertToHostOp(args_proto.op());
+  *fd = args_proto.hostfd();
+  if (args_proto.has_event()) ConvertToEpollEvent(args_proto.event(), event);
+  return true;
+}
+
+bool SerializeEpollWaitArgs(int epfd, int maxevents, int timeout, char **out,
+                            size_t *len) {
+  if (!out || !len) return false;
+  EpollWaitArgs args_proto;
+  if (ConvertToEpollWaitArgsProtobuf(epfd, maxevents, timeout, &args_proto)) {
+    *len = args_proto.ByteSizeLong();
+    // The caller is responsible for freeing the memory allocated below.
+    *out = static_cast<char *>(malloc(*len));
+    return args_proto.SerializeToArray(*out, *len);
+  }
+  return false;
+}
+
+bool DeserializeEpollWaitArgs(absl::string_view in, int *epfd, int *maxevents,
+                              int *timeout) {
+  if (!epfd || !maxevents) return false;
+  EpollWaitArgs args_proto;
+  if (!args_proto.ParseFromArray(in.data(), in.length())) return false;
+  *epfd = args_proto.epfd();
+  *maxevents = args_proto.maxevents();
+  *timeout = args_proto.timeout();
+  return true;
+}
+
+bool SerializeEvents(const struct epoll_event *events, int numevents,
+                     char **out, size_t *len) {
+  if (!events || !out) return false;
+  EpollEventList event_list_proto;
+  if (ConvertToEpollEventList(events, numevents, &event_list_proto)) {
+    *len = event_list_proto.ByteSizeLong();
+    // The caller is responsible for freeing the memory allocated below.
+    *out = static_cast<char *>(malloc(*len));
+    return event_list_proto.SerializeToArray(*out, *len);
+  }
+  return false;
+}
+
+bool DeserializeEvents(absl::string_view in, struct epoll_event *events,
+                       int *numevents) {
+  if (!events || !numevents) return false;
+  EpollEventList event_list_proto;
+  if (!event_list_proto.ParseFromArray(in.data(), in.length())) return false;
+  return ConvertToEpollEventStructs(event_list_proto, events, numevents);
 }
 
 bool SerializeIfAddrs(const struct ifaddrs *in, char **out, size_t *len) {

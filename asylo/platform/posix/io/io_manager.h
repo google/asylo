@@ -20,6 +20,7 @@
 #define ASYLO_PLATFORM_POSIX_IO_IO_MANAGER_H_
 
 #include <errno.h>
+#include <sys/epoll.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -202,6 +203,21 @@ class IOManager {
     // Implements getpeername.
     virtual int GetPeerName(struct sockaddr *addr, socklen_t *addrlen) {
       errno = ENOSYS;
+      return -1;
+    }
+
+    // Implements epoll_ctl.
+    virtual int EpollCtl(int op, int hostfd, struct epoll_event *event) {
+      // EINVAL since file descriptors do not by default support epoll behavior.
+      errno = EINVAL;
+      return -1;
+    }
+
+    // Implements epoll_wait.
+    virtual int EpollWait(struct epoll_event *events, int maxevents,
+                          int timeout) {
+      // EINVAL since file descriptors do not by defualt support epoll behavior.
+      errno = EINVAL;
       return -1;
     }
 
@@ -462,6 +478,16 @@ class IOManager {
   // Implements poll(2).
   int Poll(struct pollfd *fds, nfds_t nfds, int timeout)
       LOCKS_EXCLUDED(fd_table_lock_);
+
+  // Implements epoll_create(2).
+  int EpollCreate(int size) LOCKS_EXCLUDED(fd_table_lock_);
+
+  // Implements epoll_ctl(2);
+  int EpollCtl(int epfd, int op, int fd, struct epoll_event *event);
+
+  // Implements epoll_wait(2);
+  int EpollWait(int epfd, struct epoll_event *events, int maxevents,
+                int timeout);
 
   // Implements mkdir(2).
   int Mkdir(const char *pathname, mode_t mode);

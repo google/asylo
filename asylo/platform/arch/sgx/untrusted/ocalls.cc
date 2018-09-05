@@ -28,6 +28,7 @@
 #include <signal.h>
 #include <stdint.h>
 #include <stdio.h>
+#include <sys/epoll.h>
 #include <sys/file.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -49,6 +50,7 @@
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/util/status.h"
@@ -393,6 +395,55 @@ int ocall_enc_untrusted_poll(struct bridge_pollfd *fds, unsigned int nfds,
       return -1;
     }
   }
+  return ret;
+}
+
+//////////////////////////////////////
+//           epoll.h                //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_epoll_create(int size) { return epoll_create(size); }
+
+int ocall_enc_untrusted_epoll_ctl(const char *serialized_args,
+                                  bridge_size_t serialized_args_len) {
+  std::string serialized_args_str(serialized_args,
+                             static_cast<size_t>(serialized_args_len));
+  int epfd = 0;
+  int op = 0;
+  int hostfd = 0;
+  struct epoll_event event;
+  if (!asylo::DeserializeEpollCtlArgs(serialized_args_str, &epfd, &op, &hostfd,
+                                      &event)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return epoll_ctl(epfd, op, hostfd, &event);
+}
+
+int ocall_enc_untrusted_epoll_wait(const char *serialized_args,
+                                   bridge_size_t serialized_args_len,
+                                   char **serialized_events,
+                                   bridge_size_t *serialized_events_len) {
+  int epfd = 0;
+  int maxevents = 0;
+  int timeout = 0;
+  std::string serialized_args_str(serialized_args,
+                             static_cast<size_t>(serialized_args_len));
+  if (!asylo::DeserializeEpollWaitArgs(serialized_args_str, &epfd, &maxevents,
+                                       &timeout)) {
+    errno = EINVAL;
+    return -1;
+  }
+  struct epoll_event *event_array = static_cast<struct epoll_event *>(
+      malloc(sizeof(struct epoll_event) * maxevents));
+  asylo::MallocUniquePtr<struct epoll_event> event_array_ptr(event_array);
+  int ret = epoll_wait(epfd, event_array, maxevents, timeout);
+  size_t len = 0;
+  if (!asylo::SerializeEvents(event_array, ret, serialized_events, &len)) {
+    errno = EINVAL;
+    return -1;
+  }
+  *serialized_events_len = static_cast<bridge_size_t>(len);
   return ret;
 }
 

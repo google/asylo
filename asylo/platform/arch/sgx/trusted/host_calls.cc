@@ -42,6 +42,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/platform/arch/include/trusted/memory.h"
+#include "asylo/platform/common/memory.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
@@ -680,6 +681,85 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
       errno = EFAULT;
       return -1;
     }
+  }
+  return ret;
+}
+
+//////////////////////////////////////
+//           epoll.h                //
+//////////////////////////////////////
+int enc_untrusted_epoll_create(int size) {
+  int ret = 0;
+  sgx_status_t status = ocall_enc_untrusted_epoll_create(&ret, size);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
+
+int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
+                            struct epoll_event *event) {
+  char *serialized_args = nullptr;
+  asylo::MallocUniquePtr<char[]> args_ptr(serialized_args);
+  size_t len = 0;
+  if (!asylo::SerializeEpollCtlArgs(epfd, op, fd, event, &serialized_args,
+                                    &len)) {
+    errno = EINVAL;
+    return -1;
+  }
+  bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
+  int ret = 0;
+  sgx_status_t status =
+      ocall_enc_untrusted_epoll_ctl(&ret, serialized_args, serialized_args_len);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
+
+int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
+                             int maxevents, int timeout) {
+  char *serialized_args = nullptr;
+  asylo::MallocUniquePtr<char[]> args_ptr(serialized_args);
+  size_t len = 0;
+  if (!asylo::SerializeEpollWaitArgs(epfd, maxevents, timeout, &serialized_args,
+                                     &len)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
+  int ret = 0;
+  char *serialized_event_list = nullptr;
+  bridge_size_t serialized_event_list_len = 0;
+  sgx_status_t status = ocall_enc_untrusted_epoll_wait(
+      &ret, serialized_args, serialized_args_len, &serialized_event_list,
+      &serialized_event_list_len);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  if (!sgx_is_outside_enclave(serialized_event_list,
+                              serialized_event_list_len)) {
+    abort();
+  }
+  asylo::UntrustedUniquePtr<char[]>
+      serialized_events_ptr(serialized_event_list);
+  // The line below intentially copies |serialized_event_list| into trusted
+  // memory.
+  std::string event_list_str(serialized_event_list, serialized_event_list_len);
+  int numevents = 0;
+  if (!asylo::DeserializeEvents(event_list_str, events, &numevents)) {
+    errno = EBADE;
+    return -1;
+  }
+  // Check if the number of events in the deserialized results (|numevents|) is
+  // the same as the return value of epoll_wait (|ret|). An inconsistency would
+  // suggest malicious behavior, therefore, we would abort().
+  if (numevents != ret) {
+    abort();
   }
   return ret;
 }

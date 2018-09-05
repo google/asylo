@@ -146,6 +146,15 @@ void enc_untrusted_sys_futex_wake(int32_t *futex);
 int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 
 //////////////////////////////////////
+//            epoll.h               //
+//////////////////////////////////////
+int enc_untrusted_epoll_create(int size);
+int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
+                            struct epoll_event *event);
+int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
+                             int maxevents, int timeout);
+
+//////////////////////////////////////
 //            ifaddrs.h             //
 //////////////////////////////////////
 int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
