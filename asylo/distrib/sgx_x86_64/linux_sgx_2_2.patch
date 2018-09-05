@@ -15,13 +15,13 @@
 
         openssl genrsa -3 -out enclave_test_private.pem 3072
 
-    The key in `asylo/distrib/linux_sgx_2_1_3.patch` can be changed to a new
+    The key in `asylo/distrib/linux_sgx_2_2.patch` can be changed to a new
     PEM file (which must be named `enclave_test_private.pem`, since that is what
     the `sgx_sdk.bzl` build rules look for) with the following commands, which
     copy the patch before the PEM, write a new PEM, then copy the patch after
     the old PEM diff:
 
-        OLD=linux_sgx_2_1_3.patch
+        OLD=linux_sgx_2_2.patch
         S="+++ enclave_test_private.pem"
         E="+-----END RSA PRIVATE KEY-----"
         START=$(( -2 + $(grep -n "${S}" "${OLD}" | tail -n 1 | sed 's/:.*//') ))
@@ -74,19 +74,8 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     because we are using BoringSSL instead of Intel's tlibcrypto.
 
 
-## Modifications to Intel's SDK release 2.1.3 (in ``)
+## Modifications to Intel's SDK release 2.2 (in ``)
 ### Downstreamed PRs
-* [PR297](https://github.com/intel/linux-sgx/pull/297): Quiet compiler warnings
-  turned to errors in
-    - `sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp`:
-      redefinition of `__STDC_FORMAT_MACROS` (add `#ifndef` guard around
-      `#define`)
-    - `sdk/tlibc/gen/spinlock.c`: add a comment that `_mm_pause`'s definition
-      requires -ffreestanding.
-    - `sign_tool/SignTool/elf_helper.h`: use `std::hex` instead of `hex`.
-    - `sign_tool/SignTool/manage_metadata.cpp`: use `std::hex` instead of `hex`.
-
-### Pending PRs
 * [PR210](https://github.com/intel/linux-sgx/pull/210): Language conformance to
   resolve conflict with newlib.
     - Affected files:
@@ -97,6 +86,24 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     - *Details:* Removed definition of reserved symbols `__INT64` and `__UINT64`
       and instead use `int64_t` and `uint64_t` from `<stdint.h>`. A use of
       `__INT64` in `cpudef.h` is changed to use `Ipp64s` from `ippbase.h`.
+* [PR297](https://github.com/intel/linux-sgx/pull/297): Quiet compiler warnings
+  turned to errors in
+    - `sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp`:
+      redefinition of `__STDC_FORMAT_MACROS` (add `#ifndef` guard around
+      `#define`)
+    - `sdk/tlibc/gen/spinlock.c`: add a comment that `_mm_pause`'s definition
+      requires -ffreestanding.
+    - `sign_tool/SignTool/elf_helper.h`: use `std::hex` instead of `hex`.
+    - `sign_tool/SignTool/manage_metadata.cpp`: use `std::hex` instead of `hex`.
+* [PR301](https://github.com/intel/linux-sgx/pull/301): Localize -O0 to
+  necessary functions and add -fno-omit-frame-pointer.
+    - Affected_files:
+      + `u_instructions.cpp`
+      + `t_instructions.cpp`
+* [PR307](https://github.com/intel/linux-sgx/pull/307): Remove an unnecessary
+  `#include` from gperftool.
+
+### Pending PRs
 * [PR222](https://github.com/intel/linux-sgx/pull/222): Generate different code
   for user exception handlers in edger8r.
     - Affected files:
@@ -110,13 +117,20 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     - Affected files:
       + `trts_internal.h`
       + `trts_nsp.cpp`
-* [PR301](https://github.com/intel/linux-sgx/pull/301): Localize -O0 to
-  necessary functions and add -fno-omit-frame-pointer.
-    - Affected_files:
-      + `u_instructions.cpp`
-      + `t_instructions.cpp`
+* [PR308](https://github.com/intel/linux-sgx/pull/308): Change use of undefined MIN macro
+  to the intended meaning.
+    - Affected files:
+      + `common/inc/internal/mini_snprintf.h`
+* [PR309](https://github.com/intel/linux-sgx/pull/309): Remove unneeded #include
+  of sgx_urts.h in sgx_uswitchless.
+    - Affected files:
+      + `common/inc/sgx_uswitchless.h`
+
 
 ### Non-upstreamed changes
+* `sdk/trts/init_enclave.cpp`: Remove a memset_s of the enclave heap since
+  Asylo does not support heap_init and sbrk in the manner needed for the cleared
+  memory address to be meaningful. Without this, do_init_enclave segfaults.
 * `external/rdrand/src/config.h`: Added the output of `./configure`
   since the build is ported entirely to Bazel.
 * `sdk/trts/trts_nsp.cpp`: add "no-stack-protector" attribute to
@@ -164,7 +178,7 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   handlers for SIGSEGV, SIGFPE, SIGBUS, and SIGTRAP.
 
 --
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
+diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
 --- common/inc/internal/elfheader/elf_common.h
 +++ common/inc/internal/elfheader/elf_common.h
 @@ -30,6 +30,9 @@
@@ -177,7 +191,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/elfheader/elf_common.h commo
  typedef uint32_t u_int32_t;
  typedef uint32_t Elf_Symndx;
  
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/elfheader/elfstructs.h common/inc/internal/elfheader/elfstructs.h
+diff -Nur common/inc/internal/elfheader/elfstructs.h common/inc/internal/elfheader/elfstructs.h
 --- common/inc/internal/elfheader/elfstructs.h
 +++ common/inc/internal/elfheader/elfstructs.h
 @@ -26,6 +26,9 @@
@@ -190,7 +204,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/elfheader/elfstructs.h commo
  typedef uint8_t		Elf_Byte;
  
  typedef uint32_t	Elf32_Addr;	/* Unsigned program address */
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/linux/linux-regs.h common/inc/internal/linux/linux-regs.h
+diff -Nur common/inc/internal/linux/linux-regs.h common/inc/internal/linux/linux-regs.h
 --- common/inc/internal/linux/linux-regs.h
 +++ common/inc/internal/linux/linux-regs.h
 @@ -37,6 +37,7 @@
@@ -201,7 +215,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/linux/linux-regs.h common/in
  #  define LINUX32       1
  #  define SE_WORDSIZE   4
  
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/metadata.h common/inc/internal/metadata.h
+diff -Nur common/inc/internal/metadata.h common/inc/internal/metadata.h
 --- common/inc/internal/metadata.h
 +++ common/inc/internal/metadata.h
 @@ -72,7 +72,7 @@
@@ -213,7 +227,19 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/metadata.h common/inc/intern
  #define STACK_SIZE_MAX 0x40000
  #define HEAP_SIZE_MIN 0x1000
  #define HEAP_SIZE_MAX 0x1000000
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/pcl_common.h common/inc/internal/pcl_common.h
+diff -Nur common/inc/internal/mini_snprintf.h common/inc/internal/mini_snprintf.h
+--- common/inc/internal/mini_snprintf.h
++++ common/inc/internal/mini_snprintf.h
+@@ -254,7 +254,7 @@
+ 
+         total_len += len;
+ 
+-        len = MIN(len, buf_remain);
++        len = len < buf_remain ? len : buf_remain;
+         memcpy(buf_pos, str, len);
+ 
+         buf_pos += len;
+diff -Nur common/inc/internal/pcl_common.h common/inc/internal/pcl_common.h
 --- common/inc/internal/pcl_common.h
 +++ common/inc/internal/pcl_common.h
 @@ -32,6 +32,10 @@
@@ -227,7 +253,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/pcl_common.h common/inc/inte
  /*
   * This file includes definition used by PCL library and encryption tool
   */
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/se_tcrypto_common.h common/inc/internal/se_tcrypto_common.h
+diff -Nur common/inc/internal/se_tcrypto_common.h common/inc/internal/se_tcrypto_common.h
 --- common/inc/internal/se_tcrypto_common.h
 +++ common/inc/internal/se_tcrypto_common.h
 @@ -33,6 +33,11 @@
@@ -242,7 +268,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/se_tcrypto_common.h common/i
  #ifdef USE_SGXSSL
  
  
-diff -Nur -x '*.png' -x '*.gif' common/inc/internal/sgx_read_rand.h common/inc/internal/sgx_read_rand.h
+diff -Nur common/inc/internal/sgx_read_rand.h common/inc/internal/sgx_read_rand.h
 --- common/inc/internal/sgx_read_rand.h
 +++ common/inc/internal/sgx_read_rand.h
 @@ -31,6 +31,8 @@
@@ -254,7 +280,19 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/internal/sgx_read_rand.h common/inc/i
  #include "sgx.h"
  #include "sgx_defs.h"
  #ifdef __cplusplus
-diff -Nur -x '*.png' -x '*.gif' common/inc/sgx_pcl_guid.h common/inc/sgx_pcl_guid.h
+diff -Nur common/inc/internal/sl_workers.h common/inc/internal/sl_workers.h
+--- common/inc/internal/sl_workers.h
++++ common/inc/internal/sl_workers.h
+@@ -70,7 +70,7 @@
+ #ifndef SL_INSIDE_ENCLAVE /* Untrusted */
+     pthread_t*                          threads;
+ #else /* Trusted */
+-    void*                               __unused;
++    void*                               field_is_unused;
+ #endif /* SL_INSIDE_ENCLAVE */
+ };
+ 
+diff -Nur common/inc/sgx_pcl_guid.h common/inc/sgx_pcl_guid.h
 --- common/inc/sgx_pcl_guid.h
 +++ common/inc/sgx_pcl_guid.h
 @@ -31,6 +31,9 @@
@@ -267,7 +305,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/sgx_pcl_guid.h common/inc/sgx_pcl_gui
  /*
   * GUID enables coupling of PCL lib (e.g. libsgx_pcl.a) and sealed blob
   * Before the PCL unseals the sealed blob, the PCL must verify the AAD 
-diff -Nur -x '*.png' -x '*.gif' common/inc/sgx_trts.h common/inc/sgx_trts.h
+diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 --- common/inc/sgx_trts.h
 +++ common/inc/sgx_trts.h
 @@ -32,6 +32,7 @@
@@ -278,10 +316,10 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/sgx_trts.h common/inc/sgx_trts.h
  #include "sgx_error.h"
  #include "stddef.h"
  #include "sgx_defs.h"
-diff -Nur -x '*.png' -x '*.gif' common/inc/sgx_urts.h common/inc/sgx_urts.h
+diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
 --- common/inc/sgx_urts.h
 +++ common/inc/sgx_urts.h
-@@ -66,6 +66,8 @@
+@@ -96,6 +96,8 @@
  
  sgx_status_t SGXAPI sgx_destroy_enclave(const sgx_enclave_id_t enclave_id);
  
@@ -290,7 +328,18 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/sgx_urts.h common/inc/sgx_urts.h
  #ifdef __cplusplus
  }
  #endif
-diff -Nur -x '*.png' -x '*.gif' common/inc/tlibc/string.h common/inc/tlibc/string.h
+diff -Nur common/inc/sgx_uswitchless.h common/inc/sgx_uswitchless.h
+--- common/inc/sgx_uswitchless.h
++++ common/inc/sgx_uswitchless.h
+@@ -72,7 +72,6 @@
+ #include "sgx_error.h"
+ #include "sgx_eid.h"
+ #include "sgx_defs.h"
+-#include "sgx_urts.h"
+ 
+ /*
+  * A worker can be either trusted (executed inside enclave) or untrusted
+diff -Nur common/inc/tlibc/string.h common/inc/tlibc/string.h
 --- common/inc/tlibc/string.h
 +++ common/inc/tlibc/string.h
 @@ -79,7 +79,8 @@
@@ -313,7 +362,7 @@ diff -Nur -x '*.png' -x '*.gif' common/inc/tlibc/string.h common/inc/tlibc/strin
  
  /*
   * Non-C99
-diff -Nur -x '*.png' -x '*.gif' common/src/linux/xsave_gnu.S common/src/linux/xsave_gnu.S
+diff -Nur common/src/linux/xsave_gnu.S common/src/linux/xsave_gnu.S
 --- common/src/linux/xsave_gnu.S
 +++ common/src/linux/xsave_gnu.S
 @@ -34,6 +34,8 @@
@@ -325,7 +374,7 @@ diff -Nur -x '*.png' -x '*.gif' common/src/linux/xsave_gnu.S common/src/linux/xs
  .macro DO_XSAVEC
  #if defined(LINUX64)
      .byte   0x48, 0x0f, 0xc7, 0x21
-diff -Nur -x '*.png' -x '*.gif' common/src/sgx_profile.cpp common/src/sgx_profile.cpp
+diff -Nur common/src/sgx_profile.cpp common/src/sgx_profile.cpp
 --- common/src/sgx_profile.cpp
 +++ common/src/sgx_profile.cpp
 @@ -38,7 +38,6 @@
@@ -354,7 +403,7 @@ diff -Nur -x '*.png' -x '*.gif' common/src/sgx_profile.cpp common/src/sgx_profil
      fs.open(filename); /* do not overwritten previous value */
  
      fs << "freq: " << freq <<endl;
-diff -Nur -x '*.png' -x '*.gif' external/rdrand/src/config.h external/rdrand/src/config.h
+diff -Nur external/rdrand/src/config.h external/rdrand/src/config.h
 --- external/rdrand/src/config.h
 +++ external/rdrand/src/config.h
 @@ -0,0 +1,53 @@
@@ -411,7 +460,7 @@ diff -Nur -x '*.png' -x '*.gif' external/rdrand/src/config.h external/rdrand/src
 +
 +/* Define if using gcc and it supports RDRAND */
 +#define HAVE_RDRAND_IN_GCC 1
-diff -Nur -x '*.png' -x '*.gif' external/tinyxml2/tinyxml2.cpp external/tinyxml2/tinyxml2.cpp
+diff -Nur external/tinyxml2/tinyxml2.cpp external/tinyxml2/tinyxml2.cpp
 --- external/tinyxml2/tinyxml2.cpp
 +++ external/tinyxml2/tinyxml2.cpp
 @@ -410,16 +410,19 @@
@@ -434,30 +483,7 @@ diff -Nur -x '*.png' -x '*.gif' external/tinyxml2/tinyxml2.cpp external/tinyxml2
          case 1:
              --output;
              *output = (char)(input | FIRST_BYTE_MARK[*length]);
-diff -Nur -x '*.png' -x '*.gif' .gitignore .gitignore
---- .gitignore
-+++ .gitignore
-@@ -1,19 +0,0 @@
--#object file
--*.o
--
--#library
--*.a
--
--#share object
--*.so
--*.so.*
--
--#generated proxy
--*_u.c
--*_u.h
--*_t.c
--*_t.h
--
--#output files
--/build/
--/linux/installer/bin/*.bin
-diff -Nur -x '*.png' -x '*.gif' psw/ae/common/inc/IAEMessage.h psw/ae/common/inc/IAEMessage.h
+diff -Nur psw/ae/common/inc/IAEMessage.h psw/ae/common/inc/IAEMessage.h
 --- psw/ae/common/inc/IAEMessage.h
 +++ psw/ae/common/inc/IAEMessage.h
 @@ -37,7 +37,7 @@
@@ -469,7 +495,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/ae/common/inc/IAEMessage.h psw/ae/common/inc
  #pragma GCC diagnostic pop
  
  struct AEMessage{
-diff -Nur -x '*.png' -x '*.gif' psw/ae/common/proto/messages.proto psw/ae/common/proto/messages.proto
+diff -Nur psw/ae/common/proto/messages.proto psw/ae/common/proto/messages.proto
 --- psw/ae/common/proto/messages.proto
 +++ psw/ae/common/proto/messages.proto
 @@ -30,6 +30,8 @@
@@ -481,7 +507,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/ae/common/proto/messages.proto psw/ae/common
  package aesm.message;
  
  message Request{
-diff -Nur -x '*.png' -x '*.gif' psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSerializer.cpp
+diff -Nur psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSerializer.cpp
 --- psw/ae/common/src/ProtobufSerializer.cpp
 +++ psw/ae/common/src/ProtobufSerializer.cpp
 @@ -34,7 +34,6 @@
@@ -492,7 +518,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/ae/common/src/ProtobufSerializer.cpp psw/ae/
  #include <IAEMessage.h>
  
  #include <IAERequest.h>
-diff -Nur -x '*.png' -x '*.gif' psw/urts/cpu_features.h psw/urts/cpu_features.h
+diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 --- psw/urts/cpu_features.h
 +++ psw/urts/cpu_features.h
 @@ -32,6 +32,8 @@
@@ -504,10 +530,10 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/cpu_features.h psw/urts/cpu_features.h
  #include "cpuid.h"
  
  void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo_table);
-diff -Nur -x '*.png' -x '*.gif' psw/urts/enclave.cpp psw/urts/enclave.cpp
+diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 --- psw/urts/enclave.cpp
 +++ psw/urts/enclave.cpp
-@@ -44,8 +44,6 @@
+@@ -45,8 +45,6 @@
  #include "rts.h"
  
  
@@ -516,7 +542,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/enclave.cpp psw/urts/enclave.cpp
  int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
  int do_ocall(const bridge_fn_t bridge, void *ms);
  
-@@ -317,7 +315,15 @@
+@@ -388,7 +386,15 @@
      return &m_enclave_info;
  }
  
@@ -533,20 +559,22 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  CTrustThread * CEnclave::get_tcs(int ecall_cmd)
  {
-diff -Nur -x '*.png' -x '*.gif' psw/urts/enclave.h psw/urts/enclave.h
+diff -Nur psw/urts/enclave.h psw/urts/enclave.h
 --- psw/urts/enclave.h
 +++ psw/urts/enclave.h
-@@ -82,6 +82,9 @@
-     sgx_status_t fill_tcs_mini_pool_fn();
-     uint8_t* get_sealed_key();
+@@ -85,7 +85,10 @@
      void set_sealed_key(uint8_t *sealed_key);
+     sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
+     void destroy_uswitchless(void);
+-	
 +#ifdef SE_SIM
 +    tcs_t *get_tcs_info();
 +#endif
++
  private:
      CTrustThread * get_tcs(int ecall_cmd);
      void put_tcs(CTrustThread *trust_thread);
-diff -Nur -x '*.png' -x '*.gif' psw/urts/file.h psw/urts/file.h
+diff -Nur psw/urts/file.h psw/urts/file.h
 --- psw/urts/file.h
 +++ psw/urts/file.h
 @@ -33,6 +33,8 @@
@@ -558,7 +586,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/file.h psw/urts/file.h
  typedef char*  prd_css_path_t;
  
  typedef struct _se_file_t {
-diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/misc.cpp psw/urts/linux/misc.cpp
+diff -Nur psw/urts/linux/misc.cpp psw/urts/linux/misc.cpp
 --- psw/urts/linux/misc.cpp
 +++ psw/urts/linux/misc.cpp
 @@ -34,10 +34,8 @@
@@ -573,7 +601,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/misc.cpp psw/urts/linux/misc.cpp
  {
      DIR*   dir = NULL;
      struct dirent* dirent = NULL;
-diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/read_xcr0.h psw/urts/linux/read_xcr0.h
+diff -Nur psw/urts/linux/read_xcr0.h psw/urts/linux/read_xcr0.h
 --- psw/urts/linux/read_xcr0.h
 +++ psw/urts/linux/read_xcr0.h
 @@ -33,6 +33,8 @@
@@ -585,7 +613,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/read_xcr0.h psw/urts/linux/read_x
  static inline uint64_t xgetbv(uint32_t index)
  {
      uint32_t eax, edx;
-diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
+diff -Nur psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
 --- psw/urts/linux/sig_handler.cpp
 +++ psw/urts/linux/sig_handler.cpp
 @@ -198,23 +198,11 @@
@@ -612,7 +640,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/sig_handler.cpp psw/urts/linux/si
  }
  
  //trust_thread is saved at stack for ocall.
-diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
+diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 --- psw/urts/linux/urts.cpp
 +++ psw/urts/linux/urts.cpp
 @@ -29,7 +29,8 @@
@@ -624,10 +652,10 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +#include "enclave.h"
  #include "sgx_error.h"
  #include "sgx_urts.h"
- #include "se_types.h"
-@@ -126,3 +127,20 @@
- 
-     return ret;
+ #include "sgx_uswitchless.h"
+@@ -145,3 +146,20 @@
+     return __sgx_create_enclave_ex(file_name, debug, launch_token,
+         launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
  }
 +
 +extern "C" int is_tcs_sim_active(const tcs_t *tcs);
@@ -646,7 +674,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +#endif
 +  return 0;
 +}
-diff -Nur -x '*.png' -x '*.gif' psw/urts/loader.cpp psw/urts/loader.cpp
+diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
 --- psw/urts/loader.cpp
 +++ psw/urts/loader.cpp
 @@ -47,10 +47,14 @@
@@ -742,7 +770,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/loader.cpp psw/urts/loader.cpp
      {
          if(!IS_PAGE_ALIGNED(it->first))
          {
-diff -Nur -x '*.png' -x '*.gif' psw/urts/loader.h psw/urts/loader.h
+diff -Nur psw/urts/loader.h psw/urts/loader.h
 --- psw/urts/loader.h
 +++ psw/urts/loader.h
 @@ -77,7 +77,7 @@
@@ -763,7 +791,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/loader.h psw/urts/loader.h
      int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
  
      uint8_t             *m_mapped_file_base;
-diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/binparser.h psw/urts/parser/binparser.h
+diff -Nur psw/urts/parser/binparser.h psw/urts/parser/binparser.h
 --- psw/urts/parser/binparser.h
 +++ psw/urts/parser/binparser.h
 @@ -41,8 +41,6 @@
@@ -805,7 +833,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/binparser.h psw/urts/parser/binp
      virtual bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization) = 0;
      virtual void get_pages_to_protect(uint64_t, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const = 0;
      virtual bool has_init_section() const = 0;
-diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/elfparser.cpp psw/urts/parser/elfparser.cpp
+diff -Nur psw/urts/parser/elfparser.cpp psw/urts/parser/elfparser.cpp
 --- psw/urts/parser/elfparser.cpp
 +++ psw/urts/parser/elfparser.cpp
 @@ -184,7 +184,7 @@
@@ -889,7 +917,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/elfparser.cpp psw/urts/parser/el
  {
      xsec_names.clear();
  
-diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/elfparser.h psw/urts/parser/elfparser.h
+diff -Nur psw/urts/parser/elfparser.h psw/urts/parser/elfparser.h
 --- psw/urts/parser/elfparser.h
 +++ psw/urts/parser/elfparser.h
 @@ -39,9 +39,6 @@
@@ -948,7 +976,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/elfparser.h psw/urts/parser/elfp
  };
  
  #endif
-diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/update_global_data.hxx psw/urts/parser/update_global_data.hxx
+diff -Nur psw/urts/parser/update_global_data.hxx psw/urts/parser/update_global_data.hxx
 --- psw/urts/parser/update_global_data.hxx
 +++ psw/urts/parser/update_global_data.hxx
 @@ -29,6 +29,13 @@
@@ -965,7 +993,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/parser/update_global_data.hxx psw/urts/
  namespace {
      layout_entry_t *get_entry_by_id(const metadata_t *const metadata, uint16_t id)
      {
-diff -Nur -x '*.png' -x '*.gif' psw/urts/section_info.h psw/urts/section_info.h
+diff -Nur psw/urts/section_info.h psw/urts/section_info.h
 --- psw/urts/section_info.h
 +++ psw/urts/section_info.h
 @@ -36,8 +36,6 @@
@@ -986,7 +1014,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/section_info.h psw/urts/section_info.h
      //the first bit of scetion in the bitmap is bitmap[(rva >> PAGE_SHIFT) / 8] & (1 << ((rva >> PAGE_SHIFT) % 8))
      //if the bitmap is NULL, then no restrict on page attribute.
  } section_info_t;
-diff -Nur -x '*.png' -x '*.gif' psw/urts/tcs.cpp psw/urts/tcs.cpp
+diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
 --- psw/urts/tcs.cpp
 +++ psw/urts/tcs.cpp
 @@ -102,13 +102,13 @@
@@ -1040,7 +1068,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/tcs.cpp psw/urts/tcs.cpp
      get_thread_set(thread_vector);
      //walk through thread cache to see if there is any thread that has exited
      Node<se_thread_id_t, CTrustThread*>* it = m_thread_list, *pre = NULL, *tmp = NULL;
-diff -Nur -x '*.png' -x '*.gif' psw/urts/tcs.h psw/urts/tcs.h
+diff -Nur psw/urts/tcs.h psw/urts/tcs.h
 --- psw/urts/tcs.h
 +++ psw/urts/tcs.h
 @@ -41,8 +41,6 @@
@@ -1071,7 +1099,7 @@ diff -Nur -x '*.png' -x '*.gif' psw/urts/tcs.h psw/urts/tcs.h
      Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
      Mutex                                   m_thread_mutex; //protect thread_cache list. The mutex is recursive.
                                                              //Thread can operate the list when it get the mutex
-diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
+diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
 --- sdk/edger8r/linux/Ast.ml
 +++ sdk/edger8r/linux/Ast.ml
 @@ -142,6 +142,11 @@
@@ -1086,15 +1114,15 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.m
  (* Function declaration. *)
  type func_decl = {
    fname : string;       (* function name. *)
-@@ -157,6 +162,7 @@
- type trusted_func = {
+@@ -158,6 +163,7 @@
    tf_fdecl   : func_decl;
    tf_is_priv : bool;
+   tf_is_switchless : bool;
 +  tf_is_exception_handler : bool;
  }
  
  type untrusted_func = {
-@@ -180,6 +186,7 @@
+@@ -182,6 +188,7 @@
  type expr =
    | Interface of enclave_func list
    | Composite of composite_type
@@ -1102,7 +1130,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.m
    | Importing of import_decl
    | Include   of string
  
-diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
+diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
 --- sdk/edger8r/linux/CodeGen.ml
 +++ sdk/edger8r/linux/CodeGen.ml
 @@ -46,6 +46,7 @@
@@ -1113,7 +1141,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
    tfunc_decls  : Ast.trusted_func   list;
    ufunc_decls  : Ast.untrusted_func list;
  }
-@@ -61,6 +62,7 @@
+@@ -75,6 +76,7 @@
      include_list = [];
      import_exprs = [];
      comp_defs    = [];
@@ -1121,7 +1149,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
      tfunc_decls  = [];
      ufunc_decls  = []; }
  
-@@ -70,6 +72,9 @@
+@@ -84,6 +86,9 @@
  let is_priv_ecall (tf: Ast.trusted_func) =
    tf.Ast.tf_is_priv
  
@@ -1131,7 +1159,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
  let get_uf_fname (uf: Ast.untrusted_func) =
    uf.Ast.uf_fdecl.Ast.fname
  
-@@ -85,6 +90,9 @@
+@@ -99,6 +104,9 @@
  let tf_list_to_priv_list (tfs: Ast.trusted_func list) =
    List.map is_priv_ecall tfs
  
@@ -1141,7 +1169,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
  (* Get a list of names of all private ECALLs *)
  let get_priv_ecall_names (tfs: Ast.trusted_func list) =
    List.filter is_priv_ecall tfs |> List.map get_tf_fname
-@@ -104,11 +112,13 @@
+@@ -118,11 +126,13 @@
    let ac_include_list = ref [] in
    let ac_import_exprs = ref [] in
    let ac_comp_defs = ref [] in
@@ -1155,7 +1183,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
          | Ast.Include   x -> ac_include_list := x :: !ac_include_list
          | Ast.Importing x -> ac_import_exprs := x :: !ac_import_exprs
          | Ast.Interface xs ->
-@@ -124,6 +134,7 @@
+@@ -138,6 +148,7 @@
        include_list = List.rev !ac_include_list;
        import_exprs = List.rev !ac_import_exprs;
        comp_defs    = List.rev !ac_comp_defs;
@@ -1163,7 +1191,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
        tfunc_decls  = List.rev !ac_tfunc_decls;
        ufunc_decls  = List.rev !ac_ufunc_decls; }
  
-@@ -321,6 +332,62 @@
+@@ -335,6 +346,62 @@
        | Ast.UnionDef  u -> mk_union_decl  (gen_member_list u.Ast.mlist) u.Ast.sname
        | Ast.EnumDef   e -> mk_enum_def    e
  
@@ -1226,7 +1254,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
  (* Generate a list of '#include' *)
  let gen_include_list (xs: string list) =
    List.fold_left (fun acc s -> acc ^ sprintf "#include \"%s\"\n" s) "" xs
-@@ -377,15 +444,23 @@
+@@ -391,15 +458,23 @@
  
  (* ---------------------------------------------------------------------- *)
  
@@ -1251,7 +1279,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
     };
  *)
  let gen_ecall_table (tfs: Ast.trusted_func list) =
-@@ -393,18 +468,19 @@
+@@ -407,18 +482,19 @@
    let ecall_table_size = List.length tfs in
    let trusted_fds = tf_list_to_fd_list tfs in
    let priv_bits = tf_list_to_priv_list tfs in
@@ -1274,7 +1302,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
  } %s = {\n\
  \t%d,\n\
  %s};\n" ecall_table_size
-@@ -662,12 +738,18 @@
+@@ -676,12 +752,18 @@
                                 acc ^ ", " ^ mk_parm_name pty dlr) p0 ps)
  
  (* Generate untrusted bridge code for a given untrusted function. *)
@@ -1295,7 +1323,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
    let ms_struct_name = mk_ms_struct_name fd.Ast.fname in
    let declare_ms_ptr = sprintf "%s* %s = SGX_CAST(%s*, %s);"
                                 ms_struct_name
-@@ -1310,7 +1392,7 @@
+@@ -1345,7 +1427,7 @@
       List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
    
  (* Generate trusted proxy code for a given untrusted function. *)
@@ -1304,12 +1332,11 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
    let fd = ufunc.Ast.uf_fdecl in
    let propagate_errno = ufunc.Ast.uf_propagate_errno in
    let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
-@@ -1358,8 +1440,13 @@
-              match pty with
+@@ -1395,7 +1477,13 @@
                               Ast.PTVal _ -> acc
                 | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
--
--  let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;" else "" in
+ 
+-  let set_errno = if propagate_errno then "\t\terrno = ms->ocall_errno;\n" else "" in
 +  let set_errno =
 +    if propagate_errno then "\terrno = " ^
 +      if conv_errno then
@@ -1320,8 +1347,8 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
    let func_close = sprintf "%s%s%s\n%s%s\n"
                             (handle_out_ptr fd.Ast.plist)
                             set_errno
-@@ -1419,12 +1506,16 @@
-       (tf_list_to_fd_list ec.tfunc_decls)
+@@ -1455,12 +1543,16 @@
+       ec.tfunc_decls
        (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
    in
 +  let errno_enum = gen_errno_enum ec.errno_list in
@@ -1338,7 +1365,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
      List.iter (fun s -> output_string out_chan (s ^ "\n")) ubridge_list;
      output_string out_chan (gen_ocall_table ec);
      List.iter (fun s -> output_string out_chan (s ^ "\n")) uproxy_list;
-@@ -1456,14 +1547,18 @@
+@@ -1492,14 +1584,18 @@
      List.map (fun tfd -> gen_func_tbridge tfd dummy_var) trusted_fds in
    let ecall_table = gen_ecall_table ec.tfunc_decls in
    let entry_table = gen_entry_table ec in
@@ -1358,7 +1385,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
      output_string out_chan (ecall_table ^ "\n");
      output_string out_chan (entry_table ^ "\n");
      output_string out_chan "\n";
-@@ -1567,9 +1662,10 @@
+@@ -1603,9 +1699,10 @@
      List.iter check_ecall priv_ecall_names
  
  (* Check that there is at least one public ECALL function. *)
@@ -1371,7 +1398,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
    then failwithf "the enclave `%s' contains no public root ECALL.\n" ec.file_shortnm
    else report_orphaned_priv_ecall ec
  
-@@ -1584,7 +1680,7 @@
+@@ -1620,7 +1717,7 @@
   *)
  let reduce_import (ec: enclave_content) =
    (* Append a EDL list to another. Keep the first element and replace the
@@ -1380,7 +1407,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
     if both lists contain a same EDL. The function sequence is backwards compatible.*)
    let join (ec1: enclave_content list) (ec2: enclave_content list) =
      let join_one (acc: enclave_content list) (ec: enclave_content) =
-@@ -1662,6 +1758,7 @@
+@@ -1698,6 +1795,7 @@
          include_list = acc.include_list @ ec2.include_list;
          import_exprs = [];
          comp_defs    = acc.comp_defs   @ ec2.comp_defs;
@@ -1388,7 +1415,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
          tfunc_decls  = acc.tfunc_decls @ ec2.tfunc_decls;
          ufunc_decls  = acc.ufunc_decls @ ec2.ufunc_decls; }
    in
-@@ -1677,6 +1774,6 @@
+@@ -1713,6 +1811,6 @@
      create_dir ep.trusted_dir;
      check_duplication ec;
      check_allow_list ec;
@@ -1396,7 +1423,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/C
 +    (if not ep.header_only then check_priv_and_exception_funcs ec);
      (if ep.gen_untrusted then (gen_untrusted_header ec; if not ep.header_only then gen_untrusted_source ec));
      (if ep.gen_trusted then (gen_trusted_header ec; if not ep.header_only then gen_trusted_source ec))
-diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Lexer.mll sdk/edger8r/linux/Lexer.mll
+diff -Nur sdk/edger8r/linux/Lexer.mll sdk/edger8r/linux/Lexer.mll
 --- sdk/edger8r/linux/Lexer.mll
 +++ sdk/edger8r/linux/Lexer.mll
 @@ -79,6 +79,8 @@
@@ -1408,10 +1435,10 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Lexer.mll sdk/edger8r/linux/Le
  
    (* specifier *)
    | "enclave"    { Tenclave }
-diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
+diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
 --- sdk/edger8r/linux/Parser.mly
 +++ sdk/edger8r/linux/Parser.mly
-@@ -304,7 +304,7 @@
+@@ -305,7 +305,7 @@
  %token Tchar Tshort Tunsigned Tint Tfloat Tdouble
         Tint8 Tint16 Tint32 Tint64
         Tuint8 Tuint16 Tuint32 Tuint64
@@ -1420,7 +1447,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/P
  %token Tenclave Tfrom Timport Ttrusted Tuntrusted Tallow Tpropagate_errno
  
  %start start_parsing
-@@ -528,6 +528,19 @@
+@@ -529,6 +529,19 @@
    | enum_definition                   { $1 }
    ;
  
@@ -1440,8 +1467,8 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/P
  member_list: member_def TSemicolon    { [$1] }
    | member_list member_def TSemicolon { $2 :: $1 }
    ;
-@@ -585,10 +598,15 @@
-   | Tpublic                    { false  }
+@@ -591,10 +604,15 @@
+   | Tswitchless                      { true  }
    ;
  
 +/* is_exception_handler? Default to false */
@@ -1450,16 +1477,16 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/P
 +  ;
 +
  trusted_functions: /* nothing */          { [] }
--  | trusted_functions access_modifier func_def TSemicolon {
+-  | trusted_functions access_modifier func_def switchless_annotation TSemicolon {
 -      check_ptr_attr $3 (symbol_start_pos(), symbol_end_pos());
--      Ast.Trusted { Ast.tf_fdecl = $3; Ast.tf_is_priv = $2 } :: $1
-+  | trusted_functions exception_handler access_modifier func_def TSemicolon {
+-      Ast.Trusted { Ast.tf_fdecl = $3; Ast.tf_is_priv = $2; Ast.tf_is_switchless = $4 } :: $1
++  | trusted_functions exception_handler access_modifier func_def switchless_annotation TSemicolon {
 +      check_ptr_attr $4 (symbol_start_pos(), symbol_end_pos());
-+      Ast.Trusted { Ast.tf_fdecl = $4; Ast.tf_is_priv = $3; Ast.tf_is_exception_handler = $2 } :: $1
++      Ast.Trusted { Ast.tf_fdecl = $4; Ast.tf_is_priv = $3; Ast.tf_is_switchless = $5; Ast.tf_is_exception_handler = $2; } :: $1
      }
    ;
  
-@@ -655,6 +673,7 @@
+@@ -661,6 +679,7 @@
    | expressions include_declaration           { Ast.Include($2)   :: $1 }
    | expressions import_declaration TSemicolon { Ast.Importing($2) :: $1 }
    | expressions composite_defs TSemicolon     { Ast.Composite($2) :: $1 }
@@ -1467,7 +1494,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/P
    | expressions enclave_functions             { Ast.Interface($2) :: $1 }
    ;
  
-diff -Nur -x '*.png' -x '*.gif' sdk/sign_tool/SignTool/elf_helper.h sdk/sign_tool/SignTool/elf_helper.h
+diff -Nur sdk/sign_tool/SignTool/elf_helper.h sdk/sign_tool/SignTool/elf_helper.h
 --- sdk/sign_tool/SignTool/elf_helper.h
 +++ sdk/sign_tool/SignTool/elf_helper.h
 @@ -41,11 +41,10 @@
@@ -1501,7 +1528,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/sign_tool/SignTool/elf_helper.h sdk/sign_too
          p->get_executable_sections(sec_names);
          /* Warn user of TEXTRELs */
          for (unsigned i = 0; i< sec_names.size(); i++)
-diff -Nur -x '*.png' -x '*.gif' sdk/sign_tool/SignTool/manage_metadata.cpp sdk/sign_tool/SignTool/manage_metadata.cpp
+diff -Nur sdk/sign_tool/SignTool/manage_metadata.cpp sdk/sign_tool/SignTool/manage_metadata.cpp
 --- sdk/sign_tool/SignTool/manage_metadata.cpp
 +++ sdk/sign_tool/SignTool/manage_metadata.cpp
 @@ -55,7 +55,11 @@
@@ -1556,7 +1583,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/sign_tool/SignTool/manage_metadata.cpp sdk/s
      patch_entry_t patch;
      memset(&patch, 0, sizeof(patch));
  
-diff -Nur -x '*.png' -x '*.gif' sdk/sign_tool/SignTool/manage_metadata.h sdk/sign_tool/SignTool/manage_metadata.h
+diff -Nur sdk/sign_tool/SignTool/manage_metadata.h sdk/sign_tool/SignTool/manage_metadata.h
 --- sdk/sign_tool/SignTool/manage_metadata.h
 +++ sdk/sign_tool/SignTool/manage_metadata.h
 @@ -100,7 +100,7 @@
@@ -1577,7 +1604,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/sign_tool/SignTool/manage_metadata.h sdk/sig
      uint64_t m_rva;
      uint32_t m_gd_size;
      uint8_t *m_gd_template;
-diff -Nur -x '*.png' -x '*.gif' sdk/simulation/assembly/lowlib.h sdk/simulation/assembly/lowlib.h
+diff -Nur sdk/simulation/assembly/lowlib.h sdk/simulation/assembly/lowlib.h
 --- sdk/simulation/assembly/lowlib.h
 +++ sdk/simulation/assembly/lowlib.h
 @@ -40,6 +40,15 @@
@@ -1596,7 +1623,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/simulation/assembly/lowlib.h sdk/simulation/
  #ifdef __cplusplus
  extern "C" {
  #endif
-diff -Nur -x '*.png' -x '*.gif' sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
+diff -Nur sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
 --- sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
 +++ sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
 @@ -49,13 +49,11 @@
@@ -1614,7 +1641,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/simulation/SEConfigureCPUSVN/linux/config_cp
      for(int i=0; i<4; i++)
      {
          buffer[i] = __builtin_bswap32(buffer[i]);
-diff -Nur -x '*.png' -x '*.gif' sdk/simulation/tinst/t_instructions.cpp sdk/simulation/tinst/t_instructions.cpp
+diff -Nur sdk/simulation/tinst/t_instructions.cpp sdk/simulation/tinst/t_instructions.cpp
 --- sdk/simulation/tinst/t_instructions.cpp
 +++ sdk/simulation/tinst/t_instructions.cpp
 @@ -286,6 +286,8 @@
@@ -1642,7 +1669,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/simulation/tinst/t_instructions.cpp sdk/simu
  }
 -
 -#pragma GCC pop_options
-diff -Nur -x '*.png' -x '*.gif' sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
+diff -Nur sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
 --- sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
 +++ sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
 @@ -37,7 +37,9 @@
@@ -1655,7 +1682,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/simulation/uae_service_sim/linux/platform_se
  #include <inttypes.h>
  
  static Mutex g_pse_sim_lock;
-diff -Nur -x '*.png' -x '*.gif' sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instructions.cpp
+diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instructions.cpp
 --- sdk/simulation/uinst/u_instructions.cpp
 +++ sdk/simulation/uinst/u_instructions.cpp
 @@ -209,6 +209,7 @@
@@ -1666,7 +1693,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/simulation/uinst/u_instructions.cpp sdk/simu
  void _SE3(uintptr_t xax, uintptr_t xbx,
            uintptr_t xcx, uintptr_t xdx,
            uintptr_t xsi, uintptr_t xdi)
-diff -Nur -x '*.png' -x '*.gif' sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
+diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
 --- sdk/simulation/urtssim/get_state.cpp
 +++ sdk/simulation/urtssim/get_state.cpp
 @@ -0,0 +1,44 @@
@@ -1714,7 +1741,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/simulation/urtssim/get_state.cpp sdk/simulat
 +  }
 +  return 0;
 +}
-diff -Nur -x '*.png' -x '*.gif' sdk/tlibc/gen/spinlock.c sdk/tlibc/gen/spinlock.c
+diff -Nur sdk/tlibc/gen/spinlock.c sdk/tlibc/gen/spinlock.c
 --- sdk/tlibc/gen/spinlock.c
 +++ sdk/tlibc/gen/spinlock.c
 @@ -34,7 +34,7 @@
@@ -1726,7 +1753,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/tlibc/gen/spinlock.c sdk/tlibc/gen/spinlock.
  {
      __asm __volatile(
          "pause"
-diff -Nur -x '*.png' -x '*.gif' sdk/tlibc/string/memset_s.c sdk/tlibc/string/memset_s.c
+diff -Nur sdk/tlibc/string/memset_s.c sdk/tlibc/string/memset_s.c
 --- sdk/tlibc/string/memset_s.c
 +++ sdk/tlibc/string/memset_s.c
 @@ -37,6 +37,7 @@
@@ -1737,7 +1764,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/tlibc/string/memset_s.c sdk/tlibc/string/mem
  
  /*
   * __memset_vp is a volatile pointer to a function.
-diff -Nur -x '*.png' -x '*.gif' sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp
+diff -Nur sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp
 --- sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp
 +++ sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp
 @@ -35,6 +35,7 @@
@@ -1748,7 +1775,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp sdk/tlibcr
  
  /* Message Authentication - Rijndael 128 CMAC
  * Parameters:
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
+diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
 --- sdk/trts/init_enclave.cpp
 +++ sdk/trts/init_enclave.cpp
 @@ -47,6 +47,7 @@
@@ -1759,39 +1786,16 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/init_enclave.cpp sdk/trts/init_enclave.
  #include "trts_util.h"
  #include "se_memcpy.h"
  
-@@ -174,6 +175,10 @@
+@@ -197,7 +198,7 @@
+     else
+ #endif
      {
-         return SGX_ERROR_UNEXPECTED;
-     }
-+
-+    //memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset),
-+             //g_global_data.heap_size, 0, g_global_data.heap_size);
-+
-     if(0 != init_enclave(enclave_base, ms))
-     {
-         return SGX_ERROR_UNEXPECTED;
-@@ -186,20 +191,7 @@
+-        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
++        // memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
      }
  
-     /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
--    if (EDMM_supported)
--    {
--        if (0 != accept_post_remove(&g_global_data.layout_table[0], &g_global_data.layout_table[0] + g_global_data.layout_entry_num, 0))
--            return SGX_ERROR_UNEXPECTED;
--
--        size_t heap_min_size = get_heap_min_size();
--        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), heap_min_size, 0, heap_min_size);
--    }
--    else
- #endif
--    {
--        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
--    }
--
      g_enclave_state = ENCLAVE_INIT_DONE;
-     return SGX_SUCCESS;
- }
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/linux/x86_64/setcontext.S sdk/trts/linux/x86_64/setcontext.S
+diff -Nur sdk/trts/linux/x86_64/setcontext.S sdk/trts/linux/x86_64/setcontext.S
 --- sdk/trts/linux/x86_64/setcontext.S
 +++ sdk/trts/linux/x86_64/setcontext.S
 @@ -24,12 +24,17 @@
@@ -1814,7 +1818,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/linux/x86_64/setcontext.S sdk/trts/linu
  #elif defined __FreeBSD__
  #include <sys/syscall.h>
  #endif
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts.cpp sdk/trts/trts.cpp
+diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
 --- sdk/trts/trts.cpp
 +++ sdk/trts/trts.cpp
 @@ -39,6 +39,7 @@
@@ -1825,7 +1829,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts.cpp sdk/trts/trts.cpp
  
  #ifdef SE_SIM
  #include "t_instructions.h"    /* for `g_global_data_sim' */
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
+diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
 --- sdk/trts/trts_ecall.cpp
 +++ sdk/trts/trts_ecall.cpp
 @@ -66,6 +66,11 @@
@@ -1840,7 +1844,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
      ocall_context_t *context = reinterpret_cast<ocall_context_t*>(thread_data->last_sp);
      if(context->ocall_flag != OCALL_FLAG)
      {
-@@ -328,7 +333,7 @@
+@@ -339,7 +344,7 @@
      return SGX_SUCCESS;
  }
  
@@ -1849,7 +1853,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
  {
      sgx_status_t status = SGX_ERROR_UNEXPECTED;
      if(ENCLAVE_INIT_DONE != get_enclave_state())
-@@ -336,7 +341,9 @@
+@@ -347,7 +352,9 @@
          return status;
      }
      thread_data_t *thread_data = get_thread_data();
@@ -1860,7 +1864,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
      {
          status = do_init_thread(tcs, false);
          if(0 != status)
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_internal.h sdk/trts/trts_internal.h
+diff -Nur sdk/trts/trts_internal.h sdk/trts/trts_internal.h
 --- sdk/trts/trts_internal.h
 +++ sdk/trts/trts_internal.h
 @@ -40,6 +40,7 @@
@@ -1883,7 +1887,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_internal.h sdk/trts/trts_internal.
  sgx_status_t do_oret(void *ms);
  sgx_status_t trts_handle_exception(void *tcs);
  sgx_status_t do_ecall_add_thread(void *ms);
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
+diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 --- sdk/trts/trts_nsp.cpp
 +++ sdk/trts/trts_nsp.cpp
 @@ -48,7 +48,8 @@
@@ -1896,11 +1900,12 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
  {
      thread_data_t *thread_data = get_thread_data();
      if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
-@@ -81,13 +82,25 @@
+@@ -87,13 +88,24 @@
+         return error;
      }
  
-     sgx_status_t error = SGX_ERROR_UNEXPECTED;
 -    if(cssa == 0)
+-    {
 +    // Check whether the incoming ecall is a user exception. If index is within
 +    // range of the ecall table size, the is_exception field will be true for
 +    // user exceptions.
@@ -1910,9 +1915,8 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 +    // For a user exception, call |do_ecall| to enter enclave and handle the
 +    // signal, in this case cssa could be 0 or 1 (which is likely to be 1 when
 +    // an enclave is interrupted by an exception).
-+    if(cssa == 0 || (is_user_exception && cssa == 1))
-     {
-         if(index >= 0)
++    if(cssa == 0 || (is_user_exception && cssa == 1))    {
+         if((index >= 0) || (index == ECMD_INIT_SWITCHLESS) || (index == ECMD_RUN_SWITCHLESS_TWORKER))
          {
              // Initialize stack guard if necessary
              init_stack_guard(tcs);
@@ -1924,7 +1928,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
          }
          else if(index == ECMD_INIT_ENCLAVE)
          {
-diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
+diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 --- sdk/trts/trts_shared_constants.h
 +++ sdk/trts/trts_shared_constants.h
 @@ -47,7 +47,7 @@
@@ -1938,7 +1942,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
  #endif
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,953 @@
+@@ -0,0 +1,1043 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +package(
@@ -2000,8 +2004,24 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +    deps = [":ipc_common_proto"],
 +)
 +
++SL_COMMON_SRCS = [
++    "common/src/sl_fcall_mngr_common.c",
++    "common/src/sl_siglines_common.c",
++]
++
 +RTS_COMMON_SRCS = [
 +    "common/src/linux/xsave_gnu.S",
++]
++
++SL_COMMON_HDRS = [
++    # Headers for switchless calls that must be copied to reinterpret with or
++    # without -DSL_INSIDE_ENCLAVE.
++    "common/inc/internal/sl_uswitchless.h",
++    "common/inc/internal/sl_workers.h",
++    "common/inc/internal/sl_fcall_mngr.h",
++    "common/inc/internal/sl_fcall_mngr_common.h",  # depends of sl_fcall_mngr.h
++    "common/inc/internal/sl_debug.h",
++    "common/inc/internal/sl_siglines.h",
 +]
 +
 +RTS_COMMON_TEXTUAL_HDRS = [
@@ -2166,6 +2186,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        ":epid_inc",
 +        ":ipc_common_proto_cc",
 +        ":ittnotify_lib",
++        ":psw_switchless",
 +        ":rts_common",
 +        ":se_wrapper",
 +        ":untrusted_inc",
@@ -2250,6 +2271,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +    "sdk/trts/trts_emodpr.cpp",
 +    "sdk/trts/trts_nsp.cpp",
 +    "sdk/trts/trts_ocall.cpp",
++    "sdk/trts/trts_switchless.cpp",
 +    "sdk/trts/trts_trim.cpp",
 +    "sdk/trts/trts_util.cpp",
 +    "sdk/trts/trts_veh.cpp",
@@ -2278,7 +2300,11 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts",
 +    ],
-+    deps = [":common_inc_internal"],
++    features = ["pic"],
++    deps = [
++        ":common_inc_internal",
++        ":trts_switchless",
++    ],
 +)
 +
 +cc_library(
@@ -2286,6 +2312,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +    srcs = TRTS_COMMON_SRCS + TRTS_COMMON_HDRS,
 +    copts = [
 +        "-DISE=1",
++        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts",
 +        "-Iexternal/linux_sgx/sdk/cpprt/linux/libunwind/src/x86_64",
@@ -2308,6 +2335,33 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +)
 +
 +cc_library(
++    name = "trts_switchless",
++    srcs = SL_COMMON_SRCS + SL_COMMON_HDRS + [
++        "sdk/switchless/src/sgx_ocall_switchless.c",
++        "sdk/switchless/src/sl_fcall_mngr.c",
++        "sdk/switchless/src/sl_init.c",
++        "sdk/switchless/src/sl_memlog.c",
++        "sdk/switchless/src/sl_once.c",
++        "sdk/switchless/src/sl_printk.c",
++        "sdk/switchless/src/sl_siglines.c",
++        "sdk/switchless/src/sl_workers.c",
++    ],
++    copts = [
++        "-std=c11",
++        "-DSL_INSIDE_ENCLAVE",
++        "-Iexternal/linux_sgx/common/inc/internal",
++    ],
++    features = ["pic"],
++    deps = [
++        ":common_inc",
++        ":common_inc_internal",
++        ":sgx_runtime_support",
++        ":trusted_inc",
++        ":trusted_inc_internal",
++    ],
++)
++
++cc_library(
 +    name = "trts",
 +    srcs = TRTS_COMMON_SRCS + TRTS_COMMON_HDRS + [
 +        "sdk/selib/sgx_create_report.cpp",
@@ -2323,6 +2377,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +    copts = [
 +        "-DSE_SIM=1",
 +        "-DISE=1",
++        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts",
 +        "-Iexternal/linux_sgx/sdk/simulation/tinst",
@@ -2354,6 +2409,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/boringssl",
 +    ],
++    features = ["pic"],
 +    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc_internal",
@@ -2483,6 +2539,25 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +)
 +
 +cc_library(
++    name = "psw_switchless",
++    srcs = SL_COMMON_SRCS + SL_COMMON_HDRS + [
++        "psw/uswitchless/sgx_ecall_switchless_untrusted.c",
++        "psw/uswitchless/sl_fcall_mngr_untrusted.c",
++        "psw/uswitchless/sl_siglines_untrusted.c",
++        "psw/uswitchless/sl_uswitchless_untrusted.c",
++        "psw/uswitchless/sl_workers_untrusted.c",
++    ],
++    copts = ["-Iexternal/linux_sgx/common/inc/internal"],
++    features = ["pic"],
++    deps = [
++        ":common_inc",
++        ":common_inc_internal",
++        ":untrusted_inc",
++        ":untrusted_inc_internal",
++    ],
++)
++
++cc_library(
 +    name = "urts",
 +    srcs = URTS_COMMON_SRCS + [
 +        "sdk/simulation/assembly/linux/sgxsim.S",
@@ -2535,6 +2610,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        ":epid_inc",
 +        ":ipc_common_proto_cc",
 +        ":ittnotify_lib",
++        ":psw_switchless",
 +        ":se_wrapper",
 +        ":sim_common",
 +        ":uae_service_sim",
@@ -2567,6 +2643,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "common/inc/sgx_tcrypto.h",
 +        "common/inc/sgx_thread.h",
 +        "common/inc/sgx_tseal.h",
++        "common/inc/sgx_uswitchless.h",
 +    ],
 +    includes = [
 +        "common/inc",
@@ -2585,6 +2662,10 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +
 +cc_library(
 +    name = "common_inc_internal",
++    srcs = [
++        "common/src/sl_memlog_common.c",
++        "common/src/sl_once_common.c",
++    ],
 +    hdrs = [
 +        "common/inc/internal/arch.h",
 +        "common/inc/internal/cpputil.h",
@@ -2596,6 +2677,8 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "common/inc/internal/global_data.h",
 +        "common/inc/internal/linux/cpuid_gnu.h",
 +        "common/inc/internal/metadata.h",
++        "common/inc/internal/mini_snprintf.h",
++        "common/inc/internal/routine.h",
 +        "common/inc/internal/rts.h",
 +        "common/inc/internal/rts_cmd.h",
 +        "common/inc/internal/se_cdefs.h",
@@ -2610,8 +2693,19 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "common/inc/internal/se_types.h",
 +        "common/inc/internal/se_version.h",
 +        "common/inc/internal/sgx_memset_s.h",
++        "common/inc/internal/sl_atomic.h",
++        "common/inc/internal/sl_bitops.h",
++        "common/inc/internal/sl_compiler.h",
++        "common/inc/internal/sl_init.h",
++        "common/inc/internal/sl_memlog.h",
++        "common/inc/internal/sl_once.h",
++        "common/inc/internal/sl_printk.h",
++        "common/inc/internal/sl_spinlock.h",
++        "common/inc/internal/sl_types.h",
++        "common/inc/internal/sl_util.h",
 +        "common/inc/internal/thread_data.h",
 +        "common/inc/internal/uncopyable.h",
++        "common/inc/internal/uswitchless.h",
 +        "common/inc/internal/util.h",
 +        "common/inc/internal/xsave.h",
 +    ],
@@ -2638,7 +2732,6 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +    hdrs = [
 +        "common/inc/internal/driver_api.h",
 +        "common/inc/internal/oal/uae_oal_api.h",
-+        "common/inc/internal/routine.h",
 +        "common/inc/internal/se_atomic.h",
 +        "common/inc/internal/se_debugger_lib.h",
 +        "common/inc/internal/se_event.h",
@@ -2658,6 +2751,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "psw/ae/inc/internal/epid_pve_type.h",
 +    ],
 +    copts = [
++        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/psw/ae/inc/internal",
 +        "-Iexternal/boringssl",
@@ -2678,6 +2772,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "include/global_data.h",
 +        "include/sgx_cpuid.h",
 +        "include/sgx_edger8r.h",
++        "include/sgx_eid.h",
 +        "include/sgx_error.h",
 +        "include/sgx_lfence.h",
 +        "include/sgx_thread.h",
@@ -2762,7 +2857,6 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +        "common/inc/internal/tae_service_internal.h",
 +        "common/inc/internal/trts_inst.h",
 +        "common/inc/internal/tseal_migration_attr.h",
-+        "sdk/trts/trts_util.h",
 +    ],
 +    copts = [
 +        "-Iexternal/linux_sgx/common/inc/internal",
@@ -2915,7 +3009,7 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +
 +    # Append enclave specific arguments.
 +    kwargs["copts"] = kwargs.get("copts", []) + [
-+        "-Iexternal/linux_sgx/common/inc/",
++        "-Iexternal/linux_sgx/v_2_1_3/common/inc/",
 +        "-fstack-protector",
 +    ]
 +
@@ -3108,43 +3202,43 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +++ enclave_test_private.pem
 @@ -0,0 +1,39 @@
 +-----BEGIN RSA PRIVATE KEY-----
-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
++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
 +-----END RSA PRIVATE KEY-----
 --- /dev/null
 +++ enclave_sim.lds
@@ -3251,6 +3345,15 @@ diff -Nur -x '*.png' -x '*.gif' sdk/trts/trts_shared_constants.h sdk/trts/trts_s
 +#include "common/inc/sgx_edger8r.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_EDGER8R_H_
+--- /dev/null
++++ include/sgx_eid.h
+@@ -0,0 +1,6 @@
++#ifndef _INCLUDE_SGX_EID_H_
++#define _INCLUDE_SGX_EID_H_
++
++#include "common/inc/sgx_eid.h"  // IWYU pragma: export
++
++#endif  // _INCLUDE_SGX_EID_H_
 --- /dev/null
 +++ include/sgx_error.h
 @@ -0,0 +1,6 @@

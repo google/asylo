@@ -73,8 +73,8 @@ def sgx_deps(installation_path = None):
     if "linux_sgx" not in native.existing_rules():
         patch_repository(
             name = "linux_sgx",
-            urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.1.3.tar.gz"],
-            sha256 = "542235dd71953fb29f30d74fccecd9e12905650f44d481bca10672a07892b9c2",
-            patch = "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_1_3.patch",
-            strip_prefix = "linux-sgx-sgx_2.1.3",
+            urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.2.tar.gz"],
+            sha256 = "223f707652a60bf9a57464d9f0dcd201b2ebe1e3cf513e7ee200dfddd7bfa6ec",
+            patch = "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_2.patch",
+            strip_prefix = "linux-sgx-sgx_2.2",
         )
