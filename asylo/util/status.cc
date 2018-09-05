@@ -43,8 +43,13 @@ Status::Status()
           error::error_enum_traits<error::GoogleError>::get_error_space()),
       error_code_(error::GoogleError::OK) {}
 
-Status::Status(const error::ErrorSpace *space, int code, std::string message)
-    : error_space_(space), error_code_(code), message_(std::move(message)) {}
+Status::Status(const error::ErrorSpace *space, int code,
+               absl::string_view message)
+    : error_space_(space), error_code_(code) {
+  if (code != 0) {
+    message_ = std::string(message);
+  }
+}
 
 Status::Status(Status &&other)
     : error_space_(other.error_space_),
@@ -126,7 +131,7 @@ void Status::RestoreFrom(const StatusProto &status_proto) {
       error_code_ = error::GoogleError::UNKNOWN;
     }
   }
-  if (!ok()) {
+  if (error_code_ != 0) {
     message_ = status_proto.error_message();
   } else {
     message_.clear();

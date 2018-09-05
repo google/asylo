@@ -45,7 +45,7 @@ class Status {
   /// \param space The ErrorSpace this code belongs to.
   /// \param code An integer error code.
   /// \param message The associated error message.
-  Status(const error::ErrorSpace *space, int code, std::string message);
+  Status(const error::ErrorSpace *space, int code, absl::string_view message);
 
   /// Constructs a Status object containing an error code and a message. The
   /// error space is deduced from `code`.
@@ -208,7 +208,11 @@ class Status {
   void Set(Enum code, absl::string_view message) {
     error_space_ = error::error_enum_traits<Enum>::get_error_space();
     error_code_ = static_cast<int>(code);
-    message_ = std::string(message);
+    if (error_code_ != 0) {
+      message_ = std::string(message);
+    } else {
+      message_.clear();
+    }
   }
 
   // Returns true if the error code for this object is in the canonical error
@@ -217,6 +221,9 @@ class Status {
 
   const error::ErrorSpace *error_space_;
   int error_code_;
+
+  // An optional error-message if error_code_ is non-zero. If error_code_ is
+  // zero, then message_ is empty.
   std::string message_;
 };
 

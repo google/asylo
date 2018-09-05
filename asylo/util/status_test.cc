@@ -408,5 +408,37 @@ TEST(StatusTest, MoveAssignmentTestOk) {
   EXPECT_THAT(ok, StatusIs(error::StatusError::MOVED));
 }
 
+TEST(StatusTest, CopyConstructorTestOk) {
+  Status that(Status::OkStatus());
+
+  EXPECT_THAT(that, IsOk());
+  EXPECT_TRUE(that.error_message().empty());
+}
+
+TEST(StatusTest, CopyConstructorTestNonOk) {
+  Status invalid_arg_status(error::GoogleError::INVALID_ARGUMENT,
+                            kErrorMessage1);
+  EXPECT_THAT(invalid_arg_status,
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  Status that(invalid_arg_status);
+
+  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(StatusTest, ConstructorWithErrorSpaceOk) {
+  Status that(error::error_enum_traits<error::GoogleError>::get_error_space(),
+              error::GoogleError::OK, "This message is not copied");
+  EXPECT_TRUE(that.error_message().empty());
+  EXPECT_THAT(that, IsOk());
+}
+
+TEST(StatusTest, ConstructorWithErrorSpaceNotOk) {
+  Status that(error::error_enum_traits<error::GoogleError>::get_error_space(),
+              error::GoogleError::INVALID_ARGUMENT, "This message is copied");
+  EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                             "This message is copied"));
+}
+
 }  // namespace
 }  // namespace asylo
