@@ -42,6 +42,7 @@ cc_library(
     ],
     deps = [
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/common:memory",
         "//asylo/platform/posix/io:io_manager",
     ],
 )
@@ -224,6 +225,17 @@ cc_test(
     name = "inet_pton_test",
     srcs = ["inet_pton_test.cc"],
     enclave_test_name = "inet_pton_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "inet_aton_test",
+    srcs = ["inet_aton_test.cc"],
+    enclave_test_name = "inet_aton_enclave_test",
     tags = ["regression"],
     deps = [
         "//asylo/test/util:test_main",
