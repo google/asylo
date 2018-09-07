@@ -156,11 +156,6 @@ TEST(CwdTest, SplitHandlerResolve) {
   // device.
   EXPECT_EQ(ioctl(fd, 0, 0), -1);
   EXPECT_EQ(errno, ENOSYS);
-
-  // Our /dev/urandom also doesn't implement realpath.
-  char buf[PATH_MAX];
-  EXPECT_THAT(realpath("/dev/notrandom/../urandom", buf), IsNull());
-  EXPECT_EQ(errno, ENOSYS);
 }
 
 // Tests matching a VirtualPathHandler when the prefix is present, but backed up

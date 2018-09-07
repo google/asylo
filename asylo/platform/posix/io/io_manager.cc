@@ -535,6 +535,21 @@ int IOManager::Chown(const char *path, uid_t owner, gid_t group) {
   });
 }
 
+char *IOManager::RealPath(const char *path, char *resolved_path) {
+  StatusOr<std::string> path_str_or = CanonicalizePath(path);
+  if (!path_str_or.ok()) {
+    errno = path_str_or.status().error_code();
+
+    return nullptr;
+  }
+  std::string path_str = path_str_or.ValueOrDie();
+  if (resolved_path) {
+    snprintf(resolved_path, PATH_MAX, "%s", path_str.c_str());
+    return resolved_path;
+  }
+  return strdup(path_str.c_str());
+}
+
 int IOManager::Link(const char *from, const char *to) {
   return CallWithHandler(
       from, to,
@@ -591,13 +606,6 @@ int IOManager::LStat(const char *pathname, struct stat *stat_buffer) {
   return CallWithHandler(pathname, [stat_buffer](VirtualPathHandler *handler,
                                                  const char *canonical_path) {
     return handler->LStat(canonical_path, stat_buffer);
-  });
-}
-
-char *IOManager::RealPath(const char *path, char *resolved_path) {
-  return CallWithHandler(path, [resolved_path](VirtualPathHandler *handler,
-                                               const char *canonical_path) {
-    return handler->RealPath(canonical_path, resolved_path);
   });
 }
 

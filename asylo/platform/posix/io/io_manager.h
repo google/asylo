@@ -303,11 +303,6 @@ class IOManager {
       return -1;
     }
 
-    virtual char *RealPath(const char *path, char *resolved_path) {
-      errno = ENOSYS;
-      return nullptr;
-    }
-
     virtual int ChMod(const char *pathname, mode_t mode) {
       errno = ENOSYS;
       return -1;

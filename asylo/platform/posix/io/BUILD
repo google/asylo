@@ -152,6 +152,19 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "realpath_test",
+    srcs = ["realpath_test.cc"],
+    enclave_test_name = "realpath_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:test_flags",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Test enclave for routing standard streams to host file descriptors.
 sgx_enclave(
     name = "test_pipe.so",
