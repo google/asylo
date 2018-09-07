@@ -184,6 +184,7 @@ enclave {
     //////////////////////////////////////
     //           epoll.h                //
     //////////////////////////////////////
+
     int ocall_enc_untrusted_epoll_create(int size) propagate_errno;
 
     int ocall_enc_untrusted_epoll_ctl(
@@ -193,6 +194,24 @@ enclave {
     int ocall_enc_untrusted_epoll_wait(
         [in, size=serialized_args_len] const char *serialized_args,
         bridge_size_t serialized_args_len,
+        [out] char **serialized_events,
+        [out] bridge_size_t *serialized_events_len) propagate_errno;
+
+    //////////////////////////////////////
+    //           inotify.h              //
+    //////////////////////////////////////
+
+    int ocall_enc_untrusted_inotify_init1(int non_block);
+
+    int ocall_enc_untrusted_inotify_add_watch(
+        [in, size=serialized_args_len] const char *serialized_args,
+        bridge_size_t serialized_args_len) propagate_errno;
+
+    int ocall_enc_untrusted_inotify_rm_watch(
+        [in, size=serialized_args_len] const char *serialized_args,
+        bridge_size_t serialized_args_len) propagate_errno;
+
+    int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
         [out] char **serialized_events,
         [out] bridge_size_t *serialized_events_len) propagate_errno;
 

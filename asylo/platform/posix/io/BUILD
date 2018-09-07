@@ -37,6 +37,7 @@ cc_library(
     srcs = [
         "io_context_epoll.cc",
         "io_context_eventfd.cc",
+        "io_context_inotify.cc",
         "io_manager.cc",
         "io_syscalls.cc",
         "native_paths.cc",
@@ -46,6 +47,7 @@ cc_library(
     hdrs = [
         "io_context_epoll.h",
         "io_context_eventfd.h",
+        "io_context_inotify.h",
         "io_manager.h",
         "native_paths.h",
         "random_devices.h",
@@ -199,6 +201,19 @@ cc_test(
     tags = ["regression"],
     deps = [
         ":util",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "inotify_test",
+    srcs = ["inotify_test.cc"],
+    enclave_test_name = "inotify_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

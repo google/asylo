@@ -750,6 +750,7 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 //////////////////////////////////////
 //           epoll.h                //
 //////////////////////////////////////
+
 int enc_untrusted_epoll_create(int size) {
   int ret = 0;
   sgx_status_t status = ocall_enc_untrusted_epoll_create(&ret, size);
@@ -822,6 +823,71 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
   // suggest malicious behavior, therefore, we would abort().
   if (numevents != ret) {
     abort();
+  }
+  return ret;
+}
+
+//////////////////////////////////////
+//           inotify.h              //
+//////////////////////////////////////
+
+int enc_untrusted_inotify_init1(bool non_block) {
+  int ret = 0;
+  sgx_status_t status = ocall_enc_untrusted_inotify_init1(&ret, non_block);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
+
+int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
+                                    uint32_t mask) {
+  char *serialized_args = nullptr;
+  asylo::MallocUniquePtr<char> args_ptr(serialized_args);
+  size_t len = 0;
+  if (!asylo::SerializeInotifyAddWatchArgs(fd, pathname, mask, &serialized_args,
+                                           &len)) {
+    return -1;
+  }
+  bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
+  int ret = 0;
+  sgx_status_t status = ocall_enc_untrusted_inotify_add_watch(
+      &ret, serialized_args, serialized_args_len);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
+
+int enc_untrusted_inotify_rm_watch(int fd, int wd) {
+  char *serialized_args = nullptr;
+  asylo::MallocUniquePtr<char> args_ptr(serialized_args);
+  size_t len = 0;
+  if (!asylo::SerializeInotifyRmWatchArgs(fd, wd, &serialized_args, &len)) {
+    errno = EINVAL;
+    return -1;
+  }
+  bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
+  int ret = 0;
+  sgx_status_t status = ocall_enc_untrusted_inotify_rm_watch(
+      &ret, serialized_args, serialized_args_len);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
+
+int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
+                               size_t *serialized_events_len) {
+  int ret = 0;
+  sgx_status_t status = ocall_enc_untrusted_inotify_read(
+      &ret, fd, count, serialized_events, serialized_events_len);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
   }
   return ret;
 }

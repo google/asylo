@@ -150,6 +150,7 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 //////////////////////////////////////
 //            epoll.h               //
 //////////////////////////////////////
+
 int enc_untrusted_epoll_create(int size);
 int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
                             struct epoll_event *event);
@@ -157,8 +158,20 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
                              int maxevents, int timeout);
 
 //////////////////////////////////////
+//            inotify.h             //
+//////////////////////////////////////
+
+int enc_untrusted_inotify_init1(bool non_block);
+int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
+                                    uint32_t mask);
+int enc_untrusted_inotify_rm_watch(int fd, int wd);
+int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
+                               size_t *serialized_events_len);
+
+//////////////////////////////////////
 //            ifaddrs.h             //
 //////////////////////////////////////
+
 int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
 void enc_untrusted_freeifaddrs(struct ifaddrs *ifa);
 

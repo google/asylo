@@ -61,6 +61,7 @@ cc_library(
         "file.cc",
         "grp.cc",
         "ifaddrs.cc",
+        "inotify.cc",
         "ioctl.cc",
         "malloc_lock.cc",
         "math.cc",

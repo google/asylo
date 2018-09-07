@@ -30,6 +30,7 @@
 #include <stdio.h>
 #include <sys/epoll.h>
 #include <sys/file.h>
+#include <sys/inotify.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
@@ -480,6 +481,63 @@ int ocall_enc_untrusted_epoll_wait(const char *serialized_args,
   }
   *serialized_events_len = static_cast<bridge_size_t>(len);
   return ret;
+}
+
+//////////////////////////////////////
+//           inotify.h              //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_inotify_init1(int non_block) {
+  int flags = non_block ? IN_NONBLOCK : 0;
+  return inotify_init1(flags);
+}
+
+int ocall_enc_untrusted_inotify_add_watch(const char *serialized_args,
+                                          bridge_size_t serialized_args_len) {
+  std::string serialized_args_str(serialized_args, serialized_args_len);
+  int fd = 0;
+  char *pathname = nullptr;
+  asylo::MallocUniquePtr<char> pathname_ptr(pathname);
+  uint32_t mask = 0;
+  if (!asylo::DeserializeInotifyAddWatchArgs(serialized_args_str, &fd,
+                                             &pathname, &mask)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return inotify_add_watch(fd, pathname, mask);
+}
+
+int ocall_enc_untrusted_inotify_rm_watch(const char *serialized_args,
+                                         bridge_size_t serialized_args_len) {
+  std::string serialized_args_str(serialized_args, serialized_args_len);
+  int fd = 0;
+  int wd = 0;
+  if (!asylo::DeserializeInotifyRmWatchArgs(serialized_args_str, &fd, &wd)) {
+    errno = EINVAL;
+    return -1;
+  }
+  return inotify_rm_watch(fd, wd);
+}
+
+int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
+                                     char **serialized_events,
+                                     bridge_size_t *serialized_events_len) {
+  size_t buf_size =
+      std::max(sizeof(struct inotify_event) + NAME_MAX + 1, count);
+  char *buf = static_cast<char *>(malloc(buf_size));
+  asylo::MallocUniquePtr<char> buf_ptr(buf);
+  int bytes_read = read(fd, buf, buf_size);
+  if (bytes_read < 0) {
+    // Errno will be set by read.
+    return -1;
+  }
+  size_t len = 0;
+  if (!asylo::SerializeInotifyEvents(buf, bytes_read, serialized_events,
+                                     &len)) {
+    return -1;
+  }
+  *serialized_events_len = static_cast<bridge_size_t>(len);
+  return 0;
 }
 
 //////////////////////////////////////

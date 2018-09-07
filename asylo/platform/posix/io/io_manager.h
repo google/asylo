@@ -221,13 +221,24 @@ class IOManager {
       return -1;
     }
 
+    // Implements inotify_add_watch.
+    virtual int InotifyAddWatch(const char *pathname, uint32_t mask) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    // Implements inotify_rm_watch.
+    virtual int InotifyRmWatch(int wd) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     // Implements recvfrom.
     virtual ssize_t RecvFrom(void *buf, size_t len, int flags,
                              struct sockaddr *src_addr, socklen_t *addrlen) {
       errno = ENOSYS;
       return -1;
     }
-
     virtual int GetHostFileDescriptor() { return -1; }
 
     void IncrementFdReference() { fd_reference_++; }
@@ -558,10 +569,18 @@ class IOManager {
   // Implements eventfd(2).
   int EventFd(unsigned int initval, int flags) LOCKS_EXCLUDED(fd_table_lock_);
 
+    // Implements inotify_init(2).
+  int InotifyInit(bool non_block) LOCKS_EXCLUDED(fd_table_lock_);
+
+  // Implements inotify_add_watch(2).
+  int InotifyAddWatch(int fd, const char *pathname, uint32_t mask);
+
+  // Implements inotify_rm_watch(2).
+  int InotifyRmWatch(int fd, int wd);
+
   // Implements recvfrom(2).
   ssize_t RecvFrom(int sockfd, void *buf, size_t len, int flags,
                    struct sockaddr *src_addr, socklen_t *addrlen);
-
   // Binds an enclave file descriptor to a host file descriptor, returning an
   // enclave file descriptor which will delegate all I/O operations to the host
   // operating system.

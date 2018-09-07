@@ -30,6 +30,7 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_context_epoll.h"
 #include "asylo/platform/posix/io/io_context_eventfd.h"
+#include "asylo/platform/posix/io/io_context_inotify.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/util.h"
 #include "asylo/util/posix_error_space.h"
@@ -148,8 +149,7 @@ int IOManager::CloseFileDescriptor(int fd) {
   std::shared_ptr<IOContext> context = fd_table_.Get(fd);
   if (context) {
     int ret = 0;
-    // Only close the host file descriptor if this is the last reference to
-    // it.
+    // Only close the host file descriptor if this is the last reference to it.
     context->DecrementFdReference();
     if (context->IsNoFdReference()) {
       ret = context->Close();
@@ -351,6 +351,32 @@ int IOManager::EventFd(unsigned int initval, int flags) {
   }
   errno = EMFILE;
   return -1;
+}
+
+int IOManager::InotifyInit(bool non_block) {
+  int hostfd = enc_untrusted_inotify_init1(non_block);
+  auto context = ::absl::make_unique<IOContextInotify>(hostfd);
+  absl::WriterMutexLock lock(&fd_table_lock_);
+  int fd = fd_table_.Insert(context.get());
+  if (fd >= 0) {
+    context.release();
+    return fd;
+  }
+  errno = EMFILE;
+  return -1;
+}
+
+int IOManager::InotifyAddWatch(int fd, const char *pathname, uint32_t mask) {
+  return CallWithContext(
+      fd, [pathname, mask](std::shared_ptr<IOContext> inotify_context) {
+        return inotify_context->InotifyAddWatch(pathname, mask);
+      });
+}
+
+int IOManager::InotifyRmWatch(int fd, int wd) {
+  return CallWithContext(fd, [wd](std::shared_ptr<IOContext> inotify_context) {
+    return inotify_context->InotifyRmWatch(wd);
+  });
 }
 
 // Provide a proper error return value of different types for use in templates.
