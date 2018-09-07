@@ -36,6 +36,7 @@ cc_library(
     name = "io_manager",
     srcs = [
         "io_context_epoll.cc",
+        "io_context_eventfd.cc",
         "io_manager.cc",
         "io_syscalls.cc",
         "native_paths.cc",
@@ -44,6 +45,7 @@ cc_library(
     ],
     hdrs = [
         "io_context_epoll.h",
+        "io_context_eventfd.h",
         "io_manager.h",
         "native_paths.h",
         "random_devices.h",
@@ -82,6 +84,17 @@ cc_enclave_test(
         "//asylo/test/util:test_flags",
         "//asylo/util:cleansing_types",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "eventfd_test",
+    srcs = ["eventfd_test.cc"],
+    enclave_test_name = "eventfd_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -57,6 +57,7 @@ cc_library(
         "dirent.cc",
         "epoll.cc",
         "errno.cc",
+        "eventfd.cc",
         "file.cc",
         "grp.cc",
         "ifaddrs.cc",

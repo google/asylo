@@ -553,6 +553,9 @@ class IOManager {
   // Implements socket(2).
   int Socket(int domain, int type, int protocol);
 
+  // Implements eventfd(2).
+  int EventFd(unsigned int initval, int flags) LOCKS_EXCLUDED(fd_table_lock_);
+
   // Binds an enclave file descriptor to a host file descriptor, returning an
   // enclave file descriptor which will delegate all I/O operations to the host
   // operating system.

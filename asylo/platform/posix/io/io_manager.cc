@@ -28,6 +28,7 @@
 #include "absl/strings/string_view.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_context_epoll.h"
+#include "asylo/platform/posix/io/io_context_eventfd.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/util.h"
 #include "asylo/util/posix_error_space.h"
@@ -337,6 +338,18 @@ int IOManager::EpollWait(int epfd, struct epoll_event *events, int maxevents,
                            (std::shared_ptr<IOContext> context) {
     return context->EpollWait(events, maxevents, timeout);
   });
+}
+
+int IOManager::EventFd(unsigned int initval, int flags) {
+  auto context = ::absl::make_unique<IOContextEventFd>(initval, flags);
+  absl::WriterMutexLock lock(&fd_table_lock_);
+  int fd = fd_table_.Insert(context.get());
+  if (fd >= 0) {
+    context.release();
+    return fd;
+  }
+  errno = EMFILE;
+  return -1;
 }
 
 // Provide a proper error return value of different types for use in templates.
