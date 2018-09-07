@@ -96,6 +96,16 @@ Status SocketTransmit::SendMsg(int sockfd, const struct msghdr *msg,
   return Status::OkStatus();
 }
 
+Status SocketTransmit::RecvFrom(int socket, void *buffer, size_t length,
+                                int flags, struct sockaddr *address,
+                                socklen_t *address_len) {
+  if (recvfrom(socket, buffer, length, flags, address, address_len) == -1) {
+    return Status(static_cast<error::PosixError>(errno),
+                  std::string("recvfrom error:") + strerror(errno));
+  }
+  return Status::OkStatus();
+}
+
 int SocketTransmit::GetWrite() const { return write_count_; }
 
 int SocketTransmit::GetRead() const { return read_count_; }

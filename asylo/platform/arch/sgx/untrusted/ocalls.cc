@@ -375,6 +375,41 @@ int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr) {
   return ret;
 }
 
+ssize_t ocall_enc_untrusted_recvfrom(const char *serialized_args,
+                                     bridge_ssize_t serialized_args_len,
+                                     char **buf_ptr, char **serialized_output,
+                                     bridge_ssize_t *serialized_output_len) {
+  std::string serialized_args_str(serialized_args, serialized_args_len);
+  int sockfd = 0;
+  size_t len = 0;
+  int flags = 0;
+  if (!asylo::DeserializeRecvFromArgs(serialized_args, &sockfd, &len, &flags) ||
+      !buf_ptr) {
+    errno = EINVAL;
+    return -1;
+  }
+  *buf_ptr = static_cast<char *>(malloc(len));
+  if (serialized_output) {
+    struct sockaddr_storage src_addr;
+    struct sockaddr *src_addr_ptr =
+        reinterpret_cast<struct sockaddr *>(&src_addr);
+    socklen_t addrlen;
+    int ret = recvfrom(sockfd, *buf_ptr, len, flags, src_addr_ptr, &addrlen);
+    size_t src_addr_len = 0;
+    // The caller is responsible for freeing the memory allocated by
+    // SerializeRecvFromSrcAddr.
+    if (!asylo::SerializeRecvFromSrcAddr(src_addr_ptr, serialized_output,
+                                         &src_addr_len)) {
+      errno = EINVAL;
+      return -1;
+    }
+    *serialized_output_len = static_cast<bridge_size_t>(src_addr_len);
+    return ret;
+  } else {
+    return recvfrom(sockfd, *buf_ptr, len, flags, nullptr, nullptr);
+  }
+}
+
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////

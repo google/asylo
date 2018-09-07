@@ -66,6 +66,13 @@ Status SocketServer::SendMsg(const struct msghdr *msg, int flags) {
   return sock_transmit_.SendMsg(connection_fd_, msg, flags);
 }
 
+Status SocketServer::RecvFrom(void *buffer, size_t length, int flags,
+                              struct sockaddr *address,
+                              socklen_t *address_len) {
+  return sock_transmit_.RecvFrom(connection_fd_, buffer, length, flags, address,
+                                 address_len);
+}
+
 Status SocketServer::ServerSetup(int server_port) {
   int fd = socket(AF_INET6, SOCK_STREAM, 0);
   if (fd < 0) {

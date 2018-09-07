@@ -159,6 +159,13 @@ enclave {
                                         [out] struct bridge_sockaddr *addr)
                                         propagate_errno;
 
+    ssize_t ocall_enc_untrusted_recvfrom(
+        [in, size=serialized_args_len] const char *serialized_args,
+        bridge_ssize_t serialized_args_len,
+        [out] char **serialized_buffer,
+        [out] char **serialized_output,
+        [out] bridge_ssize_t *serialized_output_len) propagate_errno;
+
     //////////////////////////////////////
     //           Threading              //
     //////////////////////////////////////

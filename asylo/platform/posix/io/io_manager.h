@@ -221,6 +221,13 @@ class IOManager {
       return -1;
     }
 
+    // Implements recvfrom.
+    virtual ssize_t RecvFrom(void *buf, size_t len, int flags,
+                             struct sockaddr *src_addr, socklen_t *addrlen) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     virtual int GetHostFileDescriptor() { return -1; }
 
     void IncrementFdReference() { fd_reference_++; }
@@ -555,6 +562,10 @@ class IOManager {
 
   // Implements eventfd(2).
   int EventFd(unsigned int initval, int flags) LOCKS_EXCLUDED(fd_table_lock_);
+
+  // Implements recvfrom(2).
+  ssize_t RecvFrom(int sockfd, void *buf, size_t len, int flags,
+                   struct sockaddr *src_addr, socklen_t *addrlen);
 
   // Binds an enclave file descriptor to a host file descriptor, returning an
   // enclave file descriptor which will delegate all I/O operations to the host

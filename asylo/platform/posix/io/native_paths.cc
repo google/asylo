@@ -120,6 +120,12 @@ int IOContextNative::GetPeerName(struct sockaddr *addr, socklen_t *addrlen) {
   return enc_untrusted_getpeername(host_fd_, addr, addrlen);
 }
 
+ssize_t IOContextNative::RecvFrom(void *buf, size_t len, int flags,
+                                  struct sockaddr *src_addr,
+                                  socklen_t *addrlen) {
+  return enc_untrusted_recvfrom(host_fd_, buf, len, flags, src_addr, addrlen);
+}
+
 int IOContextNative::GetHostFileDescriptor() { return host_fd_; }
 
 std::unique_ptr<IOManager::IOContext> NativePathHandler::Open(const char *path,

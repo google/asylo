@@ -49,7 +49,9 @@ int socket(int domain, int type, int protocol) {
   return IOManager::GetInstance().Socket(domain, type, protocol);
 }
 
-ssize_t recv(int sockfd, void *buf, size_t len, int flags) { abort(); }
+ssize_t recv(int sockfd, void *buf, size_t len, int flags) {
+  return recvfrom(sockfd, buf, len, flags, nullptr, nullptr);
+}
 
 int getsockopt(int sockfd, int level, int optname, void *optval,
                socklen_t *optlen) {
@@ -89,7 +91,8 @@ in_addr_t inet_addr(const char *cp) { abort(); }
 
 ssize_t recvfrom(int socket, void *buffer, size_t length, int flags,
                  struct sockaddr *address, socklen_t *address_len) {
-  abort();
+  return IOManager::GetInstance().RecvFrom(socket, buffer, length, flags,
+                                           address, address_len);
 }
 
 struct servent *getservbyport(int port, const char *proto) {

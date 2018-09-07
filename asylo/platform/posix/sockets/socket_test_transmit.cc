@@ -69,6 +69,22 @@ Status ServerTransmit(SocketServer *socket_server) {
                   "expected client-write std::string not found");
   }
 
+  if (!(status = socket_server->Write(kServerWriteSuccessStr,
+                                      sizeof(kServerWriteSuccessStr)))
+           .ok()) {
+    return status;
+  }
+
+  if (!(status = socket_server->RecvFrom(socket_buf, sizeof(socket_buf), 0,
+                                         nullptr, nullptr))
+           .ok()) {
+    return status;
+  }
+  if (strncmp(socket_buf, kClientWriteSuccessStr, sizeof(socket_buf))) {
+    return Status(error::GoogleError::DATA_LOSS,
+                  "expected client-write std::string not found");
+  }
+
   struct iovec msg_iov_send[kNumMsgs];
   struct msghdr msg_send;
   AssembleMsgHdr(&msg_send, msg_iov_send, kServerMsgSuccessStr1,
@@ -100,6 +116,21 @@ Status ClientTransmit(SocketClient *socket_client) {
   char socket_buf[sizeof(kServerWriteSuccessStr)];
   Status status;
   if (!(status = socket_client->Read(socket_buf, sizeof(socket_buf))).ok()) {
+    return status;
+  }
+  if (strncmp(socket_buf, kServerWriteSuccessStr, sizeof(socket_buf))) {
+    return Status(error::GoogleError::DATA_LOSS,
+                  "expected server-write std::string not found");
+  }
+  if (!(status = socket_client->Write(kClientWriteSuccessStr,
+                                      sizeof(kClientWriteSuccessStr)))
+           .ok()) {
+    return status;
+  }
+
+  if (!(status = socket_client->RecvFrom(socket_buf, sizeof(socket_buf), 0,
+                                         nullptr, nullptr))
+           .ok()) {
     return status;
   }
   if (strncmp(socket_buf, kServerWriteSuccessStr, sizeof(socket_buf))) {

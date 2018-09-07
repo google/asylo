@@ -122,6 +122,8 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen);
 int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen);
+ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
+                               struct sockaddr *src_addr, socklen_t *addrlen);
 
 //////////////////////////////////////
 //            Threading             //

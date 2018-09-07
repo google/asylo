@@ -60,6 +60,11 @@ class SocketTransmit {
   // Transmits a message |msg| to another socket |sockfd|.
   Status SendMsg(int sockfd, const struct msghdr *msg, int flags);
 
+  // RecvFrom on |socket| to |buffer|, optionally store source address in
+  // |address| and the length of that address in |address_len|.
+  Status RecvFrom(int socket, void *buffer, size_t length, int flags,
+                  struct sockaddr *address, socklen_t *address_len);
+
   // Gets the number of times the write syscall has been executed.
   int GetWrite() const;
 

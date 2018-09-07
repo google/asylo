@@ -32,8 +32,8 @@
 namespace asylo {
 namespace {
 
-constexpr int kNumWorkers = 8;
-constexpr int kCounterStart = 8;
+constexpr int kNumWorkers = 6;
+constexpr int kCounterStart = 6;
 constexpr int kCounterStartMultiThread = kNumWorkers / 2;
 constexpr int kSleepDur = 256;
 // The value below is the maximum possible value an eventfd instance can hold.

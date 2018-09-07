@@ -22,6 +22,7 @@
 #include <fcntl.h>
 #include <poll.h>
 #include <stdint.h>
+#include <memory>
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/str_cat.h"
@@ -833,6 +834,14 @@ int IOManager::GetPeerName(int sockfd, struct sockaddr *addr,
                          [addr, addrlen](std::shared_ptr<IOContext> context) {
                            return context->GetPeerName(addr, addrlen);
                          });
+}
+
+ssize_t IOManager::RecvFrom(int sockfd, void *buf, size_t len, int flags,
+                            struct sockaddr *src_addr, socklen_t *addrlen) {
+  return CallWithContext(sockfd, [buf, len, flags, src_addr,
+                                  addrlen](std::shared_ptr<IOContext> context) {
+    return context->RecvFrom(buf, len, flags, src_addr, addrlen);
+  });
 }
 
 int IOManager::RegisterHostFileDescriptor(int host_fd) {

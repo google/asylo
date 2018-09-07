@@ -64,6 +64,11 @@ class SocketClient {
   // |connection_fd_| and propagates the return value.
   Status SendMsg(const struct msghdr *msg, int flags);
 
+  // Calls RecvFrom method of |sock_transmit_| to receive data from
+  // |connection_fd_| and propagates the return value.
+  Status RecvFrom(void *buffer, size_t length, int flags,
+                  struct sockaddr *address, socklen_t *address_len);
+
   // Performs |round_trip| rounds of data transmission with server. In each
   // round, client reads |buf_len| bytes from server and writes |buf_len| bytes
   // to server.

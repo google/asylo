@@ -119,3 +119,35 @@ message EpollWaitArgs {
   optional int32 maxevents = 2;
   optional int32 timeout = 3;
 }
+
+enum RecvSendFlags {
+  PROTO_DEFAULT = 0;
+  PROTO_OOB = 1;
+  PROTO_PEEK = 2;
+  PROTO_DONTROUTE = 3;
+  PROTO_CTRUNC = 4;
+  PROTO_PROXY = 5;
+  PROTO_TRUNC = 6;
+  PROTO_DONTWAIT = 7;
+  PROTO_EOR = 8;
+  PROTO_WAITALL = 9;
+  PROTO_FIN = 10;
+  PROTO_SYN = 11;
+  PROTO_CONFIRM = 12;
+  PROTO_RST = 13;
+  PROTO_ERRQUEUE = 14;
+  PROTO_NOSIGNAL = 15;
+  PROTO_MORE = 16;
+  PROTO_WAITFORONE = 17;
+  PROTO_FASTOPEN = 18;
+  PROTO_CMSG_CLOEXEC = 19;
+}
+message RecvFromArgs {
+  optional int32 sockfd = 1;
+  optional uint64 len = 2;
+  repeated RecvSendFlags flags = 3;
+}
+
+message RecvFromSrcAddr {
+  optional SockaddrProto src_addr = 1;
+}
