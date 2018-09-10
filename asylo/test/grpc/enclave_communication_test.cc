@@ -27,6 +27,7 @@
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -64,19 +65,13 @@ class EnclaveCommunicationTest : public ::testing::Test {
     server_config->set_host("[::1]");
     server_config->set_port(0);
 
-    Status status = server_launcher_.SetUp(FLAGS_server_enclave_path, config,
-                                           "/grpc/server");
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(server_launcher_.SetUp(FLAGS_server_enclave_path,
+                                                 config, "/grpc/server"));
 
     // Get the gRPC server's address.
     EnclaveOutput output;
-    status =
-        server_launcher_.mutable_client()->EnterAndRun(/*input=*/{}, &output);
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(
+        server_launcher_.mutable_client()->EnterAndRun(/*input=*/{}, &output));
 
     if (!output.HasExtension(server_output_config)) {
       return Status(error::GoogleError::INTERNAL,
@@ -92,12 +87,8 @@ class EnclaveCommunicationTest : public ::testing::Test {
   }
 
   Status SetUpClient(const EnclaveConfig &config) {
-    Status status = client_launcher_.SetUp(FLAGS_client_enclave_path, config,
-                                           "/grpc/client");
-    if (!status.ok()) {
-      return status;
-    }
-
+    ASYLO_RETURN_IF_ERROR(client_launcher_.SetUp(FLAGS_client_enclave_path,
+                                                 config, "/grpc/client"));
     grpc_client_enclave_ = client_launcher_.mutable_client();
     return Status::OkStatus();
   }

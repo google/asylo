@@ -24,6 +24,7 @@
 #include "asylo/examples/quickstart/demo.pb.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 #ifndef arraysize
@@ -58,11 +59,8 @@ const StatusOr<std::string> EncryptMessage(const std::string &message) {
   CleansingString nonce;
   CleansingString ciphertext;
 
-  Status status = cryptor.Seal(key, additional_authenticated_data, message,
-                               &nonce, &ciphertext);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(cryptor.Seal(key, additional_authenticated_data,
+                                     message, &nonce, &ciphertext));
 
   return absl::BytesToHexString(absl::StrCat(nonce, ciphertext));
 }
@@ -89,11 +87,8 @@ const StatusOr<std::string> DecryptMessage(const std::string &nonce_and_cipherte
   CleansingVector<uint8_t> key(kAesKey128, kAesKey128 + arraysize(kAesKey128));
 
   AesGcmSivCryptor cryptor(kMaxMessageSize, new AesGcmSivNonceGenerator());
-  Status status = cryptor.Open(key, additional_authenticated_data, ciphertext,
-                               nonce, &plaintext);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(cryptor.Open(key, additional_authenticated_data,
+                                     ciphertext, nonce, &plaintext));
 
   return std::string(plaintext.data(), plaintext.size());
 }
@@ -107,13 +102,10 @@ class EnclaveDemo : public TrustedApplication {
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     std::string user_message = GetEnclaveUserMessage(input);
 
-    StatusOr<std::string> result = EncryptMessage(user_message);
-    if (!result.ok()) {
-      return result.status();
-    }
+    std::string result;
+    ASYLO_ASSIGN_OR_RETURN(result, EncryptMessage(user_message));
 
-    std::cout << "Encrypted message:" << std::endl
-              << result.ValueOrDie() << std::endl;
+    std::cout << "Encrypted message:" << std::endl << result << std::endl;
 
     return Status::OkStatus();
   }

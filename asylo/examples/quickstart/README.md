@@ -279,13 +279,8 @@ const StatusOr<string> EncryptMessage(const string &message) {
   CleansingString additional_authenticated_data;
   CleansingString nonce;
   CleansingString ciphertext;
-
-  Status status = cryptor.Seal(key, additional_authenticated_data, message,
-                               &nonce, &ciphertext);
-  if (!status.ok()) {
-    return status;
-  }
-
+  ASYLO_RETURN_IF_ERROR(cryptor.Seal(key, additional_authenticated_data,
+                                     message, &nonce, &ciphertext));
   return absl::BytesToHexString(absl::StrCat(nonce, ciphertext));
 }
 
@@ -295,15 +290,9 @@ class EnclaveDemo : public TrustedApplication {
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     string user_message = GetEnclaveUserMessage(input);
-
-    StatusOr<string> result = EncryptMessage(user_message);
-    if (!result.ok()) {
-      return result.status();
-    }
-
-    std::cout << "Encrypted message:" << std::endl
-              << result.ValueOrDie() << std::endl;
-
+    string result;
+    ASYLO_ASSIGN_OR_RETURN(result, EncryptMessage(user_message));
+    std::cout << "Encrypted message:" << std::endl << result << std::endl;
     return Status::OkStatus();
   }
 

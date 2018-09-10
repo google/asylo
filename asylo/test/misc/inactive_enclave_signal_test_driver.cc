@@ -23,6 +23,7 @@
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -33,10 +34,7 @@ class InactiveEnclaveSignalTest : public EnclaveTest {
     EnclaveOutput enclave_output;
     // First run the enclave to register the signal handler, and close the
     // frame. At this moment no signals have been delivered yet.
-    Status status = client_->EnterAndRun(enclave_input, &enclave_output);
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(client_->EnterAndRun(enclave_input, &enclave_output));
     if (enclave_output.GetExtension(signal_received)) {
       return Status(error::GoogleError::INTERNAL,
                     "Signal received in enclave before sent");
@@ -44,10 +42,7 @@ class InactiveEnclaveSignalTest : public EnclaveTest {
     raise(SIGUSR1);
     // Run the enclave again, this time a signal is raised and should have been
     // sent to enclave, so enclave should return OK status.
-    status = client_->EnterAndRun(enclave_input, &enclave_output);
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(client_->EnterAndRun(enclave_input, &enclave_output));
     if (!enclave_output.GetExtension(signal_received)) {
       return Status(error::GoogleError::INTERNAL,
                     "Signal not received in enclave");

@@ -31,6 +31,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -122,11 +123,8 @@ class AesGcmSivCryptor {
         "Template parameter ContainerX is not a valid byte container");
 
     // Pick the appropriate EVP_AEAD based on the key length.
-    StatusOr<EVP_AEAD const *> aead_result = EvpAead(key.size());
-    if (!aead_result.ok()) {
-      return aead_result.status();
-    }
-    EVP_AEAD const *const aead = aead_result.ValueOrDie();
+    EVP_AEAD const *aead;
+    ASYLO_ASSIGN_OR_RETURN(aead, EvpAead(key.size()));
 
     if (additional_data.size() + plaintext.size() > message_size_limit_) {
       return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -148,11 +146,7 @@ class AesGcmSivCryptor {
       SHA256(reinterpret_cast<const uint8_t *>(key.data()), key.size(),
              key_id.data());
     }
-    Status status = nonce_generator_->NextNonce(key_id, &nonce_copy);
-
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(nonce_generator_->NextNonce(key_id, &nonce_copy));
     nonce->resize(nonce_copy.size());
 
     // Since the Bytes template class provides a fake resize method that does
@@ -256,11 +250,8 @@ class AesGcmSivCryptor {
                   "Ciphertext container must be self-cleansing");
 
     // Pick the appropriate EVP_AEAD based on the key length.
-    StatusOr<EVP_AEAD const *> aead_result = EvpAead(key.size());
-    if (!aead_result.ok()) {
-      return aead_result.status();
-    }
-    EVP_AEAD const *const aead = aead_result.ValueOrDie();
+    EVP_AEAD const *aead;
+    ASYLO_ASSIGN_OR_RETURN(aead, EvpAead(key.size()));
 
     if (nonce.size() != EVP_AEAD_nonce_length(aead)) {
       return Status(error::GoogleError::INVALID_ARGUMENT,
