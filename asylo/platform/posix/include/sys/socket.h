@@ -67,10 +67,8 @@ int accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 int bind(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 int connect(int sockfd, const struct sockaddr *addr, socklen_t addrlen);
 
-// No implementation provided.
 void freeaddrinfo(struct addrinfo *res);
 
-// No implementation provided.
 int getaddrinfo(const char *node, const char *service,
                 const struct addrinfo *hints, struct addrinfo **res);
 
