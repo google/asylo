@@ -160,10 +160,7 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   // architecture and was copied into the assertion byte-for-byte, so is safe to
   // restore the REPORT structure directly from the deserialized LocalAssertion.
   report = TrivialObjectFromBinaryString<sgx::Report>(local_assertion.report());
-  Status status = sgx::VerifyHardwareReport(report);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(sgx::VerifyHardwareReport(report));
 
   // Next, verify that the REPORT is cryptographically-bound to the provided
   // |user_data|. This is done by re-constructing the expected REPORTDATA (a
@@ -184,10 +181,8 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   // Serialize the protobuf representation of the peer's SGX code identity and
   // save it in |peer_identity|.
   sgx::CodeIdentity code_identity;
-  status = sgx::ParseIdentityFromHardwareReport(report, &code_identity);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      sgx::ParseIdentityFromHardwareReport(report, &code_identity));
 
   if (!code_identity.SerializeToString(peer_identity->mutable_identity())) {
     return Status(error::GoogleError::INTERNAL,

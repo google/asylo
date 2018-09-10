@@ -32,6 +32,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -96,12 +97,8 @@ Status SgxLocalSecretSealer::SetDefaultHeader(
     return Status(error::GoogleError::INTERNAL,
                   "Could not serialize additional info");
   }
-  Status status = sgx::SerializeSgxIdentity(sgx::GetSelfIdentity()->identity,
-                                            header->add_author());
-  if (!status.ok()) {
-    return status;
-  }
-
+  ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(
+      sgx::GetSelfIdentity()->identity, header->add_author()));
   return sgx::SerializeSgxExpectation(
       default_client_acl_, header->mutable_client_acl()->mutable_expectation());
 }
@@ -113,11 +110,9 @@ Status SgxLocalSecretSealer::Seal(
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  Status status = sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-      header, &cpusvn, &cipher_suite, &sgx_expectation);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+          header, &cpusvn, &cipher_suite, &sgx_expectation));
 
   if (!header.SerializeToString(
           sealed_secret->mutable_sealed_secret_header())) {
@@ -134,12 +129,9 @@ Status SgxLocalSecretSealer::Seal(
   SerializeByteContainers(views, &final_additional_data);
 
   CleansingVector<uint8_t> key;
-  status = sgx::internal::GenerateCryptorKey(cipher_suite, "default_key_id",
-                                             cpusvn, sgx_expectation,
-                                             kAes256GcmSivKeySize, &key);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(sgx::internal::GenerateCryptorKey(
+      cipher_suite, "default_key_id", cpusvn, sgx_expectation,
+      kAes256GcmSivKeySize, &key));
 
   return cryptor_->Seal(key, final_additional_data, secret,
                         sealed_secret->mutable_iv(),
@@ -157,11 +149,9 @@ Status SgxLocalSecretSealer::Unseal(const SealedSecret &sealed_secret,
   UnsafeBytes<sgx::kCpusvnSize> cpusvn;
   sgx::CipherSuite cipher_suite;
   sgx::CodeIdentityExpectation sgx_expectation;
-  Status status = sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-      header, &cpusvn, &cipher_suite, &sgx_expectation);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+          header, &cpusvn, &cipher_suite, &sgx_expectation));
 
   std::string final_additional_data;
   std::vector<ByteContainerView> views{
@@ -170,12 +160,9 @@ Status SgxLocalSecretSealer::Unseal(const SealedSecret &sealed_secret,
   SerializeByteContainers(views, &final_additional_data);
 
   CleansingVector<uint8_t> key;
-  status = sgx::internal::GenerateCryptorKey(cipher_suite, "default_key_id",
-                                             cpusvn, sgx_expectation,
-                                             kAes256GcmSivKeySize, &key);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(sgx::internal::GenerateCryptorKey(
+      cipher_suite, "default_key_id", cpusvn, sgx_expectation,
+      kAes256GcmSivKeySize, &key));
 
   return cryptor_->Open(key, final_additional_data,
                         sealed_secret.secret_ciphertext(), sealed_secret.iv(),

@@ -23,6 +23,7 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace sgx {
@@ -253,11 +254,8 @@ Status SetRandomInvalidGenericExpectation(
       SetRandomValidGenericMatchSpec(generic_expectation->mutable_match_spec(),
                                      &sgx_spec);
     } else {
-      Status status = SetRandomInvalidGenericMatchSpec(
-          generic_expectation->mutable_match_spec());
-      if (!status.ok()) {
-        return status;
-      }
+      ASYLO_RETURN_IF_ERROR(SetRandomInvalidGenericMatchSpec(
+          generic_expectation->mutable_match_spec()));
       identity_and_spec_are_valid = false;
     }
     if (count >= 100) {

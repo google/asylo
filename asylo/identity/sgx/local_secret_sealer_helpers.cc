@@ -74,10 +74,8 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
   }
   const EnclaveIdentityExpectation &generic_expectation =
       header.client_acl().expectation();
-  Status status = ParseSgxExpectation(generic_expectation, sgx_expectation);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      ParseSgxExpectation(generic_expectation, sgx_expectation));
   bool result;
   ASYLO_ASSIGN_OR_RETURN(result,
                          MatchIdentityToExpectation(GetSelfIdentity()->identity,
@@ -159,10 +157,7 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
   serializer_input.emplace_back(key_subscript_str);
   while (remaining_key_bytes > 0) {
     std::basic_string<uint8_t> key_info;
-    Status status = SerializeByteContainers(serializer_input, &key_info);
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(SerializeByteContainers(serializer_input, &key_info));
     static_assert(decltype(req->keyid)::size() == SHA256_DIGEST_LENGTH,
                   "KEYREQUEST.KEYID field has unexpected size");
 

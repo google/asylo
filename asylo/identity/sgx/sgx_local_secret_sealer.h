@@ -95,10 +95,7 @@ namespace asylo {
 ///   sealed_secret.ParseFromString(...);
 ///
 ///   std::vector<uint8_t, CleansingAllocator<uint8_t>> secret;
-///   Status status = sealer->Unseal(sealed_secret, secret);
-///   if (!status.ok()) {
-///     return status;
-///   }
+///   ASYLO_RETURN_IF_ERROR(sealer->Unseal(sealed_secret, secret));
 ///   // secret now holds the unsealed secret. The policy and
 ///   // additional_authenticated_data in the sealed_secret are now
 ///   // authenticated.

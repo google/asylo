@@ -23,6 +23,7 @@
 #include <vector>
 
 #include "asylo/crypto/util/byte_container_util.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -30,11 +31,7 @@ Status SecretSealer::Reseal(const SealedSecret &old_sealed_secret,
                             const SealedSecretHeader &new_header,
                             SealedSecret *new_sealed_secret) {
   CleansingVector<uint8_t> unsealed_secret;
-  Status status = Unseal(old_sealed_secret, &unsealed_secret);
-  if (!status.ok()) {
-    return status;
-  }
-
+  ASYLO_RETURN_IF_ERROR(Unseal(old_sealed_secret, &unsealed_secret));
   return Seal(new_header, old_sealed_secret.additional_authenticated_data(),
               unsealed_secret, new_sealed_secret);
 }
@@ -45,10 +42,7 @@ StatusOr<std::string> SecretSealer::GenerateSealerId(SealingRootType type,
   std::string sealing_root_type_name = SealingRootType_Name(type);
   std::vector<ByteContainerView> sealer_id_tokens = {sealing_root_type_name,
                                                      name};
-  Status status = SerializeByteContainers(sealer_id_tokens, &serialized);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(SerializeByteContainers(sealer_id_tokens, &serialized));
   return serialized;
 }
 

@@ -24,6 +24,7 @@
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -82,11 +83,8 @@ class EnclaveAssertionAuthority {
     std::string enclave_identity_type_name = EnclaveIdentityType_Name(identity_type);
     std::vector<ByteContainerView> authority_id_tokens = {
         enclave_identity_type_name, authority_type};
-    Status status =
-        asylo::SerializeByteContainers(authority_id_tokens, &serialized);
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(
+        asylo::SerializeByteContainers(authority_id_tokens, &serialized));
     return serialized;
   }
 

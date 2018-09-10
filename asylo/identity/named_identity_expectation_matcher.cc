@@ -22,6 +22,7 @@
 
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -33,10 +34,7 @@ StatusOr<std::string> NamedIdentityExpectationMatcher::GetMatcherName(
   description_tokens.emplace_back(description.authority_type());
 
   std::string id;
-  Status status = SerializeByteContainers(description_tokens, &id);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(SerializeByteContainers(description_tokens, &id));
   return id;
 }
 

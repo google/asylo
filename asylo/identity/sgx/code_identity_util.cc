@@ -34,6 +34,7 @@
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -299,17 +300,11 @@ Status ParseSgxExpectation(
     CodeIdentityExpectation *sgx_expectation) {
   // First, parse the identity portion of the expectation, as that also
   // verifies whether the expectation is of correct type.
-  Status status =
+  ASYLO_RETURN_IF_ERROR(
       ParseSgxIdentity(generic_expectation.reference_identity(),
-                       sgx_expectation->mutable_reference_identity());
-  if (!status.ok()) {
-    return status;
-  }
-  status = ParseSgxMatchSpec(generic_expectation.match_spec(),
-                             sgx_expectation->mutable_match_spec());
-  if (!status.ok()) {
-    return status;
-  }
+                       sgx_expectation->mutable_reference_identity()));
+  ASYLO_RETURN_IF_ERROR(ParseSgxMatchSpec(
+      generic_expectation.match_spec(), sgx_expectation->mutable_match_spec()));
   if (!internal::IsIdentityCompatibleWithMatchSpec(
           sgx_expectation->reference_identity(),
           sgx_expectation->match_spec())) {
@@ -349,12 +344,9 @@ Status SerializeSgxMatchSpec(const CodeIdentityMatchSpec &sgx_match_spec,
 Status SerializeSgxExpectation(
     const CodeIdentityExpectation &sgx_expectation,
     EnclaveIdentityExpectation *generic_expectation) {
-  Status status =
+  ASYLO_RETURN_IF_ERROR(
       SerializeSgxIdentity(sgx_expectation.reference_identity(),
-                           generic_expectation->mutable_reference_identity());
-  if (!status.ok()) {
-    return status;
-  }
+                           generic_expectation->mutable_reference_identity()));
   return SerializeSgxMatchSpec(sgx_expectation.match_spec(),
                                generic_expectation->mutable_match_spec());
 }
@@ -371,10 +363,7 @@ void SetTargetinfoFromSelfIdentity(Targetinfo *tinfo) {
 Status VerifyHardwareReport(const Report &report) {
   AlignedHardwareKeyPtr report_key;
 
-  Status status = GetReportKey(report.keyid, report_key.get());
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(GetReportKey(report.keyid, report_key.get()));
 
   // Compute the report MAC. SGX uses CMAC to MAC the contents of the report.
   // The last two fields (KEYID and MAC) from the REPORT struct are not

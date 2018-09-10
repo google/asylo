@@ -24,6 +24,7 @@
 #include "asylo/identity/assertion_description_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -45,10 +46,8 @@ StatusOr<std::string> SerializeAssertionDescription(
       EnclaveIdentityType_Name(description.identity_type()),
       description.authority_type()};
   std::string serialized;
-  Status status = SerializeByteContainers(authority_id_tokens, &serialized);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      SerializeByteContainers(authority_id_tokens, &serialized));
   return serialized;
 }
 

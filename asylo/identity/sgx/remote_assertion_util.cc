@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/remote_assertion_util.h"
 
 #include "absl/strings/str_cat.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace sgx {
@@ -50,10 +51,7 @@ Status MakeRemoteAssertion(const std::string &user_data,
   }
 
   std::vector<uint8_t> signature;
-  Status status = signing_key.Sign(assertion->payload(), &signature);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(signing_key.Sign(assertion->payload(), &signature));
   assertion->set_signature(reinterpret_cast<const char *>(signature.data()),
                            signature.size());
 
