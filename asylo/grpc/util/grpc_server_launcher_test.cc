@@ -28,6 +28,7 @@
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "include/grpcpp/grpcpp.h"
 #include "include/grpcpp/impl/codegen/service_type.h"
@@ -90,32 +91,20 @@ class GrpcServerLauncherTest : public ::testing::Test {
   // localhost listening port to the launcher, and launches the server. Stores
   // the final server address in server_address_.
   Status LaunchServer() {
-    Status status =
-        launcher_.RegisterService(absl::make_unique<test::MessengerServer1>());
-    if (!status.ok()) {
-      return status;
-    }
-    status =
-        launcher_.RegisterService(absl::make_unique<test::MessengerServer2>());
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(
+        launcher_.RegisterService(absl::make_unique<test::MessengerServer1>()));
+    ASYLO_RETURN_IF_ERROR(
+        launcher_.RegisterService(absl::make_unique<test::MessengerServer2>()));
 
     int port;
-    status = launcher_.AddListeningPort(
-        server_address_, ::grpc::InsecureServerCredentials(), &port);
-    if (!status.ok()) {
-      return status;
-    }
-    status = launcher_.Start();
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(launcher_.AddListeningPort(
+        server_address_, ::grpc::InsecureServerCredentials(), &port));
+    ASYLO_RETURN_IF_ERROR(launcher_.Start());
 
     // Only overwrite |server_address_| if a port was bound successfully.
     server_address_ = absl::StrCat(kLocalhostAddress, ":", port);
 
-    return status;
+    return Status::OkStatus();
   }
 
   // Connects channel_ to the server listening on server_address_.
@@ -131,19 +120,16 @@ class GrpcServerLauncherTest : public ::testing::Test {
   // Checks Messenger1 and Messenger2 services.
   Status CallServices() {
     test::MessengerClient1 messenger_client1(channel_);
-    StatusOr<std::string> response = messenger_client1.Hello(kMessengerClientName);
-    if (!response.ok()) {
-      return response.status();
-    }
-    EXPECT_EQ(response.ValueOrDie(),
+    std::string response;
+    ASYLO_ASSIGN_OR_RETURN(response,
+                           messenger_client1.Hello(kMessengerClientName));
+    EXPECT_EQ(response,
               test::MessengerServer1::ResponseString(kMessengerClientName));
 
     test::MessengerClient2 messenger_client2(channel_);
-    response = messenger_client2.Hello(kMessengerClientName);
-    if (!response.ok()) {
-      return response.status();
-    }
-    EXPECT_EQ(response.ValueOrDie(),
+    ASYLO_ASSIGN_OR_RETURN(response,
+                           messenger_client2.Hello(kMessengerClientName));
+    EXPECT_EQ(response,
               test::MessengerServer2::ResponseString(kMessengerClientName));
     return Status::OkStatus();
   }

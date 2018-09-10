@@ -33,6 +33,7 @@
 #include "asylo/grpc/auth/core/ekep_crypto.h"
 #include "asylo/grpc/auth/core/ekep_error_space.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -320,10 +321,8 @@ Status EkepHandshaker::WriteFrameAndUpdateTranscript(
     std::string *output) {
   int offset = output->size();
   google::protobuf::io::StringOutputStream outgoing_frame(output);
-  Status status = EncodeFrame(message_type, handshake_message, &outgoing_frame);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      EncodeFrame(message_type, handshake_message, &outgoing_frame));
 
   // There may be outgoing frames already written to |output|. Only add bytes
   // from the most recently-written frame to the transcript.
@@ -344,11 +343,7 @@ Status EkepHandshaker::DeriveAndSetRecordProtocolKey(
     HandshakeCipher cipher_suite, RecordProtocol record_protocol,
     ByteContainerView master_secret) {
   std::string final_transcript_hash;
-  Status status = GetTranscriptHash(&final_transcript_hash);
-  if (!status.ok()) {
-    return status;
-  }
-
+  ASYLO_RETURN_IF_ERROR(GetTranscriptHash(&final_transcript_hash));
   return DeriveRecordProtocolKey(cipher_suite, record_protocol,
                                  final_transcript_hash, master_secret,
                                  &record_protocol_key_);
