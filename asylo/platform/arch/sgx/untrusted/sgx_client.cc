@@ -28,6 +28,7 @@
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/util/posix_error_space.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -175,11 +176,8 @@ Status SGXClient::EnterAndInitialize(const EnclaveConfig &config) {
 
   char *output = nullptr;
   size_t output_len = 0;
-  Status status = initialize(id_, get_name().c_str(), buf.data(), buf.size(),
-                             &output, &output_len);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(initialize(id_, get_name().c_str(), buf.data(),
+                                   buf.size(), &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.
@@ -188,6 +186,7 @@ Status SGXClient::EnterAndInitialize(const EnclaveConfig &config) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to deserialize StatusProto");
   }
+  Status status;
   status.RestoreFrom(status_proto);
 
   // |output| points to an untrusted memory buffer allocated by the enclave. It
@@ -207,15 +206,14 @@ Status SGXClient::EnterAndRun(const EnclaveInput &input,
 
   char *output_buf = nullptr;
   size_t output_len = 0;
-  Status status = run(id_, buf.data(), buf.size(), &output_buf, &output_len);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      run(id_, buf.data(), buf.size(), &output_buf, &output_len));
 
   // Enclave entry-point was successfully invoked. |output_buf| is guaranteed to
   // have a value.
   EnclaveOutput local_output;
   local_output.ParseFromArray(output_buf, output_len);
+  Status status;
   status.RestoreFrom(local_output.status());
 
   // If |output| is not null, then |output_buf| points to a memory buffer
@@ -241,15 +239,14 @@ Status SGXClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   char *output = nullptr;
   size_t output_len = 0;
 
-  Status status = finalize(id_, buf.data(), buf.size(), &output, &output_len);
-  if (!status.ok()) {
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      finalize(id_, buf.data(), buf.size(), &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.
   StatusProto status_proto;
   status_proto.ParseFromArray(output, output_len);
+  Status status;
   status.RestoreFrom(status_proto);
 
   // |output| points to an untrusted memory buffer allocated by the enclave. It

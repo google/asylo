@@ -42,6 +42,7 @@
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 using EnclaveState = ::asylo::TrustedApplication::State;
 using google::protobuf::RepeatedPtrField;
@@ -204,12 +205,8 @@ Status TrustedApplication::InitializeInternal(const EnclaveConfig &config) {
                  << status;
   }
 
-  status = VerifyAndSetState(EnclaveState::kInternalInitializing,
-                             EnclaveState::kUserInitializing);
-  if (!status.ok()) {
-    return status;
-  }
-
+  ASYLO_RETURN_IF_ERROR(VerifyAndSetState(EnclaveState::kInternalInitializing,
+                                          EnclaveState::kUserInitializing));
   return Initialize(config);
 }
 

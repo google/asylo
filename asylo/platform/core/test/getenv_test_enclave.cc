@@ -22,6 +22,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/core/test/proto_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
@@ -75,10 +76,7 @@ class EnclaveGetenvTest : public EnclaveTestCase {
                     "match the value set");
     }
     for (const auto &test : enclave_input_test.test_repeated()) {
-      Status test_status = RunTest(test);
-      if (!test_status.ok()) {
-        return test_status;
-      }
+      ASYLO_RETURN_IF_ERROR(RunTest(test));
     }
     return Status::OkStatus();
   }

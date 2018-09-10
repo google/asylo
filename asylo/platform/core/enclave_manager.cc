@@ -29,6 +29,7 @@
 
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -166,23 +167,17 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
     return Status::OkStatus();
   }
 
-  Status status;
   if (!skip_finalize) {
-    status = client->EnterAndFinalize(final_input);
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(client->EnterAndFinalize(final_input));
   }
 
-  status = client->DestroyEnclave();
-  if (status.ok()) {
-    status =
-        EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
-            client);
-    const auto &name = name_by_client_[client];
-    client_by_name_.erase(name);
-    name_by_client_.erase(client);
-  }
+  ASYLO_RETURN_IF_ERROR(client->DestroyEnclave());
+  const Status status =
+      EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
+          client);
+  const auto &name = name_by_client_[client];
+  client_by_name_.erase(name);
+  name_by_client_.erase(client);
 
   return status;
 }
@@ -394,10 +389,8 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
 Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
                                                             siginfo_t *info,
                                                             void *ucontext) {
-  StatusOr<EnclaveClient *> client_result = GetClientForSignal(signum);
-  if (!client_result.ok()) {
-    return client_result.status();
-  }
+  EnclaveClient *client_result;
+  ASYLO_ASSIGN_OR_RETURN(client_result, GetClientForSignal(signum));
   EnclaveSignal enclave_signal;
   enclave_signal.set_signum(signum);
   enclave_signal.set_code(info->si_code);
@@ -407,7 +400,7 @@ Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
     enclave_signal.add_gregs(
         static_cast<uint64_t>(uc->uc_mcontext.gregs[greg_index]));
   }
-  return client_result.ValueOrDie()->EnterAndHandleSignal(enclave_signal);
+  return client_result->EnterAndHandleSignal(enclave_signal);
 }
 
 };  // namespace asylo

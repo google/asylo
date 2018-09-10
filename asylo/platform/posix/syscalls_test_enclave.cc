@@ -36,6 +36,7 @@
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -266,11 +267,8 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   Status RunUnlinkTest(const std::string &path) {
-    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     close(fd);
     if (unlink(path.c_str()) == -1) {
       return Status(
@@ -288,11 +286,8 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   Status RunFcntlTest(const std::string &path) {
-    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     platform::storage::FdCloser fd_closer(fd);
 
     // TEST F_SETFL and F_GETFL.
@@ -382,12 +377,8 @@ class SyscallsEnclave : public EnclaveTestCase {
 
   Status RunDupTest(const std::string &path) {
     const std::string message = path;
-    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
-
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     platform::storage::FdCloser fd_closer(fd);
     size_t rc = write(fd, message.c_str(), message.size());
     if (rc != message.size()) {
@@ -407,10 +398,7 @@ class SyscallsEnclave : public EnclaveTestCase {
           error::GoogleError::INTERNAL,
           absl::StrCat("dup fd:", dup_fd, " is the same as original fd:", fd));
     }
-    Status status = CompareFiles(fd, dup_fd, message.size());
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup_fd, message.size()));
 
     // Test dup2 with a used file descriptor.
     int dup2_fd = dup2(fd, dup_fd);
@@ -419,10 +407,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("dup2 fd:", fd, " to fd:", dup_fd,
                                  " failed: ", strerror(errno)));
     }
-    status = CompareFiles(fd, dup2_fd, message.size());
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
 
     // Test dup2 with a different file descriptor.
     int newfd = 1000;
@@ -432,10 +417,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("dup2 fd:", fd, " to fd:", newfd,
                                  " failed: ", strerror(errno)));
     }
-    status = CompareFiles(fd, dup2_fd, message.size());
-    if (!status.ok()) {
-      return status;
-    }
+    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
 
     // Test whether we can still read from one of the file descriptors after
     // closing the other.
@@ -463,10 +445,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  " failed: ", strerror(errno)));
     }
     char buf1[1024];
-    Status read_status = ReadFile(fd1, buf1, size);
-    if (!read_status.ok()) {
-      return read_status;
-    }
+    ASYLO_RETURN_IF_ERROR(ReadFile(fd1, buf1, size));
 
     if (lseek(fd2, 0, SEEK_SET) == -1) {
       return Status(static_cast<error::GoogleError>(errno),
@@ -474,10 +453,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                                  " failed: ", strerror(errno)));
     }
     char buf2[1024];
-    read_status = ReadFile(fd2, buf2, size);
-    if (!read_status.ok()) {
-      return read_status;
-    }
+    ASYLO_RETURN_IF_ERROR(ReadFile(fd2, buf2, size));
 
     if (memcmp(buf1, buf2, size) != 0) {
       return Status(
@@ -507,11 +483,9 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     const std::string from_path = std::string(path) + "from";
     const std::string to_path = std::string(path) + "to";
-    auto from_fd_or_error = OpenFile(from_path, O_CREAT | O_RDWR, 0644);
-    if (!from_fd_or_error.ok()) {
-      return from_fd_or_error.status();
-    }
-    int from_fd = from_fd_or_error.ValueOrDie();
+    int from_fd;
+    ASYLO_ASSIGN_OR_RETURN(from_fd,
+                           OpenFile(from_path, O_CREAT | O_RDWR, 0644));
 
     platform::storage::FdCloser from_fd_closer(from_fd);
     size_t rc = write(from_fd, path.c_str(), path.size());
@@ -525,18 +499,12 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("Link path ", from_path, " to ", to_path,
                                  " failed: ", strerror(errno)));
     }
-    auto to_fd_or_error = OpenFile(to_path, O_RDWR, 0);
-    if (!to_fd_or_error.ok()) {
-      return to_fd_or_error.status();
-    }
-    int to_fd = to_fd_or_error.ValueOrDie();
+    int to_fd;
+    ASYLO_ASSIGN_OR_RETURN(to_fd, OpenFile(to_path, O_RDWR, 0));
     platform::storage::FdCloser to_fd_closer(to_fd);
 
     char buf[1024];
-    Status read_status = ReadFile(to_fd, buf, path.size());
-    if (!read_status.ok()) {
-      return read_status;
-    }
+    ASYLO_RETURN_IF_ERROR(ReadFile(to_fd, buf, path.size()));
     if (memcmp(buf, path.c_str(), path.size()) != 0) {
       return Status(
           error::GoogleError::INTERNAL,
@@ -579,11 +547,9 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "Mkdir creates a directory with masked file modes");
     }
     const std::string file_path = path + "OpenWithUmask";
-    auto fd_or_error = OpenFile(file_path.c_str(), O_CREAT | O_RDWR, 0777);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd,
+                           OpenFile(file_path.c_str(), O_CREAT | O_RDWR, 0777));
     platform::storage::FdCloser fd_closer(fd);
     if (fstat(fd, &st) == -1) {
       return Status(static_cast<error::GoogleError>(errno),
@@ -873,11 +839,8 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   Status RunWritevTest(const std::string &path) {
-    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     platform::storage::FdCloser fd_closer(fd);
     constexpr int num_messages = 2;
     const std::string message1 = "First writev message";
@@ -904,10 +867,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
 
     char buf[1024];
-    Status read_status = ReadFile(fd, buf, size);
-    if (!read_status.ok()) {
-      return read_status;
-    }
+    ASYLO_RETURN_IF_ERROR(ReadFile(fd, buf, size));
     if (memcmp(buf, message.c_str(), message.size()) != 0) {
       return Status(error::GoogleError::INTERNAL,
                     absl::StrCat("Message read from fd:", fd, ":", buf,
@@ -917,11 +877,8 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   Status RunReadvTest(const std::string &path) {
-    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     platform::storage::FdCloser fd_closer(fd);
     constexpr int num_messages = 2;
     const std::string message1 = "First readv message";
@@ -1106,11 +1063,8 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   Status RunTruncateTest(const std::string &path) {
-    auto fd_or_error = OpenFile(path, O_CREAT | O_RDWR, 0644);
-    if (!fd_or_error.ok()) {
-      return fd_or_error.status();
-    }
-    int fd = fd_or_error.ValueOrDie();
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     platform::storage::FdCloser fd_closer(fd);
     const std::string message1 = "First message ";
     const std::string message2 = "Second message ";
