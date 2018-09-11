@@ -31,11 +31,12 @@
 #include "asylo/util/logging.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/posix_error_space.h"
+#include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 
-StatusOr<FileMapping> FileMapping::FromFile(absl::string_view file_name) {
+StatusOr<FileMapping> FileMapping::CreateFromFile(absl::string_view file_name) {
   // Create a copy of |file_name| that is definitely null-terminated so that it
   // can be passed to open(). This copy can be re-used by moving it into the
   // final FileMapping object at the end of the function. This ensures that we

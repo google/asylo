@@ -59,10 +59,15 @@ class FileMappingTest : public ::testing::Test {
   std::string expected_file_contents_;
 };
 
+// Tests that default-constructed FileMapping objects don't cause crashes.
+TEST(FileMappingFixturelessTest, DefaultConstructedMappingDoesntCrash) {
+  FileMapping empty;
+}
+
 // Tests that a mapped file buffer has the same size and contents as the backing
 // file.
 TEST_F(FileMappingTest, MapsFileSuccessfully) {
-  auto from_file_result = FileMapping::FromFile(FLAGS_test_file);
+  auto from_file_result = FileMapping::CreateFromFile(FLAGS_test_file);
   ASSERT_THAT(from_file_result, IsOk());
 
   FileMapping mapping = std::move(from_file_result.ValueOrDie());
@@ -76,7 +81,7 @@ TEST_F(FileMappingTest, MapsFileSuccessfully) {
 // file, but are still visible in memory.
 TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
   // Open one mapping of the file and check that it has the expected contents.
-  auto outer_from_file_result = FileMapping::FromFile(FLAGS_test_file);
+  auto outer_from_file_result = FileMapping::CreateFromFile(FLAGS_test_file);
   ASSERT_THAT(outer_from_file_result, IsOk());
 
   FileMapping outer_mapping = std::move(outer_from_file_result.ValueOrDie());
@@ -92,7 +97,7 @@ TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
 
   {
     // Open another mapping of the same file.
-    auto inner_from_file_result = FileMapping::FromFile(FLAGS_test_file);
+    auto inner_from_file_result = FileMapping::CreateFromFile(FLAGS_test_file);
     ASSERT_THAT(inner_from_file_result, IsOk());
 
     // Check that the new mapping has the same contents as the original file.

@@ -21,7 +21,6 @@
 
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -32,7 +31,11 @@ namespace asylo {
 // of memory are not propagated to the backing file.
 class FileMapping {
  public:
-  FileMapping() = delete;
+  // Returns a new FileMapping of |file_name| into memory, or a non-OK status if
+  // the mapping workflow fails.
+  static StatusOr<FileMapping> CreateFromFile(absl::string_view file_name);
+
+  FileMapping() = default;
 
   FileMapping(const FileMapping &other) = delete;
   FileMapping &operator=(const FileMapping &other) = delete;
@@ -45,15 +48,11 @@ class FileMapping {
 
   ~FileMapping();
 
-  // Returns a new FileMapping of |file_name| into memory, or a non-OK status if
-  // the mapping workflow fails.
-  static StatusOr<FileMapping> FromFile(absl::string_view file_name);
-
   // Returns the buffer that the specified file is mapped into.
   absl::Span<char> buffer() const { return mapped_region_; }
 
  private:
-  // A constructor used by FromFile when no errors are encountered.
+  // A constructor used by CreateFromFile when no errors are encountered.
   FileMapping(std::string &&file_name, absl::Span<char> mapped_region)
       : file_name_(std::move(file_name)), mapped_region_(mapped_region) {}
 
