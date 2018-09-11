@@ -110,8 +110,8 @@ TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
   }
 
   // Check that the first mapping's buffer still has the modified contents.
-  EXPECT_EQ(strncmp(outer_mapping.buffer().data(), kReplaceText,
-                    strlen(kReplaceText)),
+  EXPECT_EQ(strncmp(reinterpret_cast<char *>(outer_mapping.buffer().data()),
+                    kReplaceText, strlen(kReplaceText)),
             0);
 }
 

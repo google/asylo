@@ -84,7 +84,7 @@ StatusOr<FileMapping> FileMapping::CreateFromFile(absl::string_view file_name) {
 
   return FileMapping(
       std::move(file_name_string),
-      absl::MakeSpan(reinterpret_cast<char *>(buffer_ptr), file_size));
+      absl::MakeSpan(reinterpret_cast<uint8_t *>(buffer_ptr), file_size));
 }
 
 FileMapping::~FileMapping() {

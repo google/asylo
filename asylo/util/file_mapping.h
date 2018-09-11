@@ -19,6 +19,8 @@
 #ifndef ASYLO_UTIL_FILE_MAPPING_H_
 #define ASYLO_UTIL_FILE_MAPPING_H_
 
+#include <cstdint>
+
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/util/statusor.h"
@@ -49,11 +51,11 @@ class FileMapping {
   ~FileMapping();
 
   // Returns the buffer that the specified file is mapped into.
-  absl::Span<char> buffer() const { return mapped_region_; }
+  absl::Span<uint8_t> buffer() const { return mapped_region_; }
 
  private:
   // A constructor used by CreateFromFile when no errors are encountered.
-  FileMapping(std::string &&file_name, absl::Span<char> mapped_region)
+  FileMapping(std::string &&file_name, absl::Span<uint8_t> mapped_region)
       : file_name_(std::move(file_name)), mapped_region_(mapped_region) {}
 
   // A utility function to eliminate code duplication between the move
@@ -64,7 +66,7 @@ class FileMapping {
   std::string file_name_;
 
   // The buffer that the file is mapped into.
-  absl::Span<char> mapped_region_;
+  absl::Span<uint8_t> mapped_region_;
 };
 
 }  // namespace asylo
