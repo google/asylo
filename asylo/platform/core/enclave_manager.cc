@@ -389,8 +389,8 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
 Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
                                                             siginfo_t *info,
                                                             void *ucontext) {
-  EnclaveClient *client_result;
-  ASYLO_ASSIGN_OR_RETURN(client_result, GetClientForSignal(signum));
+  EnclaveClient *client;
+  ASYLO_ASSIGN_OR_RETURN(client, GetClientForSignal(signum));
   EnclaveSignal enclave_signal;
   enclave_signal.set_signum(signum);
   enclave_signal.set_code(info->si_code);
@@ -400,7 +400,7 @@ Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
     enclave_signal.add_gregs(
         static_cast<uint64_t>(uc->uc_mcontext.gregs[greg_index]));
   }
-  return client_result->EnterAndHandleSignal(enclave_signal);
+  return client->EnterAndHandleSignal(enclave_signal);
 }
 
 };  // namespace asylo
