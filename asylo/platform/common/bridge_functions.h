@@ -27,6 +27,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/time.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <utime.h>
@@ -50,6 +51,14 @@ int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant);
 // Converts |sysconf_constant| to a bridge constant. Returns UNKNOWN if
 // unsuccessful.
 enum SysconfConstants ToSysconfConstants(int sysconf_constant);
+
+// Converts |bridge_timer_type| to a runtime timer type. Returns -1 if
+// unsuccessful.
+int FromBridgeTimerType(enum TimerType bridge_timer_type);
+
+// Converts |timer_type| to a bridge constant. Returns TIMER_TYPE_UNKNOWN if
+// unsuccessful.
+enum TimerType ToBridgeTimerType(int timer_type);
 
 // Converts |bridge_wait_options| to runtime wait options. Returns 0 if no
 // supported wait options are provided.
@@ -206,6 +215,14 @@ struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
 // Converts |tv| to a bridge timeval.
 struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
                                        struct bridge_timeval *bridge_tv);
+
+// Converts |bridge_timerval| to a runtime itimerval.
+struct itimerval *FromBridgeITimerVal(
+    const struct BridgeITimerVal *bridge_timerval, struct itimerval *timerval);
+
+// Converts |timerval| to a bridge itimerval.
+struct BridgeITimerVal *ToBridgeITimerVal(
+    const struct itimerval *timerval, struct BridgeITimerVal *bridge_timerval);
 
 // Converts |fd| to a bridge pollfd. Returns nullptr if unsuccessful.
 struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,

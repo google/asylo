@@ -226,6 +226,20 @@ enum SysconfConstants ToSysconfConstants(int sysconf_constant) {
   }
 }
 
+int FromBridgeTimerType(enum TimerType bridge_timer_type) {
+  if (bridge_timer_type == BRIDGE_ITIMER_REAL) return ITIMER_REAL;
+  if (bridge_timer_type == BRIDGE_ITIMER_VIRTUAL) return ITIMER_VIRTUAL;
+  if (bridge_timer_type == BRIDGE_ITIMER_PROF) return ITIMER_PROF;
+  return -1;
+}
+
+enum TimerType ToBridgeTimerType(int timer_type) {
+  if (timer_type == ITIMER_REAL) return BRIDGE_ITIMER_REAL;
+  if (timer_type == ITIMER_VIRTUAL) return BRIDGE_ITIMER_VIRTUAL;
+  if (timer_type == ITIMER_PROF) return BRIDGE_ITIMER_PROF;
+  return TIMER_TYPE_UNKNOWN;
+}
+
 int FromBridgeWaitOptions(int bridge_wait_options) {
   int wait_options = 0;
   if (bridge_wait_options & BRIDGE_WNOHANG) wait_options |= WNOHANG;
@@ -759,6 +773,22 @@ struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
   bridge_tv->tv_sec = tv->tv_sec;
   bridge_tv->tv_usec = tv->tv_usec;
   return bridge_tv;
+}
+
+struct itimerval *FromBridgeITimerVal(
+    const struct BridgeITimerVal *bridge_timerval, struct itimerval *timerval) {
+  if (!bridge_timerval || !timerval) return nullptr;
+  FromBridgeTimeVal(&bridge_timerval->it_interval, &timerval->it_interval);
+  FromBridgeTimeVal(&bridge_timerval->it_value, &timerval->it_value);
+  return timerval;
+}
+
+struct BridgeITimerVal *ToBridgeITimerVal(
+    const struct itimerval *timerval, struct BridgeITimerVal *bridge_timerval) {
+  if (!timerval || !bridge_timerval) return nullptr;
+  ToBridgeTimeVal(&timerval->it_interval, &bridge_timerval->it_interval);
+  ToBridgeTimeVal(&timerval->it_value, &bridge_timerval->it_value);
+  return bridge_timerval;
 }
 
 int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus) {

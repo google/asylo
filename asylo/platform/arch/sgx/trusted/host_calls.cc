@@ -1067,6 +1067,25 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   return ret;
 }
 
+int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
+                            struct itimerval *old_value) {
+  int ret;
+  struct BridgeITimerVal bridge_new_value, bridge_old_value;
+  if (!asylo::ToBridgeITimerVal(new_value, &bridge_new_value)) {
+    errno = EFAULT;
+    return -1;
+  }
+  sgx_status_t status =
+      ocall_enc_untrusted_setitimer(&ret, asylo::ToBridgeTimerType(which),
+                                    &bridge_new_value, &bridge_old_value);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  asylo::FromBridgeITimerVal(&bridge_old_value, old_value);
+  return ret;
+}
+
 //////////////////////////////////////
 //           sys/time.h             //
 //////////////////////////////////////

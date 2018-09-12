@@ -60,6 +60,14 @@ enum SysconfConstants {
   NPROCESSORS_CONF = 2,
 };
 
+// The timer type for getitimer/setitimer that are supported inside an enclave.
+enum TimerType {
+  TIMER_TYPE_UNKNOWN = 0,
+  BRIDGE_ITIMER_REAL = 1,
+  BRIDGE_ITIMER_VIRTUAL = 2,
+  BRIDGE_ITIMER_PROF = 3,
+};
+
 // The target for getrusage(2) that are supported inside the enclave.
 enum RUsageTarget {
   TARGET_UNKNOWN = 0,
@@ -276,6 +284,11 @@ typedef int64_t bridge_clockid_t;
 struct bridge_timeval {
   int64_t tv_sec;
   int64_t tv_usec;
+} ABSL_ATTRIBUTE_PACKED;
+
+struct BridgeITimerVal {
+  struct bridge_timeval it_interval;
+  struct bridge_timeval it_value;
 } ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_timespec {

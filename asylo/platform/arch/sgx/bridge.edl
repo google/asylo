@@ -247,6 +247,10 @@ enclave {
         [out, size=16/*sizeof(struct timespec)*/] struct bridge_timespec *tp)
         propagate_errno;
 
+    int ocall_enc_untrusted_setitimer(
+        enum TimerType which, [in] struct BridgeITimerVal *bridge_new_value,
+        [out] struct BridgeITimerVal *bridge_old_value) propagate_errno;
+
     //////////////////////////////////////
     //            signal.h              //
     //////////////////////////////////////

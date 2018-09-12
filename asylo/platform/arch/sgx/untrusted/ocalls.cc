@@ -696,6 +696,20 @@ int ocall_enc_untrusted_clock_gettime(bridge_clockid_t clk_id,
   return ret;
 }
 
+int ocall_enc_untrusted_setitimer(enum TimerType which,
+                                  struct BridgeITimerVal *bridge_new_value,
+                                  struct BridgeITimerVal *bridge_old_value) {
+  itimerval new_value, old_value;
+  if (!asylo::FromBridgeITimerVal(bridge_new_value, &new_value)) {
+    errno = EFAULT;
+    return -1;
+  }
+  int ret =
+      setitimer(asylo::FromBridgeTimerType(which), &new_value, &old_value);
+  asylo::ToBridgeITimerVal(&old_value, bridge_old_value);
+  return ret;
+}
+
 //////////////////////////////////////
 //           sys/time.h             //
 //////////////////////////////////////
