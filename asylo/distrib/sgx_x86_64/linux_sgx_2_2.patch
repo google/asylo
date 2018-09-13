@@ -1942,7 +1942,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
  #endif
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1043 @@
+@@ -0,0 +1,1111 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +package(
@@ -2362,17 +2362,12 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +)
 +
 +cc_library(
-+    name = "trts",
++    name = "trts_sim",
 +    srcs = TRTS_COMMON_SRCS + TRTS_COMMON_HDRS + [
 +        "sdk/selib/sgx_create_report.cpp",
 +        "sdk/selib/sgx_get_key.cpp",
 +        "sdk/selib/sgx_verify_report.cpp",
 +        "sdk/selib/tservice_version.cpp",
-+    ],
-+    hdrs = [
-+        "include/sgx.h",
-+        "include/sgx_trts.h",
-+        "include/sgx_trts_exception.h",
 +    ],
 +    copts = [
 +        "-DSE_SIM=1",
@@ -2558,7 +2553,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +)
 +
 +cc_library(
-+    name = "urts",
++    name = "urts_sim",
 +    srcs = URTS_COMMON_SRCS + [
 +        "sdk/simulation/assembly/linux/sgxsim.S",
 +        "sdk/simulation/assembly/sgxsim.h",
@@ -2576,7 +2571,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "sdk/simulation/urtssim/get_state.cpp",
 +        "sdk/simulation/urtssim/urts_sim.h",
 +    ],
-+    hdrs = URTS_COMMON_HDRS + PSW_COMMON_HDRS + ["include/sgx_urts.h"],
++    hdrs = URTS_COMMON_HDRS + PSW_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
 +        "-DSE_SIM=1",
 +        "-DElfParser=Elf64Parser",
@@ -2800,6 +2795,44 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    ],
 +)
 +
++# Target selecting either simulation or hardware mode untrusted include files
++# based on the value of SGX_SIM.
++cc_library(
++    name = "urts",
++    # Reprovide untrusted_inc's header to avoid layering violation.
++    hdrs = URTS_COMMON_HDRS + ["include/sgx_urts.h"],
++    copts = [
++        "-Wa,--noexecstack",
++        "-Iexternal/linux_sgx/common/inc/internal",
++        "-Iexternal/linux_sgx/common/inc/internal/linux",
++        "-Iexternal/linux_sgx/external/epid-sdk/ext/ipp/include",
++        "-Iexternal/linux_sgx/sdk/simulation/uinst",
++        "-Iexternal/linux_sgx/psw/urts",
++        "-Iexternal/linux_sgx/psw/urts/linux",
++        "-Iexternal/linux_sgx/psw/urts/parser",
++        "-Iexternal/linux_sgx/sdk/simulation/assembly",
++        "-Iexternal/linux_sgx/sdk/simulation/assembly/linux",
++        "-Iexternal/linux_sgx/sdk/simulation/tinst",
++        "-Iexternal/linux_sgx/sdk/simulation/uinst",
++        "-Iexternal/linux_sgx/sdk/simulation/urtssim",
++        "-Iexternal/linux_sgx/psw/ae/inc/internal",
++        "-Iexternal/linux_sgx/psw/ae/inc",
++        "-Iexternal/boringssl",
++    ],
++    deps = [
++        ":common_inc",
++        ":untrusted_inc",
++        ":untrusted_inc_internal",
++        ":common_inc_internal",
++    ] + select({
++        ":sgx_hw": [
++            ":urts_hw",
++        ],
++        "//conditions:default": [
++            ":urts_sim",
++        ],
++    }),
++)
 +
 +# The following targets are designed with to be build with the Asylo toolchain.
 +cc_library(
@@ -2946,6 +2979,28 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +)
 +
 +
++# Target selecting either simulation or hardware mode trusted include files
++# based on the value of SGX_SIM.
++cc_library(
++    name = "trts",
++    hdrs = [
++        "include/sgx.h",
++        "include/sgx_trts.h",
++        "include/sgx_trts_exception.h",
++    ],
++    deps = [
++        ":common_inc",
++        ":trusted_inc",
++    ] + select({
++        ":sgx_hw": [
++            ":trts_hw",
++        ],
++        ":sgx_sim": [
++            ":trts_sim",
++        ],
++        "//conditions:default": [],
++    }),
++)
 +
 +# The edger8r tool uses an language unsupported by Bazel, so call ocamlbuild
 +# in a genrule. (sudo apt-get install ocaml)
@@ -2979,6 +3034,19 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    output_to_bindir = True,
 +)
 +
++# These configuration settings are used to select build configurations based
++# on if building for hardware or simulation sgx enclaves.
++#   --config=sgx adds --define="SGX_SIM=0"
++#   --config=sgx-sim adds --define="SGX_SIM=1"
++# By default enclave launching applications will support simulation enclaves.
++# You can manually specify "bazel build --define="SGX_SIM=1" :mytarget" to
++# support hardware enclaves.
++config_setting(
++    name = "sgx_hw",
++    values = {
++        "define": "SGX_SIM=0",
++    },
++)
 +
 +config_setting(
 +    name = "sgx_sim",

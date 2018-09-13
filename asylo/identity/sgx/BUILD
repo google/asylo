@@ -385,6 +385,10 @@ cc_library(
         "//asylo/util:logging",
         "@boringssl//:crypto",
     ] + select({
+        "@linux_sgx//:sgx_hw": [
+            "@linux_sgx//:trts",
+            "//asylo/platform/core:trusted_core",
+        ],
         "@linux_sgx//:sgx_sim": [
             "@linux_sgx//:trts",
         ],

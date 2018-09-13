@@ -13,6 +13,15 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+build:sgx --crosstool_top=@com_google_asylo_sgx_backend//toolchain:crosstool
+build:sgx --dynamic_mode=off
+build:sgx --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
+build:sgx --fission=no
+build:sgx --custom_malloc=@com_google_asylo_sgx_backend//toolchain:crosstool
+build:sgx --define=SGX_SIM=0
+build:sgx --define=grpc_no_ares=true
+
 build:sgx-sim --crosstool_top=@com_google_asylo_sgx_backend//toolchain:crosstool
 build:sgx-sim --dynamic_mode=off
 build:sgx-sim --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
