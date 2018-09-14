@@ -689,6 +689,16 @@ int ocall_enc_untrusted_nanosleep(const struct bridge_timespec *req,
   return ret;
 }
 
+int ocall_enc_untrusted_times(struct BridgeTms *bridge_buf) {
+  struct tms buf;
+  int ret = times(&buf);
+  if (!asylo::ToBridgeTms(&buf, bridge_buf)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return ret;
+}
+
 int ocall_enc_untrusted_clock_gettime(bridge_clockid_t clk_id,
                                       struct bridge_timespec *tp) {
   int ret = clock_gettime(static_cast<clockid_t>(clk_id),
@@ -706,7 +716,11 @@ int ocall_enc_untrusted_setitimer(enum TimerType which,
   }
   int ret =
       setitimer(asylo::FromBridgeTimerType(which), &new_value, &old_value);
-  asylo::ToBridgeITimerVal(&old_value, bridge_old_value);
+  if (bridge_old_value &&
+      !asylo::ToBridgeITimerVal(&old_value, bridge_old_value)) {
+    errno = EFAULT;
+    return -1;
+  }
   return ret;
 }
 
@@ -752,7 +766,7 @@ int ocall_enc_untrusted_pipe(int pipefd[2]) {
 }
 
 int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
-  int name = asylo::FromSysconfConstants(bridge_name);
+  int name = asylo::FromBridgeSysconfConstants(bridge_name);
   int64_t ret = -1;
   if (name != -1) {
     ret = sysconf(name);

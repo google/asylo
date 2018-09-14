@@ -28,6 +28,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
+#include <sys/times.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <utime.h>
@@ -46,17 +47,17 @@ int ToBridgeFLockOperation(int flock_operation);
 
 // Converts |bridge_sysconf_constant| to a runtime sysconf constant. Returns -1
 // if unsuccessful.
-int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant);
+int FromBridgeSysconfConstants(enum SysconfConstants bridge_sysconf_constant);
 
-// Converts |sysconf_constant| to a bridge constant. Returns UNKNOWN if
-// unsuccessful.
-enum SysconfConstants ToSysconfConstants(int sysconf_constant);
+// Converts |sysconf_constant| to a bridge constant. Returns BRIDGE_SC_UNKNOWN
+// if unsuccessful.
+enum SysconfConstants ToBridgeSysconfConstants(int sysconf_constant);
 
 // Converts |bridge_timer_type| to a runtime timer type. Returns -1 if
 // unsuccessful.
 int FromBridgeTimerType(enum TimerType bridge_timer_type);
 
-// Converts |timer_type| to a bridge constant. Returns TIMER_TYPE_UNKNOWN if
+// Converts |timer_type| to a bridge constant. Returns BRIDGE_ITIMER_UNKNOWN if
 // unsuccessful.
 enum TimerType ToBridgeTimerType(int timer_type);
 
@@ -72,8 +73,8 @@ int ToBridgeWaitOptions(int wait_options);
 // unsuccessful.
 int FromBridgeRUsageTarget(enum RUsageTarget bridge_rusage_target);
 
-// Converts |rusage_target| to a bridge rusage target. Returns TARGET_UNKNOWN if
-// unsuccessful.
+// Converts |rusage_target| to a bridge rusage target. Returns
+// BRIDGE_RUSAGE_UNKNOWN if unsuccessful.
 enum RUsageTarget ToBridgeRUsageTarget(int rusage_target);
 
 // Converts the sigpromask action |bridge_how| to a runtime signal mask action.
@@ -191,6 +192,14 @@ struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,
 struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,
                                          socklen_t addrlen,
                                          struct bridge_sockaddr *bridge_addr);
+
+// Converts |bridge_times| to a runtime tms.
+struct tms *FromBridgeTms(const struct BridgeTms *bridge_times,
+                          struct tms *times);
+
+// Converts |times| to a bridge tms.
+struct BridgeTms *ToBridgeTms(const struct tms *times,
+                              struct BridgeTms *bridge_times);
 
 // Converts |bridge_tp| to a runtime timespec.
 struct timespec *FromBridgeTimespec(const struct bridge_timespec *bridge_tp,

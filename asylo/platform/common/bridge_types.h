@@ -55,14 +55,14 @@ enum FLockOperations {
 // This enum contains all of the sysconf name values supported inside the
 // enclave.
 enum SysconfConstants {
-  UNKNOWN = 0,
-  NPROCESSORS_ONLN = 1,
-  NPROCESSORS_CONF = 2,
+  BRIDGE_SC_UNKNOWN = 0,
+  BRIDGE_SC_NPROCESSORS_ONLN = 1,
+  BRIDGE_SC_NPROCESSORS_CONF = 2,
 };
 
 // The timer type for getitimer/setitimer that are supported inside an enclave.
 enum TimerType {
-  TIMER_TYPE_UNKNOWN = 0,
+  BRIDGE_ITIMER_UNKNOWN = 0,
   BRIDGE_ITIMER_REAL = 1,
   BRIDGE_ITIMER_VIRTUAL = 2,
   BRIDGE_ITIMER_PROF = 3,
@@ -70,7 +70,7 @@ enum TimerType {
 
 // The target for getrusage(2) that are supported inside the enclave.
 enum RUsageTarget {
-  TARGET_UNKNOWN = 0,
+  BRIDGE_RUSAGE_UNKNOWN = 0,
   BRIDGE_RUSAGE_SELF = 1,
   BRIDGE_RUSAGE_CHILDREN = 2,
 };
@@ -280,6 +280,13 @@ struct bridge_sockaddr {
 } ABSL_ATTRIBUTE_PACKED;
 
 typedef int64_t bridge_clockid_t;
+
+struct BridgeTms {
+  clock_t tms_utime;
+  clock_t tms_stime;
+  clock_t tms_cutime;
+  clock_t tms_cstime;
+} ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_timeval {
   int64_t tv_sec;

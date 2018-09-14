@@ -204,25 +204,25 @@ int ToBridgeFLockOperation(int flock_operation) {
   return bridge_flock_operation;
 }
 
-int FromSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
+int FromBridgeSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
   switch (bridge_sysconf_constant) {
-    case NPROCESSORS_CONF:
+    case BRIDGE_SC_NPROCESSORS_CONF:
       return _SC_NPROCESSORS_CONF;
-    case NPROCESSORS_ONLN:
+    case BRIDGE_SC_NPROCESSORS_ONLN:
       return _SC_NPROCESSORS_ONLN;
     default:
       return -1;
   }
 }
 
-enum SysconfConstants ToSysconfConstants(int sysconf_constant) {
+enum SysconfConstants ToBridgeSysconfConstants(int sysconf_constant) {
   switch (sysconf_constant) {
     case _SC_NPROCESSORS_CONF:
-      return NPROCESSORS_CONF;
+      return BRIDGE_SC_NPROCESSORS_CONF;
     case _SC_NPROCESSORS_ONLN:
-      return NPROCESSORS_ONLN;
+      return BRIDGE_SC_NPROCESSORS_ONLN;
     default:
-      return UNKNOWN;
+      return BRIDGE_SC_UNKNOWN;
   }
 }
 
@@ -237,7 +237,7 @@ enum TimerType ToBridgeTimerType(int timer_type) {
   if (timer_type == ITIMER_REAL) return BRIDGE_ITIMER_REAL;
   if (timer_type == ITIMER_VIRTUAL) return BRIDGE_ITIMER_VIRTUAL;
   if (timer_type == ITIMER_PROF) return BRIDGE_ITIMER_PROF;
-  return TIMER_TYPE_UNKNOWN;
+  return BRIDGE_ITIMER_UNKNOWN;
 }
 
 int FromBridgeWaitOptions(int bridge_wait_options) {
@@ -261,7 +261,7 @@ int FromBridgeRUsageTarget(enum RUsageTarget bridge_rusage_target) {
 enum RUsageTarget ToBridgeRUsageTarget(int rusage_target) {
   if (rusage_target == RUSAGE_SELF) return BRIDGE_RUSAGE_SELF;
   if (rusage_target == RUSAGE_CHILDREN) return BRIDGE_RUSAGE_CHILDREN;
-  return TARGET_UNKNOWN;
+  return BRIDGE_RUSAGE_UNKNOWN;
 }
 
 int FromBridgeSignal(int bridge_signum) {
@@ -727,6 +727,26 @@ struct bridge_iovec *ToBridgeIovec(const struct iovec *iov,
   bridge_iov->iov_base = iov->iov_base;
   bridge_iov->iov_len = iov->iov_len;
   return bridge_iov;
+}
+
+struct tms *FromBridgeTms(const struct BridgeTms *bridge_times,
+                          struct tms *times) {
+  if (!bridge_times || !times) return nullptr;
+  times->tms_utime = bridge_times->tms_utime;
+  times->tms_stime = bridge_times->tms_stime;
+  times->tms_cutime = bridge_times->tms_cutime;
+  times->tms_cstime = bridge_times->tms_cstime;
+  return times;
+}
+
+struct BridgeTms *ToBridgeTms(const struct tms *times,
+                              struct BridgeTms *bridge_times) {
+  if (!times || !bridge_times) return nullptr;
+  bridge_times->tms_utime = times->tms_utime;
+  bridge_times->tms_stime = times->tms_stime;
+  bridge_times->tms_cutime = times->tms_cutime;
+  bridge_times->tms_cstime = times->tms_cstime;
+  return bridge_times;
 }
 
 struct timespec *FromBridgeTimespec(const struct bridge_timespec *bridge_tp,

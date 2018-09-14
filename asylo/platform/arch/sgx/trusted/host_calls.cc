@@ -1055,6 +1055,21 @@ int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
   return ret;
 }
 
+int enc_untrusted_times(struct tms *buf) {
+  int ret;
+  BridgeTms bridge_buf;
+  sgx_status_t status = ocall_enc_untrusted_times(&ret, &bridge_buf);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  if (!asylo::FromBridgeTms(&bridge_buf, buf)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return ret;
+}
+
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   int ret;
   sgx_status_t status = ocall_enc_untrusted_clock_gettime(
@@ -1082,7 +1097,11 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
     errno = EINTR;
     return -1;
   }
-  asylo::FromBridgeITimerVal(&bridge_old_value, old_value);
+  // Set |old_value| if it's not a nullptr.
+  if (old_value && !asylo::FromBridgeITimerVal(&bridge_old_value, old_value)) {
+    errno = EFAULT;
+    return -1;
+  }
   return ret;
 }
 
@@ -1144,8 +1163,8 @@ int enc_untrusted_pipe(int pipefd[2]) {
 
 int64_t enc_untrusted_sysconf(int name) {
   int64_t ret;
-  enum SysconfConstants bridge_name = asylo::ToSysconfConstants(name);
-  if (bridge_name == UNKNOWN) {
+  enum SysconfConstants bridge_name = asylo::ToBridgeSysconfConstants(name);
+  if (bridge_name == BRIDGE_SC_UNKNOWN) {
     errno = EINVAL;
     return -1;
   }

@@ -105,9 +105,8 @@ int enclave_gettimeofday(struct timeval *__restrict time, void *timezone) {
   return 0;
 }
 
-int enclave_times(struct tms *buf) {
-  abort();
-}
+
+int enclave_times(struct tms *buf) { return enc_untrusted_times(buf); }
 
 int clock_gettime(clockid_t clock_id, struct timespec *time) {
   switch (clock_id) {

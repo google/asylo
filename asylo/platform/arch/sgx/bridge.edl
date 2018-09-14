@@ -242,6 +242,9 @@ enclave {
         [out, size=16/*sizeof(struct timespec)*/] struct bridge_timespec *rem)
         propagate_errno;
 
+    int ocall_enc_untrusted_times([out] struct BridgeTms *bridge_buf)
+        propagate_errno;
+
     int ocall_enc_untrusted_clock_gettime(
         bridge_clockid_t clk_id,
         [out, size=16/*sizeof(struct timespec)*/] struct bridge_timespec *tp)
