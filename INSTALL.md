@@ -67,11 +67,25 @@ installing the toolchain.
 
 ## Intel SGX SDK
 
-The Asylo framework uses [Intel SGX SDK
-v1.9](https://github.com/intel/linux-sgx/blob/sgx_1.9/README.md) with a
-[patch](asylo/distrib/sgx_x86_64/linux_sgx_1_9.patch) that backports some pull
-requests and applies minor changes needed to build the SDK with the Asylo
+The Asylo framework uses
+[Intel SGX SDK v2.2](https://github.com/intel/linux-sgx/blob/sgx_2.2/README.md)
+with a [patch](asylo/distrib/sgx_x86_64/linux_sgx_2_2.patch) that backports some
+pull requests and applies minor changes needed to build the SDK with the Asylo
 toolchain.
+
+## Intel SGX hardware backend support
+
+Intel SGX hardware support requires additional dependencies. The process of
+installing these dependencies is detailed in the
+[Intel SGX SDK README](https://github.com/intel/linux-sgx/blob/master/README.md).
+Namely, you must
+
+*   build and install the
+    [Linux SGX driver](https://github.com/intel/linux-sgx-driver),
+*   build and install the
+    [plaform software (PSW)](https://github.com/intel/linux-sgx/blob/master/README.md#install-the-intelr-sgx-psw),
+    and
+*   [start the Architectural Enclave Service Manager](https://github.com/intel/linux-sgx#start-or-stop-aesmd-service).
 
 ## Bazel
 
