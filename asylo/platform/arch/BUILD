@@ -116,16 +116,13 @@ cc_library(
         "sgx/untrusted/generated_bridge_u.h",
         "sgx/untrusted/ocalls.cc",
         "sgx/untrusted/sgx_client.cc",
-        "sgx/untrusted/sgx_error_space.cc",
-        "sgx/untrusted/sgx_error_space.h",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_ocalls.cc",
     ],
-    hdrs = [
-        "sgx/untrusted/sgx_client.h",
-    ],
+    hdrs = ["sgx/untrusted/sgx_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
+        ":sgx_error_space",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
@@ -139,6 +136,18 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
+    ],
+)
+
+# An error space for SGX.
+cc_library(
+    name = "sgx_error_space",
+    srcs = ["sgx/sgx_error_space.cc"],
+    hdrs = ["sgx/sgx_error_space.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/util:status",
+        "@linux_sgx//:public",
     ],
 )
 
