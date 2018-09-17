@@ -4,7 +4,8 @@ Copyright 2018 Asylo authors
 
 ## Documentation
 
-The `v0.2` documentation can be found at [asylo.dev](https://asylo.dev/docs).
+The Asylo project documentation can be found at
+[asylo.dev](https://asylo.dev/docs).
 
 Example code can be found in the [asylo/examples](asylo/examples) directory.
 This directory has a working Bazel workspace and example applications that can
@@ -88,8 +89,10 @@ In the above example, we use the following Docker flags:
 
 In the above example, we use the following Bazel flags:
 
-+   `--config=enc-sim` uses the Asylo toolchain to build the target for the
-    enclave simulation backend.
++   `--config=CONFIG` configures the Asylo toolchain to build the target for a
+    given enclave backend. You can specify `--config=enc-sim` to build the
+    enclave for the enclave simulation backend or `--config=sgx` to build the
+    enclave for the Intel SGX hardware backend.
 +   `--names="${NAMES}"` is the argument passed to the `//hello_world` target.
 
 Note: The example project from [examples/](asylo/examples) also picks up
@@ -246,6 +249,12 @@ development.
         -   Common utilities provided for use both inside and outside an enclave
             environment.
 
-## Disclaimer
+## Disclaimers
 
 This is not an officially supported Google product.
+
+Asylo's support for various enclave backend technologies does not constitute an
+endorsement of those technologies or the security properties therein. Users of
+Asylo should perform due diligence in evaluating whether a backend technology
+meets the security requirements of their application. Users are advised to use
+defense-in-depth measures to protect their sensitive applications.
