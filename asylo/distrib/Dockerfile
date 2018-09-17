@@ -62,8 +62,7 @@ RUN apt-get update && \
         vim \
         && \
     apt-get clean && \
-    echo ". /etc/bash_completion" >> /root/.bashrc && \
-    echo "startup --batch" >> /root/.bazelrc
+    echo ". /etc/bash_completion" >> /root/.bashrc
 
 # Copy the built toolchain from the earlier image.
 COPY --from=toolchain /opt/asylo/toolchains/ /opt/asylo/toolchains/
