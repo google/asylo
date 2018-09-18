@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # Common utilities for trusted and untrusted targets.
 
-load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -43,6 +43,60 @@ cc_test(
     deps = [
         ":cleanup",
         "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Utility for reading ELF files.
+cc_library(
+    name = "elf_reader",
+    srcs = ["elf_reader.cc"],
+    hdrs = ["elf_reader.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+# Embedded section to view in ElfReader unit test.
+ELF_READER_TEST_SECTION = "foo_section"
+
+cc_binary(
+    name = "elf_reader_test_binary_plain",
+    srcs = ["elf_reader_test_binary.cc"],
+)
+
+embed_enclaves(
+    name = "elf_reader_test_binary",
+    elf_file = ":elf_reader_test_binary_plain",
+    enclaves = {ELF_READER_TEST_SECTION: "elf_reader_test_data.txt"},
+    executable = 1,
+)
+
+cc_test(
+    name = "elf_reader_test",
+    srcs = ["elf_reader_test.cc"],
+    args = [
+        "--elf_file=$(location :elf_reader_test_binary)",
+        "--section_name=%s" % ELF_READER_TEST_SECTION,
+        "--expected_contents=$(location elf_reader_test_data.txt)",
+    ],
+    data = [
+        "elf_reader_test_data.txt",
+        ":elf_reader_test_binary",
+    ],
+    deps = [
+        ":elf_reader",
+        ":file_mapping",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
     ],
 )
