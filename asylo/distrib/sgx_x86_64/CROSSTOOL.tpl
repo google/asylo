@@ -559,6 +559,7 @@ toolchain {
       action: 'c++-link-nodeps-dynamic-library'
       action: "c++-link-executable"
       flag_group {
+        expand_if_all_available: "fdo_instrument_path"
         flag: "-fprofile-generate=%{fdo_instrument_path}"
         flag: "-fno-data-sections"
       }
@@ -571,8 +572,8 @@ toolchain {
     flag_set {
       action: "c-compile"
       action: "c++-compile"
-      expand_if_all_available: "fdo_profile_path"
       flag_group {
+        expand_if_all_available: "fdo_profile_path"
         flag: "-fprofile-use=%{fdo_profile_path}"
         flag: "-fprofile-correction"
       }
