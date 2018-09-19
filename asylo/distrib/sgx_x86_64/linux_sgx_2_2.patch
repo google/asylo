@@ -102,6 +102,10 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
       + `t_instructions.cpp`
 * [PR307](https://github.com/intel/linux-sgx/pull/307): Remove an unnecessary
   `#include` from gperftool.
+* [PR309](https://github.com/intel/linux-sgx/pull/309): Remove unneeded #include
+  of sgx_urts.h in sgx_uswitchless.
+    - Affected files:
+      + `common/inc/sgx_uswitchless.h`
 
 ### Pending PRs
 * [PR222](https://github.com/intel/linux-sgx/pull/222): Generate different code
@@ -117,15 +121,10 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     - Affected files:
       + `trts_internal.h`
       + `trts_nsp.cpp`
-* [PR308](https://github.com/intel/linux-sgx/pull/308): Change use of undefined MIN macro
-  to the intended meaning.
+* [PR308](https://github.com/intel/linux-sgx/pull/308): Include sl_util.h to
+  define the MIN macro before its use.
     - Affected files:
       + `common/inc/internal/mini_snprintf.h`
-* [PR309](https://github.com/intel/linux-sgx/pull/309): Remove unneeded #include
-  of sgx_urts.h in sgx_uswitchless.
-    - Affected files:
-      + `common/inc/sgx_uswitchless.h`
-
 
 ### Non-upstreamed changes
 * `sdk/trts/init_enclave.cpp`: Remove a memset_s of the enclave heap since
@@ -230,15 +229,15 @@ diff -Nur common/inc/internal/metadata.h common/inc/internal/metadata.h
 diff -Nur common/inc/internal/mini_snprintf.h common/inc/internal/mini_snprintf.h
 --- common/inc/internal/mini_snprintf.h
 +++ common/inc/internal/mini_snprintf.h
-@@ -254,7 +254,7 @@
+@@ -52,6 +52,8 @@
+ #include <stdarg.h>
+ #include <limits.h>
  
-         total_len += len;
- 
--        len = MIN(len, buf_remain);
-+        len = len < buf_remain ? len : buf_remain;
-         memcpy(buf_pos, str, len);
- 
-         buf_pos += len;
++#include "sl_util.h"
++
+ /*===========================================================================
+  * Interface
+  *===========================================================================*/
 diff -Nur common/inc/internal/pcl_common.h common/inc/internal/pcl_common.h
 --- common/inc/internal/pcl_common.h
 +++ common/inc/internal/pcl_common.h
