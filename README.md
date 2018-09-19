@@ -54,7 +54,7 @@ wget -q -O - https://asylo.dev/asylo-examples.tar.gz | \
     tar -zxv --directory "${MY_PROJECT}"
 ```
 
-Next, use Docker to build and run the `hello_world` application, which uses a
+Next, use Docker to build and run the `hello_world` application, using a
 simulated enclave backend.
 
 ```bash
@@ -84,6 +84,17 @@ In the above example, we use the following Docker flags:
         incremental builds between `bazel` invocations.
 +   `-w` is used to set the working directory in the container so that `bazel
     run` command is executed in the example project.
+
+If using the Intel SGX hardware backend (see the
+[Manual Installation guide](INSTALL.md#intel-sgx-hardware-backend-support)), the
+following Docker flags are needed to propagate the necessary
+capabilities from the host:
+
++   `--device=/dev/isgx` gives the container access to the SGX device that is
+    used to interact with the SGX hardware features.
++   `-v /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket` allows the
+    container to access the Architectural Enclave Service Manager (AESM) daemon
+    running on the host.
 
 ##### Bazel flags and workspace settings
 
