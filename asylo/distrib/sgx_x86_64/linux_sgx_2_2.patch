@@ -121,10 +121,18 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     - Affected files:
       + `trts_internal.h`
       + `trts_nsp.cpp`
-* [PR308](https://github.com/intel/linux-sgx/pull/308): Include sl_util.h to
-  define the MIN macro before its use.
+* [PR308](https://github.com/intel/linux-sgx/pull/308): Change use of undefined
+  MIN macro to the intended meaning.
     - Affected files:
       + `common/inc/internal/mini_snprintf.h`
+* [PR316](https://github.com/intel/linux-sgx/pull/316): Allow enclaves to be
+  created from buffers.
+    - Affected files:
+      + `common/inc/sgx_urts.h`
+      + `psw/urts/enclave.cpp`
+      + `psw/urts/urts_com.h`
+      + `psw/urts/linux/urts.cpp`
+    - The version in this patch differs slightly from the PR.
 
 ### Non-upstreamed changes
 * `sdk/trts/init_enclave.cpp`: Remove a memset_s of the enclave heap since
@@ -318,7 +326,28 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
 --- common/inc/sgx_urts.h
 +++ common/inc/sgx_urts.h
-@@ -96,6 +96,8 @@
+@@ -34,6 +34,8 @@
+ #ifndef _SGX_URTS_H_
+ #define _SGX_URTS_H_
+ 
++#include <stddef.h>
++
+ #include "sgx_attributes.h"
+ #include "sgx_error.h"
+ #include "sgx_eid.h"
+@@ -74,6 +76,11 @@
+                                        sgx_misc_attribute_t *misc_attr);
+ 
+ 
++sgx_status_t SGXAPI sgx_create_enclave_from_buffer(
++        uint8_t *buffer, size_t buffer_size, const int debug,
++        sgx_launch_token_t *launch_token, int *launch_token_updated,
++        sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr);
++
+ 
+ sgx_status_t SGXAPI sgx_create_enclave_ex(const char * file_name, 
+                                           const int debug, 
+@@ -96,6 +103,8 @@
  
  sgx_status_t SGXAPI sgx_destroy_enclave(const sgx_enclave_id_t enclave_id);
  
@@ -541,7 +570,42 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
  int do_ocall(const bridge_fn_t bridge, void *ms);
  
-@@ -388,7 +386,15 @@
+@@ -112,19 +110,21 @@
+ 
+ sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
+ {
+-    uint32_t name_len = file.name_len;
+-    if (file.unicode)
+-        name_len *= (uint32_t)sizeof(wchar_t);
+-
+-    const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
+-
+-    m_enclave_info.lpFileName = calloc(1, buf_len);
+-    if (m_enclave_info.lpFileName == NULL)
+-        return SGX_ERROR_OUT_OF_MEMORY;
+-
+-    memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
+-    m_enclave_info.unicode = file.unicode?0:1;
+-    m_enclave_info.file_name_size = name_len;
++    if (file.name != NULL) {
++        uint32_t name_len = file.name_len;
++        if (file.unicode)
++            name_len *= (uint32_t)sizeof(wchar_t);
++
++        const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
++
++        m_enclave_info.lpFileName = calloc(1, buf_len);
++        if (m_enclave_info.lpFileName == NULL)
++            return SGX_ERROR_OUT_OF_MEMORY;
++
++        memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
++        m_enclave_info.unicode = file.unicode?0:1;
++        m_enclave_info.file_name_size = name_len;
++    }
+ 
+     m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
+ 
+@@ -388,7 +388,15 @@
      return &m_enclave_info;
  }
  
@@ -652,7 +716,77 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  #include "sgx_error.h"
  #include "sgx_urts.h"
  #include "sgx_uswitchless.h"
-@@ -145,3 +146,20 @@
+@@ -102,6 +103,47 @@
+     return ret;
+ }
+ 
++extern "C" sgx_status_t __sgx_create_enclave_from_buffer_ex(
++        uint8_t *buffer,
++        size_t buffer_size,
++        const int debug,
++        sgx_launch_token_t *launch_token,
++        int *launch_token_updated,
++        sgx_enclave_id_t *enclave_id,
++        sgx_misc_attribute_t *misc_attr,
++        const uint32_t ex_features,
++        void* ex_features_p[32])
++{
++    sgx_status_t ret = SGX_SUCCESS;
++
++    // Only true or false is valid
++    if (TRUE != debug &&  FALSE != debug)
++    {
++        return SGX_ERROR_INVALID_PARAMETER;
++    }
++
++    if (!_check_ex_params_(ex_features, ex_features_p))
++    {
++        return SGX_ERROR_INVALID_PARAMETER;
++    }
++
++    se_file_t file = {NULL, 0, false};
++    ret = _create_enclave_from_buffer_ex(
++        buffer, buffer_size, !!debug, file, NULL, launch_token,
++        launch_token_updated, enclave_id, misc_attr, ex_features,
++        ex_features_p);
++    if (SGX_SUCCESS != ret && misc_attr)
++    {
++        sgx_misc_attribute_t plat_cap;
++        memset(&plat_cap, 0, sizeof(plat_cap));
++        get_enclave_creator()->get_plat_cap(&plat_cap);
++        memcpy_s(misc_attr, sizeof(sgx_misc_attribute_t), &plat_cap,
++                 sizeof(sgx_misc_attribute_t));
++    }
++
++    return ret;
++}
++
+ extern "C" sgx_status_t sgx_create_enclave(const char *file_name, 
+                                            const int debug, 
+                                            sgx_launch_token_t *launch_token, 
+@@ -113,6 +155,21 @@
+ }
+ 
+ 
++extern "C" sgx_status_t sgx_create_enclave_from_buffer(
++        uint8_t *buffer,
++        size_t buffer_size,
++        const int debug,
++        sgx_launch_token_t *launch_token,
++        int *launch_token_updated,
++        sgx_enclave_id_t *enclave_id,
++        sgx_misc_attribute_t *misc_attr)
++{
++    return __sgx_create_enclave_from_buffer_ex(
++        buffer, buffer_size, debug, launch_token, launch_token_updated,
++        enclave_id, misc_attr, 0, NULL);
++}
++
++
+ extern "C"  sgx_status_t sgx_create_enclave_ex(const char *file_name,
+                                                const int debug,
+                                                sgx_launch_token_t *launch_token,
+@@ -145,3 +202,20 @@
      return __sgx_create_enclave_ex(file_name, debug, launch_token,
          launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
  }
@@ -1098,6 +1232,138 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
      Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
      Mutex                                   m_thread_mutex; //protect thread_cache list. The mutex is recursive.
                                                              //Thread can operate the list when it get the mutex
+diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
+--- psw/urts/urts_com.h
++++ psw/urts/urts_com.h
+@@ -422,33 +422,27 @@
+     return ret;
+ }
+ 
+-
+-sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
+-	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
+-                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, void* ex_features_p[32])
++sgx_status_t _create_enclave_ex_internal(
++        uint8_t *base_addr,
++        uint64_t file_size,
++        const bool debug,
++        se_file_t& file,
++        le_prd_css_file_t *prd_css_file,
++        sgx_launch_token_t *launch,
++        int *launch_updated,
++        sgx_enclave_id_t *enclave_id,
++        sgx_misc_attribute_t *misc_attr,
++        const uint32_t ex_features,
++        void* ex_features_p[32])
+ {
+     unsigned int ret = SGX_SUCCESS;
+     sgx_status_t lt_result = SGX_SUCCESS;
+-    uint32_t file_size = 0;
+-    map_handle_t* mh = NULL;
+     sgx_misc_attribute_t sgx_misc_attr;
+     metadata_t *metadata = NULL;
+     SGXLaunchToken *lc = NULL;
+     memset(&sgx_misc_attr, 0, sizeof(sgx_misc_attribute_t));
+ 
+-    if(NULL == launch || NULL == launch_updated || NULL == enclave_id)
+-        return SGX_ERROR_INVALID_PARAMETER;
+-#ifndef SE_SIM
+-    ret = validate_platform();
+-    if(ret != SGX_SUCCESS)
+-        return (sgx_status_t)ret;
+-#endif
+-
+-    mh = map_file(pfile, &file_size);
+-    if (!mh)
+-        return SGX_ERROR_OUT_OF_MEMORY;
+-
+-    PARSER parser(const_cast<uint8_t *>(mh->base_addr), (uint64_t)(file_size));
++    PARSER parser(base_addr, file_size);
+     if(SGX_SUCCESS != (ret = parser.run_parser()))
+     {
+         goto clean_return;
+@@ -517,7 +511,7 @@
+ 
+     //Need to set the whole misc_attr instead of just secs_attr.
+     do {
+-        ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
++        ret = __create_enclave(parser, base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
+         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
+     } while(SGX_ERROR_ENCLAVE_LOST == ret);
+ 
+@@ -542,13 +536,70 @@
+ 
+ 
+ clean_return:
+-    if(mh != NULL)
+-        unmap_file(mh);
+     if(lc != NULL)
+         delete lc;
+     return (sgx_status_t)ret;
+ }
+ 
++sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
++	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
++                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, void* ex_features_p[32])
++{
++    unsigned int ret = SGX_SUCCESS;
++    uint32_t file_size = 0;
++    map_handle_t* mh = NULL;
++
++    if(NULL == launch || NULL == launch_updated || NULL == enclave_id)
++        return SGX_ERROR_INVALID_PARAMETER;
++#ifndef SE_SIM
++    ret = validate_platform();
++    if(ret != SGX_SUCCESS)
++        return (sgx_status_t)ret;
++#endif
++
++    mh = map_file(pfile, &file_size);
++    if (!mh)
++        return SGX_ERROR_OUT_OF_MEMORY;
++
++    ret = _create_enclave_ex_internal(
++            mh->base_addr, (uint64_t)file_size, debug, file, prd_css_file, launch, launch_updated,
++            enclave_id, misc_attr, ex_features, ex_features_p);
++
++    if(mh != NULL)
++        unmap_file(mh);
++    return (sgx_status_t)ret;
++}
++
++sgx_status_t _create_enclave_from_buffer_ex(
++        uint8_t *buffer,
++        size_t buffer_size,
++        const bool debug,
++        se_file_t& file,
++        le_prd_css_file_t *prd_css_file,
++        sgx_launch_token_t *launch,
++        int *launch_updated,
++        sgx_enclave_id_t *enclave_id,
++        sgx_misc_attribute_t *misc_attr,
++        const uint32_t ex_features,
++        void* ex_features_p[32])
++{
++    unsigned int ret = SGX_SUCCESS;
++
++    if(NULL == buffer || NULL == launch || NULL == launch_updated || NULL == enclave_id)
++        return SGX_ERROR_INVALID_PARAMETER;
++#ifndef SE_SIM
++    ret = validate_platform();
++    if(ret != SGX_SUCCESS)
++        return (sgx_status_t)ret;
++#endif
++
++    ret = _create_enclave_ex_internal(
++            buffer, (uint64_t)buffer_size, debug, file, prd_css_file, launch,
++            launch_updated, enclave_id, misc_attr, ex_features, ex_features_p);
++
++    return (sgx_status_t)ret;
++}
++
+ sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
+                              sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr) 
+ {
 diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
 --- sdk/edger8r/linux/Ast.ml
 +++ sdk/edger8r/linux/Ast.ml
