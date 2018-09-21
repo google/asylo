@@ -87,8 +87,8 @@ In the above example, we use the following Docker flags:
 
 If using the Intel SGX hardware backend (see the
 [Manual Installation guide](INSTALL.md#intel-sgx-hardware-backend-support)), the
-following Docker flags are needed to propagate the necessary
-capabilities from the host:
+following Docker flags are needed to propagate the necessary capabilities from
+the host:
 
 +   `--device=/dev/isgx` gives the container access to the SGX device that is
     used to interact with the SGX hardware features.
@@ -200,9 +200,9 @@ NAMES="${USER}"
 bazel run --config=enc-sim //hello_world -- --names="${NAMES}"
 ```
 
-Refer to [Bazel flags and workspace
-settings](#bazel-flags-and-workspace-settings) for an explanation of the flags
-and workspace configuration used in this example.
+Refer to
+[Bazel flags and workspace settings](#bazel-flags-and-workspace-settings) for an
+explanation of the flags and workspace configuration used in this example.
 
 #### Running your own enclave application
 

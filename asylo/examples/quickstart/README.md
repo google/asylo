@@ -13,8 +13,8 @@ toc: true
 {% include home.html %}
 jekyll-front-matter-->
 
-This guide demonstrates using Asylo to protect secret data from an attacker
-with root privileges.
+This guide demonstrates using Asylo to protect secret data from an attacker with
+root privileges.
 
 ## Introduction
 
@@ -22,12 +22,12 @@ with root privileges.
 
 On traditional systems, the Operating System (OS) kernel has unrestricted access
 to a machine's hardware resources. The kernel typically exposes most of its
-access permissions to a root user without any restrictions. Additionally, a
-root user can extend or modify the kernel on a running system. As a result, if
-an attacker can execute code with root privileges, they can compromise every
-secret and bypass every security policy on the machine. For instance, if an
-attacker obtains root access on a machine that manages TLS keys, those keys may
-be compromised.
+access permissions to a root user without any restrictions. Additionally, a root
+user can extend or modify the kernel on a running system. As a result, if an
+attacker can execute code with root privileges, they can compromise every secret
+and bypass every security policy on the machine. For instance, if an attacker
+obtains root access on a machine that manages TLS keys, those keys may be
+compromised.
 
 Enclaves are an emerging technology paradigm that changes this equation. An
 enclave is a special execution context where code can run protected from even
@@ -58,17 +58,17 @@ runtime for that embedded computer.
 
 Below, we walk through building a simple example enclave. The example
 demonstrates initializing an enclave, passing arguments to code running inside
-the enclave, encrypting those arguments inside the enclave, and returning
-the processed results. Even though this is a very simple example, it
-demonstrates the basic functionality provided by Asylo and the steps required
-to utilize that functionality.
+the enclave, encrypting those arguments inside the enclave, and returning the
+processed results. Even though this is a very simple example, it demonstrates
+the basic functionality provided by Asylo and the steps required to utilize that
+functionality.
 
 ## Getting started with the example code
 
-Run the following commands to grab our Docker container and download the
-example source code used in this guide. See our
-[README](https://github.com/google/asylo/blob/master/README.md)
-for additional instructions on Docker usage.
+Run the following commands to grab our Docker container and download the example
+source code used in this guide. See our
+[README](https://github.com/google/asylo/blob/master/README.md) for additional
+instructions on Docker usage.
 
 ```bash
 docker pull gcr.io/asylo-framework/asylo
@@ -83,8 +83,9 @@ environment variable is later used in the instructions for
 [building and running](#building-and-running-an-enclave-application) the enclave
 application in this example.
 
-The example source code can be found in the [Asylo
-SDK](https://github.com/google/asylo/tree/master/asylo/examples) on GitHub.
+The example source code can be found in the
+[Asylo SDK](https://github.com/google/asylo/tree/master/asylo/examples) on
+GitHub.
 
 ## Overall approach
 
@@ -137,9 +138,10 @@ three are of particular interest to Asylo users:
     containing basic enclave configuration settings and passes it to the
     enclave. This is a private method, and is implicitly invoked by the Asylo
     framework when an enclave binary image is loaded.
-*   [`EnterAndRun`](https://asylo.dev/doxygen/classasylo_1_1EnclaveClient.html#enter-and-run): This method takes an `EnclaveInput` message, passes it to the
-    enclave, which can populate the `EnclaveOutput` result. The `EnclaveInput`
-    and `EnclaveOutput` messages can be extended with
+*   [`EnterAndRun`](https://asylo.dev/doxygen/classasylo_1_1EnclaveClient.html#enter-and-run):
+    This method takes an `EnclaveInput` message, passes it to the enclave, which
+    can populate the `EnclaveOutput` result. The `EnclaveInput` and
+    `EnclaveOutput` messages can be extended with
     [protobuf extensions](https://developers.google.com/protocol-buffers/docs/proto#extensions)
     by the developer to meet the data-processing requirements of the
     application. This method is a public method, and may be called an arbitrary
@@ -155,16 +157,19 @@ framework forwards calls to the above `EnclaveClient` methods to appropriate
 enclave methods on the corresponding `TrustedApplication` instance, which can be
 overridden by the enclave developer.
 
-The `TrustedApplication` interface declares methods corresponding to
-the three entry methods defined by the `EnclaveClient` abstract class:
+The `TrustedApplication` interface declares methods corresponding to the three
+entry methods defined by the `EnclaveClient` abstract class:
 
-*   [`Initialize`](https://asylo.dev/doxygen/classasylo_1_1TrustedApplication.html#initialize): This method takes an `EnclaveConfig` message from
+*   [`Initialize`](https://asylo.dev/doxygen/classasylo_1_1TrustedApplication.html#initialize):
+    This method takes an `EnclaveConfig` message from
     `EnclaveClient::EnterAndInitialize`, and initializes the enclave with the
     configuration settings in the `EnclaveConfig`.
-*   [`Run`](https://asylo.dev/doxygen/classasylo_1_1TrustedApplication.html#run): This method takes an `EnclaveInput` message from
+*   [`Run`](https://asylo.dev/doxygen/classasylo_1_1TrustedApplication.html#run):
+    This method takes an `EnclaveInput` message from
     `EnclaveClient::EnterAndRun`, populates an `EnclaveOutput` message, and
     performs trusted execution.
-*   [`Finalize`](https://asylo.dev/doxygen/classasylo_1_1TrustedApplication.html#finalize): This method takes an `EnclaveFinal` message from
+*   [`Finalize`](https://asylo.dev/doxygen/classasylo_1_1TrustedApplication.html#finalize):
+    This method takes an `EnclaveFinal` message from
     `EnclaveClient::EnterAndFinalize`, and prepares the enclave for destruction.
 
 ## Enclave lifecycle
@@ -222,38 +227,37 @@ each part of the code.
 The untrusted application performs the following steps to initialize the trusted
 application:
 
-1. Configures an instance of `EnclaveManager` with default options. The
-   `EnclaveManager` handles all enclave resources in an untrusted application.
-2. Configures a `SimLoader` object to fetch the enclave binary image from disk.
-3. Calls `EnclaveManager::LoadEnclave` to bind the enclave to the name
-  `"demo enclave"`. This call implicitly invokes the enclave's `Initialize`
-  method.
+1.  Configures an instance of `EnclaveManager` with default options. The
+    `EnclaveManager` handles all enclave resources in an untrusted application.
+2.  Configures a `SimLoader` object to fetch the enclave binary image from disk.
+3.  Calls `EnclaveManager::LoadEnclave` to bind the enclave to the name `"demo
+    enclave"`. This call implicitly invokes the enclave's `Initialize` method.
 
 ### Part 2: Secure execution
 
 The untrusted application performs the following steps to securely execute a
 workload in the trusted application:
 
-1. Gets a handle to the enclave via `EnclaveManager::GetClient`.
-2. Provides arbitrary input data in an `EnclaveInput`. This example uses a
-single string protobuf extension to the `EnclaveInput` message. This extension
-field is used to pass data to the enclave for encryption.
-3. Invokes the enclave by calling `EnclaveClient::EnterAndRun`. This method is
-the primary entry point used to dispatch messages to the enclave. It can be
-called an arbitrary number of times.
-4. Receives the result from the enclave in an `EnclaveOutput`. Developers can
-add protobuf extensions to the `EnclaveOutput` message to provide arbitrary
-output values from their enclave.
+1.  Gets a handle to the enclave via `EnclaveManager::GetClient`.
+2.  Provides arbitrary input data in an `EnclaveInput`. This example uses a
+    single string protobuf extension to the `EnclaveInput` message. This
+    extension field is used to pass data to the enclave for encryption.
+3.  Invokes the enclave by calling `EnclaveClient::EnterAndRun`. This method is
+    the primary entry point used to dispatch messages to the enclave. It can be
+    called an arbitrary number of times.
+4.  Receives the result from the enclave in an `EnclaveOutput`. Developers can
+    add protobuf extensions to the `EnclaveOutput` message to provide arbitrary
+    output values from their enclave.
 
 ### Part 3: Finalization
 
 The untrusted application performs the following steps to finalize the trusted
 application:
 
-1. Provides arbitrary finalization data to the enclave and destroys the enclave
-via `EnclaveManager::DestroyEnclave`.
-2. Runs the enclave's `Finalize` method. The Asylo framework performs this step
-implicitly during enclave destruction.
+1.  Provides arbitrary finalization data to the enclave and destroys the enclave
+    via `EnclaveManager::DestroyEnclave`.
+2.  Runs the enclave's `Finalize` method. The Asylo framework performs this step
+    implicitly during enclave destruction.
 
 ## Writing an enclave application
 
@@ -372,10 +376,10 @@ crosstool, `:demo_enclave` is compiled with the enclave-backend-specific
 crosstool, and that the untrusted enclave loader is invoked with a flag that
 specifies the enclave's path.
 
-Let us now run the demo enclave inside the Docker image we
-downloaded [above](#getting-started-with-the-example-code). You can set the
-`--message` flag passed to the `//quickstart` target to contain any string that
-you would like to encrypt.
+Let us now run the demo enclave inside the Docker image we downloaded
+[above](#getting-started-with-the-example-code). You can set the `--message`
+flag passed to the `//quickstart` target to contain any string that you would
+like to encrypt.
 
 Note: The following command runs the enclave in simulation mode.
 
@@ -402,13 +406,14 @@ are some things to try:
     and `GetEnclaveOutputMessage` in `demo_driver.cc`, to return the encrypted
     message from the enclave to the driver, and print it there. The application
     output should remain unchanged.
-*   The `EnterAndRun` function can be called multiple times once the enclave
-    is initialized. Modify `demo_driver.cc` to add another call to
-    `EnterAndRun`, in order to re-enter enclave with a different message to
-    encrypt.
+*   The `EnterAndRun` function can be called multiple times once the enclave is
+    initialized. Modify `demo_driver.cc` to add another call to `EnterAndRun`,
+    in order to re-enter enclave with a different message to encrypt.
 *   Use
     [protobuf extensions](https://developers.google.com/protocol-buffers/docs/proto#extensions)
-    in the `EnclaveInput` message to support sending ciphertext into the
-    enclave for decryption, using the provided `DecryptMessage` function.
+    in the `EnclaveInput` message to support sending ciphertext into the enclave
+    for decryption, using the provided `DecryptMessage` function.
 
-A sample [solution](https://github.com/google/asylo/tree/master/asylo/examples/quickstart/solution) is available on GitHub.
+A sample
+[solution](https://github.com/google/asylo/tree/master/asylo/examples/quickstart/solution)
+is available on GitHub.
