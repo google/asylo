@@ -94,62 +94,15 @@ pthread_t pthread_list_first(const __pthread_list_t &list) {
   return list._first->_thread_id;
 }
 
-
-// Should be set to max number of threads in enclave.
-constexpr int kMaxNodes = 200;
-// Storage associated with each enclave thread. This is implemented as static
-// data to support mutual exclusion early during enclave initialization before
-// malloc() is available.
-static __pthread_list_node_t pthread_list_nodes[kMaxNodes];
-// Sentry value of |free_node|.
-constexpr __pthread_list_node_t *kFreeNodeSentry = pthread_list_nodes - 1;
-// Pointer to first item in pthread_list_nodes free list. Must be initialized to
-// a bad value to allow for setup.
-static __pthread_list_node_t *free_node = kFreeNodeSentry;
-// Last entry in pthread_list_nodes.
-constexpr __pthread_list_node_t *kEndOfListSentry =
-    &pthread_list_nodes[kMaxNodes - 1];
-// Spinlock to guard pthread_list_nodes free list. Cannot use a mutex because
-// these primitives are used to implemented mutex.
-static pthread_spinlock_t storage_lock = 0x00;
-
-// Setups up the free list used to allocate pthread_list_nodes.
-void set_up_free_list() {
-  free_node = &pthread_list_nodes[0];
-  for (int i = 0; i < kMaxNodes - 1; ++i) {
-    pthread_list_nodes[i]._next = &pthread_list_nodes[i + 1];
-  }
-  kEndOfListSentry->_next = nullptr;
-}
-
 __pthread_list_node_t *alloc_list_node(pthread_t thread_id) {
-  SpinLock spin_lock(&storage_lock);
-  if (free_node == kFreeNodeSentry) {
-    set_up_free_list();
-  }
-
-  // If 'pthread_list_nodes' filled abort.
-  if (!free_node) {
-    printf("kMaxNodes <= # of threads\n");
-    abort();
-  }
-
-  __pthread_list_node_t *node = free_node;
-  free_node = free_node->_next;
+  __pthread_list_node_t *node = new __pthread_list_node_t;
   node->_thread_id = thread_id;
   node->_next = nullptr;
   return node;
 }
 
 void free_list_node(__pthread_list_node_t *node) {
-  if (node > kEndOfListSentry || node < &pthread_list_nodes[0]) {
-    printf("free_list_node() called on non pthread_list_nodes node\n");
-    abort();
-  }
-
-  SpinLock spin_lock(&storage_lock);
-  node->_next = free_node;
-  free_node = node;
+  delete node;
 }
 
 // Inserts |thread_id| at the end of the |list|, allocating a new
