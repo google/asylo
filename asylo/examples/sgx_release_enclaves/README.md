@@ -135,9 +135,9 @@ config.
 The following commands illustrate how to build an enclave (in this case
 `//package/path:enclave.so`) and extract signing material. The enclave build
 command can be invoked with any additional desired flags (e.g., `-c opt` for
-optimization). Your project's `bazel.rc` is required to contain the Asylo config
+optimization). Your project's `.bazelrc` is required to contain the Asylo config
 aliases from
-[asylo/tools/bazel.rc](https://github.com/google/asylo/blob/v0.3.0/tools/bazel.rc).
+[Asylo's .bazelrc](https://github.com/google/asylo/blob/v0.3.0/.bazelrc).
 
 ```shell
 # Prepare a temporary workspace.

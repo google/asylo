@@ -7,9 +7,9 @@ Copyright 2018 Asylo authors
 The Asylo project documentation can be found at
 [asylo.dev](https://asylo.dev/docs).
 
-Example code can be found in the [asylo/examples](asylo/examples) directory.
-This directory has a working Bazel workspace and example applications that can
-be used as the start of your own project.
+[Example source code](https://asylo.dev/asylo-examples.tar.gz) that contains a
+working Bazel workspace can be downloaded from the Asylo website and used as a
+template for a new project.
 
 ## Support
 
@@ -106,16 +106,16 @@ In the above example, we use the following Bazel flags:
     enclave for the Intel SGX hardware backend.
 +   `--names="${NAMES}"` is the argument passed to the `//hello_world` target.
 
-Note: The example project from [examples/](asylo/examples) also picks up
-additional Bazel configuration from the `tools/bazel.rc` file in that directory.
-Remember to copy this file to a `tools/` sub-directory in future Bazel projects
-you create so that you can make use of Asylo's toolchain configurations.
+Note: The example source code includes an additional Bazel configuration file,
+`.bazelrc`, at the root of the source tree. Remember to copy the contents of
+this file into the `.bazelrc` file at the root of any future Bazel workspaces
+that use Asylo's toolchain.
 
 #### Running your own enclave application
 
 You can follow the [steps above](#running-the-hello_world-example) to build your
 own enclave application instead. You can use the examples code in `MY_PROJECT`
-as the start of your own project, or simply change `MY_PROJECT` to point to your
+as a template for a new project, or simply change `MY_PROJECT` to point to your
 own Bazel project instead.
 
 #### Running an interactive terminal
