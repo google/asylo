@@ -19,13 +19,14 @@ licenses(["notice"])  # Apache v2.0
 # Enclave test cases.
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
     "//asylo/bazel:asylo.bzl",
     "enclave_test",
     "copy_from_host",
     "cc_enclave_test",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 # A protobuf used by signal tests. The input contains whether to register a
 # signal hander sa_handler, which takes a single argument signum, or
@@ -317,4 +318,32 @@ enclave_test(
         ":exception",
         "//asylo/test/util:exec_tester",
     ] + TEST_DEPS_COMMON,
+)
+
+sgx_enclave(
+    name = "load_from_buffer_test_enclave.so",
+    srcs = ["load_from_buffer_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = ["//asylo:enclave_runtime"],
+)
+
+enclave_test(
+    name = "load_from_buffer_test",
+    srcs = ["load_from_buffer_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": ":load_from_buffer_test_enclave.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo:enclave_proto_cc",
+        "//asylo/platform/arch:sgx_error_space",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:file_mapping",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
 )

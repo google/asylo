@@ -27,6 +27,7 @@
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/util/file_mapping.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status_macros.h"
 
@@ -153,12 +154,32 @@ StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
     return Status(error::GoogleError::RESOURCE_EXHAUSTED, "Out of memory");
   }
 
+  FileMapping whole_file_mapping;
+  absl::Span<uint8_t> enclave_buffer;
+  switch (enclave_source_.index()) {
+    case kBufferIndex:
+      enclave_buffer = absl::get<kBufferIndex>(enclave_source_);
+      break;
+    case kWholeFileIndex:
+      ASYLO_ASSIGN_OR_RETURN(whole_file_mapping,
+                             FileMapping::CreateFromFile(
+                                 absl::get<kWholeFileIndex>(enclave_source_)));
+      enclave_buffer = whole_file_mapping.buffer();
+      break;
+    default:
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Unknown enclave source: ", enclave_source_.index()));
+  }
+
   int updated;
   sgx_status_t rc;
   int attempts = kMaxEnclaveCreateAttempts;
   do {
-    rc = sgx_create_enclave(path_.c_str(), debug_ ? 1 : 0, &client->token_,
-                            &updated, &client->id_, nullptr);
+    rc = sgx_create_enclave_from_buffer(enclave_buffer.data(),
+                                        enclave_buffer.size(), debug_,
+                                        &client->token_, &updated, &client->id_,
+                                        /*misc_attr=*/nullptr);
   } while (rc == SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED &&
            --attempts > 0);
   if (rc != SGX_SUCCESS) {
