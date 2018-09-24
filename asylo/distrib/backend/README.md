@@ -1,6 +1,6 @@
 # Asylo - A framework for enclave applications
 
-Copyright 2018 Google Inc.
+Copyright 2018 Asylo authors
 
 This package provides a Skylark provider in `enclave_info.bzl`, called
 `enclave_info`. All Asylo backends should have build rules that produce targets

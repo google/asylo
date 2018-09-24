@@ -1,6 +1,6 @@
 # Asylo toolchain - a toolchain to build enclave binaries for Asylo.
 
-Copyright 2018 Google Inc.
+Copyright 2018 Asylo authors
 
 ## Build the Asylo toolchain
 
