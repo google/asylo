@@ -345,11 +345,12 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
       **kwargs: genrule arguments.
     """
     genrule_name = name + "_rule"
+    elf_file_from_host = name + "_elf_file_from_host"
 
     objcopy_flags = []
     for section_name, enclave_file in enclaves.items():
         if section_name[0] == ".":
-            fail("Section names may not begin with \".\"")
+            fail("User-defined section names may not begin with \".\"")
         objcopy_flags += [
             "--add-section",
             "\"{section_name}\"=\"$(location {enclave_file})\"".format(
@@ -358,15 +359,15 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
             ),
         ]
 
+    copy_from_host(target = elf_file, output = elf_file_from_host)
     native.genrule(
         name = genrule_name,
-        srcs = enclaves.values(),
+        srcs = enclaves.values() + [elf_file_from_host],
         outs = [name],
         output_to_bindir = 1,
-        tools = [elf_file],
         cmd = "$(OBJCOPY) {objcopy_flags} $(location {elf_file}) $@".format(
             objcopy_flags = " ".join(objcopy_flags),
-            elf_file = elf_file,
+            elf_file = elf_file_from_host,
         ),
         **kwargs
     )
