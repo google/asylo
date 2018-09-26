@@ -347,3 +347,29 @@ enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+# The name of the ELF section to use for testing in embedded_enclave_test.
+TEST_SECTION_NAME = "enclave"
+
+# Tests that embedded enclaves work.
+enclave_test(
+    name = "embedded_enclave_test",
+    srcs = ["embedded_enclave_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    embedded_enclaves = {TEST_SECTION_NAME: ":load_from_buffer_test_enclave.so"},
+    test_args = [
+        "--enclave_section",
+        TEST_SECTION_NAME,
+    ],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo:enclave_proto_cc",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:elf_reader",
+        "//asylo/util:file_mapping",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)

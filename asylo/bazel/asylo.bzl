@@ -252,7 +252,12 @@ def _make_enclave_runner_rule(test = False):
         attrs = {
             "loader": attr.label(
                 executable = True,
-                cfg = "host",
+                # If the loader contains embedded enclaves, then it needs to be
+                # built with the enclave toolchain, since host-toolchain targets
+                # cannot depend on enclave-toolchain targets. As such, it is the
+                # responsiblity of the caller to ensure that the loader is built
+                # correctly.
+                cfg = "target",
                 mandatory = True,
                 allow_single_file = True,
             ),
@@ -372,7 +377,13 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
         **kwargs
     )
 
-def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
+def enclave_test(
+        name,
+        enclaves = {},
+        embedded_enclaves = {},
+        test_args = [],
+        tags = [],
+        **kwargs):
     """Build target for testing one or more instances of 'sgx_enclave'.
 
     Creates a cc_test for a given enclave. Passes flags according to
@@ -384,9 +395,13 @@ def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
         dictionary must be injective. This dictionary is used to format each
         string in `test_args` after each enclave target is interpreted as the
         path to its output binary.
+      embedded_enclaves: Dictionary from ELF section names (that do not start
+        with '.') to target dependencies. Each target in the dictionary is
+        embedded in the test binary under the corresponding ELF section.
       test_args: List of arguments to be passed to the test binary. Arguments may
         contain {enclave_name}-style references to keys from the `enclaves` dict,
-        each of which will be replaced with the path to the named enclave.
+        each of which will be replaced with the path to the named enclave. This
+        replacement only occurs for non-embedded enclaves.
       tags: Label attached to this test to allow for querying.
       **kwargs: cc_test arguments.
 
@@ -399,7 +414,7 @@ def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
     """
 
     test_name = name + "_driver"
-    host_test_name = name + "_host_driver"
+    loader_name = name + "_host_driver"
 
     data = kwargs.get("data", [])
     kwargs.pop("data", None)
@@ -408,11 +423,19 @@ def enclave_test(name, enclaves = {}, test_args = [], tags = [], **kwargs):
         name = test_name,
         **_ensure_static_manual(kwargs)
     )
-    copy_from_host(target = test_name, output = host_test_name)
+
+    # embed_enclaves ensures that the test loader's ELF file is built with the
+    # host toolchain, even when its enclaves argument is empty.
+    embed_enclaves(
+        name = loader_name,
+        elf_file = test_name,
+        enclaves = embedded_enclaves,
+        testonly = 1,
+    )
 
     _enclave_runner_test(
         name = name,
-        loader = host_test_name,
+        loader = loader_name,
         loader_args = test_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
         data = data,
