@@ -148,4 +148,12 @@ sighandler_t signal(int signum, sighandler_t handler) {
   return oldact.sa_handler;
 }
 
+// Raise a signal to be handled.
+//
+// If a signal is raised inside an enclave, it exits the enclave and raises the
+// signal on the host. If a handler has been registered for this signal in the
+// enclave, the signal handler on the host enters the enclave to invoke the
+// registered handler.
+int raise(int sig) { return enc_untrusted_raise(sig); }
+
 }  // extern "C"

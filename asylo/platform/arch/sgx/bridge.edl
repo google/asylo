@@ -266,6 +266,8 @@ enclave {
         int how, [in] const bridge_sigset_t *set,
         [out] bridge_sigset_t *oldset);
 
+    int ocall_enc_untrusted_raise(int sig);
+
     //////////////////////////////////////
     //         sys/resource.h           //
     //////////////////////////////////////

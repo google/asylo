@@ -24,6 +24,7 @@ load(
     "enclave_test",
     "copy_from_host",
     "cc_enclave_test",
+    "cc_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -217,6 +218,17 @@ cc_enclave_test(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "raise_signal_test",
+    srcs = ["raise_signal_test.cc"],
+    enclave_test_name = "raise_signal_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )
