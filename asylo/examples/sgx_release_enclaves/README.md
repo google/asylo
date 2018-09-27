@@ -78,7 +78,7 @@ MY_PROJECT=...
 
 ### Step 1: Define the enclave and release configuration
 
-Define your enclave using the `sgx_enclave` rule.
+Define the enclave in your BUILD file using the `sgx_enclave` rule.
 
 ```python
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
@@ -113,7 +113,7 @@ Below is a sample configuration that disallows running an enclave in debug mode:
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
 
 sgx_enclave_configuration(
-name = "release_config",
+  name = "release_config",
   disable_debug = "1",
   prodid = "0",
   isvsvn = "0"
@@ -185,12 +185,12 @@ guide.
 ### Step 4: Reincorporate the signed release data into the enclave binary
 
 To produce the final enclave binary, the signature must be combined with the
-original unsigned enclave binary using Intel's enclave signing tool. Note that
-the following commands assume that `"${RELEASE_DIR}/release_data_to_sign.sig"`
-contains the signature produced in the
-[previous step](#step-3-signing-the-release-data), and that
-`"${RELEASE_DIR}/signing_key.pem.pub"` contains the public key corresponding to
-the private key used to produce the signature. `${BAZEL}` is defined as in
+original unsigned enclave binary using Intel's enclave signing tool. Copy the
+signature (generated in the [previous step](#step-3-signing-the-release-data))
+and the public key to `"${RELEASE_DIR}"`. Note that the following commands
+assume that `"${RELEASE_DIR}/release_data_to_sign.sig"` contains the signature
+and `"${RELEASE_DIR}/signing_key.pem.pub"` contains the public key corresponding
+to the private key used to produce the signature. `${BAZEL}` is defined as in
 [Step 2](#step-2-building-the-unsigned-enclave-using-the-asylo-toolchain).
 
 ```shell
