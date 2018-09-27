@@ -273,61 +273,6 @@ def _make_enclave_runner_rule(test = False):
 _enclave_runner_script = _make_enclave_runner_rule()
 _enclave_runner_test = _make_enclave_runner_rule(test = True)
 
-def enclave_loader(name, enclaves, loader_args, **kwargs):
-    """Wraps a cc_binary with a dependency on enclave availability at runtime.
-
-    Creates a cc_binary for a given enclave. Passes flags according to
-    `loader_args`, which can contain references to targets from `enclaves`.
-
-    This macro creates three build targets:
-      1) name: shell script that runs `name_host_loader`.
-      2) name_loader: cc_binary used as loader in `name`. This is a normal
-                      native cc_binary. It cannot be directly run because there
-                      is an undeclared dependency on the enclaves.
-      3) name_host_loader: genrule that builds `name_loader` with the host
-                           crosstool.
-
-    Args:
-      name: Name for build target.
-      enclaves: Dictionary from enclave names to target dependencies. The
-        dictionary must be injective. This dictionary is used to format each
-        string in `loader_args` after each enclave target is interpreted as the
-        path to its output binary.
-      loader_args: List of arguments to be passed to `loader`. Arguments may
-        contain {enclave_name}-style references to keys from the `enclaves` dict,
-        each of which will be replaced with the path to the named enclave.
-      **kwargs: cc_binary arguments.
-    """
-    loader_name = name + "_loader"
-    loader_host_name = name + "_host_loader"
-
-    native.cc_binary(
-        name = loader_name,
-        **_ensure_static_manual(kwargs)
-    )
-    copy_from_host(target = loader_name, output = loader_host_name)
-
-    _enclave_runner_script(
-        name = name,
-        loader = loader_host_name,
-        loader_args = loader_args,
-        enclaves = _invert_enclave_name_mapping(enclaves),
-        data = kwargs.get("data", []),
-    )
-
-def sim_enclave(name, **kwargs):
-    """Build rule for creating simulated enclave object files signed for testing.
-
-    The enclave simulation backend currently makes use of the SGX simulator.
-    However, this is subject to change and users of this rule should not make
-    assumptions about it being related to SGX.
-
-    Args:
-      name: The name of the signed enclave object file.
-      **kwargs: cc_binary arguments.
-    """
-    sgx_enclave(name, **kwargs)
-
 def embed_enclaves(name, elf_file, enclaves, **kwargs):
     """Build rule for embedding one or more enclaves into an ELF file.
 
@@ -354,6 +299,8 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
 
     objcopy_flags = []
     for section_name, enclave_file in enclaves.items():
+        if len(section_name) == 0:
+            fail("Section names must be non-empty")
         if section_name[0] == ".":
             fail("User-defined section names may not begin with \".\"")
         objcopy_flags += [
@@ -376,6 +323,78 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
         ),
         **kwargs
     )
+
+def enclave_loader(
+        name,
+        enclaves = {},
+        embedded_enclaves = {},
+        loader_args = [],
+        **kwargs):
+    """Wraps a cc_binary with a dependency on enclave availability at runtime.
+
+    Creates a loader for the given enclaves and containing the given embedded
+    enclaves. Passes flags according to `loader_args`, which can contain
+    references to targets from `enclaves`.
+
+    This macro creates three build targets:
+      1) name: shell script that runs `name_host_loader`.
+      2) name_loader: cc_binary used as loader in `name`. This is a normal
+                      native cc_binary. It cannot be directly run because there
+                      is an undeclared dependency on the enclaves.
+      3) name_host_loader: genrule that builds `name_loader` with the host
+                           crosstool.
+
+    Args:
+      name: Name for build target.
+      enclaves: Dictionary from enclave names to target dependencies. The
+        dictionary must be injective. This dictionary is used to format each
+        string in `loader_args` after each enclave target is interpreted as the
+        path to its output binary.
+      embedded_enclaves: Dictionary from ELF section names (that do not start
+        with '.') to target dependencies. Each target in the dictionary is
+        embedded in the loader binary under the corresponding ELF section.
+      loader_args: List of arguments to be passed to `loader`. Arguments may
+        contain {enclave_name}-style references to keys from the `enclaves` dict,
+        each of which will be replaced with the path to the named enclave.
+      **kwargs: cc_binary arguments.
+    """
+    loader_plain_name = name + "_loader"
+    loader_name = name + "_host_loader"
+
+    native.cc_binary(
+        name = loader_plain_name,
+        **_ensure_static_manual(kwargs)
+    )
+
+    # embed_enclaves ensures that the loader's ELF file is built with the host
+    # toolchain, even when its enclaves argument is empty.
+    embed_enclaves(
+        name = loader_name,
+        elf_file = loader_plain_name,
+        enclaves = embedded_enclaves,
+        executable = 1,
+    )
+
+    _enclave_runner_script(
+        name = name,
+        loader = loader_name,
+        loader_args = loader_args,
+        enclaves = _invert_enclave_name_mapping(enclaves),
+        data = kwargs.get("data", []),
+    )
+
+def sim_enclave(name, **kwargs):
+    """Build rule for creating simulated enclave object files signed for testing.
+
+    The enclave simulation backend currently makes use of the SGX simulator.
+    However, this is subject to change and users of this rule should not make
+    assumptions about it being related to SGX.
+
+    Args:
+      name: The name of the signed enclave object file.
+      **kwargs: cc_binary arguments.
+    """
+    sgx_enclave(name, **kwargs)
 
 def enclave_test(
         name,
