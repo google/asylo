@@ -596,8 +596,14 @@ int ocall_enc_untrusted_sched_getaffinity(int64_t pid, BridgeCpuSet *mask) {
 //////////////////////////////////////
 
 int ocall_enc_untrusted_register_signal_handler(
-    int signum, const struct BridgeSignalHandler *handler, const char *name) {
+    int bridge_signum, const struct BridgeSignalHandler *handler,
+    const char *name) {
   std::string enclave_name(name);
+  int signum = asylo::FromBridgeSignal(bridge_signum);
+  if (signum < 0) {
+    errno = EINVAL;
+    return -1;
+  }
   auto manager_result = asylo::EnclaveManager::Instance();
   if (!manager_result.ok()) {
     return -1;
