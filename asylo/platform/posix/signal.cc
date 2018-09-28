@@ -29,8 +29,6 @@
 
 extern "C" {
 
-int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) { abort(); }
-
 // Registers a signal handler for |signum|.
 //
 // This method registers a signal handler in two parts:
@@ -130,6 +128,10 @@ int sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   signal_manager->BlockSignals(signals_to_block);
 
   return res;
+}
+
+int pthread_sigmask(int how, const sigset_t *set, sigset_t *oldset) {
+  return sigprocmask(how, set, oldset);
 }
 
 // Registers a signal handler for |signum| with |handler|.
