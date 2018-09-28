@@ -211,6 +211,11 @@ enum TcpOptionNames {
   BRIDGE_TCP_KEEPCNT = 6,
 };
 
+// All IPV6 option names supported inside the enclave.
+enum IpV6OptionNames {
+  BRIDGE_IPV6_V6ONLY = 1,
+};
+
 // All socket option names supported inside the enclave.
 enum SocketOptionNames {
   BRIDGE_SO_DEBUG = 1,

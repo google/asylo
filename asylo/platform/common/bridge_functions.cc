@@ -130,6 +130,16 @@ int FromBridgeTcpOptionName(int bridge_tcp_option_name) {
   return -1;
 }
 
+int FromBridgeIpV6OptionName(int bridge_ipv6_option_name) {
+  if (bridge_ipv6_option_name == BRIDGE_IPV6_V6ONLY) return IPV6_V6ONLY;
+  return -1;
+}
+
+int ToBridgeIpV6OptionName(int ipv6_option_name) {
+  if (ipv6_option_name == IPV6_V6ONLY) return BRIDGE_IPV6_V6ONLY;
+  return -1;
+}
+
 int ToBridgeTcpOptionName(int tcp_option_name) {
   if (tcp_option_name == TCP_NODELAY) return BRIDGE_TCP_NODELAY;
   if (tcp_option_name == TCP_KEEPIDLE) return BRIDGE_TCP_KEEPIDLE;
@@ -472,6 +482,9 @@ int FromBridgeOptionName(int level, int bridge_option_name) {
   if (level == IPPROTO_TCP) {
     return FromBridgeTcpOptionName(bridge_option_name);
   }
+  if (level == IPPROTO_IPV6) {
+    return FromBridgeIpV6OptionName(bridge_option_name);
+  }
   if (level == SOL_SOCKET) {
     return FromBridgeSocketOptionName(bridge_option_name);
   }
@@ -481,6 +494,9 @@ int FromBridgeOptionName(int level, int bridge_option_name) {
 int ToBridgeOptionName(int level, int option_name) {
   if (level == IPPROTO_TCP) {
     return ToBridgeTcpOptionName(option_name);
+  }
+  if (level == IPPROTO_IPV6) {
+    return ToBridgeIpV6OptionName(option_name);
   }
   if (level == SOL_SOCKET) {
     return ToBridgeSocketOptionName(option_name);
