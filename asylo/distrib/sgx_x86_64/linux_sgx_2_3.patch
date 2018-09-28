@@ -74,7 +74,7 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     because we are using BoringSSL instead of Intel's tlibcrypto.
 
 
-## Modifications to Intel's SDK release 2.2 (in ``)
+## Modifications to Intel's SDK release 2.3 (in ``)
 ### Downstreamed PRs
 * [PR210](https://github.com/intel/linux-sgx/pull/210): Language conformance to
   resolve conflict with newlib.
@@ -86,20 +86,6 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     - *Details:* Removed definition of reserved symbols `__INT64` and `__UINT64`
       and instead use `int64_t` and `uint64_t` from `<stdint.h>`. A use of
       `__INT64` in `cpudef.h` is changed to use `Ipp64s` from `ippbase.h`.
-* [PR297](https://github.com/intel/linux-sgx/pull/297): Quiet compiler warnings
-  turned to errors in
-    - `sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp`:
-      redefinition of `__STDC_FORMAT_MACROS` (add `#ifndef` guard around
-      `#define`)
-    - `sdk/tlibc/gen/spinlock.c`: add a comment that `_mm_pause`'s definition
-      requires -ffreestanding.
-    - `sign_tool/SignTool/elf_helper.h`: use `std::hex` instead of `hex`.
-    - `sign_tool/SignTool/manage_metadata.cpp`: use `std::hex` instead of `hex`.
-* [PR301](https://github.com/intel/linux-sgx/pull/301): Localize -O0 to
-  necessary functions and add -fno-omit-frame-pointer.
-    - Affected_files:
-      + `u_instructions.cpp`
-      + `t_instructions.cpp`
 * [PR307](https://github.com/intel/linux-sgx/pull/307): Remove an unnecessary
   `#include` from gperftool.
 * [PR309](https://github.com/intel/linux-sgx/pull/309): Remove unneeded #include
@@ -211,17 +197,6 @@ diff -Nur common/inc/internal/elfheader/elfstructs.h common/inc/internal/elfhead
  typedef uint8_t		Elf_Byte;
  
  typedef uint32_t	Elf32_Addr;	/* Unsigned program address */
-diff -Nur common/inc/internal/linux/linux-regs.h common/inc/internal/linux/linux-regs.h
---- common/inc/internal/linux/linux-regs.h
-+++ common/inc/internal/linux/linux-regs.h
-@@ -37,6 +37,7 @@
- #define LINUX_REGS_H__
- 
- #if defined(__i386) || defined(__i386__)
-+
- #  define LINUX32       1
- #  define SE_WORDSIZE   4
- 
 diff -Nur common/inc/internal/metadata.h common/inc/internal/metadata.h
 --- common/inc/internal/metadata.h
 +++ common/inc/internal/metadata.h
@@ -335,19 +310,19 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  #include "sgx_attributes.h"
  #include "sgx_error.h"
  #include "sgx_eid.h"
-@@ -74,6 +76,11 @@
+@@ -73,7 +75,10 @@
+                                        sgx_enclave_id_t *enclave_id, 
                                         sgx_misc_attribute_t *misc_attr);
  
- 
+-
 +sgx_status_t SGXAPI sgx_create_enclave_from_buffer(
 +        uint8_t *buffer, size_t buffer_size, const int debug,
 +        sgx_launch_token_t *launch_token, int *launch_token_updated,
 +        sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr);
-+
  
  sgx_status_t SGXAPI sgx_create_enclave_ex(const char * file_name, 
                                            const int debug, 
-@@ -96,6 +103,8 @@
+@@ -96,6 +101,8 @@
  
  sgx_status_t SGXAPI sgx_destroy_enclave(const sgx_enclave_id_t enclave_id);
  
@@ -491,22 +466,22 @@ diff -Nur external/rdrand/src/config.h external/rdrand/src/config.h
 diff -Nur external/tinyxml2/tinyxml2.cpp external/tinyxml2/tinyxml2.cpp
 --- external/tinyxml2/tinyxml2.cpp
 +++ external/tinyxml2/tinyxml2.cpp
-@@ -410,16 +410,19 @@
+@@ -433,16 +433,19 @@
              *output = (char)((input | BYTE_MARK) & BYTE_MASK);
              input >>= 6;
-             /* fallthrough */
+             //fall through
 +            [[clang::fallthrough]];
          case 3:
              --output;
              *output = (char)((input | BYTE_MARK) & BYTE_MASK);
              input >>= 6;
-             /* fallthrough */
+             //fall through
 +            [[clang::fallthrough]];
          case 2:
              --output;
              *output = (char)((input | BYTE_MARK) & BYTE_MASK);
              input >>= 6;
-             /* fallthrough */
+             //fall through
 +            [[clang::fallthrough]];
          case 1:
              --output;
@@ -546,6 +521,27 @@ diff -Nur psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSer
  #include <IAEMessage.h>
  
  #include <IAERequest.h>
+diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_enclave_common.cpp
+--- psw/enclave_common/sgx_enclave_common.cpp
++++ psw/enclave_common/sgx_enclave_common.cpp
+@@ -63,7 +63,7 @@
+ 
+ static std::map<void*, mem_region_t> s_enclave_mem_region;
+ 
+-extern "C" bool open_device(void)
++static bool open_device(void)
+ {
+     se_mutex_lock(&s_device_mutex);
+     if (s_hdevice != -1) {
+@@ -83,7 +83,7 @@
+     return false;
+ }
+ 
+-extern "C" void close_device(void)
++static void close_device(void)
+ {
+     se_mutex_lock(&s_device_mutex);
+ 
 diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 --- psw/urts/cpu_features.h
 +++ psw/urts/cpu_features.h
@@ -716,10 +712,16 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  #include "sgx_error.h"
  #include "sgx_urts.h"
  #include "sgx_uswitchless.h"
-@@ -102,6 +103,47 @@
+@@ -110,17 +111,73 @@
      return ret;
  }
  
+-extern "C" sgx_status_t sgx_create_enclave(const char *file_name, 
+-                                           const int debug, 
+-                                           sgx_launch_token_t *launch_token, 
+-                                           int *launch_token_updated, 
+-                                           sgx_enclave_id_t *enclave_id, 
+-                                           sgx_misc_attribute_t *misc_attr) 
 +extern "C" sgx_status_t __sgx_create_enclave_from_buffer_ex(
 +        uint8_t *buffer,
 +        size_t buffer_size,
@@ -729,7 +731,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +        sgx_enclave_id_t *enclave_id,
 +        sgx_misc_attribute_t *misc_attr,
 +        const uint32_t ex_features,
-+        void* ex_features_p[32])
++        const void* ex_features_p[32])
 +{
 +    sgx_status_t ret = SGX_SUCCESS;
 +
@@ -761,10 +763,14 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +    return ret;
 +}
 +
- extern "C" sgx_status_t sgx_create_enclave(const char *file_name, 
-                                            const int debug, 
-                                            sgx_launch_token_t *launch_token, 
-@@ -113,6 +155,21 @@
++extern "C" sgx_status_t sgx_create_enclave(const char *file_name,
++                                           const int debug,
++                                           sgx_launch_token_t *launch_token,
++                                           int *launch_token_updated,
++                                           sgx_enclave_id_t *enclave_id,
++                                           sgx_misc_attribute_t *misc_attr)
+ {
+     return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL);
  }
  
  
@@ -786,7 +792,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  extern "C"  sgx_status_t sgx_create_enclave_ex(const char *file_name,
                                                 const int debug,
                                                 sgx_launch_token_t *launch_token,
-@@ -145,3 +202,20 @@
+@@ -153,3 +210,20 @@
      return __sgx_create_enclave_ex(file_name, debug, launch_token,
          launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
  }
@@ -810,7 +816,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
 --- psw/urts/loader.cpp
 +++ psw/urts/loader.cpp
-@@ -47,10 +47,14 @@
+@@ -47,7 +47,9 @@
  #include <vector>
  #include <tuple>
  #include <algorithm>
@@ -820,12 +826,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  #include <inttypes.h>
  #include <sys/mman.h>
  
-+using std::pair;
-+
- // enclave creator instance
- extern EnclaveCreator* g_enclave_creator;
- 
-@@ -103,7 +107,7 @@
+@@ -103,7 +105,7 @@
  }
  
  // is_relocation_page returns true if the specified RVA is a writable relocation page based on the bitmap.
@@ -834,7 +835,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  {
      uint64_t page_frame = rva >> SE_PAGE_SHIFT;
      //NOTE:
-@@ -181,7 +185,7 @@
+@@ -181,7 +183,7 @@
      return SGX_SUCCESS;
  }
  
@@ -843,7 +844,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  {
      int ret = SGX_SUCCESS;
      std::vector<Section*> sections = m_parser.get_sections();
-@@ -372,7 +376,7 @@
+@@ -372,7 +374,7 @@
                  ptcs->ogs_base += rva;
                  if(!(attributes & PAGE_ATTR_EREMOVE))
                  {
@@ -852,7 +853,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
                  }
                  sinfo.flags = layout->si_flags;
                  if(SGX_SUCCESS != (ret = build_pages(rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, added_page, sinfo, attributes)))
-@@ -417,7 +421,7 @@
+@@ -417,7 +419,7 @@
  #ifndef SE_SIM
          if(layout->id == LAYOUT_ID_TCS_DYN)
          {
@@ -861,7 +862,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
          }
  #endif
      }
-@@ -490,7 +494,7 @@
+@@ -486,7 +488,7 @@
      // If load_enclave_ex try to load the enclave for the 2nd time,
      // the enclave image is already patched, and parser cannot read the information.
      // For linux, there's no map conflict. We assume load_enclave_ex will not do the retry.
@@ -870,7 +871,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      if(!m_parser.get_reloc_bitmap(bitmap))
          return SGX_ERROR_INVALID_ENCLAVE;
  
-@@ -564,12 +568,12 @@
+@@ -564,12 +566,12 @@
  {
      layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
      layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
@@ -885,7 +886,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
              if(layout->entry.content_offset)
              {
                  if(false == is_metadata_buffer(layout->entry.content_offset, layout->entry.content_size))
-@@ -598,7 +602,7 @@
+@@ -598,7 +600,7 @@
                      {
                          return SGX_ERROR_INVALID_METADATA;
                      }
@@ -894,12 +895,12 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
                      // no need to check integer overflow for entry->rva + load_step, because
                      // entry->rva and load_step are less than enclave_size, whose size is no more than 37 bit
                  }
-@@ -606,7 +610,7 @@
+@@ -606,7 +608,7 @@
          }
      }
      sort(rva_vector.begin(), rva_vector.end());
 -    for (vector<pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
-+    for (std::vector<pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
++    for (std::vector<std::pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
      {
          if(!IS_PAGE_ALIGNED(it->first))
          {
@@ -1235,14 +1236,14 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
 diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 --- psw/urts/urts_com.h
 +++ psw/urts/urts_com.h
-@@ -422,33 +422,27 @@
-     return ret;
+@@ -423,32 +423,28 @@
  }
  
--
+ 
 -sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
 -	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
--                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, void* ex_features_p[32])
+-                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
++
 +sgx_status_t _create_enclave_ex_internal(
 +        uint8_t *base_addr,
 +        uint64_t file_size,
@@ -1254,7 +1255,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 +        sgx_enclave_id_t *enclave_id,
 +        sgx_misc_attribute_t *misc_attr,
 +        const uint32_t ex_features,
-+        void* ex_features_p[32])
++        const void* ex_features_p[32])
  {
      unsigned int ret = SGX_SUCCESS;
      sgx_status_t lt_result = SGX_SUCCESS;
@@ -1282,7 +1283,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
      if(SGX_SUCCESS != (ret = parser.run_parser()))
      {
          goto clean_return;
-@@ -517,7 +511,7 @@
+@@ -516,7 +512,7 @@
  
      //Need to set the whole misc_attr instead of just secs_attr.
      do {
@@ -1291,7 +1292,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
          //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
      } while(SGX_ERROR_ENCLAVE_LOST == ret);
  
-@@ -542,13 +536,70 @@
+@@ -541,13 +537,71 @@
  
  
  clean_return:
@@ -1302,9 +1303,10 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
      return (sgx_status_t)ret;
  }
  
-+sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
-+	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
-+                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, void* ex_features_p[32])
++
++sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file,
++                              sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id,
++                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
 +{
 +    unsigned int ret = SGX_SUCCESS;
 +    uint32_t file_size = 0;
@@ -1342,7 +1344,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 +        sgx_enclave_id_t *enclave_id,
 +        sgx_misc_attribute_t *misc_attr,
 +        const uint32_t ex_features,
-+        void* ex_features_p[32])
++        const void* ex_features_p[32])
 +{
 +    unsigned int ret = SGX_SUCCESS;
 +
@@ -1367,7 +1369,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
 --- sdk/edger8r/linux/Ast.ml
 +++ sdk/edger8r/linux/Ast.ml
-@@ -142,6 +142,11 @@
+@@ -148,6 +148,11 @@
    | UnionDef  of struct_def
    | EnumDef   of enum_def
  
@@ -1379,15 +1381,15 @@ diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
  (* Function declaration. *)
  type func_decl = {
    fname : string;       (* function name. *)
-@@ -158,6 +163,7 @@
+@@ -165,6 +170,7 @@
    tf_fdecl   : func_decl;
-   tf_is_priv : bool;
+   tf_is_priv : bool;   (* private or not, see above comment *)
    tf_is_switchless : bool;
 +  tf_is_exception_handler : bool;
  }
  
- type untrusted_func = {
-@@ -182,6 +188,7 @@
+ (* untrust function(aka ocall) declaration. *)
+@@ -190,6 +196,7 @@
  type expr =
    | Interface of enclave_func list
    | Composite of composite_type
@@ -1395,12 +1397,20 @@ diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
    | Importing of import_decl
    | Include   of string
  
+@@ -215,6 +222,7 @@
+   include_list : string list;
+   import_exprs : import_decl list;
+   comp_defs    : composite_type list;
++  errno_list   : errno_list_type list;
+   tfunc_decls  : trusted_func   list;
+   ufunc_decls  : untrusted_func list;
+ }
 diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
 --- sdk/edger8r/linux/CodeGen.ml
 +++ sdk/edger8r/linux/CodeGen.ml
 @@ -46,6 +46,7 @@
-   include_list : string list;
-   import_exprs : Ast.import_decl list;
+   include_list : string list; (* include another .h *)
+   import_exprs : Ast.import_decl list;  (* always empty list after finished reduce_import. *)
    comp_defs    : Ast.composite_type list;
 +  errno_list   : Ast.errno_list_type list;
    tfunc_decls  : Ast.trusted_func   list;
@@ -1456,7 +1466,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
        tfunc_decls  = List.rev !ac_tfunc_decls;
        ufunc_decls  = List.rev !ac_ufunc_decls; }
  
-@@ -335,6 +346,62 @@
+@@ -347,6 +358,62 @@
        | Ast.UnionDef  u -> mk_union_decl  (gen_member_list u.Ast.mlist) u.Ast.sname
        | Ast.EnumDef   e -> mk_enum_def    e
  
@@ -1567,7 +1577,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
  } %s = {\n\
  \t%d,\n\
  %s};\n" ecall_table_size
-@@ -676,12 +752,18 @@
+@@ -677,12 +753,18 @@
                                 acc ^ ", " ^ mk_parm_name pty dlr) p0 ps)
  
  (* Generate untrusted bridge code for a given untrusted function. *)
@@ -1588,16 +1598,16 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let ms_struct_name = mk_ms_struct_name fd.Ast.fname in
    let declare_ms_ptr = sprintf "%s* %s = SGX_CAST(%s*, %s);"
                                 ms_struct_name
-@@ -1345,7 +1427,7 @@
+@@ -1372,7 +1454,7 @@
       List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
-   
+ 
  (* Generate trusted proxy code for a given untrusted function. *)
 -let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) =
 +let gen_func_tproxy (ufunc: Ast.untrusted_func) (idx: int) (conv_errno: bool) =
    let fd = ufunc.Ast.uf_fdecl in
    let propagate_errno = ufunc.Ast.uf_propagate_errno in
    let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
-@@ -1395,7 +1477,13 @@
+@@ -1435,7 +1517,13 @@
                               Ast.PTVal _ -> acc
                 | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
  
@@ -1612,7 +1622,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let func_close = sprintf "%s%s%s\n%s%s\n"
                             (handle_out_ptr fd.Ast.plist)
                             set_errno
-@@ -1455,12 +1543,16 @@
+@@ -1495,12 +1583,16 @@
        ec.tfunc_decls
        (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
    in
@@ -1630,7 +1640,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      List.iter (fun s -> output_string out_chan (s ^ "\n")) ubridge_list;
      output_string out_chan (gen_ocall_table ec);
      List.iter (fun s -> output_string out_chan (s ^ "\n")) uproxy_list;
-@@ -1492,14 +1584,18 @@
+@@ -1537,14 +1629,18 @@
      List.map (fun tfd -> gen_func_tbridge tfd dummy_var) trusted_fds in
    let ecall_table = gen_ecall_table ec.tfunc_decls in
    let entry_table = gen_entry_table ec in
@@ -1650,7 +1660,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      output_string out_chan (ecall_table ^ "\n");
      output_string out_chan (entry_table ^ "\n");
      output_string out_chan "\n";
-@@ -1603,9 +1699,10 @@
+@@ -1648,9 +1744,10 @@
      List.iter check_ecall priv_ecall_names
  
  (* Check that there is at least one public ECALL function. *)
@@ -1663,7 +1673,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    then failwithf "the enclave `%s' contains no public root ECALL.\n" ec.file_shortnm
    else report_orphaned_priv_ecall ec
  
-@@ -1620,7 +1717,7 @@
+@@ -1665,7 +1762,7 @@
   *)
  let reduce_import (ec: enclave_content) =
    (* Append a EDL list to another. Keep the first element and replace the
@@ -1672,7 +1682,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
     if both lists contain a same EDL. The function sequence is backwards compatible.*)
    let join (ec1: enclave_content list) (ec2: enclave_content list) =
      let join_one (acc: enclave_content list) (ec: enclave_content) =
-@@ -1698,6 +1795,7 @@
+@@ -1743,6 +1840,7 @@
          include_list = acc.include_list @ ec2.include_list;
          import_exprs = [];
          comp_defs    = acc.comp_defs   @ ec2.comp_defs;
@@ -1680,14 +1690,15 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
          tfunc_decls  = acc.tfunc_decls @ ec2.tfunc_decls;
          ufunc_decls  = acc.ufunc_decls @ ec2.ufunc_decls; }
    in
-@@ -1713,6 +1811,6 @@
+@@ -1758,7 +1856,7 @@
      create_dir ep.trusted_dir;
      check_duplication ec;
      check_allow_list ec;
 -    (if not ep.header_only then check_priv_funcs ec);
 +    (if not ep.header_only then check_priv_and_exception_funcs ec);
-     (if ep.gen_untrusted then (gen_untrusted_header ec; if not ep.header_only then gen_untrusted_source ec));
-     (if ep.gen_trusted then (gen_trusted_header ec; if not ep.header_only then gen_trusted_source ec))
+     if Plugin.available() then
+       Plugin.gen_edge_routines ec ep
+     else (
 diff -Nur sdk/edger8r/linux/Lexer.mll sdk/edger8r/linux/Lexer.mll
 --- sdk/edger8r/linux/Lexer.mll
 +++ sdk/edger8r/linux/Lexer.mll
@@ -1751,7 +1762,7 @@ diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
      }
    ;
  
-@@ -661,6 +679,7 @@
+@@ -665,6 +683,7 @@
    | expressions include_declaration           { Ast.Include($2)   :: $1 }
    | expressions import_declaration TSemicolon { Ast.Importing($2) :: $1 }
    | expressions composite_defs TSemicolon     { Ast.Composite($2) :: $1 }
@@ -1762,14 +1773,14 @@ diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
 diff -Nur sdk/sign_tool/SignTool/elf_helper.h sdk/sign_tool/SignTool/elf_helper.h
 --- sdk/sign_tool/SignTool/elf_helper.h
 +++ sdk/sign_tool/SignTool/elf_helper.h
-@@ -41,11 +41,10 @@
+@@ -41,11 +41,9 @@
  
  static void dump_textrel(const uint64_t& offset)
  {
 -    using namespace std;
- 
+-
 -    cerr << "warning: TEXTRELs found at offset: "
--         << hex << showbase     /* show the '0x' prefix */
+-         << std::hex << showbase     /* show the '0x' prefix */
 -         << offset << endl;
 +    std::cerr << "warning: TEXTRELs found at offset: "
 +              << std::hex << std::showbase     /* show the '0x' prefix */
@@ -1777,7 +1788,7 @@ diff -Nur sdk/sign_tool/SignTool/elf_helper.h sdk/sign_tool/SignTool/elf_helper.
  }
  
  template <int N>
-@@ -87,13 +86,13 @@
+@@ -87,13 +85,13 @@
  
      static bool dump_textrels(BinParser *bp)
      {
@@ -1809,18 +1820,15 @@ diff -Nur sdk/sign_tool/SignTool/manage_metadata.cpp sdk/sign_tool/SignTool/mana
  
  #define ALIGN_SIZE 0x1000
  
-@@ -227,9 +231,9 @@
+@@ -227,7 +231,7 @@
      if(timeinfo  == NULL)
          return false;
      uint32_t tmp_date = (timeinfo->tm_year+1900)*10000 + (timeinfo->tm_mon+1)*100 + timeinfo->tm_mday;
 -    stringstream ss;
 +    std::stringstream ss;
      ss<<"0x"<<tmp_date;
--    ss>>hex>>tmp_date;
-+    ss>>std::hex>>tmp_date;
+     ss>>std::hex>>tmp_date;
      *date = tmp_date;
-     return true;
- }
 @@ -513,7 +517,7 @@
      guard_page.entry.id = LAYOUT_ID_GUARD;
      guard_page.entry.page_count = SE_GUARD_PAGE_SIZE >> SE_PAGE_SHIFT;
@@ -1869,25 +1877,6 @@ diff -Nur sdk/sign_tool/SignTool/manage_metadata.h sdk/sign_tool/SignTool/manage
      uint64_t m_rva;
      uint32_t m_gd_size;
      uint8_t *m_gd_template;
-diff -Nur sdk/simulation/assembly/lowlib.h sdk/simulation/assembly/lowlib.h
---- sdk/simulation/assembly/lowlib.h
-+++ sdk/simulation/assembly/lowlib.h
-@@ -40,6 +40,15 @@
- 
- #include <stdint.h>
- 
-+#if defined(__GNUC__) && !defined(__clang__)
-+#define LOAD_REGS_ATTRIBUTES \
-+  __attribute__((optimize("-O0,-fno-omit-frame-pointer")))
-+#elif defined(__clang__)
-+#define LOAD_REGS_ATTRIBUTES [[clang::optnone]]
-+#else
-+#pragma warning "Unsupported compiler for per-function deoptimization"
-+#endif
-+
- #ifdef __cplusplus
- extern "C" {
- #endif
 diff -Nur sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
 --- sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
 +++ sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
@@ -1906,58 +1895,6 @@ diff -Nur sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp sdk/simulatio
      for(int i=0; i<4; i++)
      {
          buffer[i] = __builtin_bswap32(buffer[i]);
-diff -Nur sdk/simulation/tinst/t_instructions.cpp sdk/simulation/tinst/t_instructions.cpp
---- sdk/simulation/tinst/t_instructions.cpp
-+++ sdk/simulation/tinst/t_instructions.cpp
-@@ -286,6 +286,8 @@
- static void
- _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xdi) __attribute__((section(".nipx")));
- 
-+// The call to load_regs assumes the existence of a frame pointer.
-+LOAD_REGS_ATTRIBUTES
- static void
- _EEXIT(uintptr_t dest, uintptr_t xcx, uintptr_t xdx, uintptr_t xsi, uintptr_t xdi)
- {
-@@ -323,9 +325,6 @@
- 
- // Master entry functions
- 
--#pragma GCC push_options
--#pragma GCC optimize ("O0")
--
- uintptr_t _SE3(uintptr_t xax, uintptr_t xbx, uintptr_t xcx,
-                uintptr_t xdx, uintptr_t xsi, uintptr_t xdi)
- {
-@@ -350,5 +349,3 @@
-     GP();
-     return (uintptr_t)-1;
- }
--
--#pragma GCC pop_options
-diff -Nur sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
---- sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
-+++ sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp
-@@ -37,7 +37,9 @@
- #include <sys/types.h>
- #include <stdlib.h>
- #include <pwd.h>
-+#ifndef __STDC_FORMAT_MACROS
- #define __STDC_FORMAT_MACROS
-+#endif
- #include <inttypes.h>
- 
- static Mutex g_pse_sim_lock;
-diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instructions.cpp
---- sdk/simulation/uinst/u_instructions.cpp
-+++ sdk/simulation/uinst/u_instructions.cpp
-@@ -209,6 +209,7 @@
- // Master entry functions
- 
- 
-+LOAD_REGS_ATTRIBUTES
- void _SE3(uintptr_t xax, uintptr_t xbx,
-           uintptr_t xcx, uintptr_t xdx,
-           uintptr_t xsi, uintptr_t xdi)
 diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
 --- sdk/simulation/urtssim/get_state.cpp
 +++ sdk/simulation/urtssim/get_state.cpp
@@ -2006,18 +1943,6 @@ diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.
 +  }
 +  return 0;
 +}
-diff -Nur sdk/tlibc/gen/spinlock.c sdk/tlibc/gen/spinlock.c
---- sdk/tlibc/gen/spinlock.c
-+++ sdk/tlibc/gen/spinlock.c
-@@ -34,7 +34,7 @@
- static inline void _mm_pause(void) __attribute__((always_inline));
- static inline int _InterlockedExchange(int volatile * dst, int val) __attribute__((always_inline));
- 
--static inline void _mm_pause(void)
-+static inline void _mm_pause(void)  /* definition requires -ffreestanding */
- {
-     __asm __volatile(
-         "pause"
 diff -Nur sdk/tlibc/string/memset_s.c sdk/tlibc/string/memset_s.c
 --- sdk/tlibc/string/memset_s.c
 +++ sdk/tlibc/string/memset_s.c
@@ -2207,7 +2132,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
  #endif
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1111 @@
+@@ -0,0 +1,1152 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +package(
@@ -2301,7 +2226,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    "psw/urts/launch_checker.cpp",
 +    "psw/urts/linux/debugger_support.cpp",
 +    "psw/urts/linux/enter_enclave.S",
-+    "psw/urts/linux/edmm_utility.cpp",
 +    "psw/urts/linux/get_thread_id.cpp",
 +    "psw/urts/linux/misc.cpp",
 +    "psw/urts/linux/sig_handler.cpp",
@@ -2333,7 +2257,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    "psw/urts/file.h",
 +    "psw/urts/launch_checker.h",
 +    "psw/urts/linux/debugger_support.h",
-+    "psw/urts/linux/edmm_utility.h",
 +    "psw/urts/linux/read_xcr0.h",
 +    "psw/urts/linux/sig_handler.h",
 +    "psw/urts/linux/urts_emodpr.h",
@@ -2361,15 +2284,18 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +]
 +
 +PSW_COMMON_SRCS = glob(["psw/ae/common/src/*.cpp"]) + [
++    "psw/enclave_common/sgx_enclave_common.cpp",
 +    "psw/uae_service/uae_wrapper/src/AEServicesImpl.cpp",
 +    "psw/uae_service/uae_wrapper/src/AEServicesProvider.cpp",
 +    "psw/uae_service/uae_wrapper/src/tae_ocall_api.cpp",
 +    "psw/uae_service/uae_wrapper/src/uae_api.cpp",
 +    "psw/uae_service/uae_service_assert.cpp",
 +    "psw/uae_service/uae_service_version.cpp",
++    "psw/urts/linux/edmm_utility.cpp",
 +]
 +
 +PSW_COMMON_HDRS = glob(["psw/ae/common/inc/*.h"]) + [
++    "psw/enclave_common/sgx_enclave_common.h",
 +    "common/inc/sgx_uae_service.h",
 +    "psw/uae_service/uae_wrapper/inc/AEServices.h",
 +    "psw/uae_service/config.h",
@@ -2379,6 +2305,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    "psw/ae/inc/aeerror.h",
 +    "psw/ae/inc/byte_order.h",
 +    "psw/ae/inc/se_sig_rl.h",
++    "psw/urts/linux/edmm_utility.h",
 +    "psw/urts/linux/isgx_user.h",
 +]
 +
@@ -2419,19 +2346,52 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +)
 +
 +cc_library(
-+    name = "urts_hw",
-+    srcs = URTS_COMMON_SRCS + PSW_COMMON_SRCS + [
++    name = "uae_service_hw",
++    srcs = PSW_COMMON_SRCS + [
 +        "psw/uae_service/sgx_uae_service.cpp",
++    ],
++    hdrs = PSW_COMMON_HDRS,
++    copts = PSW_COMMON_INCLUDES + [
++        "-Iexternal/linux_sgx/common/inc/internal",
++        "-Iexternal/linux_sgx/common/inc/internal/linux",
++        "-Iexternal/linux_sgx/external/epid-sdk/ext/ipp/include",
++        "-Iexternal/linux_sgx/external/vtune/linux/include",
++        "-Iexternal/linux_sgx/external/vtune/linux/sdk/src/ittnotify",
++        "-Iexternal/linux_sgx/psw/ae/common",
++        "-Iexternal/linux_sgx/psw/enclave_common",
++        "-Iexternal/linux_sgx/psw/urts",
++        "-Iexternal/linux_sgx/psw/urts/linux",
++        "-Iexternal/linux_sgx/psw/urts/parser",
++        "-Iexternal/boringssl",
++    ],
++    linkopts = [
++        "-Wl,--no-as-needed -ldl",
++        "-Wl,--export-dynamic",
++        "-lrt",
++    ],
++    visibility = ["//visibility:private"],
++    deps = [
++        ":common_inc",
++        ":common_inc_internal",
++        ":epid_inc",
++        ":ipc_common_proto_cc",
++        ":untrusted_inc",
++        ":untrusted_inc_internal",
++    ],
++)
++
++cc_library(
++    name = "urts_hw",
++    srcs = URTS_COMMON_SRCS + [
 +        "psw/urts/enclave_creator_hw_com.cpp",
 +        "psw/urts/linux/enclave_creator_hw.cpp",
 +    ],
-+    hdrs = URTS_COMMON_HDRS + PSW_COMMON_HDRS,
++    hdrs = URTS_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
 +        "-DElfParser=Elf64Parser",
-+        "-isystemcommon/inc/stdc++",
-+        "-isystemcommon/inc/stdc++/linux",
 +        "-Iexternal/linux_sgx/external/vtune/linux/include",
 +        "-Iexternal/linux_sgx/external/vtune/linux/sdk/src/ittnotify",
++        "-Iexternal/linux_sgx/psw/enclave_common",
 +        "-Iexternal/linux_sgx/psw/urts",
 +        "-Iexternal/linux_sgx/psw/urts/linux",
 +        "-Iexternal/linux_sgx/psw/urts/parser",
@@ -2454,6 +2414,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        ":psw_switchless",
 +        ":rts_common",
 +        ":se_wrapper",
++        ":uae_service_hw",
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
 +        "@boringssl//:crypto",
@@ -2760,6 +2721,8 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Iexternal/linux_sgx/external/epid-sdk/ext/ipp/include",
 +        "-Iexternal/linux_sgx/external/rdrand",
 +        "-Iexternal/linux_sgx/psw/ae/common",
++        "-Iexternal/linux_sgx/psw/enclave_common",
++        "-Iexternal/linux_sgx/psw/urts/linux",
 +        "-Iexternal/linux_sgx/sdk/simulation/uae_service_sim",
 +        "-Iexternal/linux_sgx/sdk/simulation/assembly",
 +        "-Iexternal/linux_sgx/sdk/simulation/tinst",
@@ -2855,6 +2818,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Iexternal/linux_sgx/sdk/simulation/uinst",
 +        "-Iexternal/linux_sgx/sdk/simulation/urtssim",
 +        "-Iexternal/boringssl",
++        "-DSE_DEBUG_LEVEL=SE_TRACE_DEBUG",
 +    ],
 +    features = ["pic"],  # Not trusted, but Intel's Makefile has -fPIC
 +    linkopts = [
@@ -3030,6 +2994,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    name = "public",
 +    hdrs = [
 +        "include/global_data.h",
++        "include/se_memcpy.h",
 +        "include/sgx_cpuid.h",
 +        "include/sgx_edger8r.h",
 +        "include/sgx_eid.h",
@@ -3277,6 +3242,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "sdk/edger8r/linux/Edger8r.ml",
 +        "sdk/edger8r/linux/Lexer.mll",
 +        "sdk/edger8r/linux/Parser.mly",
++        "sdk/edger8r/linux/Plugin.ml",
 +        "sdk/edger8r/linux/Preprocessor.ml",
 +        "sdk/edger8r/linux/SimpleStack.ml",
 +        "sdk/edger8r/linux/Util.ml",
@@ -3342,7 +3308,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +
 +    # Append enclave specific arguments.
 +    kwargs["copts"] = kwargs.get("copts", []) + [
-+        "-Iexternal/linux_sgx/v_2_1_3/common/inc/",
++        "-Iexternal/linux_sgx/common/inc/",
 +        "-fstack-protector",
 +    ]
 +
@@ -3651,6 +3617,15 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +#include "common/inc/internal/global_data.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_GLOBAL_DATA_H_
+--- /dev/null
++++ include/se_memcpy.h
+@@ -0,0 +1,6 @@
++#ifndef _V_2_3_INCLUDE_SE_MEMCPY_H_
++#define _V_2_3_INCLUDE_SE_MEMCPY_H_
++
++#include "common/inc/internal/se_memcpy.h"  // IWYU pragma: export
++
++#endif  // _V_2_3_INCLUDE_SE_MEMCPY_H_
 --- /dev/null
 +++ include/sgx.h
 @@ -0,0 +1,6 @@

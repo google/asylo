@@ -56,7 +56,7 @@ class SGXClient : public EnclaveClient {
   Status DestroyEnclave() override;
 
   std::string path_;               // Path to enclave object file.
-  sgx_launch_token_t token_;  // SGX SDK launch token.
+  sgx_launch_token_t token_ = {0};  // SGX SDK launch token.
   sgx_enclave_id_t id_;       // SGX SDK enclave identifier.
 };
 
