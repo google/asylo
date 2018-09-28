@@ -606,7 +606,7 @@ int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
   int ret;
   sgx_status_t status = ocall_enc_untrusted_setsockopt(
-      &ret, sockfd, level, asylo::FromBridgeOptionName(level, optname), optval,
+      &ret, sockfd, level, asylo::ToBridgeOptionName(level, optname), optval,
       static_cast<bridge_size_t>(optlen));
   if (status != SGX_SUCCESS) {
     errno = EINTR;
