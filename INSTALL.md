@@ -68,8 +68,8 @@ installing the toolchain.
 ## Intel SGX SDK
 
 The Asylo framework uses
-[Intel SGX SDK v2.2](https://github.com/intel/linux-sgx/blob/sgx_2.2/README.md)
-with a [patch](asylo/distrib/sgx_x86_64/linux_sgx_2_2.patch) that backports some
+[Intel SGX SDK v2.3](https://github.com/intel/linux-sgx/blob/sgx_2.3/README.md)
+with a [patch](asylo/distrib/sgx_x86_64/linux_sgx_2_3.patch) that backports some
 pull requests and applies minor changes needed to build the SDK with the Asylo
 toolchain.
 
