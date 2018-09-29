@@ -231,8 +231,8 @@ following command:
 
 ## Repository Structure & Status
 
-This repository contains source code for the Asylo framework. The `v0.2` release
-of the framework supports C++11 applications and a Bazel build environment.
+This repository contains source code for the Asylo framework. The 0.3 release of
+the framework supports C++11 applications and a Bazel build environment.
 
 The following packages contain source code that may be of particular interest to
 users of the Asylo framework as well as those looking to contribute to Asylo
