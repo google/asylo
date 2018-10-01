@@ -19,12 +19,8 @@
 major_version: "1"
 minor_version: "1"
 
+# Remove after Bazel 0.19 release:
 default_target_cpu: "sgx_x86_64"
-
-default_toolchain {
-  cpu: "k8"
-  toolchain_identifier: "sgx_x86_64"
-}
 
 toolchain {
   abi_version: "sgx_x86_64"
