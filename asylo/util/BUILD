@@ -142,8 +142,15 @@ cc_library(
 )
 
 cc_library(
+    name = "error_codes",
+    hdrs = ["error_codes.h"],
+    visibility = ["//asylo:implementation"],
+)
+
+cc_library(
     name = "status",
     srcs = [
+        "error_codes.h",
         "error_space.cc",
         "error_space.h",
         "posix_error_space.cc",
@@ -189,6 +196,7 @@ cc_test(
 cc_test(
     name = "statusor_test",
     srcs = [
+        "error_codes.h",
         "error_space.h",
         "status_error_space.h",
         "statusor_test.cc",
@@ -200,7 +208,6 @@ cc_test(
         "//asylo/platform/common:static_map",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "@boringssl//:crypto",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -252,6 +259,7 @@ cc_test(
 cc_test(
     name = "error_space_test",
     srcs = [
+        "error_codes.h",
         "error_space.h",
         "error_space_test.cc",
     ],
@@ -260,7 +268,6 @@ cc_test(
         ":status",
         "//asylo/platform/common:static_map",
         "//asylo/test/util:test_main",
-        "@boringssl//:crypto",
         "@com_google_googletest//:gtest",
     ],
 )
