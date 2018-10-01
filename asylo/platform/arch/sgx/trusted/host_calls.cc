@@ -831,7 +831,7 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
 //           inotify.h              //
 //////////////////////////////////////
 
-int enc_untrusted_inotify_init1(bool non_block) {
+int enc_untrusted_inotify_init1(int non_block) {
   int ret = 0;
   sgx_status_t status = ocall_enc_untrusted_inotify_init1(&ret, non_block);
   if (status != SGX_SUCCESS) {

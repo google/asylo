@@ -161,7 +161,7 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
 //            inotify.h             //
 //////////////////////////////////////
 
-int enc_untrusted_inotify_init1(bool non_block);
+int enc_untrusted_inotify_init1(int non_block);
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask);
 int enc_untrusted_inotify_rm_watch(int fd, int wd);
