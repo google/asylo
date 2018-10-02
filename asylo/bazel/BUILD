@@ -85,18 +85,12 @@ cc_test(
 
 EMBED_ENCLAVES_TEST_SECTION = "foo_section"
 
-# A test binary for the embed_enclaves test.
-cc_binary(
-    name = "embed_enclaves_test_binary_plain",
-    srcs = ["embed_enclaves_test_binary.cc"],
-)
-
 # A rule to embed an "enclave" (really a text file) in
 # embed_enclaves_test_binary_plain.
 embed_enclaves(
     name = "embed_enclaves_test_binary",
-    elf_file = ":embed_enclaves_test_binary_plain",
-    enclaves = {EMBED_ENCLAVES_TEST_SECTION: "embed_enclaves_test_data.txt"},
+    elf_file = "//asylo/test/util:test_binary",
+    enclaves = {EMBED_ENCLAVES_TEST_SECTION: "//asylo/test/util:sample_text"},
     executable = 1,
 )
 
@@ -108,10 +102,10 @@ sh_test(
         "$(OBJCOPY)",
         "$(location :embed_enclaves_test_binary)",
         EMBED_ENCLAVES_TEST_SECTION,
-        "$(location embed_enclaves_test_data.txt)",
+        "$(location //asylo/test/util:sample_text)",
     ],
     data = [
-        "embed_enclaves_test_data.txt",
         ":embed_enclaves_test_binary",
+        "//asylo/test/util:sample_text",
     ],
 )

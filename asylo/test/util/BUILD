@@ -22,6 +22,7 @@ package(default_visibility = ["//asylo:implementation"])
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 # Test helper that runs a subprocess and checks output.
 cc_library(
@@ -238,4 +239,25 @@ cc_library(
         "//asylo:enclave_proto_cc",
         "@com_google_absl//absl/strings",
     ],
+)
+
+# An enclave for testing purposes. All entry points use the default
+# implementations.
+sgx_enclave(
+    name = "do_nothing_enclave.so",
+    srcs = ["do_nothing_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = ["//asylo:enclave_runtime"],
+)
+
+# Sample text for testing purposes.
+filegroup(
+    name = "sample_text",
+    srcs = ["lorem_ipsum.txt"],
+)
+
+# A binary for testing purposes. Not intended to be run.
+cc_binary(
+    name = "test_binary",
+    srcs = ["test_binary.cc"],
 )

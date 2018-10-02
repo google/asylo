@@ -332,18 +332,11 @@ enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-sgx_enclave(
-    name = "load_from_buffer_test_enclave.so",
-    srcs = ["load_from_buffer_test_enclave.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = ["//asylo:enclave_runtime"],
-)
-
 enclave_test(
     name = "load_from_buffer_test",
     srcs = ["load_from_buffer_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"enclave": ":load_from_buffer_test_enclave.so"},
+    enclaves = {"enclave": "//asylo/test/util:do_nothing_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo:enclave_client",
@@ -368,7 +361,7 @@ enclave_test(
     name = "embedded_enclave_test",
     srcs = ["embedded_enclave_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    embedded_enclaves = {TEST_SECTION_NAME: ":load_from_buffer_test_enclave.so"},
+    embedded_enclaves = {TEST_SECTION_NAME: "//asylo/test/util:do_nothing_enclave.so"},
     test_args = [
         "--enclave_section",
         TEST_SECTION_NAME,

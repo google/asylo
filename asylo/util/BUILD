@@ -64,15 +64,10 @@ cc_library(
 # Embedded section to view in ElfReader unit test.
 ELF_READER_TEST_SECTION = "foo_section"
 
-cc_binary(
-    name = "elf_reader_test_binary_plain",
-    srcs = ["elf_reader_test_binary.cc"],
-)
-
 embed_enclaves(
     name = "elf_reader_test_binary",
-    elf_file = ":elf_reader_test_binary_plain",
-    enclaves = {ELF_READER_TEST_SECTION: "elf_reader_test_data.txt"},
+    elf_file = "//asylo/test/util:test_binary",
+    enclaves = {ELF_READER_TEST_SECTION: "//asylo/test/util:sample_text"},
     executable = 1,
 )
 
@@ -80,13 +75,16 @@ cc_test(
     name = "elf_reader_test",
     srcs = ["elf_reader_test.cc"],
     args = [
-        "--elf_file=$(location :elf_reader_test_binary)",
-        "--section_name=%s" % ELF_READER_TEST_SECTION,
-        "--expected_contents=$(location elf_reader_test_data.txt)",
+        "--elf_file",
+        "$(location :elf_reader_test_binary)",
+        "--section_name",
+        "%s" % ELF_READER_TEST_SECTION,
+        "--expected_contents",
+        "$(location //asylo/test/util:sample_text)",
     ],
     data = [
-        "elf_reader_test_data.txt",
         ":elf_reader_test_binary",
+        "//asylo/test/util:sample_text",
     ],
     deps = [
         ":elf_reader",
@@ -119,8 +117,11 @@ cc_library(
 cc_test(
     name = "file_mapping_test",
     srcs = ["file_mapping_test.cc"],
-    args = ["--test_file=$(location file_mapping_test_data.txt)"],
-    data = ["file_mapping_test_data.txt"],
+    args = [
+        "--test_file",
+        "$(location //asylo/test/util:sample_text)",
+    ],
+    data = ["//asylo/test/util:sample_text"],
     deps = [
         ":file_mapping",
         ":status",

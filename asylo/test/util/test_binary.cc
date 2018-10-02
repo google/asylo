@@ -39,7 +39,7 @@ constexpr uint64_t kMaxOddBeforeOverflow =
 
 // If |number| is odd, returns 3 * number + 1. Otherwise, returns number / 2. If
 // the calculation would overflow, retunrs 0.
-uint64_t CollatzItUp(uint64_t number) {
+uint64_t NextHailstoneNumber(uint64_t number) {
   if (number % 2 == 1) {
     if (number <= kMaxOddBeforeOverflow) {
       return 3 * number + 1;
@@ -62,7 +62,7 @@ int main() {
     num_steps_to_one = 0;
 
     for (current_number = start_number; current_number > 1;
-         current_number = CollatzItUp(current_number)) {
+         current_number = NextHailstoneNumber(current_number)) {
       ++num_steps_to_one;
     }
 
