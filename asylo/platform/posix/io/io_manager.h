@@ -488,6 +488,10 @@ class IOManager {
   // Implements ftruncate(2).
   int FTruncate(int fd, off_t length);
 
+  // Implements select(2).
+  int Select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+             struct timeval *timeout);
+
   // Implements poll(2).
   int Poll(struct pollfd *fds, nfds_t nfds, int timeout)
       LOCKS_EXCLUDED(fd_table_lock_);

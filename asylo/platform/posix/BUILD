@@ -28,6 +28,7 @@ load(
     "//asylo/bazel:asylo.bzl",
     "enclave_test",
     "cc_enclave_test",
+    "cc_test",
 )
 
 # Note: this target cannot be a cc_library because the toolchain itself depends
@@ -71,6 +72,7 @@ cc_library(
         "pwd.cc",
         "resource.cc",
         "sched.cc",
+        "select.cc",
         "signal.cc",
         "stat.cc",
         "stdlib.cc",
@@ -147,6 +149,21 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
         "//asylo/util:status",
+    ],
+)
+
+cc_test(
+    name = "select_test",
+    srcs = ["select_test.cc"],
+    enclave_test_name = "select_enclave_test",
+    tags = ["regression"],
+    deps = [
+        "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
     ],
 )
 

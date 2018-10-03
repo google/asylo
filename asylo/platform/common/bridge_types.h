@@ -399,6 +399,14 @@ struct BridgeUtsName {
   char domainname[BRIDGE_UTSNAME_FIELD_LENGTH];
 };
 
+#ifndef BRIDGE_FD_SETSIZE
+#define BRIDGE_FD_SETSIZE 1024
+#endif
+
+struct BridgeFDSet {
+  uint8_t file_descriptor_set[BRIDGE_FD_SETSIZE];
+};
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

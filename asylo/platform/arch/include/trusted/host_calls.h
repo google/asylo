@@ -211,6 +211,13 @@ int enc_untrusted_getrusage(int who, struct rusage *usage);
 int enc_untrusted_flock(int fd, int operation);
 
 //////////////////////////////////////
+//         sys/select.h             //
+//////////////////////////////////////
+
+int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
+                         fd_set *exceptfds, struct timeval *timeout);
+
+//////////////////////////////////////
 //          sys/stat.h              //
 //////////////////////////////////////
 

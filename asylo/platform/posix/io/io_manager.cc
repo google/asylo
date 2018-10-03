@@ -23,6 +23,7 @@
 #include <poll.h>
 #include <stdint.h>
 #include <memory>
+#include <unordered_set>
 
 #include "absl/algorithm/container.h"
 #include "absl/strings/str_cat.h"
@@ -280,6 +281,99 @@ int IOManager::Pipe(int pipefd[2]) {
     }
   }
   return res;
+}
+
+int IOManager::Select(int nfds, fd_set *readfds, fd_set *writefds,
+                      fd_set *exceptfds, struct timeval *timeout) {
+  // Translate the fd_sets into host file descriptors.
+  fd_set host_readfds, host_writefds, host_exceptfds;
+  FD_ZERO(&host_readfds);
+  FD_ZERO(&host_writefds);
+  FD_ZERO(&host_exceptfds);
+  int host_nfds = nfds;
+  for (int fd = 0; fd < nfds; ++fd) {
+    if (readfds && FD_ISSET(fd, readfds)) {
+      std::shared_ptr<IOContext> context = fd_table_.Get(fd);
+      if (context) {
+        int host_fd = context->GetHostFileDescriptor();
+        FD_SET(host_fd, &host_readfds);
+        host_nfds = std::max(host_nfds, host_fd + 1);
+      }
+    }
+    if (writefds && FD_ISSET(fd, writefds)) {
+      std::shared_ptr<IOContext> context = fd_table_.Get(fd);
+      if (context) {
+        int host_fd = context->GetHostFileDescriptor();
+        FD_SET(host_fd, &host_writefds);
+        host_nfds = std::max(host_nfds, host_fd + 1);
+      }
+    }
+    if (exceptfds && FD_ISSET(fd, exceptfds)) {
+      std::shared_ptr<IOContext> context = fd_table_.Get(fd);
+      if (context) {
+        int host_fd = context->GetHostFileDescriptor();
+        FD_SET(host_fd, &host_exceptfds);
+        host_nfds = std::max(host_nfds, host_fd + 1);
+      }
+    }
+  }
+  int ret = enc_untrusted_select(host_nfds, &host_readfds, &host_writefds,
+                                 &host_exceptfds, timeout);
+
+  // On error, errno should have been set by the host.
+  if (ret < 0) {
+    return ret;
+  }
+
+  // Add the returned fd_sets into std::unordered_set.
+  std::unordered_set<int> host_readfds_set, host_writefds_set,
+      host_exceptfds_set;
+  for (int fd = 0; fd < nfds; ++fd) {
+    std::shared_ptr<IOContext> context = fd_table_.Get(fd);
+    if (context) {
+      int host_fd = context->GetHostFileDescriptor();
+      if (FD_ISSET(host_fd, &host_readfds)) {
+        host_readfds_set.insert(host_fd);
+      }
+      if (FD_ISSET(host_fd, &host_writefds)) {
+        host_writefds_set.insert(host_fd);
+      }
+      if (FD_ISSET(host_fd, &host_exceptfds)) {
+        host_exceptfds_set.insert(host_fd);
+      }
+    }
+  }
+
+  if (readfds) {
+    FD_ZERO(readfds);
+  }
+  if (writefds) {
+    FD_ZERO(writefds);
+  }
+  if (exceptfds) {
+    FD_ZERO(exceptfds);
+  }
+  // Go through the file descriptor table, if any host file descriptor is
+  // included in any of the sets, add the corresponding enclave fd to the
+  // enclave fd_set.
+  for (int fd = 0; fd < nfds; ++fd) {
+    std::shared_ptr<IOContext> context = fd_table_.Get(fd);
+    if (context) {
+      int host_fd = context->GetHostFileDescriptor();
+      if (readfds && host_readfds_set.find(host_fd) != host_readfds_set.end()) {
+        FD_SET(fd, readfds);
+      }
+      if (writefds &&
+          host_writefds_set.find(host_fd) != host_writefds_set.end()) {
+        FD_SET(fd, writefds);
+      }
+      if (exceptfds &&
+          host_exceptfds_set.find(host_fd) != host_exceptfds_set.end()) {
+        FD_SET(fd, exceptfds);
+      }
+    }
+  }
+  return ret;
 }
 
 int IOManager::Poll(struct pollfd *fds, nfds_t nfds, int timeout) {

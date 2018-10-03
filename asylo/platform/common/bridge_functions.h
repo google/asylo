@@ -29,6 +29,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/times.h>
+#include <sys/types.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <utime.h>
@@ -288,6 +289,13 @@ struct rusage *FromBridgeRUsage(const struct BridgeRUsage *bridge_rusage,
 // Converts |rusage| to a bridge rusage. Returns nullptr if unsuccessful.
 struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
                                     struct BridgeRUsage *bridge_rusage);
+
+// Converts |bridge_fds| to a runtime fd_set. Returns nullptr if unsuccessful.
+fd_set *FromBridgeFDSet(const struct BridgeFDSet *bridge_fds, fd_set *fds);
+
+// Converts |fds| to a bridge fd_set. Returns nullptr if unsuccessful.
+struct BridgeFDSet *ToBridgeFDSet(const fd_set *fds,
+                                  struct BridgeFDSet *bridge_fds);
 
 // These functions follow the standard for the analogous functions in
 // http://man7.org/linux/man-pages/man3/CPU_SET.3.html.

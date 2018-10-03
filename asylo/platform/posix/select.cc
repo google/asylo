@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +16,11 @@
  *
  */
 
-#include <poll.h>
-
 #include <sys/select.h>
-#include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include <sys/time.h>
+#include <sys/types.h>
+
 #include "asylo/platform/posix/io/io_manager.h"
 
 using asylo::io::IOManager;
@@ -30,8 +29,10 @@ using asylo::io::IOManager;
 extern "C" {
 #endif
 
-int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
-  return IOManager::GetInstance().Poll(fds, nfds, timeout);
+int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
+           struct timeval *timeout) {
+  return IOManager::GetInstance().Select(nfds, readfds, writefds, exceptfds,
+                                         timeout);
 }
 
 #ifdef __cplusplus

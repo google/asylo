@@ -1042,6 +1042,54 @@ int enc_untrusted_flock(int fd, int operation) {
 }
 
 //////////////////////////////////////
+//          sys/select.h            //
+//////////////////////////////////////
+
+int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
+                         fd_set *exceptfds, struct timeval *timeout) {
+  BridgeFDSet bridge_readfds, bridge_writefds, bridge_exceptfds;
+  if (readfds && !asylo::ToBridgeFDSet(readfds, &bridge_readfds)) {
+    errno = EBADE;
+    return -1;
+  }
+  if (writefds && !asylo::ToBridgeFDSet(writefds, &bridge_writefds)) {
+    errno = EBADE;
+    return -1;
+  }
+  if (exceptfds && !asylo::ToBridgeFDSet(exceptfds, &bridge_exceptfds)) {
+    errno = EBADE;
+    return -1;
+  }
+  bridge_timeval bridge_timeout;
+  if (!asylo::ToBridgeTimeVal(timeout, &bridge_timeout)) {
+    errno = EBADE;
+    return -1;
+  }
+  int ret;
+  sgx_status_t status =
+      ocall_enc_untrusted_select(&ret, nfds, &bridge_readfds, &bridge_writefds,
+                                 &bridge_exceptfds, &bridge_timeout);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+
+  if (readfds && !asylo::FromBridgeFDSet(&bridge_readfds, readfds)) {
+    errno = EBADE;
+    return -1;
+  }
+  if (writefds && !asylo::FromBridgeFDSet(&bridge_writefds, writefds)) {
+    errno = EBADE;
+    return -1;
+  }
+  if (exceptfds && !asylo::FromBridgeFDSet(&bridge_exceptfds, exceptfds)) {
+    errno = EBADE;
+    return -1;
+  }
+  return ret;
+}
+
+//////////////////////////////////////
 //          sys/syslog.h            //
 //////////////////////////////////////
 
