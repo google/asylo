@@ -36,7 +36,7 @@
 /// ```
 #define ASYLO_RETURN_IF_ERROR(expr)                        \
 do {                                                       \
-  const ::asylo::Status _asylo_status_to_verify = (expr);  \
+  const auto _asylo_status_to_verify = (expr);             \
   if (ABSL_PREDICT_FALSE(!_asylo_status_to_verify.ok())) { \
     return _asylo_status_to_verify;                        \
   }                                                        \
