@@ -20,11 +20,10 @@ licenses(["notice"])  # Apache v2.0
 
 exports_files([
     "asylo.bzl",
-    "proto.bzl",
-    "enclave_unittest.sh",
     "asylo_deps.bzl",
     "install_path.bzl",
     "patch_repository.bzl",
+    "proto.bzl",
     "sgx_deps.bzl",
 ])
 
