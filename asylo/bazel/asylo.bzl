@@ -16,7 +16,7 @@
 
 """Macro definitions for Asylo testing."""
 
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "enclave_info")
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 def _parse_label(label):
@@ -264,7 +264,7 @@ def _make_enclave_runner_rule(test = False):
             "loader_args": attr.string_list(),
             "enclaves": attr.label_keyed_string_dict(
                 allow_files = True,
-                providers = [enclave_info],
+                providers = [EnclaveInfo],
             ),
             "data": attr.label_list(allow_files = True),
         },

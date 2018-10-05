@@ -16,11 +16,11 @@
 
 """Defines a test rule that uses the backend_provider package."""
 
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "enclave_info")
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 
 def _check_enclave_info_impl(ctx):
     """This rule passes through an executable argument if it is not an enclave."""
-    if enclave_info in ctx.attr.executable:
+    if EnclaveInfo in ctx.attr.executable:
         fail("no enclave info please")
 
     return [DefaultInfo(runfiles = ctx.runfiles(files = [ctx.file.executable]))]

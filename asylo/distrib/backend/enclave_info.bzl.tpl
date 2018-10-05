@@ -20,4 +20,4 @@
 # enclaves specifically. The enclave_binary and enclave_test macros then use
 # this information to understand data dependencies and generate command-line
 # arguments to automatically send to the program.
-enclave_info = provider()
+EnclaveInfo = provider()
