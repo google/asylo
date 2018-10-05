@@ -20,7 +20,7 @@
 #include "include/grpc/support/alloc.h"
 
 void safe_string_init(safe_string *safe_str) {
-  safe_str->data = NULL;
+  safe_str->data = nullptr;
   safe_str->size = 0;
 }
 
@@ -44,7 +44,7 @@ void safe_string_free(safe_string *safe_str) {
     gpr_free(safe_str->data);
 
     /* Reset the state. */
-    safe_str->data = NULL;
+    safe_str->data = nullptr;
     safe_str->size = 0;
   }
 }
