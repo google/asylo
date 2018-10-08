@@ -51,7 +51,7 @@ into English.
 This example uses the following service definition from
 [translator_server.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.proto):
 
-```proto
+```protobuf
 // A request message containing a word to be translated.
 message GetTranslationRequest {
   optional string input_word = 1;
@@ -91,7 +91,7 @@ information can be passed through the `Initialize` method, which accepts an
 `EnclaveConfig`. This example extends the `EnclaveConfig` in a new file named
 [grpc_server_config.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_config.proto):
 
-```proto
+```protobuf
 extend asylo.EnclaveConfig {
   // The address that the gRPC server inside the enclave will be hosted on.
   // Required.
