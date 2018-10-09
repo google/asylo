@@ -2132,7 +2132,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
  #endif
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1151 @@
+@@ -0,0 +1,1171 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +package(
@@ -2747,6 +2747,24 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    ],
 +)
 +
++# Target selecting either simulation mode or hardware mode includes for the UAE
++# service library based on the value of SGX_SIM.
++cc_library(
++    name = "uae_service_select",
++    deps = select({
++        ":sgx_hw": [":uae_service_hw"],
++        "//conditions:default": [":uae_service_sim"],
++    }),
++)
++
++# A non-versioned, publicly-consumable target for the UAE service.
++cc_library(
++    name = "uae_service",
++    hdrs = ["include/sgx_uae_service.h"],
++    visibility = ["//visibility:public"],
++    deps = [":uae_service_select"],
++)
++
 +cc_library(
 +    name = "untrusted_sim_inc",
 +    hdrs = [
@@ -2999,6 +3017,8 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "include/sgx_eid.h",
 +        "include/sgx_error.h",
 +        "include/sgx_lfence.h",
++        "include/sgx_quote.h",
++        "include/sgx_report.h",
 +        "include/sgx_thread.h",
 +    ],
 +    copts = [
@@ -3680,6 +3700,24 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +
 +#endif  // _INCLUDE_SGX_LFENCE_H_
 --- /dev/null
++++ include/sgx_quote.h
+@@ -0,0 +1,6 @@
++#ifndef _INCLUDE_SGX_QUOTE_H_
++#define _INCLUDE_SGX_QUOTE_H_
++
++#include "common/inc/sgx_quote.h"  // IWYU pragma: export
++
++#endif  // _INCLUDE_SGX_QUOTE_H_
+--- /dev/null
++++ include/sgx_report.h
+@@ -0,0 +1,6 @@
++#ifndef _INCLUDE_SGX_REPORT_H_
++#define _INCLUDE_SGX_REPORT_H_
++
++#include "common/inc/sgx_report.h"  // IWYU pragma: export
++
++#endif  // _INCLUDE_SGX_REPORT_H_
+--- /dev/null
 +++ include/sgx_thread.h
 @@ -0,0 +1,6 @@
 +#ifndef _INCLUDE_SGX_THREAD_H_
@@ -3706,6 +3744,15 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +#include "common/inc/sgx_trts_exception.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_TRTS_EXCEPTION_H_
+--- /dev/null
++++ include/sgx_uae_service.h
+@@ -0,0 +1,6 @@
++#ifndef _INCLUDE_SGX_UAE_SERVICE_H_
++#define _INCLUDE_SGX_UAE_SERVICE_H_
++
++#include "common/inc/sgx_uae_service.h"  // IWYU pragma: export
++
++#endif  // _INCLUDE_SGX_UAE_SERVICE_H_
 --- /dev/null
 +++ include/sgx_urts.h
 @@ -0,0 +1,6 @@
