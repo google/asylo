@@ -179,7 +179,8 @@ StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
     rc = sgx_create_enclave_from_buffer(enclave_buffer.data(),
                                         enclave_buffer.size(), debug_,
                                         &client->token_, &updated, &client->id_,
-                                        /*misc_attr=*/nullptr);
+                                        /*misc_attr=*/nullptr,
+                                        /*enclave_base_addr=*/nullptr);
   } while (rc == SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED &&
            --attempts > 0);
   if (rc != SGX_SUCCESS) {
