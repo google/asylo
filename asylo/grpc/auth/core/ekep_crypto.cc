@@ -23,6 +23,7 @@
 #include <openssl/hkdf.h>
 #include <openssl/hmac.h>
 #include <openssl/mem.h>
+#include <openssl/rand.h>
 #include <openssl/sha.h>
 
 #include <cstdint>
@@ -165,6 +166,14 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
   switch (record_protocol) {
     case SEAL_AES128_GCM:
       record_protocol_key->resize(kSealAes128GcmKeySize);
+      // Randomize the key bytes just in case the key is mistakenly used even
+      // when the key derivation fails. The byte-sequence in uninitialized
+      // memory could be predictable and, as a result, an attacker may be able
+      // to recover data that is encrypted by a key whose underlying bytes are
+      // uninitialized. Initializing the key with a truly random value makes it
+      // impossible for an attacker to recover any data that is mistakenly
+      // encrypted with the key.
+      RAND_bytes(record_protocol_key->data(), record_protocol_key->size());
       break;
     default:
       return Status(Abort_ErrorCode_BAD_RECORD_PROTOCOL,
