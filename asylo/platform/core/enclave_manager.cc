@@ -238,22 +238,24 @@ StatusOr<EnclaveManager *> EnclaveManager::Instance() {
 }
 
 Status EnclaveManager::LoadEnclave(const std::string &name,
-                                   const EnclaveLoader &loader) {
-  return LoadEnclaveInternal(name, loader,
-                             CreateDefaultEnclaveConfig(host_config_));
+                                   const EnclaveLoader &loader,
+                                   void *base_address) {
+  return LoadEnclaveInternal(
+      name, loader, CreateDefaultEnclaveConfig(host_config_), base_address);
 }
 
 Status EnclaveManager::LoadEnclave(const std::string &name,
                                    const EnclaveLoader &loader,
-                                   EnclaveConfig config) {
+                                   EnclaveConfig config, void *base_address) {
   EnclaveConfig sanitized_config = std::move(config);
   SetEnclaveConfigDefaults(host_config_, &sanitized_config);
-  return LoadEnclaveInternal(name, loader, sanitized_config);
+  return LoadEnclaveInternal(name, loader, sanitized_config, base_address);
 }
 
 Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
                                            const EnclaveLoader &loader,
-                                           const EnclaveConfig &config) {
+                                           const EnclaveConfig &config,
+                                           void *base_address) {
   // Check whether a client with this name already exists.
   if (client_by_name_.find(name) != client_by_name_.end()) {
     Status status(error::GoogleError::ALREADY_EXISTS,
@@ -263,7 +265,8 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
   }
 
   // Attempt to load the enclave.
-  StatusOr<std::unique_ptr<EnclaveClient>> result = loader.LoadEnclave(name);
+  StatusOr<std::unique_ptr<EnclaveClient>> result =
+      loader.LoadEnclave(name, base_address);
   if (!result.ok()) {
     LOG(ERROR) << "LoadEnclave failed: " << result.status();
     return result.status();

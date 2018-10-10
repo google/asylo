@@ -148,7 +148,7 @@ static Status handle_signal(sgx_enclave_id_t eid, const char *input,
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
-    const std::string &name) const {
+    const std::string &name, void *base_address) const {
   std::unique_ptr<SGXClient> client(new SGXClient(name));
   if (!client) {
     return Status(error::GoogleError::RESOURCE_EXHAUSTED, "Out of memory");
@@ -179,13 +179,13 @@ StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
     rc = sgx_create_enclave_from_buffer(enclave_buffer.data(),
                                         enclave_buffer.size(), debug_,
                                         &client->token_, &updated, &client->id_,
-                                        /*misc_attr=*/nullptr,
-                                        /*enclave_base_addr=*/nullptr);
+                                        /*misc_attr=*/nullptr, &base_address);
   } while (rc == SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED &&
            --attempts > 0);
   if (rc != SGX_SUCCESS) {
     return Status(rc, "Failed to create an enclave");
   }
+  client->base_address_ = base_address;
   return std::unique_ptr<EnclaveClient>(client.release());
 }
 

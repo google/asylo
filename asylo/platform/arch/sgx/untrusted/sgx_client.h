@@ -46,6 +46,9 @@ class SGXClient : public EnclaveClient {
   // simulation mode.
   bool IsTcsActive();
 
+  void *base_address() { return base_address_; }
+  const void *base_address() const { return base_address_; }
+
  private:
   friend class SGXLoader;
 
@@ -58,6 +61,7 @@ class SGXClient : public EnclaveClient {
   std::string path_;               // Path to enclave object file.
   sgx_launch_token_t token_ = {0};  // SGX SDK launch token.
   sgx_enclave_id_t id_;       // SGX SDK enclave identifier.
+  void *base_address_;        // SGX SDK enclave base address.
 };
 
 /// Enclave loader for Intel Software Guard Extension (SGX) based enclaves.
@@ -96,7 +100,7 @@ class SGXLoader : public EnclaveLoader {
   static constexpr size_t kWholeFileIndex = 1;
 
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name) const override;
+      const std::string &name, void *base_address = nullptr) const override;
 
   const EnclaveSourceType enclave_source_;
   const bool debug_;

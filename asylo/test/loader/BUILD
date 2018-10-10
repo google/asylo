@@ -16,6 +16,9 @@
 
 licenses(["notice"])  # Apache v2.0
 
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("//asylo/bazel:asylo.bzl", "enclave_test")
+
 cc_test(
     name = "loader_test",
     size = "small",
@@ -27,6 +30,30 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Trivial SGX enclave.
+sgx_enclave(
+    name = "enclave_address.so",
+    srcs = ["enclave_address_test_enclave.cc"],
+    deps = ["//asylo:enclave_runtime"],
+)
+
+enclave_test(
+    name = "enclave_address_test",
+    srcs = ["enclave_address_test_driver.cc"],
+    enclaves = {"enclave": "enclave_address.so"},
+    tags = ["regression"],
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_googletest//:gtest",
     ],
 )

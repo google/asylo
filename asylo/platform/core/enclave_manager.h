@@ -179,7 +179,8 @@ class EnclaveManager {
   ///
   /// \param name Name to bind the loaded enclave under.
   /// \param loader Configured enclave loader to load from.
-  Status LoadEnclave(const std::string &name, const EnclaveLoader &loader);
+  Status LoadEnclave(const std::string &name, const EnclaveLoader &loader,
+                     void *base_address = nullptr);
 
   /// Loads an enclave.
   ///
@@ -201,7 +202,7 @@ class EnclaveManager {
   /// \param loader Configured enclave loader to load from.
   /// \param config Enclave configuration to launch the enclave with.
   Status LoadEnclave(const std::string &name, const EnclaveLoader &loader,
-                     EnclaveConfig config);
+                     EnclaveConfig config, void *base_address = nullptr);
 
   /// Fetches a client to a loaded enclave.
   ///
@@ -262,7 +263,8 @@ class EnclaveManager {
   // name. The actual work of opening the enclave is delegated to the passed
   // loader object.
   Status LoadEnclaveInternal(const std::string &name, const EnclaveLoader &loader,
-                             const EnclaveConfig &config);
+                             const EnclaveConfig &config,
+                             void *base_address = nullptr);
 
   // Create a thread to periodically update logic.
   void SpawnWorkerThread();
@@ -318,7 +320,7 @@ class EnclaveLoader {
   // Loads an enclave, returning a pointer to a client on success and a non-ok
   // status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name) const = 0;
+      const std::string &name, void *base_address = nullptr) const = 0;
 };
 
 // Stores the mapping between signals and the enclave with a handler installed
