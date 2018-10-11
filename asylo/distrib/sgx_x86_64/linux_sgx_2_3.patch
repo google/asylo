@@ -2376,12 +2376,8 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
  #endif
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1171 @@
+@@ -0,0 +1,1170 @@
 +# linux-sgx is the Intel SGX SDK
-+
-+package(
-+    default_visibility = ["//visibility:public"],
-+)
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
@@ -2424,9 +2420,13 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    values = {
 +        "compilation_mode": "dbg",
 +    },
++    visibility = ["//visibility:public"],
 +)
 +
-+sgx_enclave_configuration(name = "enclave_debug_config")
++sgx_enclave_configuration(
++    name = "enclave_debug_config",
++    visibility = ["//visibility:public"],
++)
 +
 +
 +proto_library(
@@ -2562,11 +2562,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    "-Iexternal/linux_sgx/psw/ae/aesm_service/source",
 +]
 +
-+filegroup(
-+    name = "build_tools",
-+    srcs = glob(["tools/**"]),
-+)
-+
 +cc_library(
 +    name = "se_wrapper",
 +    srcs = [
@@ -2581,7 +2576,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    copts = [
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc_internal",
 +        ":untrusted_inc",
@@ -2613,7 +2607,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Wl,--export-dynamic",
 +        "-lrt",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
@@ -2685,7 +2678,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    textual_hdrs = [
 +        "external/vtune/linux/sdk/src/ittnotify/ittnotify_static.h",
 +    ],
-+    visibility = ["//visibility:private"],
 +)
 +
 +cc_binary(
@@ -2717,11 +2709,12 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Iexternal/boringssl",
 +        "-DSE_DEBUG_LEVEL=SE_TRACE_DEBUG",
 +    ],
++    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":untrusted_inc_internal",
-+        ":urts",
++        ":urts_select",
 +        "@boringssl//:crypto",
 +    ],
 +)
@@ -2875,7 +2868,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Iexternal/boringssl",
 +    ],
 +    features = ["pic"],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc_internal",
 +        "@boringssl//:crypto",
@@ -2908,7 +2900,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    ],
 +    linkstatic = 1,
 +    textual_hdrs = RTS_COMMON_TEXTUAL_HDRS,
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
@@ -2978,7 +2969,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Wl,--export-dynamic",
 +        "-lrt",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
@@ -3133,7 +3123,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    includes = [
 +        "common/inc",
 +    ],
-+    visibility = ["//visibility:private"],
 +)
 +
 +cc_library(
@@ -3141,7 +3130,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    hdrs = [
 +        "common/inc/sgx_urts.h",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [":common_inc"],
 +)
 +
@@ -3204,7 +3192,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    textual_hdrs = [
 +        "common/inc/internal/inst.h",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":epid_inc",
@@ -3241,7 +3228,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Iexternal/linux_sgx/psw/ae/inc/internal",
 +        "-Iexternal/boringssl",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
@@ -3268,6 +3254,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    copts = [
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +    ],
++    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
@@ -3291,9 +3278,9 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +# Target selecting either simulation or hardware mode untrusted include files
 +# based on the value of SGX_SIM.
 +cc_library(
-+    name = "urts",
++    name = "urts_select",
 +    # Reprovide untrusted_inc's header to avoid layering violation.
-+    hdrs = URTS_COMMON_HDRS + ["include/sgx_urts.h"],
++    hdrs = URTS_COMMON_HDRS,
 +    copts = [
 +        "-Wa,--noexecstack",
 +        "-Iexternal/linux_sgx/common/inc/internal",
@@ -3327,6 +3314,14 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    }),
 +)
 +
++# A non-versioned publicly-consumable urts.
++cc_library(
++    name = "urts",
++    hdrs = ["include/sgx_urts.h"],
++    visibility = ["//visibility:public"],
++    deps = [":urts_select"],
++)
++
 +# The following targets are designed with to be build with the Asylo toolchain.
 +cc_library(
 +    name = "trusted_inc",
@@ -3341,7 +3336,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    copts = [
 +        "-ffreestanding",
 +    ],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":sgx_runtime_support",
@@ -3362,6 +3356,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "runtime_support/rts_config.h",
 +    ],
 +    includes = ["runtime_support"],
++    visibility = ["//visibility:public"],
 +    deps = [":common_inc"],
 +)
 +
@@ -3390,7 +3385,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "-Iexternal/boringssl",
 +    ],
 +    linkopts = ["-Wl,--export-dynamic"],
-+    visibility = ["//visibility:private"],
 +    deps = [
 +        ":common_inc",
 +        ":epid_inc",
@@ -3450,6 +3444,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +# A wrapping library that wraps linux_sgx targets used by enclave.
 +cc_library(
 +    name = "intel_runtime",
++    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc",
 +        ":sgx_spin_lock",
@@ -3481,6 +3476,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "include/sgx_trts.h",
 +        "include/sgx_trts_exception.h",
 +    ],
++    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc",
 +        ":trusted_inc",
@@ -3526,6 +3522,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +          "cp $$BUILD/Edger8r.native $$OUT",
 +    executable = True,
 +    output_to_bindir = True,
++    visibility = ["//visibility:public"],
 +)
 +
 +# These configuration settings are used to select build configurations based
@@ -3540,6 +3537,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    values = {
 +        "define": "SGX_SIM=0",
 +    },
++    visibility = ["//visibility:public"],
 +)
 +
 +config_setting(
@@ -3547,6 +3545,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    values = {
 +        "define": "SGX_SIM=1",
 +    },
++    visibility = ["//visibility:public"],
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
