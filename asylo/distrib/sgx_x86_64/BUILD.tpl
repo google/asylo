@@ -21,10 +21,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_toolchain_suite(
     name = "crosstool",
-    toolchains = {
-    "sgx_x86_64": "cc-compiler",
-    "sgx_x86_64|compiler": "cc-compiler",
-    },
+    toolchains = {"sgx_x86_64|compiler": "cc-compiler"},
 )
 
 filegroup(
