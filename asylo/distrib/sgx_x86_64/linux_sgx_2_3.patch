@@ -2376,7 +2376,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
  #endif
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1170 @@
+@@ -0,0 +1,1171 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +# "notice" licenses present:
@@ -2947,6 +2947,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +        "sdk/simulation/uae_service_sim/quoting_sim.cpp",
 +        "sdk/simulation/uae_service_sim/uae_service_sim.h",
 +        "sdk/simulation/urtssim/cpusvn_util.h",
++        "sdk/simulation/urtssim/cpusvn_util.cpp",
 +    ],
 +    hdrs = PSW_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
@@ -2985,7 +2986,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +# service library based on the value of SGX_SIM.
 +cc_library(
 +    name = "uae_service_select",
-+    deps = select({
++    deps = [":se_wrapper"] + select({
 +        ":sgx_hw": [":uae_service_hw"],
 +        "//conditions:default": [":uae_service_sim"],
 +    }),
