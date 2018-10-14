@@ -188,6 +188,9 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   to `start_addr` in `create_enclave`.
   `sdk/simulation/uinst/u_instructions.cpp` change `se_virtual_alloc`
   address for `NULL` to `pi->lin_addr` in `_ECREATE`.
+  `psw/enclave_common/sgx_enclave_common.cpp` add a static `pid`, and
+  check the pid everytime when checking `s_enclave_init` table. If `pid` has
+  changed, clear `s_enclave_int` table.
 
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
@@ -564,7 +567,22 @@ diff -Nur psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSer
 diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_enclave_common.cpp
 --- psw/enclave_common/sgx_enclave_common.cpp
 +++ psw/enclave_common/sgx_enclave_common.cpp
-@@ -63,7 +63,7 @@
+@@ -43,12 +43,14 @@
+ #include <sys/ioctl.h>
+ #include <sys/mman.h>
+ #include <sys/types.h>
++#include <unistd.h>
+ 
+ #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
+ 
+ static se_file_handle_t s_hdevice = -1;
+ static bool s_is_kernel_driver = false;
+ static se_mutex_t s_device_mutex;
++static pid_t s_pid = -1;
+ 
+ static std::map<void*, size_t> s_enclave_size;
+ static std::map<void*, bool> s_enclave_init;
+@@ -63,7 +65,7 @@
  
  static std::map<void*, mem_region_t> s_enclave_mem_region;
  
@@ -573,7 +591,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
  {
      se_mutex_lock(&s_device_mutex);
      if (s_hdevice != -1) {
-@@ -83,7 +83,7 @@
+@@ -83,7 +85,7 @@
      return false;
  }
  
@@ -582,6 +600,20 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
  {
      se_mutex_lock(&s_device_mutex);
  
+@@ -441,6 +443,13 @@
+     }
+ 
+     se_mutex_lock(&s_enclave_mutex);
++    // If the process ID has changed, |s_enclave_init| is inherited from a
++    // parent process. The enclaves are not going to be copied, so clear the
++    // table.
++    if (s_pid != -1 && s_pid != getpid()) {
++      s_enclave_init.clear();
++    }
++    s_pid = getpid();
+     std::map<void*, bool>::iterator it = s_enclave_init.find(base_address);
+     if (it != s_enclave_init.end() && it->second) {
+         se_mutex_unlock(&s_enclave_mutex);
 diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 --- psw/urts/cpu_features.h
 +++ psw/urts/cpu_features.h

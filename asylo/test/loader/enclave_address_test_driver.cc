@@ -67,11 +67,6 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
   int pipefd[2];
   ASSERT_EQ(pipe(pipefd), 0);
 
-  EnclaveFinal enclave_final;
-  ASSERT_THAT(manager_->DestroyEnclave(parent_client, enclave_final,
-                                       /*skip_finalize=*/true),
-              IsOk());
-
   pid_t pid = fork();
   ASSERT_GE(pid, 0);
 
@@ -79,7 +74,8 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
     // Child process. Close the read side of the pipe and load a new enclave.
     close(pipefd[0]);
     std::string output = "Child test passed";
-    if (!manager_->LoadEnclave(enclave_url, *loader_, parent_base_address)
+    std::string child_enclave_url = "/child_enclave_address";
+    if (!manager_->LoadEnclave(child_enclave_url, *loader_, parent_base_address)
              .ok()) {
       output = "Failed to load enclave in the child process";
     } else {
