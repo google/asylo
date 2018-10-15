@@ -16,7 +16,6 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:asylo.bzl", "enclave_test")
 
 cc_test(
@@ -34,17 +33,10 @@ cc_test(
     ],
 )
 
-# Trivial SGX enclave.
-sgx_enclave(
-    name = "enclave_address.so",
-    srcs = ["enclave_address_test_enclave.cc"],
-    deps = ["//asylo:enclave_runtime"],
-)
-
 enclave_test(
     name = "enclave_address_test",
     srcs = ["enclave_address_test_driver.cc"],
-    enclaves = {"enclave": "enclave_address.so"},
+    enclaves = {"enclave": "//asylo/test/util:do_nothing_enclave.so"},
     tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
