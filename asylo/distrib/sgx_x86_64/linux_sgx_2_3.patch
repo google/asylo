@@ -191,6 +191,19 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `psw/enclave_common/sgx_enclave_common.cpp` add a static `pid`, and
   check the pid everytime when checking `s_enclave_init` table. If `pid` has
   changed, clear `s_enclave_int` table.
+* Add a utility specifier to edger8r.
+  `sdk/edger8r/linux/Ast.ml` add tf_is_utility field to trusted_func.
+  `sdk/edger8r/linux/CodeGen.ml` add is_utility_ecall check, add
+  tf_list_to_utility_list method, fold it into ecall table in `gen_ecall_table`,
+  check the value in `gen_func_uproxy` and add this as a new parameter to
+  `sgx_ecall`, add check to `check_priv_funcs` to check for at least one
+  non-private and non-utility ecall.
+  `sdk/edger8r/linux/Lexer.mll` add Tutility to the parse rule.
+  `sdk/edger8r/linux/Parser.mly` add Tutility to token, add utility check
+  in trusted_functions parser.
+  `common/inc/sgx_edger8r.h`, `common/inc/internal/routine.h`,
+  `psw/urts/routine.cpp` add a new bool variable `is_utility` to
+  `sgx_ecall`.
 
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
@@ -257,6 +270,27 @@ diff -Nur common/inc/internal/pcl_common.h common/inc/internal/pcl_common.h
  /*
   * This file includes definition used by PCL library and encryption tool
   */
+diff -Nur common/inc/internal/routine.h common/inc/internal/routine.h
+--- common/inc/internal/routine.h
++++ common/inc/internal/routine.h
+@@ -36,6 +36,8 @@
+ #include "sgx_error.h"
+ #include "sgx_defs.h"
+ 
++#include <stdbool.h>
++
+ #ifdef __cplusplus
+ extern "C" {
+ #endif
+@@ -46,7 +48,7 @@
+     void *ocall[];
+ } sgx_ocall_table_t;
+ 
+-sgx_status_t SGXAPI sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms);
++sgx_status_t SGXAPI sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, bool is_utility);
+ 
+ #ifdef __cplusplus
+ }
 diff -Nur common/inc/internal/se_tcrypto_common.h common/inc/internal/se_tcrypto_common.h
 --- common/inc/internal/se_tcrypto_common.h
 +++ common/inc/internal/se_tcrypto_common.h
@@ -296,6 +330,33 @@ diff -Nur common/inc/internal/sl_workers.h common/inc/internal/sl_workers.h
  #endif /* SL_INSIDE_ENCLAVE */
  };
  
+diff -Nur common/inc/sgx_edger8r.h common/inc/sgx_edger8r.h
+--- common/inc/sgx_edger8r.h
++++ common/inc/sgx_edger8r.h
+@@ -47,6 +47,7 @@
+ #include "sgx_error.h"
+ #include "sgx_eid.h"
+ #include <stddef.h>         /* for size_t */
++#include <stdbool.h>
+ 
+ /* The `sgx_edger8r' tool will generate C interfaces. */
+ #ifdef __cplusplus
+@@ -90,11 +91,13 @@
+ sgx_status_t SGXAPI sgx_ecall(const sgx_enclave_id_t eid,
+                               const int index,
+                               const void* ocall_table,
+-                              void* ms);
++                              void* ms,
++                              bool is_utility);
+ sgx_status_t SGXAPI sgx_ecall_switchless(const sgx_enclave_id_t eid,
+                               const int index,
+                               const void* ocall_table,
+-                              void* ms);
++                              void* ms,
++                              bool is_utility);
+ 
+ /* sgx_ocall()
+  * Parameters:
 diff -Nur common/inc/sgx_pcl_guid.h common/inc/sgx_pcl_guid.h
 --- common/inc/sgx_pcl_guid.h
 +++ common/inc/sgx_pcl_guid.h
@@ -1354,6 +1415,38 @@ diff -Nur psw/urts/parser/update_global_data.hxx psw/urts/parser/update_global_d
  namespace {
      layout_entry_t *get_entry_by_id(const metadata_t *const metadata, uint16_t id)
      {
+diff -Nur psw/urts/routine.cpp psw/urts/routine.cpp
+--- psw/urts/routine.cpp
++++ psw/urts/routine.cpp
+@@ -37,7 +37,7 @@
+ #include "rts_cmd.h"
+ 
+ static
+-sgx_status_t _sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, const bool is_switchless)
++sgx_status_t _sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, bool is_utility, const bool is_switchless)
+ {
+     if ((proc != ECMD_RUN_SWITCHLESS_TWORKER) &&  (proc < 0))
+     {
+@@ -63,15 +63,15 @@
+ }
+ 
+ extern "C"
+-sgx_status_t sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms)
++sgx_status_t sgx_ecall(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, bool is_utility)
+ {
+-    return _sgx_ecall(enclave_id, proc, ocall_table, ms, false);
++    return _sgx_ecall(enclave_id, proc, ocall_table, ms, is_utility, false);
+ }
+ 
+ extern "C"
+-sgx_status_t sgx_ecall_switchless(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms)
++sgx_status_t sgx_ecall_switchless(const sgx_enclave_id_t enclave_id, const int proc, const void *ocall_table, void *ms, bool is_utility)
+ {
+-    return _sgx_ecall(enclave_id, proc, ocall_table, ms, true);
++    return _sgx_ecall(enclave_id, proc, ocall_table, ms, is_utility, true);
+ }
+ 
+ extern "C"
 diff -Nur psw/urts/section_info.h psw/urts/section_info.h
 --- psw/urts/section_info.h
 +++ psw/urts/section_info.h
@@ -1619,6 +1712,18 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
  }
  
  
+diff -Nur psw/uswitchless/sl_workers_untrusted.c psw/uswitchless/sl_workers_untrusted.c
+--- psw/uswitchless/sl_workers_untrusted.c
++++ psw/uswitchless/sl_workers_untrusted.c
+@@ -206,7 +206,7 @@
+     BUG_ON(workers->handle->us_ocall_table == NULL);
+     struct sl_uswitchless* handle = workers->handle;
+     sgx_ecall(handle->us_enclave_id, ECMD_RUN_SWITCHLESS_TWORKER,
+-              handle->us_ocall_table, NULL);
++              handle->us_ocall_table, NULL, /*is_utility=*/false);
+     return 0;
+ }
+ 
 diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
 --- sdk/edger8r/linux/Ast.ml
 +++ sdk/edger8r/linux/Ast.ml
@@ -1634,15 +1739,16 @@ diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
  (* Function declaration. *)
  type func_decl = {
    fname : string;       (* function name. *)
-@@ -165,6 +170,7 @@
+@@ -165,6 +170,8 @@
    tf_fdecl   : func_decl;
    tf_is_priv : bool;   (* private or not, see above comment *)
    tf_is_switchless : bool;
 +  tf_is_exception_handler : bool;
++  tf_is_utility : bool;
  }
  
  (* untrust function(aka ocall) declaration. *)
-@@ -190,6 +196,7 @@
+@@ -190,6 +197,7 @@
  type expr =
    | Interface of enclave_func list
    | Composite of composite_type
@@ -1650,7 +1756,7 @@ diff -Nur sdk/edger8r/linux/Ast.ml sdk/edger8r/linux/Ast.ml
    | Importing of import_decl
    | Include   of string
  
-@@ -215,6 +222,7 @@
+@@ -215,6 +223,7 @@
    include_list : string list;
    import_exprs : import_decl list;
    comp_defs    : composite_type list;
@@ -1677,27 +1783,33 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      tfunc_decls  = [];
      ufunc_decls  = []; }
  
-@@ -84,6 +86,9 @@
+@@ -84,6 +86,12 @@
  let is_priv_ecall (tf: Ast.trusted_func) =
    tf.Ast.tf_is_priv
  
 +let is_exception_ecall (tf: Ast.trusted_func) =
 +  tf.Ast.tf_is_exception_handler
 +
++let is_utility_ecall (tf: Ast.trusted_func) =
++  tf.Ast.tf_is_utility
++
  let get_uf_fname (uf: Ast.untrusted_func) =
    uf.Ast.uf_fdecl.Ast.fname
  
-@@ -99,6 +104,9 @@
+@@ -99,6 +107,12 @@
  let tf_list_to_priv_list (tfs: Ast.trusted_func list) =
    List.map is_priv_ecall tfs
  
 +let tf_list_to_exception_list (tfs: Ast.trusted_func list) =
 +  List.map is_exception_ecall tfs
 +
++let tf_list_to_utility_list (tfs: Ast.trusted_func list) =
++  List.map is_utility_ecall tfs
++
  (* Get a list of names of all private ECALLs *)
  let get_priv_ecall_names (tfs: Ast.trusted_func list) =
    List.filter is_priv_ecall tfs |> List.map get_tf_fname
-@@ -118,11 +126,13 @@
+@@ -118,11 +132,13 @@
    let ac_include_list = ref [] in
    let ac_import_exprs = ref [] in
    let ac_comp_defs = ref [] in
@@ -1711,7 +1823,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
          | Ast.Include   x -> ac_include_list := x :: !ac_include_list
          | Ast.Importing x -> ac_import_exprs := x :: !ac_import_exprs
          | Ast.Interface xs ->
-@@ -138,6 +148,7 @@
+@@ -138,6 +154,7 @@
        include_list = List.rev !ac_include_list;
        import_exprs = List.rev !ac_import_exprs;
        comp_defs    = List.rev !ac_comp_defs;
@@ -1719,7 +1831,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
        tfunc_decls  = List.rev !ac_tfunc_decls;
        ufunc_decls  = List.rev !ac_ufunc_decls; }
  
-@@ -347,6 +358,62 @@
+@@ -347,6 +364,62 @@
        | Ast.UnionDef  u -> mk_union_decl  (gen_member_list u.Ast.mlist) u.Ast.sname
        | Ast.EnumDef   e -> mk_enum_def    e
  
@@ -1782,16 +1894,16 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
  (* Generate a list of '#include' *)
  let gen_include_list (xs: string list) =
    List.fold_left (fun acc s -> acc ^ sprintf "#include \"%s\"\n" s) "" xs
-@@ -391,15 +458,23 @@
+@@ -391,15 +464,24 @@
  
  (* ---------------------------------------------------------------------- *)
  
-+let fold_left3 f arg a b c =
++let fold_left4 f arg a b c d =
 +  let rec loop arg = function
-+    | x::xs, y::ys, z::zs -> loop(f arg x y z) (xs, ys, zs)
-+    | [], [], [] -> arg
++    | w::ws, x::xs, y::ys, z::zs -> loop(f arg w x y z) (ws, xs, ys, zs)
++    | [], [], [], [] -> arg
 +  in
-+  loop arg (a, b, c)
++  loop arg (a, b, c, d)
 +
  (* `gen_ecall_table' is used to generate ECALL table with the following form:
      SGX_EXTERNC const struct {
@@ -1800,18 +1912,20 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
             void   *ecall_addr;
             uint8_t is_priv;
 +           uint8_t is_exception;
++           uint8_t is_utility;
         } ecall_table [nr_ecall];
     } g_ecall_table = {
 -       2, { {sgx_foo, 1}, {sgx_bar, 0} }
-+       2, { {sgx_foo, 1, 0}, {sgx_bar, 0, 1} }
++       2, { {sgx_foo, 1, 0, 1}, {sgx_bar, 0, 1, 0} }
     };
  *)
  let gen_ecall_table (tfs: Ast.trusted_func list) =
-@@ -407,18 +482,19 @@
+@@ -407,18 +489,20 @@
    let ecall_table_size = List.length tfs in
    let trusted_fds = tf_list_to_fd_list tfs in
    let priv_bits = tf_list_to_priv_list tfs in
 +  let exception_bits = tf_list_to_exception_list tfs in
++  let utility_bits = tf_list_to_utility_list tfs in
    let tbridge_names = List.map (fun (fd: Ast.func_decl) ->
                                    mk_tbridge_name fd.Ast.fname) trusted_fds in
    let ecall_table =
@@ -1819,18 +1933,18 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      let inner_table =
 -      List.fold_left2 (fun acc s b ->
 -        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d},\n" acc s (bool_to_int b)) "" tbridge_names priv_bits
-+      fold_left3 (fun acc s is_priv is_exception_handler ->
-+        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d, %d},\n" acc s (bool_to_int is_priv) (bool_to_int is_exception_handler)) "" tbridge_names priv_bits exception_bits
++      fold_left4 (fun acc s is_priv is_exception_handler is_utility ->
++        sprintf "%s\t\t{(void*)(uintptr_t)%s, %d, %d, %d},\n" acc s (bool_to_int is_priv) (bool_to_int is_exception_handler) (bool_to_int is_utility)) "" tbridge_names priv_bits exception_bits utility_bits
      in "\t{\n" ^ inner_table ^ "\t}\n"
    in
      sprintf "SGX_EXTERNC const struct {\n\
  \tsize_t nr_ecall;\n\
 -\tstruct {void* ecall_addr; uint8_t is_priv;} ecall_table[%d];\n\
-+\tstruct {void* ecall_addr; uint8_t is_priv; uint8_t is_exception;} ecall_table[%d];\n\
++\tstruct {void* ecall_addr; uint8_t is_priv; uint8_t is_exception; uint8_t is_utility; } ecall_table[%d];\n\
  } %s = {\n\
  \t%d,\n\
  %s};\n" ecall_table_size
-@@ -677,12 +753,18 @@
+@@ -677,12 +761,18 @@
                                 acc ^ ", " ^ mk_parm_name pty dlr) p0 ps)
  
  (* Generate untrusted bridge code for a given untrusted function. *)
@@ -1851,7 +1965,26 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let ms_struct_name = mk_ms_struct_name fd.Ast.fname in
    let declare_ms_ptr = sprintf "%s* %s = SGX_CAST(%s*, %s);"
                                 ms_struct_name
-@@ -1372,7 +1454,7 @@
+@@ -741,6 +831,7 @@
+ (* Generate untrusted proxy code for a given trusted function. *)
+ let gen_func_uproxy (tf: Ast.trusted_func) (idx: int) (ec: enclave_content) =
+   let fd = tf.Ast.tf_fdecl in
++  let is_utility = tf.Ast.tf_is_utility in
+   let func_open  =
+     gen_uproxy_com_proto fd ec.enclave_name ^
+       "\n{\n\tsgx_status_t status;\n"
+@@ -754,8 +845,8 @@
+   let sgx_ecall_fn = get_sgx_fname SGX_ECALL tf.Ast.tf_is_switchless in
+ 
+   (* Normal case - do ECALL with marshaling structure*)
+-  let ecall_with_ms = sprintf "status = %s(%s, %d, %s, &%s);"
+-                              sgx_ecall_fn eid_name idx ocall_table_ptr ms_struct_val in
++  let ecall_with_ms = sprintf "status = %s(%s, %d, %s, &%s, %s);"
++                              sgx_ecall_fn eid_name idx ocall_table_ptr ms_struct_val (if is_utility then "true" else "false") in
+ 
+   (* Rare case - the trusted function doesn't have parameter nor return value.
+    * In this situation, no marshaling structure is required - passing in NULL.
+@@ -1372,7 +1463,7 @@
       List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
  
  (* Generate trusted proxy code for a given untrusted function. *)
@@ -1860,7 +1993,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let fd = ufunc.Ast.uf_fdecl in
    let propagate_errno = ufunc.Ast.uf_propagate_errno in
    let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
-@@ -1435,7 +1517,13 @@
+@@ -1435,7 +1526,13 @@
                               Ast.PTVal _ -> acc
                 | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
  
@@ -1875,7 +2008,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let func_close = sprintf "%s%s%s\n%s%s\n"
                             (handle_out_ptr fd.Ast.plist)
                             set_errno
-@@ -1495,12 +1583,16 @@
+@@ -1495,12 +1592,16 @@
        ec.tfunc_decls
        (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
    in
@@ -1893,7 +2026,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      List.iter (fun s -> output_string out_chan (s ^ "\n")) ubridge_list;
      output_string out_chan (gen_ocall_table ec);
      List.iter (fun s -> output_string out_chan (s ^ "\n")) uproxy_list;
-@@ -1537,14 +1629,18 @@
+@@ -1537,14 +1638,18 @@
      List.map (fun tfd -> gen_func_tbridge tfd dummy_var) trusted_fds in
    let ecall_table = gen_ecall_table ec.tfunc_decls in
    let entry_table = gen_entry_table ec in
@@ -1913,20 +2046,29 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      output_string out_chan (ecall_table ^ "\n");
      output_string out_chan (entry_table ^ "\n");
      output_string out_chan "\n";
-@@ -1648,9 +1744,10 @@
+@@ -1647,10 +1752,18 @@
+   in
      List.iter check_ecall priv_ecall_names
  
- (* Check that there is at least one public ECALL function. *)
+-(* Check that there is at least one public ECALL function. *)
 -let check_priv_funcs (ec: enclave_content) =
-+let check_priv_and_exception_funcs (ec: enclave_content) =
++let rec for_all3 f l1 l2 l3 =
++    match (l1, l2, l3) with
++      ([], [], []) -> true
++    | (a1::l1, a2::l2, a3::l3) -> f a1 a2 a3 && for_all3 f l1 l2 l3
++    | (_, _, _) -> invalid_arg "for_all3"
++
++(* Check that there is at least one public and non exception or utility ECALL function. *)
++let check_priv_and_utility_funcs (ec: enclave_content) =
    let priv_bits = tf_list_to_priv_list ec.tfunc_decls in
 -  if List.for_all (fun is_priv -> is_priv) priv_bits
 +  let exception_bits = tf_list_to_exception_list ec.tfunc_decls in
-+  if List.for_all2 (fun is_priv is_exception_handler -> is_priv || is_exception_handler) priv_bits exception_bits
++  let utility_bits = tf_list_to_utility_list ec.tfunc_decls in
++  if for_all3 (fun is_priv is_exception_handler is_utility -> is_priv || is_exception_handler || is_utility) priv_bits exception_bits utility_bits
    then failwithf "the enclave `%s' contains no public root ECALL.\n" ec.file_shortnm
    else report_orphaned_priv_ecall ec
  
-@@ -1665,7 +1762,7 @@
+@@ -1665,7 +1778,7 @@
   *)
  let reduce_import (ec: enclave_content) =
    (* Append a EDL list to another. Keep the first element and replace the
@@ -1935,7 +2077,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
     if both lists contain a same EDL. The function sequence is backwards compatible.*)
    let join (ec1: enclave_content list) (ec2: enclave_content list) =
      let join_one (acc: enclave_content list) (ec: enclave_content) =
-@@ -1743,6 +1840,7 @@
+@@ -1743,6 +1856,7 @@
          include_list = acc.include_list @ ec2.include_list;
          import_exprs = [];
          comp_defs    = acc.comp_defs   @ ec2.comp_defs;
@@ -1943,24 +2085,25 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
          tfunc_decls  = acc.tfunc_decls @ ec2.tfunc_decls;
          ufunc_decls  = acc.ufunc_decls @ ec2.ufunc_decls; }
    in
-@@ -1758,7 +1856,7 @@
+@@ -1758,7 +1872,7 @@
      create_dir ep.trusted_dir;
      check_duplication ec;
      check_allow_list ec;
 -    (if not ep.header_only then check_priv_funcs ec);
-+    (if not ep.header_only then check_priv_and_exception_funcs ec);
++    (if not ep.header_only then check_priv_and_utility_funcs ec);
      if Plugin.available() then
        Plugin.gen_edge_routines ec ep
      else (
 diff -Nur sdk/edger8r/linux/Lexer.mll sdk/edger8r/linux/Lexer.mll
 --- sdk/edger8r/linux/Lexer.mll
 +++ sdk/edger8r/linux/Lexer.mll
-@@ -79,6 +79,8 @@
+@@ -79,6 +79,9 @@
    | "struct"     { Tstruct }
    | "union"      { Tunion }
    | "enum"       { Tenum }
 +  | "errno_list" { Terrno_list }
 +  | "exception_handler" { Texception_handler }
++  | "utility_tcs" { Tutility }
  
    (* specifier *)
    | "enclave"    { Tenclave }
@@ -1972,7 +2115,7 @@ diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
         Tint8 Tint16 Tint32 Tint64
         Tuint8 Tuint16 Tuint32 Tuint64
 -       Tsizet Twchar Tvoid Tlong Tstruct Tunion Tenum
-+       Tsizet Twchar Tvoid Tlong Tstruct Tunion Tenum Terrno_list Texception_handler
++       Tsizet Twchar Tvoid Tlong Tstruct Tunion Tenum Terrno_list Texception_handler Tutility
  %token Tenclave Tfrom Timport Ttrusted Tuntrusted Tallow Tpropagate_errno
  
  %start start_parsing
@@ -1996,7 +2139,7 @@ diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
  member_list: member_def TSemicolon    { [$1] }
    | member_list member_def TSemicolon { $2 :: $1 }
    ;
-@@ -591,10 +604,15 @@
+@@ -591,10 +604,20 @@
    | Tswitchless                      { true  }
    ;
  
@@ -2005,17 +2148,22 @@ diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
 +  | Texception_handler           { true }
 +  ;
 +
++/* is_utility? Default to false */
++utility: /* nothing */ { false }
++  | Tutility           { true }
++  ;
++
  trusted_functions: /* nothing */          { [] }
 -  | trusted_functions access_modifier func_def switchless_annotation TSemicolon {
 -      check_ptr_attr $3 (symbol_start_pos(), symbol_end_pos());
 -      Ast.Trusted { Ast.tf_fdecl = $3; Ast.tf_is_priv = $2; Ast.tf_is_switchless = $4 } :: $1
-+  | trusted_functions exception_handler access_modifier func_def switchless_annotation TSemicolon {
-+      check_ptr_attr $4 (symbol_start_pos(), symbol_end_pos());
-+      Ast.Trusted { Ast.tf_fdecl = $4; Ast.tf_is_priv = $3; Ast.tf_is_switchless = $5; Ast.tf_is_exception_handler = $2; } :: $1
++  | trusted_functions utility exception_handler access_modifier func_def switchless_annotation TSemicolon {
++      check_ptr_attr $5 (symbol_start_pos(), symbol_end_pos());
++      Ast.Trusted { Ast.tf_fdecl = $5; Ast.tf_is_priv = $4; Ast.tf_is_switchless = $6; Ast.tf_is_exception_handler = $3; Ast.tf_is_utility = $2; } :: $1
      }
    ;
  
-@@ -665,6 +683,7 @@
+@@ -665,6 +688,7 @@
    | expressions include_declaration           { Ast.Include($2)   :: $1 }
    | expressions import_declaration TSemicolon { Ast.Importing($2) :: $1 }
    | expressions composite_defs TSemicolon     { Ast.Composite($2) :: $1 }
