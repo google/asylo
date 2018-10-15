@@ -84,7 +84,7 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
       void *child_base_address = child_client->base_address();
       if (child_base_address != parent_base_address) {
         output =
-            "Enclave address loaded in the chlid process does not match the "
+            "Enclave address loaded in the child process does not match the "
             "enclave in the parent enclave";
       }
     }
