@@ -100,7 +100,7 @@ class SGXLoader : public EnclaveLoader {
   static constexpr size_t kWholeFileIndex = 1;
 
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address = nullptr) const override;
+      const std::string &name, void *base_address) const override;
 
   const EnclaveSourceType enclave_source_;
   const bool debug_;
