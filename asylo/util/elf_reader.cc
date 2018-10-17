@@ -138,7 +138,7 @@ class ElfReaderCreator {
 
   // A map from section names to views of their data. Initialized by
   // InitializeSectionMaps().
-  std::unordered_map<std::string, const absl::Span<const uint8_t>> section_data_;
+  std::unordered_map<std::string, absl::Span<const uint8_t>> section_data_;
 };
 
 StatusOr<ElfReader> ElfReader::CreateFromSpan(

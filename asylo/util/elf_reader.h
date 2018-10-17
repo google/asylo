@@ -56,23 +56,22 @@ class ElfReader {
   // This class is defined in elf_reader.cc.
   friend class ElfReaderCreator;
 
-  ElfReader(absl::Span<const uint8_t> elf_file,
-            std::unordered_map<std::string, const Elf64_Shdr *> &&section_headers,
-            std::unordered_map<std::string, const absl::Span<const uint8_t>>
-                &&section_data)
+  ElfReader(
+      absl::Span<const uint8_t> elf_file,
+      std::unordered_map<std::string, const Elf64_Shdr *> &&section_headers,
+      std::unordered_map<std::string, absl::Span<const uint8_t>> &&section_data)
       : elf_file_(elf_file),
         section_headers_(std::move(section_headers)),
         section_data_(std::move(section_data)) {}
 
   // A view containing the file.
-  const absl::Span<const uint8_t> elf_file_;
+  absl::Span<const uint8_t> elf_file_;
 
   // A map from section names to section headers.
-  const std::unordered_map<std::string, const Elf64_Shdr *> section_headers_;
+  std::unordered_map<std::string, const Elf64_Shdr *> section_headers_;
 
   // A map from section names to views of their data.
-  const std::unordered_map<std::string, const absl::Span<const uint8_t>>
-      section_data_;
+  std::unordered_map<std::string, absl::Span<const uint8_t>> section_data_;
 };
 
 }  // namespace asylo
