@@ -40,11 +40,11 @@ class EnclaveAddressTest : public ::testing::Test {
       LOG(FATAL) << manager_result.status();
     }
     manager_ = manager_result.ValueOrDie();
-    loader_ = absl::make_unique<SGXLoader>(FLAGS_enclave_path, /*debug=*/true);
+    loader_ = absl::make_unique<SgxLoader>(FLAGS_enclave_path, /*debug=*/true);
   }
 
   EnclaveManager *manager_;
-  std::unique_ptr<SGXLoader> loader_;
+  std::unique_ptr<SgxLoader> loader_;
 };
 
 // Tests the enclave loading at specified address. First load an enclave, then
@@ -56,7 +56,7 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
   std::string enclave_url = "/enclave_address";
   ASSERT_THAT(manager_->LoadEnclave(enclave_url, *loader_), IsOk());
   auto *parent_client =
-      dynamic_cast<asylo::SGXClient *>(manager_->GetClient(enclave_url));
+      dynamic_cast<asylo::SgxClient *>(manager_->GetClient(enclave_url));
   void *parent_base_address = parent_client->base_address();
   ASSERT_NE(parent_base_address, nullptr);
 
@@ -80,7 +80,7 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
       output = "Failed to load enclave in the child process";
     } else {
       auto *child_client =
-          dynamic_cast<asylo::SGXClient *>(manager_->GetClient(enclave_url));
+          dynamic_cast<asylo::SgxClient *>(manager_->GetClient(enclave_url));
       void *child_base_address = child_client->base_address();
       if (child_base_address != parent_base_address) {
         output =

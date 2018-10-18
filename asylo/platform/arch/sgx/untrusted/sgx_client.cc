@@ -182,9 +182,9 @@ static Status handle_signal(sgx_enclave_id_t eid, const char *input,
   return Status::OkStatus();
 }
 
-StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
+StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     const std::string &name, void *base_address) const {
-  std::unique_ptr<SGXClient> client = absl::make_unique<SGXClient>(name);
+  std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
   client->base_address_ = base_address;
 
   FileMapping enclave_file_mapping;
@@ -200,7 +200,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     const std::string &name, void *base_address) const {
-  std::unique_ptr<SGXClient> client = absl::make_unique<SGXClient>(name);
+  std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
   client->base_address_ = base_address;
 
   FileMapping self_binary_mapping;
@@ -221,7 +221,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
   return std::unique_ptr<EnclaveClient>(client.release());
 }
 
-Status SGXClient::EnterAndInitialize(const EnclaveConfig &config) {
+Status SgxClient::EnterAndInitialize(const EnclaveConfig &config) {
   std::string buf;
   if (!config.SerializeToString(&buf)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -250,7 +250,7 @@ Status SGXClient::EnterAndInitialize(const EnclaveConfig &config) {
   return status;
 }
 
-Status SGXClient::EnterAndRun(const EnclaveInput &input,
+Status SgxClient::EnterAndRun(const EnclaveInput &input,
                               EnclaveOutput *output) {
   std::string buf;
   if (!input.SerializeToString(&buf)) {
@@ -283,7 +283,7 @@ Status SGXClient::EnterAndRun(const EnclaveInput &input,
   return status;
 }
 
-Status SGXClient::EnterAndFinalize(const EnclaveFinal &final_input) {
+Status SgxClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   std::string buf;
   if (!final_input.SerializeToString(&buf)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -310,7 +310,7 @@ Status SGXClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   return status;
 }
 
-Status SGXClient::EnterAndDonateThread() {
+Status SgxClient::EnterAndDonateThread() {
   sgx_status_t sgx_status;
   int result = donate_thread(id_, &sgx_status);
   Status status;
@@ -326,7 +326,7 @@ Status SGXClient::EnterAndDonateThread() {
   return status;
 }
 
-Status SGXClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
+Status SgxClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
   EnclaveSignal enclave_signal;
   int bridge_signum = ToBridgeSignal(signal.signum());
   if (bridge_signum < 0) {
@@ -344,7 +344,7 @@ Status SGXClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
                        serialized_enclave_signal.size());
 }
 
-Status SGXClient::DestroyEnclave() {
+Status SgxClient::DestroyEnclave() {
   sgx_status_t rc = sgx_destroy_enclave(id_);
   if (rc != SGX_SUCCESS) {
     return Status(rc, "Failed to destroy an enclave");
@@ -352,6 +352,6 @@ Status SGXClient::DestroyEnclave() {
   return Status::OkStatus();
 }
 
-bool SGXClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
+bool SgxClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
 
 }  //  namespace asylo

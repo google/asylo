@@ -65,7 +65,7 @@ int main(int argc, char *argv[]) {
     LOG(QFATAL) << "Instance returned status: " << manager_result.status();
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SGXLoader loader(FLAGS_enclave_path, /*debug*/ true);
+  asylo::SgxLoader loader(FLAGS_enclave_path, /*debug*/ true);
   asylo::Status status = manager->LoadEnclave(kEnclaveName, loader, config);
   if (!status.ok()) {
     LOG(QFATAL) << "LoadEnclave returned status: " << status;

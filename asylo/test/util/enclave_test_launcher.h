@@ -59,7 +59,7 @@ class EnclaveTestLauncher {
  private:
   EnclaveManager *manager_;
   EnclaveClient *client_;
-  std::unique_ptr<SGXLoader> loader_;
+  std::unique_ptr<SgxLoader> loader_;
 };
 
 }  // namespace asylo

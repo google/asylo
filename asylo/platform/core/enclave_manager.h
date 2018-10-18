@@ -174,7 +174,7 @@ class EnclaveManager {
   ///
   /// Example:
   /// ```
-  ///   LoadEnclave("/EchoEnclave", SGXLoader("echoService.so"));
+  ///   LoadEnclave("/EchoEnclave", SgxLoader("echoService.so"));
   /// ```
   ///
   /// \param name Name to bind the loaded enclave under.
@@ -195,7 +195,7 @@ class EnclaveManager {
   /// ```
   ///  EnclaveConfig config;
   ///  ... // populate config proto.
-  ///  LoadEnclave("/EchoEnclave", SGXLoader("echoService.so"), config);
+  ///  LoadEnclave("/EchoEnclave", SgxLoader("echoService.so"), config);
   /// ```
   ///
   /// \param name Name to bind the loaded enclave under.

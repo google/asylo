@@ -65,7 +65,7 @@ class DieTest {
     }
     manager_ = manager_result.ValueOrDie();
     std::cerr << "Init " << enclave_path << std::endl;
-    loader_ = absl::make_unique<SGXLoader>(enclave_path, /*debug=*/true);
+    loader_ = absl::make_unique<SgxLoader>(enclave_path, /*debug=*/true);
 
     std::string enclave_url = "/die";
     Status status = manager_->LoadEnclave(enclave_url, *loader_);
@@ -110,7 +110,7 @@ class DieTest {
 
  protected:
   EnclaveManager *manager_;
-  std::unique_ptr<SGXLoader> loader_;
+  std::unique_ptr<SgxLoader> loader_;
   EnclaveClient *client_;
 };
 

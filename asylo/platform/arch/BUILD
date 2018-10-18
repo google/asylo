@@ -53,6 +53,7 @@ cc_library(
         ":untrusted_sgx",
         "//asylo/platform/core:untrusted_core",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@linux_sgx//:urts",
     ],
 )
@@ -136,6 +137,7 @@ cc_library(
         "//asylo/util:file_mapping",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",

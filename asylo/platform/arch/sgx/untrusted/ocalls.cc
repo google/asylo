@@ -106,8 +106,8 @@ void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
   if (!client_result.ok()) {
     return;
   }
-  asylo::SGXClient *client =
-      dynamic_cast<asylo::SGXClient *>(client_result.ValueOrDie());
+  asylo::SgxClient *client =
+      dynamic_cast<asylo::SgxClient *>(client_result.ValueOrDie());
   if (client->IsTcsActive()) {
     TranslateToBridgeAndHandleSignal(signum, info, ucontext);
   } else {

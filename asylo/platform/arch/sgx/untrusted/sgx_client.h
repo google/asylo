@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "absl/base/macros.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_manager.h"
@@ -31,11 +32,11 @@
 namespace asylo {
 
 /// Enclave client for Intel Software Guard Extensions (SGX) based enclaves.
-class SGXClient : public EnclaveClient {
+class SgxClient : public EnclaveClient {
  public:
-  SGXClient() = delete;
+  SgxClient() = delete;
 
-  explicit SGXClient(const std::string &name) : EnclaveClient(name) {}
+  explicit SgxClient(const std::string &name) : EnclaveClient(name) {}
   Status EnterAndRun(const EnclaveInput &input, EnclaveOutput *output) override;
 
   // Returns true when a TCS is active in simulation mode. Always returns false
@@ -47,7 +48,7 @@ class SGXClient : public EnclaveClient {
   const void *base_address() const { return base_address_; }
 
  private:
-  friend class SGXLoader;
+  friend class SgxLoader;
   friend class SgxEmbeddedLoader;
 
   Status EnterAndInitialize(const EnclaveConfig &config) override;
@@ -64,14 +65,14 @@ class SGXClient : public EnclaveClient {
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves
 /// located in shared object files read from the file system.
-class SGXLoader : public EnclaveLoader {
+class SgxLoader : public EnclaveLoader {
  public:
-  /// Constructs an SGXLoader for an enclave object file on the file system,
+  /// Constructs an SgxLoader for an enclave object file on the file system,
   /// optionally in debug mode.
   ///
   /// \param path The path to the enclave binary (.so) file to load.
   /// \param debug Whether to load the enclave in debug mode.
-  SGXLoader(const std::string &path, bool debug)
+  SgxLoader(const std::string &path, bool debug)
       : enclave_path_(path), debug_(debug) {}
 
  private:
@@ -103,12 +104,18 @@ class SgxEmbeddedLoader : public EnclaveLoader {
   const bool debug_;
 };
 
+/// SgxClient alias for backwards compatibility.
+using SGXClient ABSL_DEPRECATED("Use SgxClient instead") = SgxClient;
+
+/// SgxLoader alias for backwards compatibility.
+using SGXLoader ABSL_DEPRECATED("Use SgxLoader instead") = SgxLoader;
+
 /// Whole-file enclave loader for simulated enclaves.
 ///
 /// Enclave simulation currently uses the same binary format as SGX enclaves.
 /// However, this is subject to change and consumers of this API should not
 /// make assumptions about it being related to SGX.
-using SimLoader = SGXLoader;
+using SimLoader = SgxLoader;
 
 /// Embedded enclave loader for simulated enclaves.
 ///

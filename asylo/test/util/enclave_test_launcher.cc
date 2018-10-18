@@ -39,7 +39,7 @@ Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
   EnclaveManager::Configure(EnclaveManagerOptions());
   ASYLO_ASSIGN_OR_RETURN(manager_, EnclaveManager::Instance());
 
-  loader_ = absl::make_unique<SGXLoader>(enclave_path, /*debug=*/true);
+  loader_ = absl::make_unique<SgxLoader>(enclave_path, /*debug=*/true);
   ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(enclave_url, *loader_, econfig));
 
   client_ = manager_->GetClient(enclave_url);
