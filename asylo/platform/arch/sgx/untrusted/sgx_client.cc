@@ -18,22 +18,57 @@
 
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
 
+#include <cstdint>
 #include <string>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "asylo/enclave.pb.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/sgx_error_space.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/util/elf_reader.h"
 #include "asylo/util/file_mapping.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
+namespace {
+
+constexpr absl::string_view kCallingProcessBinaryFile = "/proc/self/exe";
 
 constexpr int kMaxEnclaveCreateAttempts = 5;
+
+// Creates an SGX enclave from |buffer|, updating |token| and |enclave_id| with
+// the appropriate data. If enclave creation fails due to an interruption in the
+// enclave creation process, retries the enclave creation up to a total of
+// kMaxEnclaveCreateAttempts tries.
+Status LoadFromBuffer(absl::Span<const uint8_t> buffer, bool debug,
+                      sgx_launch_token_t *token, sgx_enclave_id_t *enclave_id,
+                      void **enclave_base_addr) {
+  int updated;
+  sgx_status_t sgx_status;
+  for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
+    sgx_status = sgx_create_enclave_from_buffer(
+        const_cast<uint8_t *>(buffer.data()), buffer.size(), debug, token,
+        &updated, enclave_id, /*misc_attr=*/nullptr, enclave_base_addr);
+
+    if (sgx_status == SGX_SUCCESS) {
+      break;
+    }
+
+    if (sgx_status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
+      return Status(sgx_status, "Failed to create an enclave");
+    }
+  }
+
+  return Status::OkStatus();
+}
+
+}  // namespace
 
 
 // Enters the enclave and invokes the initialization entry-point. If the ecall
@@ -149,43 +184,40 @@ static Status handle_signal(sgx_enclave_id_t eid, const char *input,
 
 StatusOr<std::unique_ptr<EnclaveClient>> SGXLoader::LoadEnclave(
     const std::string &name, void *base_address) const {
-  std::unique_ptr<SGXClient> client(new SGXClient(name));
-  if (!client) {
-    return Status(error::GoogleError::RESOURCE_EXHAUSTED, "Out of memory");
-  }
-
-  FileMapping whole_file_mapping;
-  absl::Span<uint8_t> enclave_buffer;
-  switch (enclave_source_.index()) {
-    case kBufferIndex:
-      enclave_buffer = absl::get<kBufferIndex>(enclave_source_);
-      break;
-    case kWholeFileIndex:
-      ASYLO_ASSIGN_OR_RETURN(whole_file_mapping,
-                             FileMapping::CreateFromFile(
-                                 absl::get<kWholeFileIndex>(enclave_source_)));
-      enclave_buffer = whole_file_mapping.buffer();
-      break;
-    default:
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("Unknown enclave source: ", enclave_source_.index()));
-  }
-
-  int updated;
-  sgx_status_t rc;
-  int attempts = kMaxEnclaveCreateAttempts;
-  do {
-    rc = sgx_create_enclave_from_buffer(enclave_buffer.data(),
-                                        enclave_buffer.size(), debug_,
-                                        &client->token_, &updated, &client->id_,
-                                        /*misc_attr=*/nullptr, &base_address);
-  } while (rc == SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED &&
-           --attempts > 0);
-  if (rc != SGX_SUCCESS) {
-    return Status(rc, "Failed to create an enclave");
-  }
+  std::unique_ptr<SGXClient> client = absl::make_unique<SGXClient>(name);
   client->base_address_ = base_address;
+
+  FileMapping enclave_file_mapping;
+  ASYLO_ASSIGN_OR_RETURN(enclave_file_mapping,
+                         FileMapping::CreateFromFile(enclave_path_));
+
+  ASYLO_RETURN_IF_ERROR(LoadFromBuffer(enclave_file_mapping.buffer(), debug_,
+                                       &client->token_, &client->id_,
+                                       &client->base_address_));
+
+  return std::unique_ptr<EnclaveClient>(client.release());
+}
+
+StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
+    const std::string &name, void *base_address) const {
+  std::unique_ptr<SGXClient> client = absl::make_unique<SGXClient>(name);
+  client->base_address_ = base_address;
+
+  FileMapping self_binary_mapping;
+  ASYLO_ASSIGN_OR_RETURN(self_binary_mapping, FileMapping::CreateFromFile(
+                                                  kCallingProcessBinaryFile));
+
+  ElfReader self_binary_reader;
+  ASYLO_ASSIGN_OR_RETURN(self_binary_reader, ElfReader::CreateFromSpan(
+                                                 self_binary_mapping.buffer()));
+
+  absl::Span<const uint8_t> enclave_buffer;
+  ASYLO_ASSIGN_OR_RETURN(enclave_buffer,
+                         self_binary_reader.GetSectionData(section_name_));
+
+  ASYLO_RETURN_IF_ERROR(LoadFromBuffer(enclave_buffer, debug_, &client->token_,
+                                       &client->id_, &client->base_address_));
+
   return std::unique_ptr<EnclaveClient>(client.release());
 }
 

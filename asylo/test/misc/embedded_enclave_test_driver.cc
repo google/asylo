@@ -16,17 +16,12 @@
  *
  */
 
-#include <cstdint>
-#include <utility>
-
 #include <gtest/gtest.h>
-#include "absl/types/span.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
+#include "asylo/enclave_manager.h"
 #include "gflags/gflags.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/util/elf_reader.h"
-#include "asylo/util/file_mapping.h"
 
 DEFINE_string(enclave_section, "", "The ELF section the enclave is located in");
 
@@ -36,29 +31,6 @@ namespace {
 constexpr char kEnclaveName[] = "enclave";
 
 TEST(EmbeddedEnclaveTest, EnclaveLoadsAndRuns) {
-  // Map /proc/self/exe into memory.
-  auto create_from_file_result = FileMapping::CreateFromFile("/proc/self/exe");
-  ASSERT_THAT(create_from_file_result, IsOk());
-  FileMapping enclave_parent_file =
-      std::move(create_from_file_result).ValueOrDie();
-
-  // Create an ElfReader for /proc/self/exe.
-  auto create_from_span_result =
-      ElfReader::CreateFromSpan(enclave_parent_file.buffer());
-  ASSERT_THAT(create_from_span_result, IsOk());
-  ElfReader parent_file_reader =
-      std::move(create_from_span_result).ValueOrDie();
-
-  // Retrieve the data from FLAGS_enclave_section.
-  auto get_section_data_result =
-      parent_file_reader.GetSectionData(FLAGS_enclave_section);
-  ASSERT_THAT(get_section_data_result, IsOk());
-  absl::Span<const uint8_t> const_enclave_buffer =
-      get_section_data_result.ValueOrDie();
-  absl::Span<uint8_t> enclave_buffer(
-      const_cast<uint8_t *>(const_enclave_buffer.data()),
-      const_enclave_buffer.size());
-
   // Retrieve the EnclaveManager.
   EnclaveManager::Configure(EnclaveManagerOptions());
   auto manager_result = EnclaveManager::Instance();
@@ -66,7 +38,7 @@ TEST(EmbeddedEnclaveTest, EnclaveLoadsAndRuns) {
   EnclaveManager *manager = manager_result.ValueOrDie();
 
   // Load the enclave.
-  SGXLoader loader(enclave_buffer, /*debug=*/true);
+  SgxEmbeddedLoader loader(FLAGS_enclave_section, /*debug=*/true);
   EnclaveConfig config;
   ASSERT_THAT(manager->LoadEnclave(kEnclaveName, loader, config), IsOk());
   EnclaveClient *client = manager->GetClient(kEnclaveName);

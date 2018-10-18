@@ -332,27 +332,6 @@ enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-enclave_test(
-    name = "load_from_buffer_test",
-    srcs = ["load_from_buffer_test_driver.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"enclave": "//asylo/test/util:do_nothing_enclave.so"},
-    test_args = ["--enclave_path='{enclave}'"],
-    deps = [
-        "//asylo:enclave_client",
-        "//asylo:enclave_proto_cc",
-        "//asylo/platform/arch:sgx_error_space",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:file_mapping",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 # The name of the ELF section to use for testing in embedded_enclave_test.
 TEST_SECTION_NAME = "enclave"
 
@@ -371,10 +350,7 @@ enclave_test(
         "//asylo:enclave_proto_cc",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:elf_reader",
-        "//asylo/util:file_mapping",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
     ],
 )
