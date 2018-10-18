@@ -21,6 +21,7 @@ package(default_visibility = ["//visibility:public"])
 exports_files([
     "absl_mutex.patch",
     "boringssl.patch",
+    "googletest.patch",
     "grpc_1_13_0.patch",
     "linux_sgx_1_9.patch",
     "protobuf.patch",

@@ -52,38 +52,14 @@ def asylo_testonly_deps():
 
     # GoogleTest/GoogleMock framework. Used by most unit-tests.
     if "com_google_googletest" not in native.existing_rules():
-        native.new_http_archive(
+        patch_repository(
             name = "com_google_googletest",
-            build_file_content = """
-cc_library(
-    name = "gtest",
-    srcs = [
-          "googletest/src/gtest-all.cc",
-          "googlemock/src/gmock-all.cc",
-    ],
-    hdrs = glob([
-        "**/*.h",
-        "googletest/src/*.cc",
-        "googlemock/src/*.cc",
-    ]),
-    includes = [
-        "googlemock",
-        "googletest",
-        "googletest/include",
-        "googlemock/include",
-    ],
-    linkopts = select({
-        "@com_google_asylo//asylo": [],
-        "//conditions:default": ["-pthread"],
-    }),
-    visibility = ["//visibility:public"],
-)
-""",
             urls = [
-                "https://github.com/google/googletest/archive/release-1.8.0.tar.gz",
+                "https://github.com/google/googletest/archive/release-1.8.1.tar.gz",
             ],
-            sha256 = "58a6f4277ca2bc8565222b3bbd58a177609e9c488e8a72649359ba51450db7d8",
-            strip_prefix = "googletest-release-1.8.0",
+            sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c",
+            strip_prefix = "googletest-release-1.8.1",
+            patch = "@com_google_asylo//asylo/distrib:googletest.patch",
         )
 
     # gflags
