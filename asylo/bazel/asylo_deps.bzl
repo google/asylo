@@ -59,7 +59,7 @@ def asylo_testonly_deps():
             ],
             sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c",
             strip_prefix = "googletest-release-1.8.1",
-            patch = "@com_google_asylo//asylo/distrib:googletest.patch",
+            patches = ["@com_google_asylo//asylo/distrib:googletest.patch"],
         )
 
     # gflags
@@ -86,7 +86,7 @@ def asylo_deps():
             urls = [
                 "https://github.com/google/boringssl/archive/241dc59bb90f8c45ebc8473fc7599b861a93bfa6.tar.gz",
             ],
-            patch = "@com_google_asylo//asylo/distrib:boringssl.patch",
+            patches = ["@com_google_asylo//asylo/distrib:boringssl.patch"],
             sha256 = "379e5f0f29e1429b00b44b87b66776d123dd18410b457e0a18e4f0eeff4b94c9",
             strip_prefix = "boringssl-241dc59bb90f8c45ebc8473fc7599b861a93bfa6",
         )
@@ -108,7 +108,7 @@ def asylo_deps():
             urls = [
                 "https://github.com/abseil/abseil-cpp/archive/20180600.tar.gz",
             ],
-            patch = "@com_google_asylo//asylo/distrib:absl_mutex.patch",
+            patches = ["@com_google_asylo//asylo/distrib:absl_mutex.patch"],
             sha256 = "794d483dd9a19c43dc1fbbe284ce8956eb7f2600ef350dac4c602f9b4eb26e90",
             strip_prefix = "abseil-cpp-20180600",
         )
@@ -129,7 +129,7 @@ def asylo_deps():
             strip_prefix = "protobuf-3.5.1",
             urls = ["https://github.com/google/protobuf/archive/v3.5.1.tar.gz"],
             sha256 = "826425182ee43990731217b917c5c3ea7190cfda141af4869e6d4ad9085a740f",
-            patch = "@com_google_asylo//asylo/distrib:protobuf.patch",
+            patches = ["@com_google_asylo//asylo/distrib:protobuf.patch"],
         )
 
     # gRPC
@@ -138,7 +138,7 @@ def asylo_deps():
             name = "com_github_grpc_grpc",
             urls = ["https://github.com/grpc/grpc/archive/v1.13.0.tar.gz"],
             sha256 = "50db9cf2221354485eb7c3bd55a4c27190caef7048a2a1a15fbe60a498f98b44",
-            patch = "@com_google_asylo//asylo/distrib:grpc_1_13_0.patch",
+            patches = ["@com_google_asylo//asylo/distrib:grpc_1_13_0.patch"],
             strip_prefix = "grpc-1.13.0",
         )
 

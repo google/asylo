@@ -75,6 +75,9 @@ def sgx_deps(installation_path = None):
             name = "linux_sgx",
             urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.3.tar.gz"],
             sha256 = "c412b810efb94e9be15d716578483b2fc197b4982fc02b6d13f5dfff3f1d9b14",
-            patch = "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_3.patch",
+            patches = [
+                "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_3.patch",
+                "@com_google_asylo//asylo/distrib/sgx_x86_64:enclave_test_pem.patch",
+            ],
             strip_prefix = "linux-sgx-sgx_2.3",
         )

@@ -3941,48 +3941,6 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +def _unsigned_enclave_name(enclave):
 +    return _extend_enclave_name(enclave, "_unsigned")
 --- /dev/null
-+++ enclave_test_private.pem
-@@ -0,0 +1,39 @@
-+-----BEGIN RSA PRIVATE KEY-----
-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
-+-----END RSA PRIVATE KEY-----
---- /dev/null
 +++ enclave_sim.lds
 @@ -0,0 +1,9 @@
 +enclave.so

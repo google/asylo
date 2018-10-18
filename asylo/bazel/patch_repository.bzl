@@ -24,12 +24,13 @@ def _patch_repository_impl(repository_ctx):
         output = "",
         stripPrefix = repository_ctx.attr.strip_prefix,
     )
-    repository_ctx.execute([
-        "patch",
-        "-p0",
-        "-i",
-        repository_ctx.path(repository_ctx.attr.patch),
-    ])
+    for patch in repository_ctx.attr.patches:
+        repository_ctx.execute([
+            "patch",
+            "-p0",
+            "-i",
+            repository_ctx.path(patch),
+        ])
 
 # This is implemented as part of http_archive in
 # @io_bazel//tools/build_defs/repo/http.bzl, but the bootstrapping of getting
@@ -42,7 +43,7 @@ patch_repository = repository_rule(
     attrs = {
         "urls": attr.string_list(allow_empty = False, mandatory = True),
         "sha256": attr.string(),
-        "patch": attr.label(mandatory = True, allow_single_file = True),
+        "patches": attr.label_list(allow_empty = False, allow_files = True),
         "strip_prefix": attr.string(),
     },
 )
