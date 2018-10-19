@@ -17,7 +17,6 @@
  */
 
 #include <cstdint>
-#include <unordered_set>
 
 #include "absl/strings/str_cat.h"
 #include "asylo/examples/hello_world/hello.pb.h"
