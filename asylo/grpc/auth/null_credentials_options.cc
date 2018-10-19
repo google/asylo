@@ -31,4 +31,18 @@ EnclaveCredentialsOptions BidirectionalNullCredentialsOptions() {
   return options;
 }
 
+EnclaveCredentialsOptions PeerNullCredentialsOptions() {
+  EnclaveCredentialsOptions options;
+  options.accepted_peer_assertions.emplace_back();
+  SetNullAssertionDescription(&options.accepted_peer_assertions.back());
+  return options;
+}
+
+EnclaveCredentialsOptions SelfNullCredentialsOptions() {
+  EnclaveCredentialsOptions options;
+  options.self_assertions.emplace_back();
+  SetNullAssertionDescription(&options.self_assertions.back());
+  return options;
+}
+
 }  // namespace asylo

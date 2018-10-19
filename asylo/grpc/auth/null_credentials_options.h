@@ -49,6 +49,58 @@ namespace asylo {
 ///         bidirectionally-unauthenticated channel.
 EnclaveCredentialsOptions BidirectionalNullCredentialsOptions();
 
+/// Creates options suitable for configuring a credential used in establishing a
+/// unidirectionally-unauthenticated gRPC channel between two enclave entities.
+///
+/// A credential configured with these options enforces unidirectional
+/// authentication using the null identity. The null identity specifies no
+/// identity in particular, which means that in the resulting connection the
+/// peer does not authenticate.
+///
+/// Sample usage for creating `::grpc::ChannelCredentials`:
+///
+/// ```
+/// std::shared_ptr<::grpc::ChannelCredentials> creds =
+///   EnclaveChannelCredentials(PeerNullCredentialsOptions());
+/// ```
+///
+/// Sample usage for creating `::grpc::ServerCredentials`:
+///
+/// ```
+/// std::shared_ptr<::grpc::ServerCredentials> creds =
+///   EnclaveServerCredentials(PeerNullCredentialsOptions());
+/// ```
+///
+/// \return Options used to configure gRPC credentials for a channel that is
+///         unauthenticated on the peer's end.
+EnclaveCredentialsOptions PeerNullCredentialsOptions();
+
+/// Creates options suitable for configuring a credential used in establishing a
+/// unidirectionally-unauthenticated gRPC channel between two enclave entities.
+///
+/// A credential configured with these options enforces unidirectional
+/// authentication using the null identity. The null identity specifies no
+/// identity in particular, which means that in the resulting connection
+/// the credential holder does not authenticate.
+///
+/// Sample usage for creating `::grpc::ChannelCredentials`:
+///
+/// ```
+/// std::shared_ptr<::grpc::ChannelCredentials> creds =
+///   EnclaveChannelCredentials(SelfNullCredentialsOptions());
+/// ```
+///
+/// Sample usage for creating `::grpc::ServerCredentials`:
+///
+/// ```
+/// std::shared_ptr<::grpc::ServerCredentials> creds =
+///   EnclaveServerCredentials(SelfNullCredentialsOptions());
+/// ```
+///
+/// \return Options used to configure gRPC credentials for a channel that is
+///         unauthenticated on the credential holder's end.
+EnclaveCredentialsOptions SelfNullCredentialsOptions();
+
 }  // namespace asylo
 
 #endif  // ASYLO_GRPC_AUTH_NULL_CREDENTIALS_OPTIONS_H_

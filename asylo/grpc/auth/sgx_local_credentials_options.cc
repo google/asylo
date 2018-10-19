@@ -32,4 +32,19 @@ EnclaveCredentialsOptions BidirectionalSgxLocalCredentialsOptions() {
   return options;
 }
 
+EnclaveCredentialsOptions PeerSgxLocalCredentialsOptions() {
+  EnclaveCredentialsOptions options;
+  options.accepted_peer_assertions.emplace_back();
+  sgx::SetSgxLocalAssertionDescription(
+      &options.accepted_peer_assertions.back());
+  return options;
+}
+
+EnclaveCredentialsOptions SelfSgxLocalCredentialsOptions() {
+  EnclaveCredentialsOptions options;
+  options.self_assertions.emplace_back();
+  sgx::SetSgxLocalAssertionDescription(&options.self_assertions.back());
+  return options;
+}
+
 }  // namespace asylo
