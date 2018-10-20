@@ -160,9 +160,11 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   // pre-filled with an additional 32 zeros.
   sgx::AlignedReportdataPtr reportdata;
   Sha256Hash hash;
-  hash.Update(user_data.data(), user_data.size());
+  hash.Update(user_data);
   reportdata->data = TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  reportdata->data.replace(/*pos=*/0, hash.CumulativeHash());
+  std::vector<uint8_t> digest;
+  ASYLO_RETURN_IF_ERROR(hash.CumulativeHash(&digest));
+  reportdata->data.replace(/*pos=*/0, digest);
 
   // Generate a REPORT that is bound to the provided |user_data| and is targeted
   // at the enclave described in the request.

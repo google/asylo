@@ -18,8 +18,12 @@
 
 #include "asylo/grpc/auth/core/transcript.h"
 
+#include <algorithm>
+#include <cstdint>
+#include <iterator>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <google/protobuf/io/zero_copy_stream_impl_lite.h>
 #include <gmock/gmock.h>
@@ -27,6 +31,9 @@
 #include "absl/memory/memory.h"
 #include "asylo/crypto/hash_interface.h"
 #include "asylo/crypto/sha256_hash.h"
+#include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace grpc {
@@ -45,19 +52,22 @@ const int kInputStreamBlockSize = 4;
 // is simply a concatenation of all bytes that have been added.
 class FakeHash final : public HashInterface {
  public:
-  HashAlgorithm Algorithm() const override {
+  HashAlgorithm GetHashAlgorithm() const override {
     return HashAlgorithm::UNKNOWN_HASH_ALGORITHM;
   }
   size_t DigestSize() const override { return 0; }
   void Init() override {}
-  void Update(const void *data, size_t len) override {
-    data_.append(reinterpret_cast<const char *>(data), len);
+  void Update(ByteContainerView data) override {
+    std::copy(data.begin(), data.end(), std::back_inserter(data_));
   }
 
-  std::string CumulativeHash() const override { return data_; }
+  Status CumulativeHash(std::vector<uint8_t> *digest) const override {
+    *digest = data_;
+    return Status::OkStatus();
+  }
 
  private:
-  std::string data_;
+  std::vector<uint8_t> data_;
 };
 
 // Utility method for calling Transcript::Add on |transcript| with the contents
@@ -99,9 +109,10 @@ TYPED_TEST(TranscriptTest, HashFailsWithNoHashFunction) {
 // the underlying hash function.
 TYPED_TEST(TranscriptTest, HashSameAsUnderlyingHash) {
   TypeParam hash;
-  hash.Update(kData1, strlen(kData1));
-  hash.Update(kData2, strlen(kData2));
-  std::string digest1 = hash.CumulativeHash();
+  hash.Update(kData1);
+  hash.Update(kData2);
+  std::vector<uint8_t> digest1;
+  ASSERT_THAT(hash.CumulativeHash(&digest1), IsOk());
 
   Transcript transcript;
   AddFromString(kData1, &transcript);
@@ -110,7 +121,7 @@ TYPED_TEST(TranscriptTest, HashSameAsUnderlyingHash) {
   std::string digest2;
   ASSERT_TRUE(transcript.Hash(&digest2));
 
-  EXPECT_EQ(digest1, digest2);
+  EXPECT_EQ(ByteContainerView(digest1), ByteContainerView(digest2));
 }
 
 // Verify that Hash returns the same hash, regardless of whether bytes were

@@ -20,28 +20,35 @@
 
 #include <openssl/sha.h>
 
+#include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
+
 namespace asylo {
 
 Sha256Hash::Sha256Hash() { Init(); }
 
-HashAlgorithm Sha256Hash::Algorithm() const { return HashAlgorithm::SHA256; }
+HashAlgorithm Sha256Hash::GetHashAlgorithm() const {
+  return HashAlgorithm::SHA256;
+}
 
 size_t Sha256Hash::DigestSize() const { return SHA256_DIGEST_LENGTH; }
 
 void Sha256Hash::Init() { SHA256_Init(&context_); }
 
-void Sha256Hash::Update(const void *data, size_t len) {
-  SHA256_Update(&context_, data, len);
+void Sha256Hash::Update(ByteContainerView data) {
+  SHA256_Update(&context_, data.data(), data.size());
 }
 
-std::string Sha256Hash::CumulativeHash() const {
+Status Sha256Hash::CumulativeHash(std::vector<uint8_t> *digest) const {
   // Do not finalize the internally stored hash context. Instead, finalize a
   // copy of the current context so that the current context can be updated in
   // future calls to Update.
-  uint8_t digest_bytes[SHA256_DIGEST_LENGTH];
   SHA256_CTX context_snapshot = context_;
-  SHA256_Final(digest_bytes, &context_snapshot);
-  return std::string(reinterpret_cast<char *>(digest_bytes), SHA256_DIGEST_LENGTH);
+  digest->resize(SHA256_DIGEST_LENGTH);
+  if (SHA256_Final(digest->data(), &context_snapshot) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
 }
 
 }  // namespace asylo

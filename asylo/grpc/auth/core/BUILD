@@ -111,6 +111,8 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "//asylo/crypto:hash_interface",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/util:status",
         "@com_google_protobuf//:protobuf_lite",
     ],
 )
@@ -125,7 +127,10 @@ cc_test(
         ":transcript",
         "//asylo/crypto:hash_interface",
         "//asylo/crypto:sha256_hash",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf_lite",

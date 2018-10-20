@@ -18,6 +18,9 @@
 
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 
+#include <cstdint>
+#include <vector>
+
 #include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -286,10 +289,12 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
   SetAssertionDescription(assertion.mutable_description());
 
   Sha256Hash hash;
-  hash.Update(kUserData, strlen(kUserData));
+  hash.Update(kUserData);
   sgx::AlignedReportdataPtr reportdata;
   *reportdata = TrivialZeroObject<sgx::Reportdata>();
-  reportdata->data.replace(/*pos=*/0, hash.CumulativeHash());
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  reportdata->data.replace(/*pos=*/0, digest);
 
   // A REPORT with an empty target will not verifiable by this enclave.
   sgx::AlignedTargetinfoPtr targetinfo;
@@ -345,10 +350,12 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   SetAssertionDescription(assertion.mutable_description());
 
   Sha256Hash hash;
-  hash.Update(kUserData, strlen(kUserData));
+  hash.Update(kUserData);
   sgx::AlignedReportdataPtr reportdata;
   *reportdata = TrivialZeroObject<sgx::Reportdata>();
-  reportdata->data.replace(/*pos=*/0, hash.CumulativeHash());
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  reportdata->data.replace(/*pos=*/0, digest);
 
   sgx::AlignedTargetinfoPtr targetinfo;
   sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());

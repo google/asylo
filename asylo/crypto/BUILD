@@ -45,7 +45,11 @@ cc_library(
 cc_library(
     name = "hash_interface",
     hdrs = ["hash_interface.h"],
-    deps = [":algorithms_proto_cc"],
+    deps = [
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+    ],
 )
 
 # Implementation of HashInterface for SHA256.
@@ -55,6 +59,9 @@ cc_library(
     hdrs = ["sha256_hash.h"],
     deps = [
         ":hash_interface",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
         "@boringssl//:crypto",
     ],
 )
@@ -66,7 +73,10 @@ cc_test(
     enclave_test_name = "sha256_hash_enclave_test",
     tags = ["regression"],
     deps = [
+        ":algorithms_proto_cc",
         ":sha256_hash",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",

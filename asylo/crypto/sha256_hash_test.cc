@@ -20,9 +20,16 @@
 
 #include <openssl/sha.h>
 
+#include <cstdint>
+#include <string>
+#include <vector>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/util/byte_container_util.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace {
@@ -45,7 +52,7 @@ constexpr char kSuffix[] =
 
 TEST(Sha256HashTest, Algorithm) {
   Sha256Hash hash;
-  EXPECT_EQ(hash.Algorithm(), HashAlgorithm::SHA256);
+  EXPECT_EQ(hash.GetHashAlgorithm(), HashAlgorithm::SHA256);
 }
 
 TEST(Sha256HashTest, DigestSize) {
@@ -58,37 +65,51 @@ TEST(Sha256HashTest, DigestSize) {
 
 TEST(Sha256HashTest, TestVector1) {
   Sha256Hash hash;
-  hash.Update(kTestVector1, strlen(kTestVector1));
-  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult1);
+  hash.Update(kTestVector1);
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
+            kResult1);
 }
 
 TEST(Sha256HashTest, TestVector2) {
   Sha256Hash hash;
-  hash.Update(kTestVector2, strlen(kTestVector2));
-  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult2);
+  hash.Update(kTestVector2);
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
+            kResult2);
 }
 
 // Verify that calling Init() after addition of some data resets the object to
 // a clean state, allowing a new hash operation to take place.
 TEST(Sha256HashTest, InitBetweenUpdates) {
   Sha256Hash hash;
-  hash.Update(kTestVector1, strlen(kTestVector1));
+  hash.Update(kTestVector1);
 
   hash.Init();
 
-  hash.Update(kTestVector2, strlen(kTestVector2));
-  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult2);
+  hash.Update(kTestVector2);
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
+            kResult2);
 }
 
 // Verify that the correct hash is computed when the input is added over several
 // calls to Update.
 TEST(Sha256HashTest, MultipleUpdates) {
   Sha256Hash hash;
-  hash.Update(kTestVector1, strlen(kTestVector1));
-  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult1);
+  hash.Update(kTestVector1);
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
+            kResult1);
 
-  hash.Update(kSuffix, strlen(kSuffix));
-  EXPECT_EQ(absl::BytesToHexString(hash.CumulativeHash()), kResult2);
+  hash.Update(kSuffix);
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  EXPECT_EQ(absl::BytesToHexString(CopyToByteContainer<std::string>(digest)),
+            kResult2);
 }
 
 }  // namespace

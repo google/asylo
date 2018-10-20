@@ -18,7 +18,9 @@
 
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/sha256_hash.h"
@@ -167,11 +169,13 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   // SHA256 hash of |user_data| padded with zeros), and comparing it to the
   // actual REPORTDATA inside the REPORT.
   Sha256Hash hash;
-  hash.Update(user_data.data(), user_data.size());
+  hash.Update(user_data);
   sgx::Reportdata expected_reportdata;
   expected_reportdata.data =
       TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  expected_reportdata.data.replace(/*pos=*/0, hash.CumulativeHash());
+  std::vector<uint8_t> digest;
+  ASYLO_RETURN_IF_ERROR(hash.CumulativeHash(&digest));
+  expected_reportdata.data.replace(/*pos=*/0, digest);
 
   if (expected_reportdata.data != report.reportdata.data) {
     return Status(error::GoogleError::INTERNAL,

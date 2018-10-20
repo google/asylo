@@ -21,9 +21,11 @@
 
 #include <cstdint>
 #include <cstdlib>
-#include <string>
+#include <vector>
 
 #include "asylo/crypto/algorithms.pb.h"  // IWYU pragma: export
+#include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 
@@ -43,7 +45,7 @@ class HashInterface {
   virtual ~HashInterface() = default;
 
   // Returns the hash algorithm implemented by this object.
-  virtual HashAlgorithm Algorithm() const = 0;
+  virtual HashAlgorithm GetHashAlgorithm() const = 0;
 
   // Returns the size of the message-digest size of this hash algorithm. A
   // return value of zero implies that the object does not implement a
@@ -56,13 +58,15 @@ class HashInterface {
   // are not required to call Init() on such objects.
   virtual void Init() = 0;
 
-  // Updates this hash object by adding |len| bytes from |data|.
-  virtual void Update(const void *data, size_t len) = 0;
+  // Updates this hash object by adding the contents of |data|.
+  virtual void Update(ByteContainerView data) = 0;
 
-  // Returns a string containing the current hash. Note that the internal state
-  // of the object remains unchanged, and the object can continue to accumulate
-  // additional data via Update() operations.
-  virtual std::string CumulativeHash() const = 0;
+  // Computes the hash of the data added so far and writes it to |digest|.
+  // Returns a non-OK status on error.
+  //
+  // Note that the internal state of the object remains unchanged, and the
+  // object can continue to accumulate additional data via Update() operations.
+  virtual Status CumulativeHash(std::vector<uint8_t> *digest) const = 0;
 };
 
 }  // namespace asylo

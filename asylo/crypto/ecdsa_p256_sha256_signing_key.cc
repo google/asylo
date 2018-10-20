@@ -24,10 +24,14 @@
 #include <openssl/mem.h>
 #include <openssl/nid.h>
 
+#include <cstdint>
+#include <vector>
+
 #include "absl/memory/memory.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -73,13 +77,12 @@ Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,
                                            ByteContainerView signature) const {
   Sha256Hash hasher;
   hasher.Init();
-  hasher.Update(message.data(), message.size());
-  std::string digest = hasher.CumulativeHash();
+  hasher.Update(message);
+  std::vector<uint8_t> digest;
+  ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&digest));
 
-  if (!ECDSA_verify(/*type=*/0,
-                    reinterpret_cast<const uint8_t *>(digest.data()),
-                    digest.size(), signature.data(), signature.size(),
-                    public_key_.get())) {
+  if (!ECDSA_verify(/*type=*/0, digest.data(), digest.size(), signature.data(),
+                    signature.size(), public_key_.get())) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   return Status::OkStatus();
@@ -194,14 +197,14 @@ Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,
                                        std::vector<uint8_t> *signature) const {
   Sha256Hash hasher;
   hasher.Init();
-  hasher.Update(message.data(), message.size());
-  std::string digest = hasher.CumulativeHash();
+  hasher.Update(message);
+  std::vector<uint8_t> digest;
+  ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&digest));
 
   signature->resize(ECDSA_size(private_key_.get()));
   uint32_t signature_size = 0;
-  if (!ECDSA_sign(/*type=*/0, reinterpret_cast<const uint8_t *>(digest.data()),
-                  digest.size(), signature->data(), &signature_size,
-                  private_key_.get())) {
+  if (!ECDSA_sign(/*type=*/0, digest.data(), digest.size(), signature->data(),
+                  &signature_size, private_key_.get())) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   signature->resize(signature_size);

@@ -21,9 +21,11 @@
 
 #include <openssl/sha.h>
 
-#include <string>
+#include <vector>
 
 #include "asylo/crypto/hash_interface.h"
+#include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 
@@ -33,11 +35,11 @@ class Sha256Hash final : public HashInterface {
   Sha256Hash();
 
   // From HashInterface.
-  HashAlgorithm Algorithm() const override;
+  HashAlgorithm GetHashAlgorithm() const override;
   size_t DigestSize() const override;
   void Init() override;
-  void Update(const void *data, size_t len) override;
-  std::string CumulativeHash() const override;
+  void Update(ByteContainerView data) override;
+  Status CumulativeHash(std::vector<uint8_t> *digest) const override;
 
  private:
   SHA256_CTX context_;

@@ -18,7 +18,9 @@
 
 #include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 
+#include <cstdint>
 #include <string>
+#include <vector>
 
 #include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
@@ -370,10 +372,12 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
 
   // Verify that the assertion is bound to a hash of the user data.
   Sha256Hash hash;
-  hash.Update(kUserData, strlen(kUserData));
+  hash.Update(kUserData);
   auto expected_reportdata =
       TrivialZeroObject<UnsafeBytes<sgx::kReportdataSize>>();
-  expected_reportdata.replace(/*pos=*/0, hash.CumulativeHash());
+  std::vector<uint8_t> digest;
+  ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
+  expected_reportdata.replace(/*pos=*/0, digest);
   EXPECT_EQ(report->reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.
