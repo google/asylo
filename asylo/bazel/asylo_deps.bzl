@@ -104,13 +104,13 @@ def asylo_deps():
     if "com_google_absl" not in native.existing_rules():
         patch_repository(
             name = "com_google_absl",
-            # The first release, 20180600
+            # Head commit on Oct 22, 2018.
             urls = [
-                "https://github.com/abseil/abseil-cpp/archive/20180600.tar.gz",
+                "https://github.com/abseil/abseil-cpp/archive/5fbde92571a269675543b2c513747adb711b0ea1.tar.gz",
             ],
             patches = ["@com_google_asylo//asylo/distrib:absl_mutex.patch"],
-            sha256 = "794d483dd9a19c43dc1fbbe284ce8956eb7f2600ef350dac4c602f9b4eb26e90",
-            strip_prefix = "abseil-cpp-20180600",
+            sha256 = "daa4ea781962a4af0c467baa090da8a3f1fce99ad6aed97cc51f589dfa78f36f",
+            strip_prefix = "abseil-cpp-5fbde92571a269675543b2c513747adb711b0ea1",
         )
 
     # Absl for python
