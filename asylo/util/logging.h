@@ -229,10 +229,11 @@ inline uint64_t GetReferenceableValue(uint64_t t) { return t; }
 /// \param val1 The first variable to be compared.
 /// \param val2 The second variable to be compared.
 /// \param log The log action to be performed if the comparison returns false.
-#define CHECK_OP_LOG(name, op, val1, val2, log)                                \
-  while (std::unique_ptr<std::string> _result = std::unique_ptr<std::string>(name##Impl( \
-             GetReferenceableValue(val1), GetReferenceableValue(val2),         \
-             #val1 " " #op " " #val2)))                                        \
+#define CHECK_OP_LOG(name, op, val1, val2, log)                     \
+  while (std::unique_ptr<std::string> _result = std::unique_ptr<std::string>( \
+             asylo::name##Impl(asylo::GetReferenceableValue(val1),  \
+                               asylo::GetReferenceableValue(val2),  \
+                               #val1 " " #op " " #val2)))           \
   log(__FILE__, __LINE__, *_result).stream()
 
 /// Compares `val1` and `val2` with `op`, and produces a LOG(FATAL) if false.
@@ -274,7 +275,7 @@ inline uint64_t GetReferenceableValue(uint64_t t) { return t; }
 ///
 /// \param val The value being compared.
 #define CHECK_NOTNULL(val) \
-  CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", (val))
+  asylo::CheckNotNull(__FILE__, __LINE__, "'" #val "' Must be non NULL", (val))
 
 /// Sets the verbosity threshold for VLOG. A VLOG command with a level greater
 /// than this will be ignored.
