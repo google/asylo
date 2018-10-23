@@ -16,9 +16,6 @@
  *
  */
 
-#ifndef THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_SYSLOG_H_
-#define THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_SYSLOG_H_
-
 #include <sys/syslog.h>
 
 #include <stdarg.h>
@@ -27,9 +24,7 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 void openlog(const char *ident, int option, int facility) {
   enc_untrusted_openlog(ident, option, facility);
@@ -47,7 +42,4 @@ void syslog(int priority, const char *format, ...) {
   enc_untrusted_syslog(priority, buffer.get());
 }
 
-#ifdef __cplusplus
-}
-#endif
-#endif  // THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_SYSLOG_H_
+}  // extern "C"
