@@ -43,6 +43,7 @@ sim_enclave(
     deps = [
         ":hello_proto_cc",
         "//asylo:enclave_runtime",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],

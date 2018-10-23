@@ -20,6 +20,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/examples/hello_world/hello.pb.h"
+#include "asylo/util/logging.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
 
@@ -48,7 +49,7 @@ class HelloApplication : public asylo::TrustedApplication {
   }
 
  private:
-  std::uint64_t visitor_count_;
+  uint64_t visitor_count_;
 };
 
 namespace asylo {
