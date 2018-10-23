@@ -29,5 +29,6 @@ cc_library(
     deps = [
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/core:trusted_core",
+        "@com_google_absl//absl/container:flat_hash_map",
     ],
 )

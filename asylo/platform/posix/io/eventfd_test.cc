@@ -23,11 +23,11 @@
 #include <chrono>
 #include <mutex> 
 #include <thread>
-#include <unordered_set>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/container/flat_hash_set.h"
 
 namespace asylo {
 namespace {
@@ -74,7 +74,7 @@ class EventFdTest : public ::testing::Test {
   }
 
   // Every thread will run this routine.
-  void Work(int i, std::unordered_set<int> *thread_indexes,
+  void Work(int i, absl::flat_hash_set<int> *thread_indexes,
             std::mutex *thread_indexes_mutex) {
     // Wait on semaphore.
     SemaphoreWait();
@@ -100,7 +100,7 @@ class EventFdTest : public ::testing::Test {
 
 TEST_F(EventFdTest, SemaphoreMultipleThreads) {
   InitializeEventFd(true, kCounterStartMultiThread);
-  std::unordered_set<int> thread_indexes;
+  absl::flat_hash_set<int> thread_indexes;
   std::mutex thread_indexes_mutex;
   std::vector<std::thread> workers;
   for (int i = 0; i < kNumWorkers; ++i) {

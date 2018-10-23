@@ -41,6 +41,7 @@ cc_library(
         "//asylo/platform/common:time_util",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
@@ -161,6 +162,7 @@ cc_library(
     deps = [
         ":shared_name",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",

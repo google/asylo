@@ -80,7 +80,7 @@
 // used to generate unique keys for elements added to the map. A specialization
 // of this template defines a functor that, given an instance of T, returns a
 // string that uniquely identifies the particular derived type of that object.
-// This can be acheived by making a call to some virtual method of T that is
+// This can be achieved by making a call to some virtual method of T that is
 // defined for each derived type.
 //
 // A specialization of the Namer template must be injected into the
@@ -111,8 +111,8 @@
 
 #include <string>
 #include <type_traits>
-#include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/static_map_internal.h"
@@ -186,9 +186,9 @@ class StaticMap {
   class ValueCollection {
    public:
     using iterator = internal::ValueIterator<
-        T, typename std::unordered_map<std::string, T *>::iterator>;
+        T, typename absl::flat_hash_map<std::string, T *>::iterator>;
     using const_iterator = internal::ValueIterator<
-        const T, typename std::unordered_map<std::string, T *>::const_iterator>;
+        const T, typename absl::flat_hash_map<std::string, T *>::const_iterator>;
 
     ValueCollection() {
       absl::MutexLock lock(&StaticMap::mu_);
@@ -253,16 +253,16 @@ class StaticMap {
 
   static void Initialize() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (map_ == nullptr) {
-      map_ = new std::unordered_map<std::string, T *>();
+      map_ = new absl::flat_hash_map<std::string, T *>();
     }
   }
-  static std::unordered_map<std::string, T *> *map_ GUARDED_BY(mu_);
+  static absl::flat_hash_map<std::string, T *> *map_ GUARDED_BY(mu_);
   static absl::Mutex mu_;
   static N namer_;
 };
 
 template <class MapName, class T, class N>
-std::unordered_map<std::string, T *> *StaticMap<MapName, T, N>::map_ = nullptr;
+absl::flat_hash_map<std::string, T *> *StaticMap<MapName, T, N>::map_ = nullptr;
 
 template <class MapName, class T, class N>
 absl::Mutex StaticMap<MapName, T, N>::mu_;

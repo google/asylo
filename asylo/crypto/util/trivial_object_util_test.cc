@@ -20,10 +20,10 @@
 
 #include <cctype>
 #include <string>
-#include <unordered_set>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/container/flat_hash_set.h"
 #include "asylo/crypto/util/bytes.h"
 
 namespace asylo {
@@ -43,7 +43,7 @@ TYPED_TEST_CASE(TypedTrivialObjectUtilTest, MyTypes);
 // is O(2^-56), if the entropy source is doing what it is
 // supposed to do!
 TYPED_TEST(TypedTrivialObjectUtilTest, Random) {
-  std::unordered_set<std::string> set;
+  absl::flat_hash_set<std::string> set;
   for (int i = 0; i < 16; i++) {
     TypeParam obj = TrivialRandomObject<TypeParam>();
     std::string str = ConvertTrivialObjectToHexString(obj);

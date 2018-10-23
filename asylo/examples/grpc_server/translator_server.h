@@ -19,8 +19,9 @@
 #ifndef ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_H_
 #define ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_H_
 
-#include <unordered_map>
+#include <string>
 
+#include "absl/container/flat_hash_map.h"
 #include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
 #include "include/grpcpp/grpcpp.h"
 #include "include/grpcpp/server.h"
@@ -38,7 +39,7 @@ class TranslatorServer final : public Translator::Service {
                                 GetTranslationResponse *response) override;
 
   // A map from words to their translations.
-  std::unordered_map<std::string, std::string> translation_map_;
+  absl::flat_hash_map<std::string, std::string> translation_map_;
 };
 
 }  // namespace grpc_server

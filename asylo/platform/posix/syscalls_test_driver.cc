@@ -29,10 +29,10 @@
 #include <unistd.h>
 #include <cstring>
 #include <iostream>
-#include <unordered_set>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
@@ -917,7 +917,7 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   // the host list. Furthermore, we shall verify that all IPv4/IPv6 entries in
   // the host list are indeed found in the enclave list. We shall also verify
   // that there are no duplicates in the enclave list.
-  std::unordered_set<struct ifaddrs *> found_in_enclave;
+  absl::flat_hash_set<struct ifaddrs *> found_in_enclave;
   for (struct ifaddrs *enclave_list_curr = enclave_front;
        enclave_list_curr != nullptr;
        enclave_list_curr = enclave_list_curr->ifa_next) {

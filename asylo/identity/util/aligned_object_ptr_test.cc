@@ -19,10 +19,10 @@
 #include "asylo/identity/util/aligned_object_ptr.h"
 
 #include <string>
-#include <unordered_map>
 
 #include <gtest/gtest.h>
 #include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
 
 namespace asylo {
 namespace {
@@ -142,7 +142,8 @@ TEST_F(AlignedObjectPtrTest, StructAlign) {
 TEST_F(AlignedObjectPtrTest, ClassAlign) {
   TestStruct s1{1, 1}, s2{2, 2}, s3{3, 3};
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[0]> map0;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[0]>
+      map0;
   EXPECT_TRUE(map0);
   EXPECT_TRUE(map0->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map0->emplace(std::string("s2"), s2).second);
@@ -150,7 +151,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map0->emplace(std::string("s3"), s3).second);
   CheckAlign(map0);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[1]> map1;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[1]>
+      map1;
   EXPECT_TRUE(map1);
   EXPECT_TRUE(map1->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map1->emplace(std::string("s2"), s2).second);
@@ -158,7 +160,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map1->emplace(std::string("s3"), s3).second);
   CheckAlign(map1);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[2]> map2;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[2]>
+      map2;
   EXPECT_TRUE(map2);
   EXPECT_TRUE(map2->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map2->emplace(std::string("s2"), s2).second);
@@ -166,7 +169,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map2->emplace(std::string("s3"), s3).second);
   CheckAlign(map2);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[3]> map3;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[3]>
+      map3;
   EXPECT_TRUE(map3);
   EXPECT_TRUE(map3->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map3->emplace(std::string("s2"), s2).second);
@@ -174,7 +178,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map3->emplace(std::string("s3"), s3).second);
   CheckAlign(map3);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[4]> map4;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[4]>
+      map4;
   EXPECT_TRUE(map4);
   EXPECT_TRUE(map4->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map4->emplace(std::string("s2"), s2).second);
@@ -182,7 +187,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map4->emplace(std::string("s3"), s3).second);
   CheckAlign(map4);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[5]> map5;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]>
+      map5;
   EXPECT_TRUE(map5);
   EXPECT_TRUE(map5->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map5->emplace(std::string("s2"), s2).second);
@@ -190,7 +196,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map5->emplace(std::string("s3"), s3).second);
   CheckAlign(map5);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[6]> map6;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[6]>
+      map6;
   EXPECT_TRUE(map6);
   EXPECT_TRUE(map6->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map6->emplace(std::string("s2"), s2).second);
@@ -198,7 +205,8 @@ TEST_F(AlignedObjectPtrTest, ClassAlign) {
   EXPECT_FALSE(map6->emplace(std::string("s3"), s3).second);
   CheckAlign(map6);
 
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[7]> map7;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[7]>
+      map7;
   EXPECT_TRUE(map7);
   EXPECT_TRUE(map7->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map7->emplace(std::string("s2"), s2).second);
@@ -231,7 +239,7 @@ void TestMoveAssign(AlignedObjectPtr<T, ALIGN> *t) {
 // Test the move constructor and the move-assign operator.
 TEST_F(AlignedObjectPtrTest, MoveAndAssign) {
   TestStruct s1{1, 1}, s2{2, 2}, s3{3, 3};
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[5]> map;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]> map;
   EXPECT_TRUE(map->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map->emplace(std::string("s2"), s2).second);
   EXPECT_TRUE(map->emplace(std::string("s3"), s3).second);
@@ -249,7 +257,7 @@ AlignedObjectPtr<T, Align> &&MoveObject(AlignedObjectPtr<T, Align> *t) {
 // Test that self-move-assign works correctly.
 TEST_F(AlignedObjectPtrTest, SelfMoveAssign) {
   TestStruct s1{1, 1}, s2{2, 2}, s3{3, 3};
-  AlignedObjectPtr<std::unordered_map<std::string, TestStruct>, kAlignSizes[5]> map;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]> map;
   EXPECT_TRUE(map->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map->emplace(std::string("s2"), s2).second);
   EXPECT_TRUE(map->emplace(std::string("s3"), s3).second);

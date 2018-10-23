@@ -38,6 +38,7 @@ cc_test(
         ":aligned_object_ptr",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_googletest//:gtest",
     ],
 )

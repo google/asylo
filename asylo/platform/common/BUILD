@@ -52,6 +52,7 @@ cc_test(
         ":singleton",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],
@@ -65,6 +66,7 @@ cc_library(
     hdrs = ["static_map.h"],
     deps = [
         "//asylo/util:logging",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/synchronization",
     ],
 )
@@ -105,6 +107,7 @@ cc_library(
     deps = [
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
 

@@ -18,8 +18,6 @@
 
 #include "asylo/examples/grpc_server/translator_server.h"
 
-#include <unordered_map>
-
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
 #include "include/grpcpp/grpcpp.h"

@@ -24,8 +24,8 @@
 #include <cstdlib>
 #include <functional>
 #include <type_traits>
-#include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/trusted_global_state.h"
@@ -52,10 +52,10 @@ static int check_parameter(T *parameter) {
   return 0;
 }
 
-static thread_local std::unordered_map<uint64_t, void *> *tls_map = nullptr;
+static thread_local absl::flat_hash_map<uint64_t, void *> *tls_map = nullptr;
 
 static void init_tls_map() {
-  tls_map = new std::unordered_map<uint64_t, void *>();
+  tls_map = new absl::flat_hash_map<uint64_t, void *>();
 }
 
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {
@@ -240,7 +240,7 @@ void *pthread_getspecific(pthread_key_t key) {
     init_tls_map();
   }
 
-  std::unordered_map<uint64_t, void *>::const_iterator specific =
+  absl::flat_hash_map<uint64_t, void *>::const_iterator specific =
       tls_map->find(key);
   if (specific == tls_map->end()) {
     return nullptr;

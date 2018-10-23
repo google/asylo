@@ -57,10 +57,18 @@ cc_library(
     deps = [
         ":util",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/common:bridge_proto_serializer",
+        "//asylo/platform/common:memory",
+        "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
+        "//asylo/platform/storage/secure:aead_handler",
+        "//asylo/platform/storage/secure:enclave_storage_secure",
         "//asylo/platform/storage/secure:trusted_secure",
+        "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/algorithm:container",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
@@ -97,6 +105,7 @@ cc_test(
     tags = ["regression"],
     deps = [
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -150,6 +159,7 @@ cc_test(
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest",
     ],
 )

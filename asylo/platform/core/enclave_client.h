@@ -19,8 +19,7 @@
 #ifndef ASYLO_PLATFORM_CORE_ENCLAVE_CLIENT_H_
 #define ASYLO_PLATFORM_CORE_ENCLAVE_CLIENT_H_
 
-#include <unordered_map>
-
+#include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/core/shared_name.h"

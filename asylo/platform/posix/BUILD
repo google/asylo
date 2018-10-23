@@ -92,6 +92,7 @@ cc_library(
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
@@ -149,6 +150,7 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_set",
     ],
 )
 
@@ -181,6 +183,7 @@ enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

@@ -379,7 +379,9 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
                   "Failed to deregister one or more handlers for signal: ",
                   iterator->first));
         }
-        iterator = signal_to_client_map_.erase(iterator);
+        auto saved_iterator = iterator;
+        ++iterator;
+        signal_to_client_map_.erase(saved_iterator);
       } else {
         ++iterator;
       }

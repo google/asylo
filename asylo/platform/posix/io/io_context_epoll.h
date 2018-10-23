@@ -19,7 +19,7 @@
 #ifndef ASYLO_PLATFORM_POSIX_IO_IO_CONTEXT_EPOLL_H_
 #define ASYLO_PLATFORM_POSIX_IO_IO_CONTEXT_EPOLL_H_
 
-#include <unordered_map>
+#include "absl/container/flat_hash_map.h"
 #include "asylo/platform/posix/io/io_manager.h"
 
 namespace asylo {
@@ -41,10 +41,10 @@ class IOContextEpoll : public IOManager::IOContext {
  private:
   // Host file descriptor implementing this stream.
   int host_fd_;
-  std::unordered_map<uint64_t, uint64_t> key_to_data;
+  absl::flat_hash_map<uint64_t, uint64_t> key_to_data;
   // Manages a mapping from the host file descriptor to a random key to enable
   // updates to the above map durring deletions/modifications.
-  std::unordered_map<int, uint64_t> fd_to_key;
+  absl::flat_hash_map<int, uint64_t> fd_to_key;
 };
 
 }  // namespace io

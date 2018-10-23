@@ -24,10 +24,9 @@
 
 #include <mutex>
 #include <string>
-#include <unordered_map>
-#include <unordered_set>
 #include <utility>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"
@@ -284,8 +283,8 @@ class EnclaveManager {
   // Value synchronized to CLOCK_REALTIME by the worker loop.
   std::atomic<int64_t> clock_realtime_;
 
-  std::unordered_map<std::string, std::unique_ptr<EnclaveClient>> client_by_name_;
-  std::unordered_map<const EnclaveClient *, std::string> name_by_client_;
+  absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>> client_by_name_;
+  absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_;
 
   // A part of the configuration for enclaves launched by the enclave manager
   // comes from the Asylo daemon. This member caches such configuration.
@@ -365,7 +364,7 @@ class EnclaveSignalDispatcher {
   void operator=(EnclaveSignalDispatcher const &) = delete;
 
   // Mapping of signal number to the enclave client that registered it.
-  std::unordered_map<int, EnclaveClient *> signal_to_client_map_
+  absl::flat_hash_map<int, EnclaveClient *> signal_to_client_map_
       GUARDED_BY(signal_enclave_map_lock_);
 
   // A mutex that guards signal_to_client_map_ and client_to_signal_map_.

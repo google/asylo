@@ -121,6 +121,7 @@ cc_test(
         ":bytes",
         ":trivial_object_util",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest",
     ],
 )

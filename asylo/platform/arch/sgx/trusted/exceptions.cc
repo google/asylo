@@ -17,7 +17,8 @@
  */
 
 #include <stdlib.h>
-#include <unordered_map>
+
+#include "absl/container/flat_hash_map.h"
 #include "include/sgx_cpuid.h"
 #include "include/sgx_trts_exception.h"
 
@@ -41,12 +42,12 @@ struct CpuidResult {
   // All registers from a CPUID call
   int reg[4];
 };
-std::unordered_map<int, CpuidResult> *cpuid_results;
+absl::flat_hash_map<int, CpuidResult> *cpuid_results;
 
 // Prior to any CPUID instructions being executed, go fetch results from outside
 // the enclave, for us to use as the results in the enclave.
 static void initialize_cpuid_results() {
-  cpuid_results = new std::unordered_map<int, CpuidResult>();
+  cpuid_results = new absl::flat_hash_map<int, CpuidResult>();
   for (int i : kSupportedCpuidLeaves) {
     // Get CPUID results from the host and cache the results
     CpuidResult result;

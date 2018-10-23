@@ -27,8 +27,8 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <algorithm>
-#include <unordered_set>
 
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
@@ -658,7 +658,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     // Test CPU_SET by setting a pre-determined set of bits and checking that
     // they are precisely the ones set.
 
-    const std::unordered_set<int> test_cpu_set_cpus(
+    const absl::flat_hash_set<int> test_cpu_set_cpus(
         {1, 2, 5, 14, 42, 132, 429});
     CPU_ZERO(&mask);
     for (int cpu : test_cpu_set_cpus) {
@@ -678,9 +678,9 @@ class SyscallsEnclave : public EnclaveTestCase {
     // pre-determined subset, then checking that the subset of bits are all
     // unset.
 
-    const std::unordered_set<int> test_cpu_clr_cpus_to_set(
+    const absl::flat_hash_set<int> test_cpu_clr_cpus_to_set(
         {1, 2, 5, 14, 42, 132, 429});
-    const std::unordered_set<int> test_cpu_clr_cpus_to_clear({2, 5, 132});
+    const absl::flat_hash_set<int> test_cpu_clr_cpus_to_clear({2, 5, 132});
     CPU_ZERO(&mask);
     for (int cpu : test_cpu_clr_cpus_to_set) {
       CPU_SET(cpu, &mask);

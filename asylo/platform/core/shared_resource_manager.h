@@ -20,8 +20,8 @@
 #define ASYLO_PLATFORM_CORE_SHARED_RESOURCE_MANAGER_H_
 
 #include <memory>
-#include <unordered_map>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
@@ -143,8 +143,8 @@ class SharedResourceManager {
   Status InstallResource(ResourceHandle *handle) EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   absl::Mutex mu_;
-  std::unordered_map<SharedName, std::unique_ptr<ResourceHandle>,
-                     SharedName::Hash, SharedName::Eq>
+  absl::flat_hash_map<SharedName, std::unique_ptr<ResourceHandle>,
+                      SharedName::Hash, SharedName::Eq>
       shared_resources_;
 };
 

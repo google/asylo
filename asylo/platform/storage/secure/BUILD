@@ -18,7 +18,6 @@ licenses(["notice"])  # Apache v2.0
 
 # Secure IO library for enclave.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
 
 package(
@@ -64,6 +63,7 @@ cc_library(
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/storage/utils:offset_translator",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ],

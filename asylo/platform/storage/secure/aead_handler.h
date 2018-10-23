@@ -22,9 +22,9 @@
 #include <stdint.h>
 #include <memory>
 #include <string>
-#include <unordered_map>
 
 #include "absl/base/attributes.h"
+#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"
@@ -195,11 +195,11 @@ class AeadHandler {
 
   // Map of file (data set) controls for opened files keyed on int identity of
   // files.
-  std::unordered_map<int, std::shared_ptr<FileControl>> fmap_ GUARDED_BY(mu_);
+  absl::flat_hash_map<int, std::shared_ptr<FileControl>> fmap_ GUARDED_BY(mu_);
 
   // Map of file (data set) controls for opened files keyed on string paths of
   // files.
-  std::unordered_map<std::string, std::shared_ptr<FileControl>> opened_files_;
+  absl::flat_hash_map<std::string, std::shared_ptr<FileControl>> opened_files_;
 
   // An instance that performs operations on untrusted file offset.
   std::unique_ptr<OffsetTranslator> offset_translator_;

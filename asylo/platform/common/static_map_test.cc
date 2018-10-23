@@ -191,13 +191,15 @@ TEST(StaticMapTest, TestRangeBasedFor) {
 // static-map iterator.
 TEST(StaticMapTest, TestAlgorithmIterator) {
   auto values = FooMap::Values();
-  auto bar_it = find_if(values.begin(), values.end(),
-                        [](const Foo &foo) { return foo.Name() == "Bar"; });
+  auto bar_it = std::find_if(values.begin(), values.end(), [](const Foo &foo) {
+    return foo.Name() == "Bar";
+  });
   EXPECT_NE(bar_it, values.end());
   EXPECT_EQ(bar_it->Name(), "Bar");
 
-  auto yam_it = find_if(values.begin(), values.end(),
-                        [](const Foo &foo) { return foo.Name() == "Yam"; });
+  auto yam_it = std::find_if(values.begin(), values.end(), [](const Foo &foo) {
+    return foo.Name() == "Yam";
+  });
   EXPECT_EQ(yam_it, values.end());
 }
 
@@ -205,13 +207,15 @@ TEST(StaticMapTest, TestAlgorithmIterator) {
 // immutable static-map iterator.
 TEST(StaticMapTest, TestAlgorithmConstIterator) {
   auto values = FooMap::Values();
-  auto bar_it = find_if(values.cbegin(), values.cend(),
-                        [](const Foo &foo) { return foo.Name() == "Bar"; });
+  auto bar_it =
+      std::find_if(values.cbegin(), values.cend(),
+                   [](const Foo &foo) { return foo.Name() == "Bar"; });
   EXPECT_NE(bar_it, values.cend());
   EXPECT_EQ(bar_it->Name(), "Bar");
 
-  auto yam_it = find_if(values.cbegin(), values.cend(),
-                        [](const Foo &foo) { return foo.Name() == "Yam"; });
+  auto yam_it =
+      std::find_if(values.cbegin(), values.cend(),
+                   [](const Foo &foo) { return foo.Name() == "Yam"; });
   EXPECT_EQ(yam_it, values.cend());
 }
 

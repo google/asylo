@@ -22,7 +22,6 @@
 #include <errno.h>
 #include <cerrno>
 #include <string>
-#include <unordered_map>
 
 #include "asylo/util/error_space.h"
 

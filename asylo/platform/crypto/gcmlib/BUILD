@@ -18,7 +18,6 @@ licenses(["notice"])  # Apache v2.0
 
 # GCM library for secure storage.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
 
 package(
@@ -43,6 +42,7 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/util:logging",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
     ],

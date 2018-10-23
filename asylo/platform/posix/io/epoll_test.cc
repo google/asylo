@@ -20,11 +20,11 @@
 #include <unistd.h>
 #include <chrono>
 #include <thread>
-#include <unordered_set>
 
-#include "asylo/test/util/status_matchers.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/container/flat_hash_set.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace {
@@ -97,7 +97,7 @@ class EpollTest : public ::testing::Test {
     int num_events = epoll_wait(epfd, events, kNumPipes, -1);
     ASSERT_NE(num_events, -1);
     EXPECT_EQ(num_events, kNumPipes / 2);
-    std::unordered_set<int> read_fds;
+    absl::flat_hash_set<int> read_fds;
     for (int i = 0; i < num_events; ++i) {
       // Make sure that the current fd hasn't been encountered before.
       ASSERT_EQ(read_fds.find(events[i].data.fd), read_fds.end());

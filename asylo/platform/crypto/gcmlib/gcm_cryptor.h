@@ -22,9 +22,9 @@
 #include <openssl/evp.h>
 #include <memory>
 #include <string>
-#include <unordered_map>
 #include <vector>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/bytes.h"
 
@@ -134,8 +134,8 @@ class GcmCryptorRegistry {
   GcmCryptorRegistry() = default;
   GcmCryptorRegistry(GcmCryptorRegistry const &) = delete;
   void operator=(GcmCryptorRegistry const &) = delete;
-  std::unordered_map<GcmCryptorKey, std::unique_ptr<GcmCryptor>,
-                     SafeBytesHasher>
+  absl::flat_hash_map<GcmCryptorKey, std::unique_ptr<GcmCryptor>,
+                      SafeBytesHasher>
       cryptor_registry_ GUARDED_BY(mu_);
   absl::Mutex mu_;
 };

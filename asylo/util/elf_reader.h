@@ -22,9 +22,9 @@
 #include <elf.h>
 #include <cstdint>
 #include <string>
-#include <unordered_map>
 #include <utility>
 
+#include "absl/container/flat_hash_map.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/util/statusor.h"
@@ -58,8 +58,8 @@ class ElfReader {
 
   ElfReader(
       absl::Span<const uint8_t> elf_file,
-      std::unordered_map<std::string, const Elf64_Shdr *> &&section_headers,
-      std::unordered_map<std::string, absl::Span<const uint8_t>> &&section_data)
+      absl::flat_hash_map<std::string, const Elf64_Shdr *> &&section_headers,
+      absl::flat_hash_map<std::string, absl::Span<const uint8_t>> &&section_data)
       : elf_file_(elf_file),
         section_headers_(std::move(section_headers)),
         section_data_(std::move(section_data)) {}
@@ -68,10 +68,10 @@ class ElfReader {
   absl::Span<const uint8_t> elf_file_;
 
   // A map from section names to section headers.
-  std::unordered_map<std::string, const Elf64_Shdr *> section_headers_;
+  absl::flat_hash_map<std::string, const Elf64_Shdr *> section_headers_;
 
   // A map from section names to views of their data.
-  std::unordered_map<std::string, absl::Span<const uint8_t>> section_data_;
+  absl::flat_hash_map<std::string, absl::Span<const uint8_t>> section_data_;
 };
 
 }  // namespace asylo

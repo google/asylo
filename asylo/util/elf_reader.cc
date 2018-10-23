@@ -134,11 +134,11 @@ class ElfReaderCreator {
 
   // A map from section names to section headers. Initialized by
   // InitializeSectionMaps().
-  std::unordered_map<std::string, const Elf64_Shdr *> section_headers_;
+  absl::flat_hash_map<std::string, const Elf64_Shdr *> section_headers_;
 
   // A map from section names to views of their data. Initialized by
   // InitializeSectionMaps().
-  std::unordered_map<std::string, absl::Span<const uint8_t>> section_data_;
+  absl::flat_hash_map<std::string, absl::Span<const uint8_t>> section_data_;
 };
 
 StatusOr<ElfReader> ElfReader::CreateFromSpan(

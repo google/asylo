@@ -23,11 +23,11 @@
 #include <cstdint>
 #include <string>
 #include <thread>
-#include <unordered_map>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 
 namespace asylo {
@@ -88,8 +88,9 @@ void TestSingleton(T **ptr, absl::Mutex *mu) {
 template <typename T>
 class TypedSingletonTest : public ::testing::Test {};
 
-typedef ::testing::Types<NumericConstant<0>, std::unordered_map<std::string, std::string>,
-                         std::string, std::vector<uint8_t>>
+typedef ::testing::Types<NumericConstant<0>,
+                         absl::flat_hash_map<std::string, std::string>, std::string,
+                         std::vector<uint8_t>>
     MyTypes;
 
 TYPED_TEST_CASE(TypedSingletonTest, MyTypes);

@@ -202,6 +202,7 @@ cc_library(
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@linux_sgx//:public",

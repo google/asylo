@@ -23,8 +23,9 @@
 #include <functional>
 #include <memory>
 #include <queue>
-#include <unordered_map>
 #include <utility>
+
+#include "absl/container/flat_hash_map.h"
 
 namespace asylo {
 
@@ -117,7 +118,7 @@ class ThreadManager {
   pthread_mutex_t threads_lock_;
 
   // List of currently running threads or threads waiting to be joined.
-  std::unordered_map<pthread_t, std::shared_ptr<Thread>> threads_;
+  absl::flat_hash_map<pthread_t, std::shared_ptr<Thread>> threads_;
 };
 
 }  // namespace asylo

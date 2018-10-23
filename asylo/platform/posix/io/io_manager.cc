@@ -23,9 +23,9 @@
 #include <poll.h>
 #include <stdint.h>
 #include <memory>
-#include <unordered_set>
 
 #include "absl/algorithm/container.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
@@ -325,8 +325,8 @@ int IOManager::Select(int nfds, fd_set *readfds, fd_set *writefds,
     return ret;
   }
 
-  // Add the returned fd_sets into std::unordered_set.
-  std::unordered_set<int> host_readfds_set, host_writefds_set,
+  // Add the returned fd_sets into absl::flat_hash_set.
+  absl::flat_hash_set<int> host_readfds_set, host_writefds_set,
       host_exceptfds_set;
   for (int fd = 0; fd < nfds; ++fd) {
     std::shared_ptr<IOContext> context = fd_table_.Get(fd);
