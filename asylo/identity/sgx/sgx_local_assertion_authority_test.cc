@@ -98,9 +98,9 @@ TEST_P(SgxLocalAssertionAuthorityTest, CanGenerate) {
   SgxLocalAssertionGenerator generator;
   ASSERT_THAT(generator.Initialize(config_), IsOk());
 
-  auto result = generator.CanGenerate(request);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_TRUE(result.ValueOrDie());
+  bool result;
+  ASYLO_ASSERT_OK_AND_ASSIGN(result, generator.CanGenerate(request));
+  EXPECT_TRUE(result);
 }
 
 // Verify that SgxLocalAssertionVerifier can verify an assertion offered by a
@@ -120,9 +120,9 @@ TEST_P(SgxLocalAssertionAuthorityTest, CanVerify) {
   SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
 
-  auto result = verifier.CanVerify(offer);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_TRUE(result.ValueOrDie());
+  bool result;
+  ASYLO_ASSERT_OK_AND_ASSIGN(result, verifier.CanVerify(offer));
+  EXPECT_TRUE(result);
 }
 
 // Verify the SgxLocalAssertionVerifier successfully verifies an assertion

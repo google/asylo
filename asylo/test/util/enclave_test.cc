@@ -33,16 +33,14 @@ void EnclaveTest::SetUpBase() {
     LoggingConfig *logging_config = config_.mutable_logging_config();
     logging_config->set_log_directory(FLAGS_test_tmpdir);
   }
-  Status status =
-      test_launcher_.SetUp(FLAGS_enclave_path, config_, enclave_url_);
-  ASSERT_THAT(status, IsOk());
+  ASYLO_ASSERT_OK(
+      test_launcher_.SetUp(FLAGS_enclave_path, config_, enclave_url_));
   client_ = test_launcher_.mutable_client();
 }
 
 void EnclaveTest::TearDownBase(bool skip_finalize) {
   EnclaveFinal efinal;
-  Status status = test_launcher_.TearDown(efinal, skip_finalize);
-  ASSERT_THAT(status, IsOk());
+  ASYLO_ASSERT_OK(test_launcher_.TearDown(efinal, skip_finalize));
 }
 
 int EnclaveTest::redirect_stdin() {

@@ -19,6 +19,8 @@
 #ifndef ASYLO_TEST_UTIL_STATUS_MATCHERS_H_
 #define ASYLO_TEST_UTIL_STATUS_MATCHERS_H_
 
+#include <memory>
+
 #include <gmock/gmock-matchers.h>
 #include "absl/types/optional.h"
 #include "asylo/test/util/statusor_test_util.h"
@@ -161,6 +163,34 @@ template <typename Enum>
 inline internal::IsOkMatcherGenerator IsOk() {
   return internal::IsOkMatcherGenerator();
 }
+
+// Macros for testing the results of functions that return asylo::Status or
+// asylo::StatusOr<T> (for any type T).
+#define ASYLO_EXPECT_OK(rexpr) EXPECT_THAT(rexpr, ::asylo::IsOk())
+#define ASYLO_ASSERT_OK(rexpr) ASSERT_THAT(rexpr, ::asylo::IsOk())
+
+// Executes an expression that returns an asylo::StatusOr<T>, and assigns the
+// contained variable to lhs if the error code is OK.
+// If the Status is non-OK, generates a test failure and returns from the
+// current function, which must have a void return type.
+//
+// Example: Assigning to an existing value
+//   ValueType value;
+//   ASYLO_ASSERT_OK_AND_ASSIGN(value, MaybeGetValue(arg));
+//
+// The value assignment example might expand into:
+//   StatusOr<ValueType> status_or_value = MaybeGetValue(arg);
+//   ASYLO_ASSERT_OK(status_or_value.status());
+//   value = status_or_value.ValueOrDie();
+#define ASYLO_ASSERT_OK_AND_ASSIGN(lhs, rexpr)                           \
+  do {                                                                   \
+    auto _asylo_status_to_verify = rexpr;                                \
+    if (!_asylo_status_to_verify.ok()) {                                 \
+      FAIL() << #rexpr                                                   \
+             << " returned error: " << _asylo_status_to_verify.status(); \
+    }                                                                    \
+    lhs = std::move(_asylo_status_to_verify).ValueOrDie();               \
+  } while (false)
 
 }  // namespace asylo
 

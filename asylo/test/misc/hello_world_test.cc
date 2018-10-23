@@ -26,7 +26,7 @@ namespace {
 class HelloWorldTest : public EnclaveTest {};
 
 TEST_F(HelloWorldTest, HelloTest) {
-  EXPECT_THAT(client_->EnterAndRun({}, nullptr), IsOk());
+  ASYLO_EXPECT_OK(client_->EnterAndRun({}, nullptr));
 }
 
 }  // namespace
