@@ -161,6 +161,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_set",
     ],
 )
 

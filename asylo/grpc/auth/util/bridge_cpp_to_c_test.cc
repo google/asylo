@@ -20,11 +20,12 @@
 
 #include <cstdint>
 #include <string>
-#include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "asylo/grpc/auth/null_credentials_options.h"
+#include "asylo/identity/assertion_description_util.h"
 #include "asylo/identity/identity.pb.h"
 
 namespace asylo {
@@ -43,16 +44,29 @@ bool AssertionDescriptionIsEqual(const AssertionDescription &expected,
                 actual.authority_type.size) == 0;
 }
 
+// Returns true if the given |array| contains an assertion_description
+// equivalent to the given |expected_assertion_description|.
+bool ContainsEquivalent(const assertion_description_array &array,
+                        AssertionDescription expected_assertion_description) {
+  for (size_t i = 0; i < array.count; ++i) {
+    if (AssertionDescriptionIsEqual(expected_assertion_description,
+                                    array.descriptions[i])) {
+      return true;
+    }
+  }
+  return false;
+}
+
 // Returns true if |expected| contains the same assertion_descriptions as
 // |actual|.
-bool AssertionDescriptionsAreEqual(
-    const std::vector<AssertionDescription> &expected,
-    const assertion_description_array &actual) {
+bool AssertionDescriptionsAreEqual(const AssertionDescriptionHashSet &expected,
+                                   const assertion_description_array &actual) {
   if (expected.size() != actual.count) {
     return false;
   }
-  for (int i = 0; i < expected.size(); ++i) {
-    if (!AssertionDescriptionIsEqual(expected[i], actual.descriptions[i])) {
+
+  for (const AssertionDescription &assertion_description : expected) {
+    if (!ContainsEquivalent(actual, assertion_description)) {
       return false;
     }
   }

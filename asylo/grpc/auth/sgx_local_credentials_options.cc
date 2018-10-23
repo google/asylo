@@ -18,33 +18,29 @@
 
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 
+#include <utility>
+
 #include "asylo/identity/sgx/code_identity_util.h"
 
 namespace asylo {
 
 EnclaveCredentialsOptions BidirectionalSgxLocalCredentialsOptions() {
-  EnclaveCredentialsOptions options;
-  options.self_assertions.emplace_back();
-  sgx::SetSgxLocalAssertionDescription(&options.self_assertions.back());
-  options.accepted_peer_assertions.emplace_back();
-  sgx::SetSgxLocalAssertionDescription(
-      &options.accepted_peer_assertions.back());
-  return options;
+  return SelfSgxLocalCredentialsOptions().Add(PeerSgxLocalCredentialsOptions());
 }
 
 EnclaveCredentialsOptions PeerSgxLocalCredentialsOptions() {
   EnclaveCredentialsOptions options;
-  options.accepted_peer_assertions.emplace_back();
-  sgx::SetSgxLocalAssertionDescription(
-      &options.accepted_peer_assertions.back());
+  AssertionDescription assertion_description;
+  sgx::SetSgxLocalAssertionDescription(&assertion_description);
+  options.accepted_peer_assertions.emplace(std::move(assertion_description));
   return options;
 }
 
 EnclaveCredentialsOptions SelfSgxLocalCredentialsOptions() {
   EnclaveCredentialsOptions options;
-  options.self_assertions.emplace_back();
-  sgx::SetSgxLocalAssertionDescription(&options.self_assertions.back());
+  AssertionDescription assertion_description;
+  sgx::SetSgxLocalAssertionDescription(&assertion_description);
+  options.self_assertions.emplace(std::move(assertion_description));
   return options;
 }
-
 }  // namespace asylo

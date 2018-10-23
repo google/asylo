@@ -51,8 +51,12 @@ cc_library(
 
 cc_library(
     name = "enclave_credentials_options",
+    srcs = ["enclave_credentials_options.cc"],
     hdrs = ["enclave_credentials_options.h"],
-    deps = ["//asylo/identity:identity_proto_cc"],
+    deps = [
+        "//asylo/identity:assertion_description_util",
+        "//asylo/identity:identity_proto_cc",
+    ],
 )
 
 # Configuration for building null enclave credentials (used for unauthenticated gRPC
@@ -118,5 +122,22 @@ cc_test(
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
         "@com_google_protobuf//:protobuf_lite",
+    ],
+)
+
+cc_test(
+    name = "enclave_credentials_options_test",
+    srcs = ["enclave_credentials_options_test.cc"],
+    enclave_test_name = "enclave_credentials_options_enclave_test",
+    deps = [
+        ":enclave_credentials_options",
+        ":null_credentials_options",
+        ":sgx_local_credentials_options",
+        "//asylo/identity:identity_proto",
+        "//asylo/identity/null_identity:null_identity_util",
+        "//asylo/identity/sgx:code_identity_util",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
     ],
 )

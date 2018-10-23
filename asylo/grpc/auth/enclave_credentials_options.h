@@ -20,8 +20,8 @@
 #define ASYLO_GRPC_AUTH_ENCLAVE_CREDENTIALS_OPTIONS_H_
 
 #include <string>
-#include <vector>
 
+#include "asylo/identity/assertion_description_util.h"
 #include "asylo/identity/identity.pb.h"
 
 namespace asylo {
@@ -29,15 +29,23 @@ namespace asylo {
 /// Options used to configure a `::grpc::ChannelCredentials` object or a
 /// `::grpc::ServerCredentials` object for use in an enclave system.
 struct EnclaveCredentialsOptions {
+  /// Combines the given EnclaveCredentialsOptions with this object.
+  ///
+  /// \param additional_options The EnclaveCredentialsOptions object to
+  ///        combine with this object.
+  /// \return This object, modified to add the `additional_options`.
+  EnclaveCredentialsOptions &Add(
+      const EnclaveCredentialsOptions &additional_options);
+
   /// Additional data that is authenticated during establishment of the gRPC
   /// channel. This string does not need to be null-terminated.
   std::string additional_authenticated_data;
 
   /// Assertions offered by the credential holder.
-  std::vector<AssertionDescription> self_assertions;
+  AssertionDescriptionHashSet self_assertions;
 
   /// Peer assertions accepted by the credential holder.
-  std::vector<AssertionDescription> accepted_peer_assertions;
+  AssertionDescriptionHashSet accepted_peer_assertions;
 };
 
 }  // namespace asylo

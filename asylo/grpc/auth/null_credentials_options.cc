@@ -18,30 +18,29 @@
 
 #include "asylo/grpc/auth/null_credentials_options.h"
 
+#include <utility>
+
 #include "asylo/identity/null_identity/null_identity_util.h"
 
 namespace asylo {
 
 EnclaveCredentialsOptions BidirectionalNullCredentialsOptions() {
-  EnclaveCredentialsOptions options;
-  options.self_assertions.emplace_back();
-  SetNullAssertionDescription(&options.self_assertions.back());
-  options.accepted_peer_assertions.emplace_back();
-  SetNullAssertionDescription(&options.accepted_peer_assertions.back());
-  return options;
+  return SelfNullCredentialsOptions().Add(PeerNullCredentialsOptions());
 }
 
 EnclaveCredentialsOptions PeerNullCredentialsOptions() {
   EnclaveCredentialsOptions options;
-  options.accepted_peer_assertions.emplace_back();
-  SetNullAssertionDescription(&options.accepted_peer_assertions.back());
+  AssertionDescription assertion_description;
+  SetNullAssertionDescription(&assertion_description);
+  options.accepted_peer_assertions.emplace(std::move(assertion_description));
   return options;
 }
 
 EnclaveCredentialsOptions SelfNullCredentialsOptions() {
   EnclaveCredentialsOptions options;
-  options.self_assertions.emplace_back();
-  SetNullAssertionDescription(&options.self_assertions.back());
+  AssertionDescription assertion_description;
+  SetNullAssertionDescription(&assertion_description);
+  options.self_assertions.emplace(std::move(assertion_description));
   return options;
 }
 

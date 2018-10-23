@@ -22,6 +22,7 @@
 #include <cstdlib>
 
 #include "asylo/grpc/auth/core/assertion_description.h"
+#include "asylo/identity/assertion_description_util.h"
 
 namespace asylo {
 namespace {
@@ -38,12 +39,14 @@ void FromAssertionDescription(const AssertionDescription &src,
 
 // Copies the list in |src| to a corresponding C structure in |dest|. The input
 // array in |dest| must have already been initialized.
-void CopyAssertionDescriptions(const std::vector<AssertionDescription> &src,
+void CopyAssertionDescriptions(const AssertionDescriptionHashSet &src,
                                assertion_description_array *dest) {
   assertion_description_array_free(dest);
   assertion_description_array_init(/*count=*/src.size(), dest);
-  for (size_t i = 0; i < src.size(); ++i) {
-    FromAssertionDescription(src[i], &dest->descriptions[i]);
+  size_t i = 0;
+  for (const AssertionDescription &assertion_description : src) {
+    FromAssertionDescription(assertion_description, &dest->descriptions[i]);
+    ++i;
   }
 }
 

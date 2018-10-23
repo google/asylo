@@ -21,6 +21,7 @@
 
 #include <string>
 
+#include "absl/container/flat_hash_set.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/util/statusor.h"
 
@@ -45,6 +46,10 @@ struct AssertionDescriptionEq {
 // serialization is guaranteed to be deterministic and unique.
 StatusOr<std::string> SerializeAssertionDescription(
     const AssertionDescription &description);
+
+using AssertionDescriptionHashSet =
+    absl::flat_hash_set<AssertionDescription, AssertionDescriptionHasher,
+                        AssertionDescriptionEq>;
 
 }  // namespace asylo
 
