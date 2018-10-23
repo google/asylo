@@ -19,10 +19,29 @@ licenses(["notice"])  # Apache v2.0
 package(default_visibility = ["//visibility:public"])
 
 
+TOOLCHAINS = [
+    ("k8", "gcc"),
+    ("sgx_x86_64", "gcc"),
+]
+
 cc_toolchain_suite(
     name = "crosstool",
-    toolchains = {"sgx_x86_64|compiler": "cc-compiler"},
+    toolchains = dict([
+        [
+            "k8",
+            ":cc-compiler-k8-gcc",
+        ],
+        [
+            "sgx_x86_64",
+            ":cc-compiler-sgx_x86_64-gcc",
+        ],
+    ] + [(
+        x[0] + "|" + x[1],
+        ":cc-compiler-" + x[0] + "-" + x[1],
+    ) for x in TOOLCHAINS]),
 )
+
+cc_library(name = "malloc")
 
 filegroup(
     name = "everything",
@@ -39,7 +58,7 @@ filegroup(
 )
 
 cc_toolchain(
-    name = "cc-compiler",
+    name = "cc-compiler-sgx_x86_64-gcc",
     all_files = ":everything",
     compiler_files = ":everything",
     cpu = "sgx_x86_64",
@@ -50,5 +69,21 @@ cc_toolchain(
     static_runtime_libs = [":everything"],
     strip_files = ":everything",
     supports_param_files = 0,
+    toolchain_identifier = "asylo_sgx_x86_64",
+)
+
+cc_toolchain(
+    name = "cc-compiler-k8-gcc",
+    all_files = ":everything",
+    compiler_files = ":everything",
+    cpu = "k8",
+    dwp_files = ":everything",
+    dynamic_runtime_libs = [":everything"],
+    linker_files = ":everything",
+    objcopy_files = ":everything",
+    static_runtime_libs = [":everything"],
+    strip_files = ":everything",
+    supports_param_files = 0,
+    toolchain_identifier = "asylo_k8",
 )
 
