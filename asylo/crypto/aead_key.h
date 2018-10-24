@@ -42,11 +42,12 @@ class AeadKey {
   virtual size_t NonceSize() const = 0;
 
   // Implements the AEAD Seal operation. |nonce|.size() must be same as the
-  // value returned by NonceSize().
+  // value returned by NonceSize(). This method is marked non-const to allow
+  // for implementations that internally manage key rotation.
   virtual Status Seal(ByteContainerView plaintext,
                       ByteContainerView associated_data,
                       ByteContainerView nonce,
-                      std::vector<uint8_t> *ciphertext) const = 0;
+                      std::vector<uint8_t> *ciphertext) = 0;
 
   // Implements the AEAD Open operation. |nonce|.size() must be same as the
   // value returned by NonceSize().
