@@ -19,7 +19,6 @@
 #include "asylo/identity/assertion_description_util.h"
 
 #include <gtest/gtest.h>
-#include "absl/container/flat_hash_set.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 
@@ -65,8 +64,8 @@ TEST(AssertionDescriptionUtilTest, EqualityFunctorDifferentAuthorityType) {
   EXPECT_FALSE(AssertionDescriptionEq()(description1, description2));
 }
 
-// Verifies that an absl::flat_hash_set that uses AssertionDescriptionHasher
-// and AssertionDescriptionEq works correctly.
+// Verifies that AssertionDescriptionHashSet, an absl::flat_hash_set that uses
+// AssertionDescriptionHasher and AssertionDescriptionEq, works correctly.
 TEST(AssertionDescriptionUtilTest, UnorderedSet) {
   AssertionDescription description1 =
       MakeAssertionDescription(EnclaveIdentityType::CODE_IDENTITY, kAuthority1);
@@ -75,9 +74,7 @@ TEST(AssertionDescriptionUtilTest, UnorderedSet) {
   AssertionDescription description3 =
       MakeAssertionDescription(EnclaveIdentityType::NULL_IDENTITY, kAuthority2);
 
-  absl::flat_hash_set<AssertionDescription, AssertionDescriptionHasher,
-                      AssertionDescriptionEq>
-      assertion_descriptions;
+  AssertionDescriptionHashSet assertion_descriptions;
 
   ASSERT_TRUE(assertion_descriptions.insert(description1).second);
   EXPECT_FALSE(assertion_descriptions.insert(description1).second);
