@@ -33,6 +33,7 @@
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
 #include "src/core/lib/surface/api_trace.h"
+#include "src/core/tsi/transport_security.h"
 
 /* -- Enclave security connectors. -- */
 
