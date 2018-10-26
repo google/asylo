@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # Enclave test cases.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 load(
     "//asylo/bazel:asylo.bzl",
     "enclave_test",
@@ -167,6 +167,32 @@ cc_enclave_test(
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
+)
+
+sgx_enclave_configuration(
+    name = "exhaust_sgx_tcs_config",
+    tcs_num = "3",
+)
+
+sgx_enclave(
+    name = "exhaust_sgx_tcs.so",
+    testonly = 1,
+    srcs = ["exhaust_sgx_tcs.cc"],
+    config = ":exhaust_sgx_tcs_config",
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+    ],
+)
+
+# Note that a naive enclave simulator that does not respect the enclave
+# configuration will not pass this test.
+enclave_test(
+    name = "exhaust_sgx_tcs_test",
+    srcs = ["exhaust_sgx_tcs_test.cc"],
+    enclaves = {"enclave": ":exhaust_sgx_tcs.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = TEST_DEPS_COMMON,
 )
 
 cc_enclave_test(
