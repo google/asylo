@@ -21,6 +21,7 @@
 #include "asylo/enclave.pb.h"
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
+#include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
@@ -28,6 +29,7 @@
 #include "asylo/identity/init.h"
 #include "asylo/identity/null_identity/null_identity_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "src/core/lib/gpr/host_port.h"
@@ -75,21 +77,8 @@ grpc_end2end_test_fixture CreateFixtureSecureFullstack(
   return f;
 }
 
-// Initializes the channel in fixture |f| using |client_args| and |creds|.
-void InitClientChannel(grpc_end2end_test_fixture *f,
-                       grpc_channel_args *client_args,
-                       grpc_channel_credentials *creds) {
-  EnclaveFullStackFixtureData *fixture_data =
-      static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
-  GPR_ASSERT(fixture_data->port_set);
-  f->client = grpc_secure_channel_create(creds, fixture_data->local_address,
-                                         client_args, /*reserved=*/nullptr);
-  GPR_ASSERT(f->client != nullptr);
-  grpc_channel_credentials_release(creds);
-}
-
-// Uses |options| to construct gRPC enclave channel credentials, and sets
-// |credentials| to point to the resulting credentials object.
+// Uses |options| to construct gRPC enclave channel credentials,
+// and sets |credentials| to point to the resulting credentials object.
 void InitClientEnclaveCredentials(const EnclaveCredentialsOptions &options,
                                   grpc_channel_credentials **credentials) {
   grpc_enclave_credentials_options c_options;
@@ -99,49 +88,91 @@ void InitClientEnclaveCredentials(const EnclaveCredentialsOptions &options,
   *credentials = grpc_enclave_channel_credentials_create(&c_options);
 }
 
-// Initializes the client in fixture |f| with |server_args| and enclave null
-// credentials.
-void InitClientEnclaveNullCredentials(grpc_end2end_test_fixture *f,
-                                      grpc_channel_args *client_args) {
+// Initializes the channel in fixture |f| using |client_args| and |options|.
+void InitClientChannel(EnclaveCredentialsOptions options,
+                       grpc_end2end_test_fixture *f,
+                       grpc_channel_args *client_args) {
+  // The client's AAD is just a fixed string in this test.
+  options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
+
+  // Create enclave gRPC channel credentials.
+  grpc_channel_credentials *creds = nullptr;
+  InitClientEnclaveCredentials(options, &creds);
+  GPR_ASSERT(creds != nullptr);
+
+  EnclaveFullStackFixtureData *fixture_data =
+      static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
+  GPR_ASSERT(fixture_data->port_set);
+  f->client = grpc_secure_channel_create(creds, fixture_data->local_address,
+                                         client_args, /*reserved=*/nullptr);
+  GPR_ASSERT(f->client != nullptr);
+  grpc_channel_credentials_release(creds);
+}
+
+// Initializes the client in fixture |f| with |server_args| and bidirectional
+// enclave null credentials.
+void InitClientEnclaveBidirectionalNullCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   // Set the client's credentials options. The client supports bidirectional
   // authentication based on null assertions.
-  EnclaveCredentialsOptions options = BidirectionalNullCredentialsOptions();
-
-  // The client's AAD is just a fixed string in this test.
-  options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
-
-  // Create enclave gRPC channel credentials.
-  grpc_channel_credentials *creds = nullptr;
-  InitClientEnclaveCredentials(options, &creds);
-  GPR_ASSERT(creds != nullptr);
-
-  // Initialize client.
-  InitClientChannel(f, client_args, creds);
+  InitClientChannel(BidirectionalNullCredentialsOptions(), f, client_args);
 }
 
-// Initializes the client in fixture |f| with |server_args| and enclave SGX
-// local credentials.
-void InitClientEnclaveSgxLocalCredentials(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *client_args) {
+// Initializes the client in fixture |f| with |server_args| and bidirectional
+// enclave SGX local credentials.
+void InitClientEnclaveBidirectionalSgxLocalCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
   // Set the client's credentials options. The client supports bidirectional
   // authentication based on SGX local attestation.
-  EnclaveCredentialsOptions options = BidirectionalSgxLocalCredentialsOptions();
-
-  // The client's AAD is just a fixed string in this test.
-  options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
-
-  // Create enclave gRPC channel credentials.
-  grpc_channel_credentials *creds = nullptr;
-  InitClientEnclaveCredentials(options, &creds);
-  GPR_ASSERT(creds != nullptr);
-
-  // Initialize client.
-  InitClientChannel(f, client_args, creds);
+  InitClientChannel(BidirectionalSgxLocalCredentialsOptions(), f, client_args);
 }
 
-// Initializes the server in fixture |f| using |server_args| and |creds|.
-void InitServer(grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
-                grpc_server_credentials *creds) {
+// Initializes the client in fixture |f| with |server_args| and channel
+// credentials that enforce null-identity-based attestation from the server and
+// SGX local attestation from the client.
+void InitClientEnclaveSelfSgxLocalPeerNullCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+  // Set the client's credentials options. The client offers SGX local
+  // credentials and accepts null credentials.
+  InitClientChannel(
+      SelfSgxLocalCredentialsOptions().Add(PeerNullCredentialsOptions()), f,
+      client_args);
+}
+
+// Initializes the client in fixture |f| with |server_args| and bidirectional
+// enclave SGX local credentials and null credentials.
+void InitClientEnclaveBidirectionalNullAndSgxLocalCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *client_args) {
+  // Set the client's credentials options. The client supports bidirectional
+  // authentication based on SGX local attestation or no authentication.
+  InitClientChannel(BidirectionalNullCredentialsOptions().Add(
+                        BidirectionalSgxLocalCredentialsOptions()),
+                    f, client_args);
+}
+
+// Uses |options| to construct gRPC enclave server credentials,
+// and sets |credentials| to point to the resulting credentials object.
+void InitServerEnclaveCredentials(const EnclaveCredentialsOptions &options,
+                                  grpc_server_credentials **credentials) {
+  grpc_enclave_credentials_options c_options;
+  grpc_enclave_credentials_options_init(&c_options);
+  CopyEnclaveCredentialsOptions(options, &c_options);
+
+  // Create enclave gRPC server credentials.
+  *credentials = grpc_enclave_server_credentials_create(&c_options);
+}
+
+// Initializes the server in fixture |f| using |server_args| and |options|.
+void InitServer(EnclaveCredentialsOptions options, grpc_end2end_test_fixture *f,
+                grpc_channel_args *server_args) {
+  // The server's AAD is just a fixed string in this test.
+  options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
+
+  // Create enclave gRPC server credentials.
+  grpc_server_credentials *creds = nullptr;
+  InitServerEnclaveCredentials(options, &creds);
+  GPR_ASSERT(creds != nullptr);
+
   EnclaveFullStackFixtureData *fixture_data =
       static_cast<EnclaveFullStackFixtureData *>(f->fixture_data);
   f->server = grpc_server_create(server_args, /*reserved=*/nullptr);
@@ -160,54 +191,44 @@ void InitServer(grpc_end2end_test_fixture *f, grpc_channel_args *server_args,
   grpc_server_start(f->server);
 }
 
-// Uses |options| to construct gRPC enclave server credentials, and sets
-// |credentials| to point to the resulting credentials object.
-void InitServerEnclaveCredentials(const EnclaveCredentialsOptions &options,
-                                  grpc_server_credentials **credentials) {
-  grpc_enclave_credentials_options c_options;
-  grpc_enclave_credentials_options_init(&c_options);
-  CopyEnclaveCredentialsOptions(options, &c_options);
-
-  // Create enclave gRPC server credentials.
-  *credentials = grpc_enclave_server_credentials_create(&c_options);
-}
-
-// Initializes the server in fixture |f| with |server_args| and enclave null
-// credentials.
-void InitServerEnclaveNullCredentials(grpc_end2end_test_fixture *f,
-                                      grpc_channel_args *server_args) {
+// Initializes the server in fixture |f| with |server_args| and bidirectional
+// enclave null credentials.
+void InitServerEnclaveBidirectionalNullCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
   // Set the server's credentials options. The server supports bidirectional
   // authentication based on null assertions.
-  EnclaveCredentialsOptions options = BidirectionalNullCredentialsOptions();
-
-  // The server's AAD is just a fixed string in this test.
-  options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
-
-  grpc_server_credentials *creds = nullptr;
-  InitServerEnclaveCredentials(options, &creds);
-  GPR_ASSERT(creds != nullptr);
-
-  // Initialize server.
-  InitServer(f, server_args, creds);
+  InitServer(BidirectionalNullCredentialsOptions(), f, server_args);
 }
 
-// Initializes the server in fixture |f| with |server_args| and enclave SGX
-// local credentials.
-void InitServerEnclaveSgxLocalCredentials(grpc_end2end_test_fixture *f,
-                                          grpc_channel_args *server_args) {
+// Initializes the server in fixture |f| with |server_args| and bidirectional
+// enclave SGX local credentials.
+void InitServerEnclaveBidirectionalSgxLocalCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
   // Set the server's credentials options. The server supports bidirectional
   // authentication based on SGX local attestation.
-  EnclaveCredentialsOptions options = BidirectionalSgxLocalCredentialsOptions();
+  InitServer(BidirectionalSgxLocalCredentialsOptions(), f, server_args);
+}
 
-  // The server's AAD is just a fixed string in this test.
-  options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
+// Initializes the server in fixture |f| with |server_args| and server
+// credentials that enforce null-identity-based attestation from the server and
+// SGX local attestation from the client.
+void InitServerEnclaveSelfNullPeerSgxLocalCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
+  // Set the server's credentials options. The server offers null credentials
+  // and accepts SGX local credentials.
+  InitServer(SelfNullCredentialsOptions().Add(PeerSgxLocalCredentialsOptions()),
+             f, server_args);
+}
 
-  grpc_server_credentials *creds = nullptr;
-  InitServerEnclaveCredentials(options, &creds);
-  GPR_ASSERT(creds != nullptr);
-
-  // Initialize server.
-  InitServer(f, server_args, creds);
+// Initializes the server in fixture |f| with |server_args| and bidirectional
+// enclave null and SGX local credentials.
+void InitServerEnclaveBidirectionalNullAndSgxLocalCredentials(
+    grpc_end2end_test_fixture *f, grpc_channel_args *server_args) {
+  // Set the server's credentials options. The server supports bidirectional
+  // authentication with null and SGX local credentials.
+  InitServer(BidirectionalNullCredentialsOptions().Add(
+                 BidirectionalSgxLocalCredentialsOptions()),
+             f, server_args);
 }
 
 void TearDownSecureFullstack(grpc_end2end_test_fixture *f) {
@@ -219,22 +240,42 @@ void TearDownSecureFullstack(grpc_end2end_test_fixture *f) {
 
 // All test configurations for the enclave gRPC stack.
 static grpc_end2end_test_config configs[] = {
-    // Null-identity-based attestation.
-    {"enclave_null_credentials",
+    // Bidirectional null-identity-based attestation.
+    {"enclave_bidirectional_null_credentials",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      /*overridden_call_host=*/nullptr, CreateFixtureSecureFullstack,
-     InitClientEnclaveNullCredentials, InitServerEnclaveNullCredentials,
+     InitClientEnclaveBidirectionalNullCredentials,
+     InitServerEnclaveBidirectionalNullCredentials, TearDownSecureFullstack},
+
+    // Bidirectional SGX local attestation.
+    {"enclave_bidirectional_sgx_local_credentials",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     /*overridden_call_host=*/nullptr, CreateFixtureSecureFullstack,
+     InitClientEnclaveBidirectionalSgxLocalCredentials,
+     InitServerEnclaveBidirectionalSgxLocalCredentials,
      TearDownSecureFullstack},
 
-    // SGX local attestation.
-    {"enclave_sgx_local_credentials",
+    // Client SGX local attestation, server null-identity-based attestation
+    {"enclave_client_sgx_local_server_null_credentials",
      FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
          FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
          FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
      /*overridden_call_host=*/nullptr, CreateFixtureSecureFullstack,
-     InitClientEnclaveSgxLocalCredentials, InitServerEnclaveSgxLocalCredentials,
+     InitClientEnclaveSelfSgxLocalPeerNullCredentials,
+     InitServerEnclaveSelfNullPeerSgxLocalCredentials, TearDownSecureFullstack},
+
+    // Bidirectional SGX local and null-identity-based attestation
+    {"enclave_bidirectional_sgx_local_null_credentials",
+     FEATURE_MASK_SUPPORTS_DELAYED_CONNECTION |
+         FEATURE_MASK_SUPPORTS_CLIENT_CHANNEL |
+         FEATURE_MASK_SUPPORTS_AUTHORITY_HEADER,
+     /*overridden_call_host=*/nullptr, CreateFixtureSecureFullstack,
+     InitClientEnclaveBidirectionalNullAndSgxLocalCredentials,
+     InitServerEnclaveBidirectionalNullAndSgxLocalCredentials,
      TearDownSecureFullstack},
 };
 

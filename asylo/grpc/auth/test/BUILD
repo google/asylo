@@ -33,6 +33,7 @@ cc_binary(
     srcs = ["h2_enclave_security_test.cc"],
     deps = [
         "//asylo:enclave_proto_cc",
+        "//asylo/grpc/auth:enclave_credentials_options",
         "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/grpc/auth/core:enclave_credentials_options",
@@ -43,6 +44,7 @@ cc_binary(
         "//asylo/identity/null_identity:null_identity_util",
         "//asylo/platform/core:trusted_global_state",
         "@com_github_grpc_grpc//:gpr_base",
+        "@com_github_grpc_grpc//:grpc_codegen",
         "@com_github_grpc_grpc//test/core/end2end:end2end_tests",
         "@com_github_grpc_grpc//test/core/util:gpr_test_util",
     ],

@@ -236,8 +236,8 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
     const AssertionDescription &offer_desc = offer.description();
     // Request any assertion that the peer offered and that this handshaker is
     // capable of verifying.
-    if (FindAssertionDescription(self_assertions_, offer_desc) !=
-        self_assertions_.cend()) {
+    if (FindAssertionDescription(accepted_peer_assertions_, offer_desc) !=
+        accepted_peer_assertions_.cend()) {
       auto result = GetEnclaveAssertionVerifier(offer_desc)->CanVerify(offer);
       if (result.ok() && result.ValueOrDie()) {
         expected_peer_assertions_.push_back(offer_desc);
@@ -255,8 +255,8 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
     // capable of generating. Note that assertion generators were verified
     // during creation of the handshaker so there is no need to check whether
     // the call to GetEnclaveAssertionGenerator() returns nullptr.
-    if (FindAssertionDescription(accepted_peer_assertions_, request_desc) !=
-        accepted_peer_assertions_.cend()) {
+    if (FindAssertionDescription(self_assertions_, request_desc) !=
+        self_assertions_.cend()) {
       auto result =
           GetEnclaveAssertionGenerator(request_desc)->CanGenerate(request);
       if (result.ok() && result.ValueOrDie()) {
