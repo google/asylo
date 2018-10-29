@@ -28,6 +28,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 
@@ -389,9 +390,17 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
   return 0;
 }
 
-// Blocks until the given |cond| is signaled or broadcasted. |mutex| must  be
-// locked before called, and will be locked on return.
-int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
+// Blocks until the given |cond| is signaled or broadcasted, or a timeout
+// occurs. |mutex| must be locked before calling and will be locked on return.
+// Returns ETIMEDOUT if |deadline| (which is an absolute time) is not null, the
+// current time is later than |deadline|, and |cond| has not yet been signaled
+// or broadcasted.
+//
+// Warning: Enclaves do not currently have a source of secure time. A hostile
+// host could cause this function to either return ETIMEDOUT immediately or
+// never time out, acting like pthread_cond_wait().
+int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
+                           const struct timespec *deadline) {
   int ret = check_parameter<pthread_cond_t>(cond);
   if (ret != 0) {
     return ret;
@@ -400,6 +409,14 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
   ret = check_parameter<pthread_mutex_t>(mutex);
   if (ret != 0) {
     return ret;
+  }
+
+  // If a deadline has been specified, ensure it is valid.
+  if (deadline != nullptr) {
+    ret = check_parameter<timespec>(deadline);
+    if (ret != 0) {
+      return ret;
+    }
   }
 
   pthread_t self = pthread_self();
@@ -423,15 +440,41 @@ int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
     if (!pthread_list_contains(cond->_queue, self)) {
       break;
     }
+
+    // If a deadline has been specified, check to see if it has passed.
+    if (deadline != nullptr) {
+      timespec curr_time;
+      ret = clock_gettime(CLOCK_REALTIME, &curr_time);
+      if (ret != 0) {
+        break;
+      }
+
+      // TimeSpecSubtract returns true if deadline < curr_time.
+      timespec time_left;
+      if (asylo::TimeSpecSubtract(*deadline, curr_time, &time_left)) {
+        ret = ETIMEDOUT;
+        break;
+      }
+    }
   }
 
   pthread_spin_unlock(&cond->_lock);
-  return pthread_mutex_lock(mutex);
+
+  // Only set the retval to be the result of re-locking the mutex if there isn't
+  // already another error we're trying to return. Otherwise, we give preference
+  // to returning the pre-existing error and drop the error caused by re-locking
+  // the mutex.
+  int relock_ret = pthread_mutex_lock(mutex);
+  if (ret != 0) {
+    return ret;
+  }
+  return relock_ret;
 }
 
-int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
-                           const struct timespec *abstime) {
-  return 0;
+// Blocks until the given |cond| is signaled or broadcasted. |mutex| must  be
+// locked before calling and will be locked on return.
+int pthread_cond_wait(pthread_cond_t *cond, pthread_mutex_t *mutex) {
+  return pthread_cond_timedwait(cond, mutex, nullptr);
 }
 
 int pthread_condattr_init(pthread_condattr_t *attr) { return 0; }

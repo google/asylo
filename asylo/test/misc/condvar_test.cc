@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/common/time_util.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include <openssl/mem.h>
@@ -170,6 +171,28 @@ TEST(BasicTest, EnclaveCondVar) {
   ASSERT_THAT(JoinThreads(threads), IsOk());
   LOG(INFO) << "Threads joined";
   ASSERT_EQ(cs.counter, 0);
+}
+
+TEST(TimeoutTest, EnclaveCondVar) {
+  const int kDeadlineSeconds = 3;
+
+  // Test to ensure a cond var that's never signaled returns ETIMEDOUT.
+  pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
+  pthread_mutex_t mu = PTHREAD_MUTEX_INITIALIZER;
+
+  timespec deadline;
+  ASSERT_EQ(clock_gettime(CLOCK_REALTIME, &deadline), 0);
+  deadline.tv_sec += kDeadlineSeconds;
+  pthread_mutex_lock(&mu);
+  LOG(INFO) << "Going to sleep";
+  ASSERT_EQ(pthread_cond_timedwait(&cv, &mu, &deadline), ETIMEDOUT);
+  LOG(INFO) << "Waking up";
+  pthread_mutex_unlock(&mu);
+
+  // Make sure the current time is at least the deadline time.
+  timespec curr_time, result;
+  ASSERT_EQ(clock_gettime(CLOCK_REALTIME, &curr_time), 0);
+  ASSERT_TRUE(asylo::TimeSpecSubtract(deadline, curr_time, &result));
 }
 
 }  // namespace
