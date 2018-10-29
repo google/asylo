@@ -45,7 +45,7 @@ static inline int InterlockedExchange(pthread_spinlock_t *dest,
 
 // Confirms that |parameter| is not nullptr and is within the enclave.
 template <typename T>
-static int check_parameter(T *parameter) {
+static int check_parameter(const T *parameter) {
   if (!parameter || !enc_is_within_enclave(parameter, sizeof(*parameter))) {
     return EINVAL;
   }
