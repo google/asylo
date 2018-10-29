@@ -32,10 +32,10 @@ bool IsRepresentableAsNanoseconds(const struct timespec *ts);
 // epoch. (+/- ~290 years)
 bool IsRepresentableAsNanoseconds(const struct timeval *tv);
 
-// Computes the difference between two timespecs and sets |result|. True if
-// |lhs| < |rhs|, otherwise false.
-bool TimeSpecSubtract(struct timespec *result, const struct timespec &lhs,
-                      const struct timespec &rhs);
+// Computes the difference |lhs| - |rhs| and puts the result in |result|.
+// Returns true if |lhs| < |rhs|, false otherwise.
+bool TimeSpecSubtract(const struct timespec &lhs, const struct timespec &rhs,
+                      struct timespec *result);
 
 // Converts a timespec to a number of nanoseconds since the epoch.
 int64_t TimeSpecToNanoseconds(const timespec *ts);

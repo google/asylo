@@ -40,8 +40,8 @@ bool IsRepresentableAsNanoseconds(const struct timeval *tv) {
          tv->tv_sec < kLastRepresentableSecond;
 }
 
-bool TimeSpecSubtract(struct timespec *result, const struct timespec &lhs,
-                      const struct timespec &rhs) {
+bool TimeSpecSubtract(const struct timespec &lhs, const struct timespec &rhs,
+                      struct timespec *result) {
   // Perform the carry for the later subtraction by updating rhs.
   int64_t rsec = rhs.tv_sec, rnsec = rhs.tv_nsec;
   if (lhs.tv_nsec < rnsec) {

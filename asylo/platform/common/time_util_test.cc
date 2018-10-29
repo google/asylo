@@ -72,5 +72,33 @@ TEST(TimeTests, Range) {
   }
 }
 
+TEST(TimeTests, TimeSpecSubtract) {
+  timespec a, b, result;
+
+  a.tv_sec = 5;
+  a.tv_nsec = 700;
+  b.tv_sec = 5;
+  b.tv_nsec = 1200;
+  ASSERT_TRUE(TimeSpecSubtract(a, b, &result));
+  ASSERT_EQ(TimeSpecToNanoseconds(&result), -500);
+  ASSERT_FALSE(TimeSpecSubtract(b, a, &result));
+  ASSERT_EQ(TimeSpecToNanoseconds(&result), 500);
+
+  a.tv_sec = 10;
+  a.tv_nsec = 999999500;
+  b.tv_sec = 11;
+  b.tv_nsec = 800;
+  ASSERT_TRUE(TimeSpecSubtract(a, b, &result));
+  ASSERT_EQ(TimeSpecToNanoseconds(&result), -1300);
+  ASSERT_FALSE(TimeSpecSubtract(b, a, &result));
+  ASSERT_EQ(TimeSpecToNanoseconds(&result), 1300);
+
+  a = b;
+  ASSERT_FALSE(TimeSpecSubtract(a, b, &result));
+  ASSERT_EQ(TimeSpecToNanoseconds(&result), 0);
+  ASSERT_FALSE(TimeSpecSubtract(b, a, &result));
+  ASSERT_EQ(TimeSpecToNanoseconds(&result), 0);
+}
+
 }  // namespace
 }  // namespace asylo
