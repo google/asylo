@@ -32,8 +32,8 @@ ThreadManager::Thread::Thread() {
   this->state_change_cond = PTHREAD_COND_INITIALIZER;
 }
 
-int ThreadManager::Thread::UpdateThreadState(pthread_t thread_id,
-                                             ThreadState state) {
+int ThreadManager::Thread::UpdateThreadState(const pthread_t thread_id,
+                                             const ThreadState state) {
   int ret = pthread_mutex_lock(&this->lock);
   if (ret != 0) {
     return ret;
@@ -58,7 +58,7 @@ ThreadManager *ThreadManager::GetInstance() {
 }
 
 std::shared_ptr<ThreadManager::Thread> ThreadManager::QueueThread(
-    const std::function<void *(void *)> &function, void *arg) {
+    const std::function<void *(void *)> &function, void *const arg) {
   LockQueuedThreads();
   queued_threads_.emplace(std::make_shared<Thread>());
   std::shared_ptr<Thread> thread = queued_threads_.back();
@@ -76,7 +76,7 @@ std::shared_ptr<ThreadManager::Thread> ThreadManager::QueueThread(
 }
 
 int ThreadManager::CreateThread(const std::function<void *(void *)> &function,
-                                void *arg, pthread_t *thread_id) {
+                                void *const arg, pthread_t *const thread_id) {
   // Add thread entry point to queue of waiting jobs.
   std::shared_ptr<Thread> thread = QueueThread(function, arg);
   if (!thread) {
@@ -152,7 +152,7 @@ int ThreadManager::StartThread() {
   return 0;
 }
 
-int ThreadManager::JoinThread(pthread_t thread_id, void **return_value) {
+int ThreadManager::JoinThread(const pthread_t thread_id, void **return_value) {
   LockThreadsList();
   std::shared_ptr<Thread> thread = GetThread(thread_id);
   UnlockThreadsList();

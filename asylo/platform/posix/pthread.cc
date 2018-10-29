@@ -169,14 +169,14 @@ int pthread_mutex_check_parameter(pthread_mutex_t *mutex) {
 // Returns locks the mutex and returns 0 if possible. Returns EBUSY if the mutex
 // is taken.
 int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
-  pthread_t self = pthread_self();
+  const pthread_t self = pthread_self();
 
   if (mutex->_control == PTHREAD_MUTEX_RECURSIVE && mutex->_owner == self) {
     mutex->_refcount++;
     return 0;
   }
 
-  pthread_t first_waiter = pthread_list_first(mutex->_queue);
+  const pthread_t first_waiter = pthread_list_first(mutex->_queue);
   if (mutex->_owner == PTHREAD_T_NULL &&
       (first_waiter == self || first_waiter == PTHREAD_T_NULL)) {
     if (first_waiter == self) {
@@ -211,12 +211,12 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
   std::function<void *(void *)> start_function(start_routine);
 
-  ThreadManager *thread_manager = ThreadManager::GetInstance();
+  ThreadManager *const thread_manager = ThreadManager::GetInstance();
   return thread_manager->CreateThread(start_function, arg, thread);
 }
 
 int pthread_join(pthread_t thread, void **value_ptr) {
-  ThreadManager *thread_manager = ThreadManager::GetInstance();
+  ThreadManager *const thread_manager = ThreadManager::GetInstance();
   return thread_manager->JoinThread(thread, value_ptr);
 }
 
@@ -326,7 +326,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  pthread_t self = pthread_self();
+  const pthread_t self = pthread_self();
 
   SpinLock lock(&mutex->_lock);
 
@@ -419,7 +419,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     }
   }
 
-  pthread_t self = pthread_self();
+  const pthread_t self = pthread_self();
 
   pthread_spin_lock(&cond->_lock);
   if (!pthread_list_contains(cond->_queue, self)) {
@@ -489,7 +489,7 @@ int pthread_cond_signal(pthread_cond_t *cond) {
   }
 
   pthread_spin_lock(&cond->_lock);
-  pthread_t first = pthread_list_first(cond->_queue);
+  const pthread_t first = pthread_list_first(cond->_queue);
   if (first == PTHREAD_T_NULL) {
     pthread_spin_unlock(&cond->_lock);
     return 0;

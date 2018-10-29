@@ -48,7 +48,7 @@ class ThreadManager {
 
   // Waits till given |thread_id| has returned and assigns its returned void* to
   // |return_value|.
-  int JoinThread(pthread_t thread_id, void **return_value);
+  int JoinThread(const pthread_t thread_id, void **return_value);
 
  private:
   ThreadManager();
