@@ -248,6 +248,20 @@ cc_enclave_test(
     ],
 )
 
+cc_enclave_test(
+    name = "condvar_test",
+    srcs = ["condvar_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 cc_test(
     name = "raise_signal_test",
     srcs = ["raise_signal_test.cc"],
