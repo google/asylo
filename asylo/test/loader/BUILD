@@ -22,8 +22,7 @@ cc_test(
     name = "loader_test",
     size = "small",
     srcs = ["loader_test.cc"],
-    features = ["fully_static_link"],  # link libc statically
-    linkstatic = 1,  # prefer static libraries
+    tags = ["regression"],
     deps = [
         "//asylo:enclave_client",
         "//asylo/test/util:status_matchers",
