@@ -269,6 +269,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -499,6 +500,36 @@ cc_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "proto_format",
+    srcs = ["proto_format.cc"],
+    hdrs = ["proto_format.h"],
+    deps = [
+        ":code_identity_proto_cc",
+        ":hardware_types",
+        "//asylo/identity/util:bit_vector_128_proto_cc",
+        "//asylo/identity/util:sha256_hash_proto_cc",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "proto_format_test",
+    srcs = ["proto_format_test.cc"],
+    deps = [
+        ":code_identity_proto_cc",
+        ":code_identity_util",
+        ":hardware_types",
+        ":proto_format",
+        "//asylo/identity/util:sha256_hash_proto",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
