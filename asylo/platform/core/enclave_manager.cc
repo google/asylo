@@ -25,7 +25,6 @@
 #include <thread>
 
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
@@ -293,14 +292,11 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
 }
 
 void EnclaveManager::SpawnWorkerThread() {
-  std::mutex worker_init_lock;
-  worker_init_lock.lock();
-  std::thread worker(
-      [this, &worker_init_lock] { WorkerLoop(&worker_init_lock); });
+  // Tick() here is to prevent a race condition between the WorkLoop thread
+  // initializing and other threads accressing the resources.
+  Tick();
+  std::thread worker([this] { WorkerLoop(); });
   worker.detach();
-  // Block until the worker loop is fully initialized and unlocks the passed
-  // mutex.
-  worker_init_lock.lock();
 }
 
 void EnclaveManager::Tick() {
@@ -308,12 +304,9 @@ void EnclaveManager::Tick() {
   clock_realtime_ = RealTimeClock();
 }
 
-void EnclaveManager::WorkerLoop(std::mutex *unlock_when_ready) {
+void EnclaveManager::WorkerLoop() {
   // Tick each 70us ~ 14.29kHz
-  const int64_t kClockPeriod = INT64_C(70000);
-  Tick();
-  unlock_when_ready->unlock();
-  unlock_when_ready = nullptr;
+  constexpr int64_t kClockPeriod = INT64_C(70000);
   int64_t next_tick = MonotonicClock();
   while (true) {
     WaitUntil(next_tick);

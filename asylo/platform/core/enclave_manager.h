@@ -22,7 +22,6 @@
 // Declares the enclave client API, providing types and methods for loading,
 // accessing, and finalizing enclaves.
 
-#include <mutex>
 #include <string>
 #include <utility>
 
@@ -269,7 +268,7 @@ class EnclaveManager {
   void SpawnWorkerThread();
 
   // Top level loop run by the background worker thread.
-  void WorkerLoop(std::mutex *unlock_when_ready);
+  void WorkerLoop();
 
   // Execute a single iteration of the work loop.
   void Tick();
