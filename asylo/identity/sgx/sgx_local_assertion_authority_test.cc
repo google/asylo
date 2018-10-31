@@ -97,10 +97,7 @@ TEST_P(SgxLocalAssertionAuthorityTest, CanGenerate) {
 
   SgxLocalAssertionGenerator generator;
   ASSERT_THAT(generator.Initialize(config_), IsOk());
-
-  bool result;
-  ASYLO_ASSERT_OK_AND_ASSIGN(result, generator.CanGenerate(request));
-  EXPECT_TRUE(result);
+  EXPECT_THAT(generator.CanGenerate(request), IsOkAndHolds(true));
 }
 
 // Verify that SgxLocalAssertionVerifier can verify an assertion offered by a
@@ -119,10 +116,7 @@ TEST_P(SgxLocalAssertionAuthorityTest, CanVerify) {
 
   SgxLocalAssertionVerifier verifier;
   ASSERT_THAT(verifier.Initialize(config_), IsOk());
-
-  bool result;
-  ASYLO_ASSERT_OK_AND_ASSIGN(result, verifier.CanVerify(offer));
-  EXPECT_TRUE(result);
+  EXPECT_THAT(verifier.CanVerify(offer), IsOkAndHolds(true));
 }
 
 // Verify the SgxLocalAssertionVerifier successfully verifies an assertion

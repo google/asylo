@@ -113,12 +113,9 @@ TEST_F(VirtualHandlerTest, BasicFileMatch) {
   RegisterVirtualPathHandler(path, label);
 
   // Verify that handler is used when issuing reads.
-  StatusOr<std::string> result_or_error = Read(path);
-  ASSERT_TRUE(result_or_error.ok());
-  std::string result = result_or_error.ValueOrDie();
-  EXPECT_EQ(result, label);
+  EXPECT_THAT(Read(path), IsOkAndHolds(label));
 
-  // CLeanup registered handler
+  // Cleanup registered handler
   DeregisterVirtualPathHandler(path);
 }
 
@@ -130,10 +127,7 @@ TEST_F(VirtualHandlerTest, BasicPrefixMatch) {
   RegisterVirtualPathHandler(path, label);
 
   // Verify that handler is used when issuing reads.
-  StatusOr<std::string> result_or_error = Read(absl::StrCat(path, "/qux"));
-  ASSERT_TRUE(result_or_error.ok());
-  std::string result = result_or_error.ValueOrDie();
-  EXPECT_EQ(result, label);
+  EXPECT_THAT(Read(absl::StrCat(path, "/qux")), IsOkAndHolds(label));
 
   // Cleanup registered handler.
   DeregisterVirtualPathHandler(path);
@@ -147,10 +141,11 @@ TEST_F(VirtualHandlerTest, PartialFileMatch) {
   RegisterVirtualPathHandler(path, label);
 
   // Verify that handler isn't matched.
-  StatusOr<std::string> result_or_error = Read(path + "x");
+  auto result_or_error = Read(path + "x");
   ASSERT_THAT(result_or_error, Not(IsOk()));
-  EXPECT_EQ(result_or_error.status().error_message(),
-            "Error: Cannot open /test/foo/qux");
+  EXPECT_THAT(result_or_error.status(),
+              StatusIs(error::GoogleError::INTERNAL,
+                       "Error: Cannot open /test/foo/qux"));
 
   // Cleanup registered handler.
   DeregisterVirtualPathHandler(path);
@@ -167,10 +162,7 @@ TEST_F(VirtualHandlerTest, OverlappingPrefixMatchFirst) {
   RegisterVirtualPathHandler(path2, label2);
 
   // Verify the proper handler is used.
-  StatusOr<std::string> result_or_error = Read(absl::StrCat(path1, "/bar"));
-  ASSERT_TRUE(result_or_error.ok());
-  std::string result = result_or_error.ValueOrDie();
-  EXPECT_EQ(result, label1);
+  EXPECT_THAT(Read(absl::StrCat(path1, "/bar")), IsOkAndHolds(label1));
 
   // Cleanup registered handlers.
   DeregisterVirtualPathHandler(path1);
@@ -188,10 +180,7 @@ TEST_F(VirtualHandlerTest, OverlappingPrefixMatchSecond) {
   RegisterVirtualPathHandler(path2, label2);
 
   // Verify the proper handler is used.
-  StatusOr<std::string> result_or_error = Read(absl::StrCat(path2, "/bar"));
-  ASSERT_TRUE(result_or_error.ok());
-  std::string result = result_or_error.ValueOrDie();
-  EXPECT_EQ(result, label2);
+  EXPECT_THAT(Read(absl::StrCat(path2, "/bar")), IsOkAndHolds(label2));
 
   // Cleanup registered handler.
   DeregisterVirtualPathHandler(path1);
@@ -216,8 +205,7 @@ TEST_F(VirtualHandlerTest, NoMatch) {
   RegisterVirtualPathHandler(path4, label4);
 
   // Verify no handler is matched.
-  auto result_or_error = Read("/test/blank");
-  ASSERT_THAT(result_or_error, Not(IsOk()));
+  ASSERT_THAT(Read("/test/blank"), Not(IsOk()));
 
   // CLeanup registered handlers.
   DeregisterVirtualPathHandler(path1);
@@ -238,10 +226,7 @@ TEST_F(VirtualHandlerTest, SiblingMatch) {
   RegisterVirtualPathHandler(path2, label2);
 
   // Verify proper handler is matched.
-  StatusOr<std::string> result_or_error = Read(absl::StrCat(path1, "/example"));
-  ASSERT_TRUE(result_or_error.ok());
-  std::string result = result_or_error.ValueOrDie();
-  EXPECT_EQ(result, label1);
+  EXPECT_THAT(Read(absl::StrCat(path1, "/example")), IsOkAndHolds(label1));
 
   // Cleanup registered handlers.
   DeregisterVirtualPathHandler(path1);

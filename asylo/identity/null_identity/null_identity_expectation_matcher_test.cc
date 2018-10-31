@@ -73,10 +73,8 @@ TEST_F(NullIdentityExpectationMatcherTest, DescriptionCorrectness) {
 // Tests that null_identity_ matches null_expectation_.
 TEST_F(NullIdentityExpectationMatcherTest, MatchNullIdentityToNullExpectation) {
   NullIdentityExpectationMatcher matcher;
-  StatusOr<bool> match_result =
-      matcher.Match(null_identity_, null_expectation_);
-  ASSERT_THAT(match_result, IsOk());
-  EXPECT_TRUE(match_result.ValueOrDie());
+  EXPECT_THAT(matcher.Match(null_identity_, null_expectation_),
+              IsOkAndHolds(true));
 }
 
 // Tests that attempt to match non_null_expectation_ using

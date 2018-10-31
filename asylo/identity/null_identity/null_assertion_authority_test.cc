@@ -101,9 +101,7 @@ TEST_F(NullAssertionAuthorityTest, CanVerifySuceedsVerifyAssertionOffer) {
   AssertionOffer offer;
   ASSERT_THAT(generator_->CreateAssertionOffer(&offer), IsOk());
 
-  auto result = verifier_->CanVerify(offer);
-  EXPECT_THAT(result, IsOk());
-  EXPECT_TRUE(result.ValueOrDie());
+  EXPECT_THAT(verifier_->CanVerify(offer), IsOkAndHolds(true));
 }
 
 // Verify that neither an empty assertion offer nor an invalid assertion offer
@@ -115,16 +113,12 @@ TEST_F(NullAssertionAuthorityTest, CanVerifyFailsBadAssertionOffer) {
       EnclaveIdentityType::CODE_IDENTITY);
   offer.mutable_description()->set_authority_type(kInvalidAuthorityType);
   offer.set_additional_information(kInvalidAssertionOfferAdditionalInfo);
-  auto result = verifier_->CanVerify(offer);
 
-  ASSERT_THAT(result, IsOk());
-  EXPECT_FALSE(result.ValueOrDie());
+  EXPECT_THAT(verifier_->CanVerify(offer), IsOkAndHolds(false));
 
   // Empty assertion offer.
   offer.Clear();
-  result = verifier_->CanVerify(offer);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_FALSE(result.ValueOrDie());
+  EXPECT_THAT(verifier_->CanVerify(offer), IsOkAndHolds(false));
 }
 
 // Verify that a NullAssertionGenerator can generate an assertion to satisfy an
@@ -133,9 +127,7 @@ TEST_F(NullAssertionAuthorityTest, CanGenerateSuceedsValidAssertionRequest) {
   AssertionRequest request;
   ASSERT_THAT(verifier_->CreateAssertionRequest(&request), IsOk());
 
-  auto result = generator_->CanGenerate(request);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_TRUE(result.ValueOrDie());
+  EXPECT_THAT(generator_->CanGenerate(request), IsOkAndHolds(true));
 }
 
 // Verify that a NullAssertionGenerator cannot generate an assertion to satisfy
@@ -148,16 +140,11 @@ TEST_F(NullAssertionAuthorityTest, CanGenerateFailsBadAssertionRequest) {
   request.mutable_description()->set_authority_type(kInvalidAuthorityType);
   request.set_additional_information(kInvalidAssertionRequestAdditionalInfo);
 
-  auto result = generator_->CanGenerate(request);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_FALSE(result.ValueOrDie());
+  EXPECT_THAT(generator_->CanGenerate(request), IsOkAndHolds(false));
 
   // Empty assertion request.
   request.Clear();
-
-  result = generator_->CanGenerate(request);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_FALSE(result.ValueOrDie());
+  EXPECT_THAT(generator_->CanGenerate(request), IsOkAndHolds(false));
 }
 
 // Verify that a NullAssertionGenerator can generate an assertion based on an

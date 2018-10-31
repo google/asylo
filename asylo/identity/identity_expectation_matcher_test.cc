@@ -109,10 +109,7 @@ TEST(IdentityExpectationMatcherTest, MatchIfDescriptionsAndIdentitiesMatch) {
   EnclaveIdentityExpectation expectation = MakeExpectation<'A'>("foo");
 
   DelegatingIdentityExpectationMatcher matcher;
-  StatusOr<bool> match_result = matcher.Match(identity, expectation);
-
-  ASSERT_THAT(match_result, IsOk());
-  EXPECT_TRUE(match_result.ValueOrDie());
+  EXPECT_THAT(matcher.Match(identity, expectation), IsOkAndHolds(true));
 }
 
 // Tests that identity and expectation of type 'A' do not match each other if
@@ -122,10 +119,7 @@ TEST(IdentityExpectationMatcherTest, MatchFailsIfIdentityMatchFails) {
   EnclaveIdentityExpectation expectation = MakeExpectation<'A'>("bar");
 
   DelegatingIdentityExpectationMatcher matcher;
-  StatusOr<bool> match_result = matcher.Match(identity, expectation);
-
-  ASSERT_THAT(match_result, IsOk());
-  EXPECT_FALSE(match_result.ValueOrDie());
+  EXPECT_THAT(matcher.Match(identity, expectation), IsOkAndHolds(false));
 }
 
 // Tests that identity of type 'A' does not match expectation of type 'B'. Since
@@ -136,10 +130,7 @@ TEST(IdentityExpectationMatcherTest, MatchFailsIfDescriptionMatchFails) {
   EnclaveIdentityExpectation expectation = MakeExpectation<'B'>("foo");
 
   DelegatingIdentityExpectationMatcher matcher;
-  StatusOr<bool> match_result = matcher.Match(identity, expectation);
-
-  ASSERT_THAT(match_result, IsOk());
-  EXPECT_FALSE(match_result.ValueOrDie());
+  EXPECT_THAT(matcher.Match(identity, expectation), IsOkAndHolds(false));
 }
 
 // Tests that identity of type 'C' does not match expectation of type 'A'.

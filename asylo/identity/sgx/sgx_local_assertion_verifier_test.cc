@@ -224,9 +224,7 @@ TEST_F(SgxLocalAssertionVerifierTest,
   AssertionOffer offer;
   MakeAssertionOffer(kLocalAttestationDomain2, &offer);
 
-  auto result = verifier.CanVerify(offer);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_FALSE(result.ValueOrDie());
+  EXPECT_THAT(verifier.CanVerify(offer), IsOkAndHolds(false));
 }
 
 // Verify that Verify() fails if the verifier is not yet initialized.

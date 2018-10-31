@@ -223,10 +223,7 @@ TEST_F(SgxLocalAssertionGeneratorTest,
   // Create an AssertionRequest for a non-matching local attestation domain.
   ASSERT_TRUE(MakeAssertionRequestWithRandomTarget(kLocalAttestationDomain2,
                                                    &assertion_request));
-
-  auto result = generator.CanGenerate(assertion_request);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_FALSE(result.ValueOrDie());
+  EXPECT_THAT(generator.CanGenerate(assertion_request), IsOkAndHolds(false));
 }
 
 // Verify that CanGenerate() fails if the AssertionRequest is unparseable.
@@ -266,10 +263,7 @@ TEST_F(SgxLocalAssertionGeneratorTest, CanGenerateSuccess) {
   // Create a valid AssertionRequest.
   ASSERT_TRUE(MakeAssertionRequestWithRandomTarget(kLocalAttestationDomain1,
                                                    &assertion_request));
-
-  auto result = generator.CanGenerate(assertion_request);
-  ASSERT_THAT(result, IsOk());
-  EXPECT_TRUE(result.ValueOrDie());
+  EXPECT_THAT(generator.CanGenerate(assertion_request), IsOkAndHolds(true));
 }
 
 // Verify that Generate() fails if the generator is not yet initialized.
