@@ -31,39 +31,9 @@
 namespace asylo {
 namespace {
 
-// A struct with state needed by each thread. A pointer to this is passed into
-// each thread start function.
-struct CounterState {
-  // A counter that simulates the length of a work queue.
-  volatile int counter = 0;
-
-  // Mutex used to lock critical sections.
-  pthread_mutex_t mu;
-
-  // Condition variable used to signal queue state changes.
-  pthread_cond_t cv;
-};
-
-// Controls the number of threads modifying a shared counter variable.
-const int kNumThreads = 8;
-
-// Controls the total number of items to be queued.
-const int kCountsPerThread = 50000;
-
-// Controls the maximum number of "outstanding work items" that can be queued.
-const int kMaxQueueLength = 50;
-
-// The expected number of total items to be drained from the "queue".
-const int kExpectedTotalCounts = kNumThreads * kCountsPerThread;
-
-// Controls the size of the buffer that is cleansed in StartRoutine.
-const int kBufferSize = 4096;
-
-// Ensure that the counter is within the intended bounds.
-void CheckInvariants(CounterState *counter_state) {
-  CHECK_GE(counter_state->counter, 0) << "Counter out of bounds!";
-  CHECK_LE(counter_state->counter, kMaxQueueLength) << "Counter out of bounds!";
-}
+// Controls the size of the buffer that is cleansed as part of our busy-work
+// routine.
+constexpr int kBufferSize = 4096;
 
 // Do an expensive operation in between reading and writing. OPENSSL_cleanse is
 // a good candidate because it performs a loop that is not performance-optimized
@@ -71,59 +41,6 @@ void CheckInvariants(CounterState *counter_state) {
 void BusyWork() {
   uint8_t buf[kBufferSize];
   OPENSSL_cleanse(buf, kBufferSize);
-}
-
-// This routine increments the integer pointed to by |arg|->counter
-// kCountsPerThread times, but with the constraint that the counter never go
-// above kMaxQueueLength. (There's another thread simultaneously "draining the
-// queue", i.e. reducing the counter value.) The mutex |arg|->mu is guards
-// the critical section and the condition variable |arg|->cv is signalled on
-// each increment.
-void *ProducerRoutine(void *arg) {
-  CounterState *counter_state = static_cast<CounterState *>(arg);
-  CHECK(counter_state != nullptr) << "Counter pointer is unexpectedly null";
-
-  // Critical section: read and write a variable that is shared amongst multiple
-  // threads.
-  pthread_mutex_lock(&counter_state->mu);
-  for (int i = 0; i < kCountsPerThread; ++i) {
-    CheckInvariants(counter_state);
-    while (counter_state->counter == kMaxQueueLength) {
-      pthread_cond_wait(&counter_state->cv, &counter_state->mu);
-      CheckInvariants(counter_state);
-    }
-    volatile int counter_copy = counter_state->counter;
-    BusyWork();
-    counter_state->counter = counter_copy + 1;
-    pthread_cond_broadcast(&counter_state->cv);
-  }
-  pthread_mutex_unlock(&counter_state->mu);
-  return nullptr;
-}
-
-// This routine decrements |arg|->counter kExpectedTotalCounts times, "draining
-// the queue" that's being filled by all the producer threads. It ensures the
-// counter never goes below zero and signals |arg|->cv each time it makes more
-// room in the "queue".
-void *ConsumerRoutine(void *arg) {
-  CounterState *counter_state = static_cast<CounterState *>(arg);
-  CHECK(counter_state != nullptr) << "Counter pointer is unexpectedly null";
-
-  pthread_mutex_lock(&counter_state->mu);
-  for (int i = 0; i < kExpectedTotalCounts; i++) {
-    CheckInvariants(counter_state);
-    while (counter_state->counter == 0) {
-      pthread_cond_wait(&counter_state->cv, &counter_state->mu);
-      CheckInvariants(counter_state);
-    }
-
-    volatile int counter_copy = counter_state->counter;
-    BusyWork();
-    counter_state->counter = counter_copy - 1;
-    pthread_cond_broadcast(&counter_state->cv);
-  }
-  pthread_mutex_unlock(&counter_state->mu);
-  return nullptr;
 }
 
 // Creates |numThreads| threads with the given |start_routine| and |arg|. Each
@@ -156,25 +73,217 @@ Status JoinThreads(const std::vector<pthread_t> &threads) {
   return Status::OkStatus();
 }
 
-TEST(BasicTest, EnclaveCondVar) {
-  CounterState cs;
-  pthread_mutex_init(&cs.mu, nullptr);
-  pthread_cond_init(&cs.cv, nullptr);
-  cs.counter = 0;
-  std::vector<pthread_t> threads;
-
-  ASSERT_THAT(LaunchThreads(kNumThreads, ProducerRoutine, &cs, &threads),
-              IsOk());
-  LOG(INFO) << "Producer threads launched";
-  ASSERT_THAT(LaunchThreads(1, ConsumerRoutine, &cs, &threads), IsOk());
-  LOG(INFO) << "Consumer thread launched";
-  ASSERT_THAT(JoinThreads(threads), IsOk());
-  LOG(INFO) << "Threads joined";
-  ASSERT_EQ(cs.counter, 0);
+// Check if |value| (called |debug_name|) is in the range from |min_allowed|
+// to |max_allowed|. Returns OkStatus() if so; error status otherwise.
+Status CheckInRange(const int value, absl::string_view debug_name,
+                    const int min_allowed, const int max_allowed) {
+  if (value < min_allowed || value > max_allowed) {
+    return Status(
+        error::GoogleError::FAILED_PRECONDITION,
+        absl::StrCat("illegal value of ", debug_name, ": currently ", value,
+                     "; must be in range ", min_allowed, "-", max_allowed));
+  }
+  return Status::OkStatus();
 }
 
-TEST(TimeoutTest, EnclaveCondVar) {
-  const int kDeadlineSeconds = 3;
+TEST(EnclaveCondVar, IllegalPointer) {
+  // Test various pthread_condvar_* functions to ensure they reject invalid
+  // pointers.
+
+  // pthread_cond_init
+  ASSERT_EQ(pthread_cond_init(nullptr, nullptr), EINVAL);
+
+  // pthread_cond_destroy
+  ASSERT_EQ(pthread_cond_destroy(nullptr), EINVAL);
+
+  // pthread_cond_wait
+  pthread_mutex_t mu;
+  ASSERT_EQ(pthread_cond_wait(nullptr, &mu), EINVAL);
+  pthread_cond_t cv;
+  ASSERT_EQ(pthread_cond_wait(&cv, nullptr), EINVAL);
+
+  // pthread_cond_timedwait
+  ASSERT_EQ(pthread_cond_timedwait(nullptr, &mu, nullptr), EINVAL);
+  ASSERT_EQ(pthread_cond_timedwait(&cv, nullptr, nullptr), EINVAL);
+
+  // pthread_cond_signal
+  ASSERT_EQ(pthread_cond_signal(nullptr), EINVAL);
+
+  // pthread_cond_broadcast
+  ASSERT_EQ(pthread_cond_broadcast(nullptr), EINVAL);
+}
+
+// This test creates a typical "producer-consumer" pattern using the mutex and
+// condition variable. We bound the maximum length our "queue" is allowed to
+// grow to. Producers signal when they've added something to the queue and
+// block on the signal when they need more space. Consumers signal when
+// they've created space and block when they need a work item.
+class ProducerConsumerTest : public ::testing::Test {
+ protected:
+  // The number of producer threads.
+  static constexpr int kNumProducerThreads = 8;
+
+  // The number of items to be queued per threads.
+  static constexpr int kCountsPerThread = 5000;
+
+  // Controls the maximum number of "outstanding work items" that can be queued.
+  static constexpr int kMaxQueueLength = 50;
+
+  // The expected number of total items to be drained from the "queue".
+  static constexpr int kExpectedTotalCounts =
+      kNumProducerThreads * kCountsPerThread;
+
+  // Ensure that the counter is within the intended bounds. Lock must be held.
+  Status CheckInvariants() {
+    return CheckInRange(counter_, "counter_", 0, kMaxQueueLength);
+  }
+
+  // Producer routine increments our "queue" counter kCountsPerThread times. We
+  // run kNumThreads of these. Each "adds" to the "queue" as long as there's
+  // space, never exceeding kMaxQueueLength. It waits on the CV if there's not
+  // space, and signals the CV if it adds something to the queue.
+  void ProducerRoutine() {
+    // Critical section: read and write a variable that is shared amongst
+    // multiple threads.
+    pthread_mutex_lock(&mu_);
+    for (int i = 0; i < kCountsPerThread; ++i) {
+      ASYLO_ASSERT_OK(CheckInvariants());
+      while (counter_ == kMaxQueueLength) {
+        pthread_cond_wait(&cv_, &mu_);
+        ASYLO_ASSERT_OK(CheckInvariants());
+      }
+      volatile int counter_copy = counter_;
+      BusyWork();
+      counter_ = counter_copy + 1;
+      pthread_cond_broadcast(&cv_);
+    }
+    pthread_mutex_unlock(&mu_);
+  }
+
+  static void *ProducerTrampoline(void *arg) {
+    ProducerConsumerTest *test = static_cast<ProducerConsumerTest *>(arg);
+    CHECK(test != nullptr) << "Corrupt test pointer";
+    test->ProducerRoutine();
+    return nullptr;
+  }
+
+  // Consumer routine "drains" our "queue" counter, ensuring it never drops
+  // below 0. It blocks on the CV if the queue is empty and signals the CV each
+  // time it makes more room in the queue by consuming a "work item".
+  void ConsumerRoutine() {
+    pthread_mutex_lock(&mu_);
+    for (int i = 0; i < kExpectedTotalCounts; i++) {
+      ASYLO_ASSERT_OK(CheckInvariants());
+      while (counter_ == 0) {
+        pthread_cond_wait(&cv_, &mu_);
+        ASYLO_ASSERT_OK(CheckInvariants());
+      }
+
+      volatile int counter_copy = counter_;
+      BusyWork();
+      counter_ = counter_copy - 1;
+      pthread_cond_broadcast(&cv_);
+    }
+    pthread_mutex_unlock(&mu_);
+  }
+
+  static void *ConsumerTrampoline(void *arg) {
+    ProducerConsumerTest *test = static_cast<ProducerConsumerTest *>(arg);
+    CHECK(test != nullptr) << "Corrupt test pointer";
+    test->ConsumerRoutine();
+    return nullptr;
+  }
+
+  // A counter that simulates the length of a work queue.
+  volatile int counter_ = 0;
+
+  // Mutex and CV. These are initialized using the explicit initialization
+  // function in this test, to ensure those functions work.
+  pthread_mutex_t mu_;
+  pthread_cond_t cv_;
+};
+
+TEST_F(ProducerConsumerTest, ProducerConsumer) {
+  ASSERT_EQ(pthread_mutex_init(&mu_, nullptr), 0);
+  ASSERT_EQ(pthread_cond_init(&cv_, nullptr), 0);
+  std::vector<pthread_t> threads;
+
+  ASYLO_ASSERT_OK(
+      LaunchThreads(kNumProducerThreads, ProducerTrampoline, this, &threads));
+  LOG(INFO) << "Producer threads launched";
+  ASYLO_ASSERT_OK(LaunchThreads(1, ConsumerTrampoline, this, &threads));
+  LOG(INFO) << "Consumer thread launched";
+  ASYLO_ASSERT_OK(JoinThreads(threads));
+  LOG(INFO) << "Threads joined";
+  ASSERT_EQ(counter_, 0);
+  ASSERT_EQ(pthread_mutex_destroy(&mu_), 0);
+  ASSERT_EQ(pthread_cond_destroy(&cv_), 0);
+}
+
+// This test waits for a bunch of threads to block on a single CV, then sends
+// a single broadcast to that CV and ensures that all threads unblock. As part
+// of the test, we use a second CV to help indicate when all threads have
+// blocked.
+class BroadcastTest : public ::testing::Test {
+ protected:
+  static constexpr int kNumThreads = 8;
+
+  void WaitForSignal() {
+    CHECK_EQ(pthread_mutex_lock(&mu_), 0);
+    num_blocked_++;
+    CHECK_EQ(pthread_cond_signal(&counter_cv_), 0);
+    CHECK_EQ(pthread_cond_wait(&broadcast_cv_, &mu_), 0);
+    CHECK_EQ(pthread_mutex_unlock(&mu_), 0);
+  }
+
+  static void *WaitForSignalTrampoline(void *arg) {
+    BroadcastTest *test = static_cast<BroadcastTest *>(arg);
+    CHECK(test != nullptr) << "Corrupt test pointer";
+    test->WaitForSignal();
+    return nullptr;
+  }
+
+  // Number of threads blocked on broadcast_cv_.
+  volatile int num_blocked_ = 0;
+
+  // Mutex that protects all critical sections.
+  pthread_mutex_t mu_ = PTHREAD_MUTEX_INITIALIZER;
+
+  // Condition variable used to send the test broadcast.
+  pthread_cond_t broadcast_cv_ = PTHREAD_COND_INITIALIZER;
+
+  // Condition variable used to track the number of blocked threads.
+  pthread_cond_t counter_cv_ = PTHREAD_COND_INITIALIZER;
+};
+
+TEST_F(BroadcastTest, Broadcast) {
+  // Start up all the threads that will wait on the broadcast signal.
+  std::vector<pthread_t> threads;
+  ASYLO_ASSERT_OK(
+      LaunchThreads(kNumThreads, WaitForSignalTrampoline, this, &threads));
+
+  // Wait for all threads to block.
+  ASSERT_EQ(pthread_mutex_lock(&mu_), 0);
+  while (num_blocked_ != kNumThreads) {
+    ASSERT_EQ(pthread_cond_wait(&counter_cv_, &mu_), 0);
+  }
+  ASSERT_EQ(pthread_mutex_unlock(&mu_), 0);
+
+  // Send that one magic broadcast.
+  ASSERT_EQ(pthread_cond_broadcast(&broadcast_cv_), 0);
+
+  // Wait for all threads to complete. They should have been unblocked by that
+  // broadcast.
+  ASYLO_ASSERT_OK(JoinThreads(threads));
+
+  // Clean up.
+  ASSERT_EQ(pthread_mutex_destroy(&mu_), 0);
+  ASSERT_EQ(pthread_cond_destroy(&counter_cv_), 0);
+  ASSERT_EQ(pthread_cond_destroy(&broadcast_cv_), 0);
+}
+
+TEST(EnclaveCondVar, Timeout) {
+  constexpr int kDeadlineSeconds = 3;
 
   // Test to ensure a cond var that's never signaled returns ETIMEDOUT.
   pthread_cond_t cv = PTHREAD_COND_INITIALIZER;
