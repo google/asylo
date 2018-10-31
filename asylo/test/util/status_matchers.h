@@ -22,13 +22,84 @@
 #include <memory>
 
 #include <gmock/gmock-matchers.h>
+#include <gtest/gtest.h>
+#include "absl/strings/str_cat.h"
 #include "absl/types/optional.h"
-#include "asylo/test/util/statusor_test_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace internal {
+
+// Implements a gMock matcher that checks that an asylo::StaturOr<T> has an OK
+// status and that the contained T value matches another matcher.
+template <typename T>
+class IsOkAndHoldsMatcher
+    : public ::testing::MatcherInterface<const StatusOr<T> &> {
+ public:
+  template <typename MatcherT>
+  IsOkAndHoldsMatcher(MatcherT &&value_matcher)
+      : value_matcher_(::testing::SafeMatcherCast<const T &>(value_matcher)) {}
+
+  // From testing::MatcherInterface.
+  void DescribeTo(std::ostream *os) const override {
+    *os << "is OK and contains a value that ";
+    value_matcher_.DescribeTo(os);
+  }
+
+  // From testing::MatcherInterface.
+  void DescribeNegationTo(std::ostream *os) const override {
+    *os << "is not OK or contains a value that ";
+    value_matcher_.DescribeNegationTo(os);
+  }
+
+  // From testing::MatcherInterface.
+  bool MatchAndExplain(
+      const StatusOr<T> &status_or,
+      ::testing::MatchResultListener *listener) const override {
+    if (!status_or.ok()) {
+      *listener << "which is not OK";
+      return false;
+    }
+
+    ::testing::StringMatchResultListener value_listener;
+    bool is_a_match =
+        value_matcher_.MatchAndExplain(status_or.ValueOrDie(), &value_listener);
+    std::string value_explanation = value_listener.str();
+    if (!value_explanation.empty()) {
+      *listener << absl::StrCat("which contains a value ", value_explanation);
+    }
+
+    return is_a_match;
+  }
+
+ private:
+  const ::testing::Matcher<const T &> value_matcher_;
+};
+
+// A polymorphic IsOkAndHolds() matcher.
+//
+// IsOkAndHolds() returns a matcher that can be used to process an IsOkAndHolds
+// expectation. However, the value type T is not provided when IsOkAndHolds() is
+// invoked. The value type is only inferable when the gtest framework invokes
+// the matcher with a value. Consequently, the IsOkAndHolds() function must
+// return an object that is implicitly convertible to a matcher for StatusOr<T>.
+// gtest refers to such an object as a polymorphic matcher, since it can be used
+// to match with more than one type of value.
+template <typename ValueMatcherT>
+class IsOkAndHoldsGenerator {
+ public:
+  explicit IsOkAndHoldsGenerator(ValueMatcherT value_matcher)
+      : value_matcher_(std::move(value_matcher)) {}
+
+  template <typename T>
+  operator ::testing::Matcher<const StatusOr<T> &>() const {
+    return ::testing::MakeMatcher(new IsOkAndHoldsMatcher<T>(value_matcher_));
+  }
+
+ private:
+  const ValueMatcherT value_matcher_;
+};
 
 // Implements a gMock matcher for checking error-code expectations on
 // asylo::Status objects.
@@ -140,6 +211,28 @@ class IsOkMatcherGenerator {
 
 }  // namespace internal
 
+// Returns a gMock matcher that expects an asylo::StatusOr<T> object to have an
+// OK status and for the contained T object to match |value_matcher|.
+//
+// Example:
+//
+//     StatusOr<string> raven_speech_result = raven.Speak();
+//     EXPECT_THAT(raven_speech_result, IsOkAndHolds(HasSubstr("nevermore")));
+//
+// If foo is an object of type T and foo_result is an object of type
+// StatusOr<T>, you can write:
+//
+//     EXPECT_THAT(foo_result, IsOkAndHolds(foo));
+//
+// instead of:
+//
+//     EXPECT_THAT(foo_result, IsOkAndHolds(Eq(foo)));
+template <typename ValueMatcherT>
+internal::IsOkAndHoldsGenerator<ValueMatcherT> IsOkAndHolds(
+    ValueMatcherT value_matcher) {
+  return internal::IsOkAndHoldsGenerator<ValueMatcherT>(value_matcher);
+}
+
 // Returns a gMock matcher that expects an asylo::Status object to have the
 // given |code|.
 template <typename Enum>
@@ -191,6 +284,20 @@ inline internal::IsOkMatcherGenerator IsOk() {
     }                                                                    \
     lhs = std::move(_asylo_status_to_verify).ValueOrDie();               \
   } while (false)
+
+// Implements the PrintTo() method for asylo::StatusOr<T>. This method is
+// used by gtest to print asylo::StatusOr<T> objects for debugging. The
+// implementation relies on gtest for printing values of T when a
+// asylo::StatusOr<T> object is OK and contains a value.
+template <typename T>
+void PrintTo(const StatusOr<T> &statusor, std::ostream *os) {
+  if (!statusor.ok()) {
+    *os << statusor.status();
+  } else {
+    *os << absl::StrCat("OK: ",
+                        ::testing::PrintToString(statusor.ValueOrDie()));
+  }
+}
 
 }  // namespace asylo
 

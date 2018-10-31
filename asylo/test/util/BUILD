@@ -20,6 +20,7 @@ licenses(["notice"])  # Apache v2.0
 
 package(default_visibility = ["//asylo:implementation"])
 
+load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
@@ -175,15 +176,28 @@ cc_library(
 cc_library(
     name = "status_matchers",
     testonly = 1,
-    hdrs = [
-        "status_matchers.h",
-        "statusor_test_util.h",
-    ],
+    hdrs = ["status_matchers.h"],
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# A test for the Status matchers.
+cc_test(
+    name = "status_matchers_test",
+    srcs = ["status_matchers_test.cc"],
+    enclave_test_name = "status_matchers_enclave_test",
+    tags = ["regression"],
+    deps = [
+        ":status_matchers",
+        ":test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
