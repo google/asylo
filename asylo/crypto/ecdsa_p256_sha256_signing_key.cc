@@ -185,12 +185,7 @@ EcdsaP256Sha256SigningKey::GetVerifyingKey() const {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
 
-  auto verifying_key_result =
-      EcdsaP256Sha256VerifyingKey::Create(std::move(public_key_copy));
-  if (!verifying_key_result.ok()) {
-    return verifying_key_result.status();
-  }
-  return {std::move(verifying_key_result).ValueOrDie()};
+  return EcdsaP256Sha256VerifyingKey::Create(std::move(public_key_copy));
 }
 
 Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,

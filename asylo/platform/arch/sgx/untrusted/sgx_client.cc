@@ -177,7 +177,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     return Status(status, "Failed to create an enclave");
   }
 
-  return std::unique_ptr<EnclaveClient>(client.release());
+  return client;
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
@@ -214,7 +214,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     return Status(status, "Failed to create an enclave");
   }
 
-  return std::unique_ptr<EnclaveClient>(client.release());
+  return client;
 }
 
 Status SgxClient::EnterAndInitialize(const EnclaveConfig &config) {
