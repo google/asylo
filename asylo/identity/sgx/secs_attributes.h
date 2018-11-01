@@ -50,11 +50,17 @@ enum class SecsAttributeBit {
                   // or a production enclave (=0).
   MODE64BIT = 2,  // Indicates whether the enclave is a 64-bit enclave
                   // (=1) or a 32-bit enclave (=0).
-  // Bit 3 is an unused bit
+  // Bit 3 is an unused bit.
   PROVISIONKEY = 4,  // Indicates whether the enclave has access to the
                      // SGX provisioning key (=1) or not (=0).
   INITTOKENKEY = 5,  // Indicates whether the enclave has access to the
                      // INIT-token key (=1) or not (=0).
+  // Bit 6 is an unused bit.
+  KSS = 7,  // Indicates whether the enclave has support for Key
+            // Separation and Sharing (KSS) (=1) or not (=0). Enabling KSS sets
+            // the ISVEXTPRODID, ISVFAMILYID, CONFIGID and CONFIGSVN values in
+            // an enclave's identity.
+  // Bits 8 through 63 are unused.
 
   // XFRM bit positions. These mirror the bit positions in the x86-64 XCR0
   // register, and control two distinct-yet-related aspects of enclave

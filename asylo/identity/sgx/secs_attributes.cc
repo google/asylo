@@ -90,11 +90,12 @@ constexpr SecsAttributeBit kDefaultDoNotCareSecsAttributes[] = {
 constexpr SecsAttributeBit kAllSecsAttributes[] = {
     SecsAttributeBit::INIT,         SecsAttributeBit::DEBUG,
     SecsAttributeBit::MODE64BIT,    SecsAttributeBit::PROVISIONKEY,
-    SecsAttributeBit::INITTOKENKEY, SecsAttributeBit::FPU,
-    SecsAttributeBit::SSE,          SecsAttributeBit::AVX,
-    SecsAttributeBit::BNDREG,       SecsAttributeBit::BNDCSR,
-    SecsAttributeBit::OPMASK,       SecsAttributeBit::ZMM_HI256,
-    SecsAttributeBit::HI16_ZMM,     SecsAttributeBit::PKRU};
+    SecsAttributeBit::INITTOKENKEY, SecsAttributeBit::KSS,
+    SecsAttributeBit::FPU,          SecsAttributeBit::SSE,
+    SecsAttributeBit::AVX,          SecsAttributeBit::BNDREG,
+    SecsAttributeBit::BNDCSR,       SecsAttributeBit::OPMASK,
+    SecsAttributeBit::ZMM_HI256,    SecsAttributeBit::HI16_ZMM,
+    SecsAttributeBit::PKRU};
 
 // Must-be-one attribute bits
 constexpr SecsAttributeBit kMustBeSetAttributes[] = {
@@ -106,6 +107,7 @@ std::pair<SecsAttributeBit, const char *> kPrintableSecsAttributeBitNames[] = {
     {SecsAttributeBit::MODE64BIT, "MODE64BIT"},
     {SecsAttributeBit::PROVISIONKEY, "PROVISIONKEY"},
     {SecsAttributeBit::INITTOKENKEY, "INITTOKENKEY"},
+    {SecsAttributeBit::KSS, "KSS"},
 
     {SecsAttributeBit::FPU, "FPU"},
     {SecsAttributeBit::SSE, "SSE"},

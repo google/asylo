@@ -46,6 +46,8 @@ class SecsAttributesTest : public ::testing::Test {
                                          // Unused bit
       static_cast<SecsAttributeBit>(4),  // FLAG_ATTRIBUTE_PROVISIONKEY
       static_cast<SecsAttributeBit>(5),  // FLAG_ATTRIBUTE_INITTOKENKEY
+                                         // Unused bit
+      static_cast<SecsAttributeBit>(7),  // FLAG_ATTRIBUTE_KSS
 
       static_cast<SecsAttributeBit>(64),  // XFRM_ATTRIBUTE_FPU,
       static_cast<SecsAttributeBit>(65),  // XFRM_ATTRIBUTE_SSE,
@@ -59,29 +61,28 @@ class SecsAttributesTest : public ::testing::Test {
       static_cast<SecsAttributeBit>(73)   // XFRM_ATTRIBUTE_PKRU
   };
   const std::vector<std::string> attribute_names_ = {
-      "INIT",   "DEBUG",     "MODE64BIT", "PROVISIONKEY", "INITTOKENKEY",
-      "FPU",    "SSE",       "AVX",       "BNDREG",       "BNDCSR",
-      "OPMASK", "ZMM_HI256", "HI16_ZMM",  "PKRU"};
+      "INIT",   "DEBUG",  "MODE64BIT", "PROVISIONKEY", "INITTOKENKEY",
+      "KSS",    "FPU",    "SSE",       "AVX",          "BNDREG",
+      "BNDCSR", "OPMASK", "ZMM_HI256", "HI16_ZMM",     "PKRU"};
   const std::vector<SecsAttributeSet> attribute_sets_ = {
-      {0x1, 0x0},
-      {0x2, 0x0},
-      {0x4, 0x0},
-      // Unused bit
-      {0x10, 0x0},
-      {0x20, 0x0},
+      {0x1, 0x0},   // INIT
+      {0x2, 0x0},   // DEBUG
+      {0x4, 0x0},   // MODE64BIT
+      {0x10, 0x0},  // PROVISIONKEY
+      {0x20, 0x0},  // INITTOKENKEY
+      {0x80, 0x0},  // KSS
 
-      {0x0, 0x1},
-      {0x0, 0x2},
-      {0x0, 0x4},
-      {0x0, 0x8},
-      {0x0, 0x10},
-      {0x0, 0x20},
-      {0x0, 0x40},
-      {0x0, 0x80},
-      // Unused bit
-      {0x0, 0x200},
+      {0x0, 0x1},    // FPU
+      {0x0, 0x2},    // SSE
+      {0x0, 0x4},    // AVX
+      {0x0, 0x8},    // BNDREG
+      {0x0, 0x10},   // BNDCSR
+      {0x0, 0x20},   // OPMASK
+      {0x0, 0x40},   // ZMM_HI256
+      {0x0, 0x80},   // HI16_ZMM
+      {0x0, 0x200},  // PKRU
   };
-  const SecsAttributeSet all_attributes_ = {0x37, 0x2FF};
+  const SecsAttributeSet all_attributes_ = {0xb7, 0x2FF};
   const SecsAttributeBit bad_attribute_ = static_cast<SecsAttributeBit>(129);
 };
 
