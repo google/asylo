@@ -216,6 +216,8 @@ TEST_F(ProducerConsumerTest, ProducerConsumer) {
   ASYLO_ASSERT_OK(JoinThreads(threads));
   LOG(INFO) << "Threads joined";
   ASSERT_EQ(counter_, 0);
+
+  // Clean up. This will return an error if there are any waiters.
   ASSERT_EQ(pthread_mutex_destroy(&mu_), 0);
   ASSERT_EQ(pthread_cond_destroy(&cv_), 0);
 }
@@ -276,7 +278,7 @@ TEST_F(BroadcastTest, Broadcast) {
   // broadcast.
   ASYLO_ASSERT_OK(JoinThreads(threads));
 
-  // Clean up.
+  // Clean up. This will return an error if there are any waiters.
   ASSERT_EQ(pthread_mutex_destroy(&mu_), 0);
   ASSERT_EQ(pthread_cond_destroy(&counter_cv_), 0);
   ASSERT_EQ(pthread_cond_destroy(&broadcast_cv_), 0);
@@ -302,6 +304,10 @@ TEST(EnclaveCondVar, Timeout) {
   timespec curr_time, result;
   ASSERT_EQ(clock_gettime(CLOCK_REALTIME, &curr_time), 0);
   ASSERT_TRUE(asylo::TimeSpecSubtract(deadline, curr_time, &result));
+
+  // Clean up. This will return an error if there are any waiters.
+  ASSERT_EQ(pthread_mutex_destroy(&mu), 0);
+  ASSERT_EQ(pthread_cond_destroy(&cv), 0);
 }
 
 }  // namespace

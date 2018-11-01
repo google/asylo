@@ -143,6 +143,34 @@ void pthread_list_remove_first(__pthread_list_t *list) {
   free_list_node(old_first);
 }
 
+// Removes the node containing |thread_id| from |list|. Returns true if found
+// and removed; false if not found.
+bool pthread_list_remove(__pthread_list_t *list, pthread_t thread_id) {
+  if (list == nullptr) {
+    abort();
+  }
+
+  __pthread_list_node_t *curr, *prev;
+
+  for (curr = list->_first, prev = nullptr; curr != nullptr;
+       prev = curr, curr = curr->_next) {
+    if (curr->_thread_id == thread_id) {
+      if (prev == nullptr) {
+        // Node to remove was the first item in the list. Change the list head.
+        list->_first = curr->_next;
+      } else {
+        // Set previous node's next to be the deleted node's next.
+        prev->_next = curr->_next;
+      }
+
+      free_list_node(curr);
+      return true;
+    }
+  }
+
+  return false;
+}
+
 // Returns whether the given |list| contains |thread_id|.
 bool pthread_list_contains(const __pthread_list_t &list, pthread_t thread_id) {
   __pthread_list_node_t *current = list._first;
@@ -202,6 +230,7 @@ using asylo::pthread_impl::init_tls_map;
 using asylo::pthread_impl::pthread_list_contains;
 using asylo::pthread_impl::pthread_list_first;
 using asylo::pthread_impl::pthread_list_insert_last;
+using asylo::pthread_impl::pthread_list_remove;
 using asylo::pthread_impl::pthread_list_remove_first;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
@@ -471,6 +500,12 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
         break;
       }
     }
+  }
+
+  // If we stopped waiting for some reason other than a ready signal, remove the
+  // thread from the wait list.
+  if (ret != 0) {
+    pthread_list_remove(&cond->_queue, self);
   }
 
   pthread_spin_unlock(&cond->_lock);

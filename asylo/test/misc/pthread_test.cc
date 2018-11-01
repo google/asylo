@@ -38,7 +38,7 @@ class PThreadListNodeTest : public ::testing::Test {
   // Destructively evaluates the list_ to ensure its items match what's passed
   // in as |expected_list|. list_ is empty after this function runs. If there is
   // a mismatch, reports a test error using EXPECT macros.
-  void VerifyListContents(const std::vector<int>& expected_list) {
+  void VerifyListContentsAndDelete(const std::vector<int>& expected_list) {
     for (const int expected_item : expected_list) {
       pthread_t actual_item = pthread_list_first(list_);
       pthread_list_remove_first(&list_);
@@ -90,7 +90,7 @@ TEST_F(PThreadListNodeTest, InsertLast) {
   pthread_list_insert_last(&list_, TestThread(3));
   pthread_list_insert_last(&list_, TestThread(4));
 
-  VerifyListContents({1, 2, 3, 4});
+  VerifyListContentsAndDelete({1, 2, 3, 4});
 }
 
 TEST_F(PThreadListNodeTest, First) {
@@ -119,6 +119,45 @@ TEST_F(PThreadListNodeTest, First) {
 }
 
 TEST_F(PThreadListNodeTest, Remove) {
+  // Ensure remove works if we're removing the first element.
+  pthread_list_insert_last(&list_, TestThread(1));
+  pthread_list_insert_last(&list_, TestThread(2));
+  pthread_list_insert_last(&list_, TestThread(3));
+  pthread_list_insert_last(&list_, TestThread(4));
+  EXPECT_TRUE(pthread_list_remove(&list_, TestThread(1)));
+  VerifyListContentsAndDelete({2, 3, 4});
+
+  // Ensure remove works if we're removing a middle element.
+  pthread_list_insert_last(&list_, TestThread(1));
+  pthread_list_insert_last(&list_, TestThread(2));
+  pthread_list_insert_last(&list_, TestThread(3));
+  pthread_list_insert_last(&list_, TestThread(4));
+  EXPECT_TRUE(pthread_list_remove(&list_, TestThread(2)));
+  VerifyListContentsAndDelete({1, 3, 4});
+
+  // Ensure remove works if we're removing the end element.
+  pthread_list_insert_last(&list_, TestThread(1));
+  pthread_list_insert_last(&list_, TestThread(2));
+  pthread_list_insert_last(&list_, TestThread(3));
+  pthread_list_insert_last(&list_, TestThread(4));
+  EXPECT_TRUE(pthread_list_remove(&list_, TestThread(4)));
+  VerifyListContentsAndDelete({1, 2, 3});
+
+  // Ensure remove works on a 1-element list.
+  pthread_list_insert_last(&list_, TestThread(1));
+  EXPECT_TRUE(pthread_list_remove(&list_, TestThread(1)));
+  VerifyListContentsAndDelete({});
+
+  // Ensure remove works if we're removing an element not in the list.
+  pthread_list_insert_last(&list_, TestThread(1));
+  pthread_list_insert_last(&list_, TestThread(2));
+  pthread_list_insert_last(&list_, TestThread(3));
+  pthread_list_insert_last(&list_, TestThread(4));
+  EXPECT_FALSE(pthread_list_remove(&list_, TestThread(5)));
+  VerifyListContentsAndDelete({1, 2, 3, 4});
+}
+
+TEST_F(PThreadListNodeTest, RemoveFirst) {
   // Ensure that removing the first item from the list works.
 
   pthread_list_insert_last(&list_, TestThread(1));
@@ -129,7 +168,7 @@ TEST_F(PThreadListNodeTest, Remove) {
   pthread_list_remove_first(&list_);
   pthread_list_remove_first(&list_);
 
-  VerifyListContents({3, 4});
+  VerifyListContentsAndDelete({3, 4});
 }
 
 TEST_F(PThreadListNodeTest, EndToEnd) {
@@ -140,7 +179,7 @@ TEST_F(PThreadListNodeTest, EndToEnd) {
   EXPECT_TRUE(pthread_list_contains(list_, TestThread(1)));
   pthread_list_remove_first(&list_);
   EXPECT_FALSE(pthread_list_contains(list_, TestThread(1)));
-  VerifyListContents({});
+  VerifyListContentsAndDelete({});
 }
 
 }  // namespace

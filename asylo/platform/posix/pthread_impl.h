@@ -30,6 +30,10 @@ pthread_t pthread_list_first(const __pthread_list_t &list);
 // Adds |thread_id| as the last entry of |list|.
 void pthread_list_insert_last(__pthread_list_t *list, pthread_t thread_id);
 
+// Removes the node containing |thread_id| from |list|. Returns true if found
+// and removed; false if not found.
+bool pthread_list_remove(__pthread_list_t *list, pthread_t thread_id);
+
 // Removes the first entry of |list|.
 void pthread_list_remove_first(__pthread_list_t *list);
 
