@@ -19,6 +19,9 @@
 #ifndef ASYLO_UTIL_STATUSOR_H_
 #define ASYLO_UTIL_STATUSOR_H_
 
+#include <type_traits>
+
+#include "absl/meta/type_traits.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_error_space.h"
@@ -97,6 +100,17 @@ constexpr char kStatusMoveAssignmentMsg[] =
 /// ```
 template <class T>
 class StatusOr {
+  template <typename U>
+  friend class StatusOr;
+
+  // A traits class that determines whether a type U is implicitly convertible
+  // from a type V. If it is convertible, then the `value` member of this class
+  // is statically set to true, otherwise it is statically set to false.
+  template <class U, typename V>
+  struct is_implicitly_constructible
+      : absl::conjunction<std::is_constructible<U, V>,
+                          std::is_convertible<V, U> > {};
+
  public:
   /// Constructs a StatusOr object that contains a non-OK status.
   /// The non-OK status has an error code of -1. This is a non-standard POSIX
@@ -135,32 +149,56 @@ class StatusOr {
     }
   }
 
-  /// Constructs a StatusOr object containing `value`. The resulting object is
-  /// considered to have an OK status. The wrapped element can be accessed with
-  /// ValueOrDie().
-  ///
-  /// This constructor is not declared `explicit` so that a function with a
-  /// return type of `StatusOr<T>` can return an element of type `T`, and this
-  /// value will be implicitly converted to the appropriate return type as
-  /// matter of convenience.
-  ///
-  /// \param value The wrapped value to initialize to.
-  StatusOr(const T &value) : variant_(value), has_value_(true) {}
-
   /// Constructs a StatusOr object that contains `value`. The resulting object
   /// is considered to have an OK status. The wrapped element can be accessed
   /// with ValueOrDie().
   ///
-  /// This constructor is not declared explicit so that a function with a return
-  /// type of `StatusOr<T>` can return an element of type `T &&`, and this value
-  /// will be implicitly converted to the appropriate return type as a matter of
-  /// convenience.
+  /// This constructor is made implicit so that a function with a return type of
+  /// `StatusOr<T>` can return an object of type `U &&`, implicitly converting
+  /// it to a `StatusOr<T>` object.
   ///
-  /// \param value The value to move-initialize to.
-  StatusOr(T &&value) : variant_(std::move(value)), has_value_(true) {}
+  /// Note that `T` must be implicitly constructible from `U`. Due to C++
+  /// reference-collapsing rules and perfect-forwarding semantics, this
+  /// constructor matches invocations that pass `value` either as a const
+  /// reference or as an rvalue reference. See
+  /// http://thbecker.net/articles/rvalue_references/section_08.html for
+  /// additional details.
+  ///
+  /// \param value The value to initialize to.
+  template <typename U, typename E = typename std::enable_if<
+                            is_implicitly_constructible<T, U>::value>::type>
+  StatusOr(U &&value) : variant_(std::forward<U>(value)), has_value_(true) {
+  
+  }
 
   /// Copy constructor.
+  ///
+  /// This constructor needs to be explicitly defined because the presence of
+  /// the move-assignment operator deletes the default copy constructor. In such
+  /// a scenario, since the deleted copy constructor has stricter binding rules
+  /// than the templated copy constructor, the templated constructor cannot act
+  /// as a copy constructor, and any attempt to copy-construct a `StatusOr`
+  /// object results in a compilation error.
+  ///
+  /// \param other The value to copy from.
   StatusOr(const StatusOr &other) : has_value_(other.has_value_) {
+    if (has_value_) {
+      new (&variant_) variant(other.variant_.value_);
+    } else {
+      new (&variant_) variant(other.variant_.status_);
+    }
+  }
+
+  /// Templatized constructor that constructs a `StatusOr<T>` from a const
+  /// reference to a `StatusOr<U>`.
+  ///
+  /// `T` must be implicitly constructible from `const U &`.
+  ///
+  /// \param other The value to copy from.
+  template <typename U,
+            typename E = typename std::enable_if<
+                is_implicitly_constructible<T, const U &>::value>::type>
+  StatusOr(const StatusOr<U> &other) : has_value_(other.has_value_) {
     if (has_value_) {
       new (&variant_) variant(other.variant_.value_);
     } else {
@@ -186,13 +224,17 @@ class StatusOr {
     return *this;
   }
 
-  /// Move constructor.
+  /// Templatized constructor which constructs a `StatusOr<T>` by moving the
+  /// contents of a `StatusOr<U>`. `T` must be implicitly constructible from `U
+  /// &&`.
   ///
   /// Sets `other` to contain a non-OK status with a`StatusError::MOVED`
   /// error code.
   ///
-  /// \param other The StatusOr object to copy and set to a non-OK status.
-  StatusOr(StatusOr &&other) : has_value_(other.has_value_) {
+  /// \param other The StatusOr object to move from and set to a non-OK status.
+  template <typename U, typename E = typename std::enable_if<
+                            is_implicitly_constructible<T, U &&>::value>::type>
+  StatusOr(StatusOr<U> &&other) : has_value_(other.has_value_) {
     if (has_value_) {
       new (&variant_) variant(std::move(other.variant_.value_));
       other.OverwriteValueWithStatus(
@@ -240,7 +282,6 @@ class StatusOr {
 
     return *this;
   }
-
 
   /// Indicates whether the object contains a `T` value.
   ///
@@ -356,9 +397,9 @@ class StatusOr {
 
     variant(Status &&status) : status_(std::move(status)) {}
 
-    variant(const T &value) : value_(value) {}
-
-    variant(T &&value) : value_(std::move(value)) {}
+    template <typename U, typename E = typename std::enable_if<
+                              is_implicitly_constructible<T, U>::value>::type>
+    variant(U &&value) : value_(std::forward<U>(value)) {}
 
     // This destructor must be explicitly defined because it is deleted due to
     // the variant type having non-static data members with non-trivial

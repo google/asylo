@@ -47,6 +47,61 @@ struct Foo {
   explicit Foo(int value) : bar(value), baz(kStringElement) {}
 };
 
+// A data type with only copy constructors.
+struct CopyOnlyDataType {
+  explicit CopyOnlyDataType(int x) : data(x) {}
+
+  CopyOnlyDataType(const CopyOnlyDataType &other) = default;
+  CopyOnlyDataType &operator=(const CopyOnlyDataType &other) = default;
+
+  int data;
+};
+
+struct ImplicitlyCopyConvertible {
+
+  ImplicitlyCopyConvertible(const CopyOnlyDataType &co) : copy_only(co) {}
+
+  CopyOnlyDataType copy_only;
+};
+
+// A data type with only move constructors.
+struct MoveOnlyDataType {
+  explicit MoveOnlyDataType(int x) : data(new int(x)) {}
+
+  MoveOnlyDataType(MoveOnlyDataType &&other) : data(other.data) {
+    other.data = nullptr;
+  }
+
+  MoveOnlyDataType &operator=(MoveOnlyDataType &&other) {
+    if (&other == this) {
+      return *this;
+    }
+    if (data) {
+      delete data;
+    }
+    data = other.data;
+    other.data = nullptr;
+    return *this;
+  }
+
+  MoveOnlyDataType(const MoveOnlyDataType &other) = delete;
+  MoveOnlyDataType &operator=(const MoveOnlyDataType &other) = delete;
+
+  ~MoveOnlyDataType() {
+    delete data;
+    data = nullptr;
+  }
+
+  int *data;
+};
+
+struct ImplicitlyMoveConvertible {
+
+  ImplicitlyMoveConvertible(MoveOnlyDataType &&mo) : move_only(std::move(mo)) {}
+
+  MoveOnlyDataType move_only;
+};
+
 // A data type with dynamically-allocated data.
 struct HeapAllocatedObject {
   int *value;
@@ -433,6 +488,88 @@ TEST(StatusOrTest, ValueOrDieMovedValue) {
   EXPECT_FALSE(statusor.ok());
   EXPECT_THAT(statusor.status(),
               StatusIs(error::StatusError::MOVED, kValueOrDieMovedMsg));
+}
+
+// Verify that a StatusOr<T> is implicitly constructible from some U, where T is
+// a type which has an implicit constructor taking a const U &.
+TEST(StatusOrTest, TemplateValueCopyConstruction) {
+  CopyOnlyDataType copy_only(kIntElement);
+  StatusOr<ImplicitlyCopyConvertible> statusor(copy_only);
+
+  EXPECT_THAT(statusor, IsOk());
+  EXPECT_EQ(statusor.ValueOrDie().copy_only.data, kIntElement);
+}
+
+// Verify that a StatusOr<T> is implicitly constructible from some U, where T is
+// a type which has an implicit constructor taking a U &&.
+TEST(StatusOrTest, TemplateValueMoveConstruction) {
+  MoveOnlyDataType move_only(kIntElement);
+  StatusOr<ImplicitlyMoveConvertible> statusor(std::move(move_only));
+
+  EXPECT_THAT(statusor, IsOk());
+  EXPECT_EQ(*statusor.ValueOrDie().move_only.data, kIntElement);
+}
+
+// Verify that a StatusOr<U> is assignable to a StatusOr<T>, where T
+// is a type which has an implicit constructor taking a const U &.
+TEST(StatusOrTest, TemplateCopyAssign) {
+  CopyOnlyDataType copy_only(kIntElement);
+  StatusOr<CopyOnlyDataType> statusor(copy_only);
+
+  StatusOr<ImplicitlyCopyConvertible> statusor2 = statusor;
+
+  EXPECT_THAT(statusor, IsOk());
+  EXPECT_EQ(statusor.ValueOrDie().data, kIntElement);
+  EXPECT_THAT(statusor2, IsOk());
+  EXPECT_EQ(statusor2.ValueOrDie().copy_only.data, kIntElement);
+}
+
+// Verify that a StatusOr<U> is assignable to a StatusOr<T>, where T is a type
+// which has an implicit constructor taking a U &&.
+TEST(StatusOrTest, TemplateMoveAssign) {
+  MoveOnlyDataType move_only(kIntElement);
+  StatusOr<MoveOnlyDataType> statusor(std::move(move_only));
+
+  StatusOr<ImplicitlyMoveConvertible> statusor2 = std::move(statusor);
+
+  EXPECT_THAT(statusor2, IsOk());
+  EXPECT_EQ(*statusor2.ValueOrDie().move_only.data, kIntElement);
+
+  //  NOLINTNEXTLINE use after move.
+  EXPECT_THAT(statusor, Not(IsOk()));
+  //  NOLINTNEXTLINE use after move.
+  EXPECT_THAT(statusor.status(),
+              StatusIs(error::StatusError::MOVED, kValueMoveConstructorMsg));
+}
+
+// Verify that a StatusOr<U> is constructible from a StatusOr<T>, where T is a
+// type which has an implicit constructor taking a const U &.
+TEST(StatusOrTest, TemplateCopyConstruct) {
+  CopyOnlyDataType copy_only(kIntElement);
+  StatusOr<CopyOnlyDataType> statusor(copy_only);
+  StatusOr<ImplicitlyCopyConvertible> statusor2(statusor);
+
+  EXPECT_THAT(statusor, IsOk());
+  EXPECT_EQ(statusor.ValueOrDie().data, kIntElement);
+  EXPECT_THAT(statusor2, IsOk());
+  EXPECT_EQ(statusor2.ValueOrDie().copy_only.data, kIntElement);
+}
+
+// Verify that a StatusOr<U> is constructible from a StatusOr<T>, where T is a
+// type which has an implicit constructor taking a U &&.
+TEST(StatusOrTest, TemplateMoveConstruct) {
+  MoveOnlyDataType move_only(kIntElement);
+  StatusOr<MoveOnlyDataType> statusor(std::move(move_only));
+  StatusOr<ImplicitlyMoveConvertible> statusor2(std::move(statusor));
+
+  EXPECT_THAT(statusor2, IsOk());
+  EXPECT_EQ(*statusor2.ValueOrDie().move_only.data, kIntElement);
+
+  //  NOLINTNEXTLINE use after move.
+  EXPECT_THAT(statusor, Not(IsOk()));
+  //  NOLINTNEXTLINE use after move.
+  EXPECT_THAT(statusor.status(),
+              StatusIs(error::StatusError::MOVED, kValueMoveConstructorMsg));
 }
 
 }  // namespace
