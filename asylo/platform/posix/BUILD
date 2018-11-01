@@ -85,7 +85,10 @@ cc_library(
         "utsname.cc",
         "wait.cc",
     ],
-    hdrs = [":posix_headers"] + select({
+    hdrs = [
+        ":posix_headers",
+        "pthread_impl.h",
+    ] + select({
         "//asylo/platform/arch:sgx": ["//asylo/third_party/intel:posix_sgx_headers"],
         "//conditions:default": [],
     }),

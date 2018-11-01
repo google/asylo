@@ -235,6 +235,19 @@ cc_enclave_test(
 )
 
 cc_enclave_test(
+    name = "pthread_test",
+    srcs = ["pthread_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_enclave_test(
     name = "mutex_test",
     srcs = ["mutex_test.cc"],
     tags = ["regression"],

@@ -30,9 +30,11 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/posix/pthread_impl.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 
-namespace {
+namespace asylo {
+namespace pthread_impl {
 
 static inline int InterlockedExchange(pthread_spinlock_t *dest,
                                       pthread_spinlock_t old_value,
@@ -89,7 +91,7 @@ class SpinLock {
 
 // Returns the first pthread_t in the |list|.
 pthread_t pthread_list_first(const __pthread_list_t &list) {
-  if (!list._first) {
+  if (list._first == nullptr) {
     return PTHREAD_T_NULL;
   }
   return list._first->_thread_id;
@@ -109,7 +111,7 @@ void free_list_node(__pthread_list_node_t *node) {
 // Inserts |thread_id| at the end of the |list|, allocating a new
 // __pthread_list_t.
 void pthread_list_insert_last(__pthread_list_t *list, pthread_t thread_id) {
-  if (!list) {
+  if (list == nullptr) {
     abort();
   }
 
@@ -128,11 +130,11 @@ void pthread_list_insert_last(__pthread_list_t *list, pthread_t thread_id) {
 }
 
 void pthread_list_remove_first(__pthread_list_t *list) {
-  if (!list) {
+  if (list == nullptr) {
     abort();
   }
 
-  if (!list->_first) {
+  if (list->_first == nullptr) {
     abort();
   }
 
@@ -191,9 +193,22 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
   return EBUSY;
 }
 
-}  //  namespace
+}  //  namespace pthread_impl
+}  //  namespace asylo
 
 using asylo::ThreadManager;
+using asylo::pthread_impl::check_parameter;
+using asylo::pthread_impl::init_tls_map;
+using asylo::pthread_impl::pthread_list_contains;
+using asylo::pthread_impl::pthread_list_first;
+using asylo::pthread_impl::pthread_list_insert_last;
+using asylo::pthread_impl::pthread_list_remove_first;
+using asylo::pthread_impl::pthread_mutex_check_parameter;
+using asylo::pthread_impl::pthread_mutex_lock_internal;
+using asylo::pthread_impl::pthread_spin_lock;
+using asylo::pthread_impl::pthread_spin_unlock;
+using asylo::pthread_impl::SpinLock;
+using asylo::pthread_impl::tls_map;
 
 extern "C" {
 
