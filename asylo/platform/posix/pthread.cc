@@ -78,6 +78,8 @@ inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
 // Provides RAII wrapper around pthread_spinlock_t.
 class SpinLock {
  public:
+  SpinLock(pthread_mutex_t *mutex) : SpinLock(&mutex->_lock) {}
+  SpinLock(pthread_cond_t *cond) : SpinLock(&cond->_lock) {}
   SpinLock(pthread_spinlock_t *lock) {
     lock_ = lock;
     pthread_spin_lock(lock_);
@@ -88,14 +90,6 @@ class SpinLock {
  private:
   pthread_spinlock_t *lock_;
 };
-
-// Returns the first pthread_t in the |list|.
-pthread_t pthread_list_first(const __pthread_list_t &list) {
-  if (list._first == nullptr) {
-    return PTHREAD_T_NULL;
-  }
-  return list._first->_thread_id;
-}
 
 __pthread_list_node_t *alloc_list_node(pthread_t thread_id) {
   __pthread_list_node_t *node = new __pthread_list_node_t;
@@ -108,56 +102,61 @@ void free_list_node(__pthread_list_node_t *node) {
   delete node;
 }
 
-// Inserts |thread_id| at the end of the |list|, allocating a new
-// __pthread_list_t.
-void pthread_list_insert_last(__pthread_list_t *list, pthread_t thread_id) {
-  if (list == nullptr) {
-    abort();
+PthreadListWrapper::PthreadListWrapper(pthread_mutex_t *mutex)
+    : list_(&mutex->_queue) {}
+
+PthreadListWrapper::PthreadListWrapper(pthread_cond_t *condvar)
+    : list_(&condvar->_queue) {}
+
+PthreadListWrapper::PthreadListWrapper(__pthread_list_t *list,
+                                       const std::function<void()> &abort_func)
+    : list_(list), abort_func_(abort_func) {
+  if (list_ == nullptr) {
+    abort_func_();
+  }
+}
+
+void PthreadListWrapper::Pop() {
+  if (list_->_first == nullptr) {
+    return abort_func_();
   }
 
-  __pthread_list_node_t *last = alloc_list_node(thread_id);
+  __pthread_list_node_t *old_first = list_->_first;
+  list_->_first = old_first->_next;
+  free_list_node(old_first);
+}
 
-  if (!list->_first) {
-    list->_first = last;
+pthread_t PthreadListWrapper::Front() const {
+  if (list_->_first == nullptr) {
+    return PTHREAD_T_NULL;
+  }
+  return list_->_first->_thread_id;
+}
+
+void PthreadListWrapper::Push(const pthread_t id) {
+  __pthread_list_node_t *last = alloc_list_node(id);
+
+  if (!list_->_first) {
+    list_->_first = last;
     return;
   }
 
-  __pthread_list_node_t *current = list->_first;
+  __pthread_list_node_t *current = list_->_first;
   while (current->_next) {
     current = current->_next;
   }
   current->_next = last;
 }
 
-void pthread_list_remove_first(__pthread_list_t *list) {
-  if (list == nullptr) {
-    abort();
-  }
-
-  if (list->_first == nullptr) {
-    abort();
-  }
-
-  __pthread_list_node_t *old_first = list->_first;
-  list->_first = old_first->_next;
-  free_list_node(old_first);
-}
-
-// Removes the node containing |thread_id| from |list|. Returns true if found
-// and removed; false if not found.
-bool pthread_list_remove(__pthread_list_t *list, pthread_t thread_id) {
-  if (list == nullptr) {
-    abort();
-  }
-
+bool PthreadListWrapper::Remove(const pthread_t id) {
   __pthread_list_node_t *curr, *prev;
 
-  for (curr = list->_first, prev = nullptr; curr != nullptr;
+  for (curr = list_->_first, prev = nullptr; curr != nullptr;
        prev = curr, curr = curr->_next) {
-    if (curr->_thread_id == thread_id) {
+    if (curr->_thread_id == id) {
       if (prev == nullptr) {
         // Node to remove was the first item in the list. Change the list head.
-        list->_first = curr->_next;
+        list_->_first = curr->_next;
       } else {
         // Set previous node's next to be the deleted node's next.
         prev->_next = curr->_next;
@@ -171,16 +170,26 @@ bool pthread_list_remove(__pthread_list_t *list, pthread_t thread_id) {
   return false;
 }
 
-// Returns whether the given |list| contains |thread_id|.
-bool pthread_list_contains(const __pthread_list_t &list, pthread_t thread_id) {
-  __pthread_list_node_t *current = list._first;
+bool PthreadListWrapper::Contains(const pthread_t id) const {
+  __pthread_list_node_t *current = list_->_first;
   while (current) {
-    if (current->_thread_id == thread_id) {
+    if (current->_thread_id == id) {
       return true;
     }
     current = current->_next;
   }
   return false;
+}
+
+void PthreadListWrapper::Drain() {
+  while (!Empty()) {
+    Pop();
+  }
+}
+
+bool PthreadListWrapper::Empty() const {
+  const __pthread_list_node_t *current = list_->_first;
+  return current == PTHREAD_T_NULL;
 }
 
 int pthread_mutex_check_parameter(pthread_mutex_t *mutex) {
@@ -197,7 +206,7 @@ int pthread_mutex_check_parameter(pthread_mutex_t *mutex) {
 }
 
 // Returns locks the mutex and returns 0 if possible. Returns EBUSY if the mutex
-// is taken.
+// is taken. |mutex|->_lock must be locked.
 int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
   const pthread_t self = pthread_self();
 
@@ -206,11 +215,12 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
     return 0;
   }
 
-  const pthread_t first_waiter = pthread_list_first(mutex->_queue);
+  PthreadListWrapper list(mutex);
+  const pthread_t first_waiter = list.Front();
   if (mutex->_owner == PTHREAD_T_NULL &&
       (first_waiter == self || first_waiter == PTHREAD_T_NULL)) {
     if (first_waiter == self) {
-      pthread_list_remove_first(&mutex->_queue);
+      list.Pop();
     }
 
     mutex->_owner = self;
@@ -227,15 +237,9 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
 using asylo::ThreadManager;
 using asylo::pthread_impl::check_parameter;
 using asylo::pthread_impl::init_tls_map;
-using asylo::pthread_impl::pthread_list_contains;
-using asylo::pthread_impl::pthread_list_first;
-using asylo::pthread_impl::pthread_list_insert_last;
-using asylo::pthread_impl::pthread_list_remove;
-using asylo::pthread_impl::pthread_list_remove_first;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
-using asylo::pthread_impl::pthread_spin_lock;
-using asylo::pthread_impl::pthread_spin_unlock;
+using asylo::pthread_impl::PthreadListWrapper;
 using asylo::pthread_impl::SpinLock;
 using asylo::pthread_impl::tls_map;
 
@@ -321,9 +325,9 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  SpinLock spin_lock(&mutex->_lock);
-
-  if (pthread_list_first(mutex->_queue) != PTHREAD_T_NULL) {
+  SpinLock lock(mutex);
+  PthreadListWrapper list(mutex);
+  if (!list.Empty()) {
     return EBUSY;
   }
 
@@ -337,9 +341,15 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
     return ret;
   }
 
+  PthreadListWrapper list(mutex);
+  {
+    SpinLock lock(mutex);
+    list.Push(pthread_self());
+  }
+
   while (true) {
     {
-      SpinLock lock(&mutex->_lock);
+      SpinLock lock(mutex);
       ret = pthread_mutex_lock_internal(mutex);
     }
     if (ret == 0) {
@@ -356,8 +366,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  SpinLock lock(&mutex->_lock);
-
+  SpinLock lock(mutex);
   ret = pthread_mutex_lock_internal(mutex);
 
   return ret;
@@ -372,7 +381,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
 
   const pthread_t self = pthread_self();
 
-  SpinLock lock(&mutex->_lock);
+  SpinLock lock(mutex);
 
   if (mutex->_owner == PTHREAD_T_NULL) {
     return EINVAL;
@@ -423,14 +432,12 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
     return ret;
   }
 
-  pthread_spin_lock(&cond->_lock);
-
-  if (pthread_list_first(cond->_queue) != PTHREAD_T_NULL) {
-    pthread_spin_unlock(&cond->_lock);
+  SpinLock lock(cond);
+  PthreadListWrapper list(cond);
+  if (!list.Empty()) {
     return EBUSY;
   }
 
-  pthread_spin_unlock(&cond->_lock);
   return 0;
 }
 
@@ -465,25 +472,19 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 
   const pthread_t self = pthread_self();
 
-  pthread_spin_lock(&cond->_lock);
-  if (!pthread_list_contains(cond->_queue, self)) {
-    pthread_list_insert_last(&cond->_queue, self);
+  PthreadListWrapper list(cond);
+  {
+    SpinLock lock(cond);
+    list.Push(self);
   }
 
   ret = pthread_mutex_unlock(mutex);
   if (ret != 0) {
-    pthread_spin_unlock(&cond->_lock);
     return ret;
   }
 
   while (true) {
-    pthread_spin_unlock(&cond->_lock);
     enc_pause();
-    pthread_spin_lock(&cond->_lock);
-
-    if (!pthread_list_contains(cond->_queue, self)) {
-      break;
-    }
 
     // If a deadline has been specified, check to see if it has passed.
     if (deadline != nullptr) {
@@ -500,15 +501,16 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
         break;
       }
     }
-  }
 
-  // If we stopped waiting for some reason other than a ready signal, remove the
-  // thread from the wait list.
-  if (ret != 0) {
-    pthread_list_remove(&cond->_queue, self);
+    SpinLock lock(cond);
+    if (!list.Contains(self)) {
+      break;
+    }
   }
-
-  pthread_spin_unlock(&cond->_lock);
+  {
+    SpinLock lock(cond);
+    list.Remove(self);
+  }
 
   // Only set the retval to be the result of re-locking the mutex if there isn't
   // already another error we're trying to return. Otherwise, we give preference
@@ -538,17 +540,13 @@ int pthread_cond_signal(pthread_cond_t *cond) {
     return ret;
   }
 
-  pthread_spin_lock(&cond->_lock);
-  const pthread_t first = pthread_list_first(cond->_queue);
-  if (first == PTHREAD_T_NULL) {
-    pthread_spin_unlock(&cond->_lock);
+  SpinLock lock(cond);
+  PthreadListWrapper list(cond);
+  if (list.Empty()) {
     return 0;
   }
 
-  pthread_list_remove_first(&cond->_queue);
-
-  pthread_spin_unlock(&cond->_lock);
-
+  list.Pop();
 
   return 0;
 }
@@ -560,13 +558,12 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
     return ret;
   }
 
-  pthread_spin_lock(&cond->_lock);
-
-  while (pthread_list_first(cond->_queue) != PTHREAD_T_NULL) {
-    pthread_list_remove_first(&cond->_queue);
+  PthreadListWrapper list(cond);
+  {
+    SpinLock lock(cond);
+    list.Drain();
   }
 
-  pthread_spin_unlock(&cond->_lock);
   return 0;
 }
 

@@ -20,25 +20,52 @@
 #define ASYLO_PLATFORM_POSIX_PTHREAD_IMPL_H_
 
 #include <pthread.h>
+#include <functional>
 
 namespace asylo {
 namespace pthread_impl {
 
-// Returns the thread ID of the first thread in |list|.
-pthread_t pthread_list_first(const __pthread_list_t &list);
+// Utility class for working with pthread_list_t.
+class PthreadListWrapper {
+ public:
+  // The PthreadListWrapper does not take ownership of |mutex|.
+  PthreadListWrapper(pthread_mutex_t* mutex);
+  // The PthreadListWrapper does not take ownership of |condvar|.
+  PthreadListWrapper(pthread_cond_t* condvar);
 
-// Adds |thread_id| as the last entry of |list|.
-void pthread_list_insert_last(__pthread_list_t *list, pthread_t thread_id);
+  // This constructor should only be used for testing. Use one of the above
+  // constructors which takes a pthread_* type. The PthreadListWrapper does not
+  // take ownership of |list|.
+  PthreadListWrapper(__pthread_list_t* list,
+                     const std::function<void()>& abort_func = abort);
 
-// Removes the node containing |thread_id| from |list|. Returns true if found
-// and removed; false if not found.
-bool pthread_list_remove(__pthread_list_t *list, pthread_t thread_id);
+  // Removes the first thread_id in the list.
+  void Pop();
 
-// Removes the first entry of |list|.
-void pthread_list_remove_first(__pthread_list_t *list);
+  // Adds |id| to the end of the list.
+  void Push(const pthread_t id);
 
-// Returns true if |list| contains |thread_id|; false otherwise.
-bool pthread_list_contains(const __pthread_list_t &list, pthread_t thread_id);
+  // Returns true if |id| is found and removed from the list; false if not
+  // found.
+  bool Remove(const pthread_t id);
+
+  // Removes all ids from the list.
+  void Drain();
+
+  // Returns true of the |id| is in the list.
+  bool Contains(const pthread_t id) const;
+
+  // Returns the first id in the list.
+  pthread_t Front() const;
+
+  // Returns true if the id is in the list.
+  bool Empty() const;
+
+ private:
+  __pthread_list_t* const list_;
+
+  std::function<void()> abort_func_;
+};
 
 }  // namespace pthread_impl
 }  // namespace asylo
