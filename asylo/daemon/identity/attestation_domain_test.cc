@@ -29,7 +29,6 @@
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
-namespace daemon {
 
 using ::testing::Not;
 
@@ -139,5 +138,4 @@ TEST_F(AttestationDomainTest, AttestationDomainBadChars) {
 }
 
 }  // namespace
-}  // namespace daemon
 }  // namespace asylo

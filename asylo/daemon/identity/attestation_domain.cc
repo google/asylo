@@ -36,7 +36,6 @@
 #include "asylo/util/posix_error_space.h"
 
 namespace asylo {
-namespace daemon {
 namespace {
 
 constexpr size_t kAttestationDomainSize = 16;
@@ -198,5 +197,4 @@ Status GetAttestationDomain(const char *domain_file_path, std::string *domain) {
   return ReadExistingAttestationDomain(domain_file_path, domain);
 }
 
-}  // namespace daemon
 }  // namespace asylo

@@ -16,7 +16,7 @@
 
 syntax = "proto2";
 
-package asylo.daemon;
+package asylo;
 
 message GetAttestationDomainRequest {
   // No fields are needed for this request.

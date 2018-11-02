@@ -28,7 +28,6 @@
 #include "asylo/util/statusor.h"
 
 namespace asylo {
-namespace daemon {
 namespace {
 
 using ::testing::_;
@@ -80,5 +79,4 @@ TEST(AttestationDomainClientMockTest, GeAttestationDomainFails) {
 }
 
 }  // namespace
-}  // namespace daemon
 }  // namespace asylo

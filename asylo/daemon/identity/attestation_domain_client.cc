@@ -21,7 +21,6 @@
 #include <memory>
 
 namespace asylo {
-namespace daemon {
 
 StatusOr<std::string> AttestationDomainClient::GetAttestationDomain() {
   ::grpc::ClientContext client_context;
@@ -38,5 +37,4 @@ StatusOr<std::string> AttestationDomainClient::GetAttestationDomain() {
   return response.attestation_domain();
 }
 
-}  // namespace daemon
 }  // namespace asylo

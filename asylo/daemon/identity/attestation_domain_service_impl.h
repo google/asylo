@@ -25,7 +25,6 @@
 #include "include/grpcpp/grpcpp.h"
 
 namespace asylo {
-namespace daemon {
 
 class AttestationDomainServiceImpl final
     : public AttestationDomainService::Service {
@@ -46,7 +45,6 @@ class AttestationDomainServiceImpl final
   const std::string domain_file_path_;
 };
 
-}  // namespace daemon
 }  // namespace asylo
 
 #endif  // ASYLO_DAEMON_IDENTITY_ATTESTATION_DOMAIN_SERVICE_IMPL_H_

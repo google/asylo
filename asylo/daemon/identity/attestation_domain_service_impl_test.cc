@@ -29,7 +29,6 @@
 #include "include/grpcpp/server_context.h"
 
 namespace asylo {
-namespace daemon {
 namespace {
 
 constexpr char kAttestationDomainFileName[] =
@@ -62,5 +61,4 @@ TEST(AttestationDomainServiceImplTest, GetAttestationDomain) {
 }
 
 }  // namespace
-}  // namespace daemon
 }  // namespace asylo

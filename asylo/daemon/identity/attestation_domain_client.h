@@ -27,7 +27,6 @@
 #include "include/grpcpp/grpcpp.h"
 
 namespace asylo {
-namespace daemon {
 
 class AttestationDomainClient {
  public:
@@ -49,7 +48,6 @@ class AttestationDomainClient {
   std::unique_ptr<AttestationDomainService::StubInterface> stub_;
 };
 
-}  // namespace daemon
 }  // namespace asylo
 
 #endif  // ASYLO_DAEMON_IDENTITY_ATTESTATION_DOMAIN_CLIENT_H_

@@ -24,7 +24,6 @@
 #include "asylo/util/status.h"
 
 namespace asylo {
-namespace daemon {
 
 // Size of attestation domain name.
 constexpr size_t kAttestationDomainNameSize = 16;
@@ -45,7 +44,6 @@ constexpr size_t kAttestationDomainNameSize = 16;
 // indicates a fatal error.
 Status GetAttestationDomain(const char *domain_file_path, std::string *domain);
 
-}  // namespace daemon
 }  // namespace asylo
 
 #endif  // ASYLO_DAEMON_IDENTITY_ATTESTATION_DOMAIN_H_
