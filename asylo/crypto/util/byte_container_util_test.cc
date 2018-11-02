@@ -61,29 +61,26 @@ TYPED_TEST_CASE(ByteContainerUtilTypedTest, OutputTypes);
 
 // Verify that the serialization of no strings is an empty string.
 TYPED_TEST(ByteContainerUtilTypedTest, EmptySerialization) {
-  std::vector<ByteContainerView> input = {};
   TypeParam output(kStr4, kStr4 + sizeof(kStr4) - 1);
-  EXPECT_THAT(SerializeByteContainers(input, &output), IsOk());
+  EXPECT_THAT(SerializeByteContainers(&output), IsOk());
   EXPECT_EQ(0, output.size());
 }
 
 // Verify that appending the serialization of no strings to a non-empty string
 // does not alter the existing string.
 TYPED_TEST(ByteContainerUtilTypedTest, EmptySerializationAppend) {
-  std::vector<ByteContainerView> input = {};
   TypeParam output(kStr4, kStr4 + sizeof(kStr4) - 1);
-  EXPECT_THAT(AppendSerializedByteContainers(input, &output), IsOk());
+  EXPECT_THAT(AppendSerializedByteContainers(&output), IsOk());
   EXPECT_EQ(ByteContainerView(kStr4), (output));
 }
 
 // Verify that a serialization contains all input strings and that the input
 // strings can be inferred from the serialization.
 TYPED_TEST(ByteContainerUtilTypedTest, SerializationContainsAllByteContainers) {
-  std::vector<ByteContainerView> inputs = {kStr1, kStr2, kStr3};
-
   TypeParam output1;
-  EXPECT_THAT(SerializeByteContainers(inputs, &output1), IsOk());
+  EXPECT_THAT(SerializeByteContainers(&output1, kStr1, kStr2, kStr3), IsOk());
 
+  std::vector<ByteContainerView> inputs = {kStr1, kStr2, kStr3};
   int index = 0;
   for (const auto &input : inputs) {
     uint32_t size = EncodeLittleEndian(input.size());
@@ -95,8 +92,29 @@ TYPED_TEST(ByteContainerUtilTypedTest, SerializationContainsAllByteContainers) {
 
   TypeParam output2;
   for (const auto &input : inputs) {
-    std::vector<ByteContainerView> single_input = {input};
-    EXPECT_THAT(AppendSerializedByteContainers(single_input, &output2), IsOk());
+    EXPECT_THAT(AppendSerializedByteContainers(&output2, input), IsOk());
+  }
+
+  // serialized([a, b, c]) == (serialized(a) || serialized(b) || serialized(c))
+  EXPECT_EQ(ByteContainerView(output1), ByteContainerView(output2));
+}
+
+// Verify the serialization for a large number of inputs to exercise the
+// recursive-template implementation.
+TYPED_TEST(ByteContainerUtilTypedTest, SerializeLargeNumberOfInputs) {
+  TypeParam output1;
+  EXPECT_THAT(SerializeByteContainers(&output1, kStr1, kStr2, kStr3, kStr4,
+                                      kStr1, kStr2, kStr3, kStr4, kStr1, kStr2,
+                                      kStr3, kStr4, kStr1, kStr2, kStr3, kStr4),
+              IsOk());
+
+  std::vector<ByteContainerView> inputs = {
+      kStr1, kStr2, kStr3, kStr4, kStr1, kStr2, kStr3, kStr4,
+      kStr1, kStr2, kStr3, kStr4, kStr1, kStr2, kStr3, kStr4};
+
+  TypeParam output2;
+  for (const auto &input : inputs) {
+    EXPECT_THAT(AppendSerializedByteContainers(&output2, input), IsOk());
   }
 
   // serialized([a, b, c]) == (serialized(a) || serialized(b) || serialized(c))
@@ -106,17 +124,14 @@ TYPED_TEST(ByteContainerUtilTypedTest, SerializationContainsAllByteContainers) {
 // Verify that serializations are unambiguous, and unique per set of input
 // strings.
 TYPED_TEST(ByteContainerUtilTypedTest, SerializationsAreUnique) {
-  // [a, b, c]
-  std::vector<ByteContainerView> inputs1 = {kStr1, kStr2, kStr3};
-
-  // [a || b, c]
-  std::vector<ByteContainerView> inputs2 = {kStr3, kStr4};
-
   TypeParam output1;
   TypeParam output2;
 
-  EXPECT_THAT(SerializeByteContainers(inputs1, &output1), IsOk());
-  EXPECT_THAT(SerializeByteContainers(inputs2, &output2), IsOk());
+  // Serialize(a, b, c)
+  EXPECT_THAT(SerializeByteContainers(&output1, kStr1, kStr2, kStr3), IsOk());
+
+  // Serialize(a || b, c)
+  EXPECT_THAT(SerializeByteContainers(&output2, kStr4, kStr3), IsOk());
 
   // serialized(a, b, c) != serialized(a || b, c)
   EXPECT_NE(ByteContainerView(output1), ByteContainerView(output2));

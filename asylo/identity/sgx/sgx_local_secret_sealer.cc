@@ -124,9 +124,9 @@ Status SgxLocalSecretSealer::Seal(
       additional_authenticated_data.size());
 
   std::string final_additional_data;
-  std::vector<ByteContainerView> views{sealed_secret->sealed_secret_header(),
-                                       additional_authenticated_data};
-  SerializeByteContainers(views, &final_additional_data);
+  SerializeByteContainers(&final_additional_data,
+                          sealed_secret->sealed_secret_header(),
+                          additional_authenticated_data);
 
   CleansingVector<uint8_t> key;
   ASYLO_RETURN_IF_ERROR(sgx::internal::GenerateCryptorKey(
@@ -154,10 +154,9 @@ Status SgxLocalSecretSealer::Unseal(const SealedSecret &sealed_secret,
           header, &cpusvn, &cipher_suite, &sgx_expectation));
 
   std::string final_additional_data;
-  std::vector<ByteContainerView> views{
-      sealed_secret.sealed_secret_header(),
-      sealed_secret.additional_authenticated_data()};
-  SerializeByteContainers(views, &final_additional_data);
+  SerializeByteContainers(&final_additional_data,
+                          sealed_secret.sealed_secret_header(),
+                          sealed_secret.additional_authenticated_data());
 
   CleansingVector<uint8_t> key;
   ASYLO_RETURN_IF_ERROR(sgx::internal::GenerateCryptorKey(

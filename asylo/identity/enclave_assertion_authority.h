@@ -48,7 +48,7 @@ class EnclaveAssertionAuthority {
   ///
   /// \param config A config with which to initialize this authority.
   /// \return A Status indicating whether initialization succeeded.
-  virtual Status Initialize(const std::string& config) = 0;
+  virtual Status Initialize(const std::string &config) = 0;
 
   /// Indicates whether this assertion authority has been initialized
   /// successfully via a call to Initialize().
@@ -78,13 +78,10 @@ class EnclaveAssertionAuthority {
   /// \return The generated authority identifier on success, or a non-OK
   ///         Status on failure.
   static StatusOr<std::string> GenerateAuthorityId(
-      const EnclaveIdentityType& identity_type, const std::string& authority_type) {
+      const EnclaveIdentityType &identity_type, const std::string &authority_type) {
     std::string serialized;
-    std::string enclave_identity_type_name = EnclaveIdentityType_Name(identity_type);
-    std::vector<ByteContainerView> authority_id_tokens = {
-        enclave_identity_type_name, authority_type};
-    ASYLO_RETURN_IF_ERROR(
-        asylo::SerializeByteContainers(authority_id_tokens, &serialized));
+    ASYLO_RETURN_IF_ERROR(asylo::SerializeByteContainers(
+        &serialized, EnclaveIdentityType_Name(identity_type), authority_type));
     return serialized;
   }
 
@@ -98,7 +95,7 @@ class EnclaveAssertionAuthority {
   /// \param description A description to check for compatibility.
   /// \return True if `description` is compatible with this authority.
   bool IsCompatibleAssertionDescription(
-      const AssertionDescription& description) const {
+      const AssertionDescription &description) const {
     return (description.identity_type() == IdentityType()) &&
            (description.authority_type() == AuthorityType());
   }

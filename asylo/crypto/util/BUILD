@@ -31,6 +31,7 @@ cc_library(
 
 cc_library(
     name = "byte_container_util",
+    srcs = ["byte_container_util_internal.h"],
     hdrs = ["byte_container_util.h"],
     deps = [
         ":byte_container_view",

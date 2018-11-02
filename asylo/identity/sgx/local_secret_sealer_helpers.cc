@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 
 #include <cstdint>
+#include <vector>
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/byte_container_util.h"
@@ -126,38 +127,21 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
   req->miscmask = sgx_expectation.match_spec().miscselect_match_mask();
   req->reserved2.fill(0);
 
-  // The |req->keyid| field is populated to uniquely identify each of the
-  // hardware subkeys. This is done by constructing a sub-key-specific
-  // |key_info| string, and hashing the contents of that string into
-  // |req->key_id|.
-  std::vector<ByteContainerView> serializer_input;
-
-  // Description of the sealing root.
-  std::string sealing_root_type_name = SealingRootType_Name(LOCAL);
-  serializer_input.emplace_back(sealing_root_type_name);
-  serializer_input.emplace_back(kSgxLocalSecretSealerRootName);
-
-  // Cipher suite in which the key will be used.
-  std::string cipher_suite_name = CipherSuite_Name(cipher_suite);
-  serializer_input.emplace_back(cipher_suite_name);
-
-  // Identifier of the key.
-  serializer_input.emplace_back(key_id);
-
-  // Size of the key.
-  std::string key_size_str = ::absl::StrCat(key_size);
-  serializer_input.emplace_back(key_size_str);
-
   key->resize(0);
   key->reserve(key_size);
 
   size_t remaining_key_bytes = key_size;
   size_t key_subscript = 0;
-  std::string key_subscript_str = ::absl::StrCat(key_subscript);
-  serializer_input.emplace_back(key_subscript_str);
   while (remaining_key_bytes > 0) {
-    std::basic_string<uint8_t> key_info;
-    ASYLO_RETURN_IF_ERROR(SerializeByteContainers(serializer_input, &key_info));
+    std::vector<uint8_t> key_info;
+    // Build a key_info string that uniquely and unambiguously encodes
+    // sealing-root description, ciphersuite with which the key will be used,
+    // key identifier, key size, and key subscript.
+    ASYLO_RETURN_IF_ERROR(SerializeByteContainers(
+        &key_info, SealingRootType_Name(LOCAL), kSgxLocalSecretSealerRootName,
+        CipherSuite_Name(cipher_suite), key_id, absl::StrCat(key_size),
+        absl::StrCat(key_subscript)));
+
     static_assert(decltype(req->keyid)::size() == SHA256_DIGEST_LENGTH,
                   "KEYREQUEST.KEYID field has unexpected size");
 
@@ -173,8 +157,6 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
     std::copy(hardware_key->cbegin(), hardware_key->cbegin() + copy_size,
               std::back_inserter(*key));
     ++key_subscript;
-    key_subscript_str = ::absl::StrCat(key_subscript);
-    serializer_input.back() = key_subscript_str;
   }
   return Status::OkStatus();
 }

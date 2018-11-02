@@ -28,13 +28,10 @@ namespace asylo {
 
 StatusOr<std::string> NamedIdentityExpectationMatcher::GetMatcherName(
     const EnclaveIdentityDescription &description) {
-  std::vector<ByteContainerView> description_tokens;
-  description_tokens.emplace_back(
-      EnclaveIdentityType_Name(description.identity_type()));
-  description_tokens.emplace_back(description.authority_type());
-
   std::string id;
-  ASYLO_RETURN_IF_ERROR(SerializeByteContainers(description_tokens, &id));
+  ASYLO_RETURN_IF_ERROR(SerializeByteContainers(
+      &id, EnclaveIdentityType_Name(description.identity_type()),
+      description.authority_type()));
   return id;
 }
 

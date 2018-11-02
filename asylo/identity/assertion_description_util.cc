@@ -42,12 +42,10 @@ bool AssertionDescriptionEq::operator()(const AssertionDescription &lhs,
 
 StatusOr<std::string> SerializeAssertionDescription(
     const AssertionDescription &description) {
-  std::vector<ByteContainerView> authority_id_tokens = {
-      EnclaveIdentityType_Name(description.identity_type()),
-      description.authority_type()};
   std::string serialized;
-  ASYLO_RETURN_IF_ERROR(
-      SerializeByteContainers(authority_id_tokens, &serialized));
+  ASYLO_RETURN_IF_ERROR(SerializeByteContainers(
+      &serialized, EnclaveIdentityType_Name(description.identity_type()),
+      description.authority_type()));
   return serialized;
 }
 
