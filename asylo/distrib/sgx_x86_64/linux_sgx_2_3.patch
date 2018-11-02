@@ -7,39 +7,6 @@
       dependency instead of the system-installed `protobuf-compiler`.
   * `sgx_sdk.bzl` provides Skylark rules and macros to wrap `make` and provide
     tools to configure and sign enclave binaries with a debug test-only key.
-  * `enclave_test_private.pem` is a DEBUG ONLY private key for signing test
-    enclaves. It is generated and included in the linux_sgx patch file only for
-    reproducible build purposes. A cautious user may generate another one to
-    replace it in their Bazel cache or modify the patch file itself to apply
-    a different PEM file. We used the following command to generate the PEM:
-
-        openssl genrsa -3 -out enclave_test_private.pem 3072
-
-    The key in `asylo/distrib/linux_sgx_2_2.patch` can be changed to a new
-    PEM file (which must be named `enclave_test_private.pem`, since that is what
-    the `sgx_sdk.bzl` build rules look for) with the following commands, which
-    copy the patch before the PEM, write a new PEM, then copy the patch after
-    the old PEM diff:
-
-        OLD=linux_sgx_2_2.patch
-        S="+++ enclave_test_private.pem"
-        E="+-----END RSA PRIVATE KEY-----"
-        START=$(( -2 + $(grep -n "${S}" "${OLD}" | tail -n 1 | sed 's/:.*//') ))
-        END=$(( 1 + $(grep -n "${E}" "${OLD}" | tail -n 1 | sed 's/:.*//') ))
-        NEW=$(mktemp)
-        head "-n${START}" "${OLD}" > "${NEW}"
-        diff -u /dev/null enclave_test_private.pem | filterdiff \
-          --remove-timestamps >> "${NEW}"
-        tail "-n+${END}" "${OLD}" >> "${NEW}"
-        mv "${NEW}" "${OLD}"
-
-    `grep` is piped to `tail` to skip finding its own command in this patch
-    preamble. `grep -n` adds the line number to the beginning with `:` after, so
-    strip off `:` and everything after to get a number to feed to `head` and
-    `tail`. The `-2` is for `head` to not print either the starting line or the
-    necessary preceding line of `--- /dev/null`. The `1 +` is so `tail` does not
-    duplicate the END RSA line.
-
 
 ## Directories added
 ### `include/`
@@ -204,6 +171,34 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `common/inc/sgx_edger8r.h`, `common/inc/internal/routine.h`,
   `psw/urts/routine.cpp` add a new bool variable `is_utility` to
   `sgx_ecall`.
+* Reserve `user_utility_thread` and make `utility` ecalls to use this tcs.
+  `common/inc/internal/rts_cmd.h` add a `ECMD_UTILITY` macro.
+  `psw/urts/enclave.cpp` in `CEnclave::ecall`, check `is_utility`
+  parameter, if it's true, pass `ECMD_UTILITY` to `get_tcs`. And pass
+  `is_utility` as `false` to `ecall` in `init_uswitchless`.
+  `psw/urts/enclave_creator_hw_com.cpp` pass `is_utility` as `false` to
+  `enclave->ecall` in `EnclaveCreatorHW::initialize`.
+  `psw/urts/routine.cpp` pass `is_utility` to `enclave->ecall` in
+  `_sgx_ecall`.
+  `psw/urts/tcs.h` add `CTrustThread *m_user_utility_thread` as a private
+  member of `CTrustThreadPool`.
+  `psw/urts/tcs.cpp` initialize `m_user_utility_thread` as `NULL` in the
+  constructor of `CTrustThreadPool`, and delete it in the destructor. set
+  `m_user_utility_thread` to `trust_thread` after setting `m_utility_thread` in
+  `CTrustThreadPool::add_thread`. add condition `&& m_user_utility_thread !=
+  NULL` to `CTrustThreadPool::_acquire_thread`. check `ecall_cmd` in
+  `CTrustThreadPool::acquire_thread`, if it's `ECMD_UTILITY`, assign
+  `m_utility_thread` to `trust_thread`.
+  `psw/urts/urts_com.h` pass `is_utility` as `false` to `enclave->ecall`
+  in `sgx_destroy_enclave`.
+  `psw/urts/linux_sig_handler.cpp` pass `is_utility` as `false` to
+  `enclave->ecall` in `sig_handler`.
+  `sdk/simulation/urtssim/enclave_creator_sim.cpp` pass `is_utility` as
+  `false` to `enclave->ecall` in `EnclaveCreatorSim::initialize`.
+  `sdk/trts/trts_ecall.cpp` allow ecall if it's utility even if it's the
+  first ecall of the tcs and is prviate in `is_ecall_allowed`.
+  `sdk/trts/trts_internal.h` add `uint8_t is_utility` to `struct
+  ecall_addr_t`.
 
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
@@ -291,6 +286,17 @@ diff -Nur common/inc/internal/routine.h common/inc/internal/routine.h
  
  #ifdef __cplusplus
  }
+diff -Nur common/inc/internal/rts_cmd.h common/inc/internal/rts_cmd.h
+--- common/inc/internal/rts_cmd.h
++++ common/inc/internal/rts_cmd.h
+@@ -36,6 +36,7 @@
+ #define ECMD_EXCEPT         -3
+ #define ECMD_MKTCS          -4
+ #define ECMD_UNINIT_ENCLAVE -5
++#define ECMD_UTILITY        -6
+ 
+ /* Built-in ECall command for Switchless SGX */
+ #define ECMD_INIT_SWITCHLESS         (-6)
 diff -Nur common/inc/internal/se_tcrypto_common.h common/inc/internal/se_tcrypto_common.h
 --- common/inc/internal/se_tcrypto_common.h
 +++ common/inc/internal/se_tcrypto_common.h
@@ -699,6 +705,15 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
  int do_ocall(const bridge_fn_t bridge, void *ms);
  
+@@ -93,7 +91,7 @@
+         goto on_exit;
+     }
+ 
+-    status = ecall(ECMD_INIT_SWITCHLESS, NULL, m_uswitchless);
++    status = ecall(ECMD_INIT_SWITCHLESS, NULL, m_uswitchless, /*is_utility=*/false);
+     if (status != SGX_SUCCESS) goto on_exit;
+ 
+     if (sl_uswitchless_init_workers(m_uswitchless)) {
 @@ -112,19 +110,21 @@
  
  sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
@@ -734,7 +749,26 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
      m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
  
-@@ -388,7 +388,15 @@
+@@ -241,7 +241,7 @@
+     return (sgx_status_t)trts_error;
+ }
+ 
+-sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, const bool is_switchless)
++sgx_status_t CEnclave::ecall(const int proc, const void *ocall_table, void *ms, bool is_utility, const bool is_switchless)
+ {
+     if(se_try_rdlock(&m_rwlock))
+     {
+@@ -273,7 +273,8 @@
+ on_fallback:
+         //Handle normal ECall or fallback'ed switchless ECall
+         //do sgx_ecall
+-        CTrustThread *trust_thread = get_tcs(proc);
++        //If this is a utility ecall, use the utility thread.
++        CTrustThread *trust_thread = get_tcs(is_utility ? ECMD_UTILITY : proc);
+         unsigned ret = SGX_ERROR_OUT_OF_TCS;
+ 
+         if(NULL != trust_thread)
+@@ -388,7 +389,15 @@
      return &m_enclave_info;
  }
  
@@ -751,9 +785,31 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  CTrustThread * CEnclave::get_tcs(int ecall_cmd)
  {
+diff -Nur psw/urts/enclave_creator_hw_com.cpp psw/urts/enclave_creator_hw_com.cpp
+--- psw/urts/enclave_creator_hw_com.cpp
++++ psw/urts/enclave_creator_hw_com.cpp
+@@ -66,8 +66,7 @@
+     if (is_EDMM_supported(enclave_id))
+             info.system_feature_set[0] |= EDMM_ENABLE_BIT;
+ 
+-
+-    int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
++    int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info), /*is_utility=*/false);
+     //free the tcs used by initialization;
+     enclave->get_thread_pool()->reset();
+ 
 diff -Nur psw/urts/enclave.h psw/urts/enclave.h
 --- psw/urts/enclave.h
 +++ psw/urts/enclave.h
+@@ -58,7 +58,7 @@
+     size_t get_dynamic_tcs_list_size();
+     CTrustThreadPool * get_thread_pool() { return m_thread_pool; }
+     uint64_t get_size() { return m_size; };
+-    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms, const bool is_fast = false);
++    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms, bool is_utility, const bool is_switchless = false);
+     int ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_table, void *ms);
+     void destroy();
+     uint32_t atomic_inc_ref() { return se_atomic_inc(&m_ref); }
 @@ -85,7 +85,10 @@
      void set_sealed_key(uint8_t *sealed_key);
      sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
@@ -820,6 +876,15 @@ diff -Nur psw/urts/linux/read_xcr0.h psw/urts/linux/read_xcr0.h
 diff -Nur psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
 --- psw/urts/linux/sig_handler.cpp
 +++ psw/urts/linux/sig_handler.cpp
+@@ -113,7 +113,7 @@
+         //If exception is raised in trts again and again, the SSA will overflow, and finally it is EENTER exception.
+         assert(reinterpret_cast<tcs_t *>(xbx) == param->tcs);
+         CEnclave *enclave = param->trust_thread->get_enclave();
+-        unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL);
++        unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL, /*is_utility=*/false);
+         if(SGX_SUCCESS == ret)
+         {
+             //ERESUME execute
 @@ -198,23 +198,11 @@
      }
      else
@@ -1427,6 +1492,15 @@ diff -Nur psw/urts/routine.cpp psw/urts/routine.cpp
  {
      if ((proc != ECMD_RUN_SWITCHLESS_TWORKER) &&  (proc < 0))
      {
+@@ -52,7 +52,7 @@
+ 
+     sgx_status_t result = SGX_ERROR_UNEXPECTED;
+     {
+-        result = enclave->ecall(proc, ocall_table, ms, is_switchless);
++        result = enclave->ecall(proc, ocall_table, ms, is_utility, is_switchless);
+     }
+     {
+         //This solution seems more readable and easy to validate, but low performace
 @@ -63,15 +63,15 @@
  }
  
@@ -1471,7 +1545,17 @@ diff -Nur psw/urts/section_info.h psw/urts/section_info.h
 diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
 --- psw/urts/tcs.cpp
 +++ psw/urts/tcs.cpp
-@@ -102,13 +102,13 @@
+@@ -94,21 +94,23 @@
+ {
+     m_thread_list = NULL;
+     m_utility_thread = NULL;
++    m_user_utility_thread = NULL;
+     m_tcs_min_pool = tcs_min_pool;
+     m_need_to_wait_for_new_thread = false;
++    m_user_utility_thread_in_use = false;
+ }
+ 
+ CTrustThreadPool::~CTrustThreadPool()
  {
      LockGuard lock(&m_thread_mutex);
      //destroy free tcs list
@@ -1487,8 +1571,16 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      {
          delete *it;
      }
-@@ -133,10 +133,10 @@
- 
+@@ -130,13 +132,17 @@
+         delete m_utility_thread;
+         m_utility_thread = NULL;
+     }
+-
++    if (m_user_utility_thread)
++    {
++        delete m_user_utility_thread;
++        m_user_utility_thread = NULL;
++    }
  }
  
 -void get_thread_set(vector<se_thread_id_t> &thread_vector);
@@ -1501,7 +1593,16 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
          if(*it == thread_id)
              return TRUE;
      return FALSE;
-@@ -252,9 +252,9 @@
+@@ -218,6 +224,8 @@
+     {
+         if (g_enclave_creator->is_EDMM_supported(enclave->get_enclave_id()) && !m_utility_thread && (enclave->get_dynamic_tcs_list_size() != 0))
+             m_utility_thread = trust_thread;
++        else if (!m_user_utility_thread)
++            m_user_utility_thread = trust_thread;
+         else
+             m_free_thread_vector.push_back(trust_thread);
+     }
+@@ -252,9 +260,9 @@
  {
      LockGuard lock(&m_thread_mutex);
  
@@ -1513,7 +1614,58 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      {
          threads.push_back(*it);
      }
-@@ -533,7 +533,7 @@
+@@ -309,7 +317,7 @@
+     //try to get tcs from thread cache
+     se_thread_id_t thread_id = get_thread_id();
+     CTrustThread *trust_thread = get_bound_thread(thread_id);
+-    if(NULL != trust_thread  && m_utility_thread != trust_thread)
++    if(NULL != trust_thread && m_utility_thread != trust_thread && m_user_utility_thread != trust_thread)
+     {
+         return trust_thread;
+     }
+@@ -334,7 +342,7 @@
+     LockGuard lock(&m_thread_mutex);
+     CTrustThread *trust_thread = NULL;
+     bool is_special_ecall = (ecall_cmd == ECMD_INIT_ENCLAVE) || (ecall_cmd == ECMD_UNINIT_ENCLAVE) ;
+-    
++    bool is_user_utility = (ecall_cmd == ECMD_UTILITY);
+ 
+     if(is_special_ecall == true)
+     {
+@@ -357,6 +365,21 @@
+             trust_thread = _acquire_thread();
+         }
+     }
++    else if (is_user_utility)
++    {
++        if (m_user_utility_thread)
++        {
++            if (m_user_utility_thread_in_use.exchange(true))
++            {
++                return NULL;
++            }
++            trust_thread = m_user_utility_thread;
++            assert(trust_thread != NULL);
++        } else
++        {
++            trust_thread = _acquire_thread();
++        }
++    }
+     else
+     {
+         trust_thread = _acquire_thread();
+@@ -392,6 +415,10 @@
+ //Do nothing for bind mode, the tcs is always bound to a thread.
+ void CTrustThreadPool::release_thread(CTrustThread * const trust_thread)
+ {
++    if (trust_thread == m_user_utility_thread)
++    {
++        m_user_utility_thread_in_use = false;
++    }
+     LockGuard lock(&m_thread_mutex);
+     trust_thread->decrease_ref();
+     return;
+@@ -533,7 +560,7 @@
  
      //if free list is NULL, recycle tcs.
      //get thread id set of current process
@@ -1525,7 +1677,11 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
 diff -Nur psw/urts/tcs.h psw/urts/tcs.h
 --- psw/urts/tcs.h
 +++ psw/urts/tcs.h
-@@ -41,8 +41,6 @@
+@@ -38,11 +38,10 @@
+ #include "sgx_error.h"
+ #include "se_debugger_lib.h"
+ #include "se_lock.hpp"
++#include <atomic>
  #include <vector>
  #include "node.h"
  
@@ -1534,7 +1690,7 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
  typedef int (*bridge_fn_t)(const void*);
  
  class CEnclave;
-@@ -88,15 +86,15 @@
+@@ -88,15 +87,15 @@
      bool is_dynamic_thread_exist();
  protected:
      virtual int garbage_collect() = 0;
@@ -1553,6 +1709,17 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
      Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
      Mutex                                   m_thread_mutex; //protect thread_cache list. The mutex is recursive.
                                                              //Thread can operate the list when it get the mutex
+@@ -105,8 +104,10 @@
+ private:
+     CTrustThread * _acquire_thread();
+     CTrustThread *m_utility_thread;
++    CTrustThread *m_user_utility_thread;
+     uint64_t     m_tcs_min_pool;
+     bool         m_need_to_wait_for_new_thread;
++    std::atomic_bool m_user_utility_thread_in_use;
+ };
+ 
+ class CThreadPoolBindMode : public CTrustThreadPool
 diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 --- psw/urts/urts_com.h
 +++ psw/urts/urts_com.h
@@ -1712,6 +1879,15 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
  }
  
  
+@@ -565,7 +623,7 @@
+             debug_enclave_info_t *debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
+             generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
+             enclave->destroy_uswitchless();
+-            enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL);
++            enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL, /*is_utility=*/false);
+             CEnclavePool::instance()->unref_enclave(enclave);
+         }
+     }
 diff -Nur psw/uswitchless/sl_workers_untrusted.c psw/uswitchless/sl_workers_untrusted.c
 --- psw/uswitchless/sl_workers_untrusted.c
 +++ psw/uswitchless/sl_workers_untrusted.c
@@ -2319,6 +2495,18 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      if (addr == NULL) {
          delete ce;
          return 0;
+diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/enclave_creator_sim.cpp
+--- sdk/simulation/urtssim/enclave_creator_sim.cpp
++++ sdk/simulation/urtssim/enclave_creator_sim.cpp
+@@ -246,7 +246,7 @@
+     get_cpu_features(&info.cpu_features, (unsigned int*)info.cpuinfo_table);
+     info.version = SDK_VERSION_1_5;
+     info.sealed_key = enclave->get_sealed_key();
+-    status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
++    status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info), /*is_utility=*/false);
+     //free the tcs used by initialization;
+     enclave->get_thread_pool()->reset();
+     if(SGX_SUCCESS == status)
 diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
 --- sdk/simulation/urtssim/get_state.cpp
 +++ sdk/simulation/urtssim/get_state.cpp
@@ -2481,15 +2669,16 @@ diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
 diff -Nur sdk/trts/trts_internal.h sdk/trts/trts_internal.h
 --- sdk/trts/trts_internal.h
 +++ sdk/trts/trts_internal.h
-@@ -40,6 +40,7 @@
+@@ -40,6 +40,8 @@
  typedef struct {
      const void     *ecall_addr;
      uint8_t         is_priv;
 +    uint8_t         is_exception;
++    uint8_t         is_utility;
  } ecall_addr_t;
  
  typedef struct {
-@@ -66,7 +67,10 @@
+@@ -66,7 +68,10 @@
  
  sgx_status_t do_init_thread(void *tcs, bool enclave_init);
  sgx_status_t do_init_enclave(void *ms, void *tcs) __attribute__((section(".nipx")));
@@ -3730,7 +3919,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,209 @@
+@@ -0,0 +1,249 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -3796,6 +3985,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +            "  <TCSNum>%s</TCSNum>" % ctx.attr.tcs_num,
 +            "  <TCSPolicy>%s</TCSPolicy>" % ctx.attr.tcs_policy,
 +            "  <DisableDebug>%s</DisableDebug>" % ctx.attr.disable_debug,
++            "  <ProvisionKey>%s</ProvisionKey>" % ctx.attr.provision_key,
 +            "  <MiscSelect>%s</MiscSelect>" % ctx.attr.misc_select,
 +            "  <MiscMask>%s</MiscMask>" % ctx.attr.misc_mask,
 +            "</EnclaveConfiguration>\n\n",
@@ -3807,16 +3997,55 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 +    implementation = _sgx_enclave_configuration,
 +    output_to_genfiles = True,
 +    attrs = {
-+        "prodid": attr.string(default = "0"),
-+        "isvsvn": attr.string(default = "0"),
-+        "stack_max_size": attr.string(default = "0x40000"),
-+        "heap_max_size": attr.string(default = "0x100000"),
-+        "tcs_num": attr.string(default = "10"),
-+        "tcs_policy": attr.string(default = "1"),
++        "prodid": attr.string(
++            default = "0",
++            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
++                   "Product ID"),
++        ),
++        "isvsvn": attr.string(
++            default = "0",
++            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
++                   "Security Version Number"),
++        ),
++        "stack_max_size": attr.string(
++            default = "0x40000",
++            doc = "The enclave's maximum stack size in bytes (4KB aligned)",
++        ),
++        "heap_max_size": attr.string(
++            default = "0x100000",
++            doc = "The enclave's maximum heap size in bytes (4KB aligned)",
++        ),
++        # 2 tcs are reserved by the framework, 10 are left for users.
++        "tcs_num": attr.string(
++            default = "12",
++            doc = ("The number of Thread Control Structures allocated for " +
++                   "the enclave"),
++        ),
++        "tcs_policy": attr.string(
++            default = "1",
++            doc = ("The TCS management policy (" +
++                   "0 - The TCS is bound to the untrusted thread, " +
++                   "1 - The TCS is unbound to the untrusted thread)"),
++        ),
 +        # "1" for release enclaves.
-+        "disable_debug": attr.string(default = "0"),
-+        "misc_select": attr.string(default = "0"),
-+        "misc_mask": attr.string(default = "0xffffffff"),
++        "disable_debug": attr.string(
++            default = "0",
++            doc = ("Indicates whether launching the enclave in debug mode is " +
++                   "disabled"),
++        ),
++        "provision_key": attr.string(
++            default = "0",
++            doc = ("Indicates whether the enclave has access to the " +
++                   "Provisioning Key and the Provisioning Seal Key"),
++        ),
++        "misc_select": attr.string(
++            default = "0",
++            doc = "The desired Extended SSA frame feature (must be 0)",
++        ),
++        "misc_mask": attr.string(
++            default = "0xffffffff",
++            doc = "A mask indicating which bits in misc_select are enforced",
++        ),
 +    },
 +)
 +
