@@ -47,9 +47,9 @@ class HashInterface {
   // Returns the hash algorithm implemented by this object.
   virtual HashAlgorithm GetHashAlgorithm() const = 0;
 
-  // Returns the size of the message-digest size of this hash algorithm. A
-  // return value of zero implies that the object does not implement a
-  // fixed-size hash function.
+  // Returns the size of the message-digest of this hash algorithm. A return
+  // value of zero indicates that the object does not implement a fixed-size
+  // hash function.
   virtual size_t DigestSize() const = 0;
 
   // Initializes this hash object to a clean state. Calling this method clears
