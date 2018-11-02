@@ -52,6 +52,15 @@ cc_library(
     ],
 )
 
+# Defines a C++ interface for nonce generators.
+cc_library(
+    name = "nonce_generator_interface",
+    hdrs = ["nonce_generator_interface.h"],
+    deps = [
+        "//asylo/util:status",
+    ],
+)
+
 # Implementation of HashInterface for SHA256.
 cc_library(
     name = "sha256_hash",
