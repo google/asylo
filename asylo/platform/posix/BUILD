@@ -191,3 +191,12 @@ enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_enclave_test(
+    name = "times_test",
+    srcs = ["times_test.cc"],
+    tags = ["regression"],
+    deps = [
+        "@com_google_googletest//:gtest",
+    ],
+)
