@@ -20,6 +20,16 @@
 
 namespace asylo {
 
+Argv::Argv() { InitializeArgvCStr(); }
+
+Argv::Argv(const Argv &other) : argv_(other.argv_) { InitializeArgvCStr(); }
+
+Argv &Argv::operator=(const Argv &other) {
+  argv_ = other.argv_;
+  InitializeArgvCStr();
+  return *this;
+}
+
 void Argv::WriteArgvToRepeatedStringField(
     int argc, const char *const *argv,
     google::protobuf::RepeatedPtrField<std::string> *field) {
@@ -28,8 +38,17 @@ void Argv::WriteArgvToRepeatedStringField(
   }
 }
 
-int Argv::argc() const { return argv_.size() - 1; }
+int Argv::argc() const { return argv_.size(); }
 
-char **Argv::argv() { return argv_.data(); }
+char **Argv::argv() { return argv_c_str_.data(); }
+
+void Argv::InitializeArgvCStr() {
+  argv_c_str_.clear();
+  argv_c_str_.reserve(argv_.size() + 1);
+  for (std::string &argument : argv_) {
+    argv_c_str_.push_back(&argument[0]);
+  }
+  argv_c_str_.push_back(nullptr);
+}
 
 }  // namespace asylo

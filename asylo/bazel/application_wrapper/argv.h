@@ -33,26 +33,27 @@ namespace asylo {
 // contract of the main() function (C Standard section 5.1.2.2.1).
 class Argv {
  public:
+  // Constructs an Argv with zero arguments.
+  Argv();
+
+  // Non-default copy operations are required to ensure that the pointers in
+  // argv_c_str_ are set to point into strings in the new argv_.
+  Argv(const Argv &other);
+  Argv &operator=(const Argv &other);
+
+  Argv(Argv &&other) = default;
+  Argv &operator=(Argv &&other) = default;
+
   // Constructs an Argv from a container of string-like objects.
   // StringViewIterableT must support STL-style iteration, and its element type
   // must be implicitly convertible to absl::string_view.
   template <typename StringViewIterableT>
   explicit Argv(const StringViewIterableT &arguments) {
-    size_t total_args_length = 0;
+    argv_.reserve(arguments.size());
     for (absl::string_view argument : arguments) {
-      total_args_length += argument.size();
+      argv_.push_back(std::string(argument));
     }
-    args_contiguous_.resize(total_args_length + arguments.size());
-
-    int next_arg_index = 0;
-    argv_.reserve(arguments.size() + 1);
-    for (absl::string_view argument : arguments) {
-      argument.copy(&args_contiguous_[next_arg_index], argument.size());
-      args_contiguous_[next_arg_index + argument.size()] = '\0';
-      argv_.push_back(&args_contiguous_[next_arg_index]);
-      next_arg_index += argument.size() + 1;
-    }
-    argv_.push_back(nullptr);
+    InitializeArgvCStr();
   }
 
   // Returns the number of command-line arguments.
@@ -72,14 +73,15 @@ class Argv {
       google::protobuf::RepeatedPtrField<std::string> *field);
 
  private:
-  // A buffer containing the command-line arguments. The arguments are separated
-  // from each other by null bytes.
-  std::string args_contiguous_;
+  // Initializes argv_c_style_ from the strings in argv_.
+  void InitializeArgvCStr();
 
-  // An array of pointers into args_contiguous_, representing the command-line
-  // arguments in order. The last element is a null pointer to conform with the
-  // calling contract of main().
-  std::vector<char *> argv_;
+  // The command-line arguments as C++ strings.
+  std::vector<std::string> argv_;
+
+  // The command-line arguments as C-style strings. The last element is a null
+  // pointer to conform with the calling contract of main().
+  std::vector<char *> argv_c_str_;
 };
 
 }  // namespace asylo
