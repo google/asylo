@@ -160,6 +160,21 @@ cc_library(
     ],
 )
 
+# A utility for POSIX pipes. Intended to be used to read enclave stdout and
+# stderr.
+cc_library(
+    name = "pipe",
+    testonly = 1,
+    srcs = ["pipe.cc"],
+    hdrs = ["pipe.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
 # gMock matchers for Protocol Buffers.
 cc_library(
     name = "proto_matchers",
