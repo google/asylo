@@ -438,8 +438,11 @@ def enclave_test(
     data = kwargs.get("data", [])
     kwargs.pop("data", None)
 
-    native.cc_test(
+    flaky = kwargs.pop("flaky", None)
+    size = kwargs.pop("size", None)
+    native.cc_binary(
         name = test_name,
+        testonly = 1,
         **_ensure_static_manual(kwargs)
     )
 
@@ -458,6 +461,8 @@ def enclave_test(
         loader_args = test_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
         data = data,
+        flaky = flaky,
+        size = size,
         testonly = 1,
         tags = ["enclave_test"] + tags,
     )

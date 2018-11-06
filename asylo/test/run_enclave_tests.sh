@@ -3,8 +3,10 @@
 BAZEL="bazel"
 
 # Query for all of the tests marked as regression tests.
+ASYLO_TESTS="tests(//asylo/...)"
+NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
 REGRESSION_TESTS=(
-  $(${BAZEL} query 'attr(tags, regression, tests(//asylo/...))')
+  $(${BAZEL} query "${ASYLO_TESTS} except ${NOREGRESSION_TESTS}")
 )
 
 # Separately run the host and enclave tests, with different configs.

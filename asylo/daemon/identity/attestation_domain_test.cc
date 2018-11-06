@@ -27,6 +27,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/test/util/test_flags.h"
 
 namespace asylo {
 

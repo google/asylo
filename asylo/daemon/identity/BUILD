@@ -78,6 +78,7 @@ cc_test(
     deps = [
         ":attestation_domain",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

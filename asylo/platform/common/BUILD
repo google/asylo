@@ -149,24 +149,6 @@ cc_library(
     hdrs = ["spin_lock.h"],
 )
 
-# Synchronized pool of tokens in shared memory.
-cc_library(
-    name = "shared_token_pool",
-    hdrs = ["shared_token_pool.h"],
-    deps = [":spin_lock"],
-)
-
-cc_test(
-    name = "shared_token_pool_test",
-    size = "medium",
-    srcs = ["shared_token_pool_test.cc"],
-    deps = [
-        ":shared_token_pool",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 # Provide a unique pointer for malloc'd memory.
 cc_library(
     name = "memory",

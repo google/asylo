@@ -133,7 +133,7 @@ cc_test(
         ":enclave_credentials_options",
         ":null_credentials_options",
         ":sgx_local_credentials_options",
-        "//asylo/identity:identity_proto",
+        "//asylo/identity:identity_proto_cc",
         "//asylo/identity/null_identity:null_identity_util",
         "//asylo/identity/sgx:code_identity_util",
         "//asylo/test/util:proto_matchers",

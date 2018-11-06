@@ -276,6 +276,7 @@ cc_library(
 cc_test(
     name = "code_identity_util_test",
     srcs = ["code_identity_util_test.cc"],
+    tags = ["noregression"],
     deps = [
         ":code_identity_constants",
         ":code_identity_proto_cc",
@@ -527,7 +528,7 @@ cc_test(
         ":code_identity_util",
         ":hardware_types",
         ":proto_format",
-        "//asylo/identity/util:sha256_hash_proto",
+        "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

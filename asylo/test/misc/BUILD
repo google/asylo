@@ -191,6 +191,7 @@ enclave_test(
     name = "exhaust_sgx_tcs_test",
     srcs = ["exhaust_sgx_tcs_test.cc"],
     enclaves = {"enclave": ":exhaust_sgx_tcs.so"},
+    tags = ["noregression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )

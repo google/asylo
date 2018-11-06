@@ -68,8 +68,9 @@ cc_library(
 
 # Used by the cc_enclave_test rule to execute gtest test suites inside enclaves.
 # Should not typically be used directly.
-cc_test(
+cc_binary(
     name = "test_shim_loader",
+    testonly = 1,
     srcs = ["test_shim_loader.cc"],
     linkstatic = True,
     visibility = ["//visibility:public"],
