@@ -58,9 +58,9 @@ constexpr size_t kNumSecsAttributeBits = kNumFlagsBits + kNumXfrmBits;
 // included in the following list, the x86-64 architecture provides fail-closed
 // semantics. That is, if the enclave tries to use a feature when the
 // corresponding bit is not set, the enclave gets a #UD exception, which cannot
-// be hidden from an enclave by the in-scope adversaries (see go/siee). On the
-// other hand, setting the bit when the enclave is not intending to use the
-// feature does not affect the enclave in any meaningful way.
+// be hidden from an enclave by the in-scope adversaries. On the other hand,
+// setting the bit when the enclave is not intending to use the feature does not
+// affect the enclave in any meaningful way.
 //
 // MPX, on the other hand, when enabled, turns some of the legacy NOP
 // instructions into memory-write operations. Consequently, it can be used

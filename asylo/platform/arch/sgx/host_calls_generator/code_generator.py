@@ -20,9 +20,6 @@ specification, generates the bridge and serialization code to invoke untrusted
 functions in the Asylo framework. The code generator uses the Jinja
 templating library and several template files to generate the output files.
 
-The design doc for the code generator can be found here:
-go/asylo-system-calls
-
 The input files required by the code generator are:
   1. host_calls.textproto (the specification for which to generate code)
   2. templates/* (the set of template files to use for code generation)
