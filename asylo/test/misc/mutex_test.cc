@@ -24,8 +24,8 @@
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/test/util/test_util.h"
 #include "asylo/util/status.h"
-#include <openssl/mem.h>
 
 namespace asylo {
 namespace {
@@ -64,39 +64,20 @@ void StartRoutine(volatile int *counter) {
   // threads.
   for (int i = 0; i < kNumLoops; ++i) {
     volatile int counter_copy = *counter;
-
-    // Do an expensive operation in between reading and writing.
-    // OPENSSL_cleanse is a good candidate because it performs a loop that is
-    // not performance-optimized in any way (for security reasons).
-    uint8_t buf[kBufferSize];
-    OPENSSL_cleanse(buf, kBufferSize);
-
+    BusyWork();
     *counter = counter_copy + 1;
   }
 }
 
 // Creates kNumThreads that run the given |start_routine| and waits for all
 // threads to join.
-Status LaunchThreads(void *(*start_routine)(void *)) {
-  pthread_t threads[kNumThreads];
-  int ret = 0;
-
-  for (int i = 0; i < kNumThreads; ++i) {
-    ret = pthread_create(&threads[i], nullptr, start_routine, nullptr);
-    if (ret != 0) {
-      LOG(ERROR) << "pthread_create() returned " << ret;
-      return Status(error::GoogleError::INTERNAL, "Failed to create thread");
-    }
+Status RunThreads(void *(*start_routine)(void *)) {
+  std::vector<pthread_t> threads;
+  Status ret = LaunchThreads(kNumThreads, start_routine, nullptr, &threads);
+  if (ret.ok()) {
+    ret = JoinThreads(threads);
   }
-
-  for (int i = 0; i < kNumThreads; ++i) {
-    ret = pthread_join(threads[i], nullptr);
-    if (ret != 0) {
-      LOG(ERROR) << "pthread_join() returned " << ret;
-      return Status(error::GoogleError::INTERNAL, "Failed to join thread");
-    }
-  }
-  return Status::OkStatus();
+  return ret;
 }
 
 // Runs StartRoutine without any mutual-exclusion mechanism.  In this routine,
@@ -145,28 +126,28 @@ void *StartRoutineTryLock(void *) {
 
 TEST(RunWithUnguardedTest, EnclaveMutex) {
   counter = 0;
-  ASSERT_THAT(LaunchThreads(&StartRoutineUnguarded), IsOk());
+  ASSERT_THAT(RunThreads(&StartRoutineUnguarded), IsOk());
   LOG(INFO) << "unguarded_counter: " << counter;
   ASSERT_LT(counter, kExpectedResult);
 }
 
 TEST(RunWithMutexTest, EnclaveMutex) {
   counter = 0;
-  ASSERT_THAT(LaunchThreads(&StartRoutineMutex), IsOk());
+  ASSERT_THAT(RunThreads(&StartRoutineMutex), IsOk());
   LOG(INFO) << "mutex_guarded_counter: " << counter;
   ASSERT_EQ(counter, kExpectedResult);
 }
 
 TEST(RunWithMutexLockTest, EnclaveMutex) {
   counter = 0;
-  ASSERT_THAT(LaunchThreads(&StartRoutineMutexLock), IsOk());
+  ASSERT_THAT(RunThreads(&StartRoutineMutexLock), IsOk());
   LOG(INFO) << "lock_guarded_counter: " << counter;
   ASSERT_EQ(counter, kExpectedResult);
 }
 
 TEST(RunWithTryLockTest, EnclaveMutex) {
   counter = 0;
-  ASSERT_THAT(LaunchThreads(&StartRoutineTryLock), IsOk());
+  ASSERT_THAT(RunThreads(&StartRoutineTryLock), IsOk());
   LOG(INFO) << "try_lock_guarded_counter: " << counter;
   ASSERT_EQ(counter, kExpectedResult);
 }

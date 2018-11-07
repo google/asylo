@@ -39,6 +39,22 @@ cc_library(
     ],
 )
 
+# Miscallaneous helper functions for tests.
+cc_library(
+    name = "test_util",
+    testonly = 1,
+    srcs = ["test_util.cc"],
+    hdrs = ["test_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+    ],
+)
+
 # Subprocess used to test exec_tester.
 cc_binary(
     name = "exit_app",
