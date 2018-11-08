@@ -30,6 +30,7 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/posix/include/semaphore.h"
 #include "asylo/platform/posix/pthread_impl.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 
@@ -231,11 +232,26 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
   return EBUSY;
 }
 
+// Small utility function to "convert" a return value into an errno value. The
+// sem_* functions indicate errors by returning -1 and setting the global errno
+// variable to the error value. Unfortunately, this is different than the
+// pthread_cond_* and pthread_mutex_* functions that indicate errors by
+// returning the error value directly.
+int ConvertToErrno(int err_value) {
+  if (err_value == 0) {
+    return 0;
+  }
+
+  errno = err_value;
+  return -1;
+}
+
 }  //  namespace pthread_impl
 }  //  namespace asylo
 
 using asylo::ThreadManager;
 using asylo::pthread_impl::check_parameter;
+using asylo::pthread_impl::ConvertToErrno;
 using asylo::pthread_impl::init_tls_map;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
@@ -562,6 +578,157 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
   {
     SpinLock lock(cond);
     list.Drain();
+  }
+
+  return 0;
+}
+
+// Initialize |sem| with an initial semaphore value of |value|. |pshared| must
+// be 0; shared semaphores are not supported.
+int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
+  int ret = check_parameter<sem_t>(sem);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  // We only support inside-an-enclave semaphores, not cross-process semaphores.
+  if (pshared) {
+    return ConvertToErrno(ENOSYS);
+  }
+
+  sem->_count = value;
+
+  ret = pthread_mutex_init(&sem->mu_, nullptr);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  ret = pthread_cond_init(&sem->cv_, nullptr);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  return 0;
+}
+
+// Get the current value of |sem| and write it to |sval|.
+int sem_getvalue(sem_t *sem, int *sval) {
+  int ret = check_parameter<sem_t>(sem);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  ret = check_parameter<int>(sval);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  ret = pthread_mutex_lock(&sem->mu_);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  *sval = sem->_count;
+
+  return ConvertToErrno(pthread_mutex_unlock(&sem->mu_));
+}
+
+// Unlock |sem|, unblocking a thread that might be waiting for it.
+int sem_post(sem_t *sem) {
+  int ret = check_parameter<sem_t>(sem);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  ret = pthread_mutex_lock(&sem->mu_);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  sem->_count++;
+  ret = pthread_cond_signal(&sem->cv_);
+  int unlock_ret = pthread_mutex_unlock(&sem->mu_);
+
+  // If pthread_cond_signal fails, return that error. Otherwise, return the
+  // error from trying to unlock the mutex. We must unlock the mutex even if
+  // we fail to signal.
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+  return ConvertToErrno(unlock_ret);
+}
+
+// Wait for |sem| to be unlocked until the time specified by |abs_timeout|. If
+// |abs_timeout| is null, waits indefinitely. Returns 0 if the semaphore has
+// been unlocked. Returns -1 on err. errno will be set to ETIMEDOUT if the
+// failure is due to a timeout.
+int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
+  int ret = check_parameter<sem_t>(sem);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  if (abs_timeout != nullptr) {
+    ret = check_parameter<timespec>(abs_timeout);
+    if (ret != 0) {
+      return ConvertToErrno(ret);
+    }
+  }
+
+  ret = pthread_mutex_lock(&sem->mu_);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  while (sem->_count == 0) {
+    ret = pthread_cond_timedwait(&sem->cv_, &sem->mu_, abs_timeout);
+
+    if (ret != 0) {
+      break;
+    }
+  }
+
+  // If the pthread_cond_timedwait succeeds, reduce the semaphore count by one,
+  // unlock the mutex, and return any error that might arise from the unlocking.
+  if (ret == 0) {
+    sem->_count--;
+    return ConvertToErrno(pthread_mutex_unlock(&sem->mu_));
+  }
+
+  // pthread_cond_timedwait failed. We don't decrease the semaphore value and
+  // return whatever retval came from pthread_cond_timedwait. This means we drop
+  // any error that might arise from unlocking the mutex.
+  pthread_mutex_unlock(&sem->mu_);
+  return ConvertToErrno(ret);
+}
+
+// Wait indefinitely for |sem| to be unlocked.
+int sem_wait(sem_t *sem) { return sem_timedwait(sem, nullptr); }
+
+int sem_trywait(sem_t *sem) {
+  struct timespec deadline = {0, 0};
+  int ret = sem_timedwait(sem, &deadline);
+  if (ret != 0 && errno == ETIMEDOUT) {
+    errno = EAGAIN;
+  }
+
+  return ret;
+}
+
+int sem_destroy(sem_t *sem) {
+  int ret = check_parameter<sem_t>(sem);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  ret = pthread_cond_destroy(&sem->cv_);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  ret = pthread_mutex_destroy(&sem->mu_);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
   }
 
   return 0;
