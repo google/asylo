@@ -157,19 +157,25 @@ class StatusOr {
   /// `StatusOr<T>` can return an object of type `U &&`, implicitly converting
   /// it to a `StatusOr<T>` object.
   ///
-  /// Note that `T` must be implicitly constructible from `U`. Due to C++
+  /// Note that `T` must be implicitly constructible from `U`, and `U` must not
+  /// be a (cv-qualified) Status or Status-reference type. Due to C++
   /// reference-collapsing rules and perfect-forwarding semantics, this
   /// constructor matches invocations that pass `value` either as a const
-  /// reference or as an rvalue reference. See
-  /// http://thbecker.net/articles/rvalue_references/section_08.html for
+  /// reference or as an rvalue reference. Since StatusOr needs to work for both
+  /// reference and rvalue-reference types, the constructor uses perfect
+  /// forwarding to avoid invalidating arguments that were passed by reference.
+  /// See http://thbecker.net/articles/rvalue_references/section_08.html for
   /// additional details.
   ///
   /// \param value The value to initialize to.
-  template <typename U, typename E = typename std::enable_if<
-                            is_implicitly_constructible<T, U>::value>::type>
-  StatusOr(U &&value) : variant_(std::forward<U>(value)), has_value_(true) {
-  
-  }
+  template <typename U,
+            typename E = typename std::enable_if<
+                is_implicitly_constructible<T, U>::value &&
+                !std::is_same<typename std::remove_reference<
+                                  typename std::remove_cv<U>::type>::type,
+                              Status>::value>::type>
+
+  StatusOr(U &&value) : variant_(std::forward<U>(value)), has_value_(true) {}
 
   /// Copy constructor.
   ///
