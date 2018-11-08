@@ -89,7 +89,6 @@ cc_test(
 cc_test(
     name = "attestation_domain_client_test",
     srcs = ["attestation_domain_client_test.cc"],
-    tags = ["regression"],
     deps = [
         ":attestation_domain_client",
         ":attestation_domain_grpc_proto",
@@ -107,7 +106,6 @@ cc_test(
 cc_test(
     name = "attestation_domain_service_impl_test",
     srcs = ["attestation_domain_service_impl_test.cc"],
-    tags = ["regression"],
     deps = [
         ":attestation_domain",
         ":attestation_domain_service_impl",

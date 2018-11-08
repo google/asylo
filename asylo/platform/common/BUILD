@@ -47,7 +47,6 @@ cc_test(
     name = "singleton_test",
     srcs = ["singleton_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         ":singleton",
         "//asylo/test/util:test_main",
@@ -75,7 +74,6 @@ cc_library(
 cc_test(
     name = "static_map_test",
     srcs = ["static_map_test.cc"],
-    tags = ["regression"],
     deps = [
         ":static_map",
         "//asylo/test/util:test_main",
@@ -88,7 +86,6 @@ cc_test(
 cc_test(
     name = "time_util_test",
     srcs = ["time_util_test.cc"],
-    tags = ["regression"],
     deps = [
         ":time_util",
         "//asylo/test/util:test_main",

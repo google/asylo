@@ -68,7 +68,6 @@ cc_test(
     srcs = ["exec_tester_test.cc"],
     args = ["--binary_path=$(location :exit_app)"],
     data = [":exit_app"],
-    tags = ["regression"],
     deps = [
         ":exec_tester",
         ":test_main",
@@ -251,7 +250,6 @@ cc_test(
     name = "fake_local_enclave_client_test",
     size = "small",
     srcs = ["fake_local_enclave_client_test.cc"],
-    tags = ["regression"],
     deps = [
         ":fake_local_enclave_client",
         ":test_main",

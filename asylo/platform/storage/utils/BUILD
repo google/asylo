@@ -45,7 +45,6 @@ cc_test(
     name = "fd_closer_test",
     size = "small",
     srcs = ["fd_closer_test.cc"],
-    tags = ["regression"],
     deps = [
         ":fd_closer",
         "//asylo/test/util:test_main",
@@ -66,7 +65,6 @@ cc_library(
 cc_enclave_test(
     name = "offset_translator_test",
     srcs = ["offset_translator_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],

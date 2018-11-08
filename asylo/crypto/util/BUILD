@@ -43,7 +43,6 @@ cc_library(
 cc_test(
     name = "byte_container_util_test",
     srcs = ["byte_container_util_test.cc"],
-    tags = ["regression"],
     deps = [
         ":byte_container_util",
         ":byte_container_view",
@@ -69,7 +68,6 @@ cc_test(
     name = "byte_container_view_test",
     srcs = ["byte_container_view_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         ":byte_container_view",
         ":bytes",
@@ -95,7 +93,6 @@ cc_test(
     name = "bytes_test",
     srcs = ["bytes_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         ":bytes",
         ":trivial_object_util",
@@ -117,7 +114,6 @@ cc_test(
     name = "trivial_object_util_test",
     srcs = ["trivial_object_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         ":bytes",
         ":trivial_object_util",

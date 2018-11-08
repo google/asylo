@@ -80,7 +80,6 @@ cc_test(
     name = "sha256_hash_test",
     srcs = ["sha256_hash_test.cc"],
     enclave_test_name = "sha256_hash_enclave_test",
-    tags = ["regression"],
     deps = [
         ":algorithms_proto_cc",
         ":sha256_hash",
@@ -116,7 +115,6 @@ cc_library(
 cc_test(
     name = "aes_gcm_siv_test",
     srcs = ["aes_gcm_siv_test.cc"],
-    tags = ["regression"],
     deps = [
         ":aes_gcm_siv",
         "//asylo/crypto/util:byte_container_view",
@@ -160,7 +158,6 @@ cc_test(
     name = "ecdsa_p256_sha256_signing_key_test",
     srcs = ["ecdsa_p256_sha256_signing_key_test.cc"],
     enclave_test_name = "ecdsa_p256_sha256_signing_key_enclave_test",
-    tags = ["regression"],
     deps = [
         ":ecdsa_p256_sha256_signing_key",
         "//asylo/test/util:status_matchers",

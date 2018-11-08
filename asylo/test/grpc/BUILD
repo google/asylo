@@ -153,7 +153,6 @@ enclave_test(
     srcs = ["enclave_insecure_server_test.cc"],
     enclaves = {"enclave": ":enclave_insecure_server.so"},
     flaky = 1,
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":messenger_client_impl",
@@ -176,7 +175,6 @@ enclave_test(
     name = "enclave_secure_server_test",
     srcs = ["enclave_secure_server_test.cc"],
     enclaves = {"enclave": ":enclave_secure_server.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":messenger_client_impl",
@@ -204,7 +202,6 @@ cc_test(
     srcs = ["channel_test.cc"],
     enclave_test_config = "//asylo/grpc/util:grpc_enclave_config",
     enclave_test_name = "channel_enclave_test",
-    tags = ["regression"],
     deps = [
         ":messenger_client_impl",
         ":messenger_server_impl",
@@ -230,7 +227,6 @@ enclave_test(
         "server_enclave": ":server_enclave.so",
         "client_enclave": ":client_enclave.so",
     },
-    tags = ["regression"],
     test_args = [
         "--server_enclave_path='{server_enclave}'",
         "--client_enclave_path='{client_enclave}'",

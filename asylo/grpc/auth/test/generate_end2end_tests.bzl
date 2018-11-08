@@ -35,6 +35,5 @@ def grpc_end2end_tests():
             name = "%s@%s" % (END2END_FIXTURE, test),
             srcs = ["end2end_test.sh"],
             args = ["$(location %s)" % END2END_FIXTURE, test],
-            tags = ["regression"],
             data = [":%s" % END2END_FIXTURE],
         )

@@ -88,7 +88,6 @@ cc_library(
 cc_enclave_test(
     name = "read_write_test",
     srcs = ["read_write_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
@@ -102,7 +101,6 @@ cc_test(
     name = "eventfd_test",
     srcs = ["eventfd_test.cc"],
     enclave_test_name = "eventfd_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/container:flat_hash_set",
@@ -114,7 +112,6 @@ cc_test(
 cc_enclave_test(
     name = "read_write_multithread_test",
     srcs = ["read_write_multithread_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
@@ -128,7 +125,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "virtual_test",
     srcs = ["virtual_test.cc"],
-    tags = ["regression"],
     deps = [
         ":io_manager",
         "//asylo/test/util:status_matchers",
@@ -142,7 +138,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "cwd_test",
     srcs = ["cwd_test.cc"],
-    tags = ["regression"],
     deps = [
         ":io_manager",
         "//asylo/test/util:test_flags",
@@ -155,7 +150,6 @@ cc_test(
     name = "epoll_test",
     srcs = ["epoll_test.cc"],
     enclave_test_name = "epoll_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -168,7 +162,6 @@ cc_test(
     name = "realpath_test",
     srcs = ["realpath_test.cc"],
     enclave_test_name = "realpath_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
@@ -192,7 +185,6 @@ enclave_test(
     srcs = ["pipe_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":test_pipe.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo/test/util:enclave_test",
@@ -208,7 +200,6 @@ cc_test(
     size = "small",
     srcs = ["path_normalization_test.cc"],
     enclave_test_name = "enclave_path_normalization_test",
-    tags = ["regression"],
     deps = [
         ":util",
         "//asylo/test/util:test_main",
@@ -221,7 +212,6 @@ cc_test(
     name = "inotify_test",
     srcs = ["inotify_test.cc"],
     enclave_test_name = "inotify_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",

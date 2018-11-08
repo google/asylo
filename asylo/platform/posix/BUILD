@@ -119,7 +119,6 @@ cc_library(
 cc_enclave_test(
     name = "bswap_test",
     srcs = ["bswap_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -129,7 +128,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "errno_test",
     srcs = ["errno_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -161,7 +159,6 @@ cc_test(
     name = "select_test",
     srcs = ["select_test.cc"],
     enclave_test_name = "select_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:status_matchers",
@@ -176,7 +173,6 @@ enclave_test(
     name = "syscalls_test",
     srcs = ["syscalls_test_driver.cc"],
     enclaves = {"enclave": ":syscalls_test.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":syscalls_test_proto_cc",
@@ -195,7 +191,6 @@ enclave_test(
 cc_enclave_test(
     name = "times_test",
     srcs = ["times_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],

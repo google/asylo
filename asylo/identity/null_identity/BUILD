@@ -77,7 +77,6 @@ cc_test(
         "null_assertion_verifier.h",
     ],
     enclave_test_name = "null_assertion_authority_enclave_test",
-    tags = ["regression"],
     deps = [
         ":null_assertion_generator",
         ":null_assertion_verifier",
@@ -120,7 +119,6 @@ cc_test(
         "null_identity_expectation_matcher_test.cc",
     ],
     enclave_test_name = "null_identity_expectation_matcher_enclave_test",
-    tags = ["regression"],
     deps = [
         ":null_identity_constants",
         ":null_identity_expectation_matcher",

@@ -94,7 +94,6 @@ cc_test(
     name = "assertion_description_test",
     srcs = ["assertion_description_test.cc"],
     enclave_test_name = "assertion_description_enclave_test",
-    tags = ["regression"],
     deps = [
         ":assertion_description",
         "//asylo/identity:identity_proto_cc",
@@ -122,7 +121,6 @@ cc_test(
     name = "transcript_test",
     srcs = ["transcript_test.cc"],
     enclave_test_name = "transcript_enclave_test",
-    tags = ["regression"],
     deps = [
         ":transcript",
         "//asylo/crypto:hash_interface",
@@ -171,7 +169,6 @@ cc_test(
     name = "ekep_crypto_test",
     srcs = ["ekep_crypto_test.cc"],
     enclave_test_name = "ekep_crypto_enclave_test",
-    tags = ["regression"],
     deps = [
         ":ekep_crypto",
         ":ekep_error_space",
@@ -279,7 +276,6 @@ cc_test(
     name = "ekep_handshaker_util_test",
     srcs = ["ekep_handshaker_util_test.cc"],
     enclave_test_name = "ekep_handshaker_util_enclave_test",
-    tags = ["regression"],
     deps = [
         ":ekep_handshaker",
         ":ekep_handshaker_util",

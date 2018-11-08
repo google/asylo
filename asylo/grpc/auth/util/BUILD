@@ -38,7 +38,6 @@ cc_library(
 cc_test(
     name = "safe_string_test",
     srcs = ["safe_string_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/grpc/auth/util:safe_string",
         "//asylo/test/util:test_main",
@@ -66,7 +65,6 @@ cc_test(
     srcs = ["bridge_cpp_to_c_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "bridge_cpp_to_c_enclave_test",
-    tags = ["regression"],
     deps = [
         ":bridge_cpp_to_c",
         "//asylo/grpc/auth:enclave_credentials_options",

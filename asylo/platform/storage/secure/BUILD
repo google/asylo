@@ -84,7 +84,6 @@ cc_library(
 cc_enclave_test(
     name = "enclave_storage_secure_test",
     srcs = ["enclave_storage_secure_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",

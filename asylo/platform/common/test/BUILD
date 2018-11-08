@@ -38,7 +38,6 @@ enclave_test(
     name = "bridge_types_test",
     srcs = ["bridge_types_test_driver.cc"],
     enclaves = {"enclave": ":bridge_types_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":bridge_types_test_data",

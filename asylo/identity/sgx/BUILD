@@ -117,7 +117,6 @@ cc_test(
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_generator_test.cc",
     ],
-    tags = ["regression"],
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
@@ -170,7 +169,6 @@ cc_test(
         "sgx_local_assertion_verifier.h",
         "sgx_local_assertion_verifier_test.cc",
     ],
-    tags = ["regression"],
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
@@ -201,7 +199,6 @@ cc_test(
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_verifier.h",
     ],
-    tags = ["regression"],
     deps = [
         ":code_identity_proto_cc",
         ":code_identity_util",
@@ -321,7 +318,6 @@ cc_test(
         "sgx_code_identity_expectation_matcher.h",
         "sgx_code_identity_expectation_matcher_test.cc",
     ],
-    tags = ["regression"],
     deps = [
         ":code_identity_constants",
         ":code_identity_proto_cc",
@@ -356,7 +352,6 @@ cc_test(
     name = "secs_attributes_test",
     srcs = ["secs_attributes_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         ":hardware_types",
         "//asylo/crypto/util:trivial_object_util",
@@ -405,7 +400,6 @@ cc_library(
 cc_test(
     name = "fake_hardware_interface_test",
     srcs = ["fake_hardware_interface_test.cc"],
-    tags = ["regression"],
     deps = [
         ":code_identity_util",
         ":hardware_interface",
@@ -423,7 +417,6 @@ cc_test(
 cc_enclave_test(
     name = "verify_hardware_report_test",
     srcs = ["verify_hardware_report_test.cc"],
-    tags = ["regression"],
     deps = [
         ":code_identity_util",
         ":hardware_interface",
@@ -483,7 +476,6 @@ cc_library(
 cc_test(
     name = "sgx_local_secret_sealer_test",
     srcs = ["sgx_local_secret_sealer_test.cc"],
-    tags = ["regression"],
     deps = [
         ":code_identity_proto_cc",
         ":code_identity_util",

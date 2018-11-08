@@ -38,7 +38,6 @@ load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 cc_enclave_test(
     name = "gtest_test",
     srcs = ["gtest_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],

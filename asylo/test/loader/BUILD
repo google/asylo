@@ -36,7 +36,6 @@ enclave_test(
     name = "enclave_address_test",
     srcs = ["enclave_address_test_driver.cc"],
     enclaves = {"enclave": "//asylo/test/util:do_nothing_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo:enclave_client",

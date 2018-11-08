@@ -53,7 +53,6 @@ cc_test(
     srcs = ["grpc_server_launcher_test.cc"],
     enclave_test_config = ":grpc_enclave_config",
     enclave_test_name = "grpc_server_launcher_enclave_test",
-    tags = ["regression"],
     deps = [
         ":grpc_server_launcher",
         "//asylo/test/grpc:messenger_client_impl",

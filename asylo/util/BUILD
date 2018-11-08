@@ -184,7 +184,6 @@ cc_test(
     name = "status_test",
     srcs = ["status_test.cc"],
     enclave_test_name = "status_enclave_test",
-    tags = ["regression"],
     deps = [
         ":status",
         "//asylo/test/util:status_matchers",
@@ -204,7 +203,6 @@ cc_test(
         "statusor_test.cc",
     ],
     enclave_test_name = "statusor_enclave_test",
-    tags = ["regression"],
     deps = [
         ":status",
         "//asylo/platform/common:static_map",
@@ -218,7 +216,6 @@ cc_test(
 cc_test(
     name = "status_macros_test",
     srcs = ["status_macros_test.cc"],
-    tags = ["regression"],
     deps = [
         ":status",
         "//asylo/test/util:status_matchers",
@@ -247,7 +244,6 @@ cc_test(
         "cleansing_allocator_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
@@ -265,7 +261,6 @@ cc_test(
         "error_space.h",
         "error_space_test.cc",
     ],
-    tags = ["regression"],
     deps = [
         ":status",
         "//asylo/platform/common:static_map",
@@ -278,7 +273,6 @@ cc_test(
 cc_test(
     name = "posix_error_space_test",
     srcs = ["posix_error_space_test.cc"],
-    tags = ["regression"],
     deps = [
         ":status",
         "//asylo/test/util:test_main",
@@ -307,7 +301,6 @@ cc_test(
     name = "path_test",
     srcs = ["path_test.cc"],
     enclave_test_name = "path_enclave_test",
-    tags = ["regression"],
     deps = [
         ":path",
         "//asylo/test/util:test_main",

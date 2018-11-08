@@ -141,7 +141,6 @@ enclave_test(
     name = "domain_socket_test",
     srcs = ["domain_socket_test_driver.cc"],
     enclaves = {"enclave": ":domain_socket_test_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":socket_client",
@@ -179,7 +178,6 @@ enclave_test(
     name = "inet6_socket_test",
     srcs = ["inet6_socket_test_driver.cc"],
     enclaves = {"enclave": ":inet6_socket_test_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":socket_client",
@@ -210,7 +208,6 @@ enclave_test(
     name = "addrinfo_test",
     srcs = ["addrinfo_test_driver.cc"],
     enclaves = {"enclave": ":addrinfo_test_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":socket_test_proto_cc",
@@ -225,7 +222,6 @@ cc_test(
     name = "inet_pton_test",
     srcs = ["inet_pton_test.cc"],
     enclave_test_name = "inet_pton_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -236,7 +232,6 @@ cc_test(
     name = "inet_aton_test",
     srcs = ["inet_aton_test.cc"],
     enclave_test_name = "inet_aton_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

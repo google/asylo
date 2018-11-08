@@ -52,7 +52,6 @@ cc_library(
 cc_enclave_test(
     name = "gcm_cryptor_test",
     srcs = ["gcm_cryptor_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],

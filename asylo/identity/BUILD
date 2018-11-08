@@ -68,7 +68,6 @@ cc_library(
 cc_test(
     name = "init_test",
     srcs = ["init_test.cc"],
-    tags = ["regression"],
     deps = [
         ":enclave_assertion_authority_config_proto_cc",
         ":init",
@@ -138,7 +137,6 @@ cc_library(
 cc_test(
     name = "identity_expectation_matcher_test",
     srcs = ["identity_expectation_matcher_test.cc"],
-    tags = ["regression"],
     deps = [
         ":identity_expectation_matcher",
         ":identity_proto_cc",

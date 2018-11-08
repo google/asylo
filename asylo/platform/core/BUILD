@@ -185,7 +185,6 @@ cc_test(
     name = "enclave_clock_test",
     srcs = ["enclave_clock_test.cc"],
     tags = [
-        "regression",
     ],
     deps = [
         ":shared_resource_manager",

@@ -74,7 +74,6 @@ genrule(
 py_test(
     name = "code_generator_test",
     srcs = ["code_generator_test.py"],
-    tags = ["regression"],
     deps = [
         ":code_generator",
     ],

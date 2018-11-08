@@ -108,7 +108,6 @@ cc_library(
 cc_test(
     name = "enclave_auth_context_test",
     srcs = ["enclave_auth_context_test.cc"],
-    tags = ["regression"],
     deps = [
         ":enclave_auth_context",
         "//asylo/grpc/auth/core:grpc_security_enclave",

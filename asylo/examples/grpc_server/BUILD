@@ -100,7 +100,6 @@ enclave_test(
     srcs = ["grpc_server_test.cc"],
     data = [":grpc_server_host_loader"],
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{server_enclave}'"],
     deps = [
         ":translator_server_grpc_proto",

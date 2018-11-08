@@ -154,7 +154,6 @@ enclave_test(
     name = "enclave_smoke_test",
     srcs = ["hello_world_test.cc"],
     enclaves = {"enclave": ":test_enclave_smoke.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )
@@ -162,7 +161,6 @@ enclave_test(
 cc_enclave_test(
     name = "threaded_test",
     srcs = ["threaded_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -199,7 +197,6 @@ enclave_test(
 cc_enclave_test(
     name = "threaded_test_in_initialize",
     srcs = ["threaded_test.cc"],
-    tags = ["regression"],
     test_in_initialize = True,
     deps = [
         "@com_google_absl//absl/strings",
@@ -210,7 +207,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "rdrand_test",
     srcs = ["rdrand_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -219,7 +215,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "nanosleep_test",
     srcs = ["nanosleep_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -228,7 +223,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "malloc_stress_test",
     srcs = ["malloc_stress_test.cc"],
-    tags = ["regression"],
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -251,7 +245,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "mutex_test",
     srcs = ["mutex_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
@@ -280,7 +273,6 @@ cc_test(
     name = "raise_signal_test",
     srcs = ["raise_signal_test.cc"],
     enclave_test_name = "raise_signal_enclave_test",
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -291,7 +283,6 @@ enclave_test(
     name = "active_enclave_signal_test",
     srcs = ["active_enclave_signal_test_driver.cc"],
     enclaves = {"enclave": "active_enclave_signal_test.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_proto_cc",
@@ -304,7 +295,6 @@ enclave_test(
     name = "inactive_enclave_signal_test",
     srcs = ["inactive_enclave_signal_test_driver.cc"],
     enclaves = {"enclave": "inactive_enclave_signal_test.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":signal_test_proto_cc",
@@ -315,7 +305,6 @@ enclave_test(
     name = "error_propagation_test",
     srcs = ["error_propagation_test.cc"],
     enclaves = {"enclave": ":error_propagation_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )
@@ -324,7 +313,6 @@ enclave_test(
     name = "logging_test",
     srcs = ["logging_test_driver.cc"],
     enclaves = {"enclave": ":logging.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo/test/util:test_flags",
@@ -351,7 +339,6 @@ enclave_test(
     srcs = ["die_test.cc"],
     data = [":double_die_host_bin"],
     enclaves = {"enclave": ":die.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo/test/util:exec_tester",
@@ -378,7 +365,6 @@ enclave_test(
     srcs = ["exception_test.cc"],
     data = [":exception_app_host_bin"],
     enclaves = {"enclave": ":exception.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":exception",

@@ -35,7 +35,6 @@ asylo_proto_library(
 cc_enclave_test(
     name = "random_test",
     srcs = ["random_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/platform/posix/io:io_manager",
         "@boringssl//:crypto",
@@ -60,7 +59,6 @@ enclave_test(
     name = "proto_test",
     srcs = ["proto_test_driver.cc"],
     enclaves = {"enclave": ":test_proto.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":config_test_proto_cc",
@@ -87,7 +85,6 @@ enclave_test(
     name = "getenv_test",
     srcs = ["getenv_test_driver.cc"],
     enclaves = {"enclave": ":getenv_test_enclave.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":config_test_proto_cc",
@@ -115,7 +112,6 @@ enclave_test(
     name = "enclave_api_test",
     srcs = ["enclave_api_test_driver.cc"],
     enclaves = {"enclave": ":enclave_api_test_proto.so"},
-    tags = ["regression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":config_test_proto_cc",
@@ -131,7 +127,6 @@ enclave_test(
 cc_test(
     name = "shared_resource_test",
     srcs = ["shared_resource_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/platform/core:untrusted_core",
         "//asylo/test/util:test_main",
@@ -148,7 +143,6 @@ cc_enclave_test(
     name = "lock_test",
     srcs = ["lock_test.cc"],
     enclave_config = ":many_threads_enclave_config",
-    tags = ["regression"],
     deps = [
         "//asylo/platform/core:trusted_mutex",
         "//asylo/platform/core:trusted_spin_lock",

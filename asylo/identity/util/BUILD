@@ -33,7 +33,6 @@ cc_library(
 cc_test(
     name = "aligned_object_ptr_test",
     srcs = ["aligned_object_ptr_test.cc"],
-    tags = ["regression"],
     deps = [
         ":aligned_object_ptr",
         "//asylo/test/util:test_main",
@@ -61,7 +60,6 @@ cc_library(
 cc_test(
     name = "bit_vector_128_util_test",
     srcs = ["bit_vector_128_util_test.cc"],
-    tags = ["regression"],
     deps = [
         ":bit_vector_128_proto_cc",
         ":bit_vector_128_util",
@@ -91,7 +89,6 @@ cc_library(
 cc_test(
     name = "sha256_hash_util_test",
     srcs = ["sha256_hash_util_test.cc"],
-    tags = ["regression"],
     deps = [
         ":sha256_hash_proto_cc",
         ":sha256_hash_util",
