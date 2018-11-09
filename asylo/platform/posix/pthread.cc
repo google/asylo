@@ -596,7 +596,7 @@ int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
     return ConvertToErrno(ENOSYS);
   }
 
-  sem->_count = value;
+  sem->count_ = value;
 
   ret = pthread_mutex_init(&sem->mu_, nullptr);
   if (ret != 0) {
@@ -628,7 +628,7 @@ int sem_getvalue(sem_t *sem, int *sval) {
     return ConvertToErrno(ret);
   }
 
-  *sval = sem->_count;
+  *sval = sem->count_;
 
   return ConvertToErrno(pthread_mutex_unlock(&sem->mu_));
 }
@@ -645,7 +645,7 @@ int sem_post(sem_t *sem) {
     return ConvertToErrno(ret);
   }
 
-  sem->_count++;
+  sem->count_++;
   ret = pthread_cond_signal(&sem->cv_);
   int unlock_ret = pthread_mutex_unlock(&sem->mu_);
 
@@ -680,7 +680,7 @@ int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
     return ConvertToErrno(ret);
   }
 
-  while (sem->_count == 0) {
+  while (sem->count_ == 0) {
     ret = pthread_cond_timedwait(&sem->cv_, &sem->mu_, abs_timeout);
 
     if (ret != 0) {
@@ -691,7 +691,7 @@ int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
   // If the pthread_cond_timedwait succeeds, reduce the semaphore count by one,
   // unlock the mutex, and return any error that might arise from the unlocking.
   if (ret == 0) {
-    sem->_count--;
+    sem->count_--;
     return ConvertToErrno(pthread_mutex_unlock(&sem->mu_));
   }
 

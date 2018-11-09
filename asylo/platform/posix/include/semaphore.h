@@ -27,7 +27,7 @@ extern "C" {
 #endif
 
 typedef struct sem_t {
-  int _count;
+  int count_;
   pthread_mutex_t mu_;
   pthread_cond_t cv_;
 } sem_t;
