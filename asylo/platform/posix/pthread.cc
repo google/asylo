@@ -750,6 +750,24 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *mutexattr, int type) {
 int pthread_attr_init(pthread_attr_t *attr) { return 0; }
 int pthread_attr_destroy(pthread_attr_t *attr) { return 0; }
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) { return 0; }
+int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy) {
+  return ENOSYS;
+}
+int pthread_attr_setschedpolicy(pthread_attr_t *attr, int policy) {
+  return ENOSYS;
+}
+int pthread_attr_getscope(const pthread_attr_t *attr, int *scope) {
+  return ENOSYS;
+}
+int pthread_attr_setscope(pthread_attr_t *attr, int scope) { return ENOSYS; }
+int pthread_attr_getschedparam(const pthread_attr_t *attr,
+                               struct sched_param *param) {
+  return ENOSYS;
+}
+int pthread_attr_setschedparam(pthread_attr_t *attr,
+                               const struct sched_param *param) {
+  return ENOSYS;
+}
 int pthread_attr_getstacksize(const pthread_attr_t *attr, size_t *stacksize) {
   return ENOSYS;
 }
