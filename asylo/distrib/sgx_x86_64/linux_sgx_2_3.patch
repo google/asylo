@@ -199,6 +199,25 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   first ecall of the tcs and is prviate in `is_ecall_allowed`.
   `sdk/trts/trts_internal.h` add `uint8_t is_utility` to `struct
   ecall_addr_t`.
+* Provide SGXAPI to expose enclave data/bss/stack/heap/thread address and size.
+  `common/inc/sgx_trts.h` add a struct `MemoryLayout` that includes
+  address and size for data, bss, heap, thread, and stack, also add a
+  `sgx_memory_layout(struct MemoryLayout *memory_layout)` API.
+  `common/inc/internal/global_data.h` add `sys_word_t` fileds
+  `data_offset`, `data_size`, `bss_offset`, `bss_size` to `struct
+  global_data_t`.
+  `psw/urts/parser/elfparser.cpp` in `update_global_data`, read the
+  section of `ELF_DATA` and `ELF_BSS`, save the corresponding address and size
+  to `data`.
+  `sdk/trts/init_enclave.cpp` add the 4 new fields initialization to
+  `g_global_data`.
+  `sdk/trts/trts.cpp` include `trts_util.h` header, and provide
+  implementation for `sgx_memory_layout` by calling `get_memory_layout`.
+  `sdk/trts/trts_util.h` provide declaration of `get_memory_layout`.
+  `sdk/trts/trts_util.h` provide implementation for `get_memory_layout` by
+  getting the address and size of data/bss/heap from `global_data`, and get
+  thread and stack from `thread_data`.
+
 
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
@@ -227,6 +246,20 @@ diff -Nur common/inc/internal/elfheader/elfstructs.h common/inc/internal/elfhead
  typedef uint8_t		Elf_Byte;
  
  typedef uint32_t	Elf32_Addr;	/* Unsigned program address */
+diff -Nur common/inc/internal/global_data.h common/inc/internal/global_data.h
+--- common/inc/internal/global_data.h
++++ common/inc/internal/global_data.h
+@@ -50,6 +50,10 @@
+     sys_word_t     enclave_size;
+     sys_word_t     heap_offset;
+     sys_word_t     heap_size;
++    sys_word_t     data_offset;
++    sys_word_t     data_size;
++    sys_word_t     bss_offset;
++    sys_word_t     bss_size;
+     sys_word_t     thread_policy;
+     thread_data_t  td_template;
+     uint8_t        tcs_template[TCS_TEMPLATE_SIZE];
 diff -Nur common/inc/internal/metadata.h common/inc/internal/metadata.h
 --- common/inc/internal/metadata.h
 +++ common/inc/internal/metadata.h
@@ -387,6 +420,43 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  #include "sgx_error.h"
  #include "stddef.h"
  #include "sgx_defs.h"
+@@ -82,6 +83,36 @@
+ */
+ sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
+ 
++struct MemoryLayout {
++    // Base address of the initialized data section in the current enclave.
++    void *data_base;
++    // Size of the initialized data section in the current enclave.
++    size_t data_size;
++    // Base address of the uninitialized data section in the current enclave.
++    void *bss_base;
++    // Size of the uninitialized data section in the current enclave.
++    size_t bss_size;
++    // Base address of heap in the current enclave.
++    void *heap_base;
++    // size of heap in the current enclave.
++    size_t heap_size;
++    // Base address of the thread data for the current tcs.
++    void *thread_base;
++    // Size of the thread data for the current tcs.
++    size_t thread_size;
++    // Base address of the stack for the current tcs.
++    void *stack_base;
++    // Limit address of the stack for the current tcs.
++    void *stack_limit;
++};
++
++/* sgx_memory_layout()
++ * Parameters:
++ *      memory_layout - Receives the memory layout of the current enclave
++ *      (data/bss/heap) and for current tcs(thread data/stack).
++*/
++void SGXAPI sgx_memory_layout(struct MemoryLayout *memory_layout);
++
+ #ifdef __cplusplus
+ }
+ #endif
 diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
 --- common/inc/sgx_urts.h
 +++ common/inc/sgx_urts.h
@@ -1395,7 +1465,26 @@ diff -Nur psw/urts/parser/elfparser.cpp psw/urts/parser/elfparser.cpp
  {
      if (sec_name == NULL)
          return;
-@@ -859,7 +859,7 @@
+@@ -844,6 +844,18 @@
+         return false;
+     }
+     *data_size = sizeof(global_data_t);
++
++    // Record the data and bss section address and size.
++    global_data_t *global_data = reinterpret_cast<global_data_t *>(data);
++    const ElfW(Ehdr) *elf_hdr = reinterpret_cast<const ElfW(Ehdr) *>(m_start_addr);
++    const ElfW(Shdr) *shdr = get_section_by_name(elf_hdr, ELF_DATA);
++    global_data->data_offset = static_cast<sys_word_t>(shdr->sh_addr);
++    global_data->data_size = static_cast<sys_word_t>(shdr->sh_size);
++
++    shdr = get_section_by_name(elf_hdr, ELF_BSS);
++    global_data->bss_offset = static_cast<sys_word_t>(shdr->sh_addr);
++    global_data->bss_size = static_cast<sys_word_t>(shdr->sh_size);
++
+     return do_update_global_data(metadata, create_param, (global_data_t *)data);
+ }
+ 
+@@ -859,7 +871,7 @@
      return SGX_SUCCESS;
  }
  
@@ -2588,6 +2677,15 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
  #include "trts_util.h"
  #include "se_memcpy.h"
  
+@@ -55,7 +56,7 @@
+ int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
+ sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
+ 
+-const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4,
++const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6, 7, 8,
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
+ uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
+ 
 @@ -197,7 +198,7 @@
      else
  #endif
@@ -2623,14 +2721,23 @@ diff -Nur sdk/trts/linux/x86_64/setcontext.S sdk/trts/linux/x86_64/setcontext.S
 diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
 --- sdk/trts/trts.cpp
 +++ sdk/trts/trts.cpp
-@@ -39,6 +39,7 @@
+@@ -39,6 +39,8 @@
  #include "global_data.h"
  #include "trts_internal.h"
  #include "internal/rts.h"
 +#include "rts_config.h"
++#include "trts_util.h"
  
  #ifdef SE_SIM
  #include "t_instructions.h"    /* for `g_global_data_sim' */
+@@ -318,3 +320,7 @@
+     return 0;
+ }
+ 
++void sgx_memory_layout(struct MemoryLayout *memory_layout)
++{
++    get_memory_layout(memory_layout);
++}
 diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
 --- sdk/trts/trts_ecall.cpp
 +++ sdk/trts/trts_ecall.cpp
@@ -2743,6 +2850,61 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
  
  
  #endif
+diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
+--- sdk/trts/trts_util.cpp
++++ sdk/trts/trts_util.cpp
+@@ -30,6 +30,7 @@
+  */
+ 
+ 
++#include "trts_internal.h"
+ #include "trts_util.h"
+ #include "global_data.h"
+ #include "util.h"
+@@ -72,6 +73,24 @@
+     return heap_size;
+ }
+ 
++void get_memory_layout(struct MemoryLayout *memory_layout)
++{
++    // Enclave initialized data/uninitialized data/heap.
++    memory_layout->data_base = GET_PTR(void, &__ImageBase, g_global_data.data_offset);
++    memory_layout->data_size = static_cast<size_t>(g_global_data.data_size);
++    memory_layout->bss_base = GET_PTR(void, &__ImageBase, g_global_data.bss_offset);
++    memory_layout->bss_size = static_cast<size_t>(g_global_data.bss_size);
++    memory_layout->heap_base = get_heap_base();
++    memory_layout->heap_size = get_heap_size();
++
++    // Current tcs thread data/stack.
++    thread_data_t *thread_data = get_thread_data();
++    memory_layout->thread_base = reinterpret_cast<void *>(thread_data);
++    memory_layout->thread_size = sizeof(thread_data_t);
++    memory_layout->stack_base = reinterpret_cast<void *>(thread_data->stack_base_addr + static_cast<size_t>(STATIC_STACK_SIZE));
++    memory_layout->stack_limit = reinterpret_cast<void *>(thread_data->stack_limit_addr);
++}
++
+ int * get_errno_addr(void)
+ {
+     thread_data_t *thread_data = get_thread_data();
+diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
+--- sdk/trts/trts_util.h
++++ sdk/trts/trts_util.h
+@@ -36,6 +36,7 @@
+ #include <stddef.h>    /* for size_t */
+ #include <stdbool.h>
+ #include "se_types.h"
++#include "sgx_trts.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
+@@ -44,6 +45,7 @@
+ void * get_heap_base(void);
+ size_t get_heap_size(void);
+ size_t get_heap_min_size(void);
++void get_memory_layout(struct MemoryLayout *memory_layout);
+ int * get_errno_addr(void);
+ bool is_stack_addr(void *address, size_t size);
+ bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
 @@ -0,0 +1,1171 @@
