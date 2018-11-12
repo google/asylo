@@ -27,7 +27,6 @@ package_group(
     packages = [
         "-//asylo/examples/...",
         "//asylo/...",
-        "//third_party/unsupported_toolchains/enclave/toolchains",
     ],
 )
 

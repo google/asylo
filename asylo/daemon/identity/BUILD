@@ -16,10 +16,6 @@
 
 licenses(["notice"])  # Apache v2.0
 
-package(
-    default_visibility = ["//asylo:implementation"],
-)
-
 load(
     "//asylo/bazel:proto.bzl",
     "asylo_grpc_proto_library",
@@ -52,6 +48,7 @@ cc_library(
     name = "attestation_domain_service_impl",
     srcs = ["attestation_domain_service_impl.cc"],
     hdrs = ["attestation_domain_service_impl.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":attestation_domain",
         ":attestation_domain_grpc_proto",
@@ -64,6 +61,7 @@ cc_library(
     name = "attestation_domain_client",
     srcs = ["attestation_domain_client.cc"],
     hdrs = ["attestation_domain_client.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":attestation_domain_grpc_proto",
         "//asylo/util:status",
