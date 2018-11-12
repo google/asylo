@@ -76,6 +76,32 @@ inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
   return 0;
 }
 
+// Provides an RAII wrapper around pthread_mutex_t. Aborts on errors, so should
+// only be used for locks that are internal to pthread.cc, where errors indicate
+// internal implementation errors. Should not be used for user-provided mutexes
+// so that we don't abort internally due to application error.
+class PthreadMutexLock {
+ public:
+  PthreadMutexLock(pthread_mutex_t *mutex) : mutex_(mutex) {
+    int ret = pthread_mutex_lock(mutex_);
+    if (ret != 0) {
+      LOG(FATAL) << "Can't lock mutex: " << ret;
+      abort();
+    }
+  }
+
+  ~PthreadMutexLock() {
+    int ret = pthread_mutex_unlock(mutex_);
+    if (ret != 0) {
+      LOG(FATAL) << "Can't unlock mutex: " << ret;
+      abort();
+    }
+  }
+
+ private:
+  pthread_mutex_t *const mutex_;
+};
+
 // Provides RAII wrapper around pthread_spinlock_t.
 class SpinLock {
  public:
@@ -256,6 +282,7 @@ using asylo::pthread_impl::init_tls_map;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
 using asylo::pthread_impl::PthreadListWrapper;
+using asylo::pthread_impl::PthreadMutexLock;
 using asylo::pthread_impl::SpinLock;
 using asylo::pthread_impl::tls_map;
 
@@ -288,13 +315,8 @@ int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   static pthread_key_t next_key = 0;
   static pthread_mutex_t next_key_lock = PTHREAD_MUTEX_INITIALIZER;
 
-  if (pthread_mutex_lock(&next_key_lock) != 0) {
-    abort();
-  }
+  PthreadMutexLock lock(&next_key_lock);
   *key = next_key++;
-  if (pthread_mutex_unlock(&next_key_lock) != 0) {
-    abort();
-  }
   return 0;
 }
 
@@ -417,17 +439,12 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
 
 // Runs the given |init_routine| exactly once.
 int pthread_once(pthread_once_t *once, void (*init_routine)(void)) {
-  int ret = pthread_mutex_lock(&once->_mutex);
-  if (ret != 0) {
-    return ret;
-  }
-
+  PthreadMutexLock lock(&once->_mutex);
   if (!once->_ran) {
     init_routine();
     once->_ran = true;
   }
-
-  return pthread_mutex_unlock(&once->_mutex);
+  return 0;
 }
 
 // Initializes |cond|, |attr| is unused.
@@ -623,14 +640,9 @@ int sem_getvalue(sem_t *sem, int *sval) {
     return ConvertToErrno(ret);
   }
 
-  ret = pthread_mutex_lock(&sem->mu_);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
-  }
-
+  PthreadMutexLock lock(&sem->mu_);
   *sval = sem->count_;
-
-  return ConvertToErrno(pthread_mutex_unlock(&sem->mu_));
+  return 0;
 }
 
 // Unlock |sem|, unblocking a thread that might be waiting for it.
@@ -640,22 +652,9 @@ int sem_post(sem_t *sem) {
     return ConvertToErrno(ret);
   }
 
-  ret = pthread_mutex_lock(&sem->mu_);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
-  }
-
+  PthreadMutexLock lock(&sem->mu_);
   sem->count_++;
-  ret = pthread_cond_signal(&sem->cv_);
-  int unlock_ret = pthread_mutex_unlock(&sem->mu_);
-
-  // If pthread_cond_signal fails, return that error. Otherwise, return the
-  // error from trying to unlock the mutex. We must unlock the mutex even if
-  // we fail to signal.
-  if (ret != 0) {
-    return ConvertToErrno(ret);
-  }
-  return ConvertToErrno(unlock_ret);
+  return ConvertToErrno(pthread_cond_signal(&sem->cv_));
 }
 
 // Wait for |sem| to be unlocked until the time specified by |abs_timeout|. If
@@ -675,10 +674,7 @@ int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
     }
   }
 
-  ret = pthread_mutex_lock(&sem->mu_);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
-  }
+  PthreadMutexLock lock(&sem->mu_);
 
   while (sem->count_ == 0) {
     ret = pthread_cond_timedwait(&sem->cv_, &sem->mu_, abs_timeout);
@@ -692,13 +688,11 @@ int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
   // unlock the mutex, and return any error that might arise from the unlocking.
   if (ret == 0) {
     sem->count_--;
-    return ConvertToErrno(pthread_mutex_unlock(&sem->mu_));
+    return 0;
   }
 
   // pthread_cond_timedwait failed. We don't decrease the semaphore value and
-  // return whatever retval came from pthread_cond_timedwait. This means we drop
-  // any error that might arise from unlocking the mutex.
-  pthread_mutex_unlock(&sem->mu_);
+  // return whatever retval came from pthread_cond_timedwait.
   return ConvertToErrno(ret);
 }
 
