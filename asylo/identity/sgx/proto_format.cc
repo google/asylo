@@ -23,11 +23,11 @@
 
 #include <google/protobuf/descriptor.h>
 #include <google/protobuf/text_format.h>
+#include "absl/memory/memory.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_join.h"
-#include "absl/memory/memory.h"
+#include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
-#include "asylo/identity/util/bit_vector_128.pb.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 
 namespace asylo {
@@ -46,55 +46,55 @@ class BytesPrinter : public TextFormat::FastFieldValuePrinter {
 };
 
 // A FieldValuePrinter that prints the name of each ATTRIBUTE bit that is set in
-// the lower 64 bits of ATTRIBUTES.
-class AttributesLowPrinter : public TextFormat::FastFieldValuePrinter {
+// the lower 64 bits of ATTRIBUTES (the flags bits).
+class AttributesFlagsPrinter : public TextFormat::FastFieldValuePrinter {
  public:
   void PrintUInt64(uint64_t value,
                    TextFormat::BaseTextGenerator *generator) const override {
-    BitVector128 attributes;
-    attributes.set_low(value);
-    attributes.set_high(0);
+  Attributes attributes;
+  attributes.set_flags(value);
+  attributes.set_xfrm(0);
 
-    generator->PrintLiteral("[");
+  generator->PrintLiteral("[");
 
-    std::vector<std::string> printable_attributes;
-    GetPrintableAttributeList(attributes, &printable_attributes);
-    generator->PrintString(absl::StrJoin(printable_attributes, ", "));
+  std::vector<std::string> printable_attributes;
+  GetPrintableAttributeList(attributes, &printable_attributes);
+  generator->PrintString(absl::StrJoin(printable_attributes, ", "));
 
-    generator->PrintLiteral("]");
+  generator->PrintLiteral("]");
   }
 };
 
 // A FieldValuePrinter that prints the name of each ATTRIBUTE bit that is set in
-// the upper 64 bits of ATTRIBUTES.
-class AttributesHighPrinter : public TextFormat::FastFieldValuePrinter {
+// the upper 64 bits of ATTRIBUTES (the XFRM bits).
+class AttributesXfrmPrinter : public TextFormat::FastFieldValuePrinter {
  public:
   void PrintUInt64(uint64_t value,
                    TextFormat::BaseTextGenerator *generator) const override {
-    BitVector128 attributes;
-    attributes.set_low(0);
-    attributes.set_high(value);
+  Attributes attributes;
+  attributes.set_flags(0);
+  attributes.set_xfrm(value);
 
-    generator->PrintLiteral("[");
+  generator->PrintLiteral("[");
 
-    std::vector<std::string> printable_attributes;
-    GetPrintableAttributeList(attributes, &printable_attributes);
-    generator->PrintString(absl::StrJoin(printable_attributes, ", "));
+  std::vector<std::string> printable_attributes;
+  GetPrintableAttributeList(attributes, &printable_attributes);
+  generator->PrintString(absl::StrJoin(printable_attributes, ", "));
 
-    generator->PrintLiteral("]");
+  generator->PrintLiteral("]");
   }
 };
 
 std::unique_ptr<TextFormat::Printer> CreateSgxCodeIdentityPrinter() {
   auto printer = absl::make_unique<TextFormat::Printer>();
-  const google::protobuf::Descriptor *descriptor = BitVector128::descriptor();
+  const google::protobuf::Descriptor *descriptor = Attributes::descriptor();
 
   // Register a special printer for the fields that make up the enclave's
   // ATTRIBUTES. The printer prints the name of each ATTRIBUTE bit that is set.
-  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("low"),
-                                     new AttributesLowPrinter());
-  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("high"),
-                                     new AttributesHighPrinter());
+  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("flags"),
+                                     new AttributesFlagsPrinter());
+  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("xfrm"),
+                                     new AttributesXfrmPrinter());
 
   // Register a special printer for the Sha256Hash proto that prints the hash
   // value in hex.

@@ -26,7 +26,7 @@
 #include <vector>
 
 #include "asylo/util/logging.h"
-#include "asylo/identity/util/bit_vector_128.pb.h"
+#include "asylo/identity/sgx/attributes.pb.h"
 
 #ifndef arraysize
 #define arraysize(arr) (sizeof(arr) / sizeof(arr[0]))
@@ -210,8 +210,8 @@ bool ConvertSecsAttributeRepresentation(
 
 bool ConvertSecsAttributeRepresentation(
     const std::vector<SecsAttributeBit> &attribute_list,
-    BitVector128 *bit_vector) {
-  bit_vector->Clear();
+    Attributes *attributes) {
+  attributes->Clear();
   for (SecsAttributeBit attribute : attribute_list) {
     size_t bit_position = static_cast<size_t>(attribute);
     if (bit_position >= kNumSecsAttributeBits) {
@@ -221,9 +221,9 @@ bool ConvertSecsAttributeRepresentation(
       return false;
     }
     if (bit_position < kNumFlagsBits) {
-      bit_vector->set_low(bit_vector->low() | (1ULL << bit_position));
+      attributes->set_flags(attributes->flags() | (1ULL << bit_position));
     } else {
-      bit_vector->set_high(bit_vector->high() |
+      attributes->set_xfrm(attributes->xfrm() |
                            (1ULL << (bit_position - kNumFlagsBits)));
     }
   }
@@ -231,16 +231,16 @@ bool ConvertSecsAttributeRepresentation(
 }
 
 bool ConvertSecsAttributeRepresentation(
-    const BitVector128 &bit_vector,
+    const Attributes &attributes,
     std::vector<SecsAttributeBit> *attribute_list) {
   attribute_list->clear();
   for (uint32_t i = 0; i < kNumFlagsBits; i++) {
-    if (bit_vector.low() & (1ULL << i)) {
+    if (attributes.flags() & (1ULL << i)) {
       attribute_list->push_back(static_cast<SecsAttributeBit>(i));
     }
   }
   for (uint32_t i = 0; i < kNumXfrmBits; i++) {
-    if (bit_vector.high() & (1ULL << i)) {
+    if (attributes.xfrm() & (1ULL << i)) {
       attribute_list->push_back(
           static_cast<SecsAttributeBit>(i + kNumFlagsBits));
     }
@@ -248,22 +248,22 @@ bool ConvertSecsAttributeRepresentation(
   return true;
 }
 
-bool ConvertSecsAttributeRepresentation(const SecsAttributeSet &attributes,
-                                        BitVector128 *bit_vector) {
-  bit_vector->set_low(attributes.flags);
-  bit_vector->set_high(attributes.xfrm);
+bool ConvertSecsAttributeRepresentation(const SecsAttributeSet &attributes_set,
+                                        Attributes *attributes) {
+  attributes->set_flags(attributes_set.flags);
+  attributes->set_xfrm(attributes_set.xfrm);
   return true;
 }
 
-bool ConvertSecsAttributeRepresentation(const BitVector128 &bit_vector,
-                                        SecsAttributeSet *attributes) {
-  attributes->flags = bit_vector.low();
-  attributes->xfrm = bit_vector.high();
+bool ConvertSecsAttributeRepresentation(const Attributes &attributes,
+                                        SecsAttributeSet *attributes_set) {
+  attributes_set->flags = attributes.flags();
+  attributes_set->xfrm = attributes.xfrm();
   return true;
 }
 
 bool TestAttribute(SecsAttributeBit attribute,
-                   const SecsAttributeSet &attributes) {
+                   const SecsAttributeSet &attributes_set) {
   size_t bit_position = static_cast<size_t>(attribute);
   if (bit_position >= kNumSecsAttributeBits) {
     LOG(INFO) << "SecsAttributeBit specifies a bit position " << bit_position
@@ -273,13 +273,14 @@ bool TestAttribute(SecsAttributeBit attribute,
   }
 
   if (bit_position < kNumFlagsBits) {
-    return (attributes.flags & (1ULL << bit_position)) != 0;
+    return (attributes_set.flags & (1ULL << bit_position)) != 0;
   } else {
-    return (attributes.xfrm & (1ULL << (bit_position - kNumFlagsBits))) != 0;
+    return (attributes_set.xfrm & (1ULL << (bit_position - kNumFlagsBits))) !=
+           0;
   }
 }
 
-bool TestAttribute(SecsAttributeBit attribute, const BitVector128 &bit_vector) {
+bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes) {
   size_t bit_position = static_cast<size_t>(attribute);
   if (bit_position >= kNumSecsAttributeBits) {
     LOG(INFO) << "SecsAttributeBit specifies a bit position " << bit_position
@@ -289,9 +290,9 @@ bool TestAttribute(SecsAttributeBit attribute, const BitVector128 &bit_vector) {
   }
 
   if (bit_position < kNumFlagsBits) {
-    return (bit_vector.low() & (1ULL << bit_position)) != 0;
+    return (attributes.flags() & (1ULL << bit_position)) != 0;
   } else {
-    return (bit_vector.high() & (1ULL << (bit_position - kNumFlagsBits))) != 0;
+    return (attributes.xfrm() & (1ULL << (bit_position - kNumFlagsBits))) != 0;
   }
 }
 
@@ -310,10 +311,10 @@ bool GetAllSecsAttributes(SecsAttributeSet *attributes) {
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
-bool GetAllSecsAttributes(BitVector128 *bit_vector) {
+bool GetAllSecsAttributes(Attributes *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kAllSecsAttributes, kAllSecsAttributes + arraysize(kAllSecsAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, bit_vector);
+  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
 bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes) {
@@ -323,11 +324,11 @@ bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes) {
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
-bool GetMustBeSetSecsAttributes(BitVector128 *bit_vector) {
+bool GetMustBeSetSecsAttributes(Attributes *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kMustBeSetAttributes,
       kMustBeSetAttributes + arraysize(kMustBeSetAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, bit_vector);
+  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
 bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes) {
@@ -338,12 +339,12 @@ bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes) {
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
-bool GetDefaultDoNotCareSecsAttributes(BitVector128 *bit_vector) {
+bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kDefaultDoNotCareSecsAttributes,
       kDefaultDoNotCareSecsAttributes +
           arraysize(kDefaultDoNotCareSecsAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, bit_vector);
+  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
 void GetPrintableAttributeList(
@@ -362,10 +363,10 @@ void GetPrintableAttributeList(const SecsAttributeSet &attributes,
   GetPrintableAttributeList(attribute_list, printable_list);
 }
 
-void GetPrintableAttributeList(const BitVector128 &bit_vector,
+void GetPrintableAttributeList(const Attributes &attributes,
                                std::vector<std::string> *printable_list) {
   std::vector<SecsAttributeBit> attribute_list;
-  ConvertSecsAttributeRepresentation(bit_vector, &attribute_list);
+  ConvertSecsAttributeRepresentation(attributes, &attribute_list);
   GetPrintableAttributeList(attribute_list, printable_list);
 }
 

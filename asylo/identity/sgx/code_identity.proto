@@ -18,7 +18,7 @@ syntax = "proto2";
 
 package asylo.sgx;
 
-import "asylo/identity/util/bit_vector_128.proto";
+import "asylo/identity/sgx/attributes.proto";
 import "asylo/identity/util/sha256_hash.proto";
 
 // Signer-assigned identity of an enclave, as specified in SGX architecture.
@@ -61,7 +61,7 @@ message CodeIdentity {
   // ATTRIBUTES bit vector defined by SGX architecture. It holds various
   // potentially security-sensitive attributes of the enclave. This is a
   // required field.
-  optional BitVector128 attributes = 4;
+  optional Attributes attributes = 4;
 }
 
 // Specification of which fields from CodeIdentity to match.
@@ -83,7 +83,7 @@ message CodeIdentityMatchSpec {
   // similar to the miscselect mask.  Note that this is a required field. If
   // this field is skipped, no CodeIdentity will match this identity
   // expectation.
-  optional BitVector128 attributes_match_mask = 6;
+  optional Attributes attributes_match_mask = 6;
 }
 
 // The following protobuf defines a verifier's expectation on an enclave's

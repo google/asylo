@@ -25,10 +25,15 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 asylo_proto_library(
+    name = "attributes_proto",
+    srcs = ["attributes.proto"],
+)
+
+asylo_proto_library(
     name = "code_identity_proto",
     srcs = ["code_identity.proto"],
     deps = [
-        "//asylo/identity/util:bit_vector_128_proto",
+        ":attributes_proto",
         "//asylo/identity/util:sha256_hash_proto",
     ],
 )
@@ -225,6 +230,7 @@ cc_library(
     hdrs = ["code_identity_test_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":attributes_proto_cc",
         ":code_identity_proto_cc",
         ":code_identity_util",
         "//asylo/crypto/util:bytes",
@@ -250,6 +256,8 @@ cc_library(
     ],
     visibility = ["//asylo:implementation"],
     deps = [
+        ":attributes_proto_cc",
+        ":attributes_util",
         ":code_identity_constants",
         ":code_identity_proto_cc",
         ":hardware_interface",
@@ -258,15 +266,12 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/util:bit_vector_128_proto_cc",
-        "//asylo/identity/util:bit_vector_128_util",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/identity/util:sha256_hash_util",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -275,6 +280,8 @@ cc_test(
     srcs = ["code_identity_util_test.cc"],
     tags = ["noregression"],
     deps = [
+        ":attributes_proto_cc",
+        ":attributes_util",
         ":code_identity_constants",
         ":code_identity_proto_cc",
         ":code_identity_test_util",
@@ -284,8 +291,6 @@ cc_test(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/util:bit_vector_128_proto_cc",
-        "//asylo/identity/util:bit_vector_128_util",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/identity/util:sha256_hash_util",
         "//asylo/platform/common:singleton",
@@ -293,6 +298,27 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "attributes_util",
+    srcs = ["attributes_util.cc"],
+    hdrs = ["attributes_util.h"],
+    deps = [
+        ":attributes_proto_cc",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "attributes_util_test",
+    srcs = ["attributes_util_test.cc"],
+    deps = [
+        ":attributes_proto_cc",
+        ":attributes_util",
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -339,9 +365,9 @@ cc_library(
         "secs_attributes.h",
     ],
     deps = [
+        ":attributes_proto_cc",
         "//asylo/crypto/util:bytes",
         "//asylo/identity/util:aligned_object_ptr",
-        "//asylo/identity/util:bit_vector_128_proto_cc",
         "//asylo/util:logging",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
@@ -353,9 +379,9 @@ cc_test(
     srcs = ["secs_attributes_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":attributes_proto_cc",
         ":hardware_types",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity/util:bit_vector_128_proto_cc",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -465,8 +491,6 @@ cc_library(
         "//asylo/identity:identity_acl_proto_cc",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity:secret_sealer",
-        "//asylo/identity/util:bit_vector_128_proto_cc",
-        "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
@@ -502,9 +526,9 @@ cc_library(
     srcs = ["proto_format.cc"],
     hdrs = ["proto_format.h"],
     deps = [
+        ":attributes_proto_cc",
         ":code_identity_proto_cc",
         ":hardware_types",
-        "//asylo/identity/util:bit_vector_128_proto_cc",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",

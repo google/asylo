@@ -25,12 +25,12 @@
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/attributes_util.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/util/bit_vector_128.pb.h"
-#include "asylo/identity/util/bit_vector_128_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
 #include "asylo/util/status.h"
@@ -209,9 +209,8 @@ Status ParseIdentityFromHardwareReport(const Report &report,
   identity->mutable_signer_assigned_identity()->set_isvsvn(report.isvsvn);
   if (!ConvertSecsAttributeRepresentation(report.attributes,
                                           identity->mutable_attributes())) {
-    return Status(
-        ::asylo::error::GoogleError::INTERNAL,
-        "Cound not convert hardware attributes to BitVector128 proto");
+    return Status(::asylo::error::GoogleError::INTERNAL,
+                  "Cound not convert hardware attributes to Attributes proto");
   }
   identity->set_miscselect(report.miscselect);
   return Status::OkStatus();

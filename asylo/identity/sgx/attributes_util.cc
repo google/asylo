@@ -17,31 +17,30 @@
  */
 
 // This file implements bit-wise AND, equality, and inequality operations
-// for BitVector128 protobuf.
+// for Attributes protobuf.
 
-#include "asylo/identity/util/bit_vector_128_util.h"
+#include "asylo/identity/sgx/attributes_util.h"
 
 #include <google/protobuf/util/message_differencer.h>
-#include "asylo/identity/util/bit_vector_128.pb.h"
+#include "asylo/identity/sgx/attributes.pb.h"
 
 namespace asylo {
+namespace sgx {
 
-BitVector128 operator&(const BitVector128 &left, const BitVector128 &right) {
-  BitVector128 result;
-
-  result.set_low(left.low() & right.low());
-
-  result.set_high(left.high() & right.high());
-
+Attributes operator&(const Attributes &left, const Attributes &right) {
+  Attributes result;
+  result.set_flags(left.flags() & right.flags());
+  result.set_xfrm(left.xfrm() & right.xfrm());
   return result;
 }
 
-bool operator==(const BitVector128 &left, const BitVector128 &right) {
+bool operator==(const Attributes &left, const Attributes &right) {
   return ::google::protobuf::util::MessageDifferencer::Equivalent(left, right);
 }
 
-bool operator!=(const BitVector128 &left, const BitVector128 &right) {
+bool operator!=(const Attributes &left, const Attributes &right) {
   return (!(left == right));
 }
 
+}  // namespace sgx
 }  // namespace asylo

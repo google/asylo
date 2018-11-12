@@ -20,6 +20,7 @@
 
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
@@ -64,13 +65,13 @@ void FuzzField(int percent, ProtoFieldSetter<ProtoT, FieldT> set_field,
   }
 }
 
-// Generates and returns a random BitVector128, where each field is randomly
+// Generates and returns a random Attributes, where each field is randomly
 // filled with a |percent|% chance.
-BitVector128 GetRandomBitVector128(int percent = 100) {
-  BitVector128 bit_vector;
-  FuzzField(percent, &BitVector128::set_low, &bit_vector);
-  FuzzField(percent, &BitVector128::set_high, &bit_vector);
-  return bit_vector;
+Attributes GetRandomAttributes(int percent = 100) {
+  Attributes attributes;
+  FuzzField(percent, &Attributes::set_flags, &attributes);
+  FuzzField(percent, &Attributes::set_xfrm, &attributes);
+  return attributes;
 }
 
 // Generates and returns a random CodeIdentityMatchSpec, where each field is
@@ -82,7 +83,7 @@ CodeIdentityMatchSpec GetRandomMatchSpec(int percent = 100) {
   FuzzField(percent, &CodeIdentityMatchSpec::set_is_mrsigner_match_required,
             &spec);
   FuzzField(percent, &CodeIdentityMatchSpec::set_miscselect_match_mask, &spec);
-  *spec.mutable_attributes_match_mask() = GetRandomBitVector128(percent);
+  *spec.mutable_attributes_match_mask() = GetRandomAttributes(percent);
   return spec;
 }
 
@@ -106,7 +107,7 @@ CodeIdentity GetRandomValidCodeIdentityWithConstraints(
       TrivialRandomObject<uint16_t>());
   id.mutable_signer_assigned_identity()->set_isvsvn(
       TrivialRandomObject<uint16_t>());
-  *id.mutable_attributes() = GetRandomBitVector128();
+  *id.mutable_attributes() = GetRandomAttributes();
   id.set_miscselect(TrivialRandomObject<uint32_t>());
   return id;
 }

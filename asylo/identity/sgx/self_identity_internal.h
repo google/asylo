@@ -24,7 +24,6 @@
 
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/self_identity.h"
-
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/hardware_interface.h"

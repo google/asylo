@@ -43,32 +43,6 @@ cc_test(
 )
 
 asylo_proto_library(
-    name = "bit_vector_128_proto",
-    srcs = ["bit_vector_128.proto"],
-)
-
-cc_library(
-    name = "bit_vector_128_util",
-    srcs = ["bit_vector_128_util.cc"],
-    hdrs = ["bit_vector_128_util.h"],
-    deps = [
-        ":bit_vector_128_proto_cc",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_test(
-    name = "bit_vector_128_util_test",
-    srcs = ["bit_vector_128_util_test.cc"],
-    deps = [
-        ":bit_vector_128_proto_cc",
-        ":bit_vector_128_util",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-asylo_proto_library(
     name = "sha256_hash_proto",
     srcs = ["sha256_hash.proto"],
 )

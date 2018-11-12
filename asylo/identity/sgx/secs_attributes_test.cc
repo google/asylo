@@ -25,7 +25,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
-#include "asylo/identity/util/bit_vector_128.pb.h"
+#include "asylo/identity/sgx/attributes.pb.h"
 
 namespace asylo {
 namespace sgx {
@@ -221,91 +221,91 @@ TEST_F(SecsAttributesTest, SetToList) {
   }
 }
 
-// Verify the correctness of conversion from attribute list to BitVector128.
-TEST_F(SecsAttributesTest, ListToBitVector) {
+// Verify the correctness of conversion from attribute list to Attributes.
+TEST_F(SecsAttributesTest, ListToAttributes) {
   for (int i = 0; i < attributes_.size(); i++) {
     std::vector<SecsAttributeBit> v{attributes_[i]};
 
-    BitVector128 bit_vector;
-    EXPECT_TRUE(ConvertSecsAttributeRepresentation(v, &bit_vector));
-    EXPECT_EQ(bit_vector.low(), attribute_sets_[i].flags);
-    EXPECT_EQ(bit_vector.high(), attribute_sets_[i].xfrm);
+    Attributes attributes;
+    EXPECT_TRUE(ConvertSecsAttributeRepresentation(v, &attributes));
+    EXPECT_EQ(attributes.flags(), attribute_sets_[i].flags);
+    EXPECT_EQ(attributes.xfrm(), attribute_sets_[i].xfrm);
   }
 
-  BitVector128 bit_vector;
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &bit_vector));
-  EXPECT_EQ(bit_vector.low(), all_attributes_.flags);
-  EXPECT_EQ(bit_vector.high(), all_attributes_.xfrm);
+  Attributes attributes;
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &attributes));
+  EXPECT_EQ(attributes.flags(), all_attributes_.flags);
+  EXPECT_EQ(attributes.xfrm(), all_attributes_.xfrm);
 }
 
-// Verify error handling for conversion from attribute list to BitVector128.
-TEST_F(SecsAttributesTest, ListToBitVectorError) {
+// Verify error handling for conversion from attribute list to Attributes.
+TEST_F(SecsAttributesTest, ListToAttributesError) {
   std::vector<SecsAttributeBit> v{bad_attribute_};
   std::string str =
       absl::StrCat("SecsAttributeBit specifies a bit position ",
                    static_cast<size_t>(bad_attribute_),
                    " that is larger than the max allowed value of 127");
   EXPECT_LOG(ERROR, str);
-  BitVector128 bit_vector;
-  EXPECT_FALSE(ConvertSecsAttributeRepresentation(v, &bit_vector));
+  Attributes attributes;
+  EXPECT_FALSE(ConvertSecsAttributeRepresentation(v, &attributes));
 }
 
-// Verify the correctness of conversion from BitVector128 to attribute list.
-TEST_F(SecsAttributesTest, BitVectorToList) {
+// Verify the correctness of conversion from Attributes to attribute list.
+TEST_F(SecsAttributesTest, AttributesToList) {
   std::vector<SecsAttributeBit> list;
-  BitVector128 bit_vector;
+  Attributes attributes;
   for (int i = 0; i < attribute_sets_.size(); i++) {
-    bit_vector.set_low(attribute_sets_[i].flags);
-    bit_vector.set_high(attribute_sets_[i].xfrm);
-    EXPECT_TRUE(ConvertSecsAttributeRepresentation(bit_vector, &list));
+    attributes.set_flags(attribute_sets_[i].flags);
+    attributes.set_xfrm(attribute_sets_[i].xfrm);
+    EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes, &list));
     EXPECT_EQ(list.size(), 1);
     EXPECT_EQ(list[0], attributes_[i]);
   }
 
-  bit_vector.set_low(all_attributes_.flags);
-  bit_vector.set_high(all_attributes_.xfrm);
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(bit_vector, &list));
+  attributes.set_flags(all_attributes_.flags);
+  attributes.set_xfrm(all_attributes_.xfrm);
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes, &list));
   EXPECT_EQ(list.size(), attributes_.size());
   for (int i = 0; i < list.size(); i++) {
     EXPECT_EQ(list[i], attributes_[i]);
   }
 }
 
-// Verify the correctness of conversion from AttributeSet to BitVector128.
-TEST_F(SecsAttributesTest, SetToBitVector) {
-  BitVector128 bit_vector;
+// Verify the correctness of conversion from AttributeSet to Attributes.
+TEST_F(SecsAttributesTest, SetToAttributes) {
+  Attributes attributes;
   for (int i = 0; i < attribute_sets_.size(); i++) {
-    BitVector128 bit_vector;
+    Attributes attributes;
     EXPECT_TRUE(
-        ConvertSecsAttributeRepresentation(attribute_sets_[i], &bit_vector));
-    EXPECT_EQ(bit_vector.low(), attribute_sets_[i].flags);
-    EXPECT_EQ(bit_vector.high(), attribute_sets_[i].xfrm);
+        ConvertSecsAttributeRepresentation(attribute_sets_[i], &attributes));
+    EXPECT_EQ(attributes.flags(), attribute_sets_[i].flags);
+    EXPECT_EQ(attributes.xfrm(), attribute_sets_[i].xfrm);
   }
 
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes_, &bit_vector));
-  EXPECT_EQ(bit_vector.low(), all_attributes_.flags);
-  EXPECT_EQ(bit_vector.high(), all_attributes_.xfrm);
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes_, &attributes));
+  EXPECT_EQ(attributes.flags(), all_attributes_.flags);
+  EXPECT_EQ(attributes.xfrm(), all_attributes_.xfrm);
 }
 
-// Verify the correctness of conversion from BitVector128 to AttributeSet.
-TEST_F(SecsAttributesTest, BitVectorToSet) {
+// Verify the correctness of conversion from Attributes to AttributeSet.
+TEST_F(SecsAttributesTest, AttributesToSet) {
   std::vector<SecsAttributeBit> list;
-  BitVector128 bit_vector;
+  Attributes attributes;
   SecsAttributeSet attribute_set;
 
   for (int i = 0; i < attribute_sets_.size(); i++) {
-    bit_vector.set_low(attribute_sets_[i].flags);
-    bit_vector.set_high(attribute_sets_[i].xfrm);
-    EXPECT_TRUE(ConvertSecsAttributeRepresentation(bit_vector, &attribute_set));
-    EXPECT_EQ(bit_vector.low(), attribute_set.flags);
-    EXPECT_EQ(bit_vector.high(), attribute_set.xfrm);
+    attributes.set_flags(attribute_sets_[i].flags);
+    attributes.set_xfrm(attribute_sets_[i].xfrm);
+    EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes, &attribute_set));
+    EXPECT_EQ(attributes.flags(), attribute_set.flags);
+    EXPECT_EQ(attributes.xfrm(), attribute_set.xfrm);
   }
 
-  bit_vector.set_low(all_attributes_.flags);
-  bit_vector.set_high(all_attributes_.xfrm);
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(bit_vector, &attribute_set));
-  EXPECT_EQ(bit_vector.low(), all_attributes_.flags);
-  EXPECT_EQ(bit_vector.high(), all_attributes_.xfrm);
+  attributes.set_flags(all_attributes_.flags);
+  attributes.set_xfrm(all_attributes_.xfrm);
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes, &attribute_set));
+  EXPECT_EQ(attributes.flags(), all_attributes_.flags);
+  EXPECT_EQ(attributes.xfrm(), all_attributes_.xfrm);
 }
 
 // Verify the correctness of TestAttribute on a set.
@@ -332,24 +332,24 @@ TEST_F(SecsAttributesTest, TestAttributeSetError) {
   EXPECT_FALSE(TestAttribute(bad_attribute_, all_attributes_));
 }
 
-// Verify the correctness of TestAttribute on a BitVector.
-TEST_F(SecsAttributesTest, TestAttributeBitVector) {
-  BitVector128 bit_vector;
+// Verify the correctness of TestAttribute on Attributes.
+TEST_F(SecsAttributesTest, TestAttributeAttributes) {
+  Attributes attributes;
   for (int i = 0; i < attribute_sets_.size(); i++) {
     EXPECT_TRUE(
-        ConvertSecsAttributeRepresentation(attribute_sets_[i], &bit_vector));
+        ConvertSecsAttributeRepresentation(attribute_sets_[i], &attributes));
     for (int j = 0; j < attributes_.size(); j++) {
-      EXPECT_EQ(TestAttribute(attributes_[j], bit_vector), (i == j));
+      EXPECT_EQ(TestAttribute(attributes_[j], attributes), (i == j));
     }
   }
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &bit_vector));
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &attributes));
   for (int j = 0; j < attributes_.size(); j++) {
-    EXPECT_TRUE(TestAttribute(attributes_[j], bit_vector));
+    EXPECT_TRUE(TestAttribute(attributes_[j], attributes));
   }
 }
 
 // Verify the error-handling in TestAttribute on a set.
-TEST_F(SecsAttributesTest, TestAttributeBitVectorError) {
+TEST_F(SecsAttributesTest, TestAttributeAttributesError) {
   std::string str =
       absl::StrCat("SecsAttributeBit specifies a bit position ",
                    static_cast<size_t>(bad_attribute_),
@@ -357,9 +357,9 @@ TEST_F(SecsAttributesTest, TestAttributeBitVectorError) {
 
   EXPECT_LOG(INFO, str);
 
-  BitVector128 bit_vector;
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &bit_vector));
-  EXPECT_FALSE(TestAttribute(bad_attribute_, bit_vector));
+  Attributes attributes;
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &attributes));
+  EXPECT_FALSE(TestAttribute(bad_attribute_, attributes));
 }
 
 // Verify the correctness of GetPrintableAttributeList on an attribute list.
@@ -397,21 +397,21 @@ TEST_F(SecsAttributesTest, GetPrintableAttributeListFromSet) {
   }
 }
 
-// Verify the correctness of GetPrintableAttributeList on a bit vector.
-TEST_F(SecsAttributesTest, GetPrintableAttributeListFromBitVector) {
+// Verify the correctness of GetPrintableAttributeList on Attributes.
+TEST_F(SecsAttributesTest, GetPrintableAttributeListFromAttributes) {
   std::vector<std::string> printable_list;
-  BitVector128 bit_vector;
+  Attributes attributes;
 
   for (int i = 0; i < attribute_sets_.size(); i++) {
     EXPECT_TRUE(
-        ConvertSecsAttributeRepresentation(attribute_sets_[i], &bit_vector));
-    GetPrintableAttributeList(bit_vector, &printable_list);
+        ConvertSecsAttributeRepresentation(attribute_sets_[i], &attributes));
+    GetPrintableAttributeList(attributes, &printable_list);
     EXPECT_EQ(printable_list.size(), 1);
     EXPECT_EQ(printable_list[0], attribute_names_[i]);
   }
 
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &bit_vector));
-  GetPrintableAttributeList(bit_vector, &printable_list);
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &attributes));
+  GetPrintableAttributeList(attributes, &printable_list);
   EXPECT_EQ(printable_list.size(), attributes_.size());
   for (int i = 0; i < printable_list.size(); i++) {
     EXPECT_EQ(printable_list[i], attribute_names_[i]);

@@ -26,14 +26,14 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/attributes_util.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/util/bit_vector_128.pb.h"
-#include "asylo/identity/util/bit_vector_128_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
 #include "asylo/platform/common/singleton.h"
@@ -67,12 +67,12 @@ class CodeIdentityUtilTest : public ::testing::Test {
     Sha256HashFromHexString(
         "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
         &h_deadbeef_);
-    bv128_all_f_.set_low(kLongLongAllF);
-    bv128_all_f_.set_high(kLongLongAllF);
-    bv128_all_5_.set_low(kLongLongAll5);
-    bv128_all_5_.set_high(kLongLongAll5);
-    bv128_all_a_.set_low(kLongLongAllA);
-    bv128_all_a_.set_high(kLongLongAllA);
+    attributes_all_f_.set_flags(kLongLongAllF);
+    attributes_all_f_.set_xfrm(kLongLongAllF);
+    attributes_all_5_.set_flags(kLongLongAll5);
+    attributes_all_5_.set_xfrm(kLongLongAll5);
+    attributes_all_a_.set_flags(kLongLongAllA);
+    attributes_all_a_.set_xfrm(kLongLongAllA);
 
     // Create a randomly-initialized FakeEnclave singleton, and use it in all
     // the tests. This is necessary as all tests run as a part of a single
@@ -93,7 +93,7 @@ class CodeIdentityUtilTest : public ::testing::Test {
   }
 
   CodeIdentity GetMinimalValidCodeIdentity(uint32_t miscselect,
-                                           const BitVector128 &attributes) {
+                                           const Attributes &attributes) {
     CodeIdentity id;
     id.set_miscselect(miscselect);
     *id.mutable_attributes() = attributes;
@@ -104,10 +104,10 @@ class CodeIdentityUtilTest : public ::testing::Test {
 
   Sha256HashProto h_acedface_;
   Sha256HashProto h_deadbeef_;
-  BitVector128 bv128_all_0_;
-  BitVector128 bv128_all_f_;
-  BitVector128 bv128_all_5_;
-  BitVector128 bv128_all_a_;
+  Attributes attributes_all_0_;
+  Attributes attributes_all_f_;
+  Attributes attributes_all_5_;
+  Attributes attributes_all_a_;
   FakeEnclave *enclave_;
 };
 
@@ -166,7 +166,7 @@ TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegative2) {
 // Tests to verify the correctness of IsValidCodeIdentity()
 
 TEST_F(CodeIdentityUtilTest, CodeIdentityValidityPositive1) {
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -174,7 +174,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityValidityPositive1) {
 }
 
 TEST_F(CodeIdentityUtilTest, CodeIdentityValidityPositive2) {
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   EXPECT_TRUE(IsValidCodeIdentity(id));
 }
 
@@ -191,7 +191,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityValidityNegative2) {
 
 TEST_F(CodeIdentityUtilTest, CodeIdentityValidityNegative3) {
   CodeIdentity id;
-  *id.mutable_attributes() = bv128_all_5_;
+  *id.mutable_attributes() = attributes_all_5_;
   EXPECT_FALSE(IsValidCodeIdentity(id));
 }
 
@@ -202,7 +202,7 @@ TEST_F(CodeIdentityUtilTest, MatchSpecValidityPositive) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
   EXPECT_TRUE(IsValidMatchSpec(spec));
 }
 
@@ -210,7 +210,7 @@ TEST_F(CodeIdentityUtilTest, MatchSpecValidityNegative1) {
   CodeIdentityMatchSpec spec;
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
@@ -218,7 +218,7 @@ TEST_F(CodeIdentityUtilTest, MatchSpecValidityNegative2) {
   CodeIdentityMatchSpec spec;
   spec.set_is_mrenclave_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
@@ -226,7 +226,7 @@ TEST_F(CodeIdentityUtilTest, MatchSpecValidityNegative3) {
   CodeIdentityMatchSpec spec;
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
@@ -245,9 +245,9 @@ TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive1) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -262,9 +262,9 @@ TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive2) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
@@ -278,9 +278,9 @@ TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive3) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(false);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
 
   CodeIdentityExpectation expectation;
@@ -293,9 +293,9 @@ TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive4) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -310,9 +310,9 @@ TEST_F(CodeIdentityUtilTest, ExpectationValidityNegative1) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
@@ -326,9 +326,9 @@ TEST_F(CodeIdentityUtilTest, ExpectationValidityNegative2) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
 
   CodeIdentityExpectation expectation;
@@ -345,9 +345,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySelfMatch) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -367,9 +367,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityDifferingDoNotCareFields) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(false);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -377,7 +377,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityDifferingDoNotCareFields) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
   ASSERT_THAT(result, IsOk());
   EXPECT_TRUE(result.ValueOrDie());
@@ -390,9 +390,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMrEnclaveMismatch) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(false);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -400,7 +400,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMrEnclaveMismatch) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
   *id.mutable_mrenclave() = h_deadbeef_;
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
   ASSERT_THAT(result, IsOk());
@@ -415,9 +415,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityMismatch1) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -425,7 +425,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityMismatch1) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_deadbeef_, 0, 0);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
@@ -441,9 +441,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityMismatch2) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -451,7 +451,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityMismatch2) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 1, 0);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
@@ -474,9 +474,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityMismatch3) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 1);
@@ -484,7 +484,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityMismatch3) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
@@ -507,9 +507,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentitySVNMatch) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -517,7 +517,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentitySVNMatch) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 1);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
@@ -532,9 +532,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMiscSelectMismatch) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(false);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -542,7 +542,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMiscSelectMismatch) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAll0, bv128_all_f_);
+  id = GetMinimalValidCodeIdentity(kLongAll0, attributes_all_f_);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
   ASSERT_THAT(result, IsOk());
   EXPECT_FALSE(result.ValueOrDie());
@@ -555,9 +555,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityAttributesMismatch) {
   spec.set_is_mrenclave_match_required(false);
   spec.set_is_mrsigner_match_required(false);
   spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = bv128_all_5_;
+  *spec.mutable_attributes_match_mask() = attributes_all_5_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -565,7 +565,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityAttributesMismatch) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id, &expectation), IsOk());
 
-  id = GetMinimalValidCodeIdentity(kLongAllF, bv128_all_0_);
+  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_0_);
   StatusOr<bool> result = MatchIdentityToExpectation(id, expectation);
   ASSERT_THAT(result, IsOk());
   EXPECT_FALSE(result.ValueOrDie());
@@ -574,7 +574,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityAttributesMismatch) {
 // Make sure that enclave identity match fails with appropriate status if the
 // target expectation is invalid.
 TEST_F(CodeIdentityUtilTest, CodeIdentityMatchInvalidExpectation) {
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -593,9 +593,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchInvalidIdentity) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_mrenclave() = h_acedface_;
   *id.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -618,9 +618,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrenclave) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id1 = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id1 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id1.mutable_mrenclave() = h_acedface_;
   *id1.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -628,7 +628,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrenclave) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id1, &expectation), IsOk());
 
-  CodeIdentity id2 = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id2 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id2.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
@@ -645,9 +645,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrsigner) {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(true);
   spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = bv128_all_f_;
+  *spec.mutable_attributes_match_mask() = attributes_all_f_;
 
-  CodeIdentity id1 = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id1 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id1.mutable_mrenclave() = h_acedface_;
   *id1.mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
@@ -655,7 +655,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrsigner) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetExpectation(spec, id1, &expectation), IsOk());
 
-  CodeIdentity id2 = GetMinimalValidCodeIdentity(kLongAll5, bv128_all_5_);
+  CodeIdentity id2 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
   *id2.mutable_mrenclave() = h_acedface_;
 
   StatusOr<bool> result = MatchIdentityToExpectation(id2, expectation);
@@ -699,7 +699,7 @@ TEST_F(CodeIdentityUtilTest, SetDefaultMatchSpec) {
   EXPECT_EQ(spec.miscselect_match_mask(), kLongAllF);
   SecsAttributeSet attributes;
   EXPECT_TRUE(GetDefaultDoNotCareSecsAttributes(&attributes));
-  BitVector128 default_attributes_mask;
+  Attributes default_attributes_mask;
   ConvertSecsAttributeRepresentation(~attributes, &default_attributes_mask);
   EXPECT_EQ(spec.attributes_match_mask(), default_attributes_mask);
 }

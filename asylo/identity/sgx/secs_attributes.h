@@ -25,7 +25,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
-#include "asylo/identity/util/bit_vector_128.pb.h"
+#include "asylo/identity/sgx/attributes.pb.h"
 
 namespace asylo {
 namespace sgx {
@@ -115,32 +115,32 @@ bool ConvertSecsAttributeRepresentation(
     std::vector<SecsAttributeBit> *attribute_list);
 
 // Converts a list of SecsAttributeBit values to a
-// BitVector128 proto.
+// Attributes proto.
 bool ConvertSecsAttributeRepresentation(
     const std::vector<SecsAttributeBit> &attribute_list,
-    BitVector128 *bit_vector);
+    Attributes *attributes);
 
-// Convert a BitVector128 proto to a list of
+// Convert a Attributes proto to a list of
 // SecsAttributeBit values.
 bool ConvertSecsAttributeRepresentation(
-    const BitVector128 &bit_vector,
+    const Attributes &attributes,
     std::vector<SecsAttributeBit> *attribute_list);
 
-// Converts an SecsAttributeSet to a BitVector128 proto.
-bool ConvertSecsAttributeRepresentation(const SecsAttributeSet &attributes,
-                                        BitVector128 *bit_vector);
+// Converts an SecsAttributeSet to a Attributes proto.
+bool ConvertSecsAttributeRepresentation(const SecsAttributeSet &attributes_set,
+                                        Attributes *attributes);
 
-// Converts a BitVector128 proto to an SecsAttributeSet.
-bool ConvertSecsAttributeRepresentation(const BitVector128 &bit_vector,
-                                        SecsAttributeSet *attributes);
+// Converts a Attributes proto to an SecsAttributeSet.
+bool ConvertSecsAttributeRepresentation(const Attributes &attributes,
+                                        SecsAttributeSet *attributes_set);
 
 // Tests if an attribute bit in an SecsAttributeSet is set.
 bool TestAttribute(SecsAttributeBit attribute,
-                   const SecsAttributeSet &attributes);
+                   const SecsAttributeSet &attributes_set);
 
-// Tests if an attribute bit in a BitVector128 proto
+// Tests if an attribute bit in a Attributes proto
 // is set.
-bool TestAttribute(SecsAttributeBit attribute, const BitVector128 &bit_vector);
+bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes);
 
 // Gets default "do not care" attributes in a list form.
 bool GetDefaultDoNotCareSecsAttributes(
@@ -150,20 +150,20 @@ bool GetDefaultDoNotCareSecsAttributes(
 // form.
 bool GetAllSecsAttributes(SecsAttributeSet *attributes);
 
-// Gets all attributes defined by the SGX architectrure in a BitVector128 form.
-bool GetAllSecsAttributes(BitVector128 *bit_vector);
+// Gets all attributes defined by the SGX architectrure in a Attributes form.
+bool GetAllSecsAttributes(Attributes *attributes);
 
 // Gets attributes defined as must-be-set in an SecsAttributeSet form.
 bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes);
 
-// Gets attributes defined as must-be-set in a BitVector128 form.
-bool GetMustBeSetSecsAttributes(BitVector128 *bit_vector);
+// Gets attributes defined as must-be-set in a Attributes form.
+bool GetMustBeSetSecsAttributes(Attributes *attributes);
 
 // Gets default "do not care" attributes in an SecsAttributeSet form.
 bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes);
 
-// Gets default "do not care" attributes in a BitVector128 form.
-bool GetDefaultDoNotCareSecsAttributes(BitVector128 *bit_vector);
+// Gets default "do not care" attributes in a Attributes form.
+bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes);
 
 // Gets printable list of attributes from a list of SecsAttributeBit values.
 void GetPrintableAttributeList(
@@ -174,9 +174,9 @@ void GetPrintableAttributeList(
 void GetPrintableAttributeList(const SecsAttributeSet &attributes,
                                std::vector<std::string> *printable_list);
 
-// Gets printable list of attributes from a BitVector128
+// Gets printable list of attributes from a Attributes
 // proto.
-void GetPrintableAttributeList(const BitVector128 &bit_vector,
+void GetPrintableAttributeList(const Attributes &attributes,
                                std::vector<std::string> *printable_list);
 
 }  // namespace sgx
