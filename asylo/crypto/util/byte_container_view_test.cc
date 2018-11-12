@@ -24,7 +24,10 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+#include "asylo/crypto/util/byte_container_view_internal.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace {
@@ -65,6 +68,23 @@ TYPED_TEST(TypedByteContainerViewTest, SizeMethod) {
 // ByteContainerView object. These tests are not typed tests because the methods
 // being tested behave the same irrespective of how the ByteContainerView object
 // was constructed.
+
+TEST(ByteContainerViewTest, VerifyTraitsCorrectness) {
+  static_assert(
+      internal::is_ro_byte_container_type<ByteContainerView>::value,
+      "ByteContainerView is expected to be a read-only byte container type");
+  static_assert(internal::is_ro_byte_container_type<std::string>::value,
+                "string is expected to be a read-only byte container type");
+  static_assert(
+      internal::is_ro_byte_container_type<std::vector<uint8_t>>::value,
+      "std::vector<uint8_t> is expected to be a read-only byte container type");
+  static_assert(
+      !internal::is_ro_byte_container_type<std::vector<uint32_t>>::value,
+      "std::vector<uint32_t> is not expected to be a read-only byte container "
+      "type");
+  static_assert(!internal::is_ro_byte_container_type<Status>::value,
+                "Status is not expected to be a read-only byte container type");
+}
 
 TEST(ByteContainerViewTest, EmptyMethodPositive) {
   EXPECT_TRUE(ByteContainerView("").empty());

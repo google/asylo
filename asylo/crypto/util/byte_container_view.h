@@ -23,7 +23,9 @@
 #include <cstdint>
 #include <cstdlib>
 #include <iterator>
+#include <type_traits>
 
+#include "asylo/crypto/util/byte_container_view_internal.h"
 #include "asylo/util/logging.h"
 #include <openssl/mem.h>
 
@@ -31,40 +33,34 @@ namespace asylo {
 
 // Byte Container is an abstract concept that is used to represent various
 // containers that are used to store bytes (e.g., std::string,
-// std::vector<uint8_t>, etc.). A (template) class is considered to
-// support the byte-container concept if:
-//   1. It provides a value_type type-alias that aliases to the type of bytes
-//      stored in that container (e.g., char, uint8_t, etc.).
-//   2. It defines the iterator, const_iterator, reverse_iterator, and
+// std::vector<uint8_t>, etc.). A byte container can be immutable or mutable. An
+// immutable byte-container type must meet following requirements:
+//   1. It must provide a value_type type-alias that aliases to the type of
+//      bytes stored in that container (e.g., char, uint8_t, etc.).
+//   2. It must define the iterator, const_iterator, reverse_iterator, and
 //      const_reverse_iterator type aliases.
-//   3. It provides an immutable data() method.
-//   4. It provides a size() method.
-//   5. It provides immutable begin(), end(), cbegin(), cend(), rbegin(),
+//   3. It must provide an immutable data() method.
+//   4. It must provide a size() method.
+//   5. It must provide immutable begin(), end(), cbegin(), cend(), rbegin(),
 //      rend(), crbegin(), crend() iterator generators.
-//   6. It provides mutable begin(), end(), rbegin(), and rend() iterator
+//   6. It must provide an immutable subscript operator and at() method.
+//
+// Additionally, a mutable byte container must meet the following supplemental
+// requirements:
+//   1. It must provide mutable begin(), end(), rbegin(), and rend() iterator
 //      generators.
-//   7. It provides a resize() method. Note that the resize() method may not
-//      necessarily resize the container, and callers of the resize() method
-//      must check the size of the byte container after resize operation has
-//      been carried out.
-//   8. It provides immutable subscript operator and at() method.
-//   9. It provides mutable subscript operator and at() method.
+//   2. It must provide a mutable subscript operator and at() method.
 //
-// byte_container_util.h provides templatized utilities that work with objects
-// that support the byte-container concept.
+// The ByteContainerView class is an immutable byte container.
 //
-// The ByteContainerView class implements the read-only portions of the
-// byte-container concept. I.e., it meets requirements 1, 2, 3, 4, 5, and 8
-// above.
-//
-// A ByteContainerView object can be passed as an input into any template
-// function that expects a const object that supports the byte-container
-// concept.
-//
-// A ByteContainerView object can be constructed cheaply from a const instance
-// of any byte-container object. The view object does not take ownership of the
-// underlying memory. It is responsibility of the caller to make sure that the
-// underlying memory remains valid for the lifetime of the view object.
+// Additionally, a ByteContainerView object can be constructed implicitly and
+// cheaply from any other mutable or immutable byte-container objects such as
+// another ByteContainerView object or a const instance of any other
+// mutable byte-container object. The ByteContainerView object does not take
+// ownership of the underlying memory. It is responsibility of the caller to
+// make sure that the underlying memory referenced by the ByteContainerView
+// remains valid for the lifetime of the ByteContainerView object.
+
 class ByteContainerView {
  public:
   using value_type = const uint8_t;
@@ -82,14 +78,13 @@ class ByteContainerView {
       : data_{reinterpret_cast<const uint8_t *>(cstr)},
         size_{cstr ? strlen(cstr) : 0} {}
 
-  template <typename ByteContainerT>
+  template <
+      typename ByteContainerT,
+      typename E = typename std::enable_if<
+          internal::is_ro_byte_container_type<ByteContainerT>::value>::type>
   ByteContainerView(const ByteContainerT &container)
       : data_{reinterpret_cast<const uint8_t *>(container.data())},
         size_{container.size()} {}
-
-  // Prevent construction of a view object based on a temporary object.
-  template <typename ByteContainerT>
-  explicit ByteContainerView(const ByteContainerT &&container) = delete;
 
   const uint8_t *data() const { return data_; }
   size_t size() const { return size_; }

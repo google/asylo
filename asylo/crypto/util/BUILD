@@ -57,6 +57,7 @@ cc_test(
 
 cc_library(
     name = "byte_container_view",
+    srcs = ["byte_container_view_internal.h"],
     hdrs = ["byte_container_view.h"],
     deps = [
         "//asylo/util:logging",
@@ -66,12 +67,17 @@ cc_library(
 
 cc_test(
     name = "byte_container_view_test",
-    srcs = ["byte_container_view_test.cc"],
+    srcs = [
+        "byte_container_view_internal.h",
+        "byte_container_view_test.cc",
+    ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":byte_container_view",
         ":bytes",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
