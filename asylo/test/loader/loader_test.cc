@@ -61,7 +61,8 @@ class TestClient : public EnclaveClient {
 class FailingLoader : public EnclaveLoader {
  protected:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address) const override {
+      const std::string &name, void *base_address,
+      const EnclaveConfig &config) const override {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Could not load enclave.");
   }
@@ -77,7 +78,8 @@ class FakeLoader : public EnclaveLoader {
 
  protected:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address) const override {
+      const std::string &name, void *base_address,
+      const EnclaveConfig &config) const override {
     return std::unique_ptr<EnclaveClient>(new T());
   }
 };

@@ -319,13 +319,15 @@ class EnclaveLoader {
   // status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       const std::string &name) const {
-    return LoadEnclave(name, nullptr);
+    EnclaveConfig config;
+    return LoadEnclave(name, nullptr, config);
   }
 
   // Loads an enclave at the specified address, returning a pointer to a client
   // on success and a non-ok status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address) const = 0;
+      const std::string &name, void *base_address,
+      const EnclaveConfig &config) const = 0;
 };
 
 // Stores the mapping between signals and the enclave with a handler installed

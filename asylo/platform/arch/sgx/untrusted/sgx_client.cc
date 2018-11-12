@@ -157,7 +157,7 @@ static Status handle_signal(sgx_enclave_id_t eid, const char *input,
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
-    const std::string &name, void *base_address) const {
+    const std::string &name, void *base_address, const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
   client->base_address_ = base_address;
 
@@ -166,7 +166,8 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
     status = sgx_create_enclave(enclave_path_.c_str(), debug_, &client->token_,
                                 &updated, &client->id_,
-                                /*misc_attr=*/nullptr, &client->base_address_);
+                                /*misc_attr=*/nullptr, &client->base_address_,
+                                config.enable_fork());
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;
@@ -181,7 +182,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
-    const std::string &name, void *base_address) const {
+    const std::string &name, void *base_address, const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
   client->base_address_ = base_address;
 
@@ -203,7 +204,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     status = sgx_create_enclave_from_buffer(
         const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
         debug_, &client->token_, &updated, &client->id_, /*misc_attr=*/nullptr,
-        &client->base_address_);
+        &client->base_address_, config.enable_fork());
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;

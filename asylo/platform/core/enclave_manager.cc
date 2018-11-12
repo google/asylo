@@ -265,7 +265,7 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
 
   // Attempt to load the enclave.
   StatusOr<std::unique_ptr<EnclaveClient>> result =
-      loader.LoadEnclave(name, base_address);
+      loader.LoadEnclave(name, base_address, config);
   if (!result.ok()) {
     LOG(ERROR) << "LoadEnclave failed: " << result.status();
     return result.status();

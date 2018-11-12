@@ -99,6 +99,10 @@ message EnclaveConfig {
   // Configuration needed to initialize logging.
   optional LoggingConfig logging_config = 11;
 
+  // Whether fork (which reserves an extra thread inside the enclave) is
+  // enabled.
+  optional bool enable_fork = 12 [default = false];
+
   // Allow user extensions.
   extensions 1000 to max;
 }
