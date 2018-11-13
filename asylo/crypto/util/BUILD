@@ -62,6 +62,7 @@ cc_library(
     deps = [
         "//asylo/util:logging",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
     ],
 )
 

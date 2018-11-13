@@ -25,6 +25,7 @@
 #include <iterator>
 #include <type_traits>
 
+#include "absl/strings/string_view.h"
 #include "asylo/crypto/util/byte_container_view_internal.h"
 #include "asylo/util/logging.h"
 #include <openssl/mem.h>
@@ -73,6 +74,9 @@ class ByteContainerView {
 
   ByteContainerView(void const *data, size_t size)
       : data_{reinterpret_cast<const uint8_t *>(data)}, size_{size} {}
+
+  ByteContainerView(absl::string_view v)
+      : data_{reinterpret_cast<const uint8_t *>(v.data())}, size_{v.size()} {}
 
   ByteContainerView(const char *cstr)
       : data_{reinterpret_cast<const uint8_t *>(cstr)},
