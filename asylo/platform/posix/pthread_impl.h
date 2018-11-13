@@ -22,6 +22,8 @@
 #include <pthread.h>
 #include <functional>
 
+#include "asylo/util/logging.h"
+
 namespace asylo {
 namespace pthread_impl {
 
@@ -65,6 +67,32 @@ class PthreadListWrapper {
   __pthread_list_t* const list_;
 
   std::function<void()> abort_func_;
+};
+
+// Provides an RAII wrapper around pthread_mutex_t. Aborts on errors, so should
+// only be used for locks that are internal to pthread.cc, where errors indicate
+// internal implementation errors. Should not be used for user-provided mutexes
+// so that we don't abort internally due to application error.
+class PthreadMutexLock {
+ public:
+  PthreadMutexLock(pthread_mutex_t* mutex) : mutex_(mutex) {
+    int ret = pthread_mutex_lock(mutex_);
+    if (ret != 0) {
+      LOG(FATAL) << "Can't lock mutex: " << ret;
+      abort();
+    }
+  }
+
+  ~PthreadMutexLock() {
+    int ret = pthread_mutex_unlock(mutex_);
+    if (ret != 0) {
+      LOG(FATAL) << "Can't unlock mutex: " << ret;
+      abort();
+    }
+  }
+
+ private:
+  pthread_mutex_t* const mutex_;
 };
 
 }  // namespace pthread_impl

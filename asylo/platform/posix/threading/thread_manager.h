@@ -94,18 +94,6 @@ class ThreadManager {
   // LockQueuedThreads().
   std::shared_ptr<Thread> GetThread(pthread_t thread_id);
 
-  // Locks threads_.
-  void LockThreadsList();
-
-  // Unlocks threads_.
-  void UnlockThreadsList();
-
-  // Locks queued_threads_.
-  void LockQueuedThreads();
-
-  // Unlocks queued_threads_.
-  void UnlockQueuedThreads();
-
   // Guards queued_threads_.
   pthread_mutex_t scheduled_lock_;
 

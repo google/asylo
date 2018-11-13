@@ -24,8 +24,11 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/posix/pthread_impl.h"
 
 namespace asylo {
+
+using pthread_impl::PthreadMutexLock;
 
 ThreadManager::Thread::Thread() {
   this->lock = PTHREAD_MUTEX_INITIALIZER;
@@ -59,11 +62,10 @@ ThreadManager *ThreadManager::GetInstance() {
 
 std::shared_ptr<ThreadManager::Thread> ThreadManager::QueueThread(
     const std::function<void *(void *)> &function, void *const arg) {
-  LockQueuedThreads();
+  PthreadMutexLock lock(&scheduled_lock_);
   queued_threads_.emplace(std::make_shared<Thread>());
   std::shared_ptr<Thread> thread = queued_threads_.back();
-  if (!thread) {
-    UnlockQueuedThreads();
+  if (thread == nullptr) {
     return nullptr;
   }
 
@@ -71,7 +73,6 @@ std::shared_ptr<ThreadManager::Thread> ThreadManager::QueueThread(
   thread->start_routine = function;
   thread->arg = arg;
   thread->lock = PTHREAD_MUTEX_INITIALIZER;
-  UnlockQueuedThreads();
   return thread;
 }
 
@@ -79,7 +80,7 @@ int ThreadManager::CreateThread(const std::function<void *(void *)> &function,
                                 void *const arg, pthread_t *const thread_id) {
   // Add thread entry point to queue of waiting jobs.
   std::shared_ptr<Thread> thread = QueueThread(function, arg);
-  if (!thread) {
+  if (thread == nullptr) {
     return -1;
   }
   int ret = pthread_mutex_lock(&thread->lock);
@@ -107,20 +108,22 @@ int ThreadManager::CreateThread(const std::function<void *(void *)> &function,
 }
 
 int ThreadManager::StartThread() {
-  LockQueuedThreads();
-  // If there are no jobs waiting to be executed, abort.
-  if (queued_threads_.empty()) {
-    UnlockQueuedThreads();
-    abort();
+  std::shared_ptr<Thread> thread;
+
+  {
+    PthreadMutexLock sched_lock(&scheduled_lock_);
+    // If there are no jobs waiting to be executed, abort.
+    if (queued_threads_.empty()) {
+      abort();
+    }
+
+    PthreadMutexLock threads_lock(&threads_lock_);
+    // Move Thread from queued_threads_ onto threads_.
+    thread = AllocateThread(queued_threads_.front());
+    queued_threads_.pop();
   }
 
-  LockThreadsList();
-  // Move Thread from queued_threads_ onto threads_.
-  std::shared_ptr<Thread> thread = AllocateThread(queued_threads_.front());
-  queued_threads_.pop();
-  UnlockQueuedThreads();
-  UnlockThreadsList();
-  if (!thread) {
+  if (thread == nullptr) {
     return -1;
   }
 
@@ -153,10 +156,13 @@ int ThreadManager::StartThread() {
 }
 
 int ThreadManager::JoinThread(const pthread_t thread_id, void **return_value) {
-  LockThreadsList();
-  std::shared_ptr<Thread> thread = GetThread(thread_id);
-  UnlockThreadsList();
-  if (!thread) {
+  std::shared_ptr<Thread> thread;
+  {
+    PthreadMutexLock lock(&threads_lock_);
+    thread = GetThread(thread_id);
+  }
+
+  if (thread == nullptr) {
     return -1;
   }
 
@@ -208,30 +214,6 @@ std::shared_ptr<ThreadManager::Thread> ThreadManager::GetThread(
     ret = threads_[thread_id];
   }
   return ret;
-}
-
-void ThreadManager::LockThreadsList() {
-  if (pthread_mutex_lock(&threads_lock_) != 0) {
-    abort();
-  }
-}
-
-void ThreadManager::UnlockThreadsList() {
-  if (pthread_mutex_unlock(&threads_lock_) != 0) {
-    abort();
-  }
-}
-
-void ThreadManager::LockQueuedThreads() {
-  if (pthread_mutex_lock(&scheduled_lock_) != 0) {
-    abort();
-  }
-}
-
-void ThreadManager::UnlockQueuedThreads() {
-  if (pthread_mutex_unlock(&scheduled_lock_) != 0) {
-    abort();
-  }
 }
 
 }  // namespace asylo

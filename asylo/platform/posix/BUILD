@@ -51,6 +51,12 @@ cc_library(
     }),
 )
 
+cc_library(
+    name = "pthread_impl",
+    hdrs = ["pthread_impl.h"],
+    deps = ["//asylo/util:logging"],
+)
+
 # POSIX runtime implementation.
 cc_library(
     name = "posix",
@@ -87,7 +93,6 @@ cc_library(
     ],
     hdrs = [
         ":posix_headers",
-        "pthread_impl.h",
     ] + select({
         "//asylo/platform/arch:sgx": ["//asylo/third_party/intel:posix_sgx_headers"],
         "//conditions:default": [],
@@ -95,6 +100,7 @@ cc_library(
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
+        ":pthread_impl",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",

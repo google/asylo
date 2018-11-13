@@ -25,10 +25,13 @@ package(
 cc_library(
     name = "thread_manager",
     srcs = ["thread_manager.cc"],
-    hdrs = ["thread_manager.h"],
+    hdrs = [
+        "thread_manager.h",
+    ],
     deps = [
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/core:trusted_core",
+        "//asylo/platform/posix:pthread_impl",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
