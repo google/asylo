@@ -208,6 +208,7 @@ cc_test(
         "//asylo/platform/common:static_map",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -265,6 +266,7 @@ cc_test(
         ":status",
         "//asylo/platform/common:static_map",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_googletest//:gtest",
     ],
 )
