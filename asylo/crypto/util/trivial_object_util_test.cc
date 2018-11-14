@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace {
@@ -53,13 +54,13 @@ TYPED_TEST(TypedTrivialObjectUtilTest, Random) {
       c = std::tolower(c);
     }
     TypeParam obj2;
-    SetTrivialObjectFromHexString<TypeParam>(str, &obj2);
+    ASYLO_ASSERT_OK(SetTrivialObjectFromHexString<TypeParam>(str, &obj2));
     EXPECT_EQ(obj, obj2);
 
     for (auto &c : str) {
       c = std::toupper(c);
     }
-    SetTrivialObjectFromHexString<TypeParam>(str, &obj2);
+    ASYLO_ASSERT_OK(SetTrivialObjectFromHexString<TypeParam>(str, &obj2));
     EXPECT_EQ(obj, obj2);
   }
 }
@@ -76,7 +77,7 @@ TYPED_TEST(TypedTrivialObjectUtilTest, Zero) {
     EXPECT_EQ(c, '0');
   }
   TypeParam obj2;
-  SetTrivialObjectFromHexString<TypeParam>(str, &obj2);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString<TypeParam>(str, &obj2));
   EXPECT_EQ(obj, obj2);
 }
 
@@ -94,14 +95,14 @@ TYPED_TEST(TypedTrivialObjectUtilTest, Ones) {
     EXPECT_EQ(c, 'f');
   }
   TypeParam obj2;
-  SetTrivialObjectFromHexString<TypeParam>(str, &obj2);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString<TypeParam>(str, &obj2));
   EXPECT_EQ(obj, obj2);
 
   for (auto &c : str) {
     c = std::toupper(c);
     EXPECT_EQ(c, 'F');
   }
-  SetTrivialObjectFromHexString<TypeParam>(str, &obj2);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString<TypeParam>(str, &obj2));
   EXPECT_EQ(obj, obj2);
 }
 

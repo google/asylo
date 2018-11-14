@@ -149,20 +149,24 @@ TEST(EkepCryptoTest, DeriveSecretsBadPrivateParameterSize) {
 // Curve25519 and SHA256.
 TEST(EkepCryptoTest, DeriveSecretsWithCurve25519Sha256) {
   UnsafeBytes<SHA256_DIGEST_LENGTH> transcript_hash;
-  SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash);
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash));
 
   UnsafeBytes<X25519_PUBLIC_VALUE_LEN> peer_dh_public_key;
-  SetTrivialObjectFromHexString(kTestPubKey, &peer_dh_public_key);
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kTestPubKey, &peer_dh_public_key));
 
   SafeBytes<X25519_PRIVATE_KEY_LEN> self_dh_private_key;
-  SetTrivialObjectFromHexString(kTestPrivKey, &self_dh_private_key);
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kTestPrivKey, &self_dh_private_key));
 
   SafeBytes<kEkepMasterSecretSize> expected_master_secret;
-  SetTrivialObjectFromHexString(kTestMasterSecret, &expected_master_secret);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestMasterSecret,
+                                                &expected_master_secret));
 
   SafeBytes<kEkepAuthenticatorSecretSize> expected_authenticator_secret;
-  SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
-                                &expected_authenticator_secret);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(
+      kTestAuthenticatorSecret, &expected_authenticator_secret));
 
   CleansingVector<uint8_t> authenticator_secret;
   CleansingVector<uint8_t> master_secret;
@@ -217,13 +221,16 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadRecordProtocol) {
 // consisting of Curve25519 and SHA256, and the SEAL record protocol.
 TEST(EkepCryptoTest, DeriveRecordProtocolKeySealAes128Gcm) {
   UnsafeBytes<SHA256_DIGEST_LENGTH> transcript_hash;
-  SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash);
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kTestTranscriptHash, &transcript_hash));
 
   SafeBytes<kEkepMasterSecretSize> master_secret;
-  SetTrivialObjectFromHexString(kTestMasterSecret, &master_secret);
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kTestMasterSecret, &master_secret));
 
   SafeBytes<kSealAes128GcmKeySize> expected_key;
-  SetTrivialObjectFromHexString(kTestRecordProtocolKey, &expected_key);
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kTestRecordProtocolKey, &expected_key));
 
   CleansingVector<uint8_t> key;
 
@@ -241,8 +248,8 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeySealAes128Gcm) {
 // BAD_HANDSHAKER_CIPHER when passed an unsupported ciphersuite.
 TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorBadCipherSuite) {
   SafeBytes<kEkepAuthenticatorSecretSize> authenticator_secret;
-  SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
-                                &authenticator_secret);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
+                                                &authenticator_secret));
 
   CleansingVector<uint8_t> authenticator;
 
@@ -256,12 +263,12 @@ TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorBadCipherSuite) {
 // ciphersuite consisting of Curve25519 and SHA256.
 TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorSha256) {
   SafeBytes<kEkepAuthenticatorSecretSize> authenticator_secret;
-  SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
-                                &authenticator_secret);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
+                                                &authenticator_secret));
 
   SafeBytes<SHA256_DIGEST_LENGTH> expected_authenticator;
-  SetTrivialObjectFromHexString(kTestClientHandshakeAuthenticator,
-                                &expected_authenticator);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(
+      kTestClientHandshakeAuthenticator, &expected_authenticator));
 
   CleansingVector<uint8_t> authenticator;
 
@@ -280,8 +287,8 @@ TEST(EkepCryptoTest, ComputeClientHandshakeAuthenticatorSha256) {
 // BAD_HANDSHAKER_CIPHER when passed an unsupported ciphersuite.
 TEST(EkepCryptoTest, ComputeServerHandshakeAuthenticatorBadCipherSuite) {
   SafeBytes<kEkepAuthenticatorSecretSize> authenticator_secret;
-  SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
-                                &authenticator_secret);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
+                                                &authenticator_secret));
 
   CleansingVector<uint8_t> authenticator;
 
@@ -295,12 +302,12 @@ TEST(EkepCryptoTest, ComputeServerHandshakeAuthenticatorBadCipherSuite) {
 // ciphersuite consisting of Curve25519 and SHA256.
 TEST(EkepCryptoTest, ComputeServerHandshakeAuthenticatorSha256) {
   SafeBytes<kEkepAuthenticatorSecretSize> authenticator_secret;
-  SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
-                                &authenticator_secret);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kTestAuthenticatorSecret,
+                                                &authenticator_secret));
 
   SafeBytes<SHA256_DIGEST_LENGTH> expected_authenticator;
-  SetTrivialObjectFromHexString(kTestServerHandshakeAuthenticator,
-                                &expected_authenticator);
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(
+      kTestServerHandshakeAuthenticator, &expected_authenticator));
 
   CleansingVector<uint8_t> authenticator;
 

@@ -29,6 +29,8 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/cleansing_allocator.h"
+#include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 #include <openssl/mem.h>
 
 namespace asylo {
@@ -383,6 +385,31 @@ class UnsafeBytes final : public Bytes<Size, UnsafePolicy, UnsafeBytes<Size>> {
   }
 } ABSL_ATTRIBUTE_PACKED;
 
+// Returns a SafeBytes object created from the hex representation in
+// |bytes_hex|. |InputSize| must be an odd number. |bytes_hex| must be a
+// null-terminated C string with strlen(bytes_hex) equal to |InputSize - 1|. All
+// characters in |bytes_hex| must be valid hex characters.
+template <size_t InputSize>
+StatusOr<SafeBytes<(InputSize - 1) / 2>> InstantiateSafeBytesFromHexString(
+    const char *bytes_hex) {
+  SafeBytes<(InputSize - 1) / 2> bytes;
+  ASYLO_RETURN_IF_ERROR(
+      SetTrivialObjectFromHexString(std::string(bytes_hex, InputSize - 1), &bytes));
+  return bytes;
+}
+
+// Returns an UnsafeBytes object created from the hex representation in
+// |bytes_hex|. |InputSize| must be an odd number. |bytes_hex| must be a
+// null-terminated C string with strlen(bytes_hex) equal to |InputSize - 1|. All
+// characters in |bytes_hex| must be valid hex characters.
+template <size_t InputSize>
+StatusOr<UnsafeBytes<(InputSize - 1) / 2>> InstantiateUnsafeBytesFromHexString(
+    const char *bytes_hex) {
+  UnsafeBytes<(InputSize - 1) / 2> bytes;
+  ASYLO_RETURN_IF_ERROR(
+      SetTrivialObjectFromHexString(std::string(bytes_hex, InputSize - 1), &bytes));
+  return bytes;
+}
 // Stream-insertion operator for SafeBytes. Writes the hex representation of
 // |bytes| into the given |os| stream.
 template <size_t Size>

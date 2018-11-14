@@ -62,13 +62,6 @@ constexpr size_t kMessageSizeLimit = 1 << 16;
 
 constexpr size_t kAesGcmSivNonceUsageLimit = 8;
 
-template <size_t Size>
-SafeBytes<(Size - 1) / 2> InstantiateSafeBytes(const char *cstr) {
-  SafeBytes<(Size - 1) / 2> bytes;
-  SetTrivialObjectFromHexString(std::string(cstr, Size - 1), &bytes);
-  return bytes;
-}
-
 class FixedNonceGenerator : public NonceGenerator<kAesGcmSivNonceSize> {
  public:
   using AesGcmSivNonce = UnsafeBytes<kAesGcmSivNonceSize>;
@@ -88,10 +81,15 @@ class FixedNonceGenerator : public NonceGenerator<kAesGcmSivNonceSize> {
 // Verifies that the Seal and Open methods conform to two test vectors from the
 // AES GCM SIV spec.
 TEST(AesGcmSivTest, AesGcmSivTestVectors) {
-  auto plaintext1 =
-      InstantiateSafeBytes<sizeof(plaintext1_hex)>(plaintext1_hex);
+  auto plaintext1_result =
+      InstantiateSafeBytesFromHexString<sizeof(plaintext1_hex)>(plaintext1_hex);
+  ASYLO_ASSERT_OK(plaintext1_result);
+  auto plaintext1 = plaintext1_result.ValueOrDie();
   auto aad1 = absl::HexStringToBytes(aad1_hex);
-  auto key1 = InstantiateSafeBytes<sizeof(key1_hex)>(key1_hex);
+  auto key1_result =
+      InstantiateSafeBytesFromHexString<sizeof(key1_hex)>(key1_hex);
+  ASYLO_ASSERT_OK(key1_result);
+  auto key1 = key1_result.ValueOrDie();
   auto nonce1 = absl::HexStringToBytes(nonce1_hex);
   auto ciphertext1 = absl::HexStringToBytes(ciphertext1_hex);
 
@@ -110,10 +108,15 @@ TEST(AesGcmSivTest, AesGcmSivTestVectors) {
       cryptor1.Open(key1, aad1, ciphertext1, nonce1, &tmp_plaintext1).ok());
   EXPECT_EQ(plaintext1, tmp_plaintext1);
 
-  auto plaintext2 =
-      InstantiateSafeBytes<sizeof(plaintext2_hex)>(plaintext2_hex);
+  auto plaintext2_result =
+      InstantiateSafeBytesFromHexString<sizeof(plaintext2_hex)>(plaintext2_hex);
+  ASYLO_ASSERT_OK(plaintext2_result);
+  auto plaintext2 = plaintext2_result.ValueOrDie();
   auto aad2 = absl::HexStringToBytes(aad2_hex);
-  auto key2 = InstantiateSafeBytes<sizeof(key2_hex)>(key2_hex);
+  auto key2_result =
+      InstantiateSafeBytesFromHexString<sizeof(key2_hex)>(key2_hex);
+  ASYLO_ASSERT_OK(key2_result);
+  auto key2 = key2_result.ValueOrDie();
   auto nonce2 = absl::HexStringToBytes(nonce2_hex);
   auto ciphertext2 = absl::HexStringToBytes(ciphertext2_hex);
 

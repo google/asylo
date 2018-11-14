@@ -67,6 +67,7 @@ cc_test(
         ":sha256_hash_proto_cc",
         ":sha256_hash_util",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],
 )

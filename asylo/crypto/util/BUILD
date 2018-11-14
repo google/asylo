@@ -91,6 +91,7 @@ cc_library(
         ":trivial_object_util",
         "//asylo/util:cleansing_types",
         "//asylo/util:logging",
+        "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
     ],
@@ -112,6 +113,7 @@ cc_library(
     name = "trivial_object_util",
     hdrs = ["trivial_object_util.h"],
     deps = [
+        "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
     ],
@@ -124,6 +126,7 @@ cc_test(
     deps = [
         ":bytes",
         ":trivial_object_util",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_googletest//:gtest",

@@ -31,7 +31,7 @@ namespace asylo {
 bool Sha256HashFromHexString(const std::string &hex, Sha256HashProto *h) {
   UnsafeBytes<kSha256Size> bytes;
 
-  if (!SetTrivialObjectFromHexString(hex, &bytes)) {
+  if (!SetTrivialObjectFromHexString(hex, &bytes).ok()) {
     return false;
   }
 
