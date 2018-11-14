@@ -43,6 +43,33 @@ bool enc_is_within_enclave(const void* address, size_t size);
 // contained outside of the enclave.
 bool enc_is_outside_enclave(void const* address, size_t size);
 
+struct EnclaveMemoryLayout {
+  // Base address of the initialized data section in the current enclave.
+  void *data_base;
+  // Size of the initialized data section in the current enclave.
+  size_t data_size;
+  // Base address of the uninitialized data section in the current enclave.
+  void *bss_base;
+  // Size of the uninitialized data section in the current enclave.
+  size_t bss_size;
+  // Base address of heap in the current enclave.
+  void *heap_base;
+  // size of heap in the current enclave.
+  size_t heap_size;
+  // Base address of the thread data for the current thread.
+  void *thread_base;
+  // Size of the thread data for the current thread.
+  size_t thread_size;
+  // Base address of the stack for the current thread. This is the upper bound
+  // of the stack since stack goes down.
+  void *stack_base;
+  // Limit address of the stack for the current thread. This is the lower bound
+  // of the stack since stack goes down.
+  void *stack_limit;
+};
+
+void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout);
+
 // A macro expanding to an expression appropriate for use as the body of a busy
 // loop.
 #ifdef __x86_64__

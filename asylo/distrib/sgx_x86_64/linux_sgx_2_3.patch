@@ -424,7 +424,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
-+struct MemoryLayout {
++struct SgxMemoryLayout {
 +    // Base address of the initialized data section in the current enclave.
 +    void *data_base;
 +    // Size of the initialized data section in the current enclave.
@@ -452,7 +452,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 + *      memory_layout - Receives the memory layout of the current enclave
 + *      (data/bss/heap) and for current tcs(thread data/stack).
 +*/
-+void SGXAPI sgx_memory_layout(struct MemoryLayout *memory_layout);
++void SGXAPI sgx_memory_layout(struct SgxMemoryLayout *memory_layout);
 +
  #ifdef __cplusplus
  }
@@ -2800,7 +2800,7 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
      return 0;
  }
  
-+void sgx_memory_layout(struct MemoryLayout *memory_layout)
++void sgx_memory_layout(struct SgxMemoryLayout *memory_layout)
 +{
 +    get_memory_layout(memory_layout);
 +}
@@ -2931,7 +2931,7 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
      return heap_size;
  }
  
-+void get_memory_layout(struct MemoryLayout *memory_layout)
++void get_memory_layout(struct SgxMemoryLayout *memory_layout)
 +{
 +    // Enclave initialized data/uninitialized data/heap.
 +    memory_layout->data_base = GET_PTR(void, &__ImageBase, g_global_data.data_offset);
@@ -2967,7 +2967,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  void * get_heap_base(void);
  size_t get_heap_size(void);
  size_t get_heap_min_size(void);
-+void get_memory_layout(struct MemoryLayout *memory_layout);
++void get_memory_layout(struct SgxMemoryLayout *memory_layout);
  int * get_errno_addr(void);
  bool is_stack_addr(void *address, size_t size);
  bool is_valid_sp(uintptr_t sp);

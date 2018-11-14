@@ -44,6 +44,22 @@ bool enc_is_outside_enclave(void const* address, size_t size) {
   return sgx_is_outside_enclave(address, size) == 1;
 }
 
+void enc_get_memory_layout(struct EnclaveMemoryLayout* enclave_memory_layout) {
+  if (!enclave_memory_layout) return;
+  struct SgxMemoryLayout memory_layout;
+  sgx_memory_layout(&memory_layout);
+  enclave_memory_layout->data_base = memory_layout.data_base;
+  enclave_memory_layout->data_size = memory_layout.data_size;
+  enclave_memory_layout->bss_base = memory_layout.bss_base;
+  enclave_memory_layout->bss_size = memory_layout.bss_size;
+  enclave_memory_layout->heap_base = memory_layout.heap_base;
+  enclave_memory_layout->heap_size = memory_layout.heap_size;
+  enclave_memory_layout->thread_base = memory_layout.thread_base;
+  enclave_memory_layout->thread_size = memory_layout.thread_size;
+  enclave_memory_layout->stack_base = memory_layout.stack_base;
+  enclave_memory_layout->stack_limit = memory_layout.stack_limit;
+}
+
 #ifdef __cplusplus
 }  //  extern "C"
 #endif
