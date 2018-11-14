@@ -30,29 +30,56 @@ namespace asylo {
 
 using pthread_impl::PthreadMutexLock;
 
-ThreadManager::Thread::Thread() {
-  this->lock = PTHREAD_MUTEX_INITIALIZER;
-  this->state_change_cond = PTHREAD_COND_INITIALIZER;
+ThreadManager::Thread::Thread(std::function<void *()> start_routine)
+    : start_routine_(std::move(start_routine)) {}
+
+void ThreadManager::Thread::Run() {
+  UpdateThreadState(ThreadState::RUNNING);
+  ret_ = start_routine_();
+  UpdateThreadState(ThreadState::DONE);
 }
 
-int ThreadManager::Thread::UpdateThreadState(const pthread_t thread_id,
-                                             const ThreadState state) {
-  int ret = pthread_mutex_lock(&this->lock);
-  if (ret != 0) {
-    return ret;
-  }
-  this->state = state;
-  this->thread_id = thread_id;
-  ret = pthread_cond_broadcast(&this->state_change_cond);
-  if (ret != 0) {
-    return ret;
-  }
-  return pthread_mutex_unlock(&this->lock);
+void *ThreadManager::Thread::GetReturnValue() { return ret_; }
+
+void ThreadManager::Thread::UpdateThreadId(const pthread_t thread_id) {
+  PthreadMutexLock lock(&lock_);
+  thread_id_ = thread_id;
 }
 
-ThreadManager::ThreadManager() {
-  this->threads_lock_ = PTHREAD_MUTEX_INITIALIZER;
-  this->scheduled_lock_ = PTHREAD_MUTEX_INITIALIZER;
+pthread_t ThreadManager::Thread::GetThreadId() {
+  PthreadMutexLock lock(&lock_);
+  return thread_id_;
+}
+
+void ThreadManager::Thread::UpdateThreadState(const ThreadState &new_state) {
+  PthreadMutexLock lock(&lock_);
+  this->state_ = new_state;
+  int ret = pthread_cond_broadcast(&state_change_cond_);
+  if (ret != 0) {
+    abort();
+  }
+}
+
+void ThreadManager::Thread::WaitForThreadToEnterState(
+    const ThreadState &desired_state) {
+  PthreadMutexLock lock(&lock_);
+  while (state_ != desired_state) {
+    int ret = pthread_cond_wait(&state_change_cond_, &lock_);
+    if (ret != 0) {
+      abort();
+    }
+  }
+}
+
+void ThreadManager::Thread::WaitForThreadToExitState(
+    const ThreadState &undesired_state) {
+  PthreadMutexLock lock(&lock_);
+  while (state_ == undesired_state) {
+    int ret = pthread_cond_wait(&state_change_cond_, &lock_);
+    if (ret != 0) {
+      abort();
+    }
+  }
 }
 
 ThreadManager *ThreadManager::GetInstance() {
@@ -60,160 +87,102 @@ ThreadManager *ThreadManager::GetInstance() {
   return instance;
 }
 
-std::shared_ptr<ThreadManager::Thread> ThreadManager::QueueThread(
-    const std::function<void *(void *)> &function, void *const arg) {
-  PthreadMutexLock lock(&scheduled_lock_);
-  queued_threads_.emplace(std::make_shared<Thread>());
-  std::shared_ptr<Thread> thread = queued_threads_.back();
-  if (thread == nullptr) {
-    return nullptr;
+int ThreadManager::CreateThread(const std::function<void *()> &start_routine,
+                                pthread_t *const thread_id_out) {
+  std::shared_ptr<Thread> thread;
+
+  // Add thread entry point to queue of threads waiting to run.
+  {
+    PthreadMutexLock lock(&queued_threads_lock_);
+    queued_threads_.emplace(std::make_shared<Thread>(start_routine));
+    thread = queued_threads_.back();
   }
 
-  thread->state = Thread::ThreadState::QUEUED;
-  thread->start_routine = function;
-  thread->arg = arg;
-  thread->lock = PTHREAD_MUTEX_INITIALIZER;
-  return thread;
-}
-
-int ThreadManager::CreateThread(const std::function<void *(void *)> &function,
-                                void *const arg, pthread_t *const thread_id) {
-  // Add thread entry point to queue of waiting jobs.
-  std::shared_ptr<Thread> thread = QueueThread(function, arg);
   if (thread == nullptr) {
-    return -1;
-  }
-  int ret = pthread_mutex_lock(&thread->lock);
-  if (ret != 0) {
-    return ret;
+    return ENOMEM;
   }
 
   // Exit and create a thread to enter with EnterAndDonateThread().
   if (enc_untrusted_create_thread(GetEnclaveName().c_str())) {
-    return -1;
+    return ECHILD;
   }
 
   // Wait until a thread enters and executes the job.
-  while (thread->state == Thread::ThreadState::QUEUED) {
-    if (pthread_cond_wait(&thread->state_change_cond, &thread->lock)) {
-      abort();
-    }
-  }
+  thread->WaitForThreadToExitState(Thread::ThreadState::QUEUED);
 
-  if (thread_id) {
-    *thread_id = thread->thread_id;
-  }
-
-  return pthread_mutex_unlock(&thread->lock);
-}
-
-int ThreadManager::StartThread() {
-  std::shared_ptr<Thread> thread;
-
-  {
-    PthreadMutexLock sched_lock(&scheduled_lock_);
-    // If there are no jobs waiting to be executed, abort.
-    if (queued_threads_.empty()) {
-      abort();
-    }
-
-    PthreadMutexLock threads_lock(&threads_lock_);
-    // Move Thread from queued_threads_ onto threads_.
-    thread = AllocateThread(queued_threads_.front());
-    queued_threads_.pop();
-  }
-
-  if (thread == nullptr) {
-    return -1;
-  }
-
-  pthread_t self = pthread_self();
-  int ret = thread->UpdateThreadState(self, Thread::ThreadState::RUNNING);
-  if (ret != 0) {
-    return ret;
-  }
-
-  // Run the job.
-  thread->ret = thread->start_routine(thread->arg);
-
-  ret = thread->UpdateThreadState(self, Thread::ThreadState::DONE);
-  if (ret != 0) {
-    return ret;
-  }
-
-  // Wait until the thread is joined.
-  ret = pthread_mutex_lock(&thread->lock);
-  if (ret != 0) {
-    return ret;
-  }
-  while (thread->state != Thread::ThreadState::JOINED) {
-    if (pthread_cond_wait(&thread->state_change_cond, &thread->lock)) {
-      abort();
-    }
+  if (thread_id_out != nullptr) {
+    *thread_id_out = thread->GetThreadId();
   }
 
   return 0;
 }
 
-int ThreadManager::JoinThread(const pthread_t thread_id, void **return_value) {
+// StartThread is called from trusted_application.cc as the start routine when
+// a new thread is donated to the Enclave.
+int ThreadManager::StartThread() {
   std::shared_ptr<Thread> thread;
+
+  {
+    PthreadMutexLock lock(&queued_threads_lock_);
+    // There should be a one-to-one mapping of threads donated to the enclave
+    // and threads created from above at the pthread API layer waiting to run.
+    // If a thread gets donated and there's no thread waiting to run, something
+    // has gone very wrong.
+    if (queued_threads_.empty()) {
+      abort();
+    }
+    thread = queued_threads_.front();
+    queued_threads_.pop();
+  }
+
+  // Bind the Thread we just took off the queue to the thread id of the donated
+  // enclave thread we're running under.
+  const pthread_t thread_id = pthread_self();
+  thread->UpdateThreadId(thread_id);
+
+  // Add the thread to our map so we can find it later.
   {
     PthreadMutexLock lock(&threads_lock_);
-    thread = GetThread(thread_id);
+    threads_[thread_id] = thread;
   }
+
+  // Run the start_routine.
+  thread->Run();
+
+  // Wait for the caller to join before releasing the thread.
+  thread->WaitForThreadToEnterState(Thread::ThreadState::JOINED);
+
+  return 0;
+}
+
+int ThreadManager::JoinThread(const pthread_t thread_id,
+                              void **return_value_out) {
+  std::shared_ptr<Thread> thread = GetThread(thread_id);
 
   if (thread == nullptr) {
     return -1;
   }
 
   // Wait until the job is finished executing.
-  int ret = pthread_mutex_lock(&thread->lock);
-  if (ret != 0) {
-    return ret;
-  }
-  while (thread->state != Thread::ThreadState::DONE) {
-    if (pthread_cond_wait(&thread->state_change_cond, &thread->lock)) {
-      abort();
-    }
+  thread->WaitForThreadToEnterState(Thread::ThreadState::DONE);
+
+  if (return_value_out != nullptr) {
+    *return_value_out = thread->GetReturnValue();
   }
 
-  if (return_value) {
-    *return_value = thread->ret;
-  }
-
-  ret = pthread_mutex_unlock(&thread->lock);
-  if (ret != 0) {
-    return ret;
-  }
-
-  ret = thread->UpdateThreadState(thread_id, Thread::ThreadState::JOINED);
-  if (ret != 0) {
-    return ret;
-  }
+  thread->UpdateThreadState(Thread::ThreadState::JOINED);
 
   return 0;
 }
 
-std::shared_ptr<ThreadManager::Thread> ThreadManager::AllocateThread(
-    std::shared_ptr<Thread> thread) {
-  pthread_t thread_id = pthread_self();
-  threads_[thread_id] = thread;
-
-  int ret = thread->UpdateThreadState(thread_id, Thread::ThreadState::RUNNING);
-  if (ret != 0) {
-    abort();
-  }
-
-  return thread;
-}
-
 std::shared_ptr<ThreadManager::Thread> ThreadManager::GetThread(
     pthread_t thread_id) {
-  std::shared_ptr<Thread> ret = nullptr;
-  if (threads_.find(thread_id) != threads_.end()) {
-    ret = threads_[thread_id];
+  PthreadMutexLock lock(&threads_lock_);
+  auto it = threads_.find(thread_id);
+  if (it == threads_.end()) {
+    return nullptr;
   }
-  return ret;
+  return it->second;
 }
 
 }  // namespace asylo

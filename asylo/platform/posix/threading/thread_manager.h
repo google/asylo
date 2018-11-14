@@ -36,11 +36,10 @@ class ThreadManager {
   static ThreadManager *GetInstance();
 
   // Adds the given |function| to a start_routine queue of functions waiting to
-  // be run by the pthreads implementation. |arg| will be saved to pass to the
-  // start_routine. |thread_id| will be updated to the pthread_t of the created
-  // thread.
-  int CreateThread(const std::function<void *(void *)> &function, void *arg,
-                   pthread_t *thread_id);
+  // be run by the pthreads implementation. |thread_id_out| will be updated to
+  // the pthread_t of the created thread.
+  int CreateThread(const std::function<void *()> &start_routine,
+                   pthread_t *thread_id_out);
 
   // Removes a function from the start_routine queue and runs it. If no
   // start_routine is present this function will abort().
@@ -48,54 +47,68 @@ class ThreadManager {
 
   // Waits till given |thread_id| has returned and assigns its returned void* to
   // |return_value|.
-  int JoinThread(const pthread_t thread_id, void **return_value);
+  int JoinThread(pthread_t thread_id, void **return_value_out);
 
  private:
-  ThreadManager();
+  ThreadManager() = default;
   ThreadManager(ThreadManager const &) = delete;
   void operator=(ThreadManager const &) = delete;
 
   // Represents a thread inside of the enclave.
-  struct Thread {
-    Thread();
-    ~Thread() = default;
+  class Thread {
+   public:
     enum class ThreadState { QUEUED, RUNNING, DONE, JOINED };
 
-    // Function passed to pthread_create().
-    std::function<void *(void *)> start_routine;
+    // Creates a thread in the QUEUED state with the specified |start_routine|.
+    Thread(std::function<void *()> start_routine);
 
-    // Argument passed to pthread_create().
-    void *arg;
+    ~Thread() = default;
 
-    // Return value of start_routine.
-    void *ret;
+    // Moves the thread into the RUNNING state, runs the thread's start_routine,
+    // and then sets the state to DONE.
+    void Run();
+
+    // Returns the return value of the thread's start routine.
+    void *GetReturnValue();
+
+    // Updates the thread ID; used to bind an Asylo thread struct to the ID of
+    // the donated Enclave thread running this Asylo thread.
+    void UpdateThreadId(pthread_t thread_id);
+
+    // Accessor for thread id.
+    pthread_t GetThreadId();
+
+    // Updates the thread state, potentially unblocking any thread waiting for
+    // this thread to enter or exit that state.
+    void UpdateThreadState(const ThreadState &state);
+
+    // Blocks until this thread enters |state|.
+    void WaitForThreadToEnterState(const ThreadState &state);
+
+    // Blocks until this thread is not in |state|.
+    void WaitForThreadToExitState(const ThreadState &state);
+
+   private:
+    // Function passed to pthread_create() bound to its argument.
+    const std::function<void *()> start_routine_;
+
+    // Return value of start_routine, set when Run() is complete.
+    void *ret_;
+
+    // Current thread_id if the thread has been allocated.
+    pthread_t thread_id_;
 
     // Guards internal state of a Thread object.
-    pthread_mutex_t lock;
-    pthread_cond_t state_change_cond;
-    pthread_t thread_id;
-    ThreadState state;
-
-    // Requires lock is held. Updates the state and broadcasts to
-    // state_change_cond and releases the lock.
-    int UpdateThreadState(pthread_t thread_id, ThreadState state);
+    pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER;
+    pthread_cond_t state_change_cond_ = PTHREAD_COND_INITIALIZER;
+    ThreadState state_ = ThreadState::QUEUED;
   };
 
-  // Creates a Thread for the given parameters, adds it to the queued_threads_
-  // queue then returns a pointer to it.
-  std::shared_ptr<Thread> QueueThread(
-      const std::function<void *(void *)> &function, void *arg);
-
-  // Adds given |thread| to the threads_ list, sets its state to RUNNING, and
-  // returns its thread_id.
-  std::shared_ptr<Thread> AllocateThread(std::shared_ptr<Thread> thread);
-
-  // Returns a Thread pointer for a given |thread_id|. Requires
-  // LockQueuedThreads().
+  // Returns a Thread pointer for a given |thread_id|.
   std::shared_ptr<Thread> GetThread(pthread_t thread_id);
 
   // Guards queued_threads_.
-  pthread_mutex_t scheduled_lock_;
+  pthread_mutex_t queued_threads_lock_ = PTHREAD_MUTEX_INITIALIZER;
 
   // Queue of start_routines waiting to be run.
   // std::shared_ptr is documented to use atomic increments/decrements to manage
@@ -103,7 +116,7 @@ class ThreadManager {
   std::queue<std::shared_ptr<Thread>> queued_threads_;
 
   // Guards threads_.
-  pthread_mutex_t threads_lock_;
+  pthread_mutex_t threads_lock_ = PTHREAD_MUTEX_INITIALIZER;
 
   // List of currently running threads or threads waiting to be joined.
   absl::flat_hash_map<pthread_t, std::shared_ptr<Thread>> threads_;
