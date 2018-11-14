@@ -42,6 +42,42 @@ cc_library(
     ],
 )
 
+# Implementation of AeadKey for AES-GCM.
+cc_library(
+    name = "aes_gcm_key",
+    srcs = ["aes_gcm_key.cc"],
+    hdrs = ["aes_gcm_key.h"],
+    deps = [
+        ":aead_key",
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:cleanup",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+# Tests for AesGcmKey class.
+cc_test(
+    name = "aes_gcm_key_test",
+    srcs = ["aes_gcm_key_test.cc"],
+    deps = [
+        ":aes_gcm_key",
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:bytes",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:error_codes",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Defines a C++ interface for hash functions.
 cc_library(
     name = "hash_interface",
