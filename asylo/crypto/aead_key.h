@@ -19,8 +19,7 @@
 #ifndef ASYLO_CRYPTO_AEAD_KEY_H_
 #define ASYLO_CRYPTO_AEAD_KEY_H_
 
-#include <vector>
-
+#include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"  // IWYU pragma: export
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/cleansing_types.h"
@@ -41,20 +40,26 @@ class AeadKey {
   // Gets the nonce size in bytes expected for the Seal() and Open() operations.
   virtual size_t NonceSize() const = 0;
 
-  // Implements the AEAD Seal operation. |nonce|.size() must be same as the
-  // value returned by NonceSize(). This method is marked non-const to allow
-  // for implementations that internally manage key rotation.
+  // Gets the max size of the spatial overhead for a Seal() operation.
+  virtual size_t MaxSealOverhead() const = 0;
+
+  // Implements the AEAD Seal operation. |nonce|.size() must be the same as the
+  // value returned by NonceSize(). |ciphertext| is not resized, but its final
+  // size is returned through |ciphertext_size|. This method is marked non-const
+  // to allow for implementations that internally manage key rotation.
   virtual Status Seal(ByteContainerView plaintext,
                       ByteContainerView associated_data,
-                      ByteContainerView nonce,
-                      std::vector<uint8_t> *ciphertext) = 0;
+                      ByteContainerView nonce, absl::Span<uint8_t> *ciphertext,
+                      size_t *ciphertext_size) = 0;
 
-  // Implements the AEAD Open operation. |nonce|.size() must be same as the
-  // value returned by NonceSize().
+  // Implements the AEAD Open operation. |nonce|.size() must be the same as the
+  // value returned by NonceSize(). |plaintext| is not resized, but its final
+  // size is returned through |plaintext_size|. This method is marked non-const
+  // to allow for implementations that internally manage key rotation.
   virtual Status Open(ByteContainerView ciphertext,
                       ByteContainerView associated_data,
-                      ByteContainerView nonce,
-                      CleansingVector<uint8_t> *plaintext) const = 0;
+                      ByteContainerView nonce, absl::Span<uint8_t> *plaintext,
+                      size_t *plaintext_size) = 0;
 };
 
 }  // namespace asylo

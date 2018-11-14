@@ -38,6 +38,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
+        "@com_google_absl//absl/types:span",
     ],
 )
 
