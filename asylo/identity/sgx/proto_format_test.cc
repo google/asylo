@@ -37,7 +37,7 @@ using ::testing::Test;
 
 TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
   CodeIdentity identity;
-  SetDefaultCodeIdentity(&identity);
+  SetSelfCodeIdentity(&identity);
   std::string text = FormatCodeIdentityProto(identity);
 
   std::vector<std::string> named_attributes;
@@ -49,7 +49,7 @@ TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
 
 TEST(ProtoFormatTest, CodeIdentityHasHexEncodedBytesFields) {
   CodeIdentity identity;
-  SetDefaultCodeIdentity(&identity);
+  SetSelfCodeIdentity(&identity);
   std::string text = FormatCodeIdentityProto(identity);
 
   EXPECT_THAT(text,

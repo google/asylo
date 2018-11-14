@@ -52,7 +52,7 @@ TEST(RemoteAssertionUtilTest, MakeRemoteAssertionSucceeds) {
 
   // Current enclave's code identity.
   CodeIdentity identity;
-  SetDefaultCodeIdentity(&identity);
+  SetSelfCodeIdentity(&identity);
 
   RemoteAssertion assertion;
   ASSERT_THAT(MakeRemoteAssertion(kUserData, identity, *signing_key,

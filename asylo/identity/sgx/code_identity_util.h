@@ -88,14 +88,15 @@ Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec);
 void SetStrictMatchSpec(CodeIdentityMatchSpec *spec);
 
 // Sets |identity| to the current enclave's identity.
-void SetDefaultCodeIdentity(CodeIdentity *identity);
+void SetSelfCodeIdentity(CodeIdentity *identity);
 
 // Sets |expectation| to default expectation, which is defined as the pair
-// <default identity, default match spec>.
-Status SetDefaultCodeIdentityExpectation(CodeIdentityExpectation *expectation);
+// <self identity, default match spec>.
+Status SetDefaultSelfCodeIdentityExpectation(
+    CodeIdentityExpectation *expectation);
 
 // Sets |expectation| to the strictest self identity expectation, which is
-// defined as the pair <default identity, strict match spec>.
+// defined as the pair <self identity, strict match spec>.
 Status SetStrictSelfCodeIdentityExpectation(
     CodeIdentityExpectation *expectation);
 

@@ -717,9 +717,9 @@ TEST_F(CodeIdentityUtilTest, SetStrictMatchSpec) {
   EXPECT_EQ(spec.attributes_match_mask(), expected_attributes);
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultCodeIdentity) {
+TEST_F(CodeIdentityUtilTest, SetSelfCodeIdentity) {
   CodeIdentity identity;
-  SetDefaultCodeIdentity(&identity);
+  SetSelfCodeIdentity(&identity);
   EXPECT_TRUE(std::equal(enclave_->get_mrenclave().cbegin(),
                          enclave_->get_mrenclave().cend(),
                          identity.mrenclave().hash().cbegin()));
@@ -751,15 +751,15 @@ TEST_F(CodeIdentityUtilTest, SetStrictSelfCodeIdentityExpectation) {
   EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultCodeIdentityExpectation) {
+TEST_F(CodeIdentityUtilTest, SetDefaultSelfCodeIdentityExpectation) {
   CodeIdentity identity;
-  SetDefaultCodeIdentity(&identity);
+  SetSelfCodeIdentity(&identity);
 
   CodeIdentityMatchSpec spec;
   EXPECT_THAT(SetDefaultMatchSpec(&spec), IsOk());
 
   CodeIdentityExpectation expectation;
-  EXPECT_THAT(SetDefaultCodeIdentityExpectation(&expectation), IsOk());
+  EXPECT_THAT(SetDefaultSelfCodeIdentityExpectation(&expectation), IsOk());
 
   EXPECT_THAT(expectation.reference_identity(), EquivalentProto(identity));
   EXPECT_THAT(expectation.match_spec(), EquivalentProto(spec));

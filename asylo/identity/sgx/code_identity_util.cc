@@ -250,13 +250,14 @@ void SetStrictMatchSpec(CodeIdentityMatchSpec *spec) {
   SetStrictSecsAttributesMask(spec->mutable_attributes_match_mask());
 }
 
-void SetDefaultCodeIdentity(CodeIdentity *identity) {
+void SetSelfCodeIdentity(CodeIdentity *identity) {
   // The default identity is the identity of the current enclave.
   *identity = GetSelfIdentity()->identity;
 }
 
-Status SetDefaultCodeIdentityExpectation(CodeIdentityExpectation *expectation) {
-  SetDefaultCodeIdentity(expectation->mutable_reference_identity());
+Status SetDefaultSelfCodeIdentityExpectation(
+    CodeIdentityExpectation *expectation) {
+  SetSelfCodeIdentity(expectation->mutable_reference_identity());
   return SetDefaultMatchSpec(expectation->mutable_match_spec());
 }
 
@@ -266,7 +267,7 @@ Status SetStrictSelfCodeIdentityExpectation(
   SetStrictMatchSpec(&match_spec);
 
   CodeIdentity self_identity;
-  SetDefaultCodeIdentity(&self_identity);
+  SetSelfCodeIdentity(&self_identity);
 
   return SetExpectation(match_spec, self_identity, expectation);
 }
