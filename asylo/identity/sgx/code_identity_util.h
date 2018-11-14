@@ -78,8 +78,14 @@ bool IsValidExpectation(const CodeIdentityExpectation &expectation);
 Status ParseIdentityFromHardwareReport(const Report &report,
                                        CodeIdentity *identity);
 
-// Sets |spec| to default SGX match spec.
+// Sets |spec| to the default SGX match spec, which requires a match on
+// MRSIGNER, MISCSELECT, and all ATTRIBUTES that do not fall into the default
+// "do not care" set.
 Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec);
+
+// Sets |spec| to the strictest SGX match spec, which requires a match on
+// MRENCLAVE, MRSIGNER, MISCSELECT, and all ATTRIBUTES bits.
+void SetStrictMatchSpec(CodeIdentityMatchSpec *spec);
 
 // Sets |identity| to the current enclave's identity.
 void SetDefaultCodeIdentity(CodeIdentity *identity);
@@ -87,6 +93,11 @@ void SetDefaultCodeIdentity(CodeIdentity *identity);
 // Sets |expectation| to default expectation, which is defined as the pair
 // <default identity, default match spec>.
 Status SetDefaultCodeIdentityExpectation(CodeIdentityExpectation *expectation);
+
+// Sets |expectation| to the strictest self identity expectation, which is
+// defined as the pair <default identity, strict match spec>.
+Status SetStrictSelfCodeIdentityExpectation(
+    CodeIdentityExpectation *expectation);
 
 // Parses SGX code identity from a EnclaveIdentity proto.
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,

@@ -26,6 +26,7 @@
 
 #include "absl/base/attributes.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace sgx {
@@ -142,10 +143,6 @@ bool TestAttribute(SecsAttributeBit attribute,
 // is set.
 bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes);
 
-// Gets default "do not care" attributes in a list form.
-bool GetDefaultDoNotCareSecsAttributes(
-    std::vector<SecsAttributeBit> *attribute_list);
-
 // Gets all attributes defined by the SGX architecture in an SecsAttributeSet
 // form.
 bool GetAllSecsAttributes(SecsAttributeSet *attributes);
@@ -159,11 +156,23 @@ bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes);
 // Gets attributes defined as must-be-set in a Attributes form.
 bool GetMustBeSetSecsAttributes(Attributes *attributes);
 
+// Gets default "do not care" attributes in a list form.
+bool GetDefaultDoNotCareSecsAttributes(
+    std::vector<SecsAttributeBit> *attribute_list);
+
 // Gets default "do not care" attributes in an SecsAttributeSet form.
 bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes);
 
 // Gets default "do not care" attributes in a Attributes form.
 bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes);
+
+// Sets |attributes_match_mask| to the default attributes match mask, which is
+// defined as the logical NOT of the default "do not care" attributes.
+Status SetDefaultSecsAttributesMask(Attributes *attributes_match_mask);
+
+// Sets |attributes_match_mask| to the strictest match mask, which sets all bits
+// in the mask.
+void SetStrictSecsAttributesMask(Attributes *attributes_match_mask);
 
 // Gets printable list of attributes from a list of SecsAttributeBit values.
 void GetPrintableAttributeList(

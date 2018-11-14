@@ -33,6 +33,7 @@
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
@@ -693,7 +694,7 @@ TEST_F(CodeIdentityUtilTest, ParseIdentityFromHardwareReport) {
 
 TEST_F(CodeIdentityUtilTest, SetDefaultMatchSpec) {
   CodeIdentityMatchSpec spec;
-  EXPECT_THAT(SetDefaultMatchSpec(&spec), IsOk());
+  ASSERT_THAT(SetDefaultMatchSpec(&spec), IsOk());
   EXPECT_FALSE(spec.is_mrenclave_match_required());
   EXPECT_TRUE(spec.is_mrsigner_match_required());
   EXPECT_EQ(spec.miscselect_match_mask(), kLongAllF);
@@ -702,6 +703,18 @@ TEST_F(CodeIdentityUtilTest, SetDefaultMatchSpec) {
   Attributes default_attributes_mask;
   ConvertSecsAttributeRepresentation(~attributes, &default_attributes_mask);
   EXPECT_EQ(spec.attributes_match_mask(), default_attributes_mask);
+}
+
+TEST_F(CodeIdentityUtilTest, SetStrictMatchSpec) {
+  CodeIdentityMatchSpec spec;
+  SetStrictMatchSpec(&spec);
+  EXPECT_TRUE(spec.is_mrenclave_match_required());
+  EXPECT_TRUE(spec.is_mrsigner_match_required());
+  EXPECT_EQ(spec.miscselect_match_mask(), kLongAllF);
+
+  Attributes expected_attributes;
+  SetStrictSecsAttributesMask(&expected_attributes);
+  EXPECT_EQ(spec.attributes_match_mask(), expected_attributes);
 }
 
 TEST_F(CodeIdentityUtilTest, SetDefaultCodeIdentity) {
@@ -724,6 +737,18 @@ TEST_F(CodeIdentityUtilTest, SetDefaultCodeIdentity) {
       ConvertSecsAttributeRepresentation(identity.attributes(), &attributes));
   EXPECT_EQ(enclave_->get_attributes(), attributes);
   EXPECT_EQ(enclave_->get_miscselect(), identity.miscselect());
+}
+
+TEST_F(CodeIdentityUtilTest, SetStrictSelfCodeIdentityExpectation) {
+  CodeIdentityExpectation expectation;
+  SetStrictSelfCodeIdentityExpectation(&expectation);
+
+  CodeIdentityMatchSpec match_spec;
+  SetStrictMatchSpec(&match_spec);
+
+  EXPECT_THAT(expectation.reference_identity(),
+              EquivalentProto(GetSelfIdentity()->identity));
+  EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec));
 }
 
 TEST_F(CodeIdentityUtilTest, SetDefaultCodeIdentityExpectation) {

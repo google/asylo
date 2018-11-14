@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/code_identity_util.h"
 
 #include <openssl/cmac.h>
+#include <limits>
 #include <string>
 
 #include "absl/strings/str_cat.h"
@@ -228,19 +229,25 @@ Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec) {
   // currently only one MISCSELECT bit is defined, which is security critical,
   // and all undefined bits are, by default, considered security-critical, as
   // they could be defined to affect security in the future.
-  spec->set_miscselect_match_mask(0xFFFFFFFF);
+  spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
 
   // The default attributes_match_mask is a logical NOT of the default "DO NOT
   // CARE" attributes.
-  SecsAttributeSet attributes;
-  if (!GetDefaultDoNotCareSecsAttributes(&attributes)) {
-    return Status(::asylo::error::GoogleError::INTERNAL,
-                  "Could not determine default \"DO NOT CARE\" attributes");
-  }
-  ConvertSecsAttributeRepresentation(~attributes,
-                                     spec->mutable_attributes_match_mask());
+  return SetDefaultSecsAttributesMask(spec->mutable_attributes_match_mask());
+}
 
-  return Status::OkStatus();
+void SetStrictMatchSpec(CodeIdentityMatchSpec *spec) {
+  // Require MRENCLAVE match.
+  spec->set_is_mrenclave_match_required(true);
+
+  // Require MRSIGNER match.
+  spec->set_is_mrsigner_match_required(true);
+
+  // Require a match on all MISCSELECT bits.
+  spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
+
+  // Require a match for all ATTRIBUTES bits.
+  SetStrictSecsAttributesMask(spec->mutable_attributes_match_mask());
 }
 
 void SetDefaultCodeIdentity(CodeIdentity *identity) {
@@ -251,6 +258,17 @@ void SetDefaultCodeIdentity(CodeIdentity *identity) {
 Status SetDefaultCodeIdentityExpectation(CodeIdentityExpectation *expectation) {
   SetDefaultCodeIdentity(expectation->mutable_reference_identity());
   return SetDefaultMatchSpec(expectation->mutable_match_spec());
+}
+
+Status SetStrictSelfCodeIdentityExpectation(
+    CodeIdentityExpectation *expectation) {
+  CodeIdentityMatchSpec match_spec;
+  SetStrictMatchSpec(&match_spec);
+
+  CodeIdentity self_identity;
+  SetDefaultCodeIdentity(&self_identity);
+
+  return SetExpectation(match_spec, self_identity, expectation);
 }
 
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,

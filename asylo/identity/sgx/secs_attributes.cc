@@ -21,6 +21,7 @@
 #include <cstdint>
 #include <cstring>
 #include <iostream>
+#include <limits>
 #include <string>
 #include <utility>
 #include <vector>
@@ -296,15 +297,6 @@ bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes) {
   }
 }
 
-bool GetDefaultDoNotCareSecsAttributes(
-    std::vector<SecsAttributeBit> *attribute_list) {
-  *attribute_list = std::vector<SecsAttributeBit>(
-      kDefaultDoNotCareSecsAttributes,
-      kDefaultDoNotCareSecsAttributes +
-          arraysize(kDefaultDoNotCareSecsAttributes));
-  return true;
-}
-
 bool GetAllSecsAttributes(SecsAttributeSet *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kAllSecsAttributes, kAllSecsAttributes + arraysize(kAllSecsAttributes));
@@ -331,6 +323,15 @@ bool GetMustBeSetSecsAttributes(Attributes *attributes) {
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
+bool GetDefaultDoNotCareSecsAttributes(
+    std::vector<SecsAttributeBit> *attribute_list) {
+  *attribute_list = std::vector<SecsAttributeBit>(
+      kDefaultDoNotCareSecsAttributes,
+      kDefaultDoNotCareSecsAttributes +
+          arraysize(kDefaultDoNotCareSecsAttributes));
+  return true;
+}
+
 bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kDefaultDoNotCareSecsAttributes,
@@ -345,6 +346,28 @@ bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes) {
       kDefaultDoNotCareSecsAttributes +
           arraysize(kDefaultDoNotCareSecsAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
+}
+
+Status SetDefaultSecsAttributesMask(Attributes *attributes_match_mask) {
+  SecsAttributeSet attributes;
+  if (!GetDefaultDoNotCareSecsAttributes(&attributes)) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Could not determine default \"DO NOT CARE\" attributes");
+  }
+  // The default attributes_match_mask is a logical NOT of the default "DO NOT
+  // CARE" attributes.
+  if (!ConvertSecsAttributeRepresentation(~attributes, attributes_match_mask)) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "Could not convert hardware SecsAttributeSet to Attributes");
+  }
+
+  return Status::OkStatus();
+}
+
+void SetStrictSecsAttributesMask(Attributes *attributes_match_mask) {
+  attributes_match_mask->set_flags(std::numeric_limits<uint64_t>::max());
+  attributes_match_mask->set_xfrm(std::numeric_limits<uint64_t>::max());
 }
 
 void GetPrintableAttributeList(

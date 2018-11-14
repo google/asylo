@@ -26,10 +26,13 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
+
+constexpr uint64_t kLongLongAllF = 0xFFFFFFFFFFFFFFFFULL;
 
 // A test fixture is used to ensure naming consistency, maintaining common
 // set of constants, and future extensibility.
@@ -360,6 +363,33 @@ TEST_F(SecsAttributesTest, TestAttributeAttributesError) {
   Attributes attributes;
   EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &attributes));
   EXPECT_FALSE(TestAttribute(bad_attribute_, attributes));
+}
+
+// Verify that SetDefaultSecsAttributesMask creates a mask that is the logical
+// NOT of the "do not care" attributes set.
+TEST_F(SecsAttributesTest, SetDefaultSecsAttributesMask) {
+  Attributes attributes_match_mask_vector;
+  EXPECT_THAT(SetDefaultSecsAttributesMask(&attributes_match_mask_vector),
+              IsOk());
+  SecsAttributeSet attributes_match_mask;
+  EXPECT_TRUE(ConvertSecsAttributeRepresentation(attributes_match_mask_vector,
+                                                 &attributes_match_mask));
+
+  SecsAttributeSet do_not_care_attributes;
+  EXPECT_TRUE(GetDefaultDoNotCareSecsAttributes(&do_not_care_attributes));
+
+  EXPECT_EQ(~attributes_match_mask.flags, do_not_care_attributes.flags);
+  EXPECT_EQ(~attributes_match_mask.xfrm, do_not_care_attributes.xfrm);
+}
+
+// Verify that SetStrictSecsAttributesMask creates a mask that sets all possible
+// attributes bits.
+TEST_F(SecsAttributesTest, SetStrictSecsAttributesMask) {
+  Attributes attributes_match_mask;
+  SetStrictSecsAttributesMask(&attributes_match_mask);
+
+  EXPECT_EQ(attributes_match_mask.flags(), kLongLongAllF);
+  EXPECT_EQ(attributes_match_mask.xfrm(), kLongLongAllF);
 }
 
 // Verify the correctness of GetPrintableAttributeList on an attribute list.
