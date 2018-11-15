@@ -101,7 +101,7 @@ struct Sigstruct {
   SecsAttributeSet attributemask;
   UnsafeBytes<SHA256_DIGEST_LENGTH> enclavehash;
   UnsafeBytes<32> reserved3;  // Field size taken from the Intel SDM.
-  uint16_t isvproid;
+  uint16_t isvprodid;
   uint16_t isvsvn;
   UnsafeBytes<12> reserved4;  // Field size taken from the Intel SDM.
   UnsafeBytes<kRsa3072ModulusSize> q1;
