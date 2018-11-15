@@ -20,7 +20,7 @@
 
 #include <cstdio>
 #include <memory>
-#include <mutex> 
+#include <mutex>
 #include <thread>
 
 #include "absl/memory/memory.h"

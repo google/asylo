@@ -21,7 +21,7 @@
 
 #include <atomic>
 #include <chrono>
-#include <mutex> 
+#include <mutex>
 #include <thread>
 #include <vector>
 
