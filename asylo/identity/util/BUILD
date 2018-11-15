@@ -18,16 +18,13 @@ licenses(["notice"])  # Apache v2.0
 
 # This package defines utility libraries that are used by the identity libraries.
 
-package(
-    default_visibility = ["//asylo:implementation"],
-)
-
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 cc_library(
     name = "aligned_object_ptr",
     hdrs = ["aligned_object_ptr.h"],
+    visibility = ["//asylo:implementation"],
 )
 
 cc_test(
@@ -45,12 +42,14 @@ cc_test(
 asylo_proto_library(
     name = "sha256_hash_proto",
     srcs = ["sha256_hash.proto"],
+    visibility = ["//asylo:implementation"],
 )
 
 cc_library(
     name = "sha256_hash_util",
     srcs = ["sha256_hash_util.cc"],
     hdrs = ["sha256_hash_util.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":sha256_hash_proto_cc",
         "//asylo/crypto/util:bytes",

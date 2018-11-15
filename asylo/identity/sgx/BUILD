@@ -27,11 +27,13 @@ load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 asylo_proto_library(
     name = "attributes_proto",
     srcs = ["attributes.proto"],
+    visibility = ["//asylo:implementation"],
 )
 
 asylo_proto_library(
     name = "code_identity_proto",
     srcs = ["code_identity.proto"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_proto",
         "//asylo/identity/util:sha256_hash_proto",
@@ -528,6 +530,7 @@ cc_library(
     name = "proto_format",
     srcs = ["proto_format.cc"],
     hdrs = ["proto_format.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_proto_cc",
         ":code_identity_proto_cc",
