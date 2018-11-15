@@ -84,7 +84,7 @@ static Status run(sgx_enclave_id_t eid, const char *input, size_t input_len,
     // Return a Status object in the SGX error space.
     return Status(sgx_status, "Call to ecall_run failed");
   } else if (result || *output_len == 0) {
-    // Ecall succeeded but did not return a value. The indicates that the
+    // Ecall succeeded but did not return a value. This indicates that the
     // trusted code failed to propagate error information over the enclave
     // boundary (e.g. serialization failure).
     return Status(error::GoogleError::INTERNAL, "No output from enclave");
