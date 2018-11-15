@@ -34,8 +34,16 @@ ThreadManager::Thread::Thread(std::function<void *()> start_routine)
     : start_routine_(std::move(start_routine)) {}
 
 void ThreadManager::Thread::Run() {
+  // Unblock anyone waiting for thread to start.
   UpdateThreadState(ThreadState::RUNNING);
+
+  // Run the thread and store the start function's return value.
   ret_ = start_routine_();
+
+  // Run cleanup routines, if any.
+  RunCleanupRoutines();
+
+  // Unblock anyone waiting for this to finish.
   UpdateThreadState(ThreadState::DONE);
 }
 
@@ -73,6 +81,31 @@ void ThreadManager::Thread::WaitForThreadToExitState(
   while (state_ == undesired_state) {
     int ret = pthread_cond_wait(&state_change_cond_, &lock_);
     CHECK_EQ(ret, 0);
+  }
+}
+
+void ThreadManager::Thread::PushCleanupRoutine(
+    const std::function<void()> &func) {
+  cleanup_functions_.push(func);
+}
+
+void ThreadManager::Thread::PopCleanupRoutine(bool execute) {
+  // pthread_cleanup_push and pthread_cleanup_pop are guaranteed by the compiler
+  // (at compile-time!) to always occur in pairs. An attempt to pop an empty
+  // stack means something is wrong internally.
+  CHECK(!cleanup_functions_.empty());
+
+  std::function<void()> func = cleanup_functions_.top();
+  cleanup_functions_.pop();
+
+  if (execute) {
+    func();
+  }
+}
+
+void ThreadManager::Thread::RunCleanupRoutines() {
+  while (!cleanup_functions_.empty()) {
+    PopCleanupRoutine(/*execute=*/true);
   }
 }
 
@@ -176,6 +209,28 @@ std::shared_ptr<ThreadManager::Thread> ThreadManager::GetThread(
     return nullptr;
   }
   return it->second;
+}
+
+void ThreadManager::PushCleanupRoutine(const std::function<void()> &func) {
+  std::shared_ptr<Thread> thread = GetThread(pthread_self());
+
+  // This is only ever called on pthread_self, so the thread should always be
+  // found.
+  CHECK(thread != nullptr);
+
+  // No lock needed since this is a per-thread data structure.
+  thread->PushCleanupRoutine(func);
+}
+
+void ThreadManager::PopCleanupRoutine(bool execute) {
+  std::shared_ptr<Thread> thread = GetThread(pthread_self());
+
+  // This is only ever called on pthread_self, so the thread should always be
+  // found.
+  CHECK(thread != nullptr);
+
+  // No lock needed since this is a per-thread data structure.
+  thread->PopCleanupRoutine(execute);
 }
 
 }  // namespace asylo

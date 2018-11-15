@@ -222,6 +222,141 @@ TEST_F(PthreadListWrapperTest, EndToEnd) {
   VerifyListContentsAndDelete({});
 }
 
+// A helper class for testing pthread_cleanup_push and pthread_cleanup_pop. This
+// class defines a cleanup function that takes a string as an argument; every
+// time the cleanup function is called, that string is added to a "run log" that
+// records which cleanup functions ran, and in which order. This makes it easy
+// to compare what we think should run to what actually ran.
+class PthreadCleanupTest : public Test {
+ protected:
+  // Log of callback runs, each of which is identified with a string.
+  static std::vector<std::string> run_log_;
+
+  // Cleanup function just casts its argument to a string and places it in the
+  // run log.
+  static void CleanupFunc(void *arg) { run_log_.emplace_back((char *)arg); }
+
+  // Run |test_func| in a thread, wait for that thread to terminate, and check
+  // that the run log of callbacks that we observed matches |expected_run_log|.
+  void ExpectResult(const std::vector<std::string> &expected_run_log,
+                    void *(*test_func)(void *)) {
+    pthread_t pthread;
+    run_log_.clear();
+    ASSERT_EQ(pthread_create(&pthread, nullptr, test_func, nullptr), 0);
+    ASSERT_EQ(pthread_join(pthread, nullptr), 0);
+    EXPECT_EQ(run_log_, expected_run_log);
+  }
+};
+
+std::vector<std::string> PthreadCleanupTest::run_log_;
+
+TEST_F(PthreadCleanupTest, CleanupExecutedImplicitly) {
+  // Basic cleanup test: return before any callbacks are popped, so they should
+  // all run in stack order.
+  ExpectResult({"c", "b", "a"}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+    return nullptr;
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(0);
+  });
+}
+
+TEST_F(PthreadCleanupTest, CleanupExecutedExplicitly) {
+  // We explicitly pop each cleanup func with execute enabled. They should all
+  // execute in stack order.
+  ExpectResult({"c", "b", "a"}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+    pthread_cleanup_pop(1);
+    pthread_cleanup_pop(1);
+    pthread_cleanup_pop(1);
+    return nullptr;
+  });
+}
+
+TEST_F(PthreadCleanupTest, PartialPopWithoutExecution) {
+  // C is popped before execution. Execution should only be B, A.
+  ExpectResult({"b", "a"}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+    pthread_cleanup_pop(0);
+    return nullptr;
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(0);
+  });
+}
+
+TEST_F(PthreadCleanupTest, PartialPopWithExecution) {
+  // C and D are popped and executed before returning. The rest are executed
+  // implicitly.
+  ExpectResult({"d", "c", "b", "a"}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+    pthread_cleanup_push(CleanupFunc, (void *)"d");
+    pthread_cleanup_pop(1);
+    pthread_cleanup_pop(1);
+    return nullptr;
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(0);
+  });
+}
+
+TEST_F(PthreadCleanupTest, PoppedWithoutExecuting) {
+  // We explicitly pop each cleanup func with execute disabled. No cleanup
+  // functions should run.
+  ExpectResult({}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(0);
+    return nullptr;
+  });
+}
+
+TEST_F(PthreadCleanupTest, PopAllExecuteSome) {
+  // We explicitly pop each cleanup func with execute enabled for some and
+  // disabled for others.
+  ExpectResult({"c", "b"}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+    pthread_cleanup_push(CleanupFunc, (void *)"d");
+    pthread_cleanup_pop(0);
+    pthread_cleanup_pop(1);
+    pthread_cleanup_pop(1);
+    pthread_cleanup_pop(0);
+    return nullptr;
+  });
+}
+
+TEST_F(PthreadCleanupTest, NestedCleanup) {
+  // Nest pushes and pops.
+  ExpectResult({"e", "b", "a"}, [](void *) -> void * {
+    pthread_cleanup_push(CleanupFunc, (void *)"a");
+    pthread_cleanup_push(CleanupFunc, (void *)"b");
+    pthread_cleanup_push(CleanupFunc, (void *)"c");
+
+    pthread_cleanup_push(CleanupFunc, (void *)"d");
+    pthread_cleanup_pop(0);  // pop d
+
+    pthread_cleanup_push(CleanupFunc, (void *)"e");
+    pthread_cleanup_pop(1);  // pop e and execute
+
+    pthread_cleanup_pop(0);  // pop c
+    return nullptr;
+    pthread_cleanup_pop(0);  // pop b; executed implicitly
+    pthread_cleanup_pop(0);  // pop a; executed implicitly
+  });
+}
+
 }  // namespace
 }  // namespace pthread_impl
 }  // namespace asylo

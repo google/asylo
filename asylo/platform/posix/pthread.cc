@@ -707,6 +707,18 @@ int pthread_equal(pthread_t thread_one, pthread_t thread_two) {
   return 0;
 }
 
+void _pthread_cleanup_push(struct _pthread_cleanup_context *context,
+                           void (*routine)(void *), void *arg) {
+  ThreadManager *const thread_manager = ThreadManager::GetInstance();
+  thread_manager->PushCleanupRoutine(std::bind(routine, arg));
+}
+
+void _pthread_cleanup_pop(struct _pthread_cleanup_context *context,
+                          int execute) {
+  ThreadManager *const thread_manager = ThreadManager::GetInstance();
+  thread_manager->PopCleanupRoutine(execute != 0);
+}
+
 int pthread_mutexattr_init(pthread_mutexattr_t *mutexattr) { return 0; }
 int pthread_mutexattr_destroy(pthread_mutexattr_t *mutexattr) { return 0; }
 int pthread_mutexattr_settype(pthread_mutexattr_t *mutexattr, int type) {

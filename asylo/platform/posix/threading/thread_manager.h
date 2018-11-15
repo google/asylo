@@ -23,6 +23,7 @@
 #include <functional>
 #include <memory>
 #include <queue>
+#include <stack>
 #include <utility>
 
 #include "absl/container/flat_hash_map.h"
@@ -48,6 +49,13 @@ class ThreadManager {
   // Waits till given |thread_id| has returned and assigns its returned void* to
   // |return_value|.
   int JoinThread(pthread_t thread_id, void **return_value_out);
+
+  // Push a cleanup routine |func| to the current (self) thread.
+  void PushCleanupRoutine(const std::function<void()> &func);
+
+  // Pop the top cleanup routine off the current (self) thread; execute it if
+  // |execute| is true.
+  void PopCleanupRoutine(bool execute);
 
  private:
   ThreadManager() = default;
@@ -88,7 +96,18 @@ class ThreadManager {
     // Blocks until this thread is not in |state|.
     void WaitForThreadToExitState(const ThreadState &state);
 
+    // Push cleanup routine |func| onto the thread's cleanup stack.
+    void PushCleanupRoutine(const std::function<void()> &func);
+
+    // Pop the top cleanup routine off the thread's cleanup stack; execute it if
+    // |execute| is true.
+    void PopCleanupRoutine(bool execute);
+
    private:
+    // Run all cleanup routines still on the cleanup stack. This is ony used to
+    // run the cleanup stack implicitly when thread execution ends.
+    void RunCleanupRoutines();
+
     // Function passed to pthread_create() bound to its argument.
     const std::function<void *()> start_routine_;
 
@@ -102,6 +121,10 @@ class ThreadManager {
     pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t state_change_cond_ = PTHREAD_COND_INITIALIZER;
     ThreadState state_ = ThreadState::QUEUED;
+
+    // Stack of cleanup functions that have been pushed and not yet popped or
+    // executed.
+    std::stack<std::function<void()>> cleanup_functions_;
   };
 
   // Returns a Thread pointer for a given |thread_id|.
