@@ -77,18 +77,12 @@ class PthreadMutexLock {
  public:
   PthreadMutexLock(pthread_mutex_t* mutex) : mutex_(mutex) {
     int ret = pthread_mutex_lock(mutex_);
-    if (ret != 0) {
-      LOG(FATAL) << "Can't lock mutex: " << ret;
-      abort();
-    }
+    CHECK_EQ(ret, 0);
   }
 
   ~PthreadMutexLock() {
     int ret = pthread_mutex_unlock(mutex_);
-    if (ret != 0) {
-      LOG(FATAL) << "Can't unlock mutex: " << ret;
-      abort();
-    }
+    CHECK_EQ(ret, 0);
   }
 
  private:

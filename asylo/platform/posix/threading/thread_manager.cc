@@ -55,9 +55,7 @@ void ThreadManager::Thread::UpdateThreadState(const ThreadState &new_state) {
   PthreadMutexLock lock(&lock_);
   this->state_ = new_state;
   int ret = pthread_cond_broadcast(&state_change_cond_);
-  if (ret != 0) {
-    abort();
-  }
+  CHECK_EQ(ret, 0);
 }
 
 void ThreadManager::Thread::WaitForThreadToEnterState(
@@ -65,9 +63,7 @@ void ThreadManager::Thread::WaitForThreadToEnterState(
   PthreadMutexLock lock(&lock_);
   while (state_ != desired_state) {
     int ret = pthread_cond_wait(&state_change_cond_, &lock_);
-    if (ret != 0) {
-      abort();
-    }
+    CHECK_EQ(ret, 0);
   }
 }
 
@@ -76,9 +72,7 @@ void ThreadManager::Thread::WaitForThreadToExitState(
   PthreadMutexLock lock(&lock_);
   while (state_ == undesired_state) {
     int ret = pthread_cond_wait(&state_change_cond_, &lock_);
-    if (ret != 0) {
-      abort();
-    }
+    CHECK_EQ(ret, 0);
   }
 }
 
@@ -128,9 +122,8 @@ int ThreadManager::StartThread() {
     // and threads created from above at the pthread API layer waiting to run.
     // If a thread gets donated and there's no thread waiting to run, something
     // has gone very wrong.
-    if (queued_threads_.empty()) {
-      abort();
-    }
+    CHECK(!queued_threads_.empty());
+
     thread = queued_threads_.front();
     queued_threads_.pop();
   }
