@@ -134,8 +134,9 @@ class EnclaveManagerOptions {
 /// ```
 ///   EnclaveManager::Configure(
 ///     EnclaveManagerOptions()
-///         .set_config_server_address("[::]:8000")
-///         .set_daemon_connection_timeout(absl::Milliseconds(100)));
+///         .set_config_server_connection_attributes(
+///             "[::]:8000",
+///             absl::Milliseconds(100)));
 ///   auto manager_result = EnclaveManager::Instance();
 ///   if (!manager_result.ok()) {
 ///     LOG(QFATAL) << manager_result.status();
