@@ -978,5 +978,11 @@ TEST_F(SyscallsTest, Truncate) {
       "truncate", FLAGS_test_tmpdir + "/truncate", nullptr));
 }
 
+// Tests that mmap(MAP_ANONYMOUS) will return an initialized, block-aligned
+// region of memory.
+TEST_F(SyscallsTest, Mmap) {
+  EXPECT_TRUE(RunSyscallInsideEnclave("mmap", "", nullptr));
+}
+
 }  // namespace
 }  // namespace asylo

@@ -22,6 +22,7 @@
 #include <regex.h>
 #include <sched.h>
 #include <stdio.h>
+#include <sys/mman.h>
 #include <sys/resource.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
@@ -123,6 +124,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunGetIfAddrsTest(output);
     } else if (test_input.test_target() == "truncate") {
       return RunTruncateTest(test_input.path_name());
+    } else if (test_input.test_target() == "mmap") {
+      return RunMmapTest();
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1125,6 +1128,31 @@ class SyscallsEnclave : public EnclaveTestCase {
           error::GoogleError::INTERNAL,
           absl::StrCat("Message read from truncated file is: ", buf1,
                        " and does not match expected: ", truncated_message));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunMmapTest() {
+    // use mmap to allocate an aligned block of 10000 bytes.
+    void *ptr = mmap(nullptr, 10000, PROT_READ | PROT_WRITE,
+                     MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if (ptr == MAP_FAILED) {
+      return Status(static_cast<error::PosixError>(errno),
+                    "mmap(MAP_ANONYMOUS) failed");
+    }
+    intptr_t address = reinterpret_cast<intptr_t>(ptr);
+    if ((address & 4095) != 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    "mmap(MAP_ANONYMOUS) returned non-page-aligned memory");
+    }
+    char *cptr = static_cast<char*>(ptr);
+    if (std::count(cptr, cptr + 10000, '\0') != 10000) {
+      return Status(error::GoogleError::INTERNAL,
+                    "mmap(MAP_ANONYMOUS) returned uninitialized memory");
+    }
+    if (munmap(ptr, 10000) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    "munmap() failed");
     }
     return Status::OkStatus();
   }

@@ -30,6 +30,7 @@ extern "C" {
 #define PROT_EXEC 0x01
 
 #define MAP_ANON 0x0002
+#define MAP_ANONYMOUS MAP_ANON
 
 #define MAP_SHARED 0x0010
 #define MAP_PRIVATE 0x0000
