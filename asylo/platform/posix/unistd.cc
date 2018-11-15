@@ -29,6 +29,9 @@
 
 using asylo::io::IOManager;
 
+// Simulated page size, used by the POSIX wrappers.
+constexpr size_t kPageSize = 4096;
+
 extern "C" {
 
 int access(const char *path_name, int mode) {
@@ -74,14 +77,21 @@ int gethostname(char *name, size_t len) {
   return 0;
 }
 
-// Only _SC_NPROCESSORS_ONLN and _SC_NPROCESSORS_CONF are supported for now. In
-// these cases, the return value is retrieved from the host. For any other
-// arguments, -1 is returned.
+// Only _SC_NPROCESSORS_ONLN, _SC_NPROCESSORS_CONF, and _SC_PAGESIZE are
+// supported for now. _SC_NPROCESSORS_CONF and _SC_NOPROCESSORS_ONLN retrieve
+// the return value from the host because processor resources are under control
+// of the host. _SC_PAGESIZE is hard-coded because a malicious value returned by
+// a host could result in undesired behavior. For any other arguments, -1 is
+// returned.
 long sysconf(int name) {
   switch (name) {
     case _SC_NPROCESSORS_CONF:
     case _SC_NPROCESSORS_ONLN:
       return enc_untrusted_sysconf(name);
+    case _SC_PAGESIZE:
+      // Hard-code a reasonable guess for the page size, without having to
+      // make an untrusted call.
+      return kPageSize;
     default:
       errno = ENOSYS;
       return -1;

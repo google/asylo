@@ -62,6 +62,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunSysconfTest(output, _SC_NPROCESSORS_CONF);
     } else if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_ONLN)") {
       return RunSysconfTest(output, _SC_NPROCESSORS_ONLN);
+    } else if (test_input.test_target() == "sysconf(_SC_PAGESIZE)") {
+      return RunSysconfTest(output, _SC_PAGESIZE);
     } else if (test_input.test_target() == "getpid") {
       return RunGetPidTest(output);
     } else if (test_input.test_target() == "unlink") {

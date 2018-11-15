@@ -321,6 +321,16 @@ TEST_F(SyscallsTest, SysconfScNprocessorsOnln) {
   EXPECT_EQ(test_output.int_syscall_return(), sysconf(_SC_NPROCESSORS_ONLN));
 }
 
+// Tests sysconf(). sysconf(_SC_PAGESIZE) should return 4096, regardless of
+// the host configuration.
+TEST_F(SyscallsTest, SysconfScPagesize) {
+  SyscallsTestOutput test_output;
+  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf(_SC_PAGESIZE)", "",
+                                      &test_output));
+  ASSERT_TRUE(test_output.has_int_syscall_return());
+  EXPECT_EQ(test_output.int_syscall_return(), 4096);
+}
+
 // Tests getpid() by comparing the return value of getpid() inside/outside the
 // enclave.
 TEST_F(SyscallsTest, GetPid) {
