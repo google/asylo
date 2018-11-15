@@ -26,21 +26,13 @@
 namespace asylo {
 namespace sgx {
 
-// For each of the supported proto types, returns a formatted string containing
-// a human-understandable representation of the given proto. The string is the
-// same as the one returned by Message::DebugString(), but with the following
-// changes to improve readability:
-//   * All bytes fields are hex-encoded.
-//   * All BitVector128 fields that are representations of ATTRIBUTES are
-//   printed as a list of ATTRIBUTE bit names.
-
-std::string FormatCodeIdentityProto(const CodeIdentity &code_identity);
-
-std::string FormatCodeIdentityMatchSpecProto(
-    const CodeIdentityMatchSpec &match_spec);
-
-std::string FormatCodeIdentityExpectationProto(
-    const CodeIdentityExpectation &expectation);
+// Returns a formatted string containing a human-understandable representation
+// of the given proto. The string is the same as the one returned by
+// google::protobuf::Message::DebugString(), but with the following changes to improve
+// readability:
+//   * All Sha256HashProto.hash() fields are hex-encoded.
+//   * All Attributes messages are presented as lists of ATTRIBUTES bit names.
+std::string FormatProto(const google::protobuf::Message &message);
 
 }  // namespace sgx
 }  // namespace asylo

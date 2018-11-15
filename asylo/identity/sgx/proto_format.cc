@@ -85,12 +85,12 @@ class AttributesXfrmPrinter : public TextFormat::FastFieldValuePrinter {
   }
 };
 
-std::unique_ptr<TextFormat::Printer> CreateSgxCodeIdentityPrinter() {
+std::unique_ptr<TextFormat::Printer> CreateSgxProtoPrinter() {
   auto printer = absl::make_unique<TextFormat::Printer>();
   const google::protobuf::Descriptor *descriptor = Attributes::descriptor();
 
   // Register a special printer for the fields that make up the enclave's
-  // ATTRIBUTES. The printer prints the name of each ATTRIBUTE bit that is set.
+  // ATTRIBUTES. The printer prints the name of each attribute bit that is set.
   printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("flags"),
                                      new AttributesFlagsPrinter());
   printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("xfrm"),
@@ -105,29 +105,14 @@ std::unique_ptr<TextFormat::Printer> CreateSgxCodeIdentityPrinter() {
   return printer;
 }
 
+}  // namespace
+
 std::string FormatProto(const google::protobuf::Message &message) {
-  static const TextFormat::Printer *printer =
-      CreateSgxCodeIdentityPrinter().release();
+  static const TextFormat::Printer *printer = CreateSgxProtoPrinter().release();
 
   std::string text;
   printer->PrintToString(message, &text);
   return text;
-}
-
-}  // namespace
-
-std::string FormatCodeIdentityProto(const CodeIdentity &code_identity) {
-  return FormatProto(code_identity);
-}
-
-std::string FormatCodeIdentityMatchSpecProto(
-    const CodeIdentityMatchSpec &match_spec) {
-  return FormatProto(match_spec);
-}
-
-std::string FormatCodeIdentityExpectationProto(
-    const CodeIdentityExpectation &expectation) {
-  return FormatProto(expectation);
 }
 
 }  // namespace sgx

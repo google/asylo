@@ -38,7 +38,7 @@ using ::testing::Test;
 TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
   CodeIdentity identity;
   SetSelfCodeIdentity(&identity);
-  std::string text = FormatCodeIdentityProto(identity);
+  std::string text = FormatProto(identity);
 
   std::vector<std::string> named_attributes;
   GetPrintableAttributeList(identity.attributes(), &named_attributes);
@@ -50,7 +50,7 @@ TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
 TEST(ProtoFormatTest, CodeIdentityHasHexEncodedBytesFields) {
   CodeIdentity identity;
   SetSelfCodeIdentity(&identity);
-  std::string text = FormatCodeIdentityProto(identity);
+  std::string text = FormatProto(identity);
 
   EXPECT_THAT(text,
               HasSubstr(absl::BytesToHexString(identity.mrenclave().hash())));
@@ -62,7 +62,7 @@ TEST(ProtoFormatTest, CodeIdentityHasHexEncodedBytesFields) {
 TEST(ProtoFormatTest, CodeIdentityMatchSpecHasAttributesByName) {
   CodeIdentityMatchSpec match_spec;
   SetDefaultMatchSpec(&match_spec);
-  std::string text = FormatCodeIdentityMatchSpecProto(match_spec);
+  std::string text = FormatProto(match_spec);
 
   std::vector<std::string> named_attributes;
   GetPrintableAttributeList(match_spec.attributes_match_mask(),
