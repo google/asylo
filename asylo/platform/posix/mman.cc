@@ -45,4 +45,25 @@ int munmap(void *addr, size_t length) {
   return 0;
 }
 
+int posix_memalign(void **memptr, size_t alignment, size_t size) {
+  // The spec says passing a size of 0 should either return a null pointer or
+  // a valid freeable pointer.
+  if (size == 0) {
+    *memptr = nullptr;
+    return 0;
+  }
+
+  void* ptr = memalign(alignment, size);
+
+  // From the man page: "On Linux (and other systems), posix_memalign() does not
+  // modify memptr on failure.  A requirement standardizing this behavior was
+  // added in POSIX.1-2016."
+  if (ptr == nullptr) {
+    return ENOMEM;
+  }
+
+  *memptr = ptr;
+  return 0;
+}
+
 }  // extern "C"
