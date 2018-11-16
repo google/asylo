@@ -88,6 +88,7 @@ cc_library(
 cc_enclave_test(
     name = "read_write_test",
     srcs = ["read_write_test.cc"],
+    tags = ["noregression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
