@@ -174,6 +174,7 @@ cc_library(
         "@linux_sgx//:sgx_hw": [
             "sgx/trusted/hardware_random.cc",
             "sgx/trusted/register_signal.cc",
+            "sgx/trusted/fork.cc",
         ],
         "@linux_sgx//:sgx_sim": [
             "sgx_sim/trusted/hardware_random.cc",
