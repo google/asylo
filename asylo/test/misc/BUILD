@@ -232,7 +232,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "pthread_test",
     srcs = ["pthread_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
@@ -258,7 +257,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "condvar_test",
     srcs = ["condvar_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
@@ -272,7 +270,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "sem_test",
     srcs = ["sem_test.cc"],
-    tags = ["regression"],
+    tags = ["noregression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
@@ -286,7 +284,6 @@ cc_enclave_test(
 cc_enclave_test(
     name = "memory_layout_test",
     srcs = ["memory_layout_test.cc"],
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
