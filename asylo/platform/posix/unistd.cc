@@ -98,6 +98,8 @@ long sysconf(int name) {
   }
 }
 
+int getpagesize() { return kPageSize; }
+
 uint32_t sleep(uint32_t seconds) { return enc_untrusted_sleep(seconds); }
 
 int usleep(useconds_t usec) { return enc_untrusted_usleep(usec); }
