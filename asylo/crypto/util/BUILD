@@ -16,7 +16,10 @@
 
 licenses(["notice"])  # Apache v2.0
 
-package(default_visibility = ["//asylo:implementation"])
+package(
+    default_visibility = ["//asylo:implementation"],
+    features = ["-parse_headers"],
+)
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
