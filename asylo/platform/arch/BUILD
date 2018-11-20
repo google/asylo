@@ -195,6 +195,7 @@ cc_library(
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
+        ":sgx_error_space",
         ":trusted_sgx_bridge",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",

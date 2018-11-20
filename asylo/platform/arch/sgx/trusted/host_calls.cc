@@ -41,20 +41,38 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
+#include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/memory.h"
-#include "asylo/platform/common/memory.h"
+#include "asylo/platform/arch/sgx/sgx_error_space.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/common/memory.h"
+#include "asylo/util/status.h"
 #include "include/sgx_trts.h"
 
 namespace asylo {
 namespace {
 
+#define CHECK_OCALL(status_)                                                 \
+  do {                                                                       \
+    sgx_status_t status##__COUNTER__ = status_;                              \
+    if (status##__COUNTER__ != SGX_SUCCESS) {                                \
+      enc_untrusted_puts(                                                    \
+          absl::StrCat(                                                      \
+              __FILE__, ":", __LINE__, ": ",                                 \
+              asylo::Status(status##__COUNTER__, "ocall failed").ToString()) \
+              .c_str());                                                     \
+      abort();                                                               \
+    }                                                                        \
+  } while (0)
+
 // Allocates untrusted memory and copies the buffer |data| of size |size| to it.
 // |addr| is updated to point to the address of the copied memory. It is the
 // responsibility of the caller to free the memory pointed to by |addr|.
+// It is a fatal error if memory cannot be allocated.
 bool CopyToUntrustedMemory(void **addr, void *data, size_t size) {
   if (data && !addr) {
     return false;
@@ -64,6 +82,10 @@ bool CopyToUntrustedMemory(void **addr, void *data, size_t size) {
     return true;
   }
   void *outside_enclave = enc_untrusted_malloc(size);
+  // The operation fails if it cannot allocate the necessary resources.
+  if (!outside_enclave) {
+    LOG(FATAL) << "Untrusted memory allocation failed";
+  }
   memcpy(outside_enclave, data, size);
   *addr = outside_enclave;
   return true;
@@ -119,6 +141,7 @@ bool BridgeMsghdrWrapper::CopyMsgName() {
   return true;
 }
 
+// It is a fatal error if memory cannot be allocated.
 bool BridgeMsghdrWrapper::CopyMsgIov() {
   struct bridge_iovec *tmp_iov_ptr = reinterpret_cast<struct bridge_iovec *>(
       enc_untrusted_malloc(msg_in_->msg_iovlen * sizeof(struct bridge_iovec)));
@@ -128,7 +151,7 @@ bool BridgeMsghdrWrapper::CopyMsgIov() {
   }
   for (int i = 0; i < msg_in_->msg_iovlen; ++i) {
     if (!ToBridgeIovec(&msg_in_->msg_iov[i], &msg_out_->msg_iov[i])) {
-      return false;
+      LOG(FATAL) << "Iovec allocation failed";
     }
   }
   return true;
@@ -184,12 +207,8 @@ extern "C" {
 
 void *enc_untrusted_malloc(size_t size) {
   void *result;
-  sgx_status_t status =
-      ocall_enc_untrusted_malloc(&result, static_cast<bridge_size_t>(size));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    abort();
-  }
+  CHECK_OCALL(
+      ocall_enc_untrusted_malloc(&result, static_cast<bridge_size_t>(size)));
   if (result &&
       !sgx_is_outside_enclave(result, static_cast<bridge_size_t>(size))) {
     abort();
@@ -211,32 +230,19 @@ int enc_untrusted_open(const char *path_name, int flags, ...) {
 
   int bridge_flags = asylo::ToBridgeFileFlags(flags);
   int result;
-  sgx_status_t status =
-      ocall_enc_untrusted_open(&result, path_name, bridge_flags, mode);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_open(&result, path_name, bridge_flags, mode));
   return result;
 }
 
 int enc_untrusted_puts(const char *str) {
   int result;
-  sgx_status_t status = ocall_enc_untrusted_puts(&result, str);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return EOF;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_puts(&result, str));
   return result;
 }
 
 int FcntlHelper(int fd, int cmd, int64_t arg) {
   int result;
-  sgx_status_t status = ocall_enc_untrusted_fcntl(&result, fd, cmd, arg);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_fcntl(&result, fd, cmd, arg));
   return result;
 }
 
@@ -271,6 +277,7 @@ int enc_untrusted_fcntl(int fd, int cmd, ...) {
       return result;
     }
     default: {
+      LOG(ERROR) << "Unimplemented fcntl command: " << cmd;
       errno = EINVAL;
       return -1;
     }
@@ -280,12 +287,7 @@ int enc_untrusted_fcntl(int fd, int cmd, ...) {
 int enc_untrusted_stat(const char *pathname, struct stat *stat_buffer) {
   int result;
   struct bridge_stat bridge_stat_buffer;
-  sgx_status_t status =
-      ocall_enc_untrusted_stat(&result, pathname, &bridge_stat_buffer);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_stat(&result, pathname, &bridge_stat_buffer));
   asylo::FromBridgeStat(&bridge_stat_buffer, stat_buffer);
   return result;
 }
@@ -293,12 +295,7 @@ int enc_untrusted_stat(const char *pathname, struct stat *stat_buffer) {
 int enc_untrusted_fstat(int fd, struct stat *stat_buffer) {
   int result;
   struct bridge_stat bridge_stat_buffer;
-  sgx_status_t status =
-      ocall_enc_untrusted_fstat(&result, fd, &bridge_stat_buffer);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_fstat(&result, fd, &bridge_stat_buffer));
   asylo::FromBridgeStat(&bridge_stat_buffer, stat_buffer);
   return result;
 }
@@ -306,12 +303,8 @@ int enc_untrusted_fstat(int fd, struct stat *stat_buffer) {
 int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer) {
   int result;
   struct bridge_stat bridge_stat_buffer;
-  sgx_status_t status =
-      ocall_enc_untrusted_lstat(&result, pathname, &bridge_stat_buffer);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(
+      ocall_enc_untrusted_lstat(&result, pathname, &bridge_stat_buffer));
   asylo::FromBridgeStat(&bridge_stat_buffer, stat_buffer);
   return result;
 }
@@ -368,17 +361,16 @@ ssize_t enc_untrusted_writev(int fd, const struct iovec *iov, int iovcnt) {
   char *buf;
   int size;
   if (!serialize_iov(iov, iovcnt, &buf, &size)) {
-    return -1;
+    // The serialization step is introduced for this bridge code. The
+    // possibility of its failure falls outside of the original specification
+    // for writev. Thus, instead of returning a writev error, log and abort.
+    LOG(FATAL) << "Unable to serialize iovec";
   }
   asylo::UntrustedUniquePtr<char> tmp(buf);
   bridge_ssize_t ret;
 
-  sgx_status_t status =
-      ocall_enc_untrusted_write_with_untrusted_ptr(&ret, fd, buf, size);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(
+      ocall_enc_untrusted_write_with_untrusted_ptr(&ret, fd, buf, size));
   return static_cast<ssize_t>(ret);
 }
 
@@ -390,17 +382,16 @@ ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt) {
   char *buf;
   int size;
   if (!create_untrusted_buffer(iov, iovcnt, &buf, &size)) {
+    // The extra buffer allocation step is introduced for this bridge code. The
+    // possibility of its failure falls outside of the original specification
+    // for readv. Thus, instead of returning a readv error, log and abort.
+    LOG(FATAL) << "Could not allocate buffer to read iovec";
     return -1;
   }
 
   asylo::UntrustedUniquePtr<char> tmp(buf);
   bridge_ssize_t ret;
-  sgx_status_t status =
-      ocall_enc_untrusted_read_with_untrusted_ptr(&ret, fd, buf, size);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_read_with_untrusted_ptr(&ret, fd, buf, size));
   fill_iov(buf, ret, iov, iovcnt);
   return static_cast<ssize_t>(ret);
 }
@@ -413,11 +404,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
                          socklen_t *addrlen) {
   int ret;
   struct bridge_sockaddr tmp;
-  sgx_status_t status = ocall_enc_untrusted_accept(&ret, sockfd, &tmp);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_accept(&ret, sockfd, &tmp));
   if (ret == -1) {
     return ret;
   }
@@ -431,12 +418,8 @@ int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
                        socklen_t addrlen) {
   int ret;
   struct bridge_sockaddr tmp;
-  sgx_status_t status = ocall_enc_untrusted_bind(
-      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_bind(
+      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp)));
   return ret;
 }
 
@@ -444,12 +427,8 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen) {
   int ret;
   struct bridge_sockaddr tmp;
-  sgx_status_t status = ocall_enc_untrusted_connect(
-      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_connect(
+      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp)));
   return ret;
 }
 
@@ -457,17 +436,14 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   bridge_ssize_t ret;
   asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
   if (!tmp_wrapper.CopyAllBuffers()) {
+    // CopyAllBuffers sets the ocall status on failure.
     errno = EFAULT;
     return -1;
   }
 
-  sgx_status_t status =
-      ocall_enc_untrusted_sendmsg(&ret, sockfd, tmp_wrapper.get_msg(), flags);
+  CHECK_OCALL(
+      ocall_enc_untrusted_sendmsg(&ret, sockfd, tmp_wrapper.get_msg(), flags));
 
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
   return static_cast<ssize_t>(ret);
 }
 
@@ -475,17 +451,13 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   bridge_ssize_t ret;
   asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
   if (!tmp_wrapper.CopyAllBuffers()) {
+    // CopyAllBuffers sets the ocall status on failure.
     errno = EFAULT;
     return -1;
   }
 
-  sgx_status_t status =
-      ocall_enc_untrusted_recvmsg(&ret, sockfd, tmp_wrapper.get_msg(), flags);
-
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(
+      ocall_enc_untrusted_recvmsg(&ret, sockfd, tmp_wrapper.get_msg(), flags));
 
   asylo::FromBridgeIovecArray(tmp_wrapper.get_msg(), msg);
   return static_cast<ssize_t>(ret);
@@ -503,12 +475,8 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
     errno = EAFNOSUPPORT;
     return nullptr;
   }
-  sgx_status_t status = ocall_enc_untrusted_inet_ntop(
-      &ret, af, src, src_size, dst, static_cast<bridge_size_t>(size));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return nullptr;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_inet_ntop(&ret, af, src, src_size, dst,
+                                            static_cast<bridge_size_t>(size)));
   // Instead of returning |ret| (which points to untrusted memory), we return
   // |dst| upon success (when |ret| is non-null) and nullptr upon failure.
   if (!ret) {
@@ -528,12 +496,8 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
     errno = EINVAL;
     return -1;
   }
-  sgx_status_t status = ocall_enc_untrusted_inet_pton(
-      &ret, asylo::ToBridgeAfFamily(af), src, dst, dst_size);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return 0;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_inet_pton(&ret, asylo::ToBridgeAfFamily(af),
+                                            src, dst, dst_size));
   return ret;
 }
 
@@ -550,24 +514,23 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   // Serialize an empty addrinfo if |hints| is nullptr.
   if (!asylo::SerializeAddrinfo(hints ? &bridge_hints : nullptr,
                                 &serialized_hints)) {
+    LOG(ERROR) << "Bad addrinfo";
     return -1;
   }
 
   int ret;
   char *tmp_serialized_res_start;
   bridge_size_t tmp_serialized_res_len;
-  sgx_status_t status = ocall_enc_untrusted_getaddrinfo(
+  CHECK_OCALL(ocall_enc_untrusted_getaddrinfo(
       &ret, node, service, serialized_hints.c_str(),
       static_cast<bridge_size_t>(serialized_hints.length()),
-      &tmp_serialized_res_start, &tmp_serialized_res_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  } else if (ret != 0) {
+      &tmp_serialized_res_start, &tmp_serialized_res_len));
+  if (ret != 0) {
     return ret;
-  } else if (!sgx_is_outside_enclave(
-                 tmp_serialized_res_start,
-                 static_cast<size_t>(tmp_serialized_res_len))) {
+  }
+  if (!sgx_is_outside_enclave(tmp_serialized_res_start,
+                              static_cast<size_t>(tmp_serialized_res_len))) {
+    LOG(ERROR) << "getaddrinfo response pointer not from host address space";
     return -1;
   }
 
@@ -579,7 +542,10 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
 
   std::string serialized_res(tmp_serialized_res,
                         static_cast<size_t>(tmp_serialized_res_len));
-  if (!asylo::DeserializeAddrinfo(&serialized_res, res)) return -1;
+  if (!asylo::DeserializeAddrinfo(&serialized_res, res)) {
+    LOG(ERROR) << "Invalid addrinfo in getaddrinfo response";
+    return -1;
+  }
   return ret;
 }
 
@@ -591,13 +557,9 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
                              socklen_t *optlen) {
   int ret;
   unsigned int host_optlen = *optlen;
-  sgx_status_t status = ocall_enc_untrusted_getsockopt(
+  CHECK_OCALL(ocall_enc_untrusted_getsockopt(
       &ret, sockfd, level, asylo::ToBridgeOptionName(level, optname), optval,
-      host_optlen, &host_optlen);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+      host_optlen, &host_optlen));
   *optlen = host_optlen;
   return ret;
 }
@@ -605,13 +567,9 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_setsockopt(
+  CHECK_OCALL(ocall_enc_untrusted_setsockopt(
       &ret, sockfd, level, asylo::ToBridgeOptionName(level, optname), optval,
-      static_cast<bridge_size_t>(optlen));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+      static_cast<bridge_size_t>(optlen)));
   return ret;
 }
 
@@ -619,12 +577,7 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen) {
   int ret;
   struct bridge_sockaddr tmp;
-  sgx_status_t status =
-      ocall_enc_untrusted_getsockname(&ret, sockfd, &tmp);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_getsockname(&ret, sockfd, &tmp));
   asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
   return ret;
 }
@@ -633,12 +586,7 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen) {
   int ret;
   struct bridge_sockaddr tmp;
-  sgx_status_t status =
-      ocall_enc_untrusted_getpeername(&ret, sockfd, &tmp);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_getpeername(&ret, sockfd, &tmp));
   asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
   return ret;
 }
@@ -658,14 +606,10 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   char **serialized_output_ptr = src_addr ? &serialized_output : nullptr;
   char *output_buf = nullptr;
   bridge_ssize_t output_len = 0;
-  sgx_status_t status = ocall_enc_untrusted_recvfrom(
-      &ret, serialized_args, serialized_len, &output_buf, serialized_output_ptr,
-      &output_len);
+  CHECK_OCALL(ocall_enc_untrusted_recvfrom(&ret, serialized_args,
+                                           serialized_len, &output_buf,
+                                           serialized_output_ptr, &output_len));
   asylo::UntrustedUniquePtr<char[]> output_buf_ptr(output_buf);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
   if (ret < 0) {
     // errno is propagated.
     return -1;
@@ -711,10 +655,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
 
 int enc_untrusted_create_thread(const char *name) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_thread_create(&ret, name);
-  if (status != SGX_SUCCESS) {
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_thread_create(&ret, name));
 
   return 0;
 }
@@ -732,14 +673,10 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
       return -1;
     }
   }
-  sgx_status_t status =
-      ocall_enc_untrusted_poll(&ret, tmp.get(), nfds, timeout);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_poll(&ret, tmp.get(), nfds, timeout));
   for (int i = 0; i < nfds; ++i) {
     if (!asylo::FromBridgePollfd(&tmp[i], &fds[i])) {
+      LOG(ERROR) << "Invalid bridge poll fd in poll response";
       errno = EFAULT;
       return -1;
     }
@@ -753,11 +690,7 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 
 int enc_untrusted_epoll_create(int size) {
   int ret = 0;
-  sgx_status_t status = ocall_enc_untrusted_epoll_create(&ret, size);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_epoll_create(&ret, size));
   return ret;
 }
 
@@ -773,12 +706,8 @@ int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
   }
   bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
   int ret = 0;
-  sgx_status_t status =
-      ocall_enc_untrusted_epoll_ctl(&ret, serialized_args, serialized_args_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_epoll_ctl(&ret, serialized_args,
+                                            serialized_args_len));
   return ret;
 }
 
@@ -797,13 +726,9 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
   int ret = 0;
   char *serialized_event_list = nullptr;
   bridge_size_t serialized_event_list_len = 0;
-  sgx_status_t status = ocall_enc_untrusted_epoll_wait(
+  CHECK_OCALL(ocall_enc_untrusted_epoll_wait(
       &ret, serialized_args, serialized_args_len, &serialized_event_list,
-      &serialized_event_list_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+      &serialized_event_list_len));
   if (!sgx_is_outside_enclave(serialized_event_list,
                               serialized_event_list_len)) {
     abort();
@@ -833,11 +758,7 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
 
 int enc_untrusted_inotify_init1(int non_block) {
   int ret = 0;
-  sgx_status_t status = ocall_enc_untrusted_inotify_init1(&ret, non_block);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_inotify_init1(&ret, non_block));
   return ret;
 }
 
@@ -852,12 +773,8 @@ int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
   }
   bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
   int ret = 0;
-  sgx_status_t status = ocall_enc_untrusted_inotify_add_watch(
-      &ret, serialized_args, serialized_args_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_inotify_add_watch(&ret, serialized_args,
+                                                    serialized_args_len));
   return ret;
 }
 
@@ -871,24 +788,16 @@ int enc_untrusted_inotify_rm_watch(int fd, int wd) {
   }
   bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
   int ret = 0;
-  sgx_status_t status = ocall_enc_untrusted_inotify_rm_watch(
-      &ret, serialized_args, serialized_args_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_inotify_rm_watch(&ret, serialized_args,
+                                                   serialized_args_len));
   return ret;
 }
 
 int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
                                size_t *serialized_events_len) {
   int ret = 0;
-  sgx_status_t status = ocall_enc_untrusted_inotify_read(
-      &ret, fd, count, serialized_events, serialized_events_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_inotify_read(
+      &ret, fd, count, serialized_events, serialized_events_len));
   return ret;
 }
 
@@ -900,17 +809,14 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
   char *serialized_ifaddrs = nullptr;
   bridge_ssize_t serialized_ifaddrs_len = 0;
   int ret = 0;
-  int status = ocall_enc_untrusted_getifaddrs(&ret, &serialized_ifaddrs,
-                                              &serialized_ifaddrs_len);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_getifaddrs(&ret, &serialized_ifaddrs,
+                                             &serialized_ifaddrs_len));
   if (ret != 0) {
     return ret;
   }
   if (!sgx_is_outside_enclave(serialized_ifaddrs,
                               static_cast<size_t>(serialized_ifaddrs_len))) {
+    LOG(ERROR) << "serialized_ifaddrs not from host address space";
     return -1;
   }
   asylo::UntrustedUniquePtr<char> ifaddrs_str_ptr(serialized_ifaddrs);
@@ -936,12 +842,8 @@ int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
 
   int ret;
   BridgeCpuSet bridge_mask;
-  sgx_status_t status = ocall_enc_untrusted_sched_getaffinity(
-      &ret, static_cast<int64_t>(pid), &bridge_mask);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_sched_getaffinity(
+      &ret, static_cast<int64_t>(pid), &bridge_mask));
 
   // Translate from bridge_cpu_set_t to enclave cpu_set_t.
   CPU_ZERO(mask);
@@ -970,12 +872,8 @@ int enc_untrusted_register_signal_handler(
   handler.sigaction = bridge_sigaction;
   asylo::ToBridgeSigSet(&mask, &handler.mask);
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_register_signal_handler(
-      &ret, bridge_signum, &handler, enclave_name);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
+      &ret, bridge_signum, &handler, enclave_name));
   return ret;
 }
 
@@ -984,12 +882,8 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   asylo::ToBridgeSigSet(set, &bridge_set);
   bridge_sigset_t bridge_old_set;
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_sigprocmask(
-      &ret, asylo::ToBridgeSigMaskAction(how), &bridge_set, &bridge_old_set);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_sigprocmask(
+      &ret, asylo::ToBridgeSigMaskAction(how), &bridge_set, &bridge_old_set));
   asylo::FromBridgeSigSet(&bridge_old_set, oldset);
   return ret;
 }
@@ -1001,11 +895,7 @@ int enc_untrusted_raise(int sig) {
     return -1;
   }
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_raise(&ret, bridge_sig);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_raise(&ret, bridge_sig));
   return ret;
 }
 
@@ -1016,12 +906,8 @@ int enc_untrusted_raise(int sig) {
 int enc_untrusted_getrusage(int who, struct rusage *usage) {
   int ret;
   BridgeRUsage bridge_usage;
-  sgx_status_t status = ocall_enc_untrusted_getrusage(
-      &ret, asylo::ToBridgeRUsageTarget(who), &bridge_usage);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_getrusage(
+      &ret, asylo::ToBridgeRUsageTarget(who), &bridge_usage));
   asylo::FromBridgeRUsage(&bridge_usage, usage);
   return ret;
 }
@@ -1032,12 +918,8 @@ int enc_untrusted_getrusage(int who, struct rusage *usage) {
 
 int enc_untrusted_flock(int fd, int operation) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_flock(
-      &ret, fd, asylo::ToBridgeFLockOperation(operation));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_flock(
+      &ret, fd, asylo::ToBridgeFLockOperation(operation)));
   return ret;
 }
 
@@ -1066,13 +948,9 @@ int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
     return -1;
   }
   int ret;
-  sgx_status_t status =
-      ocall_enc_untrusted_select(&ret, nfds, &bridge_readfds, &bridge_writefds,
-                                 &bridge_exceptfds, &bridge_timeout);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_select(&ret, nfds, &bridge_readfds,
+                                         &bridge_writefds, &bridge_exceptfds,
+                                         &bridge_timeout));
 
   if (readfds && !asylo::FromBridgeFDSet(&bridge_readfds, readfds)) {
     errno = EBADE;
@@ -1094,12 +972,14 @@ int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
 //////////////////////////////////////
 
 void enc_untrusted_openlog(const char *ident, int option, int facility) {
-  ocall_enc_untrusted_openlog(ident, asylo::ToBridgeSysLogOption(option),
-                              asylo::ToBridgeSysLogFacility(facility));
+  CHECK_OCALL(
+      ocall_enc_untrusted_openlog(ident, asylo::ToBridgeSysLogOption(option),
+                                  asylo::ToBridgeSysLogFacility(facility)));
 }
 
 void enc_untrusted_syslog(int priority, const char *message) {
-  ocall_enc_untrusted_syslog(asylo::ToBridgeSysLogPriority(priority), message);
+  CHECK_OCALL(ocall_enc_untrusted_syslog(
+      asylo::ToBridgeSysLogPriority(priority), message));
 }
 
 //////////////////////////////////////
@@ -1108,24 +988,16 @@ void enc_untrusted_syslog(int priority, const char *message) {
 
 int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_nanosleep(
+  CHECK_OCALL(ocall_enc_untrusted_nanosleep(
       &ret, reinterpret_cast<const bridge_timespec *>(req),
-      reinterpret_cast<bridge_timespec *>(rem));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+      reinterpret_cast<bridge_timespec *>(rem)));
   return ret;
 }
 
 int enc_untrusted_times(struct tms *buf) {
   int ret;
   BridgeTms bridge_buf;
-  sgx_status_t status = ocall_enc_untrusted_times(&ret, &bridge_buf);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_times(&ret, &bridge_buf));
   if (!asylo::FromBridgeTms(&bridge_buf, buf)) {
     errno = EFAULT;
     return -1;
@@ -1135,13 +1007,9 @@ int enc_untrusted_times(struct tms *buf) {
 
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_clock_gettime(
+  CHECK_OCALL(ocall_enc_untrusted_clock_gettime(
       &ret, static_cast<bridge_clockid_t>(clk_id),
-      reinterpret_cast<bridge_timespec *>(tp));
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+      reinterpret_cast<bridge_timespec *>(tp)));
   return ret;
 }
 
@@ -1153,13 +1021,9 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
     errno = EFAULT;
     return -1;
   }
-  sgx_status_t status =
+  CHECK_OCALL(
       ocall_enc_untrusted_setitimer(&ret, asylo::ToBridgeTimerType(which),
-                                    &bridge_new_value, &bridge_old_value);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+                                    &bridge_new_value, &bridge_old_value));
   // Set |old_value| if it's not a nullptr.
   if (old_value && !asylo::FromBridgeITimerVal(&bridge_old_value, old_value)) {
     errno = EFAULT;
@@ -1174,11 +1038,8 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 
 int enc_untrusted_gettimeofday(struct timeval *tv, void *tz) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_gettimeofday(
-      &ret, reinterpret_cast<bridge_timeval *>(tv), nullptr);
-  if (status != SGX_SUCCESS) {
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_gettimeofday(
+      &ret, reinterpret_cast<bridge_timeval *>(tv), nullptr));
   return ret;
 }
 
@@ -1194,17 +1055,13 @@ int enc_untrusted_uname(struct utsname *utsname_val) {
 
   struct BridgeUtsName bridge_utsname_val;
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_uname(&ret, &bridge_utsname_val);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  } else if (ret != 0) {
+  CHECK_OCALL(ocall_enc_untrusted_uname(&ret, &bridge_utsname_val));
+  if (ret != 0) {
     return ret;
   }
 
   if (!asylo::ConvertUtsName(bridge_utsname_val, utsname_val)) {
-    errno = EINTR;
-    return -1;
+    LOG(FATAL) << "uname returned an ill-formed utsname";
   }
 
   return ret;
@@ -1216,11 +1073,7 @@ int enc_untrusted_uname(struct utsname *utsname_val) {
 
 int enc_untrusted_pipe(int pipefd[2]) {
   int ret;
-  sgx_status_t status = ocall_enc_untrusted_pipe(&ret, pipefd);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_pipe(&ret, pipefd));
   return ret;
 }
 
@@ -1231,17 +1084,13 @@ int64_t enc_untrusted_sysconf(int name) {
     errno = EINVAL;
     return -1;
   }
-  sgx_status_t status = ocall_enc_untrusted_sysconf(&ret, bridge_name);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_sysconf(&ret, bridge_name));
   return ret;
 }
 
 uint32_t enc_untrusted_sleep(uint32_t seconds) {
   uint32_t ret;
-  ocall_enc_untrusted_sleep(&ret, seconds);
+  CHECK_OCALL(ocall_enc_untrusted_sleep(&ret, seconds));
   return ret;
 }
 
@@ -1253,13 +1102,9 @@ pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage) {
   pid_t ret;
   struct BridgeWStatus bridge_wstatus;
   BridgeRUsage bridge_rusage;
-  sgx_status_t status = ocall_enc_untrusted_wait3(
-      &ret, &bridge_wstatus, asylo::ToBridgeWaitOptions(options),
-      &bridge_rusage);
-  if (status != SGX_SUCCESS) {
-    errno = EINTR;
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_wait3(&ret, &bridge_wstatus,
+                                        asylo::ToBridgeWaitOptions(options),
+                                        &bridge_rusage));
   if (wstatus) {
     *wstatus = asylo::FromBridgeWStatus(bridge_wstatus);
   }
@@ -1274,11 +1119,8 @@ pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage) {
 int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
   int ret;
   struct bridge_utimbuf tmp_bridge_utimbuf;
-  sgx_status_t status = ocall_enc_untrusted_utime(
-      &ret, filename, asylo::ToBridgeUtimbuf(times, &tmp_bridge_utimbuf));
-  if (status != SGX_SUCCESS) {
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_utime(
+      &ret, filename, asylo::ToBridgeUtimbuf(times, &tmp_bridge_utimbuf)));
   return ret;
 }
 
@@ -1289,22 +1131,14 @@ int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
 void *enc_untrusted_acquire_shared_resource(enum SharedNameKind kind,
                                             const char *name) {
   void *ret;
-  sgx_status_t status =
-      ocall_enc_untrusted_acquire_shared_resource(&ret, kind, name);
-  if (status != SGX_SUCCESS) {
-    return nullptr;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_acquire_shared_resource(&ret, kind, name));
   return ret;
 }
 
 int enc_untrusted_release_shared_resource(enum SharedNameKind kind,
                                           const char *name) {
   int ret;
-  sgx_status_t status =
-      ocall_enc_untrusted_release_shared_resource(&ret, kind, name);
-  if (status != SGX_SUCCESS) {
-    return -1;
-  }
+  CHECK_OCALL(ocall_enc_untrusted_release_shared_resource(&ret, kind, name));
   return ret ? 0 : -1;
 }
 
@@ -1313,7 +1147,7 @@ int enc_untrusted_release_shared_resource(enum SharedNameKind kind,
 //////////////////////////////////////
 
 void enc_untrusted_hex_dump(const void *buf, int nbytes) {
-  ocall_enc_untrusted_hex_dump(buf, nbytes);
+  CHECK_OCALL(ocall_enc_untrusted_hex_dump(buf, nbytes));
 }
 
 #ifdef __cplusplus

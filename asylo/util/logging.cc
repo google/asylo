@@ -55,6 +55,10 @@ std::string *log_basename = nullptr;
 // specified at the time the enclave is initialized.
 int vlog_level = 0;
 
+// A flag to ensure that LOG(FATAL) doesn't lead to an infinite loop of
+// failures.
+thread_local bool log_panic = false;
+
 const char *GetBasename(const char *file_path) {
   const char *slash = strrchr(file_path, '/');
   return slash ? slash + 1 : file_path;
@@ -166,7 +170,14 @@ static constexpr const char *LogSeverityNames[4] = {"INFO", "WARNING", "ERROR",
                                                     "FATAL"};
 
 void LogMessage::Init(const char *file, int line, LogSeverity severity) {
+  // Disallow recursive fatal messages.
+  if (log_panic) {
+    abort();
+  }
   severity_ = severity;
+  if (severity_ == FATAL) {
+    log_panic = true;
+  }
 
   const char *filename = GetBasename(file);
 
