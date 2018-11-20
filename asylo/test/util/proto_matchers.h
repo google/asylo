@@ -41,6 +41,14 @@ MATCHER_P(ApproximatelyEquivalentProto, other, "") {
                                                                      other);
 }
 
+// A proto message matches Partially(reference_message) if every field that is
+// set in reference_message is set to the same value in the matchee message.
+MATCHER_P(Partially, other, "") {
+  ::google::protobuf::util::MessageDifferencer differ;
+  differ.set_scope(::google::protobuf::util::MessageDifferencer::PARTIAL);
+  return differ.Compare(other, arg);
+}
+
 }  // namespace asylo
 
 #endif  // ASYLO_TEST_UTIL_PROTO_MATCHERS_H_
