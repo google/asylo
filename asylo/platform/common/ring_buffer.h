@@ -168,7 +168,7 @@ class RingBuffer {
   uint64_t InstanceVersion() const { return instance_version_; }
 
   // Returns a signature reflecting the layout of this abstract type.
-  static const uint64_t TypeVersion() {
+  static constexpr uint64_t TypeVersion() {
     return offsetof(RingBuffer, count_) << 0 |
            offsetof(RingBuffer, closed_for_read_) << 8 |
            offsetof(RingBuffer, closed_for_write_) << 16 |
