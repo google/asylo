@@ -28,7 +28,7 @@ namespace {
 
 // Aborts if the value of the |spin_lock| is invalid.
 void ValidateSpinLock(uint32_t spin_lock) {
-  if (spin_lock < 0 || spin_lock > TrustedSpinLock::kLocked) {
+  if (spin_lock > TrustedSpinLock::kLocked) {
     char buf[1024];
     snprintf(buf, sizeof(buf),
              "Invalid spin lock value in TrustedSpinLock operation: %u\n",
