@@ -835,7 +835,7 @@ int IOManager::SetRLimit(int resource, const struct rlimit *rlim) {
     errno = EFAULT;
     return -1;
   }
-  if (rlim->rlim_cur > rlim->rlim_max || rlim->rlim_cur < 0) {
+  if (rlim->rlim_cur > rlim->rlim_max) {
     errno = EINVAL;
     return -1;
   }

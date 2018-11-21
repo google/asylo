@@ -385,7 +385,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     int fd;
     ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     platform::storage::FdCloser fd_closer(fd);
-    size_t rc = write(fd, message.c_str(), message.size());
+    ssize_t rc = write(fd, message.c_str(), message.size());
     if (rc != message.size()) {
       return Status(
           static_cast<error::GoogleError>(errno),
