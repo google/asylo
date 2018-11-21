@@ -274,6 +274,19 @@ cc_library(
     ],
 )
 
+# A FakeEnclaveLoader that loads a given EnclaveClient.
+cc_library(
+    name = "fake_enclave_loader",
+    testonly = 1,
+    srcs = ["fake_enclave_loader.cc"],
+    hdrs = ["fake_enclave_loader.h"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/util:status",
+    ],
+)
+
 cc_library(
     name = "grpc_debug_config",
     srcs = ["grpc_debug_config.cc"],
