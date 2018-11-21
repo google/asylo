@@ -107,21 +107,18 @@ void free_list_node(__pthread_list_node_t *node) {
   delete node;
 }
 
-PthreadListWrapper::PthreadListWrapper(pthread_mutex_t *mutex)
-    : list_(&mutex->_queue) {}
+QueueOperations::QueueOperations(__pthread_list_t *list)
+    : QueueOperations(list, abort) {}
 
-PthreadListWrapper::PthreadListWrapper(pthread_cond_t *condvar)
-    : list_(&condvar->_queue) {}
-
-PthreadListWrapper::PthreadListWrapper(__pthread_list_t *list,
-                                       const std::function<void()> &abort_func)
+QueueOperations::QueueOperations(__pthread_list_t *list,
+                                 const std::function<void()> &abort_func)
     : list_(list), abort_func_(abort_func) {
   if (list_ == nullptr) {
     abort_func_();
   }
 }
 
-void PthreadListWrapper::Pop() {
+void QueueOperations::Dequeue() {
   if (list_->_first == nullptr) {
     return abort_func_();
   }
@@ -131,14 +128,14 @@ void PthreadListWrapper::Pop() {
   free_list_node(old_first);
 }
 
-pthread_t PthreadListWrapper::Front() const {
+pthread_t QueueOperations::Front() const {
   if (list_->_first == nullptr) {
     return PTHREAD_T_NULL;
   }
   return list_->_first->_thread_id;
 }
 
-void PthreadListWrapper::Push(const pthread_t id) {
+void QueueOperations::Enqueue(const pthread_t id) {
   __pthread_list_node_t *last = alloc_list_node(id);
 
   if (!list_->_first) {
@@ -153,7 +150,7 @@ void PthreadListWrapper::Push(const pthread_t id) {
   current->_next = last;
 }
 
-bool PthreadListWrapper::Remove(const pthread_t id) {
+bool QueueOperations::Remove(const pthread_t id) {
   __pthread_list_node_t *curr, *prev;
 
   for (curr = list_->_first, prev = nullptr; curr != nullptr;
@@ -175,7 +172,7 @@ bool PthreadListWrapper::Remove(const pthread_t id) {
   return false;
 }
 
-bool PthreadListWrapper::Contains(const pthread_t id) const {
+bool QueueOperations::Contains(const pthread_t id) const {
   __pthread_list_node_t *current = list_->_first;
   while (current) {
     if (current->_thread_id == id) {
@@ -186,13 +183,13 @@ bool PthreadListWrapper::Contains(const pthread_t id) const {
   return false;
 }
 
-void PthreadListWrapper::Drain() {
+void QueueOperations::Clear() {
   while (!Empty()) {
-    Pop();
+    Dequeue();
   }
 }
 
-bool PthreadListWrapper::Empty() const {
+bool QueueOperations::Empty() const {
   const __pthread_list_node_t *current = list_->_first;
   return current == PTHREAD_T_NULL;
 }
@@ -220,12 +217,12 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
     return 0;
   }
 
-  PthreadListWrapper list(mutex);
+  QueueOperations list(mutex);
   const pthread_t first_waiter = list.Front();
   if (mutex->_owner == PTHREAD_T_NULL &&
       (first_waiter == self || first_waiter == PTHREAD_T_NULL)) {
     if (first_waiter == self) {
-      list.Pop();
+      list.Dequeue();
     }
 
     mutex->_owner = self;
@@ -260,8 +257,8 @@ using asylo::pthread_impl::init_tls_map;
 using asylo::pthread_impl::LockableGuard;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
-using asylo::pthread_impl::PthreadListWrapper;
 using asylo::pthread_impl::PthreadMutexLock;
+using asylo::pthread_impl::QueueOperations;
 using asylo::pthread_impl::tls_map;
 
 extern "C" {
@@ -340,7 +337,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
   }
 
   LockableGuard lock_guard(mutex);
-  PthreadListWrapper list(mutex);
+  QueueOperations list(mutex);
   if (!list.Empty()) {
     return EBUSY;
   }
@@ -355,10 +352,10 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  PthreadListWrapper list(mutex);
+  QueueOperations list(mutex);
   {
     LockableGuard lock_guard(mutex);
-    list.Push(pthread_self());
+    list.Enqueue(pthread_self());
   }
 
   while (true) {
@@ -442,7 +439,7 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
   }
 
   LockableGuard lock_guard(cond);
-  PthreadListWrapper list(cond);
+  QueueOperations list(cond);
   if (!list.Empty()) {
     return EBUSY;
   }
@@ -481,10 +478,10 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 
   const pthread_t self = pthread_self();
 
-  PthreadListWrapper list(cond);
+  QueueOperations list(cond);
   {
     LockableGuard lock_guard(cond);
-    list.Push(self);
+    list.Enqueue(self);
   }
 
   ret = pthread_mutex_unlock(mutex);
@@ -550,12 +547,12 @@ int pthread_cond_signal(pthread_cond_t *cond) {
   }
 
   LockableGuard lock_guard(cond);
-  PthreadListWrapper list(cond);
+  QueueOperations list(cond);
   if (list.Empty()) {
     return 0;
   }
 
-  list.Pop();
+  list.Dequeue();
 
   return 0;
 }
@@ -567,10 +564,10 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
     return ret;
   }
 
-  PthreadListWrapper list(cond);
+  QueueOperations list(cond);
   {
     LockableGuard lock_guard(cond);
-    list.Drain();
+    list.Clear();
   }
 
   return 0;

@@ -27,32 +27,29 @@
 namespace asylo {
 namespace pthread_impl {
 
-// Utility class for working with pthread_list_t.
-class PthreadListWrapper {
+// An adapter class for queue operations on a pthread_list_t.
+class QueueOperations {
  public:
-  // The PthreadListWrapper does not take ownership of |mutex|.
-  PthreadListWrapper(pthread_mutex_t* mutex);
-  // The PthreadListWrapper does not take ownership of |condvar|.
-  PthreadListWrapper(pthread_cond_t* condvar);
+  // // Constructs a QueueOperations instance from a non-owning pointer to a
+  // generic Queue object.
+  template <class QueueType>
+  explicit QueueOperations(QueueType* queue)
+      : QueueOperations(&queue->_queue) {}
 
-  // This constructor should only be used for testing. Use one of the above
-  // constructors which takes a pthread_* type. The PthreadListWrapper does not
-  // take ownership of |list|.
-  PthreadListWrapper(__pthread_list_t* list,
-                     const std::function<void()>& abort_func = abort);
+  explicit QueueOperations(__pthread_list_t* list);
 
   // Removes the first thread_id in the list.
-  void Pop();
+  void Dequeue();
 
   // Adds |id| to the end of the list.
-  void Push(const pthread_t id);
+  void Enqueue(const pthread_t id);
 
   // Returns true if |id| is found and removed from the list; false if not
   // found.
   bool Remove(const pthread_t id);
 
   // Removes all ids from the list.
-  void Drain();
+  void Clear();
 
   // Returns true of the |id| is in the list.
   bool Contains(const pthread_t id) const;
@@ -63,9 +60,19 @@ class PthreadListWrapper {
   // Returns true if the id is in the list.
   bool Empty() const;
 
+ protected:
+  // This constructor should only be used for testing. Use one of the above
+  // constructors which takes a pthread_* type. The QueueOperations does not
+  // take ownership of |list|.
+  QueueOperations(__pthread_list_t* list,
+                  const std::function<void()>& abort_func);
+
  private:
   __pthread_list_t* const list_;
 
+  // Only stored for injection during testing. In production use this should be
+  // abort().
+  //
   std::function<void()> abort_func_;
 };
 
