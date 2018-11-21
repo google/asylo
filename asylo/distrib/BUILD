@@ -19,7 +19,6 @@ licenses(["notice"])  # Apache v2.0
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
-    "absl_mutex.patch",
     "boringssl.patch",
     "googletest.patch",
     "grpc_1_13_0.patch",
