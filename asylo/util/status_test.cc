@@ -376,7 +376,6 @@ TEST(StatusTest, MoveConstructorTest) {
   Status that(std::move(invalid_arg_status));
 
   EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
   EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
 }
 
@@ -390,7 +389,6 @@ TEST(StatusTest, MoveAssignmentTestNonOk) {
   that = std::move(invalid_arg_status);
 
   EXPECT_THAT(that, StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
   EXPECT_THAT(invalid_arg_status, StatusIs(error::StatusError::MOVED));
 }
 
@@ -404,7 +402,6 @@ TEST(StatusTest, MoveAssignmentTestOk) {
   invalid_arg_status = std::move(ok);
 
   EXPECT_THAT(invalid_arg_status, StatusIs(error::GoogleError::OK, ""));
-
   EXPECT_THAT(ok, StatusIs(error::StatusError::MOVED));
 }
 

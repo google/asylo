@@ -58,7 +58,6 @@ struct CopyOnlyDataType {
 };
 
 struct ImplicitlyCopyConvertible {
-
   ImplicitlyCopyConvertible(const CopyOnlyDataType &co) : copy_only(co) {}
 
   CopyOnlyDataType copy_only;
@@ -96,7 +95,6 @@ struct MoveOnlyDataType {
 };
 
 struct ImplicitlyMoveConvertible {
-
   ImplicitlyMoveConvertible(MoveOnlyDataType &&mo) : move_only(std::move(mo)) {}
 
   MoveOnlyDataType move_only;
