@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"

@@ -56,6 +56,7 @@ cc_library(
         "//asylo/util:cleanup",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
     ],
 )
