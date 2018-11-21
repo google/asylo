@@ -51,11 +51,11 @@ class AesGcmKey : public AeadKey {
   size_t MaxSealOverhead() const override;
 
   Status Seal(ByteContainerView plaintext, ByteContainerView associated_data,
-              ByteContainerView nonce, absl::Span<uint8_t> *ciphertext,
+              ByteContainerView nonce, absl::Span<uint8_t> ciphertext,
               size_t *ciphertext_size) override;
 
   Status Open(ByteContainerView ciphertext, ByteContainerView associated_data,
-              ByteContainerView nonce, absl::Span<uint8_t> *plaintext,
+              ByteContainerView nonce, absl::Span<uint8_t> plaintext,
               size_t *plaintext_size) override;
 
  private:

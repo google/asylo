@@ -139,56 +139,51 @@ TEST_F(AesGcmKeyTest, AesGcmKeyTestNonceSize) {
 // Verifies that the Seal and Open methods conform to vectors from the AES-GCM
 // spec which do not include associated data.
 TEST_F(AesGcmKeyTest, AesGcmKeyTestVectorsWithoutAssociatedData) {
-  std::vector<uint8_t> actual_ciphertext_vector(
-      plaintext256_.size() + aes_gcm_key256_->MaxSealOverhead());
-  absl::Span<uint8_t> actual_ciphertext(actual_ciphertext_vector);
+  std::vector<uint8_t> actual_ciphertext(plaintext256_.size() +
+                                         aes_gcm_key256_->MaxSealOverhead());
   size_t actual_ciphertext_size;
-  ASYLO_ASSERT_OK(aes_gcm_key256_->Seal(plaintext256_, /*associated_data=*/"",
-                                        nonce256_, &actual_ciphertext,
-                                        &actual_ciphertext_size));
+  ASYLO_ASSERT_OK(aes_gcm_key256_->Seal(
+      plaintext256_, /*associated_data=*/"", nonce256_,
+      absl::MakeSpan(actual_ciphertext), &actual_ciphertext_size));
   EXPECT_EQ(authenticated_ciphertext256_.size(), actual_ciphertext_size);
-  EXPECT_EQ(
-      ByteContainerView(authenticated_ciphertext256_),
-      ByteContainerView(actual_ciphertext.subspan(0, actual_ciphertext_size)));
+  actual_ciphertext.resize(actual_ciphertext_size);
+  EXPECT_EQ(ByteContainerView(authenticated_ciphertext256_),
+            ByteContainerView(actual_ciphertext));
 
-  CleansingVector<uint8_t> actual_plaintext_vector(
+  CleansingVector<uint8_t> actual_plaintext(
       authenticated_ciphertext256_.size());
-  absl::Span<uint8_t> actual_plaintext(actual_plaintext_vector);
   size_t actual_plaintext_size;
   ASYLO_ASSERT_OK(aes_gcm_key256_->Open(authenticated_ciphertext256_,
                                         /*associated_data=*/"", nonce256_,
-                                        &actual_plaintext,
+                                        absl::MakeSpan(actual_plaintext),
                                         &actual_plaintext_size));
-  EXPECT_EQ(
-      ByteContainerView(plaintext256_),
-      ByteContainerView(actual_plaintext.subspan(0, actual_plaintext_size)));
+  actual_plaintext.resize(actual_plaintext_size);
+  EXPECT_EQ(ByteContainerView(plaintext256_),
+            ByteContainerView(actual_plaintext));
 }
 
 // Verifies that the Seal and Open methods conform to vectors from the AES-GCM
 // spec which include associated data.
 TEST_F(AesGcmKeyTest, AesGcmKeyTestVectorsWithAssociatedData) {
-  std::vector<uint8_t> actual_ciphertext_vector(
-      plaintext128_.size() + aes_gcm_key128_->MaxSealOverhead());
-  absl::Span<uint8_t> actual_ciphertext(actual_ciphertext_vector);
+  std::vector<uint8_t> actual_ciphertext(plaintext128_.size() +
+                                         aes_gcm_key128_->MaxSealOverhead());
   size_t actual_ciphertext_size;
   ASYLO_ASSERT_OK(aes_gcm_key128_->Seal(plaintext128_, aad128_, nonce128_,
-                                        &actual_ciphertext,
+                                        absl::MakeSpan(actual_ciphertext),
                                         &actual_ciphertext_size));
   EXPECT_EQ(authenticated_ciphertext128_.size(), actual_ciphertext_size);
-  EXPECT_EQ(
-      ByteContainerView(authenticated_ciphertext128_),
-      ByteContainerView(actual_ciphertext.subspan(0, actual_ciphertext_size)));
+  actual_ciphertext.resize(actual_ciphertext_size);
+  EXPECT_EQ(ByteContainerView(authenticated_ciphertext128_),
+            ByteContainerView(actual_ciphertext));
 
-  std::vector<uint8_t> actual_plaintext_vector(
-      authenticated_ciphertext128_.size());
-  absl::Span<uint8_t> actual_plaintext(actual_plaintext_vector);
+  std::vector<uint8_t> actual_plaintext(authenticated_ciphertext128_.size());
   size_t actual_plaintext_size;
-  ASYLO_ASSERT_OK(aes_gcm_key128_->Open(authenticated_ciphertext128_, aad128_,
-                                        nonce128_, &actual_plaintext,
-                                        &actual_plaintext_size));
-  EXPECT_EQ(
-      ByteContainerView(plaintext128_),
-      ByteContainerView(actual_plaintext.subspan(0, actual_plaintext_size)));
+  ASYLO_ASSERT_OK(aes_gcm_key128_->Open(
+      authenticated_ciphertext128_, aad128_, nonce128_,
+      absl::MakeSpan(actual_plaintext), &actual_plaintext_size));
+  actual_plaintext.resize(actual_plaintext_size);
+  EXPECT_EQ(ByteContainerView(plaintext128_),
+            ByteContainerView(actual_plaintext));
 }
 
 // Verifies that an AesGcmKey cannot be created with a key with an invalid size.
@@ -205,67 +200,63 @@ TEST_F(AesGcmKeyTest, AesGcmKeyTestInvalidKey) {
 
 // Verifies that Seal returns a non-OK Status with invalid inputs.
 TEST_F(AesGcmKeyTest, AesGcmKeyTestInvalidInputSeal) {
-  std::vector<uint8_t> actual_ciphertext_vector(
-      plaintext256_.size() + aes_gcm_key256_->MaxSealOverhead());
-  absl::Span<uint8_t> actual_ciphertext(actual_ciphertext_vector);
+  std::vector<uint8_t> actual_ciphertext(plaintext256_.size() +
+                                         aes_gcm_key256_->MaxSealOverhead());
   size_t actual_ciphertext_size;
 
   // Verifies that Seal fails with a nonce with an invalid size.
   auto bad_nonce = absl::HexStringToBytes(kBadNonceString);
-  EXPECT_THAT(
-      aes_gcm_key256_->Seal(plaintext256_, /*associated_data=*/"", bad_nonce,
-                            &actual_ciphertext, &actual_ciphertext_size),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(aes_gcm_key256_->Seal(
+                  plaintext256_, /*associated_data=*/"", bad_nonce,
+                  absl::MakeSpan(actual_ciphertext), &actual_ciphertext_size),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verifies that Open returns a non-OK Status with invalid inputs.
 TEST_F(AesGcmKeyTest, AesGcmKeyTestInvalidInputOpen) {
-  std::vector<uint8_t> actual_plaintext_vector(
-      authenticated_ciphertext256_.size());
-  absl::Span<uint8_t> actual_plaintext(actual_plaintext_vector);
+  std::vector<uint8_t> actual_plaintext(authenticated_ciphertext256_.size());
   size_t actual_plaintext_size;
 
   // Verifies that Open fails with a nonce with an invalid size.
   auto bad_nonce = absl::HexStringToBytes(kBadNonceString);
-  EXPECT_THAT(
-      aes_gcm_key128_->Open(authenticated_ciphertext128_, aad128_, bad_nonce,
-                            &actual_plaintext, &actual_plaintext_size),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(aes_gcm_key128_->Open(authenticated_ciphertext128_, aad128_,
+                                    bad_nonce, absl::MakeSpan(actual_plaintext),
+                                    &actual_plaintext_size),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verifies that the authenticated encryption uses all relevant data.
 // Dependent on the test cases not being valid decryptions of each other and
 // also not being a collision.
 TEST_F(AesGcmKeyTest, AesGcmKeyTestWrongInformation) {
-  std::vector<uint8_t> actual_plaintext_vector(
-      authenticated_ciphertext256_.size());
-  absl::Span<uint8_t> actual_plaintext(actual_plaintext_vector);
+  std::vector<uint8_t> actual_plaintext(authenticated_ciphertext256_.size());
   size_t actual_plaintext_size;
 
   // Verifies that Open fails with a nonce with the wrong key.
-  EXPECT_THAT(
-      aes_gcm_key256_->Open(authenticated_ciphertext128_, aad128_, nonce128_,
-                            &actual_plaintext, &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(aes_gcm_key256_->Open(authenticated_ciphertext128_, aad128_,
+                                    nonce128_, absl::MakeSpan(actual_plaintext),
+                                    &actual_plaintext_size),
+              StatusIs(error::GoogleError::INTERNAL));
 
   // Verifies that Open fails with the wrong nonce.
-  EXPECT_THAT(
-      aes_gcm_key128_->Open(authenticated_ciphertext128_, aad128_, nonce256_,
-                            &actual_plaintext, &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(aes_gcm_key128_->Open(authenticated_ciphertext128_, aad128_,
+                                    nonce256_, absl::MakeSpan(actual_plaintext),
+                                    &actual_plaintext_size),
+              StatusIs(error::GoogleError::INTERNAL));
 
   // Verifies that Open fails when the associated data is not passed in.
   EXPECT_THAT(aes_gcm_key128_->Open(authenticated_ciphertext128_,
                                     /*associated_data=*/"", nonce128_,
-                                    &actual_plaintext, &actual_plaintext_size),
+                                    absl::MakeSpan(actual_plaintext),
+                                    &actual_plaintext_size),
               StatusIs(error::GoogleError::INTERNAL));
 
   // Verifies that Open fails when includes associated data not part of the
   // original.
-  EXPECT_THAT(
-      aes_gcm_key256_->Open(authenticated_ciphertext256_, aad128_, nonce256_,
-                            &actual_plaintext, &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(aes_gcm_key256_->Open(authenticated_ciphertext256_, aad128_,
+                                    nonce256_, absl::MakeSpan(actual_plaintext),
+                                    &actual_plaintext_size),
+              StatusIs(error::GoogleError::INTERNAL));
 
   // Verifies that Open fails when the ciphertext does not include the tag.
   auto unauthenticated_ciphertext128_str =
@@ -273,10 +264,10 @@ TEST_F(AesGcmKeyTest, AesGcmKeyTestWrongInformation) {
   std::vector<uint8_t> unauthenticated_ciphertext2(
       unauthenticated_ciphertext128_str.cbegin(),
       unauthenticated_ciphertext128_str.cend());
-  EXPECT_THAT(
-      aes_gcm_key128_->Open(unauthenticated_ciphertext2, aad128_, nonce128_,
-                            &actual_plaintext, &actual_plaintext_size),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(aes_gcm_key128_->Open(unauthenticated_ciphertext2, aad128_,
+                                    nonce128_, absl::MakeSpan(actual_plaintext),
+                                    &actual_plaintext_size),
+              StatusIs(error::GoogleError::INTERNAL));
 }
 
 }  // namespace

@@ -49,7 +49,7 @@ class AeadKey {
   // to allow for implementations that internally manage key rotation.
   virtual Status Seal(ByteContainerView plaintext,
                       ByteContainerView associated_data,
-                      ByteContainerView nonce, absl::Span<uint8_t> *ciphertext,
+                      ByteContainerView nonce, absl::Span<uint8_t> ciphertext,
                       size_t *ciphertext_size) = 0;
 
   // Implements the AEAD Open operation. |nonce|.size() must be the same as the
@@ -58,7 +58,7 @@ class AeadKey {
   // to allow for implementations that internally manage key rotation.
   virtual Status Open(ByteContainerView ciphertext,
                       ByteContainerView associated_data,
-                      ByteContainerView nonce, absl::Span<uint8_t> *plaintext,
+                      ByteContainerView nonce, absl::Span<uint8_t> plaintext,
                       size_t *plaintext_size) = 0;
 };
 

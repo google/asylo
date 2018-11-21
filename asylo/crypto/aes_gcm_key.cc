@@ -74,7 +74,7 @@ size_t AesGcmKey::MaxSealOverhead() const { return max_seal_overhead_; }
 
 Status AesGcmKey::Seal(ByteContainerView plaintext,
                        ByteContainerView associated_data,
-                       ByteContainerView nonce, absl::Span<uint8_t> *ciphertext,
+                       ByteContainerView nonce, absl::Span<uint8_t> ciphertext,
                        size_t *ciphertext_size) {
   if (nonce.size() != nonce_size_) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -93,8 +93,8 @@ Status AesGcmKey::Seal(ByteContainerView plaintext,
         absl::StrCat("EVP_AEAD_CTX_init failed: ", BsslLastErrorString()));
   }
 
-  if (EVP_AEAD_CTX_seal(&context, ciphertext->data(), ciphertext_size,
-                        ciphertext->size(), nonce.data(), nonce.size(),
+  if (EVP_AEAD_CTX_seal(&context, ciphertext.data(), ciphertext_size,
+                        ciphertext.size(), nonce.data(), nonce.size(),
                         plaintext.data(), plaintext.size(),
                         associated_data.data(), associated_data.size()) != 1) {
     return Status(
@@ -107,7 +107,7 @@ Status AesGcmKey::Seal(ByteContainerView plaintext,
 
 Status AesGcmKey::Open(ByteContainerView ciphertext,
                        ByteContainerView associated_data,
-                       ByteContainerView nonce, absl::Span<uint8_t> *plaintext,
+                       ByteContainerView nonce, absl::Span<uint8_t> plaintext,
                        size_t *plaintext_size) {
   if (nonce.size() != nonce_size_) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -125,8 +125,8 @@ Status AesGcmKey::Open(ByteContainerView ciphertext,
         absl::StrCat("EVP_AEAD_CTX_init failed: ", BsslLastErrorString()));
   }
 
-  if (EVP_AEAD_CTX_open(&context, plaintext->data(), plaintext_size,
-                        plaintext->size(), nonce.data(), nonce.size(),
+  if (EVP_AEAD_CTX_open(&context, plaintext.data(), plaintext_size,
+                        plaintext.size(), nonce.data(), nonce.size(),
                         ciphertext.data(), ciphertext.size(),
                         associated_data.data(), associated_data.size()) != 1) {
     return Status(
