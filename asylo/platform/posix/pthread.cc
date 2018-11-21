@@ -76,20 +76,24 @@ inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
   return 0;
 }
 
-// Provides RAII wrapper around pthread_spinlock_t.
-class SpinLock {
+// An RAII guard object managing exclusive access to a "lockable" object, where
+// a lockable object is an aggregate type with a field "lock_" of type
+// pthread_spinlock_t.
+class LockableGuard {
  public:
-  SpinLock(pthread_mutex_t *mutex) : SpinLock(&mutex->_lock) {}
-  SpinLock(pthread_cond_t *cond) : SpinLock(&cond->_lock) {}
-  SpinLock(pthread_spinlock_t *lock) {
-    lock_ = lock;
+  // Initializes a guard with an explicit reference to a lock instance, rather
+  // than a lockable's |lock_| field.
+  template <class LockableType>
+  LockableGuard(LockableType *lockable) : LockableGuard(&lockable->_lock) {}
+
+  LockableGuard(pthread_spinlock_t *lock) : lock_(lock) {
     pthread_spin_lock(lock_);
   }
 
-  ~SpinLock() { pthread_spin_unlock(lock_); }
+  ~LockableGuard() { pthread_spin_unlock(lock_); }
 
  private:
-  pthread_spinlock_t *lock_;
+  pthread_spinlock_t *const lock_;
 };
 
 __pthread_list_node_t *alloc_list_node(pthread_t thread_id) {
@@ -253,11 +257,11 @@ using asylo::ThreadManager;
 using asylo::pthread_impl::check_parameter;
 using asylo::pthread_impl::ConvertToErrno;
 using asylo::pthread_impl::init_tls_map;
+using asylo::pthread_impl::LockableGuard;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
 using asylo::pthread_impl::PthreadListWrapper;
 using asylo::pthread_impl::PthreadMutexLock;
-using asylo::pthread_impl::SpinLock;
 using asylo::pthread_impl::tls_map;
 
 extern "C" {
@@ -335,7 +339,7 @@ int pthread_mutex_destroy(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  SpinLock lock(mutex);
+  LockableGuard lock_guard(mutex);
   PthreadListWrapper list(mutex);
   if (!list.Empty()) {
     return EBUSY;
@@ -353,13 +357,13 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
 
   PthreadListWrapper list(mutex);
   {
-    SpinLock lock(mutex);
+    LockableGuard lock_guard(mutex);
     list.Push(pthread_self());
   }
 
   while (true) {
     {
-      SpinLock lock(mutex);
+      LockableGuard lock_guard(mutex);
       ret = pthread_mutex_lock_internal(mutex);
     }
     if (ret == 0) {
@@ -376,7 +380,7 @@ int pthread_mutex_trylock(pthread_mutex_t *mutex) {
     return ret;
   }
 
-  SpinLock lock(mutex);
+  LockableGuard lock_guard(mutex);
   ret = pthread_mutex_lock_internal(mutex);
 
   return ret;
@@ -391,7 +395,7 @@ int pthread_mutex_unlock(pthread_mutex_t *mutex) {
 
   const pthread_t self = pthread_self();
 
-  SpinLock lock(mutex);
+  LockableGuard lock_guard(mutex);
 
   if (mutex->_owner == PTHREAD_T_NULL) {
     return EINVAL;
@@ -437,7 +441,7 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
     return ret;
   }
 
-  SpinLock lock(cond);
+  LockableGuard lock_guard(cond);
   PthreadListWrapper list(cond);
   if (!list.Empty()) {
     return EBUSY;
@@ -479,7 +483,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
 
   PthreadListWrapper list(cond);
   {
-    SpinLock lock(cond);
+    LockableGuard lock_guard(cond);
     list.Push(self);
   }
 
@@ -507,13 +511,13 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
       }
     }
 
-    SpinLock lock(cond);
+    LockableGuard lock_guard(cond);
     if (!list.Contains(self)) {
       break;
     }
   }
   {
-    SpinLock lock(cond);
+    LockableGuard lock_guard(cond);
     list.Remove(self);
   }
 
@@ -545,7 +549,7 @@ int pthread_cond_signal(pthread_cond_t *cond) {
     return ret;
   }
 
-  SpinLock lock(cond);
+  LockableGuard lock_guard(cond);
   PthreadListWrapper list(cond);
   if (list.Empty()) {
     return 0;
@@ -565,7 +569,7 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
 
   PthreadListWrapper list(cond);
   {
-    SpinLock lock(cond);
+    LockableGuard lock_guard(cond);
     list.Drain();
   }
 
