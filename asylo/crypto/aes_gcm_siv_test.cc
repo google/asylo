@@ -60,8 +60,6 @@ const char ciphertext2_hex[] =
     "ae6559e48fd10f6e5c9ca17e";
 constexpr size_t kMessageSizeLimit = 1 << 16;
 
-constexpr size_t kAesGcmSivNonceUsageLimit = 8;
-
 class FixedNonceGenerator : public NonceGenerator<kAesGcmSivNonceSize> {
  public:
   using AesGcmSivNonce = UnsafeBytes<kAesGcmSivNonceSize>;

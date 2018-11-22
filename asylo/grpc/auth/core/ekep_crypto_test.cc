@@ -38,10 +38,6 @@ namespace {
 
 using ::testing::Not;
 
-const uint32_t kFrameSizeLength = 4;
-const uint32_t kMinFrameSize = 4;
-const uint32_t kFrameHeaderSize = 8;
-
 // Test vector for EKEP secret derivation.
 //   Inputs:
 //     kTestPrivKey, kTestPubKey, kTestTranscriptHash
