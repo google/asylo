@@ -51,7 +51,6 @@ using ::testing::Not;
 
 constexpr uint32_t kLongAll0 = 0x0;
 constexpr uint32_t kLongAllF = 0xFFFFFFFF;
-constexpr uint32_t kLongAllA = 0xAAAAAAAA;
 constexpr uint32_t kLongAll5 = 0x55555555;
 constexpr uint64_t kLongLongAllF = 0xFFFFFFFFFFFFFFFFULL;
 constexpr uint64_t kLongLongAllA = 0xAAAAAAAAAAAAAAAAULL;

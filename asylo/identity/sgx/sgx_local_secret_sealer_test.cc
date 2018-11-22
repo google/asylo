@@ -50,7 +50,6 @@ constexpr char kBadCpusvn[] = "BAD";
 constexpr char kTestString[] = "test";
 constexpr sgx::CipherSuite kBadCipherSuite = sgx::UNKNOWN_CIPHER_SUITE;
 constexpr char kTestAad[] = "Mary had a little lamb";
-constexpr size_t kTestAadSize = sizeof(kTestAad) - 1;
 constexpr char kTestSecret[] = "Its fleece was white as snow";
 constexpr size_t kTestSecretSize = sizeof(kTestSecret) - 1;
 
