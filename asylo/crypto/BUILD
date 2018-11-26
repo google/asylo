@@ -100,6 +100,36 @@ cc_library(
     ],
 )
 
+# Implementation of NonceGeneratorInterface with random nonce generation.
+cc_library(
+    name = "random_nonce_generator",
+    srcs = ["random_nonce_generator.cc"],
+    hdrs = ["random_nonce_generator.h"],
+    deps = [
+        ":nonce_generator_interface",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+# Tests for RandomNonceGenerator.
+cc_test(
+    name = "random_nonce_generator_test",
+    srcs = ["random_nonce_generator_test.cc"],
+    deps = [
+        ":random_nonce_generator",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Implementation of HashInterface for SHA256.
 cc_library(
     name = "sha256_hash",
