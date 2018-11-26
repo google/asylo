@@ -96,6 +96,7 @@ cc_library(
     hdrs = ["nonce_generator_interface.h"],
     deps = [
         "//asylo/util:status",
+        "@com_google_absl//absl/types:span",
     ],
 )
 

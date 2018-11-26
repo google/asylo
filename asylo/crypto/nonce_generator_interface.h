@@ -21,8 +21,8 @@
 
 #include <cstddef>
 #include <cstdint>
-#include <vector>
 
+#include "absl/types/span.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -39,8 +39,9 @@ class NonceGeneratorInterface {
   virtual size_t NonceSize() const = 0;
 
   // Generates a new nonce and writes it to |nonce|. Returns a non-OK status if
-  // nonce-generation was not successful.
-  virtual Status NextNonce(std::vector<uint8_t> *nonce) = 0;
+  // nonce-generation was not successful. |nonce|.size() must be greater than or
+  // equal to NonceSize().
+  virtual Status NextNonce(absl::Span<uint8_t> nonce) = 0;
 };
 
 }  // namespace asylo
