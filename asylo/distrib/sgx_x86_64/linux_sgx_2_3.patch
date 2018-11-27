@@ -420,7 +420,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  #include "sgx_error.h"
  #include "stddef.h"
  #include "sgx_defs.h"
-@@ -82,6 +83,36 @@
+@@ -82,6 +83,40 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
@@ -445,6 +445,10 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 +    void *stack_base;
 +    // Limit address of the stack for the current tcs.
 +    void *stack_limit;
++    // Base address of the reserved storage section.
++    void *reserved_base;
++    // Size of the reserved storage section.
++    size_t reserved_size;
 +};
 +
 +/* sgx_memory_layout()
@@ -2761,6 +2765,19 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
      }
  
      g_enclave_state = ENCLAVE_INIT_DONE;
+diff -Nur sdk/trts/linux/trts_pic.S sdk/trts/linux/trts_pic.S
+--- sdk/trts/linux/trts_pic.S
++++ sdk/trts/linux/trts_pic.S
+@@ -40,6 +40,9 @@
+ 
+ #include "trts_pic.h"
+ 
++    /* .reserved */
++    .section .reserved, "aw",@progbits
++
+     /* .text */
+     .section .nipx,"ax",@progbits
+ 
 diff -Nur sdk/trts/linux/x86_64/setcontext.S sdk/trts/linux/x86_64/setcontext.S
 --- sdk/trts/linux/x86_64/setcontext.S
 +++ sdk/trts/linux/x86_64/setcontext.S
@@ -2927,10 +2944,13 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  #include "trts_util.h"
  #include "global_data.h"
  #include "util.h"
-@@ -72,6 +73,24 @@
+@@ -72,6 +73,31 @@
      return heap_size;
  }
  
++// A 1M bytes temporary storage buffer.
++static char reserved[1024 * 1024] __attribute__((section(".reserved")));
++
 +void get_memory_layout(struct SgxMemoryLayout *memory_layout)
 +{
 +    // Enclave initialized data/uninitialized data/heap.
@@ -2947,6 +2967,10 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +    memory_layout->thread_size = sizeof(thread_data_t);
 +    memory_layout->stack_base = reinterpret_cast<void *>(thread_data->stack_base_addr + static_cast<size_t>(STATIC_STACK_SIZE));
 +    memory_layout->stack_limit = reinterpret_cast<void *>(thread_data->stack_limit_addr);
++
++    // Temporary storage buffer section.
++    memory_layout->reserved_base = reinterpret_cast<void *>(reserved);
++    memory_layout->reserved_size = sizeof(reserved);
 +}
 +
  int * get_errno_addr(void)
@@ -2973,7 +2997,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1171 @@
+@@ -0,0 +1,1177 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +# "notice" licenses present:
@@ -3594,7 +3618,10 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    name = "uae_service",
 +    hdrs = ["include/sgx_uae_service.h"],
 +    visibility = ["//visibility:public"],
-+    deps = [":uae_service_select"],
++    deps = [
++        ":uae_service_select",
++        ":urts_sim",
++    ],
 +)
 +
 +cc_library(
@@ -3917,7 +3944,10 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    name = "urts",
 +    hdrs = ["include/sgx_urts.h"],
 +    visibility = ["//visibility:public"],
-+    deps = [":urts_select"],
++    deps = [
++        ":untrusted_inc",
++        ":urts_select",
++    ],
 +)
 +
 +# The following targets are designed with to be build with the Asylo toolchain.

@@ -58,6 +58,8 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout* enclave_memory_layout) {
   enclave_memory_layout->thread_size = memory_layout.thread_size;
   enclave_memory_layout->stack_base = memory_layout.stack_base;
   enclave_memory_layout->stack_limit = memory_layout.stack_limit;
+  enclave_memory_layout->reserved_base = memory_layout.reserved_base;
+  enclave_memory_layout->reserved_size = memory_layout.reserved_size;
 }
 
 #ifdef __cplusplus

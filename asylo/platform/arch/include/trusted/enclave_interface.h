@@ -66,6 +66,10 @@ struct EnclaveMemoryLayout {
   // Limit address of the stack for the current thread. This is the lower bound
   // of the stack since stack goes down.
   void *stack_limit;
+  // Base address of the storage reserved to the Asylo runtime.
+  void *reserved_base;
+  // Size of the storage reserved to the Asylo runtime.
+  size_t reserved_size;
 };
 
 void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout);

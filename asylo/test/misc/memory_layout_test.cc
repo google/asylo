@@ -69,6 +69,10 @@ TEST(EnclaveMemoryLayout, MemoryLayout) {
   int variable_on_stack = 0;
   EXPECT_TRUE(IsAddressInRange(&variable_on_stack,
                                enclave_memory_layout.stack_limit, stack_size));
+
+  // Check reserved.
+  EXPECT_TRUE(enc_is_within_enclave(enclave_memory_layout.reserved_base,
+                                    enclave_memory_layout.reserved_size));
 }
 
 }  // namespace
