@@ -28,7 +28,7 @@ namespace {
 
 constexpr int kMaxSignalsInMask = sizeof(sigset_t) * 8;
 
-const sigset_t EmptySigSet() {
+sigset_t EmptySigSet() {
   sigset_t set;
   sigemptyset(&set);
   return set;
