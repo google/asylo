@@ -107,11 +107,11 @@ void SignalManager::UnblockSignals(const sigset_t &set) {
   }
 }
 
-const sigset_t SignalManager::GetSignalMask() const { return signal_mask_; }
+sigset_t SignalManager::GetSignalMask() const { return signal_mask_; }
 
 void SignalManager::SetSignalMask(const sigset_t &mask) { signal_mask_ = mask; }
 
-const sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
+sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
   sigset_t signals_to_unblock;
   sigemptyset(&signals_to_unblock);
   for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {

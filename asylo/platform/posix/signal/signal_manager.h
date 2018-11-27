@@ -52,13 +52,13 @@ class SignalManager {
   void UnblockSignals(const sigset_t &set);
 
   // Gets the enclave stored signal mask.
-  const sigset_t GetSignalMask() const;
+  sigset_t GetSignalMask() const;
 
   // Sets the enclave stored signal mask to |mask|.
   void SetSignalMask(const sigset_t &mask);
 
   // Gets the set of unblocked signals in |set|.
-  const sigset_t GetUnblockedSet(const sigset_t &set);
+  sigset_t GetUnblockedSet(const sigset_t &set);
 
  private:
   SignalManager() = default;  // Private to enforce singleton.
