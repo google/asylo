@@ -181,6 +181,14 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
   return status;
 }
 
+Status EnclaveManager::EnterAndTakeSnapshot(EnclaveClient *client,
+                                            SnapshotLayout *snapshot_layout) {
+  if (!client) {
+    return Status::OkStatus();
+  }
+  return client->EnterAndTakeSnapshot(snapshot_layout);
+}
+
 EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
   auto it = client_by_name_.find(name);
   if (it == client_by_name_.end()) {

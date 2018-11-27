@@ -16,7 +16,14 @@
  *
  */
 
+#include "asylo/platform/arch/include/trusted/fork.h"
+
 #include <cstddef>
+
+#include "asylo/util/logging.h"
+#include "asylo/platform/arch/include/trusted/enclave_interface.h"
+#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace {
@@ -56,4 +63,104 @@ const struct ThreadMemoryLayout GetThreadLayoutForSnapshot() {
 }
 
 }  // namespace
+
+// Takes a snapshot of the enclave data/bss/heap and stack for the calling
+// thread by copying to untrusted memory.
+Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
+#ifndef INSECURE_DEBUG_FORK_ENABLED
+  return Status(error::GoogleError::FAILED_PRECONDITION,
+                "Insecure fork not enabled");
+#endif  // INSECURE_DEBUG_FORK_ENABLED
+
+  LOG(WARNING) << "ENCLAVE FORK IS INSECURE CURRENTLY. THE SNAPSHOT IS "
+                  "UNENCRYPTED AND IT LEAKS ALL ENCLAVE DATA!";
+  if (!snapshot_layout) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Snapshot layout is nullptr");
+  }
+
+  // Get the information of enclave layout.
+  struct EnclaveMemoryLayout enclave_layout;
+  enc_get_memory_layout(&enclave_layout);
+  if (!enclave_layout.data_base || enclave_layout.data_size <= 0) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Can't find enclave data section");
+  }
+  if (!enclave_layout.bss_base || enclave_layout.bss_size <= 0) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Can't find enclave bss section");
+  }
+  if (!enclave_layout.heap_base || enclave_layout.heap_size <= 0) {
+    return Status(error::GoogleError::INTERNAL, "Can't find enclave heap");
+  }
+
+  struct ThreadMemoryLayout thread_layout = GetThreadLayoutForSnapshot();
+  if (!thread_layout.thread_base || thread_layout.thread_size <= 0) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Can't locate the thread calling fork");
+  }
+  if (!thread_layout.stack_base || !thread_layout.stack_limit) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Can't locate the stack of the thread calling fork");
+  }
+
+  // Allocate and copy data section.
+  void *snapshot_data = enc_untrusted_malloc(enclave_layout.data_size);
+  if (!snapshot_data) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed allocate untrusted memory for data of the snapshot");
+  }
+  snapshot_layout->set_data_base(reinterpret_cast<uint64_t>(snapshot_data));
+  memcpy(snapshot_data, enclave_layout.data_base, enclave_layout.data_size);
+  snapshot_layout->set_data_size(enclave_layout.data_size);
+
+  // Allocate and copy bss section.
+  void *snapshot_bss = enc_untrusted_malloc(enclave_layout.bss_size);
+  if (!snapshot_bss) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "Failed to allocate untrusted memory for bss of the snapshot");
+  }
+  snapshot_layout->set_bss_base(reinterpret_cast<uint64_t>(snapshot_bss));
+  memcpy(snapshot_bss, enclave_layout.bss_base, enclave_layout.bss_size);
+  snapshot_layout->set_bss_size(enclave_layout.bss_size);
+
+  // Allocate and copy thread data for the calling thread.
+  void *snapshot_thread = enc_untrusted_malloc(enclave_layout.thread_size);
+  if (!snapshot_thread) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "Failed to allocate untrusted memory for thread data of the snapshot");
+  }
+  snapshot_layout->set_thread_base(reinterpret_cast<uint64_t>(snapshot_thread));
+  memcpy(snapshot_thread, thread_layout.thread_base, thread_layout.thread_size);
+  snapshot_layout->set_thread_size(enclave_layout.thread_size);
+
+  // Allocate and copy heap.
+  void *snapshot_heap = enc_untrusted_malloc(enclave_layout.heap_size);
+  if (!snapshot_heap) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "Failed to allocate untrusted memory for heap of the snapshot");
+  }
+  snapshot_layout->set_heap_base(reinterpret_cast<uint64_t>(snapshot_heap));
+  memcpy(snapshot_heap, enclave_layout.heap_base, enclave_layout.heap_size);
+  snapshot_layout->set_heap_size(enclave_layout.heap_size);
+
+  // Allocate and copy stack for the calling thread.
+  size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
+                      reinterpret_cast<size_t>(thread_layout.stack_limit);
+  void *snapshot_stack = enc_untrusted_malloc(stack_size);
+  if (!snapshot_stack) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "Failed to allocate untrusted memory for stack of the snapshot");
+  }
+  snapshot_layout->set_stack_base(reinterpret_cast<uint64_t>(snapshot_stack));
+  memcpy(snapshot_stack, thread_layout.stack_limit, stack_size);
+  snapshot_layout->set_stack_size(stack_size);
+
+  return Status::OkStatus();
+}
+
 }  // namespace asylo

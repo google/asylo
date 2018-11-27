@@ -54,6 +54,10 @@ class TestClient : public EnclaveClient {
     return Status::OkStatus();
   }
 
+  Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) override {
+    return Status::OkStatus();
+  }
+
   Status DestroyEnclave() override { return Status::OkStatus(); }
 };
 

@@ -36,6 +36,7 @@ class MockEnclaveClient : public EnclaveClient {
   MOCK_METHOD1(EnterAndFinalize, Status(const EnclaveFinal &));
   MOCK_METHOD0(EnterAndDonateThread, Status());
   MOCK_METHOD1(EnterAndHandleSignal, Status(const EnclaveSignal &));
+  MOCK_METHOD1(EnterAndTakeSnapshot, Status(SnapshotLayout *));
   MOCK_METHOD0(DestroyEnclave, Status());
 };
 

@@ -133,6 +133,45 @@ message EnclaveSignal {
   repeated uint64 gregs = 3;
 }
 
+// A snapshot layout message that contains the base address and size of an
+// enclave data/bss section, heap, and stack for the thread which took the
+// snapshot.
+message SnapshotLayout {
+  // Start address of the data section in the snapshot in untrusted memory.
+  optional uint64 data_base = 1;
+
+  // Size of the data section in the snapshot in untrusted memory.
+  optional uint64 data_size = 2;
+
+  // Start address of the bss section in the snapshot in untrusted memory.
+  optional uint64 bss_base = 3;
+
+  // Size of the bss section in the snapshot in untrusted memory.
+  optional uint64 bss_size = 4;
+
+  // Start address of the heap in the snapshot in untrusted memory.
+  optional uint64 heap_base = 5;
+
+  // Size of the heap in the snapshot in untrusted memory.
+  optional uint64 heap_size = 6;
+
+  // Start address of the thread related information of thread which took the
+  // snpashot, including the stack gurad, stack last pointer, etc.
+  optional uint64 thread_base = 7;
+
+  // Size of the thread related information of the thread which took the
+  // snapshot, including the stack guard, stack last pointer, etc.
+  optional uint64 thread_size = 8;
+
+  // Start address of the stack of the thread which took the snapshot, in the
+  // snapshot in untrusted memory.
+  optional uint64 stack_base = 9;
+
+  // Size of the stack of the thread which took the snapshot, in the snapshot in
+  // untrusted memory.
+  optional uint64 stack_size = 10;
+}
+
 // An output message produced by an enclave for an invocation of its `Run`
 // entry-point. This message can be used to send information out of the enclave
 // back to an untrusted caller.
@@ -140,6 +179,9 @@ message EnclaveOutput {
   // Contains status information for the Run invocation. A non-OK status may
   // indicate an error in either trusted or untrusted space.
   optional StatusProto status = 1;
+
+  // Contains the snapshot layout information for the take_snapshot invocation.
+  optional SnapshotLayout snapshot_layout = 2;
 
   // Allow user extensions.
   extensions 1000 to max;

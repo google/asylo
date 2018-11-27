@@ -234,6 +234,16 @@ class EnclaveManager {
   Status DestroyEnclave(EnclaveClient *client, const EnclaveFinal &final_input,
                         bool skip_finalize = false);
 
+  /// Enters an enclave and takes a snapshot of its memory. This method calls
+  /// `client's` EnterAndTakeSnapshot entry point, with snapshot layout (in
+  /// untrusted memory) stored in |snapshot_layout|.
+  ///
+  /// \param client A client attached to the enclave to enter.
+  /// \param snapshot_layout The snapshot layout in untrusted memory to be
+  ///                        filled up by snapshotting.
+  Status EnterAndTakeSnapshot(EnclaveClient *client,
+                              SnapshotLayout *snapshot_layout);
+
   /// Fetches the shared resource manager object.
   ///
   /// \return The SharedResourceManager instance.

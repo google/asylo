@@ -30,6 +30,7 @@
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/init.h"
+#include "asylo/platform/arch/include/trusted/fork.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/include/trusted/time.h"
 #include "asylo/platform/common/bridge_functions.h"
@@ -400,6 +401,32 @@ int __asylo_handle_signal(const char *input, size_t input_len) {
     return 1;
   }
   return 0;
+}
+
+int __asylo_take_snapshot(char **output, size_t *output_len) {
+  Status status = VerifyOutputArguments(output, output_len);
+  if (!status.ok()) {
+    return 1;
+  }
+  EnclaveOutput enclave_output;
+  StatusSerializer<EnclaveOutput> status_serializer(
+      &enclave_output, enclave_output.mutable_status(), output, output_len);
+
+#ifndef INSECURE_DEBUG_FORK_ENABLED
+  status = Status(error::GoogleError::FAILED_PRECONDITION,
+                  "Insecure fork not enabled");
+  return status_serializer.Serialize(status);
+#endif  // INSECURE_DEBUG_FORK_ENABLED
+
+  TrustedApplication *trusted_application = GetApplicationInstance();
+  if (trusted_application->GetState() != EnclaveState::kRunning) {
+    status = Status(error::GoogleError::FAILED_PRECONDITION,
+                    "Enclave not in state RUNNING");
+    return status_serializer.Serialize(status);
+  }
+
+  status = TakeSnapshotForFork(enclave_output.mutable_snapshot_layout());
+  return status_serializer.Serialize(status);
 }
 
 }  // extern "C"

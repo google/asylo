@@ -31,6 +31,7 @@ cc_library(
     name = "trusted_arch",
     hdrs = [
         "include/trusted/enclave_interface.h",
+        "include/trusted/fork.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",
@@ -40,7 +41,11 @@ cc_library(
     deps = select({
         "//asylo/platform/arch:sgx": ["trusted_sgx"],
         "//conditions:default": ["trusted_build_only"],
-    }) + ["//asylo/platform/core:shared_name"],
+    }) + [
+        "//asylo:enclave_proto_cc",
+        "//asylo/platform/core:shared_name",
+        "//asylo/util:status",
+    ],
 )
 
 # Target exposing untrusted client components for all backends.
@@ -172,11 +177,12 @@ cc_library(
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
+            "sgx/trusted/fork.cc",
             "sgx/trusted/hardware_random.cc",
             "sgx/trusted/register_signal.cc",
-            "sgx/trusted/fork.cc",
         ],
         "@linux_sgx//:sgx_sim": [
+            "sgx_sim/trusted/fork.cc",
             "sgx_sim/trusted/hardware_random.cc",
             "sgx_sim/trusted/register_signal.cc",
         ],
@@ -184,6 +190,7 @@ cc_library(
     hdrs = [
         "include/trusted/enclave_interface.h",
         "include/trusted/entry_points.h",
+        "include/trusted/fork.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",

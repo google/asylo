@@ -68,6 +68,11 @@ int __asylo_threading_donate();
 // The input type is asylo::EnclaveSignal.
 int __asylo_handle_signal(const char *input, size_t input_len);
 
+// Enclave snapshotting routine.
+//
+// The output type is asylo::EnclaveOutput.
+int __asylo_take_snapshot(char **output, size_t *output_len);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

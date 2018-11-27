@@ -151,6 +151,7 @@ class TrustedApplication {
                                char **output, size_t *output_len);
   friend int __asylo_threading_donate();
   friend int __asylo_handle_signal(const char *input, size_t input_len);
+  friend int __asylo_take_snapshot(SnapshotLayout *snapshot_layout);
 };
 
 /// User-supplied factory function for making a trusted application instance.
