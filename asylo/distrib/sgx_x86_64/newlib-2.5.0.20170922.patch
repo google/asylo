@@ -4429,7 +4429,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave.c ./libgloss/enclav
 +
 +void _exit(int rc)
 +{
-+  return enclave_exit(rc);
++  enclave_exit(rc);
 +}
 +
 +int _close(int fildes)
@@ -4581,7 +4581,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/enclave/Makefile.in
 --- ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in
 +++ ./libgloss/enclave/Makefile.in
-@@ -0,0 +1,131 @@
+@@ -0,0 +1,137 @@
 +# Copyright (c) 1998 Cygnus Support
 +#
 +# The authors hereby grant permission to use, copy, modify, distribute,
@@ -4657,7 +4657,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +GCC_LDFLAGS = `if [ -d ${objroot}/../gcc ] ; \
 +	then echo -L${objroot}/../gcc ; fi`
 +
-+OUTPUTS = libenclave.a
++OUTPUTS = libenclave.a libpthread.a
 +SPECS = ${srcdir}/enclave.specs
 +
 +# Host specific makefile fragment comes in here.
@@ -4672,6 +4672,11 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +libenclave.a: $(EVALOBJS)
 +	${AR} ${ARFLAGS} $@ $(EVALOBJS)
 +	${RANLIB} $@
++
++# Create an empty archive for pthread library. We include pthread symbols in
++# the base libc, but don't want build rules to get errors with -lpthread.
++libpthread.a:
++	${AR} ${ARFLAGS} $@
 +
 +doc:
 +
@@ -4689,7 +4694,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	done
 +	if [ -z "$(MULTISUBDIR)" ]; then \
 +	 mkdir $(DESTDIR)$(tooldir)/include/enclave/; \
-+   $(INSTALL_DATA) $(srcdir)/enclave_syscalls.h $(DESTDIR)$(tooldir)/include/enclave/enclave_syscalls.h || exit $$?; \
++	 $(INSTALL_DATA) $(srcdir)/enclave_syscalls.h $(DESTDIR)$(tooldir)/include/enclave/enclave_syscalls.h || exit $$?; \
 +	else true; fi
 +
 +info:
@@ -4708,6 +4713,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +		rm -f ${objroot}/newlib/targ-include/enclave_syscalls.h; \
 +	else true; fi ; \
 +	if [ -d ${objroot}/newlib/targ-include ]; then \
++		mkdir -p ${objroot}/newlib/targ-include/enclave/; \
 +		cp $(srcdir)/enclave_syscalls.h ${objroot}/newlib/targ-include/enclave/enclave_syscalls.h; \
 +	else true; fi ; \
 +	touch $@
