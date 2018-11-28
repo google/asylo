@@ -9943,7 +9943,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
-@@ -0,0 +1,80 @@
+@@ -0,0 +1,86 @@
 +#ifndef _SYS__PTHREADTYPES_H
 +#define _SYS__PTHREADTYPES_H
 +
@@ -9997,8 +9997,6 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +  }
 +#define PTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_NONRECURSIVE_INITIALIZER
 +
-+#define PTHREAD_RWLOCK_INITIALIZER {0}
-+
 +typedef struct { unsigned char _dummy; } pthread_mutexattr_t;
 +
 +typedef struct {
@@ -10019,7 +10017,15 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +
 +typedef struct { unsigned char _dummy; } pthread_condattr_t;
 +
-+typedef struct { unsigned char _dummy; } pthread_rwlock_t;
++typedef struct {
++  pthread_spinlock_t _lock;
++  pthread_t _write_owner;
++  uint32_t _reader_count;
++  __pthread_list_t _queue;
++} pthread_rwlock_t;
++
++#define PTHREAD_RWLOCK_INITIALIZER \
++  { PTHREAD_SPINLOCK_INITIALIZER, PTHREAD_T_NULL, 0, PTHREAD_LIST_INITIALIZER }
 +
 +typedef struct { unsigned char _dummy; } pthread_rwlockattr_t;
 +
