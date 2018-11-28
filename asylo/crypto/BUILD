@@ -16,8 +16,6 @@
 
 licenses(["notice"])  # Apache v2.0
 
-package(default_visibility = ["//asylo:implementation"])
-
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:asylo.bzl", "cc_test")
 
@@ -27,12 +25,14 @@ load("//asylo/bazel:asylo.bzl", "cc_test")
 asylo_proto_library(
     name = "algorithms_proto",
     srcs = ["algorithms.proto"],
+    visibility = ["//asylo:implementation"],
 )
 
 # Defines a C++ interface for AEAD keys.
 cc_library(
     name = "aead_key",
     hdrs = ["aead_key.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
         "//asylo/crypto/util:byte_container_view",
@@ -47,6 +47,7 @@ cc_library(
     name = "aes_gcm_key",
     srcs = ["aes_gcm_key.cc"],
     hdrs = ["aes_gcm_key.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":aead_key",
         ":algorithms_proto_cc",
@@ -83,6 +84,7 @@ cc_test(
 cc_library(
     name = "hash_interface",
     hdrs = ["hash_interface.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
         "//asylo/crypto/util:byte_container_view",
@@ -94,6 +96,7 @@ cc_library(
 cc_library(
     name = "nonce_generator_interface",
     hdrs = ["nonce_generator_interface.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:status",
         "@com_google_absl//absl/types:span",
@@ -105,6 +108,7 @@ cc_library(
     name = "random_nonce_generator",
     srcs = ["random_nonce_generator.cc"],
     hdrs = ["random_nonce_generator.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":nonce_generator_interface",
         "//asylo/crypto/util:bssl_util",
@@ -135,6 +139,7 @@ cc_library(
     name = "sha256_hash",
     srcs = ["sha256_hash.cc"],
     hdrs = ["sha256_hash.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":hash_interface",
         "//asylo/crypto/util:bssl_util",
@@ -200,6 +205,7 @@ cc_test(
 cc_library(
     name = "signing_key",
     hdrs = ["signing_key.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
         "//asylo/crypto/util:byte_container_view",
@@ -212,6 +218,7 @@ cc_library(
     name = "ecdsa_p256_sha256_signing_key",
     srcs = ["ecdsa_p256_sha256_signing_key.cc"],
     hdrs = ["ecdsa_p256_sha256_signing_key.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":sha256_hash",
         ":signing_key",
