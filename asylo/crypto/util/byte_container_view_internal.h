@@ -19,6 +19,8 @@
 #ifndef ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_INTERNAL_H_
 #define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_INTERNAL_H_
 
+#include <type_traits>
+
 namespace asylo {
 namespace internal {
 

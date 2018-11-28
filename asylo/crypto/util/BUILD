@@ -16,11 +16,6 @@
 
 licenses(["notice"])  # Apache v2.0
 
-package(
-    default_visibility = ["//asylo:implementation"],
-    features = ["-parse_headers"],
-)
-
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Asylo Crypto library utilities.
@@ -29,6 +24,7 @@ cc_library(
     name = "bssl_util",
     srcs = ["bssl_util.cc"],
     hdrs = ["bssl_util.h"],
+    visibility = ["//asylo:implementation"],
     deps = ["@boringssl//:crypto"],
 )
 
@@ -36,6 +32,7 @@ cc_library(
     name = "byte_container_util",
     srcs = ["byte_container_util_internal.h"],
     hdrs = ["byte_container_util.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":byte_container_view",
         "//asylo/util:logging",
@@ -62,6 +59,7 @@ cc_library(
     name = "byte_container_view",
     srcs = ["byte_container_view_internal.h"],
     hdrs = ["byte_container_view.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:logging",
         "@boringssl//:crypto",
@@ -89,6 +87,7 @@ cc_test(
 cc_library(
     name = "bytes",
     hdrs = ["bytes.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":byte_container_view",
         ":trivial_object_util",
@@ -115,6 +114,7 @@ cc_test(
 cc_library(
     name = "trivial_object_util",
     hdrs = ["trivial_object_util.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:status",
         "@boringssl//:crypto",
