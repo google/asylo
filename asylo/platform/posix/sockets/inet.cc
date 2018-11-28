@@ -17,57 +17,42 @@
  */
 
 #include <arpa/inet.h>
+#include <byteswap.h>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
-
-static inline uint32_t flip_endian_32(uint32_t u32_in) {
-  const char *in = reinterpret_cast<const char *>(&u32_in);
-  char out[4];
-  out[0] = in[3];
-  out[1] = in[2];
-  out[2] = in[1];
-  out[3] = in[0];
-  return *reinterpret_cast<uint32_t *>(out);
-}
-
-static inline uint16_t flip_endian_16(uint16_t u16_in) {
-  const char *in = reinterpret_cast<const char *>(&u16_in);
-  char out[2];
-  out[0] = in[1];
-  out[1] = in[0];
-  return *reinterpret_cast<uint16_t *>(out);
-}
 
 uint32_t htonl(uint32_t hostlong) {
 #ifdef __LITTLE_ENDIAN
-  return flip_endian_32(hostlong);
-#endif
+  return bswap_32(hostlong);
+#else
   return hostlong;
+#endif
 }
 
 uint16_t htons(uint16_t hostshort) {
 #ifdef __LITTLE_ENDIAN
-  return flip_endian_16(hostshort);
-#endif
+  return bswap_16(hostshort);
+#else
   return hostshort;
+#endif
 }
 
 uint32_t ntohl(uint32_t netlong) {
 #ifdef __LITTLE_ENDIAN
-  return flip_endian_32(netlong);
-#endif
+  return bswap_32(netlong);
+#else
   return netlong;
+#endif
 }
 
 uint16_t ntohs(uint16_t netshort) {
 #ifdef __LITTLE_ENDIAN
-  return flip_endian_16(netshort);
-#endif
+  return bswap_16(netshort);
+#else
   return netshort;
+#endif
 }
 
 const char *inet_ntop(int af, const void *src, char *dst, socklen_t size) {
@@ -78,6 +63,4 @@ int inet_pton(int af, const char *src, void *dst) {
   return enc_untrusted_inet_pton(af, src, dst);
 }
 
-#ifdef __cplusplus
 }  // extern "C"
-#endif
