@@ -367,6 +367,7 @@ cc_library(
         "identity_key_management_structs.h",
         "secs_attributes.h",
     ],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_proto_cc",
         "//asylo/crypto/util:bytes",
