@@ -273,6 +273,12 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
                                            const EnclaveLoader &loader,
                                            const EnclaveConfig &config,
                                            void *base_address) {
+  if (config.enable_fork() && base_address) {
+    // If fork is enabled and a base address is provided, it is now loading an
+    // enclave in the child process. Remove the reference in the enclave table
+    // that points to the enclave in the parent process.
+    RemoveEnclaveReference(name);
+  }
   // Check whether a client with this name already exists.
   if (client_by_name_.find(name) != client_by_name_.end()) {
     Status status(error::GoogleError::ALREADY_EXISTS,
@@ -307,6 +313,12 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
     name_by_client_.erase(client);
   }
   return status;
+}
+
+void EnclaveManager::RemoveEnclaveReference(const std::string &name) {
+  EnclaveClient *client = client_by_name_[name].get();
+  client_by_name_.erase(name);
+  name_by_client_.erase(client);
 }
 
 void EnclaveManager::SpawnWorkerThread() {

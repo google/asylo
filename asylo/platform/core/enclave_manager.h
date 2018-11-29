@@ -285,6 +285,10 @@ class EnclaveManager {
                              const EnclaveConfig &config,
                              void *base_address = nullptr);
 
+  // Deletes an enclave client reference that points to an enclave that no
+  // longer exists. This should only happen during fork.
+  void RemoveEnclaveReference(const std::string &name);
+
   // Create a thread to periodically update logic.
   void SpawnWorkerThread();
 
