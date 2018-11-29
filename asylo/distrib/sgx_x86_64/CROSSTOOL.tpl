@@ -30,8 +30,8 @@ toolchain {
   needsPic: true
   target_libc: "sgx-sdk"
   target_cpu: "sgx_x86_64"
-  target_system_name: "sgx_x86_64"
-  toolchain_identifier: "sgx_x86_64"
+  target_system_name: "x86_64-newlib-asylo"
+  toolchain_identifier: "asylo_sgx_x86_64"
   default_python_version: "python2.7"
   cc_target_os: "asylo"
 
