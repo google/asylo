@@ -383,7 +383,6 @@ GCC_CONFIG=(
 if [[ ! -d build-gcc ]]; then
 (mkdir build-gcc && cd build-gcc &&
    "${srcs_root}/${gcc}/configure" "${GCC_CONFIG[@]}" --enable-languages=c &&
-   make configure-gcc &&
    make -j"${JOBS}" all-gcc && make -j"${JOBS}" all-target-libgcc &&
    make install-gcc && make install-target-libgcc &&
    echo "installed stage1 compiler")
@@ -433,6 +432,14 @@ GCC_CONFIG+=(
   --with-native-system-header-dir=/include/
 )
 
+# Define a LIB_SPEC for GCC so that it understands -pthread. This is the same
+# as the default LIB_SPEC, except for the pthread expansion at the end.
+# It is written to a file instead of directly passed in GCC_FLAGS to avoid the
+# quotes being stripped at various levels of flag passing.
+cat > asylo_lib_spec.txt << 'EOF'
+-DLIB_SPEC='"%{!shared:%{g*:-lg} %{!p:%{!pg:-lc}}%{p:-lc_p}%{pg:-lc_p}} %{pthread:-lpthread}"'
+EOF
+
 # Exporting these environment variables forces gcc to build the C++ library and
 # its dependencies with -fPIC, which out of the box it isn't configured to do
 # when building a static library for x86_64-elf. A more robust approach would be
@@ -447,7 +454,7 @@ GCC_FLAGS=(
   -D_POSIX_READER_WRITER_LOCKS
   -D_UNIX98_THREAD_MUTEX_ATTRIBUTES
   -D__ASYLO__
-  -DTARGET_ANDROID=0
+  @${PWD}/asylo_lib_spec.txt
 )
 
 export CFLAGS="${GCC_FLAGS[@]}"
@@ -462,6 +469,7 @@ export CXXFLAGS_FOR_TARGET="${CXXFLAGS}"
      --enable-c99 \
      --enable-threads=posix &&
    make configure-gcc &&
+   sed -i 's^extra_opt_files=.*^& $(srcdir)/config/gnu-user.opt^' gcc/Makefile &&
    make -j"${JOBS}" && make install &&
    echo "installed compiler")
 
