@@ -73,6 +73,13 @@ int __asylo_handle_signal(const char *input, size_t input_len);
 // The output type is asylo::EnclaveOutput.
 int __asylo_take_snapshot(char **output, size_t *output_len);
 
+// Enclave restoring routine.
+//
+// The input type is asylo::SnapshotLayout.
+// The output type is asylo::StatusProto.
+int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
+                    char **output, size_t *output_len);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

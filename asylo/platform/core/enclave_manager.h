@@ -244,6 +244,16 @@ class EnclaveManager {
   Status EnterAndTakeSnapshot(EnclaveClient *client,
                               SnapshotLayout *snapshot_layout);
 
+  /// Enters an enclave and restores it from an untrusted snapshot. This method
+  /// calls `client's` EnterAndRestore entry point, with snapshot layout (in
+  /// untrusted memory) passed in |snapshot_layout|.
+  ///
+  /// \param client A client attached to the enclave to enter.
+  /// \param snapshot_layout The snapshot layout in untrusted memory used to
+  ///                        restore enclave states.
+  Status EnterAndRestore(EnclaveClient *client,
+                         const SnapshotLayout &snapshot_layout);
+
   /// Fetches the shared resource manager object.
   ///
   /// \return The SharedResourceManager instance.

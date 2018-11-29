@@ -28,6 +28,10 @@ namespace asylo {
 // memory.
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout);
 
+// Copies the snapshot from untrusted memory to replace data/bss/heap and stack
+// for the calling thread in the current enclave.
+Status RestoreForFork(const SnapshotLayout &snapshot_layout);
+
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_

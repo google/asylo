@@ -56,6 +56,7 @@ class SgxClient : public EnclaveClient {
   Status EnterAndDonateThread() override;
   Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
   Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) override;
+  Status EnterAndRestore(const SnapshotLayout &snapshot_layout) override;
   Status DestroyEnclave() override;
 
   std::string path_;               // Path to enclave object file.

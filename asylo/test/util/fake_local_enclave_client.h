@@ -60,6 +60,10 @@ class FakeLocalEnclaveClient : public EnclaveClient {
     return Status::OkStatus();
   }
 
+  Status EnterAndRestore(const SnapshotLayout &snapshot_layout) override {
+    return Status::OkStatus();
+  }
+
   Status DestroyEnclave() override { return Status::OkStatus(); }
 
   // An enclave object that is owned by the client and handles all calls made to

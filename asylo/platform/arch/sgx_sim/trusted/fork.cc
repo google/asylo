@@ -29,4 +29,9 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   abort();
 }
 
+Status RestoreForFork(const SnapshotLayout *snapshot_layout) {
+  // Simulation mode shouldn't need to restore for fork.
+  abort();
+}
+
 }  // namespace asylo

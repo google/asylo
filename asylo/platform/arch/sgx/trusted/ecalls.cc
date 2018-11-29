@@ -117,3 +117,17 @@ int ecall_take_snapshot(char **output, bridge_size_t *output_len) {
   }
   return result;
 }
+
+// Invokes the enclave restoring entry-point. Returns a non-zero error code on
+// failure.
+int ecall_restore(const char *input, bridge_size_t input_len, char **output,
+                  bridge_size_t *output_len) {
+  int result = 0;
+  try {
+    result = asylo::__asylo_restore(input, static_cast<size_t>(input_len),
+                                    output, static_cast<size_t *>(output_len));
+  } catch (...) {
+    LOG(FATAL) << "Uncaught exception in enclave";
+  }
+  return result;
+}

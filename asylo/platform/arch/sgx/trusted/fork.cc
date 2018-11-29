@@ -163,4 +163,107 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   return Status::OkStatus();
 }
 
+// Restore the current enclave states from an untrusted snapshot.
+Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
+#ifndef INSECURE_DEBUG_FORK_ENABLED
+  return Status(error::GoogleError::FAILED_PRECONDITION,
+                "Insecure fork not enabled");
+#endif  // INSECURE_DEBUG_FORK_ENABLED
+
+  // Get the information of current enclave layout.
+  struct EnclaveMemoryLayout enclave_layout;
+  enc_get_memory_layout(&enclave_layout);
+  if (!enclave_layout.data_base ||
+      !enc_is_within_enclave(enclave_layout.data_base,
+                             snapshot_layout.data_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "enclave data section is not found or unexpected");
+  }
+  if (!enclave_layout.bss_base ||
+      !enc_is_within_enclave(enclave_layout.bss_base,
+                             snapshot_layout.bss_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "enclave bss section is not found or unexpected");
+  }
+  if (!enclave_layout.heap_base ||
+      !enc_is_within_enclave(enclave_layout.heap_base,
+                             snapshot_layout.heap_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "enclave heap not found or unexpected");
+  }
+
+  // Restore data section.
+  if (!enc_is_outside_enclave(
+          reinterpret_cast<void *>(snapshot_layout.data_base()),
+          snapshot_layout.data_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot data section is not outside the enclave");
+  }
+  memcpy(enclave_layout.data_base,
+         reinterpret_cast<void *>(snapshot_layout.data_base()),
+         snapshot_layout.data_size());
+
+  // Restore bss section.
+  if (!enc_is_outside_enclave(
+          reinterpret_cast<void *>(snapshot_layout.bss_base()),
+          snapshot_layout.bss_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot bss section is not outside the enclave");
+  }
+  memcpy(enclave_layout.bss_base,
+         reinterpret_cast<void *>(snapshot_layout.bss_base()),
+         snapshot_layout.bss_size());
+
+  // Restore heap.
+  if (!enc_is_outside_enclave(
+          reinterpret_cast<void *>(snapshot_layout.heap_base()),
+          snapshot_layout.heap_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot heap is not outside the enclave");
+  }
+  memcpy(enclave_layout.heap_base,
+         reinterpret_cast<void *>(snapshot_layout.heap_base()),
+         snapshot_layout.heap_size());
+
+  // Get the information of the thread that calls fork. These are saved in data
+  // section, and should be available now since data/bss are restored.
+  struct ThreadMemoryLayout thread_layout = GetThreadLayoutForSnapshot();
+  if (!thread_layout.thread_base ||
+      !enc_is_within_enclave(thread_layout.thread_base,
+                             snapshot_layout.thread_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "target tcs thread data not found or unexpected");
+  }
+  if (!thread_layout.stack_base ||
+      !enc_is_within_enclave(thread_layout.stack_limit,
+                             snapshot_layout.stack_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "target tcs stack not found or unexpected");
+  }
+
+  // Restore thread data for the calling thread.
+  if (!enc_is_outside_enclave(
+          reinterpret_cast<void *>(snapshot_layout.thread_base()),
+          snapshot_layout.thread_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot thread is not outside the enclave");
+  }
+  memcpy(thread_layout.thread_base,
+         reinterpret_cast<void *>(snapshot_layout.thread_base()),
+         snapshot_layout.thread_size());
+
+  // Restore stack for the calling thread.
+  if (!enc_is_outside_enclave(
+          reinterpret_cast<void *>(snapshot_layout.stack_base()),
+          snapshot_layout.stack_size())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot stack is not outside the enclave");
+  }
+  memcpy(thread_layout.stack_limit,
+         reinterpret_cast<void *>(snapshot_layout.stack_base()),
+         snapshot_layout.stack_size());
+
+  return Status::OkStatus();
+}
+
 }  // namespace asylo

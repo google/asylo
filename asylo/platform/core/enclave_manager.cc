@@ -184,9 +184,19 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
 Status EnclaveManager::EnterAndTakeSnapshot(EnclaveClient *client,
                                             SnapshotLayout *snapshot_layout) {
   if (!client) {
-    return Status::OkStatus();
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Enclave client does not exist");
   }
   return client->EnterAndTakeSnapshot(snapshot_layout);
+}
+
+Status EnclaveManager::EnterAndRestore(EnclaveClient *client,
+                                       const SnapshotLayout &snapshot_layout) {
+  if (!client) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Enclave client does not exist");
+  }
+  return client->EnterAndRestore(snapshot_layout);
 }
 
 EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {

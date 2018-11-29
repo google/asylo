@@ -429,6 +429,39 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
   return status_serializer.Serialize(status);
 }
 
+int __asylo_restore(const char *input, size_t input_len, char **output,
+                    size_t *output_len) {
+  Status status = VerifyOutputArguments(output, output_len);
+  if (!status.ok()) {
+    return 1;
+  }
+
+  StatusSerializer<StatusProto> status_serializer(output, output_len);
+
+#ifndef INSECURE_DEBUG_FORK_ENABLED
+  status = Status(error::GoogleError::FAILED_PRECONDITION,
+                  "Insecure fork not enabled");
+  return status_serializer.Serialize(status);
+#endif  // INSECURE_DEBUG_FORK_ENABLED
+
+  asylo::SnapshotLayout snapshot_layout;
+  if (!snapshot_layout.ParseFromArray(input, input_len)) {
+    status = Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Failed to parse SnapshotLayout");
+    return status_serializer.Serialize(status);
+  }
+
+  TrustedApplication *trusted_application = GetApplicationInstance();
+  if (trusted_application->GetState() != EnclaveState::kRunning) {
+    status = Status(error::GoogleError::FAILED_PRECONDITION,
+                    "Enclave not in state RUNNING");
+    return status_serializer.Serialize(status);
+  }
+
+  status = RestoreForFork(snapshot_layout);
+  return status_serializer.Serialize(status);
+}
+
 }  // extern "C"
 
 }  // namespace asylo
