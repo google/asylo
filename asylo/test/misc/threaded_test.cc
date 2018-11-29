@@ -106,5 +106,18 @@ TEST(ThreadedTest, EnclaveThread) {
   }
 }
 
+// Tests that pthread_create works for detached threads and pthread_join fails.
+TEST(ThreadedTest, DetchedThread) {
+  pthread_t thread;
+  pthread_attr_t attr;
+  ASSERT_EQ(pthread_attr_init(&attr), 0);
+  ASSERT_EQ(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED), 0);
+  ASSERT_EQ(pthread_create(&thread, &attr, increment_count, &global_arg), 0);
+
+  EXPECT_EQ(pthread_attr_destroy(&attr), 0);
+
+  EXPECT_NE(pthread_join(thread, nullptr), 0);
+}
+
 }  // namespace
 }  // namespace asylo

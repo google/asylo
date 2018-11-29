@@ -17,6 +17,7 @@
  */
 
 #include "asylo/platform/posix/threading/thread_manager.h"
+#include <pthread.h>
 
 #include <algorithm>
 #include <cstdlib>
@@ -30,8 +31,9 @@ namespace asylo {
 
 using pthread_impl::PthreadMutexLock;
 
-ThreadManager::Thread::Thread(std::function<void *()> start_routine)
-    : start_routine_(std::move(start_routine)) {}
+ThreadManager::Thread::Thread(const ThreadOptions &options,
+                              std::function<void *()> start_routine)
+    : start_routine_(std::move(start_routine)), detached_(options.detached) {}
 
 void ThreadManager::Thread::Run() {
   // Unblock anyone waiting for thread to start.
@@ -47,7 +49,9 @@ void ThreadManager::Thread::Run() {
   UpdateThreadState(ThreadState::DONE);
 }
 
-void *ThreadManager::Thread::GetReturnValue() { return ret_; }
+void *ThreadManager::Thread::GetReturnValue() const { return ret_; }
+
+bool ThreadManager::Thread::detached() const { return detached_; }
 
 void ThreadManager::Thread::UpdateThreadId(const pthread_t thread_id) {
   PthreadMutexLock lock(&lock_);
@@ -115,13 +119,14 @@ ThreadManager *ThreadManager::GetInstance() {
 }
 
 int ThreadManager::CreateThread(const std::function<void *()> &start_routine,
+                                const ThreadOptions &options,
                                 pthread_t *const thread_id_out) {
   std::shared_ptr<Thread> thread;
 
   // Add thread entry point to queue of threads waiting to run.
   {
     PthreadMutexLock lock(&queued_threads_lock_);
-    queued_threads_.emplace(std::make_shared<Thread>(start_routine));
+    queued_threads_.emplace(std::make_shared<Thread>(options, start_routine));
     thread = queued_threads_.back();
   }
 
@@ -175,8 +180,11 @@ int ThreadManager::StartThread() {
   // Run the start_routine.
   thread->Run();
 
-  // Wait for the caller to join before releasing the thread.
-  thread->WaitForThreadToEnterState(Thread::ThreadState::JOINED);
+  // Wait for the caller to join before releasing the thread if the thread is
+  // joinable.
+  if (!thread->detached()) {
+    thread->WaitForThreadToEnterState(Thread::ThreadState::JOINED);
+  }
 
   return 0;
 }
@@ -186,7 +194,11 @@ int ThreadManager::JoinThread(const pthread_t thread_id,
   std::shared_ptr<Thread> thread = GetThread(thread_id);
 
   if (thread == nullptr) {
-    return -1;
+    return ESRCH;
+  }
+
+  if (thread->detached()) {
+    return EINVAL;
   }
 
   // Wait until the job is finished executing.

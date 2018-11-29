@@ -36,11 +36,18 @@ class ThreadManager {
  public:
   static ThreadManager *GetInstance();
 
+  // ThreadOptions contains options for configuring new threads.
+  struct ThreadOptions {
+    // If |detached| a new thread will not be joinable.
+    bool detached = false;
+  };
+
   // Adds the given |function| to a start_routine queue of functions waiting to
   // be run by the pthreads implementation. |thread_id_out| will be updated to
-  // the pthread_t of the created thread.
+  // the pthread_t of the created thread. |options| contains options for
+  // configuring the thread.
   int CreateThread(const std::function<void *()> &start_routine,
-                   pthread_t *thread_id_out);
+                   const ThreadOptions &options, pthread_t *thread_id_out);
 
   // Removes a function from the start_routine queue and runs it. If no
   // start_routine is present this function will abort().
@@ -68,7 +75,7 @@ class ThreadManager {
     enum class ThreadState { QUEUED, RUNNING, DONE, JOINED };
 
     // Creates a thread in the QUEUED state with the specified |start_routine|.
-    Thread(std::function<void *()> start_routine);
+    Thread(const ThreadOptions &options, std::function<void *()> start_routine);
 
     ~Thread() = default;
 
@@ -77,7 +84,11 @@ class ThreadManager {
     void Run();
 
     // Returns the return value of the thread's start routine.
-    void *GetReturnValue();
+    void *GetReturnValue() const;
+
+    // Returns true if the thread is detached. If true the thread is not
+    // joinable.
+    bool detached() const;
 
     // Updates the thread ID; used to bind an Asylo thread struct to the ID of
     // the donated Enclave thread running this Asylo thread.
@@ -121,6 +132,7 @@ class ThreadManager {
     pthread_mutex_t lock_ = PTHREAD_MUTEX_INITIALIZER;
     pthread_cond_t state_change_cond_ = PTHREAD_COND_INITIALIZER;
     ThreadState state_ = ThreadState::QUEUED;
+    bool detached_ = false;
 
     // Stack of cleanup functions that have been pushed and not yet popped or
     // executed.

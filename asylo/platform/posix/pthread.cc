@@ -247,12 +247,25 @@ int ConvertToErrno(int err_value) {
   return -1;
 }
 
+// Returns a ThreadManager::ThreadOptions from the configuration of |attr|.
+asylo::ThreadManager::ThreadOptions CreateOptions(
+    const pthread_attr_t *const attr) {
+  asylo::ThreadManager::ThreadOptions options;
+
+  if (attr != nullptr && attr->detach_state == PTHREAD_CREATE_DETACHED) {
+    options.detached = true;
+  }
+
+  return options;
+}
+
 }  //  namespace pthread_impl
 }  //  namespace asylo
 
 using asylo::ThreadManager;
 using asylo::pthread_impl::check_parameter;
 using asylo::pthread_impl::ConvertToErrno;
+using asylo::pthread_impl::CreateOptions;
 using asylo::pthread_impl::init_tls_map;
 using asylo::pthread_impl::LockableGuard;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
@@ -276,7 +289,8 @@ pthread_t pthread_self() {
 int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                    void *(*start_routine)(void *), void *arg) {
   ThreadManager *const thread_manager = ThreadManager::GetInstance();
-  return thread_manager->CreateThread(std::bind(start_routine, arg), thread);
+  return thread_manager->CreateThread(std::bind(start_routine, arg),
+                                      CreateOptions(attr), thread);
 }
 
 int pthread_join(pthread_t thread, void **value_ptr) {
@@ -726,9 +740,38 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *mutexattr, int type) {
   return 0;
 }
 
-int pthread_attr_init(pthread_attr_t *attr) { return 0; }
-int pthread_attr_destroy(pthread_attr_t *attr) { return 0; }
-int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) { return 0; }
+int pthread_attr_init(pthread_attr_t *attr) {
+  int ret = check_parameter<pthread_attr_t>(attr);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  attr->detach_state = PTHREAD_CREATE_JOINABLE;
+  return 0;
+}
+
+int pthread_attr_destroy(pthread_attr_t *attr) {
+  int ret = check_parameter<pthread_attr_t>(attr);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+  return 0;
+}
+
+int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) {
+  int ret = check_parameter<pthread_attr_t>(attr);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  if (type != PTHREAD_CREATE_JOINABLE && type != PTHREAD_CREATE_DETACHED) {
+    return EINVAL;
+  }
+
+  attr->detach_state = type;
+  return 0;
+}
+
 int pthread_attr_getschedpolicy(const pthread_attr_t *attr, int *policy) {
   return ENOSYS;
 }
