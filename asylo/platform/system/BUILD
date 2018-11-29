@@ -22,6 +22,8 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 filegroup(
     name = "system_headers",
     srcs = glob(["include/**/*.h"]) + [
@@ -33,5 +35,6 @@ filegroup(
 cc_library(
     name = "system",
     hdrs = [":system_headers"],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
 )

@@ -27,6 +27,7 @@ load(
     "asylo_grpc_proto_library",
     "asylo_proto_library",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Service definition for testing gRPC in Asylo.
 asylo_grpc_proto_library(
@@ -46,7 +47,7 @@ cc_library(
     name = "messenger_server_impl",
     testonly = 1,
     hdrs = ["messenger_server_impl.h"],
-    copts = ["-DPORTABLE_STATUS"],
+    copts = ["-DPORTABLE_STATUS"] + ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":service_grpc_proto",
@@ -60,6 +61,7 @@ cc_library(
     name = "messenger_client_impl",
     testonly = 1,
     hdrs = ["messenger_client_impl.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":service_grpc_proto",
@@ -75,6 +77,7 @@ cc_library(
     testonly = 1,
     srcs = ["enclave_server.cc"],
     hdrs = ["enclave_server.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
         "//asylo:enclave_runtime",
@@ -88,6 +91,7 @@ sgx_enclave(
     testonly = 1,
     srcs = ["enclave_insecure_server.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
         "//asylo:enclave_runtime",
@@ -103,6 +107,7 @@ sgx_enclave(
     testonly = 1,
     srcs = ["enclave_secure_server.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
@@ -119,6 +124,7 @@ sgx_enclave(
     testonly = 1,
     srcs = ["server_enclave.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
         "//asylo/grpc/auth:grpc++_security_enclave",
@@ -134,6 +140,7 @@ sgx_enclave(
     testonly = 1,
     srcs = ["client_enclave.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":client_enclave_proto_cc",
         ":messenger_client_impl",
@@ -151,6 +158,7 @@ sgx_enclave(
 enclave_test(
     name = "enclave_insecure_server_test",
     srcs = ["enclave_insecure_server_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":enclave_insecure_server.so"},
     flaky = 1,
     test_args = ["--enclave_path='{enclave}'"],
@@ -174,6 +182,7 @@ enclave_test(
 enclave_test(
     name = "enclave_secure_server_test",
     srcs = ["enclave_secure_server_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":enclave_secure_server.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -200,6 +209,7 @@ enclave_test(
 cc_test(
     name = "channel_test",
     srcs = ["channel_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_config = "//asylo/grpc/util:grpc_enclave_config",
     enclave_test_name = "channel_enclave_test",
     deps = [
@@ -223,6 +233,7 @@ cc_test(
 enclave_test(
     name = "enclave_communication_test",
     srcs = ["enclave_communication_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "server_enclave": ":server_enclave.so",
         "client_enclave": ":client_enclave.so",

@@ -21,6 +21,7 @@ licenses(["notice"])  # Apache v2.0
 exports_files(["LICENSE"])
 
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package_group(
     name = "implementation",
@@ -46,6 +47,7 @@ cc_library(
         "client.h",
         "enclave_manager.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/platform/arch:untrusted_arch",
@@ -58,6 +60,7 @@ cc_library(
 cc_library(
     name = "enclave_runtime",
     hdrs = ["trusted_application.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     visibility = ["//visibility:public"],
     deps = [

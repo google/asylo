@@ -18,6 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Asylo Crypto library
 
@@ -32,6 +33,7 @@ asylo_proto_library(
 cc_library(
     name = "aead_key",
     hdrs = ["aead_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
@@ -47,6 +49,7 @@ cc_library(
     name = "aes_gcm_key",
     srcs = ["aes_gcm_key.cc"],
     hdrs = ["aes_gcm_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":aead_key",
@@ -66,6 +69,7 @@ cc_library(
 cc_test(
     name = "aes_gcm_key_test",
     srcs = ["aes_gcm_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":aes_gcm_key",
         ":algorithms_proto_cc",
@@ -84,6 +88,7 @@ cc_test(
 cc_library(
     name = "hash_interface",
     hdrs = ["hash_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
@@ -96,6 +101,7 @@ cc_library(
 cc_library(
     name = "nonce_generator_interface",
     hdrs = ["nonce_generator_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:status",
@@ -108,6 +114,7 @@ cc_library(
     name = "random_nonce_generator",
     srcs = ["random_nonce_generator.cc"],
     hdrs = ["random_nonce_generator.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":nonce_generator_interface",
@@ -123,6 +130,7 @@ cc_library(
 cc_test(
     name = "random_nonce_generator_test",
     srcs = ["random_nonce_generator_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":random_nonce_generator",
         "//asylo/test/util:status_matchers",
@@ -139,6 +147,7 @@ cc_library(
     name = "sha256_hash",
     srcs = ["sha256_hash.cc"],
     hdrs = ["sha256_hash.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":hash_interface",
@@ -153,6 +162,7 @@ cc_library(
 cc_test(
     name = "sha256_hash_test",
     srcs = ["sha256_hash_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "sha256_hash_enclave_test",
     deps = [
         ":algorithms_proto_cc",
@@ -174,6 +184,7 @@ cc_library(
         "aes_gcm_siv.h",
         "nonce_generator.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto/util:bssl_util",
@@ -189,6 +200,7 @@ cc_library(
 cc_test(
     name = "aes_gcm_siv_test",
     srcs = ["aes_gcm_siv_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":aes_gcm_siv",
         "//asylo/crypto/util:byte_container_view",
@@ -205,6 +217,7 @@ cc_test(
 cc_library(
     name = "signing_key",
     hdrs = ["signing_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
@@ -218,6 +231,7 @@ cc_library(
     name = "ecdsa_p256_sha256_signing_key",
     srcs = ["ecdsa_p256_sha256_signing_key.cc"],
     hdrs = ["ecdsa_p256_sha256_signing_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":sha256_hash",
@@ -233,6 +247,7 @@ cc_library(
 cc_test(
     name = "ecdsa_p256_sha256_signing_key_test",
     srcs = ["ecdsa_p256_sha256_signing_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "ecdsa_p256_sha256_signing_key_enclave_test",
     deps = [
         ":ecdsa_p256_sha256_signing_key",

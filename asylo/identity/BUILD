@@ -19,6 +19,7 @@ licenses(["notice"])  # Apache v2.0
 # This package defines libraries used in enclave auth{N,Z}.
 
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 asylo_proto_library(
     name = "identity_proto",
@@ -54,6 +55,7 @@ cc_library(
     name = "init",
     srcs = ["init_internal.h"],
     hdrs = ["init.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority_config_proto_cc",
@@ -68,6 +70,7 @@ cc_library(
 cc_test(
     name = "init_test",
     srcs = ["init_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_assertion_authority_config_proto_cc",
         ":init",
@@ -84,6 +87,7 @@ cc_library(
     name = "secret_sealer",
     srcs = ["secret_sealer.cc"],
     hdrs = ["secret_sealer.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":identity_proto_cc",
@@ -100,6 +104,7 @@ cc_library(
     name = "identity_acl_evaluator",
     srcs = ["identity_acl_evaluator.cc"],
     hdrs = ["identity_acl_evaluator.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":identity_acl_proto_cc",
@@ -122,6 +127,7 @@ cc_library(
         "identity_expectation_matcher.h",
         "named_identity_expectation_matcher.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":identity_proto_cc",
@@ -137,6 +143,7 @@ cc_library(
 cc_test(
     name = "identity_expectation_matcher_test",
     srcs = ["identity_expectation_matcher_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":identity_expectation_matcher",
         ":identity_proto_cc",
@@ -153,6 +160,7 @@ cc_library(
     name = "assertion_description_util",
     srcs = ["assertion_description_util.cc"],
     hdrs = ["assertion_description_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":identity_proto_cc",
@@ -166,6 +174,7 @@ cc_library(
 cc_test(
     name = "assertion_description_util_test",
     srcs = ["assertion_description_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":assertion_description_util",
         ":identity_proto_cc",
@@ -178,6 +187,7 @@ cc_test(
 cc_library(
     name = "enclave_assertion_authority",
     hdrs = ["enclave_assertion_authority.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":identity_proto_cc",
@@ -189,6 +199,7 @@ cc_library(
 cc_library(
     name = "enclave_assertion_generator",
     hdrs = ["enclave_assertion_generator.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority",
@@ -201,6 +212,7 @@ cc_library(
 cc_library(
     name = "enclave_assertion_verifier",
     hdrs = ["enclave_assertion_verifier.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority",

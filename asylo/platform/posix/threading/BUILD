@@ -16,6 +16,8 @@
 
 licenses(["notice"])  # Apache v2.0
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 package(
     default_visibility = [
         "//asylo:implementation",
@@ -28,6 +30,7 @@ cc_library(
     hdrs = [
         "thread_manager.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/core:trusted_core",

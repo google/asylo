@@ -25,6 +25,7 @@ load(
     "cc_enclave_test",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 asylo_proto_library(
     name = "config_test_proto",
@@ -35,6 +36,7 @@ asylo_proto_library(
 cc_enclave_test(
     name = "random_test",
     srcs = ["random_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/posix/io:io_manager",
         "@boringssl//:crypto",
@@ -47,6 +49,7 @@ cc_enclave_test(
 sgx_enclave(
     name = "test_proto.so",
     srcs = ["proto_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":config_test_proto_cc",
         "//asylo/platform/posix/io:io_manager",
@@ -58,6 +61,7 @@ sgx_enclave(
 enclave_test(
     name = "proto_test",
     srcs = ["proto_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":test_proto.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -73,6 +77,7 @@ enclave_test(
 sgx_enclave(
     name = "getenv_test_enclave.so",
     srcs = ["getenv_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":config_test_proto_cc",
         "//asylo:enclave_proto_cc",
@@ -84,6 +89,7 @@ sgx_enclave(
 enclave_test(
     name = "getenv_test",
     srcs = ["getenv_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":getenv_test_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -100,6 +106,7 @@ enclave_test(
 sgx_enclave(
     name = "enclave_api_test_proto.so",
     srcs = ["enclave_api_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":config_test_proto_cc",
         "//asylo/platform/posix/io:io_manager",
@@ -111,6 +118,7 @@ sgx_enclave(
 enclave_test(
     name = "enclave_api_test",
     srcs = ["enclave_api_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":enclave_api_test_proto.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -127,6 +135,7 @@ enclave_test(
 cc_test(
     name = "shared_resource_test",
     srcs = ["shared_resource_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/core:untrusted_core",
         "//asylo/test/util:test_main",
@@ -142,6 +151,7 @@ sgx_enclave_configuration(
 cc_enclave_test(
     name = "lock_test",
     srcs = ["lock_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_config = ":many_threads_enclave_config",
     deps = [
         "//asylo/platform/core:trusted_mutex",

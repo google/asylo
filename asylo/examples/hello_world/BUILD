@@ -24,6 +24,7 @@ load(
     "sim_enclave",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
     default_visibility = ["//visibility:public"],
@@ -40,6 +41,7 @@ asylo_proto_library(
 sim_enclave(
     name = "hello_enclave.so",
     srcs = ["hello_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hello_proto_cc",
         "//asylo:enclave_runtime",
@@ -52,6 +54,7 @@ sim_enclave(
 enclave_loader(
     name = "hello_world",
     srcs = ["hello_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":hello_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [

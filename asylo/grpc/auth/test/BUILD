@@ -24,6 +24,7 @@ package(
 )
 
 load(":generate_end2end_tests.bzl", "grpc_end2end_tests")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # A binary that packages a test fixture for the enclave gRPC stack with the
 # gRPC end2end tests library.
@@ -31,6 +32,7 @@ cc_binary(
     name = "h2_enclave_security_test",
     testonly = 1,
     srcs = ["h2_enclave_security_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo:enclave_proto_cc",
         "//asylo/grpc/auth:enclave_credentials_options",

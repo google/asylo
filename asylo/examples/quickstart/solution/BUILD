@@ -26,6 +26,7 @@ load(
     "sim_enclave",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Example and exercise for using Asylo toolkits.
 asylo_proto_library(
@@ -37,6 +38,7 @@ asylo_proto_library(
 sim_enclave(
     name = "demo_enclave",
     srcs = ["demo_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":demo_proto_cc",
         "//asylo:enclave_runtime",
@@ -50,6 +52,7 @@ sim_enclave(
 enclave_loader(
     name = "quickstart",
     srcs = ["demo_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":demo_enclave"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [

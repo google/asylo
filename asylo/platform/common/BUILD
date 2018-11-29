@@ -28,17 +28,20 @@ cc_library(
     name = "time_util",
     srcs = ["time_util.cc"],
     hdrs = ["time_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # A function for creating a hash from two hashes.
 cc_library(
     name = "hash_combine",
     hdrs = ["hash_combine.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 cc_library(
     name = "singleton",
     hdrs = ["singleton.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = ["@com_google_absl//absl/synchronization"],
 )
 
@@ -63,6 +66,7 @@ cc_library(
     name = "static_map",
     srcs = ["static_map_internal.h"],
     hdrs = ["static_map.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:logging",
         "@com_google_absl//absl/container:flat_hash_map",
@@ -74,6 +78,7 @@ cc_library(
 cc_test(
     name = "static_map_test",
     srcs = ["static_map_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":static_map",
         "//asylo/test/util:test_main",
@@ -86,6 +91,7 @@ cc_test(
 cc_test(
     name = "time_util_test",
     srcs = ["time_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":time_util",
         "//asylo/test/util:test_main",
@@ -101,6 +107,7 @@ cc_library(
         "bridge_functions.h",
         "bridge_types.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
@@ -119,6 +126,7 @@ cc_library(
     name = "bridge_proto_serializer",
     srcs = ["bridge_proto_serializer.cc"],
     hdrs = ["bridge_proto_serializer.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":bridge_types_proto_cc",
         "@com_google_absl//absl/strings",
@@ -129,11 +137,13 @@ cc_library(
 cc_library(
     name = "ring_buffer",
     hdrs = ["ring_buffer.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 cc_test(
     name = "ring_buffer_test",
     srcs = ["ring_buffer_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ring_buffer",
         "//asylo/test/util:test_main",
@@ -144,12 +154,14 @@ cc_test(
 cc_library(
     name = "spin_lock",
     hdrs = ["spin_lock.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # Provide a unique pointer for malloc'd memory.
 cc_library(
     name = "memory",
     hdrs = ["memory.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # Utility functions for working with Linux futex objects.
@@ -157,6 +169,7 @@ cc_library(
     name = "futex",
     srcs = ["futex.cc"],
     hdrs = ["futex.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # Utility functions for creating debug report strings.
@@ -164,6 +177,7 @@ cc_library(
     name = "debug_strings",
     srcs = ["debug_strings.cc"],
     hdrs = ["debug_strings.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
@@ -173,6 +187,7 @@ cc_library(
 cc_test(
     name = "debug_strings_test",
     srcs = ["debug_strings_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":debug_strings",
         "//asylo/test/util:test_main",

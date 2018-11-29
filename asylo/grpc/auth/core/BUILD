@@ -73,6 +73,7 @@ cc_library(
     name = "enclave_credentials_options",
     srcs = ["enclave_credentials_options.cc"],
     hdrs = ["enclave_credentials_options.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":assertion_description",
         "//asylo/grpc/auth/util:safe_string",
@@ -84,6 +85,7 @@ cc_library(
     name = "assertion_description",
     srcs = ["assertion_description.cc"],
     hdrs = ["assertion_description.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/grpc/auth/util:safe_string",
         "@com_github_grpc_grpc//:gpr_base",
@@ -93,6 +95,7 @@ cc_library(
 cc_test(
     name = "assertion_description_test",
     srcs = ["assertion_description_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "assertion_description_enclave_test",
     deps = [
         ":assertion_description",
@@ -107,6 +110,7 @@ cc_library(
     name = "transcript",
     srcs = ["transcript.cc"],
     hdrs = ["transcript.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
         "//asylo/crypto:hash_interface",
@@ -120,6 +124,7 @@ cc_library(
 cc_test(
     name = "transcript_test",
     srcs = ["transcript_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "transcript_enclave_test",
     deps = [
         ":transcript",
@@ -140,6 +145,7 @@ cc_library(
     name = "ekep_error_space",
     srcs = ["ekep_error_space.cc"],
     hdrs = ["ekep_error_space.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":handshake_proto_cc",
         "//asylo/util:status",
@@ -151,6 +157,7 @@ cc_library(
     name = "ekep_crypto",
     srcs = ["ekep_crypto.cc"],
     hdrs = ["ekep_crypto.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ekep_error_space",
         ":handshake_proto_cc",
@@ -168,6 +175,7 @@ cc_library(
 cc_test(
     name = "ekep_crypto_test",
     srcs = ["ekep_crypto_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "ekep_crypto_enclave_test",
     deps = [
         ":ekep_crypto",
@@ -215,6 +223,7 @@ cc_library(
     name = "server_ekep_handshaker",
     srcs = ["server_ekep_handshaker.cc"],
     hdrs = ["server_ekep_handshaker.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ekep_crypto",
         ":ekep_error_space",
@@ -237,6 +246,7 @@ cc_library(
     name = "client_ekep_handshaker",
     srcs = ["client_ekep_handshaker.cc"],
     hdrs = ["client_ekep_handshaker.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ekep_crypto",
         ":ekep_error_space",
@@ -260,6 +270,7 @@ cc_library(
     name = "ekep_handshaker_util",
     srcs = ["ekep_handshaker_util.cc"],
     hdrs = ["ekep_handshaker_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ekep_handshaker",
         "//asylo/identity:enclave_assertion_authority",
@@ -275,6 +286,7 @@ cc_library(
 cc_test(
     name = "ekep_handshaker_util_test",
     srcs = ["ekep_handshaker_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "ekep_handshaker_util_enclave_test",
     deps = [
         ":ekep_handshaker",

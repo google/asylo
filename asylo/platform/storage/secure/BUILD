@@ -19,6 +19,7 @@ licenses(["notice"])  # Apache v2.0
 # Secure IO library for enclave.
 
 load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -26,6 +27,7 @@ package(
 
 cc_library(
     name = "trusted_secure",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = select({
         "@com_google_asylo//asylo": [
             "aead_handler",
@@ -44,6 +46,7 @@ cc_library(
         "authenticated_dictionary.h",
         "ctmmt_authenticated_dictionary.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/memory",
         "@com_google_certificate_transparency//:merkletree",
@@ -54,6 +57,7 @@ cc_library(
     name = "aead_handler",
     srcs = ["aead_handler.cc"],
     hdrs = ["aead_handler.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":authenticated_dictionary",
         "//asylo/crypto/util:byte_container_view",
@@ -73,6 +77,7 @@ cc_library(
     name = "enclave_storage_secure",
     srcs = ["enclave_storage_secure.cc"],
     hdrs = ["enclave_storage_secure.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":aead_handler",
         "//asylo/platform/arch:trusted_arch",
@@ -84,6 +89,7 @@ cc_library(
 cc_enclave_test(
     name = "enclave_storage_secure_test",
     srcs = ["enclave_storage_secure_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",

@@ -33,11 +33,13 @@ load(
     "embed_enclaves",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # This tests that gtest can work inside an enclave.
 cc_enclave_test(
     name = "gtest_test",
     srcs = ["gtest_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -56,6 +58,7 @@ cc_library(
     name = "test_shim_enclave",
     testonly = 1,
     srcs = ["test_shim_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":test_shim_enclave_proto_cc",
@@ -71,6 +74,7 @@ cc_binary(
     name = "test_shim_loader",
     testonly = 1,
     srcs = ["test_shim_loader.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [

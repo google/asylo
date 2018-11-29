@@ -38,6 +38,7 @@ cc_library(
         "include/trusted/register_signal.h",
         "include/trusted/time.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = select({
         "//asylo/platform/arch:sgx": ["trusted_sgx"],
         "//conditions:default": ["trusted_build_only"],
@@ -54,6 +55,7 @@ cc_library(
     hdrs = [
         "sgx/untrusted/sgx_client.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":untrusted_sgx",
         "//asylo:enclave_proto_cc",
@@ -198,7 +200,7 @@ cc_library(
     ],
     copts = [
         "-mrdrnd",
-    ],
+    ] + ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
@@ -246,6 +248,7 @@ cc_library(
     hdrs = [
         "sgx/trusted/generated_bridge_t.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [

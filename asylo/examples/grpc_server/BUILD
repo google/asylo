@@ -33,6 +33,7 @@ load(
     "asylo_proto_library",
     "asylo_grpc_proto_library",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # The generated code for the translator server (and client).
 asylo_grpc_proto_library(
@@ -45,6 +46,7 @@ cc_library(
     name = "translator_server",
     srcs = ["translator_server.cc"],
     hdrs = ["translator_server.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":translator_server_grpc_proto",
         "@com_github_grpc_grpc//:grpc++",
@@ -65,6 +67,7 @@ sim_enclave(
     name = "grpc_server_enclave.so",
     srcs = ["grpc_server_enclave.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":grpc_server_config_proto_cc",
         ":translator_server",
@@ -81,6 +84,7 @@ sim_enclave(
 enclave_loader(
     name = "grpc_server",
     srcs = ["grpc_server_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -98,6 +102,7 @@ enclave_loader(
 enclave_test(
     name = "grpc_server_test",
     srcs = ["grpc_server_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     data = [":grpc_server_host_loader"],
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},
     test_args = ["--enclave_path='{server_enclave}'"],

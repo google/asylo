@@ -22,6 +22,8 @@ package(
 
 exports_files(["LICENSE"])
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 # Core untrusted Asylo components.
 cc_library(
     name = "untrusted_core",
@@ -34,6 +36,7 @@ cc_library(
         "enclave_client.h",
         "enclave_manager.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":shared_name",
         ":shared_resource_manager",
@@ -58,6 +61,7 @@ cc_library(
         "//conditions:default": ["fake_trusted_global_state.cc"],
     }),
     hdrs = ["trusted_global_state.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     deps = [
         "//asylo:enclave_proto_cc",
@@ -74,6 +78,7 @@ cc_library(
     hdrs = [
         "trusted_global_state.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     deps = [
         ":shared_name",
@@ -91,6 +96,7 @@ cc_library(
     name = "trusted_application",
     srcs = ["trusted_application.cc"],
     hdrs = ["trusted_application.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     deps = [
         ":shared_name",
@@ -113,6 +119,7 @@ cc_library(
 cc_library(
     name = "atomic",
     hdrs = ["atomic.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # An untrusted mutex object which depends on host kernel resources.
@@ -124,6 +131,7 @@ cc_library(
     hdrs = [
         "untrusted_mutex.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":atomic",
         "//asylo/platform/arch:trusted_arch",
@@ -139,6 +147,7 @@ cc_library(
     hdrs = [
         "trusted_spin_lock.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":atomic",
         "//asylo/platform/arch:trusted_arch",
@@ -152,6 +161,7 @@ cc_library(
         "shared_name.h",
         "shared_name_kind.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo/platform/common:hash_combine"],
 )
 
@@ -159,6 +169,7 @@ cc_library(
     name = "shared_resource_manager",
     srcs = ["shared_resource_manager.cc"],
     hdrs = ["shared_resource_manager.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":shared_name",
         "//asylo/util:status",
@@ -173,6 +184,7 @@ cc_library(
     name = "trusted_mutex",
     srcs = ["trusted_mutex.cc"],
     hdrs = ["trusted_mutex.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":trusted_spin_lock",
         ":untrusted_mutex",
@@ -184,6 +196,7 @@ cc_library(
 cc_test(
     name = "enclave_clock_test",
     srcs = ["enclave_clock_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     tags = [
     ],
     deps = [

@@ -16,6 +16,8 @@
 
 licenses(["notice"])  # Apache v2.0
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 package(
     default_visibility = [
         "//asylo:implementation",
@@ -26,6 +28,7 @@ cc_library(
     name = "signal_manager",
     srcs = ["signal_manager.cc"],
     hdrs = ["signal_manager.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",

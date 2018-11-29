@@ -20,6 +20,7 @@ licenses(["notice"])  # Apache v2.0
 
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Definition of a null assertion.
 asylo_proto_library(
@@ -35,6 +36,7 @@ cc_library(
         "null_assertion_generator.cc",
         "null_assertion_generator.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":null_assertion_proto_cc",
@@ -55,6 +57,7 @@ cc_library(
         "null_assertion_verifier.cc",
         "null_assertion_verifier.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":null_assertion_proto_cc",
@@ -76,6 +79,7 @@ cc_test(
         "null_assertion_generator.h",
         "null_assertion_verifier.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "null_assertion_authority_enclave_test",
     deps = [
         ":null_assertion_generator",
@@ -101,6 +105,7 @@ cc_library(
         "null_identity_expectation_matcher.cc",
         "null_identity_expectation_matcher.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":null_identity_util",
@@ -118,6 +123,7 @@ cc_test(
         "null_identity_expectation_matcher.h",
         "null_identity_expectation_matcher_test.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "null_identity_expectation_matcher_enclave_test",
     deps = [
         ":null_identity_constants",
@@ -136,12 +142,14 @@ cc_library(
     name = "null_identity_constants",
     srcs = ["null_identity_constants.cc"],
     hdrs = ["null_identity_constants.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # Utility functions for operating on null identities and assertions.
 cc_library(
     name = "null_identity_util",
     hdrs = ["null_identity_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":null_identity_constants",
@@ -152,6 +160,7 @@ cc_library(
 cc_test(
     name = "null_identity_util_test",
     srcs = ["null_identity_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "null_identity_util_enclave_test",
     deps = [
         ":null_identity_constants",

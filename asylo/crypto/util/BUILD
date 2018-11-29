@@ -24,6 +24,7 @@ cc_library(
     name = "bssl_util",
     srcs = ["bssl_util.cc"],
     hdrs = ["bssl_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = ["@boringssl//:crypto"],
 )
@@ -32,6 +33,7 @@ cc_library(
     name = "byte_container_util",
     srcs = ["byte_container_util_internal.h"],
     hdrs = ["byte_container_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":byte_container_view",
@@ -43,6 +45,7 @@ cc_library(
 cc_test(
     name = "byte_container_util_test",
     srcs = ["byte_container_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":byte_container_util",
         ":byte_container_view",
@@ -59,6 +62,7 @@ cc_library(
     name = "byte_container_view",
     srcs = ["byte_container_view_internal.h"],
     hdrs = ["byte_container_view.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:logging",
@@ -87,6 +91,7 @@ cc_test(
 cc_library(
     name = "bytes",
     hdrs = ["bytes.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":byte_container_view",
@@ -114,6 +119,7 @@ cc_test(
 cc_library(
     name = "trivial_object_util",
     hdrs = ["trivial_object_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:status",

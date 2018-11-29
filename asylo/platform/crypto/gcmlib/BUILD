@@ -19,6 +19,7 @@ licenses(["notice"])  # Apache v2.0
 # GCM library for secure storage.
 
 load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -26,6 +27,7 @@ package(
 
 cc_library(
     name = "trusted_gcmlib",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = select({
         "@com_google_asylo//asylo": ["gcm_cryptor"],
         "//conditions:default": [],
@@ -36,6 +38,7 @@ cc_library(
     name = "gcm_cryptor",
     srcs = ["gcm_cryptor.cc"],
     hdrs = ["gcm_cryptor.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
@@ -52,6 +55,7 @@ cc_library(
 cc_enclave_test(
     name = "gcm_cryptor_test",
     srcs = ["gcm_cryptor_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],

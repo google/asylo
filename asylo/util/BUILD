@@ -26,6 +26,7 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 cc_library(
     name = "asylo_macros",
     hdrs = ["asylo_macros.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
 )
 
@@ -33,12 +34,14 @@ cc_library(
 cc_library(
     name = "cleanup",
     hdrs = ["cleanup.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
 )
 
 cc_test(
     name = "cleanup_test",
     srcs = ["cleanup_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "cleanup_enclave_test",
     deps = [
         ":cleanup",
@@ -52,6 +55,7 @@ cc_library(
     name = "elf_reader",
     srcs = ["elf_reader.cc"],
     hdrs = ["elf_reader.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":status",
@@ -83,6 +87,7 @@ cc_test(
         "--expected_contents",
         "$(location //asylo/test/util:sample_text)",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     data = [
         ":elf_reader_test_binary",
         "//asylo/test/util:sample_text",
@@ -105,6 +110,7 @@ cc_library(
     name = "file_mapping",
     srcs = ["file_mapping.cc"],
     hdrs = ["file_mapping.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":cleanup",
@@ -122,6 +128,7 @@ cc_test(
         "--test_file",
         "$(location //asylo/test/util:sample_text)",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     data = ["//asylo/test/util:sample_text"],
     deps = [
         ":file_mapping",
@@ -139,6 +146,7 @@ cc_library(
     name = "logging",
     srcs = ["logging.cc"],
     hdrs = ["logging.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = ["@com_google_absl//absl/base:core_headers"],
 )
@@ -146,6 +154,7 @@ cc_library(
 cc_library(
     name = "error_codes",
     hdrs = ["error_codes.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
 )
 
@@ -167,6 +176,7 @@ cc_library(
         "status_macros.h",
         "statusor.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":status_proto_cc",
@@ -183,6 +193,7 @@ cc_library(
 cc_test(
     name = "status_test",
     srcs = ["status_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "status_enclave_test",
     deps = [
         ":status",
@@ -202,6 +213,7 @@ cc_test(
         "status_error_space.h",
         "statusor_test.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "statusor_enclave_test",
     deps = [
         ":status",
@@ -217,6 +229,7 @@ cc_test(
 cc_test(
     name = "status_macros_test",
     srcs = ["status_macros_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":status",
         "//asylo/test/util:status_matchers",
@@ -234,6 +247,7 @@ cc_library(
         "cleansing_allocator.h",
         "cleansing_types.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = ["@boringssl//:crypto"],
 )
@@ -262,6 +276,7 @@ cc_test(
         "error_space.h",
         "error_space_test.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":status",
         "//asylo/platform/common:static_map",
@@ -275,6 +290,7 @@ cc_test(
 cc_test(
     name = "posix_error_space_test",
     srcs = ["posix_error_space_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":status",
         "//asylo/test/util:test_main",
@@ -294,6 +310,7 @@ cc_library(
     name = "path",
     srcs = ["path.cc"],
     hdrs = ["path.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = ["@com_google_absl//absl/strings"],
 )
@@ -302,6 +319,7 @@ cc_library(
 cc_test(
     name = "path_test",
     srcs = ["path_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "path_enclave_test",
     deps = [
         ":path",

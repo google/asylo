@@ -24,6 +24,7 @@ load(
     "enclave_test",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "@linux_sgx//:sgx_sdk.bzl",
     "sgx_enclave",
@@ -35,6 +36,7 @@ cc_library(
     name = "argv",
     srcs = ["argv.cc"],
     hdrs = ["argv.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf_lite",
@@ -53,6 +55,7 @@ asylo_proto_library(
 cc_library(
     name = "application_wrapper_enclave_core",
     srcs = ["application_wrapper_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":application_wrapper_proto_cc",
@@ -68,6 +71,7 @@ cc_library(
 cc_test(
     name = "argv_test",
     srcs = ["argv_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "argv_enclave_test",
     deps = [
         ":argv",
@@ -86,6 +90,7 @@ cc_library(
     name = "test_application_library",
     testonly = 1,
     srcs = ["test_application.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo/util:logging"],
 )
 
@@ -111,6 +116,7 @@ sgx_enclave(
 enclave_test(
     name = "application_wrapper_enclave_test",
     srcs = ["application_wrapper_enclave_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     embedded_enclaves = {TEST_SECTION_NAME: ":application_wrapper_enclave_test_enclave.so"},
     test_args = [
         "--enclave_section",

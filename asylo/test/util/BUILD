@@ -60,6 +60,7 @@ cc_binary(
     name = "exit_app",
     testonly = 1,
     srcs = ["exit_app.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # Who tests the tester? This.
@@ -67,6 +68,7 @@ cc_test(
     name = "exec_tester_test",
     srcs = ["exec_tester_test.cc"],
     args = ["--binary_path=$(location :exit_app)"],
+    copts = ASYLO_DEFAULT_COPTS,
     data = [":exit_app"],
     deps = [
         ":exec_tester",
@@ -90,6 +92,7 @@ cc_library(
     testonly = 1,
     srcs = ["enclave_test_launcher.cc"],
     hdrs = ["enclave_test_launcher.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":test_string_proto_cc",
         "//asylo:enclave_client",
@@ -106,6 +109,7 @@ cc_library(
     name = "enclave_test_application",
     srcs = ["enclave_test_application.cc"],
     hdrs = ["enclave_test_application.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":test_string_proto_cc",
@@ -119,6 +123,7 @@ cc_library(
     name = "test_main_impl",
     testonly = 1,
     srcs = ["test_main.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
         ":test_flags",
@@ -135,6 +140,7 @@ cc_library(
 cc_library(
     name = "test_main",
     testonly = 1,
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = select({
         "@com_google_asylo//asylo": [],
@@ -150,6 +156,7 @@ cc_library(
     testonly = 1,
     srcs = ["test_flags.cc"],
     hdrs = ["test_flags.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "@com_github_gflags_gflags//:gflags_nothreads",
@@ -162,6 +169,7 @@ cc_library(
     testonly = 1,
     srcs = ["enclave_test.cc"],
     hdrs = ["enclave_test.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_test_launcher",
@@ -182,6 +190,7 @@ cc_library(
     testonly = 1,
     srcs = ["pipe.cc"],
     hdrs = ["pipe.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:logging",
@@ -195,6 +204,7 @@ cc_library(
     name = "proto_matchers",
     testonly = 1,
     hdrs = ["proto_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
@@ -207,6 +217,7 @@ cc_library(
     name = "status_matchers",
     testonly = 1,
     hdrs = ["status_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto/util:bytes",
@@ -221,6 +232,7 @@ cc_library(
 cc_test(
     name = "status_matchers_test",
     srcs = ["status_matchers_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "status_matchers_enclave_test",
     tags = ["regression"],
     deps = [
@@ -236,6 +248,7 @@ cc_library(
     name = "fake_local_enclave_client",
     testonly = 1,
     hdrs = ["fake_local_enclave_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo:enclave_client",
@@ -250,6 +263,7 @@ cc_test(
     name = "fake_local_enclave_client_test",
     size = "small",
     srcs = ["fake_local_enclave_client_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":fake_local_enclave_client",
         ":test_main",
@@ -266,6 +280,7 @@ cc_library(
     name = "mock_enclave_client",
     testonly = 1,
     hdrs = ["mock_enclave_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo:enclave_client",
@@ -280,6 +295,7 @@ cc_library(
     testonly = 1,
     srcs = ["fake_enclave_loader.cc"],
     hdrs = ["fake_enclave_loader.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo:enclave_client",
@@ -291,6 +307,7 @@ cc_library(
     name = "grpc_debug_config",
     srcs = ["grpc_debug_config.cc"],
     hdrs = ["grpc_debug_config.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo:enclave_proto_cc",
         "@com_google_absl//absl/strings",
@@ -316,4 +333,5 @@ filegroup(
 cc_binary(
     name = "test_binary",
     srcs = ["test_binary.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
 )

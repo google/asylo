@@ -31,6 +31,7 @@ cc_library(
     name = "safe_string",
     srcs = ["safe_string.cc"],
     hdrs = ["safe_string.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = ["@com_github_grpc_grpc//:gpr_base"],
 )
 
@@ -38,6 +39,7 @@ cc_library(
 cc_test(
     name = "safe_string_test",
     srcs = ["safe_string_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/grpc/auth/util:safe_string",
         "//asylo/test/util:test_main",
@@ -50,6 +52,7 @@ cc_library(
     name = "bridge_cpp_to_c",
     srcs = ["bridge_cpp_to_c.cc"],
     hdrs = ["bridge_cpp_to_c.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/grpc/auth:enclave_credentials_options",
         "//asylo/grpc/auth/core:assertion_description",

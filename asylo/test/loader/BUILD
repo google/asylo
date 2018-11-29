@@ -17,11 +17,13 @@
 licenses(["notice"])  # Apache v2.0
 
 load("//asylo/bazel:asylo.bzl", "enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 cc_test(
     name = "loader_test",
     size = "small",
     srcs = ["loader_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     tags = ["regression"],
     deps = [
         "//asylo:enclave_client",
@@ -35,6 +37,7 @@ cc_test(
 enclave_test(
     name = "enclave_address_test",
     srcs = ["enclave_address_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "//asylo/test/util:do_nothing_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [

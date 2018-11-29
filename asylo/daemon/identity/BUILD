@@ -20,6 +20,7 @@ load(
     "//asylo/bazel:proto.bzl",
     "asylo_grpc_proto_library",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Service definition for the attestation-domain service.
 asylo_grpc_proto_library(
@@ -34,6 +35,7 @@ cc_library(
     name = "attestation_domain",
     srcs = ["attestation_domain.cc"],
     hdrs = ["attestation_domain.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/crypto/util:bssl_util",
         "//asylo/util:logging",
@@ -48,6 +50,7 @@ cc_library(
     name = "attestation_domain_service_impl",
     srcs = ["attestation_domain_service_impl.cc"],
     hdrs = ["attestation_domain_service_impl.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":attestation_domain",
@@ -61,6 +64,7 @@ cc_library(
     name = "attestation_domain_client",
     srcs = ["attestation_domain_client.cc"],
     hdrs = ["attestation_domain_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":attestation_domain_grpc_proto",
@@ -73,6 +77,7 @@ cc_library(
 cc_test(
     name = "attestation_domain_test",
     srcs = ["attestation_domain_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attestation_domain",
         "//asylo/test/util:status_matchers",
@@ -87,6 +92,7 @@ cc_test(
 cc_test(
     name = "attestation_domain_client_test",
     srcs = ["attestation_domain_client_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attestation_domain_client",
         ":attestation_domain_grpc_proto",
@@ -104,6 +110,7 @@ cc_test(
 cc_test(
     name = "attestation_domain_service_impl_test",
     srcs = ["attestation_domain_service_impl_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attestation_domain",
         ":attestation_domain_service_impl",

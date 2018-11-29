@@ -27,6 +27,7 @@ package(default_visibility = ["//asylo:__subpackages__"])
 exports_files(["LICENSE"])
 
 load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # gRPC channel and server credentials objects.
 cc_library(
@@ -40,6 +41,7 @@ cc_library(
         "enclave_credentials_options.h",
         "enclave_server_credentials.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/grpc/auth/core:grpc_security_enclave",
@@ -54,6 +56,7 @@ cc_library(
     name = "enclave_credentials_options",
     srcs = ["enclave_credentials_options.cc"],
     hdrs = ["enclave_credentials_options.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/identity:assertion_description_util",
         "//asylo/identity:identity_proto_cc",
@@ -66,6 +69,7 @@ cc_library(
     name = "null_credentials_options",
     srcs = ["null_credentials_options.cc"],
     hdrs = ["null_credentials_options.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":grpc++_security_enclave",
@@ -81,6 +85,7 @@ cc_library(
     name = "sgx_local_credentials_options",
     srcs = ["sgx_local_credentials_options.cc"],
     hdrs = ["sgx_local_credentials_options.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":grpc++_security_enclave",
         "//asylo/identity/sgx:code_identity_util",
@@ -93,6 +98,7 @@ cc_library(
     name = "enclave_auth_context",
     srcs = ["enclave_auth_context.cc"],
     hdrs = ["enclave_auth_context.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/grpc/auth/core:grpc_security_enclave",
@@ -109,6 +115,7 @@ cc_library(
 cc_test(
     name = "enclave_auth_context_test",
     srcs = ["enclave_auth_context_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_auth_context",
         "//asylo/grpc/auth/core:grpc_security_enclave",
@@ -128,6 +135,7 @@ cc_test(
 cc_test(
     name = "enclave_credentials_options_test",
     srcs = ["enclave_credentials_options_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "enclave_credentials_options_enclave_test",
     deps = [
         ":enclave_credentials_options",

@@ -40,6 +40,7 @@ cc_library(
         "netdb.cc",
         "socket.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:memory",
@@ -70,6 +71,7 @@ cc_library(
     name = "socket_server",
     srcs = ["socket_server.cc"],
     hdrs = ["socket_server.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_transmit",
         "//asylo/util:logging",
@@ -89,6 +91,7 @@ cc_library(
     name = "socket_client",
     srcs = ["socket_client.cc"],
     hdrs = ["socket_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_transmit",
         "//asylo/util:logging",
@@ -108,6 +111,7 @@ cc_library(
     name = "socket_test_transmit",
     srcs = ["socket_test_transmit.cc"],
     hdrs = ["socket_test_transmit.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_client",
         ":socket_server",
@@ -126,6 +130,7 @@ asylo_proto_library(
 sgx_enclave(
     name = "domain_socket_test_enclave.so",
     srcs = ["domain_socket_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_client",
         ":socket_server",
@@ -140,6 +145,7 @@ sgx_enclave(
 enclave_test(
     name = "domain_socket_test",
     srcs = ["domain_socket_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":domain_socket_test_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -163,6 +169,7 @@ enclave_test(
 sgx_enclave(
     name = "inet6_socket_test_enclave.so",
     srcs = ["inet6_socket_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_client",
         ":socket_server",
@@ -177,6 +184,7 @@ sgx_enclave(
 enclave_test(
     name = "inet6_socket_test",
     srcs = ["inet6_socket_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":inet6_socket_test_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -197,6 +205,7 @@ enclave_test(
 sgx_enclave(
     name = "addrinfo_test_enclave.so",
     srcs = ["addrinfo_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_test_proto_cc",
         "//asylo/test/util:enclave_test_application",
@@ -207,6 +216,7 @@ sgx_enclave(
 enclave_test(
     name = "addrinfo_test",
     srcs = ["addrinfo_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":addrinfo_test_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -221,6 +231,7 @@ enclave_test(
 cc_test(
     name = "inet_pton_test",
     srcs = ["inet_pton_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "inet_pton_enclave_test",
     deps = [
         "//asylo/test/util:test_main",
@@ -231,6 +242,7 @@ cc_test(
 cc_test(
     name = "inet_aton_test",
     srcs = ["inet_aton_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "inet_aton_enclave_test",
     deps = [
         "//asylo/test/util:test_main",

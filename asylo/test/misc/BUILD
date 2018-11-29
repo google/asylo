@@ -42,6 +42,7 @@ asylo_proto_library(
 sgx_enclave(
     name = "hello_world.so",
     srcs = ["hello_world.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
     ],
@@ -52,6 +53,7 @@ sgx_enclave(
 sgx_enclave(
     name = "initfini.so",
     srcs = ["initfini.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
     ],
@@ -61,6 +63,7 @@ sgx_enclave(
 sgx_enclave(
     name = "active_enclave_signal_test.so",
     srcs = ["active_enclave_signal_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":signal_test_proto_cc",
         "//asylo/test/util:enclave_test_application",
@@ -71,6 +74,7 @@ sgx_enclave(
 sgx_enclave(
     name = "inactive_enclave_signal_test.so",
     srcs = ["inactive_enclave_signal_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":signal_test_proto_cc",
         "//asylo/test/util:enclave_test_application",
@@ -81,6 +85,7 @@ sgx_enclave(
 sgx_enclave(
     name = "die.so",
     srcs = ["die.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo:enclave_runtime",
         "@linux_sgx//:trts",
@@ -91,6 +96,7 @@ sgx_enclave(
 sgx_enclave(
     name = "exception.so",
     srcs = ["exception_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":exception",
         "//asylo:enclave_runtime",
@@ -104,6 +110,7 @@ sgx_enclave(
 sgx_enclave(
     name = "logging.so",
     srcs = ["logging_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
@@ -116,12 +123,14 @@ cc_library(
     name = "exception",
     srcs = ["exception.cc"],
     hdrs = ["exception.h"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 # Smoke tests for enclaves; currently identical to hello_world.so.
 sgx_enclave(
     name = "test_enclave_smoke.so",
     srcs = ["hello_world.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
     ],
@@ -131,6 +140,7 @@ sgx_enclave(
 sgx_enclave(
     name = "error_propagation_enclave.so",
     srcs = ["error_propagation_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
@@ -153,6 +163,7 @@ TEST_DEPS_COMMON = [
 enclave_test(
     name = "enclave_smoke_test",
     srcs = ["hello_world_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":test_enclave_smoke.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
@@ -161,6 +172,7 @@ enclave_test(
 cc_enclave_test(
     name = "threaded_test",
     srcs = ["threaded_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -177,6 +189,7 @@ sgx_enclave(
     testonly = 1,
     srcs = ["exhaust_sgx_tcs.cc"],
     config = ":exhaust_sgx_tcs_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
@@ -188,6 +201,7 @@ sgx_enclave(
 enclave_test(
     name = "exhaust_sgx_tcs_test",
     srcs = ["exhaust_sgx_tcs_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":exhaust_sgx_tcs.so"},
     tags = ["noregression"],
     test_args = ["--enclave_path='{enclave}'"],
@@ -197,6 +211,7 @@ enclave_test(
 cc_enclave_test(
     name = "threaded_test_in_initialize",
     srcs = ["threaded_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     test_in_initialize = True,
     deps = [
         "@com_google_absl//absl/strings",
@@ -207,6 +222,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "rdrand_test",
     srcs = ["rdrand_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -215,6 +231,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "nanosleep_test",
     srcs = ["nanosleep_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -223,6 +240,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "malloc_stress_test",
     srcs = ["malloc_stress_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -232,6 +250,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "pthread_test",
     srcs = ["pthread_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
@@ -244,6 +263,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "mutex_test",
     srcs = ["mutex_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
@@ -257,6 +277,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "condvar_test",
     srcs = ["condvar_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
@@ -270,6 +291,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "sem_test",
     srcs = ["sem_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     tags = ["noregression"],
     deps = [
         "//asylo/test/util:status_matchers",
@@ -284,6 +306,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "memory_layout_test",
     srcs = ["memory_layout_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_util",
@@ -297,6 +320,7 @@ cc_enclave_test(
 cc_test(
     name = "raise_signal_test",
     srcs = ["raise_signal_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "raise_signal_enclave_test",
     deps = [
         "//asylo/test/util:test_main",
@@ -307,6 +331,7 @@ cc_test(
 enclave_test(
     name = "active_enclave_signal_test",
     srcs = ["active_enclave_signal_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "active_enclave_signal_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -319,6 +344,7 @@ enclave_test(
 enclave_test(
     name = "inactive_enclave_signal_test",
     srcs = ["inactive_enclave_signal_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "inactive_enclave_signal_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -329,6 +355,7 @@ enclave_test(
 enclave_test(
     name = "error_propagation_test",
     srcs = ["error_propagation_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":error_propagation_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
@@ -337,6 +364,7 @@ enclave_test(
 enclave_test(
     name = "logging_test",
     srcs = ["logging_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":logging.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -348,6 +376,7 @@ cc_binary(
     name = "double_die",
     testonly = 1,
     srcs = ["double_die.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo:enclave_client",
         "@com_google_absl//absl/memory",
@@ -362,6 +391,7 @@ copy_from_host(
 enclave_test(
     name = "die_test",
     srcs = ["die_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     data = [":double_die_host_bin"],
     enclaves = {"enclave": ":die.so"},
     test_args = ["--enclave_path='{enclave}'"],
@@ -374,6 +404,7 @@ cc_binary(
     name = "exception_app",
     testonly = 1,
     srcs = ["exception_app.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo:enclave_client",
         "//asylo/test/util:enclave_test_launcher",
@@ -388,6 +419,7 @@ copy_from_host(
 enclave_test(
     name = "exception_test",
     srcs = ["exception_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     data = [":exception_app_host_bin"],
     enclaves = {"enclave": ":exception.so"},
     test_args = ["--enclave_path='{enclave}'"],

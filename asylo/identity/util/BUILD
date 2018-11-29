@@ -24,12 +24,14 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 cc_library(
     name = "aligned_object_ptr",
     hdrs = ["aligned_object_ptr.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
 )
 
 cc_test(
     name = "aligned_object_ptr_test",
     srcs = ["aligned_object_ptr_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":aligned_object_ptr",
         "//asylo/test/util:test_main",
@@ -49,6 +51,7 @@ cc_library(
     name = "sha256_hash_util",
     srcs = ["sha256_hash_util.cc"],
     hdrs = ["sha256_hash_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":sha256_hash_proto_cc",
@@ -62,6 +65,7 @@ cc_library(
 cc_test(
     name = "sha256_hash_util_test",
     srcs = ["sha256_hash_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":sha256_hash_proto_cc",
         ":sha256_hash_util",

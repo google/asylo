@@ -30,6 +30,7 @@ load(
     "cc_enclave_test",
     "cc_test",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Note: this target cannot be a cc_library because the toolchain itself depends
 # on these headers, which creates a circular dependency when cc_library adds a
@@ -46,6 +47,7 @@ filegroup(
 # configuration.
 cc_library(
     name = "trusted_posix",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = select({
         "//asylo/platform/arch:sgx": [":posix"],
     }),
@@ -54,6 +56,7 @@ cc_library(
 cc_library(
     name = "pthread_impl",
     hdrs = ["pthread_impl.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo/util:logging"],
 )
 
@@ -97,6 +100,7 @@ cc_library(
         "//asylo/platform/arch:sgx": ["//asylo/third_party/intel:posix_sgx_headers"],
         "//conditions:default": [],
     }),
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     visibility = ["//visibility:private"],
     deps = [
@@ -125,6 +129,7 @@ cc_library(
 cc_enclave_test(
     name = "bswap_test",
     srcs = ["bswap_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -134,6 +139,7 @@ cc_enclave_test(
 cc_enclave_test(
     name = "errno_test",
     srcs = ["errno_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],
@@ -151,6 +157,7 @@ asylo_proto_library(
 sgx_enclave(
     name = "syscalls_test.so",
     srcs = ["syscalls_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":syscalls_test_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
@@ -164,6 +171,7 @@ sgx_enclave(
 cc_test(
     name = "select_test",
     srcs = ["select_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "select_enclave_test",
     deps = [
         "//asylo/platform/storage/utils:fd_closer",
@@ -178,6 +186,7 @@ cc_test(
 enclave_test(
     name = "syscalls_test",
     srcs = ["syscalls_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":syscalls_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
@@ -197,6 +206,7 @@ enclave_test(
 cc_enclave_test(
     name = "times_test",
     srcs = ["times_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_googletest//:gtest",
     ],
