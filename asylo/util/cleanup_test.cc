@@ -18,6 +18,8 @@
 
 #include "asylo/util/cleanup.h"
 
+#include <functional>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
@@ -34,6 +36,23 @@ TEST(CleanupTest, DestructorCallsCleanupFunction) {
     EXPECT_EQ(counter, 0);
   }
 
+  EXPECT_EQ(counter, 1);
+}
+
+TEST(CleanupTest, ReleasePreventsDestructorCleanupFunctionCall) {
+  int counter = 0;
+  std::function<void()> cleanup_holder;
+
+  {
+    Cleanup increment_counter([&counter]() { ++counter; });
+    EXPECT_EQ(counter, 0);
+
+    cleanup_holder = increment_counter.release();
+  }
+
+  EXPECT_EQ(counter, 0);
+
+  cleanup_holder();
   EXPECT_EQ(counter, 1);
 }
 
