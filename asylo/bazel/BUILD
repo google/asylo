@@ -111,4 +111,5 @@ sh_test(
         ":embed_enclaves_test_binary",
         "//asylo/test/util:sample_text",
     ],
+    tags = ["noregression"],
 )
