@@ -59,6 +59,15 @@ void *increment_count(void *arg) {
   return arg;
 }
 
+void *detachable_function(void *arg) {
+  printf("self: %lu\n", reinterpret_cast<uint64_t>(pthread_self()));
+  if (!arg || arg != &global_arg) {
+    printf("arg == nullptr || arg != &global_arg\n");
+    return nullptr;
+  }
+  return arg;
+}
+
 static volatile int cc11_count = 0;
 static std::mutex cc11_mutex;
 
@@ -107,15 +116,26 @@ TEST(ThreadedTest, EnclaveThread) {
 }
 
 // Tests that pthread_create works for detached threads and pthread_join fails.
-TEST(ThreadedTest, DetchedThread) {
+TEST(ThreadedTest, DetachedThread) {
   pthread_t thread;
   pthread_attr_t attr;
   ASSERT_EQ(pthread_attr_init(&attr), 0);
   ASSERT_EQ(pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED), 0);
-  ASSERT_EQ(pthread_create(&thread, &attr, increment_count, &global_arg), 0);
+  ASSERT_EQ(pthread_create(&thread, &attr, detachable_function, &global_arg),
+            0);
 
   EXPECT_EQ(pthread_attr_destroy(&attr), 0);
 
+  EXPECT_NE(pthread_join(thread, nullptr), 0);
+  EXPECT_NE(pthread_detach(thread), 0);
+}
+
+TEST(ThreadedTest, DetachThread) {
+  pthread_t thread;
+  ASSERT_EQ(pthread_create(&thread, nullptr, detachable_function, &global_arg),
+            0);
+
+  EXPECT_EQ(pthread_detach(thread), 0);
   EXPECT_NE(pthread_join(thread, nullptr), 0);
 }
 

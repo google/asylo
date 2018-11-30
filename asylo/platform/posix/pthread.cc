@@ -298,6 +298,11 @@ int pthread_join(pthread_t thread, void **value_ptr) {
   return thread_manager->JoinThread(thread, value_ptr);
 }
 
+int pthread_detach(pthread_t thread) {
+  ThreadManager *const thread_manager = ThreadManager::GetInstance();
+  return thread_manager->DetachThread(thread);
+}
+
 int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
   static pthread_key_t next_key = 0;
   static pthread_mutex_t next_key_lock = PTHREAD_MUTEX_INITIALIZER;

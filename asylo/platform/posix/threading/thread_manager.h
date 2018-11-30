@@ -30,6 +30,8 @@
 
 namespace asylo {
 
+bool ReturnFalse();
+
 // ThreadManager class is a singleton responsible for:
 // - Maintaining a queue of thread start_routine functions.
 class ThreadManager {
@@ -56,6 +58,9 @@ class ThreadManager {
   // Waits till given |thread_id| has returned and assigns its returned void* to
   // |return_value|.
   int JoinThread(pthread_t thread_id, void **return_value_out);
+
+  // Detaches the given |thread_id| making it not joinable.
+  int DetachThread(pthread_t thread_id);
 
   // Push a cleanup routine |func| to the current (self) thread.
   void PushCleanupRoutine(const std::function<void()> &func);
@@ -101,11 +106,17 @@ class ThreadManager {
     // this thread to enter or exit that state.
     void UpdateThreadState(const ThreadState &state);
 
-    // Blocks until this thread enters |state|.
-    void WaitForThreadToEnterState(const ThreadState &state);
+    // Blocks until this thread enters |state| or |alternative_predicate|
+    // returns true.
+    void WaitForThreadToEnterState(
+        const ThreadState &state,
+        const std::function<bool()> &alternative_predicate = ReturnFalse);
 
     // Blocks until this thread is not in |state|.
     void WaitForThreadToExitState(const ThreadState &state);
+
+    // Detaches the thread if joinable.
+    void Detach();
 
     // Push cleanup routine |func| onto the thread's cleanup stack.
     void PushCleanupRoutine(const std::function<void()> &func);
@@ -138,6 +149,18 @@ class ThreadManager {
     // executed.
     std::stack<std::function<void()>> cleanup_functions_;
   };
+
+  // Adds a Thread object with the given |options| and |start_routine| to
+  // queued_threads_. Guaranteed to return a valid std::shared_ptr or this
+  // function will abort.
+  std::shared_ptr<Thread> EnqueueThread(
+      const ThreadOptions &options,
+      const std::function<void *()> &start_routine);
+
+  // Removes a Thread object from queued_threads_ and setups up the Thread with
+  // pthread_self() as the thread id and adding it to the threads_ map.
+  // Guaranteed to return a valid std::shared_ptr or this function will abort.
+  std::shared_ptr<Thread> DequeueThread();
 
   // Returns a Thread pointer for a given |thread_id|.
   std::shared_ptr<Thread> GetThread(pthread_t thread_id);
