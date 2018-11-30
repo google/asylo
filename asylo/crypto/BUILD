@@ -17,7 +17,10 @@
 licenses(["notice"])  # Apache v2.0
 
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
-load("//asylo/bazel:asylo.bzl", "cc_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    cc_test = "cc_test_and_cc_enclave_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Asylo Crypto library
@@ -163,7 +166,6 @@ cc_test(
     name = "sha256_hash_test",
     srcs = ["sha256_hash_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "sha256_hash_enclave_test",
     deps = [
         ":algorithms_proto_cc",
         ":sha256_hash",
@@ -248,7 +250,6 @@ cc_test(
     name = "ecdsa_p256_sha256_signing_key_test",
     srcs = ["ecdsa_p256_sha256_signing_key_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "ecdsa_p256_sha256_signing_key_enclave_test",
     deps = [
         ":ecdsa_p256_sha256_signing_key",
         "//asylo/test/util:status_matchers",
