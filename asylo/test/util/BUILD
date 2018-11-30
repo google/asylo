@@ -272,6 +272,18 @@ cc_test(
     ],
 )
 
+cc_test(
+    name = "mock_test",
+    srcs = ["mock_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":mock_enclave_client",
+        ":mock_enclave_loader",
+        ":test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # A mock EnclaveClient that can be used in tests in the native compiler.
 # This allows tests to simulate calling into an enclave and getting responses.
 # In particular, it is useful for programming EnterAndRun using ON_CALL to give
@@ -280,6 +292,19 @@ cc_library(
     name = "mock_enclave_client",
     testonly = 1,
     hdrs = ["mock_enclave_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "mock_enclave_loader",
+    testonly = 1,
+    hdrs = ["mock_enclave_loader.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
