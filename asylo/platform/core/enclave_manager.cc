@@ -177,6 +177,7 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
   const auto &name = name_by_client_[client];
   client_by_name_.erase(name);
   name_by_client_.erase(client);
+  loader_by_client_.erase(client);
 
   return status;
 }
@@ -215,6 +216,13 @@ const std::string EnclaveManager::GetName(const EnclaveClient *client) const {
   } else {
     return it->second;
   }
+}
+
+EnclaveLoader *EnclaveManager::GetLoaderFromClient(EnclaveClient *client) {
+  if (!client || loader_by_client_.find(client) == loader_by_client_.end()) {
+    return nullptr;
+  }
+  return loader_by_client_[client].get();
 }
 
 Status EnclaveManager::Configure(const EnclaveManagerOptions &options) {
@@ -300,6 +308,14 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
   client_by_name_.emplace(name, std::move(result).ValueOrDie());
   name_by_client_.emplace(client, name);
 
+  if (config.enable_fork()) {
+    StatusOr<std::unique_ptr<EnclaveLoader>> loader_result = loader.Copy();
+    if (!loader_result.ok()) {
+      return loader_result.status();
+    }
+    loader_by_client_.emplace(client, std::move(loader_result.ValueOrDie()));
+  }
+
   Status status = client->EnterAndInitialize(config);
   // If initialization fails, don't keep the enclave registered. GetClient will
   // return a nullptr rather than an enclave in a bad state.
@@ -311,6 +327,7 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
     }
     client_by_name_.erase(name);
     name_by_client_.erase(client);
+    loader_by_client_.erase(client);
   }
   return status;
 }
@@ -319,6 +336,7 @@ void EnclaveManager::RemoveEnclaveReference(const std::string &name) {
   EnclaveClient *client = client_by_name_[name].get();
   client_by_name_.erase(name);
   name_by_client_.erase(client);
+  loader_by_client_.erase(client);
 }
 
 void EnclaveManager::SpawnWorkerThread() {

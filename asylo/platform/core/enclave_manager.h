@@ -268,6 +268,10 @@ class EnclaveManager {
     return &shared_resource_manager_;
   }
 
+  /// Get the loader of an enclave. This should only be used during fork in
+  /// order to load an enclave with the same loader as the parent.
+  EnclaveLoader *GetLoaderFromClient(EnclaveClient *client);
+
  private:
   EnclaveManager() EXCLUSIVE_LOCKS_REQUIRED(mu_);
   EnclaveManager(EnclaveManager const &) = delete;
@@ -309,6 +313,9 @@ class EnclaveManager {
 
   absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>> client_by_name_;
   absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_;
+
+  absl::flat_hash_map<const EnclaveClient *, std::unique_ptr<EnclaveLoader>>
+      loader_by_client_;
 
   // A part of the configuration for enclaves launched by the enclave manager
   // comes from the Asylo daemon. This member caches such configuration.
@@ -353,6 +360,10 @@ class EnclaveLoader {
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       const std::string &name, void *base_address,
       const EnclaveConfig &config) const = 0;
+
+  // Gets a copy of the loader that loaded a previous enclave. This is only used
+  // by fork to load a child enclave with the same loader as the parent.
+  virtual StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const = 0;
 };
 
 // Stores the mapping between signals and the enclave with a handler installed

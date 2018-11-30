@@ -54,7 +54,9 @@ class EnclaveAddressTest : public ::testing::Test {
 // address.
 TEST_F(EnclaveAddressTest, LoadEnclave) {
   std::string enclave_url = "/enclave_address";
-  ASSERT_THAT(manager_->LoadEnclave(enclave_url, *loader_), IsOk());
+  EnclaveConfig config;
+  config.set_enable_fork(true);
+  ASSERT_THAT(manager_->LoadEnclave(enclave_url, *loader_, config), IsOk());
   auto *parent_client =
       dynamic_cast<asylo::SgxClient *>(manager_->GetClient(enclave_url));
   void *parent_base_address = parent_client->base_address();
@@ -67,6 +69,9 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
   int pipefd[2];
   ASSERT_EQ(pipe(pipefd), 0);
 
+  SgxLoader *child_loader =
+      dynamic_cast<SgxLoader *>(manager_->GetLoaderFromClient(parent_client));
+
   pid_t pid = fork();
   ASSERT_GE(pid, 0);
 
@@ -75,7 +80,9 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
     close(pipefd[0]);
     std::string output = "Child test passed";
     std::string child_enclave_url = "/child_enclave_address";
-    if (!manager_->LoadEnclave(child_enclave_url, *loader_, parent_base_address)
+    if (!manager_
+             ->LoadEnclave(child_enclave_url, *child_loader, config,
+                           parent_base_address)
              .ok()) {
       output = "Failed to load enclave in the child process";
     } else {
