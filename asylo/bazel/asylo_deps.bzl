@@ -20,6 +20,7 @@ load(
     "@com_google_asylo//asylo/bazel:patch_repository.bzl",
     "patch_repository",
 )
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def _asylo_backend_deps_impl(repository_ctx):
     repository_ctx.template(
@@ -64,7 +65,7 @@ def asylo_testonly_deps():
 
     # gflags
     if "com_github_gflags_gflags" not in native.existing_rules():
-        native.http_archive(
+        http_archive(
             name = "com_github_gflags_gflags",
             # Release v2.2.1
             urls = ["https://github.com/gflags/gflags/archive/v2.2.1.tar.gz"],
@@ -93,7 +94,7 @@ def asylo_deps():
 
     # RE2 regular-expression framework. Used by some unit-tests.
     if "com_googlesource_code_re2" not in native.existing_rules():
-        native.http_archive(
+        http_archive(
             name = "com_googlesource_code_re2",
             urls = ["https://github.com/google/re2/archive/2018-03-01.tar.gz"],
             sha256 = "51dc7ee9d1a68ee0209672ac4bdff56766c56606dfcdd57aed022015c4784178",
@@ -102,7 +103,7 @@ def asylo_deps():
 
     # Absl for C++
     if "com_google_absl" not in native.existing_rules():
-        native.http_archive(
+        http_archive(
             name = "com_google_absl",
             # Head commit on Nov 20, 2018.
             urls = [
@@ -114,7 +115,7 @@ def asylo_deps():
 
     # Absl for python
     if "io_abseil_py" not in native.existing_rules():
-        native.http_archive(
+        http_archive(
             name = "io_abseil_py",
             # Pre-release commit dated 01/30/2018
             urls = ["https://github.com/abseil/abseil-py/archive/5e343642d987268df199b4c851b7dd3d687ac316.tar.gz"],
@@ -143,7 +144,7 @@ def asylo_deps():
 
     # Google certificate transparency has a merkletree implementation.
     if "com_google_certificate_transparency" not in native.existing_rules():
-        native.new_http_archive(
+        http_archive(
             name = "com_google_certificate_transparency",
             # Non-release commit 335536d introduced Merkle trees. They have not been
             # modified since.
@@ -183,7 +184,7 @@ cc_library(
 
     # required by protobuf_python
     if "six_archive" not in native.existing_rules():
-        native.new_http_archive(
+        http_archive(
             name = "six_archive",
             build_file = "@com_google_protobuf//:six.BUILD",
             # Release 1.10.0
@@ -197,7 +198,7 @@ cc_library(
 
     # Jinja for code_generator.py
     if "jinja" not in native.existing_rules():
-        native.new_http_archive(
+        http_archive(
             name = "jinja",
             # Jinja release 2.10
             url = "https://github.com/pallets/jinja/archive/2.10.tar.gz",
@@ -213,7 +214,7 @@ def asylo_go_deps():
 
     # go rules for EKEP's go_binary usage.
     if "io_bazel_rules_go" not in native.existing_rules():
-        native.http_archive(
+        http_archive(
             name = "io_bazel_rules_go",
             url = "https://github.com/bazelbuild/rules_go/releases/download/0.10.1/rules_go-0.10.1.tar.gz",
             sha256 = "4b14d8dd31c6dbaf3ff871adcd03f28c3274e42abc855cb8fb4d01233c0154dc",
@@ -221,7 +222,7 @@ def asylo_go_deps():
 
     # go crypto for EKEP's go_binary usage.
     if "com_github_golang_crypto" not in native.existing_rules():
-        native.new_http_archive(
+        http_archive(
             name = "com_github_golang_crypto",
             build_file_content = """
 load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_prefix")
