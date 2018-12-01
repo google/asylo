@@ -16,11 +16,13 @@
  *
  */
 
-#ifndef ASYLO_TEST_UTIL_TEST_UTIL_H_
-#define ASYLO_TEST_UTIL_TEST_UTIL_H_
+#ifndef ASYLO_TEST_UTIL_PTHREAD_TEST_UTIL_H_
+#define ASYLO_TEST_UTIL_PTHREAD_TEST_UTIL_H_
 
 #include <pthread.h>
+#include <vector>
 
+#include "absl/strings/string_view.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -33,10 +35,14 @@ void BusyWork();
 Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
                      void *arg, std::vector<pthread_t> *threads);
 
+// Joins all threads in the |threads| vector.
 Status JoinThreads(const std::vector<pthread_t> &threads);
+
+// Check if |value| (called |debug_name|) is in the range from |min_allowed|
+// to |max_allowed|. Returns OkStatus() if so; error status otherwise.
 Status CheckInRange(const int value, absl::string_view debug_name,
                     const int min_allowed, const int max_allowed);
 
 }  // namespace asylo
 
-#endif  // ASYLO_TEST_UTIL_TEST_UTIL_H_
+#endif  // ASYLO_TEST_UTIL_PTHREAD_TEST_UTIL_H_

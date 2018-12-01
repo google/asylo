@@ -39,19 +39,17 @@ cc_library(
     ],
 )
 
-# Miscallaneous helper functions for tests.
+# Functions for stress-testing pthreads.
 cc_library(
-    name = "test_util",
+    name = "pthread_test_util",
     testonly = 1,
-    srcs = ["test_util.cc"],
-    hdrs = ["test_util.h"],
+    srcs = ["pthread_test_util.cc"],
+    hdrs = ["pthread_test_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/crypto/util:bytes",
-        "//asylo/util:logging",
         "//asylo/util:status",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
     ],
 )
 

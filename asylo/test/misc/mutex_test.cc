@@ -23,8 +23,8 @@
 #include <gtest/gtest.h>
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
+#include "asylo/test/util/pthread_test_util.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/test/util/test_util.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

@@ -265,8 +265,8 @@ cc_enclave_test(
     srcs = ["mutex_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_util",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/synchronization",
@@ -279,8 +279,8 @@ cc_enclave_test(
     srcs = ["condvar_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_util",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/synchronization",
@@ -294,8 +294,8 @@ cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     tags = ["noregression"],
     deps = [
+        "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_util",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/synchronization",
@@ -308,11 +308,7 @@ cc_enclave_test(
     srcs = ["memory_layout_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_util",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
 )

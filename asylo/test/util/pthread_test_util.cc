@@ -16,30 +16,27 @@
  *
  */
 
-#include "asylo/test/util/test_util.h"
+#include "asylo/test/util/pthread_test_util.h"
 
 #include <pthread.h>
-#include <stdio.h>
+#include <cstdint>
+#include <cstdio>
 
-#include "asylo/util/logging.h"
-#include "asylo/util/status.h"
+#include "absl/strings/str_cat.h"
 #include <openssl/mem.h>
 
 namespace asylo {
 
-// Do an expensive operation to act as a busy-wait between reading and writing
-// for tests of locks, condition variables, etc. OPENSSL_cleanse is a good
-// candidate because it performs a loop that is not performance-optimized in any
-// way (for security reasons).
 void BusyWork() {
   constexpr int kBufferSize = 4096;
 
+  // OPENSSL_cleanse is a good candidate for an expensive operation because it
+  // performs a loop that is not performance-optimized in any way (for security
+  // reasons).
   uint8_t buf[kBufferSize];
   OPENSSL_cleanse(buf, kBufferSize);
 }
 
-// Creates |numThreads| threads with the given |start_routine| and |arg|. Each
-// thread that is started is placed in the |threads| vector.
 Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
                      void *arg, std::vector<pthread_t> *threads) {
   for (int i = 0; i < numThreads; ++i) {
@@ -55,7 +52,6 @@ Status LaunchThreads(const int numThreads, void *(*start_routine)(void *),
   return Status::OkStatus();
 }
 
-// Joins all threads in the |threads| vector.
 Status JoinThreads(const std::vector<pthread_t> &threads) {
   for (int i = 0; i < threads.size(); ++i) {
     int ret = pthread_join(threads[i], nullptr);
@@ -68,8 +64,6 @@ Status JoinThreads(const std::vector<pthread_t> &threads) {
   return Status::OkStatus();
 }
 
-// Check if |value| (called |debug_name|) is in the range from |min_allowed|
-// to |max_allowed|. Returns OkStatus() if so; error status otherwise.
 Status CheckInRange(const int value, absl::string_view debug_name,
                     const int min_allowed, const int max_allowed) {
   if (value < min_allowed || value > max_allowed) {
