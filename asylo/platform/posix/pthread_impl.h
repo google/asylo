@@ -60,20 +60,8 @@ class QueueOperations {
   // Returns true if the id is in the list.
   bool Empty() const;
 
- protected:
-  // This constructor should only be used for testing. Use one of the above
-  // constructors which takes a pthread_* type. The QueueOperations does not
-  // take ownership of |list|.
-  QueueOperations(__pthread_list_t* list,
-                  const std::function<void()>& abort_func);
-
  private:
   __pthread_list_t* const list_;
-
-  // Only stored for injection during testing. In production use this should be
-  // abort().
-  //
-  std::function<void()> abort_func_;
 };
 
 // Provides an RAII wrapper around pthread_mutex_t. Aborts on errors, so should

@@ -81,16 +81,20 @@ inline int pthread_spin_unlock(pthread_spinlock_t *lock) {
 // pthread_spinlock_t.
 class LockableGuard {
  public:
-  // Initializes a guard with an explicit reference to a lock instance, rather
-  // than a lockable's |lock_| field.
   template <class LockableType>
   LockableGuard(LockableType *lockable) : LockableGuard(&lockable->_lock) {}
 
+  // Initializes a guard with an explicit reference to a lock instance, rather
+  // than a lockable's |lock_| field.
   LockableGuard(pthread_spinlock_t *lock) : lock_(lock) {
     pthread_spin_lock(lock_);
   }
 
   ~LockableGuard() { pthread_spin_unlock(lock_); }
+
+  void Lock() { pthread_spin_lock(lock_); }
+
+  void Unlock() { pthread_spin_unlock(lock_); }
 
  private:
   pthread_spinlock_t *const lock_;
@@ -103,24 +107,17 @@ __pthread_list_node_t *alloc_list_node(pthread_t thread_id) {
   return node;
 }
 
-void free_list_node(__pthread_list_node_t *node) {
-  delete node;
-}
+void free_list_node(__pthread_list_node_t *node) { delete node; }
 
-QueueOperations::QueueOperations(__pthread_list_t *list)
-    : QueueOperations(list, abort) {}
-
-QueueOperations::QueueOperations(__pthread_list_t *list,
-                                 const std::function<void()> &abort_func)
-    : list_(list), abort_func_(abort_func) {
+QueueOperations::QueueOperations(__pthread_list_t *list) : list_(list) {
   if (list_ == nullptr) {
-    abort_func_();
+    abort();
   }
 }
 
 void QueueOperations::Dequeue() {
   if (list_->_first == nullptr) {
-    return abort_func_();
+    return;
   }
 
   __pthread_list_node_t *old_first = list_->_first;
@@ -217,16 +214,77 @@ int pthread_mutex_lock_internal(pthread_mutex_t *mutex) {
     return 0;
   }
 
-  QueueOperations list(mutex);
-  const pthread_t first_waiter = list.Front();
-  if (mutex->_owner == PTHREAD_T_NULL &&
-      (first_waiter == self || first_waiter == PTHREAD_T_NULL)) {
-    if (first_waiter == self) {
-      list.Dequeue();
-    }
+  if (mutex->_owner != PTHREAD_T_NULL) {
+    return EBUSY;
+  }
 
+  QueueOperations list(mutex);
+  if (list.Empty() || list.Front() == self) {
+    list.Dequeue();
     mutex->_owner = self;
     mutex->_refcount++;
+
+    return 0;
+  }
+
+  return EBUSY;
+}
+
+// Read locks the given |rwlock| if possible and returns 0. On success,
+// pthread_self() is removed from |rwlock|._queue and |rwlock|._readers is
+// incremented. Returns EBUSY if the |rwlock| is write locked or pthread_self()
+// is not the front of |rwlock|._queue. |rwlock|._lock must be locked by the
+// caller.
+int pthread_rwlock_tryrdlock_internal(pthread_rwlock_t *rwlock) {
+  // If |rwlock| is owned by a writer it is not read lockable.
+  if (rwlock->_write_owner != PTHREAD_T_NULL) {
+    return EBUSY;
+  }
+
+  QueueOperations queue(rwlock);
+  const pthread_t self = pthread_self();
+
+  // If the current thread is at the front of the queue or the queue is empty
+  // |rwlock| is read lockable.
+  if (queue.Empty() || queue.Front() == self) {
+    queue.Dequeue();
+    rwlock->_reader_count++;
+
+    return 0;
+  }
+
+  return EBUSY;
+}
+
+// Writes locks the given |rwlock| if possible and returns 0. On success,
+// pthread_self() is removed from |rwlock|._queue and added to
+// |rwlock|._write_owner. Returns EBUSY if the |rwlock| is write locked, read
+// locked, or pthread_self() is not the front of |rwlock|._queue. |rwlock|._lock
+// must be locked by the caller.
+int pthread_rwlock_trywrlock_internal(pthread_rwlock_t *rwlock) {
+  // If |rwlock| is owned by a reader it is not write lockable.
+  if (rwlock->_reader_count != 0) {
+    return EBUSY;
+  }
+
+  // If |rwlock| is owned by the current thread there is a deadlock.
+  const pthread_t self = pthread_self();
+  if (rwlock->_write_owner == self) {
+    return EDEADLK;
+  }
+
+  // If |rwlock| is owned by another writer it is not write lockable.
+  if (rwlock->_write_owner != PTHREAD_T_NULL) {
+    return EBUSY;
+  }
+
+  // If the current thread is at the front of the queue or the queue is empty
+  // |rwlock| is write lockable.
+  QueueOperations queue(rwlock);
+  if (queue.Empty() || queue.Front() == self) {
+    queue.Dequeue();
+    rwlock->_write_owner = self;
+
     return 0;
   }
 
@@ -259,6 +317,40 @@ asylo::ThreadManager::ThreadOptions CreateOptions(
   return options;
 }
 
+// Acquires |rwlock| with a read lock or a write lock if |TryLockFunc| is
+// set to pthread_rwlock_tryrdlock_internal() or
+// pthread_rwlock_trywrlock_internal() respectively.
+template <int(TryLockFunc)(pthread_rwlock_t *)>
+int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
+  int ret = check_parameter<pthread_rwlock_t>(rwlock);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  LockableGuard lock_guard(rwlock);
+  ret = TryLockFunc(rwlock);
+  if (ret == 0) {
+    return 0;
+  }
+
+  const pthread_t self = pthread_self();
+  QueueOperations queue(rwlock);
+  if (queue.Contains(self)) {
+    return EDEADLK;
+  }
+  queue.Enqueue(self);
+
+  while (ret == EBUSY) {
+    lock_guard.Unlock();
+    enc_pause();
+    lock_guard.Lock();
+
+    ret = TryLockFunc(rwlock);
+  }
+
+  return ret;
+}
+
 }  //  namespace pthread_impl
 }  //  namespace asylo
 
@@ -270,6 +362,9 @@ using asylo::pthread_impl::init_tls_map;
 using asylo::pthread_impl::LockableGuard;
 using asylo::pthread_impl::pthread_mutex_check_parameter;
 using asylo::pthread_impl::pthread_mutex_lock_internal;
+using asylo::pthread_impl::pthread_rwlock_lock;
+using asylo::pthread_impl::pthread_rwlock_tryrdlock_internal;
+using asylo::pthread_impl::pthread_rwlock_trywrlock_internal;
 using asylo::pthread_impl::PthreadMutexLock;
 using asylo::pthread_impl::QueueOperations;
 using asylo::pthread_impl::tls_map;
@@ -718,6 +813,79 @@ int sem_destroy(sem_t *sem) {
   }
 
   return 0;
+}
+
+int pthread_rwlock_init(pthread_rwlock_t *rwlock,
+                        const pthread_rwlockattr_t *attr) {
+  int ret = check_parameter<pthread_rwlock_t>(rwlock);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  *rwlock = PTHREAD_RWLOCK_INITIALIZER;
+
+  return 0;
+}
+
+int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
+  int ret = check_parameter<pthread_rwlock_t>(rwlock);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  LockableGuard lock_guard(rwlock);
+  return pthread_rwlock_tryrdlock_internal(rwlock);
+}
+
+int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
+  int ret = check_parameter<pthread_rwlock_t>(rwlock);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  LockableGuard lock_guard(rwlock);
+  return pthread_rwlock_trywrlock_internal(rwlock);
+}
+
+int pthread_rwlock_rdlock(pthread_rwlock_t *rwlock) {
+  return pthread_rwlock_lock<pthread_rwlock_tryrdlock_internal>(rwlock);
+}
+
+int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
+  return pthread_rwlock_lock<pthread_rwlock_trywrlock_internal>(rwlock);
+}
+
+int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
+  int ret = check_parameter<pthread_rwlock_t>(rwlock);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  LockableGuard lock_guard(rwlock);
+
+  const pthread_t self = pthread_self();
+  if (rwlock->_write_owner == self) {
+    rwlock->_write_owner = PTHREAD_T_NULL;
+    return 0;
+  }
+
+  rwlock->_reader_count--;
+  return 0;
+}
+
+int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
+  int ret = check_parameter<pthread_rwlock_t>(rwlock);
+  if (ret != 0) {
+    return ConvertToErrno(ret);
+  }
+
+  LockableGuard lock_guard(rwlock);
+  QueueOperations queue(rwlock);
+  if (rwlock->_write_owner == PTHREAD_T_NULL && queue.Empty()) {
+    return 0;
+  }
+
+  return EBUSY;
 }
 
 int pthread_equal(pthread_t thread_one, pthread_t thread_two) {
