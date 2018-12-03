@@ -20,6 +20,7 @@
 #define ASYLO_PLATFORM_POSIX_THREADING_THREAD_MANAGER_H_
 
 #include <pthread.h>
+#include <atomic>
 #include <functional>
 #include <memory>
 #include <queue>
@@ -68,6 +69,12 @@ class ThreadManager {
   // Pop the top cleanup routine off the current (self) thread; execute it if
   // |execute| is true.
   void PopCleanupRoutine(bool execute);
+
+  // Finalizes the ThreadManager. This means no new threads may be created using
+  // pthread_create(). This function will block until all pending
+  // pthread_create() created threads have entered the enclave, and all of
+  // created threads have returned from |start_routine|.
+  void Finalize();
 
  private:
   ThreadManager() = default;
@@ -165,16 +172,14 @@ class ThreadManager {
   // Returns a Thread pointer for a given |thread_id|.
   std::shared_ptr<Thread> GetThread(pthread_t thread_id);
 
-  // Guards queued_threads_.
-  pthread_mutex_t queued_threads_lock_ = PTHREAD_MUTEX_INITIALIZER;
+  // Guards queued_threads_ and threads_.
+  pthread_mutex_t threads_lock_ = PTHREAD_MUTEX_INITIALIZER;
+  pthread_cond_t threads_cond_ = PTHREAD_COND_INITIALIZER;
 
   // Queue of start_routines waiting to be run.
   // std::shared_ptr is documented to use atomic increments/decrements to manage
   // a refcount instead of using a mutex.
   std::queue<std::shared_ptr<Thread>> queued_threads_;
-
-  // Guards threads_.
-  pthread_mutex_t threads_lock_ = PTHREAD_MUTEX_INITIALIZER;
 
   // List of currently running threads or threads waiting to be joined.
   absl::flat_hash_map<pthread_t, std::shared_ptr<Thread>> threads_;

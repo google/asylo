@@ -448,3 +448,23 @@ enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+sgx_enclave(
+    name = "threaded_finalize.so",
+    srcs = ["threaded_finalize.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo:enclave_runtime",
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
+    ],
+)
+
+enclave_test(
+    name = "threaded_finalize_test",
+    srcs = ["hello_world_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": ":threaded_finalize.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = TEST_DEPS_COMMON,
+)

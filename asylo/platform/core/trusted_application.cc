@@ -346,6 +346,9 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
     return status_serializer.Serialize(status);
   }
 
+  ThreadManager *thread_manager = ThreadManager::GetInstance();
+  thread_manager->Finalize();
+
   trusted_application->SetState(EnclaveState::kFinalized);
   return status_serializer.Serialize(status);
 }

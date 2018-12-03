@@ -28,6 +28,18 @@
 #include "asylo/platform/posix/pthread_impl.h"
 
 namespace asylo {
+namespace {
+
+// Returns when |predicate| returns true. |mutex| must be locked.
+void WaitFor(const std::function<bool()> &predicate, pthread_cond_t *cond,
+             pthread_mutex_t *mutex) {
+  while (!predicate()) {
+    int ret = pthread_cond_wait(cond, mutex);
+    CHECK_EQ(ret, 0);
+  }
+}
+
+}  // namespace
 
 using pthread_impl::PthreadMutexLock;
 
@@ -76,19 +88,18 @@ void ThreadManager::Thread::WaitForThreadToEnterState(
     const ThreadState &desired_state,
     const std::function<bool()> &alternative_predicate) {
   PthreadMutexLock lock(&lock_);
-  while (state_ != desired_state && !alternative_predicate()) {
-    int ret = pthread_cond_wait(&state_change_cond_, &lock_);
-    CHECK_EQ(ret, 0);
-  }
+  WaitFor(
+      [this, desired_state, alternative_predicate]() {
+        return state_ == desired_state || alternative_predicate();
+      },
+      &state_change_cond_, &lock_);
 }
 
 void ThreadManager::Thread::WaitForThreadToExitState(
     const ThreadState &undesired_state) {
   PthreadMutexLock lock(&lock_);
-  while (state_ == undesired_state) {
-    int ret = pthread_cond_wait(&state_change_cond_, &lock_);
-    CHECK_EQ(ret, 0);
-  }
+  WaitFor([this, undesired_state]() { return state_ != undesired_state; },
+          &state_change_cond_, &lock_);
 }
 
 void ThreadManager::Thread::Detach() {
@@ -131,17 +142,20 @@ ThreadManager *ThreadManager::GetInstance() {
 std::shared_ptr<ThreadManager::Thread> ThreadManager::EnqueueThread(
     const ThreadOptions &options,
     const std::function<void *()> &start_routine) {
-  PthreadMutexLock lock(&queued_threads_lock_);
+  PthreadMutexLock lock(&threads_lock_);
+
   queued_threads_.emplace(std::make_shared<Thread>(options, start_routine));
   std::shared_ptr<Thread> thread = queued_threads_.back();
 
   // If a Thread object cannot be allocated, abort.
   CHECK(thread != nullptr);
+
+  pthread_cond_broadcast(&threads_cond_);
   return thread;
 }
 
 std::shared_ptr<ThreadManager::Thread> ThreadManager::DequeueThread() {
-  PthreadMutexLock lock(&queued_threads_lock_);
+  PthreadMutexLock lock(&threads_lock_);
   // There should be a one-to-one mapping of threads donated to the enclave
   // and threads created from above at the pthread API layer waiting to run.
   // If a thread gets donated and there's no thread waiting to run, something
@@ -155,8 +169,10 @@ std::shared_ptr<ThreadManager::Thread> ThreadManager::DequeueThread() {
   // enclave thread we're running under.
   const pthread_t thread_id = pthread_self();
   thread->UpdateThreadId(thread_id);
+
   threads_[thread_id] = thread;
 
+  pthread_cond_broadcast(&threads_cond_);
   return thread;
 }
 
@@ -193,6 +209,10 @@ int ThreadManager::StartThread() {
   thread->WaitForThreadToEnterState(Thread::ThreadState::JOINED,
                                     std::bind(&Thread::detached, thread));
 
+  PthreadMutexLock threads_lock(&threads_lock_);
+  threads_.erase(pthread_self());
+  pthread_cond_broadcast(&threads_cond_);
+
   return 0;
 }
 
@@ -201,10 +221,6 @@ int ThreadManager::JoinThread(const pthread_t thread_id,
   std::shared_ptr<Thread> thread = GetThread(thread_id);
   if (thread == nullptr) {
     return ESRCH;
-  }
-
-  if (thread->detached()) {
-    return EINVAL;
   }
 
   // Wait until the job is finished executing.
@@ -269,6 +285,14 @@ void ThreadManager::PopCleanupRoutine(bool execute) {
 
   // No lock needed since this is a per-thread data structure.
   thread->PopCleanupRoutine(execute);
+}
+
+void ThreadManager::Finalize() {
+  // Wait for any expected threads to be donated and all threads to return from
+  // start_routine.
+  PthreadMutexLock lock(&threads_lock_);
+  WaitFor([this]() { return queued_threads_.empty() && threads_.empty(); },
+          &threads_cond_, &threads_lock_);
 }
 
 }  // namespace asylo
