@@ -47,6 +47,19 @@ cc_library(
     ],
 )
 
+# A class wrapping the setup for AEAD test vectors.
+cc_library(
+    name = "aead_test_vector",
+    testonly = 1,
+    srcs = ["aead_test_vector.cc"],
+    hdrs = ["aead_test_vector.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/util:cleansing_types",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
 # Implementation of AeadKey for AES-GCM.
 cc_library(
     name = "aes_gcm_key",
@@ -74,6 +87,7 @@ cc_test(
     srcs = ["aes_gcm_key_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":aead_test_vector",
         ":aes_gcm_key",
         ":algorithms_proto_cc",
         "//asylo/crypto/util:bytes",
