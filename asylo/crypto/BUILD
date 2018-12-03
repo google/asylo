@@ -32,6 +32,39 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
 )
 
+# A generic cryptor wrapping an AEAD key and a NonceGeneratorInterface.
+cc_library(
+    name = "aead_cryptor",
+    srcs = ["aead_cryptor.cc"],
+    hdrs = ["aead_cryptor.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":aead_key",
+        ":aes_gcm_key",
+        ":nonce_generator_interface",
+        ":random_nonce_generator",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+# Tests for AeadCryptor class.
+cc_test(
+    name = "aead_cryptor_test",
+    srcs = ["aead_cryptor_test.cc"],
+    deps = [
+        ":aead_cryptor",
+        ":aead_test_vector",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Defines a C++ interface for AEAD keys.
 cc_library(
     name = "aead_key",
