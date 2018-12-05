@@ -194,6 +194,7 @@ enclave_test(
         "//asylo:enclave_client",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
         "//asylo/util:status",

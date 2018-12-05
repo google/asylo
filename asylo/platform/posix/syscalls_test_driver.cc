@@ -37,6 +37,8 @@
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
 #include "asylo/test/util/enclave_test.h"
+#include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status.h"
 
 // Enables gtest to print a struct stat on failure. This function needs to be in
 // the global namespace to override gtest's default PrintTo function in ADL
@@ -59,15 +61,17 @@ void PrintTo(const struct stat &stat_buffer, std::ostream *output_stream) {
 namespace asylo {
 namespace {
 
+using ::testing::Not;
+
 const char *kCustomHostName = "CustomHostName";
 const char *kCustomWorkingDirectory = "/tmp/testworkingdir";
 const int kSinZeroPadSize = 8;
 
 // Invokes a system call from inside the enclave and returns its output (if
 // needed).
-bool RunEnclaveSyscall(EnclaveClient *client, const std::string &tested_syscall,
-                       const std::string &file_path, bool provide_buffer,
-                       int32_t buffer_size, SyscallsTestOutput *test_output) {
+Status RunEnclaveSyscall(EnclaveClient *client, const std::string &tested_syscall,
+                         const std::string &file_path, bool provide_buffer,
+                         int32_t buffer_size, SyscallsTestOutput *test_output) {
   EnclaveInput enclave_input;
   SyscallsTestInput *test_input =
       enclave_input.MutableExtension(syscalls_test_input);
@@ -81,16 +85,15 @@ bool RunEnclaveSyscall(EnclaveClient *client, const std::string &tested_syscall,
   EnclaveOutput enclave_output;
   Status test_status = client->EnterAndRun(enclave_input, &enclave_output);
   if (!test_status.ok()) {
-    LOG(ERROR) << "In test of " << tested_syscall << ": " << test_status;
-    return false;
+    return test_status;
   }
   if (test_output) {
     if (!enclave_output.HasExtension(syscalls_test_output)) {
-      return false;
+      return Status(error::GoogleError::INTERNAL, "No expected enclave output");
     }
     *test_output = enclave_output.GetExtension(syscalls_test_output);
   }
-  return true;
+  return Status::OkStatus();
 }
 
 // Extracts a cpu_set_t from the bit_mask_syscall_outptr field of a
@@ -262,16 +265,16 @@ MATCHER_P(EqualsStat, rhs_stat_buffer, "") {
 // class that runs syscall tests with default enclave config.
 class SyscallsTest : public EnclaveTest {
  protected:
-  bool RunSyscallInsideEnclave(const std::string &tested_syscall,
-                               const std::string &file_path,
-                               SyscallsTestOutput *test_output) {
+  Status RunSyscallInsideEnclave(const std::string &tested_syscall,
+                                 const std::string &file_path,
+                                 SyscallsTestOutput *test_output) {
     return RunEnclaveSyscall(client_, tested_syscall, file_path, false, 0,
                              test_output);
   }
 
-  bool RunSyscallInsideEnclave(const std::string &tested_syscall,
-                               bool provide_buffer, int32_t buffer_size,
-                               SyscallsTestOutput *test_output) {
+  Status RunSyscallInsideEnclave(const std::string &tested_syscall,
+                                 bool provide_buffer, int32_t buffer_size,
+                                 SyscallsTestOutput *test_output) {
     return RunEnclaveSyscall(client_, tested_syscall, "", provide_buffer,
                              buffer_size, test_output);
   }
@@ -286,16 +289,16 @@ class CustomConfigSyscallsTest : public EnclaveTest {
     EnclaveTest::SetUp();
   }
 
-  bool RunSyscallInsideEnclave(const std::string &tested_syscall,
-                               const std::string &file_path,
-                               SyscallsTestOutput *test_output) {
+  Status RunSyscallInsideEnclave(const std::string &tested_syscall,
+                                 const std::string &file_path,
+                                 SyscallsTestOutput *test_output) {
     return RunEnclaveSyscall(client_, tested_syscall, file_path, false, 0,
                              test_output);
   }
 
-  bool RunSyscallInsideEnclave(const std::string &tested_syscall,
-                               bool provide_buffer, int32_t buffer_size,
-                               SyscallsTestOutput *test_output) {
+  Status RunSyscallInsideEnclave(const std::string &tested_syscall,
+                                 bool provide_buffer, int32_t buffer_size,
+                                 SyscallsTestOutput *test_output) {
     return RunEnclaveSyscall(client_, tested_syscall, "", provide_buffer,
                              buffer_size, test_output);
   }
@@ -305,8 +308,9 @@ class CustomConfigSyscallsTest : public EnclaveTest {
 // inside enclave gives the same result as outside the enclave.
 TEST_F(SyscallsTest, SysconfScNprocessorsConf) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf(_SC_NPROCESSORS_CONF)", "",
-                                      &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("sysconf(_SC_NPROCESSORS_CONF)", "",
+                                      &test_output),
+              IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), sysconf(_SC_NPROCESSORS_CONF));
 }
@@ -315,8 +319,9 @@ TEST_F(SyscallsTest, SysconfScNprocessorsConf) {
 // inside enclave gives the same result as outside the enclave.
 TEST_F(SyscallsTest, SysconfScNprocessorsOnln) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf(_SC_NPROCESSORS_ONLN)", "",
-                                      &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("sysconf(_SC_NPROCESSORS_ONLN)", "",
+                                      &test_output),
+              IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), sysconf(_SC_NPROCESSORS_ONLN));
 }
@@ -325,8 +330,9 @@ TEST_F(SyscallsTest, SysconfScNprocessorsOnln) {
 // the host configuration.
 TEST_F(SyscallsTest, SysconfScPagesize) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("sysconf(_SC_PAGESIZE)", "",
-                                      &test_output));
+  ASSERT_THAT(
+      RunSyscallInsideEnclave("sysconf(_SC_PAGESIZE)", "", &test_output),
+      IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), 4096);
 }
@@ -335,7 +341,7 @@ TEST_F(SyscallsTest, SysconfScPagesize) {
 // enclave.
 TEST_F(SyscallsTest, GetPid) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getpid", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getpid", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), getpid());
 }
@@ -343,22 +349,25 @@ TEST_F(SyscallsTest, GetPid) {
 // Tests unlink(). Opens a file, closes it and unlinks it. Then checks whether
 // it's still available.
 TEST_F(SyscallsTest, Unlink) {
-  EXPECT_TRUE(RunSyscallInsideEnclave("unlink", FLAGS_test_tmpdir + "/unlink",
-                                      nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("unlink", FLAGS_test_tmpdir + "/unlink", nullptr),
+      IsOk());
 }
 
 // Tests fcntl() with F_GETFL and F_SETFL. Sets the file flags with F_SETFL,
 // then uses F_GETFL to check whether it's set correctly.
 TEST_F(SyscallsTest, Fcntl) {
-  EXPECT_TRUE(
-      RunSyscallInsideEnclave("fcntl", FLAGS_test_tmpdir + "/fcntl", nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("fcntl", FLAGS_test_tmpdir + "/fcntl", nullptr),
+      IsOk());
 }
 
 // Tests mkdir(). Calls mkdir() inside enclave to create a directory. And checks
 // the existence of the directory outside enclave.
 TEST_F(SyscallsTest, Mkdir) {
-  EXPECT_TRUE(
-      RunSyscallInsideEnclave("mkdir", FLAGS_test_tmpdir + "/mkdir", nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("mkdir", FLAGS_test_tmpdir + "/mkdir", nullptr),
+      IsOk());
   DIR *directory = opendir((FLAGS_test_tmpdir + "/mkdir").c_str());
   EXPECT_TRUE(directory);
   closedir(directory);
@@ -367,15 +376,16 @@ TEST_F(SyscallsTest, Mkdir) {
 // Tests dup() and dup2(). Calls dup() and dup2() on a file descriptor, and
 // checks whether the new file descriptor behaves the same as the original one.
 TEST_F(SyscallsTest, Dup) {
-  EXPECT_TRUE(
-      RunSyscallInsideEnclave("dup", FLAGS_test_tmpdir + "/dup", nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("dup", FLAGS_test_tmpdir + "/dup", nullptr),
+      IsOk());
 }
 
 // Tests gethostname() with default settings. Calls gethostname() inside
 // enclave, and compares the result with the value outside enclave.
 TEST_F(SyscallsTest, GetHostName) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("gethostname", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("gethostname", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
   char buf[1024];
   ASSERT_EQ(gethostname(buf, sizeof(buf)), 0);
@@ -387,7 +397,7 @@ TEST_F(SyscallsTest, GetHostName) {
 // with the value set.
 TEST_F(CustomConfigSyscallsTest, GetHostName) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("gethostname", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("gethostname", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
   EXPECT_EQ(test_output.string_syscall_return(), kCustomHostName);
 }
@@ -395,15 +405,17 @@ TEST_F(CustomConfigSyscallsTest, GetHostName) {
 // Tests link(). Calls link() inside enclave, writes to the old path, and reads
 // from the new path to check whether they are the same.
 TEST_F(SyscallsTest, Link) {
-  EXPECT_TRUE(
-      RunSyscallInsideEnclave("link", FLAGS_test_tmpdir + "/link", nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("link", FLAGS_test_tmpdir + "/link", nullptr),
+      IsOk());
 }
 
 // Tests getcwd() with default settings. Calls getcwd() inside enclave and
 // compares the result with the value outside enclave.
 TEST_F(SyscallsTest, GetCwd) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getcwd", true, PATH_MAX, &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", true, PATH_MAX, &test_output),
+              IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
   char buf[PATH_MAX];
   ASSERT_NE(getcwd(buf, sizeof(buf)), nullptr);
@@ -413,14 +425,15 @@ TEST_F(SyscallsTest, GetCwd) {
 // Tests getcwd() with default settings. Calls getcwd() inside enclave with 0
 // buffer size and verifies the call fails.
 TEST_F(SyscallsTest, GetCwdNoSize) {
-  ASSERT_FALSE(RunSyscallInsideEnclave("getcwd", true, 0, nullptr));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", true, 0, nullptr), Not(IsOk()));
 }
 
 // Tests getcwd() with default settings. Calls getcwd() inside enclave with no
 // buffer and compares the result with the value outside the enclave.
 TEST_F(SyscallsTest, GetCwdNoBuffer) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getcwd", false, PATH_MAX, &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", false, PATH_MAX, &test_output),
+              IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
   char buf[PATH_MAX];
   ASSERT_NE(getcwd(buf, sizeof(buf)), nullptr);
@@ -431,7 +444,8 @@ TEST_F(SyscallsTest, GetCwdNoBuffer) {
 // buffer or size and compares the result with the value outside the enclave.
 TEST_F(SyscallsTest, GetCwdNoBufferNoSize) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getcwd", false, 0, &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", false, 0, &test_output),
+              IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
   char buf[PATH_MAX];
   ASSERT_NE(getcwd(buf, sizeof(buf)), nullptr);
@@ -443,7 +457,7 @@ TEST_F(SyscallsTest, GetCwdNoBufferNoSize) {
 // with the value set.
 TEST_F(CustomConfigSyscallsTest, GetCwd) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getcwd", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_string_syscall_return());
   EXPECT_EQ(test_output.string_syscall_return(), kCustomWorkingDirectory);
 }
@@ -452,30 +466,33 @@ TEST_F(CustomConfigSyscallsTest, GetCwd) {
 // loading enclave, calls getcwd() inside enclave with insufficient buffer size,
 // and verifies the call fails.
 TEST_F(CustomConfigSyscallsTest, GetCwdInsufficientSize) {
-  ASSERT_FALSE(RunSyscallInsideEnclave(
-      "getcwd", true, strlen(kCustomWorkingDirectory), nullptr));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", true,
+                                      strlen(kCustomWorkingDirectory), nullptr),
+              Not(IsOk()));
 }
 
 // Tests getcwd() with custom settings. Sets working directory config before
 // loading enclave, calls getcwd() inside enclave with no buffer and
 // insufficient buffer size, and verifies the call fails.
 TEST_F(CustomConfigSyscallsTest, GetCwdNoBufferInsufficientSize) {
-  ASSERT_FALSE(RunSyscallInsideEnclave(
-      "getcwd", false, strlen(kCustomWorkingDirectory), nullptr));
+  ASSERT_THAT(RunSyscallInsideEnclave("getcwd", false,
+                                      strlen(kCustomWorkingDirectory), nullptr),
+              Not(IsOk()));
 }
 
 // Tests umask() by masking file modes and call open/mkdir to create new path
 // with masked file modes, and check whether the mode exists in the new path.
 TEST_F(SyscallsTest, Umask) {
-  ASSERT_TRUE(
-      RunSyscallInsideEnclave("umask", FLAGS_test_tmpdir + "/umask", nullptr));
+  ASSERT_THAT(
+      RunSyscallInsideEnclave("umask", FLAGS_test_tmpdir + "/umask", nullptr),
+      IsOk());
 }
 
 // Tests getuid() by comparing the return value of getuid() inside/outside the
 // enclave.
 TEST_F(SyscallsTest, GetUid) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getuid", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getuid", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), getuid());
 }
@@ -484,7 +501,7 @@ TEST_F(SyscallsTest, GetUid) {
 // enclave.
 TEST_F(SyscallsTest, GetEuid) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("geteuid", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("geteuid", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), geteuid());
 }
@@ -493,7 +510,7 @@ TEST_F(SyscallsTest, GetEuid) {
 // enclave.
 TEST_F(SyscallsTest, GetGid) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getgid", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getgid", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), getgid());
 }
@@ -502,7 +519,7 @@ TEST_F(SyscallsTest, GetGid) {
 // enclave.
 TEST_F(SyscallsTest, GetEgid) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getegid", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getegid", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), getegid());
 }
@@ -511,7 +528,7 @@ TEST_F(SyscallsTest, GetEgid) {
 // enclave.
 TEST_F(SyscallsTest, GetPpid) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getppid", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getppid", "", &test_output), IsOk());
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), getppid());
 }
@@ -526,8 +543,9 @@ TEST_F(SyscallsTest, SchedGetAffinity) {
   cpu_set_t host_mask;
   ASSERT_EQ(sched_getaffinity(getpid(), sizeof(cpu_set_t), &host_mask), 0);
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("sched_getaffinity", /*file_path=*/"",
-                                      &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("sched_getaffinity", /*file_path=*/"",
+                                      &test_output),
+              IsOk());
 
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), 0);
@@ -545,8 +563,9 @@ TEST_F(SyscallsTest, SchedGetAffinity) {
 TEST_F(SyscallsTest, SchedGetAffinityFailure) {
   SyscallsTestOutput test_output;
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("sched_getaffinity failure",
-                                      /*file_path=*/"", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("sched_getaffinity failure",
+                                      /*file_path=*/"", &test_output),
+              IsOk());
 
   ASSERT_TRUE(test_output.has_int_syscall_return());
   EXPECT_EQ(test_output.int_syscall_return(), -1);
@@ -587,8 +606,9 @@ TEST_F(SyscallsTest, SchedGetAffinityAfterSet) {
     ASSERT_EQ(sched_getaffinity(getpid(), sizeof(cpu_set_t), &host_mask), 0);
     ASSERT_TRUE(CPU_EQUAL(&initial_mask, &host_mask));
 
-    ASSERT_TRUE(RunSyscallInsideEnclave("sched_getaffinity", /*file_path=*/"",
-                                        &test_output));
+    ASSERT_THAT(RunSyscallInsideEnclave("sched_getaffinity", /*file_path=*/"",
+                                        &test_output),
+                IsOk());
 
     ASSERT_TRUE(test_output.has_int_syscall_return());
     EXPECT_EQ(test_output.int_syscall_return(), 0);
@@ -605,8 +625,9 @@ TEST_F(SyscallsTest, SchedGetAffinityAfterSet) {
 // Tests the enclave-native implementations of the macros defined in
 // http://man7.org/linux/man-pages/man3/CPU_SET.3.html#DESCRIPTION.
 TEST_F(SyscallsTest, CpuSetMacros) {
-  ASSERT_TRUE(RunSyscallInsideEnclave("CPU_SET macros", /*file_path=*/"",
-                                      /*test_output=*/nullptr));
+  ASSERT_THAT(RunSyscallInsideEnclave("CPU_SET macros", /*file_path=*/"",
+                                      /*test_output=*/nullptr),
+              IsOk());
 }
 
 // Tests stat() by comparing the return value of stat() inside/outside the
@@ -623,7 +644,7 @@ TEST_F(SyscallsTest, Stat) {
   ASSERT_EQ(stat(test_dir.c_str(), &host_stat_buffer), 0)
       << absl::StrCat("stat(", test_dir, ", ...) failed on host");
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("stat", test_dir, &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("stat", test_dir, &test_output), IsOk())
       << "Failed to execute stat() inside enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -661,7 +682,7 @@ TEST_F(SyscallsTest, StatOnSymlink) {
   ASSERT_EQ(stat(test_link.c_str(), &host_stat_buffer), 0)
       << absl::StrCat("stat(", test_link, ", ...) failed on host");
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("stat", test_link, &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("stat", test_link, &test_output), IsOk())
       << "Failed to execute stat() inside enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -698,7 +719,7 @@ TEST_F(SyscallsTest, FStat) {
 
   ASSERT_EQ(close(fd), 0) << absl::StrCat("Failed to close ", test_dir);
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("fstat", test_dir, &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("fstat", test_dir, &test_output), IsOk())
       << "Failed to execute fstat() inside enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -741,7 +762,7 @@ TEST_F(SyscallsTest, FStatOnSymlink) {
 
   ASSERT_EQ(close(fd), 0) << absl::StrCat("Failed to close ", test_dir);
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("fstat", test_link, &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("fstat", test_link, &test_output), IsOk())
       << "Failed to execute fstat() inside enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -773,7 +794,7 @@ TEST_F(SyscallsTest, LStat) {
   ASSERT_EQ(lstat(test_dir.c_str(), &host_stat_buffer), 0)
       << absl::StrCat("lstat(", test_dir, ", ...) failed on host");
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("lstat", test_dir, &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("lstat", test_dir, &test_output), IsOk())
       << "Failed to execute lstat() inside enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -811,7 +832,7 @@ TEST_F(SyscallsTest, LStatOnSymlink) {
   ASSERT_EQ(lstat(test_link.c_str(), &host_stat_buffer), 0)
       << absl::StrCat("lstat(", test_link, ", ...) failed on host");
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("lstat", test_link, &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("lstat", test_link, &test_output), IsOk())
       << "Failed to execute lstat() inside enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -838,7 +859,8 @@ TEST_F(SyscallsTest, Uname) {
   struct utsname host_utsname_buf;
   ASSERT_EQ(uname(&host_utsname_buf), 0) << "Could not fetch host utsname";
 
-  ASSERT_TRUE(RunSyscallInsideEnclave("uname", /*file_path=*/"", &test_output))
+  ASSERT_THAT(RunSyscallInsideEnclave("uname", /*file_path=*/"", &test_output),
+              IsOk())
       << "Failed to execute uname() inside the enclave";
 
   ASSERT_TRUE(test_output.has_int_syscall_return())
@@ -860,37 +882,42 @@ TEST_F(SyscallsTest, Uname) {
 // Tests writev() by write a scattered array to a file inside enclave, and then
 // read from it to compare the content.
 TEST_F(SyscallsTest, Writev) {
-  EXPECT_TRUE(RunSyscallInsideEnclave("writev", FLAGS_test_tmpdir + "/writev",
-                                      nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("writev", FLAGS_test_tmpdir + "/writev", nullptr),
+      IsOk());
 }
 
 // Tests readv() by write a message to a file, and then read it to a scattered
 // array by readv, compare the results.
 TEST_F(SyscallsTest, Readv) {
-  EXPECT_TRUE(
-      RunSyscallInsideEnclave("readv", FLAGS_test_tmpdir + "/readv", nullptr));
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("readv", FLAGS_test_tmpdir + "/readv", nullptr),
+      IsOk());
 }
 
 // Tests getrlimit() and setrlimit() with RLIMIT_NOFILE by setting the limit and
 // getting it to compare the result.
 TEST_F(SyscallsTest, RlimitNoFile) {
-  EXPECT_TRUE(RunSyscallInsideEnclave("rlimit nofile",
-                                      FLAGS_test_tmpdir + "/rlimit", nullptr));
+  EXPECT_THAT(RunSyscallInsideEnclave("rlimit nofile",
+                                      FLAGS_test_tmpdir + "/rlimit", nullptr),
+              IsOk());
 }
 
 // Tests setrlimit() with RLIMIT_NOFILE by setting the limit to a low number,
 // and checking whether it fails to open more files than that limit to confirm
 // that the limit is used correctly.
 TEST_F(SyscallsTest, RlimitLowNoFile) {
-  EXPECT_TRUE(RunSyscallInsideEnclave("rlimit low nofile",
-                                      FLAGS_test_tmpdir + "/rlimit", nullptr));
+  EXPECT_THAT(RunSyscallInsideEnclave("rlimit low nofile",
+                                      FLAGS_test_tmpdir + "/rlimit", nullptr),
+              IsOk());
 }
 
 // Tests setrlimit() with RLIMIT_NOFILE by setting the limit to an invalid
 // value, and checking that the call fails and does not change the limit.
 TEST_F(SyscallsTest, RlimitInvalidNoFile) {
-  EXPECT_TRUE(RunSyscallInsideEnclave("rlimit invalid nofile",
-                                      FLAGS_test_tmpdir + "/rlimit", nullptr));
+  EXPECT_THAT(RunSyscallInsideEnclave("rlimit invalid nofile",
+                                      FLAGS_test_tmpdir + "/rlimit", nullptr),
+              IsOk());
 }
 
 // Tests chmod() by changing the mode of a file inside an enclave, and verifies
@@ -898,7 +925,7 @@ TEST_F(SyscallsTest, RlimitInvalidNoFile) {
 TEST_F(SyscallsTest, ChMod) {
   const std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/chmod");
   ASSERT_NE(open(test_file.c_str(), O_CREAT | O_RDWR, 0777), -1);
-  ASSERT_TRUE(RunSyscallInsideEnclave("chmod", test_file, nullptr));
+  ASSERT_THAT(RunSyscallInsideEnclave("chmod", test_file, nullptr), IsOk());
   struct stat stat_buffer;
   ASSERT_EQ(stat(test_file.c_str(), &stat_buffer), 0);
   EXPECT_EQ(stat_buffer.st_mode & 0777, 0644);
@@ -913,7 +940,7 @@ TEST_F(SyscallsTest, ChMod) {
 // the linked lists.
 TEST_F(SyscallsTest, GetIfAddrs) {
   SyscallsTestOutput test_output;
-  ASSERT_TRUE(RunSyscallInsideEnclave("getifaddrs", "", &test_output));
+  ASSERT_THAT(RunSyscallInsideEnclave("getifaddrs", "", &test_output), IsOk());
   ASSERT_EQ(test_output.int_syscall_return(), 0);
   ASSERT_TRUE(test_output.has_serialized_proto_return());
   struct ifaddrs *host_front = nullptr;
@@ -974,14 +1001,15 @@ TEST_F(SyscallsTest, GetIfAddrs) {
 // Tests truncate and ftruncate by truncating the file inside an enclave, and
 // read from it to ensure it's truncated to the correct size.
 TEST_F(SyscallsTest, Truncate) {
-  EXPECT_TRUE(RunSyscallInsideEnclave(
-      "truncate", FLAGS_test_tmpdir + "/truncate", nullptr));
+  EXPECT_THAT(RunSyscallInsideEnclave("truncate",
+                                      FLAGS_test_tmpdir + "/truncate", nullptr),
+              IsOk());
 }
 
 // Tests that mmap(MAP_ANONYMOUS) will return an initialized, block-aligned
 // region of memory.
 TEST_F(SyscallsTest, Mmap) {
-  EXPECT_TRUE(RunSyscallInsideEnclave("mmap", "", nullptr));
+  EXPECT_THAT(RunSyscallInsideEnclave("mmap", "", nullptr), IsOk());
 }
 
 }  // namespace
