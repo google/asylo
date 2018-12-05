@@ -468,8 +468,14 @@ export CXXFLAGS_FOR_TARGET="${CXXFLAGS}"
      --enable-languages=c,c++ \
      --enable-c99 \
      --enable-threads=posix &&
+   # gnu-user.opt defines -pthread as a valid flag.
    make configure-gcc &&
    sed -i 's^extra_opt_files=.*^& $(srcdir)/config/gnu-user.opt^' gcc/Makefile &&
+   # GCC hard-codes what math functions newlib provides, but has a few missing.
+   make configure-target-libstdc++-v3 &&
+   echo "#define HAVE_HYPOTF" >> x86_64-elf/libstdc++-v3/config.h &&
+   echo "#define HAVE_HYPOTL" >> x86_64-elf/libstdc++-v3/config.h &&
+   echo "#define HAVE_SQRTL" >> x86_64-elf/libstdc++-v3/config.h &&
    make -j"${JOBS}" && make install &&
    echo "installed compiler")
 
