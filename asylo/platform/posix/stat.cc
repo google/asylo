@@ -35,4 +35,8 @@ int chmod(const char *pathname, mode_t mode) {
   return IOManager::GetInstance().ChMod(pathname, mode);
 }
 
+int mkdir(const char *pathname, mode_t mode) {
+  return IOManager::GetInstance().Mkdir(pathname, mode);
+}
+
 }  // extern "C"
