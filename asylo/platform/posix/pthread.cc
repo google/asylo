@@ -342,7 +342,7 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
 
   while (ret == EBUSY) {
     lock_guard.Unlock();
-    enc_pause();
+    enc_untrusted_sched_yield();
     lock_guard.Lock();
 
     ret = TryLockFunc(rwlock);
@@ -481,7 +481,7 @@ int pthread_mutex_lock(pthread_mutex_t *mutex) {
       return ret;
     }
 
-    enc_pause();
+    enc_untrusted_sched_yield();
   }
 }
 
@@ -604,7 +604,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
   }
 
   while (true) {
-    enc_pause();
+    enc_untrusted_sched_yield();
 
     // If a deadline has been specified, check to see if it has passed.
     if (deadline != nullptr) {
