@@ -19,12 +19,12 @@
 #include <pthread.h>
 
 #include <cstdio>
-#include <mutex>
 #include <thread>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "absl/synchronization/mutex.h"
 
 namespace asylo {
 namespace {
@@ -69,10 +69,10 @@ void *detachable_function(void *arg) {
 }
 
 static volatile int cc11_count = 0;
-static std::mutex cc11_mutex;
+static absl::Mutex cc11_mutex;
 
 void cc11_increment_count() {
-  std::lock_guard<std::mutex> lock(cc11_mutex);
+  absl::MutexLock lock(&cc11_mutex);
   ++cc11_count;
 }
 
@@ -109,7 +109,7 @@ TEST(ThreadedTest, EnclaveThread) {
   std::thread t(cc11_increment_count);
   t.join();
 
-  std::lock_guard<std::mutex> lock(cc11_mutex);
+  absl::MutexLock lock(&cc11_mutex);
   if (cc11_count != 1) {
     printf("cc11_count == %i, wanted %i\n", once_count, 1);
   }
