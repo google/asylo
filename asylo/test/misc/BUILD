@@ -269,6 +269,7 @@ cc_enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],
