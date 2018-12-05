@@ -21,13 +21,13 @@
 
 #include <atomic>
 #include <chrono>
-#include <mutex>
 #include <thread>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/synchronization/mutex.h"
 
 namespace asylo {
 namespace {
@@ -75,7 +75,7 @@ class EventFdTest : public ::testing::Test {
 
   // Every thread will run this routine.
   void Work(int i, absl::flat_hash_set<int> *thread_indexes,
-            std::mutex *thread_indexes_mutex) {
+            absl::Mutex *thread_indexes_mutex) {
     // Wait on semaphore.
     SemaphoreWait();
     // Increment the number of current working threads (atomic).
@@ -85,9 +85,9 @@ class EventFdTest : public ::testing::Test {
     EXPECT_LE(num_current_working_threads_.load(), kCounterStartMultiThread);
     std::this_thread::sleep_for(std::chrono::milliseconds(kSleepDur));
     // Add the current thread idx to the set.
-    thread_indexes_mutex->lock();
+    thread_indexes_mutex->Lock();
     thread_indexes->insert(i);
-    thread_indexes_mutex->unlock();
+    thread_indexes_mutex->Unlock();
     // Decrement the number of current working threads (atomic).
     num_current_working_threads_--;
     // Signal semaphore.
@@ -101,7 +101,7 @@ class EventFdTest : public ::testing::Test {
 TEST_F(EventFdTest, SemaphoreMultipleThreads) {
   InitializeEventFd(true, kCounterStartMultiThread);
   absl::flat_hash_set<int> thread_indexes;
-  std::mutex thread_indexes_mutex;
+  absl::Mutex thread_indexes_mutex;
   std::vector<std::thread> workers;
   for (int i = 0; i < kNumWorkers; ++i) {
     workers.push_back(std::thread([this, i, &thread_indexes,
