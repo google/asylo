@@ -4789,6 +4789,21 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/configure.host ./newlib/configure.hos
    xc16x-*)
            syscall_dir=syscalls
          ;;
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h ./newlib/libc/include/malloc.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h
++++ ./newlib/libc/include/malloc.h
+@@ -50,6 +50,11 @@
+ extern _VOID _free_r _PARAMS ((struct _reent *, _PTR));
+ #endif
+ 
++#ifdef __ASYLO__
++extern _VOID set_malloc_hook _PARAMS((_PTR(*)(size_t, _PTR), _PTR));
++extern _VOID set_free_hook _PARAMS((_VOID(*)(_PTR, _PTR), _PTR));
++#endif  // __ASYLO__
++
+ extern _PTR realloc _PARAMS ((_PTR, size_t));
+ #ifdef __CYGWIN__
+ #undef _realloc_r
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/pthread.h ./newlib/libc/include/pthread.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/pthread.h
 +++ ./newlib/libc/include/pthread.h
@@ -4986,6 +5001,65 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/posix/opendir.c ./newlib/libc/po
  #ifdef HAVE_FCNTL
  	rc = fcntl(fd, F_SETFD, 1);
  #endif
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/malloc.c ./newlib/libc/stdlib/malloc.c
+--- ../newlib-2.5.0.20170922/newlib/libc/stdlib/malloc.c
++++ ./newlib/libc/stdlib/malloc.c
+@@ -208,10 +208,41 @@
+ 
+ #ifndef _REENT_ONLY
+ 
++#ifdef __ASYLO__
++static void* (*malloc_hook)(size_t, void*) = NULL;
++static void* malloc_pool = NULL;
++static void (*free_hook)(void*, void*) = NULL;
++static void* free_pool = NULL;
++
++void
++_DEFUN (set_malloc_hook, (custom_malloc, pool),
++        void* (*custom_malloc)(size_t, void*) _AND
++        void* pool)
++{
++  malloc_hook = custom_malloc;
++  malloc_pool = pool;
++}
++
++void
++_DEFUN (set_free_hook, (custom_free, pool),
++        void (*custom_free)(void*, void*) _AND
++        void *pool)
++{
++  free_hook = custom_free;
++  free_pool = pool;
++}
++#endif  // __ASYLO__
++
+ _PTR
+ _DEFUN (malloc, (nbytes),
+ 	size_t nbytes)		/* get a block */
+ {
++#ifdef __ASYLO__
++  if (malloc_hook)
++  {
++    return malloc_hook(nbytes, malloc_pool);
++  }
++#endif  // __ASYLO__
+   return _malloc_r (_REENT, nbytes);
+ }
+ 
+@@ -219,6 +250,13 @@
+ _DEFUN (free, (aptr),
+ 	_PTR aptr)
+ {
++#ifdef __ASYLO__
++  if (free_hook)
++  {
++    free_hook(aptr, free_pool);
++    return;
++  }
++#endif  // __ASYLO__
+   _free_r (_REENT, aptr);
+ }
+ 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/mprec.c ./newlib/libc/stdlib/mprec.c
 --- ../newlib-2.5.0.20170922/newlib/libc/stdlib/mprec.c
 +++ ./newlib/libc/stdlib/mprec.c
