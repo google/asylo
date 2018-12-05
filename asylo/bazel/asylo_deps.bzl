@@ -66,10 +66,10 @@ def asylo_testonly_deps():
     if "com_github_gflags_gflags" not in native.existing_rules():
         http_archive(
             name = "com_github_gflags_gflags",
-            # Release v2.2.1
-            urls = ["https://github.com/gflags/gflags/archive/v2.2.1.tar.gz"],
-            sha256 = "ae27cdbcd6a2f935baa78e4f21f675649271634c092b1be01469440495609d0e",
-            strip_prefix = "gflags-2.2.1",
+            # Release v2.2.2
+            urls = ["https://github.com/gflags/gflags/archive/v2.2.2.tar.gz"],
+            sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
+            strip_prefix = "gflags-2.2.2",
         )
 
 def asylo_deps():
