@@ -53,14 +53,13 @@ def asylo_testonly_deps():
 
     # GoogleTest/GoogleMock framework. Used by most unit-tests.
     if "com_google_googletest" not in native.existing_rules():
-        patch_repository(
+        http_archive(
             name = "com_google_googletest",
             urls = [
                 "https://github.com/google/googletest/archive/release-1.8.1.tar.gz",
             ],
             sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c",
             strip_prefix = "googletest-release-1.8.1",
-            patches = ["@com_google_asylo//asylo/distrib:googletest.patch"],
         )
 
     # gflags
@@ -81,13 +80,12 @@ def asylo_deps():
 
     # Boringssl
     if "boringssl" not in native.existing_rules():
-        patch_repository(
+        http_archive(
             name = "boringssl",
             # Non-release commit to master-with-bazel branch from March 8, 2018
             urls = [
                 "https://github.com/google/boringssl/archive/241dc59bb90f8c45ebc8473fc7599b861a93bfa6.tar.gz",
             ],
-            patches = ["@com_google_asylo//asylo/distrib:boringssl.patch"],
             sha256 = "379e5f0f29e1429b00b44b87b66776d123dd18410b457e0a18e4f0eeff4b94c9",
             strip_prefix = "boringssl-241dc59bb90f8c45ebc8473fc7599b861a93bfa6",
         )
@@ -124,12 +122,11 @@ def asylo_deps():
 
     # Protobuf
     if "com_google_protobuf" not in native.existing_rules():
-        patch_repository(
+        http_archive(
             name = "com_google_protobuf",
             strip_prefix = "protobuf-3.5.1",
             urls = ["https://github.com/google/protobuf/archive/v3.5.1.tar.gz"],
             sha256 = "826425182ee43990731217b917c5c3ea7190cfda141af4869e6d4ad9085a740f",
-            patches = ["@com_google_asylo//asylo/distrib:protobuf.patch"],
         )
 
     # gRPC
