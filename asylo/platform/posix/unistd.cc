@@ -187,7 +187,14 @@ pid_t setsid() { return enc_untrusted_setsid(); }
 
 // The functions below are prefixed with |enclave_|, as they are plumbed in from
 // newlib.
-int enclave_getpid() { return enc_untrusted_getpid(); }
+int enclave_getpid() {
+  int pid = enc_untrusted_getpid();
+  if (pid == 0) {
+    enc_untrusted_puts("FATAL ERROR: Host returned 0 from getpid()");
+    abort();
+  }
+  return pid;
+}
 
 int enclave_fstat(int fd, struct stat *st) {
   return IOManager::GetInstance().FStat(fd, st);
