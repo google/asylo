@@ -20,10 +20,10 @@
 
 #include <cstdio>
 #include <memory>
-#include <mutex>
 #include <thread>
 
 #include "absl/memory/memory.h"
+#include "absl/synchronization/mutex.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/status.h"
 
@@ -31,13 +31,13 @@ namespace asylo {
 namespace {
 
 static volatile int cc11_wait_count = 0;
-static std::mutex cc11_mutex;
+static absl::Mutex cc11_mutex;
 
 constexpr int stop_on_count = 4;  // Must be greater than TCS number.
 
 void cc11_increment_count_and_wait() {
   {
-    std::lock_guard<std::mutex> lock(cc11_mutex);
+    absl::MutexLock lock(&cc11_mutex);
     ++cc11_wait_count;
   }
   while (cc11_wait_count < stop_on_count) {
