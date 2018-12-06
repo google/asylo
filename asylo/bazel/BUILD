@@ -64,6 +64,7 @@ cc_library(
         ":test_shim_enclave_proto_cc",
         "//asylo/test/util:enclave_test_application",
         "//asylo/test/util:test_flags",
+        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_googletest//:gtest",
     ],
 )

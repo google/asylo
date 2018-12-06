@@ -12,7 +12,6 @@ _WARNING_FLAGS = [
     "-Wextra",
     "-Wformat-security",
     "-Wno-sign-compare",  # allow use of ints as loop variables
-    "-Wno-strict-aliasing",
     "-Wno-unused-function",  # allow unused static functions in headers
     # allow unused parameters (primarily occuring in template specializations or virtual methods)
     "-Wno-unused-parameter",

@@ -246,6 +246,8 @@ cc_test(
     enclave_test_name = "inet_aton_enclave_test",
     deps = [
         "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "@com_google_absl//absl/strings:str_format",
         "@com_google_googletest//:gtest",
     ],
 )
