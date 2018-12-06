@@ -458,7 +458,7 @@ int ToBridgeSysLogPriority(int syslog_priority) {
   int syslog_level = syslog_priority & 0x07;
   int syslog_facility = syslog_priority & ~0x07;
   return ToBridgeSysLogLevel(syslog_level) |
-         ToBridgeSysLogLevel(syslog_facility);
+         ToBridgeSysLogFacility(syslog_facility);
 }
 
 int FromBridgeFileFlags(int bridge_file_flag) {
