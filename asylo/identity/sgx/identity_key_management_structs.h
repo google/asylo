@@ -37,11 +37,17 @@
 // capitalization/hyphenation rules are applied to those words. For example, the
 // Intel SDM defines a structure called REPORTDATA. This file defines this
 // structure as Reportdata. The expected size of this structure is defined by
-// the constant kReportdataSize.
+// the constant kReportdataSize. Note that all fixed-sized bytes fields are
+// represented using the UnsafeBytes template, as none of the fields are
+// security-sensitive (they do not require memory cleansing).
 //
-// Readers are referred to Intel SDM vol 3 for the explanation of these
-// structures, their fields, and their interactions with x86-64 instruction set
-// in general, and SGX instruction set in particular.
+// Readers are referred to Intel SDM vol 3 for the explanation of the
+// architectural structures, their fields, and their interactions with x86-64
+// instruction set in general, and SGX instruction set in particular.
+//
+// This file also defines several SGX structures that are non-architectural.
+// These structures are just providing for convenience of grouping related
+// fields together.
 
 namespace asylo {
 namespace sgx {
@@ -61,49 +67,94 @@ constexpr int kSgxMacSize = AES_BLOCK_SIZE;
 // is used by the CPU to specialize/access-control various SGX keys.
 constexpr int kCpusvnSize = 16;
 
-// The following constants are specific to the SIGSTRUCT, and are taken
-// from the Intel SDM.
+// The following constants are specific to the SIGSTRUCT architectural
+// structure, and are taken from the Intel SDM.
 
 // Size of the two SIGSTRUCT headers (defined below).
 constexpr int kSigstructHeaderSize = 16;
 
-// DATE structure defines the format of the "date" field embedded in the
-// SIGSTRUCT (defined below)
+// Date defines the format of the "date" field embedded in a SIGSTRUCT.
+//
+// Note that this is not an architectural structure.
 struct Date {
   uint16_t year;
   uint8_t month;
   uint8_t day;
 } ABSL_ATTRIBUTE_PACKED;
 
-static_assert(sizeof(Date) == 4, "Size of struct Date is incorrect");
+static_assert(sizeof(Date) == 4, "Size of Date struct is incorrect");
 
-// SIGSTRUCT defines the enclave signature structure, which is provided
-// as an input to the ENCLS[EINIT] instruction.
+// The set of fields that define the header of a SIGSTRUCT. This is a subset of
+// the fields in SIGSTRUCT that are signed. See SigstructSigningData for the
+// full set of fields that are signed.
 //
-// The structure is stored and handled by the untrusted part of the program
-// and consequently, none of the fields in this structure are
-// security-sensitive. Consequently, all byte-array-type members of this
-// structure are instantiated using the UnsafeBytes template.
-struct Sigstruct {
-  UnsafeBytes<kSigstructHeaderSize> header;
+// Note that this is not an architectural structure.
+struct SigstructHeader {
+  UnsafeBytes<kSigstructHeaderSize> header1;
   uint32_t vendor;
   Date date;
   UnsafeBytes<kSigstructHeaderSize> header2;
   uint32_t swdefined;
   UnsafeBytes<84> reserved1;  // Field size taken from the Intel SDM.
-  UnsafeBytes<kRsa3072ModulusSize> modulus;
-  uint32_t exponent;
-  UnsafeBytes<kRsa3072ModulusSize> signature;
+} ABSL_ATTRIBUTE_PACKED;
+
+static_assert(sizeof(SigstructHeader) == 128,
+              "Size of struct SigstructHeader is incorrect");
+
+// The set of fields that define the body of a SIGSTRUCT. This is a subset of
+// the fields in SIGSTRUCT that are signed. See SigstructSigningData for the
+// full set of fields that are signed.
+//
+// Note that this is not an architectural structure.
+struct SigstructBody {
   uint32_t miscselect;
   uint32_t miscmask;
-  UnsafeBytes<20> reserved2;  // Field size taken from the Intel SDM.
+  UnsafeBytes<20> reserved1;  // Field size taken from the Intel SDM.
   SecsAttributeSet attributes;
   SecsAttributeSet attributemask;
   UnsafeBytes<SHA256_DIGEST_LENGTH> enclavehash;
-  UnsafeBytes<32> reserved3;  // Field size taken from the Intel SDM.
+  UnsafeBytes<32> reserved2;  // Field size taken from the Intel SDM.
   uint16_t isvprodid;
   uint16_t isvsvn;
-  UnsafeBytes<12> reserved4;  // Field size taken from the Intel SDM.
+} ABSL_ATTRIBUTE_PACKED;
+
+static_assert(sizeof(SigstructBody) == 128,
+              "Size of struct SigstructBody is incorrect");
+
+// The set of fields that comprise the RSA-3072 public key stored in SIGSTRUCT.
+// The exponent field must always be 3.
+//
+// Note that this is not an architectural structure.
+struct Rsa3072PublicKey {
+  UnsafeBytes<kRsa3072ModulusSize> modulus;
+  uint32_t exponent;
+} ABSL_ATTRIBUTE_PACKED;
+
+static_assert(sizeof(Rsa3072PublicKey) == 388,
+              "Size of struct Rsa3072PublicKey is incorrect");
+
+// The subset of fields in SIGSTRUCT that are signed. A signature over this
+// structure is placed in the signature field of the SIGSTRUCT.
+//
+// Note that although this structure is architectural, it does not require
+// alignment because it is not used as an input to any SGX instruction.
+struct SigstructSigningData {
+  SigstructHeader header;
+  SigstructBody body;
+} ABSL_ATTRIBUTE_PACKED;
+
+static_assert(sizeof(SigstructSigningData) == 256,
+              "Size of struct SigstructSigningData is incorrect");
+
+// Defines the SIGSTRUCT structure, which represents the enclave signature
+// structure. A SIGSTRUCT is provided as an input to the ENCLS[EINIT]
+// instruction.
+struct Sigstruct {
+  SigstructHeader header;
+  Rsa3072PublicKey public_key;
+  UnsafeBytes<kRsa3072ModulusSize> signature;
+  SigstructBody body;
+  UnsafeBytes<12> reserved1;  // Field size taken from the Intel SDM.
   UnsafeBytes<kRsa3072ModulusSize> q1;
   UnsafeBytes<kRsa3072ModulusSize> q2;
 } ABSL_ATTRIBUTE_PACKED;
@@ -115,10 +166,10 @@ static_assert(sizeof(Sigstruct) == 1808,
 // to be aligned on a 4096-byte boundary.
 using AlignedSigstructPtr = AlignedObjectPtr<Sigstruct, 4096>;
 
-// KEYNAME defines the x86-64 architectural names for the various keys
-// that are potentially available to an enclave. The base type of this enum
-// class is uint16_t to make it compatible with the KEREQUEST struct defined
-// below.
+// Defines the KEYREQUEST KeyNames enumeration, which is the set of x86-64
+// architectural names for the various keys that are available to be requested
+// via a KEYREQUEST. The base type of this enum class is uint16_t to make it
+// compatible with the KeyRequest structure defined below.
 enum class KeyrequestKeyname : uint16_t {
   EINITTOKEN_KEY = 0,
   PROVISION_KEY = 1,
@@ -139,14 +190,9 @@ constexpr int kKeyrequestKeyidSize = 32;
 constexpr uint16_t kKeypolicyMrenclaveBitMask = 0x1;
 constexpr uint16_t kKeypolicyMrsignerBitMask = 0x2;
 
-// KEYREQUEST structure is used by an enclave to request various hardware
-// keys from the CPU, and is provided as an input to the ENCLU[EGETKEY]
-// instruction.
-//
-// The KEYREQUEST structure itself does not contain any security-sensitive or
-// secret values (although the key generated by the ENCLU[EGETKEY] instruction
-// is typically security-sensitive). Consequently, all byte-array-type members
-// of this structure are instantiated using the UnsafeBytes template.
+// Defines the KEYREQUEST architectural structure, which is used by an enclave
+// to request various hardware keys from the CPU. A KEYREQUEST is provided as an
+// input to the ENCLU[EGETKEY] instruction.
 struct Keyrequest {
   KeyrequestKeyname keyname;
   uint16_t keypolicy;
@@ -166,13 +212,10 @@ static_assert(sizeof(Keyrequest) == 512,
 // to be aligned on a 512-byte boundary.
 using AlignedKeyrequestPtr = AlignedObjectPtr<Keyrequest, 512>;
 
-// TARGETINFO structure is used by software to define the identity of the
-// enclave to which an enclave identity report should be targeted. This
-// structure is provided as an input to the ENCLU[EREPORT] instruction.
-//
-// The TARGETINFO structure does not contain any security-sensitive/secret
-// values. Consequently, all byte-array-type members of this structure are
-// instantiated using the UnsafeBytes template.
+// Defines the TARGETINFO architectural structure, which is used by software to
+// define the identity of the enclave to which an enclave identity report should
+// be targeted. A TARGETINFO is one of the inputs that is provided to the
+// ENCLU[EREPORT] instruction.
 struct Targetinfo {
   UnsafeBytes<SHA256_DIGEST_LENGTH> measurement;
   SecsAttributeSet attributes;
@@ -191,11 +234,10 @@ using AlignedTargetinfoPtr = AlignedObjectPtr<Targetinfo, 512>;
 // Size of REPORTDATA field in the REPORT and REPORTDATA structs defined below.
 constexpr int kReportdataSize = 64;
 
-// REPORTDATA structure holds kReportdataSize bytes of unstructured data.
-// This structure is provided as input to the EREPORT instruction. The EREPORT
-// instruction includes the unstructured data from this input in its output
-// structure (REPORT). The contents of this structure are not secret, and
-// consequently, the data-safety policy is set to DataSafety::UNSAFE.
+// Defines the REPORTDATA architectural structure, which holds kReportdataSize
+// bytes of unstructured data. A REPORTDATA is one of the inputs that is
+// provided to the EREPORT instruction. The EREPORT instruction includes the
+// unstructured data from this input in its output structure (REPORT).
 struct Reportdata {
   UnsafeBytes<kReportdataSize> data;
 } ABSL_ATTRIBUTE_PACKED;
@@ -213,12 +255,9 @@ constexpr int kReportKeyidSize = 32;
 static_assert(kReportKeyidSize == kKeyrequestKeyidSize,
               "KEYID size for REPORT and KEYREQUEST structs is not the same");
 
-// REPORT structure acts as a locally-verifiable assertion of an enclave's
-// identity, and is an output from the ENCLU[EREPORT] instruction.
-//
-// The REPORT structure does not contain any security-sensitive/secret values.
-// Consequently, all byte-array-type members of this structure are instantiated
-// using the UnsafeBytes template.
+// Defines the REPORT architectural structure, which acts as a
+// locally-verifiable assertion of an enclave's identity. REPORT is an output
+// from the ENCLU[EREPORT] instruction.
 struct Report {
   UnsafeBytes<kCpusvnSize> cpusvn;
   uint32_t miscselect;
