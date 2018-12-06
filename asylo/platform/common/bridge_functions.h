@@ -125,6 +125,14 @@ int FromBridgeAddressInfoFlags(int bridge_ai_flag);
 // flags are provided.
 int ToBridgeAddressInfoFlags(int ai_flag);
 
+// Converts |bridge_sock_type| from a bridge socket type value. Returns -1 if
+// |bridge_sock_type| is not recognized.
+int FromBridgeSocketType(int bridge_sock_type);
+
+// Converts |sock_type| to a bridge socket type value. Returns -1 if |sock_type|
+// is not recognized.
+int ToBridgeSocketType(int sock_type);
+
 // Converts |bridge_syslog_option| to a runtime syslog option. Returns 0 if
 // |bridge_syslog_option| does not contain any supported options.
 int FromBridgeSysLogOption(int bridge_syslog_option);
@@ -175,13 +183,21 @@ struct stat *FromBridgeStat(const struct bridge_stat *bridge_statbuf,
 struct bridge_stat *ToBridgeStat(const struct stat *statbuf,
                                  struct bridge_stat *bridge_statbuf);
 
-// Converts |af_family| to a bridge af family. If |af_family| is not supported,
-// we return a special value (BRIDGE_AF_UNSUPPORTED) to indicate this.
+// Converts |af_family| to a bridge af family. Returns BRIDGE_AF_UNSUPPORTED if
+// |af_family| is not supported.
 AfFamily ToBridgeAfFamily(int af_family);
 
-// Converts |bridge_af_family| to a host af family. If this value is not
-// supported, we return -1.
-int FromBridgeAfFamily(AfFamily bridge_af_family);
+// Converts |bridge_af_family| to a host af family. Returns -1 if
+// |bridge_af_family| is not supported.
+int FromBridgeAfFamily(int bridge_af_family);
+
+// Converts |sock_type| to a bridge socket type. Returns BRIDGE_SOCK_UNSUPPORTED
+// if |sock_type| is not supported.
+int ToBridgeSocketType(int sock_type);
+
+// Converts |bridge_sock_type| to a socket type. Returns -1 if
+// |bridge_sock_type| is not supported.
+int FromBridgeSocketType(int bridge_sock_type);
 
 // Copies |bridge_addr| to a runtime sockaddr up to sizeof(struct
 // bridge_sockaddr). Returns nullptr if unsuccessful.

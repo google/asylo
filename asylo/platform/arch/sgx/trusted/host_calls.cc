@@ -400,6 +400,18 @@ ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt) {
 //             Sockets              //
 //////////////////////////////////////
 
+int enc_untrusted_socket(int domain, int type, int protocol) {
+  int ret;
+  // A protocol number is from a standard set of numbers and thus can be passed
+  // without translation. See the list of protocol numbers and which protocol
+  // they denote here
+  // https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
+  CHECK_OCALL(ocall_enc_untrusted_socket(&ret, asylo::ToBridgeAfFamily(domain),
+                                         asylo::ToBridgeSocketType(type),
+                                         protocol));
+  return ret;
+}
+
 int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
                          socklen_t *addrlen) {
   int ret;

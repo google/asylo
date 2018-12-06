@@ -208,6 +208,11 @@ bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(int fd, void *buf,
 //             Sockets              //
 //////////////////////////////////////
 
+int ocall_enc_untrusted_socket(int domain, int type, int protocol) {
+  return socket(asylo::FromBridgeAfFamily(domain),
+                asylo::FromBridgeSocketType(type), protocol);
+}
+
 int ocall_enc_untrusted_connect(int sockfd,
                                 const struct bridge_sockaddr *addr) {
   struct bridge_sockaddr tmp;

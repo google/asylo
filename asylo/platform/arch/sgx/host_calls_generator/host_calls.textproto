@@ -382,23 +382,6 @@ host_calls {
   }
 }
 
-host_calls {
-  name: "socket"
-  return_type: "int"
-  parameters {
-    name: "domain"
-    type: "int"
-  }
-  parameters {
-    name: "type"
-    type: "int"
-  }
-  parameters {
-    name: "protocol"
-    type: "int"
-  }
-}
-
 ######################################
 ##            sys/stat.h            ##
 ######################################

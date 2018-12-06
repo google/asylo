@@ -123,6 +123,8 @@ enclave {
     //           Sockets                //
     //////////////////////////////////////
 
+    int ocall_enc_untrusted_socket(int domain, int type, int protocol)
+                                   propagate_errno;
     int ocall_enc_untrusted_connect(int sockfd,
                                     [in] const struct bridge_sockaddr *addr)
                                     propagate_errno;

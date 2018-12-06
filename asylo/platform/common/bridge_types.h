@@ -151,6 +151,22 @@ enum AddrInfoFlags {
   BRIDGE_AI_NUMERICHOST = 0x0004,
 };
 
+// Possible values for socket(2)'s type argument, and ai_socktype in the
+// AddressInfo struct.
+enum BridgeSocketType {
+  BRIDGE_SOCK_UNSUPPORTED = 0,
+  BRIDGE_SOCK_STREAM = 1,
+  BRIDGE_SOCK_DGRAM = 2,
+  BRIDGE_SOCK_SEQPACKET = 3,
+  BRIDGE_SOCK_RAW = 4,
+  BRIDGE_SOCK_RDM = 5,
+  BRIDGE_SOCK_PACKET = 6,
+  // The following two values may be bitwise-ORd with any of the above values.
+  BRIDGE_SOCK_O_NONBLOCK = 0x0100,
+  BRIDGE_SOCK_O_CLOEXEC = 0x0200,
+  BRIDGE_SOCK_TYPE_FLAGS = BRIDGE_SOCK_O_NONBLOCK | BRIDGE_SOCK_O_CLOEXEC,
+};
+
 // All of the file operation flags supported inside the enclave.
 enum FileStatusFlags {
   RDONLY = 0x00,
@@ -240,9 +256,20 @@ enum SocketOptionNames {
 };
 
 enum AfFamily {
+  BRIDGE_AF_UNSUPPORTED = 0,
   BRIDGE_AF_INET = 1,
   BRIDGE_AF_INET6 = 2,
-  BRIDGE_AF_UNSUPPORTED = 3,
+  BRIDGE_AF_UNSPEC = 3,
+  BRIDGE_AF_UNIX = 4,
+  BRIDGE_AF_LOCAL = 5,
+  BRIDGE_AF_IPX = 6,
+  BRIDGE_AF_NETLINK = 7,
+  BRIDGE_AF_X25 = 8,
+  BRIDGE_AF_AX25 = 9,
+  BRIDGE_AF_ATMPVC = 10,
+  BRIDGE_AF_APPLETALK = 11,
+  BRIDGE_AF_PACKET = 12,
+  BRIDGE_AF_ALG = 13,
 };
 
 struct bridge_in_addr {
