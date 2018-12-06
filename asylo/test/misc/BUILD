@@ -293,7 +293,6 @@ cc_enclave_test(
     name = "sem_test",
     srcs = ["sem_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["noregression"],
     deps = [
         "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
