@@ -28,6 +28,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/common/memory.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/cleansing_types.h"
@@ -46,33 +47,25 @@ const char *kSecureTestText =
 
 class ReadWriteTest : public ::testing::Test {
  protected:
-  // Removes the test file if it exists already, and generates secure key.
-  Status PrepareFileAndKey() {
-    test_file_ = absl::StrCat(FLAGS_test_tmpdir, "/test.out");
-
-    key_.resize(kKeyLength);
-    if (1 != RAND_bytes(key_.data(), key_.size())) {
-      return Status(error::GoogleError::INTERNAL, "RAND_bytes() failed");
-    }
-
-    // Note: this step should not be required, but the observation is that
-    // occasionally the test is executed on the same (virtual) machine.
-    LOG(INFO) << "Cleaning up test file if present, test_file_ = "
-              << test_file_;
-    remove(test_file_.c_str());
-
-    return Status::OkStatus();
+  void SetUp() override {
+    // Assign random file name, to avoid potential conflict with other runs
+    // on the same machine, current or prior.
+    test_file_.reset(tempnam(FLAGS_test_tmpdir.c_str(), "RWT"));
   }
 
-  std::string test_file_;
-  CleansingVector<uint8_t> key_;
+  void TearDown() override {
+    if (test_file_) {
+      remove(test_file_.get());
+    }
+  }
+
+  asylo::MallocUniquePtr<char> test_file_;
 };
 
 TEST_F(ReadWriteTest, FileDescriptorOrderingTest) {
-  EXPECT_THAT(PrepareFileAndKey(), IsOk());
-  int fd1 = open(test_file_.c_str(), O_CREAT | O_RDWR, 0644);
-  int fd2 = open(test_file_.c_str(), O_CREAT | O_RDWR, 0644);
-  int fd3 = open(test_file_.c_str(), O_CREAT | O_RDWR, 0644);
+  int fd1 = open(test_file_.get(), O_CREAT | O_RDWR, 0644);
+  int fd2 = open(test_file_.get(), O_CREAT | O_RDWR, 0644);
+  int fd3 = open(test_file_.get(), O_CREAT | O_RDWR, 0644);
 
   // Check that file descriptors are increasing by one.
   EXPECT_EQ(fd2, fd1 + 1);
@@ -82,15 +75,14 @@ TEST_F(ReadWriteTest, FileDescriptorOrderingTest) {
   close(fd1);
   close(fd2);
   close(fd3);
-  EXPECT_EQ(open(test_file_.c_str(), O_CREAT | O_RDWR, 0644), fd1);
-  EXPECT_EQ(open(test_file_.c_str(), O_CREAT | O_RDWR, 0644), fd2);
-  EXPECT_EQ(open(test_file_.c_str(), O_CREAT | O_RDWR, 0644), fd3);
+  EXPECT_EQ(open(test_file_.get(), O_CREAT | O_RDWR, 0644), fd1);
+  EXPECT_EQ(open(test_file_.get(), O_CREAT | O_RDWR, 0644), fd2);
+  EXPECT_EQ(open(test_file_.get(), O_CREAT | O_RDWR, 0644), fd3);
 }
 
 TEST_F(ReadWriteTest, ReadWriteUntrustedTest) {
-  EXPECT_THAT(PrepareFileAndKey(), IsOk());
   // Check that we can open a file for writing.
-  int fd = open(test_file_.c_str(), O_CREAT | O_RDWR, 0644);
+  int fd = open(test_file_.get(), O_CREAT | O_RDWR, 0644);
   ASSERT_GE(fd, 0);
 
   // Check that writing to the file succeeds.
@@ -101,7 +93,7 @@ TEST_F(ReadWriteTest, ReadWriteUntrustedTest) {
   EXPECT_EQ(close(fd), 0);
 
   // Check that we can reopen the file for reading.
-  fd = open(test_file_.c_str(), O_RDONLY);
+  fd = open(test_file_.get(), O_RDONLY);
   ASSERT_GE(fd, 0);
 
   // Check that we can read back what we wrote.
@@ -129,13 +121,18 @@ TEST_F(ReadWriteTest, ReadWriteUntrustedTest) {
 }
 
 TEST_F(ReadWriteTest, ReadWriteSecureTest) {
-  ASSERT_THAT(PrepareFileAndKey(), IsOk());
+  // Generate secure key.
+  CleansingVector<uint8_t> secure_key;
+  secure_key.resize(kKeyLength);
+  ASSERT_EQ(RAND_bytes(secure_key.data(), secure_key.size()), 1)
+      << "RAND_bytes() failed";
+
   struct key_info ioctl_param;
-  ioctl_param.length = key_.size();
-  ioctl_param.data = key_.data();
+  ioctl_param.length = secure_key.size();
+  ioctl_param.data = secure_key.data();
 
   // Check that we can open a file for writing.
-  int fd = open(test_file_.c_str(), O_CREAT | O_RDWR | O_SECURE, 0644);
+  int fd = open(test_file_.get(), O_CREAT | O_RDWR | O_SECURE, 0644);
   ASSERT_GE(fd, 0);
 
   EXPECT_EQ(ioctl(fd, ENCLAVE_STORAGE_SET_KEY, &ioctl_param), 0);
@@ -148,7 +145,7 @@ TEST_F(ReadWriteTest, ReadWriteSecureTest) {
   EXPECT_EQ(close(fd), 0);
 
   // Check that we can reopen the file for reading.
-  fd = open(test_file_.c_str(), O_RDONLY | O_SECURE);
+  fd = open(test_file_.get(), O_RDONLY | O_SECURE);
   ASSERT_GE(fd, 0);
 
   EXPECT_EQ(ioctl(fd, ENCLAVE_STORAGE_SET_KEY, &ioctl_param), 0);

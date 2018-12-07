@@ -168,30 +168,34 @@ class AeadHandler {
   void operator=(AeadHandler const&) = delete;
 
   // Loads and validates integrity metadata, returns false on failure.
-  bool Deserialize(FileControl* file_ctrl);
+  bool Deserialize(FileControl* file_ctrl)
+      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
 
   // Retrieves logical cursor offset associated with a file descriptor |fd|.
   // Returns false on failure.
   bool RetrieveLogicalOffset(int fd, off_t* logical_offset) const;
 
   // Updates digest of the file data in the secure file header.
-  bool UpdateDigest(FileControl* file_ctrl, const GcmCryptor& cryptor) const;
+  bool UpdateDigest(FileControl* file_ctrl, const GcmCryptor& cryptor) const
+      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
 
   // Returns an instance of GcmCryptor associated with a file, or nullptr if was
   // not able to retrieve. The caller does not own the instance.
-  GcmCryptor* GetGcmCryptor(const FileControl& file_ctrl) const;
+  GcmCryptor* GetGcmCryptor(const FileControl& file_ctrl) const
+      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Similar to DecryptAndVerify, but is called by internal implementation, and
   // as such does not take a file lock. The cursor associated with the file
   // descriptor |fd| is expected to be at the position of |logical_offset|.
   ssize_t DecryptAndVerifyInternal(int fd, void* buf, size_t count,
                                    const FileControl& file_ctrl,
-                                   off_t logical_offset) const;
+                                   off_t logical_offset) const
+      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Reads a single full block of a file at a specified logical offset. Returns
   // false on failure.
   bool ReadFullBlock(const FileControl& file_ctrl, off_t logical_offset,
-                     Block* block) const;
+                     Block* block) const EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Map of file (data set) controls for opened files keyed on int identity of
   // files.
@@ -199,7 +203,8 @@ class AeadHandler {
 
   // Map of file (data set) controls for opened files keyed on string paths of
   // files.
-  absl::flat_hash_map<std::string, std::shared_ptr<FileControl>> opened_files_;
+  absl::flat_hash_map<std::string, std::shared_ptr<FileControl>> opened_files_
+      GUARDED_BY(mu_);
 
   // An instance that performs operations on untrusted file offset.
   std::unique_ptr<OffsetTranslator> offset_translator_;

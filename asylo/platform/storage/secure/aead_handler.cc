@@ -24,6 +24,7 @@
 #include <fcntl.h>
 
 #include <iomanip>
+#include <memory>
 
 #include "absl/strings/escaping.h"
 #include "absl/synchronization/mutex.h"
@@ -149,6 +150,7 @@ bool AeadHandler::Deserialize(FileControl* file_ctrl) {
     errno = EINVAL;
     return false;
   }
+  file_ctrl->mu.AssertHeld();
 
   const GcmCryptor* cryptor = GetGcmCryptor(*file_ctrl);
   if (!cryptor) {
@@ -305,6 +307,7 @@ bool AeadHandler::RetrieveLogicalOffset(int fd, off_t* logical_offset) const {
 }
 
 GcmCryptor* AeadHandler::GetGcmCryptor(const FileControl& file_ctrl) const {
+  file_ctrl.mu.AssertHeld();
   if (!file_ctrl.master_key) {
     LOG(ERROR) << "Master key has not been set, path = " << file_ctrl.path;
     return nullptr;
@@ -330,8 +333,7 @@ ssize_t AeadHandler::DecryptAndVerify(int fd, void* buf, size_t count) {
     return -1;
   }
 
-  FileControl* file_ctrl;
-  std::unique_ptr<absl::MutexLock> file_lock;
+  std::shared_ptr<FileControl> file_ctrl;
   {
     absl::MutexLock global_lock(&mu_);
 
@@ -342,16 +344,17 @@ ssize_t AeadHandler::DecryptAndVerify(int fd, void* buf, size_t count) {
       return -1;
     }
 
-    file_ctrl = entry->second.get();
-    file_lock = absl::make_unique<absl::MutexLock>(&file_ctrl->mu);
+    file_ctrl = entry->second;
   }
 
+  absl::MutexLock lock(&file_ctrl->mu);
   return DecryptAndVerifyInternal(fd, buf, count, *file_ctrl, logical_offset);
 }
 
 ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void* buf, size_t count,
                                               const FileControl& file_ctrl,
                                               off_t logical_offset) const {
+  file_ctrl.mu.AssertHeld();
   if (count == 0) {
     return 0;
   }
@@ -539,6 +542,7 @@ bool AeadHandler::UpdateDigest(FileControl* file_ctrl,
     errno = EINVAL;
     return false;
   }
+  file_ctrl->mu.AssertHeld();
 
   int fd = enc_untrusted_open(file_ctrl->path.c_str(), O_WRONLY);
   if (fd == -1) {
@@ -590,6 +594,7 @@ bool AeadHandler::UpdateDigest(FileControl* file_ctrl,
 
 bool AeadHandler::ReadFullBlock(const FileControl& file_ctrl,
                                 off_t logical_offset, Block* block) const {
+  file_ctrl.mu.AssertHeld();
   if (logical_offset < 0 || logical_offset % kBlockLength != 0) {
     errno = EINVAL;
     return false;
@@ -635,8 +640,7 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
     return -1;
   }
 
-  FileControl* file_ctrl;
-  std::unique_ptr<absl::MutexLock> file_lock;
+  std::shared_ptr<FileControl> file_ctrl;
   {
     absl::MutexLock global_lock(&mu_);
 
@@ -647,13 +651,14 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
       return -1;
     }
 
-    file_ctrl = entry->second.get();
-    file_lock = absl::make_unique<absl::MutexLock>(&file_ctrl->mu);
+    file_ctrl = entry->second;
   }
 
   if (count == 0) {
     return 0;
   }
+
+  absl::MutexLock lock(&file_ctrl->mu);
 
   // Determine data breakdown into logical blocks.
   size_t first_partial_block_bytes_count;
@@ -839,7 +844,7 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
 
   file_ctrl->logical_size = logical_offset + count;
 
-  if (!UpdateDigest(file_ctrl, *cryptor)) {
+  if (!UpdateDigest(file_ctrl.get(), *cryptor)) {
     return -1;
   }
 
@@ -863,17 +868,15 @@ bool AeadHandler::FinalizeFile(int fd) {
     return false;
   }
 
-  FileControl* file_ctrl = entry->second.get();
-  {
-    // Wait until the file is not operated on - once that is the case, it will
-    // remain the case throughout this function, as guaranteed by global_lock.
-    absl::MutexLock file_lock(&file_ctrl->mu);
-  }
+  // Do not need to wait until the file is no longer operated on - shared_ptr
+  // taken by the operator will keep file_ctrl alive and allow it to take and
+  // release the lock on its own schedule. Removal from the maps here will not
+  // impact that ability.
 
   VLOG(2) << "Finalizing secure file, fd = " << fd
-          << ", pathname = " << file_ctrl->path;
-  opened_files_.erase(file_ctrl->path);
-  fmap_.erase(fd);
+          << ", pathname = " << entry->second->path;
+  opened_files_.erase(entry->second->path);
+  fmap_.erase(entry);
 
   return true;
 }
@@ -890,8 +893,7 @@ int AeadHandler::SetMasterKey(int fd, const uint8_t* key_data,
     return -1;
   }
 
-  FileControl* file_ctrl;
-  std::unique_ptr<absl::MutexLock> file_lock;
+  std::shared_ptr<FileControl> file_ctrl;
   {
     absl::MutexLock global_lock(&mu_);
 
@@ -902,9 +904,10 @@ int AeadHandler::SetMasterKey(int fd, const uint8_t* key_data,
       return -1;
     }
 
-    file_ctrl = entry->second.get();
-    file_lock = absl::make_unique<absl::MutexLock>(&file_ctrl->mu);
+    file_ctrl = entry->second;
   }
+
+  absl::MutexLock lock(&file_ctrl->mu);
 
   if (file_ctrl->is_deserialized) {
     if (memcmp(file_ctrl->master_key->data(), key_data, kKeyLength) != 0) {
@@ -918,7 +921,7 @@ int AeadHandler::SetMasterKey(int fd, const uint8_t* key_data,
 
   file_ctrl->master_key =
       absl::make_unique<GcmCryptorKey>(key_data, key_length);
-  if (!Deserialize(file_ctrl)) {
+  if (!Deserialize(file_ctrl.get())) {
     LOG(ERROR) << "Failed to deserialize integrity metadata for file, path="
                << file_ctrl->path;
     return -1;

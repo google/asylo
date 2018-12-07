@@ -89,9 +89,9 @@ cc_library(
 # Test reading and writing to a file from inside an enclave.
 cc_enclave_test(
     name = "read_write_test",
+    size = "small",
     srcs = ["read_write_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["noregression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
