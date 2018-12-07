@@ -16,6 +16,10 @@
 
 licenses(["notice"])  # Apache v2.0
 
+load(
+    "//asylo/bazel:asylo.bzl",
+    cc_test = "cc_test_and_cc_enclave_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Asylo Crypto library utilities.
