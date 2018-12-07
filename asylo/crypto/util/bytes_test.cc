@@ -590,6 +590,13 @@ TYPED_TEST(TypedBytesTest, PrintTo) {
 // Untyped tests         //
 ///////////////////////////
 
+TEST(BytesTest, UnsafeBytesIsTrivial) {
+  EXPECT_TRUE(std::is_trivially_default_constructible<UnsafeBytes<1>>::value);
+  EXPECT_TRUE(std::is_trivially_destructible<UnsafeBytes<1>>::value);
+  EXPECT_TRUE(std::is_trivially_copy_constructible<UnsafeBytes<1>>::value);
+  EXPECT_TRUE(std::is_trivially_copyable<UnsafeBytes<1>>::value);
+  EXPECT_TRUE(std::is_trivial<UnsafeBytes<1>>::value);
+}
 
 // Make sure that objects that have different sizes are not considered equal by
 // the equality operator, even when the first N bytes in the two objects match

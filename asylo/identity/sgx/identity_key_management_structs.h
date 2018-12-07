@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 #define ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 
+#include <type_traits>
+
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -280,6 +282,25 @@ static_assert(sizeof(Report) == 432, "Size of struct Report is incorrect");
 // Aligned REPORT structure. SGX architecture requires this structure
 // to be aligned on a 512-byte boundary.
 using AlignedReportPtr = AlignedObjectPtr<Report, 512>;
+
+static_assert(std::is_trivial<Date>::value, "Date is not a trivial type");
+static_assert(std::is_trivial<SigstructHeader>::value,
+              "SigstructHeader is not a trivial type");
+static_assert(std::is_trivial<SigstructBody>::value,
+              "SigstructBody is not a trivial type");
+static_assert(std::is_trivial<Rsa3072PublicKey>::value,
+              "Rsa3072PublicKey is not a trivial type");
+static_assert(std::is_trivial<SigstructSigningData>::value,
+              "SigstructSigningData is not a trivial type");
+static_assert(std::is_trivial<Sigstruct>::value,
+              "Sigstruct is not a trivial type");
+static_assert(std::is_trivial<Keyrequest>::value,
+              "Keyrequest is not a trivial type");
+static_assert(std::is_trivial<Targetinfo>::value,
+              "Targetinfo is not a trivial type");
+static_assert(std::is_trivial<Reportdata>::value,
+              "Reportdata is not a trivial type");
+static_assert(std::is_trivial<Report>::value, "Report is not a trivial type");
 
 }  // namespace sgx
 }  // namespace asylo

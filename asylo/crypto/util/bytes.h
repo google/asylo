@@ -257,7 +257,8 @@ class Bytes {
   static constexpr DataSafety policy() { return Policy::policy; }
 
  protected:
-  Bytes() { PerformStaticChecks(); }
+  // The default constructor is defaulted so that Bytes is a trivial class.
+  Bytes() = default;
 
   // Instantiates a new object and copy the input data. If the input data is
   // larger than the value of the Size template parameter on the class, then
@@ -315,6 +316,8 @@ class SafeBytes final : public Bytes<Size, SafePolicy, SafeBytes<Size>> {
   using reverse_iterator = typename base_type::reverse_iterator;
   using const_reverse_iterator = typename base_type::const_reverse_iterator;
 
+  SafeBytes() = default;
+
   // The following template constructor just forwards all its arguments to the
   // constructor of the base type. This template construct is safe because none
   // of the constructors of the base type are marked explicit. As a result,
@@ -357,6 +360,16 @@ class UnsafeBytes final : public Bytes<Size, UnsafePolicy, UnsafeBytes<Size>> {
   using reverse_iterator = typename base_type::reverse_iterator;
   using const_reverse_iterator = typename base_type::const_reverse_iterator;
 
+  // The default constructor, copy and move constructors, copy and move
+  // assignment operators, and destructor are all defaulted so that the
+  // UnsafeBytes class is a trivial class.
+  UnsafeBytes() = default;
+  UnsafeBytes(const UnsafeBytes &) = default;
+  UnsafeBytes &operator=(const UnsafeBytes &) = default;
+  UnsafeBytes(UnsafeBytes &&) = default;
+  UnsafeBytes &operator=(UnsafeBytes &&) = default;
+  ~UnsafeBytes() = default;
+
   // The following template constructor just forwards all its arguments to the
   // constructor of the base type. This template construct is safe because none
   // of the constructors of the base type are marked explicit. As a result,
@@ -365,8 +378,6 @@ class UnsafeBytes final : public Bytes<Size, UnsafePolicy, UnsafeBytes<Size>> {
   template <typename... Args>
   UnsafeBytes(Args &&... args)
       : base_type(std::forward<Args>(args)...) {}
-
-  ~UnsafeBytes() = default;
 
   // The equality operator. Since the UnsafeBytes class uses UnsafePolicy to
   // configure its Bytes base class, the Equals method, when invoked on an
