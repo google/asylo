@@ -125,6 +125,14 @@ int FromBridgeAddressInfoFlags(int bridge_ai_flag);
 // flags are provided.
 int ToBridgeAddressInfoFlags(int ai_flag);
 
+// Converts |eai_code| to a bridge address info error code. Returns 1 if
+// |eai_code| is not recognized, since error codes are conventionally negative.
+int ToBridgeAddressInfoErrors(int eai_code);
+
+// Converts |bridge_eai_code| from a bridge address info error code. Returns -1
+// if |bridge_eai_code| is not recognized.
+int FromBridgeAddressInfoErrors(int bridge_eai_code);
+
 // Converts |bridge_sock_type| from a bridge socket type value. Returns -1 if
 // |bridge_sock_type| is not recognized.
 int FromBridgeSocketType(int bridge_sock_type);

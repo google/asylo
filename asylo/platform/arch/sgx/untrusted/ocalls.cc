@@ -321,20 +321,18 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
   if (!asylo::DeserializeAddrinfo(&tmp_serialized_hints, &hints)) {
     return -1;
   }
-  if (hints) {
-    hints->ai_flags = asylo::FromBridgeAddressInfoFlags(hints->ai_flags);
-  }
 
   struct addrinfo *res;
   int ret = getaddrinfo(node, service, hints, &res);
   if (ret != 0) {
-    return ret;
+    return asylo::ToBridgeAddressInfoErrors(ret);
   }
   asylo::FreeDeserializedAddrinfo(hints);
 
   std::string tmp_serialized_res;
-  if (!asylo::SerializeAddrinfo(res, &tmp_serialized_res)) {
-    return -1;
+  int bridge_error_code = -1;
+  if (!asylo::SerializeAddrinfo(res, &tmp_serialized_res, &bridge_error_code)) {
+    return bridge_error_code;
   }
   freeaddrinfo(res);
 
@@ -344,7 +342,7 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
   memcpy(serialized_res, tmp_serialized_res.c_str(), tmp_serialized_res_len);
   *serialized_res_start = serialized_res;
   *serialized_res_len = static_cast<bridge_size_t>(tmp_serialized_res_len);
-  return ret;
+  return 0;
 }
 
 int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
@@ -404,10 +402,14 @@ ssize_t ocall_enc_untrusted_recvfrom(const char *serialized_args,
     socklen_t addrlen;
     int ret = recvfrom(sockfd, *buf_ptr, len, flags, src_addr_ptr, &addrlen);
     size_t src_addr_len = 0;
+    // If the address family is unsupported, then errno is set to indicate an
+    // invalid argument error. The value of error_code is irrelevant in this
+    // context.
+    int error_code;
     // The caller is responsible for freeing the memory allocated by
     // SerializeRecvFromSrcAddr.
     if (!asylo::SerializeRecvFromSrcAddr(src_addr_ptr, serialized_output,
-                                         &src_addr_len)) {
+                                         &src_addr_len, &error_code)) {
       errno = EINVAL;
       return -1;
     }

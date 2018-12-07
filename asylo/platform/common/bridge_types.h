@@ -145,10 +145,43 @@ enum SignalCode {
   BRIDGE_SI_MESGQ = 5,
 };
 
-// The address info flags that specifies options of an addrinfo struct.
+// The address info ai_flags bitset constituent values that specify options of
+// an addrinfo struct.
 enum AddrInfoFlags {
   BRIDGE_AI_CANONNAME = 0x0002,
   BRIDGE_AI_NUMERICHOST = 0x0004,
+  BRIDGE_AI_V4MAPPED = 0x0008,
+  BRIDGE_AI_ADDRCONFIG = 0x0010,
+  BRIDGE_AI_ALL = 0x0020,
+  BRIDGE_AI_PASSIVE = 0x0040,
+  BRIDGE_AI_NUMERICSERV = 0x0080,
+  BRIDGE_AI_IDN = 0x0100,
+  BRIDGE_AI_CANONIDN = 0x0200,
+  BRIDGE_AI_IDN_ALLOW_UNASSIGNED = 0x0400,
+  BRIDGE_AI_IDN_USE_STD3_ASCII_RULES = 0x0800,
+};
+
+// The possible return error codes for getaddrinfo.
+enum AddrInfoErrorCode {
+  BRIDGE_EAI_SUCCESS = 0,
+  BRIDGE_EAI_ADDRFAMILY = 1,
+  BRIDGE_EAI_AGAIN = 2,
+  BRIDGE_EAI_BADFLAGS = 3,
+  BRIDGE_EAI_FAIL = 4,
+  BRIDGE_EAI_FAMILY = 5,
+  BRIDGE_EAI_MEMORY = 6,
+  BRIDGE_EAI_NODATA = 7,
+  BRIDGE_EAI_NONAME = 8,
+  BRIDGE_EAI_SERVICE = 9,
+  BRIDGE_EAI_SOCKTYPE = 10,
+  BRIDGE_EAI_SYSTEM = 11,
+  BRIDGE_EAI_OVERFLOW = 12,
+  BRIDGE_EAI_INPROGRESS = 13,
+  BRIDGE_EAI_CANCELED = 14,
+  BRIDGE_EAI_ALLDONE = 15,
+  BRIDGE_EAI_INTR = 16,
+  BRIDGE_EAI_IDN_ENCODE = 17,
+  BRIDGE_EAI_UNKNOWN = 20,  // The result of a bad translation.
 };
 
 // Possible values for socket(2)'s type argument, and ai_socktype in the

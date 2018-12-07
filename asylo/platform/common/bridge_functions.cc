@@ -391,6 +391,19 @@ int FromBridgeAddressInfoFlags(int bridge_ai_flag) {
   int ai_flag = 0;
   if (bridge_ai_flag & BRIDGE_AI_CANONNAME) ai_flag |= AI_CANONNAME;
   if (bridge_ai_flag & BRIDGE_AI_NUMERICHOST) ai_flag |= AI_NUMERICHOST;
+  if (bridge_ai_flag & BRIDGE_AI_V4MAPPED) ai_flag |= AI_V4MAPPED;
+  if (bridge_ai_flag & BRIDGE_AI_ADDRCONFIG) ai_flag |= AI_ADDRCONFIG;
+  if (bridge_ai_flag & BRIDGE_AI_ALL) ai_flag |= AI_ALL;
+  if (bridge_ai_flag & BRIDGE_AI_PASSIVE) ai_flag |= AI_PASSIVE;
+  if (bridge_ai_flag & BRIDGE_AI_NUMERICSERV) ai_flag |= AI_NUMERICSERV;
+  if (bridge_ai_flag & BRIDGE_AI_IDN) ai_flag |= AI_IDN;
+  if (bridge_ai_flag & BRIDGE_AI_CANONIDN) ai_flag |= AI_CANONIDN;
+  if (bridge_ai_flag & BRIDGE_AI_IDN_ALLOW_UNASSIGNED) {
+    ai_flag |= AI_IDN_ALLOW_UNASSIGNED;
+  }
+  if (bridge_ai_flag & BRIDGE_AI_IDN_USE_STD3_ASCII_RULES) {
+    ai_flag |= AI_IDN_USE_STD3_ASCII_RULES;
+  }
   return ai_flag;
 }
 
@@ -398,6 +411,19 @@ int ToBridgeAddressInfoFlags(int ai_flag) {
   int bridge_ai_flag = 0;
   if (ai_flag & AI_CANONNAME) bridge_ai_flag |= BRIDGE_AI_CANONNAME;
   if (ai_flag & AI_NUMERICHOST) bridge_ai_flag |= BRIDGE_AI_NUMERICHOST;
+  if (ai_flag & AI_V4MAPPED) bridge_ai_flag |= BRIDGE_AI_V4MAPPED;
+  if (ai_flag & AI_ADDRCONFIG) bridge_ai_flag |= BRIDGE_AI_ADDRCONFIG;
+  if (ai_flag & AI_ALL) bridge_ai_flag |= BRIDGE_AI_ALL;
+  if (ai_flag & AI_PASSIVE) bridge_ai_flag |= BRIDGE_AI_PASSIVE;
+  if (ai_flag & AI_NUMERICSERV) bridge_ai_flag |= BRIDGE_AI_NUMERICSERV;
+  if (ai_flag & AI_IDN) bridge_ai_flag |= BRIDGE_AI_IDN;
+  if (ai_flag & AI_CANONIDN) bridge_ai_flag |= BRIDGE_AI_CANONIDN;
+  if (ai_flag & AI_IDN_ALLOW_UNASSIGNED) {
+    bridge_ai_flag |= BRIDGE_AI_IDN_ALLOW_UNASSIGNED;
+  }
+  if (ai_flag & AI_IDN_USE_STD3_ASCII_RULES) {
+    bridge_ai_flag |= BRIDGE_AI_IDN_USE_STD3_ASCII_RULES;
+  }
   return bridge_ai_flag;
 }
 
@@ -674,6 +700,86 @@ struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,
     abort();
   }
   return bridge_addr;
+}
+
+int FromBridgeAddressInfoErrors(int bridge_eai_code) {
+  switch (bridge_eai_code) {
+    case BRIDGE_EAI_SUCCESS:
+      return 0;
+    case BRIDGE_EAI_ADDRFAMILY:
+      return EAI_ADDRFAMILY;
+    case BRIDGE_EAI_BADFLAGS:
+      return EAI_BADFLAGS;
+    case BRIDGE_EAI_NONAME:
+      return EAI_NONAME;
+    case BRIDGE_EAI_AGAIN:
+      return EAI_AGAIN;
+    case BRIDGE_EAI_FAIL:
+      return EAI_FAIL;
+    case BRIDGE_EAI_FAMILY:
+      return EAI_FAMILY;
+    case BRIDGE_EAI_MEMORY:
+      return EAI_MEMORY;
+    case BRIDGE_EAI_NODATA:
+      return EAI_NODATA;
+    case BRIDGE_EAI_SERVICE:
+      return EAI_SERVICE;
+    case BRIDGE_EAI_SOCKTYPE:
+      return EAI_SOCKTYPE;
+    case BRIDGE_EAI_OVERFLOW:
+      return EAI_OVERFLOW;
+    case BRIDGE_EAI_INPROGRESS:
+      return EAI_INPROGRESS;
+    case BRIDGE_EAI_CANCELED:
+      return EAI_CANCELED;
+    case BRIDGE_EAI_ALLDONE:
+      return EAI_ALLDONE;
+    case BRIDGE_EAI_SYSTEM:
+      return EAI_SYSTEM;
+    default:
+      return 1;
+  }
+}
+
+int ToBridgeAddressInfoErrors(int eai_code) {
+  switch (eai_code) {
+    case 0:
+      return BRIDGE_EAI_SUCCESS;
+    case EAI_BADFLAGS:
+      return BRIDGE_EAI_BADFLAGS;
+    case EAI_NONAME:
+      return BRIDGE_EAI_NONAME;
+    case EAI_AGAIN:
+      return BRIDGE_EAI_AGAIN;
+    case EAI_FAIL:
+      return BRIDGE_EAI_FAIL;
+    case EAI_FAMILY:
+      return BRIDGE_EAI_FAMILY;
+    case EAI_SOCKTYPE:
+      return BRIDGE_EAI_SOCKTYPE;
+    case EAI_SERVICE:
+      return BRIDGE_EAI_SERVICE;
+    case EAI_MEMORY:
+      return BRIDGE_EAI_MEMORY;
+    case EAI_SYSTEM:
+      return BRIDGE_EAI_SYSTEM;
+    case EAI_OVERFLOW:
+      return BRIDGE_EAI_OVERFLOW;
+    case EAI_NODATA:
+      return BRIDGE_EAI_NODATA;
+    case EAI_ADDRFAMILY:
+      return BRIDGE_EAI_ADDRFAMILY;
+    case EAI_INPROGRESS:
+      return BRIDGE_EAI_INPROGRESS;
+    case EAI_CANCELED:
+      return BRIDGE_EAI_CANCELED;
+    case EAI_ALLDONE:
+      return BRIDGE_EAI_ALLDONE;
+    case EAI_INTR:
+      return BRIDGE_EAI_IDN_ENCODE;
+    default:
+      return BRIDGE_EAI_UNKNOWN;
+  }
 }
 
 AfFamily ToBridgeAfFamily(int af_family) {

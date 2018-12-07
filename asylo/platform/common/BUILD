@@ -128,6 +128,7 @@ cc_library(
     hdrs = ["bridge_proto_serializer.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":bridge_types",
         ":bridge_types_proto_cc",
         "@com_google_absl//absl/strings",
     ],

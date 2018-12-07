@@ -523,11 +523,16 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
     bridge_hints.ai_flags =
         asylo::ToBridgeAddressInfoFlags(bridge_hints.ai_flags);
   }
+  // Some serialization failures may lead to specified behavior. If a value is
+  // invalid, some EAI_* error code may need to be returned.
+  int bridge_error_code = BRIDGE_EAI_UNKNOWN;
   // Serialize an empty addrinfo if |hints| is nullptr.
   if (!asylo::SerializeAddrinfo(hints ? &bridge_hints : nullptr,
-                                &serialized_hints)) {
-    LOG(ERROR) << "Bad addrinfo";
-    return -1;
+                                &serialized_hints, &bridge_error_code)) {
+    if (bridge_error_code == BRIDGE_EAI_UNKNOWN) {
+      LOG(ERROR) << "Bad addrinfo";
+    }
+    return asylo::FromBridgeAddressInfoErrors(bridge_error_code);
   }
 
   int ret;
@@ -537,6 +542,7 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
       &ret, node, service, serialized_hints.c_str(),
       static_cast<bridge_size_t>(serialized_hints.length()),
       &tmp_serialized_res_start, &tmp_serialized_res_len));
+  ret = asylo::FromBridgeAddressInfoErrors(ret);
   if (ret != 0) {
     return ret;
   }

@@ -26,7 +26,9 @@
 #include <sys/types.h>
 #include <string>
 
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
+#include "asylo/platform/common/bridge_types.h"
 
 namespace asylo {
 namespace {
@@ -58,7 +60,8 @@ bool ConvertToSockaddr(const SockaddrProto &in, struct sockaddr **out) {
   return true;
 }
 
-bool ConvertToSockaddrProtobuf(const struct sockaddr *in, SockaddrProto *out) {
+bool ConvertToSockaddrProtobuf(const struct sockaddr *in, SockaddrProto *out,
+                               int *error_code) {
   if (!in || !out) return false;
 
   if (in->sa_family == AF_INET6) {  // IPv6
@@ -78,6 +81,7 @@ bool ConvertToSockaddrProtobuf(const struct sockaddr *in, SockaddrProto *out) {
     sock_in_proto->set_sin_port(sock->sin_port);
     sock_in_proto->set_sin_addr(sock->sin_addr.s_addr);
   } else {
+    *error_code = BRIDGE_EAI_ADDRFAMILY;
     return false;  // unsupported sa_family
   }
   return true;
@@ -103,9 +107,15 @@ bool ConvertToAddrinfo(const AddrinfosProto *in, struct addrinfo **out) {
     if (info == nullptr) return false;
 
     memset(info, 0, sizeof(struct addrinfo));
-    info->ai_flags = info_proto.ai_flags();
-    info->ai_family = info_proto.ai_family();
-    info->ai_socktype = info_proto.ai_socktype();
+    info->ai_flags = FromBridgeAddressInfoFlags(info_proto.ai_flags());
+    info->ai_family = FromBridgeAfFamily(info_proto.ai_family());
+    if (info->ai_family == -1) {  // Invalid address family.
+      return false;
+    }
+    info->ai_socktype = FromBridgeSocketType(info_proto.ai_socktype());
+    if (info->ai_socktype == -1) {  // Invalid socket type.
+      return false;
+    }
     info->ai_protocol = info_proto.ai_protocol();
     info->ai_addrlen = info_proto.ai_addrlen();
     if (info_proto.has_ai_addr() &&
@@ -132,26 +142,40 @@ bool ConvertToAddrinfo(const AddrinfosProto *in, struct addrinfo **out) {
 // Arbitrary max length of ai_canonname. This maximum is above anything we would
 // expect for a non-malicous input. POSIX does not specify any maximum length.
 constexpr int kMaxCannonnameLen = 4096;
-bool ConvertToAddrinfoProtobuf(const struct addrinfo *in, AddrinfosProto *out) {
+bool ConvertToAddrinfoProtobuf(const struct addrinfo *in, AddrinfosProto *out,
+                               int *bridge_error_code) {
   if (!in || !out) return false;
 
   for (const struct addrinfo *info = in; info != nullptr;
        info = info->ai_next) {
     AddrinfoProto *info_proto = out->add_addrinfos();
-    info_proto->set_ai_flags(info->ai_flags);
-    info_proto->set_ai_family(info->ai_family);
-    info_proto->set_ai_socktype(info->ai_socktype);
+    info_proto->set_ai_flags(ToBridgeAddressInfoFlags(info->ai_flags));
+    int af_family = ToBridgeAfFamily(info->ai_family);
+    if (af_family == BRIDGE_AF_UNSUPPORTED) {
+      *bridge_error_code = BRIDGE_EAI_ADDRFAMILY;
+      return false;
+    }
+    info_proto->set_ai_family(af_family);
+    int ai_socktype = ToBridgeSocketType(info->ai_socktype);
+    if (ai_socktype == BRIDGE_SOCK_UNSUPPORTED) {
+      *bridge_error_code = BRIDGE_EAI_SOCKTYPE;
+      return false;
+    }
+    info_proto->set_ai_socktype(ai_socktype);
+    // A protocol number is from a standard set of numbers:
+    // https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
     info_proto->set_ai_protocol(info->ai_protocol);
     info_proto->set_ai_addrlen(info->ai_addrlen);
     if (info->ai_addr) {
       SockaddrProto *sock_proto = info_proto->mutable_ai_addr();
-      if (!ConvertToSockaddrProtobuf(info->ai_addr, sock_proto)) {
+      if (!ConvertToSockaddrProtobuf(info->ai_addr, sock_proto,
+                                     bridge_error_code)) {
         return false;
       }
     }
     if (info->ai_canonname) {
       int canonname_len = strnlen(info->ai_canonname, kMaxCannonnameLen);
-      info_proto->set_ai_canonname(std::string(info->ai_canonname, canonname_len));
+      info_proto->set_ai_canonname(info->ai_canonname, canonname_len);
     }
   }
 
@@ -358,17 +382,22 @@ bool ConvertToIfAddrsProtobuf(const struct ifaddrs *in, IfAddrsProto *out) {
     IfAddrProto *ifaddr_proto = out->add_ifaddrs();
     ifaddr_proto->set_ifa_name(curr->ifa_name);
     ToProtoIffFlags(curr->ifa_flags, ifaddr_proto);
+    // The serialized results are expected to be valid, so the error code is
+    // ignored.
+    int error_code;
     // It is possible for ifa_addr and ifa_netmask to be NULL, in which case,
     // they will not be included in the protobuf
     if ((curr->ifa_addr &&
-         !ConvertToSockaddrProtobuf(curr->ifa_addr,
-                                    ifaddr_proto->mutable_ifa_addr())) ||
+         !ConvertToSockaddrProtobuf(
+             curr->ifa_addr, ifaddr_proto->mutable_ifa_addr(), &error_code)) ||
         (curr->ifa_netmask &&
          !ConvertToSockaddrProtobuf(curr->ifa_netmask,
-                                    ifaddr_proto->mutable_ifa_netmask())) ||
+                                    ifaddr_proto->mutable_ifa_netmask(),
+                                    &error_code)) ||
         (curr->ifa_ifu.ifu_dstaddr &&
          !ConvertToSockaddrProtobuf(curr->ifa_ifu.ifu_dstaddr,
-                                    ifaddr_proto->mutable_ifa_ifu()))) {
+                                    ifaddr_proto->mutable_ifa_ifu(),
+                                    &error_code))) {
       // If any of these conversions doesn't pan out, e.g. because of a protocol
       // that is unavailable, simply don't include it with the rest of the
       // protobuf
@@ -591,10 +620,11 @@ bool ConvertFromRecvFromArgsProto(const RecvFromArgs& args, int *sockfd,
 
 }  // namespace
 
-bool SerializeAddrinfo(const struct addrinfo *in, std::string *out) {
+bool SerializeAddrinfo(const struct addrinfo *in, std::string *out,
+                       int *bridge_error_code) {
   AddrinfosProto addrinfo_protobuf;
   if (!in) return addrinfo_protobuf.SerializeToString(out);  // empty addrinfo
-  return ConvertToAddrinfoProtobuf(in, &addrinfo_protobuf) &&
+  return ConvertToAddrinfoProtobuf(in, &addrinfo_protobuf, bridge_error_code) &&
          addrinfo_protobuf.SerializeToString(out);
 }
 
@@ -824,10 +854,11 @@ bool DeserializeRecvFromArgs(absl::string_view in, int *sockfd, size_t *len,
 }
 
 bool SerializeRecvFromSrcAddr(struct sockaddr *src_addr, char **out,
-                              size_t *out_len) {
+                              size_t *out_len, int *bridge_error_code) {
   RecvFromSrcAddr addr_proto;
   if (!src_addr || !out || !out_len ||
-      !ConvertToSockaddrProtobuf(src_addr, addr_proto.mutable_src_addr())) {
+      !ConvertToSockaddrProtobuf(src_addr, addr_proto.mutable_src_addr(),
+                                 bridge_error_code)) {
     return false;
   }
   *out_len = addr_proto.ByteSizeLong();
