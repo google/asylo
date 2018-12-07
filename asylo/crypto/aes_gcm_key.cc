@@ -18,6 +18,7 @@
 
 #include "asylo/crypto/aes_gcm_key.h"
 
+#include <openssl/aead.h>
 #include <memory>
 
 #include "absl/memory/memory.h"
@@ -27,7 +28,6 @@
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/status_macros.h"
-#include <openssl/aead.h>
 
 namespace asylo {
 namespace {

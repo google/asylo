@@ -18,6 +18,8 @@
 
 #include "asylo/identity/sgx/fake_enclave.h"
 
+#include <openssl/cmac.h>
+#include <openssl/rand.h>
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
@@ -28,8 +30,6 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
-#include <openssl/cmac.h>
-#include <openssl/rand.h>
 
 namespace asylo {
 namespace sgx {

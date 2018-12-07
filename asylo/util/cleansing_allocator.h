@@ -19,12 +19,11 @@
 #ifndef ASYLO_UTIL_CLEANSING_ALLOCATOR_H_
 #define ASYLO_UTIL_CLEANSING_ALLOCATOR_H_
 
+#include <openssl/mem.h>
 #include <cstdlib>
 #include <limits>
 #include <memory>
 #include <type_traits>
-
-#include <openssl/mem.h>
 
 namespace asylo {
 

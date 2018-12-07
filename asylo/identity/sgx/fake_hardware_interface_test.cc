@@ -16,6 +16,8 @@
  *
  */
 
+#include <openssl/aes.h>
+#include <openssl/cmac.h>
 #include <string>
 #include <vector>
 
@@ -28,8 +30,6 @@
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/test/util/proto_matchers.h"
-#include <openssl/aes.h>
-#include <openssl/cmac.h>
 
 // This file implements some basic, sanity-checking tests for the
 // fake-hardware-interface implementation. It does not test the fake

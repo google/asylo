@@ -19,14 +19,14 @@
 #ifndef ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 #define ASYLO_IDENTITY_SGX_IDENTITY_KEY_MANAGEMENT_STRUCTS_H_
 
+#include <openssl/aes.h>
+#include <openssl/sha.h>
 #include <type_traits>
 
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/aligned_object_ptr.h"
-#include <openssl/aes.h>
-#include <openssl/sha.h>
 
 // This file defines SGX architectural structures that pertain to the identity
 // and key-management portions of the SGX architecture. These structures are

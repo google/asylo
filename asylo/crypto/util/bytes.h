@@ -19,6 +19,7 @@
 #ifndef ASYLO_CRYPTO_UTIL_BYTES_H_
 #define ASYLO_CRYPTO_UTIL_BYTES_H_
 
+#include <openssl/mem.h>
 #include <algorithm>
 #include <cstdlib>
 #include <cstring>
@@ -31,7 +32,6 @@
 #include "asylo/util/cleansing_allocator.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
-#include <openssl/mem.h>
 
 namespace asylo {
 

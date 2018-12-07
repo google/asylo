@@ -19,6 +19,7 @@
 #ifndef ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_
 #define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_VIEW_H_
 
+#include <openssl/mem.h>
 #include <string.h>
 #include <cstdint>
 #include <cstdlib>
@@ -28,7 +29,6 @@
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/util/byte_container_view_internal.h"
 #include "asylo/util/logging.h"
-#include <openssl/mem.h>
 
 namespace asylo {
 

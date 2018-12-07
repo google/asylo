@@ -19,10 +19,11 @@
 #ifndef ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
 #define ASYLO_IDENTITY_SGX_HARDWARE_INTERFACE_H_
 
+#include <openssl/aes.h>
+
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include <openssl/aes.h>
 
 namespace asylo {
 namespace sgx {

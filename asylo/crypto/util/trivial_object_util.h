@@ -19,13 +19,13 @@
 #ifndef ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_
 #define ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_
 
+#include <openssl/rand.h>
 #include <type_traits>
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/status.h"
-#include <openssl/rand.h>
 
 namespace asylo {
 

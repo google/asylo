@@ -19,6 +19,7 @@
 #ifndef ASYLO_CRYPTO_AES_GCM_KEY_H_
 #define ASYLO_CRYPTO_AES_GCM_KEY_H_
 
+#include <openssl/aead.h>
 #include <cstdint>
 #include <memory>
 #include <vector>
@@ -29,7 +30,6 @@
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
-#include <openssl/aead.h>
 
 namespace asylo {
 

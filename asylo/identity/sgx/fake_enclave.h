@@ -19,6 +19,7 @@
 #ifndef ASYLO_IDENTITY_SGX_FAKE_ENCLAVE_H_
 #define ASYLO_IDENTITY_SGX_FAKE_ENCLAVE_H_
 
+#include <openssl/sha.h>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -27,7 +28,6 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include <openssl/sha.h>
 
 #ifdef __ASYLO__
 #error \

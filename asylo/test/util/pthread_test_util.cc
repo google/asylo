@@ -18,12 +18,12 @@
 
 #include "asylo/test/util/pthread_test_util.h"
 
+#include <openssl/mem.h>
 #include <pthread.h>
 #include <cstdint>
 #include <cstdio>
 
 #include "absl/strings/str_cat.h"
-#include <openssl/mem.h>
 
 namespace asylo {
 
