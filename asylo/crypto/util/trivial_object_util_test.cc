@@ -30,11 +30,23 @@
 namespace asylo {
 namespace {
 
+// A trivial structure consisting of trivial members.
+struct TrivialStructure {
+  UnsafeBytes<24> foo;
+  uint64_t bar;
+  uint8_t baz[10];
+};
+
+// An equality operator is provided for EXPECT_EQ statements.
+bool operator==(const TrivialStructure &first, const TrivialStructure &second) {
+  return memcmp(&first, &second, sizeof(first)) == 0;
+}
+
 // A test fixture is used for naming consistency and future extensibility.
 template <typename T>
 class TypedTrivialObjectUtilTest : public ::testing::Test {};
-typedef ::testing::Types<SafeBytes<16>, SafeBytes<32>, UnsafeBytes<16>,
-                         UnsafeBytes<32>, uint64_t>
+typedef ::testing::Types<UnsafeBytes<16>, UnsafeBytes<32>, TrivialStructure,
+                         uint64_t>
     MyTypes;
 TYPED_TEST_CASE(TypedTrivialObjectUtilTest, MyTypes);
 
