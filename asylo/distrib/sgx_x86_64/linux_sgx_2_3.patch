@@ -2997,7 +2997,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1177 @@
+@@ -0,0 +1,1190 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +# "notice" licenses present:
@@ -3024,17 +3024,17 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +# CC0 1.0 (DLMalloc),
 +licenses(["reciprocal"])  # Eclipse public license
 +
-+exports_files([
-+    "LICENSE",
-+    "enclave_sim.lds",
-+    "enclave_test_private.pem",
-+])
-+
 +load(
 +    ":sgx_sdk.bzl",
 +    "sgx_enclave",
 +    "sgx_enclave_configuration",
 +)
++
++exports_files([
++    "LICENSE",
++    "enclave_sim.lds",
++    "enclave_test_private.pem",
++])
 +
 +config_setting(
 +    name = "dbg",
@@ -3607,7 +3607,20 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +# service library based on the value of SGX_SIM.
 +cc_library(
 +    name = "uae_service_select",
-+    deps = [":se_wrapper"] + select({
++    hdrs = PSW_COMMON_HDRS,
++    copts = PSW_COMMON_INCLUDES + [
++        "-Iexternal/linux_sgx/psw/ae/common",
++        "-Iexternal/linux_sgx/common/inc/internal",
++    ],
++    deps = [
++        ":ipc_common_proto_cc",
++        ":common_inc",
++        ":common_inc_internal",
++        ":se_wrapper",
++        ":untrusted_inc",
++        ":untrusted_inc_internal",
++        ":epid_inc",
++    ] + select({
 +        ":sgx_hw": [":uae_service_hw"],
 +        "//conditions:default": [":uae_service_sim"],
 +    }),
@@ -3620,7 +3633,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    visibility = ["//visibility:public"],
 +    deps = [
 +        ":uae_service_select",
-+        ":urts_sim",
 +    ],
 +)
 +
@@ -3676,7 +3688,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "sdk/simulation/urtssim/get_state.cpp",
 +        "sdk/simulation/urtssim/urts_sim.h",
 +    ],
-+    hdrs = URTS_COMMON_HDRS + PSW_COMMON_HDRS,
++    hdrs = URTS_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
 +        "-DSE_SIM=1",
 +        "-DElfParser=Elf64Parser",
@@ -3929,6 +3941,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
 +        ":common_inc_internal",
++        ":uae_service_select",
 +    ] + select({
 +        ":sgx_hw": [
 +            ":urts_hw",
