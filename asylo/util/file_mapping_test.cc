@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+#include <algorithm>
 #include <cstddef>
 #include <cstring>
 #include <fstream>
@@ -92,8 +93,8 @@ TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
       0);
 
   // Modify the buffer.
-  strncpy(reinterpret_cast<char *>(outer_mapping.buffer().data()), kReplaceText,
-          strlen(kReplaceText));
+  std::copy(kReplaceText, kReplaceText + strlen(kReplaceText),
+            outer_mapping.buffer().data());
 
   {
     // Open another mapping of the same file.
