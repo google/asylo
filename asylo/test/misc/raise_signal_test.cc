@@ -36,6 +36,7 @@ void HandleSignal(int signum) {
 // handled.
 TEST(SignalTest, RaiseSignal) {
   struct sigaction act;
+  memset(&act, 0, sizeof(struct sigaction));
   act.sa_handler = &HandleSignal;
   struct sigaction oldact;
   sigaction(SIGUSR1, &act, &oldact);
