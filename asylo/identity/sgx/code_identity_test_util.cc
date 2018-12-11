@@ -55,13 +55,33 @@ bool ShouldFuzzField(int percent) {
 template <typename ProtoT, typename FieldT>
 using ProtoFieldSetter = void (ProtoT::*)(FieldT);
 
+// Implementation for a field fuzzer that is partially-specialized for Boolean
+// fields, since random `bool` values that aren't 0 or 1 cause undefined
+// behavior.
+template <typename ProtoT, typename FieldT>
+struct FuzzFieldImpl {
+  static void call(ProtoFieldSetter<ProtoT, FieldT> set_field,
+                   ProtoT *message) {
+    (message->*set_field)(TrivialRandomObject<FieldT>());
+  }
+};
+
+// Specialization of FuzzFieldImpl for Boolean fields.
+template <typename ProtoT>
+struct FuzzFieldImpl<ProtoT, bool> {
+  static void call(ProtoFieldSetter<ProtoT, bool> set_field,
+                   ProtoT *message) {
+    (message->*set_field)(TrivialRandomObject<uint8_t>() > 127);
+  }
+};
+
 // Fuzzes the field referred to by the |set_field| method in |message| with a
 // |percent| / 100 probability.
 template <typename ProtoT, typename FieldT>
 void FuzzField(int percent, ProtoFieldSetter<ProtoT, FieldT> set_field,
                ProtoT *message) {
   if (ShouldFuzzField(percent)) {
-    (message->*set_field)(TrivialRandomObject<FieldT>());
+    FuzzFieldImpl<ProtoT, FieldT>::call(set_field, message);
   }
 }
 
