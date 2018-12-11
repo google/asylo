@@ -25,6 +25,8 @@
 #include <string>
 #include <vector>
 
+#include "absl/types/span.h"
+
 namespace asylo {
 namespace experimental {
 
@@ -93,11 +95,12 @@ class ExecTester {
   void DoExec(int read_stdin, int write_stdin, int read_fd_to_check,
               int write_fd_to_check);
 
-  // Reads contents of `fd` into `buf` and runs CheckLine() on each
-  // newline-terminated piece of `buf` as written to `linebuf`. Stores any
-  // unfinished line in `linebuf`, i.e., the characters in `buf` that follow the
-  // last newline. The accumulated CheckLine() results are stored in `result`.
-  void CheckFD(int fd, char *buf, size_t bufsize, std::stringstream *linebuf,
+  // Reads contents of `fd` into `buffer` and runs CheckLine() on each
+  // newline-terminated piece of `buffer` as written to `linebuf`. Stores any
+  // unfinished line in `linebuf`, i.e., the characters in `buffer` that follow
+  // the last newline. The accumulated CheckLine() results are stored in
+  // `result`.
+  void CheckFD(int fd, absl::Span<char> buffer, std::stringstream *linebuf,
                bool *result);
 
   // Polls output from `pid` to `fd` and calls CheckFD() to accumulate

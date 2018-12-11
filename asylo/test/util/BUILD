@@ -14,16 +14,16 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+
 licenses(["notice"])  # Apache v2.0
 
 # Enclave test infrastructure.
 
 package(default_visibility = ["//asylo:implementation"])
-
-load("//asylo/bazel:asylo.bzl", "cc_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 # Test helper that runs a subprocess and checks output.
 cc_library(
@@ -35,6 +35,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -20,17 +20,18 @@
 
 #include <fcntl.h>
 #include <libgen.h>  // dirname()
-#include <string.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include <cstdlib>
+#include <cstring>
 #include <sstream>
 #include <thread>
 
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_split.h"
 #include "absl/strings/string_view.h"
 
 namespace asylo {
@@ -135,7 +136,7 @@ void ExecTester::ReadCheckLoop(pid_t pid, int fd, bool *result, int *status) {
   ASSERT_NE(nullptr, status);
 
   bool conjunction = true;
-  char buf[1024];
+  char buffer[1024];
   std::stringstream linebuf;
 
   // Read and check all subprocess output to |fd| until the subprocess
@@ -146,7 +147,7 @@ void ExecTester::ReadCheckLoop(pid_t pid, int fd, bool *result, int *status) {
     ASSERT_NE(-1, changed_pid)
         << "Wait on subprocess status failed: " << strerror(errno);
 
-    CheckFD(fd, buf, sizeof(buf), &linebuf, &conjunction);
+    CheckFD(fd, buffer, &linebuf, &conjunction);
 
     if (changed_pid && (WIFEXITED(*status) || WIFSIGNALED(*status))) {
       *result = conjunction;
@@ -155,13 +156,12 @@ void ExecTester::ReadCheckLoop(pid_t pid, int fd, bool *result, int *status) {
   }
 }
 
-void ExecTester::CheckFD(int fd, char *buf, size_t bufsize,
+void ExecTester::CheckFD(int fd, absl::Span<char> buffer,
                          std::stringstream *linebuf, bool *result) {
-  ASSERT_NE(nullptr, buf);
-  ASSERT_LT(0, bufsize);
+  ASSERT_FALSE(buffer.empty());
   ASSERT_NE(nullptr, linebuf);
 
-  ssize_t numread = read(fd, buf, bufsize);
+  ssize_t numread = read(fd, buffer.data(), buffer.size());
 
   if (numread == -1) {
     // Nothing to read.
@@ -178,26 +178,15 @@ void ExecTester::CheckFD(int fd, char *buf, size_t bufsize,
   }
 
   // Test each line we see in this buffer before moving on.
-  char *bufptr = buf;
-  int unconsumed = numread, line_size = 0;
-  while (unconsumed > 0) {
-    bufptr = &bufptr[line_size];
-    // We populate an entire line before testing.
-    const char *line_end = strchr(bufptr, '\n');
-    if (line_end) {
-      line_size = (line_end - bufptr) + 1;
-      ASSERT_LE(line_size, bufsize);
-
-      unconsumed -= line_size;
-      linebuf->write(bufptr, line_size - 1);  // Don't include the \n character.
-      std::string line = linebuf->str();
-      linebuf->str("");  // Reset the line buffer.
-      *result &= CheckLine(line);
-    } else {  // No new line. Copy rest of buffer.
-      linebuf->write(bufptr, unconsumed);
-      unconsumed = 0;
-    }
+  std::vector<absl::string_view> lines =
+      absl::StrSplit(absl::string_view(buffer.data(), numread), '\n');
+  for (int i = 0; i < lines.size() - 1; ++i) {
+    linebuf->write(lines[i].data(), lines[i].size());
+    *result &= CheckLine(linebuf->str());
+    linebuf->str("");
   }
+  ASSERT_GT(lines.size(), 0);
+  linebuf->write(lines.back().data(), lines.back().size());
 }
 
 }  // namespace experimental

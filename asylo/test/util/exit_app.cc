@@ -16,10 +16,9 @@
  *
  */
 
-#include <string.h>
-
 #include <csignal>
 #include <cstdlib>
+#include <cstring>
 #include <iostream>
 
 void usage(int argc, char *argv[]) {
