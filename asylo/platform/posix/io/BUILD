@@ -117,11 +117,13 @@ cc_test(
 # Test for multi-threaded read/write inside an enclave.
 cc_enclave_test(
     name = "read_write_multithread_test",
+    size = "small",
     srcs = ["read_write_multithread_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
+        "//asylo/util:cleanup",
         "//asylo/util:logging",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

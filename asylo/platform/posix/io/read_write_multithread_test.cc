@@ -30,8 +30,10 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
+#include "asylo/platform/common/memory.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
+#include "asylo/util/cleanup.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 
@@ -53,67 +55,71 @@ std::string GenerateRandomString() {
   return res;
 }
 
-Status GenerateErrorStatusFromErrno(const std::string &message) {
-  return Status(static_cast<error::PosixError>(errno), message);
+Status GenerateErrorStatusFromErrno(const char *message, const char *path) {
+  return Status(static_cast<error::PosixError>(errno),
+                absl::StrCat(message, ":", path));
 }
 
 // Writes to and reads from a file, checking that the file includes expected
 // results.
 // This returns Status because gtest assertions are not thread-safe on all
 // platforms.
-Status WriteRead(const std::string &path) {
+Status WriteRead(const char *path) {
   // Generate a random string so that each thread writes a different message.
   std::string message = GenerateRandomString();
-  if (path.empty() || message.empty()) {
+  if (!path || !*path || message.empty()) {
     return Status(error::PosixError::P_ENOMSG, "File path or message is empty");
   }
 
-  int fd = open(path.c_str(), O_CREAT | O_RDWR | O_APPEND, 0644);
+  int fd = open(path, O_CREAT | O_RDWR | O_APPEND, 0644);
   if (fd < 0) {
-    return GenerateErrorStatusFromErrno("Failed to open file:" + path);
+    return GenerateErrorStatusFromErrno("Failed to open file", path);
   }
   ssize_t rc = write(fd, message.c_str(), message.size());
   if (rc != message.size()) {
-    return GenerateErrorStatusFromErrno("Failed to write to file:" + path);
+    return GenerateErrorStatusFromErrno("Failed to write to file", path);
   }
   if (close(fd) != 0) {
-    return GenerateErrorStatusFromErrno("Failed to close file:" + path);
+    return GenerateErrorStatusFromErrno("Failed to close file", path);
   }
-  fd = open(path.c_str(), O_CREAT | O_RDWR | O_APPEND, 0664);
+  fd = open(path, O_CREAT | O_RDWR | O_APPEND, 0664);
   if (fd < 0) {
-    return GenerateErrorStatusFromErrno("Failed to open file:" + path);
+    return GenerateErrorStatusFromErrno("Failed to open file", path);
   }
 
   char buf[1024];
   rc = read(fd, buf, sizeof(buf));
   if (rc == -1) {
-    return GenerateErrorStatusFromErrno("Failed to read from file:" + path);
+    return GenerateErrorStatusFromErrno("Failed to read from file", path);
   }
   if (rc >= sizeof(buf) || rc < message.size()) {
-    return Status(error::PosixError::P_EFAULT,
-                  "Unexpected number of bytes read from file:" + path);
+    return Status(
+        error::PosixError::P_EFAULT,
+        absl::StrCat("Unexpected number of bytes read from file:", path));
   }
   if (!strstr(buf, message.c_str())) {
     return Status(error::PosixError::P_EFAULT,
-                  "Unexpected message read from file:" + path);
+                  absl::StrCat("Unexpected message read from file:", path));
   }
   if (close(fd) != 0) {
-    return GenerateErrorStatusFromErrno("Failed to close file:" + path);
+    return GenerateErrorStatusFromErrno("Failed to close file", path);
   }
   return Status::OkStatus();
 }
 
 TEST(ReadWriteMultiThreadTest, MultiThreadTest) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test.out");
-
-  remove(path.c_str());
+  // Assign random file name, to avoid potential conflict with other runs
+  // on the same machine, current or prior.
+  MallocUniquePtr<char> test_file(tempnam(FLAGS_test_tmpdir.c_str(), "MRWT"));
+  Cleanup remove_file([&test_file] { remove(test_file.get()); });
 
   // Creates kNumThreads that run the given |WriteRead| and waits for all
   // threads to join.
   std::vector<std::future<Status>> futures;
 
   for (int i = 0; i < kNumThreads; ++i) {
-    futures.push_back(std::async(std::launch::async, &WriteRead, path));
+    futures.push_back(
+        std::async(std::launch::async, &WriteRead, test_file.get()));
   }
 
   for (auto &result : futures) {
