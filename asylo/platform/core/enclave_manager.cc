@@ -174,6 +174,7 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
   const Status status =
       EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
           client);
+  absl::WriterMutexLock lock(&client_table_lock_);
   const auto &name = name_by_client_[client];
   client_by_name_.erase(name);
   name_by_client_.erase(client);
@@ -201,6 +202,7 @@ Status EnclaveManager::EnterAndRestore(EnclaveClient *client,
 }
 
 EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
+  absl::ReaderMutexLock lock(&client_table_lock_);
   auto it = client_by_name_.find(name);
   if (it == client_by_name_.end()) {
     return nullptr;
@@ -210,6 +212,7 @@ EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
 }
 
 const std::string EnclaveManager::GetName(const EnclaveClient *client) const {
+  absl::ReaderMutexLock lock(&client_table_lock_);
   auto it = name_by_client_.find(client);
   if (it == name_by_client_.end()) {
     return "";
@@ -219,6 +222,7 @@ const std::string EnclaveManager::GetName(const EnclaveClient *client) const {
 }
 
 EnclaveLoader *EnclaveManager::GetLoaderFromClient(EnclaveClient *client) {
+  absl::ReaderMutexLock lock(&client_table_lock_);
   if (!client || loader_by_client_.find(client) == loader_by_client_.end()) {
     return nullptr;
   }
@@ -288,11 +292,14 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
     RemoveEnclaveReference(name);
   }
   // Check whether a client with this name already exists.
-  if (client_by_name_.find(name) != client_by_name_.end()) {
-    Status status(error::GoogleError::ALREADY_EXISTS,
-                  "Name already exists: " + name);
-    LOG(ERROR) << "LoadEnclave failed: " << status;
-    return status;
+  {
+    absl::ReaderMutexLock lock(&client_table_lock_);
+    if (client_by_name_.find(name) != client_by_name_.end()) {
+      Status status(error::GoogleError::ALREADY_EXISTS,
+                    "Name already exists: " + name);
+      LOG(ERROR) << "LoadEnclave failed: " << status;
+      return status;
+    }
   }
 
   // Attempt to load the enclave.
@@ -305,15 +312,18 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
 
   // Add the client to the lookup tables.
   EnclaveClient *client = result.ValueOrDie().get();
-  client_by_name_.emplace(name, std::move(result).ValueOrDie());
-  name_by_client_.emplace(client, name);
+  {
+    absl::WriterMutexLock lock(&client_table_lock_);
+    client_by_name_.emplace(name, std::move(result).ValueOrDie());
+    name_by_client_.emplace(client, name);
 
-  if (config.enable_fork()) {
-    StatusOr<std::unique_ptr<EnclaveLoader>> loader_result = loader.Copy();
-    if (!loader_result.ok()) {
-      return loader_result.status();
+    if (config.enable_fork()) {
+      StatusOr<std::unique_ptr<EnclaveLoader>> loader_result = loader.Copy();
+      if (!loader_result.ok()) {
+        return loader_result.status();
+      }
+      loader_by_client_.emplace(client, std::move(loader_result.ValueOrDie()));
     }
-    loader_by_client_.emplace(client, std::move(loader_result.ValueOrDie()));
   }
 
   Status status = client->EnterAndInitialize(config);
@@ -325,14 +335,18 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
       LOG(ERROR) << "DestroyEnclave failed after EnterAndInitialize failure: "
                  << destroy_status;
     }
-    client_by_name_.erase(name);
-    name_by_client_.erase(client);
-    loader_by_client_.erase(client);
+    {
+      absl::WriterMutexLock lock(&client_table_lock_);
+      client_by_name_.erase(name);
+      name_by_client_.erase(client);
+      loader_by_client_.erase(client);
+    }
   }
   return status;
 }
 
 void EnclaveManager::RemoveEnclaveReference(const std::string &name) {
+  absl::WriterMutexLock lock(&client_table_lock_);
   EnclaveClient *client = client_by_name_[name].get();
   client_by_name_.erase(name);
   name_by_client_.erase(client);

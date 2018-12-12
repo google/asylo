@@ -209,7 +209,8 @@ class EnclaveManager {
   ///             EnclaveManager.
   /// \return A mutable pointer to the EnclaveClient if the name is
   ///         registered. Otherwise returns nullptr.
-  EnclaveClient *GetClient(const std::string &name) const;
+  EnclaveClient *GetClient(const std::string &name) const
+      LOCKS_EXCLUDED(client_table_lock_);
 
   /// Returns the name of an enclave client.
   ///
@@ -217,7 +218,8 @@ class EnclaveManager {
   ///               EnclaveManager.
   /// \return The name of an enclave client. If no enclave matches `client` the
   ///         empty string will be returned.
-  const std::string GetName(const EnclaveClient *client) const;
+  const std::string GetName(const EnclaveClient *client) const
+      LOCKS_EXCLUDED(client_table_lock_);
 
   /// Destroys an enclave.
   ///
@@ -232,7 +234,8 @@ class EnclaveManager {
   /// \param skip_finalize If true, the enclave is destroyed without invoking
   ///                      its Finalize method.
   Status DestroyEnclave(EnclaveClient *client, const EnclaveFinal &final_input,
-                        bool skip_finalize = false);
+                        bool skip_finalize = false)
+      LOCKS_EXCLUDED(client_table_lock_);
 
   /// Enters an enclave and takes a snapshot of its memory. This method calls
   /// `client's` EnterAndTakeSnapshot entry point, with snapshot layout (in
@@ -270,7 +273,8 @@ class EnclaveManager {
 
   /// Get the loader of an enclave. This should only be used during fork in
   /// order to load an enclave with the same loader as the parent.
-  EnclaveLoader *GetLoaderFromClient(EnclaveClient *client);
+  EnclaveLoader *GetLoaderFromClient(EnclaveClient *client)
+      LOCKS_EXCLUDED(client_table_lock_);
 
  private:
   EnclaveManager() EXCLUSIVE_LOCKS_REQUIRED(mu_);
@@ -287,11 +291,13 @@ class EnclaveManager {
   // loader object.
   Status LoadEnclaveInternal(const std::string &name, const EnclaveLoader &loader,
                              const EnclaveConfig &config,
-                             void *base_address = nullptr);
+                             void *base_address = nullptr)
+      LOCKS_EXCLUDED(client_table_lock_);
 
   // Deletes an enclave client reference that points to an enclave that no
   // longer exists. This should only happen during fork.
-  void RemoveEnclaveReference(const std::string &name);
+  void RemoveEnclaveReference(const std::string &name)
+      LOCKS_EXCLUDED(client_table_lock_);
 
   // Create a thread to periodically update logic.
   void SpawnWorkerThread();
@@ -311,11 +317,17 @@ class EnclaveManager {
   // Value synchronized to CLOCK_REALTIME by the worker loop.
   std::atomic<int64_t> clock_realtime_;
 
-  absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>> client_by_name_;
-  absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_;
+  // A mutex guarding |client_by_name_|, |name_by_client_|, and
+  // |loader_by_client_| tables.
+  mutable absl::Mutex client_table_lock_;
+
+  absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>> client_by_name_
+      GUARDED_BY(client_table_lock_);
+  absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_
+      GUARDED_BY(client_table_lock_);
 
   absl::flat_hash_map<const EnclaveClient *, std::unique_ptr<EnclaveLoader>>
-      loader_by_client_;
+      loader_by_client_ GUARDED_BY(client_table_lock_);
 
   // A part of the configuration for enclaves launched by the enclave manager
   // comes from the Asylo daemon. This member caches such configuration.
