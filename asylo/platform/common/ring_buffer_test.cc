@@ -44,11 +44,11 @@ class RingBufferForTest : public RingBuffer<Capacity> {
 
 // Generate a series of test data.
 std::vector<uint8_t> MakeTestData(size_t size) {
-  int f1 = 0;
-  int f2 = 1;
+  uint8_t f1 = 0;
+  uint8_t f2 = 1;
   std::vector<uint8_t> data(size);
   for (int i = 0; i < size; i++) {
-    int next = f1 + f2;
+    uint8_t next = f1 + f2;
     data[i] = next;
     f1 = f2;
     f2 = next;
@@ -135,12 +135,17 @@ TEST_F(RingBufferTest, SingleThreadedStressTest) {
     switch (random() % 2) {
       // Write some bytes.
       case 0: {
+        // Avoid writing past the end of data_.
+        next_chunk_size = std::min(next_chunk_size, data_.size() - data_index);
         size_t count = std::min(next_chunk_size, small_buf.available());
         data_index +=
             small_buf.NonBlockingWrite(data_.data() + data_index, count);
       } break;
       // Read some bytes.
       case 1: {
+        // Avoid reading past the end of copied_data.
+        next_chunk_size =
+            std::min(next_chunk_size, copied_data.size() - copy_index);
         size_t count = std::min(next_chunk_size, small_buf.size());
         copy_index +=
             small_buf.NonBlockingRead(copied_data.data() + copy_index, count);
