@@ -124,9 +124,9 @@ def asylo_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-3.5.1",
-            urls = ["https://github.com/google/protobuf/archive/v3.5.1.tar.gz"],
-            sha256 = "826425182ee43990731217b917c5c3ea7190cfda141af4869e6d4ad9085a740f",
+            strip_prefix = "protobuf-3.6.1",
+            urls = ["https://github.com/google/protobuf/archive/v3.6.1.tar.gz"],
+            sha256 = "3d4e589d81b2006ca603c1ab712c9715a76227293032d05b26fca603f90b3f5b",
         )
 
     # gRPC
