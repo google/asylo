@@ -227,11 +227,13 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
   int updated;
   sgx_status_t status;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
-    status = sgx_create_enclave(enclave_path_.c_str(), debug_, &client->token_,
-                                &updated, &client->id_,
-                                /*misc_attr=*/nullptr, &client->base_address_,
-                                config.enable_fork());
+    status = sgx_create_enclave(
+        enclave_path_.c_str(), debug_, &client->token_, &updated, &client->id_,
+        /*misc_attr=*/nullptr, &client->base_address_, config.enable_fork());
 
+    LOG_IF(WARNING, status != SGX_SUCCESS)
+        << "Failed to create an enclave, attempt=" << i
+        << ", status=" << status;
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;
     }
