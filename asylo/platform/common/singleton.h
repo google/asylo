@@ -44,11 +44,11 @@ class Singleton {
   // Returns the pointer to the singleton of type |T|. Creates one using the
   // template parameter |F| if none exists. This method is thread-safe.
   static T *get() LOCKS_EXCLUDED(mu_) {
+    absl::MutexLock lock(&mu_);
     if (instance_) {
       return instance_;
     }
 
-    absl::MutexLock lock(&mu_);
     if (destroyed_) {
       return nullptr;
     }
