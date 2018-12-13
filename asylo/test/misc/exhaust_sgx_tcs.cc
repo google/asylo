@@ -33,7 +33,9 @@ namespace {
 static volatile int cc11_wait_count = 0;
 static absl::Mutex cc11_mutex;
 
-constexpr int stop_on_count = 4;  // Must be greater than TCS number.
+// Must be greater than or equal to the TCS number, since the main thread also
+// consumes a TCS.
+constexpr int stop_on_count = 3;
 
 void cc11_increment_count_and_wait() {
   {
@@ -50,9 +52,10 @@ class ExhaustTcsEnclave : public TrustedApplication {
   Status Run(const EnclaveInput &, EnclaveOutput *) override {
     std::vector<std::unique_ptr<std::thread>> threads;
     for (int i = 0; i < stop_on_count; ++i) {
-      threads[i] =
-          absl::make_unique<std::thread>(cc11_increment_count_and_wait);
+      threads.push_back(
+          absl::make_unique<std::thread>(cc11_increment_count_and_wait));
     }
+
     for (auto &thread : threads) {
       thread->join();
     }

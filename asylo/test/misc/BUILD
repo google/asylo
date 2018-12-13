@@ -203,7 +203,9 @@ enclave_test(
     srcs = ["exhaust_sgx_tcs_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":exhaust_sgx_tcs.so"},
-    tags = ["noregression"],
+    tags = [
+        "noregression",
+    ],
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )

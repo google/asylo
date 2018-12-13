@@ -16,20 +16,19 @@
  *
  */
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/test/util/enclave_test.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace {
 
 class ExhaustSgxTcsTest : public EnclaveTest {};
 
-TEST_F(ExhaustSgxTcsTest, ExhaustTCSsSIGILLorSIGSEGV) {
-  auto test_exit = [] (int exit_status) {
-      return WIFSIGNALED(exit_status) && (WTERMSIG(exit_status) == SIGILL ||
-                                          WTERMSIG(exit_status) == SIGSEGV);
-  };
-  EXPECT_EXIT(client_->EnterAndRun({}, nullptr), test_exit, "");
+TEST_F(ExhaustSgxTcsTest, StdThreadResourceExhausted) {
+  EXPECT_THAT(client_->EnterAndRun({}, nullptr),
+              StatusIs(error::GoogleError::RESOURCE_EXHAUSTED));
 }
 
 }  // namespace
