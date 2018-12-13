@@ -35,26 +35,26 @@ TEST(EnclaveCondVar, IllegalPointer) {
   // pointers.
 
   // pthread_cond_init
-  ASSERT_EQ(pthread_cond_init(nullptr, nullptr), EINVAL);
+  EXPECT_EQ(pthread_cond_init(nullptr, nullptr), EFAULT);
 
   // pthread_cond_destroy
-  ASSERT_EQ(pthread_cond_destroy(nullptr), EINVAL);
+  EXPECT_EQ(pthread_cond_destroy(nullptr), EFAULT);
 
   // pthread_cond_wait
   pthread_mutex_t mu;
-  ASSERT_EQ(pthread_cond_wait(nullptr, &mu), EINVAL);
+  EXPECT_EQ(pthread_cond_wait(nullptr, &mu), EFAULT);
   pthread_cond_t cv;
-  ASSERT_EQ(pthread_cond_wait(&cv, nullptr), EINVAL);
+  EXPECT_EQ(pthread_cond_wait(&cv, nullptr), EFAULT);
 
   // pthread_cond_timedwait
-  ASSERT_EQ(pthread_cond_timedwait(nullptr, &mu, nullptr), EINVAL);
-  ASSERT_EQ(pthread_cond_timedwait(&cv, nullptr, nullptr), EINVAL);
+  EXPECT_EQ(pthread_cond_timedwait(nullptr, &mu, nullptr), EFAULT);
+  EXPECT_EQ(pthread_cond_timedwait(&cv, nullptr, nullptr), EFAULT);
 
   // pthread_cond_signal
-  ASSERT_EQ(pthread_cond_signal(nullptr), EINVAL);
+  EXPECT_EQ(pthread_cond_signal(nullptr), EFAULT);
 
   // pthread_cond_broadcast
-  ASSERT_EQ(pthread_cond_broadcast(nullptr), EINVAL);
+  EXPECT_EQ(pthread_cond_broadcast(nullptr), EFAULT);
 }
 
 // This test creates a typical "producer-consumer" pattern using the mutex and

@@ -34,6 +34,16 @@ struct UntrustedDeleter {
 template <typename T>
 using UntrustedUniquePtr = std::unique_ptr<T, UntrustedDeleter>;
 
+// Checks whether |pointer| is not nullptr and is within the enclave. Returns
+// true if the pointer is valid; false if not.
+template <typename T>
+bool IsValidEnclaveAddress(const T *pointer) {
+  if (pointer == nullptr || !enc_is_within_enclave(pointer, sizeof(*pointer))) {
+    return false;
+  }
+  return true;
+}
+
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_MEMORY_H_

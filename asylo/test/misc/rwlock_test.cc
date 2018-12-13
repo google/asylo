@@ -75,29 +75,29 @@ class RwLockTest : public ::testing::Test {
 };
 
 TEST_F(RwLockTest, InvalidPointers) {
-  // Test various functions to ensure they return EINVAL rather than crashing if
+  // Test various functions to ensure they return EFAULT rather than crashing if
   // they get invalid pointers.
 
   ASSERT_EQ(pthread_rwlock_init(nullptr, nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   ASSERT_EQ(pthread_rwlock_destroy(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   ASSERT_EQ(pthread_rwlock_trywrlock(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   ASSERT_EQ(pthread_rwlock_wrlock(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   ASSERT_EQ(pthread_rwlock_tryrdlock(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   ASSERT_EQ(pthread_rwlock_rdlock(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   ASSERT_EQ(pthread_rwlock_unlock(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 }
 
 TEST_F(RwLockTest, Init) {

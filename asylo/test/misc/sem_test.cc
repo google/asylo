@@ -32,41 +32,41 @@ namespace asylo {
 namespace {
 
 TEST(EnclaveSem, InvalidSemPointer) {
-  // Test various functions to ensure they return EINVAL rather than crashing if
+  // Test various functions to ensure they return EFAULT rather than crashing if
   // they get invalid pointers.
 
   // sem_init
   ASSERT_EQ(sem_init(nullptr, /*pshared=*/0, /*value=*/0), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   // sem_destroy
   ASSERT_EQ(sem_destroy(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   // sem_post
   ASSERT_EQ(sem_post(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   // sem_wait
   ASSERT_EQ(sem_wait(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   // sem_trywait
   ASSERT_EQ(sem_wait(nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   // sem_timedwait
   timespec ts;
   ASSERT_EQ(sem_timedwait(nullptr, &ts), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 
   // sem_getvalue
   int value;
   ASSERT_EQ(sem_getvalue(nullptr, &value), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
   sem_t sem;
   ASSERT_EQ(sem_getvalue(&sem, nullptr), -1);
-  ASSERT_EQ(errno, EINVAL);
+  ASSERT_EQ(errno, EFAULT);
 }
 
 TEST(EnclaveSem, SharedNotAllowed) {

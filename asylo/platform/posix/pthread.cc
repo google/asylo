@@ -28,6 +28,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/arch/include/trusted/memory.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/include/semaphore.h"
@@ -45,15 +46,6 @@ static inline int InterlockedExchange(pthread_spinlock_t *dest,
                                       pthread_spinlock_t old_value,
                                       pthread_spinlock_t new_value) {
   return __sync_val_compare_and_swap(dest, old_value, new_value);
-}
-
-// Confirms that |parameter| is not nullptr and is within the enclave.
-template <typename T>
-static int check_parameter(const T *parameter) {
-  if (!parameter || !enc_is_within_enclave(parameter, sizeof(*parameter))) {
-    return EINVAL;
-  }
-  return 0;
 }
 
 static thread_local absl::flat_hash_map<uint64_t, void *> *tls_map = nullptr;
@@ -192,9 +184,8 @@ bool QueueOperations::Empty() const {
 }
 
 int pthread_mutex_check_parameter(pthread_mutex_t *mutex) {
-  int ret = check_parameter<pthread_mutex_t>(mutex);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+    return EFAULT;
   }
 
   if (mutex->_control != PTHREAD_MUTEX_RECURSIVE &&
@@ -322,13 +313,12 @@ asylo::ThreadManager::ThreadOptions CreateOptions(
 // pthread_rwlock_trywrlock_internal() respectively.
 template <int(TryLockFunc)(pthread_rwlock_t *)>
 int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
-  int ret = check_parameter<pthread_rwlock_t>(rwlock);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+    return ConvertToErrno(EFAULT);
   }
 
   LockableGuard lock_guard(rwlock);
-  ret = TryLockFunc(rwlock);
+  int ret = TryLockFunc(rwlock);
   if (ret == 0) {
     return 0;
   }
@@ -354,8 +344,8 @@ int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
 }  //  namespace pthread_impl
 }  //  namespace asylo
 
+using asylo::IsValidEnclaveAddress;
 using asylo::ThreadManager;
-using asylo::pthread_impl::check_parameter;
 using asylo::pthread_impl::ConvertToErrno;
 using asylo::pthread_impl::CreateOptions;
 using asylo::pthread_impl::init_tls_map;
@@ -434,9 +424,8 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
 // Initializes |mutex|, |attr| is unused.
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
-  int ret = check_parameter<pthread_mutex_t>(mutex);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+    return EFAULT;
   }
 
   *mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -445,9 +434,8 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
 
 // Destroys |mutex|, returns error if there are threads waiting on |mutex|.
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
-  int ret = check_parameter<pthread_mutex_t>(mutex);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+    return EFAULT;
   }
 
   LockableGuard lock_guard(mutex);
@@ -536,9 +524,8 @@ int pthread_once(pthread_once_t *once, void (*init_routine)(void)) {
 
 // Initializes |cond|, |attr| is unused.
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
-  int ret = check_parameter<pthread_cond_t>(cond);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+    return EFAULT;
   }
 
   *cond = PTHREAD_COND_INITIALIZER;
@@ -547,9 +534,8 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
 
 // Destroys |cond|, errors if there are threads waiting on |cond|.
 int pthread_cond_destroy(pthread_cond_t *cond) {
-  int ret = check_parameter<pthread_cond_t>(cond);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+    return EFAULT;
   }
 
   LockableGuard lock_guard(cond);
@@ -572,22 +558,14 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
 // never time out, acting like pthread_cond_wait().
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *deadline) {
-  int ret = check_parameter<pthread_cond_t>(cond);
-  if (ret != 0) {
-    return ret;
-  }
-
-  ret = check_parameter<pthread_mutex_t>(mutex);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_cond_t>(cond) ||
+      !IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+    return EFAULT;
   }
 
   // If a deadline has been specified, ensure it is valid.
-  if (deadline != nullptr) {
-    ret = check_parameter<timespec>(deadline);
-    if (ret != 0) {
-      return ret;
-    }
+  if (deadline != nullptr && !IsValidEnclaveAddress<timespec>(deadline)) {
+    return EFAULT;
   }
 
   const pthread_t self = pthread_self();
@@ -598,7 +576,7 @@ int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
     list.Enqueue(self);
   }
 
-  ret = pthread_mutex_unlock(mutex);
+  int ret = pthread_mutex_unlock(mutex);
   if (ret != 0) {
     return ret;
   }
@@ -655,9 +633,8 @@ int pthread_condattr_destroy(pthread_condattr_t *attr) { return 0; }
 
 // Wakes the first waiting thread on |cond|.
 int pthread_cond_signal(pthread_cond_t *cond) {
-  int ret = check_parameter<pthread_cond_t>(cond);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+    return EFAULT;
   }
 
   LockableGuard lock_guard(cond);
@@ -673,9 +650,8 @@ int pthread_cond_signal(pthread_cond_t *cond) {
 
 // Wakes all the waiting threads on |cond|.
 int pthread_cond_broadcast(pthread_cond_t *cond) {
-  int ret = check_parameter<pthread_cond_t>(cond);
-  if (ret != 0) {
-    return ret;
+  if (!IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+    return EFAULT;
   }
 
   QueueOperations list(cond);
@@ -690,9 +666,8 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
 // Initialize |sem| with an initial semaphore value of |value|. |pshared| must
 // be 0; shared semaphores are not supported.
 int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
-  int ret = check_parameter<sem_t>(sem);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<sem_t>(sem)) {
+    return ConvertToErrno(EFAULT);
   }
 
   // We only support inside-an-enclave semaphores, not cross-process semaphores.
@@ -702,7 +677,7 @@ int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
 
   sem->count_ = value;
 
-  ret = pthread_mutex_init(&sem->mu_, nullptr);
+  int ret = pthread_mutex_init(&sem->mu_, nullptr);
   if (ret != 0) {
     return ConvertToErrno(ret);
   }
@@ -717,14 +692,8 @@ int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
 
 // Get the current value of |sem| and write it to |sval|.
 int sem_getvalue(sem_t *sem, int *sval) {
-  int ret = check_parameter<sem_t>(sem);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
-  }
-
-  ret = check_parameter<int>(sval);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<sem_t>(sem) || !IsValidEnclaveAddress<int>(sval)) {
+    return ConvertToErrno(EFAULT);
   }
 
   PthreadMutexLock lock(&sem->mu_);
@@ -734,9 +703,8 @@ int sem_getvalue(sem_t *sem, int *sval) {
 
 // Unlock |sem|, unblocking a thread that might be waiting for it.
 int sem_post(sem_t *sem) {
-  int ret = check_parameter<sem_t>(sem);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<sem_t>(sem)) {
+    return ConvertToErrno(EFAULT);
   }
 
   PthreadMutexLock lock(&sem->mu_);
@@ -749,20 +717,17 @@ int sem_post(sem_t *sem) {
 // been unlocked. Returns -1 on err. errno will be set to ETIMEDOUT if the
 // failure is due to a timeout.
 int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
-  int ret = check_parameter<sem_t>(sem);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<sem_t>(sem)) {
+    return ConvertToErrno(EFAULT);
   }
 
-  if (abs_timeout != nullptr) {
-    ret = check_parameter<timespec>(abs_timeout);
-    if (ret != 0) {
-      return ConvertToErrno(ret);
-    }
+  if (abs_timeout != nullptr && !IsValidEnclaveAddress<timespec>(abs_timeout)) {
+    return ConvertToErrno(EFAULT);
   }
 
   PthreadMutexLock lock(&sem->mu_);
 
+  int ret = 0;
   while (sem->count_ == 0) {
     ret = pthread_cond_timedwait(&sem->cv_, &sem->mu_, abs_timeout);
 
@@ -797,12 +762,11 @@ int sem_trywait(sem_t *sem) {
 }
 
 int sem_destroy(sem_t *sem) {
-  int ret = check_parameter<sem_t>(sem);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<sem_t>(sem)) {
+    return ConvertToErrno(EFAULT);
   }
 
-  ret = pthread_cond_destroy(&sem->cv_);
+  int ret = pthread_cond_destroy(&sem->cv_);
   if (ret != 0) {
     return ConvertToErrno(ret);
   }
@@ -817,9 +781,8 @@ int sem_destroy(sem_t *sem) {
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
-  int ret = check_parameter<pthread_rwlock_t>(rwlock);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+    return ConvertToErrno(EFAULT);
   }
 
   *rwlock = PTHREAD_RWLOCK_INITIALIZER;
@@ -828,9 +791,8 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 }
 
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
-  int ret = check_parameter<pthread_rwlock_t>(rwlock);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+    return ConvertToErrno(EFAULT);
   }
 
   LockableGuard lock_guard(rwlock);
@@ -838,9 +800,8 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
-  int ret = check_parameter<pthread_rwlock_t>(rwlock);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+    return ConvertToErrno(EFAULT);
   }
 
   LockableGuard lock_guard(rwlock);
@@ -856,9 +817,8 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
-  int ret = check_parameter<pthread_rwlock_t>(rwlock);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+    return ConvertToErrno(EFAULT);
   }
 
   LockableGuard lock_guard(rwlock);
@@ -874,9 +834,8 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-  int ret = check_parameter<pthread_rwlock_t>(rwlock);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+    return ConvertToErrno(EFAULT);
   }
 
   LockableGuard lock_guard(rwlock);
@@ -914,9 +873,8 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *mutexattr, int type) {
 }
 
 int pthread_attr_init(pthread_attr_t *attr) {
-  int ret = check_parameter<pthread_attr_t>(attr);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_attr_t>(attr)) {
+    return ConvertToErrno(EFAULT);
   }
 
   attr->detach_state = PTHREAD_CREATE_JOINABLE;
@@ -924,17 +882,15 @@ int pthread_attr_init(pthread_attr_t *attr) {
 }
 
 int pthread_attr_destroy(pthread_attr_t *attr) {
-  int ret = check_parameter<pthread_attr_t>(attr);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_attr_t>(attr)) {
+    return ConvertToErrno(EFAULT);
   }
   return 0;
 }
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) {
-  int ret = check_parameter<pthread_attr_t>(attr);
-  if (ret != 0) {
-    return ConvertToErrno(ret);
+  if (!IsValidEnclaveAddress<pthread_attr_t>(attr)) {
+    return ConvertToErrno(EFAULT);
   }
 
   if (type != PTHREAD_CREATE_JOINABLE && type != PTHREAD_CREATE_DETACHED) {
