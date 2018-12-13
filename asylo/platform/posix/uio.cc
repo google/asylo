@@ -22,9 +22,7 @@
 
 using asylo::io::IOManager;
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 ssize_t writev(int fd, const struct iovec *iov, int iovcnt) {
   return IOManager::GetInstance().Writev(fd, iov, iovcnt);
@@ -34,6 +32,4 @@ ssize_t readv(int fd, const struct iovec *iov, int iovcnt) {
   return IOManager::GetInstance().Readv(fd, iov, iovcnt);
 }
 
-#ifdef __cplusplus
 }  // extern "C"
-#endif

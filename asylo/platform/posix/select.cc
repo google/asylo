@@ -25,9 +25,7 @@
 
 using asylo::io::IOManager;
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
            struct timeval *timeout) {
@@ -35,6 +33,4 @@ int select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
                                          timeout);
 }
 
-#ifdef __cplusplus
 }  // extern "C"
-#endif

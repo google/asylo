@@ -197,9 +197,7 @@ bool BridgeMsghdrWrapper::CopyAllBuffers() {
 }  // namespace
 }  // namespace asylo
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 ///////////////////////////////////////
 //              IO                   //
@@ -1168,6 +1166,4 @@ void enc_untrusted_hex_dump(const void *buf, int nbytes) {
   CHECK_OCALL(ocall_enc_untrusted_hex_dump(buf, nbytes));
 }
 
-#ifdef __cplusplus
 }  // extern "C"
-#endif

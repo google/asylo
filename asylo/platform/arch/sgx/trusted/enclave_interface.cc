@@ -21,9 +21,7 @@
 #include "include/sgx_thread.h"
 #include "include/sgx_trts.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 // The SGX SDK function sgx_thread_self() returns nullptr during early
 // initialization. To return a non-zero, distinct value for each thread and
@@ -62,6 +60,4 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout* enclave_memory_layout) {
   enclave_memory_layout->reserved_size = memory_layout.reserved_size;
 }
 
-#ifdef __cplusplus
 }  //  extern "C"
-#endif

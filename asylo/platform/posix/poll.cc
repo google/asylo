@@ -26,14 +26,10 @@
 
 using asylo::io::IOManager;
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 int poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   return IOManager::GetInstance().Poll(fds, nfds, timeout);
 }
 
-#ifdef __cplusplus
 }  // extern "C"
-#endif

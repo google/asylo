@@ -21,13 +21,9 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
-#ifdef __cplusplus
 extern "C" {
-#endif
 
 // Retrieves system information from the host.
 int uname(struct utsname *buf) { return enc_untrusted_uname(buf); }
 
-#ifdef __cplusplus
 }  // extern "C"
-#endif
