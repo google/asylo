@@ -214,22 +214,30 @@ int ocall_enc_untrusted_socket(int domain, int type, int protocol) {
 }
 
 int ocall_enc_untrusted_connect(int sockfd,
-                                const struct bridge_sockaddr *addr) {
-  struct bridge_sockaddr tmp;
-  socklen_t len = 0;
-  asylo::FromBridgeSockaddr(addr, reinterpret_cast<struct sockaddr *>(&tmp),
-                            &len);
-  int ret = connect(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), len);
+                                const struct bridge_sockaddr *bridge_addr) {
+  struct sockaddr_storage tmp;
+  socklen_t len = sizeof(tmp);
+  struct sockaddr *addr = asylo::FromBridgeSockaddr(
+      bridge_addr, reinterpret_cast<struct sockaddr *>(&tmp), &len);
+
+  LOG_IF(FATAL, addr == nullptr) << "Unexpected bridge failure";
+  LOG_IF(FATAL, len > sizeof(tmp)) << "Insufficient sockaddr buf space";
+
+  int ret = connect(sockfd, addr, len);
   return ret;
 }
 
-int ocall_enc_untrusted_bind(int sockfd, const struct bridge_sockaddr *addr) {
-  struct bridge_sockaddr tmp;
-  socklen_t len = 0;
-  asylo::FromBridgeSockaddr(
-                     addr, reinterpret_cast<struct sockaddr *>(&tmp), &len);
-  int ret = bind(sockfd,
-                 reinterpret_cast<struct sockaddr *>(&tmp), len);
+int ocall_enc_untrusted_bind(int sockfd,
+                             const struct bridge_sockaddr *bridge_addr) {
+  struct sockaddr_storage tmp;
+  socklen_t len = sizeof(tmp);
+  struct sockaddr *addr = asylo::FromBridgeSockaddr(
+      bridge_addr, reinterpret_cast<struct sockaddr *>(&tmp), &len);
+
+  LOG_IF(FATAL, addr == nullptr) << "Unexpected bridge failure";
+  LOG_IF(FATAL, len > sizeof(tmp)) << "Insufficient sockaddr buf space";
+
+  int ret = bind(sockfd, addr, len);
   return ret;
 }
 
@@ -366,8 +374,14 @@ int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr) {
   socklen_t tmp_len = sizeof(tmp);
   int ret =
       getsockname(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
-                          addr);
+
+  LOG_IF(FATAL, tmp_len > sizeof(tmp)) << "Insufficient sockaddr buf space";
+
+  // Only marshal the sockaddr if a valid one was returned.
+  if (ret == 0) {
+    asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
+                            addr);
+  }
   return ret;
 }
 

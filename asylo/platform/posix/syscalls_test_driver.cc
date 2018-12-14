@@ -998,6 +998,28 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   freeifaddrs(host_front);
 }
 
+// Tests various failure modes of getsockname(). The enclave code sets up each
+// test and tests against the expected retval.
+TEST_F(SyscallsTest, SocknameFailure_EBADF) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getsockname_ebadf", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, SocknameFailure_EFAULT) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getsockname_efault", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, SocknameFailure_EINVAL) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getsockname_einval", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, SocknameFailure_ENOTSOCK) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getsockname_enotsock", "", nullptr),
+              IsOk());
+}
+
 // Tests truncate and ftruncate by truncating the file inside an enclave, and
 // read from it to ensure it's truncated to the correct size.
 TEST_F(SyscallsTest, Truncate) {

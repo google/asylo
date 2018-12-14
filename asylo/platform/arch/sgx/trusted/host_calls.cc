@@ -418,7 +418,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   if (ret == -1) {
     return ret;
   }
-  if (addr && addrlen) {
+  if (addr != nullptr && addrlen != nullptr) {
     asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
   }
   return ret;
@@ -591,10 +591,23 @@ int enc_untrusted_setsockopt(int sockfd, int level, int optname,
 
 int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen) {
+  if (!asylo::IsValidEnclaveAddress<struct sockaddr>(addr) ||
+      !asylo::IsValidEnclaveAddress<socklen_t>(addrlen)) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  // Guard against -1 being passed as addrlen even though it's unsigned.
+  if (*addrlen == 0 || *addrlen > INT32_MAX) {
+    errno = EINVAL;
+    return -1;
+  }
   int ret;
   struct bridge_sockaddr tmp;
   CHECK_OCALL(ocall_enc_untrusted_getsockname(&ret, sockfd, &tmp));
-  asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
+  if (ret == 0) {
+    asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
+  }
   return ret;
 }
 

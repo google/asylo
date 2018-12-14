@@ -150,7 +150,7 @@ Status SocketServer::ServerRoundtripTransmit(int buf_len, int round_trip) {
 int SocketServer::GetPort() {
   sockaddr_in6 serv_addr6;
   sockaddr *serv_addr = reinterpret_cast<sockaddr *>(&serv_addr6);
-  socklen_t serv_addr_size = sizeof(serv_addr);
+  socklen_t serv_addr_size = sizeof(sockaddr_in6);
   if (getsockname(socket_fd_.get(), serv_addr, &serv_addr_size) != 0) {
     LOG(ERROR) << kLogOrigin << "getsockname error: " << strerror(errno);
     return -1;

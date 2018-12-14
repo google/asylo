@@ -142,7 +142,7 @@ void SocketClient::LogClientIOStats() {
 Status SocketClient::ClientConnection(int fd, struct sockaddr *serv_addr,
                                       socklen_t addrlen) {
   if (connect(fd, serv_addr, addrlen) < 0) {
-    LOG(ERROR) << kLogOrigin << "client connect timeout";
+    LOG(ERROR) << kLogOrigin << "client connect failure: " << strerror(errno);
     return Status(static_cast<error::PosixError>(errno), "connect timeout");
   }
   return Status::OkStatus();

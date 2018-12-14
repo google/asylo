@@ -207,8 +207,14 @@ int ToBridgeSocketType(int sock_type);
 // |bridge_sock_type| is not supported.
 int FromBridgeSocketType(int bridge_sock_type);
 
-// Copies |bridge_addr| to a runtime sockaddr up to sizeof(struct
-// bridge_sockaddr). Returns nullptr if unsuccessful.
+// Copies |bridge_addr| to a runtime sockaddr. Similar to getsockname(),
+// |addrlen| is both an in and out parameter. Its value when FromBridgeSockaddr
+// is called should be the size of the buffer available at `addr`. If the
+// conversion succeeds, it will contain the length of the converted address.
+// Returns nullptr if unsuccessful. Will truncate the converted sockaddr if the
+// provided buffer is too small; callers should check to ensure they are getting
+// a complete sockaddr by ensuring the returned addrlen is not larger than the
+// size of the buffer.
 struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,
                                     struct sockaddr *addr, socklen_t *addrlen);
 

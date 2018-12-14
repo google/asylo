@@ -122,6 +122,14 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunChModTest(test_input.path_name());
     } else if (test_input.test_target() == "getifaddrs") {
       return RunGetIfAddrsTest(output);
+    } else if (test_input.test_target() == "getsockname_ebadf") {
+      return RunGetSocknameFailureTest_EBADF();
+    } else if (test_input.test_target() == "getsockname_efault") {
+      return RunGetSocknameFailureTest_EFAULT();
+    } else if (test_input.test_target() == "getsockname_einval") {
+      return RunGetSocknameFailureTest_EINVAL();
+    } else if (test_input.test_target() == "getsockname_enotsock") {
+      return RunGetSocknameFailureTest_ENOTSOCK();
     } else if (test_input.test_target() == "truncate") {
       return RunTruncateTest(test_input.path_name());
     } else if (test_input.test_target() == "mmap") {
@@ -1065,6 +1073,71 @@ class SyscallsEnclave : public EnclaveTestCase {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
     return Status::OkStatus();
+  }
+
+  Status ExpectSockErrno(int expected_errno, int retval) {
+    int saved_errno = errno;
+
+    if (retval != -1) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Expected getsockname retval of -1, got ", retval));
+    }
+
+    if (saved_errno != expected_errno) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("Expected getsockname errno of ",
+                                 expected_errno, "; got ", saved_errno));
+    }
+
+    return Status::OkStatus();
+  }
+
+  Status RunGetSocknameFailureTest_EBADF() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+
+    return ExpectSockErrno(EBADF, getsockname(-1, &sa, &sa_len));
+  }
+
+  Status RunGetSocknameFailureTest_EFAULT() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
+    }
+
+    return ExpectSockErrno(EFAULT, getsockname(fd, nullptr, &sa_len));
+  }
+
+  Status RunGetSocknameFailureTest_EINVAL() {
+    sockaddr sa;
+    socklen_t sa_len = -1;
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
+    }
+
+    return ExpectSockErrno(EINVAL, getsockname(fd, &sa, &sa_len));
+  }
+
+  Status RunGetSocknameFailureTest_ENOTSOCK() {
+    int fds[2];
+    int ret = pipe(fds);
+    if (ret != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    "couldn't create pipe");
+    }
+
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+    return ExpectSockErrno(ENOTSOCK, getsockname(fds[0], &sa, &sa_len));
   }
 
   Status RunTruncateTest(const std::string &path) {

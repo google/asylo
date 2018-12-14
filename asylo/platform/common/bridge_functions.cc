@@ -613,43 +613,63 @@ void InitializeToZeroArray(T (&ptr)[M]) {
   memset(ptr, 0, sizeof(T) * M);
 }
 
+// Helper for implementing standard POSIX semantics for returning sockaddr
+// structures. CopySockaddr copies the sockaddr in |source|, of length
+// |source_len|, into the buffer pointed to by |addr_dest|, which has
+// |addrlen_dest| bytes available. The copy is truncated if the destination
+// buffer is too small. The number of bytes in the un-truncated structure is
+// written to addrlen_dest.
+//
+// Returns |addr_dest|.
+static struct sockaddr *CopySockaddr(void *source, socklen_t source_len,
+                                     struct sockaddr *addr_dest,
+                                     socklen_t *addrlen_dest) {
+  memcpy(addr_dest, source, std::min(*addrlen_dest, source_len));
+  *addrlen_dest = source_len;
+  return addr_dest;
+}
+
 struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,
                                     struct sockaddr *addr, socklen_t *addrlen) {
-  if (!bridge_addr || !addr) return nullptr;
-  addr->sa_family = FromBridgeAfFamily(bridge_addr->sa_family);
-  if (addr->sa_family == AF_UNIX || addr->sa_family == AF_LOCAL) {
-    struct sockaddr_un *sockaddr_un_out =
-        reinterpret_cast<struct sockaddr_un *>(addr);
-    InitializeToZeroArray(sockaddr_un_out->sun_path);
-    ReinterpretCopyArray(sockaddr_un_out->sun_path,
+  if (bridge_addr == nullptr || addr == nullptr || addrlen == nullptr) {
+    return nullptr;
+  }
+  sa_family_t family = FromBridgeAfFamily(bridge_addr->sa_family);
+  if (family == AF_UNIX || family == AF_LOCAL) {
+    struct sockaddr_un sockaddr_un_out;
+    sockaddr_un_out.sun_family = family;
+    InitializeToZeroArray(sockaddr_un_out.sun_path);
+    ReinterpretCopyArray(sockaddr_un_out.sun_path,
                          bridge_addr->addr_un.sun_path);
-    *addrlen = sizeof(struct sockaddr_un);
-  } else if (addr->sa_family == AF_INET6) {
-    struct sockaddr_in6 *sockaddr_in6_out =
-        reinterpret_cast<struct sockaddr_in6 *>(addr);
-    sockaddr_in6_out->sin6_port = bridge_addr->addr_in6.sin6_port;
-    sockaddr_in6_out->sin6_flowinfo = bridge_addr->addr_in6.sin6_flowinfo;
-    InitializeToZeroSingle(&sockaddr_in6_out->sin6_addr);
-    ReinterpretCopySingle(&sockaddr_in6_out->sin6_addr,
+    return CopySockaddr(&sockaddr_un_out, sizeof(sockaddr_un_out), addr,
+                        addrlen);
+  } else if (family == AF_INET6) {
+    struct sockaddr_in6 sockaddr_in6_out;
+    sockaddr_in6_out.sin6_family = family;
+    sockaddr_in6_out.sin6_port = bridge_addr->addr_in6.sin6_port;
+    sockaddr_in6_out.sin6_flowinfo = bridge_addr->addr_in6.sin6_flowinfo;
+    InitializeToZeroSingle(&sockaddr_in6_out.sin6_addr);
+    ReinterpretCopySingle(&sockaddr_in6_out.sin6_addr,
                           &bridge_addr->addr_in6.sin6_addr);
-    sockaddr_in6_out->sin6_scope_id = bridge_addr->addr_in6.sin6_scope_id;
-    *addrlen = sizeof(sockaddr_in6);
-  } else if (addr->sa_family == AF_INET) {
-    struct sockaddr_in *sockaddr_in_out =
-        reinterpret_cast<struct sockaddr_in *>(addr);
-    sockaddr_in_out->sin_port = bridge_addr->addr_in.sin_port;
-    InitializeToZeroSingle(&sockaddr_in_out->sin_addr);
-    ReinterpretCopySingle(&sockaddr_in_out->sin_addr,
+    sockaddr_in6_out.sin6_scope_id = bridge_addr->addr_in6.sin6_scope_id;
+    return CopySockaddr(&sockaddr_in6_out, sizeof(sockaddr_in6_out), addr,
+                        addrlen);
+  } else if (family == AF_INET) {
+    struct sockaddr_in sockaddr_in_out;
+    sockaddr_in_out.sin_family = family;
+    sockaddr_in_out.sin_port = bridge_addr->addr_in.sin_port;
+    InitializeToZeroSingle(&sockaddr_in_out.sin_addr);
+    ReinterpretCopySingle(&sockaddr_in_out.sin_addr,
                           &bridge_addr->addr_in.sin_addr);
-    InitializeToZeroArray(sockaddr_in_out->sin_zero);
-    ReinterpretCopyArray(sockaddr_in_out->sin_zero,
+    InitializeToZeroArray(sockaddr_in_out.sin_zero);
+    ReinterpretCopyArray(sockaddr_in_out.sin_zero,
                          bridge_addr->addr_in.sin_zero);
-    *addrlen = sizeof(sockaddr_in);
+    return CopySockaddr(&sockaddr_in_out, sizeof(sockaddr_in_out), addr,
+                        addrlen);
   } else {
     LOG(ERROR) << "socket type is not supported";
     abort();
   }
-  return addr;
 }
 
 struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,

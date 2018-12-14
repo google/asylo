@@ -21,6 +21,7 @@
 
 #include <memory>
 
+#include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
 namespace asylo {
