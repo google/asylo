@@ -63,11 +63,11 @@ class EnclaveStorageSecureTest : public ::testing::Test,
   const int64_t kFileHeaderLength = kFileHashLength + sizeof(size_t);
   const std::string &GetPath() const { return path_; }
   const void *GetWriteBuffer() const {
-    return reinterpret_cast<const void*>(write_buffer_);
+    return reinterpret_cast<const void *>(write_buffer_);
   }
   void *GetReadBuffer() { return reinterpret_cast<void*>(read_buffer_); }
   const void *GetZeroBuffer() const {
-    return reinterpret_cast<const void*>(zero_buffer_);
+    return reinterpret_cast<const void *>(zero_buffer_);
   }
   int EmulateSetKeyIoctl(int fd) const {
     return AeadHandler::GetInstance().SetMasterKey(fd, key_.data(),

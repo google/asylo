@@ -57,7 +57,7 @@ ssize_t read_all(int fd, void *buf, size_t len) {
   while (bytes_to_read > 0) {
     ssize_t bytes_read;
     do {
-      bytes_read = enc_untrusted_read(fd, static_cast<uint8_t*>(buf) + offset,
+      bytes_read = enc_untrusted_read(fd, static_cast<uint8_t *>(buf) + offset,
                                       bytes_to_read);
     } while ((bytes_read == -1) && is_transient_error(errno));
     if (bytes_read == -1) {
@@ -83,7 +83,7 @@ ssize_t write_all(int fd, const void *buf, size_t len) {
     ssize_t bytes_written;
     do {
       bytes_written = enc_untrusted_write(
-          fd, static_cast<const uint8_t*>(buf) + offset, bytes_to_write);
+          fd, static_cast<const uint8_t *>(buf) + offset, bytes_to_write);
     } while ((bytes_written == -1) && is_transient_error(errno));
     if (bytes_written == -1) {
       return -1;
@@ -122,9 +122,9 @@ const uint8_t *GetPlaintextBuffer(size_t first_partial_block_bytes_count,
 
 uint8_t *GetPlaintextBuffer(size_t first_partial_block_bytes_count,
                             int64_t block_index, void *buf) {
-  return const_cast<uint8_t*>(
+  return const_cast<uint8_t *>(
       GetPlaintextBuffer(first_partial_block_bytes_count, block_index,
-                         const_cast<const void*>(buf)));
+                         const_cast<const void *>(buf)));
 }
 
 }  // namespace
@@ -210,7 +210,7 @@ bool AeadHandler::Deserialize(FileControl *file_ctrl) {
       return false;
     }
 
-    std::string tag_string(reinterpret_cast<char*>(tag.data()), kTagLength);
+    std::string tag_string(reinterpret_cast<char *>(tag.data()), kTagLength);
     VLOG(2) << "Adding auth tag as leaf to rebuild Merkle tree: "
             << absl::BytesToHexString(tag_string);
     file_ctrl->ad->AddLeaf(tag_string);
@@ -228,7 +228,7 @@ bool AeadHandler::Deserialize(FileControl *file_ctrl) {
   // Prepare file data digest.
   DataDigest data_digest;
   std::copy_n(
-      reinterpret_cast<const uint8_t*>(file_ctrl->ad->CurrentRoot().data()),
+      reinterpret_cast<const uint8_t *>(file_ctrl->ad->CurrentRoot().data()),
       kRootHashLength, data_digest.data());
   data_digest.file_size = file_header.file_size;
 
@@ -467,28 +467,28 @@ ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void *buf, size_t count,
                               kCipherBlockLength);
     VLOG(2) << "Ciphertext read: "
             << absl::BytesToHexString(absl::string_view(
-                   reinterpret_cast<const char*>(ciphertext.data()),
+                   reinterpret_cast<const char *>(ciphertext.data()),
                    kCipherBlockLength));
 
     TagView tag(buffer.data() + block_index * kSecureBlockLength + kBlockLength,
                 kTagLength);
     VLOG(2) << "Auth tag read: "
             << absl::BytesToHexString(absl::string_view(
-                   reinterpret_cast<const char*>(tag.data()), kTagLength));
+                   reinterpret_cast<const char *>(tag.data()), kTagLength));
 
     TokenView token(
         buffer.data() + block_index * kSecureBlockLength + kCipherBlockLength,
         kTokenLength);
     VLOG(2) << "Token read: "
             << absl::BytesToHexString(absl::string_view(
-                   reinterpret_cast<const char*>(token.data()), kTokenLength));
+                   reinterpret_cast<const char *>(token.data()), kTokenLength));
 
     // Note: Verifying integrity tag will be replaced with integrity
     // verification against AD root if/when AD tree will be stored in a file
     // (i.e. if/when optimizing integrity assurance for large files).
     if (file_ctrl.ad->LeafHash(merkle_block_idx) !=
         file_ctrl.ad->LeafHash(
-            std::string(reinterpret_cast<const char*>(tag.data()), kTagLength))) {
+            std::string(reinterpret_cast<const char *>(tag.data()), kTagLength))) {
       LOG(ERROR) << "Integrity verification failed, fd = " << fd;
       return -1;
     }
@@ -562,7 +562,7 @@ bool AeadHandler::UpdateDigest(FileControl *file_ctrl,
 
   // Prepare file data digest.
   DataDigest data_digest;
-  std::copy_n(reinterpret_cast<const uint8_t*>(root.data()), kRootHashLength,
+  std::copy_n(reinterpret_cast<const uint8_t *>(root.data()), kRootHashLength,
               data_digest.data());
   data_digest.file_size = file_ctrl->logical_size;
 
@@ -682,7 +682,7 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void *buf, size_t count) {
     }
 
     std::copy_n(
-        reinterpret_cast<const uint8_t*>(buf), first_partial_block_bytes_count,
+        reinterpret_cast<const uint8_t *>(buf), first_partial_block_bytes_count,
         first_block.data() + kBlockLength - first_partial_block_bytes_count);
   }
 
@@ -698,7 +698,7 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void *buf, size_t count) {
       return -1;
     }
 
-    std::copy_n(reinterpret_cast<const uint8_t*>(buf) + count -
+    std::copy_n(reinterpret_cast<const uint8_t *>(buf) + count -
                     last_partial_block_bytes_count,
                 last_partial_block_bytes_count, last_block.data());
   }
@@ -776,17 +776,18 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void *buf, size_t count) {
     }
     VLOG(2) << "Ciphertext generated: "
             << absl::BytesToHexString(absl::string_view(
-                   reinterpret_cast<const char*>(ciphertext->data()),
+                   reinterpret_cast<const char *>(ciphertext->data()),
                    kBlockLength));
     VLOG(2) << "Token generated: "
             << absl::BytesToHexString(absl::string_view(
-                   reinterpret_cast<const char*>(token->data()), kTokenLength));
+                   reinterpret_cast<const char *>(token->data()),
+                   kTokenLength));
 
     TagView tag(ciphertext->data() + kBlockLength, kTagLength);
     tags.push_back(tag);
     VLOG(2) << "Auth tag generated: "
             << absl::BytesToHexString(absl::string_view(
-                   reinterpret_cast<const char*>(tag.data()), kTagLength));
+                   reinterpret_cast<const char *>(tag.data()), kTagLength));
   }
 
   // Move cursor to the first full block to write.
@@ -829,7 +830,7 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void *buf, size_t count) {
   }
 
   for (int64_t idx = 0; idx < tags.size(); idx++) {
-    std::string tag_string(reinterpret_cast<char*>(tags[idx].data()), kTagLength);
+    std::string tag_string(reinterpret_cast<char *>(tags[idx].data()), kTagLength);
     int64_t block_index = start_block_to_write + idx;
     if (block_index < eof_block_index) {
       VLOG(2) << "Updating auth tag on AD: "

@@ -1218,7 +1218,7 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(error::GoogleError::INTERNAL,
                     "mmap(MAP_ANONYMOUS) returned non-page-aligned memory");
     }
-    char *cptr = static_cast<char*>(ptr);
+    char *cptr = static_cast<char *>(ptr);
     if (std::count(cptr, cptr + 10000, '\0') != 10000) {
       return Status(error::GoogleError::INTERNAL,
                     "mmap(MAP_ANONYMOUS) returned uninitialized memory");

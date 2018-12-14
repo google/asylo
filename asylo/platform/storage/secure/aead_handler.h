@@ -151,7 +151,7 @@ class AeadHandler {
           ad(absl::make_unique<CTMMTAuthenticatedDictionary>()) {
       UnsafeBytes<kTagLength> tag;
       memset(tag.data(), 0, kTagLength);
-      std::string tag_string(reinterpret_cast<char*>(tag.data()), kTagLength);
+      std::string tag_string(reinterpret_cast<char *>(tag.data()), kTagLength);
       zero_hash = ad->LeafHash(tag_string);
     }
 
