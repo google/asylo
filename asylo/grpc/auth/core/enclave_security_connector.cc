@@ -29,6 +29,7 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
+#include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
 #include "src/core/lib/security/transport/security_handshaker.h"
@@ -177,6 +178,7 @@ static int enclave_server_security_connector_cmp(grpc_security_connector *sc1,
 
 static void enclave_channel_security_connector_add_handshaker(
     grpc_channel_security_connector *security_connector,
+    grpc_pollset_set* interested_parties,
     grpc_handshake_manager *handshake_mgr) {
   tsi_handshaker *tsi_handshaker = nullptr;
   grpc_enclave_channel_credentials *channel_creds =
@@ -199,6 +201,7 @@ static void enclave_channel_security_connector_add_handshaker(
 
 static void enclave_server_security_connector_add_handshakers(
     grpc_server_security_connector *security_connector,
+    grpc_pollset_set *interested_parties,
     grpc_handshake_manager *handshake_mgr) {
   tsi_handshaker *tsi_handshaker = nullptr;
   grpc_enclave_server_credentials *server_creds =
