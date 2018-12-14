@@ -2989,7 +2989,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1194 @@
+@@ -0,0 +1,1208 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +# "notice" licenses present:
@@ -4164,11 +4164,25 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +# These configuration settings are used to select build configurations based
 +# on if building for hardware or simulation sgx enclaves.
-+#   --config=sgx adds --define="SGX_SIM=0"
-+#   --config=sgx-sim adds --define="SGX_SIM=1"
++#   sgx_hw matches --config=sgx, which adds:
++#                                --define="ASYLO_SGX=1"
++#                                --define="SGX_SIM=0"
++#   sgx_sim matches --config=sgx-sim, which adds:
++#                                     --define="ASYLO_SGX=1"
++#                                     --define="SGX_SIM=1"
++#   sgx matches sgx_hw and sgx_sim
++# ASYLO_SGX implies that the build uses either SGX backend (hardware or simulation).
 +# By default enclave launching applications will support simulation enclaves.
 +# You can manually specify "bazel build --define="SGX_SIM=1" :mytarget" to
 +# support hardware enclaves.
++config_setting(
++    name = "sgx",
++    values = {
++        "define": "ASYLO_SGX=1",
++    },
++    visibility = ["//visibility:public"],
++)
++
 +config_setting(
 +    name = "sgx_hw",
 +    values = {
