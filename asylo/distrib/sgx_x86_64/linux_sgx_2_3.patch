@@ -2781,20 +2781,12 @@ diff -Nur sdk/trts/linux/trts_pic.S sdk/trts/linux/trts_pic.S
 diff -Nur sdk/trts/linux/x86_64/setcontext.S sdk/trts/linux/x86_64/setcontext.S
 --- sdk/trts/linux/x86_64/setcontext.S
 +++ sdk/trts/linux/x86_64/setcontext.S
-@@ -24,12 +24,17 @@
- OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION
- WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
- 
-+#define __NR_rt_sigprocmask 0
-+#ifndef __linux__
-+#define __linux__
-+#endif
-+
+@@ -27,9 +27,9 @@
  #include "ucontext_i.h"
  #if (!ISE)
  #if defined __linux__
 -#include <asm/unistd.h>
-+//#include <asm/unistd.h>
++// #include <asm/unistd.h>  // Unused, and undefined in Asylo.
  #define	SIG_SETMASK   2
 -#define	SIGSET_BYTE_SIZE   (64/8)
 +#define	SIGSET_BYTE_SIZE   8
@@ -2997,7 +2989,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1190 @@
+@@ -0,0 +1,1194 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +# "notice" licenses present:
@@ -3396,6 +3388,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    srcs = TRTS_COMMON_SRCS + TRTS_COMMON_HDRS,
 +    copts = [
 +        "-DISE=1",
++        "-D__NR_rt_sigprocmask=0",  # Provided just for parse_headers
++        "-D__linux__",
 +        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts",
@@ -3456,6 +3450,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    copts = [
 +        "-DSE_SIM=1",
 +        "-DISE=1",
++        "-D__NR_rt_sigprocmask=0",  # Provided just for parse_headers
++        "-D__linux__",
 +        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts",
@@ -4454,7 +4450,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +};
 --- /dev/null
 +++ runtime_support/rts_config.h
-@@ -0,0 +1,30 @@
+@@ -0,0 +1,23 @@
 +#ifndef _RUNTIME_SUPPORT_RTS_CONFIG_H_
 +#define _RUNTIME_SUPPORT_RTS_CONFIG_H_
 +
@@ -4463,13 +4459,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#ifndef _ERNNO_T_DEFINED
 +#define _ERRNO_T_DEFINED
 +typedef int errno_t;
-+#endif
-+
-+#ifndef HAVE_SET_UCONTEXT
-+#define HAVE_SET_UCONTEXT
-+ #ifndef __linux__
-+ #define __linux__
-+ #endif
 +#endif
 +
 +#ifdef __cplusplus
