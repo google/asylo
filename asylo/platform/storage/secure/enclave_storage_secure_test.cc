@@ -61,12 +61,12 @@ class EnclaveStorageSecureTest : public ::testing::Test,
   Status OpenReadVerifyClose(off_t offset, size_t bytes_expected);
 
   const int64_t kFileHeaderLength = kFileHashLength + sizeof(size_t);
-  const std::string& GetPath() const { return path_; }
-  const void* GetWriteBuffer() const {
+  const std::string &GetPath() const { return path_; }
+  const void *GetWriteBuffer() const {
     return reinterpret_cast<const void*>(write_buffer_);
   }
-  void* GetReadBuffer() { return reinterpret_cast<void*>(read_buffer_); }
-  const void* GetZeroBuffer() const {
+  void *GetReadBuffer() { return reinterpret_cast<void*>(read_buffer_); }
+  const void *GetZeroBuffer() const {
     return reinterpret_cast<const void*>(zero_buffer_);
   }
   int EmulateSetKeyIoctl(int fd) const {
@@ -299,7 +299,7 @@ TEST_P(EnclaveStorageSecureTest, LseekReadWriteInterlacedMultiFdSuccess) {
     fds.push_back(fd);
   }
 
-  for (const int& fd : fds) {
+  for (const int &fd : fds) {
     EXPECT_EQ(secure_close(fd), 0);
   }
 }

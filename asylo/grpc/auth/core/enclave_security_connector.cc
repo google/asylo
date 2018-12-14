@@ -178,7 +178,7 @@ static int enclave_server_security_connector_cmp(grpc_security_connector *sc1,
 
 static void enclave_channel_security_connector_add_handshaker(
     grpc_channel_security_connector *security_connector,
-    grpc_pollset_set* interested_parties,
+    grpc_pollset_set *interested_parties,
     grpc_handshake_manager *handshake_mgr) {
   tsi_handshaker *tsi_handshaker = nullptr;
   grpc_enclave_channel_credentials *channel_creds =

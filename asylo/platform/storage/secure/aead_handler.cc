@@ -43,14 +43,14 @@ using crypto::gcmlib::GcmCryptorRegistry;
 namespace {
 
 // Perform a weak validation that the path is canonical.
-bool IsPathNameValid(const char* path_name) {
+bool IsPathNameValid(const char *path_name) {
   return path_name && strlen(path_name) && path_name[0] == '/';
 }
 
 bool is_transient_error(int err) { return (err == EAGAIN) || (err == EINTR); }
 
 // Returns -1 on failure, or min(|len|, bytes to EOF) on success.
-ssize_t read_all(int fd, void* buf, size_t len) {
+ssize_t read_all(int fd, void *buf, size_t len) {
   size_t bytes_to_read = len;
   size_t offset = 0;
 
@@ -75,7 +75,7 @@ ssize_t read_all(int fd, void* buf, size_t len) {
 }
 
 // Returns -1 on failure, or |len| on success.
-ssize_t write_all(int fd, const void* buf, size_t len) {
+ssize_t write_all(int fd, const void *buf, size_t len) {
   size_t bytes_to_write = len;
   size_t offset = 0;
 
@@ -103,9 +103,9 @@ ssize_t write_all(int fd, const void* buf, size_t len) {
 
 // Returns offset to the plaintext buffer associated with the |block_index| of
 // a full block.
-const uint8_t* GetPlaintextBuffer(size_t first_partial_block_bytes_count,
-                                  int64_t block_index, const void* buf) {
-  const uint8_t* plaintext_data = reinterpret_cast<const uint8_t*>(buf);
+const uint8_t *GetPlaintextBuffer(size_t first_partial_block_bytes_count,
+                                  int64_t block_index, const void *buf) {
+  const uint8_t *plaintext_data = reinterpret_cast<const uint8_t *>(buf);
   if (first_partial_block_bytes_count > 0) {
     if (block_index > 0) {
       plaintext_data += first_partial_block_bytes_count;
@@ -120,8 +120,8 @@ const uint8_t* GetPlaintextBuffer(size_t first_partial_block_bytes_count,
   return plaintext_data;
 }
 
-uint8_t* GetPlaintextBuffer(size_t first_partial_block_bytes_count,
-                            int64_t block_index, void* buf) {
+uint8_t *GetPlaintextBuffer(size_t first_partial_block_bytes_count,
+                            int64_t block_index, void *buf) {
   return const_cast<uint8_t*>(
       GetPlaintextBuffer(first_partial_block_bytes_count, block_index,
                          const_cast<const void*>(buf)));
@@ -145,14 +145,14 @@ AeadHandler::AeadHandler()
     : offset_translator_(OffsetTranslator::Create(
           sizeof(FileHeader), kBlockLength, kSecureBlockLength)) {}
 
-bool AeadHandler::Deserialize(FileControl* file_ctrl) {
+bool AeadHandler::Deserialize(FileControl *file_ctrl) {
   if (!file_ctrl) {
     errno = EINVAL;
     return false;
   }
   file_ctrl->mu.AssertHeld();
 
-  const GcmCryptor* cryptor = GetGcmCryptor(*file_ctrl);
+  const GcmCryptor *cryptor = GetGcmCryptor(*file_ctrl);
   if (!cryptor) {
     return false;
   }
@@ -252,7 +252,7 @@ bool AeadHandler::Deserialize(FileControl* file_ctrl) {
   return true;
 }
 
-bool AeadHandler::InitializeFile(int fd, const char* path_name,
+bool AeadHandler::InitializeFile(int fd, const char *path_name,
                                  bool is_new_file) {
   if (!IsPathNameValid(path_name)) {
     LOG(ERROR) << "Invalid input when initializing file, path_name="
@@ -285,7 +285,7 @@ bool AeadHandler::InitializeFile(int fd, const char* path_name,
   return true;
 }
 
-bool AeadHandler::RetrieveLogicalOffset(int fd, off_t* logical_offset) const {
+bool AeadHandler::RetrieveLogicalOffset(int fd, off_t *logical_offset) const {
   if (fd < 0) {
     errno = EINVAL;
     return false;
@@ -306,14 +306,14 @@ bool AeadHandler::RetrieveLogicalOffset(int fd, off_t* logical_offset) const {
   return true;
 }
 
-GcmCryptor* AeadHandler::GetGcmCryptor(const FileControl& file_ctrl) const {
+GcmCryptor *AeadHandler::GetGcmCryptor(const FileControl &file_ctrl) const {
   file_ctrl.mu.AssertHeld();
   if (!file_ctrl.master_key) {
     LOG(ERROR) << "Master key has not been set, path = " << file_ctrl.path;
     return nullptr;
   }
 
-  GcmCryptor* cryptor = GcmCryptorRegistry::GetInstance().GetGcmCryptor(
+  GcmCryptor *cryptor = GcmCryptorRegistry::GetInstance().GetGcmCryptor(
       kBlockLength, *file_ctrl.master_key);
   if (!cryptor) {
     LOG(ERROR) << "Unable to instantiate GCM cryptor.";
@@ -322,7 +322,7 @@ GcmCryptor* AeadHandler::GetGcmCryptor(const FileControl& file_ctrl) const {
   return cryptor;
 }
 
-ssize_t AeadHandler::DecryptAndVerify(int fd, void* buf, size_t count) {
+ssize_t AeadHandler::DecryptAndVerify(int fd, void *buf, size_t count) {
   if (!buf) {
     errno = EINVAL;
     return -1;
@@ -351,8 +351,8 @@ ssize_t AeadHandler::DecryptAndVerify(int fd, void* buf, size_t count) {
   return DecryptAndVerifyInternal(fd, buf, count, *file_ctrl, logical_offset);
 }
 
-ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void* buf, size_t count,
-                                              const FileControl& file_ctrl,
+ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void *buf, size_t count,
+                                              const FileControl &file_ctrl,
                                               off_t logical_offset) const {
   file_ctrl.mu.AssertHeld();
   if (count == 0) {
@@ -437,7 +437,7 @@ ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void* buf, size_t count,
     return -1;
   }
 
-  GcmCryptor* cryptor = GetGcmCryptor(file_ctrl);
+  GcmCryptor *cryptor = GetGcmCryptor(file_ctrl);
   if (!cryptor) {
     return -1;
   }
@@ -451,7 +451,7 @@ ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void* buf, size_t count,
   for (int64_t block_index = 0; block_index < blocks_read; block_index++) {
     const size_t merkle_block_idx = first_block_index + block_index + 1;
 
-    uint8_t* plaintext_data =
+    uint8_t *plaintext_data =
         GetPlaintextBuffer(first_partial_block_bytes_count, block_index, buf);
 
     // Detect full blocks that belong to sparse regions in the file - no need to
@@ -496,7 +496,7 @@ ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void* buf, size_t count,
     // Bounce block for reading partial blocks at the ends of the full range.
     Block bounce_block;
     // Target for decryption - bounce block or the supplied buffer.
-    uint8_t* decrypt_target;
+    uint8_t *decrypt_target;
     // Determine the target depending on whether the read block is at the end of
     // the full range.
     if ((block_index == 0 && first_partial_block_bytes_count > 0) ||
@@ -536,8 +536,8 @@ ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void* buf, size_t count,
   return read_count;
 }
 
-bool AeadHandler::UpdateDigest(FileControl* file_ctrl,
-                               const GcmCryptor& cryptor) const {
+bool AeadHandler::UpdateDigest(FileControl *file_ctrl,
+                               const GcmCryptor &cryptor) const {
   if (!file_ctrl) {
     errno = EINVAL;
     return false;
@@ -592,8 +592,8 @@ bool AeadHandler::UpdateDigest(FileControl* file_ctrl,
   return true;
 }
 
-bool AeadHandler::ReadFullBlock(const FileControl& file_ctrl,
-                                off_t logical_offset, Block* block) const {
+bool AeadHandler::ReadFullBlock(const FileControl &file_ctrl,
+                                off_t logical_offset, Block *block) const {
   file_ctrl.mu.AssertHeld();
   if (logical_offset < 0 || logical_offset % kBlockLength != 0) {
     errno = EINVAL;
@@ -629,7 +629,7 @@ bool AeadHandler::ReadFullBlock(const FileControl& file_ctrl,
   return true;
 }
 
-ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
+ssize_t AeadHandler::EncryptAndPersist(int fd, const void *buf, size_t count) {
   if (!buf) {
     errno = EINVAL;
     return -1;
@@ -730,7 +730,7 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
     start_block_to_write = eof_block_index - blocks_to_eof;
   }
 
-  GcmCryptor* cryptor = GetGcmCryptor(*file_ctrl);
+  GcmCryptor *cryptor = GetGcmCryptor(*file_ctrl);
   if (!cryptor) {
     return -1;
   }
@@ -747,11 +747,11 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
   // Cycle through blocks.
   std::vector<Tag> tags;
   for (int64_t block_index = 0; block_index < blocks_to_write; block_index++) {
-    const uint8_t* plaintext_data =
+    const uint8_t *plaintext_data =
         GetPlaintextBuffer(first_partial_block_bytes_count, block_index, buf);
 
     // Source for encryption - bounce block or the supplied buffer.
-    const uint8_t* encrypt_source;
+    const uint8_t *encrypt_source;
     // Determine the source depending on whether the written block is at the end
     // of the full range.
     if (block_index == 0 && first_partial_block_bytes_count > 0) {
@@ -763,9 +763,9 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void* buf, size_t count) {
       encrypt_source = plaintext_data;
     }
 
-    Ciphertext* ciphertext =
+    Ciphertext *ciphertext =
         Ciphertext::Place(&buffer, block_index * kSecureBlockLength);
-    Token* token = Token::Place(
+    Token *token = Token::Place(
         &buffer, block_index * kSecureBlockLength + kCipherBlockLength);
 
     // Encrypt the block.
@@ -885,7 +885,7 @@ bool AeadHandler::FinalizeFile(int fd) {
 // files, and only if not set yet - arguably, such intelligence may need to
 // reside outside of AeadHandler on the side of the IOCTL client. If not done
 // correctly by the client, IO ops will simply fail, as intended.
-int AeadHandler::SetMasterKey(int fd, const uint8_t* key_data,
+int AeadHandler::SetMasterKey(int fd, const uint8_t *key_data,
                               uint32_t key_length) {
   if (!key_data || key_length != kKeyLength) {
     LOG(ERROR) << "Attempt made to set an invalid key.";
@@ -931,7 +931,7 @@ int AeadHandler::SetMasterKey(int fd, const uint8_t* key_data,
   return 0;
 }
 
-const OffsetTranslator& AeadHandler::GetOffsetTranslator() const {
+const OffsetTranslator &AeadHandler::GetOffsetTranslator() const {
   return *offset_translator_;
 }
 

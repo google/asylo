@@ -36,7 +36,7 @@ class ExecTesterTest : public ::testing::Test {
  protected:
   class UniformOutputChecker : public ExecTester {
    public:
-    UniformOutputChecker(const std::string& line, const std::vector<std::string>& args,
+    UniformOutputChecker(const std::string &line, const std::vector<std::string> &args,
                          int minimum = 0, bool hard_limit = true,
                          int fd_to_check = STDOUT_FILENO)
         : ExecTester(args, fd_to_check),
@@ -46,7 +46,7 @@ class ExecTesterTest : public ::testing::Test {
           hard_limit_(hard_limit) {}
 
    protected:
-    bool CheckLine(const std::string& line) override {
+    bool CheckLine(const std::string &line) override {
       bool check = (line == line_);
       if (check) ++count_;
       return (count_ >= minimum_) || check;

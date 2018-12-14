@@ -72,9 +72,9 @@ off_t OffsetTranslator::LogicalToPhysical(off_t offset) const {
 }
 
 void OffsetTranslator::ReduceLogicalRangeToFullLogicalBlocks(
-    off_t logical_offset, size_t count, size_t* first_partial_block_bytes_count,
-    size_t* last_partial_block_bytes_count,
-    size_t* full_inclusive_blocks_bytes_count) {
+    off_t logical_offset, size_t count, size_t *first_partial_block_bytes_count,
+    size_t *last_partial_block_bytes_count,
+    size_t *full_inclusive_blocks_bytes_count) {
   off_t in_block_offset = logical_offset % payload_length_;
   *first_partial_block_bytes_count =
       (in_block_offset > 0) ? (payload_length_ - in_block_offset) : 0;

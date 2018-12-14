@@ -37,9 +37,9 @@ class CTMMTAuthenticatedDictionary : public AuthenticatedDictionary {
 
   size_t LeafCount() const final { return mtree_->LeafCount(); }
 
-  size_t AddLeaf(const std::string& data) final { return mtree_->AddLeaf(data); }
+  size_t AddLeaf(const std::string &data) final { return mtree_->AddLeaf(data); }
 
-  size_t AddLeafHash(const std::string& hash) final {
+  size_t AddLeafHash(const std::string &hash) final {
     return mtree_->AddLeafHash(hash);
   }
 
@@ -47,11 +47,11 @@ class CTMMTAuthenticatedDictionary : public AuthenticatedDictionary {
 
   std::string LeafHash(size_t leaf) const final { return mtree_->LeafHash(leaf); }
 
-  std::string LeafHash(const std::string& data) const final {
+  std::string LeafHash(const std::string &data) const final {
     return mtree_->LeafHash(data);
   }
 
-  bool UpdateLeaf(size_t leaf, const std::string& data) final;
+  bool UpdateLeaf(size_t leaf, const std::string &data) final;
 
  private:
   std::unique_ptr<MutableMerkleTree> mtree_;

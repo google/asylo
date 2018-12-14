@@ -71,8 +71,8 @@ using FileDigest = UnsafeBytes<kRootHashLength>;
 //
 class AeadHandler {
  public:
-  static AeadHandler& GetInstance() {
-    static AeadHandler* instance = new AeadHandler;
+  static AeadHandler &GetInstance() {
+    static AeadHandler *instance = new AeadHandler;
     return *instance;
   }
 
@@ -80,16 +80,16 @@ class AeadHandler {
   // opened file, returns false on failure. Does not modify the state of the
   // file descriptor. By contract, absolute (canonical) |path_name| is expected.
   // The function performs a weak validation that the path is canonical.
-  bool InitializeFile(int fd, const char* path_name, bool is_new_file)
+  bool InitializeFile(int fd, const char *path_name, bool is_new_file)
       LOCKS_EXCLUDED(mu_);
 
   // Decrypts read data in-place, verifies data has not been tampered with,
   // returns the size of data verified, or -1 on failure.
-  ssize_t DecryptAndVerify(int fd, void* buf, size_t count) LOCKS_EXCLUDED(mu_);
+  ssize_t DecryptAndVerify(int fd, void *buf, size_t count) LOCKS_EXCLUDED(mu_);
 
   // Encrypts data and generates integrity metadata for it in memory, writes
   // encrypted data to disk, returns the size of data written, or -1 on failure.
-  ssize_t EncryptAndPersist(int fd, const void* buf, size_t count)
+  ssize_t EncryptAndPersist(int fd, const void *buf, size_t count)
       LOCKS_EXCLUDED(mu_);
 
   // Frees resources used to assure integrity of an opened file, persists
@@ -98,10 +98,10 @@ class AeadHandler {
   bool FinalizeFile(int fd) LOCKS_EXCLUDED(mu_);
 
   // Sets the master key for a newly opened file.
-  int SetMasterKey(int fd, const uint8_t* key_data, uint32_t key_length)
+  int SetMasterKey(int fd, const uint8_t *key_data, uint32_t key_length)
       LOCKS_EXCLUDED(mu_);
 
-  const OffsetTranslator& GetOffsetTranslator() const;
+  const OffsetTranslator &GetOffsetTranslator() const;
 
  private:
   // Structure represents the file header layout.
@@ -114,7 +114,7 @@ class AeadHandler {
     size_t file_size;
 
     // Returns the address of the FileHeader instance.
-    uint8_t* data() { return file_hash.data(); }
+    uint8_t *data() { return file_hash.data(); }
   } ABSL_ATTRIBUTE_PACKED;
 
   // Structure represents the file data digest from which the file hash used for
@@ -127,7 +127,7 @@ class AeadHandler {
     size_t file_size;
 
     // Returns the address of the DataDigest instance.
-    uint8_t* data() { return file_digest.data(); }
+    uint8_t *data() { return file_digest.data(); }
   } ABSL_ATTRIBUTE_PACKED;
 
   // File (data set) control structure for an opened file.
@@ -143,7 +143,7 @@ class AeadHandler {
     // Mutex for protecting FileControl instance.
     absl::Mutex mu;
 
-    FileControl(const char* path_name, bool is_new_file)
+    FileControl(const char *path_name, bool is_new_file)
         : path(path_name),
           logical_size(0),
           is_new(is_new_file),
@@ -168,34 +168,34 @@ class AeadHandler {
   void operator=(AeadHandler const&) = delete;
 
   // Loads and validates integrity metadata, returns false on failure.
-  bool Deserialize(FileControl* file_ctrl)
+  bool Deserialize(FileControl *file_ctrl)
       EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
 
   // Retrieves logical cursor offset associated with a file descriptor |fd|.
   // Returns false on failure.
-  bool RetrieveLogicalOffset(int fd, off_t* logical_offset) const;
+  bool RetrieveLogicalOffset(int fd, off_t *logical_offset) const;
 
   // Updates digest of the file data in the secure file header.
-  bool UpdateDigest(FileControl* file_ctrl, const GcmCryptor& cryptor) const
+  bool UpdateDigest(FileControl *file_ctrl, const GcmCryptor &cryptor) const
       EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
 
   // Returns an instance of GcmCryptor associated with a file, or nullptr if was
   // not able to retrieve. The caller does not own the instance.
-  GcmCryptor* GetGcmCryptor(const FileControl& file_ctrl) const
+  GcmCryptor *GetGcmCryptor(const FileControl &file_ctrl) const
       EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Similar to DecryptAndVerify, but is called by internal implementation, and
   // as such does not take a file lock. The cursor associated with the file
   // descriptor |fd| is expected to be at the position of |logical_offset|.
-  ssize_t DecryptAndVerifyInternal(int fd, void* buf, size_t count,
-                                   const FileControl& file_ctrl,
+  ssize_t DecryptAndVerifyInternal(int fd, void *buf, size_t count,
+                                   const FileControl &file_ctrl,
                                    off_t logical_offset) const
       EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Reads a single full block of a file at a specified logical offset. Returns
   // false on failure.
-  bool ReadFullBlock(const FileControl& file_ctrl, off_t logical_offset,
-                     Block* block) const EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
+  bool ReadFullBlock(const FileControl &file_ctrl, off_t logical_offset,
+                     Block *block) const EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Map of file (data set) controls for opened files keyed on int identity of
   // files.

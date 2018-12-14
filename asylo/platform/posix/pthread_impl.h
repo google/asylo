@@ -33,10 +33,10 @@ class QueueOperations {
   // // Constructs a QueueOperations instance from a non-owning pointer to a
   // generic Queue object.
   template <class QueueType>
-  explicit QueueOperations(QueueType* queue)
+  explicit QueueOperations(QueueType *queue)
       : QueueOperations(&queue->_queue) {}
 
-  explicit QueueOperations(__pthread_list_t* list);
+  explicit QueueOperations(__pthread_list_t *list);
 
   // Removes the first thread_id in the list.
   void Dequeue();
@@ -61,7 +61,7 @@ class QueueOperations {
   bool Empty() const;
 
  private:
-  __pthread_list_t* const list_;
+  __pthread_list_t *const list_;
 };
 
 // Provides an RAII wrapper around pthread_mutex_t. Aborts on errors, so should
@@ -70,7 +70,7 @@ class QueueOperations {
 // so that we don't abort internally due to application error.
 class PthreadMutexLock {
  public:
-  PthreadMutexLock(pthread_mutex_t* mutex) : mutex_(mutex) {
+  PthreadMutexLock(pthread_mutex_t *mutex) : mutex_(mutex) {
     int ret = pthread_mutex_lock(mutex_);
     CHECK_EQ(ret, 0);
   }
@@ -81,7 +81,7 @@ class PthreadMutexLock {
   }
 
  private:
-  pthread_mutex_t* const mutex_;
+  pthread_mutex_t *const mutex_;
 };
 
 }  // namespace pthread_impl

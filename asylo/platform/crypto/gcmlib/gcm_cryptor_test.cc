@@ -164,9 +164,9 @@ TEST(GcmCryptorTest, DecryptWithAlteredNonceFails) {
 
   uint8_t token_altered_nonce[kTokenLength];
   memcpy(token_altered_nonce, token, kTokenLength);
-  uint8_t* partial_nonce = reinterpret_cast<uint8_t*>(token);
-  uint8_t* partial_altered_nonce =
-      reinterpret_cast<uint8_t*>(token_altered_nonce);
+  uint8_t *partial_nonce = reinterpret_cast<uint8_t *>(token);
+  uint8_t *partial_altered_nonce =
+      reinterpret_cast<uint8_t *>(token_altered_nonce);
   *partial_altered_nonce = *partial_nonce + 1;
 
   ASSERT_FALSE(decryptor->DecryptBlock(encryptor_buffer, token_altered_nonce,
@@ -199,9 +199,9 @@ TEST(GcmCryptorTest, DecryptWithAlteredCiphertextFails) {
 TEST(GcmCryptorTest, GetGcmCryptorIsConsistent) {
   GcmCryptorKey key;
   ASSERT_EQ(RAND_bytes(key.data(), key.size()), 1);
-  GcmCryptor* c1 =
+  GcmCryptor *c1 =
       GcmCryptorRegistry::GetInstance().GetGcmCryptor(kBlockLength, key);
-  GcmCryptor* c2 =
+  GcmCryptor *c2 =
       GcmCryptorRegistry::GetInstance().GetGcmCryptor(kBlockLength, key);
 
   EXPECT_NE(c1, nullptr);

@@ -29,8 +29,8 @@ namespace asylo {
 class MockEnclaveLoader : public EnclaveLoader {
  public:
   MOCK_CONST_METHOD3(LoadEnclave, StatusOr<std::unique_ptr<EnclaveClient>>(
-                                      const std::string& name, void* base_address,
-                                      const EnclaveConfig& config));
+                                      const std::string &name, void *base_address,
+                                      const EnclaveConfig &config));
 
   MOCK_CONST_METHOD0(Copy, StatusOr<std::unique_ptr<EnclaveLoader>>());
 };

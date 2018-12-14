@@ -64,9 +64,9 @@ class OffsetTranslator {
   // bytes in the full inclusive blocks. Expects non-negative |logical_offset|.
   void ReduceLogicalRangeToFullLogicalBlocks(
       off_t logical_offset, size_t count,
-      size_t* first_partial_block_bytes_count,
-      size_t* last_partial_block_bytes_count,
-      size_t* full_inclusive_blocks_bytes_count);
+      size_t *first_partial_block_bytes_count,
+      size_t *last_partial_block_bytes_count,
+      size_t *full_inclusive_blocks_bytes_count);
 
  private:
   OffsetTranslator(size_t header_len, size_t payload_len, size_t block_len);

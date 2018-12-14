@@ -37,11 +37,11 @@ constexpr uint64_t kInvalidThread = 0;
 
 // Validates that the address-range [|address|, |address| +|size|) is fully
 // contained within the enclave.
-bool enc_is_within_enclave(const void* address, size_t size);
+bool enc_is_within_enclave(const void *address, size_t size);
 
 // Validates that the address-range [|address|, |address| +|size|) is fully
 // contained outside of the enclave.
-bool enc_is_outside_enclave(void const* address, size_t size);
+bool enc_is_outside_enclave(void const *address, size_t size);
 
 struct EnclaveMemoryLayout {
   // Base address of the initialized data section in the current enclave.

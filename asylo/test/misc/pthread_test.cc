@@ -43,7 +43,7 @@ class QueueOperationsTest : public Test {
   // Destructively evaluates the list_ to ensure its items match what's passed
   // in as |expected_list|. list_ is empty after this function runs. If there is
   // a mismatch, reports a test error using EXPECT macros.
-  void VerifyListContentsAndDelete(const std::vector<int>& expected_list) {
+  void VerifyListContentsAndDelete(const std::vector<int> &expected_list) {
     for (const int expected_item : expected_list) {
       pthread_t actual_item = list_.Front();
       list_.Dequeue();

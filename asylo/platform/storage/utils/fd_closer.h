@@ -46,8 +46,8 @@ class FdCloser {
  private:
   int fd_;
   const CloseFunction close_function_;
-  FdCloser(const FdCloser&) = delete;
-  FdCloser& operator=(const FdCloser&) = delete;
+  FdCloser(const FdCloser &) = delete;
+  FdCloser &operator=(const FdCloser &) = delete;
 };
 
 }  // namespace storage

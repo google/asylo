@@ -583,7 +583,7 @@ bool ConvertToRecvFromArgs(int sockfd, size_t len, int flags,
   return true;
 }
 
-bool ConvertFromRecvFromArgsProto(const RecvFromArgs& args, int *sockfd,
+bool ConvertFromRecvFromArgsProto(const RecvFromArgs &args, int *sockfd,
                                   size_t *len, int *flags) {
   if (!sockfd || !len || !flags) {
     return false;
