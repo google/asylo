@@ -280,7 +280,6 @@ cc_library(
 cc_test(
     name = "code_identity_util_test",
     srcs = ["code_identity_util_test.cc"],
-    tags = ["noregression"],
     deps = [
         ":attributes_proto_cc",
         ":attributes_util",
@@ -290,6 +289,7 @@ cc_test(
         ":code_identity_util",
         ":hardware_interface",
         ":hardware_types",
+        ":proto_format",
         ":sgx_code_identity_expectation_matcher",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",

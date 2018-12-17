@@ -33,6 +33,7 @@
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
@@ -676,11 +677,16 @@ TEST_F(CodeIdentityUtilTest, ParseIdentityFromHardwareReport) {
 
   CodeIdentity identity;
   EXPECT_THAT(ParseIdentityFromHardwareReport(*report, &identity), IsOk());
-  EXPECT_TRUE(std::equal(report->mrenclave.cbegin(), report->mrenclave.cend(),
-                         identity.mrenclave().hash().cbegin()));
+  EXPECT_TRUE(std::equal(
+      report->mrenclave.cbegin(), report->mrenclave.cend(),
+      identity.mrenclave().hash().cbegin(),
+      // Cast char to unsigned char before checking for equality.
+      [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_TRUE(std::equal(
       report->mrsigner.cbegin(), report->mrsigner.cend(),
-      identity.signer_assigned_identity().mrsigner().hash().cbegin()));
+      identity.signer_assigned_identity().mrsigner().hash().cbegin(),
+      // Cast char to unsigned char before checking for equality.
+      [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_EQ(report->isvprodid, identity.signer_assigned_identity().isvprodid());
   EXPECT_EQ(report->isvsvn, identity.signer_assigned_identity().isvsvn());
 
@@ -719,13 +725,16 @@ TEST_F(CodeIdentityUtilTest, SetStrictMatchSpec) {
 TEST_F(CodeIdentityUtilTest, SetSelfCodeIdentity) {
   CodeIdentity identity;
   SetSelfCodeIdentity(&identity);
-  EXPECT_TRUE(std::equal(enclave_->get_mrenclave().cbegin(),
-                         enclave_->get_mrenclave().cend(),
-                         identity.mrenclave().hash().cbegin()));
-
+  EXPECT_TRUE(std::equal(
+      enclave_->get_mrenclave().cbegin(), enclave_->get_mrenclave().cend(),
+      identity.mrenclave().hash().cbegin(),
+      // Cast char to unsigned char before checking for equality.
+      [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_TRUE(std::equal(
       enclave_->get_mrsigner().cbegin(), enclave_->get_mrsigner().cend(),
-      identity.signer_assigned_identity().mrsigner().hash().cbegin()));
+      identity.signer_assigned_identity().mrsigner().hash().cbegin(),
+      // Cast char to unsigned char before checking for equality.
+      [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_EQ(enclave_->get_isvprodid(),
             identity.signer_assigned_identity().isvprodid());
   EXPECT_EQ(enclave_->get_isvsvn(),
@@ -746,8 +755,11 @@ TEST_F(CodeIdentityUtilTest, SetStrictSelfCodeIdentityExpectation) {
   SetStrictMatchSpec(&match_spec);
 
   EXPECT_THAT(expectation.reference_identity(),
-              EquivalentProto(GetSelfIdentity()->identity));
-  EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec));
+              EquivalentProto(GetSelfIdentity()->identity))
+      << FormatProto(expectation.reference_identity())
+      << FormatProto(GetSelfIdentity()->identity);
+  EXPECT_THAT(expectation.match_spec(), EquivalentProto(match_spec))
+      << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
 TEST_F(CodeIdentityUtilTest, SetDefaultSelfCodeIdentityExpectation) {
@@ -760,8 +772,10 @@ TEST_F(CodeIdentityUtilTest, SetDefaultSelfCodeIdentityExpectation) {
   CodeIdentityExpectation expectation;
   EXPECT_THAT(SetDefaultSelfCodeIdentityExpectation(&expectation), IsOk());
 
-  EXPECT_THAT(expectation.reference_identity(), EquivalentProto(identity));
-  EXPECT_THAT(expectation.match_spec(), EquivalentProto(spec));
+  EXPECT_THAT(expectation.reference_identity(), EquivalentProto(identity))
+      << FormatProto(expectation.reference_identity()) << FormatProto(identity);
+  EXPECT_THAT(expectation.match_spec(), EquivalentProto(spec))
+      << FormatProto(expectation.match_spec()) << FormatProto(spec);
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
@@ -772,7 +786,9 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
     CodeIdentity parsed_sgx_identity;
     ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity),
                 IsOk());
-    ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity));
+    ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity))
+        << FormatProto(generated_sgx_identity)
+        << FormatProto(parsed_sgx_identity);
   }
 }
 
@@ -795,7 +811,9 @@ TEST_F(CodeIdentityUtilTest, ParseSgxMatchSpecSuccess) {
     SetRandomValidGenericMatchSpec(&generic_match_spec, &generated_sgx_spec);
     ASSERT_THAT(ParseSgxMatchSpec(generic_match_spec, &parsed_sgx_spec),
                 IsOk());
-    ASSERT_THAT(generated_sgx_spec, EquivalentProto(parsed_sgx_spec));
+
+    ASSERT_THAT(generated_sgx_spec, EquivalentProto(parsed_sgx_spec))
+        << FormatProto(parsed_sgx_spec) << FormatProto(generated_sgx_spec);
   }
 }
 
@@ -826,7 +844,9 @@ TEST_F(CodeIdentityUtilTest, ParseSgxExpectationSuccess) {
         ParseSgxExpectation(generic_expectation, &parsed_sgx_expectation),
         IsOk());
     ASSERT_THAT(generated_sgx_expectation,
-                EquivalentProto(parsed_sgx_expectation));
+                EquivalentProto(parsed_sgx_expectation))
+        << FormatProto(generated_sgx_expectation)
+        << FormatProto(parsed_sgx_expectation);
   }
 }
 
@@ -854,7 +874,9 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityEndToEnd) {
               IsOk());
   CodeIdentity parsed_sgx_identity;
   ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity), IsOk());
-  ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity));
+  ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity))
+      << FormatProto(generated_sgx_identity)
+      << FormatProto(parsed_sgx_identity);
 }
 
 TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxMatchSpecEndToEnd) {
@@ -867,7 +889,8 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxMatchSpecEndToEnd) {
   EXPECT_THAT(SerializeSgxMatchSpec(generated_sgx_spec, &generic_spec), IsOk());
   CodeIdentityMatchSpec parsed_sgx_spec;
   ASSERT_THAT(ParseSgxMatchSpec(generic_spec, &parsed_sgx_spec), IsOk());
-  ASSERT_THAT(generated_sgx_spec, EquivalentProto(parsed_sgx_spec));
+  ASSERT_THAT(generated_sgx_spec, EquivalentProto(parsed_sgx_spec))
+      << FormatProto(generated_sgx_spec) << FormatProto(parsed_sgx_spec);
 }
 
 TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxExpectationEndToEnd) {
@@ -885,10 +908,12 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxExpectationEndToEnd) {
   ASSERT_THAT(ParseSgxExpectation(generic_expectation, &parsed_sgx_expectation),
               IsOk());
   ASSERT_THAT(generated_sgx_expectation,
-              EquivalentProto(parsed_sgx_expectation));
+              EquivalentProto(parsed_sgx_expectation))
+      << FormatProto(generated_sgx_expectation)
+      << FormatProto(parsed_sgx_expectation);
 }
 
-TEST_F(CodeIdentityUtilTest, SetTargetinforFromSelfIdentity) {
+TEST_F(CodeIdentityUtilTest, SetTargetinfoFromSelfIdentity) {
   AlignedTargetinfoPtr tinfo;
   SetTargetinfoFromSelfIdentity(tinfo.get());
 
