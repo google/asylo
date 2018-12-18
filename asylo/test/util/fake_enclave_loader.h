@@ -41,6 +41,9 @@ class FakeEnclaveLoader : public EnclaveLoader {
       const std::string &name, void *base_address,
       const EnclaveConfig &config) const override;
 
+  // From EnclaveLoader.
+  StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const;
+
   // The client to be loaded.
   mutable std::unique_ptr<EnclaveClient> client_;
 };
