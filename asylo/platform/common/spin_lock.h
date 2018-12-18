@@ -60,4 +60,17 @@ class SpinLock {
   std::atomic<uint64_t> lock_word_;
 };
 
+// Provides RAII wrapper around SpinLock.
+class ScopedSpinLock {
+ public:
+  ScopedSpinLock(SpinLock *lock) : lock_(lock) {
+    lock_->Acquire();
+  }
+
+  ~ScopedSpinLock() { lock_->Release(); }
+
+ private:
+  SpinLock *lock_;
+};
+
 #endif  // ASYLO_PLATFORM_COMMON_SPIN_LOCK_H_

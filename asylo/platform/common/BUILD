@@ -159,6 +159,17 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
 )
 
+cc_test(
+    name = "spin_lock_test",
+    srcs = ["spin_lock_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":spin_lock",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Provide a unique pointer for malloc'd memory.
 cc_library(
     name = "memory",
