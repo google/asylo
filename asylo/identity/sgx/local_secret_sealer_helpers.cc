@@ -148,10 +148,7 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
     SHA256(key_info.data(), key_info.size(), req->keyid.data());
 
     AlignedHardwareKeyPtr hardware_key;
-    if (!GetHardwareKey(*req, hardware_key.get())) {
-      return Status(::asylo::error::GoogleError::INTERNAL,
-                    "Could not get required hardware key");
-    }
+    ASYLO_RETURN_IF_ERROR(GetHardwareKey(*req, hardware_key.get()));
     size_t copy_size = std::min(hardware_key->size(), remaining_key_bytes);
     remaining_key_bytes -= copy_size;
     std::copy(hardware_key->cbegin(), hardware_key->cbegin() + copy_size,

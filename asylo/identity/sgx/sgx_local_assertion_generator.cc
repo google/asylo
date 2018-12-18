@@ -169,9 +169,8 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   // Generate a REPORT that is bound to the provided |user_data| and is targeted
   // at the enclave described in the request.
   sgx::AlignedReportPtr report;
-  if (!sgx::GetHardwareReport(*tinfo, *reportdata, report.get())) {
-    return Status(error::GoogleError::INTERNAL, "Failed to generate a REPORT");
-  }
+  ASYLO_RETURN_IF_ERROR(
+      sgx::GetHardwareReport(*tinfo, *reportdata, report.get()));
 
   // As explained above, the REPORT structure can be copied byte-for-byte into
   // the report field of the assertion because the layout and endianness of the

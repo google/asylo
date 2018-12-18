@@ -41,11 +41,11 @@ FakeEnclave *SetNewRandomEnclave() {
 
 }  // namespace
 
-bool GetHardwareRand64(uint64_t *value) {
+Status GetHardwareRand64(uint64_t *value) {
   return FakeEnclave::GetHardwareRand64(value);
 }
 
-bool GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
+Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   if (enclave == nullptr) {
@@ -54,8 +54,8 @@ bool GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
   return enclave->GetHardwareKey(request, key);
 }
 
-bool GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
-                       Report *report) {
+Status GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
+                         Report *report) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   if (enclave == nullptr) {

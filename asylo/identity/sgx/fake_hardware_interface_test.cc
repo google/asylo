@@ -30,6 +30,7 @@
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/test/util/proto_matchers.h"
+#include "asylo/test/util/status_matchers.h"
 
 // This file implements some basic, sanity-checking tests for the
 // fake-hardware-interface implementation. It does not test the fake
@@ -122,11 +123,11 @@ TEST_F(FakeEnclaveTest, CurrentEnclave) {
 // the random-number generator is not utterly broken.
 TEST_F(FakeEnclaveTest, GetHardwareRand) {
   uint64_t first_value = 0;
-  ASSERT_TRUE(GetHardwareRand64(&first_value));
+  ASYLO_ASSERT_OK(GetHardwareRand64(&first_value));
   int collision_count = 0;
   for (int i = 0; i < 3; i++) {
     uint64_t new_value = 0;
-    ASSERT_TRUE(GetHardwareRand64(&new_value));
+    ASYLO_ASSERT_OK(GetHardwareRand64(&new_value));
     if (first_value == new_value) {
       collision_count++;
     }
@@ -160,7 +161,7 @@ TEST_F(FakeEnclaveTest, SealKey1) {
 
   AlignedHardwareKeyPtr key;
   key->fill(0);
-  ASSERT_TRUE(GetHardwareKey(*seal_key_request_, key.get()));
+  ASYLO_ASSERT_OK(GetHardwareKey(*seal_key_request_, key.get()));
 
   HardwareKey zero_key;
   zero_key.fill(0);
@@ -183,12 +184,12 @@ TEST_F(FakeEnclaveTest, SealKey2) {
 
   for (int i = 0; i < 1000; i++) {
     request->keypolicy = TrivialRandomObject<uint16_t>() & 0x3;
-    ASSERT_TRUE(GetHardwareKey(*request, key1.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set mrenclave to a new random value. The probability that
     // this will match the old value is 2^-256.
     enclave->set_mrenclave(TrivialRandomObject<Measurement>());
-    ASSERT_TRUE(GetHardwareKey(*request, key2.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     EXPECT_EQ((*key1 == *key2), ((request->keypolicy & 0x1) == 0))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
@@ -208,12 +209,12 @@ TEST_F(FakeEnclaveTest, SealKey3) {
 
   for (int i = 0; i < 1000; i++) {
     request->keypolicy = TrivialRandomObject<uint16_t>() & 0x3;
-    ASSERT_TRUE(GetHardwareKey(*request, key1.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set mrsigner to a new random value. The probability that
     // this will match the old value is 2^-256.
     enclave->set_mrsigner(TrivialRandomObject<Measurement>());
-    ASSERT_TRUE(GetHardwareKey(*request, key2.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     EXPECT_EQ((*key1 == *key2), ((request->keypolicy & 0x2) == 0))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
@@ -230,13 +231,13 @@ TEST_F(FakeEnclaveTest, SealKey4) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   for (int i = 0; i < 1000; i++) {
-    ASSERT_TRUE(GetHardwareKey(*request, key1.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set ISVPRODID to a new random value. The probability that
     // this will match the old value is 1/16.
     uint16_t prev_isvprodid = enclave->get_isvprodid();
     enclave->set_isvprodid(TrivialRandomObject<uint16_t>() & 0x0F);
-    ASSERT_TRUE(GetHardwareKey(*request, key2.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     EXPECT_EQ((*key1 == *key2), (enclave->get_isvprodid() == prev_isvprodid))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
@@ -244,7 +245,7 @@ TEST_F(FakeEnclaveTest, SealKey4) {
 
   request->isvsvn = enclave->get_isvsvn();
   for (int i = 0; i < 1000; i++) {
-    ASSERT_TRUE(GetHardwareKey(*request, key1.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set ISVSVN to a new random value. The probability that
     // this will match the old value is 1/16.
@@ -252,7 +253,7 @@ TEST_F(FakeEnclaveTest, SealKey4) {
     uint16_t isvsvn = TrivialRandomObject<uint16_t>() & 0x0F;
     enclave->set_isvsvn(isvsvn);
     request->isvsvn = isvsvn;
-    ASSERT_TRUE(GetHardwareKey(*request, key2.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     EXPECT_EQ((*key1 == *key2), (isvsvn == prev_isvsvn))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
@@ -274,7 +275,7 @@ TEST_F(FakeEnclaveTest, SealKey5) {
   next = next | must_be_set_attributes_;
   enclave->set_attributes(next);
   for (int i = 0; i < 1000; i++) {
-    ASSERT_TRUE(GetHardwareKey(*request, key1.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Modify SECS attributes randomly. There are 14 attributes defined.
     // Of these, 3 attributes are defined by the architecture as must-be-one,
@@ -286,7 +287,7 @@ TEST_F(FakeEnclaveTest, SealKey5) {
     next = TrivialRandomObject<SecsAttributeSet>() & all_attributes_;
     next = next | must_be_set_attributes_;
     enclave->set_attributes(next);
-    ASSERT_TRUE(GetHardwareKey(*request, key2.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     bool are_attributes_effectively_unchanged =
         (prev & ~do_not_care_attributes_) == (next & ~do_not_care_attributes_);
@@ -308,7 +309,7 @@ TEST_F(FakeEnclaveTest, SealKey6) {
   // Only least-significant bit in miscselect can be set.
   enclave->set_miscselect(TrivialRandomObject<uint32_t>() & 0x1);
   for (int i = 0; i < 100; i++) {
-    ASSERT_TRUE(GetHardwareKey(*request, key1.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Modify SECS attributes randomly. There are 14 attributes defined.
     // Of these, 3 attributes are defined by the architecture as must-be-one,
@@ -318,7 +319,7 @@ TEST_F(FakeEnclaveTest, SealKey6) {
     // 1/32.
     uint32_t prev = enclave->get_miscselect();
     enclave->set_miscselect(TrivialRandomObject<uint32_t>() & 0x1);
-    ASSERT_TRUE(GetHardwareKey(*request, key2.get()))
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     EXPECT_EQ((*key1 == *key2), (prev == enclave->get_miscselect()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
@@ -353,7 +354,7 @@ TEST_F(FakeEnclaveTest, Report) {
     tinfo->reserved2.fill(0);
 
     AlignedReportPtr report;
-    ASSERT_TRUE(GetHardwareReport(*tinfo, *reportdata, report.get()));
+    ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *reportdata, report.get()));
 
     // Check that the various fields from the report match the expectation.
     EXPECT_EQ(report->cpusvn, enclave1.get_cpusvn());
@@ -385,7 +386,7 @@ TEST_F(FakeEnclaveTest, Report) {
     request->keyid = report->keyid;
     AlignedHardwareKeyPtr report_key;
 
-    ASSERT_TRUE(GetHardwareKey(*request, report_key.get()));
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, report_key.get()));
 
     SafeBytes<AES_BLOCK_SIZE> expected_mac;
     EXPECT_TRUE(AES_CMAC(

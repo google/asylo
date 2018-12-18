@@ -40,8 +40,8 @@ TEST(VerifyHardwareReportTest, VerifyHardwareReportSucceedsWhenTargetIsSelf) {
   reportdata->data = TrivialRandomObject<UnsafeBytes<kReportdataSize>>();
 
   AlignedReportPtr report;
-  ASSERT_TRUE(GetHardwareReport(*targetinfo, *reportdata, report.get()));
-  ASSERT_THAT(VerifyHardwareReport(*report), IsOk());
+  ASYLO_ASSERT_OK(GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  ASYLO_ASSERT_OK(VerifyHardwareReport(*report));
 }
 
 // Verify that VerifyHardwareReport() cannot verify a hardware report that is
@@ -54,7 +54,7 @@ TEST(VerifyHardwareReportTest, VerifyHardwareReportFailsWhenTargetIsNotSelf) {
   reportdata->data = TrivialRandomObject<UnsafeBytes<kReportdataSize>>();
 
   AlignedReportPtr report;
-  ASSERT_TRUE(GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  ASYLO_ASSERT_OK(GetHardwareReport(*targetinfo, *reportdata, report.get()));
   ASSERT_THAT(VerifyHardwareReport(*report), Not(IsOk()));
 }
 

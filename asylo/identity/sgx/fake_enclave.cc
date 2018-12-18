@@ -25,11 +25,13 @@
 #include <iostream>
 #include <vector>
 
+#include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
+#include "asylo/platform/arch/sgx/sgx_error_space.h"
 
 namespace asylo {
 namespace sgx {
@@ -102,13 +104,13 @@ void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
   miscselect_ = identity.miscselect();
 }
 
-bool FakeEnclave::GetHardwareRand64(uint64_t *value) {
+Status FakeEnclave::GetHardwareRand64(uint64_t *value) {
   RAND_bytes(reinterpret_cast<uint8_t *>(value), sizeof(*value));
-  return true;
+  return Status::OkStatus();
 }
 
-bool FakeEnclave::DeriveKey(const KeyDependencies &dependencies,
-                            HardwareKey *key) {
+Status FakeEnclave::DeriveKey(const KeyDependencies &dependencies,
+                              HardwareKey *key) {
   static_assert(HardwareKey::size() == AES_BLOCK_SIZE,
                 "Mismatch between kHardwareKeySize and AES_BLOCK_SIZE");
 
@@ -117,9 +119,9 @@ bool FakeEnclave::DeriveKey(const KeyDependencies &dependencies,
                sizeof(dependencies)) != 1) {
     // Clear-out any leftover state from the output.
     key->Cleanse();
-    return false;
+    return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
-  return true;
+  return Status::OkStatus();
 }
 
 bool FakeEnclave::operator==(const FakeEnclave &rhs) const {
@@ -135,7 +137,8 @@ bool FakeEnclave::operator!=(const FakeEnclave &rhs) const {
   return !(*this == rhs);
 }
 
-bool FakeEnclave::GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
+Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
+                                   HardwareKey *key) {
   // Check the alignment of the input parameters. If the parameters are
   // not correctly aligned, SGX hardware throws a #GP(0) exception.
   // Here, this behavior is simulated by invoking the LOG(FATAL) macro.
@@ -168,12 +171,12 @@ bool FakeEnclave::GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
       // ordering between CPUSVNs.
       //
       if (request.cpusvn != cpusvn_) {
-        LOG(ERROR) << "Access to seal key denied due to incorrect CPUSVN.";
-        return false;
+        return Status(SGX_ERROR_INVALID_CPUSVN,
+                      "Access to seal key denied due to incorrect CPUSVN.");
       }
       if (request.isvsvn > isvsvn_) {
-        LOG(ERROR) << "ISVSVN value in KEYREQUEST is too large.";
-        return false;
+        return Status(SGX_ERROR_INVALID_ISVSVN,
+                      "ISVSVN value in KEYREQUEST is too large.");
       }
       dependencies.keyname = KeyrequestKeyname::SEAL_KEY;
       dependencies.isvprodid = isvprodid_;
@@ -217,19 +220,17 @@ bool FakeEnclave::GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
       break;
 
     default:
-      LOG(ERROR) << "Key name " << static_cast<uint64_t>(request.keyname)
-                 << " is not supported";
-      return false;
+      return Status(
+          SGX_ERROR_INVALID_KEYNAME,
+          absl::StrCat("Key name ", static_cast<uint64_t>(request.keyname),
+                       " is not supported"));
   }
-  if (!DeriveKey(dependencies, key)) {
-    return false;
-  }
-  return true;
+  return DeriveKey(dependencies, key);
 }
 
-bool FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
-                                    const Reportdata &reportdata,
-                                    Report *report) {
+Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
+                                      const Reportdata &reportdata,
+                                      Report *report) {
   // The SGX EREPORT instruction throws the #GP(0) exception if the parameters
   // are not correctly aligned. This behavior is simulated here by means of a
   // LOG(FATAL) macro.
@@ -291,17 +292,15 @@ bool FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   dependencies.miscmask = 0;
 
   SafeBytes<kHardwareKeySize> report_key;
-  if (!DeriveKey(dependencies, &report_key)) {
-    LOG(ERROR) << "Could not derive the report key";
-    return false;
-  }
+  ASYLO_RETURN_IF_ERROR(DeriveKey(dependencies, &report_key));
 
   // Compute the report MAC. SGX uses CMAC to MAC the contents of the report.
   // The last two fields (KEYID and MAC) from the REPORT struct are not
   // included in the MAC computation.
   if (report->mac.size() != AES_BLOCK_SIZE) {
-    LOG(ERROR) << "Size of the mac field in the REPORT structure is incorrect.";
-    return false;
+    return Status(
+        SGX_ERROR_INVALID_PARAMETER,
+        "Size of the mac field in the REPORT structure is incorrect.");
   }
 
   if (AES_CMAC(report->mac.data(), report_key.data(), report_key.size(),
@@ -309,9 +308,9 @@ bool FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
                offsetof(Report, keyid)) != 1) {
     // Clear-out any leftover state from the output.
     report->mac.Cleanse();
-    return false;
+    return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
-  return true;
+  return Status::OkStatus();
 }
 
 }  // namespace sgx

@@ -71,12 +71,7 @@ Status GetReportKey(const UnsafeBytes<kKeyrequestKeyidSize> &keyid,
   ClearSecsAttributeSet(&request->attributemask);
   request->miscmask = 0;
 
-  if (!GetHardwareKey(*request, key)) {
-    return Status(::asylo::error::GoogleError::INTERNAL,
-                  "Could not get required hardware key");
-  }
-
-  return Status::OkStatus();
+  return GetHardwareKey(*request, key);
 }
 
 }  // namespace

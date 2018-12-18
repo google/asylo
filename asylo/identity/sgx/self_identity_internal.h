@@ -42,8 +42,9 @@ SelfIdentity::SelfIdentity() {
   *tinfo = TrivialZeroObject<Targetinfo>();
   *reportdata = TrivialZeroObject<Reportdata>();
 
-  if (!GetHardwareReport(*tinfo, *reportdata, report.get())) {
-    LOG(FATAL) << "GetHardwareReport() failed";
+  Status status = GetHardwareReport(*tinfo, *reportdata, report.get());
+  if (!status.ok()) {
+    LOG(FATAL) << "GetHardwareReport() failed: " << status;
   }
 
   cpusvn = report->cpusvn;
@@ -54,7 +55,7 @@ SelfIdentity::SelfIdentity() {
   isvprodid = report->isvprodid;
   isvsvn = report->isvsvn;
 
-  Status status = ParseIdentityFromHardwareReport(*report, &identity);
+  status = ParseIdentityFromHardwareReport(*report, &identity);
   if (!status.ok()) {
     LOG(FATAL) << status;
   }

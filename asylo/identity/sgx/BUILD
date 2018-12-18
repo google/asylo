@@ -249,7 +249,7 @@ cc_library(
         "code_identity_util.cc",
         "self_identity_internal.h",
     ] + select({
-        "@com_google_asylo//asylo": ["self_identity.cc"],
+        "@linux_sgx//:sgx": ["self_identity.cc"],
         "//conditions:default": ["fake_self_identity.cc"],
     }),
     hdrs = [
@@ -397,14 +397,14 @@ cc_test(
 cc_library(
     name = "hardware_interface",
     srcs = select({
-        "@com_google_asylo//asylo": ["hardware_interface.cc"],
+        "@linux_sgx//:sgx": ["hardware_interface.cc"],
         "//conditions:default": [
             "fake_enclave.cc",
             "fake_hardware_interface.cc",
         ],
     }),
     hdrs = ["hardware_interface.h"] + select({
-        "@com_google_asylo//asylo": [],
+        "@linux_sgx//:sgx": [],
         "//conditions:default": ["fake_enclave.h"],
     }),
     deps = [
@@ -412,17 +412,16 @@ cc_library(
         "@com_google_absl//absl/base:core_headers",
         "//asylo/crypto/util:bytes",
         "//asylo/util:logging",
+        "//asylo/platform/arch:sgx_error_space",
+        "//asylo/util:status",
         "@boringssl//:crypto",
     ] + select({
-        "@linux_sgx//:sgx_hw": [
-            "@linux_sgx//:trts",
-            "//asylo/platform/core:trusted_core",
-        ],
-        "@linux_sgx//:sgx_sim": [
+        "@linux_sgx//:sgx": [
             "@linux_sgx//:trts",
         ],
         "//conditions:default": [
             ":code_identity_proto_cc",
+            "//asylo/crypto/util:bssl_util",
             "//asylo/crypto/util:trivial_object_util",
             "//asylo/identity/util:sha256_hash_proto_cc",
         ],
@@ -438,6 +437,7 @@ cc_test(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",

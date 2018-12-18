@@ -20,6 +20,7 @@
 
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/platform/arch/sgx/sgx_error_space.h"
 #include "include/sgx.h"
 
 // The following functions are defined by the Intel SGX SDK. However,
@@ -49,27 +50,33 @@ void do_ereport(const sgx_target_info_t *target_info,
 // byte-array of 16 bytes, and hence is compatible with the HardwareKey type
 // defined by the Asylo SDK.
 int do_egetkey(const sgx_key_request_t *key_request, sgx_key_128bit_t *key);
+
+// Translates the return value from EGETKEY, |egetkey_status|, to an
+// sgx_status_t.
+sgx_status_t egetkey_status_to_sgx_status(int egetkey_status);
 }  // extern "C"
 
 namespace asylo {
 namespace sgx {
 
-bool GetHardwareRand64(uint64_t *value) {
-  LOG(ERROR) << "This function is not yet implemented.";
-  return false;
+Status GetHardwareRand64(uint64_t *value) {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "This function is not yet implemented.");
 }
 
-bool GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
-  return (do_egetkey(reinterpret_cast<const sgx_key_request_t *>(&request),
-                     reinterpret_cast<sgx_key_128bit_t *>(key)) == 0);
+Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
+  return Status(egetkey_status_to_sgx_status(do_egetkey(
+                    reinterpret_cast<const sgx_key_request_t *>(&request),
+                    reinterpret_cast<sgx_key_128bit_t *>(key))),
+                "Call to do_egetkey failed.");
 }
 
-bool GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
-                       Report *report) {
+Status GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
+                         Report *report) {
   do_ereport(reinterpret_cast<const sgx_target_info_t *>(&tinfo),
              reinterpret_cast<const sgx_report_data_t *>(&reportdata),
              reinterpret_cast<sgx_report_t *>(report));
-  return true;
+  return Status::OkStatus();
 }
 
 }  // namespace sgx
