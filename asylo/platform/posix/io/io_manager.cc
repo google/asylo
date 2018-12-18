@@ -94,9 +94,13 @@ bool IOManager::FileDescriptorTable::SetFileDescriptorLimits(
     const struct rlimit *rlim) {
   // The new limit should not exceed the absolute max file limit, and
   // unprivileged process should not be allowed to increase the hard limit.
+  if (rlim->rlim_max <= GetHighestFileDescriptorUsed()) {
+    errno = EINVAL;
+    return false;
+  }
   if (rlim->rlim_cur > rlim->rlim_max || rlim->rlim_max > kMaxOpenFiles ||
-      rlim->rlim_max <= GetHighestFileDescriptorUsed() ||
       rlim->rlim_max > maximum_fd_hard_limit) {
+    errno = EPERM;
     return false;
   }
   maximum_fd_soft_limit = rlim->rlim_cur;
@@ -844,7 +848,6 @@ int IOManager::SetRLimit(int resource, const struct rlimit *rlim) {
       {
         absl::WriterMutexLock lock(&fd_table_lock_);
         if (!fd_table_.SetFileDescriptorLimits(rlim)) {
-          errno = EPERM;
           return -1;
         }
         return 0;
