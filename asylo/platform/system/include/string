@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef THIRD_PARTY_ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
-#define THIRD_PARTY_ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
+#ifndef ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
+#define ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
 
 #include_next <string>
 
@@ -31,8 +31,8 @@ using std::string;
 namespace std {
 
 // Unimplemented stub
-string to_string(int i);
+std::string to_string(int i);
 
 }
 
-#endif  // THIRD_PARTY_ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
+#endif  // ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
