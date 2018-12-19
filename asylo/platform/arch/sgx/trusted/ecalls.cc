@@ -45,12 +45,17 @@ int ecall_initialize(const char *name, const char *input,
                      bridge_size_t input_len, char **output,
                      bridge_size_t *output_len) {
   int result = 0;
+  size_t tmp_output_len;
   try {
     result =
         asylo::__asylo_user_init(name, input, static_cast<size_t>(input_len),
-                                 output, static_cast<size_t *>(output_len));
+                                 output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
+  }
+
+  if (output_len) {
+    *output_len = static_cast<bridge_size_t>(tmp_output_len);
   }
 
   return result;
@@ -61,11 +66,16 @@ int ecall_initialize(const char *name, const char *input,
 int ecall_run(const char *input, bridge_size_t input_len, char **output,
               bridge_size_t *output_len) {
   int result = 0;
+  size_t tmp_output_len;
   try {
     result = asylo::__asylo_user_run(input, static_cast<size_t>(input_len),
-                                     output, static_cast<size_t *>(output_len));
+                                     output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
+  }
+
+  if (output_len) {
+    *output_len = static_cast<bridge_size_t>(tmp_output_len);
   }
 
   return result;
@@ -94,12 +104,17 @@ int ecall_handle_signal(const char *input, bridge_size_t input_len) {
 int ecall_finalize(const char *input, bridge_size_t input_len, char **output,
                    bridge_size_t *output_len) {
   int result = 0;
+  size_t tmp_output_len;
   try {
     result =
         asylo::__asylo_user_fini(input, static_cast<size_t>(input_len), output,
-                                 static_cast<size_t *>(output_len));
+                                 &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
+  }
+
+  if (output_len) {
+    *output_len = static_cast<bridge_size_t>(tmp_output_len);
   }
 
   return result;
@@ -109,11 +124,16 @@ int ecall_finalize(const char *input, bridge_size_t input_len, char **output,
 // on failure.
 int ecall_take_snapshot(char **output, bridge_size_t *output_len) {
   int result = 0;
+  size_t tmp_output_len;
   try {
     result =
-        asylo::__asylo_take_snapshot(output, static_cast<size_t *>(output_len));
+        asylo::__asylo_take_snapshot(output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
+  }
+
+  if (output_len) {
+    *output_len = static_cast<bridge_size_t>(tmp_output_len);
   }
   return result;
 }
@@ -123,11 +143,16 @@ int ecall_take_snapshot(char **output, bridge_size_t *output_len) {
 int ecall_restore(const char *input, bridge_size_t input_len, char **output,
                   bridge_size_t *output_len) {
   int result = 0;
+  size_t tmp_output_len;
   try {
     result = asylo::__asylo_restore(input, static_cast<size_t>(input_len),
-                                    output, static_cast<size_t *>(output_len));
+                                    output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
+  }
+
+  if (output_len) {
+    *output_len = static_cast<bridge_size_t>(tmp_output_len);
   }
   return result;
 }
