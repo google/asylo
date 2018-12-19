@@ -40,6 +40,7 @@ struct AeadTestVector {
                  absl::string_view ciphertext_hex, absl::string_view tag_hex);
 
   std::string aad;
+  std::string unauthenticated_ciphertext;
   std::string authenticated_ciphertext;
   CleansingVector<uint8_t> key;
   std::string nonce;

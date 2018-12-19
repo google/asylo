@@ -43,6 +43,7 @@ AeadTestVector::AeadTestVector(absl::string_view plaintext_hex,
                                absl::string_view ciphertext_hex,
                                absl::string_view tag_hex)
     : aad(absl::HexStringToBytes(aad_hex)),
+      unauthenticated_ciphertext(absl::HexStringToBytes(ciphertext_hex)),
       authenticated_ciphertext(
           absl::HexStringToBytes(absl::StrCat(ciphertext_hex, tag_hex))),
       key(CreateCleansingVectorFromHexString(key_hex)),

@@ -21,7 +21,6 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "asylo/crypto/aes_gcm_key.h"
 #include "asylo/crypto/random_nonce_generator.h"
 #include "asylo/util/status_macros.h"
 
@@ -40,7 +39,7 @@ constexpr size_t kAesGcmMaxMessageSize = static_cast<size_t>(1) << 25;
 StatusOr<std::unique_ptr<AeadCryptor>> AeadCryptor::CreateAesGcmCryptor(
     ByteContainerView key) {
   std::unique_ptr<AeadKey> aead_key;
-  ASYLO_ASSIGN_OR_RETURN(aead_key, AesGcmKey::Create(key));
+  ASYLO_ASSIGN_OR_RETURN(aead_key, AeadKey::CreateAesGcmKey(key));
   return absl::WrapUnique<AeadCryptor>(new AeadCryptor(
       std::move(aead_key), kAesGcmMaxMessageSize, kAesGcmMaxSealedMessages,
       RandomNonceGenerator::CreateAesGcmNonceGenerator()));

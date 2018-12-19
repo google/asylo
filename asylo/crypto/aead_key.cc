@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/crypto/aes_gcm_key.h"
+#include "asylo/crypto/aead_key.h"
 
 #include <openssl/aead.h>
 #include <memory>
@@ -25,7 +25,6 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
-#include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/status_macros.h"
 
@@ -36,16 +35,22 @@ constexpr size_t kAes128KeySize = 16;
 constexpr size_t kAes256KeySize = 32;
 
 // Returns the appropriate EVP_AEAD based on |key_size|.
-const EVP_AEAD *GetEvpAead(size_t key_size) {
-  if (key_size == EVP_AEAD_key_length(EVP_aead_aes_128_gcm())) {
-    return EVP_aead_aes_128_gcm();
-  } else if (key_size == EVP_AEAD_key_length(EVP_aead_aes_256_gcm())) {
-    return EVP_aead_aes_256_gcm();
+const EVP_AEAD *GetEvpAead(AeadScheme aead_scheme) {
+  switch (aead_scheme) {
+    case AES128_GCM:
+      return EVP_aead_aes_128_gcm();
+    case AES256_GCM:
+      return EVP_aead_aes_256_gcm();
+    case AES128_GCM_SIV:
+      return EVP_aead_aes_128_gcm_siv();
+    case AES256_GCM_SIV:
+      return EVP_aead_aes_256_gcm_siv();
+    case UNKNOWN_AEAD_SCHEME:
+      return nullptr;
   }
-  return nullptr;
 }
 
-// Returns the appropriate AeadScheme based on |key_size|.
+// Returns the appropriate AeadScheme for AES-GCM based on |key_size|.
 AeadScheme GetAesGcmAeadScheme(size_t key_size) {
   if (key_size == kAes128KeySize) {
     return AES128_GCM;
@@ -55,27 +60,49 @@ AeadScheme GetAesGcmAeadScheme(size_t key_size) {
   return UNKNOWN_AEAD_SCHEME;
 }
 
+// Returns the appropriate AeadScheme for AES-GCM-SIV based on |key_size|.
+AeadScheme GetAesGcmSivAeadScheme(size_t key_size) {
+  if (key_size == kAes128KeySize) {
+    return AES128_GCM_SIV;
+  } else if (key_size == kAes256KeySize) {
+    return AES256_GCM_SIV;
+  }
+  return UNKNOWN_AEAD_SCHEME;
+}
+
 }  // namespace
 
-StatusOr<std::unique_ptr<AesGcmKey>> AesGcmKey::Create(ByteContainerView key) {
-  if (!(key.size() == kAes128KeySize || key.size() == kAes256KeySize)) {
+StatusOr<std::unique_ptr<AeadKey>> AeadKey::CreateAesGcmKey(
+    ByteContainerView key) {
+  AeadScheme scheme = GetAesGcmAeadScheme(key.size());
+  if (scheme == UNKNOWN_AEAD_SCHEME) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   absl::StrCat("Invalid AES-GCM key length: ", key.size(),
                                " (must be 16 or 32 bytes)"));
   }
-  return absl::WrapUnique<AesGcmKey>(new AesGcmKey(key));
+  return absl::WrapUnique<AeadKey>(new AeadKey(scheme, key));
 }
 
-AeadScheme AesGcmKey::GetAeadScheme() const { return aead_scheme_; }
+StatusOr<std::unique_ptr<AeadKey>> AeadKey::CreateAesGcmSivKey(
+    ByteContainerView key) {
+  AeadScheme scheme = GetAesGcmSivAeadScheme(key.size());
+  if (scheme == UNKNOWN_AEAD_SCHEME) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid AES-GCM-SIV key length: ", key.size(),
+                               " (must be 16 or 32 bytes)"));
+  }
+  return absl::WrapUnique<AeadKey>(new AeadKey(scheme, key));
+}
 
-size_t AesGcmKey::NonceSize() const { return nonce_size_; }
+AeadScheme AeadKey::GetAeadScheme() const { return aead_scheme_; }
 
-size_t AesGcmKey::MaxSealOverhead() const { return max_seal_overhead_; }
+size_t AeadKey::NonceSize() const { return nonce_size_; }
 
-Status AesGcmKey::Seal(ByteContainerView plaintext,
-                       ByteContainerView associated_data,
-                       ByteContainerView nonce, absl::Span<uint8_t> ciphertext,
-                       size_t *ciphertext_size) {
+size_t AeadKey::MaxSealOverhead() const { return max_seal_overhead_; }
+
+Status AeadKey::Seal(ByteContainerView plaintext,
+                     ByteContainerView associated_data, ByteContainerView nonce,
+                     absl::Span<uint8_t> ciphertext, size_t *ciphertext_size) {
   if (nonce.size() != nonce_size_) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   absl::StrCat("Invalid nonce length: ", nonce.size(),
@@ -105,10 +132,9 @@ Status AesGcmKey::Seal(ByteContainerView plaintext,
   return Status::OkStatus();
 }
 
-Status AesGcmKey::Open(ByteContainerView ciphertext,
-                       ByteContainerView associated_data,
-                       ByteContainerView nonce, absl::Span<uint8_t> plaintext,
-                       size_t *plaintext_size) {
+Status AeadKey::Open(ByteContainerView ciphertext,
+                     ByteContainerView associated_data, ByteContainerView nonce,
+                     absl::Span<uint8_t> plaintext, size_t *plaintext_size) {
   if (nonce.size() != nonce_size_) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   absl::StrCat("Invalid nonce length: ", nonce.size(),
@@ -137,9 +163,9 @@ Status AesGcmKey::Open(ByteContainerView ciphertext,
   return Status::OkStatus();
 }
 
-AesGcmKey::AesGcmKey(ByteContainerView key)
-    : aead_(GetEvpAead(key.size())),
-      aead_scheme_(GetAesGcmAeadScheme(key.size())),
+AeadKey::AeadKey(AeadScheme aead_scheme, ByteContainerView key)
+    : aead_(GetEvpAead(aead_scheme)),
+      aead_scheme_(aead_scheme),
       key_(key.cbegin(), key.cend()),
       max_seal_overhead_(EVP_AEAD_max_overhead(aead_)),
       nonce_size_(EVP_AEAD_nonce_length(aead_)) {}

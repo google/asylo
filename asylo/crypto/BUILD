@@ -40,7 +40,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":aead_key",
-        ":aes_gcm_key",
         ":nonce_generator_interface",
         ":random_nonce_generator",
         "//asylo/crypto/util:byte_container_view",
@@ -65,18 +64,23 @@ cc_test(
     ],
 )
 
-# Defines a C++ interface for AEAD keys.
+# Implementation of AeadKey.
 cc_library(
     name = "aead_key",
+    srcs = ["aead_key.cc"],
     hdrs = ["aead_key.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
+        "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
+        "//asylo/util:cleanup",
         "//asylo/util:status",
-        "@com_google_absl//absl/types:span",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -93,35 +97,14 @@ cc_library(
     ],
 )
 
-# Implementation of AeadKey for AES-GCM.
-cc_library(
-    name = "aes_gcm_key",
-    srcs = ["aes_gcm_key.cc"],
-    hdrs = ["aes_gcm_key.h"],
+# Tests for AeadKey class.
+cc_test(
+    name = "aead_key_test",
+    srcs = ["aead_key_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":aead_key",
-        ":algorithms_proto_cc",
-        "//asylo/crypto/util:bssl_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/util:cleansing_types",
-        "//asylo/util:cleanup",
-        "//asylo/util:status",
-        "@boringssl//:crypto",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-# Tests for AesGcmKey class.
-cc_test(
-    name = "aes_gcm_key_test",
-    srcs = ["aes_gcm_key_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
         ":aead_test_vector",
-        ":aes_gcm_key",
         ":algorithms_proto_cc",
         "//asylo/crypto/util:bytes",
         "//asylo/test/util:status_matchers",
