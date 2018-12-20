@@ -256,6 +256,8 @@ class Bytes {
   static constexpr size_t size() { return Size; }
   static constexpr DataSafety policy() { return Policy::policy; }
 
+  uint8_t data_[Size];
+
  protected:
   // The default constructor is defaulted so that Bytes is a trivial class.
   Bytes() = default;
@@ -297,7 +299,6 @@ class Bytes {
     static_assert(offsetof(Bytes, data_) == 0,
                   "Offset of the member data_ within the class is incorrect.");
   }
-  uint8_t data_[Size];
 } ABSL_ATTRIBUTE_PACKED;
 
 // Define SafeBytes.
