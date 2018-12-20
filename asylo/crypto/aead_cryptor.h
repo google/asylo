@@ -33,11 +33,17 @@ namespace asylo {
 // An AEAD cryptor that provides Seal() and Open() functionality. Currently
 // supported configurations:
 // * AES-GCM-128 and AES-GCM-256 with 96-bit random nonces.
+// * AES-GCM-SIV-128 and AES-GCM-SIV-256 with 96-bit random nonces.
 class AeadCryptor {
  public:
   // Creates an AeadCryptor that uses AES-GCM for Seal() and Open(), and
   // generates random 96-bit nonces for use in Seal().
   static StatusOr<std::unique_ptr<AeadCryptor>> CreateAesGcmCryptor(
+      ByteContainerView key);
+
+  // Creates an AeadCryptor that uses AES-GCM-SIV for Seal() and Open(), and
+  // generates random 96-bit nonces for use in Seal().
+  static StatusOr<std::unique_ptr<AeadCryptor>> CreateAesGcmSivCryptor(
       ByteContainerView key);
 
   // Returns the maximum size of a message that may be sealed successfully.

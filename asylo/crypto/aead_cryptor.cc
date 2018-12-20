@@ -28,11 +28,14 @@ namespace asylo {
 namespace {
 
 // The following constants determine the maximum number of messages that can be
-// sealed with an AES-GCM cryptor and the maximum message size. These constants
-// keep the adversary's advantage at or below 2^-32 and keep the probability of
+// sealed with a cryptor and the maximum message size. These constants keep the
+// adversary's advantage at or below 2^-32 and keep the probability of
 // nonce-collision at or below 2^-48.
 constexpr uint64_t kAesGcmMaxSealedMessages = UINT64_C(1) << 27;
 constexpr size_t kAesGcmMaxMessageSize = static_cast<size_t>(1) << 25;
+
+constexpr uint64_t kAesGcmSivMaxSealedMessages = UINT64_C(1) << 48;
+constexpr size_t kAesGcmSivMaxMessageSize = static_cast<size_t>(1) << 25;
 
 }  // namespace
 
@@ -43,6 +46,16 @@ StatusOr<std::unique_ptr<AeadCryptor>> AeadCryptor::CreateAesGcmCryptor(
   return absl::WrapUnique<AeadCryptor>(new AeadCryptor(
       std::move(aead_key), kAesGcmMaxMessageSize, kAesGcmMaxSealedMessages,
       RandomNonceGenerator::CreateAesGcmNonceGenerator()));
+}
+
+StatusOr<std::unique_ptr<AeadCryptor>> AeadCryptor::CreateAesGcmSivCryptor(
+    ByteContainerView key) {
+  std::unique_ptr<AeadKey> aead_key;
+  ASYLO_ASSIGN_OR_RETURN(aead_key, AeadKey::CreateAesGcmSivKey(key));
+  return absl::WrapUnique<AeadCryptor>(
+      new AeadCryptor(std::move(aead_key), kAesGcmSivMaxMessageSize,
+                      kAesGcmSivMaxSealedMessages,
+                      RandomNonceGenerator::CreateAesGcmNonceGenerator()));
 }
 
 size_t AeadCryptor::MaxMessageSize() const { return max_message_size_; }
