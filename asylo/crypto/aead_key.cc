@@ -46,6 +46,7 @@ const EVP_AEAD *GetEvpAead(AeadScheme aead_scheme) {
     case AES256_GCM_SIV:
       return EVP_aead_aes_256_gcm_siv();
     case UNKNOWN_AEAD_SCHEME:
+    default:
       return nullptr;
   }
 }
