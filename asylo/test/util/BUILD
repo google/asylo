@@ -245,6 +245,19 @@ cc_test(
 )
 
 cc_library(
+    name = "finite_domain_fuzz",
+    testonly = 1,
+    srcs = ["finite_domain_fuzz.cc"],
+    hdrs = ["finite_domain_fuzz.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        "@com_google_absl//absl/types:optional",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "fake_local_enclave_client",
     testonly = 1,
     hdrs = ["fake_local_enclave_client.h"],
