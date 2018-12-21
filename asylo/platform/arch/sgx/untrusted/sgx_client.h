@@ -47,6 +47,9 @@ class SgxClient : public EnclaveClient {
   void *base_address() { return base_address_; }
   const void *base_address() const { return base_address_; }
 
+  // Sets a new expected process ID for an existing SGX enclave.
+  void SetProcessId();
+
  private:
   friend class SgxLoader;
   friend class SgxEmbeddedLoader;

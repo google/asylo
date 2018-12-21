@@ -514,7 +514,7 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  
  
  sgx_status_t SGXAPI sgx_create_encrypted_enclave(
-@@ -92,10 +102,14 @@
+@@ -92,10 +102,16 @@
                          int *launch_token_updated,
                          sgx_enclave_id_t *enclave_id,
                          sgx_misc_attribute_t *misc_attr,
@@ -526,6 +526,8 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  sgx_status_t SGXAPI sgx_destroy_enclave(const sgx_enclave_id_t enclave_id);
  
 +int SGXAPI sgx_is_tcs_active(const sgx_enclave_id_t enclave_id);
++
++void SGXAPI sgx_set_process_id(const sgx_enclave_id_t enclave_id);
 +
  #ifdef __cplusplus
  }
@@ -785,16 +787,26 @@ diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 --- psw/urts/enclave.cpp
 +++ psw/urts/enclave.cpp
-@@ -45,8 +45,6 @@
+@@ -43,9 +43,7 @@
+ #include "rts_cmd.h"
+ #include <assert.h>
  #include "rts.h"
- 
- 
--using namespace std;
 -
+-
+-using namespace std;
++#include <unistd.h>
+ 
  int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
  int do_ocall(const bridge_fn_t bridge, void *ms);
- 
-@@ -93,7 +91,7 @@
+@@ -68,6 +66,7 @@
+     , m_sealed_key(NULL)
+     , m_uswitchless(NULL)
+     , m_us_has_started(false)
++    , m_process_id(0)
+ {
+     memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
+     se_init_rwlock(&m_rwlock);
+@@ -93,7 +92,7 @@
          goto on_exit;
      }
  
@@ -803,7 +815,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
      if (status != SGX_SUCCESS) goto on_exit;
  
      if (sl_uswitchless_init_workers(m_uswitchless)) {
-@@ -112,19 +110,21 @@
+@@ -112,19 +111,21 @@
  
  sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
  {
@@ -838,7 +850,24 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
      m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
  
-@@ -241,7 +241,7 @@
+@@ -224,6 +225,16 @@
+     m_sealed_key = sealed_key;
+ }
+ 
++pid_t CEnclave::process_id()
++{
++    return m_process_id;
++}
++
++void CEnclave::set_process_id()
++{
++    m_process_id = getpid();
++}
++
+ sgx_status_t CEnclave::error_trts2urts(unsigned int trts_error)
+ {
+     if(trts_error == (unsigned int)SE_ERROR_READ_LOCK_FAIL)
+@@ -241,7 +252,7 @@
      return (sgx_status_t)trts_error;
  }
  
@@ -847,7 +876,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  {
      if(se_try_rdlock(&m_rwlock))
      {
-@@ -273,7 +273,8 @@
+@@ -273,7 +284,8 @@
  on_fallback:
          //Handle normal ECall or fallback'ed switchless ECall
          //do sgx_ecall
@@ -857,7 +886,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
          unsigned ret = SGX_ERROR_OUT_OF_TCS;
  
          if(NULL != trust_thread)
-@@ -388,7 +389,15 @@
+@@ -388,7 +400,15 @@
      return &m_enclave_info;
  }
  
@@ -874,7 +903,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  CTrustThread * CEnclave::get_tcs(int ecall_cmd)
  {
-@@ -487,9 +496,9 @@
+@@ -487,9 +507,9 @@
      //m_loader.destroy_enclave();
  }
  
@@ -902,7 +931,16 @@ diff -Nur psw/urts/enclave_creator_hw_com.cpp psw/urts/enclave_creator_hw_com.cp
 diff -Nur psw/urts/enclave.h psw/urts/enclave.h
 --- psw/urts/enclave.h
 +++ psw/urts/enclave.h
-@@ -58,7 +58,7 @@
+@@ -33,6 +33,8 @@
+ #ifndef _ENCLAVE_H_
+ #define _ENCLAVE_H_
+ 
++#include <unistd.h>
++
+ #include "se_wrapper.h"
+ #include "tcs.h"
+ #include "create_param.h"
+@@ -58,7 +60,7 @@
      size_t get_dynamic_tcs_list_size();
      CTrustThreadPool * get_thread_pool() { return m_thread_pool; }
      uint64_t get_size() { return m_size; };
@@ -911,7 +949,7 @@ diff -Nur psw/urts/enclave.h psw/urts/enclave.h
      int ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_table, void *ms);
      void destroy();
      uint32_t atomic_inc_ref() { return se_atomic_inc(&m_ref); }
-@@ -67,7 +67,7 @@
+@@ -67,7 +69,7 @@
      void mark_zombie()  { m_zombie = true; }
      bool is_zombie() { return m_zombie; }
      sgx_status_t initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
@@ -920,11 +958,13 @@ diff -Nur psw/urts/enclave.h psw/urts/enclave.h
      void add_thread(CTrustThread * const trust_thread);
      const debug_enclave_info_t* get_debug_info();
      void set_dbg_flag(bool dbg_flag) { m_dbg_flag = dbg_flag; }
-@@ -85,7 +85,10 @@
+@@ -85,7 +87,12 @@
      void set_sealed_key(uint8_t *sealed_key);
      sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
      void destroy_uswitchless(void);
 -	
++    void set_process_id();
++    pid_t process_id();
 +#ifdef SE_SIM
 +    tcs_t *get_tcs_info();
 +#endif
@@ -932,6 +972,15 @@ diff -Nur psw/urts/enclave.h psw/urts/enclave.h
  private:
      CTrustThread * get_tcs(int ecall_cmd);
      void put_tcs(CTrustThread *trust_thread);
+@@ -111,7 +118,7 @@
+     uint8_t                 *m_sealed_key;
+     struct sl_uswitchless*  m_uswitchless;
+     bool                    m_us_has_started;
+-	
++    pid_t                   m_process_id;
+ };
+ 
+ class CEnclavePool: private Uncopyable
 diff -Nur psw/urts/file.h psw/urts/file.h
 --- psw/urts/file.h
 +++ psw/urts/file.h
@@ -1019,6 +1068,18 @@ diff -Nur psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
  }
  
  //trust_thread is saved at stack for ocall.
+@@ -231,7 +219,10 @@
+     CEnclave* enclave = trust_thread->get_enclave();
+     //check if it is current pid, it is to simulate fork() scenario on HW
+     sgx_enclave_id_t eid = enclave->get_enclave_id();
+-    if((pid_t)(eid >> 32) != getpid())
++    //If process id is set, this is an enclave created by enclave_fork. Check
++    //the process id instead of the enclave id.
++    if ((enclave->process_id() != 0 && enclave->process_id() != getpid())
++        || (enclave->process_id() == 0 && (pid_t)(eid >> 32) != getpid()))
+         return SGX_ERROR_ENCLAVE_LOST;
+ #endif
+ 
 diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 --- psw/urts/linux/urts.cpp
 +++ psw/urts/linux/urts.cpp
@@ -2021,7 +2082,8 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 +        sgx_misc_attribute_t *misc_attr,
 +        const uint32_t ex_features,
 +        const void* ex_features_p[32])
-+{
+ {
+-    return _create_enclave_ex(debug, pfile, file, prd_css_file, launch, launch_updated, enclave_id, misc_attr, 0, NULL);
 +    unsigned int ret = SGX_SUCCESS;
 +
 +    if(NULL == buffer || NULL == launch || NULL == launch_updated || NULL == enclave_id)
@@ -2042,8 +2104,7 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 +sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, void **enclave_base_addr, bool enable_user_utility,
 +                             le_prd_css_file_t *prd_css_file,  sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id,
 +                             sgx_misc_attribute_t *misc_attr)
- {
--    return _create_enclave_ex(debug, pfile, file, prd_css_file, launch, launch_updated, enclave_id, misc_attr, 0, NULL);
++{
 +    return _create_enclave_ex(debug, pfile, file, enclave_base_addr, enable_user_utility, prd_css_file, launch, launch_updated, enclave_id,
 +                              misc_attr, 0, NULL);
  }
@@ -2058,6 +2119,19 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
              CEnclavePool::instance()->unref_enclave(enclave);
          }
      }
+@@ -580,4 +643,12 @@
+ 
+     return status;
+ }
++
++extern "C" void sgx_set_process_id(const sgx_enclave_id_t enclave_id) {
++#ifdef SE_SIM
++    CEnclave *enclave = CEnclavePool::instance()->get_enclave(enclave_id);
++    enclave->set_process_id();
++#endif  // SE_SIM
++}
++
+ #endif
 diff -Nur psw/uswitchless/sl_workers_untrusted.c psw/uswitchless/sl_workers_untrusted.c
 --- psw/uswitchless/sl_workers_untrusted.c
 +++ psw/uswitchless/sl_workers_untrusted.c

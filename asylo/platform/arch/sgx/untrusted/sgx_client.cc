@@ -485,4 +485,6 @@ Status SgxClient::DestroyEnclave() {
 
 bool SgxClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
 
+void SgxClient::SetProcessId() { sgx_set_process_id(id_); }
+
 }  //  namespace asylo
