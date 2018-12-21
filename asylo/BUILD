@@ -20,6 +20,7 @@ licenses(["notice"])  # Apache v2.0
 
 exports_files(["LICENSE"])
 
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -62,6 +63,7 @@ cc_library(
     hdrs = ["trusted_application.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/platform/arch:trusted_arch",

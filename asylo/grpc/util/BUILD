@@ -16,7 +16,7 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:asylo.bzl", "cc_test", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
@@ -83,6 +83,7 @@ cc_library(
     name = "enclave_server",
     hdrs = ["enclave_server.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_server_proto_cc",

@@ -46,6 +46,7 @@ def asylo_grpc_proto_library(
         fail("Expected asylo_grpc_proto_library name to end with '_grpc_proto'.")
     base_name = name[0:-len("_grpc_proto")]
     proto_name = base_name + "_proto"
+    tags = kwargs.pop("tags", [])
 
     grpc_proto_library(
         name = name,
@@ -61,6 +62,7 @@ def asylo_grpc_proto_library(
         name = proto_name,
         srcs = srcs,
         deps = deps,
+        tags = tags,
         **kwargs
     )
 

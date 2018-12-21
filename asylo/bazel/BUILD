@@ -31,6 +31,7 @@ load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
     "embed_enclaves",
+    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
@@ -59,6 +60,7 @@ cc_library(
     testonly = 1,
     srcs = ["test_shim_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:public"],
     deps = [
         ":test_shim_enclave_proto_cc",

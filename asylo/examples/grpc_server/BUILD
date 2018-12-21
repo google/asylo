@@ -27,6 +27,7 @@ load(
     "enclave_loader",
     "sim_enclave",
     "enclave_test",
+    "ASYLO_ALL_BACKENDS",
 )
 load(
     "//asylo/bazel:proto.bzl",
@@ -39,6 +40,7 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 asylo_grpc_proto_library(
     name = "translator_server_grpc_proto",
     srcs = ["translator_server.proto"],
+    tags = ASYLO_ALL_BACKENDS,
 )
 
 # The implementation of the translation server.
@@ -47,6 +49,7 @@ cc_library(
     srcs = ["translator_server.cc"],
     hdrs = ["translator_server.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":translator_server_grpc_proto",
         "@com_github_grpc_grpc//:grpc++",

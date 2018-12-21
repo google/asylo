@@ -19,6 +19,10 @@
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
+ASYLO_ALL_BACKENDS = [
+    "asylo-sgx",
+]
+
 def _parse_label(label):
     """Parse a label into (package, name).
 
@@ -159,7 +163,7 @@ def _enclave_runner_script_impl(ctx):
     user-provided arguments. Performs string interpolation over the arguments, to
     populate paths to enclaves.
 
-    Arguments:
+    Args:
       ctx: A bazel rule context
 
     Returns:
@@ -250,6 +254,11 @@ def _make_enclave_runner_rule(test = False):
         executable = not test,
         test = test,
         attrs = {
+            "data": attr.label_list(allow_files = True),
+            "enclaves": attr.label_keyed_string_dict(
+                allow_files = True,
+                providers = [EnclaveInfo],
+            ),
             "loader": attr.label(
                 executable = True,
                 # If the loader contains embedded enclaves, then it needs to be
@@ -262,11 +271,6 @@ def _make_enclave_runner_rule(test = False):
                 allow_single_file = True,
             ),
             "loader_args": attr.string_list(),
-            "enclaves": attr.label_keyed_string_dict(
-                allow_files = True,
-                providers = [EnclaveInfo],
-            ),
-            "data": attr.label_list(allow_files = True),
         },
     )
 
@@ -380,6 +384,7 @@ def enclave_loader(
         loader = loader_name,
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
+        tags = kwargs.get("tags", []),
         data = kwargs.get("data", []),
     )
 
@@ -403,7 +408,7 @@ def enclave_test(
         test_args = [],
         tags = [],
         **kwargs):
-    """Build target for testing one or more instances of 'sgx_enclave'.
+    """Build target for testing one or more enclaves.
 
     Creates a cc_test for a given enclave. Passes flags according to
     `test_args`, which can contain references to targets from `enclaves`.
@@ -414,22 +419,22 @@ def enclave_test(
         dictionary must be injective. This dictionary is used to format each
         string in `test_args` after each enclave target is interpreted as the
         path to its output binary.
-      embedded_enclaves: Dictionary from ELF section names (that do not start
-        with '.') to target dependencies. Each target in the dictionary is
-        embedded in the test binary under the corresponding ELF section.
-      test_args: List of arguments to be passed to the test binary. Arguments may
-        contain {enclave_name}-style references to keys from the `enclaves` dict,
-        each of which will be replaced with the path to the named enclave. This
-        replacement only occurs for non-embedded enclaves.
-      tags: Label attached to this test to allow for querying.
-      **kwargs: cc_test arguments.
+     embedded_enclaves: Dictionary from ELF section names (that do not start
+       with '.') to target dependencies. Each target in the dictionary is
+       embedded in the test binary under the corresponding ELF section.
+     test_args: List of arguments to be passed to the test binary. Arguments may
+       contain {enclave_name}-style references to keys from the `enclaves` dict,
+       each of which will be replaced with the path to the named enclave. This
+       replacement only occurs for non-embedded enclaves.
+     tags: Label attached to this test to allow for querying.
+     **kwargs: cc_test arguments.
 
     This macro creates three build targets:
-      1) name: sh_test that runs the enclave_test.
-      2) name_driver: cc_test used as test loader in `name`. This is a normal
-                      native cc_test. It cannot be directly run because there is
-                      an undeclared dependency on enclave.
-      3) name_host_driver: genrule that builds name_driver with host crosstool.
+     1) name: sh_test that runs the enclave_test.
+     2) name_driver: cc_test used as test loader in `name`. This is a normal
+                     native cc_test. It cannot be directly run because there is
+                     an undeclared dependency on enclave.
+     3) name_host_driver: genrule that builds name_driver with host crosstool.
     """
 
     test_name = name + "_driver"
@@ -624,3 +629,16 @@ def cc_enclave_test(
         testonly = 1,
         tags = ["enclave_test"] + tags,
     )
+
+def sgx_enclave_test(name, srcs, **kwargs):
+    """Build target for testing one or more instances of 'sgx_enclave'.
+
+    This macro invokes enclave_test with the "asylo-sgx" tag added.
+
+    Args:
+      name: The target name.
+      srcs: Same as cc_test srcs.
+      **kwargs: enclave_test arguments.
+    """
+    tags = kwargs.pop("tags", [])
+    enclave_test(name, srcs, tags + ["asylo-sgx"], **kwargs)

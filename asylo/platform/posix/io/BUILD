@@ -22,6 +22,7 @@ load(
     "enclave_test",
     "cc_enclave_test",
     "cc_test",
+    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -55,6 +56,7 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":util",
         "//asylo/platform/arch:trusted_arch",

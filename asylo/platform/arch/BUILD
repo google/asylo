@@ -202,6 +202,7 @@ cc_library(
         "-mrdrnd",
     ] + ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ["asylo-sgx"],
     visibility = ["//visibility:private"],
     deps = [
         ":sgx_error_space",
@@ -250,6 +251,7 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ["asylo-sgx"],
     visibility = ["//visibility:private"],
     deps = [
         "//asylo/platform/common:bridge_types",

@@ -3136,6 +3136,12 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 @@ -0,0 +1,1208 @@
 +# linux-sgx is the Intel SGX SDK
 +
++load(
++    ":sgx_sdk.bzl",
++    "sgx_enclave",
++    "sgx_enclave_configuration",
++)
++
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
 +# NetBSD, FreeBSD, OpenBSD
@@ -3159,12 +3165,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +# SQLite
 +# CC0 1.0 (DLMalloc),
 +licenses(["reciprocal"])  # Eclipse public license
-+
-+load(
-+    ":sgx_sdk.bzl",
-+    "sgx_enclave",
-+    "sgx_enclave_configuration",
-+)
 +
 +exports_files([
 +    "LICENSE",
@@ -3761,8 +3761,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":untrusted_inc_internal",
 +        ":epid_inc",
 +    ] + select({
-+        ":sgx_hw": [":uae_service_hw"],
 +        "//conditions:default": [":uae_service_sim"],
++        ":sgx_hw": [":uae_service_hw"],
 +    }),
 +)
 +
@@ -4262,13 +4262,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":trusted_inc",
 +    ] + select({
++        "//conditions:default": [],
 +        ":sgx_hw": [
 +            ":trts_hw",
 +        ],
 +        ":sgx_sim": [
 +            ":trts_sim",
 +        ],
-+        "//conditions:default": [],
 +    }),
 +)
 +
@@ -4399,7 +4399,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +def _sgx_enclave_configuration(ctx):
 +    """Implementation of enclave signing configuration file formatting."""
 +    xml_file = ctx.actions.declare_file(ctx.label.name + ".xml")
-+    ctx.file_action(
++    ctx.actions.write(
 +        output = xml_file,
 +        content = "\n".join([
 +            "<EnclaveConfiguration>",
@@ -4422,23 +4422,42 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    implementation = _sgx_enclave_configuration,
 +    output_to_genfiles = True,
 +    attrs = {
-+        "prodid": attr.string(
++        # "1" for release enclaves.
++        "disable_debug": attr.string(
 +            default = "0",
-+            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
-+                   "Product ID"),
++            doc = ("Indicates whether launching the enclave in debug mode is " +
++                   "disabled"),
++        ),
++        "heap_max_size": attr.string(
++            default = "0x100000",
++            doc = "The enclave's maximum heap size in bytes (4KB aligned)",
 +        ),
 +        "isvsvn": attr.string(
 +            default = "0",
 +            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
 +                   "Security Version Number"),
 +        ),
++        "misc_mask": attr.string(
++            default = "0xffffffff",
++            doc = "A mask indicating which bits in misc_select are enforced",
++        ),
++        "misc_select": attr.string(
++            default = "0",
++            doc = "The desired Extended SSA frame feature (must be 0)",
++        ),
++        "prodid": attr.string(
++            default = "0",
++            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
++                   "Product ID"),
++        ),
++        "provision_key": attr.string(
++            default = "0",
++            doc = ("Indicates whether the enclave has access to the " +
++                   "Provisioning Key and the Provisioning Seal Key"),
++        ),
 +        "stack_max_size": attr.string(
 +            default = "0x40000",
 +            doc = "The enclave's maximum stack size in bytes (4KB aligned)",
-+        ),
-+        "heap_max_size": attr.string(
-+            default = "0x100000",
-+            doc = "The enclave's maximum heap size in bytes (4KB aligned)",
 +        ),
 +        # 2 tcs are reserved by the framework, 10 are left for users.
 +        "tcs_num": attr.string(
@@ -4451,25 +4470,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +            doc = ("The TCS management policy (" +
 +                   "0 - The TCS is bound to the untrusted thread, " +
 +                   "1 - The TCS is unbound to the untrusted thread)"),
-+        ),
-+        # "1" for release enclaves.
-+        "disable_debug": attr.string(
-+            default = "0",
-+            doc = ("Indicates whether launching the enclave in debug mode is " +
-+                   "disabled"),
-+        ),
-+        "provision_key": attr.string(
-+            default = "0",
-+            doc = ("Indicates whether the enclave has access to the " +
-+                   "Provisioning Key and the Provisioning Seal Key"),
-+        ),
-+        "misc_select": attr.string(
-+            default = "0",
-+            doc = "The desired Extended SSA frame feature (must be 0)",
-+        ),
-+        "misc_mask": attr.string(
-+            default = "0xffffffff",
-+            doc = "A mask indicating which bits in misc_select are enforced",
 +        ),
 +    },
 +)
@@ -4515,23 +4515,23 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    implementation = _sgx_debug_sign_enclave_impl,
 +    executable = True,
 +    attrs = {
-+        "unsigned": attr.label(allow_single_file = True),
 +        "config": attr.label(
 +            mandatory = True,
 +            allow_single_file = True,
 +            providers = [SGXEnclaveConfigInfo],
++        ),
++        "unsigned": attr.label(allow_single_file = True),
++        "_key": attr.label(
++            default = Label(
++                "@linux_sgx//:enclave_test_private.pem",
++            ),
++            allow_single_file = True,
 +        ),
 +        "_sign_tool": attr.label(
 +            default = Label("@linux_sgx//:sgx_sign_tool"),
 +            allow_single_file = True,
 +            executable = True,
 +            cfg = "host",
-+        ),
-+        "_key": attr.label(
-+            default = Label(
-+                "@linux_sgx//:enclave_test_private.pem",
-+            ),
-+            allow_single_file = True,
 +        ),
 +    },
 +)

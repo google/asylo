@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:asylo.bzl", "cc_test", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
@@ -109,6 +109,7 @@ cc_library(
     srcs = ["enclave_test_application.cc"],
     hdrs = ["enclave_test_application.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":test_string_proto_cc",

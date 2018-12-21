@@ -14,20 +14,20 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_test",
     "enclave_test",
 )
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:proto.bzl",
     "asylo_grpc_proto_library",
     "asylo_proto_library",
 )
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+
+licenses(["notice"])  # Apache v2.0
 
 # Service definition for testing gRPC in Asylo.
 asylo_grpc_proto_library(
@@ -68,20 +68,6 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
-    ],
-)
-
-# Base implementation for a simple gRPC server in an enclave.
-cc_library(
-    name = "enclave_server",
-    testonly = 1,
-    srcs = ["enclave_server.cc"],
-    hdrs = ["enclave_server.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":messenger_server_impl",
-        "//asylo:enclave_runtime",
-        "//asylo/util:status",
     ],
 )
 

@@ -22,6 +22,7 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 filegroup(
@@ -38,4 +39,5 @@ cc_library(
     hdrs = [":system_headers"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
 )

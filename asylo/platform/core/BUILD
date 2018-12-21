@@ -22,6 +22,7 @@ package(
 
 exports_files(["LICENSE"])
 
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Core untrusted Asylo components.
@@ -63,6 +64,7 @@ cc_library(
     hdrs = ["trusted_global_state.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         "//asylo:enclave_proto_cc",
         "//asylo/util:status",
@@ -80,6 +82,7 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":shared_name",
         ":trusted_global_state",
@@ -98,6 +101,7 @@ cc_library(
     hdrs = ["trusted_application.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":shared_name",
         ":trusted_core",

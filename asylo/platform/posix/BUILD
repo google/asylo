@@ -29,6 +29,7 @@ load(
     "enclave_test",
     "cc_enclave_test",
     "cc_test",
+    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -48,6 +49,7 @@ filegroup(
 cc_library(
     name = "trusted_posix",
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     deps = select({
         "//asylo/platform/arch:sgx": [":posix"],
     }),
@@ -102,6 +104,7 @@ cc_library(
     }),
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:private"],
     deps = [
         ":pthread_impl",

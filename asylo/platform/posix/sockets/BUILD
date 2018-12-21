@@ -19,7 +19,7 @@ licenses(["notice"])  # Apache v2.0
 # Socket implementation, tests, and perf measurement tools.
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("//asylo/bazel:asylo.bzl", "enclave_test")
+load("//asylo/bazel:asylo.bzl", "enclave_test", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
@@ -41,6 +41,7 @@ cc_library(
         "socket.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:memory",
@@ -54,6 +55,7 @@ cc_library(
     srcs = ["socket_transmit.cc"],
     hdrs = ["socket_transmit.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
@@ -72,6 +74,7 @@ cc_library(
     srcs = ["socket_server.cc"],
     hdrs = ["socket_server.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":socket_transmit",
         "//asylo/util:logging",
@@ -92,6 +95,7 @@ cc_library(
     srcs = ["socket_client.cc"],
     hdrs = ["socket_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":socket_transmit",
         "//asylo/util:logging",
