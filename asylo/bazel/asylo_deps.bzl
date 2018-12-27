@@ -124,9 +124,9 @@ def asylo_deps():
     if "com_google_protobuf" not in native.existing_rules():
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-3.6.1",
-            urls = ["https://github.com/google/protobuf/archive/v3.6.1.tar.gz"],
-            sha256 = "3d4e589d81b2006ca603c1ab712c9715a76227293032d05b26fca603f90b3f5b",
+            strip_prefix = "protobuf-3.6.1.2",
+            urls = ["https://github.com/google/protobuf/archive/v3.6.1.2.tar.gz"],
+            sha256 = "2244b0308846bb22b4ff0bcc675e99290ff9f1115553ae9671eba1030af31bc0",
         )
 
     # gRPC
@@ -213,8 +213,8 @@ def asylo_go_deps():
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            url = "https://github.com/bazelbuild/rules_go/releases/download/0.10.1/rules_go-0.10.1.tar.gz",
-            sha256 = "4b14d8dd31c6dbaf3ff871adcd03f28c3274e42abc855cb8fb4d01233c0154dc",
+            url = "https://github.com/bazelbuild/rules_go/releases/download/0.16.5/rules_go-0.16.5.tar.gz",
+            sha256 = "7be7dc01f1e0afdba6c8eb2b43d2fa01c743be1b9273ab1eaf6c233df078d705",
         )
 
     # go crypto for EKEP's go_binary usage.
