@@ -22,7 +22,8 @@ package(
 
 exports_files(["LICENSE"])
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Core untrusted Asylo components.
@@ -210,6 +211,37 @@ cc_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Singleton class responsible for allocating shared buffers between trusted
+# and untrusted code.
+cc_library(
+    name = "untrusted_cache_malloc",
+    srcs = ["untrusted_cache_malloc.cc"],
+    hdrs = ["untrusted_cache_malloc.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/common:memory",
+        "//asylo/platform/common:spin_lock",
+        "@com_google_absl//absl/container:flat_hash_set",
+    ],
+)
+
+sgx_enclave_configuration(
+    name = "many_threads_enclave_config",
+    tcs_num = "1000",
+)
+
+cc_enclave_test(
+    name = "untrusted_cache_malloc_test",
+    srcs = ["untrusted_cache_malloc_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_config = ":many_threads_enclave_config",
+    deps = [
+        "//asylo/platform/core:untrusted_cache_malloc",
         "@com_google_googletest//:gtest",
     ],
 )

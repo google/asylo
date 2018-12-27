@@ -217,6 +217,23 @@ void *enc_untrusted_malloc(size_t size) {
   return result;
 }
 
+void **enc_untrusted_allocate_buffers(size_t count, size_t size) {
+  void **buffers;
+  CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
+      &buffers,
+      static_cast<bridge_size_t>(count),
+      static_cast<bridge_size_t>(size)));
+  if (!buffers || !sgx_is_outside_enclave(buffers, size)) {
+    abort();
+  }
+  return buffers;
+}
+
+void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
+  CHECK_OCALL(ocall_enc_untrusted_deallocate_free_list(
+      free_list, static_cast<bridge_size_t>(count)));
+}
+
 int enc_untrusted_open(const char *path_name, int flags, ...) {
   uint32_t mode = 0;
   if (flags & O_CREAT) {

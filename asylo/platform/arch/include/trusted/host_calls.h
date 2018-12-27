@@ -60,6 +60,15 @@ void *enc_untrusted_realloc(void *ptr, size_t size);
 // Releases memory on the untrusted heap.
 void enc_untrusted_free(void *ptr);
 
+// Allocates |count| buffers of size |size| on the untrusted heap, returning a
+// pointer to an array of buffer pointers.
+void **enc_untrusted_allocate_buffers(
+    size_t count, size_t size);
+
+// Releases memory on the untrusted heap pointed to by buffer pointers stored in
+// |free_list|.
+void enc_untrusted_deallocate_free_list(void **free_list, size_t count);
+
 //////////////////////////////////////
 //          Error Handling          //
 //////////////////////////////////////

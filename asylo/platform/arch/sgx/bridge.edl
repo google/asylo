@@ -102,7 +102,10 @@ enclave {
 
     int ocall_enc_untrusted_puts([in, string] const char *str) propagate_errno;
     void *ocall_enc_untrusted_malloc(bridge_size_t size) propagate_errno;
-
+    void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
+        bridge_size_t size) propagate_errno;
+    void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,
+        bridge_size_t count) propagate_errno;
     int ocall_enc_untrusted_open([in, string] const char *path_name,
                                  int flags, uint32_t mode) propagate_errno;
     int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) propagate_errno;

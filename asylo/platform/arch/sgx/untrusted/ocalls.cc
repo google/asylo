@@ -137,6 +137,27 @@ void *ocall_enc_untrusted_malloc(bridge_size_t size) {
   return ret;
 }
 
+void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
+                                            bridge_size_t size) {
+  void **buffers = reinterpret_cast<void **>(
+      malloc(static_cast<size_t>(count) * sizeof(void*)));
+  for (int i = 0; i < count; i++) {
+    buffers[i] = malloc(size);
+  }
+  return buffers;
+}
+
+void ocall_enc_untrusted_deallocate_free_list(void **free_list,
+                                              bridge_size_t count) {
+  // This function only releases memory on the untrusted heap pointed to by
+  // buffer pointers stored in |free_list|, not freeing the |free_list| object
+  // itself. The client making the host call is responsible for the deallocation
+  // of the |free list| object.
+  for (int i = 0; i < count; i++) {
+    free(free_list[i]);
+  }
+}
+
 int ocall_enc_untrusted_open(const char *path_name, int flags, uint32_t mode) {
   int host_flags = asylo::FromBridgeFileFlags(flags);
   int ret = open(path_name, host_flags, mode);
