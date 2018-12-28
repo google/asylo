@@ -23,6 +23,7 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Target exposing trusted architecture-dependent components for the build
@@ -31,7 +32,6 @@ cc_library(
     name = "trusted_arch",
     hdrs = [
         "include/trusted/enclave_interface.h",
-        "include/trusted/fork.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",
@@ -179,12 +179,10 @@ cc_library(
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
-            "sgx/trusted/fork.cc",
             "sgx/trusted/hardware_random.cc",
             "sgx/trusted/register_signal.cc",
         ],
         "@linux_sgx//:sgx_sim": [
-            "sgx_sim/trusted/fork.cc",
             "sgx_sim/trusted/hardware_random.cc",
             "sgx_sim/trusted/register_signal.cc",
         ],
@@ -192,7 +190,6 @@ cc_library(
     hdrs = [
         "include/trusted/enclave_interface.h",
         "include/trusted/entry_points.h",
-        "include/trusted/fork.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",
@@ -267,4 +264,27 @@ config_setting(
     values = {
         "crosstool_top": "@com_google_asylo_sgx_backend//toolchain:crosstool",
     },
+)
+
+# fork related runtime.
+cc_library(
+    name = "trusted_fork",
+    srcs = select({
+        "@linux_sgx//:sgx_hw": ["sgx/trusted/fork.cc"],
+        "//conditions:default": ["common/trusted/fork.cc"],
+    }),
+    hdrs = ["include/trusted/fork.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
+    tags = ASYLO_ALL_BACKENDS,
+    deps = [
+        ":trusted_arch",
+        "@com_google_absl//absl/strings",
+        "//asylo:enclave_proto_cc",
+    ] + select({
+        "@linux_sgx//:sgx_hw": [
+            ":sgx_error_space",
+        ],
+        "//conditions:default": [],
+    }),
 )

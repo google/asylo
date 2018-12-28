@@ -109,6 +109,7 @@ cc_library(
         "//asylo:enclave_proto_cc",
         "//asylo/identity:init",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",

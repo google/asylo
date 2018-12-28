@@ -25,12 +25,12 @@
 namespace asylo {
 
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
-  // Simulation mode shouldn't need to take a snapshot for fork.
+  // Only supported in the SGX hardware backend.
   abort();
 }
 
 Status RestoreForFork(const SnapshotLayout *snapshot_layout) {
-  // Simulation mode shouldn't need to restore for fork.
+  // Only supported in the SGX hardware backend.
   abort();
 }
 
