@@ -14,14 +14,6 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
-# Example demonstrating gRPC in Asylo.
-
-package(
-    default_visibility = ["//visibility:public"],
-)
-
 load(
     "//asylo/bazel:asylo.bzl",
     "enclave_loader",
@@ -29,12 +21,20 @@ load(
     "enclave_test",
     "ASYLO_ALL_BACKENDS",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:proto.bzl",
     "asylo_proto_library",
     "asylo_grpc_proto_library",
 )
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
+
+# Example demonstrating gRPC in Asylo.
+
+package(
+    default_visibility = ["//visibility:public"],
+)
 
 # The generated code for the translator server (and client).
 asylo_grpc_proto_library(
@@ -53,8 +53,10 @@ cc_library(
     deps = [
         ":translator_server_grpc_proto",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
     ],
 )
 
@@ -78,8 +80,10 @@ sim_enclave(
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_reflection",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
     ],
 )
 
@@ -95,8 +99,6 @@ enclave_loader(
         "//asylo:enclave_client",
         "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
     ],
 )
 
@@ -114,14 +116,13 @@ enclave_test(
         "//asylo/test/util:exec_tester",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
     ],
 )

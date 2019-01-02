@@ -23,5 +23,9 @@ import "asylo/enclave.proto";
 extend asylo.EnclaveConfig {
   // The address that the gRPC server inside the enclave will be hosted on.
   // Required.
-  optional string server_address = 65537;
+  optional string server_address = 205739939;
+
+  // The maximum amount of time in seconds before the server is shut down.
+  // Required.
+  optional int32 server_max_lifetime = 225604125;
 }

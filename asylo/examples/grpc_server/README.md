@@ -46,12 +46,19 @@ you'd like to run your code outside of Docker, you can follow
 
 This example shows how to run a gRPC server that implements a simple translation
 service inside an enclave. The service provides translations of some Greek words
-into English.
+into English. The service also includes a shutdown RPC that triggers server
+shutdown.
 
 This example uses the following service definition from
 [translator_server.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.proto):
 
 ```protobuf
+// An empty message to serve as the input to the Shutdown RPC.
+message ShutdownRequest {}
+
+// An empty message to serve as the output from the Shutdown RPC.
+message ShutdownResponse {}
+
 // A request message containing a word to be translated.
 message GetTranslationRequest {
   optional string input_word = 1;
@@ -68,6 +75,9 @@ service Translator {
   rpc GetTranslation(GetTranslationRequest) returns (GetTranslationResponse) {
     // errors: no input word, no translation available
   }
+
+  // Shuts down the Translator server.
+  rpc Shutdown(ShutdownRequest) returns (ShutdownResponse) {}
 }
 ```
 
@@ -86,7 +96,8 @@ utility included in Asylo. `EnclaveServer` is a whole enclave that runs a single
 gRPC service. You can find `EnclaveServer` in
 [enclave_server.h](https://github.com/google/asylo/tree/master/asylo/grpc/util/enclave_server.h).
 
-To set up the server, the enclave needs to know the desired server address. This
+To set up the server, the enclave needs to know the desired server address and
+the maximum time the server will wait before shutting down the server. This
 information can be passed through the `Initialize` method, which accepts an
 `EnclaveConfig`. This example extends the `EnclaveConfig` in a new file named
 [grpc_server_config.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_config.proto):
@@ -95,7 +106,11 @@ information can be passed through the `Initialize` method, which accepts an
 extend asylo.EnclaveConfig {
   // The address that the gRPC server inside the enclave will be hosted on.
   // Required.
-  optional string server_address = 65537;
+  optional string server_address = 205739939;
+
+  // The maximum amount of time in seconds before the server is shut down.
+  // Required.
+  optional int32 server_max_lifetime = 225604125;
 }
 ```
 
@@ -104,39 +119,47 @@ of `TrustedApplication` as follows:
 
 *   The `Initialize` method builds and starts the gRPC server using the
     information from the `EnclaveConfig`.
-*   The `Run` method returns an `OK` status. All of our interaction with the
-    enclave goes through gRPC, so `Run` doesn't need to do any work.
+*   The `Run` method waits for a shutdown RPC (or for the timeout to run out)
+    and returns an `OK` status. All of our interaction with the enclave goes
+    through gRPC, so `Run` doesn't need to do any other work.
 *   The `Finalize` method shuts down the gRPC server.
 
-The enclave keeps track of the server address and service object in member
-variables. This example defines the server enclave in
+**NOTE:** Enclaves do not have a secure source of time information.
+Consequently, enclaves should not rely on timing for security. For instance, the
+host can make the server in this example run forever or shut down prematurely by
+providing the enclave with incorrect time information. However, neither of these
+possibilities would compromise the security of the server in this example, so it
+is fine to rely on a non-secure source of time here.
+
+The enclave keeps track of the server, service object, shutdown timeout, and
+whether a shutdown RPC has been received in member variables. This example
+defines the server enclave in
 [grpc_server_enclave.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_enclave.cc):
 
 ```cpp
 class GrpcServerEnclave final : public asylo::TrustedApplication {
  public:
-  GrpcServerEnclave() = default;
+  GrpcServerEnclave() : service_(&shutdown_requested_) {}
 
   asylo::Status Initialize(const asylo::EnclaveConfig &enclave_config)
       LOCKS_EXCLUDED(server_mutex_) override;
 
   asylo::Status Run(const asylo::EnclaveInput &enclave_input,
-                    asylo::EnclaveOutput *enclave_output) override {
-    return asylo::Status::OkStatus();
-  }
+                    asylo::EnclaveOutput *enclave_output) override;
 
   asylo::Status Finalize(const asylo::EnclaveFinal &enclave_final)
       LOCKS_EXCLUDED(server_mutex_) override;
 
  private:
-  // Guards the |server_| member.
   absl::Mutex server_mutex_;
 
-  // A gRPC server hosting |service_|.
   std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
 
-  // The translation service.
   TranslatorServer service_;
+
+  absl::Notification shutdown_requested_;
+
+  absl::Duration shutdown_timeout_;
 };
 ```
 
@@ -148,9 +171,10 @@ the `EnclaveConfig` and the `service_` member described above. The logic of the
 `Initialize` method ensures that the server is initialized and started only one
 time.
 
-If the `EnclaveConfig` does not have a `server_address` extension, or if the
-server fails to start, then `Initialize` returns a non-OK `Status`. Otherwise,
-`Initialize` logs the final address and port, and returns an OK `Status`:
+If the `EnclaveConfig` does not have a `server_address` extension or a
+`server_max_lifetime` extension, or if the server fails to start, then
+`Initialize` returns a non-OK `Status`. Otherwise, `Initialize` logs the final
+address and port, and returns an OK `Status`:
 
 ```cpp
 asylo::Status GrpcServerEnclave::Initialize(
@@ -159,6 +183,14 @@ asylo::Status GrpcServerEnclave::Initialize(
     return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
                          "Expected a server_address extension on config.");
   }
+
+  if (!enclave_config.HasExtension(server_max_lifetime)) {
+    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                         "Expected a server_max_lifetime extension on config.");
+  }
+
+  shutdown_timeout_ =
+      absl::Seconds(enclave_config.GetExtension(server_max_lifetime));
 
   absl::MutexLock lock(&server_mutex_);
 
@@ -192,6 +224,20 @@ server uses no additional security for channel establishment. The server and its
 clients are not authenticated, and no channels are secured. **This configuration
 is not suitable for a production environment**, but it is fine for this
 demonstration.
+
+#### Running the server
+
+The `Run` method waits for the server's configured lifetime to expire or for a
+shutdown RPC, whichever takes place first, and then returns an `OK` status:
+
+```cpp
+asylo::Status GrpcServerEnclave::Run(const asylo::EnclaveInput &enclave_input,
+                                     asylo::EnclaveOutput *enclave_output) {
+  shutdown_requested_.WaitForNotificationWithTimeout(shutdown_timeout_);
+
+  return asylo::Status::OkStatus();
+}
+```
 
 #### Finalizing the server
 
@@ -227,8 +273,9 @@ The driver for the server enclave does the following:
 
 *   Loads the enclave, passing the address that the server will run on using the
     `server_address` extension of `EnclaveConfig`
-*   Keeps the server open for a configurable amount of time
-*   Finalizes the enclave cleanly at the end of that time
+*   Enters the enclave to wait until either the shutdown RPC has been received
+    or the timeout has expired
+*   Finalizes the enclave cleanly
 
 This example implements the driver in
 [grpc_server_driver.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_driver.cc).
@@ -241,8 +288,9 @@ needs:
 ```cpp
 DEFINE_string(enclave_path, "", "Path to enclave to load");
 
-DEFINE_int32(server_lifetime, 300,
-             "The time the server should remain running in seconds");
+DEFINE_int32(server_max_lifetime, 300,
+             "The longest amount of time (in seconds) that the server should "
+             "be allowed to run");
 
 constexpr char kServerAddress[] = "[::1]:0";
 ```
@@ -267,6 +315,8 @@ asylo::SimLoader loader(FLAGS_enclave_path, /*debug=*/true);
 
 asylo::EnclaveConfig config;
 config.SetExtension(examples::grpc_server::server_address, kServerAddress);
+config.SetExtension(examples::grpc_server::server_max_lifetime,
+                    FLAGS_server_max_lifetime);
 ```
 
 #### Starting the enclave
@@ -288,19 +338,32 @@ LOG_IF(QFATAL, !status.ok())
     << "Load " << FLAGS_enclave_path << " failed: " << status;
 ```
 
-#### Finalizing the enclave
+#### Entering the enclave
 
-The driver uses an `absl::Notification` object to wait for
-`FLAGS_server_lifetime` seconds, then it finalizes the enclave:
+The driver retrieves the `EnclaveClient` and enters the enclave with
+`EnterAndRun`:
 
 ```cpp
-absl::Notification server_timeout;
-server_timeout.WaitForNotificationWithTimeout(
-    absl::Seconds(FLAGS_server_lifetime));
+asylo::EnclaveClient *client = manager->GetClient("grpc_example");
+asylo::EnclaveInput input;
+status = client->EnterAndRun(input, nullptr);
+LOG_IF(QFATAL, !status.ok())
+    << "Running " << FLAGS_enclave_path << " failed: " << status;
+```
 
+As covered in the
+[Asylo quickstart](https://asylo.dev/docs/guides/quickstart.html#part-2-secure-execution),
+the call to `EnterAndRun` invokes the enclave's `Run` method. This means that
+`EnterAndRun` will not return until either the server's configured lifetime
+expires or the server receives a shutdown RPC, whichever takes place first.
+
+#### Finalizing the enclave
+
+The driver then finalizes the enclave:
+
+```cpp
 asylo::EnclaveFinal final_input;
-status =
-    manager->DestroyEnclave(manager->GetClient("grpc_example"), final_input);
+status = manager->DestroyEnclave(client, final_input);
 LOG_IF(QFATAL, !status.ok())
     << "Destroy " << FLAGS_enclave_path << " failed: " << status;
 ```
@@ -327,7 +390,10 @@ cc_library(
     hdrs = ["translator_server.h"],
     deps = [
         ":translator_server_grpc_proto",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "@com_github_grpc_grpc//:grpc++",
     ],
 )
@@ -353,10 +419,12 @@ sim_enclave(
     srcs = ["grpc_server_enclave.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
-        ":grpc_server_proto_cc",
+        ":grpc_server_config_proto_cc",
         ":translator_server",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
         "//asylo:enclave_runtime",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
@@ -374,9 +442,7 @@ enclave_loader(
     enclaves = {"enclave": ":grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":grpc_server_proto_cc",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
+        ":grpc_server_config_proto_cc",
         "//asylo:enclave_client",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "//asylo/util:logging",
@@ -393,17 +459,18 @@ $ bazel run --config=enc-sim \
     //asylo/examples/grpc_server:grpc_server
 ```
 
-The above command starts the server and keeps it running for five minutes. If
-you want the server to run for a different length of time, you can use the
-`server_lifetime` flag that is defined in the [driver](#driving-the-enclave).
-The `server_lifetime` flag specifies the number of seconds to keep the server
-running.
+The above command starts the server and keeps it running for five minutes or
+until it receives a shutdown RPC. If you want to set a different upper bound for
+the server lifetime, you can use the `--server_max_lifetime` flag that is
+defined in the [driver](#driving-the-enclave). The `--server_max_lifetime` flag
+specifies the number of seconds to wait for a shutdown RPC.
 
-For example, to keep the server running for ten seconds, run:
+For example, to set a maximum server lifetime of ten seconds, run:
 
 ```bash
 $ bazel run --config=enc-sim \
-    //asylo/examples/grpc_server:grpc_server -- --server_lifetime=10
+    //asylo/examples/grpc_server:grpc_server -- \
+    --server_max_lifetime=10
 ```
 
 For this example, use the
@@ -424,7 +491,7 @@ In your original terminal window, start the server with the `bazel run` command
 should print a message that displays what port it's running on:
 
 ```
-2019-10-11 12:18:46  INFO  grpc_server_enclave.cc : 108 : Server started on port 62831
+2019-10-11 12:18:46  INFO  grpc_server_enclave.cc : 136 : Server started on port 62831
 ```
 
 **NOTE:** Each time the enclave is started, it auto-selects a new port for the
@@ -464,12 +531,23 @@ connecting to localhost:62831
 Rpc failed with status code 3, error message: No known translation for "orkut"
 ```
 
-After the amount of time specified in `server_lifetime` (five minutes by
-default), the server should display a message that it's shutting down:
+When you are done making RPCs to the server, you can send it a shutdown RPC:
+
+```bash
+$ /tmp/grpc_cli call localhost:62831 Shutdown ""
+connecting to localhost:62831
+
+Rpc succeeded with OK status
+```
+
+The server should display a message that it's shutting down:
 
 ```
-2019-10-11 12:23:46  INFO  grpc_server_enclave.cc : 121 : Server shutting down
+2019-10-11 12:23:46  INFO  grpc_server_enclave.cc : 152 : Server shutting down
 ```
+
+Alternatively, if you don't send a shutdown RPC to the server, it will shut down
+by itself after the number seconds given at startup (300 by default).
 
 ## Exercises
 
@@ -480,8 +558,5 @@ exercises below:
     service maintain some statistics about the RPCs it receives. Using the
     driver, periodically fetch a snapshot of these statistics from the enclave
     using `EnterAndRun` and print them out.
-*   **Replace the server timeout with a shutdown RPC:** Instead of specifying
-    the server lifetime with a command-line flag, add an RPC to the translation
-    service that causes the server to shut down.
 *   **Write a gRPC client in another enclave:** Write a gRPC client that makes
     RPCs to the translation server. Run this client inside another enclave.

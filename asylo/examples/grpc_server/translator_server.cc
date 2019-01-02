@@ -25,12 +25,13 @@
 namespace examples {
 namespace grpc_server {
 
-TranslatorServer::TranslatorServer()
+TranslatorServer::TranslatorServer(absl::Notification *shutdown_requested)
     : Service(),
       // Initialize the translation map with a few known translations.
       translation_map_({{"asylo", "sanctuary"},
                         {"istio", "sail"},
-                        {"kubernetes", "helmsman"}}) {}
+                        {"kubernetes", "helmsman"}}),
+      shutdown_requested_(shutdown_requested) {}
 
 ::grpc::Status TranslatorServer::GetTranslation(
     ::grpc::ServerContext *context, const GetTranslationRequest *request,
@@ -52,6 +53,18 @@ TranslatorServer::TranslatorServer()
 
   // Return the translation.
   response->set_translated_word(response_iterator->second);
+  return ::grpc::Status::OK;
+}
+
+::grpc::Status TranslatorServer::Shutdown(::grpc::ServerContext *context,
+                                          const ShutdownRequest *query,
+                                          ShutdownResponse *response)
+    LOCKS_EXCLUDED(shutdown_requested_mutex_) {
+  // Lock shutdown_requested_mutex_ and request a shutdown.
+  absl::MutexLock lock(&shutdown_requested_mutex_);
+  if (!shutdown_requested_->HasBeenNotified()) {
+    shutdown_requested_->Notify();
+  }
   return ::grpc::Status::OK;
 }
 

@@ -15,8 +15,6 @@
  * limitations under the License.
  *
  */
-#include "absl/synchronization/notification.h"
-#include "absl/time/time.h"
 #include "asylo/client.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
 #include "gflags/gflags.h"
@@ -24,9 +22,11 @@
 
 DEFINE_string(enclave_path, "", "Path to enclave to load");
 
-// By default, keep the server running for five minutes.
-DEFINE_int32(server_lifetime, 300,
-             "The time the server should remain running in seconds");
+// By default, let the server run for five minutes.
+DEFINE_int32(server_max_lifetime, 300,
+             "The longest amount of time (in seconds) that the server should "
+             "be allowed to run");
+DEFINE_int32(server_lifetime, -1, "Deprecated alias for server_max_lifetime");
 
 // A port of 0 is used to indicate that the system should choose an available
 // port.
@@ -44,6 +44,9 @@ int main(int argc, char *argv[]) {
   // run on.
   asylo::EnclaveConfig config;
   config.SetExtension(examples::grpc_server::server_address, kServerAddress);
+  config.SetExtension(examples::grpc_server::server_max_lifetime,
+                      FLAGS_server_lifetime >= 0 ? FLAGS_server_lifetime
+                                                 : FLAGS_server_max_lifetime);
 
   // Configure and retrieve the EnclaveManager.
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
@@ -59,15 +62,17 @@ int main(int argc, char *argv[]) {
   LOG_IF(QFATAL, !status.ok())
       << "Load " << FLAGS_enclave_path << " failed: " << status;
 
-  // Keep the server alive for the |FLAGS_server_lifetime| seconds.
-  absl::Notification server_timeout;
-  server_timeout.WaitForNotificationWithTimeout(
-      absl::Seconds(FLAGS_server_lifetime));
+  // Wait up to FLAGS_server_max_lifetime seconds or for the server to receive
+  // the shutdown RPC, whichever happens first.
+  asylo::EnclaveClient *client = manager->GetClient("grpc_example");
+  asylo::EnclaveInput input;
+  status = client->EnterAndRun(input, nullptr);
+  LOG_IF(QFATAL, !status.ok())
+      << "Running " << FLAGS_enclave_path << " failed: " << status;
 
-  // Terminate the server.
+  // Destroy the enclave.
   asylo::EnclaveFinal final_input;
-  status =
-      manager->DestroyEnclave(manager->GetClient("grpc_example"), final_input);
+  status = manager->DestroyEnclave(client, final_input);
   LOG_IF(QFATAL, !status.ok())
       << "Destroy " << FLAGS_enclave_path << " failed: " << status;
 

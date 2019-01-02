@@ -19,7 +19,10 @@
 #include <chrono>
 #include <memory>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
+#include "absl/synchronization/notification.h"
+#include "absl/time/time.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
 #include "asylo/examples/grpc_server/translator_server.h"
 #include "asylo/trusted_application.h"
@@ -36,20 +39,25 @@ namespace grpc_server {
 // TrustedApplication as follows:
 //
 // * Initialize starts the gRPC server.
-// * Run does nothing. See the exercises section of the README.md for some
-//   possible uses of this method.
-// * Finalize shuts down the gRPC server.
+// * Run waits for the server to receive the shutdown RPC or for the provided
+//   timeout to expire.
+// * Finalize shuts down the server.
+//
+// Note: Enclaves do not have a secure source of time information. Consequently,
+// enclaves should not rely on timing for security. For instance, the host can
+// make the server in this example run forever or shut down prematurely by
+// providing the enclave with incorrect time information. However, neither of
+// these possibilities would compromise the security of the server in this
+// example, so it is fine to rely on a non-secure source of time here.
 class GrpcServerEnclave final : public asylo::TrustedApplication {
  public:
-  GrpcServerEnclave() = default;
+  GrpcServerEnclave() : service_(&shutdown_requested_) {}
 
   asylo::Status Initialize(const asylo::EnclaveConfig &enclave_config)
       LOCKS_EXCLUDED(server_mutex_) override;
 
   asylo::Status Run(const asylo::EnclaveInput &enclave_input,
-                    asylo::EnclaveOutput *enclave_output) override {
-    return asylo::Status::OkStatus();
-  }
+                    asylo::EnclaveOutput *enclave_output) override;
 
   asylo::Status Finalize(const asylo::EnclaveFinal &enclave_final)
       LOCKS_EXCLUDED(server_mutex_) override;
@@ -63,6 +71,13 @@ class GrpcServerEnclave final : public asylo::TrustedApplication {
 
   // The translation service.
   TranslatorServer service_;
+
+  // An object that gets notified when the server receives a shutdown RPC.
+  absl::Notification shutdown_requested_;
+
+  // The amount of time that Finalize() should wait for the shutdown RPC before
+  // shutting down anyway.
+  absl::Duration shutdown_timeout_;
 };
 
 asylo::Status GrpcServerEnclave::Initialize(
@@ -72,6 +87,15 @@ asylo::Status GrpcServerEnclave::Initialize(
     return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
                          "Expected a server_address extension on config.");
   }
+
+  // Fail if there is no server_max_lifetime available.
+  if (!enclave_config.HasExtension(server_max_lifetime)) {
+    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                         "Expected a server_max_lifetime extension on config.");
+  }
+
+  shutdown_timeout_ =
+      absl::Seconds(enclave_config.GetExtension(server_max_lifetime));
 
   // Lock |server_mutex_| so that we can start setting up the server.
   absl::MutexLock lock(&server_mutex_);
@@ -106,6 +130,14 @@ asylo::Status GrpcServerEnclave::Initialize(
   }
 
   LOG(INFO) << "Server started on port " << selected_port;
+
+  return asylo::Status::OkStatus();
+}
+
+asylo::Status GrpcServerEnclave::Run(const asylo::EnclaveInput &enclave_input,
+                                     asylo::EnclaveOutput *enclave_output) {
+  // Wait until the timeout runs out or the server receives a shutdown RPC.
+  shutdown_requested_.WaitForNotificationWithTimeout(shutdown_timeout_);
 
   return asylo::Status::OkStatus();
 }
