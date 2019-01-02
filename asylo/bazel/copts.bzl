@@ -15,7 +15,6 @@ _WARNING_FLAGS = [
     "-Wno-unused-function",  # allow unused static functions in headers
     # allow unused parameters (primarily occuring in template specializations or virtual methods)
     "-Wno-unused-parameter",
-    "-Wno-return-type-c-linkage",
 ]
 
 ASYLO_DEFAULT_COPTS = _WARNING_FLAGS
