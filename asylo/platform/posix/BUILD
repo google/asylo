@@ -108,7 +108,6 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":pthread_impl",
-        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",

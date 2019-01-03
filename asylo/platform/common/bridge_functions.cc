@@ -32,8 +32,8 @@
 #include <unistd.h>
 #include <utime.h>
 #include <algorithm>
+#include <unordered_map>
 
-#include "absl/container/flat_hash_map.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_types.h"
 
@@ -82,8 +82,8 @@ bool BridgeSigIsMember(const bridge_sigset_t *bridge_set, const int sig) {
 
 void BridgeSigEmptySet(bridge_sigset_t *bridge_set) { *bridge_set = 0; }
 
-const absl::flat_hash_map<int, int> *CreateBridgeSignalMap() {
-  auto signal_map = new absl::flat_hash_map<int, int>;
+const std::unordered_map<int, int> *CreateBridgeSignalMap() {
+  auto signal_map = new std::unordered_map<int, int>;
   signal_map->insert({SIGHUP, BRIDGE_SIGHUP});
   signal_map->insert({SIGINT, BRIDGE_SIGINT});
   signal_map->insert({SIGQUIT, BRIDGE_SIGQUIT});
@@ -120,8 +120,8 @@ const absl::flat_hash_map<int, int> *CreateBridgeSignalMap() {
   return signal_map;
 }
 
-const absl::flat_hash_map<int, int> *GetSignalToBridgeSignalMap() {
-  static const absl::flat_hash_map<int, int> *signal_to_bridge_signal_map =
+const std::unordered_map<int, int> *GetSignalToBridgeSignalMap() {
+  static const std::unordered_map<int, int> *signal_to_bridge_signal_map =
       CreateBridgeSignalMap();
   return signal_to_bridge_signal_map;
 }
