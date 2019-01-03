@@ -214,4 +214,8 @@ int ftruncate(int fd, off_t length) {
   return IOManager::GetInstance().FTruncate(fd, length);
 }
 
+void enclave_exit(int rc) {
+  enc_untrusted__exit(rc);
+}
+
 }  // extern "C"

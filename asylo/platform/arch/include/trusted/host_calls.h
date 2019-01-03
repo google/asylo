@@ -275,6 +275,7 @@ pid_t enc_untrusted_getppid();
 pid_t enc_untrusted_setsid();
 int enc_untrusted_truncate(const char *path, off_t length);
 int enc_untrusted_ftruncate(int fd, off_t length);
+void enc_untrusted__exit(int rc);
 
 //////////////////////////////////////
 //            utime.h               //

@@ -1140,6 +1140,8 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
   return ret;
 }
 
+void enc_untrusted__exit(int rc) { ocall_enc_untrusted__exit(rc); }
+
 //////////////////////////////////////
 //             wait.h               //
 //////////////////////////////////////

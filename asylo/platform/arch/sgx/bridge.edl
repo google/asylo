@@ -345,6 +345,7 @@ enclave {
     int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants name)
         propagate_errno;
     uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);
+    void ocall_enc_untrusted__exit(int rc);
 
     //////////////////////////////////////
     //           utime.h                //

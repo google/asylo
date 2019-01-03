@@ -38,8 +38,6 @@
 
 extern "C" {
 
-void enclave_exit(int rc) { abort(); }
-
 int enclave_execve(char *name, char **argv, char **env) { abort(); }
 
 int enclave_fork() { abort(); }

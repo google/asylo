@@ -881,6 +881,8 @@ int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
 
 uint32_t ocall_enc_untrusted_sleep(uint32_t seconds) { return sleep(seconds); }
 
+void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
+
 //////////////////////////////////////
 //             wait.h               //
 //////////////////////////////////////
