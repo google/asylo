@@ -411,8 +411,10 @@ int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr) {
   socklen_t tmp_len = sizeof(tmp);
   int ret =
       getpeername(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
-                          addr);
+  if (ret == 0) {
+    asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
+                            addr);
+  }
   return ret;
 }
 

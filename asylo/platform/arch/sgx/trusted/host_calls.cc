@@ -630,10 +630,23 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
 
 int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen) {
+  if (!asylo::IsValidEnclaveAddress<struct sockaddr>(addr) ||
+      !asylo::IsValidEnclaveAddress<socklen_t>(addrlen)) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  // Guard against -1 being passed as addrlen even though it's unsigned.
+  if (*addrlen == 0 || *addrlen > INT32_MAX) {
+    errno = EINVAL;
+    return -1;
+  }
   int ret;
   struct bridge_sockaddr tmp;
   CHECK_OCALL(ocall_enc_untrusted_getpeername(&ret, sockfd, &tmp));
-  asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
+  if (ret == 0) {
+    asylo::FromBridgeSockaddr(&tmp, addr, addrlen);
+  }
   return ret;
 }
 

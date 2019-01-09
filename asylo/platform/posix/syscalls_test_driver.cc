@@ -1020,6 +1020,33 @@ TEST_F(SyscallsTest, SocknameFailure_ENOTSOCK) {
               IsOk());
 }
 
+// Tests various failure modes of getpeername(). The enclave code sets up each
+// test and tests against the expected retval.
+TEST_F(SyscallsTest, PeernameFailure_EBADF) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getpeername_ebadf", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, PeernameFailure_EFAULT) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getpeername_efault", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, PeernameFailure_EINVAL) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getpeername_einval", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, PeernameFailure_ENOTCONN) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getpeername_enotconn", "", nullptr),
+              IsOk());
+}
+
+TEST_F(SyscallsTest, PeernameFailure_ENOTSOCK) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getpeername_enotsock", "", nullptr),
+              IsOk());
+}
+
 // Tests truncate and ftruncate by truncating the file inside an enclave, and
 // read from it to ensure it's truncated to the correct size.
 TEST_F(SyscallsTest, Truncate) {

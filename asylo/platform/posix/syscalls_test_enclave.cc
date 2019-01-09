@@ -130,6 +130,16 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunGetSocknameFailureTest_EINVAL();
     } else if (test_input.test_target() == "getsockname_enotsock") {
       return RunGetSocknameFailureTest_ENOTSOCK();
+    } else if (test_input.test_target() == "getpeername_ebadf") {
+      return RunGetPeernameFailureTest_EBADF();
+    } else if (test_input.test_target() == "getpeername_efault") {
+      return RunGetPeernameFailureTest_EFAULT();
+    } else if (test_input.test_target() == "getpeername_einval") {
+      return RunGetPeernameFailureTest_EINVAL();
+    } else if (test_input.test_target() == "getpeername_enotsock") {
+      return RunGetPeernameFailureTest_ENOTSOCK();
+    } else if (test_input.test_target() == "getpeername_enotconn") {
+      return RunGetPeernameFailureTest_ENOTCONN();
     } else if (test_input.test_target() == "truncate") {
       return RunTruncateTest(test_input.path_name());
     } else if (test_input.test_target() == "mmap") {
@@ -1075,31 +1085,34 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status ExpectSockErrno(int expected_errno, int retval) {
+  Status ExpectErrno(int expected_errno, int retval) {
     int saved_errno = errno;
 
     if (retval != -1) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("Expected getsockname retval of -1, got ", retval));
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("Expected retval of -1, got ", retval));
     }
 
     if (saved_errno != expected_errno) {
       return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Expected getsockname errno of ",
-                                 expected_errno, "; got ", saved_errno));
+                    absl::StrCat("Expected errno of ", expected_errno, "; got ",
+                                 saved_errno));
     }
 
     return Status::OkStatus();
   }
 
+  // getsockname()
+
+  // EBADF: Returned if you pass an invalid file descriptor.
   Status RunGetSocknameFailureTest_EBADF() {
     sockaddr sa;
     socklen_t sa_len = sizeof(sa);
 
-    return ExpectSockErrno(EBADF, getsockname(-1, &sa, &sa_len));
+    return ExpectErrno(EBADF, getsockname(-1, &sa, &sa_len));
   }
 
+  // EFAULT: Returned if you pass a bad pointer.
   Status RunGetSocknameFailureTest_EFAULT() {
     sockaddr sa;
     socklen_t sa_len = sizeof(sa);
@@ -1111,9 +1124,10 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
-    return ExpectSockErrno(EFAULT, getsockname(fd, nullptr, &sa_len));
+    return ExpectErrno(EFAULT, getsockname(fd, nullptr, &sa_len));
   }
 
+  // EINVAL: Returned if you give an invalid (negative) sockaddr length.
   Status RunGetSocknameFailureTest_EINVAL() {
     sockaddr sa;
     socklen_t sa_len = -1;
@@ -1124,9 +1138,10 @@ class SyscallsEnclave : public EnclaveTestCase {
                     absl::StrCat("couldn't create socket, errno ", errno));
     }
 
-    return ExpectSockErrno(EINVAL, getsockname(fd, &sa, &sa_len));
+    return ExpectErrno(EINVAL, getsockname(fd, &sa, &sa_len));
   }
 
+  // ENOTSOCK: Returned if you pass an FD of something other than a socket.
   Status RunGetSocknameFailureTest_ENOTSOCK() {
     int fds[2];
     int ret = pipe(fds);
@@ -1137,7 +1152,74 @@ class SyscallsEnclave : public EnclaveTestCase {
 
     sockaddr sa;
     socklen_t sa_len = sizeof(sa);
-    return ExpectSockErrno(ENOTSOCK, getsockname(fds[0], &sa, &sa_len));
+    return ExpectErrno(ENOTSOCK, getsockname(fds[0], &sa, &sa_len));
+  }
+
+  // getpeername()
+
+  // EBADF: Returned if you pass an invalid file descriptor.
+  Status RunGetPeernameFailureTest_EBADF() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+
+    return ExpectErrno(EBADF, getpeername(-1, &sa, &sa_len));
+  }
+
+  // EFAULT: Returned if you pass a bad pointer.
+  Status RunGetPeernameFailureTest_EFAULT() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
+    }
+
+    return ExpectErrno(EFAULT, getpeername(fd, nullptr, &sa_len));
+  }
+
+  // EINVAL: Returned if you give an invalid (negative) sockaddr length.
+  Status RunGetPeernameFailureTest_EINVAL() {
+    sockaddr sa;
+    socklen_t sa_len = -1;
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
+    }
+
+    return ExpectErrno(EINVAL, getpeername(fd, &sa, &sa_len));
+  }
+
+  // ENOTCONN: Returned if you pass a socket that is not yet connected.
+  Status RunGetPeernameFailureTest_ENOTCONN() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
+    }
+
+    return ExpectErrno(ENOTCONN, getpeername(fd, &sa, &sa_len));
+  }
+
+  // ENOTSOCK: Returned if you pass an FD of something other than a socket.
+  Status RunGetPeernameFailureTest_ENOTSOCK() {
+    int fds[2];
+    int ret = pipe(fds);
+    if (ret != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    "couldn't create pipe");
+    }
+
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+    return ExpectErrno(ENOTSOCK, getpeername(fds[0], &sa, &sa_len));
   }
 
   Status RunTruncateTest(const std::string &path) {
