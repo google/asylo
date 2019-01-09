@@ -112,8 +112,13 @@ class EnclaveCommunicationTest : public ::testing::Test {
 
 TEST_F(EnclaveCommunicationTest, SimpleSynchronousRpc) {
   EnclaveInput input;
-  input.SetExtension(server_address, server_address_);
-  input.SetExtension(rpc_input, kName);
+  ClientEnclaveInput client_input;
+  client_input.set_server_address(server_address_);
+  client_input.set_rpc_input(kName);
+  // The client uses bidirectional SGX local attestation.
+  client_input.add_self_grpc_creds_options(SGX_LOCAL_GRPC_CREDENTIALS_OPTIONS);
+  client_input.add_peer_grpc_creds_options(SGX_LOCAL_GRPC_CREDENTIALS_OPTIONS);
+  *input.MutableExtension(client_enclave_input) = client_input;
   EnclaveOutput output;
   ASSERT_THAT(grpc_client_enclave_->EnterAndRun(input, &output), IsOk());
   EXPECT_EQ(output.GetExtension(rpc_result),

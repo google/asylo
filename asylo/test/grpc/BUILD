@@ -39,6 +39,7 @@ asylo_grpc_proto_library(
 asylo_proto_library(
     name = "client_enclave_proto",
     srcs = ["client_enclave.proto"],
+    visibility = ["//asylo:implementation"],
     deps = ["//asylo:enclave_proto"],
 )
 
@@ -117,21 +118,25 @@ sgx_enclave(
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/grpc/util:enclave_server",
         "//asylo/identity:identity_proto_cc",
-        "//asylo/util:status",
     ],
 )
 
 sgx_enclave(
     name = "client_enclave.so",
     testonly = 1,
-    srcs = ["client_enclave.cc"],
+    srcs = [
+        "client_enclave.cc",
+        "client_enclave.h",
+    ],
     config = "//asylo/grpc/util:grpc_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":client_enclave_proto_cc",
         ":messenger_client_impl",
         "//asylo:enclave_runtime",
         "//asylo/grpc/auth:grpc++_security_enclave",
+        "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:identity_proto_cc",
         "//asylo/util:status",

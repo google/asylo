@@ -21,14 +21,33 @@ package asylo;
 import "asylo/enclave.proto";
 
 extend EnclaveInput {
-  // The address of the server to contact.
-  optional string server_address = 201042554;
-
-  // The input to the Hello RPC.
-  optional string rpc_input = 201042555;
+  optional ClientEnclaveInput client_enclave_input = 225075181;
 }
 
 extend EnclaveOutput {
   // The response from the gRPC server.
   optional string rpc_result = 200746417;
+}
+
+// Enumeration of all gRPC credentials options types.
+enum GrpcCredentialsOptionsType {
+  UNKNOWN_GRPC_CREDENTIALS_OPTIONS = 0;
+  NULL_GRPC_CREDENTIALS_OPTIONS = 1;
+  SGX_LOCAL_GRPC_CREDENTIALS_OPTIONS = 2;
+}
+
+// Input for a ClientEnclave.
+message ClientEnclaveInput {
+  // Configuration options for the gRPC channel credentials.
+  repeated GrpcCredentialsOptionsType self_grpc_creds_options = 1;
+  repeated GrpcCredentialsOptionsType peer_grpc_creds_options = 2;
+
+  // The address of the server to contact.
+  optional string server_address = 3;
+
+  // The input to the Hello RPC.
+  optional string rpc_input = 4;
+
+  // Connection deadline in milliseconds.
+  optional int64 connection_deadline_milliseconds = 5;
 }
