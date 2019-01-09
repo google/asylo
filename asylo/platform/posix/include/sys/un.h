@@ -19,6 +19,7 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_UN_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_UN_H_
 
+#include <stdint.h>
 #include <sys/cdefs.h>
 
 struct sockaddr_un {
