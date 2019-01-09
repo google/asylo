@@ -74,10 +74,7 @@ class NullAssertionAuthorityTest : public ::testing::Test {
     auto verifier = AssertionVerifierMap::GetValue(map_key);
     ASSERT_NE(verifier, AssertionVerifierMap::value_end());
 
-    std::vector<EnclaveAssertionAuthorityConfig> configs;
-    ASSERT_THAT(
-        InitializeEnclaveAssertionAuthorities(configs.begin(), configs.end()),
-        IsOk());
+    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
 
     // Tests in this file only need to call const methods of
     // NullAssertionGenerator and NullAssertionVerifier.

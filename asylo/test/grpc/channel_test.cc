@@ -65,9 +65,7 @@ class ChannelTest : public ::testing::Test {
  public:
   void SetUp() override {
     std::vector<EnclaveAssertionAuthorityConfig> configs;
-    ASSERT_THAT(
-        InitializeEnclaveAssertionAuthorities(configs.begin(), configs.end()),
-        IsOk());
+    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
   }
 };
 

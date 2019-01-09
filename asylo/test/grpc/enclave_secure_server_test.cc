@@ -55,10 +55,7 @@ class EnclaveSecureGrpcTest : public EnclaveTest {
     config->set_port(0);
     address_ = absl::StrCat(config->host(), ":", config->port());
 
-    std::vector<EnclaveAssertionAuthorityConfig> configs;
-    ASSERT_THAT(
-        InitializeEnclaveAssertionAuthorities(configs.begin(), configs.end()),
-        IsOk());
+    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
 
     EnclaveTest::SetUp();
   }

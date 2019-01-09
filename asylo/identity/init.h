@@ -117,6 +117,11 @@ Status InitializeEnclaveAssertionAuthorities(ConfigIteratorT configs_begin,
                   "assertion generators and assertion verifiers");
 }
 
+// Initializes all statically-registered EnclaveAssertionGenerators and
+// EnclaveAssertionVerifiers using empty configs. This is provided for use when
+// none of the statically-registered assertion authorities require a config.
+Status InitializeEnclaveAssertionAuthorities();
+
 }  // namespace asylo
 
 #endif  // ASYLO_IDENTITY_INIT_H_

@@ -297,10 +297,7 @@ int main(int argc, char **argv) {
   // needed for either the null or SGX local null assertion authorities.
   // Consequently, no configs are provided and this call will just initialize
   // each authority with an empty config string.
-  std::vector<asylo::EnclaveAssertionAuthorityConfig> authority_configs;
-  GPR_ASSERT(asylo::InitializeEnclaveAssertionAuthorities(
-                 authority_configs.begin(), authority_configs.end())
-                 .ok());
+  GPR_ASSERT(asylo::InitializeEnclaveAssertionAuthorities().ok());
 
   size_t i;
   for (i = 0; i < sizeof(asylo::configs) / sizeof(*asylo::configs); ++i) {

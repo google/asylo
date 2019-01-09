@@ -53,7 +53,10 @@ asylo_proto_library(
 
 cc_library(
     name = "init",
-    srcs = ["init_internal.h"],
+    srcs = [
+        "init.cc",
+        "init_internal.h",
+    ],
     hdrs = ["init.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
