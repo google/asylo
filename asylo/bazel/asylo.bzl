@@ -381,6 +381,7 @@ def enclave_loader(
 
     _enclave_runner_script(
         name = name,
+        testonly = kwargs.get("testonly", 0),
         loader = loader_name,
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
