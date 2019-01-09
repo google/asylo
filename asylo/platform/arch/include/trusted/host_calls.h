@@ -98,8 +98,9 @@ int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer);
 int enc_untrusted_symlink(const char *from, const char *to);
 int enc_untrusted_fstat(int fd, struct stat *stat_buffer);
 int enc_untrusted_isatty(int file);
-ssize_t enc_untrusted_writev(int fd, const struct iovec *iov, int iovcnt);
-ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt);
+ssize_t enc_untrusted_writev(int fd, char *buf, int size);
+ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt,
+                            char *buf, int size);
 
 //////////////////////////////////////
 //            Sockets               //

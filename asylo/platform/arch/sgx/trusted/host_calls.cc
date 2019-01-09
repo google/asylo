@@ -324,36 +324,6 @@ int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer) {
   return result;
 }
 
-bool create_untrusted_buffer(const struct iovec *iov, int iovcnt, char **buf,
-                             int *size) {
-  int tmp_size = 0;
-  for (int i = 0; i < iovcnt; ++i) {
-    tmp_size += iov[i].iov_len;
-  }
-  char *tmp =
-      reinterpret_cast<char *>(enc_untrusted_malloc(tmp_size * sizeof(char)));
-  if (!tmp) {
-    return false;
-  }
-  *size = tmp_size;
-  *buf = tmp;
-  return true;
-}
-
-bool serialize_iov(const struct iovec *iov, int iovcnt, char **buf, int *size) {
-  char *tmp;
-  if (!create_untrusted_buffer(iov, iovcnt, &tmp, size)) {
-    return false;
-  }
-  int copied_bytes = 0;
-  for (int i = 0; i < iovcnt; ++i) {
-    memcpy(tmp + copied_bytes, iov[i].iov_base, iov[i].iov_len);
-    copied_bytes += iov[i].iov_len;
-  }
-  *buf = tmp;
-  return true;
-}
-
 void fill_iov(const char *buf, int size, const struct iovec *iov, int iovcnt) {
   size_t bytes_left = size;
   for (int i = 0; i < iovcnt; ++i) {
@@ -367,20 +337,7 @@ void fill_iov(const char *buf, int size, const struct iovec *iov, int iovcnt) {
   }
 }
 
-ssize_t enc_untrusted_writev(int fd, const struct iovec *iov, int iovcnt) {
-  if (iovcnt <= 0) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  char *buf;
-  int size;
-  if (!serialize_iov(iov, iovcnt, &buf, &size)) {
-    // The serialization step is introduced for this bridge code. The
-    // possibility of its failure falls outside of the original specification
-    // for writev. Thus, instead of returning a writev error, log and abort.
-    LOG(FATAL) << "Unable to serialize iovec";
-  }
+ssize_t enc_untrusted_writev(int fd, char *buf, int size) {
   asylo::UntrustedUniquePtr<char> tmp(buf);
   bridge_ssize_t ret;
 
@@ -389,21 +346,8 @@ ssize_t enc_untrusted_writev(int fd, const struct iovec *iov, int iovcnt) {
   return static_cast<ssize_t>(ret);
 }
 
-ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt) {
-  if (iovcnt <= 0) {
-    errno = EINVAL;
-    return -1;
-  }
-  char *buf;
-  int size;
-  if (!create_untrusted_buffer(iov, iovcnt, &buf, &size)) {
-    // The extra buffer allocation step is introduced for this bridge code. The
-    // possibility of its failure falls outside of the original specification
-    // for readv. Thus, instead of returning a readv error, log and abort.
-    LOG(FATAL) << "Could not allocate buffer to read iovec";
-    return -1;
-  }
-
+ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt,
+                            char *buf, int size) {
   asylo::UntrustedUniquePtr<char> tmp(buf);
   bridge_ssize_t ret;
   CHECK_OCALL(ocall_enc_untrusted_read_with_untrusted_ptr(&ret, fd, buf, size));

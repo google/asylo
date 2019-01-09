@@ -60,12 +60,63 @@ int IOContextNative::FLock(int operation) {
   return enc_untrusted_flock(host_fd_, operation);
 }
 
+bool IOContextNative::CreateUntrustedBuffer(const struct iovec *iov, int iovcnt,
+                                            char **buf, int *size) {
+  size_t total_size = 0;
+  for (int i = 0; i < iovcnt; ++i) {
+    total_size += iov[i].iov_len;
+  }
+  char *tmp =
+      reinterpret_cast<char *>(enc_untrusted_malloc(total_size * sizeof(char)));
+  if (!tmp) {
+    return false;
+  }
+  *size = total_size;
+  *buf = tmp;
+  return true;
+}
+
+bool IOContextNative::SerializeIov(const struct iovec *iov, int iovcnt,
+                                   char **buf, int *size) {
+  char *tmp;
+  if (!CreateUntrustedBuffer(iov, iovcnt, &tmp, size)) {
+    return false;
+  }
+  size_t copied_bytes = 0;
+  for (int i = 0; i < iovcnt; ++i) {
+    size_t len =  iov[i].iov_len;
+    memcpy(tmp + copied_bytes, iov[i].iov_base, len);
+    copied_bytes += len;
+  }
+  *buf = tmp;
+  return true;
+}
+
 ssize_t IOContextNative::Writev(const struct iovec *iov, int iovcnt) {
-  return enc_untrusted_writev(host_fd_, iov, iovcnt);
+  if (iovcnt <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  char *buf;
+  int size;
+  if (!SerializeIov(iov, iovcnt, &buf, &size)) {
+    return -1;
+  }
+  return enc_untrusted_writev(host_fd_, buf, size);
 }
 
 ssize_t IOContextNative::Readv(const struct iovec *iov, int iovcnt) {
-  return enc_untrusted_readv(host_fd_, iov, iovcnt);
+  if (iovcnt <= 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  char *buf;
+  int size;
+  if (!CreateUntrustedBuffer(iov, iovcnt, &buf, &size)) {
+    return -1;
+  }
+  return enc_untrusted_readv(host_fd_, iov, iovcnt, buf, size);
 }
 
 int IOContextNative::SetSockOpt(int level, int option_name,
