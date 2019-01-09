@@ -72,7 +72,8 @@ class DomainSocketDriver : public EnclaveTest {
   // Runs UNIX domain-socket client thread outside enclave.
   static void AppClientThread(const std::string &enc_server_socket) {
     SocketClient app_socket_client;
-    EXPECT_THAT(app_socket_client.ClientSetup(enc_server_socket), IsOk());
+    EXPECT_THAT(app_socket_client.ClientSetup(enc_server_socket, nullptr),
+                IsOk());
     EXPECT_THAT(ClientTransmit(&app_socket_client), IsOk());
   }
 };

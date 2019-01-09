@@ -16,6 +16,8 @@
  *
  */
 
+#include <netinet/in.h>
+
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/sockets/socket_client.h"
 #include "asylo/platform/posix/sockets/socket_server.h"
@@ -82,10 +84,34 @@ class Inet6SocketTest : public EnclaveTestCase {
   // Runs INET6 socket client inside enclave.
   Status EncRunClient(int app_server_port) {
     SocketClient enc_socket_client;
-    if (!enc_socket_client.ClientSetup(kLocalIpv6AddrStr, app_server_port)
+    sockaddr_in6 app_server_sockaddr;
+    if (!enc_socket_client
+             .ClientSetup(kLocalIpv6AddrStr, app_server_port,
+                          &app_server_sockaddr)
              .ok()) {
       return Status(error::GoogleError::INTERNAL, "Client setup failed");
     }
+
+    // Test getpeername() by ensuring its return value matches the server
+    // address we just connected to.
+    struct sockaddr_storage peer_sockaddr;
+    socklen_t peer_sockaddr_len = sizeof(peer_sockaddr);
+    Status retval = enc_socket_client.GetPeername(
+        reinterpret_cast<struct sockaddr *>(&peer_sockaddr),
+        &peer_sockaddr_len);
+    if (!retval.ok()) {
+      return retval;
+    }
+    if (peer_sockaddr_len != sizeof(sockaddr_in6)) {
+      LOG(ERROR) << "peer addrlen " << peer_sockaddr_len
+                 << " doesn't match server addr len " << sizeof(sockaddr_in6);
+      return Status(error::GoogleError::INTERNAL, "getpeername failure 1");
+    }
+    if (memcmp(&peer_sockaddr, &app_server_sockaddr, sizeof(sockaddr_in6))) {
+      LOG(ERROR) << "peer addr doesn't match server addr!";
+      return Status(error::GoogleError::INTERNAL, "getpeername failure 2");
+    }
+
     if (!ClientTransmit(&enc_socket_client).ok()) {
       return Status(error::GoogleError::INTERNAL, "Client transmit failed");
     }

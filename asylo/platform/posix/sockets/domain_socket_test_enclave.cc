@@ -16,6 +16,8 @@
  *
  */
 
+#include <sys/un.h>
+
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/sockets/socket_client.h"
 #include "asylo/platform/posix/sockets/socket_server.h"
@@ -75,9 +77,35 @@ class DomainSocketTest : public EnclaveTestCase {
   // Runs UNIX domain-socket client inside enclave.
   Status EncRunClient(const std::string &socket_name) {
     SocketClient enc_socket_client;
-    if (!enc_socket_client.ClientSetup(socket_name).ok()) {
+    sockaddr_un app_server_sockaddr;
+    if (!enc_socket_client.ClientSetup(socket_name, &app_server_sockaddr)
+             .ok()) {
       return Status(error::GoogleError::INTERNAL, "Client setup failed");
     }
+
+    // Test getpeername() by ensuring its return value matches the server
+    // address we just connected to. Note that getpeername() on AF_UNIX sockets
+    // only returns a family, not a path name.
+    struct sockaddr_storage peer_sockaddr;
+    socklen_t peer_sockaddr_len = sizeof(peer_sockaddr);
+    Status retval = enc_socket_client.GetPeername(
+        reinterpret_cast<struct sockaddr *>(&peer_sockaddr),
+        &peer_sockaddr_len);
+    if (!retval.ok()) {
+      return retval;
+    }
+    if (peer_sockaddr_len != sizeof(app_server_sockaddr)) {
+      LOG(ERROR) << "peer addrlen " << peer_sockaddr_len
+                 << " doesn't match server addr len "
+                 << sizeof(app_server_sockaddr);
+      return Status(error::GoogleError::INTERNAL, "getpeername failure 1");
+    }
+    sockaddr_un *peer_sockaddr_un = (sockaddr_un *)&peer_sockaddr;
+    if (app_server_sockaddr.sun_family != peer_sockaddr_un->sun_family) {
+      LOG(ERROR) << "peer addr is incorrect family";
+      return Status(error::GoogleError::INTERNAL, "getpeername failure 2");
+    }
+
     if (!ClientTransmit(&enc_socket_client).ok()) {
       return Status(error::GoogleError::INTERNAL, "Client transmit failed");
     }

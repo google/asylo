@@ -19,7 +19,9 @@
 #ifndef ASYLO_PLATFORM_POSIX_SOCKETS_SOCKET_CLIENT_H_
 #define ASYLO_PLATFORM_POSIX_SOCKETS_SOCKET_CLIENT_H_
 
+#include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 
 #include <string>
 
@@ -36,17 +38,22 @@ class SocketClient {
   // descriptor (-1).
   SocketClient();
 
-  // Sets up a IPv4 client connecting to |server_ip| on |server_port|.
+  // Sets up a IPv6 client connecting to |server_ip| on |server_port|.
   // Connection is fulfilled on |connection_fd_|.
+  // If |out_addr| is not null, and the OK status is returned, the sockaddr
+  // of the made connection is written to |out_addr|.
   // Returns an OK Status on success or a Status with corresponding error code
   // on failure.
-  Status ClientSetup(const std::string &server_ip, int server_port);
+  Status ClientSetup(const std::string &server_ip, int server_port,
+                     sockaddr_in6 *out_addr);
 
   // Sets up a UNIX domain client connecting to local UNIX domain server on
   // |socket_name|. Connection is fulfilled on |connection_fd_|.
+  // If |out_addr| is not null, and the OK status is returned, the sockaddr
+  // of the made connection is written to |out_addr|.
   // Returns an OK Status on success or a Status with corresponding error code
   // on failure.
-  Status ClientSetup(const std::string &socket_name);
+  Status ClientSetup(const std::string &socket_name, sockaddr_un *out_addr);
 
   // Calls Read method of |sock_transmit_| to read |read_len| bytes from
   // |connection_fd_| into |buf| and propagates the return value.
@@ -73,6 +80,12 @@ class SocketClient {
   // round, client reads |buf_len| bytes from server and writes |buf_len| bytes
   // to server.
   Status ClientRoundtripTransmit(int buf_len, int round_trip);
+
+  // Calls getpeername() on the underlying connection. If retval is OkStatus(),
+  // the peer sockaddr and its length are returned in the caller-provided
+  // buffers in |peeraddr_out| and |peeraddr_len_out|.
+  Status GetPeername(struct sockaddr *peeraddr_out,
+                     socklen_t *peeraddr_len_out);
 
   // Logs socket write/read statistics of client.
   void LogClientIOStats();

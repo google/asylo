@@ -60,8 +60,9 @@ class Inet6SocketDriver : public EnclaveTest {
   // Runs INET6 socket client thread outside enclave.
   static void AppClientThread(int enc_server_port) {
     SocketClient app_socket_client;
-    EXPECT_TRUE(
-        app_socket_client.ClientSetup(kLocalIpv6AddrStr, enc_server_port).ok());
+    EXPECT_TRUE(app_socket_client
+                    .ClientSetup(kLocalIpv6AddrStr, enc_server_port, nullptr)
+                    .ok());
     EXPECT_THAT(ClientTransmit(&app_socket_client), IsOk());
   }
 };

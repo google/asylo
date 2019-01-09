@@ -67,7 +67,18 @@ Status SocketClient::RecvFrom(void *buffer, size_t length, int flags,
                                  address_len);
 }
 
-Status SocketClient::ClientSetup(const std::string &server_ip, int server_port) {
+Status SocketClient::GetPeername(struct sockaddr *peeraddr_out,
+                                 socklen_t *peeraddr_len_out) {
+  if (getpeername(connection_fd_, peeraddr_out, peeraddr_len_out) < 0) {
+    LOG(ERROR) << "getpeername failure: " << strerror(errno);
+    return Status(static_cast<error::PosixError>(errno), "getpeername failure");
+  }
+
+  return Status::OkStatus();
+}
+
+Status SocketClient::ClientSetup(const std::string &server_ip, int server_port,
+                                 sockaddr_in6 *out_addr) {
   connection_fd_ = socket(AF_INET6, SOCK_STREAM, 0);
   if (connection_fd_ < 0) {
     LOG(ERROR) << kLogOrigin << "client socket error";
@@ -86,13 +97,18 @@ Status SocketClient::ClientSetup(const std::string &server_ip, int server_port) 
     return Status(static_cast<error::PosixError>(errno), "inet_pton error");
   }
 
+  if (out_addr != nullptr) {
+    *out_addr = serv_addr;
+  }
+
   Status status = ClientConnection(
       connection_fd_, reinterpret_cast<struct sockaddr *>(&serv_addr),
       sizeof(serv_addr));
   return status;
 }
 
-Status SocketClient::ClientSetup(const std::string &socket_name) {
+Status SocketClient::ClientSetup(const std::string &socket_name,
+                                 sockaddr_un *out_addr) {
   connection_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
   if (connection_fd_ < 0) {
     LOG(ERROR) << kLogOrigin << "client socket error";
@@ -106,6 +122,10 @@ Status SocketClient::ClientSetup(const std::string &socket_name) {
   serv_addr.sun_family = AF_UNIX;
   strncpy(serv_addr.sun_path, socket_name.c_str(),
           sizeof(serv_addr.sun_path) - 1);
+
+  if (out_addr != nullptr) {
+    *out_addr = serv_addr;
+  }
 
   Status status = ClientConnection(
       connection_fd_, reinterpret_cast<struct sockaddr *>(&serv_addr),
@@ -143,8 +163,9 @@ Status SocketClient::ClientConnection(int fd, struct sockaddr *serv_addr,
                                       socklen_t addrlen) {
   if (connect(fd, serv_addr, addrlen) < 0) {
     LOG(ERROR) << kLogOrigin << "client connect failure: " << strerror(errno);
-    return Status(static_cast<error::PosixError>(errno), "connect timeout");
+    return Status(static_cast<error::PosixError>(errno), "connect failure");
   }
+
   return Status::OkStatus();
 }
 
