@@ -18,13 +18,14 @@
 
 #include <stdlib.h>
 
-#include "absl/container/flat_hash_map.h"
 #include "include/sgx_cpuid.h"
 #include "include/sgx_trts_exception.h"
 
+namespace {
+
 // Handled opcodes
-static const uint16_t kCpuidOpcode = 0xA20F;
-static const uint16_t kRdtscOpcode = 0x310F;
+constexpr uint16_t kCpuidOpcode = 0xA20F;
+constexpr uint16_t kRdtscOpcode = 0x310F;
 
 // Only support CPUID leaves 0, 1, 4, and 7.
 // 0: Vender ID
@@ -32,7 +33,8 @@ static const uint16_t kRdtscOpcode = 0x310F;
 // 4: Deterministic cache parameters
 // 7: Extended features
 // This is all that BoringSSL needs to function.
-constexpr std::array<int, 4> kSupportedCpuidLeaves = {0, 1, 4, 7};
+constexpr int kMaxSupportedCpuidLeaf = 7;
+constexpr int kSupportedCpuidLeaves[] = {0, 1, 4, 7};
 
 // Holds cached CPUID results.
 struct CpuidResult {
@@ -41,25 +43,30 @@ struct CpuidResult {
 
   // All registers from a CPUID call
   int reg[4];
+  bool cached;
 };
-absl::flat_hash_map<int, CpuidResult> *cpuid_results;
+CpuidResult cpuid_results[kMaxSupportedCpuidLeaf + 1];
 
 // Prior to any CPUID instructions being executed, go fetch results from outside
 // the enclave, for us to use as the results in the enclave.
-static void initialize_cpuid_results() {
-  cpuid_results = new absl::flat_hash_map<int, CpuidResult>();
+void initialize_cpuid_results() {
+  // Initialize cpuid result array as having no cache results.
+  for (int i = 0; i < kMaxSupportedCpuidLeaf; ++i) {
+    cpuid_results[i].cached = false;
+  }
+
+  // Populate CPUID result cache for each supported leaf.
   for (int i : kSupportedCpuidLeaves) {
     // Get CPUID results from the host and cache the results
-    CpuidResult result;
-    if (sgx_cpuid(result.reg, i) != SGX_SUCCESS) abort();
-    cpuid_results->emplace(i, result);
+    if (sgx_cpuid(cpuid_results[i].reg, i) != SGX_SUCCESS) abort();
+    cpuid_results[i].cached = true;
   }
 
 }
 
 // Called whenever an SGX exception occurs.  This handler deals with CPUID
 // invalid opcode exceptions by filling in data cached earlier.
-static int handle_cpuid_exception(sgx_exception_info_t *info) {
+int handle_cpuid_exception(sgx_exception_info_t *info) {
   // Grab the opcode for the instruction at the exception's instruction pointer.
   uint16_t opcode = *reinterpret_cast<uint16_t *>(info->cpu_context.rip);
 
@@ -74,8 +81,9 @@ static int handle_cpuid_exception(sgx_exception_info_t *info) {
 
   // This handler only provides results for CPUID calls that were cached.
   uint64_t leaf = info->cpu_context.rax;
-  if (cpuid_results->find(leaf) == cpuid_results->end())
+  if (leaf > kMaxSupportedCpuidLeaf || !cpuid_results[leaf].cached) {
     return EXCEPTION_CONTINUE_SEARCH;
+  }
 
   // Only subleaf==0 results were cached.  Since subleaf doesn't mean anything
   // for leaves 0 and 1, allow those to be anything (some code doesn't set RCX
@@ -84,14 +92,14 @@ static int handle_cpuid_exception(sgx_exception_info_t *info) {
   if (leaf != 0 && leaf != 1 && subleaf != 0) return EXCEPTION_CONTINUE_SEARCH;
 
   // Copy the cached result registers into our result registers.
-  info->cpu_context.rax = cpuid_results->at(leaf).reg[CpuidResult::EAX];
-  info->cpu_context.rbx = cpuid_results->at(leaf).reg[CpuidResult::EBX];
-  info->cpu_context.rcx = cpuid_results->at(leaf).reg[CpuidResult::ECX];
-  info->cpu_context.rdx = cpuid_results->at(leaf).reg[CpuidResult::EDX];
+  info->cpu_context.rax = cpuid_results[leaf].reg[CpuidResult::EAX];
+  info->cpu_context.rbx = cpuid_results[leaf].reg[CpuidResult::EBX];
+  info->cpu_context.rcx = cpuid_results[leaf].reg[CpuidResult::ECX];
+  info->cpu_context.rdx = cpuid_results[leaf].reg[CpuidResult::EDX];
 
   // CPUID instruction is 2 bytes wide, so advance the instruction pointer
-  // beyond it. This way the enclave should continue execution should continue
-  // as though the CPUID instruction executed normally.
+  // beyond it. This way the enclave should continue execution as though the
+  // CPUID instruction executed normally.
   info->cpu_context.rip += 2;
 
   return EXCEPTION_CONTINUE_EXECUTION;
@@ -99,7 +107,7 @@ static int handle_cpuid_exception(sgx_exception_info_t *info) {
 
 // Called whenever an SGX exception occurs.  This handler deals with RDTSC
 // invalid opcode exceptions by filling in dummy data.
-static int handle_rdtsc_exception(sgx_exception_info_t *info) {
+int handle_rdtsc_exception(sgx_exception_info_t *info) {
   // Grab the opcode for the instruction at the exception's instruction pointer.
   uint16_t opcode = *reinterpret_cast<uint16_t *>(info->cpu_context.rip);
 
@@ -131,9 +139,11 @@ static int handle_rdtsc_exception(sgx_exception_info_t *info) {
 // Register an exception handler with the SGX SDK.
 // Other constructors already issue these instructions, so use the highest
 // priority to make this one run first.
-static void register_exception_handlers() __attribute__((constructor(101)));
-static void register_exception_handlers() {
+void register_exception_handlers() __attribute__((constructor(101)));
+void register_exception_handlers() {
   initialize_cpuid_results();
   sgx_register_exception_handler(true, handle_cpuid_exception);
   sgx_register_exception_handler(true, handle_rdtsc_exception);
 }
+
+}  // namespace
