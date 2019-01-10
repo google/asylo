@@ -69,6 +69,23 @@ cc_library(
     ],
 )
 
+# The core logic of the whole-application wrapper's driver.
+cc_library(
+    name = "application_wrapper_driver_main",
+    srcs = ["application_wrapper_driver_main.cc"],
+    hdrs = ["application_wrapper_driver_main.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":application_wrapper_proto_cc",
+        ":argv",
+        "//asylo:enclave_client",
+        "//asylo/util:cleanup",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/types:optional",
+    ],
+)
+
 # A test of Argv.
 cc_test(
     name = "argv_test",
@@ -108,6 +125,7 @@ sgx_enclave(
     name = "application_wrapper_enclave_test_enclave.so",
     testonly = 1,
     config = ":application_wrapper_enclave_test_configuration",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":application_wrapper_enclave_core",
         ":test_application_library",
@@ -134,6 +152,26 @@ enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# A test of the application driver core logic.
+cc_test(
+    name = "application_wrapper_driver_main_test",
+    srcs = ["application_wrapper_driver_main_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":application_wrapper_driver_main",
+        ":application_wrapper_proto_cc",
+        ":argv",
+        "//asylo:enclave_client",
+        "//asylo/test/util:fake_enclave_loader",
+        "//asylo/test/util:mock_enclave_client",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
