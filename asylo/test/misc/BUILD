@@ -395,6 +395,7 @@ cc_binary(
     deps = [
         "//asylo:enclave_client",
         "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
     ],
 )
 

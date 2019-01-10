@@ -22,30 +22,9 @@
 #include <iostream>
 #include <string>
 
+#include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "asylo/client.h"
-
-#define ASSERT_TRUE(x)                                                \
-  if (!(x)) {                                                         \
-    std::cout << __FILE__ ":" << __LINE__ << ": Assertion failed " #x \
-              << std::endl;                                           \
-    exit(1);                                                          \
-  }
-
-#define ASSERT_MSG(x, msg)                                                   \
-  if (!(x)) {                                                                \
-    std::cout << __FILE__ ":" << __LINE__ << ": Assertion failed " #x << " " \
-              << msg << std::endl;                                           \
-    exit(1);                                                                 \
-  }
-
-#define ASSERT_EQ(x, y)                                                  \
-  if ((x) != (y)) {                                                      \
-    std::cout << __FILE__ ":" << __LINE__                                \
-              << ": Assertion failed. Expected " #x " = " #y " but got " \
-              << (x) << " and " << (y) << " respectively." << std::endl; \
-    exit(1);                                                             \
-  }
 
 namespace asylo {
 namespace {
@@ -92,13 +71,15 @@ class DieTest {
       std::cerr << "Round one" << std::endl;
       client_->EnterAndRun(einput, nullptr);
       std::cerr << "Unreachable?" << std::endl;
-      ASSERT_MSG(false, "Abort handler should activate first.");
+      std::cerr << "Abort handler should activate first." << std::endl;
+      exit(1);
     } else {
       EnclaveInput einput;
       std::cerr << "Going again" << std::endl;
       // Reentry calls exit(EXIT_FAILURE) due to tcs_state != TCS_STATE_INACTIVE
       client_->EnterAndRun(einput, nullptr);
-      ASSERT_MSG(false, "Can't reenter in inconsistent state.");
+      std::cerr << "Can't reenter in inconsistent state." << std::endl;
+      exit(1);
     }
   }
 
