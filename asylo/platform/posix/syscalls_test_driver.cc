@@ -1061,5 +1061,9 @@ TEST_F(SyscallsTest, Mmap) {
   EXPECT_THAT(RunSyscallInsideEnclave("mmap", "", nullptr), IsOk());
 }
 
+TEST_F(SyscallsTest, Itimer) {
+  EXPECT_THAT(RunSyscallInsideEnclave("itimer", "", nullptr), IsOk());
+}
+
 }  // namespace
 }  // namespace asylo

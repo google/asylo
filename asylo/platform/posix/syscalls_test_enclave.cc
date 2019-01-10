@@ -144,6 +144,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunTruncateTest(test_input.path_name());
     } else if (test_input.test_target() == "mmap") {
       return RunMmapTest();
+    } else if (test_input.test_target() == "itimer") {
+      return RunItimerTest();
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1309,6 +1311,47 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     "munmap() failed");
     }
+    return Status::OkStatus();
+  }
+
+  Status RunItimerTest() {
+    itimerval timer_val;
+    timer_val.it_interval.tv_sec = 100;
+    timer_val.it_interval.tv_usec = 12;
+    timer_val.it_value.tv_sec = 100;
+    timer_val.it_value.tv_usec = 0;
+
+    // Set a timer value.
+    if (setitimer(ITIMER_REAL, &timer_val, nullptr) != 0) {
+      perror("setitimer");
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 1");
+    }
+
+    // Call setitimer again and make sure the old value was returned with the
+    // correct interval and a decreased time-till-next-fire.
+    itimerval time_till_next;
+    if (setitimer(ITIMER_REAL, &timer_val, &time_till_next) != 0) {
+      perror("setitimer");
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 2");
+    }
+    if (time_till_next.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
+        time_till_next.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 3");
+    }
+    if (time_till_next.it_value.tv_sec >= timer_val.it_interval.tv_sec) {
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 4");
+    }
+
+    // Make sure getitimer works too.
+    itimerval curr_val;
+    if (getitimer(ITIMER_REAL, &curr_val) != 0) {
+      return Status(error::GoogleError::INTERNAL, "getitimer failure 1");
+    }
+    if (curr_val.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
+        curr_val.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
+      return Status(error::GoogleError::INTERNAL, "getitimer failure 2");
+    }
+
     return Status::OkStatus();
   }
 };

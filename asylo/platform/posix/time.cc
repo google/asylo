@@ -121,6 +121,10 @@ int clock_gettime(clockid_t clock_id, struct timespec *time) {
   }
 }
 
+int getitimer(int which, struct itimerval *curr_value) {
+  return enc_untrusted_getitimer(which, curr_value);
+}
+
 int setitimer(int which, const struct itimerval *new_value,
               struct itimerval *old_value) {
   return enc_untrusted_setitimer(which, new_value, old_value);

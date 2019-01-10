@@ -1016,6 +1016,19 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   return ret;
 }
 
+int enc_untrusted_getitimer(int which, struct itimerval *curr_value) {
+  int ret;
+  struct BridgeITimerVal bridge_curr_value;
+  CHECK_OCALL(ocall_enc_untrusted_getitimer(
+      &ret, asylo::ToBridgeTimerType(which), &bridge_curr_value));
+  if (curr_value == nullptr ||
+      !asylo::FromBridgeITimerVal(&bridge_curr_value, curr_value)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return ret;
+}
+
 int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
                             struct itimerval *old_value) {
   int ret;
@@ -1028,7 +1041,8 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
       ocall_enc_untrusted_setitimer(&ret, asylo::ToBridgeTimerType(which),
                                     &bridge_new_value, &bridge_old_value));
   // Set |old_value| if it's not a nullptr.
-  if (old_value && !asylo::FromBridgeITimerVal(&bridge_old_value, old_value)) {
+  if (old_value != nullptr &&
+      !asylo::FromBridgeITimerVal(&bridge_old_value, old_value)) {
     errno = EFAULT;
     return -1;
   }
