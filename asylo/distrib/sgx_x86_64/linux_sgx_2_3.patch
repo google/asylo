@@ -3148,7 +3148,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1209 @@
+@@ -0,0 +1,1210 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -4014,6 +4014,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "common/inc/internal/uae_service_internal.h",
 +        "psw/ae/inc/internal/aesm_error.h",
 +        "psw/ae/inc/internal/epid_pve_type.h",
++        "psw/ae/inc/internal/pce_cert.h",
 +    ],
 +    copts = [
 +        "-DSL_INSIDE_ENCLAVE",
