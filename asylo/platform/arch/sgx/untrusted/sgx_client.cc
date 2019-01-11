@@ -227,7 +227,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
   int updated;
   sgx_status_t status;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
-    status = sgx_create_enclave(
+    status = sgx_create_enclave_with_utility_and_address(
         enclave_path_.c_str(), debug_, &client->token_, &updated, &client->id_,
         /*misc_attr=*/nullptr, &client->base_address_, config.enable_fork());
 

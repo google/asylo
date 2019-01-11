@@ -484,16 +484,20 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  #include "sgx_attributes.h"
  #include "sgx_error.h"
  #include "sgx_eid.h"
-@@ -71,9 +73,15 @@
-                                        sgx_launch_token_t *launch_token, 
-                                        int *launch_token_updated, 
+@@ -73,7 +75,21 @@
                                         sgx_enclave_id_t *enclave_id, 
--                                       sgx_misc_attribute_t *misc_attr);
+                                        sgx_misc_attribute_t *misc_attr);
+ 
 -
--
-+                                       sgx_misc_attribute_t *misc_attr,
-+                                       void **enclave_base_addr,
-+                                       bool enable_user_utility);
++sgx_status_t SGXAPI sgx_create_enclave_with_utility_and_address(
++    const char *file_name, 
++    const int debug, 
++    sgx_launch_token_t *launch_token, 
++    int *launch_token_updated, 
++    sgx_enclave_id_t *enclave_id, 
++    sgx_misc_attribute_t *misc_attr,
++    void **enclave_base_addr,
++    bool enable_user_utility);
 +
 +sgx_status_t SGXAPI sgx_create_enclave_from_buffer(
 +        uint8_t *buffer, size_t buffer_size, const int debug,
@@ -503,7 +507,7 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  
  sgx_status_t SGXAPI sgx_create_enclave_ex(const char * file_name, 
                                            const int debug, 
-@@ -82,7 +90,9 @@
+@@ -82,7 +98,9 @@
                                            sgx_enclave_id_t * enclave_id, 
                                            sgx_misc_attribute_t * misc_attr,  
                                            const uint32_t ex_features, 
@@ -514,7 +518,7 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  
  
  sgx_status_t SGXAPI sgx_create_encrypted_enclave(
-@@ -92,10 +102,16 @@
+@@ -92,10 +110,16 @@
                          int *launch_token_updated,
                          sgx_enclave_id_t *enclave_id,
                          sgx_misc_attribute_t *misc_attr,
@@ -1113,7 +1117,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
      if(SGX_SUCCESS != ret && misc_attr)
      {
          sgx_misc_attribute_t plat_cap;
-@@ -110,14 +113,76 @@
+@@ -110,14 +113,87 @@
      return ret;
  }
  
@@ -1135,8 +1139,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +        const void* ex_features_p[32],
 +        void **enclave_base_addr,
 +        bool enable_user_utility)
- {
--    return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL);
++{
 +    sgx_status_t ret = SGX_SUCCESS;
 +
 +    // Only true or false is valid
@@ -1172,9 +1175,20 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +                                           sgx_launch_token_t *launch_token,
 +                                           int *launch_token_updated,
 +                                           sgx_enclave_id_t *enclave_id,
-+                                           sgx_misc_attribute_t *misc_attr,
-+                                           void **enclave_base_addr,
-+                                           bool enable_user_utility)
++                                           sgx_misc_attribute_t *misc_attr)
++{
++  return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL, NULL, false);
++}
++
++extern "C" sgx_status_t sgx_create_enclave_with_utility_and_address(
++    const char *file_name,
++    const int debug,
++    sgx_launch_token_t *launch_token,
++    int *launch_token_updated,
++    sgx_enclave_id_t *enclave_id,
++    sgx_misc_attribute_t *misc_attr,
++    void **enclave_base_addr,
++    bool enable_user_utility)
 +{
 +    return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL, enclave_base_addr, enable_user_utility);
 +}
@@ -1190,14 +1204,15 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +        sgx_misc_attribute_t *misc_attr,
 +        void **enclave_base_addr,
 +        bool enable_user_utility)
-+{
+ {
+-    return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL);
 +    return __sgx_create_enclave_from_buffer_ex(
 +        buffer, buffer_size, debug, launch_token, launch_token_updated,
 +        enclave_id, misc_attr, 0, NULL, enclave_base_addr, enable_user_utility);
  }
  
  
-@@ -128,11 +193,14 @@
+@@ -128,11 +204,14 @@
                                                 sgx_enclave_id_t *enclave_id,
                                                 sgx_misc_attribute_t *misc_attr,
                                                 const uint32_t ex_features,
@@ -1214,7 +1229,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  }
  
  
-@@ -144,12 +212,32 @@
+@@ -144,12 +223,32 @@
      int *launch_token_updated,
      sgx_enclave_id_t *enclave_id,
      sgx_misc_attribute_t *misc_attr,
