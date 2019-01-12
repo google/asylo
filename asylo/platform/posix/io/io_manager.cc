@@ -402,6 +402,10 @@ int IOManager::Poll(struct pollfd *fds, nfds_t nfds, int timeout) {
 }
 
 int IOManager::EpollCreate(int size) {
+  if (size < 1) {
+    errno = EINVAL;
+    return -1;
+  }
   int hostfd = enc_untrusted_epoll_create(size);
   auto context = ::absl::make_unique<IOContextEpoll>(hostfd);
   absl::WriterMutexLock lock(&fd_table_lock_);
