@@ -3148,7 +3148,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1210 @@
+@@ -0,0 +1,1207 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3364,7 +3364,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    copts = PSW_COMMON_INCLUDES + [
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/common/inc/internal/linux",
-+        "-Iexternal/linux_sgx/external/epid-sdk/ext/ipp/include",
 +        "-Iexternal/linux_sgx/external/vtune/linux/include",
 +        "-Iexternal/linux_sgx/external/vtune/linux/sdk/src/ittnotify",
 +        "-Iexternal/linux_sgx/psw/ae/common",
@@ -3730,7 +3729,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-DSE_SIM=1",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/common/inc/internal/linux",
-+        "-Iexternal/linux_sgx/external/epid-sdk/ext/ipp/include",
 +        "-Iexternal/linux_sgx/external/rdrand",
 +        "-Iexternal/linux_sgx/psw/ae/common",
 +        "-Iexternal/linux_sgx/psw/enclave_common",
@@ -4079,7 +4077,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Wa,--noexecstack",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/common/inc/internal/linux",
-+        "-Iexternal/linux_sgx/external/epid-sdk/ext/ipp/include",
 +        "-Iexternal/linux_sgx/sdk/simulation/uinst",
 +        "-Iexternal/linux_sgx/psw/urts",
 +        "-Iexternal/linux_sgx/psw/urts/linux",
