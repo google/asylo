@@ -31,6 +31,9 @@ class IOContextSecure : public IOManager::IOContext {
   static std::unique_ptr<IOManager::IOContext> Create(const char *path,
                                                       int flags, mode_t mode) {
     int host_fd = platform::storage::secure_open(path, flags, mode);
+    if (host_fd == -1) {
+      return nullptr;
+    }
     return std::unique_ptr<IOManager::IOContext>(new IOContextSecure(host_fd));
   }
 

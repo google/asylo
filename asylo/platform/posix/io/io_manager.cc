@@ -407,6 +407,9 @@ int IOManager::EpollCreate(int size) {
     return -1;
   }
   int hostfd = enc_untrusted_epoll_create(size);
+  if (hostfd == -1) {
+    return -1;
+  }
   auto context = ::absl::make_unique<IOContextEpoll>(hostfd);
   absl::WriterMutexLock lock(&fd_table_lock_);
   int fd = fd_table_.Insert(context.get());
@@ -457,6 +460,9 @@ int IOManager::EventFd(unsigned int initval, int flags) {
 
 int IOManager::InotifyInit(bool non_block) {
   int hostfd = enc_untrusted_inotify_init1(non_block);
+  if (hostfd == -1) {
+    return -1;
+  }
   auto context = ::absl::make_unique<IOContextInotify>(hostfd);
   absl::WriterMutexLock lock(&fd_table_lock_);
   int fd = fd_table_.Insert(context.get());
