@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 
@@ -32,7 +33,6 @@ namespace {
 static pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
 static volatile int count = 0;
 static int global_arg = 1;
-static pthread_key_t tls_key;
 
 static pthread_once_t once = PTHREAD_ONCE_INIT;
 static volatile int once_count = 0;
@@ -68,6 +68,30 @@ void *detachable_function(void *arg) {
   return arg;
 }
 
+void *thread_specific_function(void *arg) {
+  // The key to use may be passed in to the spawned thread. If so, use that. If
+  // not, allocate a new one and make sure it's unique.
+  pthread_key_t tls_key;
+  if (arg != nullptr) {
+    tls_key = *static_cast<pthread_key_t *>(arg);
+  } else {
+    EXPECT_EQ(pthread_key_create(&tls_key, nullptr), 0);
+
+    static absl::Mutex used_key_mutex;
+    static absl::flat_hash_set<pthread_key_t> used_keys;
+    absl::MutexLock used_key_lock(&used_key_mutex);
+    EXPECT_EQ(used_keys.find(tls_key), used_keys.end());
+    used_keys.insert(tls_key);
+  }
+
+  // If this thread hasn't set it yet, it should be null.
+  EXPECT_EQ(pthread_getspecific(tls_key), nullptr);
+
+  int used_for_address;
+  pthread_setspecific(tls_key, &used_for_address);
+  EXPECT_EQ(pthread_getspecific(tls_key), &used_for_address);
+}
+
 static volatile int cc11_count = 0;
 static absl::Mutex cc11_mutex;
 
@@ -82,11 +106,6 @@ TEST(ThreadedTest, EnclaveThread) {
   printf("Initialize: begin\n");
 
   printf("self: %lu\n", reinterpret_cast<uint64_t>(pthread_self()));
-
-  int used_for_address;
-  pthread_key_create(&tls_key, nullptr);
-  pthread_setspecific(tls_key, &used_for_address);
-  ASSERT_EQ(pthread_getspecific(tls_key), &used_for_address);
 
   pthread_t thread;
   printf("about to create thread\n");
@@ -137,6 +156,40 @@ TEST(ThreadedTest, DetachThread) {
 
   EXPECT_EQ(pthread_detach(thread), 0);
   EXPECT_NE(pthread_join(thread, nullptr), 0);
+}
+
+TEST(ThreadedTest, ThreadSpecific) {
+  pthread_key_t tls_key;
+  EXPECT_EQ(pthread_key_create(&tls_key, nullptr), 0);
+
+  // Set and verify thread-specific data for main thread.
+  int used_for_address;
+  pthread_setspecific(tls_key, &used_for_address);
+  EXPECT_EQ(pthread_getspecific(tls_key), &used_for_address);
+
+  // Make sure spawned threads can use thread-specific data.
+  pthread_t thread;
+  ASSERT_EQ(
+      pthread_create(&thread, nullptr, thread_specific_function, &tls_key), 0);
+  EXPECT_EQ(pthread_join(thread, nullptr), 0);
+
+  // Ensure the spawned thread setting a value didn't affect this value.
+  EXPECT_EQ(pthread_getspecific(tls_key), &used_for_address);
+
+  // Create new keys in separate threads.
+  constexpr int kNumThreads = 10;
+  absl::flat_hash_set<pthread_t> spawned_threads;
+  for (int i = 0; i < kNumThreads; ++i) {
+    pthread_t thread;
+    ASSERT_EQ(
+        pthread_create(&thread, nullptr, thread_specific_function, nullptr), 0);
+    spawned_threads.insert(thread);
+  }
+
+  // Wait for all of the spawned threads to complete.
+  for (pthread_t thread : spawned_threads) {
+    EXPECT_EQ(pthread_join(thread, nullptr), 0);
+  }
 }
 
 }  // namespace

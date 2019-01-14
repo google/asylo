@@ -174,7 +174,9 @@ cc_enclave_test(
     srcs = ["threaded_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],
 )
