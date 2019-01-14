@@ -93,7 +93,7 @@ typedef ::testing::Types<NumericConstant<0>,
                          std::vector<uint8_t>>
     MyTypes;
 
-TYPED_TEST_CASE(TypedSingletonTest, MyTypes);
+TYPED_TEST_SUITE(TypedSingletonTest, MyTypes);
 
 // Launches eight threads and invokes Singleton<TypeParam>::get() from each
 // thread. If Singleton is working correctly, all threads must get the same

@@ -84,7 +84,7 @@ typedef ::testing::Types<SafeBytes<8>, UnsafeBytes<15>, SafeBytes<235>,
                          UnsafeBytes<519>, uint8_t, uint16_t, uint32_t,
                          uint64_t>
     MyTypes;
-TYPED_TEST_CASE(TypedCleansingAllocatorTest, MyTypes);
+TYPED_TEST_SUITE(TypedCleansingAllocatorTest, MyTypes);
 
 TYPED_TEST(TypedCleansingAllocatorTest, VectorTest) {
   using TestVector =

@@ -78,8 +78,8 @@ class SgxLocalAssertionAuthorityTest
 //   * Generator and verifier run in the same enclave
 //   * Generator and verifier run in different enclaves (with the same local
 //     attestation domain)
-INSTANTIATE_TEST_CASE_P(RandomizedEnclaves, SgxLocalAssertionAuthorityTest,
-                        /*same_enclave=*/::testing::Bool());
+INSTANTIATE_TEST_SUITE_P(RandomizedEnclaves, SgxLocalAssertionAuthorityTest,
+                         /*same_enclave=*/::testing::Bool());
 
 // Verify that SgxLocalAssertionGenerator can fulfill an assertion request from
 // a SgxLocalAssertionVerifier.

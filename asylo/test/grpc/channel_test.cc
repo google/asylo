@@ -71,7 +71,7 @@ class ChannelTest : public ::testing::Test {
 
 using TestTypes =
     ::testing::Types<InsecureCredentialsConfig, EnclaveCredentialsConfig>;
-TYPED_TEST_CASE(ChannelTest, TestTypes);
+TYPED_TEST_SUITE(ChannelTest, TestTypes);
 
 TYPED_TEST(ChannelTest, EndToEnd) {
   GrpcServerLauncher launcher("ChannelTest");

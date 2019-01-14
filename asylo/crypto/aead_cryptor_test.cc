@@ -128,7 +128,7 @@ TEST_P(AeadCryptorTest, OpenTest) {
             ByteContainerView(actual_plaintext));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AllTests, AeadCryptorTest,
     ::testing::Values(
         // AES-128-GCM with additional authenticated data.

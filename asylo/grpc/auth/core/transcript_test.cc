@@ -84,7 +84,7 @@ class TranscriptTest : public ::testing::Test {};
 
 typedef ::testing::Types<FakeHash, Sha256Hash> TestTypes;
 
-TYPED_TEST_CASE(TranscriptTest, TestTypes);
+TYPED_TEST_SUITE(TranscriptTest, TestTypes);
 
 // Verify that the hash function for a Transcript can only be set once.
 TYPED_TEST(TranscriptTest, SetHasherSucceedsOnce) {

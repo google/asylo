@@ -100,9 +100,9 @@ PathParams GetTestPathParams() {
 }
 
 // Instantiates a test case for each of the entries in the |test_params| map.
-INSTANTIATE_TEST_CASE_P(PathList, PathNormalizationTest,
-                        ::testing::ValuesIn(GetTestPathParams()),
-                        PathParamsValueToTestName);
+INSTANTIATE_TEST_SUITE_P(PathList, PathNormalizationTest,
+                         ::testing::ValuesIn(GetTestPathParams()),
+                         PathParamsValueToTestName);
 
 }  // namespace
 }  // namespace util

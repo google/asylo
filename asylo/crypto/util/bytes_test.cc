@@ -49,7 +49,7 @@ class TypedBytesTest : public ::testing::Test {
 };
 
 typedef ::testing::Types<SafeBytes<kSize>, UnsafeBytes<kSize>> MyTypes;
-TYPED_TEST_CASE(TypedBytesTest, MyTypes);
+TYPED_TEST_SUITE(TypedBytesTest, MyTypes);
 
 TYPED_TEST(TypedBytesTest, EqualityOperatorPositive1) {
   TypeParam bytes1(kValue1, kSize);

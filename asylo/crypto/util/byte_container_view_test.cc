@@ -47,7 +47,7 @@ typedef ::testing::Types<SafeBytes<kSize1>, UnsafeBytes<kSize1>,
                          std::vector<uint8_t>, std::vector<char>, std::string,
                          std::basic_string<uint8_t, std::char_traits<uint8_t>>>
     MyTypes;
-TYPED_TEST_CASE(TypedByteContainerViewTest, MyTypes);
+TYPED_TEST_SUITE(TypedByteContainerViewTest, MyTypes);
 
 TYPED_TEST(TypedByteContainerViewTest, DataMethod) {
   TypeParam container(kData1, kData1 + kSize1);

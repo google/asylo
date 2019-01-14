@@ -153,7 +153,7 @@ typedef ::testing::Types<
     std::pair<UnsafeString, SafeVector>, std::pair<SafeString, SafeVector>,
     std::pair<UnsafeVector, SafeString>, std::pair<SafeVector, SafeString>>
     MyTypes;
-TYPED_TEST_CASE(TypedAesGcmSivTest, MyTypes);
+TYPED_TEST_SUITE(TypedAesGcmSivTest, MyTypes);
 
 TYPED_TEST(TypedAesGcmSivTest, KeySize128) {
   using InputType = typename TypeParam::first_type;

@@ -48,7 +48,7 @@ class TypedTrivialObjectUtilTest : public ::testing::Test {};
 typedef ::testing::Types<UnsafeBytes<16>, UnsafeBytes<32>, TrivialStructure,
                          uint64_t>
     MyTypes;
-TYPED_TEST_CASE(TypedTrivialObjectUtilTest, MyTypes);
+TYPED_TEST_SUITE(TypedTrivialObjectUtilTest, MyTypes);
 
 // Rough sanity check on TrivialRandomObject. This test generates
 // 16 different values and expects no collisions. Since the smallest

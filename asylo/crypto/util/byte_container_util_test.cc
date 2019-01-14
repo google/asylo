@@ -57,7 +57,7 @@ typedef ::testing::Types<std::string, std::vector<uint8_t>, std::string,
                          CleansingString, CleansingVector<uint8_t>>
     OutputTypes;
 
-TYPED_TEST_CASE(ByteContainerUtilTypedTest, OutputTypes);
+TYPED_TEST_SUITE(ByteContainerUtilTypedTest, OutputTypes);
 
 // Verify that the serialization of no strings is an empty string.
 TYPED_TEST(ByteContainerUtilTypedTest, EmptySerialization) {

@@ -239,7 +239,7 @@ TEST_P(AeadKeyTest, AeadKeyTestInvalidKey) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     AllTests, AeadKeyTest,
     ::testing::Values(
         // AES-128-GCM with additional authenticated data.
