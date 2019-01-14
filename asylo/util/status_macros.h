@@ -20,11 +20,10 @@
 #define ASYLO_UTIL_STATUS_MACROS_H_
 
 #include "absl/base/optimization.h"
-#include "asylo/util/status.h"
-#include "asylo/util/statusor.h"
 
-/// Evaluates an expression that produces an `asylo::Status`. If the status is
-/// non-OK, returns it from the current function.
+/// Evaluates an expression that produces an `Status`-like object with
+/// a `.ok()` method. If this method returns false, the object is
+/// returned from the current function.
 ///
 /// Example:
 /// ```
@@ -42,12 +41,14 @@ do {                                                       \
   }                                                        \
 } while (false)
 
-/// Evaluates an expression `rexpr` that returns an `asylo::StatusOr<T>`.
-/// If the result is OK, moves its value into the variable defined by `lhs`,
-/// otherwise returns the `asylo::Status` from the current function. The error
-/// `asylo::Status` is returned unchanged. If there is an error, `lhs` is not
-/// evaluated; thus any side effects that `lhs` may have only occur in the
-/// success case.
+/// Evaluates an expression `rexpr` that returns a `StatusOr`-like
+/// object with `.ok()`, `.status()`, and `.ValueOrDie()` methods.  If
+/// the result is OK, moves its value into the variable defined by
+/// `lhs`, otherwise returns the result of the `.status()` from the
+/// current function. The error result of `.status` is returned
+/// unchanged. If there is an error, `lhs` is not evaluated: thus any
+/// side effects of evaluating `lhs` will only occur if `rexpr.ok()`
+/// is true.
 ///
 /// Interface:
 /// ```

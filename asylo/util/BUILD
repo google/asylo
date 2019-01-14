@@ -159,6 +159,16 @@ cc_library(
 )
 
 cc_library(
+    name = "status_macros",
+    hdrs = ["status_macros.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+    ],
+)
+
+cc_library(
     name = "status",
     srcs = [
         "error_codes.h",
@@ -179,6 +189,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":status_macros",
         ":status_proto_cc",
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
