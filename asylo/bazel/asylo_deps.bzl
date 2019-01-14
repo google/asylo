@@ -56,10 +56,10 @@ def asylo_testonly_deps():
         http_archive(
             name = "com_google_googletest",
             urls = [
-                "https://github.com/google/googletest/archive/release-1.8.1.tar.gz",
+                "https://github.com/google/googletest/archive/eb9225ce361affe561592e0912320b9db84985d0.tar.gz",
             ],
-            sha256 = "9bf1fe5182a604b4135edc1a425ae356c9ad15e9b23f9f12a02e80184c3a249c",
-            strip_prefix = "googletest-release-1.8.1",
+            sha256 = "a4cb4b0c3ebb191b798594aca674ad47eee255dcb4c26885cf7f49777703484f",
+            strip_prefix = "googletest-eb9225ce361affe561592e0912320b9db84985d0",
         )
 
     # gflags
