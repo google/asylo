@@ -38,6 +38,7 @@ cc_library(
     srcs = ["aead_cryptor.cc"],
     hdrs = ["aead_cryptor.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":aead_key",
         ":nonce_generator_interface",

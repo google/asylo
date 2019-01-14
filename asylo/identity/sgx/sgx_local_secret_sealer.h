@@ -24,6 +24,7 @@
 #include "asylo/crypto/aes_gcm_siv.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/secret_sealer.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/util/cleansing_types.h"

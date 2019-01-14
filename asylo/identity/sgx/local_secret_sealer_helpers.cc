@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity.pb.h"
@@ -132,6 +133,7 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
 
   size_t remaining_key_bytes = key_size;
   size_t key_subscript = 0;
+  Sha256Hash hasher;
   while (remaining_key_bytes > 0) {
     std::vector<uint8_t> key_info;
     // Build a key_info string that uniquely and unambiguously encodes
@@ -145,7 +147,11 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
     static_assert(decltype(req->keyid)::size() == SHA256_DIGEST_LENGTH,
                   "KEYREQUEST.KEYID field has unexpected size");
 
-    SHA256(key_info.data(), key_info.size(), req->keyid.data());
+    hasher.Init();
+    hasher.Update(key_info);
+    std::vector<uint8_t> digest;
+    hasher.CumulativeHash(&digest);
+    req->keyid.assign(digest);
 
     AlignedHardwareKeyPtr hardware_key;
     ASYLO_RETURN_IF_ERROR(GetHardwareKey(*req, hardware_key.get()));

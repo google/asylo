@@ -34,7 +34,7 @@ namespace {
 constexpr size_t kAes128KeySize = 16;
 constexpr size_t kAes256KeySize = 32;
 
-// Returns the appropriate EVP_AEAD based on |key_size|.
+// Returns the appropriate EVP_AEAD based on |aead_scheme|.
 const EVP_AEAD *GetEvpAead(AeadScheme aead_scheme) {
   switch (aead_scheme) {
     case AES128_GCM:
