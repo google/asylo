@@ -666,8 +666,12 @@ struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,
                          bridge_addr->addr_in.sin_zero);
     return CopySockaddr(&sockaddr_in_out, sizeof(sockaddr_in_out), addr,
                         addrlen);
+  } else if (family == AF_UNSPEC) {
+    struct sockaddr sockaddr_out;
+    sockaddr_out.sa_family = family;
+    return CopySockaddr(&sockaddr_out, sizeof(sockaddr_out), addr, addrlen);
   } else {
-    LOG(ERROR) << "socket type is not supported";
+    LOG(ERROR) << "sockaddr family is not supported: " << family;
     abort();
   }
 }
@@ -715,8 +719,11 @@ struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,
     InitializeToZeroArray(bridge_addr->addr_in.sin_zero);
     ReinterpretCopyArray(bridge_addr->addr_in.sin_zero,
                          sockaddr_in_in->sin_zero);
+  } else if (bridge_addr->sa_family == BRIDGE_AF_UNSPEC) {
+    // Do nothing
   } else {
-    LOG(ERROR) << "socket type is not supported";
+    LOG(ERROR) << "sockaddr family is not supported: "
+               << bridge_addr->sa_family;
     abort();
   }
   return bridge_addr;
@@ -831,6 +838,7 @@ AfFamily ToBridgeAfFamily(int af_family) {
     case AF_ALG:
       return BRIDGE_AF_ALG;
     default:
+      LOG(ERROR) << "Unsupported address family: " << af_family;
       return BRIDGE_AF_UNSUPPORTED;
   }
 }

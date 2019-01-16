@@ -50,7 +50,14 @@ message SocketTestOutput {
 // Used by addrinfo tests to specify whether or not hints should be passed to
 // the getaddrinfo() system call
 message AddrInfoTestInput {
-  required bool use_addrinfo_hints = 1;
+  enum TestMode {
+    UNKNOWN = 0;
+    NO_HINTS = 1;
+    UNSPEC_HINTS = 2;
+    IP_HINTS = 3;
+  }
+
+  required TestMode mode = 1;
 }
 
 extend EnclaveInput {
