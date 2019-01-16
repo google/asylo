@@ -21,6 +21,7 @@
 #include <fcntl.h>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/common/bridge_msghdr_wrapper.h"
 #include "asylo/platform/posix/io/secure_paths.h"
 
 namespace asylo {
@@ -156,11 +157,24 @@ int IOContextNative::Listen(int backlog) {
 }
 
 ssize_t IOContextNative::SendMsg(const struct msghdr *msg, int flags) {
-  return enc_untrusted_sendmsg(host_fd_, msg, flags);
+  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
+  if (!tmp_wrapper.CopyAllBuffers()) {
+    // CopyAllBuffers sets the ocall status on failure.
+    errno = EFAULT;
+    return -1;
+  }
+
+  return enc_untrusted_sendmsg(host_fd_, tmp_wrapper.get_msg(), flags);
 }
 
 ssize_t IOContextNative::RecvMsg(struct msghdr *msg, int flags) {
-  return enc_untrusted_recvmsg(host_fd_, msg, flags);
+  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
+  if (!tmp_wrapper.CopyAllBuffers()) {
+    // CopyAllBuffers sets the ocall status on failure.
+    errno = EFAULT;
+    return -1;
+  }
+  return enc_untrusted_recvmsg(host_fd_, msg, tmp_wrapper.get_msg(), flags);
 }
 
 int IOContextNative::GetSockName(struct sockaddr *addr, socklen_t *addrlen) {

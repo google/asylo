@@ -69,131 +69,6 @@ namespace {
     }                                                                        \
   } while (0)
 
-// Allocates untrusted memory and copies the buffer |data| of size |size| to it.
-// |addr| is updated to point to the address of the copied memory. It is the
-// responsibility of the caller to free the memory pointed to by |addr|.
-// It is a fatal error if memory cannot be allocated.
-bool CopyToUntrustedMemory(void **addr, void *data, size_t size) {
-  if (data && !addr) {
-    return false;
-  }
-  // The operation trivially succeeds if there is nothing to copy.
-  if (!data) {
-    return true;
-  }
-  void *outside_enclave = enc_untrusted_malloc(size);
-  // The operation fails if it cannot allocate the necessary resources.
-  if (!outside_enclave) {
-    LOG(FATAL) << "Untrusted memory allocation failed";
-  }
-  memcpy(outside_enclave, data, size);
-  *addr = outside_enclave;
-  return true;
-}
-
-// This helper class wraps a bridge_msghdr and does a deep copy of all the
-// buffers to untrusted memory.
-class BridgeMsghdrWrapper {
- public:
-  BridgeMsghdrWrapper(const struct msghdr *in);
-  bridge_msghdr *get_msg();
-  bool CopyAllBuffers();
-
- private:
-  bool CopyMsgName();
-  bool CopyMsgIov();
-  bool CopyMsgIovBase();
-  bool CopyMsgControl();
-
-  const msghdr *msg_in_;
-  UntrustedUniquePtr<bridge_msghdr> msg_out_;
-  UntrustedUniquePtr<void> msg_name_ptr_;
-  UntrustedUniquePtr<void> msg_iov_ptr_;
-  UntrustedUniquePtr<void> msg_control_ptr_;
-  std::vector<UntrustedUniquePtr<void>> msg_iov_base_ptrs_;
-};
-
-BridgeMsghdrWrapper::BridgeMsghdrWrapper(const struct msghdr *in) {
-  struct bridge_msghdr tmp;
-  ToBridgeMsgHdr(in, &tmp);
-  struct bridge_msghdr *tmp_bridge_msghdr(nullptr);
-  bool ret =
-      CopyToUntrustedMemory(reinterpret_cast<void **>(&tmp_bridge_msghdr), &tmp,
-                            sizeof(struct bridge_msghdr));
-  if (ret && tmp_bridge_msghdr) {
-    msg_out_.reset(tmp_bridge_msghdr);
-  }
-  msg_in_ = in;
-}
-
-bridge_msghdr *BridgeMsghdrWrapper::get_msg() { return msg_out_.get(); }
-
-bool BridgeMsghdrWrapper::CopyMsgName() {
-  void *tmp_name_ptr(nullptr);
-  if (!CopyToUntrustedMemory(&tmp_name_ptr, msg_in_->msg_name,
-                             msg_in_->msg_namelen)) {
-    return false;
-  }
-  if (tmp_name_ptr) {
-    msg_name_ptr_.reset(tmp_name_ptr);
-    msg_out_->msg_name = tmp_name_ptr;
-  }
-  return true;
-}
-
-// It is a fatal error if memory cannot be allocated.
-bool BridgeMsghdrWrapper::CopyMsgIov() {
-  struct bridge_iovec *tmp_iov_ptr = reinterpret_cast<struct bridge_iovec *>(
-      enc_untrusted_malloc(msg_in_->msg_iovlen * sizeof(struct bridge_iovec)));
-  if (tmp_iov_ptr) {
-    msg_iov_ptr_.reset(tmp_iov_ptr);
-    msg_out_->msg_iov = tmp_iov_ptr;
-  }
-  for (int i = 0; i < msg_in_->msg_iovlen; ++i) {
-    if (!ToBridgeIovec(&msg_in_->msg_iov[i], &msg_out_->msg_iov[i])) {
-      LOG(FATAL) << "Iovec allocation failed";
-    }
-  }
-  return true;
-}
-
-bool BridgeMsghdrWrapper::CopyMsgIovBase() {
-  for (int i = 0; i < msg_in_->msg_iovlen; ++i) {
-    msg_iov_base_ptrs_.push_back(nullptr);
-    void *tmp_iov_base_ptr(nullptr);
-    if (!CopyToUntrustedMemory(&tmp_iov_base_ptr, msg_in_->msg_iov[i].iov_base,
-                               msg_in_->msg_iov[i].iov_len)) {
-      return false;
-    }
-    if (tmp_iov_base_ptr) {
-      msg_iov_base_ptrs_[i].reset(tmp_iov_base_ptr);
-      msg_out_->msg_iov[i].iov_base = tmp_iov_base_ptr;
-    }
-  }
-  return true;
-}
-
-bool BridgeMsghdrWrapper::CopyMsgControl() {
-  void *tmp_control_ptr(nullptr);
-  if (!CopyToUntrustedMemory(&tmp_control_ptr, msg_in_->msg_control,
-                             msg_in_->msg_controllen)) {
-    return false;
-  }
-  if (tmp_control_ptr) {
-    msg_control_ptr_.reset(tmp_control_ptr);
-    msg_out_->msg_control = tmp_control_ptr;
-  }
-  return true;
-}
-
-bool BridgeMsghdrWrapper::CopyAllBuffers() {
-  if (!CopyMsgName() || !CopyMsgIov() || !CopyMsgIovBase() ||
-      !CopyMsgControl()) {
-    return false;
-  }
-  return true;
-}
-
 }  // namespace
 }  // namespace asylo
 
@@ -403,34 +278,24 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
   return ret;
 }
 
-ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
+ssize_t enc_untrusted_sendmsg(int sockfd,
+                              const struct bridge_msghdr *bridge_msg,
+                              int flags) {
   bridge_ssize_t ret;
-  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
-  if (!tmp_wrapper.CopyAllBuffers()) {
-    // CopyAllBuffers sets the ocall status on failure.
-    errno = EFAULT;
-    return -1;
-  }
-
   CHECK_OCALL(
-      ocall_enc_untrusted_sendmsg(&ret, sockfd, tmp_wrapper.get_msg(), flags));
-
+      ocall_enc_untrusted_sendmsg(&ret, sockfd, bridge_msg, flags));
   return static_cast<ssize_t>(ret);
 }
 
-ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
+ssize_t enc_untrusted_recvmsg(int sockfd,
+                              struct msghdr *msg,
+                              struct bridge_msghdr *bridge_msg,
+                              int flags) {
   bridge_ssize_t ret;
-  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
-  if (!tmp_wrapper.CopyAllBuffers()) {
-    // CopyAllBuffers sets the ocall status on failure.
-    errno = EFAULT;
-    return -1;
-  }
-
   CHECK_OCALL(
-      ocall_enc_untrusted_recvmsg(&ret, sockfd, tmp_wrapper.get_msg(), flags));
+      ocall_enc_untrusted_recvmsg(&ret, sockfd, bridge_msg, flags));
 
-  asylo::FromBridgeIovecArray(tmp_wrapper.get_msg(), msg);
+  asylo::FromBridgeIovecArray(bridge_msg, msg);
   return static_cast<ssize_t>(ret);
 }
 
