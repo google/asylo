@@ -31,12 +31,12 @@ class EnclaveTestLauncher {
  public:
   EnclaveTestLauncher();
 
-  // Loads and initializes the enclave passed in |enclave_path| and calls
-  // EnterAndInitialize with |econfig|.
+  // Loads and initializes the enclave passed in |enclave_path| with name
+  // |enclave_url| and calls EnterAndInitialize with |econfig|.
   Status SetUp(const std::string &enclave_path, const EnclaveConfig &econfig,
                const std::string &enclave_url);
 
-  // Calls the client's EnterAndRun method with input. Returns
+  // Calls the client's EnterAndRun method with |input| and |output|. Returns
   // PRECONDITION_FAILED if SetUp() has not yet been invoked successfully to
   // initialize the enclave under test.
   Status Run(const EnclaveInput &input, EnclaveOutput *output);
@@ -49,7 +49,8 @@ class EnclaveTestLauncher {
   // Mutable access to the loaded client.
   EnclaveClient *mutable_client() { return client_; }
 
-  // Sets test_string in the enclave_input_test_string protobuf extension.
+  // Sets the test_string field in the enclave_input_test_string protobuf
+  // extension in |enclave_input| to |str_test|.
   static void SetEnclaveInputTestString(EnclaveInput *enclave_input,
                                         const std::string &str_test);
 
