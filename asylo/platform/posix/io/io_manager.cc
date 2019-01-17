@@ -289,12 +289,18 @@ int IOManager::Pipe(int pipefd[2]) {
 
 int IOManager::Select(int nfds, fd_set *readfds, fd_set *writefds,
                       fd_set *exceptfds, struct timeval *timeout) {
+  if (nfds < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   // Translate the fd_sets into host file descriptors.
   fd_set host_readfds, host_writefds, host_exceptfds;
   FD_ZERO(&host_readfds);
   FD_ZERO(&host_writefds);
   FD_ZERO(&host_exceptfds);
-  int host_nfds = nfds;
+
+  int host_nfds = 0;
   for (int fd = 0; fd < nfds; ++fd) {
     if (readfds && FD_ISSET(fd, readfds)) {
       std::shared_ptr<IOContext> context = fd_table_.Get(fd);
