@@ -115,4 +115,5 @@ sh_test(
         "//asylo/test/util:sample_text",
     ],
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
+    deps = ["//asylo/test/util:shell_testing"],
 )
