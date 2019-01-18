@@ -19,7 +19,7 @@
 
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_functions.h"
-#include "asylo/platform/common/bridge_msghdr_wrapper.h"
+#include "asylo/platform/core/bridge_msghdr_wrapper.h"
 
 namespace asylo {
 namespace {

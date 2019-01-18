@@ -219,14 +219,3 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
-
-cc_library(
-    name = "bridge_msghdr_wrapper",
-    srcs = ["bridge_msghdr_wrapper.cc"],
-    hdrs = ["bridge_msghdr_wrapper.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":bridge_types",
-        "//asylo/platform/arch:trusted_arch",
-    ],
-)
