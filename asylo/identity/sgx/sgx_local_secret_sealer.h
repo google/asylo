@@ -21,7 +21,6 @@
 
 #include <memory>
 
-#include "asylo/crypto/aes_gcm_siv.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
@@ -150,9 +149,6 @@ class SgxLocalSecretSealer : public SecretSealer {
   // Instantiates LocalSecretSealer that sets client_acl in the default sealed
   // secret header per |default_client_acl|.
   SgxLocalSecretSealer(const sgx::CodeIdentityExpectation &default_client_acl);
-
-  // Cryptor to perform AEAD operations.
-  std::unique_ptr<AesGcmSivCryptor> cryptor_;
 
   // The default client ACL for this SecretSealer.
   sgx::CodeIdentityExpectation default_client_acl_;

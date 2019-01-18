@@ -468,8 +468,10 @@ cc_library(
         ":hardware_interface",
         ":hardware_types",
         ":local_sealed_secret_proto_cc",
+        "//asylo/crypto:aead_cryptor",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
         "//asylo/identity:identity_acl_proto_cc",
         "//asylo/identity:identity_proto_cc",
@@ -478,6 +480,7 @@ cc_library(
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
     ],
 )
 
@@ -491,7 +494,7 @@ cc_library(
         ":code_identity_util",
         ":hardware_types",
         ":local_secret_sealer_helpers",
-        "//asylo/crypto:aes_gcm_siv",
+        "//asylo/crypto:aead_cryptor",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",

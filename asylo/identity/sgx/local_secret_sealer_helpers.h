@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_SGX_LOCAL_SECRET_SEALER_HELPERS_H_
 #define ASYLO_IDENTITY_SGX_LOCAL_SECRET_SEALER_HELPERS_H_
 
+#include "asylo/crypto/aead_cryptor.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
@@ -48,6 +50,20 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
                           const UnsafeBytes<kCpusvnSize> &cpusvn,
                           const CodeIdentityExpectation &sgx_expectation,
                           size_t key_size, CleansingVector<uint8_t> *key);
+
+// Creates a cryptor that uses |key| and the algorithm denoted by
+// |cipher_suite|. Returns a non-OK status if a cryptor cannot be generated.
+StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(CipherSuite cipher_suite,
+                                                   ByteContainerView key);
+
+// Seals |secret| and |additional_data| into |sealed_secret|, using |cryptor|.
+Status Seal(AeadCryptor *cryptor, ByteContainerView secret,
+            ByteContainerView additional_data, SealedSecret *sealed_secret);
+
+// Opens |sealed_secret| into |secret|, using |cryptor| with |additional_data|.
+Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
+            ByteContainerView additional_data,
+            CleansingVector<uint8_t> *secret);
 
 }  // namespace internal
 }  // namespace sgx
