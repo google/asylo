@@ -352,6 +352,13 @@ cc_library(
     ],
 )
 
+# A library of shell test utilities.
+sh_library(
+    name = "shell_testing",
+    testonly = 1,
+    srcs = ["shell_testing.sh"],
+)
+
 # An enclave for testing purposes. All entry points use the default
 # implementations.
 sgx_enclave(
