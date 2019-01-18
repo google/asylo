@@ -20,6 +20,7 @@
 #define ASYLO_IDENTITY_SGX_LOCAL_SECRET_SEALER_HELPERS_H_
 
 #include "asylo/crypto/aead_cryptor.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sealed_secret.pb.h"
@@ -64,6 +65,14 @@ Status Seal(AeadCryptor *cryptor, ByteContainerView secret,
 Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
             ByteContainerView additional_data,
             CleansingVector<uint8_t> *secret);
+
+// Parses and returns the cipher-suite associated with |header|. Returns a
+// non-OK status if |header| cannot be parsed.
+StatusOr<CipherSuite> ParseCipherSuiteFromSealedSecretHeader(
+    const SealedSecretHeader &header);
+
+// Translates |cipher_suite| to the AeadScheme equivalent.
+AeadScheme CipherSuiteToAeadScheme(CipherSuite cipher_suite);
 
 }  // namespace internal
 }  // namespace sgx

@@ -24,6 +24,7 @@
 
 #include "absl/types/span.h"
 #include "asylo/crypto/aead_key.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/nonce_generator_interface.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/statusor.h"
@@ -45,6 +46,14 @@ class AeadCryptor {
   // generates random 96-bit nonces for use in Seal().
   static StatusOr<std::unique_ptr<AeadCryptor>> CreateAesGcmSivCryptor(
       ByteContainerView key);
+
+  // Returns the maximum size of a message that may be sealed successfully with
+  // a cryptor that uses |scheme|.
+  static StatusOr<size_t> MaxMessageSize(AeadScheme scheme);
+
+  // Returns the maximum number of messages that may be sealed successfully with
+  // a cryptor that uses |scheme|.
+  static StatusOr<uint64_t> MaxSealedMessages(AeadScheme scheme);
 
   // Returns the maximum size of a message that may be sealed successfully.
   size_t MaxMessageSize() const;

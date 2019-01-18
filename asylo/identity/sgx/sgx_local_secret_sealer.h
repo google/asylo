@@ -128,6 +128,10 @@ class SgxLocalSecretSealer : public SecretSealer {
   std::string RootName() const override;
   std::vector<EnclaveIdentityExpectation> RootAcl() const override;
   Status SetDefaultHeader(SealedSecretHeader *header) const override;
+  StatusOr<size_t> MaxMessageSize(
+      const SealedSecretHeader &header) const override;
+  StatusOr<uint64_t> MaxSealedMessages(
+      const SealedSecretHeader &header) const override;
   Status Seal(const SealedSecretHeader &header,
               ByteContainerView additional_authenticated_data,
               ByteContainerView secret, SealedSecret *sealed_secret) override;
@@ -135,17 +139,6 @@ class SgxLocalSecretSealer : public SecretSealer {
                 CleansingVector<uint8_t> *secret) override;
 
  private:
-  // Maximum size (in bytes) of each protected message (including authenticated
-  // data). A protected message may not be larger than 32MB.
-  //
-  // A size-limit of 32MiB (2^25 bytes) allows the cryptor to safely encrypt
-  // 2^48 messages (see https://cyber.biu.ac.il/aes-gcm-siv/). On a 4GHz
-  // single-threaded Intel processor, assuming 1 byte/cycle AES-GCM processing
-  // bandwidth, this yields a key-lifetime of over 2^16 years, if the enclave
-  // did nothing but execute seal/unseal operations 24/7. On a 256-threaded
-  // machine, the key lifetime would reduce to ~256 years.
-  static constexpr size_t kMaxAesGcmSivMessageSize = (1 << 25);
-
   // Instantiates LocalSecretSealer that sets client_acl in the default sealed
   // secret header per |default_client_acl|.
   SgxLocalSecretSealer(const sgx::CodeIdentityExpectation &default_client_acl);

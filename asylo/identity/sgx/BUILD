@@ -469,6 +469,7 @@ cc_library(
         ":hardware_types",
         ":local_sealed_secret_proto_cc",
         "//asylo/crypto:aead_cryptor",
+        "//asylo/crypto:algorithms_proto_cc",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",

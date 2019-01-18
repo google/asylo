@@ -58,6 +58,34 @@ StatusOr<std::unique_ptr<AeadCryptor>> AeadCryptor::CreateAesGcmSivCryptor(
                       RandomNonceGenerator::CreateAesGcmNonceGenerator()));
 }
 
+StatusOr<size_t> AeadCryptor::MaxMessageSize(AeadScheme scheme) {
+  switch (scheme) {
+    case AES128_GCM:
+    case AES256_GCM:
+      return kAesGcmMaxMessageSize;
+    case AES128_GCM_SIV:
+    case AES256_GCM_SIV:
+      return kAesGcmSivMaxMessageSize;
+    default:
+      return Status(error::GoogleError::UNIMPLEMENTED,
+                    "Given scheme is not supported");
+  }
+}
+
+StatusOr<uint64_t> AeadCryptor::MaxSealedMessages(AeadScheme scheme) {
+  switch (scheme) {
+    case AES128_GCM:
+    case AES256_GCM:
+      return kAesGcmMaxSealedMessages;
+    case AES128_GCM_SIV:
+    case AES256_GCM_SIV:
+      return kAesGcmSivMaxSealedMessages;
+    default:
+      return Status(error::GoogleError::UNIMPLEMENTED,
+                    "Given scheme is not supported");
+  }
+}
+
 size_t AeadCryptor::MaxMessageSize() const { return max_message_size_; }
 
 uint64_t AeadCryptor::MaxSealedMessages() const { return max_sealed_messages_; }

@@ -41,6 +41,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":aead_key",
+        ":algorithms_proto_cc",
         ":nonce_generator_interface",
         ":random_nonce_generator",
         "//asylo/crypto/util:byte_container_view",

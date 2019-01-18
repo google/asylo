@@ -101,6 +101,26 @@ Status SgxLocalSecretSealer::SetDefaultHeader(
       default_client_acl_, header->mutable_client_acl()->mutable_expectation());
 }
 
+StatusOr<size_t> SgxLocalSecretSealer::MaxMessageSize(
+    const SealedSecretHeader &header) const {
+  sgx::CipherSuite cipher_suite;
+  ASYLO_ASSIGN_OR_RETURN(
+      cipher_suite,
+      sgx::internal::ParseCipherSuiteFromSealedSecretHeader(header));
+  return AeadCryptor::MaxMessageSize(
+      sgx::internal::CipherSuiteToAeadScheme(cipher_suite));
+}
+
+StatusOr<uint64_t> SgxLocalSecretSealer::MaxSealedMessages(
+    const SealedSecretHeader &header) const {
+  sgx::CipherSuite cipher_suite;
+  ASYLO_ASSIGN_OR_RETURN(
+      cipher_suite,
+      sgx::internal::ParseCipherSuiteFromSealedSecretHeader(header));
+  return AeadCryptor::MaxSealedMessages(
+      sgx::internal::CipherSuiteToAeadScheme(cipher_suite));
+}
+
 Status SgxLocalSecretSealer::Seal(
     const SealedSecretHeader &header,
     ByteContainerView additional_authenticated_data, ByteContainerView secret,

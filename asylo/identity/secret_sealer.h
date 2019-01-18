@@ -61,6 +61,37 @@ class SecretSealer {
   /// \return A non-OK status if a default cannot be set.
   virtual Status SetDefaultHeader(SealedSecretHeader *header) const = 0;
 
+  /// Gets the maximum message size (in bytes) that can be sealed according to
+  /// the cipher-suite configuration recorded in `header`.
+  ///
+  /// The user is expected to call this before calling Seal() to ensure that
+  /// they have chunked their messages correctly. The maximum message sizes of
+  /// supported cipher-suites are as follows:
+  /// - AES-GCM-SIV supports a maximum message size of 32 MiB
+  ///
+  /// \param header The associated header to determine the maximum message size.
+  /// \return The maximum message size that can be encrypted based on the
+  ///         cipher-suite configuration in header, or a non-OK status if the
+  //          cipher-suite configuration is not supported.
+  virtual StatusOr<size_t> MaxMessageSize(
+      const SealedSecretHeader &header) const = 0;
+
+  /// Gets the maximum number of messages that can safely be sealed according to
+  /// the cipher-suite configuration recorded in `header`.
+  ///
+  /// The user is responsible for following these guidelines. The secret sealer
+  /// will not check the number of secrets sealed. The maximum number of sealed
+  /// messages of supported cipher-suites are as follows:
+  /// - AES-GCM-SIV can safely seal 2 ^ 48 messages
+  ///
+  /// \param header The associated header to determine the maximum number of
+  ///        sealed messages.
+  /// \return The maximum number of messages that can be sealed  based on the
+  ///         cipher-suite configuration in header, or a non-OK status if the
+  ///         cipher-suite configuration is not supported.
+  virtual StatusOr<uint64_t> MaxSealedMessages(
+      const SealedSecretHeader &header) const = 0;
+
   /// Seals the input per the header specification.
   ///
   /// The `header` must have its `secret_name`, `secret_version` and

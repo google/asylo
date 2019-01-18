@@ -65,12 +65,8 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
                   "Incorrect cpusvn size");
   }
   cpusvn->assign(info.cpusvn().data(), info.cpusvn().size());
-  if (!CipherSuite_IsValid(info.cipher_suite()) ||
-      info.cipher_suite() == UNKNOWN_CIPHER_SUITE) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Unsupported cipher suite");
-  }
-  *cipher_suite = info.cipher_suite();
+  ASYLO_ASSIGN_OR_RETURN(*cipher_suite,
+                         ParseCipherSuiteFromSealedSecretHeader(header));
   if (header.client_acl().item_case() != IdentityAclPredicate::kExpectation) {
     return Status(error::GoogleError::INVALID_ARGUMENT, "Malformed client_acl");
   }
@@ -202,6 +198,29 @@ Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
       absl::MakeSpan(*secret), &plaintext_size));
   secret->resize(plaintext_size);
   return Status::OkStatus();
+}
+
+StatusOr<CipherSuite> ParseCipherSuiteFromSealedSecretHeader(
+    const SealedSecretHeader &header) {
+  SealedSecretAdditionalInfo info;
+  if (!info.ParseFromString(header.root_info().additional_info())) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Could not parse additional_info");
+  }
+  if (info.cipher_suite() == UNKNOWN_CIPHER_SUITE) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Unsupported cipher suite");
+  }
+  return info.cipher_suite();
+}
+
+AeadScheme CipherSuiteToAeadScheme(CipherSuite cipher_suite) {
+  switch (cipher_suite) {
+    case sgx::AES256_GCM_SIV:
+      return AeadScheme::AES256_GCM_SIV;
+    default:
+      return AeadScheme::UNKNOWN_AEAD_SCHEME;
+  }
 }
 
 }  // namespace internal
