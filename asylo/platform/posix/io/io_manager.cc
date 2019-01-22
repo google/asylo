@@ -18,10 +18,10 @@
 
 #include "asylo/platform/posix/io/io_manager.h"
 
-#include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
-#include <stdint.h>
+#include <cerrno>
+#include <cstdint>
 #include <memory>
 
 #include "absl/algorithm/container.h"

@@ -18,9 +18,9 @@
 
 #include "asylo/platform/posix/io/secure_paths.h"
 
-#include <errno.h>
-#include <stdint.h>
 #include <sys/ioctl.h>
+#include <cerrno>
+#include <cstdint>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"

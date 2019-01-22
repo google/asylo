@@ -19,16 +19,15 @@
 #ifndef ASYLO_PLATFORM_POSIX_IO_IO_MANAGER_H_
 #define ASYLO_PLATFORM_POSIX_IO_IO_MANAGER_H_
 
-#include <errno.h>
+#include <poll.h>
 #include <sys/epoll.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
-
-#include <poll.h>
-#include <stdint.h>
 #include <atomic>
+#include <cerrno>
+#include <cstdint>
 #include <cstdlib>
 #include <functional>
 #include <map>
@@ -36,6 +35,7 @@
 #include <queue>
 #include <type_traits>
 
+#include "absl/base/thread_annotations.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/mutex.h"

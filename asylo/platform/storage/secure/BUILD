@@ -14,12 +14,12 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 licenses(["notice"])  # Apache v2.0
 
 # Secure IO library for enclave.
-
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "ASYLO_ALL_BACKENDS")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -84,7 +84,9 @@ cc_library(
     deps = [
         ":aead_handler",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/storage/utils:offset_translator",
+        "//asylo/util:logging",
     ],
 )
 

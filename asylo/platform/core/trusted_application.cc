@@ -18,11 +18,11 @@
 
 #include "asylo/platform/core/trusted_application.h"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <sys/ucontext.h>
 #include <unistd.h>
 #include <cerrno>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
 
 #include "absl/memory/memory.h"
@@ -97,7 +97,7 @@ class StatusSerializer {
 
     // Serialize to a trusted buffer instead of an untrusted buffer because the
     // serialization routine may rely on read backs for correctness.
-    *output_len_ = output_proto_->ByteSize();
+    *output_len_ = output_proto_->ByteSizeLong();
     std::unique_ptr<char[]> trusted_output(new char[*output_len_]);
     if (!output_proto_->SerializeToArray(trusted_output.get(), *output_len_)) {
       *output_ = nullptr;

@@ -29,6 +29,7 @@ namespace io {
 class IOContextNative : public IOManager::IOContext {
  public:
   explicit IOContextNative(int host_fd) : host_fd_(host_fd) {}
+
   ssize_t Read(void *buf, size_t count) override;
   ssize_t Write(const void *buf, size_t count) override;
   int LSeek(off_t offset, int whence) override;
