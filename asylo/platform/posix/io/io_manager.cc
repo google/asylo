@@ -46,13 +46,16 @@ IOManager::FileDescriptorTable::FileDescriptorTable()
 
 std::shared_ptr<IOManager::IOContext> IOManager::FileDescriptorTable::Get(
     int fd) {
-  if (!IsFileDescriptorValid(fd)) return nullptr;
-  return fd_table_[fd];
+  if (!IsFileDescriptorValid(fd) || !fd_table_[fd]) return nullptr;
+  return fd_table_[fd]->Get();
 }
 
-void IOManager::FileDescriptorTable::Delete(int fd) {
-  if (!IsFileDescriptorValid(fd)) return;
+int IOManager::FileDescriptorTable::Delete(int fd) {
+  if (!IsFileDescriptorValid(fd)) return 0;
+  int close_result = 0;
+  fd_table_[fd]->WriteCloseResultTo(&close_result);
   fd_table_[fd] = nullptr;
+  return close_result;
 }
 
 bool IOManager::FileDescriptorTable::IsFileDescriptorUnused(int fd) {
@@ -65,7 +68,7 @@ int IOManager::FileDescriptorTable::Insert(IOContext *context) {
   if (fd < 0) {
     return -1;
   }
-  fd_table_[fd] = std::shared_ptr<IOContext>(context);
+  fd_table_[fd] = std::make_shared<AutoCloseIOContext>(context);
   return fd;
 }
 
@@ -75,7 +78,6 @@ int IOManager::FileDescriptorTable::CopyFileDescriptor(int oldfd, int startfd) {
     return -1;
   }
   fd_table_[newfd] = fd_table_[oldfd];
-  fd_table_[oldfd]->IncrementFdReference();
   return newfd;
 }
 
@@ -86,7 +88,6 @@ int IOManager::FileDescriptorTable::CopyFileDescriptorToSpecifiedTarget(
     return -1;
   }
   fd_table_[newfd] = fd_table_[oldfd];
-  fd_table_[oldfd]->IncrementFdReference();
   return newfd;
 }
 
@@ -153,14 +154,7 @@ int IOManager::Access(const char *path, int mode) {
 int IOManager::CloseFileDescriptor(int fd) {
   std::shared_ptr<IOContext> context = fd_table_.Get(fd);
   if (context) {
-    int ret = 0;
-    // Only close the host file descriptor if this is the last reference to it.
-    context->DecrementFdReference();
-    if (context->IsNoFdReference()) {
-      ret = context->Close();
-    }
-    fd_table_.Delete(fd);
-    return ret;
+    return fd_table_.Delete(fd);
   }
   errno = EBADF;
   return -1;
@@ -231,7 +225,6 @@ int IOManager::Open(const char *path, int flags, mode_t mode) {
       absl::WriterMutexLock lock(&fd_table_lock_);
       int fd = fd_table_.Insert(context.get());
       if (fd >= 0) {
-        context->IncrementFdReference();
         context.release();
         return fd;
       }
@@ -438,18 +431,18 @@ int IOManager::EpollCtl(int epfd, int op, int fd, struct epoll_event *event) {
     errno = EBADF;
     return -1;
   }
-  return CallWithContext(epfd, [op, hostfd, event]
-                           (std::shared_ptr<IOContext> epoll_context) {
-    return epoll_context->EpollCtl(op, hostfd, event);
-  });
+  return CallWithContext(
+      epfd, [op, hostfd, event](std::shared_ptr<IOContext> epoll_context) {
+        return epoll_context->EpollCtl(op, hostfd, event);
+      });
 }
 
 int IOManager::EpollWait(int epfd, struct epoll_event *events, int maxevents,
                          int timeout) {
-  return CallWithContext(epfd, [events, maxevents, timeout]
-                           (std::shared_ptr<IOContext> context) {
-    return context->EpollWait(events, maxevents, timeout);
-  });
+  return CallWithContext(
+      epfd, [events, maxevents, timeout](std::shared_ptr<IOContext> context) {
+        return context->EpollWait(events, maxevents, timeout);
+      });
 }
 
 int IOManager::EventFd(unsigned int initval, int flags) {
