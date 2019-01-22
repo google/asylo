@@ -80,6 +80,11 @@ class UntrustedCacheMalloc {
   // held by the pointers in the free list is freed.
   static constexpr size_t kFreeListCapacity = 1024;
 
+  // Defaults to false. Set to true when the singleton class object is
+  // destructed. The class will internally route all subsequent calls for memory
+  // (de)allocation to the native malloc/free implementation.
+  static bool is_destroyed;
+
   UntrustedCacheMalloc();
 
   // Returns a buffer from the pool. If no buffers are available in the pool,

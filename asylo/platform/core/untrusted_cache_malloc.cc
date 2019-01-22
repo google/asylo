@@ -25,12 +25,17 @@
 
 namespace asylo {
 
+bool UntrustedCacheMalloc::is_destroyed = false;
+
 UntrustedCacheMalloc *UntrustedCacheMalloc::Instance() {
   static UntrustedCacheMalloc *instance = new UntrustedCacheMalloc();
   return instance;
 }
 
 UntrustedCacheMalloc::UntrustedCacheMalloc() {
+  if (is_destroyed) {
+    return;
+  }
   // Initialize a free list object in the trusted heap. The free list object
   // stores an array of buffers stored in the untrusted heap.
   free_list_ = absl::make_unique<FreeList>();
@@ -52,6 +57,7 @@ UntrustedCacheMalloc::~UntrustedCacheMalloc() {
     enc_untrusted_deallocate_free_list(free_list_->buffers.get(),
                                        free_list_->count);
   }
+  is_destroyed = true;
 }
 
 void *UntrustedCacheMalloc::GetBuffer() {
@@ -74,7 +80,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
 }
 
 void *UntrustedCacheMalloc::Malloc(size_t size) {
-  if (size > kPoolEntrySize) {
+  if (is_destroyed || (size > kPoolEntrySize)) {
     return enc_untrusted_malloc(size);
   }
   return GetBuffer();
@@ -92,6 +98,9 @@ void UntrustedCacheMalloc::PushToFreeList(void *buffer) {
 }
 
 void UntrustedCacheMalloc::Free(void *buffer) {
+  if (is_destroyed) {
+    enc_untrusted_free(buffer);
+  }
   ScopedSpinLock spin_lock(&lock_);
 
   // Add the buffer to the free list if it was not allocated from the buffer
