@@ -23,6 +23,24 @@
 #include "absl/memory/memory.h"
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 
+extern "C" {
+// Expose the untrusted memory cache via a C API. This interface allows C code
+// to depend on the global memory pool singleton.
+
+void *untrusted_cache_malloc(size_t size) {
+  asylo::UntrustedCacheMalloc *instance =
+      asylo::UntrustedCacheMalloc::Instance();
+  return instance->Malloc(size);
+}
+
+void untrusted_cache_free(void *buffer) {
+  asylo::UntrustedCacheMalloc *instance =
+      asylo::UntrustedCacheMalloc::Instance();
+  instance->Free(buffer);
+}
+
+}  // extern "C"
+
 namespace asylo {
 
 bool UntrustedCacheMalloc::is_destroyed = false;
