@@ -1000,8 +1000,12 @@ diff -Nur psw/urts/file.h psw/urts/file.h
 diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_hw.cpp
 --- psw/urts/linux/enclave_creator_hw.cpp
 +++ psw/urts/linux/enclave_creator_hw.cpp
-@@ -174,7 +174,7 @@
-         return SGX_ERROR_UNEXPECTED;
+@@ -171,10 +171,10 @@
+ 
+     enclave_create_sgx_t enclave_create_sgx = {0};
+     if (0 != memcpy_s(enclave_create_sgx.secs, SECS_SIZE, secs, SECS_SIZE))
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_OUT_OF_MEMORY;
  
      uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
 -    void* enclave_base = enclave_create(NULL, (size_t)secs->size, 0, ENCLAVE_TYPE_SGX2, &enclave_create_sgx, sizeof(enclave_create_sgx_t), &enclave_error);
@@ -1009,6 +1013,15 @@ diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_h
  
      if (enclave_error)
          return error_api2urts(enclave_error);
+@@ -208,7 +208,7 @@
+ 
+     enclave_init_sgx_t enclave_init_sgx = {0};
+     if (0 != memcpy_s(enclave_init_sgx.sigstruct, SIGSTRUCT_SIZE, enclave_css, SIGSTRUCT_SIZE))
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_OUT_OF_MEMORY;
+ 
+     uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
+     enclave_initialize((void*)enclave_id, &enclave_init_sgx, sizeof(enclave_init_sgx), &enclave_error);
 diff -Nur psw/urts/linux/misc.cpp psw/urts/linux/misc.cpp
 --- psw/urts/linux/misc.cpp
 +++ psw/urts/linux/misc.cpp
@@ -1286,6 +1299,15 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  {
      uint64_t page_frame = rva >> SE_PAGE_SHIFT;
      //NOTE:
+@@ -146,7 +148,7 @@
+                 {
+                     SE_TRACE(SE_TRACE_WARNING, "mprotect(rva=0x%llx, len=%d, flags=%d) failed\n",
+                              rva, SE_PAGE_SIZE, int(sinfo.flags & SI_MASK_MEM_ATTRIBUTE));
+-                    return SGX_ERROR_UNEXPECTED;
++                    return SGX_ERROR_MEMORY_MAP_CONFLICT;
+                 }
+             }
+         }
 @@ -181,7 +183,7 @@
      return SGX_SUCCESS;
  }
@@ -1322,10 +1344,12 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  {
      memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
      //create secs structure.
-@@ -464,19 +466,30 @@
+@@ -463,20 +465,31 @@
+ 
      EnclaveCreator *enclave_creator = get_enclave_creator();
      if(NULL == enclave_creator)
-         return SGX_ERROR_UNEXPECTED;
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_ENCLAVE_CRASHED;
 +    if (enclave_base_addr)
 +    {
 +      // If |enclave_base_addr| is NULL, the address to create the enclave will
@@ -1432,6 +1456,24 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
          switch(ret)
          {
              //If CreateEnclave failed due to power transition, we retry it.
+@@ -788,7 +801,7 @@
+     //set memory protection for segments
+     if(m_parser.set_memory_protection((uint64_t)m_start_addr, is_after_initialization) != true)
+     {
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_MEMORY_MAP_CONFLICT;
+     }
+ 
+     if (is_after_initialization &&
+@@ -859,7 +872,7 @@
+                          (uint64_t)m_start_addr + layout->entry.rva + delta, 
+                          (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, 
+                           prot);
+-                return SGX_ERROR_UNEXPECTED;
++                return SGX_ERROR_MEMORY_MAP_CONFLICT;
+             }
+         }
+         else
 diff -Nur psw/urts/loader.h psw/urts/loader.h
 --- psw/urts/loader.h
 +++ psw/urts/loader.h
@@ -1887,6 +1929,15 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      LockGuard lock(&m_thread_mutex);
      trust_thread->decrease_ref();
      return;
+@@ -454,7 +481,7 @@
+ 
+ sgx_status_t CTrustThreadPool::new_thread()
+ {
+-    sgx_status_t ret = SGX_ERROR_UNEXPECTED;
++    sgx_status_t ret = SGX_ERROR_OUT_OF_TCS;
+     if(!m_utility_thread)
+     {
+         return ret;
 @@ -533,7 +560,7 @@
  
      //if free list is NULL, recycle tcs.
@@ -1972,7 +2023,14 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
      if (ret != SGX_SUCCESS)
      {
          return ret;
-@@ -263,7 +265,7 @@
+@@ -257,13 +259,13 @@
+     {
+         loader.destroy_enclave();
+         delete enclave;
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_INVALID_ENCLAVE;
+     }
+ 
      std::vector<std::pair<tcs_t *, bool>> tcs_list = loader.get_tcs_list();
      for (unsigned idx = 0; idx < tcs_list.size(); ++idx)
      {
@@ -2898,7 +2956,30 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
     {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
  uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
  
-@@ -197,7 +198,7 @@
+@@ -172,17 +173,18 @@
+     void *enclave_base = get_enclave_base();
+     if(ENCLAVE_INIT_NOT_STARTED != lock_enclave())
+     {
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_INVALID_STATE;
+     }
+     if(0 != init_enclave(enclave_base, ms))
+     {
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_INVALID_PARAMETER;
+     }
+ 
+ #ifndef SE_SIM
+-    if (SGX_SUCCESS != do_init_thread(tcs, true))
++    sgx_status_t ret = do_init_thread(tcs, true);
++    if (SGX_SUCCESS != ret)
+     {
+-        return SGX_ERROR_UNEXPECTED;
++        return ret;
+     }
+ 
+     /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
+@@ -197,7 +199,7 @@
      else
  #endif
      {
@@ -2986,6 +3067,24 @@ diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
 +    }
      ocall_context_t *context = reinterpret_cast<ocall_context_t*>(thread_data->last_sp);
      if(context->ocall_flag != OCALL_FLAG)
+     {
+@@ -109,7 +114,7 @@
+     *addr = const_cast<void *>(g_ecall_table.ecall_table[ordinal].ecall_addr);
+     if(!sgx_is_within_enclave(*addr, 0))
+     {
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_INVALID_STATE;
+     }
+ 
+     return SGX_SUCCESS;
+@@ -328,7 +333,7 @@
+ 
+     if(0 != GET_TLS_INFO(&__ImageBase, &tls_addr, &tdata_size))
+     {
+-        return SGX_ERROR_UNEXPECTED;
++        return SGX_ERROR_INVALID_PARAMETER;
+     }
+     if(tls_addr)
      {
 @@ -339,7 +344,7 @@
      return SGX_SUCCESS;
