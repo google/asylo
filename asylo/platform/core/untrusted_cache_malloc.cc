@@ -79,21 +79,33 @@ UntrustedCacheMalloc::~UntrustedCacheMalloc() {
 }
 
 void *UntrustedCacheMalloc::GetBuffer() {
-  ScopedSpinLock spin_lock(&lock_);
-  if (buffer_pool_.empty()) {
-    UntrustedUniquePtr<void*> buffers(
-        enc_untrusted_allocate_buffers(kPoolIncrement, kPoolEntrySize));
-    for (int i = 0; i < kPoolIncrement; i++) {
-      void *buffer = buffers.get()[i];
-      if (!buffer || !enc_is_outside_enclave(buffer, kPoolEntrySize)) {
-        abort();
+  void **buffers;
+  void *buffer;
+  bool is_pool_empty;
+
+  {
+    ScopedSpinLock spin_lock(&lock_);
+    is_pool_empty = buffer_pool_.empty();
+    if (is_pool_empty) {
+      buffers = enc_untrusted_allocate_buffers(kPoolIncrement, kPoolEntrySize);
+      for (int i = 0; i < kPoolIncrement; i++) {
+        if (!buffers[i]
+            || !enc_is_outside_enclave(buffers[i], kPoolEntrySize)) {
+          abort();
+        }
+        buffer_pool_.push(buffers[i]);
       }
-      buffer_pool_.push(buffer);
     }
+    buffer = buffer_pool_.top();
+    buffer_pool_.pop();
+    busy_buffers_.insert(buffer);
   }
-  void *buffer = buffer_pool_.top();
-  buffer_pool_.pop();
-  busy_buffers_.insert(buffer);
+
+  if (is_pool_empty) {
+    // Free memory held by the array of buffer pointers returned by
+    // enc_untrusted_allocate_buffers.
+    Free(buffers);
+  }
   return buffer;
 }
 
@@ -118,6 +130,7 @@ void UntrustedCacheMalloc::PushToFreeList(void *buffer) {
 void UntrustedCacheMalloc::Free(void *buffer) {
   if (is_destroyed) {
     enc_untrusted_free(buffer);
+    return;
   }
   ScopedSpinLock spin_lock(&lock_);
 
