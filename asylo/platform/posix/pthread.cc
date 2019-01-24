@@ -24,6 +24,8 @@
 #include <cstdlib>
 #include <functional>
 #include <type_traits>
+#include <array>
+#include <bitset>
 
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
@@ -42,9 +44,12 @@ inline int InterlockedExchange(pthread_spinlock_t *dest,
   return __sync_val_compare_and_swap(dest, old_value, new_value);
 }
 
-// Create a per-thread table to store thread-specific data.
 constexpr size_t PTHREAD_KEYS_MAX = 64;
-thread_local const void *thread_specific[PTHREAD_KEYS_MAX] = {nullptr};
+thread_local std::array<const void *,
+             PTHREAD_KEYS_MAX> thread_specific = {nullptr};
+
+static pthread_mutex_t used_thread_keys_lock = PTHREAD_MUTEX_INITIALIZER;
+std::bitset<PTHREAD_KEYS_MAX> used_thread_keys;
 
 inline int pthread_spin_lock(pthread_spinlock_t *lock) {
   while (InterlockedExchange(lock, 0, 1) != 0) {
@@ -373,24 +378,37 @@ int pthread_detach(pthread_t thread) {
   return thread_manager->DetachThread(thread);
 }
 
-int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
-  static pthread_key_t next_key = 0;
-  static pthread_mutex_t next_key_lock = PTHREAD_MUTEX_INITIALIZER;
+bool assign_key(pthread_key_t *key) {
+  bool ret = false;
+  pthread_key_t next_key;
+  asylo::pthread_impl::PthreadMutexLock lock(&used_thread_keys_lock);
+  for (next_key = 0; next_key < PTHREAD_KEYS_MAX; next_key++) {
+    if (!used_thread_keys[next_key]) {
+      used_thread_keys[next_key] = true;
+      *key = next_key;
+      ret = true;
+      break;
+    }
+  }
+  return ret;
+}
 
-  // Keys are process-wide, even though the data is thread local. Need to have
-  // key allocation thread safe.
-  asylo::pthread_impl::PthreadMutexLock lock(&next_key_lock);
-  if (next_key >= PTHREAD_KEYS_MAX) {
+int pthread_key_create(pthread_key_t *key, void (*destructor)(void *)) {
+  if (!assign_key(key)) {
     // Limit on the total number of keys per process has been exceeded.
     return EAGAIN;
   }
-
-  // Until pthread_key_delete is implemented, simply increment.
-  *key = next_key++;
   return 0;
 }
 
-int pthread_key_delete(pthread_key_t key) { return 0; }
+int pthread_key_delete(pthread_key_t key) {
+  if (key > PTHREAD_KEYS_MAX) {
+    return EINVAL;
+  }
+  asylo::pthread_impl::PthreadMutexLock lock(&used_thread_keys_lock);
+  used_thread_keys[key] = false;
+  return 0;
+}
 
 void *pthread_getspecific(pthread_key_t key) {
   // Behavior if the key wasn't obtained through pthread_key_create is

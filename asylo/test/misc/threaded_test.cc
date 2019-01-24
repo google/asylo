@@ -100,6 +100,28 @@ void cc11_increment_count() {
   ++cc11_count;
 }
 
+TEST(ThreadedTest, ThreadKeys) {
+  pthread_key_t tls_key, tls_key2;
+
+  // Assign keys.
+  EXPECT_EQ(pthread_key_create(&tls_key, nullptr), 0);
+  EXPECT_EQ(pthread_key_create(&tls_key2, nullptr), 0);
+
+  // Ensure assigned different keys
+  EXPECT_NE(tls_key, tls_key2);
+
+  // Delete both keys.
+  EXPECT_EQ(pthread_key_delete(tls_key), 0);
+  EXPECT_EQ(pthread_key_delete(tls_key2), 0);
+
+  // Assign key 2 and ensure it picks up tls_key's previous value.
+  EXPECT_EQ(pthread_key_create(&tls_key2, nullptr), 0);
+  EXPECT_EQ(tls_key2, tls_key);
+
+  // Clean up.
+  EXPECT_EQ(pthread_key_delete(tls_key2), 0);
+}
+
 // Tests that pthread_create works and that the pthread_mutex_.* symbols are
 // present and do not crash. This does not test the correctness of the mutex.
 TEST(ThreadedTest, EnclaveThread) {
