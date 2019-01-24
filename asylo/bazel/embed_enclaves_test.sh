@@ -47,12 +47,14 @@ function test::embedded_section_does_not_have_alloc_or_load() {
 # objcopy version 2.25 has a --dump-section option that streamlines this
 # test, but a workaround is necessary for older versions of objcopy.
 function test::section_contents_equals_expected_file() {
-  VERSION=$("${OBJCOPY}" --version | head -n1 | rev | cut -d' ' -f 1 | rev)
-  MAJOR=$(echo "${VERSION}" | cut -d. -f 1)
-  MINOR=$(echo "${VERSION}" | cut -d. -f 2)
+  VERSION_HEADER=$("${OBJCOPY}" --version | head -n1)
+  GNU_VERSION=$(echo "${VERSION_HEADER}" | rev | cut -d' ' -f 1 | rev)
+  GNU_MAJOR=$(echo "${GNU_VERSION}" | cut -d. -f 1)
+  GNU_MINOR=$(echo "${GNU_VERSION}" | cut -d. -f 2)
   ACTUAL_CONTENTS_FILE=$(mktemp /tmp/actual.XXXXXXXXXX)
 
-  if [[ "${MAJOR}" -ge "3" || ("${MAJOR}" -eq "2" && "${MINOR}" -ge "25") ]]; then
+  if [[ "${VERSION_HEADER,,}" == *llvm* || "${GNU_MAJOR}" -ge "3" ||
+          ("${GNU_MAJOR}" -eq "2" && "${GNU_MINOR}" -ge "25") ]]; then
     "${OBJCOPY}" --dump-section "${SECTION_NAME}=${ACTUAL_CONTENTS_FILE}" \
         "${ELF_FILE_LOCATION}" /dev/null
   else
