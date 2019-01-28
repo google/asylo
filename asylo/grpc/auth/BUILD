@@ -86,6 +86,7 @@ cc_library(
     srcs = ["sgx_local_credentials_options.cc"],
     hdrs = ["sgx_local_credentials_options.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
         ":grpc++_security_enclave",
         "//asylo/identity/sgx:code_identity_util",
