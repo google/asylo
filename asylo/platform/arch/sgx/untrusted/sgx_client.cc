@@ -243,7 +243,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     return Status(status, "Failed to create an enclave");
   }
 
-  return client;
+  return std::unique_ptr<EnclaveClient>(std::move(client));
 }
 
 StatusOr<std::unique_ptr<EnclaveLoader>> SgxLoader::Copy() const {
@@ -288,7 +288,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     return Status(status, "Failed to create an enclave");
   }
 
-  return client;
+  return std::unique_ptr<EnclaveClient>(std::move(client));
 }
 
 StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
