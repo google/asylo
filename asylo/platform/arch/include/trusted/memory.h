@@ -24,12 +24,18 @@
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
+// Forward declaration of the API exposed by UntrustedCacheMalloc which allows
+// C code to depend on the global memory pool singleton. This forward
+// declaration is required here to break the cyclic dependencies between
+// platform/arch and platform/core.
+extern "C" void untrusted_cache_free(void *buffer);
+
 namespace asylo {
 
 // Deleter for untrusted memory for use with std::unique_ptr. Calls
-// enc_untrusted_free() internally.
+// untrusted_cache_free() internally.
 struct UntrustedDeleter {
-  inline void operator()(void *ptr) const { enc_untrusted_free(ptr); }
+  inline void operator()(void *ptr) const { untrusted_cache_free(ptr); }
 };
 
 template <typename T>

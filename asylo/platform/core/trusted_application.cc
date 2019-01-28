@@ -36,6 +36,7 @@
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/shared_name_kind.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/core/untrusted_cache_malloc.h"
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/random_devices.h"
@@ -105,7 +106,12 @@ class StatusSerializer {
       LogError(status);
       return 1;
     }
-    *output_ = reinterpret_cast<char *>(enc_untrusted_malloc(*output_len_));
+
+    // Instance of the global memory pool singleton.
+    asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+        asylo::UntrustedCacheMalloc::Instance();
+    *output_ =
+        reinterpret_cast<char *>(untrusted_cache_malloc->Malloc(*output_len_));
     memcpy(*output_, trusted_output.get(), *output_len_);
     return 0;
   }
@@ -253,6 +259,20 @@ extern "C" {
 
 int __asylo_user_init(const char *name, const char *config, size_t config_len,
                       char **output, size_t *output_len) {
+  // Destroys the global memory pool singleton if enclave initialization was
+  // unsuccessful.
+  struct InitCleaner {
+    bool enclave_was_initialized = false;
+
+    ~InitCleaner() {
+      if (!enclave_was_initialized) {
+        // Delete instance of the global memory pool singleton freeing all
+        // memory held by the pool.
+        delete asylo::UntrustedCacheMalloc::Instance();
+      }
+    }
+  } init_cleaner;
+
   Status status = VerifyOutputArguments(output, output_len);
   if (!status.ok()) {
     return 1;
@@ -282,6 +302,7 @@ int __asylo_user_init(const char *name, const char *config, size_t config_len,
     return status_serializer.Serialize(status);
   }
 
+  init_cleaner.enclave_was_initialized = true;
   trusted_application->SetState(EnclaveState::kRunning);
   return status_serializer.Serialize(status);
 }
@@ -348,6 +369,10 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
 
   ThreadManager *thread_manager = ThreadManager::GetInstance();
   thread_manager->Finalize();
+
+  // Delete instance of the global memory pool singleton freeing all memory held
+  // by the pool.
+  delete asylo::UntrustedCacheMalloc::Instance();
 
   trusted_application->SetState(EnclaveState::kFinalized);
   return status_serializer.Serialize(status);

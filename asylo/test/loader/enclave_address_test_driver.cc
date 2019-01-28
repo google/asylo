@@ -80,13 +80,14 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
     close(pipefd[0]);
     std::string output = "Child test passed";
     std::string child_enclave_url = "/child_enclave_address";
+    asylo::SgxClient *child_client;
     if (!manager_
              ->LoadEnclave(child_enclave_url, *child_loader, config,
                            parent_base_address)
              .ok()) {
       output = "Failed to load enclave in the child process";
     } else {
-      auto *child_client =
+      child_client =
           dynamic_cast<asylo::SgxClient *>(manager_->GetClient(enclave_url));
       void *child_base_address = child_client->base_address();
       if (child_base_address != parent_base_address) {
@@ -100,6 +101,7 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
     if (write(pipefd[1], output.c_str(), output.size()) == -1) {
       LOG(FATAL) << "Child process write to pipe failed";
     }
+    manager_->DestroyEnclave(child_client, EnclaveFinal());
     _exit(0);
   } else {
     // Parent process. Close the write side of the pipe and wait for the result.
@@ -111,6 +113,7 @@ TEST_F(EnclaveAddressTest, LoadEnclave) {
     EXPECT_GT(rc, 0);
     buf[rc] = '\0';
     EXPECT_STREQ(buf, "Child test passed");
+    manager_->DestroyEnclave(parent_client, EnclaveFinal());
   }
 }
 

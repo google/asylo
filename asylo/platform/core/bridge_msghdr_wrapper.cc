@@ -20,6 +20,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/bridge_msghdr_wrapper.h"
+#include "asylo/platform/core/untrusted_cache_malloc.h"
 
 namespace asylo {
 namespace {
@@ -39,7 +40,11 @@ bool CopyToUntrustedMemory(void **addr, void *data, size_t size) {
     }
     return true;
   }
-  void *outside_enclave = enc_untrusted_malloc(size);
+
+  // Instance of the global memory pool singleton.
+  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+      asylo::UntrustedCacheMalloc::Instance();
+  void *outside_enclave = untrusted_cache_malloc->Malloc(size);
   // The operation fails if it cannot allocate the necessary resources.
   LOG_IF(FATAL, !outside_enclave) << "Untrusted memory allocation failed";
 
@@ -82,8 +87,12 @@ bool asylo::BridgeMsghdrWrapper::CopyMsgName() {
 
 // It is a fatal error if memory cannot be allocated.
 bool asylo::BridgeMsghdrWrapper::CopyMsgIov() {
-  auto tmp_iov_ptr = reinterpret_cast<struct bridge_iovec *>(
-      enc_untrusted_malloc(msg_in_->msg_iovlen * sizeof(struct bridge_iovec)));
+  // Instance of the global memory pool singleton.
+  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+      asylo::UntrustedCacheMalloc::Instance();
+  auto tmp_iov_ptr =
+      reinterpret_cast<struct bridge_iovec *>(untrusted_cache_malloc->Malloc(
+          msg_in_->msg_iovlen * sizeof(struct bridge_iovec)));
   LOG_IF(FATAL, !tmp_iov_ptr) << "Untrusted memory allocation failed";
   if (tmp_iov_ptr) {
     msg_iov_ptr_.reset(tmp_iov_ptr);

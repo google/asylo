@@ -106,6 +106,7 @@ cc_library(
     deps = [
         ":shared_name",
         ":trusted_core",
+        ":untrusted_cache_malloc",
         "//asylo:enclave_proto_cc",
         "//asylo/identity:init",
         "//asylo/platform/arch:trusted_arch",
@@ -140,6 +141,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":atomic",
+        ":untrusted_cache_malloc",
         "//asylo/platform/arch:trusted_arch",
     ],
 )
@@ -228,6 +230,7 @@ cc_library(
         "//asylo/platform/common:memory",
         "//asylo/platform/common:spin_lock",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/memory",
     ],
 )
 
@@ -253,6 +256,7 @@ cc_library(
     hdrs = ["bridge_msghdr_wrapper.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":untrusted_cache_malloc",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:bridge_types",
     ],

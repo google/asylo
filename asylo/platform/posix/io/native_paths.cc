@@ -24,6 +24,7 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/bridge_msghdr_wrapper.h"
+#include "asylo/platform/core/untrusted_cache_malloc.h"
 #include "asylo/platform/posix/io/secure_paths.h"
 
 namespace asylo {
@@ -69,8 +70,12 @@ bool IOContextNative::CreateUntrustedBuffer(const struct iovec *iov, int iovcnt,
   for (int i = 0; i < iovcnt; ++i) {
     total_size += iov[i].iov_len;
   }
-  char *tmp =
-      reinterpret_cast<char *>(enc_untrusted_malloc(total_size * sizeof(char)));
+
+  // Instance of the global memory pool singleton.
+  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+      asylo::UntrustedCacheMalloc::Instance();
+  char *tmp = reinterpret_cast<char *>(
+      untrusted_cache_malloc->Malloc(total_size * sizeof(char)));
   if (!tmp) {
     return false;
   }

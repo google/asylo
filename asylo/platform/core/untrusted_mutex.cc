@@ -24,6 +24,7 @@
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/atomic.h"
+#include "asylo/platform/core/untrusted_cache_malloc.h"
 
 namespace asylo {
 
@@ -53,18 +54,28 @@ UntrustedMutex::UntrustedMutex(bool is_recursive)
     : is_recursive_(is_recursive),
       owner_(kInvalidThread),
       recursive_lock_count_(0) {
+
+  // Instance of the global memory pool singleton.
+  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+      asylo::UntrustedCacheMalloc::Instance();
+
   // Allocate and initialize a 32-bit futex object in shared memory, accessible
   // by the untrusted host kernel. Allocates a full cache line to avoid false
   // sharing with another object.
   //
   untrusted_futex_ =
-      static_cast<int32_t *>(enc_untrusted_malloc(kCacheLineSize));
+      static_cast<int32_t *>(untrusted_cache_malloc->Malloc(kCacheLineSize));
 
   // Initialize the futex as unlocked;
   *untrusted_futex_ = kUnlocked;
 }
 
-UntrustedMutex::~UntrustedMutex() { enc_untrusted_free(untrusted_futex_); }
+UntrustedMutex::~UntrustedMutex() {
+  // Instance of the global memory pool singleton.
+  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+      asylo::UntrustedCacheMalloc::Instance();
+  untrusted_cache_malloc->Free(untrusted_futex_);
+}
 
 void UntrustedMutex::Lock() {
   // Ensure the value of the shared futex word is valid.
