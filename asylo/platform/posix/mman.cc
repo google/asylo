@@ -36,6 +36,10 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
     return MAP_FAILED;
   }
   void *ptr = memalign(kPageSize, length);
+  if (ptr == nullptr) {
+    return MAP_FAILED;
+  }
+
   memset(ptr, 0, length);
   return ptr;
 }
