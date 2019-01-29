@@ -29,6 +29,7 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/iomgr/pollset.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/core/lib/security/credentials/credentials.h"
@@ -36,47 +37,11 @@
 #include "src/core/lib/surface/api_trace.h"
 #include "src/core/tsi/transport_security.h"
 
-/* -- Enclave security connectors. -- */
-
-typedef struct {
-  grpc_channel_security_connector base;
-
-  /* The address of the server as a null-terminated std::string. */
-  char *target;
-} grpc_enclave_channel_security_connector;
-
-typedef struct {
-  grpc_server_security_connector base;
-} grpc_enclave_server_security_connector;
-
-/* -- Enclave security connector implementation. -- */
-
-/* Frees all memory allocated by the channel security connector and destroys
- * the security connector itself. */
-static void enclave_channel_security_connector_destroy(
-    grpc_security_connector *sc) {
-  grpc_enclave_channel_security_connector *security_connector =
-      reinterpret_cast<grpc_enclave_channel_security_connector *>(sc);
-  grpc_channel_credentials_unref(security_connector->base.channel_creds);
-  grpc_call_credentials_unref(security_connector->base.request_metadata_creds);
-  if (security_connector->target != nullptr) {
-    gpr_free(security_connector->target);
-  }
-  gpr_free(sc);
-}
-
-/* Frees all memory allocated by the server security connector and destroys
- * the security connector itself. */
-static void enclave_server_security_connector_destroy(
-    grpc_security_connector *sc) {
-  grpc_enclave_server_security_connector *security_connector =
-      reinterpret_cast<grpc_enclave_server_security_connector *>(sc);
-  grpc_server_credentials_unref(security_connector->base.server_creds);
-  gpr_free(sc);
-}
+namespace {
 
 grpc_security_status grpc_enclave_auth_context_from_tsi_peer(
-    const tsi_peer *peer, grpc_auth_context **auth_context) {
+    const tsi_peer *peer,
+    grpc_core::RefCountedPtr<grpc_auth_context> *auth_context) {
   // Authenticated peers should have the following properties:
   //   * TSI_CERTIFICATE_TYPE_PEER_PROPERTY
   //   * TSI_ENCLAVE_IDENTITIES_PROTO_PEER_PROPERTY
@@ -115,20 +80,21 @@ grpc_security_status grpc_enclave_auth_context_from_tsi_peer(
   }
 
   // Create a new authentication context and set the properties.
-  *auth_context = grpc_auth_context_create(/*chained=*/nullptr);
+  *auth_context =
+      grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr);
   grpc_auth_context_add_cstring_property(
-      *auth_context, GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
+      auth_context->get(), GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
       GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE);
   grpc_auth_context_add_property(
-      *auth_context, GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME,
+      auth_context->get(), GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME,
       identity_property->value.data, identity_property->value.length);
-  grpc_auth_context_add_property(*auth_context,
+  grpc_auth_context_add_property(auth_context->get(),
                                  GRPC_ENCLAVE_RECORD_PROTOCOL_PROPERTY_NAME,
                                  record_protocol_property->value.data,
                                  record_protocol_property->value.length);
   // The EnclaveIdentities proto is the identity in the authentication context.
   if (!grpc_auth_context_set_peer_identity_property_name(
-          *auth_context, GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME)) {
+          auth_context->get(), GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME)) {
     gpr_log(GPR_ERROR, "Error setting peer identity property name");
     return GRPC_SECURITY_ERROR;
   }
@@ -137,9 +103,10 @@ grpc_security_status grpc_enclave_auth_context_from_tsi_peer(
   return GRPC_SECURITY_OK;
 }
 
-static void enclave_security_connector_check_peer(
+void enclave_security_connector_check_peer(
     grpc_security_connector *sc, tsi_peer peer,
-    grpc_auth_context **auth_context, grpc_closure *on_peer_checked) {
+    grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+    grpc_closure *on_peer_checked) {
   grpc_error *error = GRPC_ERROR_NONE;
   grpc_security_status status =
       grpc_enclave_auth_context_from_tsi_peer(&peer, auth_context);
@@ -152,148 +119,137 @@ static void enclave_security_connector_check_peer(
   GRPC_CLOSURE_SCHED(on_peer_checked, error);
 }
 
-static bool enclave_channel_check_call_host(grpc_channel_security_connector *sc,
-                                            const char *host,
-                                            grpc_auth_context *auth_context,
-                                            grpc_closure *on_call_host_checked,
-                                            grpc_error **error) {
-  return true;
-}
+/* -- Enclave security connector implementation. -- */
 
-static void enclave_channel_cancel_check_call_host(
-    grpc_channel_security_connector *sc, grpc_closure *on_call_host_checked,
-    grpc_error *error) {
-  GRPC_ERROR_UNREF(error);
-}
+class grpc_enclave_channel_security_connector final
+    : public grpc_channel_security_connector {
+ public:
+  grpc_enclave_channel_security_connector(
+      grpc_core::RefCountedPtr<grpc_channel_credentials> channel_credentials,
+      grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+      const char *target)
+      : grpc_channel_security_connector(/*url_scheme=*/nullptr,
+                                        std::move(channel_credentials),
+                                        std::move(request_metadata_creds)),
+        target_(gpr_strdup(target)) {}
 
-static int enclave_channel_security_connector_cmp(
-    grpc_security_connector *sc1, grpc_security_connector *sc2) {
-  return 1;
-}
-
-static int enclave_server_security_connector_cmp(grpc_security_connector *sc1,
-                                                 grpc_security_connector *sc2) {
-  return 1;
-}
-
-static void enclave_channel_security_connector_add_handshaker(
-    grpc_channel_security_connector *security_connector,
-    grpc_pollset_set *interested_parties,
-    grpc_handshake_manager *handshake_mgr) {
-  tsi_handshaker *tsi_handshaker = nullptr;
-  grpc_enclave_channel_credentials *channel_creds =
-      reinterpret_cast<grpc_enclave_channel_credentials *>(
-          security_connector->channel_creds);
-  tsi_result result = tsi_enclave_handshaker_create(
-      /*is_client=*/true, &channel_creds->self_assertions,
-      &channel_creds->accepted_peer_assertions,
-      &channel_creds->additional_authenticated_data, &tsi_handshaker);
-  if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
-            tsi_result_to_string(result));
-    return;
+  ~grpc_enclave_channel_security_connector() override {
+    gpr_free(target_);
   }
 
-  grpc_handshake_manager_add(handshake_mgr,
-                             grpc_security_handshaker_create(
-                                 tsi_handshaker, &security_connector->base));
-}
-
-static void enclave_server_security_connector_add_handshakers(
-    grpc_server_security_connector *security_connector,
-    grpc_pollset_set *interested_parties,
-    grpc_handshake_manager *handshake_mgr) {
-  tsi_handshaker *tsi_handshaker = nullptr;
-  grpc_enclave_server_credentials *server_creds =
-      reinterpret_cast<grpc_enclave_server_credentials *>(
-          security_connector->server_creds);
-  tsi_result result = tsi_enclave_handshaker_create(
-      /*is_client=*/false, &server_creds->self_assertions,
-      &server_creds->accepted_peer_assertions,
-      &server_creds->additional_authenticated_data, &tsi_handshaker);
-  if (result != TSI_OK) {
-    gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
-            tsi_result_to_string(result));
-    return;
+  void check_peer(tsi_peer peer, grpc_endpoint *ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                  grpc_closure *on_peer_checked) override {
+    enclave_security_connector_check_peer(this, peer, auth_context,
+                                          on_peer_checked);
   }
 
-  grpc_handshake_manager_add(handshake_mgr,
-                             grpc_security_handshaker_create(
-                                 tsi_handshaker, &security_connector->base));
-}
+  bool check_call_host(const char *host, grpc_auth_context *auth_context,
+                       grpc_closure *on_call_host_checked,
+                       grpc_error **error) override {
+    return true;
+  }
 
-static grpc_security_connector_vtable
-    enclave_channel_security_connector_vtable = {
-        /* Enclave channel security connector destructor. */
-        enclave_channel_security_connector_destroy,
-        /* Populates a tsi_peer object with information about the peer (server).
-         */
-        enclave_security_connector_check_peer,
-        /* Compares this enclave channel security connector with another. */
-        enclave_channel_security_connector_cmp};
+  void cancel_check_call_host(grpc_closure *on_call_host_checked,
+                              grpc_error *error) override {
+    GRPC_ERROR_UNREF(error);
+  }
 
-static grpc_security_connector_vtable enclave_server_security_connector_vtable =
-    {
-        /* Enclave server security connector destructor. */
-        enclave_server_security_connector_destroy,
-        /* Populates a tsi_peer object with information about the peer (client).
-         */
-        enclave_security_connector_check_peer,
-        /* Compares this enclave server security connector with another. */
-        enclave_server_security_connector_cmp};
+  int cmp(const grpc_security_connector * /*other*/) const override {
+    return 1;
+  }
 
-/* -- Enclave security connector creation functions -- */
+  void add_handshakers(
+      grpc_pollset_set *interested_parties,
+      grpc_handshake_manager *handshake_mgr) override {
+    tsi_handshaker *tsi_handshaker = nullptr;
+    grpc_enclave_channel_credentials *channel_creds =
+        static_cast<grpc_enclave_channel_credentials *>(
+            this->mutable_channel_creds());
+    tsi_result result = tsi_enclave_handshaker_create(
+        /*is_client=*/true, channel_creds->mutable_self_assertions(),
+        channel_creds->mutable_accepted_peer_assertions(),
+        channel_creds->mutable_additional_authenticated_data(),
+        &tsi_handshaker);
+    if (result != TSI_OK) {
+      gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
+              tsi_result_to_string(result));
+      return;
+    }
 
-grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
-    grpc_channel_credentials *channel_credentials,
-    grpc_call_credentials *request_metadata_creds, const char *target) {
+    grpc_handshake_manager_add(
+        handshake_mgr, grpc_security_handshaker_create(tsi_handshaker, this));
+  }
+
+ private:
+  // The address of the server as a null-terminated string.
+  char *target_;
+};
+
+class grpc_enclave_server_security_connector final
+    : public grpc_server_security_connector {
+ public:
+  explicit grpc_enclave_server_security_connector(
+      grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials)
+      : grpc_server_security_connector(/*url_scheme=*/nullptr,
+                                       std::move(server_credentials)) {}
+  ~grpc_enclave_server_security_connector() override = default;
+
+  void check_peer(tsi_peer peer, grpc_endpoint *ep,
+                  grpc_core::RefCountedPtr<grpc_auth_context> *auth_context,
+                  grpc_closure *on_peer_checked) override {
+    enclave_security_connector_check_peer(this, peer, auth_context,
+                                          on_peer_checked);
+  }
+
+  int cmp(const grpc_security_connector * /*other*/) const override {
+    return 1;
+  }
+
+  void add_handshakers(
+      grpc_pollset_set *interested_parties,
+      grpc_handshake_manager *handshake_mgr) override {
+    tsi_handshaker *tsi_handshaker = nullptr;
+    grpc_enclave_server_credentials *server_creds =
+        static_cast<grpc_enclave_server_credentials *>(
+            this->mutable_server_creds());
+    tsi_result result = tsi_enclave_handshaker_create(
+        /*is_client=*/false, server_creds->mutable_self_assertions(),
+        server_creds->mutable_accepted_peer_assertions(),
+        server_creds->mutable_additional_authenticated_data(), &tsi_handshaker);
+    if (result != TSI_OK) {
+      gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
+              tsi_result_to_string(result));
+      return;
+    }
+
+    grpc_handshake_manager_add(
+        handshake_mgr, grpc_security_handshaker_create(tsi_handshaker, this));
+  }
+};
+
+}  // namespace
+
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_enclave_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_credentials,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char *target) {
   GRPC_API_TRACE(
       "grpc_enclave_channel_security_connector_create("
       "grpc_channel_credentials=%p, grpc_call_credentials=%p, target=%s)",
-      3, (channel_credentials, request_metadata_creds, target));
-  grpc_enclave_channel_security_connector *security_connector =
-      static_cast<grpc_enclave_channel_security_connector *>(
-          gpr_malloc(sizeof(*security_connector)));
-
-  // Initialize all members.
-  gpr_ref_init(&security_connector->base.base.refcount, 1);
-
-  // Copy parameters.
-  if (target != nullptr) {
-    security_connector->target = gpr_strdup(target);
-  }
-
-  // Initialize the base channel security connector object.
-  grpc_channel_security_connector &base = security_connector->base;
-  base.base.vtable = &enclave_channel_security_connector_vtable;
-  base.channel_creds = grpc_channel_credentials_ref(channel_credentials);
-  base.request_metadata_creds =
-      grpc_call_credentials_ref(request_metadata_creds);
-  base.check_call_host = enclave_channel_check_call_host;
-  base.cancel_check_call_host = enclave_channel_cancel_check_call_host;
-  base.add_handshakers = enclave_channel_security_connector_add_handshaker;
-
-  return &security_connector->base;
+      3, (channel_credentials.get(), request_metadata_creds.get(), target));
+  return grpc_core::MakeRefCounted<grpc_enclave_channel_security_connector>(
+      channel_credentials, request_metadata_creds, target);
 }
 
-grpc_server_security_connector *grpc_enclave_server_security_connector_create(
-    grpc_server_credentials *server_credentials) {
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_enclave_server_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials) {
   GRPC_API_TRACE(
       "grpc_enclave_server_security_connector_create("
       "grpc_server_credentials=%p)",
-      1, (server_credentials));
-  grpc_enclave_server_security_connector *security_connector =
-      static_cast<grpc_enclave_server_security_connector *>(
-          gpr_malloc(sizeof(*security_connector)));
-
-  // Initialize all members.
-  gpr_ref_init(&security_connector->base.base.refcount, 1);
-
-  // Initialize the base server security connector object.
-  grpc_server_security_connector &base = security_connector->base;
-  base.base.vtable = &enclave_server_security_connector_vtable;
-  base.server_creds = grpc_server_credentials_ref(server_credentials);
-  base.add_handshakers = enclave_server_security_connector_add_handshakers;
-
-  return &security_connector->base;
+      1, (server_credentials.get()));
+  return grpc_core::MakeRefCounted<grpc_enclave_server_security_connector>(
+      server_credentials);
 }

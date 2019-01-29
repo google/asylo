@@ -47,6 +47,7 @@ cc_binary(
         "//asylo/platform/core:trusted_global_state",
         "@com_github_grpc_grpc//:gpr_base",
         "@com_github_grpc_grpc//:grpc_codegen",
+        "@com_github_grpc_grpc//:ref_counted_ptr",
         "@com_github_grpc_grpc//test/core/end2end:end2end_tests",
         "@com_github_grpc_grpc//test/core/util:grpc_test_util_base",
     ],

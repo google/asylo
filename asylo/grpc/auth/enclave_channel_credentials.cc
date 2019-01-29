@@ -34,7 +34,7 @@ std::shared_ptr<::grpc::ChannelCredentials> EnclaveChannelCredentials(
   // Create a channel credentials object using the options.
   auto creds = std::shared_ptr<::grpc::ChannelCredentials>(
       new ::grpc::SecureChannelCredentials(
-          grpc_enclave_channel_credentials_create(&c_opts)));
+          grpc_enclave_channel_credentials_create(&c_opts).release()));
   grpc_enclave_credentials_options_destroy(&c_opts);
   return creds;
 }

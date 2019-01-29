@@ -62,6 +62,7 @@ cc_library(
         "@com_github_grpc_grpc//:gpr_base",
         "@com_github_grpc_grpc//:grpc_base_c",
         "@com_github_grpc_grpc//:grpc_secure",
+        "@com_github_grpc_grpc//:ref_counted_ptr",
         "@com_github_grpc_grpc//:tsi_interface",
         "@com_google_absl//absl/memory",
         "@com_google_protobuf//:protobuf_lite",

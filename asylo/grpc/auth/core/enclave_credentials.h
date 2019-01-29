@@ -23,51 +23,89 @@
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
 #include "asylo/grpc/auth/util/safe_string.h"
 #include "src/core/lib/security/credentials/credentials.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 
 #define GRPC_CREDENTIALS_TYPE_ENCLAVE "Enclave"
 
 /* -- Enclave credentials. -- */
 
-/* Creates an enclave channel credentials object using the provided options.
- * The caller takes ownership of the resulting credentials object and is
- * responsible for destroying it. The caller can wrap the credentials object
- * in a ::grpc::SecureChannelCredentials object that handles its destruction. */
-grpc_channel_credentials *grpc_enclave_channel_credentials_create(
+// Creates a grpc_enclave_channel_credentials object using the provided options.
+// The underlying object can be wrapped in a ::grpc::SecureChannelCredentials
+// object, which will handle its destruction.
+grpc_core::RefCountedPtr<grpc_channel_credentials>
+grpc_enclave_channel_credentials_create(
     const grpc_enclave_credentials_options *options);
 
-/* Creates an enclave server credentials object using the provided options.
- * The caller takes ownership of the resulting credentials object and is
- * responsible for destroying it. The caller can wrap the credentials object
- * in a ::grpc::SecureServerCredentials object that handles its destruction. */
-grpc_server_credentials *grpc_enclave_server_credentials_create(
-    const grpc_enclave_credentials_options *options);
+// Creates a grpc_enclave_server_credentials object using the provided options.
+// The underlying object can be wrapped in a ::grpc::SecureServerCredentials
+// object, which will handle its destruction.
+grpc_core::RefCountedPtr<grpc_server_credentials>
+grpc_enclave_server_credentials_create(
+    const grpc_enclave_credentials_options* options);
 
-typedef struct {
-  grpc_channel_credentials base;
+class grpc_enclave_channel_credentials final : public grpc_channel_credentials {
+ public:
+  explicit grpc_enclave_channel_credentials(
+      const grpc_enclave_credentials_options& options);
+  ~grpc_enclave_channel_credentials() override;
 
-  /* Additional authenticated data provided by the client. */
-  safe_string additional_authenticated_data;
+  grpc_core::RefCountedPtr<grpc_channel_security_connector>
+  create_security_connector(
+      grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
+      const char* target, const grpc_channel_args* args,
+      grpc_channel_args** new_args) override;
 
-  /* Assertions offered by the client. */
-  assertion_description_array self_assertions;
+  safe_string* mutable_additional_authenticated_data() {
+    return &additional_authenticated_data_;
+  }
+  assertion_description_array* mutable_self_assertions() {
+    return &self_assertions_;
+  }
+  assertion_description_array* mutable_accepted_peer_assertions() {
+    return &accepted_peer_assertions_;
+  }
 
-  /* Server assertions accepted by the client. */
-  assertion_description_array accepted_peer_assertions;
+ private:
+  // Additional authenticated data provided by the client.
+  safe_string additional_authenticated_data_;
 
-} grpc_enclave_channel_credentials;
+  // Assertions offered by the client.
+  assertion_description_array self_assertions_;
 
-typedef struct {
-  grpc_server_credentials base;
+  // Server assertions accepted by the client.
+  assertion_description_array accepted_peer_assertions_;
 
-  /* Additional authenticated data provided by the server. */
-  safe_string additional_authenticated_data;
+};
 
-  /* Assertions offered by the server. */
-  assertion_description_array self_assertions;
+class grpc_enclave_server_credentials final : public grpc_server_credentials {
+ public:
+  explicit grpc_enclave_server_credentials(
+      const grpc_enclave_credentials_options& options);
+  ~grpc_enclave_server_credentials() override;
 
-  /* Client assertions accepted by the server. */
-  assertion_description_array accepted_peer_assertions;
+  grpc_core::RefCountedPtr<grpc_server_security_connector>
+  create_security_connector() override;
 
-} grpc_enclave_server_credentials;
+  safe_string* mutable_additional_authenticated_data() {
+    return &additional_authenticated_data_;
+  }
+  assertion_description_array* mutable_self_assertions() {
+    return &self_assertions_;
+  }
+  assertion_description_array* mutable_accepted_peer_assertions() {
+    return &accepted_peer_assertions_;
+  }
+
+ private:
+  // Additional authenticated data provided by the server.
+  safe_string additional_authenticated_data_;
+
+  // Assertions offered by the server.
+  assertion_description_array self_assertions_;
+
+  // Client assertions accepted by the server.
+  assertion_description_array accepted_peer_assertions_;
+
+};
 
 #endif  // ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_

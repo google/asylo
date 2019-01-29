@@ -26,120 +26,83 @@
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "src/core/lib/channel/channel_args.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/credentials.h"
 
-/* Frees any memory allocated by this channel credentials object.
- * Note that this function does not destroy the credentials object itself. */
-static void enclave_channel_credentials_destruct(
-    grpc_channel_credentials *creds) {
-  grpc_enclave_channel_credentials *credentials =
-      reinterpret_cast<grpc_enclave_channel_credentials *>(creds);
-  safe_string_free(&credentials->additional_authenticated_data);
-  assertion_description_array_free(&credentials->self_assertions);
-  assertion_description_array_free(&credentials->accepted_peer_assertions);
+grpc_core::RefCountedPtr<grpc_channel_credentials>
+grpc_enclave_channel_credentials_create(
+    const grpc_enclave_credentials_options *options) {
+  return grpc_core::MakeRefCounted<grpc_enclave_channel_credentials>(*options);
 }
 
-/* Frees any memory allocated by this server credentials object.
- * Note that this function does not destroy the credentials object itself. */
-static void enclave_server_credentials_destruct(
-    grpc_server_credentials *creds) {
-  grpc_enclave_server_credentials *credentials =
-      reinterpret_cast<grpc_enclave_server_credentials *>(creds);
-  safe_string_free(&credentials->additional_authenticated_data);
-  assertion_description_array_free(&credentials->self_assertions);
-  assertion_description_array_free(&credentials->accepted_peer_assertions);
+grpc_core::RefCountedPtr<grpc_server_credentials>
+grpc_enclave_server_credentials_create(
+    const grpc_enclave_credentials_options *options) {
+  return grpc_core::MakeRefCounted<grpc_enclave_server_credentials>(*options);
 }
 
-/* Creates an enclave channel security connector. */
-static grpc_security_status enclave_channel_security_connector_create(
-    grpc_channel_credentials *channel_creds, grpc_call_credentials *call_creds,
+// Frees any memory allocated by this channel credentials object.
+grpc_enclave_channel_credentials::~grpc_enclave_channel_credentials() {
+  safe_string_free(&additional_authenticated_data_);
+  assertion_description_array_free(&self_assertions_);
+  assertion_description_array_free(&accepted_peer_assertions_);
+}
+
+// Frees any memory allocated by this server credentials object.
+grpc_enclave_server_credentials::~grpc_enclave_server_credentials() {
+  safe_string_free(&additional_authenticated_data_);
+  assertion_description_array_free(&self_assertions_);
+  assertion_description_array_free(&accepted_peer_assertions_);
+}
+
+// Creates a grpc_enclave_channel_security_connector object.
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_enclave_channel_credentials::create_security_connector(
+    grpc_core::RefCountedPtr<grpc_call_credentials> call_creds,
     const char *target, const grpc_channel_args *args,
-    grpc_channel_security_connector **security_connector,
     grpc_channel_args **new_args) {
-  *security_connector = grpc_enclave_channel_security_connector_create(
-      channel_creds, call_creds, target);
-  return GRPC_SECURITY_OK;
+  return grpc_enclave_channel_security_connector_create(
+      this->Ref(), std::move(call_creds), target);
 }
 
-/* Creates an enclave server security connector. */
-static grpc_security_status enclave_server_security_connector_create(
-    grpc_server_credentials *server_creds,
-    grpc_server_security_connector **security_connector) {
-  *security_connector =
-      grpc_enclave_server_security_connector_create(server_creds);
-  return GRPC_SECURITY_OK;
+// Creates a grpc_enclave_server_security_connector object.
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_enclave_server_credentials::create_security_connector() {
+  return grpc_enclave_server_security_connector_create(this->Ref());
 }
 
-static grpc_channel_credentials_vtable enclave_credentials_vtable = {
-    /* Channel credentials destructor. */
-    enclave_channel_credentials_destruct,
-    /* Channel security connector constructor. */
-    enclave_channel_security_connector_create,
-    /* No implementation provided for duplicate_without_call_credentials(...).
-     */
-    nullptr};
-
-static grpc_server_credentials_vtable enclave_server_credentials_vtable = {
-    /* Server credentials destructor. */
-    enclave_server_credentials_destruct,
-    /* Server security connector constructor. */
-    enclave_server_security_connector_create};
-
-grpc_channel_credentials *grpc_enclave_channel_credentials_create(
-    const grpc_enclave_credentials_options *options) {
-  grpc_enclave_channel_credentials *credentials =
-      static_cast<grpc_enclave_channel_credentials *>(
-          gpr_malloc(sizeof(*credentials)));
-
+grpc_enclave_channel_credentials::grpc_enclave_channel_credentials(
+    const grpc_enclave_credentials_options &options)
+    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_ENCLAVE) {
   // Initialize all members.
-  safe_string_init(&credentials->additional_authenticated_data);
-  assertion_description_array_init(/*count=*/0, &credentials->self_assertions);
-  assertion_description_array_init(/*count=*/0,
-                                   &credentials->accepted_peer_assertions);
+  safe_string_init(&additional_authenticated_data_);
+  assertion_description_array_init(/*count=*/0, &self_assertions_);
+  assertion_description_array_init(/*count=*/0, &accepted_peer_assertions_);
 
   // Copy parameters.
-  safe_string_copy(/*dest=*/&credentials->additional_authenticated_data,
-                   /*src=*/&options->additional_authenticated_data);
-  assertion_description_array_copy(/*src=*/&options->self_assertions,
-                                   /*dest=*/&credentials->self_assertions);
+  safe_string_copy(/*dest=*/&additional_authenticated_data_,
+                   /*src=*/&options.additional_authenticated_data);
+  assertion_description_array_copy(/*src=*/&options.self_assertions,
+                                   /*dest=*/&self_assertions_);
   assertion_description_array_copy(
-      /*src=*/&options->accepted_peer_assertions,
-      /*dest=*/&credentials->accepted_peer_assertions);
-
-  // Initialize the base credentials object
-  credentials->base.type = GRPC_CREDENTIALS_TYPE_ENCLAVE;
-  credentials->base.vtable = &enclave_credentials_vtable;
-  gpr_ref_init(&credentials->base.refcount, 1);
-
-  return &credentials->base;
+      /*src=*/&options.accepted_peer_assertions,
+      /*dest=*/&accepted_peer_assertions_);
 }
 
-grpc_server_credentials *grpc_enclave_server_credentials_create(
-    const grpc_enclave_credentials_options *options) {
-  grpc_enclave_server_credentials *credentials =
-      static_cast<grpc_enclave_server_credentials *>(
-          gpr_malloc(sizeof(*credentials)));
-
+grpc_enclave_server_credentials::grpc_enclave_server_credentials(
+    const grpc_enclave_credentials_options &options)
+    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_ENCLAVE) {
   // Initialize all members.
-  safe_string_init(&credentials->additional_authenticated_data);
-  assertion_description_array_init(/*count=*/0, &credentials->self_assertions);
-  assertion_description_array_init(/*count=*/0,
-                                   &credentials->accepted_peer_assertions);
+  safe_string_init(&additional_authenticated_data_);
+  assertion_description_array_init(/*count=*/0, &self_assertions_);
+  assertion_description_array_init(/*count=*/0, &accepted_peer_assertions_);
 
   // Copy parameters.
-  safe_string_copy(/*dest=*/&credentials->additional_authenticated_data,
-                   /*src=*/&options->additional_authenticated_data);
-  assertion_description_array_copy(/*src=*/&options->self_assertions,
-                                   /*dest=*/&credentials->self_assertions);
+  safe_string_copy(/*dest=*/&additional_authenticated_data_,
+                   /*src=*/&options.additional_authenticated_data);
+  assertion_description_array_copy(/*src=*/&options.self_assertions,
+                                   /*dest=*/&self_assertions_);
   assertion_description_array_copy(
-      /*src=*/&options->accepted_peer_assertions,
-      /*dest=*/&credentials->accepted_peer_assertions);
-
-  // Initialize the base credentials object.
-  credentials->base.type = GRPC_CREDENTIALS_TYPE_ENCLAVE;
-  credentials->base.vtable = &enclave_server_credentials_vtable;
-  gpr_ref_init(&credentials->base.refcount, 1);
-  memset(&credentials->base.processor, 0, sizeof(credentials->base.processor));
-
-  return &credentials->base;
+      /*src=*/&options.accepted_peer_assertions,
+      /*dest=*/&accepted_peer_assertions_);
 }

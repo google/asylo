@@ -26,19 +26,21 @@
 
 /* --- Enclave security connectors. --- */
 
-/* Creates an enclave channel security connector.
- *  |channel_credentials| is the channel credentials object.
- *  |request_metadata_creds| is the call credentials object to use per call.
- *  |target| is the server endpoint to which to connect.
- */
-grpc_channel_security_connector *grpc_enclave_channel_security_connector_create(
-    grpc_channel_credentials *channel_credentials,
-    grpc_call_credentials *request_metadata_creds, const char *target);
+// Creates an enclave channel security connector.
+// |channel_credentials| is the channel credentials object to use on the
+// channel.
+// |request_metadata_creds| is the call credentials object to use per call.
+// |target| is the server endpoint to which to connect.
+grpc_core::RefCountedPtr<grpc_channel_security_connector>
+grpc_enclave_channel_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_channel_credentials> channel_credentials,
+    grpc_core::RefCountedPtr<grpc_call_credentials> request_metadata_creds,
+    const char *target);
 
-/* Creates an enclave server security connector.
- *  |server_credentials| is the server credentials object.
- */
-grpc_server_security_connector *grpc_enclave_server_security_connector_create(
-    grpc_server_credentials *server_credentials);
+// Creates an enclave server security connector.
+// |server_credentials| is the server credentials object.
+grpc_core::RefCountedPtr<grpc_server_security_connector>
+grpc_enclave_server_security_connector_create(
+    grpc_core::RefCountedPtr<grpc_server_credentials> server_credentials);
 
 #endif  // ASYLO_GRPC_AUTH_CORE_ENCLAVE_SECURITY_CONNECTOR_H_

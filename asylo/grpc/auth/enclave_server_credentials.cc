@@ -34,7 +34,7 @@ std::shared_ptr<::grpc::ServerCredentials> EnclaveServerCredentials(
   // Create a server credentials objects using the options.
   auto creds = std::shared_ptr<::grpc::ServerCredentials>(
       new ::grpc::SecureServerCredentials(
-          grpc_enclave_server_credentials_create(&c_opts)));
+          grpc_enclave_server_credentials_create(&c_opts).release()));
   grpc_enclave_credentials_options_destroy(&c_opts);
   return creds;
 }

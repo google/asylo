@@ -27,6 +27,7 @@
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/context/security_context.h"
 #include "src/cpp/common/secure_auth_context.h"
 
@@ -41,8 +42,8 @@ class EnclaveAuthContextTest : public ::testing::Test {
  protected:
   EnclaveAuthContextTest()
       : secure_auth_context_(absl::make_unique<::grpc::SecureAuthContext>(
-            grpc_auth_context_create(/*chained=*/nullptr),
-            /*take_ownership=*/true)) {}
+            grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr)
+                .get())) {}
 
   void SetUp() override {
     good_identity_description_.set_identity_type(
@@ -118,7 +119,7 @@ TEST_F(EnclaveAuthContextTest, CreateSuccess) {
 // a valid peer identity proto.
 TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
   ::grpc::SecureAuthContext secure_auth_context(
-      grpc_auth_context_create(/*chained=*/nullptr), /*take_ownership=*/true);
+      grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
   AddRecordProtocolProperty(RecordProtocol::SEAL_AES128_GCM,
                             &secure_auth_context);
   AddTransportSecurityTypeProperty(&secure_auth_context);
@@ -137,7 +138,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
 // invalid transport security type.
 TEST_F(EnclaveAuthContextTest, CreateFailsBadTransportSecurityType) {
   ::grpc::SecureAuthContext secure_auth_context(
-      grpc_auth_context_create(/*chained=*/nullptr), /*take_ownership=*/true);
+      grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
   AddRecordProtocolProperty(RecordProtocol::SEAL_AES128_GCM,
                             &secure_auth_context);
   AddEnclaveIdentitiesProperty(identities_, &secure_auth_context);
@@ -168,7 +169,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsPeerUnauthenticated) {
   // Create a SecureAuthContext that does not have a peer identity property.
   // This is considered to be an unauthenticated peer.
   ::grpc::SecureAuthContext secure_auth_context(
-      grpc_auth_context_create(/*chained=*/nullptr), /*take_ownership=*/true);
+      grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
 
   EXPECT_THAT(
       EnclaveAuthContext::CreateFromAuthContext(secure_auth_context).status(),
