@@ -150,3 +150,18 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "peer_identity_util",
+    srcs = ["peer_identity_util.cc"],
+    hdrs = ["peer_identity_util.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":enclave_auth_context",
+        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity/sgx:code_identity_proto_cc",
+        "//asylo/identity/sgx:code_identity_util",
+        "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc++_codegen_base",
+    ],
+)
