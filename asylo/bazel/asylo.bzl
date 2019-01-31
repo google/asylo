@@ -16,12 +16,29 @@
 
 """Macro definitions for Asylo testing."""
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 ASYLO_ALL_BACKENDS = [
     "asylo-sgx",
 ]
+
+def _backend_tags(tags):
+    """Returns the sublist of tags containing Asylo backends.
+
+    Args:
+      tags: A list of strings for a targets `tags` field.
+
+    Returns:
+      list: The tags in `tags` that correspond to Asylo backends, in the same
+            order that they appeared in the input.
+    """
+    backend_tags = []
+    for backend in ASYLO_ALL_BACKENDS:
+        if backend in tags:
+            backend_tags.append(backend)
+    return backend_tags
 
 def _parse_label(label):
     """Parse a label into (package, name).
@@ -387,6 +404,106 @@ def enclave_loader(
         enclaves = _invert_enclave_name_mapping(enclaves),
         tags = kwargs.get("tags", []),
         data = kwargs.get("data", []),
+    )
+
+# The section to embed the application enclave in.
+_APPLICATION_WRAPPER_ENCLAVE_SECTION = "enclave"
+
+def cc_enclave_binary(
+        name,
+        enclave_config = "",
+        application_library_linkstatic = True,
+        **kwargs):
+    """Creates a cc_binary that runs an application inside an enclave.
+
+    Mostly compatible with the cc_binary interface. The following options are
+    not supported:
+
+      * linkshared
+      * malloc
+      * stamp
+
+    Usage of unsupported aspects of the cc_binary interface will result in build
+    failures.
+
+    Args:
+      name: Name for the build target.
+      enclave_config: An sgx_enclave_configuration target to be passed to the
+          enclave. Optional.
+      application_library_linkstatic: When building the application as a
+          library, whether to allow that library to be statically linked. See
+          the `linkstatic` option on `cc_library`. Optional.
+      **kwargs: cc_binary arguments.
+    """
+    application_library_name = name + "_application_library"
+    enclave_name = name + "_application_enclave.so"
+
+    loader_kwargs = {}
+
+    # The "args" attribute should be moved to the loader since cc_library does
+    # not support it. The whole-application wrapper contains all the machinery
+    # necessary to propagate the arguments.
+    if "args" in kwargs:
+        loader_kwargs["args"] = kwargs.pop("args")
+
+    # Wrapping shared libraries in enclaves is not supported.
+    if "linkshared" in kwargs:
+        fail("linkshared option not supported in cc_enclave_binary")
+
+    # "linkstatic" has a different meaning on cc_library than on cc_binary. If
+    # a user asks for it on cc_enclave_binary, then the loader should get the
+    # attribute.
+    if "linkstatic" in kwargs:
+        loader_kwargs["linkstatic"] = kwargs.pop("linkstatic")
+
+    # Changing the enclave malloc() implementation is currently not supported.
+    if "malloc" in kwargs:
+        fail("malloc option not supported in cc_enclave_binary")
+
+    # Licenses should be visibile from the user-visible rule, i.e. the loader.
+    if "output_licenses" in kwargs:
+        loader_kwargs["output_licenses"] = kwargs.pop("output_licenses")
+
+    # "stamp" currently not supported.
+    if "stamp" in kwargs:
+        fail("stamp option not supported in cc_enclave_binary")
+
+    # The user probably wants their tags applied to the loader.
+    loader_kwargs["tags"] = kwargs.pop("tags", [])
+
+    native.cc_library(
+        name = application_library_name,
+        linkstatic = application_library_linkstatic,
+        **kwargs
+    )
+
+    enclave_kwargs = {}
+    if enclave_config:
+        enclave_kwargs["config"] = enclave_config
+
+    sgx_enclave(
+        name = enclave_name,
+        copts = ASYLO_DEFAULT_COPTS,
+        tags = ["asylo-sgx"],
+        deps = [
+            ":" + application_library_name,
+            "//asylo/bazel/application_wrapper:application_wrapper_enclave_core",
+        ],
+        **enclave_kwargs
+    )
+
+    enclave_loader(
+        name = name,
+        srcs = ["//asylo/bazel/application_wrapper:application_wrapper_driver.cc"],
+        embedded_enclaves = {_APPLICATION_WRAPPER_ENCLAVE_SECTION: ":" + enclave_name},
+        copts = ASYLO_DEFAULT_COPTS,
+        deps = [
+            "//asylo/bazel/application_wrapper:application_wrapper_driver_main",
+            "//asylo:enclave_client",
+            "//asylo/util:logging",
+            "//asylo/util:status",
+        ],
+        **loader_kwargs
     )
 
 def sim_enclave(name, **kwargs):

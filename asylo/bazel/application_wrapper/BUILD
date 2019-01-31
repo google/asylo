@@ -20,7 +20,9 @@ licenses(["notice"])  # Apache v2.0
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "cc_enclave_binary",
     "cc_test",
+    "copy_from_host",
     "enclave_test",
     "ASYLO_ALL_BACKENDS",
 )
@@ -175,4 +177,40 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
+)
+
+# A test application.
+cc_binary(
+    name = "test_application",
+    srcs = ["test_application.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = ["//asylo/util:logging"],
+)
+
+# A test enclave-wrapped application.
+cc_enclave_binary(
+    name = "test_enclave_application",
+    srcs = ["test_application.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = ["//asylo/util:logging"],
+)
+
+copy_from_host(
+    output = "test_host_application",
+    target = "test_application",
+)
+
+# An end-to-end test of the whole-application wrapper.
+sh_test(
+    name = "application_wrapper_end_to_end_test",
+    srcs = ["application_wrapper_end_to_end_test.sh"],
+    data = [
+        ":test_enclave_application",
+        ":test_host_application",
+    ],
+    tags = [
+        "asylo-sgx",
+        "enclave_test",
+    ],
+    deps = ["//asylo/test/util:shell_testing"],
 )
