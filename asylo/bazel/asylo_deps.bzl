@@ -213,8 +213,8 @@ def asylo_go_deps():
     if "io_bazel_rules_go" not in native.existing_rules():
         http_archive(
             name = "io_bazel_rules_go",
-            url = "https://github.com/bazelbuild/rules_go/releases/download/0.16.5/rules_go-0.16.5.tar.gz",
-            sha256 = "7be7dc01f1e0afdba6c8eb2b43d2fa01c743be1b9273ab1eaf6c233df078d705",
+            url = "https://github.com/bazelbuild/rules_go/releases/download/0.17.0/rules_go-0.17.0.tar.gz",
+            sha256 = "492c3ac68ed9dcf527a07e6a1b2dcbf199c6bf8b35517951467ac32e421c06c1",
         )
 
     # go crypto for EKEP's go_binary usage.
@@ -222,8 +222,7 @@ def asylo_go_deps():
         http_archive(
             name = "com_github_golang_crypto",
             build_file_content = """
-load("@io_bazel_rules_go//go:def.bzl", "go_library", "go_prefix")
-go_prefix("github.com/golang/crypto")
+load("@io_bazel_rules_go//go:def.bzl", "go_library")
 
 go_library(
     name = "curve25519",
@@ -239,16 +238,19 @@ go_library(
         "curve25519/mul_amd64.s",
         "curve25519/square_amd64.s",
     ],
+    importpath = "github.com/golang/crypto/curve25519",
     visibility = ["//visibility:public"],
 )
 go_library(
     name = "hkdf",
     srcs = ["hkdf/hkdf.go"],
+    importpath = "github.com/golang/crypto/hkdf",
     visibility = ["//visibility:public"],
 )
 """,
-            # Non-release commit from March 8, 2018
-            urls = ["https://github.com/golang/crypto/archive/c7dcf104e3a7a1417abc0230cb0d5240d764159d.tar.gz"],
-            sha256 = "e7b88be3ea254c20e126dfa6caf5169b65ce9e19d91ebe445cedbf8308258e49",
-            strip_prefix = "crypto-c7dcf104e3a7a1417abc0230cb0d5240d764159d",
+            # Non-release commit from January 31, 2019. golang/crypto does not
+            # have releases.
+            urls = ["https://github.com/golang/crypto/archive/b8fe1690c61389d7d2a8074a507d1d40c5d30448.tar.gz"],
+            sha256 = "21bded0f669be39373c16b5bff02916aeaf971f0f5d8696f69fa89297844586d",
+            strip_prefix = "crypto-b8fe1690c61389d7d2a8074a507d1d40c5d30448",
         )

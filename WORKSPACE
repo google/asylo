@@ -41,7 +41,7 @@ asylo_go_deps()
 
 # io_bazel_rules is defined by asylo_go_deps(). Skylark loads cannot be
 # produced by macros, so this must come after asylo_go_deps() in WORKSPACE.
-load("@io_bazel_rules_go//go:def.bzl", "go_rules_dependencies",
+load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies",
      "go_register_toolchains")
 # Load go bazel rules and toolchain.
 go_rules_dependencies()
