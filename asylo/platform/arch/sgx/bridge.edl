@@ -80,7 +80,7 @@ enclave {
     // Invokes a utility ecall that enters the enclave to take a snapshot.
     // This is a private ecall because it should only be invoked by an
     // ocall(fork).
-    utility_tcs int ecall_take_snapshot(
+    utility_tcs public int ecall_take_snapshot(
 	[out] char **output,
 	[out] bridge_size_t *output_len);
 
@@ -349,6 +349,9 @@ enclave {
         propagate_errno;
     uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);
     void ocall_enc_untrusted__exit(int rc);
+    pid_t ocall_enc_untrusted_fork(
+        [in, string]const char *enclave_name, bool restore_snapshot)
+	allow(ecall_take_snapshot, ecall_restore) propagate_errno;
 
     //////////////////////////////////////
     //           utime.h                //

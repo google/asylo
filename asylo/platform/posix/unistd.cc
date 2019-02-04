@@ -22,6 +22,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "asylo/platform/arch/include/trusted/fork.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/io/io_manager.h"
@@ -216,6 +217,28 @@ int ftruncate(int fd, off_t length) {
 
 void enclave_exit(int rc) {
   enc_untrusted__exit(rc);
+}
+
+pid_t enclave_fork() {
+  asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
+      asylo::GetEnclaveConfig();
+
+  if (!config_result.ok()) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  if (!config->has_enable_fork()) {
+    errno = EFAULT;
+    return -1;
+  }
+  if (!config->enable_fork()) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  return asylo::enc_fork(asylo::GetEnclaveName().c_str());
 }
 
 }  // extern "C"

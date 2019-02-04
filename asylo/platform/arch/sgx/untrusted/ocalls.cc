@@ -47,6 +47,7 @@
 #include <algorithm>
 
 #include "absl/memory/memory.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
 #include "asylo/platform/common/bridge_functions.h"
@@ -896,6 +897,98 @@ int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
 uint32_t ocall_enc_untrusted_sleep(uint32_t seconds) { return sleep(seconds); }
 
 void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
+
+pid_t ocall_enc_untrusted_fork(const char *enclave_name,
+                               bool restore_snapshot) {
+  auto manager_result = asylo::EnclaveManager::Instance();
+  if (!manager_result.ok()) {
+    return -1;
+  }
+  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+  asylo::SgxClient *client = dynamic_cast<asylo::SgxClient *>(
+      manager->GetClient(enclave_name));
+
+  if (!restore_snapshot) {
+    // No need to take and restore a snapshot, just set indication that the new
+    // enclave is created from fork.
+    pid_t pid = fork();
+    if (pid == 0) {
+      // Set the process ID so that the new enclave created from fork does not
+      // reject entry.
+      client->SetProcessId();
+    }
+    return pid;
+  }
+
+  // A snapshot should be taken and restored for fork, take a snapshot of the
+  // current enclave memory.
+  void *enclave_base_address = client->base_address();
+  asylo::SnapshotLayout snapshot_layout;
+  asylo::Status status =
+      manager->EnterAndTakeSnapshot(client, &snapshot_layout);
+  if (!status.ok()) {
+    LOG(ERROR) << "EnterAndTakeSnapshot failed: " << status;
+    errno = ENOMEM;
+    return -1;
+  }
+
+  // The snapshot memory should be freed in both the parent and the child
+  // process.
+  asylo::MallocUniquePtr<void> snapshot_data_deleter(reinterpret_cast<void *>(
+      snapshot_layout.data_base()));
+  asylo::MallocUniquePtr<void> snapshot_bss_deleter(reinterpret_cast<void *>(
+      snapshot_layout.bss_base()));
+  asylo::MallocUniquePtr<void> snapshot_heap_deleter(reinterpret_cast<void *>(
+      snapshot_layout.heap_base()));
+  asylo::MallocUniquePtr<void> snapshot_thread_deleter(reinterpret_cast<void *>(
+      snapshot_layout.thread_base()));
+  asylo::MallocUniquePtr<void> snapshot_stack_deleter(reinterpret_cast<void *>(
+      snapshot_layout.stack_base()));
+
+  asylo::SgxLoader *loader =
+      dynamic_cast<asylo::SgxLoader *>(manager->GetLoaderFromClient(client));
+
+  pid_t pid = fork();
+  if (pid == -1) {
+    return pid;
+  }
+
+  size_t enclave_size = client->size();
+
+  asylo::EnclaveConfig config;
+  config.set_enable_fork(true);
+  if (pid == 0) {
+    // Load an enclave at the same virtual space as the parent.
+    status = manager->LoadEnclave(enclave_name, *loader, config,
+                                  enclave_base_address, enclave_size);
+    if (!status.ok()) {
+      LOG(ERROR) << "Load new enclave failed:" << status;
+      errno = ENOMEM;
+      return -1;
+    }
+
+    // Verifies that the new enclave is loaded at the same virtual address space
+    // as the parent enclave.
+    client = dynamic_cast<asylo::SgxClient *>(manager->GetClient(enclave_name));
+    void *child_enclave_base_address = client->base_address();
+    if (child_enclave_base_address != enclave_base_address) {
+      LOG(ERROR) << "New enclave address: " << child_enclave_base_address
+                 << " is different from the parent enclave address: "
+                 << enclave_base_address;
+      errno = EAGAIN;
+      return -1;
+    }
+
+    // Enters the child enclave and restore the enclave memory.
+    status = manager->EnterAndRestore(client, snapshot_layout);
+    if (!status.ok()) {
+      LOG(ERROR) << "EnterAndRestore failed: " << status;
+      errno = EAGAIN;
+      return -1;
+    }
+  }
+  return pid;
+}
 
 //////////////////////////////////////
 //             wait.h               //

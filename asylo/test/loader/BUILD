@@ -33,20 +33,3 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
-
-enclave_test(
-    name = "enclave_address_test",
-    srcs = ["enclave_address_test_driver.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"enclave": "//asylo/test/util:do_nothing_enclave.so"},
-    test_args = ["--enclave_path='{enclave}'"],
-    deps = [
-        "//asylo:enclave_client",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_googletest//:gtest",
-    ],
-)

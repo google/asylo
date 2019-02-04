@@ -280,6 +280,7 @@ pid_t enc_untrusted_setsid();
 int enc_untrusted_truncate(const char *path, off_t length);
 int enc_untrusted_ftruncate(int fd, off_t length);
 void enc_untrusted__exit(int rc);
+pid_t enc_untrusted_fork(const char *enclave_name, bool restore_snapshot);
 
 //////////////////////////////////////
 //            utime.h               //

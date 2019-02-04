@@ -178,8 +178,12 @@ class EnclaveManager {
   ///
   /// \param name Name to bind the loaded enclave under.
   /// \param loader Configured enclave loader to load from.
+  /// \param base_address Start address to load enclave(optional).
+  /// \param enclave_size The size of the enclave in memory(only needed if
+  /// |base_address| is specified).
   Status LoadEnclave(const std::string &name, const EnclaveLoader &loader,
-                     void *base_address = nullptr);
+                     void *base_address = nullptr,
+                     const size_t enclave_size = 0);
 
   /// Loads an enclave.
   ///
@@ -200,8 +204,12 @@ class EnclaveManager {
   /// \param name Name to bind the loaded enclave under.
   /// \param loader Configured enclave loader to load from.
   /// \param config Enclave configuration to launch the enclave with.
+  /// \param base_address Start address to load enclave(optional).
+  /// \param enclave_size The size of the enclave in memory(only needed if
+  /// |base_address| is specified).
   Status LoadEnclave(const std::string &name, const EnclaveLoader &loader,
-                     EnclaveConfig config, void *base_address = nullptr);
+                     EnclaveConfig config, void *base_address = nullptr,
+                     const size_t enclave_size = 0);
 
   /// Fetches a client to a loaded enclave.
   ///
@@ -291,7 +299,8 @@ class EnclaveManager {
   // loader object.
   Status LoadEnclaveInternal(const std::string &name, const EnclaveLoader &loader,
                              const EnclaveConfig &config,
-                             void *base_address = nullptr)
+                             void *base_address = nullptr,
+                             const size_t enclave_size = 0)
       LOCKS_EXCLUDED(client_table_lock_);
 
   // Deletes an enclave client reference that points to an enclave that no
@@ -364,13 +373,14 @@ class EnclaveLoader {
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       const std::string &name) const {
     EnclaveConfig config;
-    return LoadEnclave(name, nullptr, config);
+    return LoadEnclave(name, /*base_address=*/nullptr, /*enclave_size=*/0,
+                       config);
   }
 
   // Loads an enclave at the specified address, returning a pointer to a client
   // on success and a non-ok status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address,
+      const std::string &name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const = 0;
 
   // Gets a copy of the loader that loaded a previous enclave. This is only used

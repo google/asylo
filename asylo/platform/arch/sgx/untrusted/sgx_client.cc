@@ -220,7 +220,8 @@ static Status restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
-    const std::string &name, void *base_address, const EnclaveConfig &config) const {
+    const std::string &name, void *base_address, const size_t enclave_size,
+    const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
   client->base_address_ = base_address;
 
@@ -229,7 +230,8 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
     status = sgx_create_enclave_with_utility_and_address(
         enclave_path_.c_str(), debug_, &client->token_, &updated, &client->id_,
-        /*misc_attr=*/nullptr, &client->base_address_, config.enable_fork());
+        /*misc_attr=*/nullptr, &client->base_address_, enclave_size,
+        config.enable_fork());
 
     LOG_IF(WARNING, status != SGX_SUCCESS)
         << "Failed to create an enclave, attempt=" << i
@@ -243,6 +245,8 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     return Status(status, "Failed to create an enclave");
   }
 
+  client->size_ = sgx_enclave_size(client->id_);
+
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
 
@@ -255,7 +259,8 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxLoader::Copy() const {
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
-    const std::string &name, void *base_address, const EnclaveConfig &config) const {
+    const std::string &name, void *base_address, const size_t enclave_size,
+    const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
   client->base_address_ = base_address;
 
@@ -277,12 +282,14 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     status = sgx_create_enclave_from_buffer(
         const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
         debug_, &client->token_, &updated, &client->id_, /*misc_attr=*/nullptr,
-        &client->base_address_, config.enable_fork());
+        &client->base_address_, enclave_size, config.enable_fork());
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;
     }
   }
+
+  client->size_ = sgx_enclave_size(client->id_);
 
   if (status != SGX_SUCCESS) {
     return Status(status, "Failed to create an enclave");
@@ -423,6 +430,8 @@ Status SgxClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
 }
 
 Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
+  LOG(WARNING) << "ENCLAVE FORK IS INSECURE CURRENTLY. THE SNAPSHOT IS "
+                  "UNENCRYPTED AND IT LEAKS ALL ENCLAVE DATA!";
   char *output_buf = nullptr;
   size_t output_len = 0;
 

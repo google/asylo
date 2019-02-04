@@ -19,10 +19,14 @@
 #ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_
 #define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_
 
+#include <sys/types.h>
+
 #include "asylo/enclave.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
+
+pid_t enc_fork(const char *enclave_name);
 
 // Copies enclave data/bss/heap and stack for the calling thread to untrusted
 // memory.

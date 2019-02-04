@@ -38,7 +38,7 @@ class FakeEnclaveLoader : public EnclaveLoader {
  private:
   // From EnclaveLoader.
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address,
+      const std::string &name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
 
   // From EnclaveLoader.

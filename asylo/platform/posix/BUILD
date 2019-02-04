@@ -111,6 +111,7 @@ cc_library(
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:time_util",
         "//asylo/platform/core:shared_name",
@@ -181,6 +182,32 @@ cc_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+sgx_enclave(
+    name = "fork_test.so",
+    srcs = ["fork_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+enclave_test(
+    name = "fork_test",
+    srcs = ["fork_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": "fork_test.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_googletest//:gtest",
     ],
 )

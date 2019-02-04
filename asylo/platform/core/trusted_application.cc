@@ -440,11 +440,19 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
   StatusSerializer<EnclaveOutput> status_serializer(
       &enclave_output, enclave_output.mutable_status(), output, output_len);
 
-#ifndef INSECURE_DEBUG_FORK_ENABLED
-  status = Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Insecure fork not enabled");
-  return status_serializer.Serialize(status);
-#endif  // INSECURE_DEBUG_FORK_ENABLED
+  asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
+      asylo::GetEnclaveConfig();
+
+  if (!config_result.ok()) {
+    return status_serializer.Serialize(config_result.status());
+  }
+
+  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  if (!config->has_enable_fork() || !config->enable_fork()) {
+    status = Status(error::GoogleError::FAILED_PRECONDITION,
+                    "Insecure fork not enabled");
+    return status_serializer.Serialize(status);
+  }
 
   TrustedApplication *trusted_application = GetApplicationInstance();
   if (trusted_application->GetState() != EnclaveState::kRunning) {
@@ -466,11 +474,19 @@ int __asylo_restore(const char *input, size_t input_len, char **output,
 
   StatusSerializer<StatusProto> status_serializer(output, output_len);
 
-#ifndef INSECURE_DEBUG_FORK_ENABLED
-  status = Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Insecure fork not enabled");
-  return status_serializer.Serialize(status);
-#endif  // INSECURE_DEBUG_FORK_ENABLED
+  asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
+      asylo::GetEnclaveConfig();
+
+  if (!config_result.ok()) {
+    return status_serializer.Serialize(config_result.status());
+  }
+
+  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  if (!config->has_enable_fork() || !config->enable_fork()) {
+    status = Status(error::GoogleError::FAILED_PRECONDITION,
+                    "Insecure fork not enabled");
+    return status_serializer.Serialize(status);
+  }
 
   asylo::SnapshotLayout snapshot_layout;
   if (!snapshot_layout.ParseFromArray(input, input_len)) {

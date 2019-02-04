@@ -46,6 +46,7 @@ class SgxClient : public EnclaveClient {
 
   void *base_address() { return base_address_; }
   const void *base_address() const { return base_address_; }
+  const size_t &size() { return size_; }
 
   // Sets a new expected process ID for an existing SGX enclave.
   void SetProcessId();
@@ -66,6 +67,7 @@ class SgxClient : public EnclaveClient {
   sgx_launch_token_t token_ = {0};  // SGX SDK launch token.
   sgx_enclave_id_t id_;       // SGX SDK enclave identifier.
   void *base_address_;        // Enclave base address.
+  size_t size_;               // Enclave size.
 };
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves
@@ -82,7 +84,7 @@ class SgxLoader : public EnclaveLoader {
 
  private:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address,
+      const std::string &name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
 
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
@@ -106,7 +108,7 @@ class SgxEmbeddedLoader : public EnclaveLoader {
 
  private:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address,
+      const std::string &name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
 
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;

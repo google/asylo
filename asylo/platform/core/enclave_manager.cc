@@ -268,23 +268,28 @@ StatusOr<EnclaveManager *> EnclaveManager::Instance() {
 
 Status EnclaveManager::LoadEnclave(const std::string &name,
                                    const EnclaveLoader &loader,
-                                   void *base_address) {
+                                   void *base_address,
+                                   const size_t enclave_size) {
   return LoadEnclaveInternal(
-      name, loader, CreateDefaultEnclaveConfig(host_config_), base_address);
+      name, loader, CreateDefaultEnclaveConfig(host_config_), base_address,
+      enclave_size);
 }
 
 Status EnclaveManager::LoadEnclave(const std::string &name,
                                    const EnclaveLoader &loader,
-                                   EnclaveConfig config, void *base_address) {
+                                   EnclaveConfig config, void *base_address,
+                                   const size_t enclave_size) {
   EnclaveConfig sanitized_config = std::move(config);
   SetEnclaveConfigDefaults(host_config_, &sanitized_config);
-  return LoadEnclaveInternal(name, loader, sanitized_config, base_address);
+  return LoadEnclaveInternal(name, loader, sanitized_config, base_address,
+                             enclave_size);
 }
 
 Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
                                            const EnclaveLoader &loader,
                                            const EnclaveConfig &config,
-                                           void *base_address) {
+                                           void *base_address,
+                                           const size_t enclave_size) {
   if (config.enable_fork() && base_address) {
     // If fork is enabled and a base address is provided, it is now loading an
     // enclave in the child process. Remove the reference in the enclave table
@@ -304,7 +309,7 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
 
   // Attempt to load the enclave.
   StatusOr<std::unique_ptr<EnclaveClient>> result =
-      loader.LoadEnclave(name, base_address, config);
+      loader.LoadEnclave(name, base_address, enclave_size, config);
   if (!result.ok()) {
     LOG(ERROR) << "LoadEnclave failed: " << result.status();
     return result.status();
@@ -350,7 +355,6 @@ void EnclaveManager::RemoveEnclaveReference(const std::string &name) {
   EnclaveClient *client = client_by_name_[name].get();
   client_by_name_.erase(name);
   name_by_client_.erase(client);
-  loader_by_client_.erase(client);
 }
 
 void EnclaveManager::SpawnWorkerThread() {

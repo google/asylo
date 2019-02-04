@@ -51,8 +51,14 @@ static struct ThreadMemoryLayout forked_thread_memory_layout = {
 
 // Saves the thread memory layout, including the base address and size of the
 // stack/thread info of the calling TCS.
-void SaveThreadLayoutForSnapshot(
-    struct ThreadMemoryLayout thread_memory_layout) {
+void SaveThreadLayoutForSnapshot() {
+  struct EnclaveMemoryLayout enclave_memory_layout;
+  enc_get_memory_layout(&enclave_memory_layout);
+  struct ThreadMemoryLayout thread_memory_layout;
+  thread_memory_layout.thread_base = enclave_memory_layout.thread_base;
+  thread_memory_layout.thread_size = enclave_memory_layout.thread_size;
+  thread_memory_layout.stack_base = enclave_memory_layout.stack_base;
+  thread_memory_layout.stack_limit = enclave_memory_layout.stack_limit;
   forked_thread_memory_layout = thread_memory_layout;
 }
 
@@ -67,13 +73,6 @@ const struct ThreadMemoryLayout GetThreadLayoutForSnapshot() {
 // Takes a snapshot of the enclave data/bss/heap and stack for the calling
 // thread by copying to untrusted memory.
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
-#ifndef INSECURE_DEBUG_FORK_ENABLED
-  return Status(error::GoogleError::FAILED_PRECONDITION,
-                "Insecure fork not enabled");
-#endif  // INSECURE_DEBUG_FORK_ENABLED
-
-  LOG(WARNING) << "ENCLAVE FORK IS INSECURE CURRENTLY. THE SNAPSHOT IS "
-                  "UNENCRYPTED AND IT LEAKS ALL ENCLAVE DATA!";
   if (!snapshot_layout) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Snapshot layout is nullptr");
@@ -165,11 +164,6 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
 
 // Restore the current enclave states from an untrusted snapshot.
 Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
-#ifndef INSECURE_DEBUG_FORK_ENABLED
-  return Status(error::GoogleError::FAILED_PRECONDITION,
-                "Insecure fork not enabled");
-#endif  // INSECURE_DEBUG_FORK_ENABLED
-
   // Get the information of current enclave layout.
   struct EnclaveMemoryLayout enclave_layout;
   enc_get_memory_layout(&enclave_layout);
@@ -264,6 +258,12 @@ Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
          snapshot_layout.stack_size());
 
   return Status::OkStatus();
+}
+
+pid_t enc_fork(const char *enclave_name) {
+  // Saves the current stack/thread address info for snpashot.
+  asylo::SaveThreadLayoutForSnapshot();
+  return enc_untrusted_fork(enclave_name, /*restore_snapshot=*/true);
 }
 
 }  // namespace asylo

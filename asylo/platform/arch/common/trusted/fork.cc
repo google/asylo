@@ -20,16 +20,21 @@
 
 #include <stdlib.h>
 
+#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
+
+pid_t enc_fork(const char *enclave_name) {
+  return enc_untrusted_fork(enclave_name, /*restore_required=*/false);
+}
 
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // Only supported in the SGX hardware backend.
   abort();
 }
 
-Status RestoreForFork(const SnapshotLayout *snapshot_layout) {
+Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
   // Only supported in the SGX hardware backend.
   abort();
 }
