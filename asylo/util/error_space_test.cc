@@ -28,7 +28,7 @@ namespace {
 // A test fixture is used for naming consistency and future scalability.
 class ErrorSpaceTest : public ::testing::Test {};
 
-// Make sure that the GoogleErroSpace singleton can be retrieved based on the
+// Make sure that the GoogleErrorSpace singleton can be retrieved based on the
 // enum as well as the name, and that it returns the same value.
 TEST_F(ErrorSpaceTest, GoogleErrorSpaceSingleton) {
   ErrorSpace const *space1 = ErrorSpace::Find(kCanonicalErrorSpaceName);
