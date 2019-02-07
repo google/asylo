@@ -24,7 +24,7 @@ licenses(["notice"])  # Apache v2.0
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
-load("@io_bazel_rules_go//go:def.bzl", "go_binary")
+load("@io_bazel_rules_go//go:def.bzl", "go_test")
 
 package(default_visibility = [
     "//asylo/grpc/auth:__subpackages__",
@@ -308,9 +308,13 @@ asylo_proto_library(
 )
 
 # Generates test vectors for EKEP secret derivation.
-go_binary(
-    name = "generate_test_vectors",
-    srcs = ["generate_test_vectors.go"],
+# Note that the test just makes sure this file builds and runs, but doesn't
+# actually check anything. However, one can manually run this target in order to
+# derive the test vectors used in other tests.
+go_test(
+    name = "generate_test_vectors_test",
+    size = "small",
+    srcs = ["generate_test_vectors_test.go"],
     deps = [
         "@com_github_golang_crypto//:curve25519",
         "@com_github_golang_crypto//:hkdf",

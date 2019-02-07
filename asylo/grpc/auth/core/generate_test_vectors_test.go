@@ -16,7 +16,6 @@
  *
  */
 
-// Generates a test vector for EKEP crypto operations.
 package main
 
 import (
@@ -51,7 +50,7 @@ var (
 		0xb4, 0x10, 0xff, 0x61, 0xf2, 0x00, 0x15, 0xad}
 )
 
-// DeriveSecrets generates an EKEP master and authenticator secret using
+// deriveSecrets generates an EKEP master and authenticator secret using
 // Curve25519 and SHA256.
 func deriveSecrets() ([]byte, []byte) {
 	// Compute the shared secret.
