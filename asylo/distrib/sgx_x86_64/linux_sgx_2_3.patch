@@ -3283,7 +3283,7 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +    thread_data_t *thread_data = get_thread_data();
 +    memory_layout->thread_base = reinterpret_cast<void *>(thread_data);
 +    memory_layout->thread_size = sizeof(thread_data_t);
-+    memory_layout->stack_base = reinterpret_cast<void *>(thread_data->stack_base_addr + static_cast<size_t>(STATIC_STACK_SIZE));
++    memory_layout->stack_base = reinterpret_cast<void *>(thread_data->stack_base_addr);
 +    memory_layout->stack_limit = reinterpret_cast<void *>(thread_data->stack_limit_addr);
 +
 +    // Temporary storage buffer section.
