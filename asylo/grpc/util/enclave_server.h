@@ -179,7 +179,7 @@ class EnclaveServer final : public TrustedApplication {
   absl::Mutex server_mutex_;
 
   // A gRPC server hosting |messenger_|.
-  std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex);
+  std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
 
   // The host and port of the server's address.
   std::string host_;
