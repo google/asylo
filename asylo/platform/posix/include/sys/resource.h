@@ -25,7 +25,17 @@ extern "C" {
 
 #include_next <sys/resource.h>
 
-#define RLIMIT_NOFILE 0 /* maximum file descriptor number */
+#define RLIMIT_CPU 0    /* Per-process CPU limit, in seconds.  */
+#define RLIMIT_FSIZE 1  /* Largest file that can be created, in bytes.  */
+#define RLIMIT_DATA 2   /* Maximum size of data segment, in bytes.  */
+#define RLIMIT_STACK 3  /* Maximum size of stack segment, in bytes.  */
+#define RLIMIT_CORE 4   /* Largest core file that can be created, in bytes.  */
+#define RLIMIT_RSS 5    /* Largest resident set size, in bytes. */
+#define RLIMIT_NPROC 6  /* Number of processes.  */
+#define RLIMIT_NOFILE 7 /* Number of open files.  */
+#define RLIMIT_OFILE RLIMIT_NOFILE /* BSD name for the above. */
+#define RLIMIT_MEMLOCK 8           /* Locked-in-memory address space.  */
+#define RLIMIT_AS 9                /* Address space limit.  */
 
 typedef uint64_t rlim_t;
 
@@ -36,6 +46,8 @@ struct rlimit {
 
 int getrlimit(int resource, struct rlimit *rlim);
 int setrlimit(int resource, const struct rlimit *rlim);
+
+#define RLIM_INFINITY 0xffffffffffffffffuLL
 
 #ifdef __cplusplus
 }  // extern "C"
