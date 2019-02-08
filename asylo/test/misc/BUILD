@@ -311,7 +311,6 @@ cc_enclave_test(
     name = "rwlock_test",
     srcs = ["rwlock_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",

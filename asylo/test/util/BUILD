@@ -234,7 +234,6 @@ cc_test(
     srcs = ["status_matchers_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "status_matchers_enclave_test",
-    tags = ["regression"],
     deps = [
         ":status_matchers",
         ":test_main",

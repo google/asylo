@@ -16,7 +16,6 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load("//asylo/bazel:asylo.bzl", "enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 cc_test(
@@ -24,7 +23,6 @@ cc_test(
     size = "small",
     srcs = ["loader_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["regression"],
     deps = [
         "//asylo:enclave_client",
         "//asylo/test/util:status_matchers",
