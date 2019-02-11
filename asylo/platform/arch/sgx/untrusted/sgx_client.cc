@@ -477,10 +477,6 @@ Status SgxClient::EnterAndRestore(const SnapshotLayout &snapshot_layout) {
   Status status;
   status.RestoreFrom(status_proto);
 
-  // |output| points to an untrusted memory buffer allocated by the enclave. It
-  // is the untrusted caller's responsibility to free this buffer.
-  free(output);
-
   return status;
 }
 
