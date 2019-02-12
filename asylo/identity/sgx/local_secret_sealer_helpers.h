@@ -54,15 +54,16 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
 
 // Creates a cryptor that uses |key| and the algorithm denoted by
 // |cipher_suite|. Returns a non-OK status if a cryptor cannot be generated.
-StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(CipherSuite cipher_suite,
-                                                   ByteContainerView key);
+StatusOr<std::unique_ptr<experimental::AeadCryptor>> MakeCryptor(
+    CipherSuite cipher_suite, ByteContainerView key);
 
 // Seals |secret| and |additional_data| into |sealed_secret|, using |cryptor|.
-Status Seal(AeadCryptor *cryptor, ByteContainerView secret,
+Status Seal(experimental::AeadCryptor *cryptor, ByteContainerView secret,
             ByteContainerView additional_data, SealedSecret *sealed_secret);
 
 // Opens |sealed_secret| into |secret|, using |cryptor| with |additional_data|.
-Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
+Status Open(experimental::AeadCryptor *cryptor,
+            const SealedSecret &sealed_secret,
             ByteContainerView additional_data,
             CleansingVector<uint8_t> *secret);
 

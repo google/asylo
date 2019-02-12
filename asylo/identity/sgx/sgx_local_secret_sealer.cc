@@ -36,6 +36,8 @@
 
 namespace asylo {
 
+using experimental::AeadCryptor;
+
 constexpr size_t kAes256GcmSivKeySize = 32;
 
 std::unique_ptr<SgxLocalSecretSealer>

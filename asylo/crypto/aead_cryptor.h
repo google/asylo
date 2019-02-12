@@ -30,6 +30,7 @@
 #include "asylo/util/statusor.h"
 
 namespace asylo {
+namespace experimental {
 
 // An AEAD cryptor that provides Seal() and Open() functionality. Currently
 // supported configurations:
@@ -109,6 +110,7 @@ class AeadCryptor {
   size_t number_of_sealed_messages_;
 };
 
+}  // namespace experimental
 }  // namespace asylo
 
 #endif  // ASYLO_CRYPTO_AEAD_CRYPTOR_H_

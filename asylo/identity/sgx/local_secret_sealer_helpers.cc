@@ -41,6 +41,8 @@ namespace asylo {
 namespace sgx {
 namespace internal {
 
+using experimental::AeadCryptor;
+
 const char *const kSgxLocalSecretSealerRootName = "SGX";
 
 Status ParseKeyGenerationParamsFromSealedSecretHeader(
