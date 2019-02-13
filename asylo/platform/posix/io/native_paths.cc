@@ -252,6 +252,10 @@ int NativePathHandler::Mkdir(const char *path, mode_t mode) {
   return enc_untrusted_mkdir(path, mode);
 }
 
+int NativePathHandler::Rename(const char *oldpath, const char *newpath) {
+  return enc_untrusted_rename(oldpath, newpath);
+}
+
 int NativePathHandler::Access(const char *path, int mode) {
   return enc_untrusted_access(path, mode);
 }

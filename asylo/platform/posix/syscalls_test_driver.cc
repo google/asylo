@@ -1065,5 +1065,15 @@ TEST_F(SyscallsTest, Itimer) {
   EXPECT_THAT(RunSyscallInsideEnclave("itimer", "", nullptr), IsOk());
 }
 
+// Tests rename(). Calls rename() inside enclave to change the name of a file,
+// and verifies the existence of the file with the new name outside the enclave.
+TEST_F(SyscallsTest, Rename) {
+  EXPECT_THAT(RunSyscallInsideEnclave("rename", FLAGS_test_tmpdir, nullptr),
+              IsOk());
+  int fd = open((FLAGS_test_tmpdir + "/rename").c_str(), O_RDWR);
+  EXPECT_GE(fd, 0);
+  close(fd);
+}
+
 }  // namespace
 }  // namespace asylo

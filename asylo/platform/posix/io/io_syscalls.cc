@@ -69,4 +69,8 @@ int enclave_stat(const char *file, struct stat *st) {
   return IOManager::GetInstance().Stat(file, st);
 }
 
+int rename(const char *oldpath, const char *newpath) {
+  return IOManager::GetInstance().Rename(oldpath, newpath);
+}
+
 }  // extern "C"

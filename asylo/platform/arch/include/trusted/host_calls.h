@@ -92,6 +92,7 @@ int enc_untrusted_fsync(int fd);
 int enc_untrusted_access(const char *path_name, int mode);
 int enc_untrusted_chown(const char *path, uid_t owner, gid_t group);
 int enc_untrusted_link(const char *from, const char *to);
+int enc_untrusted_rename(const char *oldpath, const char *newpath);
 ssize_t enc_untrusted_readlink(const char *path, char *buf, size_t bufsize);
 int enc_untrusted_stat(const char *pathname, struct stat *stat_buffer);
 int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer);

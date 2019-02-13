@@ -146,6 +146,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunMmapTest();
     } else if (test_input.test_target() == "itimer") {
       return RunItimerTest();
+    } else if (test_input.test_target() == "rename") {
+      return RunRenameTest(test_input.path_name());
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1350,6 +1352,28 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (curr_val.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
         curr_val.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
       return Status(error::GoogleError::INTERNAL, "getitimer failure 2");
+    }
+
+    return Status::OkStatus();
+  }
+
+  Status RunRenameTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+    }
+
+    // Create a file and rename it.
+    int fd = open((path + "/oldname").c_str(), O_RDWR | O_CREAT, 0777);
+    if (fd < 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("failed to create file in: ", path,
+                                 ", error: ", strerror(errno)));
+    }
+    close(fd);
+    if (rename((path + "/oldname").c_str(), (path + "/rename").c_str()) < 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("failed to rename file in: ", path,
+                                 ", error: ", strerror(errno)));
     }
 
     return Status::OkStatus();

@@ -288,6 +288,11 @@ class IOManager {
       return -1;
     }
 
+    virtual int Rename(const char *oldpath, const char *newpath) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     virtual int Unlink(const char *pathname) {
       errno = ENOSYS;
       return -1;
@@ -538,6 +543,9 @@ class IOManager {
 
   // Implements mkdir(2).
   int Mkdir(const char *pathname, mode_t mode);
+
+  // Implements rename(2).
+  int Rename(const char *oldpath, const char *newpath);
 
   // Implements writev(2).
   ssize_t Writev(int fd, const struct iovec *iov, int iovcnt);

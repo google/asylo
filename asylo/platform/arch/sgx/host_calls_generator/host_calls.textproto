@@ -283,6 +283,31 @@ host_calls {
   }
 }
 
+host_calls {
+  name: "rename"
+  return_type: "int"
+  parameters {
+    name: "oldpath"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+  parameters {
+    name: "newpath"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+}
+
 ####################################
 ##             Futex              ##
 ####################################

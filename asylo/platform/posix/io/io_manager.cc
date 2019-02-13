@@ -810,6 +810,15 @@ int IOManager::Mkdir(const char *path, mode_t mode) {
       });
 }
 
+int IOManager::Rename(const char *oldpath, const char *newpath) {
+  return CallWithHandler(
+      oldpath, newpath,
+      [](VirtualPathHandler *handler, const char *canonical_oldpath,
+         const char *canonical_newpath) {
+        return handler->Rename(canonical_oldpath, canonical_newpath);
+      });
+}
+
 ssize_t IOManager::Writev(int fd, const struct iovec *iov, int iovcnt) {
   return CallWithContext(fd, [iov, iovcnt](std::shared_ptr<IOContext> context) {
     return context->Writev(iov, iovcnt);
