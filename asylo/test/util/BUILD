@@ -351,6 +351,19 @@ cc_library(
     ],
 )
 
+# Provides configurations suitable for use in tests.
+cc_library(
+    name = "enclave_assertion_authority_configs",
+    testonly = 1,
+    srcs = ["enclave_assertion_authority_configs.cc"],
+    hdrs = ["enclave_assertion_authority_configs.h"],
+    deps = [
+        "//asylo/identity:enclave_assertion_authority_config_proto_cc",
+        "//asylo/identity/null_identity:null_identity_util",
+        "//asylo/identity/sgx:code_identity_util",
+    ],
+)
+
 # A library of shell test utilities.
 sh_library(
     name = "shell_testing",
