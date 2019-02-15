@@ -202,18 +202,20 @@ enum BridgeSocketType {
 
 // All of the file operation flags supported inside the enclave.
 enum FileStatusFlags {
-  RDONLY = 0x00,
-  WRONLY = 0x01,
-  RDWR = 0x02,
-  CREAT = 0x40,
-  EXCL = 0x80,
-  TRUNC = 0x200,
-  APPEND = 0x400,
-  NONBLOCK = 0x800,
+  BRIDGE_RDONLY = 0x00,
+  BRIDGE_WRONLY = 0x01,
+  BRIDGE_RDWR = 0x02,
+  BRIDGE_CREAT = 0x40,
+  BRIDGE_EXCL = 0x80,
+  BRIDGE_TRUNC = 0x200,
+  BRIDGE_APPEND = 0x400,
+  BRIDGE_NONBLOCK = 0x800,
+  BRIDGE_DIRECT = 0x1000,
+  BRIDGE_O_CLOEXEC = 0x2000,
 };
 
 enum FileDescriptorFlags {
-  CLOEXEC = 0x01,
+  BRIDGE_CLOEXEC = 0x01,
 };
 
 // All the syslog options supported inside the enclave.
@@ -250,6 +252,16 @@ enum SysLogLevel {
   BRIDGE_LOG_NOTICE = 5,
   BRIDGE_LOG_INFO = 6,
   BRIDGE_LOG_DEBUG = 7,
+};
+
+// All fcntl cmd arguments supported inside the enclave.
+enum FcntlCommands {
+  BRIDGE_F_GETFD = 1,
+  BRIDGE_F_SETFD = 2,
+  BRIDGE_F_GETFL = 3,
+  BRIDGE_F_SETFL = 4,
+  BRIDGE_F_GETPIPE_SZ = 5,
+  BRIDGE_F_SETPIPE_SZ = 6,
 };
 
 // All tcp option names supported inside the enclave.

@@ -143,31 +143,42 @@ int enc_untrusted_fcntl(int fd, int cmd, ...) {
   arg = va_arg(ap, int64_t);
   va_end(ap);
 
+  int bridge_cmd = asylo::ToBridgeFcntlCmd(cmd);
+  if (bridge_cmd == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
   switch (cmd) {
     case F_SETFL: {
       arg = asylo::ToBridgeFileFlags(arg);
-      return FcntlHelper(fd, cmd, arg);
+      return FcntlHelper(fd, bridge_cmd, arg);
     }
     case F_SETFD: {
       arg = asylo::ToBridgeFDFlags(arg);
-      return FcntlHelper(fd, cmd, arg);
+      return FcntlHelper(fd, bridge_cmd, arg);
     }
     case F_GETFL: {
-      int result = FcntlHelper(fd, cmd, arg);
+      int result = FcntlHelper(fd, bridge_cmd, arg);
       if (result != -1) {
         result = asylo::FromBridgeFileFlags(result);
       }
       return result;
     }
     case F_GETFD: {
-      int result = FcntlHelper(fd, cmd, arg);
+      int result = FcntlHelper(fd, bridge_cmd, arg);
       if (result != -1) {
         result = asylo::FromBridgeFDFlags(result);
       }
       return result;
     }
+    case F_GETPIPE_SZ: {
+      return FcntlHelper(fd, bridge_cmd, arg);
+    }
+    case F_SETPIPE_SZ: {
+      return FcntlHelper(fd, bridge_cmd, arg);
+    }
     default: {
-      LOG(ERROR) << "Unimplemented fcntl command: " << cmd;
       errno = EINVAL;
       return -1;
     }
@@ -953,9 +964,15 @@ int enc_untrusted_uname(struct utsname *utsname_val) {
 //            unistd.h              //
 //////////////////////////////////////
 
-int enc_untrusted_pipe(int pipefd[2]) {
+int enc_untrusted_pipe2(int pipefd[2], int flags) {
+  if (flags & ~(O_CLOEXEC | O_DIRECT | O_NONBLOCK)) {
+    errno = EINVAL;
+    return -1;
+  }
+
   int ret;
-  CHECK_OCALL(ocall_enc_untrusted_pipe(&ret, pipefd));
+  CHECK_OCALL(
+      ocall_enc_untrusted_pipe2(&ret, pipefd, asylo::ToBridgeFileFlags(flags)));
   return ret;
 }
 

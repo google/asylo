@@ -267,8 +267,8 @@ int IOManager::Dup2(int oldfd, int newfd) {
   return -1;
 }
 
-int IOManager::Pipe(int pipefd[2]) {
-  int res = enc_untrusted_pipe(pipefd);
+int IOManager::Pipe(int pipefd[2], int flags) {
+  int res = enc_untrusted_pipe2(pipefd, flags);
   if (res != -1) {
     pipefd[0] = RegisterHostFileDescriptor(pipefd[0]);
     pipefd[1] = RegisterHostFileDescriptor(pipefd[1]);

@@ -477,10 +477,12 @@ class IOManager {
   // error.
   int Dup2(int oldfd, int newfd) LOCKS_EXCLUDED(fd_table_lock_);
 
-  // Creates a pipe. The array |pipefd| is used to return two file descriptors
-  // referring to the ends of the pipe. |pipefd[0]| refers to the read end while
-  // |pipefd[1]| refers to the write end.
-  int Pipe(int pipefd[2]);
+  // Creates a pipe with the given |flags|, which must be a bitwise-or of any
+  // combination of O_CLOEXEC, O_DIRECT, and O_NONBLOCK. The array |pipefd| is
+  // used to return two file descriptors referring to the ends of the pipe.
+  // |pipefd[0]| refers to the read end while |pipefd[1]| refers to the write
+  // end.
+  int Pipe(int pipefd[2], int flags);
 
   // Reads up to |count| bytes from the stream into |buf|, returning the number
   // of bytes read on success or -1 on error.

@@ -267,7 +267,7 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 //            unistd.h              //
 //////////////////////////////////////
 
-int enc_untrusted_pipe(int pipefd[2]);
+int enc_untrusted_pipe2(int pipefd[2], int flags);
 int64_t enc_untrusted_sysconf(int name);
 uint32_t enc_untrusted_sleep(uint32_t seconds);
 int enc_untrusted_usleep(useconds_t usec);

@@ -14,6 +14,16 @@
 # limitations under the License.
 #
 
+load(
+    "//asylo/bazel:asylo.bzl",
+    "enclave_test",
+    cc_test = "cc_test_and_cc_enclave_test",
+    "ASYLO_ALL_BACKENDS",
+)
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+
 licenses(["notice"])  # Apache v2.0
 
 # asylo POSIX interface.
@@ -21,17 +31,6 @@ licenses(["notice"])  # Apache v2.0
 package(
     default_visibility = ["//asylo:implementation"],
 )
-
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
-load(
-    "//asylo/bazel:asylo.bzl",
-    "enclave_test",
-    "cc_enclave_test",
-    "cc_test",
-    "ASYLO_ALL_BACKENDS",
-)
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Note: this target cannot be a cc_library because the toolchain itself depends
 # on these headers, which creates a circular dependency when cc_library adds a
@@ -129,45 +128,40 @@ cc_library(
 )
 
 # Test byteswap.h posix extension inside an enclave.
-cc_enclave_test(
+cc_test(
     name = "bswap_test",
     srcs = ["bswap_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )
 
 # Test for errno inside an enclave.
-cc_enclave_test(
+cc_test(
     name = "errno_test",
     srcs = ["errno_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/test/util:test_flags",
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )
 
-# A protobuf used by syscalls test. The input contains the target syscall to
-# test, and the output contains the output of the syscall inside enclave.
-asylo_proto_library(
-    name = "syscalls_test_proto",
-    srcs = ["syscalls_test.proto"],
-    deps = ["//asylo:enclave_proto"],
-)
-
-# SGX enclave used to test different syscalls.
-sgx_enclave(
-    name = "syscalls_test.so",
-    srcs = ["syscalls_test_enclave.cc"],
+cc_test(
+    name = "pipe_test",
+    srcs = ["pipe_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":syscalls_test_proto_cc",
-        "//asylo/platform/common:bridge_proto_serializer",
-        "//asylo/test/util:enclave_test_application",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_google_absl//absl/container:flat_hash_set",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleanup",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
     ],
 )
 
@@ -175,7 +169,6 @@ cc_test(
     name = "select_test",
     srcs = ["select_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "select_enclave_test",
     deps = [
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:status_matchers",
@@ -212,6 +205,29 @@ enclave_test(
     ],
 )
 
+# A protobuf used by syscalls test. The input contains the target syscall to
+# test, and the output contains the output of the syscall inside enclave.
+asylo_proto_library(
+    name = "syscalls_test_proto",
+    srcs = ["syscalls_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
+# SGX enclave used to test different syscalls.
+sgx_enclave(
+    name = "syscalls_test.so",
+    srcs = ["syscalls_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":syscalls_test_proto_cc",
+        "//asylo/platform/common:bridge_proto_serializer",
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_set",
+    ],
+)
+
 enclave_test(
     name = "syscalls_test",
     srcs = ["syscalls_test_driver.cc"],
@@ -233,11 +249,12 @@ enclave_test(
     ],
 )
 
-cc_enclave_test(
+cc_test(
     name = "times_test",
     srcs = ["times_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )

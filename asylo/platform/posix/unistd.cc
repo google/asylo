@@ -51,7 +51,11 @@ int symlink(const char *path1, const char *path2) {
   return IOManager::GetInstance().SymLink(path1, path2);
 }
 
-int pipe(int pipefd[2]) { return IOManager::GetInstance().Pipe(pipefd); }
+int pipe(int pipefd[2]) { return IOManager::GetInstance().Pipe(pipefd, 0); }
+
+int pipe2(int pipefd[2], int flags) {
+  return IOManager::GetInstance().Pipe(pipefd, flags);
+}
 
 int gethostname(char *name, size_t len) {
   asylo::StatusOr<const asylo::EnclaveConfig *> config_result =

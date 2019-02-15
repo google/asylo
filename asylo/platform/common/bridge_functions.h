@@ -22,8 +22,6 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include <poll.h>
-#include <signal.h>
-#include <stdint.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -33,6 +31,8 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <utime.h>
+#include <csignal>
+#include <cstdint>
 
 #include "asylo/platform/common/bridge_types.h"
 
@@ -164,6 +164,12 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // Converts |syslog_priority| to a bridge syslog priority. Returns 0 if
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
+
+// Converts |bridge_fcntl_cmd| to a runtime fcntl command.
+int FromBridgeFcntlCmd(int bridge_fcntl_cmd);
+
+// Converts |fcntl_cmd| to a bridge fcntl command.
+int ToBridgeFcntlCmd(int fcntl_cmd);
 
 // Converts |bridge_file_flag| to a runtime file flag.
 int FromBridgeFileFlags(int bridge_file_flag);

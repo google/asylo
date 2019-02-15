@@ -533,41 +533,83 @@ int ToBridgeSysLogPriority(int syslog_priority) {
          ToBridgeSysLogFacility(syslog_facility);
 }
 
+int FromBridgeFcntlCmd(int bridge_fcntl_cmd) {
+  switch (bridge_fcntl_cmd) {
+    case BRIDGE_F_GETFD:
+      return F_GETFD;
+    case BRIDGE_F_SETFD:
+      return F_SETFD;
+    case BRIDGE_F_GETFL:
+      return F_GETFL;
+    case BRIDGE_F_SETFL:
+      return F_SETFL;
+    case BRIDGE_F_GETPIPE_SZ:
+      return F_GETPIPE_SZ;
+    case BRIDGE_F_SETPIPE_SZ:
+      return F_SETPIPE_SZ;
+    default:
+      return -1;
+  }
+}
+
+int ToBridgeFcntlCmd(int fcntl_cmd) {
+  switch (fcntl_cmd) {
+    case F_GETFD:
+      return BRIDGE_F_GETFD;
+    case F_SETFD:
+      return BRIDGE_F_SETFD;
+    case F_GETFL:
+      return BRIDGE_F_GETFL;
+    case F_SETFL:
+      return BRIDGE_F_SETFL;
+    case F_GETPIPE_SZ:
+      return BRIDGE_F_GETPIPE_SZ;
+    case F_SETPIPE_SZ:
+      return BRIDGE_F_SETPIPE_SZ;
+    default:
+      return -1;
+  }
+}
+
 int FromBridgeFileFlags(int bridge_file_flag) {
   int file_flag = 0;
-  if (bridge_file_flag & RDONLY) file_flag |= O_RDONLY;
-  if (bridge_file_flag & WRONLY) file_flag |= O_WRONLY;
-  if (bridge_file_flag & RDWR) file_flag |= O_RDWR;
-  if (bridge_file_flag & CREAT) file_flag |= O_CREAT;
-  if (bridge_file_flag & APPEND) file_flag |= O_APPEND;
-  if (bridge_file_flag & EXCL) file_flag |= O_EXCL;
-  if (bridge_file_flag & TRUNC) file_flag |= O_TRUNC;
-  if (bridge_file_flag & NONBLOCK) file_flag |= O_NONBLOCK;
+  if (bridge_file_flag & BRIDGE_RDONLY) file_flag |= O_RDONLY;
+  if (bridge_file_flag & BRIDGE_WRONLY) file_flag |= O_WRONLY;
+  if (bridge_file_flag & BRIDGE_RDWR) file_flag |= O_RDWR;
+  if (bridge_file_flag & BRIDGE_CREAT) file_flag |= O_CREAT;
+  if (bridge_file_flag & BRIDGE_APPEND) file_flag |= O_APPEND;
+  if (bridge_file_flag & BRIDGE_EXCL) file_flag |= O_EXCL;
+  if (bridge_file_flag & BRIDGE_TRUNC) file_flag |= O_TRUNC;
+  if (bridge_file_flag & BRIDGE_NONBLOCK) file_flag |= O_NONBLOCK;
+  if (bridge_file_flag & BRIDGE_DIRECT) file_flag |= O_DIRECT;
+  if (bridge_file_flag & BRIDGE_O_CLOEXEC) file_flag |= O_CLOEXEC;
   return file_flag;
 }
 
 int ToBridgeFileFlags(int file_flag) {
   int bridge_file_flag = 0;
-  if (file_flag & O_RDONLY) bridge_file_flag |= RDONLY;
-  if (file_flag & O_WRONLY) bridge_file_flag |= WRONLY;
-  if (file_flag & O_RDWR) bridge_file_flag |= RDWR;
-  if (file_flag & O_CREAT) bridge_file_flag |= CREAT;
-  if (file_flag & O_APPEND) bridge_file_flag |= APPEND;
-  if (file_flag & O_EXCL) bridge_file_flag |= EXCL;
-  if (file_flag & O_TRUNC) bridge_file_flag |= TRUNC;
-  if (file_flag & O_NONBLOCK) bridge_file_flag |= NONBLOCK;
+  if (file_flag & O_RDONLY) bridge_file_flag |= BRIDGE_RDONLY;
+  if (file_flag & O_WRONLY) bridge_file_flag |= BRIDGE_WRONLY;
+  if (file_flag & O_RDWR) bridge_file_flag |= BRIDGE_RDWR;
+  if (file_flag & O_CREAT) bridge_file_flag |= BRIDGE_CREAT;
+  if (file_flag & O_APPEND) bridge_file_flag |= BRIDGE_APPEND;
+  if (file_flag & O_EXCL) bridge_file_flag |= BRIDGE_EXCL;
+  if (file_flag & O_TRUNC) bridge_file_flag |= BRIDGE_TRUNC;
+  if (file_flag & O_NONBLOCK) bridge_file_flag |= BRIDGE_NONBLOCK;
+  if (file_flag & O_DIRECT) bridge_file_flag |= BRIDGE_DIRECT;
+  if (file_flag & O_CLOEXEC) bridge_file_flag |= BRIDGE_O_CLOEXEC;
   return bridge_file_flag;
 }
 
 int FromBridgeFDFlags(int bridge_fd_flag) {
   int fd_flag = 0;
-  if (bridge_fd_flag & CLOEXEC) fd_flag |= FD_CLOEXEC;
+  if (bridge_fd_flag & BRIDGE_CLOEXEC) fd_flag |= FD_CLOEXEC;
   return fd_flag;
 }
 
 int ToBridgeFDFlags(int fd_flag) {
   int bridge_fd_flag = 0;
-  if (fd_flag & FD_CLOEXEC) bridge_fd_flag |= CLOEXEC;
+  if (fd_flag & FD_CLOEXEC) bridge_fd_flag |= BRIDGE_CLOEXEC;
   return bridge_fd_flag;
 }
 

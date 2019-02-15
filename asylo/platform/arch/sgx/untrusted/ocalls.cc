@@ -18,16 +18,17 @@
 
 // Stubs invoked by edger8r generated bridge code for ocalls.
 
+// For |domainname| field in struct utsname and pipe2().
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
+
 #include <arpa/inet.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <poll.h>
 #include <sched.h>
-#include <signal.h>
-#include <stdint.h>
-#include <stdio.h>
 #include <sys/epoll.h>
 #include <sys/file.h>
 #include <sys/inotify.h>
@@ -35,16 +36,18 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#ifndef _GNU_SOURCE
-#define _GNU_SOURCE  // For |domainname| field in struct utsname.
-#endif
 #include <sys/utsname.h>
 #include <sys/wait.h>
 #include <syslog.h>
-#include <time.h>
 #include <unistd.h>
 #include <utime.h>
 #include <algorithm>
+#include <cerrno>
+#include <csignal>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
+#include <ctime>
 
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"
@@ -165,7 +168,13 @@ int ocall_enc_untrusted_open(const char *path_name, int flags, uint32_t mode) {
   return ret;
 }
 
-int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) {
+int ocall_enc_untrusted_fcntl(int fd, int bridge_cmd, int64_t arg) {
+  int cmd = asylo::FromBridgeFcntlCmd(bridge_cmd);
+  if (cmd == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
   int ret;
   switch (cmd) {
     case F_SETFL:
@@ -186,7 +195,14 @@ int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) {
         ret = asylo::ToBridgeFDFlags(ret);
       }
       break;
+    case F_GETPIPE_SZ:
+      ret = fcntl(fd, cmd, arg);
+      break;
+    case F_SETPIPE_SZ:
+      ret = fcntl(fd, cmd, arg);
+      break;
     default:
+      errno = EINVAL;
       return -1;
   }
   return ret;
@@ -880,8 +896,8 @@ int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
 //            unistd.h              //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_pipe(int pipefd[2]) {
-  int ret = pipe(pipefd);
+int ocall_enc_untrusted_pipe2(int pipefd[2], int flags) {
+  int ret = pipe2(pipefd, asylo::FromBridgeFileFlags(flags));
   return ret;
 }
 

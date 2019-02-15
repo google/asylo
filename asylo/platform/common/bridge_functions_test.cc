@@ -234,11 +234,29 @@ TEST_F(BridgeTest, BridgeSysLogPriorityTest) {
   }
 }
 
+TEST_F(BridgeTest, BridgeFcntlCommandsTest) {
+  intvec from_consts = {BRIDGE_F_GETFD,      BRIDGE_F_SETFD,
+                        BRIDGE_F_GETFL,      BRIDGE_F_SETFL,
+                        BRIDGE_F_GETPIPE_SZ, BRIDGE_F_SETPIPE_SZ};
+  intvec to_consts = {F_GETFD, F_SETFD,      F_GETFL,
+                      F_SETFL, F_GETPIPE_SZ, F_SETPIPE_SZ};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFcntlCmd);
+  EXPECT_THAT(
+      FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1, ITER_BOUND),
+      from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeFcntlCmd);
+  EXPECT_THAT(
+      FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1, ITER_BOUND),
+      to_matcher);
+}
+
 TEST_F(BridgeTest, BridgeFileFlagsTest) {
-  intvec from_bits = {RDONLY, WRONLY, RDWR,  CREAT,
-                      APPEND, EXCL,   TRUNC, NONBLOCK};
-  intvec to_bits = {O_RDONLY, O_WRONLY, O_RDWR,  O_CREAT,
-                    O_APPEND, O_EXCL,   O_TRUNC, O_NONBLOCK};
+  intvec from_bits = {BRIDGE_RDONLY,   BRIDGE_WRONLY,   BRIDGE_RDWR,
+                      BRIDGE_CREAT,    BRIDGE_APPEND,   BRIDGE_EXCL,
+                      BRIDGE_TRUNC,    BRIDGE_NONBLOCK, BRIDGE_DIRECT,
+                      BRIDGE_O_CLOEXEC};
+  intvec to_bits = {O_RDONLY, O_WRONLY, O_RDWR,     O_CREAT,  O_APPEND,
+                    O_EXCL,   O_TRUNC,  O_NONBLOCK, O_DIRECT, O_CLOEXEC};
   auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFileFlags);
   EXPECT_THAT(FuzzBitsetTranslationFunction(from_bits, to_bits, ITER_BOUND),
               from_matcher);
@@ -248,7 +266,7 @@ TEST_F(BridgeTest, BridgeFileFlagsTest) {
 }
 
 TEST_F(BridgeTest, BridgeFDFlagsTest) {
-  intvec from_consts = {CLOEXEC};
+  intvec from_consts = {BRIDGE_CLOEXEC};
   intvec to_consts = {FD_CLOEXEC};
   auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFDFlags);
   EXPECT_THAT(FuzzBitsetTranslationFunction(from_consts, to_consts, ITER_BOUND),

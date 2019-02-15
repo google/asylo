@@ -344,7 +344,8 @@ enclave {
     //            unistd.h              //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_pipe([out] int pipefd[2]) propagate_errno;
+    int ocall_enc_untrusted_pipe2([out] int pipefd[2], int flags)
+        propagate_errno;
     int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants name)
         propagate_errno;
     uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);

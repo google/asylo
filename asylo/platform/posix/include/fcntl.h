@@ -19,13 +19,13 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_FCNTL_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_FCNTL_H_
 
-// This header file is a redirect file that replaces newlib's redirect file
-// <fcntl.h>, in order to complement redirection to <sys/fcntl.h> with
-// enclave-specific extensions to POSIX definitions.
-#include <sys/fcntl.h>
+#include_next <fcntl.h>
 
-#define O_SECURE 0x80000000
-#undef O_NONBLOCK
-#define O_NONBLOCK 04000
+#define F_GETPIPE_SZ 15
+#define F_SETPIPE_SZ 16
+
+#define O_CLOEXEC 0x10000
+#define O_DIRECT 0x20000
+#define O_SECURE 0x40000000
 
 #endif  // ASYLO_PLATFORM_POSIX_INCLUDE_FCNTL_H_
