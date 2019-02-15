@@ -117,6 +117,7 @@ def asylo_deps():
             name = "io_abseil_py",
             # Pre-release commit dated 01/30/2018
             urls = ["https://github.com/abseil/abseil-py/archive/5e343642d987268df199b4c851b7dd3d687ac316.tar.gz"],
+            sha256 = "3c83ba6be3df1ea6d2dd1608830853981d47d2a0faa6c9505e4c8022fc41c912",
             strip_prefix = "abseil-py-5e343642d987268df199b4c851b7dd3d687ac316",
         )
 
@@ -186,6 +187,7 @@ cc_library(
             build_file = "@com_google_protobuf//:six.BUILD",
             # Release 1.10.0
             url = "https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz",
+            sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
         )
 
     native.bind(
@@ -204,6 +206,7 @@ cc_library(
     visibility = ["//visibility:public"],
     srcs = glob(["jinja2/*.py"]),
 )""",
+            sha256 = "0d31d3466c313a9ca014a2d904fed18cdac873a5ba1f7b70b8fd8b206cd860d6",
         )
 
 def asylo_go_deps():
