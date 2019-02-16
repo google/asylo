@@ -24,7 +24,9 @@
 namespace std {
 
 
+using ::log1p;
 using ::log2;
+using ::nextafter;
 
 }
 
