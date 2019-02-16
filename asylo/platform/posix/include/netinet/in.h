@@ -71,6 +71,10 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 } \
   }
 
+#define IN6_IS_ADDR_V4MAPPED(a)                                              \
+  ((((const uint32_t *)(a))[0] == 0) && (((const uint32_t *)(a))[1] == 0) && \
+   (((const uint32_t *)(a))[2] == htonl(0xffff)))
+
 /* Standard well-defined IP protocols.  */
 #define IPPROTO_IP 0         // Dummy protocol for TCP.
 #define IPPROTO_ICMP 1       // Internet Control Message Protocol.
@@ -88,6 +92,7 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
 #define IPPROTO_GRE 47       // General Routing Encapsulation.
 #define IPPROTO_ESP 50       // encapsulating security payload.
 #define IPPROTO_AH 51        // authentication header.
+#define IPPROTO_ICMPV6 58    // ICMPv6.
 #define IPPROTO_MTP 92       // Multicast Transport Protocol.
 #define IPPROTO_BEETPH 94    // IP option pseudo header for BEET.
 #define IPPROTO_ENCAP 98     // Encapsulation Header.
@@ -105,6 +110,24 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
 #define INET_ADDRSTRLEN 16
 #define INET6_ADDRSTRLEN 46
 
+struct in_pktinfo {
+  int ipi_ifindex;
+  struct in_addr ipi_spec_dst;
+  struct in_addr ipi_addr;
+};
+
+/* IPv6 packet information.  */
+struct in6_pktinfo {
+  struct in6_addr ipi6_addr; /* src/dst IPv6 address */
+  unsigned int ipi6_ifindex; /* send/recv interface index */
+};
+
+/* IPv6 MTU information.  */
+struct ip6_mtuinfo {
+  struct sockaddr_in6 ip6m_addr; /* dst address including zone ID */
+  uint32_t ip6m_mtu;             /* path MTU in host byte order */
+};
+
 #define IN_CLASSA(a) ((((in_addr_t)(a)) & 0x80000000) == 0)
 #define IN_CLASSA_NET 0xff000000
 #define IN_CLASSB(a) ((((in_addr_t)(a)) & 0xc0000000) == 0x80000000)
@@ -114,11 +137,77 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
 #define IN_CLASSD(a) ((((in_addr_t)(a)) & 0xf0000000) == 0xe0000000)
 
 #define INADDR_ANY UINT32_C(0x00000000)  // Inet 0.0.0.0
+#define INADDR_NONE UINT32_C(0xffffffff)  // Inet 255.255.255.255
 
 // Address to loopback in software to local host.
 #ifndef INADDR_LOOPBACK
 #define INADDR_LOOPBACK ((in_addr_t)0x7f000001)  // Inet 127.0.0.1.
 #endif
+
+#define IP_TOS 1
+#define IP_TTL 2
+#define IP_HDRINCL 3
+#define IP_OPTIONS 4
+#define IP_ROUTER_ALERT 5 /* bool */
+#define IP_PKTINFO 8      /* bool */
+#define IP_PKTOPTIONS 9
+#define IP_PMTUDISC 10     /* obsolete name? */
+#define IP_MTU_DISCOVER 10 /* int; see below */
+#define IP_RECVERR 11      /* bool */
+#define IP_RECVTTL 12      /* bool */
+#define IP_RECVTOS 13      /* bool */
+#define IP_MTU 14          /* int */
+#define IP_FREEBIND 15
+#define IP_IPSEC_POLICY 16
+#define IP_XFRM_POLICY 17
+#define IP_PASSSEC 18
+#define IP_TRANSPARENT 19
+
+#define IP_MULTICAST_IF 32
+#define IP_MULTICAST_TTL 33
+#define IP_MULTICAST_LOOP 34
+#define IP_ADD_MEMBERSHIP 35
+#define IP_DROP_MEMBERSHIP 36
+#define IP_UNBLOCK_SOURCE 37
+#define IP_BLOCK_SOURCE 38
+#define IP_ADD_SOURCE_MEMBERSHIP 39
+#define IP_DROP_SOURCE_MEMBERSHIP 40
+#define IP_MSFILTER 41
+#define MCAST_JOIN_GROUP 42
+#define MCAST_BLOCK_SOURCE 43
+#define MCAST_UNBLOCK_SOURCE 44
+#define MCAST_LEAVE_GROUP 45
+#define MCAST_JOIN_SOURCE_GROUP 46
+#define MCAST_LEAVE_SOURCE_GROUP 47
+#define MCAST_MSFILTER 48
+#define IP_MULTICAST_ALL 49
+#define IP_UNICAST_IF 50
+
+#define IPV6_RECVPKTINFO 49
+#define IPV6_PKTINFO 50
+#define IPV6_RECVHOPLIMIT 51
+#define IPV6_HOPLIMIT 52
+#define IPV6_RECVHOPOPTS 53
+#define IPV6_HOPOPTS 54
+#define IPV6_RTHDRDSTOPTS 55
+#define IPV6_RECVRTHDR 56
+#define IPV6_RTHDR 57
+#define IPV6_RECVDSTOPTS 58
+#define IPV6_DSTOPTS 59
+#define IPV6_RECVPATHMTU 60
+#define IPV6_PATHMTU 61
+#define IPV6_DONTFRAG 62
+
+struct ip_mreq {
+  struct in_addr imr_multiaddr; /* IP multicast address of group */
+  struct in_addr imr_interface; /* local IP address of interface */
+};
+
+struct ip_mreqn {
+  struct in_addr imr_multiaddr; /* IP multicast address of group */
+  struct in_addr imr_address;   /* local IP address of interface */
+  int imr_ifindex;              /* Interface index */
+};
 
 #ifdef __cplusplus
 }  // extern "C"
