@@ -18,6 +18,7 @@
 #include "asylo/grpc/auth/peer_identity_util.h"
 
 #include "asylo/grpc/auth/enclave_auth_context.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/util/status.h"
@@ -38,7 +39,7 @@ Status ExtractAndCheckPeerSgxCodeIdentity(const ::grpc::ServerContext &context,
 
   EnclaveAuthContext auth_context = auth_context_result.ValueOrDie();
   EnclaveIdentityDescription code_identity_description;
-  sgx::SetSgxIdentityDescription(&code_identity_description);
+  SetSgxIdentityDescription(&code_identity_description);
   StatusOr<const EnclaveIdentity *> identity_result =
       auth_context.FindEnclaveIdentity(code_identity_description);
   if (!identity_result.ok()) {

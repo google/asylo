@@ -20,7 +20,7 @@
 
 #include <utility>
 
-#include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/descriptions.h"
 
 namespace asylo {
 
@@ -31,7 +31,7 @@ EnclaveCredentialsOptions BidirectionalSgxLocalCredentialsOptions() {
 EnclaveCredentialsOptions PeerSgxLocalCredentialsOptions() {
   EnclaveCredentialsOptions options;
   AssertionDescription assertion_description;
-  sgx::SetSgxLocalAssertionDescription(&assertion_description);
+  SetSgxLocalAssertionDescription(&assertion_description);
   options.accepted_peer_assertions.emplace(std::move(assertion_description));
   return options;
 }
@@ -39,7 +39,7 @@ EnclaveCredentialsOptions PeerSgxLocalCredentialsOptions() {
 EnclaveCredentialsOptions SelfSgxLocalCredentialsOptions() {
   EnclaveCredentialsOptions options;
   AssertionDescription assertion_description;
-  sgx::SetSgxLocalAssertionDescription(&assertion_description);
+  SetSgxLocalAssertionDescription(&assertion_description);
   options.self_assertions.emplace(std::move(assertion_description));
   return options;
 }

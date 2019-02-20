@@ -26,6 +26,7 @@
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
@@ -193,7 +194,7 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
                   "Failed to serialize CodeIdentity");
   }
 
-  sgx::SetSgxIdentityDescription(peer_identity->mutable_description());
+  SetSgxIdentityDescription(peer_identity->mutable_description());
 
   return Status::OkStatus();
 }

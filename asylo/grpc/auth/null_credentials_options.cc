@@ -20,7 +20,7 @@
 
 #include <utility>
 
-#include "asylo/identity/null_identity/null_identity_util.h"
+#include "asylo/identity/descriptions.h"
 
 namespace asylo {
 

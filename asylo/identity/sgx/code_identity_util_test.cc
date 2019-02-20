@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/attributes_util.h"

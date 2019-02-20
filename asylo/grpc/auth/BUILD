@@ -73,9 +73,9 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":grpc++_security_enclave",
+        "//asylo/identity:descriptions",
         "//asylo/identity/null_identity:null_assertion_generator",  # alwayslink = 1
         "//asylo/identity/null_identity:null_assertion_verifier",  # alwayslink = 1
-        "//asylo/identity/null_identity:null_identity_util",
     ],
 )
 
@@ -89,7 +89,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":grpc++_security_enclave",
-        "//asylo/identity/sgx:code_identity_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity/sgx:sgx_local_assertion_generator",  # alwayslink = 1
         "//asylo/identity/sgx:sgx_local_assertion_verifier",  # alwayslink = 1
     ],
@@ -142,9 +142,8 @@ cc_test(
         ":enclave_credentials_options",
         ":null_credentials_options",
         ":sgx_local_credentials_options",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/null_identity:null_identity_util",
-        "//asylo/identity/sgx:code_identity_util",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -158,6 +157,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":enclave_auth_context",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity/sgx:code_identity_proto_cc",
         "//asylo/identity/sgx:code_identity_util",

@@ -93,6 +93,7 @@ cc_library(
     name = "code_identity_constants",
     srcs = ["code_identity_constants.cc"],
     hdrs = ["code_identity_constants.h"],
+    visibility = ["//asylo/identity:__subpackages__"],
 )
 
 cc_library(
@@ -162,6 +163,7 @@ cc_library(
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity:enclave_assertion_verifier",
         "//asylo/platform/core:trusted_global_state",
         "//asylo/util:status",
@@ -267,6 +269,7 @@ cc_library(
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/identity/util:sha256_hash_util",
@@ -293,6 +296,7 @@ cc_test(
         ":sgx_code_identity_expectation_matcher",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/identity/util:sha256_hash_util",
@@ -335,6 +339,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/identity:identity_proto_cc",
     ],

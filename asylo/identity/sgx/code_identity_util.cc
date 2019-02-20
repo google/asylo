@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/attributes_util.h"

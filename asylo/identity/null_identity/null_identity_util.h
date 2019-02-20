@@ -21,23 +21,10 @@
 
 #include "asylo/identity/identity.pb.h"
 
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/null_identity/null_identity_constants.h"
 
 namespace asylo {
-
-// Sets |assertion_description| to describe a null assertion.
-inline void SetNullAssertionDescription(
-    AssertionDescription *assertion_description) {
-  assertion_description->set_identity_type(EnclaveIdentityType::NULL_IDENTITY);
-  assertion_description->set_authority_type(kNullAssertionAuthority);
-}
-
-// Sets |identity_description| to describe a null identity.
-inline void SetNullIdentityDescription(
-    EnclaveIdentityDescription *identity_description) {
-  identity_description->set_identity_type(EnclaveIdentityType::NULL_IDENTITY);
-  identity_description->set_authority_type(kNullAuthorizationAuthority);
-}
 
 // Returns true if |identity_description| describes a null identity.
 inline bool IsNullIdentityDescription(

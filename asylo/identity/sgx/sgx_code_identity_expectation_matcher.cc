@@ -18,6 +18,7 @@
 
 #include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
 
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 
 namespace asylo {
@@ -47,7 +48,7 @@ StatusOr<bool> SgxCodeIdentityExpectationMatcher::Match(
 EnclaveIdentityDescription SgxCodeIdentityExpectationMatcher::Description()
     const {
   EnclaveIdentityDescription description;
-  sgx::SetSgxIdentityDescription(&description);
+  SetSgxIdentityDescription(&description);
   return description;
 }
 

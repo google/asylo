@@ -21,6 +21,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/null_identity/null_identity_constants.h"
 
 namespace asylo {

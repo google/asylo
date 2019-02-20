@@ -87,6 +87,17 @@ cc_test(
 )
 
 cc_library(
+    name = "descriptions",
+    hdrs = ["descriptions.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":identity_proto_cc",
+        "//asylo/identity/null_identity:null_identity_constants",
+        "//asylo/identity/sgx:code_identity_constants",
+    ],
+)
+
+cc_library(
     name = "secret_sealer",
     srcs = ["secret_sealer.cc"],
     hdrs = ["secret_sealer.h"],
