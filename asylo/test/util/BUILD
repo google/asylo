@@ -360,6 +360,8 @@ cc_library(
     deps = [
         "//asylo/identity:descriptions",
         "//asylo/identity:enclave_assertion_authority_config_proto_cc",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_proto_cc",
+        "//asylo/util:logging",
     ],
 )
 

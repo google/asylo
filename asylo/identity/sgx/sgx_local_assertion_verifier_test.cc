@@ -36,7 +36,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_assertion.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -44,6 +44,8 @@ namespace asylo {
 namespace {
 
 using ::testing::Not;
+
+constexpr char kBadConfig[] = "Not a real config";
 
 constexpr char kLocalAttestationDomain1[] = "A 16-byte string";
 constexpr char kLocalAttestationDomain2[] = "A superb std::string!";
@@ -60,10 +62,9 @@ const char kUserData[] = "User data";
 class SgxLocalAssertionVerifierTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    EnclaveConfig enclave_config;
-    enclave_config.mutable_host_config()->set_local_attestation_domain(
-        kLocalAttestationDomain1);
-    SetEnclaveConfig(enclave_config);
+    SgxLocalAssertionAuthorityConfig authority_config;
+    authority_config.set_attestation_domain(kLocalAttestationDomain1);
+    ASSERT_TRUE(authority_config.SerializeToString(&config_));
   }
 
   // Sets |description| to the assertion description handled by the SGX local
@@ -129,12 +130,17 @@ TEST_F(SgxLocalAssertionVerifierTest, InitializeSucceedsOnce) {
   EXPECT_THAT(verifier.Initialize(config_), Not(IsOk()));
 }
 
-// Verify that Initialize() fails if the EnclaveConfig is missing the local
+// Verify that Initialize() fails if the authority config cannot be parsed.
+TEST_F(SgxLocalAssertionVerifierTest, InitializeFailsWithUnparsableConfig) {
+  SgxLocalAssertionVerifier verifier;
+  EXPECT_THAT(verifier.Initialize(kBadConfig), Not(IsOk()));
+}
+
+// Verify that Initialize() fails if the authority config is missing the local
 // attestation domain.
 TEST_F(SgxLocalAssertionVerifierTest, InitializeFailsMissingAttestationDomain) {
-  // Override the config set during SetUp().
-  EnclaveConfig enclave_config;
-  SetEnclaveConfig(enclave_config);
+  SgxLocalAssertionAuthorityConfig authority_config;
+  ASSERT_TRUE(authority_config.SerializeToString(&config_));
 
   SgxLocalAssertionVerifier verifier;
   EXPECT_THAT(verifier.Initialize(config_), Not(IsOk()));

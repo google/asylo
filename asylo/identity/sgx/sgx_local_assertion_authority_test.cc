@@ -24,14 +24,13 @@
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
-#include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace {
 
-constexpr char kLocalAttestationDomain1[] = "A 16-byte string";
 constexpr char kUserData[] = "User data";
 
 // A test fixture is required for value-parameterized tests. The test fixture is
@@ -41,10 +40,7 @@ class SgxLocalAssertionAuthorityTest
       public ::testing::WithParamInterface</*same_enclave=*/bool> {
  protected:
   void SetUp() override {
-    EnclaveConfig enclave_config;
-    enclave_config.mutable_host_config()->set_local_attestation_domain(
-        kLocalAttestationDomain1);
-    SetEnclaveConfig(enclave_config);
+    config_ = GetSgxLocalAssertionAuthorityTestConfig().config();
 
     // Create a sgx::FakeEnclave with a randomized identity for the generator.
     generator_enclave_.SetRandomIdentity();

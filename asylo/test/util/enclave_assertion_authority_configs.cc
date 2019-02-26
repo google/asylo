@@ -18,10 +18,15 @@
 
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 
+#include "asylo/util/logging.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
+#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 
 namespace asylo {
+
+// The attestation domain is expected to be a 16-byte unique identifier.
+const char kAttestationDomain[] = "A 16-byte string";
 
 EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig() {
   EnclaveAssertionAuthorityConfig test_config;
@@ -33,6 +38,11 @@ EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig() {
 EnclaveAssertionAuthorityConfig GetSgxLocalAssertionAuthorityTestConfig() {
   EnclaveAssertionAuthorityConfig test_config;
   SetSgxLocalAssertionDescription(test_config.mutable_description());
+
+  SgxLocalAssertionAuthorityConfig config;
+  config.set_attestation_domain(kAttestationDomain);
+  CHECK(config.SerializeToString(test_config.mutable_config()));
+
   return test_config;
 }
 

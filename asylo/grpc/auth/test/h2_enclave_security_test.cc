@@ -27,7 +27,6 @@
 #include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
-#include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/alloc.h"
@@ -43,7 +42,6 @@ namespace {
 constexpr char kClientAdditionalAuthenticatedData[] = "EKEP client";
 constexpr char kServerAdditionalAuthenticatedData[] = "EKEP server";
 constexpr char kAddress[] = "[::1]";
-constexpr char kLocalAttestationDomain[] = "gRPC Test Domain";
 
 struct EnclaveFullStackFixtureData {
   // The address of the server.
@@ -286,12 +284,6 @@ int main(int argc, char **argv) {
   grpc_test_init(argc, argv);
   grpc_end2end_tests_pre_init();
   grpc_init();
-
-  // Set the attestation domain in the global EnclaveConfig.
-  asylo::EnclaveConfig enclave_config;
-  enclave_config.mutable_host_config()->set_local_attestation_domain(
-      asylo::kLocalAttestationDomain);
-  asylo::SetEnclaveConfig(enclave_config);
 
   // Explicitly initialize all assertion authorities used in this test.
   std::vector<asylo::EnclaveAssertionAuthorityConfig> authority_configs = {

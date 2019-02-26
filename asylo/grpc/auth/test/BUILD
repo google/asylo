@@ -43,7 +43,6 @@ cc_binary(
         "//asylo/grpc/auth/util:bridge_cpp_to_c",
         "//asylo/identity:enclave_assertion_authority_config_proto_cc",
         "//asylo/identity:init",
-        "//asylo/platform/core:trusted_global_state",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "@com_github_grpc_grpc//:gpr_base",
         "@com_github_grpc_grpc//:grpc_codegen",

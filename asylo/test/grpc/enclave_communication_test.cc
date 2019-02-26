@@ -37,7 +37,6 @@ DEFINE_string(client_enclave_path, "", "Path to client enclave");
 DEFINE_string(server_enclave_path, "", "Path to server enclave");
 
 constexpr char kName[] = "Mellanie Rescorai";
-constexpr char kLocalAttestationDomain[] = "A unique attestation domain";
 
 // A test for gRPC communication between two enclaves.
 //
@@ -57,11 +56,6 @@ class EnclaveCommunicationTest : public ::testing::Test {
         GetNullAssertionAuthorityTestConfig();
     *config.add_enclave_assertion_authority_configs() =
         GetSgxLocalAssertionAuthorityTestConfig();
-
-    // The client and server must have the same local attestation domain in
-    // order for SGX local attestation to work.
-    config.mutable_host_config()->set_local_attestation_domain(
-        kLocalAttestationDomain);
 
     ASSERT_THAT(SetUpServer(config), IsOk());
     ASSERT_THAT(SetUpClient(config), IsOk());
