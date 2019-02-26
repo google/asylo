@@ -24,7 +24,15 @@ package(
 )
 
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+# Protobuf used by fork.
+asylo_proto_library(
+    name = "fork_proto",
+    srcs = ["fork.proto"],
+    visibility = ["//visibility:public"],
+)
 
 # Target exposing trusted architecture-dependent components for the build
 # configuration.
@@ -57,6 +65,7 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":fork_proto_cc",
         ":untrusted_sgx",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/core:untrusted_core",
@@ -132,6 +141,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
+        ":fork_proto_cc",
         ":sgx_error_space",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
@@ -277,12 +287,21 @@ cc_library(
     linkstatic = 1,
     tags = ASYLO_ALL_BACKENDS,
     deps = [
+        ":fork_proto_cc",
         ":trusted_arch",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_proto_cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
             ":sgx_error_space",
+            "//asylo/grpc/auth/core:client_ekep_handshaker",
+            "//asylo/grpc/auth/core:server_ekep_handshaker",
+            "//asylo/identity:descriptions",
+            "//asylo/identity:identity_acl_evaluator",
+            "//asylo/identity/sgx:code_identity_util",
+            "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",
+            "//asylo/identity/sgx:sgx_local_assertion_generator",
+            "//asylo/identity/sgx:sgx_local_assertion_verifier",
         ],
         "//conditions:default": [],
     }),

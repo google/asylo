@@ -201,6 +201,15 @@ Status EnclaveManager::EnterAndRestore(EnclaveClient *client,
   return client->EnterAndRestore(snapshot_layout);
 }
 
+Status EnclaveManager::EnterAndTransferSecureSnapshotKey(
+    EnclaveClient *client, const ForkHandshakeConfig &fork_handshake_config) {
+  if (!client) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Enclave client does not exist");
+  }
+  return client->EnterAndTransferSecureSnapshotKey(fork_handshake_config);
+}
+
 EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
   absl::ReaderMutexLock lock(&client_table_lock_);
   auto it = client_by_name_.find(name);

@@ -506,6 +506,33 @@ int __asylo_restore(const char *input, size_t input_len, char **output,
   return status_serializer.Serialize(status);
 }
 
+int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
+                                         char **output, size_t *output_len) {
+  Status status = VerifyOutputArguments(output, output_len);
+  if (!status.ok()) {
+    return 1;
+  }
+
+  StatusSerializer<StatusProto> status_serializer(output, output_len);
+
+  asylo::ForkHandshakeConfig fork_handshake_config;
+  if (!fork_handshake_config.ParseFromArray(input, input_len)) {
+    status = Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Failed to parse HandshakeInput");
+    return status_serializer.Serialize(status);
+  }
+
+  TrustedApplication *trusted_application = GetApplicationInstance();
+  if (trusted_application->GetState() != EnclaveState::kRunning) {
+    status = Status(error::GoogleError::FAILED_PRECONDITION,
+                    "Enclave not in state RUNNING");
+    return status_serializer.Serialize(status);
+  }
+
+  status = TransferSecureSnapshotKey(fork_handshake_config);
+  return status_serializer.Serialize(status);
+}
+
 }  // extern "C"
 
 }  // namespace asylo

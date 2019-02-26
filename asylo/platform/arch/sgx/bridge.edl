@@ -91,6 +91,14 @@ enclave {
 	bridge_size_t input_len,
 	[user_check] char **output,
 	[user_check] bridge_size_t *output_len);
+
+    // Invokes a utility ecall that enters the enclave to encrypt and transfer
+    // the snpashot key.
+    utility_tcs public int ecall_transfer_secure_snapshot_key(
+        [in, size=input_len] const char *input,
+	bridge_size_t input_len,
+	[out] char **output,
+	[out] bridge_size_t *output_len);
   };
 
   // Unless otherwise specified, each of the following calls invokes the

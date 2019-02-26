@@ -23,6 +23,7 @@
 
 #include "absl/base/macros.h"
 #include "asylo/enclave.pb.h"
+#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/util/status.h"
@@ -61,6 +62,8 @@ class SgxClient : public EnclaveClient {
   Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
   Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) override;
   Status EnterAndRestore(const SnapshotLayout &snapshot_layout) override;
+  Status EnterAndTransferSecureSnapshotKey(
+      const ForkHandshakeConfig &fork_handshake_config) override;
   Status DestroyEnclave() override;
 
   std::string path_;               // Path to enclave object file.

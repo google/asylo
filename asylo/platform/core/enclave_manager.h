@@ -32,6 +32,7 @@
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
+#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"
@@ -264,6 +265,16 @@ class EnclaveManager {
   ///                        restore enclave states.
   Status EnterAndRestore(EnclaveClient *client,
                          const SnapshotLayout &snapshot_layout);
+
+  /// Enters an enclave and securely transfers snapshot key with another
+  /// enclave. This method calls `client's` EnterAndTransferSecureSnapshotKey
+  /// entry_point.
+  ///
+  /// \param client A client attached to the enclave to enter.
+  /// \param fork_handshake_config The input specifies the socket and type of
+  ///                              enclave(parent/child).
+  Status EnterAndTransferSecureSnapshotKey(
+      EnclaveClient *client, const ForkHandshakeConfig &fork_handshake_config);
 
   /// Fetches the shared resource manager object.
   ///

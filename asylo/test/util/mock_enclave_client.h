@@ -38,6 +38,8 @@ class MockEnclaveClient : public EnclaveClient {
   MOCK_METHOD1(EnterAndHandleSignal, Status(const EnclaveSignal &));
   MOCK_METHOD1(EnterAndTakeSnapshot, Status(SnapshotLayout *));
   MOCK_METHOD1(EnterAndRestore, Status(const SnapshotLayout &));
+  MOCK_METHOD1(EnterAndTransferSecureSnapshotKey,
+               Status(const ForkHandshakeConfig &));
   MOCK_METHOD0(DestroyEnclave, Status());
 };
 

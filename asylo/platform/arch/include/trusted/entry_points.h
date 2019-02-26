@@ -80,6 +80,13 @@ int __asylo_take_snapshot(char **output, size_t *output_len);
 int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
                     char **output, size_t *output_len);
 
+// Enclave secure snapshot key transfer routine.
+//
+// The input type is asylo::ForkHandshakeConfig.
+// The output type is asylo::StatusProto.
+int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
+                                         char **output, size_t *output_len);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

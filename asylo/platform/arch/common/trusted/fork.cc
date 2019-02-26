@@ -39,4 +39,10 @@ Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
   abort();
 }
 
+Status TransferSecureSnapshotKey(
+    const ForkHandshakeConfig &fork_handshake_config) {
+  // Only supported in the SGX hardware backend.
+  abort();
+}
+
 }  // namespace asylo

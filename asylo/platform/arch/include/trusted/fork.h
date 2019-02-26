@@ -22,6 +22,7 @@
 #include <sys/types.h>
 
 #include "asylo/enclave.pb.h"
+#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -35,6 +36,11 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout);
 // Copies the snapshot from untrusted memory to replace data/bss/heap and stack
 // for the calling thread in the current enclave.
 Status RestoreForFork(const SnapshotLayout &snapshot_layout);
+
+// Does a handshake between the parent and child enclave, and parent encrypts
+// and transfers the snapshot key to the child.
+Status TransferSecureSnapshotKey(
+    const ForkHandshakeConfig &fork_handshake_config);
 
 }  // namespace asylo
 

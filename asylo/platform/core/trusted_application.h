@@ -24,6 +24,7 @@
 #include <string>
 
 #include "asylo/enclave.pb.h"
+#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/arch/include/trusted/entry_points.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/util/status.h"
@@ -151,8 +152,13 @@ class TrustedApplication {
                                char **output, size_t *output_len);
   friend int __asylo_threading_donate();
   friend int __asylo_handle_signal(const char *input, size_t input_len);
-  friend int __asylo_take_snapshot(SnapshotLayout *snapshot_layout);
-  friend int __asylo_restore(const SnapshotLayout &snapshot_layout);
+  friend int __asylo_take_snapshot(char **output, size_t *output_len);
+  friend int __asylo_restore(const char *input, size_t input_len, char **output,
+                             size_t *output_len);
+  friend int __asylo_transfer_secure_snapshot_key(const char *input,
+                                                  size_t input_len,
+                                                  char **output,
+                                                  size_t *output_len);
 };
 
 /// User-supplied factory function for making a trusted application instance.

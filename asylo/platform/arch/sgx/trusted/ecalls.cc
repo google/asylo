@@ -156,3 +156,22 @@ int ecall_restore(const char *input, bridge_size_t input_len, char **output,
   }
   return result;
 }
+
+// Invokes the enclave secure snapshot key transfer entry-point. Returns a
+// non-zero error code on failure.
+int ecall_transfer_secure_snapshot_key(const char *input,
+                                       bridge_size_t input_len, char **output,
+                                       bridge_size_t *output_len) {
+  int result = 0;
+  bridge_size_t bridge_output_len;
+  try {
+    result = asylo::__asylo_transfer_secure_snapshot_key(
+        input, static_cast<size_t>(input_len), output, &bridge_output_len);
+  } catch (...) {
+    LOG(FATAL) << "Uncaught exception in enclave";
+  }
+  if (output_len) {
+    *output_len = static_cast<size_t>(bridge_output_len);
+  }
+  return result;
+}

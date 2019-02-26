@@ -62,6 +62,11 @@ class TestClient : public EnclaveClient {
     return Status::OkStatus();
   }
 
+  Status EnterAndTransferSecureSnapshotKey(
+      const ForkHandshakeConfig &fork_handshake_config) override {
+    return Status::OkStatus();
+  }
+
   Status DestroyEnclave() override { return Status::OkStatus(); }
 };
 

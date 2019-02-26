@@ -225,6 +225,7 @@ cc_library(
     srcs = ["server_ekep_handshaker.cc"],
     hdrs = ["server_ekep_handshaker.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":ekep_crypto",
         ":ekep_error_space",
@@ -248,6 +249,7 @@ cc_library(
     srcs = ["client_ekep_handshaker.cc"],
     hdrs = ["client_ekep_handshaker.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":ekep_crypto",
         ":ekep_error_space",

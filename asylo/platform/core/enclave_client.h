@@ -22,6 +22,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
+#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 
@@ -82,6 +83,11 @@ class EnclaveClient {
 
   // Enters the enclave and invokes its restoring entry point.
   virtual Status EnterAndRestore(const SnapshotLayout &snapshot_layout) = 0;
+
+  // Enters the enclave and invokes its secure snapshot key transfer entry
+  // point.
+  virtual Status EnterAndTransferSecureSnapshotKey(
+      const ForkHandshakeConfig &fork_handshake_config) = 0;
 
   // Invoked by the EnclaveManager immediately before the enclave is
   // destroyed. This hook is provided to enable execution of custom logic by the
