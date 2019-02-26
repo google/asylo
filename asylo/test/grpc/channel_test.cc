@@ -29,6 +29,7 @@
 #include "asylo/identity/init.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -64,8 +65,15 @@ template <typename ConfigT>
 class ChannelTest : public ::testing::Test {
  public:
   void SetUp() override {
-    std::vector<EnclaveAssertionAuthorityConfig> configs;
-    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
+    // Set up assertion authority configs.
+    std::vector<EnclaveAssertionAuthorityConfig> authority_configs = {
+      GetNullAssertionAuthorityTestConfig()
+    };
+
+    // Explicitly initialize the null assertion authorities.
+    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(
+                    authority_configs.cbegin(), authority_configs.cend()),
+                IsOk());
   }
 };
 

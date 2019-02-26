@@ -25,10 +25,10 @@
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 #include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
-#include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
 #include "asylo/test/grpc/messenger_client_impl.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
 #include "include/grpcpp/channel.h"
@@ -49,13 +49,23 @@ constexpr const char kAddress[] = "[::1]";
 class EnclaveSecureGrpcTest : public EnclaveTest {
  protected:
   void SetUp() override {
+    // Add config to initialize null assertion authorities in the enclave.
+    *config_.add_enclave_assertion_authority_configs() =
+        GetNullAssertionAuthorityTestConfig();
+
+    // Use the same configs to initialize null assertion authorities on the
+    // host.
+    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(
+                    config_.enclave_assertion_authority_configs().cbegin(),
+                    config_.enclave_assertion_authority_configs().cend()),
+                IsOk());
+
+    // Set server's address and port configuration.
     ServerConfig *config = config_.MutableExtension(server_input_config);
     config->set_host(kAddress);
     // Use a port of 0 for port auto-selection.
     config->set_port(0);
     address_ = absl::StrCat(config->host(), ":", config->port());
-
-    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
 
     EnclaveTest::SetUp();
   }

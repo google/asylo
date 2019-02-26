@@ -53,18 +53,15 @@ asylo_proto_library(
 
 cc_library(
     name = "init",
-    srcs = [
-        "init.cc",
-        "init_internal.h",
-    ],
+    srcs = ["init_internal.h"],
     hdrs = ["init.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":enclave_assertion_authority",
         ":enclave_assertion_authority_config_proto_cc",
-        "//asylo/identity:enclave_assertion_authority",
-        "//asylo/identity:enclave_assertion_generator",
-        "//asylo/identity:enclave_assertion_verifier",
+        ":enclave_assertion_generator",
+        ":enclave_assertion_verifier",
         "//asylo/util:logging",
         "//asylo/util:status",
     ],

@@ -31,12 +31,12 @@
 
 namespace asylo {
 
-// Initializes every EnclaveAssertionGenerator and EnclaveAssertionVerifier that
-// has been statically-registered into the program static maps using the
+// Initializes EnclaveAssertionGenerators and EnclaveAssertionVerifiers that
+// have been statically-registered into the program static maps using the
 // configs provided in the range [|configs_begin|, |configs_end|). If a config
-// is not available for an authority, uses an empty config string to initialize
-// that authority. Each authority will be initialized at most once between all
-// calls to this function.
+// is not available for an authority, does not attempt to initialize that
+// authority. Each authority will be initialized at most once between all calls
+// to this function.
 //
 // ConfigIteratorT must be an iterator type that satisfies the following
 // constraints:
@@ -48,8 +48,7 @@ namespace asylo {
 // This function will return a non-ok status if any of the following occurs:
 //   * A config was provided for which there is no matching
 //     EnclaveAssertionGenerator and/or EnclaveAssertionVerifier
-//   * An authority could not be initialized with either a provided config or an
-//     empty config string
+//   * An authority could not be initialized with a provided config
 //   * An authority identifier could not be generated from a provided config
 //
 // Note that if this method has already been called successfully, future calls
@@ -98,17 +97,6 @@ Status InitializeEnclaveAssertionAuthorities(ConfigIteratorT configs_begin,
     }
   }
 
-  // Initialize all remaining assertion authorities with an empty config string.
-  for (auto &generator : AssertionGeneratorMap::Values()) {
-    if (!internal::TryInitialize(/*config=*/"", &generator).ok()) {
-      ok = false;
-    }
-  }
-  for (auto &verifier : AssertionVerifierMap::Values()) {
-    if (!internal::TryInitialize(/*config=*/"", &verifier).ok()) {
-      ok = false;
-    }
-  }
 
   return ok ? Status::OkStatus()
             : Status(
@@ -116,11 +104,6 @@ Status InitializeEnclaveAssertionAuthorities(ConfigIteratorT configs_begin,
                   "One or more errors occurred while attempting to initialize "
                   "assertion generators and assertion verifiers");
 }
-
-// Initializes all statically-registered EnclaveAssertionGenerators and
-// EnclaveAssertionVerifiers using empty configs. This is provided for use when
-// none of the statically-registered assertion authorities require a config.
-Status InitializeEnclaveAssertionAuthorities();
 
 }  // namespace asylo
 

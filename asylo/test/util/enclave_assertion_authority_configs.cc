@@ -18,9 +18,8 @@
 
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
-#include "asylo/identity/null_identity/null_identity_util.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 
 namespace asylo {
 
@@ -33,7 +32,7 @@ EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig() {
 
 EnclaveAssertionAuthorityConfig GetSgxLocalAssertionAuthorityTestConfig() {
   EnclaveAssertionAuthorityConfig test_config;
-  sgx::SetSgxLocalAssertionDescription(test_config.mutable_description());
+  SetSgxLocalAssertionDescription(test_config.mutable_description());
   return test_config;
 }
 

@@ -27,8 +27,8 @@
 #include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/init.h"
-#include "asylo/identity/null_identity/null_identity_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
@@ -237,6 +237,7 @@ void TearDownSecureFullstack(grpc_end2end_test_fixture *f) {
   gpr_free(fixture_data);
 }
 
+
 // All test configurations for the enclave gRPC stack.
 static grpc_end2end_test_config configs[] = {
     // Bidirectional null-identity-based attestation.
@@ -292,11 +293,14 @@ int main(int argc, char **argv) {
       asylo::kLocalAttestationDomain);
   asylo::SetEnclaveConfig(enclave_config);
 
-  // Initialize all enclave assertion authorities. No configs are currently
-  // needed for either the null or SGX local null assertion authorities.
-  // Consequently, no configs are provided and this call will just initialize
-  // each authority with an empty config string.
-  GPR_ASSERT(asylo::InitializeEnclaveAssertionAuthorities().ok());
+  // Explicitly initialize all assertion authorities used in this test.
+  std::vector<asylo::EnclaveAssertionAuthorityConfig> authority_configs = {
+    asylo::GetNullAssertionAuthorityTestConfig(),
+    asylo::GetSgxLocalAssertionAuthorityTestConfig(),
+  };
+  GPR_ASSERT(InitializeEnclaveAssertionAuthorities(authority_configs.cbegin(),
+                                                   authority_configs.cend())
+                 .ok());
 
   size_t i;
   for (i = 0; i < sizeof(asylo::configs) / sizeof(*asylo::configs); ++i) {

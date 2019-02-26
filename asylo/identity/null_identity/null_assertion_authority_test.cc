@@ -16,16 +16,22 @@
  *
  */
 
+#include <string>
+#include <vector>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/enclave_assertion_generator.h"
 #include "asylo/identity/enclave_assertion_verifier.h"
+#include "asylo/identity/identity.pb.h"
 #include "asylo/identity/init.h"
 #include "asylo/identity/null_identity/null_assertion_generator.h"
 #include "asylo/identity/null_identity/null_assertion_verifier.h"
 #include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 
 // The unit tests in this file test compatibility of NullAssertionGenerator and
@@ -61,12 +67,15 @@ const char kInvalidAssertion[] = "assertion";
 class NullAssertionAuthorityTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    AssertionDescription null_assertion_description;
+    SetNullAssertionDescription(&null_assertion_description);
+
     // The same key is used for NullAssertionGenerator in AssertionGeneratorMap
     // and for NullAssertionVerifier in AssertionVerifierMap.
-    std::string map_key =
-        EnclaveAssertionAuthority::GenerateAuthorityId(
-            EnclaveIdentityType::NULL_IDENTITY, kNullAssertionAuthority)
-            .ValueOrDie();
+    std::string map_key = EnclaveAssertionAuthority::GenerateAuthorityId(
+                         null_assertion_description.identity_type(),
+                         null_assertion_description.authority_type())
+                         .ValueOrDie();
 
     auto generator = AssertionGeneratorMap::GetValue(map_key);
     ASSERT_NE(generator, AssertionGeneratorMap::value_end());
@@ -74,7 +83,14 @@ class NullAssertionAuthorityTest : public ::testing::Test {
     auto verifier = AssertionVerifierMap::GetValue(map_key);
     ASSERT_NE(verifier, AssertionVerifierMap::value_end());
 
-    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
+    std::vector<EnclaveAssertionAuthorityConfig> authority_configs = {
+      GetNullAssertionAuthorityTestConfig()
+    };
+
+    // Explicitly initialize the null assertion authorities.
+    ASSERT_THAT(InitializeEnclaveAssertionAuthorities(
+                    authority_configs.cbegin(), authority_configs.cend()),
+                IsOk());
 
     // Tests in this file only need to call const methods of
     // NullAssertionGenerator and NullAssertionVerifier.

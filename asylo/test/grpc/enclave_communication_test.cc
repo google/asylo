@@ -23,6 +23,7 @@
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/enclave_test_launcher.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
@@ -45,10 +46,17 @@ constexpr char kLocalAttestationDomain[] = "A unique attestation domain";
 class EnclaveCommunicationTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    // Set up a base EnclaveConfig for the client and the server.
     EnclaveConfig config;
     if (!FLAGS_test_tmpdir.empty()) {
       config.mutable_logging_config()->set_log_directory(FLAGS_test_tmpdir);
     }
+
+    // The client and server both use the same assertion authority configs.
+    *config.add_enclave_assertion_authority_configs() =
+        GetNullAssertionAuthorityTestConfig();
+    *config.add_enclave_assertion_authority_configs() =
+        GetSgxLocalAssertionAuthorityTestConfig();
 
     // The client and server must have the same local attestation domain in
     // order for SGX local attestation to work.

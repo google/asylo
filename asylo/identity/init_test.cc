@@ -40,13 +40,6 @@ TEST(InitTest, InitializeSucceedsWithEmptyConfigs) {
       IsOk());
 }
 
-// Verify that InitializeEnclaveAssertionAuthorities succeeds with no input
-// (default configs).
-TEST(InitTest, InitializeSucceedsWithDefaultConfigs) {
-  std::vector<EnclaveAssertionAuthorityConfig> configs;
-
-  EXPECT_THAT(InitializeEnclaveAssertionAuthorities(), IsOk());
-}
 
 // Verify that InitializeEnclaveAssertionAuthorities succeeds when provided with
 // valid configs.
