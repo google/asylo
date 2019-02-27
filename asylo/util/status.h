@@ -25,6 +25,7 @@
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
+#include "asylo/util/logging.h"
 #include "asylo/util/error_space.h"  // IWYU: pragma export
 #include "asylo/util/status.pb.h"
 #include "asylo/util/status_error_space.h"
@@ -232,6 +233,9 @@ bool operator==(const Status &lhs, const Status &rhs);
 bool operator!=(const Status &lhs, const Status &rhs);
 
 std::ostream &operator<<(std::ostream &os, const Status &status);
+
+/// Checks that the `Status` object in `val` is OK.
+#define ASYLO_CHECK_OK(val) CHECK_EQ(::asylo::Status::OkStatus(), (val))
 
 }  // namespace asylo
 
