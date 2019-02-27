@@ -14,10 +14,6 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
-# Build targets for the whole-application wrapper and its tests.
-
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_binary",
@@ -26,13 +22,17 @@ load(
     "enclave_test",
     "ASYLO_ALL_BACKENDS",
 )
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
     "@linux_sgx//:sgx_sdk.bzl",
     "sgx_enclave",
     "sgx_enclave_configuration",
 )
+
+licenses(["notice"])  # Apache v2.0
+
+# Build targets for the whole-application wrapper and its tests.
 
 # A utility for converting various representations of argv.
 cc_library(
@@ -148,9 +148,9 @@ enclave_test(
         ":application_wrapper_proto_cc",
         ":argv",
         "//asylo:enclave_client",
-        "//asylo/test/util:pipe",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:fd_utils",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",

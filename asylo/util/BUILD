@@ -14,13 +14,13 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:proto.bzl", "asylo_proto_library")
+
 licenses(["notice"])  # Apache v2.0
 
 # Common utilities for trusted and untrusted targets.
-
-load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Defines ASYLO macros.
 cc_library(
@@ -101,6 +101,37 @@ cc_test(
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# A library of utilities for working with POSIX file descriptors.
+cc_library(
+    name = "fd_utils",
+    srcs = ["fd_utils.cc"],
+    hdrs = ["fd_utils.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":status",
+        "//asylo/util:logging",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+    ],
+)
+
+cc_test(
+    name = "fd_utils_test",
+    srcs = ["fd_utils_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "fd_utils_enclave_test",
+    deps = [
+        ":fd_utils",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
     ],
 )
