@@ -183,6 +183,20 @@ cc_library(
     ],
 )
 
+# A utility for collecting writes from file descriptors.
+cc_library(
+    name = "output_collector",
+    testonly = 1,
+    srcs = ["output_collector.cc"],
+    hdrs = ["output_collector.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/util:fd_utils",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+    ],
+)
+
 # gMock matchers for Protocol Buffers.
 cc_library(
     name = "proto_matchers",
