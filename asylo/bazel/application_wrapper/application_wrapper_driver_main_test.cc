@@ -32,6 +32,7 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/test/util/fake_enclave_loader.h"
 #include "asylo/test/util/mock_enclave_client.h"
+#include "asylo/test/util/output_collector.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -39,6 +40,7 @@ namespace asylo {
 namespace {
 
 using ::testing::_;
+using ::testing::HasSubstr;
 using ::testing::InSequence;
 using ::testing::Return;
 using ::testing::SetArgPointee;
@@ -157,6 +159,36 @@ TEST_F(ApplicationWrapperDriverMainTest,
           .status(),
       StatusIs(error::GoogleError::INTERNAL,
                "EnclaveOutput does not have a main_return_value extension"));
+}
+
+// Tests that ApplicationWrapperDriverMain() logs an error message if the call
+// to DestroyEnclave() when processing another error fails.
+TEST_F(ApplicationWrapperDriverMainTest,
+       LogsErrorMessageIfDestroyEnclaveFailsDuringErrorProcessing) {
+  const Status enter_and_run_failure(error::GoogleError::INTERNAL, "foobar");
+  const Status destroy_enclave_failure(error::GoogleError::INTERNAL, "bazzle");
+
+  EXPECT_CALL(*client_, EnterAndInitialize(_));
+  EXPECT_CALL(*client_, EnterAndRun(_, _))
+      .WillOnce(Return(enter_and_run_failure));
+  EXPECT_CALL(*client_, EnterAndFinalize(_))
+      .WillOnce(Return(destroy_enclave_failure));
+  EXPECT_CALL(*client_, DestroyEnclave()).Times(0);
+
+  char *arg = nullptr;
+  OutputCollector collect_stderr(kCollectStderr);
+  EXPECT_EQ(ApplicationWrapperDriverMain(Loader(), "double_failure", /*argc=*/0,
+                                         /*argv=*/&arg)
+                .status(),
+            enter_and_run_failure);
+  EXPECT_THAT(collect_stderr.CollectAllOutputAndRestore(),
+              IsOkAndHolds(HasSubstr(
+                  absl::StrCat("Failed to destroy the application enclave: ",
+                               destroy_enclave_failure.ToString()))));
+
+  // Since the EnterAndFinalize() call fails, ApplicationWrapperDriverMain()
+  // will not have destroyed the enclave.
+  DestroyClient();
 }
 
 // Tests that ApplicationWrapperDriverMain() returns the same status as

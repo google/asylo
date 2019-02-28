@@ -171,6 +171,7 @@ cc_test(
         "//asylo:enclave_client",
         "//asylo/test/util:fake_enclave_loader",
         "//asylo/test/util:mock_enclave_client",
+        "//asylo/test/util:output_collector",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
