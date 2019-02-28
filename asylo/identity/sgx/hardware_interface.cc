@@ -20,7 +20,7 @@
 
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/platform/arch/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "include/sgx.h"
 
 // The following functions are defined by the Intel SGX SDK. However,

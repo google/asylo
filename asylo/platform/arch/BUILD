@@ -142,7 +142,6 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":fork_proto_cc",
-        ":sgx_error_space",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
@@ -151,6 +150,7 @@ cc_library(
         "//asylo/platform/common:memory",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/core:untrusted_core",
+        "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:logging",
@@ -161,18 +161,6 @@ cc_library(
         "@com_google_absl//absl/types:span",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
-    ],
-)
-
-# An error space for SGX.
-cc_library(
-    name = "sgx_error_space",
-    srcs = ["sgx/sgx_error_space.cc"],
-    hdrs = ["sgx/sgx_error_space.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/util:status",
-        "@linux_sgx//:public",
     ],
 )
 
@@ -212,7 +200,6 @@ cc_library(
     tags = ["asylo-sgx"],
     visibility = ["//visibility:private"],
     deps = [
-        ":sgx_error_space",
         ":trusted_sgx_bridge",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/common:bridge_proto_serializer",
@@ -220,6 +207,7 @@ cc_library(
         "//asylo/platform/common:memory",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/posix/signal:signal_manager",
+        "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
@@ -293,7 +281,7 @@ cc_library(
         "//asylo:enclave_proto_cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
-            ":sgx_error_space",
+            "//asylo/platform/primitives/sgx:sgx_error_space",
             "//asylo/grpc/auth/core:client_ekep_handshaker",
             "//asylo/grpc/auth/core:server_ekep_handshaker",
             "//asylo/identity:descriptions",

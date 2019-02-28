@@ -44,7 +44,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/memory.h"
-#include "asylo/platform/arch/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"

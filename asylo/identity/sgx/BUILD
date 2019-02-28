@@ -423,7 +423,7 @@ cc_library(
         "@com_google_absl//absl/base:core_headers",
         "//asylo/crypto/util:bytes",
         "//asylo/util:logging",
-        "//asylo/platform/arch:sgx_error_space",
+        "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/util:status",
         "@boringssl//:crypto",
     ] + select({

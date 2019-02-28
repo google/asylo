@@ -31,7 +31,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
-#include "asylo/platform/arch/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 
 namespace asylo {
 namespace sgx {

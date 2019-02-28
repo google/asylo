@@ -47,3 +47,15 @@ cc_library(
         "@com_google_absl//absl/strings",
     ],
 )
+
+# An error space for SGX.
+cc_library(
+    name = "sgx_error_space",
+    srcs = ["sgx_error_space.cc"],
+    hdrs = ["sgx_error_space.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/util:status",
+        "@linux_sgx//:public",
+    ],
+)

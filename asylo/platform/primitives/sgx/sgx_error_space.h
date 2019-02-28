@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_SGX_SGX_ERROR_SPACE_H_
-#define ASYLO_PLATFORM_ARCH_SGX_SGX_ERROR_SPACE_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_SGX_SGX_ERROR_SPACE_H_
+#define ASYLO_PLATFORM_PRIMITIVES_SGX_SGX_ERROR_SPACE_H_
 
 #include "asylo/util/status.h"
 #include "include/sgx_error.h"
@@ -47,4 +47,4 @@ ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<sgx_status_t> tag);
 }  // namespace error
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_ARCH_SGX_SGX_ERROR_SPACE_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_SGX_SGX_ERROR_SPACE_H_

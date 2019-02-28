@@ -26,7 +26,7 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/arch/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
