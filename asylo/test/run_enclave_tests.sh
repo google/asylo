@@ -2,11 +2,13 @@
 
 BAZEL="bazel"
 
-# Query for all of the tests marked as regression tests.
+# Query for all of the tests marked as regression tests excluding tests in
+# platform/primitives.
 ASYLO_TESTS="tests(//asylo/...)"
+ASYLO_PRIMITIVES="tests(//asylo/platform/primitives/...)"
 NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
-REGRESSION_TESTS=(
-  $(${BAZEL} query "${ASYLO_TESTS} except ${NOREGRESSION_TESTS}")
+REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
+  ${NOREGRESSION_TESTS} except ${ASYLO_PRIMITIVES}")
 )
 
 # Separately run the host and enclave tests, with different configs.

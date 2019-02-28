@@ -25,6 +25,7 @@ exports_files([
     "patch_repository.bzl",
     "proto.bzl",
     "sgx_deps.bzl",
+    "sim_enclave.bzl",
 ])
 
 load(

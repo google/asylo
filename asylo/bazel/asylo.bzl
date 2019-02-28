@@ -406,6 +406,44 @@ def enclave_loader(
         data = kwargs.get("data", []),
     )
 
+def sim_enclave_loader(
+        name,
+        enclaves = {},
+        embedded_enclaves = {},
+        loader_args = [],
+        **kwargs):
+    """Thin wrapper around enclave loader, adds necessary linkopts and testonly=1
+
+    Args:
+      name: Name for build target.
+      enclaves: Dictionary from enclave names to target dependencies. The
+        dictionary must be injective. This dictionary is used to format each
+        string in `loader_args` after each enclave target is interpreted as the
+        path to its output binary.
+      embedded_enclaves: Dictionary from ELF section names (that do not start
+        with '.') to target dependencies. Each target in the dictionary is
+        embedded in the loader binary under the corresponding ELF section.
+      loader_args: List of arguments to be passed to `loader`. Arguments may
+        contain {enclave_name}-style references to keys from the `enclaves` dict,
+        each of which will be replaced with the path to the named enclave.
+      **kwargs: cc_binary arguments.
+    """
+    linkopts = kwargs.pop("linkopts", [])
+    if "-rdynamic" not in linkopts:
+        linkopts += ["-rdynamic"]
+    if "-ldl" not in linkopts:
+        linkopts += ["-ldl"]
+
+    enclave_loader(
+        name,
+        enclaves = enclaves,
+        embedded_enclaves = embedded_enclaves,
+        loader_args = loader_args,
+        linkopts = linkopts,
+        testonly = 1,
+        **kwargs
+    )
+
 # The section to embed the application enclave in.
 _APPLICATION_WRAPPER_ENCLAVE_SECTION = "enclave"
 
@@ -588,6 +626,32 @@ def enclave_test(
         size = size,
         testonly = 1,
         tags = ["enclave_test"] + tags,
+    )
+
+def sim_enclave_test(
+        name,
+        **kwargs):
+    """Thin wrapper around enclave test, adds 'asylo-sim' tag and necessary linkopts
+
+    Args:
+      name: enclave_test name
+      **kwargs: same as enclave_test kwargs
+
+    """
+
+    tags = kwargs.pop("tags", [])
+    if "asylo-sim" not in tags:
+        tags += ["asylo-sim"]
+
+    linkopts = kwargs.pop("linkopts", [])
+    if "-rdynamic" not in linkopts:
+        linkopts += ["-rdynamic"]
+
+    enclave_test(
+        name,
+        tags = tags,
+        linkopts = linkopts,
+        **kwargs
     )
 
 def cc_test(
