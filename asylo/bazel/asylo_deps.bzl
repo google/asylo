@@ -195,6 +195,12 @@ cc_library(
         actual = "@six_archive//:six",
     )
 
+    # required by protobuf_python
+    native.bind(
+        name = "python_headers",
+        actual = "@com_google_protobuf//util/python:python_headers",
+    )
+
     # Jinja for code_generator.py
     if "jinja" not in native.existing_rules():
         http_archive(
