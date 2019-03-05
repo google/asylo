@@ -4792,12 +4792,13 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/configure.host ./newlib/configure.hos
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h ./newlib/libc/include/malloc.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h
 +++ ./newlib/libc/include/malloc.h
-@@ -50,6 +50,11 @@
+@@ -50,6 +50,12 @@
  extern _VOID _free_r _PARAMS ((struct _reent *, _PTR));
  #endif
  
 +#ifdef __ASYLO__
 +extern _VOID set_malloc_hook _PARAMS((_PTR(*)(size_t, _PTR), _PTR));
++extern _VOID set_realloc_hook _PARAMS((_PTR(*)(_PTR, size_t, _PTR), _PTR));
 +extern _VOID set_free_hook _PARAMS((_VOID(*)(_PTR, _PTR), _PTR));
 +#endif  // __ASYLO__
 +
@@ -5077,6 +5078,41 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/mprec.c ./newlib/libc/std
  	return 0;
  }
 -
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/realloc.c ./newlib/libc/stdlib/realloc.c
+--- ../newlib-2.5.0.20170922/newlib/libc/stdlib/realloc.c
++++ ./newlib/libc/stdlib/realloc.c
+@@ -10,11 +10,31 @@
+ 
+ #ifndef _REENT_ONLY
+ 
++#ifdef __ASYLO__
++static void* (*realloc_hook)(void*, size_t, void*) = NULL;
++static void* realloc_pool = NULL;
++
++void
++_DEFUN (set_realloc_hook, (custom_realloc, pool),
++        void* (*custom_realloc)(void*, size_t, void*) _AND
++        void* pool)
++{
++  realloc_hook = custom_realloc;
++  realloc_pool = pool;
++}
++#endif  // __ASYLO__
++
+ _PTR
+ _DEFUN (realloc, (ap, nbytes),
+ 	_PTR ap _AND
+ 	size_t nbytes)
+ {
++#ifdef __ASYLO__
++  if (realloc_hook)
++  {
++    return realloc_hook(ap, nbytes, realloc_pool);
++  }
++#endif  // __ASYLO__
+   return _realloc_r (_REENT, ap, nbytes);
+ }
+ 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/strtoimax.c ./newlib/libc/stdlib/strtoimax.c
 --- ../newlib-2.5.0.20170922/newlib/libc/stdlib/strtoimax.c
 +++ ./newlib/libc/stdlib/strtoimax.c
