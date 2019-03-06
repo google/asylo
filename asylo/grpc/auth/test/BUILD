@@ -52,6 +52,19 @@ cc_binary(
     ],
 )
 
+cc_library(
+    name = "mock_enclave_auth_context",
+    testonly = 1,
+    hdrs = ["mock_enclave_auth_context.h"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "//asylo/grpc/auth:enclave_auth_context",
+        "//asylo/identity:identity_proto_cc",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Generates rules for gRPC end2end tests.
 #
 # An end2end test target looks like this:

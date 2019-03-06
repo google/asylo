@@ -32,6 +32,8 @@ namespace asylo {
 ///
 /// The authentication properties in an EnclaveAuthContext object include the
 /// secure transport protocol and the peer's enclave identities.
+///
+/// Virtual functions are only for mocking.
 class EnclaveAuthContext {
  public:
   /// Constructs an EnclaveAuthContext using the authentication properties from
@@ -51,26 +53,33 @@ class EnclaveAuthContext {
   static StatusOr<EnclaveAuthContext> CreateFromAuthContext(
       const ::grpc::AuthContext &auth_context);
 
+  virtual ~EnclaveAuthContext() = default;
+
   /// Gets the secure transport record-protocol used for securing frames over
   /// the connection.
   ///
   /// \return The secure transport record-protocol.
-  RecordProtocol GetRecordProtocol() const;
+  virtual RecordProtocol GetRecordProtocol() const;
 
   /// Indicates whether the authenticated peer has an identity matching
   /// `description`.
   ///
   /// \param description A description of the identity.
   /// \return True if the peer has the specified identity.
-  bool HasEnclaveIdentity(const EnclaveIdentityDescription &description) const;
+  virtual bool HasEnclaveIdentity(
+      const EnclaveIdentityDescription &description) const;
 
   /// Finds and returns a peer identity matching `description`, if one exists.
   ///
   /// \param description A description of an identity to find.
   /// \return A pointer to the identity on success, and a StatusOr with a
   ///        `GoogleError::NOT_FOUND` Status on failure.
-  StatusOr<const EnclaveIdentity *> FindEnclaveIdentity(
+  virtual StatusOr<const EnclaveIdentity *> FindEnclaveIdentity(
       const EnclaveIdentityDescription &description) const;
+
+ protected:
+  EnclaveAuthContext()
+      : identities_(), record_protocol_(UNKNOWN_RECORD_PROTOCOL) {}
 
  private:
   // Creates an EnclaveAuthContext for the given peer's |identities| and the
