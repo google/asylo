@@ -27,6 +27,7 @@
 DEFINE_string(enclave_path, "", "Path to enclave to load");
 DEFINE_bool(test_in_initialize, false,
             "Run tests in Initialize, rather than Run");
+DEFINE_int32(v, 0, "Logging verbosity level");
 
 namespace {
 
@@ -39,6 +40,7 @@ int main(int argc, char *argv[]) {
 
   // If provided in the environment, pass the test output file into the enclave.
   asylo::EnclaveConfig config;
+  config.mutable_logging_config()->set_vlog_level(FLAGS_v);
   char *output_file = std::getenv("GTEST_OUTPUT");
   if (output_file != nullptr && output_file[0] != '\0') {
     asylo::TestShimEnclaveConfig *shim_config =
