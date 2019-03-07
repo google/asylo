@@ -32,9 +32,8 @@ class SimTestBackend : public TestBackend {
   SimTestBackend() = default;
 
   // Loads an instance of a sim test enclave, aborting on failure.
-  StatusOr<std::shared_ptr<EnclaveClient>> LoadTestEnclave(
-      std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider)
-      override;
+  StatusOr<std::shared_ptr<Client>> LoadTestEnclave(
+      std::unique_ptr<Client::ExitCallProvider> exit_call_provider) override;
 
   // Signals to ignore memory leak checking on abort tests.
   bool LeaksMemoryOnAbort() override { return true; }

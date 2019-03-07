@@ -52,10 +52,10 @@ class PrimitivesTest : public ::testing::Test {
  protected:
   // Loads the enclave. When 'reload' is false, the enclave is indeed loaded,
   // and initialization is expected to happen.
-  std::shared_ptr<EnclaveClient> LoadTestEnclaveOrDie(bool reload) {
+  std::shared_ptr<Client> LoadTestEnclaveOrDie(bool reload) {
     auto exit_call_provider = absl::make_unique<DispatchTable>();
     // Register init exit call invoked during test_enclave.cc initialization.
-    MockFunction<Status(std::shared_ptr<class EnclaveClient> enclave, void *,
+    MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
                         UntrustedParameterStack *params)>
         mock_init_handler;
     if (reload) {
@@ -80,7 +80,7 @@ class PrimitivesTest : public ::testing::Test {
 
 // Enter an instance of the test enclave and multiply a number by two, aborting
 // on failure.
-int32_t MultiplyByTwoOrDie(const std::shared_ptr<EnclaveClient> &client,
+int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
                            int32_t value) {
   UntrustedParameterStack params;
   params.Push<int32_t>(value);
@@ -185,7 +185,7 @@ TEST_F(PrimitivesTest, AbortEnclave) {
           : nullptr);
 
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
-  std::shared_ptr<EnclaveClient> client_copy = client;
+  std::shared_ptr<Client> client_copy = client;
 
   // Make an enclave call.
   EXPECT_THAT(MultiplyByTwoOrDie(client, 1), Eq(2));
@@ -225,7 +225,7 @@ TEST_F(PrimitivesTest, CallChain) {
   // An exit handler to compute a Fibonacci number, calling back into the
   // enclave recursively.
   ExitHandler::Callback fibonacci_handler =
-      [&](std::shared_ptr<EnclaveClient> client, void *context,
+      [&](std::shared_ptr<Client> client, void *context,
           UntrustedParameterStack *params) -> Status {
     if (params->empty()) {
       return Status{error::GoogleError::INVALID_ARGUMENT,

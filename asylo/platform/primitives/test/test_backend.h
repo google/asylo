@@ -39,8 +39,8 @@ class TestBackend {
   virtual ~TestBackend() = default;
 
   // Loads an instance of an enclave, aborting on failure.
-  std::shared_ptr<EnclaveClient> LoadTestEnclaveOrDie(
-      std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider) {
+  std::shared_ptr<Client> LoadTestEnclaveOrDie(
+      std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
     auto result = LoadTestEnclave(std::move(exit_call_provider));
     EXPECT_THAT(result.status(), IsOk());
     return result.ValueOrDie();
@@ -51,8 +51,8 @@ class TestBackend {
 
  private:
   // Loads an instance of an enclave, aborting on failure.
-  virtual StatusOr<std::shared_ptr<EnclaveClient>> LoadTestEnclave(
-      std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider) = 0;
+  virtual StatusOr<std::shared_ptr<Client>> LoadTestEnclave(
+      std::unique_ptr<Client::ExitCallProvider> exit_call_provider) = 0;
 };
 
 }  // namespace test

@@ -33,16 +33,15 @@
 namespace asylo {
 namespace primitives {
 
-thread_local EnclaveClient *EnclaveClient::current_client_ = nullptr;
+thread_local Client *Client::current_client_ = nullptr;
 
-Status EnclaveClient::EnclaveCall(uint64_t selector,
-                                  UntrustedParameterStack *params) {
+Status Client::EnclaveCall(uint64_t selector, UntrustedParameterStack *params) {
   ScopedCurrentClient scoped_client(this);
   return EnclaveCallInternal(selector, params);
 }
 
-PrimitiveStatus EnclaveClient::ExitCallback(uint64_t untrusted_selector,
-                                            UntrustedParameterStack *params) {
+PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
+                                     UntrustedParameterStack *params) {
   if (!current_client_->exit_call_provider()) {
     return PrimitiveStatus{error::GoogleError::FAILED_PRECONDITION,
                            "Exit call provider not set yet"};
@@ -56,7 +55,7 @@ PrimitiveStatus EnclaveClient::ExitCallback(uint64_t untrusted_selector,
 // binary. This is a responsibility of the respective backend loader.
 extern "C" PrimitiveStatus asylo_exit_call(uint64_t untrusted_selector,
                                            UntrustedParameterStack *params) {
-  return EnclaveClient::ExitCallback(untrusted_selector, params);
+  return Client::ExitCallback(untrusted_selector, params);
 }
 
 extern "C" void *asylo_local_alloc_handler(size_t size) { return malloc(size); }

@@ -50,9 +50,9 @@ SimEnclaveClient::~SimEnclaveClient() {
   }
 }
 
-StatusOr<std::shared_ptr<EnclaveClient>> SimBackend::Load(
+StatusOr<std::shared_ptr<Client>> SimBackend::Load(
     const std::string &path,
-    std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider) {
+    std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   std::shared_ptr<SimEnclaveClient> client(
       new SimEnclaveClient(std::move(exit_call_provider)));
 
@@ -61,7 +61,7 @@ StatusOr<std::shared_ptr<EnclaveClient>> SimBackend::Load(
     // Make client reference available as thread-local for the time it loads
     // the enclave binary, in order to enable exit calls by the enclave
     // initialization.
-    EnclaveClient::ScopedCurrentClient scoped_client(client.get());
+    Client::ScopedCurrentClient scoped_client(client.get());
 
     // dlopen may allocate resources which are not disposed by dlclose.
     absl::LeakCheckDisabler disabler;

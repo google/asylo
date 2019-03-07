@@ -36,7 +36,7 @@ namespace primitives {
 static constexpr char kHello[] = "Hello";
 
 // When the enclave asks for it, send "Hello"
-Status hello_handler(std::shared_ptr<EnclaveClient> client, void *context,
+Status hello_handler(std::shared_ptr<Client> client, void *context,
                      UntrustedParameterStack *params) {
   // Push our message on to the parameter stack to pass to the enclave
   params->Push(Extent{const_cast<char *>(kHello), strlen(kHello)});
@@ -44,7 +44,7 @@ Status hello_handler(std::shared_ptr<EnclaveClient> client, void *context,
 }
 
 Status call_enclave() {
-  std::shared_ptr<EnclaveClient> client;
+  std::shared_ptr<Client> client;
   // Trusted code must exit the enclave to interact with untrusted
   // components like the host operating system. In the Asylo
   // primitives model this is accomplished via "exit handlers," where

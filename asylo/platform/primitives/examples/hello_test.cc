@@ -41,8 +41,8 @@ namespace test {
 class HelloTest : public ::testing::Test {
  public:
   // Loads an instance of a sim test enclave, aborting on failure.
-  StatusOr<std::shared_ptr<EnclaveClient>> LoadTestEnclave() {
-    std::shared_ptr<EnclaveClient> client;
+  StatusOr<std::shared_ptr<Client>> LoadTestEnclave() {
+    std::shared_ptr<Client> client;
     ASYLO_ASSIGN_OR_RETURN(
         client, LoadEnclave<SimBackend>(FLAGS_enclave_binary,
                                         absl::make_unique<DispatchTable>()));
@@ -52,7 +52,7 @@ class HelloTest : public ::testing::Test {
   }
 
   // Loads an instance of a sim test enclave, aborting on failure.
-  std::shared_ptr<EnclaveClient> LoadTestEnclaveOrDie() {
+  std::shared_ptr<Client> LoadTestEnclaveOrDie() {
     auto result = LoadTestEnclave();
     EXPECT_THAT(result.status(), IsOk());
     return result.ValueOrDie();
@@ -62,8 +62,8 @@ class HelloTest : public ::testing::Test {
   static constexpr char kTest[] = "Test";
 
   // When the enclave asks for it, send "Test"
-  static Status test_handler(std::shared_ptr<EnclaveClient> client,
-                             void *context, UntrustedParameterStack *params) {
+  static Status test_handler(std::shared_ptr<Client> client, void *context,
+                             UntrustedParameterStack *params) {
     // Push our message on to the parameter stack to pass to the enclave
     params->Push(Extent{const_cast<char *>(kTest), strlen(kTest)});
     return Status::OkStatus();

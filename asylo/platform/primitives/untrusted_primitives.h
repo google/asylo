@@ -43,22 +43,22 @@ namespace primitives {
 // structure compatible with:
 //
 // struct EnclaveBackend {
-//   // Load an enclave, returning an EnclaveClient or error status.
-//   static StatusOr<std::shared_ptr<EnclaveClient>> Load(...);
+//   // Load an enclave, returning a Client or error status.
+//   static StatusOr<std::shared_ptr<Client>> Load(...);
 // };
 
 // Loads an enclave. This template function should be instantiated with an
 // "Enclave Backend" parameter exported by a concrete implementation of the
 // "Backend" concept.
 template <typename Backend, typename... Args>
-StatusOr<std::shared_ptr<class EnclaveClient>> LoadEnclave(Args &&... args) {
+StatusOr<std::shared_ptr<class Client>> LoadEnclave(Args &&... args) {
   return Backend::Load(std::forward<Args>(args)...);
 }
 
 // Callback structure for dispatching messages from the enclave.
 struct ExitHandler {
   using Callback =
-      std::function<Status(std::shared_ptr<class EnclaveClient> enclave, void *,
+      std::function<Status(std::shared_ptr<class Client> enclave, void *,
                            ParameterStack<malloc, free> *)>;
 
   ExitHandler() : context(nullptr) {}
@@ -88,7 +88,7 @@ using UntrustedParameterStack = ParameterStack<malloc, free>;
 using UntrustedExitCallPtr = ExitCallPtr<malloc, free>;
 
 // A reference to an enclave held by untrusted code.
-class EnclaveClient : public std::enable_shared_from_this<EnclaveClient> {
+class Client : public std::enable_shared_from_this<Client> {
  public:
   // An interface to a provider of enclave exit calls.
   class ExitCallProvider {
@@ -104,17 +104,17 @@ class EnclaveClient : public std::enable_shared_from_this<EnclaveClient> {
         ASYLO_MUST_USE_RESULT = 0;
 
     // Finds and invokes an exit handler. Returns an error status on failure.
-    virtual Status InvokeExitHandler(
-        uint64_t untrusted_selector, UntrustedParameterStack *params,
-        EnclaveClient *client) ASYLO_MUST_USE_RESULT = 0;
+    virtual Status InvokeExitHandler(uint64_t untrusted_selector,
+                                     UntrustedParameterStack *params,
+                                     Client *client) ASYLO_MUST_USE_RESULT = 0;
   };
 
   // RAII wrapper that sets thread-local enclave client reference and resets
   // it when going out of scope.
   class ScopedCurrentClient {
    public:
-    explicit ScopedCurrentClient(EnclaveClient *client)
-        : saved_client_(EnclaveClient::current_client_) {
+    explicit ScopedCurrentClient(Client *client)
+        : saved_client_(Client::current_client_) {
       current_client_ = client;
     }
     ~ScopedCurrentClient() { current_client_ = saved_client_; }
@@ -123,10 +123,10 @@ class EnclaveClient : public std::enable_shared_from_this<EnclaveClient> {
     ScopedCurrentClient &operator=(const ScopedCurrentClient &other) = delete;
 
    private:
-    EnclaveClient *saved_client_;
+    Client *saved_client_;
   };
 
-  virtual ~EnclaveClient() = default;
+  virtual ~Client() = default;
 
   // Returns true if the enclave has been destroyed, or if it is marked for
   // destruction pending the completion of an operation by another thread. A
@@ -153,7 +153,7 @@ class EnclaveClient : public std::enable_shared_from_this<EnclaveClient> {
   ExitCallProvider *exit_call_provider() { return exit_call_provider_.get(); }
 
  protected:
-  explicit EnclaveClient(std::unique_ptr<ExitCallProvider> exit_call_provider)
+  explicit Client(std::unique_ptr<ExitCallProvider> exit_call_provider)
       : exit_call_provider_(std::move(exit_call_provider)) {}
 
   // Provides implementation of EnclaveCall.
@@ -167,7 +167,7 @@ class EnclaveClient : public std::enable_shared_from_this<EnclaveClient> {
 
   // Thread-local reference to the enclave that makes exit call.
   // Can be set by EnclaveCall, enclave loader.
-  static thread_local EnclaveClient *current_client_;
+  static thread_local Client *current_client_;
 };
 
 }  // namespace primitives

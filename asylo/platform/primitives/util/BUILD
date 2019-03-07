@@ -55,7 +55,7 @@ cc_library(
     ],
 )
 
-# A dispatch table implementation of EnclaveClient::ExitCallProvider.
+# A dispatch table implementation of Client::ExitCallProvider.
 cc_library(
     name = "dispatch_table",
     srcs = ["dispatch_table.cc"],

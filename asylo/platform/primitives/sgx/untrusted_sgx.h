@@ -32,16 +32,14 @@ namespace primitives {
 struct SgxBackend {
   // Loads an SGX enclave and returns a client to the loaded enclave or an
   // error status on failure.
-  static StatusOr<std::shared_ptr<EnclaveClient>> Load(
-      const std::string &name,
-      void *base_address,
-      size_t enclave_size,
+  static StatusOr<std::shared_ptr<Client>> Load(
+      const std::string &name, void *base_address, size_t enclave_size,
       const EnclaveConfig &config,
-      std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider);
+      std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
 
-// SGX implementation of EnclaveClient.
-class SgxEnclaveClient : public EnclaveClient {
+// SGX implementation of Client.
+class SgxEnclaveClient : public Client {
  public:
   ~SgxEnclaveClient() override;
   void Destroy() override;

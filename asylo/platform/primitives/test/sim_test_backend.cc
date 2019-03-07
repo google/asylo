@@ -36,8 +36,8 @@ namespace asylo {
 namespace primitives {
 namespace test {
 
-StatusOr<std::shared_ptr<EnclaveClient>> SimTestBackend::LoadTestEnclave(
-    std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider) {
+StatusOr<std::shared_ptr<Client>> SimTestBackend::LoadTestEnclave(
+    std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   return LoadEnclave<SimBackend>(FLAGS_enclave_binary,
                                  std::move(exit_call_provider));
 }

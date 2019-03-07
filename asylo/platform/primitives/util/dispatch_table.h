@@ -30,7 +30,7 @@ namespace asylo {
 namespace primitives {
 
 // Implementation of ExitCallProvider based on dispatch table (thread safe).
-class DispatchTable : public EnclaveClient::ExitCallProvider {
+class DispatchTable : public Client::ExitCallProvider {
  public:
   DispatchTable() = default;
 
@@ -45,7 +45,7 @@ class DispatchTable : public EnclaveClient::ExitCallProvider {
   // Finds and invokes an exit handler, setting an error status on failure.
   Status InvokeExitHandler(uint64_t untrusted_selector,
                            UntrustedParameterStack *params,
-                           EnclaveClient *client) override ASYLO_MUST_USE_RESULT
+                           Client *client) override ASYLO_MUST_USE_RESULT
       LOCKS_EXCLUDED(mutex_);
 
  private:

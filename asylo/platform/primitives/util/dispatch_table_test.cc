@@ -40,13 +40,13 @@ namespace asylo {
 namespace primitives {
 namespace {
 
-class MockedEnclaveClient : public EnclaveClient {
+class MockedEnclaveClient : public Client {
  public:
   using MockExitHandlerCallback =
-      MockFunction<Status(std::shared_ptr<class EnclaveClient> enclave, void *,
+      MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
                           UntrustedParameterStack *params)>;
 
-  MockedEnclaveClient() : EnclaveClient(absl::make_unique<DispatchTable>()) {}
+  MockedEnclaveClient() : Client(absl::make_unique<DispatchTable>()) {}
 
   // Virtual methods not used in this test.
   bool IsClosed() const override { return false; }

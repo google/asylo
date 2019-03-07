@@ -47,13 +47,13 @@ struct SimBackend {
   // Loads a simulation enclave from a file system path for the untrusted
   // application. Returns a client to the loaded enclave or an error status on
   // failure.
-  static StatusOr<std::shared_ptr<EnclaveClient>> Load(
+  static StatusOr<std::shared_ptr<Client>> Load(
       const std::string &path,
-      std::unique_ptr<EnclaveClient::ExitCallProvider> exit_call_provider);
+      std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
 
-// Simulator implementation of EnclaveClient.
-class SimEnclaveClient : public EnclaveClient {
+// Simulator implementation of Client.
+class SimEnclaveClient : public Client {
  public:
   ~SimEnclaveClient() override;
   void Destroy() override;
@@ -68,7 +68,7 @@ class SimEnclaveClient : public EnclaveClient {
   // Constructor.
   explicit SimEnclaveClient(
       std::unique_ptr<ExitCallProvider> exit_call_provider)
-      : EnclaveClient(std::move(exit_call_provider)) {}
+      : Client(std::move(exit_call_provider)) {}
 
   // Dynamic library handle for enclave instance loaded at runtime.
   void *dl_handle_ = nullptr;
