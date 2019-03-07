@@ -135,7 +135,7 @@ class Client : public std::enable_shared_from_this<Client> {
 
   // Marks the enclave for destruction, possibily pending the completion of
   // operations by concurrent client threads.
-  virtual void Destroy() = 0;
+  virtual Status Destroy() = 0;
 
   // Enters the enclave synchronously at an entry point to trusted code
   // designated by `selector`.

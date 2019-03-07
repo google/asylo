@@ -50,7 +50,9 @@ class MockedEnclaveClient : public Client {
 
   // Virtual methods not used in this test.
   bool IsClosed() const override { return false; }
-  void Destroy() override {}
+  Status Destroy() override {
+    return Status::OkStatus();
+  }
   Status EnclaveCallInternal(uint64_t selector,
                              UntrustedParameterStack *params) override {
     return Status::OkStatus();

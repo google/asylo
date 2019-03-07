@@ -56,7 +56,7 @@ struct SimBackend {
 class SimEnclaveClient : public Client {
  public:
   ~SimEnclaveClient() override;
-  void Destroy() override;
+  Status Destroy() override;
   Status EnclaveCallInternal(uint64_t selector,
                              UntrustedParameterStack *params) override;
   bool IsClosed() const override;

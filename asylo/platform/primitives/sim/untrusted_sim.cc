@@ -85,11 +85,12 @@ StatusOr<std::shared_ptr<Client>> SimBackend::Load(
   return client;
 }
 
-void SimEnclaveClient::Destroy() {
+Status SimEnclaveClient::Destroy() {
   if (dl_handle_) {
     dlclose(dl_handle_);
     dl_handle_ = nullptr;
   }
+  return Status::OkStatus();;
 }
 
 Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,

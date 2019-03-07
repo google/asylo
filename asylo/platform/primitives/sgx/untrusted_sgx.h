@@ -42,7 +42,7 @@ struct SgxBackend {
 class SgxEnclaveClient : public Client {
  public:
   ~SgxEnclaveClient() override;
-  void Destroy() override;
+  Status Destroy() override;
   Status EnclaveCallInternal(uint64_t selector,
                              UntrustedParameterStack *params) override;
 };
