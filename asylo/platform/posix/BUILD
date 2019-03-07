@@ -258,3 +258,13 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_test(
+    name = "syslog_test",
+    srcs = ["syslog_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)

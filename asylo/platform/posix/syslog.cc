@@ -35,10 +35,16 @@ void syslog(int priority, const char *format, ...) {
   va_start(args, format);
   // Get the size of the formatted string.
   int size = vsnprintf(nullptr, 0, format, args);
+  // value of args is now undefined after vsnprintf and vsnprintf does not call
+  // va_end.
+
+  // reset the arg to the input.
+  va_start(args, format);
   // Create a buffer with the same size as the formatted string.
   std::unique_ptr<char[]> buffer(new char[size]);
   // Reads the formatted string to the buffer.
   vsnprintf(buffer.get(), size, format, args);
+  // do no re-use args since it is currently undefined.
   enc_untrusted_syslog(priority, buffer.get());
 }
 
