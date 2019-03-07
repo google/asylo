@@ -72,7 +72,7 @@ TEST_F(StatusConversionsTest, ValidateStatus) {
               Eq(reference_primitive_status_.error_code()));
   EXPECT_THAT(generatedStatus.error_space(), Eq(google_error_space_));
   EXPECT_THAT(generatedStatus.error_message(),
-              StrEq(reference_primitive_status_.error_message()));
+              Eq(reference_primitive_status_.error_message()));
 }
 
 // Validate members in PrimitiveStatus set correctly when status has google
@@ -83,7 +83,7 @@ TEST_F(StatusConversionsTest, PrimitiveStatusTestForStatusInGoogleError) {
   EXPECT_THAT(generatedPrimitiveStatus.error_code(),
               Eq(reference_google_error_status_.error_code()));
   EXPECT_THAT(generatedPrimitiveStatus.error_message(),
-              StrEq(std::string(reference_google_error_status_.error_message())));
+              Eq(reference_google_error_status_.error_message()));
 }
 
 // Validate members in PrimitiveStatus set correctly when status has non google
@@ -94,7 +94,7 @@ TEST_F(StatusConversionsTest, PrimitiveStatusTestForStatusNotInGoogleError) {
 
   EXPECT_THAT(generatedPrimitiveStatus.error_code(),
               Eq(error::GoogleError::OUT_OF_RANGE));
-  EXPECT_THAT(generatedPrimitiveStatus.error_message(),
+  EXPECT_THAT(std::string(generatedPrimitiveStatus.error_message()),
               StrEq(absl::StrCat(
                   "Could not convert error space '",
                   reference_non_google_error_status_.error_space()->SpaceName(),

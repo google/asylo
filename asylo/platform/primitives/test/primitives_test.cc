@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 #include "absl/debugging/leak_check.h"
 #include "absl/memory/memory.h"
+#include "gflags/gflags.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"

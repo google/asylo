@@ -71,6 +71,7 @@ cc_library(
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/test/util:status_matchers",
         "//asylo/util:status",
+        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
@@ -110,38 +111,6 @@ sim_enclave_test(
         "//asylo/platform/primitives/sim:untrusted_sim",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/memory",
-    ],
-)
-
-sim_enclave_test(
-    name = "proxy_primitives_test",
-    size = "small",
-    copts = ASYLO_DEFAULT_COPTS,
-    data = [
-        ":proxy_test_process",
-        ":proxy_test_process_host_loader",
-    ],
-    enclaves = {"sim": ":sim_test_enclave.so"},
-    linkstatic = True,
-    tags = [
-        "exclusive",
-    ],
-    test_args = [
-        "--proxy_binary='third_party/asylo/platform/primitives/test/proxy_test_process'",
-        "--enclave_binary='{sim}'",
-    ],
-    deps = [
-        ":primitives_test_lib",
-        ":test_backend",
-        "//asylo/platform/primitives",
-        "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/util:dispatch_table",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_github_grpc_grpc//:grpc++",
-        "@com_google_absl//absl/strings",
     ],
 )

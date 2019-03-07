@@ -76,7 +76,7 @@ Status call_enclave() {
 }  // namespace asylo
 
 int main(int argc, char *argv[]) {
-  ParseCommandLineFlags(&argc, &argv, /*remove_flags=*/true);
+  google::ParseCommandLineFlags(&argc, &argv, true);
   auto status = ::asylo::primitives::call_enclave();
   std::cout << status.ToString() << std::endl;
   return 0;

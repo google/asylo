@@ -58,6 +58,7 @@ cc_library(
     ],
     hdrs = ["untrusted_sim.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    linkopts = ["-ldl"],
     deps = [
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",

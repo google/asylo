@@ -22,6 +22,7 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 ASYLO_ALL_BACKENDS = [
     "asylo-sgx",
+    "asylo-sim",
 ]
 
 def _backend_tags(tags):

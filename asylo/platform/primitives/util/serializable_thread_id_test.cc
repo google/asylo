@@ -17,11 +17,14 @@
  */
 
 #include "asylo/platform/primitives/util/serializable_thread_id.h"
+
 #include <cstddef>
+#include <cstdint>
 #include <memory>
 #include <sstream>
 #include <string>
 #include <thread>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_map.h"
@@ -152,7 +155,7 @@ TEST_F(ThreadIdTest, IdsSerialization) {
     ThreadId id(thread.second->thread_id());
 
     // ThreadId can be cast into number and back keeping its value.
-    const uint64 id_number = id.Serialize();
+    const uint64_t id_number = id.Serialize();
     ThreadId restored_id = ThreadId::Deserialize(id_number);
     EXPECT_THAT(restored_id, Eq(thread.second->thread_id()));
   }

@@ -17,6 +17,7 @@
  */
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 
+#include <array>
 #include <memory>
 #include <string>
 
@@ -59,13 +60,12 @@ class HelloTest : public ::testing::Test {
   }
 
  private:
-  static constexpr char kTest[] = "Test";
-
   // When the enclave asks for it, send "Test"
   static Status test_handler(std::shared_ptr<Client> client, void *context,
                              UntrustedParameterStack *params) {
+    static std::array<char, 4> test_data{{'T', 'e', 's', 't'}};
     // Push our message on to the parameter stack to pass to the enclave
-    params->Push(Extent{const_cast<char *>(kTest), strlen(kTest)});
+    params->Push(Extent{test_data.data(), test_data.size()});
     return Status::OkStatus();
   }
 };

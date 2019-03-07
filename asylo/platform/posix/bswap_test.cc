@@ -24,10 +24,18 @@
 namespace asylo {
 namespace {
 
+using ::testing::Eq;
+
 TEST(ByteSwapTest, Swaps) {
-  EXPECT_EQ(bswap_16(0x1234), 0x3412);
-  EXPECT_EQ(bswap_32(0x12345678), 0x78563412);
-  EXPECT_EQ(bswap_64(0x1234567890abcdef), 0xefcdab9078563412);
+  // Binding bswap uses outside the macro uses avoids gcc errors, e.g.,
+  // "error: statement-expressions are not allowed outside functions nor in
+  //  template-argument lists"
+  auto swap1 = bswap_16(0x1234);
+  EXPECT_THAT(swap1, Eq(0x3412));
+  auto swap2 = bswap_32(0x12345678);
+  EXPECT_THAT(swap2, Eq(0x78563412));
+  auto swap3 = bswap_64(0x1234567890abcdef);
+  EXPECT_THAT(swap3, Eq(0xefcdab9078563412));
 }
 
 }  // namespace
