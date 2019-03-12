@@ -23,7 +23,7 @@ RUN apt-get update && \
         bison \
         build-essential \
         flex \
-        libisl-0.18-dev \
+        libisl-dev \
         libmpc-dev \
         libmpfr-dev \
         rsync \
@@ -54,7 +54,6 @@ RUN apt-get update && \
         bazel \
         build-essential \
         libfl2 \
-        libisl15 \
         ocaml-nox \
         ocamlbuild \
         openjdk-8-jdk-headless \
