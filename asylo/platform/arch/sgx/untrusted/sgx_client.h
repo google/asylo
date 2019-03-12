@@ -26,6 +26,7 @@
 #include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_manager.h"
+#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 #include "include/sgx_urts.h"
@@ -56,6 +57,10 @@ class SgxClient : public EnclaveClient {
   friend class SgxLoader;
   friend class SgxEmbeddedLoader;
 
+  // Syncs the SgxClient instance with the SgxEnclaveClient instance defined in
+  // primitives.
+  void Sync(std::shared_ptr<primitives::Client> primitive_client);
+
   Status EnterAndInitialize(const EnclaveConfig &config) override;
   Status EnterAndFinalize(const EnclaveFinal &final_input) override;
   Status EnterAndDonateThread() override;
@@ -71,6 +76,9 @@ class SgxClient : public EnclaveClient {
   sgx_enclave_id_t id_;       // SGX SDK enclave identifier.
   void *base_address_;        // Enclave base address.
   size_t size_;               // Enclave size.
+
+  // Primitive SGX client.
+  std::shared_ptr<primitives::SgxEnclaveClient> primitive_sgx_client_;
 };
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves

@@ -37,14 +37,17 @@ cc_library(
 
 cc_library(
     name = "untrusted_sgx",
+    srcs = ["untrusted_sgx.cc"],
     hdrs = ["untrusted_sgx.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":sgx_error_space",
         "//asylo:enclave_proto_cc",
-        "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/util:elf_reader",
+        "//asylo/util:file_mapping",
         "//asylo/util:status",
-        "@com_google_absl//absl/strings",
+        "@linux_sgx//:urts",
     ],
 )
 

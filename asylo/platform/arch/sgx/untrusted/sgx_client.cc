@@ -26,23 +26,19 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
+#include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/util/elf_reader.h"
 #include "asylo/util/file_mapping.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
-namespace {
-
-constexpr absl::string_view kCallingProcessBinaryFile = "/proc/self/exe";
-
-constexpr int kMaxEnclaveCreateAttempts = 5;
-
-}  // namespace
 
 
 // Enters the enclave and invokes the initialization entry-point. If the ecall
@@ -248,29 +244,15 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
-  client->base_address_ = base_address;
+  std::shared_ptr<primitives::Client> primitive_client;
 
-  int updated;
-  sgx_status_t status;
-  for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
-    status = sgx_create_enclave_with_utility_and_address(
-        enclave_path_.c_str(), debug_, &client->token_, &updated, &client->id_,
-        /*misc_attr=*/nullptr, &client->base_address_, enclave_size,
-        config.enable_fork());
+  ASYLO_ASSIGN_OR_RETURN(
+      primitive_client,
+      primitives::LoadEnclave<primitives::SgxBackend>(
+          base_address, enclave_path_, enclave_size, config, debug_,
+          absl::make_unique<primitives::DispatchTable>()));
 
-    LOG_IF(WARNING, status != SGX_SUCCESS)
-        << "Failed to create an enclave, attempt=" << i
-        << ", status=" << status;
-    if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
-      break;
-    }
-  }
-
-  if (status != SGX_SUCCESS) {
-    return Status(status, "Failed to create an enclave");
-  }
-
-  client->size_ = sgx_enclave_size(client->id_);
+  client->Sync(primitive_client);
 
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
@@ -287,38 +269,14 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
-  client->base_address_ = base_address;
+  std::shared_ptr<primitives::Client> primitive_client;
 
-  FileMapping self_binary_mapping;
-  ASYLO_ASSIGN_OR_RETURN(self_binary_mapping, FileMapping::CreateFromFile(
-                                                  kCallingProcessBinaryFile));
-
-  ElfReader self_binary_reader;
-  ASYLO_ASSIGN_OR_RETURN(self_binary_reader, ElfReader::CreateFromSpan(
-                                                 self_binary_mapping.buffer()));
-
-  absl::Span<const uint8_t> enclave_buffer;
-  ASYLO_ASSIGN_OR_RETURN(enclave_buffer,
-                         self_binary_reader.GetSectionData(section_name_));
-
-  int updated;
-  sgx_status_t status;
-  for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
-    status = sgx_create_enclave_from_buffer(
-        const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
-        debug_, &client->token_, &updated, &client->id_, /*misc_attr=*/nullptr,
-        &client->base_address_, enclave_size, config.enable_fork());
-
-    if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
-      break;
-    }
-  }
-
-  client->size_ = sgx_enclave_size(client->id_);
-
-  if (status != SGX_SUCCESS) {
-    return Status(status, "Failed to create an enclave");
-  }
+  ASYLO_ASSIGN_OR_RETURN(
+      primitive_client,
+      primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
+          base_address, section_name_, enclave_size, config, debug_,
+          absl::make_unique<primitives::DispatchTable>()));
+  client->Sync(primitive_client);
 
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
@@ -329,6 +287,15 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
     return Status(error::GoogleError::INTERNAL, "Failed to create self loader");
   }
   return std::unique_ptr<EnclaveLoader>(loader.release());
+}
+
+void SgxClient::Sync(std::shared_ptr<primitives::Client> primitive_client) {
+  this->primitive_sgx_client_ =
+      std::static_pointer_cast<primitives::SgxEnclaveClient>(primitive_client);
+  this->primitive_sgx_client_->GetLaunchToken(&this->token_);
+  this->id_ = this->primitive_sgx_client_->GetEnclaveId();
+  this->base_address_ = this->primitive_sgx_client_->GetBaseAddress();
+  this->size_ = this->primitive_sgx_client_->GetEnclaveSize();
 }
 
 Status SgxClient::EnterAndInitialize(const EnclaveConfig &config) {
@@ -533,13 +500,7 @@ Status SgxClient::EnterAndTransferSecureSnapshotKey(
   return status;
 }
 
-Status SgxClient::DestroyEnclave() {
-  sgx_status_t rc = sgx_destroy_enclave(id_);
-  if (rc != SGX_SUCCESS) {
-    return Status(rc, "Failed to destroy an enclave");
-  }
-  return Status::OkStatus();
-}
+Status SgxClient::DestroyEnclave() { return primitive_sgx_client_->Destroy(); }
 
 bool SgxClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
 
