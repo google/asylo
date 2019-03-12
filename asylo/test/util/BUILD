@@ -355,6 +355,7 @@ cc_library(
     testonly = 1,
     srcs = ["enclave_assertion_authority_configs.cc"],
     hdrs = ["enclave_assertion_authority_configs.h"],
+    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/identity:descriptions",
         "//asylo/identity:enclave_assertion_authority_config_proto_cc",
