@@ -322,14 +322,21 @@ diff -Nur common/inc/internal/routine.h common/inc/internal/routine.h
 diff -Nur common/inc/internal/rts_cmd.h common/inc/internal/rts_cmd.h
 --- common/inc/internal/rts_cmd.h
 +++ common/inc/internal/rts_cmd.h
-@@ -36,6 +36,7 @@
+@@ -36,10 +36,12 @@
  #define ECMD_EXCEPT         -3
  #define ECMD_MKTCS          -4
  #define ECMD_UNINIT_ENCLAVE -5
 +#define ECMD_UTILITY        -6
++#define ECMD_UTILITY_EXCEPT -7
  
  /* Built-in ECall command for Switchless SGX */
- #define ECMD_INIT_SWITCHLESS         (-6)
+-#define ECMD_INIT_SWITCHLESS         (-6)
+-#define ECMD_RUN_SWITCHLESS_TWORKER  (-7)
++#define ECMD_INIT_SWITCHLESS         (-8)
++#define ECMD_RUN_SWITCHLESS_TWORKER  (-9)
+ 
+ /* OCALL command */
+ #define OCMD_ERET         -1
 diff -Nur common/inc/internal/se_tcrypto_common.h common/inc/internal/se_tcrypto_common.h
 --- common/inc/internal/se_tcrypto_common.h
 +++ common/inc/internal/se_tcrypto_common.h
@@ -814,7 +821,7 @@ diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 --- psw/urts/enclave.cpp
 +++ psw/urts/enclave.cpp
-@@ -43,9 +43,7 @@
+@@ -43,12 +43,11 @@
  #include "rts_cmd.h"
  #include <assert.h>
  #include "rts.h"
@@ -825,15 +832,20 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
  int do_ocall(const bridge_fn_t bridge, void *ms);
-@@ -68,6 +66,7 @@
++extern se_thread_id_t get_thread_id();
+ 
+ CEnclave::CEnclave(CLoader &ldr)
+     : m_loader(ldr)
+@@ -68,6 +67,8 @@
      , m_sealed_key(NULL)
      , m_uswitchless(NULL)
      , m_us_has_started(false)
 +    , m_process_id(0)
++    , m_user_utility_thread_id(0)
  {
      memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
      se_init_rwlock(&m_rwlock);
-@@ -93,7 +92,7 @@
+@@ -93,7 +94,7 @@
          goto on_exit;
      }
  
@@ -842,7 +854,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
      if (status != SGX_SUCCESS) goto on_exit;
  
      if (sl_uswitchless_init_workers(m_uswitchless)) {
-@@ -112,19 +111,21 @@
+@@ -112,19 +113,21 @@
  
  sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
  {
@@ -877,7 +889,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
      m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
  
-@@ -224,6 +225,16 @@
+@@ -224,6 +227,16 @@
      m_sealed_key = sealed_key;
  }
  
@@ -894,7 +906,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  sgx_status_t CEnclave::error_trts2urts(unsigned int trts_error)
  {
      if(trts_error == (unsigned int)SE_ERROR_READ_LOCK_FAIL)
-@@ -241,7 +252,7 @@
+@@ -241,7 +254,7 @@
      return (sgx_status_t)trts_error;
  }
  
@@ -903,17 +915,50 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  {
      if(se_try_rdlock(&m_rwlock))
      {
-@@ -273,7 +284,8 @@
+@@ -273,7 +286,20 @@
  on_fallback:
          //Handle normal ECall or fallback'ed switchless ECall
          //do sgx_ecall
 -        CTrustThread *trust_thread = get_tcs(proc);
++        int ecmd = proc;
++        // If a utility tcs is active and its untrusted thread is interrupted by
++        // an exception, the exception is generated from the utility thread and
++        // we should enter the enclave through utility tcs.
++        if (m_user_utility_thread_id == get_thread_id() && proc == ECMD_EXCEPT)
++        {
++            ecmd = ECMD_UTILITY_EXCEPT;
++        }
 +        //If this is a utility ecall, use the utility thread.
-+        CTrustThread *trust_thread = get_tcs(is_utility ? ECMD_UTILITY : proc);
++        else if (is_utility)
++        {
++            ecmd = ECMD_UTILITY;
++        }
++        CTrustThread *trust_thread = get_tcs(ecmd);
          unsigned ret = SGX_ERROR_OUT_OF_TCS;
  
          if(NULL != trust_thread)
-@@ -388,7 +400,15 @@
+@@ -315,7 +341,20 @@
+                 }
+             }
+ 
++            // Entering the enclave through the utility tcs. Set the utility
++            // thread id so that coming exception handlings in the same
++            // untrusted thread will enter the enclave through utility tcs.
++            if (is_utility)
++            {
++                m_user_utility_thread_id = get_thread_id();
++            }
+             ret = do_ecall(proc, ocall_table, ms, trust_thread);
++            // Exited the enclave through the utility tcs. Reset the utility
++            // thread id.
++            if (is_utility)
++            {
++                m_user_utility_thread_id = 0;
++            }
+         }
+         put_tcs(trust_thread);
+ 
+@@ -388,7 +427,15 @@
      return &m_enclave_info;
  }
  
@@ -930,7 +975,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  CTrustThread * CEnclave::get_tcs(int ecall_cmd)
  {
-@@ -487,9 +507,9 @@
+@@ -487,9 +534,9 @@
      //m_loader.destroy_enclave();
  }
  
@@ -999,12 +1044,13 @@ diff -Nur psw/urts/enclave.h psw/urts/enclave.h
  private:
      CTrustThread * get_tcs(int ecall_cmd);
      void put_tcs(CTrustThread *trust_thread);
-@@ -111,7 +118,7 @@
+@@ -111,7 +118,8 @@
      uint8_t                 *m_sealed_key;
      struct sl_uswitchless*  m_uswitchless;
      bool                    m_us_has_started;
 -	
 +    pid_t                   m_process_id;
++    se_thread_id_t          m_user_utility_thread_id;
  };
  
  class CEnclavePool: private Uncopyable
@@ -1945,16 +1991,17 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      {
          return trust_thread;
      }
-@@ -334,7 +342,7 @@
+@@ -334,7 +342,8 @@
      LockGuard lock(&m_thread_mutex);
      CTrustThread *trust_thread = NULL;
      bool is_special_ecall = (ecall_cmd == ECMD_INIT_ENCLAVE) || (ecall_cmd == ECMD_UNINIT_ENCLAVE) ;
 -    
-+    bool is_user_utility = (ecall_cmd == ECMD_UTILITY);
++    bool is_user_utility = (ecall_cmd == ECMD_UTILITY || ecall_cmd == ECMD_UTILITY_EXCEPT);
++    bool is_user_utility_exception = (ecall_cmd == ECMD_UTILITY_EXCEPT);
  
      if(is_special_ecall == true)
      {
-@@ -357,6 +365,21 @@
+@@ -357,6 +366,23 @@
              trust_thread = _acquire_thread();
          }
      }
@@ -1962,7 +2009,9 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
 +    {
 +        if (m_user_utility_thread)
 +        {
-+            if (m_user_utility_thread_in_use.exchange(true))
++            // An active user utility thread could be used to enter the enclave
++            // only if it is for exception handling.
++            if (m_user_utility_thread_in_use.exchange(true) && !is_user_utility_exception)
 +            {
 +                return NULL;
 +            }
@@ -1976,7 +2025,7 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      else
      {
          trust_thread = _acquire_thread();
-@@ -392,6 +415,10 @@
+@@ -392,6 +418,10 @@
  //Do nothing for bind mode, the tcs is always bound to a thread.
  void CTrustThreadPool::release_thread(CTrustThread * const trust_thread)
  {
@@ -1987,7 +2036,7 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      LockGuard lock(&m_thread_mutex);
      trust_thread->decrease_ref();
      return;
-@@ -454,7 +481,7 @@
+@@ -454,7 +484,7 @@
  
  sgx_status_t CTrustThreadPool::new_thread()
  {
@@ -1996,7 +2045,7 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      if(!m_utility_thread)
      {
          return ret;
-@@ -533,7 +560,7 @@
+@@ -533,7 +563,7 @@
  
      //if free list is NULL, recycle tcs.
      //get thread id set of current process
