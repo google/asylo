@@ -438,7 +438,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  #include "sgx_error.h"
  #include "stddef.h"
  #include "sgx_defs.h"
-@@ -82,6 +83,40 @@
+@@ -82,6 +83,48 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
@@ -463,10 +463,18 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 +    void *stack_base;
 +    // Limit address of the stack for the current tcs.
 +    void *stack_limit;
-+    // Base address of the reserved storage section.
-+    void *reserved_base;
-+    // Size of the reserved storage section.
-+    size_t reserved_size;
++    // Base address of the reserved data storage section.
++    void *reserved_data_base;
++    // Size of the reserved data storage section.
++    size_t reserved_data_size;
++    // Base address of the reserved bss storage section.
++    void *reserved_bss_base;
++    // Size of the reserved bss storage section.
++    size_t reserved_bss_size;
++    // Base address of the reserved heap storage section.
++    void *reserved_heap_base;
++    // Size of the reserved heap storage section.
++    size_t reserved_heap_size;
 +};
 +
 +/* sgx_memory_layout()
@@ -3108,12 +3116,14 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
 diff -Nur sdk/trts/linux/trts_pic.S sdk/trts/linux/trts_pic.S
 --- sdk/trts/linux/trts_pic.S
 +++ sdk/trts/linux/trts_pic.S
-@@ -40,6 +40,9 @@
+@@ -40,6 +40,11 @@
  
  #include "trts_pic.h"
  
 +    /* .reserved */
-+    .section .reserved, "aw",@progbits
++    .section .reserved_data, "aw",@progbits
++    .section .reserved_bss, "aw",@progbits
++    .section .reserved_heap, "aw",@progbits
 +
      /* .text */
      .section .nipx,"ax",@progbits
@@ -3311,12 +3321,18 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  #include "trts_util.h"
  #include "global_data.h"
  #include "util.h"
-@@ -72,6 +73,31 @@
+@@ -72,6 +73,45 @@
      return heap_size;
  }
  
-+// A 1M bytes temporary storage buffer.
-+static char reserved[1024 * 1024] __attribute__((section(".reserved")));
++// A 1M bytes temporary storage buffer for data.
++static char reserved_data[1024 * 1024]
++    __attribute__((section(".reserved_data")));
++// A 1M bytes temporary storage buffer for bss.
++static char reserved_bss[1024 * 1024] __attribute__((section(".reserved_bss")));
++// A 1M bytes temporary storage buffer for heap.
++static char reserved_heap[1024 * 1024]
++    __attribute__((section(".reserved_heap")));
 +
 +void get_memory_layout(struct SgxMemoryLayout *memory_layout)
 +{
@@ -3335,9 +3351,17 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +    memory_layout->stack_base = reinterpret_cast<void *>(thread_data->stack_base_addr);
 +    memory_layout->stack_limit = reinterpret_cast<void *>(thread_data->stack_limit_addr);
 +
-+    // Temporary storage buffer section.
-+    memory_layout->reserved_base = reinterpret_cast<void *>(reserved);
-+    memory_layout->reserved_size = sizeof(reserved);
++    // Temporary storage data buffer section.
++    memory_layout->reserved_data_base = reinterpret_cast<void *>(reserved_data);
++    memory_layout->reserved_data_size = sizeof(reserved_data);
++
++    // Temporary storage bss buffer section.
++    memory_layout->reserved_bss_base = reinterpret_cast<void *>(reserved_bss);
++    memory_layout->reserved_bss_size = sizeof(reserved_bss);
++
++    // Temporary storage heap buffer section.
++    memory_layout->reserved_heap_base = reinterpret_cast<void *>(reserved_heap);
++    memory_layout->reserved_heap_size = sizeof(reserved_heap);
 +}
 +
  int * get_errno_addr(void)
