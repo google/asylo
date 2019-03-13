@@ -18,7 +18,7 @@ load(
     "//asylo/bazel:asylo.bzl",
     "enclave_loader",
     "sim_enclave",
-    "enclave_test",
+    "sgx_enclave_test",
     "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
@@ -104,7 +104,7 @@ enclave_loader(
 
 # A test of the example using the generated client stubs rather than the gRPC
 # command-line interface.
-enclave_test(
+sgx_enclave_test(
     name = "grpc_server_test",
     srcs = ["grpc_server_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,

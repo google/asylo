@@ -509,6 +509,8 @@ def cc_enclave_binary(
 
     # The user probably wants their tags applied to the loader.
     loader_kwargs["tags"] = kwargs.pop("tags", [])
+    if "asylo-sgx" not in loader_kwargs["tags"]:
+        loader_kwargs["tags"] += ["asylo-sgx"]
 
     native.cc_library(
         name = application_library_name,
@@ -802,6 +804,9 @@ def cc_enclave_test(
     else:
         loader_args.append("--notest_in_initialize")
 
+    if "asylo-sgx" not in tags:
+        tags = tags + ["asylo-sgx"]
+
     # Execute the gtest enclave using the gtest enclave runner
     _enclave_runner_test(
         name = name,
@@ -824,4 +829,9 @@ def sgx_enclave_test(name, srcs, **kwargs):
       **kwargs: enclave_test arguments.
     """
     tags = kwargs.pop("tags", [])
-    enclave_test(name, srcs, tags + ["asylo-sgx"], **kwargs)
+    enclave_test(
+        name,
+        srcs = srcs,
+        tags = tags + ["asylo-sgx"],
+        **kwargs
+    )

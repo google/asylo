@@ -19,7 +19,7 @@ licenses(["notice"])  # Apache v2.0
 # Socket implementation, tests, and perf measurement tools.
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("//asylo/bazel:asylo.bzl", "enclave_test", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:asylo.bzl", "sgx_enclave_test", "ASYLO_ALL_BACKENDS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
@@ -146,7 +146,7 @@ sgx_enclave(
 )
 
 # Driver for UNIX domain-socket test.
-enclave_test(
+sgx_enclave_test(
     name = "domain_socket_test",
     srcs = ["domain_socket_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -185,7 +185,7 @@ sgx_enclave(
 )
 
 # Driver for INET6 socket test.
-enclave_test(
+sgx_enclave_test(
     name = "inet6_socket_test",
     srcs = ["inet6_socket_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -217,7 +217,7 @@ sgx_enclave(
 )
 
 # Driver for getaddrinfo and freeaddrinfo tests.
-enclave_test(
+sgx_enclave_test(
     name = "addrinfo_test",
     srcs = ["addrinfo_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,

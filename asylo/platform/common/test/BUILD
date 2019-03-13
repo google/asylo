@@ -21,7 +21,7 @@ package(
 )
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("//asylo/bazel:asylo.bzl", "enclave_test")
+load("//asylo/bazel:asylo.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Enclave used to test bridge_types's packed struct size inside an enclave.
@@ -36,7 +36,7 @@ sgx_enclave(
 )
 
 # Tests for the packed struct size for bridge_types.
-enclave_test(
+sgx_enclave_test(
     name = "bridge_types_test",
     srcs = ["bridge_types_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,

@@ -21,7 +21,7 @@ licenses(["notice"])  # Apache v2.0
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 load(
     "//asylo/bazel:asylo.bzl",
-    "enclave_test",
+    "sgx_enclave_test",
     "cc_enclave_test",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -58,7 +58,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "proto_test",
     srcs = ["proto_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -86,7 +86,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "getenv_test",
     srcs = ["getenv_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -115,7 +115,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "enclave_api_test",
     srcs = ["enclave_api_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,

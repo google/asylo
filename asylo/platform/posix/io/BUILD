@@ -16,7 +16,7 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "enclave_test",
+    "sgx_enclave_test",
     "cc_enclave_test",
     "cc_test",
     "ASYLO_ALL_BACKENDS",
@@ -199,7 +199,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "pipe_test",
     srcs = ["pipe_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,

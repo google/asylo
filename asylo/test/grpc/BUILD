@@ -17,7 +17,7 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_test",
-    "enclave_test",
+    "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
@@ -146,7 +146,7 @@ sgx_enclave(
 )
 
 # Test for gRPC in Asylo.
-enclave_test(
+sgx_enclave_test(
     name = "enclave_insecure_server_test",
     srcs = ["enclave_insecure_server_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -170,7 +170,7 @@ enclave_test(
 )
 
 # Test for gRPC using enclave gRPC security.
-enclave_test(
+sgx_enclave_test(
     name = "enclave_secure_server_test",
     srcs = ["enclave_secure_server_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -222,7 +222,7 @@ cc_test(
 )
 
 # Test for gRPC communication between two enclaves.
-enclave_test(
+sgx_enclave_test(
     name = "enclave_communication_test",
     srcs = ["enclave_communication_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,

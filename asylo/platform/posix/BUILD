@@ -16,7 +16,7 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "enclave_test",
+    "sgx_enclave_test",
     cc_test = "cc_test_and_cc_enclave_test",
     "ASYLO_ALL_BACKENDS",
 )
@@ -188,7 +188,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "fork_test",
     srcs = ["fork_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -228,7 +228,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "syscalls_test",
     srcs = ["syscalls_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,

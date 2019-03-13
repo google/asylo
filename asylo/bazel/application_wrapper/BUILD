@@ -19,7 +19,7 @@ load(
     "cc_enclave_binary",
     "cc_test",
     "copy_from_host",
-    "enclave_test",
+    "sgx_enclave_test",
     "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
@@ -135,7 +135,7 @@ sgx_enclave(
 )
 
 # A test of ApplicationWrapperEnclave.
-enclave_test(
+sgx_enclave_test(
     name = "application_wrapper_enclave_test",
     srcs = ["application_wrapper_enclave_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,

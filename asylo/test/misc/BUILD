@@ -21,10 +21,10 @@ licenses(["notice"])  # Apache v2.0
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 load(
     "//asylo/bazel:asylo.bzl",
-    "enclave_test",
     "copy_from_host",
     "cc_enclave_test",
     "cc_test",
+    "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -160,7 +160,7 @@ TEST_DEPS_COMMON = [
 ]
 
 # Smoke tests for enclaves; currently identical to hello_world_test.
-enclave_test(
+sgx_enclave_test(
     name = "enclave_smoke_test",
     srcs = ["hello_world_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -200,7 +200,7 @@ sgx_enclave(
 
 # Note that a naive enclave simulator that does not respect the enclave
 # configuration will not pass this test.
-enclave_test(
+sgx_enclave_test(
     name = "exhaust_sgx_tcs_test",
     srcs = ["exhaust_sgx_tcs_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -343,7 +343,7 @@ cc_test(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "active_enclave_signal_test",
     srcs = ["active_enclave_signal_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -357,7 +357,7 @@ enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "inactive_enclave_signal_test",
     srcs = ["inactive_enclave_signal_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -368,7 +368,7 @@ enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "error_propagation_test",
     srcs = ["error_propagation_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -377,7 +377,7 @@ enclave_test(
     deps = TEST_DEPS_COMMON,
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "logging_test",
     srcs = ["logging_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -405,7 +405,7 @@ copy_from_host(
     target = "double_die",
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "die_test",
     srcs = ["die_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -433,7 +433,7 @@ copy_from_host(
     target = "exception_app",
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "exception_test",
     srcs = ["exception_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -450,7 +450,7 @@ enclave_test(
 TEST_SECTION_NAME = "enclave"
 
 # Tests that embedded enclaves work.
-enclave_test(
+sgx_enclave_test(
     name = "embedded_enclave_test",
     srcs = ["embedded_enclave_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -480,7 +480,7 @@ sgx_enclave(
     ],
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "threaded_finalize_test",
     srcs = ["hello_world_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
