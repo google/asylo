@@ -28,3 +28,11 @@ message ForkHandshakeConfig {
   // handshake.
   optional int32 socket = 2;
 }
+
+// A message containing an ecrypted snapshot key ciphertext and the nonce.
+message EncryptedSnapshotKey {
+  // The ciphertext bytes of the encrypted snapshot key.
+  optional bytes ciphertext = 1;
+  // The nonce bytes of the encrypted snapshot key.
+  optional bytes nonce = 2;
+}

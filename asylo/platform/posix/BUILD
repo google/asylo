@@ -196,6 +196,7 @@ sgx_enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         "//asylo:enclave_client",
+        "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

@@ -155,6 +155,7 @@ cc_library(
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:logging",
@@ -285,6 +286,8 @@ cc_library(
         "//asylo:enclave_proto_cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
+            "//asylo/crypto:aead_cryptor",
+            "//asylo/crypto/util:bssl_util",
             "//asylo/platform/primitives/sgx:sgx_error_space",
             "//asylo/grpc/auth/core:client_ekep_handshaker",
             "//asylo/grpc/auth/core:server_ekep_handshaker",
@@ -294,6 +297,8 @@ cc_library(
             "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",
             "//asylo/identity/sgx:sgx_local_assertion_generator",
             "//asylo/identity/sgx:sgx_local_assertion_verifier",
+            "//asylo/util:cleansing_types",
+            "//asylo/util:cleanup",
         ],
         "//conditions:default": [],
     }),

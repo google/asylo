@@ -242,7 +242,7 @@ pid_t enclave_fork() {
     return -1;
   }
 
-  return asylo::enc_fork(asylo::GetEnclaveName().c_str());
+  return asylo::enc_fork(asylo::GetEnclaveName().c_str(), *config);
 }
 
 }  // extern "C"

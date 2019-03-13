@@ -27,7 +27,7 @@
 
 namespace asylo {
 
-pid_t enc_fork(const char *enclave_name);
+pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config);
 
 // Copies enclave data/bss/heap and stack for the calling thread to untrusted
 // memory.

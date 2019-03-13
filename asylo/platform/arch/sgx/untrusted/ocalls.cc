@@ -60,7 +60,10 @@
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/platform/storage/utils/fd_closer.h"
+#include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 #include "asylo/util/logging.h"
 
@@ -117,6 +120,28 @@ void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
   } else {
     EnterEnclaveAndHandleSignal(signum, info, ucontext);
   }
+}
+
+// Perform a snapshot key transfer from the parent to the child.
+asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
+                                    asylo::EnclaveClient *client,
+                                    int self_socket, int peer_socket,
+                                    bool is_parent) {
+  asylo::platform::storage::FdCloser self_socket_closer(self_socket);
+  // Close the socket for the other side, and enters the enclave to send the
+  // snapshot key through the socket.
+  if (close(peer_socket) < 0) {
+    return asylo::Status(static_cast<asylo::error::PosixError>(errno),
+                         absl::StrCat("close failed: ", strerror(errno)));
+  }
+
+  asylo::ForkHandshakeConfig fork_handshake_config;
+  fork_handshake_config.set_is_parent(is_parent);
+  fork_handshake_config.set_socket(self_socket);
+  ASYLO_RETURN_IF_ERROR(manager->EnterAndTransferSecureSnapshotKey(
+      client, fork_handshake_config));
+
+  return asylo::Status::OkStatus();
 }
 
 }  // namespace
@@ -914,7 +939,8 @@ uint32_t ocall_enc_untrusted_sleep(uint32_t seconds) { return sleep(seconds); }
 
 void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
 
-pid_t ocall_enc_untrusted_fork(const char *enclave_name,
+pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
+                               bridge_size_t config_len,
                                bool restore_snapshot) {
   auto manager_result = asylo::EnclaveManager::Instance();
   if (!manager_result.ok()) {
@@ -964,6 +990,16 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name,
   asylo::SgxLoader *loader =
       dynamic_cast<asylo::SgxLoader *>(manager->GetLoaderFromClient(client));
 
+  // Create a socket pair used for communication between the parent and child
+  // enclave. |socket_pair[0]| is used by the parent enclave and
+  // |socket_pair[1]| is used by the child enclave.
+  int socket_pair[2];
+  if (socketpair(AF_LOCAL, SOCK_STREAM, 0, socket_pair) < 0) {
+    LOG(ERROR) << "Failed to create socket pair";
+    errno = EFAULT;
+    return -1;
+  }
+
   pid_t pid = fork();
   if (pid == -1) {
     return pid;
@@ -971,11 +1007,18 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name,
 
   size_t enclave_size = client->size();
 
-  asylo::EnclaveConfig config;
-  config.set_enable_fork(true);
+  // Parse the config from the enclave to load the child enclave with exactly
+  // the same config as the parent enclave.
+  asylo::EnclaveConfig enclave_config;
+  if (!enclave_config.ParseFromArray(config, static_cast<size_t>(config_len))) {
+    LOG(ERROR) << "Failed to parse EnclaveConfig";
+    errno = EFAULT;
+    return -1;
+  }
+
   if (pid == 0) {
     // Load an enclave at the same virtual space as the parent.
-    status = manager->LoadEnclave(enclave_name, *loader, config,
+    status = manager->LoadEnclave(enclave_name, *loader, enclave_config,
                                   enclave_base_address, enclave_size);
     if (!status.ok()) {
       LOG(ERROR) << "Load new enclave failed:" << status;
@@ -995,11 +1038,28 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name,
       return -1;
     }
 
+    asylo::Status status = DoSnapshotKeyTransfer(
+        manager, client, socket_pair[0], socket_pair[1], /*is_parent=*/false);
+    if (!status.ok()) {
+      LOG(ERROR) << "DoSnapshotKeyTransfer failed: " << status;
+      errno = EFAULT;
+      return -1;
+    }
+
     // Enters the child enclave and restore the enclave memory.
     status = manager->EnterAndRestore(client, snapshot_layout);
     if (!status.ok()) {
       LOG(ERROR) << "EnterAndRestore failed: " << status;
       errno = EAGAIN;
+      return -1;
+    }
+  } else {
+    asylo::Status status = DoSnapshotKeyTransfer(
+        manager, client, /*self_socket=*/socket_pair[1],
+        /*peer_socket=*/socket_pair[0], /*is_parent=*/true);
+    if (!status.ok()) {
+      LOG(ERROR) << "DoSnapshotKeyTransfer failed: " << status;
+      errno = EFAULT;
       return -1;
     }
   }

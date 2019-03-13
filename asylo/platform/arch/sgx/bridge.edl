@@ -359,7 +359,10 @@ enclave {
     uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);
     void ocall_enc_untrusted__exit(int rc);
     pid_t ocall_enc_untrusted_fork(
-        [in, string]const char *enclave_name, bool restore_snapshot)
+        [in, string]const char *enclave_name,
+	[in, size = config_len] const char *config,
+	bridge_size_t config_len,
+	bool restore_snapshot)
 	allow(ecall_take_snapshot, ecall_restore) propagate_errno;
 
     //////////////////////////////////////

@@ -25,8 +25,9 @@
 
 namespace asylo {
 
-pid_t enc_fork(const char *enclave_name) {
-  return enc_untrusted_fork(enclave_name, /*restore_required=*/false);
+pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config) {
+  return enc_untrusted_fork(enclave_name, /*config=*/nullptr, /*config_len=*/0,
+                            /*restore_required=*/false);
 }
 
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {

@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 #include "asylo/client.h"
 #include "gflags/gflags.h"
+#include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
 
@@ -34,6 +35,8 @@ class ForkTest : public ::testing::Test {
     StatusOr<EnclaveManager *> manager_result = EnclaveManager::Instance();
     manager_ = manager_result.ValueOrDie();
     EnclaveConfig config;
+    *config.add_enclave_assertion_authority_configs() =
+        GetSgxLocalAssertionAuthorityTestConfig();
     config.set_enable_fork(true);
     auto loader = absl::make_unique<SgxLoader>(FLAGS_enclave_path, true);
     ASSERT_THAT(manager_->LoadEnclave("/fork_test", *loader, config), IsOk());
