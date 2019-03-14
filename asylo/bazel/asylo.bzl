@@ -20,6 +20,12 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
+# Backend tags are used by testing infrastructure to determine which platform
+# flags to provide when running tests or building targets.
+#
+# For example, the enclave_runtime and posix targets can be built with
+# any enclave backend, so their tags include ASYLO_ALL_BACKENDS.
+# The trusted_sgx target is SGX-only, so its only backend tag is asylo-sgx.
 ASYLO_ALL_BACKENDS = [
     "asylo-sgx",
     "asylo-sim",
