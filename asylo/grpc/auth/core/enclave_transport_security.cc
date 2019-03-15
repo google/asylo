@@ -75,7 +75,8 @@ class TsiEnclaveHandshakerResult {
   TsiEnclaveHandshakerResult(
       bool is_client, RecordProtocol record_protocol,
       const CleansingVector<uint8_t> &record_protocol_key,
-      std::unique_ptr<EnclaveIdentities> peer_identities, std::string unused_bytes)
+      std::unique_ptr<EnclaveIdentities> peer_identities,
+      std::string unused_bytes)
       : is_client_(is_client),
         record_protocol_(record_protocol),
         record_protocol_key_(record_protocol_key),
@@ -299,17 +300,18 @@ tsi_result enclave_handshaker_next(
       // If the handshake has completed, extract the handshake results.
       StatusOr<std::string> unused_bytes_result = handshaker->GetUnusedBytes();
       if (!unused_bytes_result.ok()) {
-        gpr_log(GPR_ERROR, "Failed to retrieve unused bytes: %s",
-                std::string(unused_bytes_result.status().error_message()).c_str());
+        gpr_log(
+            GPR_ERROR, "Failed to retrieve unused bytes: %s",
+            std::string(unused_bytes_result.status().error_message()).c_str());
         return TSI_INTERNAL_ERROR;
       }
 
       StatusOr<RecordProtocol> record_protocol_result =
           handshaker->GetRecordProtocol();
       if (!record_protocol_result.ok()) {
-        gpr_log(
-            GPR_ERROR, "Failed to retrieve record protocol: %s",
-            std::string(record_protocol_result.status().error_message()).c_str());
+        gpr_log(GPR_ERROR, "Failed to retrieve record protocol: %s",
+                std::string(record_protocol_result.status().error_message())
+                    .c_str());
         return TSI_INTERNAL_ERROR;
       }
 
@@ -324,8 +326,9 @@ tsi_result enclave_handshaker_next(
       StatusOr<std::unique_ptr<EnclaveIdentities>> identities_result =
           handshaker->GetPeerIdentities();
       if (!identities_result.ok()) {
-        gpr_log(GPR_ERROR, "Failed to retrieve peer identities: %s",
-                std::string(identities_result.status().error_message()).c_str());
+        gpr_log(
+            GPR_ERROR, "Failed to retrieve peer identities: %s",
+            std::string(identities_result.status().error_message()).c_str());
         return TSI_INTERNAL_ERROR;
       }
 

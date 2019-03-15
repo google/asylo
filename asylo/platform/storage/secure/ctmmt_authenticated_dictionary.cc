@@ -25,7 +25,8 @@ namespace asylo {
 namespace platform {
 namespace storage {
 
-bool CTMMTAuthenticatedDictionary::UpdateLeaf(size_t leaf, const std::string &data) {
+bool CTMMTAuthenticatedDictionary::UpdateLeaf(size_t leaf,
+                                              const std::string &data) {
   return mtree_->UpdateLeafHash(leaf, mtree_->LeafHash(data));
 }
 

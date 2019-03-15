@@ -68,7 +68,8 @@ const StatusOr<std::string> EncryptMessage(const std::string &message) {
 // Decrypts a message using `kAesKey128`. Expects `nonce_and_ciphertext` to be
 // encoded as a hex string, and lead with a 12-byte nonce. Intended to be
 // used by the reader for completing the exercise.
-const StatusOr<std::string> DecryptMessage(const std::string &nonce_and_ciphertext) {
+const StatusOr<std::string> DecryptMessage(
+    const std::string &nonce_and_ciphertext) {
   std::string decoded_input = absl::HexStringToBytes(nonce_and_ciphertext);
   CleansingString clean_input(decoded_input.data(), decoded_input.size());
 

@@ -37,7 +37,9 @@ class CTMMTAuthenticatedDictionary : public AuthenticatedDictionary {
 
   size_t LeafCount() const final { return mtree_->LeafCount(); }
 
-  size_t AddLeaf(const std::string &data) final { return mtree_->AddLeaf(data); }
+  size_t AddLeaf(const std::string &data) final {
+    return mtree_->AddLeaf(data);
+  }
 
   size_t AddLeafHash(const std::string &hash) final {
     return mtree_->AddLeafHash(hash);
@@ -45,7 +47,9 @@ class CTMMTAuthenticatedDictionary : public AuthenticatedDictionary {
 
   std::string CurrentRoot() final { return mtree_->CurrentRoot(); }
 
-  std::string LeafHash(size_t leaf) const final { return mtree_->LeafHash(leaf); }
+  std::string LeafHash(size_t leaf) const final {
+    return mtree_->LeafHash(leaf);
+  }
 
   std::string LeafHash(const std::string &data) const final {
     return mtree_->LeafHash(data);

@@ -45,8 +45,9 @@ std::function<void(int, const std::string &)> GetLoggerFuncInScope() {
 }
 
 std::function<void(int, const std::string &)> GetLoggerFuncOutScope() {
-  return
-      [](int priority, const std::string &s) { syslog(priority, "%s", s.c_str()); };
+  return [](int priority, const std::string &s) {
+    syslog(priority, "%s", s.c_str());
+  };
 }
 
 TEST(AsyloLambdaTest, LambdaScopedTest) {

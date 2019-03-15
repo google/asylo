@@ -55,7 +55,8 @@ class EnclaveTestLauncher {
                                         const std::string &str_test);
 
   // Gets test_string from the enclave_output_test_string protobuf extension.
-  static const std::string &GetEnclaveOutputTestString(const EnclaveOutput &output);
+  static const std::string &GetEnclaveOutputTestString(
+      const EnclaveOutput &output);
 
  private:
   EnclaveManager *manager_;

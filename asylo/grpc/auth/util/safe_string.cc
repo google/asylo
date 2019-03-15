@@ -29,7 +29,7 @@ void safe_string_assign(safe_string *safe_str, size_t size, const char *data) {
   safe_string_free(safe_str);
   safe_str->data = static_cast<char *>(gpr_malloc(size));
   if (size > 0) {
-    /* Non-null std::string. */
+    /* Non-null string. */
     memcpy(safe_str->data, data, size);
   }
   safe_str->size = size;

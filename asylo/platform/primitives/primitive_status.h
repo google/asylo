@@ -132,7 +132,7 @@ class PrimitiveStatus {
   }
 
   int32_t error_code_;         // An error::GoogleError condition code.
-  char message_[kMessageMax];  // An associated error std::string.
+  char message_[kMessageMax];  // An associated error string.
 };
 
 }  // namespace primitives

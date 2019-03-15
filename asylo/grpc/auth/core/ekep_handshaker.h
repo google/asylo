@@ -107,7 +107,8 @@ class EkepHandshaker {
   // If the handshake was aborted, returns ABORTED. In this case,
   // |outgoing_bytes| may contain an Abort frame to send to the peer.
   Result NextHandshakeStep(const char *incoming_bytes,
-                           size_t incoming_bytes_size, std::string *outgoing_bytes);
+                           size_t incoming_bytes_size,
+                           std::string *outgoing_bytes);
 
   // Encodes |handshake_message| into an EKEP frame and writes the encoded frame
   // to the |output| stream. |message_type| indicates the message type of
@@ -235,7 +236,8 @@ class EkepHandshaker {
   // NextHandshakeMessage(), StartHandshake(), or HandleHandshakeMessage() will
   // return ABORTED. If the handshake has already been aborted this method has
   // no effect.
-  virtual void AbortHandshake(const Status &abort_status, std::string *output) = 0;
+  virtual void AbortHandshake(const Status &abort_status,
+                              std::string *output) = 0;
 
   // Handles the incoming |handshake_message| of type |message_type|, writes any
   // response frames to |output|, and returns a result indicating the state of

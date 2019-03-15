@@ -28,10 +28,11 @@ namespace asylo {
 // A mock class to use for testing the interaction between loaders and clients.
 class MockEnclaveLoader : public EnclaveLoader {
  public:
-  MOCK_CONST_METHOD4(LoadEnclave, StatusOr<std::unique_ptr<EnclaveClient>>(
-                                      const std::string &name, void *base_address,
-                                      const size_t enclave_size,
-                                      const EnclaveConfig &config));
+  MOCK_CONST_METHOD4(LoadEnclave,
+                     StatusOr<std::unique_ptr<EnclaveClient>>(
+                         const std::string &name, void *base_address,
+                         const size_t enclave_size,
+                         const EnclaveConfig &config));
 
   MOCK_CONST_METHOD0(Copy, StatusOr<std::unique_ptr<EnclaveLoader>>());
 };

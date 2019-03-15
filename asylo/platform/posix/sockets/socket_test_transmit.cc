@@ -66,7 +66,7 @@ Status ServerTransmit(SocketServer *socket_server) {
   }
   if (strncmp(socket_buf, kClientWriteSuccessStr, sizeof(socket_buf))) {
     return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write std::string not found");
+                  "expected client-write string not found");
   }
 
   if (!(status = socket_server->Write(kServerWriteSuccessStr,
@@ -82,7 +82,7 @@ Status ServerTransmit(SocketServer *socket_server) {
   }
   if (strncmp(socket_buf, kClientWriteSuccessStr, sizeof(socket_buf))) {
     return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write std::string not found");
+                  "expected client-write string not found");
   }
 
   struct iovec msg_iov_send[kNumMsgs];
@@ -107,7 +107,7 @@ Status ServerTransmit(SocketServer *socket_server) {
       strncmp(reinterpret_cast<char *>(msg_recv.msg_iov[1].iov_base),
               kClientMsgSuccessStr2, msg_recv.msg_iov[1].iov_len)) {
     return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write std::string not found");
+                  "expected client-write string not found");
   }
   return Status::OkStatus();
 }
@@ -120,7 +120,7 @@ Status ClientTransmit(SocketClient *socket_client) {
   }
   if (strncmp(socket_buf, kServerWriteSuccessStr, sizeof(socket_buf))) {
     return Status(error::GoogleError::DATA_LOSS,
-                  "expected server-write std::string not found");
+                  "expected server-write string not found");
   }
   if (!(status = socket_client->Write(kClientWriteSuccessStr,
                                       sizeof(kClientWriteSuccessStr)))
@@ -135,7 +135,7 @@ Status ClientTransmit(SocketClient *socket_client) {
   }
   if (strncmp(socket_buf, kServerWriteSuccessStr, sizeof(socket_buf))) {
     return Status(error::GoogleError::DATA_LOSS,
-                  "expected server-write std::string not found");
+                  "expected server-write string not found");
   }
   if (!(status = socket_client->Write(kClientWriteSuccessStr,
                                       sizeof(kClientWriteSuccessStr)))
@@ -157,7 +157,7 @@ Status ClientTransmit(SocketClient *socket_client) {
       strncmp(reinterpret_cast<char *>(msg_recv.msg_iov[1].iov_base),
               kServerMsgSuccessStr2, msg_recv.msg_iov[1].iov_len)) {
     return Status(error::GoogleError::DATA_LOSS,
-                  "expected client-write std::string not found");
+                  "expected client-write string not found");
   }
   struct iovec msg_iov_send[kNumMsgs];
   struct msghdr msg_send;

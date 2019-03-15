@@ -260,7 +260,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfNoSectionNameStringTable) {
   elf_header_->e_shstrndx = SHN_UNDEF;
 
   ExpectBadReaderInput(
-      "ELF file contains no section name std::string table section");
+      "ELF file contains no section name string table section");
 }
 
 // Tests that CreateFromSpan returns an appropriate error if the input file has
@@ -278,7 +278,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfBadShstrndx) {
   elf_header_->e_shstrndx = elf_header_->e_shnum + 1;
 
   ExpectBadReaderInput(
-      "Malformed ELF file: section name std::string table header lies outside "
+      "Malformed ELF file: section name string table header lies outside "
       "section header table");
 }
 
@@ -288,7 +288,8 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfBadNameTableType) {
   name_table_header_->sh_type = SHT_PROGBITS;
 
   ExpectBadReaderInput(
-      "Malformed ELF file: section name std::string table section is not of type "
+      "Malformed ELF file: section name string table section is not of "
+      "type "
       "SHT_STRTAB");
 }
 
@@ -298,7 +299,8 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfNameTableTooBig) {
   name_table_header_->sh_offset = std::numeric_limits<Elf64_Off>::max() / 2;
 
   ExpectBadReaderInput(
-      "Malformed ELF file: section name std::string table exceeds boundary of file");
+      "Malformed ELF file: section name string table exceeds boundary of "
+      "file");
 }
 
 // Tests that CreateFromSpan returns an appropriate error if a section name in

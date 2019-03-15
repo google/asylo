@@ -487,8 +487,8 @@ ssize_t AeadHandler::DecryptAndVerifyInternal(int fd, void *buf, size_t count,
     // verification against AD root if/when AD tree will be stored in a file
     // (i.e. if/when optimizing integrity assurance for large files).
     if (file_ctrl.ad->LeafHash(merkle_block_idx) !=
-        file_ctrl.ad->LeafHash(
-            std::string(reinterpret_cast<const char *>(tag.data()), kTagLength))) {
+        file_ctrl.ad->LeafHash(std::string(
+            reinterpret_cast<const char *>(tag.data()), kTagLength))) {
       LOG(ERROR) << "Integrity verification failed, fd = " << fd;
       return -1;
     }
@@ -830,7 +830,8 @@ ssize_t AeadHandler::EncryptAndPersist(int fd, const void *buf, size_t count) {
   }
 
   for (int64_t idx = 0; idx < tags.size(); idx++) {
-    std::string tag_string(reinterpret_cast<char *>(tags[idx].data()), kTagLength);
+    std::string tag_string(reinterpret_cast<char *>(tags[idx].data()),
+                           kTagLength);
     int64_t block_index = start_block_to_write + idx;
     if (block_index < eof_block_index) {
       VLOG(2) << "Updating auth tag on AD: "

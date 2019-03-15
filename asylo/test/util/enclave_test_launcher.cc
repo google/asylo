@@ -72,8 +72,8 @@ Status EnclaveTestLauncher::TearDown(const EnclaveFinal &efinal,
   return manager_->DestroyEnclave(client_, efinal, skipTearDown);
 }
 
-void EnclaveTestLauncher::SetEnclaveInputTestString(EnclaveInput *enclave_input,
-                                                    const std::string &str_test) {
+void EnclaveTestLauncher::SetEnclaveInputTestString(
+    EnclaveInput *enclave_input, const std::string &str_test) {
   enclave_input->MutableExtension(enclave_input_test_string)
       ->set_test_string(str_test);
 }

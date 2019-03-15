@@ -71,7 +71,7 @@ class SgxClient : public EnclaveClient {
       const ForkHandshakeConfig &fork_handshake_config) override;
   Status DestroyEnclave() override;
 
-  std::string path_;               // Path to enclave object file.
+  std::string path_;                // Path to enclave object file.
   sgx_launch_token_t token_ = {0};  // SGX SDK launch token.
   sgx_enclave_id_t id_;       // SGX SDK enclave identifier.
   void *base_address_;        // Enclave base address.

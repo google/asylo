@@ -50,7 +50,7 @@ std::string JoinPath(absl::string_view path1, absl::string_view path2);
 // Variadic definition of JoinPath() that takes three or more arguments.
 template <typename... Args>
 std::string JoinPath(absl::string_view path1, absl::string_view path2,
-                absl::string_view path3, Args... args) {
+                     absl::string_view path3, Args... args) {
   return JoinPath(JoinPath(JoinPath(path1, path2), path3),
                   std::forward<Args>(args)...);
 }

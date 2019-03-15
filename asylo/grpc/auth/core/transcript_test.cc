@@ -43,7 +43,7 @@ namespace {
 using google::protobuf::io::ArrayInputStream;
 using google::protobuf::io::ZeroCopyInputStream;
 
-constexpr char kData1[] = "A very uninteresting std::string.";
+constexpr char kData1[] = "A very uninteresting string.";
 constexpr char kData2[] = "Enclave Key Exchange Protocol";
 
 const int kInputStreamBlockSize = 4;

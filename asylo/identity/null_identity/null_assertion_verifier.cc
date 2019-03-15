@@ -53,7 +53,9 @@ EnclaveIdentityType NullAssertionVerifier::IdentityType() const {
   return identity_type_;
 }
 
-std::string NullAssertionVerifier::AuthorityType() const { return authority_type_; }
+std::string NullAssertionVerifier::AuthorityType() const {
+  return authority_type_;
+}
 
 Status NullAssertionVerifier::CreateAssertionRequest(
     AssertionRequest *request) const {

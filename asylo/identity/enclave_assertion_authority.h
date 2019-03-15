@@ -78,7 +78,8 @@ class EnclaveAssertionAuthority {
   /// \return The generated authority identifier on success, or a non-OK
   ///         Status on failure.
   static StatusOr<std::string> GenerateAuthorityId(
-      const EnclaveIdentityType &identity_type, const std::string &authority_type) {
+      const EnclaveIdentityType &identity_type,
+      const std::string &authority_type) {
     std::string serialized;
     ASYLO_RETURN_IF_ERROR(asylo::SerializeByteContainers(
         &serialized, EnclaveIdentityType_Name(identity_type), authority_type));

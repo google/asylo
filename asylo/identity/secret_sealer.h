@@ -142,7 +142,7 @@ class SecretSealer {
   /// \param name The root name for sealing (e.g., from RootName()).
   /// \return An object that represents a result string, or a failure status.
   static StatusOr<std::string> GenerateSealerId(SealingRootType type,
-                                           const std::string &name);
+                                                const std::string &name);
 };
 
 /// \cond Internal

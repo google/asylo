@@ -174,7 +174,7 @@ void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
     is_valid &= (identity_type == CODE_IDENTITY);
 
     std::vector<std::string> authority_types{kSgxAuthorizationAuthority,
-                                        kInvalidAuthorityType};
+                                             kInvalidAuthorityType};
     std::string authority_type = RandomSelect(authority_types);
     generic_identity->mutable_description()->set_authority_type(authority_type);
     is_valid &= (authority_type == kSgxAuthorizationAuthority);

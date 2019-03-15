@@ -78,7 +78,8 @@ class ServerEkepHandshaker final : public EkepHandshaker {
   // Validates the ClientPrecommit handshake message contained in |message|. If
   // validation succeeds, writes the ServerPrecommit message to |output| and
   // updates the handshake transcript with the outgoing ServerPrecommit frame.
-  Status HandleClientPrecommit(const google::protobuf::Message &message, std::string *output);
+  Status HandleClientPrecommit(const google::protobuf::Message &message,
+                               std::string *output);
 
   // Validates the ClientId handshake message contained in |message|. If
   // validation succeeds, writes the ServerId and ServerFinish messages to

@@ -62,7 +62,7 @@ template <class ByteContainerT>
 Status AppendSerializedByteContainers(
     const std::vector<ByteContainerView> &views, ByteContainerT *serialized) {
   static_assert(sizeof(typename ByteContainerT::value_type) == 1,
-                "ByteContainerT must be a std::string that uses 1-byte characters");
+                "ByteContainerT must be a string that uses 1-byte characters");
 
   for (const ByteContainerView &view : views) {
     if (view.size() > std::numeric_limits<uint32_t>::max()) {

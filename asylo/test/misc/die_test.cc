@@ -64,7 +64,8 @@ TEST_F(DieTest, CheckSIGILL) {
 }
 
 TEST_F(DieTest, DieRaisesSIGILL) {
-  experimental::ExecTester run({app_, FLAGS_enclave_path, std::string("--die")});
+  experimental::ExecTester run(
+      {app_, FLAGS_enclave_path, std::string("--die")});
   int status = 0;
   EXPECT_TRUE(run.Run("", &status));
   EXPECT_FALSE(WIFEXITED(status)) << "Terminated by exit, not signal: "

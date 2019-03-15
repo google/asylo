@@ -405,8 +405,8 @@ template <size_t InputSize>
 StatusOr<SafeBytes<(InputSize - 1) / 2>> InstantiateSafeBytesFromHexString(
     const char *bytes_hex) {
   SafeBytes<(InputSize - 1) / 2> bytes;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(std::string(bytes_hex, InputSize - 1), &bytes));
+  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromHexString(
+      std::string(bytes_hex, InputSize - 1), &bytes));
   return bytes;
 }
 
@@ -418,8 +418,8 @@ template <size_t InputSize>
 StatusOr<UnsafeBytes<(InputSize - 1) / 2>> InstantiateUnsafeBytesFromHexString(
     const char *bytes_hex) {
   UnsafeBytes<(InputSize - 1) / 2> bytes;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(std::string(bytes_hex, InputSize - 1), &bytes));
+  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromHexString(
+      std::string(bytes_hex, InputSize - 1), &bytes));
   return bytes;
 }
 // Stream-insertion operator for SafeBytes. Writes the hex representation of

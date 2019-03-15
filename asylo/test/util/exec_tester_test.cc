@@ -36,8 +36,9 @@ class ExecTesterTest : public ::testing::Test {
  protected:
   class UniformOutputChecker : public ExecTester {
    public:
-    UniformOutputChecker(const std::string &line, const std::vector<std::string> &args,
-                         int minimum = 0, bool hard_limit = true,
+    UniformOutputChecker(const std::string &line,
+                         const std::vector<std::string> &args, int minimum = 0,
+                         bool hard_limit = true,
                          int fd_to_check = STDOUT_FILENO)
         : ExecTester(args, fd_to_check),
           line_(line),
@@ -128,7 +129,8 @@ TEST_F(ExecTesterTest, CheckSIGILL) {
 }
 
 TEST_F(ExecTesterTest, CheckStderrFoo) {
-  UniformOutputChecker run("Foo", {app_, std::string("--stderrFoo")}, /*minimum=*/1,
+  UniformOutputChecker run("Foo", {app_, std::string("--stderrFoo")},
+                           /*minimum=*/1,
                            /*hard_limit=*/true, /*fd_to_check=*/STDERR_FILENO);
   int status = 0;
   EXPECT_TRUE(run.Run("", &status));

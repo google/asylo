@@ -38,7 +38,8 @@ using ::testing::Not;
 
 class VirtualHandlerTest : public ::testing::Test {
  public:
-  void RegisterVirtualPathHandler(const std::string &path, const std::string &label) {
+  void RegisterVirtualPathHandler(const std::string &path,
+                                  const std::string &label) {
     io::IOManager &mgr = io::IOManager::GetInstance();
     mgr.RegisterVirtualPathHandler(path,
                                    ::absl::make_unique<TestHandler>(label));

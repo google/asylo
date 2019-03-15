@@ -581,7 +581,8 @@ int IOManager::Read(int fd, char *buf, size_t count) {
 }
 
 bool IOManager::RegisterVirtualPathHandler(
-    const std::string &path_prefix, std::unique_ptr<VirtualPathHandler> handler) {
+    const std::string &path_prefix,
+    std::unique_ptr<VirtualPathHandler> handler) {
   if (!handler || (!path_prefix.empty() &&
                    (path_prefix.front() != '/' || path_prefix.back() == '/'))) {
     return false;
@@ -609,7 +610,8 @@ std::string IOManager::GetCurrentWorkingDirectory() const {
   return current_working_directory_;
 }
 
-StatusOr<std::string> IOManager::CanonicalizePath(absl::string_view path) const {
+StatusOr<std::string> IOManager::CanonicalizePath(
+    absl::string_view path) const {
   // Cannot resolve an empty path.
   if (path.empty()) {
     return Status(error::PosixError::P_ENOENT,

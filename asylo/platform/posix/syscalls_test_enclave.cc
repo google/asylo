@@ -1081,7 +1081,8 @@ class SyscallsEnclave : public EnclaveTestCase {
     asylo::SerializeIfAddrs(front, &serialized_ifaddrs, &len);
     freeifaddrs(front);
     SyscallsTestOutput output_ret;
-    output_ret.set_serialized_proto_return(std::string(serialized_ifaddrs, len));
+    output_ret.set_serialized_proto_return(
+        std::string(serialized_ifaddrs, len));
     output_ret.set_int_syscall_return(ret);
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);

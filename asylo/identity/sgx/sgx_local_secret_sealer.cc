@@ -137,7 +137,7 @@ Status SgxLocalSecretSealer::Seal(
   if (!header.SerializeToString(
           sealed_secret->mutable_sealed_secret_header())) {
     return Status(error::GoogleError::INTERNAL,
-                  "Header serialization to std::string failed");
+                  "Header serialization to string failed");
   }
   sealed_secret->set_additional_authenticated_data(
       reinterpret_cast<const char *>(additional_authenticated_data.data()),

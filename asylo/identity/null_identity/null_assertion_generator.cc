@@ -52,7 +52,9 @@ EnclaveIdentityType NullAssertionGenerator::IdentityType() const {
   return identity_type_;
 }
 
-std::string NullAssertionGenerator::AuthorityType() const { return authority_type_; }
+std::string NullAssertionGenerator::AuthorityType() const {
+  return authority_type_;
+}
 
 Status NullAssertionGenerator::CreateAssertionOffer(
     AssertionOffer *offer) const {

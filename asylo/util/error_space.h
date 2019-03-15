@@ -278,8 +278,8 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
   void AddTranslationMapEntry(int code, const std::string &error_string,
                               GoogleError google_error_code) {
     CHECK(code_translation_map_
-              .emplace(code, std::pair<std::string, GoogleError>(error_string,
-                                                            google_error_code))
+              .emplace(code, std::pair<std::string, GoogleError>(
+                                 error_string, google_error_code))
               .second)
         << "Duplicate map key: " << code;
   }

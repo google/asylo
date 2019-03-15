@@ -122,12 +122,13 @@ Status CreateAndWriteNewAttestationDomain(const char *domain_file_path,
 // encountered errors are fatal. The null-terminated C string
 // |domain_file_path| is used for error-reporting purposes only.
 Status ParseAttestationDomain(const char *domain_file_path,
-                              absl::string_view domain_hex, std::string *domain) {
+                              absl::string_view domain_hex,
+                              std::string *domain) {
   for (const auto ch : domain_hex) {
     if (!absl::ascii_isxdigit(ch)) {
       return Status(
           error::GoogleError::INTERNAL,
-          absl::StrCat("Invalid attestation-domain std::string. Remove the file ",
+          absl::StrCat("Invalid attestation-domain string. Remove the file ",
                        domain_file_path, " and try again."));
     }
   }

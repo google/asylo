@@ -78,7 +78,8 @@ class ClientEkepHandshaker final : public EkepHandshaker {
   // Validates the ServerPrecommit handshake message contained in |message|. If
   // validation succeeds, writes the ClientId message to |output| and updates
   // the handshake transcript with the outgoing ClientId frame.
-  Status HandleServerPrecommit(const google::protobuf::Message &message, std::string *output);
+  Status HandleServerPrecommit(const google::protobuf::Message &message,
+                               std::string *output);
 
   // Validates the ServerId handshake message contained in |message|.
   Status HandleServerId(const google::protobuf::Message &message);
@@ -86,7 +87,8 @@ class ClientEkepHandshaker final : public EkepHandshaker {
   // Validates the ServerFinish handshake message contained in |message|. If
   // validation succeeds, writes the ClientFinish message to |output| and
   // updates the handshake transcript with the outgoing ClientFinish frame.
-  Status HandleServerFinish(const google::protobuf::Message &message, std::string *output);
+  Status HandleServerFinish(const google::protobuf::Message &message,
+                            std::string *output);
 
   // Writes the ClientPrecommit frame to |output| and updates the transcript.
   Status WriteClientPrecommit(std::string *output);

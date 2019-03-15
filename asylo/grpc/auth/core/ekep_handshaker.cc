@@ -248,7 +248,8 @@ EkepHandshaker::EkepHandshaker(int max_frame_size)
   peer_identities_ = absl::make_unique<EnclaveIdentities>();
 }
 
-EkepHandshaker::Result EkepHandshaker::DecodeAndHandleFrame(std::string *output) {
+EkepHandshaker::Result EkepHandshaker::DecodeAndHandleFrame(
+    std::string *output) {
   // Check if there are enough bytes to parse a frame header.
   if (input_stream_.RemainingByteCount() < kEkepFrameHeaderSize) {
     return Result::NOT_ENOUGH_DATA;

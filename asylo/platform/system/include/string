@@ -21,13 +21,6 @@
 
 #include_next <string>
 
-// If we are not using the Google-internal version of <string> then add
-// std::string to the global namespace for compatibility with Google coding
-// conventions.
-#ifndef HAS_GLOBAL_STRING
-using std::string;
-#endif
-
 namespace std {
 
 // Unimplemented stub

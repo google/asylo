@@ -49,7 +49,7 @@ class EnclaveGetenvTest : public EnclaveTestCase {
       const char *negative = strchr(test_string.c_str(), '~');
       if (!negative) {
         return Status(error::GoogleError::INTERNAL,
-                      absl::StrCat("Bad test std::string: ", test_string));
+                      absl::StrCat("Bad test string: ", test_string));
       }
       std::string name(test_string.c_str(), negative - test_string.c_str());
       const char *negative_value = getenv(name.c_str());
@@ -68,7 +68,7 @@ class EnclaveGetenvTest : public EnclaveTestCase {
     EnclaveApiTest enclave_input_test;
     if (!enclave_input_test.ParseFromArray(buf.data(), buf.size())) {
       return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to deserialize std::string to enclave_input_test");
+                    "Failed to deserialize string to enclave_input_test");
     }
     if (enclave_input_test.test_repeated_size() != 2) {
       return Status(error::GoogleError::INTERNAL,

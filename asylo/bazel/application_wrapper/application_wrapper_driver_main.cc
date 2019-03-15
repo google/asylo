@@ -29,8 +29,8 @@
 namespace asylo {
 
 StatusOr<int> ApplicationWrapperDriverMain(const EnclaveLoader &loader,
-                                           const std::string &enclave_name, int argc,
-                                           char *argv[]) {
+                                           const std::string &enclave_name,
+                                           int argc, char *argv[]) {
   // Retrieve the EnclaveManager instance.
   EnclaveManager *manager;
   ASYLO_ASSIGN_OR_RETURN(manager, EnclaveManager::Instance());

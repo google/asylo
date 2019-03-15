@@ -35,8 +35,8 @@ Status GrpcServerLauncher::RegisterService(
 }
 
 Status GrpcServerLauncher::AddListeningPort(
-    const std::string &address, std::shared_ptr<::grpc::ServerCredentials> creds,
-    int *selected_port) {
+    const std::string &address,
+    std::shared_ptr<::grpc::ServerCredentials> creds, int *selected_port) {
   absl::MutexLock lock(&mu_);
   if (state_ != State::NOT_LAUNCHED) {
     return MakeStatus(

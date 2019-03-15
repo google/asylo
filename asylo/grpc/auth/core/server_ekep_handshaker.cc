@@ -106,7 +106,7 @@ void ServerEkepHandshaker::AbortHandshake(const Status &abort_status,
   Abort abort;
   abort.set_code(error_code);
   abort.set_message(std::string(abort_status.error_message().data(),
-                           abort_status.error_message().size()));
+                                abort_status.error_message().size()));
 
   google::protobuf::io::StringOutputStream outgoing_frame(output);
   Status status = EncodeFrame(ABORT, abort, &outgoing_frame);
@@ -424,7 +424,7 @@ Status ServerEkepHandshaker::WriteServerId(std::string *output) {
   server_id.set_dh_public_key(dh_public_key_.data(), dh_public_key_.size());
 
   std::string public_key(reinterpret_cast<const char *>(dh_public_key_.data()),
-                    dh_public_key_.size());
+                         dh_public_key_.size());
 
   // At this stage in the protocol, the transcript is:
   //   hash(ClientPrecommit || ServerPrecommit || ClientId)

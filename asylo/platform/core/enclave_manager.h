@@ -62,7 +62,8 @@ class EnclaveManagerOptions {
   /// The ConfigServerConnectionAttributes struct holds information necessary
   /// for contacting the config server running inside the Asylo daemon.
   struct ConfigServerConnectionAttributes {
-    ConfigServerConnectionAttributes(std::string address, absl::Duration timeout)
+    ConfigServerConnectionAttributes(std::string address,
+                                     absl::Duration timeout)
         : server_address(std::move(address)),
           connection_timeout(std::move(timeout)) {}
 
@@ -308,7 +309,8 @@ class EnclaveManager {
   // Loads a new enclave with custom enclave config settings and binds it to a
   // name. The actual work of opening the enclave is delegated to the passed
   // loader object.
-  Status LoadEnclaveInternal(const std::string &name, const EnclaveLoader &loader,
+  Status LoadEnclaveInternal(const std::string &name,
+                             const EnclaveLoader &loader,
                              const EnclaveConfig &config,
                              void *base_address = nullptr,
                              const size_t enclave_size = 0)
@@ -341,8 +343,8 @@ class EnclaveManager {
   // |loader_by_client_| tables.
   mutable absl::Mutex client_table_lock_;
 
-  absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>> client_by_name_
-      GUARDED_BY(client_table_lock_);
+  absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>>
+      client_by_name_ GUARDED_BY(client_table_lock_);
   absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_
       GUARDED_BY(client_table_lock_);
 

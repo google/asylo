@@ -33,7 +33,7 @@ class EnclaveProtoTest : public EnclaveTestCase {
     EnclaveApiTest enclave_input_test;
     if (!enclave_input_test.ParseFromArray(buf.data(), buf.size())) {
       return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to deserialize std::string to enclave_input_test");
+                    "Failed to deserialize string to enclave_input_test");
     }
     if (!enclave_input_test.has_test_string() ||
         !enclave_input_test.has_test_int() ||

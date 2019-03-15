@@ -344,7 +344,7 @@ StatusOr<uint16_t> ElfReaderCreator::NameTableIndex(
     const Elf64_Ehdr *elf_header) const {
   if (elf_header->e_shstrndx == SHN_UNDEF) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "ELF file contains no section name std::string table section");
+                  "ELF file contains no section name string table section");
   }
 
   return elf_header->e_shstrndx;
@@ -372,19 +372,19 @@ StatusOr<const Elf64_Shdr *> ElfReaderCreator::NameTableHeader(
       section_header_table, name_table_index * entry_size);
 
   if (!name_table_header_or_none.has_value()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        "Malformed ELF file: section name std::string table header lies outside "
-        "section header table");
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Malformed ELF file: section name string table header "
+                  "lies outside "
+                  "section header table");
   }
 
   const Elf64_Shdr *name_table_header = name_table_header_or_none.value();
 
   if (name_table_header->sh_type != SHT_STRTAB) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        "Malformed ELF file: section name std::string table section is not of type "
-        "SHT_STRTAB");
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Malformed ELF file: section name string table section "
+                  "is not of type "
+                  "SHT_STRTAB");
   }
 
   return name_table_header;
@@ -398,10 +398,10 @@ StatusOr<absl::Span<const uint8_t>> ElfReaderCreator::NameTable(
       GetSubspan(elf_file_, name_table_start, name_table_size);
 
   if (!name_table_or_none.has_value()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        "Malformed ELF file: section name std::string table exceeds boundary of "
-        "file");
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Malformed ELF file: section name string table exceeds "
+                  "boundary of "
+                  "file");
   }
 
   return name_table_or_none.value();

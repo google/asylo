@@ -47,7 +47,7 @@ class EnclaveBridgeTypes : public EnclaveTestCase {
         {"bridge_pollfd", sizeof(bridge_pollfd)},
     };
     absl::flat_hash_map<std::string, size_t> sizes(sizes_list.begin(),
-                                              sizes_list.end());
+                                                   sizes_list.end());
     type_sizes_ = std::move(sizes);
     return Status::OkStatus();
   }

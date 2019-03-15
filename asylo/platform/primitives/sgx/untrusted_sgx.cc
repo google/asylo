@@ -92,8 +92,8 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
                                                  self_binary_mapping.buffer()));
 
   absl::Span<const uint8_t> enclave_buffer;
-  ASYLO_ASSIGN_OR_RETURN(
-      enclave_buffer, self_binary_reader.GetSectionData(std::string(section_name)));
+  ASYLO_ASSIGN_OR_RETURN(enclave_buffer, self_binary_reader.GetSectionData(
+                                             std::string(section_name)));
 
   int updated;
   sgx_status_t status;

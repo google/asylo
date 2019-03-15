@@ -37,7 +37,7 @@ Status SecretSealer::Reseal(const SealedSecret &old_sealed_secret,
 }
 
 StatusOr<std::string> SecretSealer::GenerateSealerId(SealingRootType type,
-                                                const std::string &name) {
+                                                     const std::string &name) {
   std::string serialized;
   ASYLO_RETURN_IF_ERROR(
       SerializeByteContainers(&serialized, SealingRootType_Name(type), name));

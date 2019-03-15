@@ -34,7 +34,7 @@ namespace asylo {
 namespace {
 
 StatusOr<std::string> ReadRandomBytes(const char *path, size_t read_bytes,
-                                 size_t align_bytes) {
+                                      size_t align_bytes) {
   int fd = open(path, O_RDONLY, 0);
   if (fd < 0) {
     return Status(error::GoogleError::INTERNAL,
@@ -104,13 +104,17 @@ TEST(DevicesTest, RandomHandlerTest) {
         // If we read unaligned, make sure we didn't overrun the intended
         // buffers.
         if (align_bytes) {
-          EXPECT_EQ(result1.substr(0, align_bytes), std::string(align_bytes, 0));
-          EXPECT_EQ(result2.substr(0, align_bytes), std::string(align_bytes, 0));
+          EXPECT_EQ(result1.substr(0, align_bytes),
+                    std::string(align_bytes, 0));
+          EXPECT_EQ(result2.substr(0, align_bytes),
+                    std::string(align_bytes, 0));
         }
         size_t extra = total - align_bytes - read_bytes;
         if (extra) {
-          EXPECT_EQ(result1.substr(result1.size() - extra), std::string(extra, 0));
-          EXPECT_EQ(result2.substr(result2.size() - extra), std::string(extra, 0));
+          EXPECT_EQ(result1.substr(result1.size() - extra),
+                    std::string(extra, 0));
+          EXPECT_EQ(result2.substr(result2.size() - extra),
+                    std::string(extra, 0));
         }
       }
     }

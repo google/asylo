@@ -72,7 +72,7 @@ bool ConvertToSockaddrProtobuf(const struct sockaddr *in, SockaddrProto *out,
     sock_in6_proto->set_sin6_flowinfo(sock->sin6_flowinfo);
     sock_in6_proto->set_sin6_addr(
         std::string(reinterpret_cast<const char *>(&(sock->sin6_addr.s6_addr)),
-               kIn6AddrNumBytes));
+                    kIn6AddrNumBytes));
     sock_in6_proto->set_sin6_scope_id(sock->sin6_scope_id);
   } else if (in->sa_family == AF_INET) {  // IPv4
     SockaddrProto::SockaddrIn *sock_in_proto = out->mutable_sockaddr_in();
@@ -745,7 +745,7 @@ void FreeDeserializedIfAddrs(struct ifaddrs *ifa) {
   struct ifaddrs *curr = ifa;
   while (curr != nullptr) {
     struct ifaddrs *next = curr->ifa_next;
-    free(curr->ifa_name);  // std::string allocated by strdup (which uses malloc)
+    free(curr->ifa_name);  // string allocated by strdup (which uses malloc)
     free(curr->ifa_addr);  // all sockaddrs are also heap allocated
     free(curr->ifa_netmask);
     free(curr->ifa_ifu.ifu_dstaddr);

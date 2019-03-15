@@ -388,7 +388,7 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
                                     bridge_size_t *serialized_res_len) {
   struct addrinfo *hints;
   std::string tmp_serialized_hints(serialized_hints,
-                              static_cast<size_t>(serialized_hints_len));
+                                   static_cast<size_t>(serialized_hints_len));
   if (!asylo::DeserializeAddrinfo(&tmp_serialized_hints, &hints)) {
     return -1;
   }
@@ -531,7 +531,7 @@ int ocall_enc_untrusted_epoll_create(int size) { return epoll_create(size); }
 int ocall_enc_untrusted_epoll_ctl(const char *serialized_args,
                                   bridge_size_t serialized_args_len) {
   std::string serialized_args_str(serialized_args,
-                             static_cast<size_t>(serialized_args_len));
+                                  static_cast<size_t>(serialized_args_len));
   int epfd = 0;
   int op = 0;
   int hostfd = 0;
@@ -552,7 +552,7 @@ int ocall_enc_untrusted_epoll_wait(const char *serialized_args,
   int maxevents = 0;
   int timeout = 0;
   std::string serialized_args_str(serialized_args,
-                             static_cast<size_t>(serialized_args_len));
+                                  static_cast<size_t>(serialized_args_len));
   if (!asylo::DeserializeEpollWaitArgs(serialized_args_str, &epfd, &maxevents,
                                        &timeout)) {
     errno = EINVAL;

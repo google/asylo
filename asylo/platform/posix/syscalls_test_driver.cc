@@ -69,7 +69,8 @@ const int kSinZeroPadSize = 8;
 
 // Invokes a system call from inside the enclave and returns its output (if
 // needed).
-Status RunEnclaveSyscall(EnclaveClient *client, const std::string &tested_syscall,
+Status RunEnclaveSyscall(EnclaveClient *client,
+                         const std::string &tested_syscall,
                          const std::string &file_path, bool provide_buffer,
                          int32_t buffer_size, SyscallsTestOutput *test_output) {
   EnclaveInput enclave_input;
@@ -667,7 +668,8 @@ TEST_F(SyscallsTest, Stat) {
 // link target.
 TEST_F(SyscallsTest, StatOnSymlink) {
   SyscallsTestOutput test_output;
-  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink");
+  const std::string test_dir =
+      absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink");
   const std::string test_link =
       absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink_link");
 
@@ -742,7 +744,8 @@ TEST_F(SyscallsTest, FStat) {
 // link target.
 TEST_F(SyscallsTest, FStatOnSymlink) {
   SyscallsTestOutput test_output;
-  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink");
+  const std::string test_dir =
+      absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink");
   const std::string test_link =
       absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink_link");
 
@@ -817,7 +820,8 @@ TEST_F(SyscallsTest, LStat) {
 // link itself, rather than the link target.
 TEST_F(SyscallsTest, LStatOnSymlink) {
   SyscallsTestOutput test_output;
-  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink");
+  const std::string test_dir =
+      absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink");
   const std::string test_link =
       absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink_link");
 

@@ -133,7 +133,8 @@ TEST(StatusMatchersTest,
             absl::StrCat("is not OK or contains a value that ",
                          MatcherDescription<int>(Not(Lt(7)))));
   EXPECT_EQ(
-      MatcherDescription<StatusOr<std::string>>(Not(IsOkAndHolds(HasSubstr("foo")))),
+      MatcherDescription<StatusOr<std::string>>(
+          Not(IsOkAndHolds(HasSubstr("foo")))),
       absl::StrCat("is not OK or contains a value that ",
                    MatcherDescription<std::string>(Not(HasSubstr("foo")))));
 }

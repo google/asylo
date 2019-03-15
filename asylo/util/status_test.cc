@@ -74,7 +74,8 @@ TEST(StatusTest, GetErrorSpaceNonOkStatus) {
 
 TEST(StatusTest, ToStringOkStatus) {
   ::asylo::Status status = Status::OkStatus();
-  std::string error_code_name = status.error_space()->String(status.error_code());
+  std::string error_code_name =
+      status.error_space()->String(status.error_code());
 
   // The ToString() representation for an ok Status should contain the error
   // code name.
@@ -84,7 +85,8 @@ TEST(StatusTest, ToStringOkStatus) {
 
 TEST(StatusTest, ToStringNonOkStatus) {
   ::asylo::Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
-  std::string error_code_name = status.error_space()->String(status.error_code());
+  std::string error_code_name =
+      status.error_space()->String(status.error_code());
   std::string error_space_name = status.error_space()->SpaceName();
   // The format of ToString() is subject to change for a non-ok Status, but it
   // should contain the error space name, the error code name, and the error
@@ -92,7 +94,8 @@ TEST(StatusTest, ToStringNonOkStatus) {
   std::string status_rep = status.ToString();
   EXPECT_NE(status_rep.find(error_space_name), std::string::npos);
   EXPECT_NE(status_rep.find(error_code_name), std::string::npos);
-  EXPECT_NE(status_rep.find(std::string(status.error_message())), std::string::npos);
+  EXPECT_NE(status_rep.find(std::string(status.error_message())),
+            std::string::npos);
 }
 
 TEST(StatusTest, Equality) {

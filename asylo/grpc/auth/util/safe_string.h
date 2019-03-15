@@ -21,12 +21,12 @@
 
 #include <string.h>
 
-/* safe_string is a container for a fixed-length std::string. A safe_string either
- * represents some non-zero length std::string or the null std::string, in which case it
+/* safe_string is a container for a fixed-length string. A safe_string either
+ * represents some non-zero length string or the null string, in which case it
  * is zero-length and has a NULL data member. A safe_string will take on the
- * value of the null std::string when it is newly-initialized or freed.
+ * value of the null string when it is newly-initialized or freed.
  *
- * safe_string is not intended to be a general-purpose std::string utility. It simply
+ * safe_string is not intended to be a general-purpose string utility. It simply
  * provides convenience functions for safely creating copies of strings, and
  * managing allocated buffers using gRPC memory management utilities.
  *
@@ -47,7 +47,7 @@ typedef struct {
   size_t size;
 } safe_string;
 
-/* Constructor for safe_string. Sets |safe_str| to the null std::string. This must be
+/* Constructor for safe_string. Sets |safe_str| to the null string. This must be
  * called before calling any other functions on |safe_str|. */
 void safe_string_init(safe_string *safe_str);
 

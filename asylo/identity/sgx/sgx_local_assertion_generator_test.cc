@@ -49,7 +49,7 @@ using ::testing::Not;
 constexpr char kBadConfig[] = "Not a real config";
 
 constexpr char kLocalAttestationDomain1[] = "A 16-byte string";
-constexpr char kLocalAttestationDomain2[] = "A superb std::string!";
+constexpr char kLocalAttestationDomain2[] = "A superb string!";
 
 constexpr char kBadAuthority[] = "Foobar Assertion Authority";
 constexpr char kBadAdditionalInfo[] = "Invalid additional info";

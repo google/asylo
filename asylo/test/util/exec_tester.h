@@ -40,7 +40,8 @@ class ExecTester {
   ///             argument should be the executable to be run.
   /// \param fd_to_check The file descriptor from which output is sent to
   ///                    CheckLine().
-  ExecTester(const std::vector<std::string> &args, int fd_to_check = STDOUT_FILENO);
+  ExecTester(const std::vector<std::string> &args,
+             int fd_to_check = STDOUT_FILENO);
   virtual ~ExecTester() = default;
 
   /// Forks and execs the subprocess with the configured arguments. Redirects
@@ -67,7 +68,8 @@ class ExecTester {
   ///         `path`. If `path` is a relative path, then the returned path is
   ///         relative to the same directory. If `path` is absolute, then so is
   ///         the returned path.
-  static std::string BuildSiblingPath(const std::string &path, const std::string &file_name);
+  static std::string BuildSiblingPath(const std::string &path,
+                                      const std::string &file_name);
 
  protected:
   /// Checks a line of the subprocess's output to the configured file descriptor

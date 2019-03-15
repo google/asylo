@@ -124,7 +124,8 @@ std::vector<AssertionDescription>::const_iterator FindAssertionDescription(
 }
 
 bool MakeEkepContextBlob(const std::string &public_key,
-                         const std::string &transcript_hash, std::string *ekep_context) {
+                         const std::string &transcript_hash,
+                         std::string *ekep_context) {
   return SerializeByteContainers(ekep_context, public_key, transcript_hash)
       .ok();
 }

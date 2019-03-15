@@ -48,7 +48,7 @@ ExecTester::ExecTester(const std::vector<std::string> &args, int fd_to_check)
 }
 
 std::string ExecTester::BuildSiblingPath(const std::string &path,
-                                    const std::string &file_name) {
+                                         const std::string &file_name) {
   char *path_dup = strdup(path.c_str());
   absl::string_view path_dirname(dirname(path_dup));
 

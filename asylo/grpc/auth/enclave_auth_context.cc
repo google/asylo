@@ -61,7 +61,7 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
             error::GoogleError::INVALID_ARGUMENT,
             absl::StrCat("Invalid transport security type: ",
                          std::string(auth_property.second.data(),
-                                auth_property.second.size()),
+                                     auth_property.second.size()),
                          "; expected ", GRPC_ENCLAVE_TRANSPORT_SECURITY_TYPE));
       }
     } else {

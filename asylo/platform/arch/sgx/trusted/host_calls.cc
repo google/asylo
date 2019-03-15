@@ -394,7 +394,7 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   enc_untrusted_free(tmp_serialized_res_start);
 
   std::string serialized_res(tmp_serialized_res,
-                        static_cast<size_t>(tmp_serialized_res_len));
+                             static_cast<size_t>(tmp_serialized_res_len));
   if (!asylo::DeserializeAddrinfo(&serialized_res, res)) {
     LOG(ERROR) << "Invalid addrinfo in getaddrinfo response";
     return -1;

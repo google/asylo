@@ -276,7 +276,7 @@ constexpr uint8_t kAesKey128[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
 // Encrypts a message against `kAesKey128` and returns a 12-byte nonce followed
 // by authenticated ciphertext, encoded as a hex string. `message` must be less
 // than or equal to `kMaxMessageSize` in length.
-const StatusOr<string> EncryptMessage(const string &message) {
+const StatusOr<std::string> EncryptMessage(const std::string &message) {
   AesGcmSivCryptor cryptor(kMaxMessageSize, new AesGcmSivNonceGenerator());
 
   CleansingVector<uint8_t> key(kAesKey128, kAesKey128 + arraysize(kAesKey128));
@@ -293,14 +293,14 @@ class EnclaveDemo : public TrustedApplication {
   EnclaveDemo() = default;
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
-    string user_message = GetEnclaveUserMessage(input);
-    string result;
+    std::string user_message = GetEnclaveUserMessage(input);
+    std::string result;
     ASYLO_ASSIGN_OR_RETURN(result, EncryptMessage(user_message));
     std::cout << "Encrypted message:" << std::endl << result << std::endl;
     return Status::OkStatus();
   }
 
-  const string GetEnclaveUserMessage(const EnclaveInput &input) {
+  const std::string GetEnclaveUserMessage(const EnclaveInput &input) {
     return input.GetExtension(guide::asylo::enclave_input_demo).value();
   }
 };

@@ -22,6 +22,6 @@
 
 extern "C" {
 
-int fnmatch(const char *pattern, const char *std::string, int flags) { abort(); }
+int fnmatch(const char *pattern, const char *string, int flags) { abort(); }
 
 }  // extern "C"

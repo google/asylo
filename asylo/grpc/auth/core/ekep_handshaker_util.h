@@ -84,7 +84,8 @@ std::vector<AssertionDescription>::const_iterator FindAssertionDescription(
 // Creates a unique EKEP context blob consisting of |public_key| and
 // |transcript_hash| and writes it to |ekep_context|. Returns true on success.
 bool MakeEkepContextBlob(const std::string &public_key,
-                         const std::string &transcript_hash, std::string *ekep_context);
+                         const std::string &transcript_hash,
+                         std::string *ekep_context);
 
 }  // namespace asylo
 

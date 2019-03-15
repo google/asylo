@@ -59,7 +59,8 @@ class ElfReader {
   ElfReader(
       absl::Span<const uint8_t> elf_file,
       absl::flat_hash_map<std::string, const Elf64_Shdr *> &&section_headers,
-      absl::flat_hash_map<std::string, absl::Span<const uint8_t>> &&section_data)
+      absl::flat_hash_map<std::string, absl::Span<const uint8_t>>
+          &&section_data)
       : elf_file_(elf_file),
         section_headers_(std::move(section_headers)),
         section_data_(std::move(section_data)) {}

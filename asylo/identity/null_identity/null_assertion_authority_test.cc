@@ -73,9 +73,9 @@ class NullAssertionAuthorityTest : public ::testing::Test {
     // The same key is used for NullAssertionGenerator in AssertionGeneratorMap
     // and for NullAssertionVerifier in AssertionVerifierMap.
     std::string map_key = EnclaveAssertionAuthority::GenerateAuthorityId(
-                         null_assertion_description.identity_type(),
-                         null_assertion_description.authority_type())
-                         .ValueOrDie();
+                              null_assertion_description.identity_type(),
+                              null_assertion_description.authority_type())
+                              .ValueOrDie();
 
     auto generator = AssertionGeneratorMap::GetValue(map_key);
     ASSERT_NE(generator, AssertionGeneratorMap::value_end());

@@ -239,7 +239,8 @@ void TestMoveAssign(AlignedObjectPtr<T, ALIGN> *t) {
 // Test the move constructor and the move-assign operator.
 TEST_F(AlignedObjectPtrTest, MoveAndAssign) {
   TestStruct s1{1, 1}, s2{2, 2}, s3{3, 3};
-  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]> map;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]>
+      map;
   EXPECT_TRUE(map->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map->emplace(std::string("s2"), s2).second);
   EXPECT_TRUE(map->emplace(std::string("s3"), s3).second);
@@ -257,7 +258,8 @@ AlignedObjectPtr<T, Align> &&MoveObject(AlignedObjectPtr<T, Align> *t) {
 // Test that self-move-assign works correctly.
 TEST_F(AlignedObjectPtrTest, SelfMoveAssign) {
   TestStruct s1{1, 1}, s2{2, 2}, s3{3, 3};
-  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]> map;
+  AlignedObjectPtr<absl::flat_hash_map<std::string, TestStruct>, kAlignSizes[5]>
+      map;
   EXPECT_TRUE(map->emplace(std::string("s1"), s1).second);
   EXPECT_TRUE(map->emplace(std::string("s2"), s2).second);
   EXPECT_TRUE(map->emplace(std::string("s3"), s3).second);

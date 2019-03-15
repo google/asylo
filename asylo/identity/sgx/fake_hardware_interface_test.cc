@@ -43,8 +43,8 @@ using Measurement = UnsafeBytes<SHA256_DIGEST_LENGTH>;
 using Keyid = UnsafeBytes<kReportKeyidSize>;
 
 template <class T1, class T2>
-std::string HexDumpObjectPair(const char *obj1_name, T1 obj1, const char *obj2_name,
-                         T2 obj2) {
+std::string HexDumpObjectPair(const char *obj1_name, T1 obj1,
+                              const char *obj2_name, T2 obj2) {
   return absl::StrCat(obj1_name, ":\n", ConvertTrivialObjectToHexString(obj1),
                       "\n", obj2_name, ":\n",
                       ConvertTrivialObjectToHexString(obj2), "\n");

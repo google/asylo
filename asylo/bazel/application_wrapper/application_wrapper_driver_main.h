@@ -33,8 +33,8 @@ namespace asylo {
 //
 // Assumes that EnclaveManager has already been configured.
 StatusOr<int> ApplicationWrapperDriverMain(const EnclaveLoader &loader,
-                                           const std::string &enclave_name, int argc,
-                                           char *argv[]);
+                                           const std::string &enclave_name,
+                                           int argc, char *argv[]);
 
 }  // namespace asylo
 

@@ -179,7 +179,8 @@ class GrpcServerTest : public ::testing::Test {
   // Sends a GetTranslation RPC to the server. Returns the same grpc::Status as
   // the stub function call. If the RPC is successful, then sets
   // |*translated_word| to the received translation.
-  asylo::Status MakeRpc(const std::string &input_word, std::string *translated_word) {
+  asylo::Status MakeRpc(const std::string &input_word,
+                        std::string *translated_word) {
     ::grpc::ClientContext context;
     GetTranslationRequest request;
     GetTranslationResponse response;
