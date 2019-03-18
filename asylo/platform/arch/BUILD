@@ -178,7 +178,6 @@ cc_library(
         "sgx/trusted/enclave_syscalls.cc",
         "sgx/trusted/exceptions.cc",
         "sgx/trusted/host_calls.cc",
-        "sgx/trusted/sbrk.cc",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
@@ -213,6 +212,7 @@ cc_library(
         "//asylo/platform/core:shared_name",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/platform/primitives/sgx:trusted_sgx",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
