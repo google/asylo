@@ -349,6 +349,7 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
             objcopy_flags = " ".join(objcopy_flags),
             elf_file = elf_file_from_host,
         ),
+        toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
         **kwargs
     )
 
