@@ -32,7 +32,10 @@ cc_library(
         "primitives.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = ["//asylo/util:error_codes"],
+    deps = [
+        "//asylo/util:error_codes",
+        "@com_google_absl//absl/strings",
+    ],
 )
 
 # Primitive API headers for untrusted code.

@@ -26,6 +26,7 @@
 #include "asylo/platform/primitives/extent.h"
 
 using ::testing::Eq;
+using ::testing::StrEq;
 
 namespace asylo {
 namespace primitives {
@@ -104,6 +105,17 @@ TEST(ParameterStackTest, PushPopMixture) {
     }
     EXPECT_TRUE(params.empty());
     EXPECT_EQ(params.size(), 0);
+  }
+}
+
+TEST(ParameterStackTest, PushAllocPointerCopyTest) {
+  ParameterStack<malloc, free> params;
+
+  for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
+    const char *buffer = "hello world";
+    params.PushAlloc<char>(buffer, strlen(buffer) + 1);
+    EXPECT_THAT(params.Top().As<char>(), StrEq(buffer));
+    EXPECT_EQ(params.size(), iter);
   }
 }
 

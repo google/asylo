@@ -24,6 +24,7 @@
 #include <memory>
 #include <type_traits>
 
+#include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 
@@ -192,6 +193,34 @@ class ParameterStack {
                   "ParameterStack should not be used with pointers");
     return Push(Extent{const_cast<T *>(&value)});
   }
+
+  // Allocate and copy a buffer of known type T and given size. Enable only if T
+  // is not a pointer type.
+  template <typename T>
+  void PushAlloc(const T *buffer, size_t size) {
+    static_assert(!std::is_pointer<T>::value,
+                  "ParameterStack should not be used with pointers");
+
+    Extent response_extent = PushAlloc(size);
+    memcpy(response_extent.As<T>(), buffer, size);
+  }
+
+#define ASYLO_RETURN_IF_STACK_EMPTY(params)             \
+  do {                                                  \
+    if (!params->empty()) {                             \
+      return {error::GoogleError::INVALID_ARGUMENT,     \
+              "Parameter stack expected to be empty."}; \
+    }                                                   \
+  } while (false)
+
+#define ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, expected_args)        \
+  do {                                                                    \
+    if (params->size() != expected_args) {                                \
+      return {error::GoogleError::INVALID_ARGUMENT,                       \
+              absl::StrCat(expected_args,                                 \
+                           " item(s) expected on the parameter stack.")}; \
+    }                                                                     \
+  } while (false)
 
  private:
   // This method is not intended to be called, it is defined only to provide a

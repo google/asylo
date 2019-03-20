@@ -26,12 +26,6 @@ from asylo.platform.host_call.type_conversions.types_parse_functions import incl
 from asylo.platform.host_call.type_conversions.types_parse_functions import set_prefix
 from asylo.platform.host_call.type_conversions.types_parse_functions import write_output
 
-include("sys/epoll.h")
-include("sys/poll.h")
-include("sys/socket.h")
-include("sys/stat.h")
-include("sys/syscall.h")
-include("sys/types.h")
 include("fcntl.h")
 
 set_prefix("kLinux")
