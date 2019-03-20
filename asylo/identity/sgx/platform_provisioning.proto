@@ -1,0 +1,62 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.sgx;
+
+// This file defines messages representing properties involved in SGX platform
+// provisioning.
+//
+// Many of the represented properties are Security Version Numbers (SVNs). An
+// SVN is a version number indicating security-relevant changes to a system
+// component. A version of a component of a system with a given SVN is free of
+// or protected from some vulnerability in a version with a lower SVN.
+//
+// Intel's documentation for these properties can be found in Volume 3D of the
+// Intel SDM and various other Intel documents:
+//
+// https://software.intel.com/sites/default/files/managed/7c/f1/332831-sdm-vol-3d.pdf
+// https://download.01.org/intel-sgx/dcap-1.0.1/docs/SGX_PCK_Certificate_CRL_Spec-1.0.pdf
+// https://download.01.org/intel-sgx/dcap-1.0.1/docs/Intel_SGX_ECDSA_QuoteGenReference_DCAP_API_Linux_1.0.1.pdf
+
+// A Platform Provisioning ID (PPID) of an SGX CPU. The PPID is a unique
+// identifier of a CPU that is valid for the lifetime of the CPU.
+message Ppid {
+  // The bytes of the PPID. Must be exactly 16 bytes long. Required.
+  optional bytes value = 1;
+}
+
+// A CPU SVN. The CPU SVN contains security-relevant information about the Intel
+// microcode version and running authenticated code modules.
+message CpuSvn {
+  // The bytes of the CPU SVN. Must be exactly 16 bytes long. Required.
+  optional bytes value = 1;
+}
+
+// A Provisioning Certification Enclave (PCE) SVN.
+message PceSvn {
+  // The value of the PCE SVN. Must be a valid unsigned 16-bit integer.
+  // Required.
+  optional uint32 value = 1;
+}
+
+// A PCE ID number. The PCE ID distinguishes between PPID-generating algorithms
+// in the PCE.
+message PceId {
+  // The value of the PCE ID. Must be a valid unsigned 16-bit integer. Required.
+  optional uint32 value = 1;
+}

@@ -41,6 +41,12 @@ asylo_proto_library(
 )
 
 asylo_proto_library(
+    name = "platform_provisioning_proto",
+    srcs = ["platform_provisioning.proto"],
+    visibility = ["//asylo:implementation"],
+)
+
+asylo_proto_library(
     name = "local_assertion_proto",
     srcs = ["local_assertion.proto"],
 )
