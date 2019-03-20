@@ -19,6 +19,7 @@
 #ifndef ASYLO_TEST_UTIL_FAKE_LOCAL_ENCLAVE_CLIENT_H_
 #define ASYLO_TEST_UTIL_FAKE_LOCAL_ENCLAVE_CLIENT_H_
 
+#include "absl/base/macros.h"
 #include "asylo/client.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -31,7 +32,8 @@ namespace asylo {
 // be built with the native compiler, and TrustedApplication does not build with
 // the native compiler.
 template <typename EnclaveT>
-class FakeLocalEnclaveClient : public EnclaveClient {
+class ABSL_DEPRECATED("Use MockEnclaveClient instead") FakeLocalEnclaveClient
+    : public EnclaveClient {
  public:
   explicit FakeLocalEnclaveClient(std::unique_ptr<EnclaveT> enclave)
       : EnclaveClient("fake local"), enclave_(std::move(enclave)) {}

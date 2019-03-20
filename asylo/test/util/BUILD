@@ -259,10 +259,12 @@ cc_library(
     testonly = 1,
     hdrs = ["fake_local_enclave_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use mock_enclave_client instead",
     visibility = ["//visibility:public"],
     deps = [
         "//asylo:enclave_client",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
     ],
 )
 
