@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+
 #include "asylo/client.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
 #include "gflags/gflags.h"

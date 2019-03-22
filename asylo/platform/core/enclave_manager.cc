@@ -64,6 +64,7 @@ void WaitUntil(int64_t deadline) {
 }
 
 }  // namespace
+
 absl::Mutex EnclaveManager::mu_;
 bool EnclaveManager::configured_ = false;
 EnclaveManagerOptions *EnclaveManager::options_ = nullptr;

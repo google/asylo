@@ -91,6 +91,7 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
           << absl::StrCat("Could not convert \"", port_match.str(),
                           "\" to integer");
     }
+
     // Print the line back to stdout to help with debugging.
     std::cout << line << std::endl;
     return true;

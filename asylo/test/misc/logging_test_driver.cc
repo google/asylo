@@ -28,6 +28,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/test_flags.h"
+
 using testing::HasSubstr;
 using testing::Not;
 

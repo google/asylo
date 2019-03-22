@@ -41,6 +41,7 @@ const int kBufferSize = 4096;
 
 // The expected final value of a counter.
 const int kExpectedResult = kNumThreads * kNumLoops;
+
 // Mutex used in the Mutex-enabled routine.
 absl::Mutex mu;
 

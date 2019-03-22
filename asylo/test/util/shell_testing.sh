@@ -88,6 +88,7 @@ function expect_regular_file() {
   fi
 }
 
+
 _ASYLO_LOCATION_DEBUG_TEXT="$(cat << EOF
   It looks like a \$\(location ...\) or \$\(locations ...\) expression failed to
   expand in Bazel.

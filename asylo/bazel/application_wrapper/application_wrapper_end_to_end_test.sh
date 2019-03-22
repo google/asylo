@@ -16,6 +16,7 @@
 #
 
 source asylo/test/util/shell_testing.sh
+
 NORMAL_APPLICATION="asylo/bazel/application_wrapper/test_host_application"
 ENCLAVE_APPLICATION="asylo/bazel/application_wrapper/test_enclave_application"
 
