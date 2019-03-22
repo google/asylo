@@ -29,6 +29,15 @@ if [[ "${#UNTAGGED_TESTS[@]}" -ne 0 ]]; then
   echo "${UNTAGGED_TESTS[@]}"
 fi
 
+OLD_IFS="${IFS}"
+IFS=','
+ASYLO_TOOLCHAIN_FLAGS=(
+  "--define=GRPC_PORT_ISOLATED_RUNTIME=1"
+  # Add additional flags from the environment variable.
+  ${ASYLO_EXTRA_TOOLCHAIN_FLAGS}  # Intentionally not quoted for , to tokenize.
+)
+IFS="${OLD_IFS}"
+
 # Separately run the host and enclave tests, with different configs.
 # The "enclave_test" tag can be used to separate them, and "build_tests_only"
 # has it only build that filtered set of tests instead of all provided targets.
@@ -38,12 +47,12 @@ ${BAZEL} test --test_tag_filters=-enclave_test --build_tests_only \
 STAT=$(($STAT || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-  --define=GRPC_PORT_ISOLATED_RUNTIME=1 \
+  "${ASYLO_TOOLCHAIN_FLAGS[@]}" \
   --config=enc-sim "${SGX_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-  --define=GRPC_PORT_ISOLATED_RUNTIME=1 \
+  "${ASYLO_TOOLCHAIN_FLAGS[@]}" \
   --config=asylo --define=ASYLO_SIM=1 "${SIM_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
