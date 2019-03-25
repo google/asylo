@@ -625,15 +625,7 @@ toolchain {
         flag: "-D__LITTLE_ENDIAN__"
         flag: "-DCOMPILER_GCC3"
         flag: "-D__LINUX_ERRNO_EXTENSIONS__"
-        flag: "-D_GLIBCXX_USE_C99"
-        flag: "-D__TM_GMTOFF=tm_gmtoff"
-        flag: "-D__TM_ZONE=tm_zone"
-        flag: "-D_POSIX_MONOTONIC_CLOCK"
-        flag: "-D_POSIX_READER_WRITER_LOCKS"
-        flag: "-D_POSIX_THREADS"
-        flag: "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
-        flag: "-DHAVE_FCNTL"
-        flag: "-D_GNU_SOURCE"
+        flag: "-D_GLIBCXX_USE_C99"        flag: "-D_GNU_SOURCE"
       }
     }
     flag_set {
@@ -1540,13 +1532,6 @@ toolchain {
         flag: "-DCOMPILER_GCC3"
         flag: "-D__LINUX_ERRNO_EXTENSIONS__"
         flag: "-D_GLIBCXX_USE_C99"
-        flag: "-D__TM_GMTOFF=tm_gmtoff"
-        flag: "-D__TM_ZONE=tm_zone"
-        flag: "-D_POSIX_MONOTONIC_CLOCK"
-        flag: "-D_POSIX_READER_WRITER_LOCKS"
-        flag: "-D_POSIX_THREADS"
-        flag: "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
-        flag: "-DHAVE_FCNTL"
         flag: "-D_GNU_SOURCE"
       }
     }

@@ -4870,13 +4870,17 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/regex.h ./newlib/libc/in
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h
 +++ ./newlib/libc/include/sys/features.h
-@@ -384,6 +384,11 @@
+@@ -384,6 +384,15 @@
  # define _POSIX_VERSION 199009L
  #endif
  
 +#ifdef __ASYLO__
-+#define _POSIX_REALTIME_SIGNALS   1
-+#define _POSIX_TIMERS             1
++#define _POSIX_REALTIME_SIGNALS    1
++#define _POSIX_TIMERS              1
++#define _POSIX_THREADS             1
++#define _POSIX_MONOTONIC_CLOCK     200112L
++#define _POSIX_READER_WRITER_LOCKS 200112L
++#define _UNIX98_THREAD_MUTEX_ATTRIBUTES   1
 +#endif
 +
  #ifdef __CYGWIN__
@@ -9991,7 +9995,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/limits.h ./n
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/machine/_types.h ./newlib/libc/sys/enclave/include/machine/_types.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/machine/_types.h
 +++ ./newlib/libc/sys/enclave/include/machine/_types.h
-@@ -0,0 +1,37 @@
+@@ -0,0 +1,40 @@
 +#ifndef _MACHINE__TYPES_H
 +#define _MACHINE__TYPES_H
 +
@@ -10026,6 +10030,9 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/machine/_typ
 +#define __machine_nlink_t_defined
 +typedef __uint64_t __nlink_t;
 +#endif  // __machine_nlink_t_defined
++
++#define __TM_GMTOFF tm_gmtoff
++#define __TM_ZONE   tm_zone
 +
 +#endif  // _MACHINE__TYPES_H
 +
