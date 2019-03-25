@@ -19,7 +19,6 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_NETINET_IN_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_NETINET_IN_H_
 
-#include <arpa/inet.h>
 #include <stdint.h>
 #include <sys/socket.h>
 
@@ -28,6 +27,11 @@ extern "C" {
 #endif
 
 typedef uint16_t in_port_t;
+
+uint32_t htonl(uint32_t hostlong);
+uint16_t htons(uint16_t hostshort);
+uint32_t ntohl(uint32_t netlong);
+uint16_t ntohs(uint16_t netshort);
 
 // Internet address.
 typedef uint32_t in_addr_t;
