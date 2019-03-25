@@ -66,6 +66,7 @@ cc_library(
     name = "posix",
     srcs = [
         "dirent.cc",
+        "dlfcn.cc",
         "epoll.cc",
         "errno.cc",
         "eventfd.cc",
