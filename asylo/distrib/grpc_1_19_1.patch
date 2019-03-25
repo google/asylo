@@ -1,7 +1,7 @@
 diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
 --- include/grpc/impl/codegen/port_platform.h
 +++ include/grpc/impl/codegen/port_platform.h
-@@ -178,6 +178,25 @@
+@@ -183,6 +183,26 @@
  #else /* musl libc */
  #define GPR_MUSL_LIBC_COMPAT 1
  #endif
@@ -16,6 +16,7 @@ diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include
 +#define GPR_POSIX_LOG 1
 +#define GPR_POSIX_TIME 1
 +#define GPR_POSIX_ENV 1
++#define GRPC_IF_NAMETOINDEX 0
 +#define GRPC_POSIX_SOCKET 1
 +#define GRPC_POSIX_SOCKETADDR
 +#define GRPC_POSIX_SOCKETUTILS 1
@@ -30,7 +31,7 @@ diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include
 diff -Naur -x '*~' -x '*.orig' test/core/end2end/generate_tests.bzl test/core/end2end/generate_tests.bzl
 --- test/core/end2end/generate_tests.bzl
 +++ test/core/end2end/generate_tests.bzl
-@@ -373,6 +373,7 @@
+@@ -372,6 +372,7 @@
              "end2end_tests.h",
          ],
          language = "C++",
