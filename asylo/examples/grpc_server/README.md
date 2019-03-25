@@ -1,14 +1,20 @@
 <!--jekyll-front-matter
 ---
+
 title: gRPC Server Example
+
 overview: Run a gRPC server inside an enclave.
 
 location: /_docs/guides/grpc_server.md
+
 order: 10
 
 layout: docs
+
 type: markdown
+
 toc: true
+
 ---
 {% include home.html %}
 jekyll-front-matter-->
