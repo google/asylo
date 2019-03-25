@@ -27,12 +27,10 @@ toolchain {
   abi_libc_version: "sgx_x86_64"
   compiler: "compiler"
   host_system_name: "x86_64-grtev4-linux-gnu"
-  needsPic: true
   target_libc: "sgx-sdk"
   target_cpu: "sgx_x86_64"
   target_system_name: "x86_64-newlib-asylo"
   toolchain_identifier: "asylo_sgx_x86_64"
-  default_python_version: "python2.7"
   cc_target_os: "asylo"
 
   tool_path { name: "ar" path: "bin/x86_64-elf-ar" }
@@ -46,16 +44,6 @@ toolchain {
   tool_path { name: "objdump" path: "bin/x86_64-elf-objdump" }
   tool_path { name: "strip" path: "bin/x86_64-elf-strip" }
 
-  compiler_flag: "-isystemasylo/platform/posix/include"
-  compiler_flag: "-isystemasylo/platform/system/include"
-  compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/posix/include"
-  compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
-  compiler_flag: "-D__LITTLE_ENDIAN"
-  cxx_flag: "-std=gnu++11"
-  objcopy_embed_flag: "--input-target=binary"
-  objcopy_embed_flag: "--output-target=elf64-x86-64"
-  objcopy_embed_flag: "--binary-architecture=i386:x86-64"
-
   cxx_builtin_include_directory: "asylo/platform/posix/include"
   cxx_builtin_include_directory: "asylo/platform/system/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/posix/include"
@@ -67,31 +55,7 @@ toolchain {
   cxx_builtin_include_directory: "lib/gcc/x86_64-elf/7.3.0/include"
   cxx_builtin_include_directory: "lib/gcc/x86_64-elf/7.3.0/include-fixed"
 
-  compiler_flag: "-D__ASYLO__"
-  compiler_flag: "-D__LITTLE_ENDIAN__"
-  compiler_flag: "-DCOMPILER_GCC3"
-  compiler_flag: "-D__LINUX_ERRNO_EXTENSIONS__"
-  compiler_flag: "-D_GLIBCXX_USE_C99"
-  unfiltered_cxx_flag: "-no-canonical-prefixes"
-  unfiltered_cxx_flag: "-fno-canonical-system-headers"
-
-  # Make C++ compilation deterministic. Use linkstamping instead of these
-  # compiler symbols.
-  unfiltered_cxx_flag: "-Wno-builtin-macro-redefined"
-  unfiltered_cxx_flag: "-D__DATE__=\"redacted\""
-  unfiltered_cxx_flag: "-D__TIMESTAMP__=\"redacted\""
-  unfiltered_cxx_flag: "-D__TIME__=\"redacted\""
-  linker_flag: "-no-canonical-prefixes"
-
   # Required to enable optional newlib features.
-  compiler_flag: "-D__TM_GMTOFF=tm_gmtoff"
-  compiler_flag: "-D__TM_ZONE=tm_zone"
-  compiler_flag: "-D_POSIX_MONOTONIC_CLOCK"
-  compiler_flag: "-D_POSIX_READER_WRITER_LOCKS"
-  compiler_flag: "-D_POSIX_THREADS"
-  compiler_flag: "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
-  compiler_flag: "-DHAVE_FCNTL"
-  compiler_flag: "-D_GNU_SOURCE"
 
   feature {
     name: "no_legacy_features"
@@ -140,7 +104,6 @@ toolchain {
     config_name: 'c-compile'
     action_name: 'c-compile'
     tool { tool_path: "bin/x86_64-elf-gcc" }
-    implies: 'legacy_compile_flags'
     implies: 'user_compile_flags'
     implies: "sysroot"
     implies: 'unfiltered_compile_flags'
@@ -151,7 +114,6 @@ toolchain {
     config_name: 'c++-compile'
     action_name: 'c++-compile'
     tool { tool_path: "bin/x86_64-elf-g++" }
-    implies: 'legacy_compile_flags'
     implies: 'user_compile_flags'
     implies: "sysroot"
     implies: 'unfiltered_compile_flags'
@@ -164,7 +126,6 @@ toolchain {
     tool {
       tool_path: 'bin/x86_64-elf-gcc'
     }
-    implies: 'legacy_compile_flags'
     implies: 'user_compile_flags'
     implies: "sysroot"
     implies: 'unfiltered_compile_flags'
@@ -182,7 +143,6 @@ toolchain {
      implies: 'libraries_to_link'
      implies: 'force_pic_flags'
      implies: 'user_link_flags'
-     implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
   }
@@ -198,7 +158,6 @@ toolchain {
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
      implies: 'user_link_flags'
-     implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
   }
@@ -224,7 +183,6 @@ toolchain {
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
      implies: 'user_link_flags'
-     implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
   }
@@ -244,34 +202,15 @@ toolchain {
     name: "has_configured_linker_path"
   }
 
-  feature {
-    name: 'legacy_compile_flags'
-    flag_set {
-      expand_if_all_available: 'legacy_compile_flags'
-      action: 'assemble'
-      action: 'preprocess-assemble'
-      action: 'c-compile'
-      action: 'c++-compile'
-      action: 'c++-header-parsing'
-      action: 'c++-module-compile'
-      action: 'c++-module-codegen'
-      action: 'lto-backend'
-      flag_group {
-        iterate_over: 'legacy_compile_flags'
-        flag: '%{legacy_compile_flags}'
-      }
-    }
-  }
-
   # This differs from default behavior because it doesn't include
   # c++-link-executable
   feature {
      name: 'output_execpath_flags'
      flag_set {
-         expand_if_all_available: 'output_execpath'
          action: 'c++-link-dynamic-library'
          action: 'c++-link-nodeps-dynamic-library'
          flag_group {
+             expand_if_all_available: 'output_execpath'
              flag: '-o'
              flag: '%{output_execpath}'
          }
@@ -283,12 +222,12 @@ toolchain {
   feature {
      name: 'runtime_library_search_directories'
      flag_set {
-       expand_if_all_available: 'runtime_library_search_directories'
        action: 'c++-link-executable'
        action: 'c++-link-dynamic-library'
        action: 'c++-link-nodeps-dynamic-library'
        action: 'c++-link-static-library'
        flag_group {
+         expand_if_all_available: 'runtime_library_search_directories'
          iterate_over: 'runtime_library_search_directories'
          flag: '-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}'
        }
@@ -300,25 +239,34 @@ toolchain {
   feature {
      name: 'library_search_directories'
      flag_set {
-         expand_if_all_available: 'library_search_directories'
          action: 'c++-link-executable'
          action: 'c++-link-dynamic-library'
          action: 'c++-link-nodeps-dynamic-library'
          action: 'c++-link-static-library'
          flag_group {
+             expand_if_all_available: 'library_search_directories'
              iterate_over: 'library_search_directories'
              flag: "-L%{library_search_directories}"
          }
      }
   }
 
-  # This is different from default because it includes alwayslink and pic.
+  feature {
+    name: 'supports_pic'
+    enabled: true
+  }
+
+  feature {
+    name: "supports_dynamic_linker"
+    enabled: true
+  }
+
   feature {
       name: 'archiver_flags'
       flag_set {
-          expand_if_all_available: 'output_execpath'
           action: 'c++-link-static-library'
           flag_group {
+            expand_if_all_available: 'output_execpath'
               flag: 'rcsD'
               flag: '%{output_execpath}'
           }
@@ -409,9 +357,9 @@ toolchain {
   feature {
      name: 'force_pic_flags'
      flag_set {
-         expand_if_all_available: 'force_pic'
          action: 'c++-link-executable'
          flag_group {
+             expand_if_all_available: 'force_pic'
              flag: '-pie'
          }
      }
@@ -420,27 +368,13 @@ toolchain {
   feature {
       name: 'user_link_flags'
       flag_set {
-          expand_if_all_available: 'user_link_flags'
           action: 'c++-link-executable'
           action: 'c++-link-dynamic-library'
           action: 'c++-link-nodeps-dynamic-library'
           flag_group {
+              expand_if_all_available: 'user_link_flags'
               iterate_over: 'user_link_flags'
               flag: '%{user_link_flags}'
-          }
-      }
-  }
-
-  feature {
-      name: 'legacy_link_flags'
-      flag_set {
-          expand_if_all_available: 'legacy_link_flags'
-          action: 'c++-link-executable'
-          action: 'c++-link-dynamic-library'
-          action: 'c++-link-nodeps-dynamic-library'
-          flag_group {
-              iterate_over: 'legacy_link_flags'
-              flag: '%{legacy_link_flags}'
           }
       }
   }
@@ -456,13 +390,14 @@ toolchain {
       action: "c++-compile"
       action: "c++-module-compile"
       action: "c++-header-parsing"
-      expand_if_all_available: "dependency_file"
       flag_group {
+        expand_if_all_available: "dependency_file"
         flag: "-MD"
         flag: "-MF"
         flag: "%{dependency_file}"
       }
     }
+    enabled: true
   }
 
   feature {
@@ -475,6 +410,7 @@ toolchain {
         flag: "-frandom-seed=%{output_file}"
       }
     }
+    enabled: true
   }
 
   # This differs from default behavior because it doesn't include 'assemble'.
@@ -486,13 +422,13 @@ toolchain {
       action: "c++-module-codegen"
       action: "c++-module-compile"
       action: "preprocess-assemble"
-      expand_if_all_available: "pic"
       flag_group {
+        expand_if_all_available: "pic"
         flag: "-fPIC"
       }
     }
+    enabled: true
   }
-
 
   # This is different from default because it doesn't include objc.
   feature {
@@ -534,6 +470,7 @@ toolchain {
         flag: "-D%{preprocessor_defines}"
       }
     }
+    enabled: true
   }
 
   # This differs from default behavior because the flags groups are merged.
@@ -575,8 +512,8 @@ toolchain {
     flag_set {
       action: "c-compile"
       action: "c++-compile"
-      expand_if_all_available: "fdo_profile_path"
       flag_group {
+        expand_if_all_available: "fdo_profile_path"
         flag: "-fauto-profile=%{fdo_profile_path}"
         flag: "-fprofile-correction"
       }
@@ -603,7 +540,6 @@ toolchain {
   feature {
     name: 'user_compile_flags'
     flag_set {
-      expand_if_all_available: 'user_compile_flags'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -613,6 +549,7 @@ toolchain {
       action: 'c++-module-codegen'
       action: 'lto-backend'
       flag_group {
+        expand_if_all_available: 'user_compile_flags'
         iterate_over: 'user_compile_flags'
         flag: '%{user_compile_flags}'
       }
@@ -624,7 +561,6 @@ toolchain {
   feature {
     name: 'sysroot'
     flag_set {
-      expand_if_all_available: 'sysroot'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -638,6 +574,7 @@ toolchain {
       action: 'c++-link-nodeps-dynamic-library'
       action: 'lto-backend'
       flag_group {
+        expand_if_all_available: 'sysroot'
         iterate_over: 'sysroot'
         flag: '--sysroot=%{sysroot}'
       }
@@ -647,7 +584,6 @@ toolchain {
   feature {
     name: 'unfiltered_compile_flags'
     flag_set {
-      expand_if_all_available: 'unfiltered_compile_flags'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -657,26 +593,21 @@ toolchain {
       action: 'c++-module-codegen'
       action: 'lto-backend'
       flag_group {
-        iterate_over: 'unfiltered_compile_flags'
-        flag: '%{unfiltered_compile_flags}'
+        expand_if_all_available: 'unfiltered_compile_flags'
+        flag: '-no-canonical-prefixes'
+        flag: '-fno-canonical-system-headers'
+        flag: "-Wno-builtin-macro-redefined"
+        flag: "-D__DATE__=\"redacted\""
+        flag: "-D__TIMESTAMP__=\"redacted\""
+        flag: "-D__TIME__=\"redacted\""
       }
     }
   }
 
-  # Compel Bazel to use the compiler_X_flags features, otherwise it will
-  # duplicate flags to the compiler and cause errors.
-  # This is a migration feature for Bazel 0.11.1 to support both
-  # compiler_input_flags and compiler_output_flags features. Later versions of
-  # Bazel don't need this feature, but we'll keep it to support older versions
-  # of Bazel.
-  feature { name: "compile_action_flags_in_flag_set" }
-
-  # This is different from default because it doesn't include lto-backend, or
-  # objc.
   feature {
-    name: 'compiler_input_flags'
+    name: "default_compile_flags"
+    enabled: true
     flag_set {
-      expand_if_all_available: 'source_file'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -685,6 +616,244 @@ toolchain {
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       flag_group {
+        flag: "-isystemasylo/platform/posix/include"
+        flag: "-isystemasylo/platform/system/include"
+        flag: "-isystemexternal/com_google_asylo/asylo/platform/posix/include"
+        flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
+        flag: "-D__LITTLE_ENDIAN"
+        flag: "-D__ASYLO__"
+        flag: "-D__LITTLE_ENDIAN__"
+        flag: "-DCOMPILER_GCC3"
+        flag: "-D__LINUX_ERRNO_EXTENSIONS__"
+        flag: "-D_GLIBCXX_USE_C99"
+        flag: "-D__TM_GMTOFF=tm_gmtoff"
+        flag: "-D__TM_ZONE=tm_zone"
+        flag: "-D_POSIX_MONOTONIC_CLOCK"
+        flag: "-D_POSIX_READER_WRITER_LOCKS"
+        flag: "-D_POSIX_THREADS"
+        flag: "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
+        flag: "-DHAVE_FCNTL"
+        flag: "-D_GNU_SOURCE"
+      }
+    }
+    flag_set {
+      action: 'assemble'
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        flag: '-g'
+        flag: '-O0'
+      }
+      with_feature {
+        feature: 'dbg'
+      }
+    }
+    flag_set {
+      action: 'assemble'
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        flag: "-g0"
+        flag: "-fdebug-types-section"
+        flag: "-O2"
+        flag: "-DNDEBUG"
+        flag: "-ffunction-sections"
+        flag: "-fdata-sections"
+        flag: "-fPIE"
+        # The following are needed to compile Intel's SGX SDK in opt mode
+        flag: "-Wno-array-bounds"
+        flag: "-Wno-strict-aliasing"
+        flag: "-Wno-maybe-uninitialized"
+      }
+      with_feature {
+        feature: 'opt'
+      }
+    }
+    flag_set {
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        flag: '-std=gnu++11'
+      }
+    }
+  }
+
+  feature {
+    name: "default_link_flags"
+    enabled: true
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-no-canonical-prefixes"
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-O0"
+      }
+      with_feature {
+        feature: 'dbg'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-Wl,--gc-sections"
+        flag: "-Wl,-z,relro,-z,now"
+      }
+      with_feature {
+        feature: 'opt'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      flag_group {
+        flag: "-pie"
+      }
+      with_feature {
+        feature: 'opt'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      flag_group {
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+        flag: "-Wl,-no-undefined"
+      }
+      with_feature {
+        feature: 'static_linking_mode'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+      }
+      with_feature {
+        feature: 'dynamic_linking_mode'
+      }
+    }
+    flag_set {
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+      }
+      with_feature {
+        feature: 'dynamic_linking_mode'
+      }
+    }
+    flag_set {
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-static"
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+      }
+      with_feature {
+        feature: 'mostly_static_linking_mode'
+      }
+    }
+  }
+
+  feature { name: "dynamic_linking_mode" }
+  feature { name: "static_linking_mode" }
+  feature { name: "mostly_static_linking_mode" }
+
+
+  feature {
+    name: "includes"
+    enabled: true
+    flag_set {
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      flag_group {
+        expand_if_all_available: "includes"
+        iterate_over: 'includes'
+        flag: '-include=%{includes}'
+      }
+    }
+  }
+
+  feature {
+    name: "include_paths"
+    enabled: true
+    flag_set {
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      flag_group {
+        iterate_over: 'quote_include_paths'
+        flag: '-iquote=%{quote_include_paths}'
+      }
+      flag_group {
+       iterate_over: 'include_paths'
+        flag: '-I=%{include_paths}'
+      }
+      flag_group {
+        iterate_over: 'system_include_paths'
+        flag: '-isystem=%{system_include_paths}'
+      }
+    }
+  }
+
+  # This is different from default because it doesn't include lto-backend, or
+  # objc.
+  feature {
+    name: 'compiler_input_flags'
+    flag_set {
+      action: 'assemble'
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        expand_if_all_available: 'source_file'
         flag: '-c'
         flag: '%{source_file}'
       }
@@ -724,68 +893,21 @@ toolchain {
   feature {
       name: "linker_param_file"
       flag_set {
-          expand_if_all_available: "linker_param_file"
           action: "c++-link-executable"
           action: "c++-link-dynamic-library"
           action: 'c++-link-nodeps-dynamic-library'
           flag_group {
+              expand_if_all_available: "linker_param_file"
               flag: "-Wl,@%{linker_param_file}"
           }
       }
       flag_set {
-          expand_if_all_available: "linker_param_file"
           action: "c++-link-static-library"
           flag_group {
+              expand_if_all_available: "linker_param_file"
               flag: "@%{linker_param_file}"
           }
       }
-  }
-
-  compilation_mode_flags {
-    mode: DBG
-    compiler_flag: "-g"
-    compiler_flag: "-O0"
-    linker_flag: "-O0"
-  }
-
-  compilation_mode_flags {
-    mode: OPT
-    compiler_flag: "-g0"
-    compiler_flag: "-fdebug-types-section"
-    compiler_flag: "-O2"
-    compiler_flag: "-DNDEBUG"
-    compiler_flag: "-ffunction-sections"
-    compiler_flag: "-fdata-sections"
-    linker_flag: "-Wl,--gc-sections"
-    compiler_flag: "-fPIE"
-    linker_flag: "-pie"
-    linker_flag: "-Wl,-z,relro,-z,now"
-    # The following are needed to compile Intel's SGX SDK in opt mode
-    compiler_flag: "-Wno-array-bounds"
-    compiler_flag: "-Wno-strict-aliasing"
-    compiler_flag: "-Wno-maybe-uninitialized"
-  }
-
-  linking_mode_flags {
-    mode: MOSTLY_STATIC
-    linker_flag: "-lstdc++"
-    linker_flag: "-lc"
-    linker_flag: "-lgcc"
-    linker_flag: "-lm"
-    linker_flag: "-lenclave"
-    linker_flag: "-Wl,-shared"
-    linker_flag: "-Wl,-no-undefined"
-  }
-
-  linking_mode_flags {
-    mode: FULLY_STATIC
-    linker_flag: "-lstdc++"
-    linker_flag: "-lc"
-    linker_flag: "-lgcc"
-    linker_flag: "-lm"
-    linker_flag: "-lenclave"
-    linker_flag: "-Wl,-shared"
-    linker_flag: "-Wl,-no-undefined"
   }
 
   feature {
@@ -807,16 +929,6 @@ toolchain {
         flag: "-static"
       }
     }
-  }
-
-  linking_mode_flags {
-    mode: DYNAMIC
-    linker_flag: "-lstdc++"
-    linker_flag: "-lc"
-    linker_flag: "-lgcc"
-    linker_flag: "-lm"
-    linker_flag: "-lenclave"
-    linker_flag: "-Wl,-shared"
   }
 }
 
@@ -826,12 +938,10 @@ toolchain {
   abi_libc_version: "sgx_x86_64"
   compiler: "compiler"
   host_system_name: "x86_64-grtev4-linux-gnu"
-  needsPic: true
   target_libc: "sgx-sdk"
   target_cpu: "k8"
   target_system_name: "x86_64-newlib-asylo"
   toolchain_identifier: "asylo_k8"
-  default_python_version: "python2.7"
   cc_target_os: "asylo"
 
   tool_path { name: "ar" path: "bin/x86_64-elf-ar" }
@@ -845,16 +955,6 @@ toolchain {
   tool_path { name: "objdump" path: "bin/x86_64-elf-objdump" }
   tool_path { name: "strip" path: "bin/x86_64-elf-strip" }
 
-  compiler_flag: "-isystemasylo/platform/posix/include"
-  compiler_flag: "-isystemasylo/platform/system/include"
-  compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/posix/include"
-  compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
-  compiler_flag: "-D__LITTLE_ENDIAN"
-  cxx_flag: "-std=gnu++11"
-  objcopy_embed_flag: "--input-target=binary"
-  objcopy_embed_flag: "--output-target=elf64-x86-64"
-  objcopy_embed_flag: "--binary-architecture=i386:x86-64"
-
   cxx_builtin_include_directory: "asylo/platform/posix/include"
   cxx_builtin_include_directory: "asylo/platform/system/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/posix/include"
@@ -866,31 +966,7 @@ toolchain {
   cxx_builtin_include_directory: "lib/gcc/x86_64-elf/7.3.0/include"
   cxx_builtin_include_directory: "lib/gcc/x86_64-elf/7.3.0/include-fixed"
 
-  compiler_flag: "-D__ASYLO__"
-  compiler_flag: "-D__LITTLE_ENDIAN__"
-  compiler_flag: "-DCOMPILER_GCC3"
-  compiler_flag: "-D__LINUX_ERRNO_EXTENSIONS__"
-  compiler_flag: "-D_GLIBCXX_USE_C99"
-  unfiltered_cxx_flag: "-no-canonical-prefixes"
-  unfiltered_cxx_flag: "-fno-canonical-system-headers"
-
-  # Make C++ compilation deterministic. Use linkstamping instead of these
-  # compiler symbols.
-  unfiltered_cxx_flag: "-Wno-builtin-macro-redefined"
-  unfiltered_cxx_flag: "-D__DATE__=\"redacted\""
-  unfiltered_cxx_flag: "-D__TIMESTAMP__=\"redacted\""
-  unfiltered_cxx_flag: "-D__TIME__=\"redacted\""
-  linker_flag: "-no-canonical-prefixes"
-
   # Required to enable optional newlib features.
-  compiler_flag: "-D__TM_GMTOFF=tm_gmtoff"
-  compiler_flag: "-D__TM_ZONE=tm_zone"
-  compiler_flag: "-D_POSIX_MONOTONIC_CLOCK"
-  compiler_flag: "-D_POSIX_READER_WRITER_LOCKS"
-  compiler_flag: "-D_POSIX_THREADS"
-  compiler_flag: "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
-  compiler_flag: "-DHAVE_FCNTL"
-  compiler_flag: "-D_GNU_SOURCE"
 
   feature {
     name: "no_legacy_features"
@@ -939,7 +1015,6 @@ toolchain {
     config_name: 'c-compile'
     action_name: 'c-compile'
     tool { tool_path: "bin/x86_64-elf-gcc" }
-    implies: 'legacy_compile_flags'
     implies: 'user_compile_flags'
     implies: "sysroot"
     implies: 'unfiltered_compile_flags'
@@ -950,7 +1025,6 @@ toolchain {
     config_name: 'c++-compile'
     action_name: 'c++-compile'
     tool { tool_path: "bin/x86_64-elf-g++" }
-    implies: 'legacy_compile_flags'
     implies: 'user_compile_flags'
     implies: "sysroot"
     implies: 'unfiltered_compile_flags'
@@ -963,7 +1037,6 @@ toolchain {
     tool {
       tool_path: 'bin/x86_64-elf-gcc'
     }
-    implies: 'legacy_compile_flags'
     implies: 'user_compile_flags'
     implies: "sysroot"
     implies: 'unfiltered_compile_flags'
@@ -981,7 +1054,6 @@ toolchain {
      implies: 'libraries_to_link'
      implies: 'force_pic_flags'
      implies: 'user_link_flags'
-     implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
   }
@@ -997,7 +1069,6 @@ toolchain {
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
      implies: 'user_link_flags'
-     implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
   }
@@ -1023,7 +1094,6 @@ toolchain {
      implies: 'library_search_directories'
      implies: 'libraries_to_link'
      implies: 'user_link_flags'
-     implies: 'legacy_link_flags'
      implies: 'linker_param_file'
      implies: 'sysroot'
   }
@@ -1043,34 +1113,15 @@ toolchain {
     name: "has_configured_linker_path"
   }
 
-  feature {
-    name: 'legacy_compile_flags'
-    flag_set {
-      expand_if_all_available: 'legacy_compile_flags'
-      action: 'assemble'
-      action: 'preprocess-assemble'
-      action: 'c-compile'
-      action: 'c++-compile'
-      action: 'c++-header-parsing'
-      action: 'c++-module-compile'
-      action: 'c++-module-codegen'
-      action: 'lto-backend'
-      flag_group {
-        iterate_over: 'legacy_compile_flags'
-        flag: '%{legacy_compile_flags}'
-      }
-    }
-  }
-
   # This differs from default behavior because it doesn't include
   # c++-link-executable
   feature {
      name: 'output_execpath_flags'
      flag_set {
-         expand_if_all_available: 'output_execpath'
          action: 'c++-link-dynamic-library'
          action: 'c++-link-nodeps-dynamic-library'
          flag_group {
+             expand_if_all_available: 'output_execpath'
              flag: '-o'
              flag: '%{output_execpath}'
          }
@@ -1082,12 +1133,12 @@ toolchain {
   feature {
      name: 'runtime_library_search_directories'
      flag_set {
-       expand_if_all_available: 'runtime_library_search_directories'
        action: 'c++-link-executable'
        action: 'c++-link-dynamic-library'
        action: 'c++-link-nodeps-dynamic-library'
        action: 'c++-link-static-library'
        flag_group {
+         expand_if_all_available: 'runtime_library_search_directories'
          iterate_over: 'runtime_library_search_directories'
          flag: '-Wl,-rpath,$ORIGIN/%{runtime_library_search_directories}'
        }
@@ -1099,30 +1150,40 @@ toolchain {
   feature {
      name: 'library_search_directories'
      flag_set {
+       action: 'c++-link-executable'
+       action: 'c++-link-dynamic-library'
+       action: 'c++-link-nodeps-dynamic-library'
+       action: 'c++-link-static-library'
+       flag_group {
          expand_if_all_available: 'library_search_directories'
-         action: 'c++-link-executable'
-         action: 'c++-link-dynamic-library'
-         action: 'c++-link-nodeps-dynamic-library'
-         action: 'c++-link-static-library'
-         flag_group {
-             iterate_over: 'library_search_directories'
-             flag: "-L%{library_search_directories}"
-         }
+         iterate_over: 'library_search_directories'
+         flag: "-L%{library_search_directories}"
+       }
      }
+  }
+
+  feature {
+    name: 'supports_pic'
+    enabled: true
+  }
+
+  feature {
+    name: "supports_dynamic_linker"
+    enabled: true
   }
 
   # This is different from default because it includes alwayslink and pic.
   feature {
-      name: 'archiver_flags'
-      flag_set {
+    name: 'archiver_flags'
+    flag_set {
+      action: 'c++-link-static-library'
+      flag_group {
           expand_if_all_available: 'output_execpath'
-          action: 'c++-link-static-library'
-          flag_group {
-              flag: 'rcsD'
-              flag: '%{output_execpath}'
-          }
+          flag: 'rcsD'
+          flag: '%{output_execpath}'
       }
-  }
+    }
+}
 
   # This is different from default because it includes alwayslink, static,
   # and pic actions.
@@ -1208,9 +1269,9 @@ toolchain {
   feature {
      name: 'force_pic_flags'
      flag_set {
-         expand_if_all_available: 'force_pic'
          action: 'c++-link-executable'
          flag_group {
+             expand_if_all_available: 'force_pic'
              flag: '-pie'
          }
      }
@@ -1219,27 +1280,13 @@ toolchain {
   feature {
       name: 'user_link_flags'
       flag_set {
-          expand_if_all_available: 'user_link_flags'
           action: 'c++-link-executable'
           action: 'c++-link-dynamic-library'
           action: 'c++-link-nodeps-dynamic-library'
           flag_group {
+              expand_if_all_available: 'user_link_flags'
               iterate_over: 'user_link_flags'
               flag: '%{user_link_flags}'
-          }
-      }
-  }
-
-  feature {
-      name: 'legacy_link_flags'
-      flag_set {
-          expand_if_all_available: 'legacy_link_flags'
-          action: 'c++-link-executable'
-          action: 'c++-link-dynamic-library'
-          action: 'c++-link-nodeps-dynamic-library'
-          flag_group {
-              iterate_over: 'legacy_link_flags'
-              flag: '%{legacy_link_flags}'
           }
       }
   }
@@ -1255,13 +1302,14 @@ toolchain {
       action: "c++-compile"
       action: "c++-module-compile"
       action: "c++-header-parsing"
-      expand_if_all_available: "dependency_file"
       flag_group {
+        expand_if_all_available: "dependency_file"
         flag: "-MD"
         flag: "-MF"
         flag: "%{dependency_file}"
       }
     }
+    enabled: true
   }
 
   feature {
@@ -1274,6 +1322,7 @@ toolchain {
         flag: "-frandom-seed=%{output_file}"
       }
     }
+    enabled: true
   }
 
   # This differs from default behavior because it doesn't include 'assemble'.
@@ -1285,11 +1334,12 @@ toolchain {
       action: "c++-module-codegen"
       action: "c++-module-compile"
       action: "preprocess-assemble"
-      expand_if_all_available: "pic"
       flag_group {
+        expand_if_all_available: "pic"
         flag: "-fPIC"
       }
     }
+    enabled: true
   }
 
 
@@ -1318,10 +1368,12 @@ toolchain {
         flag: "%{system_include_paths}"
       }
     }
+    enabled: true
   }
 
   feature {
     name: "preprocessor_defines"
+    enabled: true
     flag_set {
       action: "preprocess-assemble"
       action: "c-compile"
@@ -1374,8 +1426,8 @@ toolchain {
     flag_set {
       action: "c-compile"
       action: "c++-compile"
-      expand_if_all_available: "fdo_profile_path"
       flag_group {
+        expand_if_all_available: "fdo_profile_path"
         flag: "-fauto-profile=%{fdo_profile_path}"
         flag: "-fprofile-correction"
       }
@@ -1402,7 +1454,6 @@ toolchain {
   feature {
     name: 'user_compile_flags'
     flag_set {
-      expand_if_all_available: 'user_compile_flags'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -1412,6 +1463,7 @@ toolchain {
       action: 'c++-module-codegen'
       action: 'lto-backend'
       flag_group {
+        expand_if_all_available: 'user_compile_flags'
         iterate_over: 'user_compile_flags'
         flag: '%{user_compile_flags}'
       }
@@ -1423,7 +1475,6 @@ toolchain {
   feature {
     name: 'sysroot'
     flag_set {
-      expand_if_all_available: 'sysroot'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -1437,6 +1488,7 @@ toolchain {
       action: 'c++-link-nodeps-dynamic-library'
       action: 'lto-backend'
       flag_group {
+        expand_if_all_available: 'sysroot'
         iterate_over: 'sysroot'
         flag: '--sysroot=%{sysroot}'
       }
@@ -1446,7 +1498,6 @@ toolchain {
   feature {
     name: 'unfiltered_compile_flags'
     flag_set {
-      expand_if_all_available: 'unfiltered_compile_flags'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -1456,26 +1507,21 @@ toolchain {
       action: 'c++-module-codegen'
       action: 'lto-backend'
       flag_group {
-        iterate_over: 'unfiltered_compile_flags'
-        flag: '%{unfiltered_compile_flags}'
+        expand_if_all_available: 'unfiltered_compile_flags'
+        flag: '-no-canonical-prefixes'
+        flag: '-fno-canonical-system-headers'
+        flag: "-Wno-builtin-macro-redefined"
+        flag: "-D__DATE__=\"redacted\""
+        flag: "-D__TIMESTAMP__=\"redacted\""
+        flag: "-D__TIME__=\"redacted\""
       }
     }
   }
 
-  # Compel Bazel to use the compiler_X_flags features, otherwise it will
-  # duplicate flags to the compiler and cause errors.
-  # This is a migration feature for Bazel 0.11.1 to support both
-  # compiler_input_flags and compiler_output_flags features. Later versions of
-  # Bazel don't need this feature, but we'll keep it to support older versions
-  # of Bazel.
-  feature { name: "compile_action_flags_in_flag_set" }
-
-  # This is different from default because it doesn't include lto-backend, or
-  # objc.
   feature {
-    name: 'compiler_input_flags'
+    name: "default_compile_flags"
+    enabled: true
     flag_set {
-      expand_if_all_available: 'source_file'
       action: 'assemble'
       action: 'preprocess-assemble'
       action: 'c-compile'
@@ -1484,6 +1530,219 @@ toolchain {
       action: 'c++-module-compile'
       action: 'c++-module-codegen'
       flag_group {
+        flag: "-isystemasylo/platform/posix/include"
+        flag: "-isystemasylo/platform/system/include"
+        flag: "-isystemexternal/com_google_asylo/asylo/platform/posix/include"
+        flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
+        flag: "-D__LITTLE_ENDIAN"
+        flag: "-D__ASYLO__"
+        flag: "-D__LITTLE_ENDIAN__"
+        flag: "-DCOMPILER_GCC3"
+        flag: "-D__LINUX_ERRNO_EXTENSIONS__"
+        flag: "-D_GLIBCXX_USE_C99"
+        flag: "-D__TM_GMTOFF=tm_gmtoff"
+        flag: "-D__TM_ZONE=tm_zone"
+        flag: "-D_POSIX_MONOTONIC_CLOCK"
+        flag: "-D_POSIX_READER_WRITER_LOCKS"
+        flag: "-D_POSIX_THREADS"
+        flag: "-D_UNIX98_THREAD_MUTEX_ATTRIBUTES"
+        flag: "-DHAVE_FCNTL"
+        flag: "-D_GNU_SOURCE"
+      }
+    }
+    flag_set {
+      action: 'assemble'
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        flag: '-g'
+        flag: '-O0'
+      }
+      with_feature {
+        feature: 'dbg'
+      }
+    }
+    flag_set {
+      action: 'assemble'
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        flag: "-g0"
+        flag: "-fdebug-types-section"
+        flag: "-O2"
+        flag: "-DNDEBUG"
+        flag: "-ffunction-sections"
+        flag: "-fdata-sections"
+        flag: "-fPIE"
+        # The following are needed to compile Intel's SGX SDK in opt mode
+        flag: "-Wno-array-bounds"
+        flag: "-Wno-strict-aliasing"
+        flag: "-Wno-maybe-uninitialized"
+      }
+      with_feature {
+        feature: 'opt'
+      }
+    }
+    flag_set {
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        flag: '-std=gnu++11'
+      }
+    }
+  }
+
+  feature {
+    name: "default_link_flags"
+    enabled: true
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-no-canonical-prefixes"
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-O0"
+      }
+      with_feature {
+        feature: 'dbg'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-Wl,--gc-sections"
+        flag: "-Wl,-z,relro,-z,now"
+      }
+      with_feature {
+        feature: 'opt'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      flag_group {
+        flag: "-pie"
+      }
+      with_feature {
+        feature: 'opt'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      flag_group {
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+        flag: "-Wl,-no-undefined"
+      }
+      with_feature {
+        feature: 'static_linking_mode'
+      }
+    }
+    flag_set {
+      action: 'c++-link-executable'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+      }
+      with_feature {
+        feature: 'dynamic_linking_mode'
+      }
+    }
+    flag_set {
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+      }
+      with_feature {
+        feature: 'dynamic_linking_mode'
+      }
+    }
+    flag_set {
+      action: 'c++-link-nodeps-dynamic-library'
+      action: 'c++-link-dynamic-library'
+      flag_group {
+        flag: "-static"
+        flag: "-lstdc++"
+        flag: "-lc"
+        flag: "-lgcc"
+        flag: "-lm"
+        flag: "-lenclave"
+        flag: "-Wl,-shared"
+      }
+      with_feature {
+        feature: 'mostly_static_linking_mode'
+      }
+    }
+  }
+
+  feature { name: "dynamic_linking_mode" }
+  feature { name: "static_linking_mode" }
+  feature { name: "mostly_static_linking_mode" }
+
+  feature {
+    name: "includes"
+    enabled: true
+    flag_set {
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      flag_group {
+        expand_if_all_available: "includes"
+        iterate_over: 'includes'
+        flag: '-include=%{includes}'
+      }
+    }
+  }
+
+  # This is different from default because it doesn't include lto-backend, or
+  # objc.
+  feature {
+    name: 'compiler_input_flags'
+    flag_set {
+      action: 'assemble'
+      action: 'preprocess-assemble'
+      action: 'c-compile'
+      action: 'c++-compile'
+      action: 'c++-header-parsing'
+      action: 'c++-module-compile'
+      action: 'c++-module-codegen'
+      flag_group {
+        expand_if_all_available: 'source_file'
         flag: '-c'
         flag: '%{source_file}'
       }
@@ -1523,68 +1782,21 @@ toolchain {
   feature {
       name: "linker_param_file"
       flag_set {
-          expand_if_all_available: "linker_param_file"
           action: "c++-link-executable"
           action: "c++-link-dynamic-library"
           action: 'c++-link-nodeps-dynamic-library'
           flag_group {
+              expand_if_all_available: "linker_param_file"
               flag: "-Wl,@%{linker_param_file}"
           }
       }
       flag_set {
-          expand_if_all_available: "linker_param_file"
           action: "c++-link-static-library"
           flag_group {
+              expand_if_all_available: "linker_param_file"
               flag: "@%{linker_param_file}"
           }
       }
-  }
-
-  compilation_mode_flags {
-    mode: DBG
-    compiler_flag: "-g"
-    compiler_flag: "-O0"
-    linker_flag: "-O0"
-  }
-
-  compilation_mode_flags {
-    mode: OPT
-    compiler_flag: "-g0"
-    compiler_flag: "-fdebug-types-section"
-    compiler_flag: "-O2"
-    compiler_flag: "-DNDEBUG"
-    compiler_flag: "-ffunction-sections"
-    compiler_flag: "-fdata-sections"
-    linker_flag: "-Wl,--gc-sections"
-    compiler_flag: "-fPIE"
-    linker_flag: "-pie"
-    linker_flag: "-Wl,-z,relro,-z,now"
-    # The following are needed to compile Intel's SGX SDK in opt mode
-    compiler_flag: "-Wno-array-bounds"
-    compiler_flag: "-Wno-strict-aliasing"
-    compiler_flag: "-Wno-maybe-uninitialized"
-  }
-
-  linking_mode_flags {
-    mode: MOSTLY_STATIC
-    linker_flag: "-lstdc++"
-    linker_flag: "-lc"
-    linker_flag: "-lgcc"
-    linker_flag: "-lm"
-    linker_flag: "-lenclave"
-    linker_flag: "-Wl,-shared"
-    linker_flag: "-Wl,-no-undefined"
-  }
-
-  linking_mode_flags {
-    mode: FULLY_STATIC
-    linker_flag: "-lstdc++"
-    linker_flag: "-lc"
-    linker_flag: "-lgcc"
-    linker_flag: "-lm"
-    linker_flag: "-lenclave"
-    linker_flag: "-Wl,-shared"
-    linker_flag: "-Wl,-no-undefined"
   }
 
   feature {
@@ -1606,15 +1818,5 @@ toolchain {
         flag: "-static"
       }
     }
-  }
-
-  linking_mode_flags {
-    mode: DYNAMIC
-    linker_flag: "-lstdc++"
-    linker_flag: "-lc"
-    linker_flag: "-lgcc"
-    linker_flag: "-lm"
-    linker_flag: "-lenclave"
-    linker_flag: "-Wl,-shared"
   }
 }

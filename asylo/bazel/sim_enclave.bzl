@@ -73,9 +73,14 @@ def sim_enclave(
             "//asylo/platform/primitives:trusted_primitives",
             "//asylo/platform/primitives/sim:trusted_sim",
         ],
-        linkopts = ["-Wl,-Bsymbolic"],
+        linkopts = [
+            "-Wl,-Bsymbolic",
+            "-static",
+        ],
         linkshared = True,
-        linkstatic = True,
+        # Link with runtime libraries and don't error on unresolved symbols.
+        features = ["dynamic_linking_mode"],
+        linkstatic = False,  # Allow the .so to be created, not .a.
         **kwargs
     )
     _reprovide_binary_with_enclave_info(
