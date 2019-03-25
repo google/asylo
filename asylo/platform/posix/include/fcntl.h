@@ -16,10 +16,10 @@
  *
  */
 
+#include_next <fcntl.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_FCNTL_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_FCNTL_H_
-
-#include_next <fcntl.h>
 
 #define F_GETPIPE_SZ 15
 #define F_SETPIPE_SZ 16

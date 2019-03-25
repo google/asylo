@@ -16,11 +16,11 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_POSIX_INCLUDE_MATH_H_
-#define ASYLO_PLATFORM_POSIX_INCLUDE_MATH_H_
-
 
 #include_next <math.h>
+
+#ifndef ASYLO_PLATFORM_POSIX_INCLUDE_MATH_H_
+#define ASYLO_PLATFORM_POSIX_INCLUDE_MATH_H_
 
 #ifdef __cplusplus
 extern "C" {

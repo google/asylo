@@ -16,14 +16,14 @@
  *
  */
 
+#include_next <sys/stat.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include_next <sys/stat.h>
 
 // May retrieve the information placed in |stat_buffer| from the host, depending
 // on which access domain |pathname| lies in.

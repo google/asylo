@@ -16,10 +16,10 @@
  *
  */
 
+#include_next <string>
+
 #ifndef ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
 #define ASYLO_PLATFORM_SYSTEM_INCLUDE_STRING_
-
-#include_next <string>
 
 namespace std {
 

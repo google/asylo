@@ -16,10 +16,11 @@
  *
  */
 
+#include_next <errno.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_ERRNO_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_ERRNO_H_
 
-#include_next <errno.h>
 #include <stdint.h>
 
 #ifdef __cplusplus

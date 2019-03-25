@@ -46,6 +46,8 @@ toolchain {
   tool_path { name: "objdump" path: "bin/x86_64-elf-objdump" }
   tool_path { name: "strip" path: "bin/x86_64-elf-strip" }
 
+  compiler_flag: "-isystemasylo/platform/posix/include"
+  compiler_flag: "-isystemasylo/platform/system/include"
   compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/posix/include"
   compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
   compiler_flag: "-D__LITTLE_ENDIAN"
@@ -54,6 +56,8 @@ toolchain {
   objcopy_embed_flag: "--output-target=elf64-x86-64"
   objcopy_embed_flag: "--binary-architecture=i386:x86-64"
 
+  cxx_builtin_include_directory: "asylo/platform/posix/include"
+  cxx_builtin_include_directory: "asylo/platform/system/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/posix/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/system/include"
   cxx_builtin_include_directory: "x86_64-elf/include"
@@ -841,6 +845,8 @@ toolchain {
   tool_path { name: "objdump" path: "bin/x86_64-elf-objdump" }
   tool_path { name: "strip" path: "bin/x86_64-elf-strip" }
 
+  compiler_flag: "-isystemasylo/platform/posix/include"
+  compiler_flag: "-isystemasylo/platform/system/include"
   compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/posix/include"
   compiler_flag: "-isystemexternal/com_google_asylo/asylo/platform/system/include"
   compiler_flag: "-D__LITTLE_ENDIAN"
@@ -849,6 +855,8 @@ toolchain {
   objcopy_embed_flag: "--output-target=elf64-x86-64"
   objcopy_embed_flag: "--binary-architecture=i386:x86-64"
 
+  cxx_builtin_include_directory: "asylo/platform/posix/include"
+  cxx_builtin_include_directory: "asylo/platform/system/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/posix/include"
   cxx_builtin_include_directory: "external/com_google_asylo/asylo/platform/system/include"
   cxx_builtin_include_directory: "x86_64-elf/include"

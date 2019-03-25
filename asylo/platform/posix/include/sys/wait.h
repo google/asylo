@@ -16,14 +16,14 @@
  *
  */
 
+#include_next <sys/wait.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include_next <sys/wait.h>
 
 #define WNOHANG 1
 

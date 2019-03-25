@@ -16,10 +16,10 @@
  *
  */
 
+#include_next <cmath>
+
 #ifndef ASYLO_PLATFORM_SYSTEM_INCLUDE_CMATH_
 #define ASYLO_PLATFORM_SYSTEM_INCLUDE_CMATH_
-
-#include_next <cmath>
 
 namespace std {
 

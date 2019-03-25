@@ -16,14 +16,14 @@
  *
  */
 
+#include_next <sys/resource.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_RESOURCE_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_RESOURCE_H_
 
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include_next <sys/resource.h>
 
 #define RLIMIT_CPU 0    /* Per-process CPU limit, in seconds.  */
 #define RLIMIT_FSIZE 1  /* Largest file that can be created, in bytes.  */

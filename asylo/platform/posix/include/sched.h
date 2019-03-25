@@ -16,6 +16,8 @@
  *
  */
 
+#include_next <sched.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SCHED_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SCHED_H_
 
@@ -24,8 +26,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include_next <sched.h>
 
 // The maximum number of CPUs we support. Should match BRIDGE_CPU_SET_MAX_CPUS
 // in third_party/asylo/platform/common/bridge_types.h.

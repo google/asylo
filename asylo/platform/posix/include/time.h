@@ -16,10 +16,10 @@
  *
  */
 
+#include_next <time.h>
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_TIME_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_TIME_H_
-
-#include_next <time.h>
 
 #ifdef __cplusplus
 extern "C" {
