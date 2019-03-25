@@ -16,6 +16,11 @@
 
 licenses(["notice"])  # Apache v2.0
 
+exports_files([
+    "bridge.edl",
+    "errno.edl",
+])
+
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(

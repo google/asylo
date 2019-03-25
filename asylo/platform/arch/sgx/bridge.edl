@@ -40,8 +40,9 @@ enclave {
       sgx_thread_setwait_untrusted_events_ocall,
       sgx_thread_set_multiple_untrusted_events_ocall;
 
+  from "../../../platform/primitives/sgx/bridge.edl" import *;
+  from "../../../platform/primitives/sgx/errno.edl" import *;
   from "host_calls_generator/generated_bridge.edl" import *;
-  from "errno.edl" import *;
 
   trusted {
     // Initializes enclave. The behavior of a call into an uninitialized enclave

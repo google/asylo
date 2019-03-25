@@ -114,7 +114,8 @@ genrule(
     name = "generate_bridge",
     srcs = [
         "sgx/bridge.edl",
-        "sgx/errno.edl",
+        "//asylo/platform/primitives/sgx:bridge.edl",
+        "//asylo/platform/primitives/sgx:errno.edl",
         "//asylo/third_party/intel:sgx_tstdc.edl",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_bridge.edl",
     ],
