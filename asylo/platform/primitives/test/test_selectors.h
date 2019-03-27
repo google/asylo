@@ -32,6 +32,7 @@ constexpr uint64_t kTimesTwoSelector = kSelectorUser + 2;
 constexpr uint64_t kTrustedFibonacci = kSelectorUser + 3;
 constexpr uint64_t kTrustedMallocTest = kSelectorUser + 4;
 constexpr uint64_t kUntrustedLocalAllocTest = kSelectorUser + 5;
+constexpr uint64_t kAveragePerThreadSelector = kSelectorUser + 6;
 
 // Entry point with no registered handler.
 constexpr uint64_t kNotRegisteredSelector = kSelectorUser + 100;

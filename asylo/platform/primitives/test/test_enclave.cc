@@ -76,6 +76,27 @@ PrimitiveStatus MultiplyByTwo(void *context, TrustedParameterStack *params) {
   return PrimitiveStatus::OkStatus();
 }
 
+// Message handler receiving incoming numbers and returning a running average,
+// using thread-local storage.
+PrimitiveStatus AveragePerThread(void *context, TrustedParameterStack *params) {
+  ABSL_CONST_INIT thread_local int64_t per_thread_sum = 0;
+  ABSL_CONST_INIT thread_local int64_t per_thread_count = 0;
+  if (params->empty()) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "AveragePerThread called with incorrect argument(s)."};
+  }
+  const int64_t input = params->Pop<int64_t>();
+  if (!params->empty()) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "AveragePerThread called with incorrect argument(s)."};
+  }
+  // No lock is needed, since these are thread-local variables.
+  per_thread_sum += input;
+  ++per_thread_count;
+  *params->PushAlloc<int64_t>() = per_thread_sum / per_thread_count;
+  return PrimitiveStatus::OkStatus();
+}
+
 // Message handler computing a Fibonacci number, recursing into untrusted code.
 // Input and result are both passed through `params`.
 PrimitiveStatus TrustedFibonacci(void *context, TrustedParameterStack *params) {
@@ -157,6 +178,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       kTrustedFibonacci, EntryHandler{TrustedFibonacci}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       kTimesTwoSelector, EntryHandler{MultiplyByTwo}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      kAveragePerThreadSelector, EntryHandler{AveragePerThread}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       kTrustedMallocTest, EntryHandler{TrustedMallocTest}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(

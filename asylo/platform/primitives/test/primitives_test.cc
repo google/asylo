@@ -66,9 +66,8 @@ class PrimitivesTest : public ::testing::Test {
       EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _))
           .WillOnce(Return(Status::OkStatus()));
     }
-    Status status = exit_call_provider->RegisterExitHandler(
-        kUntrustedInit, ExitHandler{mock_init_handler.AsStdFunction()});
-    EXPECT_THAT(status, IsOk());
+    ASYLO_EXPECT_OK(exit_call_provider->RegisterExitHandler(
+        kUntrustedInit, ExitHandler{mock_init_handler.AsStdFunction()}));
     return test::TestBackend::Get()->LoadTestEnclaveOrDie(
         std::move(exit_call_provider));
   }
@@ -85,17 +84,28 @@ int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
                            int32_t value) {
   UntrustedParameterStack params;
   params.Push<int32_t>(value);
-  Status status = client->EnclaveCall(kTimesTwoSelector, &params);
-  EXPECT_THAT(status, IsOk());
+  ASYLO_EXPECT_OK(client->EnclaveCall(kTimesTwoSelector, &params));
   EXPECT_FALSE(params.empty());
   const int32_t res = params.Pop<int32_t>();
   EXPECT_TRUE(params.empty());
   return res;
 }
 
+// Enter an instance of the test enclave with a number and get back with the
+// running average, aborting on failure.
+int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
+                              int64_t value) {
+  UntrustedParameterStack params;
+  params.Push<int64_t>(value);
+  ASYLO_EXPECT_OK(client->EnclaveCall(kAveragePerThreadSelector, &params));
+  EXPECT_FALSE(params.empty());
+  const int64_t res = params.Pop<int64_t>();
+  EXPECT_TRUE(params.empty());
+  return res;
+}
+
 // Ensure making an invalid call into an enclave returns an appropriate failure
 // status.
-
 TEST_F(PrimitivesTest, BadCall) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
 
@@ -193,14 +203,13 @@ TEST_F(PrimitivesTest, AbortEnclave) {
 
   // Abort the enclave.
   UntrustedParameterStack abort_params;
-  Status status = client->EnclaveCall(kAbortEnclaveSelector, &abort_params);
-  ASSERT_THAT(status, IsOk());
+  ASYLO_EXPECT_OK(client->EnclaveCall(kAbortEnclaveSelector, &abort_params));
 
   // Check that we can't enter the enclave again.
   int32_t value = 10;
   UntrustedParameterStack params;
   params.Push<int32_t>(value);
-  status = client->EnclaveCall(kTimesTwoSelector, &params);
+  Status status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 
   // Check that we can't enter through a copy of the client.
@@ -215,8 +224,7 @@ TEST_F(PrimitivesTest, CallChain) {
   auto trusted_fibonacci = [&client](int32_t n) -> int32_t {
     UntrustedParameterStack params;
     *params.PushAlloc<int32_t>() = n;
-    Status status = client->EnclaveCall(kTrustedFibonacci, &params);
-    EXPECT_THAT(status, IsOk());
+    ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedFibonacci, &params));
     EXPECT_FALSE(params.empty());
     const int32_t res = params.Pop<int32_t>();
     EXPECT_TRUE(params.empty());
@@ -247,9 +255,8 @@ TEST_F(PrimitivesTest, CallChain) {
   };
 
   // Register the Fibonacci exit handler.
-  Status status = client->exit_call_provider()->RegisterExitHandler(
-      kUntrustedFibonacci, ExitHandler{fibonacci_handler});
-  ASSERT_THAT(status, IsOk());
+  ASYLO_EXPECT_OK(client->exit_call_provider()->RegisterExitHandler(
+      kUntrustedFibonacci, ExitHandler{fibonacci_handler}));
   EXPECT_THAT(trusted_fibonacci(20), Eq(6765));
 }
 
@@ -271,13 +278,36 @@ TEST_F(PrimitivesTest, ThreadedTest) {
   }
 }
 
+// Ensure thread_local works properly in the Enclave threads.
+TEST_F(PrimitivesTest, ThreadLocalStorageTest) {
+  constexpr int kNumCount = 256;
+  constexpr int kNumThreads = 64;
+  auto client = LoadTestEnclaveOrDie(/*reload=*/false);
+  std::vector<std::thread> threads;
+  for (int64_t thread_index = 0; thread_index < kNumThreads; thread_index++) {
+    threads.emplace_back([&client, thread_index]() {
+      int64_t sum = 0;
+      int64_t count = 0;
+      for (int64_t i = 0; i < kNumCount; i++) {
+        int num = thread_index * kNumThreads + i;
+        sum += num;
+        ++count;
+        auto result = AveragePerThreadOrDie(client, num);
+        EXPECT_THAT(result, Eq(sum / count)) << thread_index << " " << i;
+      }
+    });
+  }
+  for (auto &thread : threads) {
+    thread.join();
+  }
+}
+
 // Ensure the buffers returned by trusted malloc satisfy
 // TrustedPrimitives::IsTrustedExtent().
 TEST_F(PrimitivesTest, TrustedMalloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   UntrustedParameterStack params;
-  Status status = client->EnclaveCall(kTrustedMallocTest, &params);
-  EXPECT_THAT(status, IsOk());
+  ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedMallocTest, &params));
   EXPECT_FALSE(params.empty());
   EXPECT_TRUE(params.Pop<bool>());
   EXPECT_TRUE(params.empty());
@@ -288,8 +318,7 @@ TEST_F(PrimitivesTest, TrustedMalloc) {
 TEST_F(PrimitivesTest, UnrustedAlloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   UntrustedParameterStack params;
-  Status status = client->EnclaveCall(kUntrustedLocalAllocTest, &params);
-  EXPECT_THAT(status, IsOk());
+  ASYLO_EXPECT_OK(client->EnclaveCall(kUntrustedLocalAllocTest, &params));
   EXPECT_FALSE(params.empty());
   EXPECT_TRUE(params.Pop<bool>());
   EXPECT_TRUE(params.empty());
