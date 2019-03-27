@@ -4797,6 +4797,26 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/configure.host ./newlib/configure.hos
    xc16x-*)
            syscall_dir=syscalls
          ;;
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/machine/_endian.h ./newlib/libc/include/machine/_endian.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/machine/_endian.h
++++ ./newlib/libc/include/machine/_endian.h
+@@ -33,3 +33,16 @@
+ #define	_BYTE_ORDER	_BIG_ENDIAN
+ #endif
+ #endif
++
++
++#ifndef __LITTLE_ENDIAN
++#define __LITTLE_ENDIAN _LITTLE_ENDIAN
++#endif
++
++#ifndef __BIG_ENDIAN
++#define __BIG_ENDIAN _BIG_ENDIAN
++#endif
++
++#ifndef __BYTE_ORDER
++#define __BYTE_ORDER _BYTE_ORDER
++#endif
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h ./newlib/libc/include/malloc.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h
 +++ ./newlib/libc/include/malloc.h
