@@ -289,8 +289,8 @@ mkdir -p "${prefix}"
 
 # Create a simple BUILD file for the toolchain
 cp "${toolchain_root}/BUILD.tpl" "${prefix}/BUILD"
-# Make the CROSSTOOL available to the BUILD's crosstool target.
-cp "${toolchain_root}/CROSSTOOL.tpl" "${prefix}/CROSSTOOL"
+# Make crosstool.bzl available to the BUILD's crosstool target.
+cp "${toolchain_root}/crosstool.bzl" "${prefix}/crosstool.bzl"
 
 ###################################
 #  Ensure source packages exist   #

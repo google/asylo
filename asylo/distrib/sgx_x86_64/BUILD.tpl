@@ -14,72 +14,66 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+load("@com_google_asylo_sgx_backend//toolchain:crosstool.bzl",
+     "cc_toolchain_config_rule")
+
+licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
+exports_files(["LICENSE", "crosstool.bzl"])
 
-TOOLCHAINS = [
+
+ASYLO_TOOLCHAINS = [
     ("k8", "gcc"),
     ("sgx_x86_64", "gcc"),
 ]
 
-cc_toolchain_suite(
-    name = "crosstool",
-    toolchains = dict([
-        [
-            "k8",
-            ":cc-compiler-k8-gcc",
-        ],
-        [
-            "sgx_x86_64",
-            ":cc-compiler-sgx_x86_64-gcc",
-        ],
-    ] + [(
-        x[0] + "|" + x[1],
-        ":cc-compiler-" + x[0] + "-" + x[1],
-    ) for x in TOOLCHAINS]),
-)
+[
+    cc_toolchain_config_rule(
+        name = x[0] + "_config",
+        cpu = x[0],
+    )
+    for x in ASYLO_TOOLCHAINS
+]
 
 cc_library(name = "malloc")
 
 filegroup(
     name = "everything",
-    srcs = glob(
-        include = ["**"],
-        exclude = [
-            "BUILD",
-            "CROSSTOOL",
-        ],
-    ) + [
+    srcs = glob(["**"]) + [
         "@com_google_asylo//asylo/platform/posix:posix_headers",
         "@com_google_asylo//asylo/platform/system:system_headers",
     ],
 )
 
-cc_toolchain(
-    name = "cc-compiler-sgx_x86_64-gcc",
-    all_files = ":everything",
-    compiler_files = ":everything",
-    cpu = "sgx_x86_64",
-    dwp_files = ":everything",
-    linker_files = ":everything",
-    objcopy_files = ":everything",
-    strip_files = ":everything",
-    supports_param_files = 0,
-    toolchain_identifier = "asylo_sgx_x86_64",
+[
+    cc_toolchain(
+        name = "cc-compiler-" + x[0] + "-" + x[1],
+        all_files = ":everything",
+        compiler_files = ":everything",
+        dwp_files = ":everything",
+        linker_files = ":everything",
+        objcopy_files = ":everything",
+        strip_files = ":everything",
+        supports_param_files = 0,
+        toolchain_config = ":" + x[0] + "_config",
+        toolchain_identifier = "asylo_" + x[0],
+    )
+    for x in ASYLO_TOOLCHAINS
+]
+
+CC_TOOLCHAINS = [(
+    x[0],
+    ":cc-compiler-" + x[0] + "-" + x[1],
+) for x in ASYLO_TOOLCHAINS] + [(
+    x[0] + "|" + x[1],
+    ":cc-compiler-" + x[0] + "-" + x[1],
+) for x in ASYLO_TOOLCHAINS]
+
+cc_toolchain_suite(
+    name = "crosstool",
+    toolchains = dict(CC_TOOLCHAINS),
 )
 
-cc_toolchain(
-    name = "cc-compiler-k8-gcc",
-    all_files = ":everything",
-    compiler_files = ":everything",
-    cpu = "k8",
-    dwp_files = ":everything",
-    linker_files = ":everything",
-    objcopy_files = ":everything",
-    strip_files = ":everything",
-    supports_param_files = 0,
-    toolchain_identifier = "asylo_k8",
-)
 
