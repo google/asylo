@@ -38,6 +38,10 @@ static constexpr uint64_t kSelectorAsyloFini = 1;
 // not be registered by the applications.
 static constexpr uint64_t kSelectorUser = 128;
 
+// Selector values in [kSelectorHostCall, kSelectorRemote) range are reserved
+// for untrusted host call handlers and cannot be used by any other component.
+static constexpr uint64_t kSelectorHostCall = 112;
+
 // Type signature of the enclave alloc function pointer.
 // Allocates 'size' bytes on the untrusted memory heap and returns pointer.
 using UntrustedLocalAllocCallPtr = void *(*)(size_t size);
