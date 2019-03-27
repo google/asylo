@@ -990,6 +990,12 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
   asylo::SgxLoader *loader =
       dynamic_cast<asylo::SgxLoader *>(manager->GetLoaderFromClient(client));
 
+  if (!loader) {
+    LOG(ERROR) << "Failed to get the loader for the enclave to fork";
+    errno = EFAULT;
+    return -1;
+  }
+
   // Create a socket pair used for communication between the parent and child
   // enclave. |socket_pair[0]| is used by the parent enclave and
   // |socket_pair[1]| is used by the child enclave.

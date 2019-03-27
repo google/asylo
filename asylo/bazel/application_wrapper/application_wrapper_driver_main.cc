@@ -40,6 +40,7 @@ StatusOr<int> ApplicationWrapperDriverMain(const EnclaveLoader &loader,
   Argv::WriteArgvToRepeatedStringField(
       argc, argv,
       config.MutableExtension(command_line_args)->mutable_arguments());
+  config.set_enable_fork(true);
 
   // Load the enclave.
   ASYLO_RETURN_IF_ERROR(manager->LoadEnclave(enclave_name, loader, config));

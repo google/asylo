@@ -472,6 +472,8 @@ def cc_enclave_binary(
     Usage of unsupported aspects of the cc_binary interface will result in build
     failures.
 
+    fork() inside Asylo is enabled by default in this rule.
+
     Args:
       name: Name for the build target.
       enclave_config: An sgx_enclave_configuration target to be passed to the
