@@ -88,6 +88,20 @@ cc_library(
     ],
 )
 
+# The whole-application wrapper's driver as a library.
+cc_library(
+    name = "application_wrapper_driver",
+    srcs = [":application_wrapper_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = [
+        ":application_wrapper_driver_main",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+    ],
+)
+
 # A test of Argv.
 cc_test(
     name = "argv_test",

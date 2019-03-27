@@ -544,15 +544,9 @@ def cc_enclave_binary(
 
     enclave_loader(
         name = name,
-        srcs = ["//asylo/bazel/application_wrapper:application_wrapper_driver.cc"],
         embedded_enclaves = {_APPLICATION_WRAPPER_ENCLAVE_SECTION: ":" + enclave_name},
         copts = ASYLO_DEFAULT_COPTS,
-        deps = [
-            "//asylo/bazel/application_wrapper:application_wrapper_driver_main",
-            "//asylo:enclave_client",
-            "//asylo/util:logging",
-            "//asylo/util:status",
-        ],
+        deps = ["//asylo/bazel/application_wrapper:application_wrapper_driver"],
         **loader_kwargs
     )
 
