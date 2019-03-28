@@ -21,6 +21,16 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SIGNAL_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SIGNAL_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+typedef int sig_atomic_t;
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
+
 #define SA_NODEFER 0x08
 #define SA_RESETHAND 0x10
 
