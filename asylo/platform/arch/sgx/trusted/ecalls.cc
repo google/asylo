@@ -176,6 +176,6 @@ int ecall_transfer_secure_snapshot_key(const char *input,
   return result;
 }
 
-int ecall_dispatch_trusted_call(uint64_t selector, void *in, void **out) {
+int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
   abort();
 }
