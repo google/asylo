@@ -61,6 +61,11 @@ def installation_path(repository_ctx, file, user_defined, default, what):
     if not result:
         result = default
         what = what + " [default]"
+
+    test_result = repository_ctx.execute(["test", "-d", result])
+    if test_result.return_code != 0:
+        result = "/opt/asylo/toolchains/sgx_x86_64"
+        what = what + " [INTERNAL TRANSITION]"
     if not result:
         fail("Unknown install location for " + what)
     return _fail_if_directory_does_not_exist(repository_ctx, result, what)

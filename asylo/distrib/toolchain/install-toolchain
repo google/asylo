@@ -15,12 +15,12 @@
 # limitations under the License.
 #
 
-# This script builds and installs the sgx-enclave toolchain.
+# This script builds and installs the Asylo toolchain.
 
 set -e
 
 # Installation default destination
-readonly install_default=/opt/asylo/toolchains/sgx_x86_64
+readonly install_default=/opt/asylo/toolchains/default
 
 # Dependency source files to use when fetching from online.
 readonly gcc_tag=gcc-7_4_0-release
@@ -54,7 +54,7 @@ FLAGS:   <-h,--help> ...        Print this message.
                                 that unpacks sources to a subdirectory X. See
                                 below for supported archive extensions.
                                 [default unpacked from
-                                 gcc-gcc-7_3_0-release.tar.gz which is fetched
+                                 gcc-gcc-7_4_0-release.tar.gz which is fetched
                                  from online if it does not exist.]
          <--newlib> ...         Specify the path to sources for newlib
                                 May be a directory or a path to an archive X.ext
@@ -81,8 +81,8 @@ Install the Asylo compiler toolchain.
 
 Supported archive extensions are .tar.gz, .gz, .tar, .tgz, .zip, and .7z.
 To uninstall, delete the --prefix directory and the files
-/usr/local/share/asylo/sgx_toolchain_location
-${HOME}/.asylo/sgx_toolchain_location
+/usr/local/share/asylo/default_toolchain_location
+${HOME}/.asylo/default_toolchain_location
 
 EOF
 }
@@ -153,11 +153,11 @@ function write_install_path() {
 
 function do_install() {
   if [[ -n "${system_install}" ]]; then
-    write_install_path "/usr/local/share/asylo/sgx_toolchain_location" \
+    write_install_path "/usr/local/share/asylo/default_toolchain_location" \
                        "${prefix}"
   fi
   if [[ -n "${user_install}" ]]; then
-    write_install_path "${HOME}/.asylo/sgx_toolchain_location" "${prefix}"
+    write_install_path "${HOME}/.asylo/default_toolchain_location" "${prefix}"
   fi
 }
 
@@ -219,22 +219,22 @@ else
     echo
   fi
   cat <<EOF
-The Asylo WORKSPACE must know where the SGX toolchain is installed.
+The Asylo WORKSPACE must know where the default toolchain is installed.
 
 You can specify the paths in WORKSPACE directly with
 
-    sgx_deps(installation_path = <path>)
+    asylo_deps(toolchain_path = <path>)
 
 or indirectly with
 
-    sgx_deps()
+    asylo_deps()
 
 which will first check \$HOME/.asylo/, and then /usr/local/share/asylo/,
 and then finally ${install_default}.
 
   1. [--user] Write to ${HOME}/.asylo/
   2. [--system] Write to /usr/local/share/asylo/ (requires root)
-  3. [--no_install] Do nothing [sgx_deps() uses default path ${install_default}]
+  3. [--no_install] Do nothing [asylo_deps() uses default path ${install_default}]
 
 EOF
   echo -n "Choose [1]: "
@@ -261,7 +261,7 @@ fi
 #         Build environment         #
 #####################################
 
-# Root of the sgx-enclave toolchain package.
+# Root of the Asylo toolchain package.
 readonly toolchain_root=$(dirname "$0")
 
 # Directory to extract source packages from.

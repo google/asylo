@@ -34,9 +34,9 @@ RUN apt-get update && \
 COPY . /opt/asylo/distrib/
 
 # Build and install the toolchain.
-RUN /opt/asylo/distrib/sgx_x86_64/install-toolchain \
+RUN /opt/asylo/distrib/toolchain/install-toolchain \
     --system \
-    --prefix /opt/asylo/toolchains/sgx_x86_64
+    --prefix /opt/asylo/toolchains/default
 
 ## Now, create the final image.
 FROM debian:buster

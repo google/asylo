@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
-build:asylo --crosstool_top=@com_google_asylo_sgx_backend//toolchain:crosstool
+build:asylo --crosstool_top=@com_google_asylo_toolchain//toolchain:crosstool
 build:asylo --dynamic_mode=off
 build:asylo --host_crosstool_top=@bazel_tools//tools/cpp:toolchain
 build:asylo --fission=no
-build:asylo --custom_malloc=@com_google_asylo_sgx_backend//toolchain:malloc
+build:asylo --custom_malloc=@com_google_asylo_toolchain//toolchain:malloc
 build:asylo --define=grpc_no_ares=true
 
 build:sgx --config=asylo

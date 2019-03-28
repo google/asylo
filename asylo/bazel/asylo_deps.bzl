@@ -17,6 +17,10 @@
 """Repository rule implementations for WORKSPACE to use."""
 
 load(
+    "@com_google_asylo//asylo/bazel:installation_path.bzl",
+    "installation_path",
+)
+load(
     "@com_google_asylo//asylo/bazel:patch_repository.bzl",
     "patch_repository",
 )
@@ -72,11 +76,53 @@ def asylo_testonly_deps():
             strip_prefix = "gflags-2.2.2",
         )
 
-def asylo_deps():
-    """Macro to include Asylo's critical dependencies in a WORKSPACE."""
+def _instantiate_crosstool_impl(repository_ctx):
+    """Instantiates the Asylo crosstool template with the installation path.
+
+    The installation path can be an attribute or found from 1 of 3 canonical
+    locations (resolved in the following order):
+      * $HOME/.asylo/default_toolchain_location [first line has the path]
+      * /usr/local/share/asylo/default_toolchain_location [first line has the path]
+      * [default fallback] /opt/asylo/toolchains/default
+
+    Args:
+      repository_ctx: The repository_rule implementation object.
+
+    Returns:
+      Void.
+    """
+    toolchain_location = installation_path(
+        repository_ctx,
+        "default_toolchain_location",
+        repository_ctx.attr.toolchain_path,
+        "/opt/asylo/toolchains/default",
+        "Asylo toolchain",
+    )
+
+    repository_ctx.symlink(toolchain_location, "toolchain")
+
+_instantiate_crosstool = repository_rule(
+    implementation = _instantiate_crosstool_impl,
+    local = True,
+    attrs = {"toolchain_path": attr.string()},
+)
+
+def asylo_deps(toolchain_path = None):
+    """Macro to include Asylo's critical dependencies in a WORKSPACE.
+
+    Args:
+      toolchain_path: The absolute path to the installed Asylo toolchain.
+                      This can be omitted if the path is the first line of
+                      /usr/local/share/asylo/default_toolchain_location
+    """
 
     # Asylo macros depend on the backend provider.
     asylo_backend_deps()
+
+    _instantiate_crosstool(
+        name = "com_google_asylo_toolchain",
+        toolchain_path = toolchain_path,
+    )
 
     # Boringssl
     if "boringssl" not in native.existing_rules():

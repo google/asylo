@@ -14,14 +14,14 @@
 # limitations under the License.
 #
 
-load("@com_google_asylo_sgx_backend//toolchain:crosstool.bzl",
+load("@com_google_asylo_toolchain//toolchain:crosstool.bzl",
      "cc_toolchain_config_rule")
 
 licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
-exports_files(["LICENSE", "crosstool.bzl"])
+exports_files(["LICENSE"])
 
 
 ASYLO_TOOLCHAINS = [

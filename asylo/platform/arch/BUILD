@@ -265,7 +265,7 @@ cc_library(
 config_setting(
     name = "sgx",
     values = {
-        "crosstool_top": "@com_google_asylo_sgx_backend//toolchain:crosstool",
+        "crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
     },
 )
 

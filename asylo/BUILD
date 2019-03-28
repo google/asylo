@@ -36,7 +36,7 @@ config_setting(
     name = "asylo",
     values = {
         "cpu": "k8",
-        "crosstool_top": "@com_google_asylo_sgx_backend//toolchain:crosstool",
+        "crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
     },
     visibility = ["//visibility:public"],
 )
