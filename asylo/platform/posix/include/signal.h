@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 Asylo authors
+ * Copyright 2019 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,23 +16,12 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
-#define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
+#include_next <signal.h>
 
-#include <signal.h>
-#include <stddef.h>
+#ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SIGNAL_H_
+#define ASYLO_PLATFORM_POSIX_INCLUDE_SIGNAL_H_
 
-#ifdef __cplusplus
-extern "C" {
-#endif
+#define SA_NODEFER 0x08
+#define SA_RESETHAND 0x10
 
-// Calls enc_untrusted_register_handler to register a signal handler on the
-// host.
-int enc_register_signal(int signum, const sigset_t mask, int flags,
-                        const char *enclave_name);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
+#endif  // ASYLO_PLATFORM_POSIX_INCLUDE_SIGNAL_H_

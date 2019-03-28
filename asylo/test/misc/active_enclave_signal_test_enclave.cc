@@ -93,6 +93,8 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
         return status;
       case SignalTestInput::SIGACTIONMASK:
         return RunSignalTest(SignalTestInput::SIGACTIONMASK);
+      case SignalTestInput::RESETHANDLER:
+        return RunSignalTest(SignalTestInput::RESETHANDLER);
       default:
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "No vaild test type");
@@ -139,6 +141,10 @@ class ActiveEnclaveSignalTest : public TrustedApplication {
         sigemptyset(&mask);
         sigaddset(&mask, SIGUSR2);
         act.sa_mask = mask;
+        break;
+      case SignalTestInput::RESETHANDLER:
+        act.sa_handler = &HandleSignalWithHandler;
+        act.sa_flags |= SA_RESETHAND;
         break;
       default:
         return Status(error::GoogleError::INVALID_ARGUMENT,

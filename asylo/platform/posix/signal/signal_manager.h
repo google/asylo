@@ -23,6 +23,7 @@
 #include <memory>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/status.h"
 
@@ -45,6 +46,9 @@ class SignalManager {
   const struct sigaction *GetSigAction(int signum) const
       LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
+  // Remove a signal handler for a specific signal |signum|.
+  void ClearSigAction(int signum) LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+
   // Blocks all the signals in |set|.
   void BlockSignals(const sigset_t &set);
 
@@ -60,6 +64,12 @@ class SignalManager {
   // Gets the set of unblocked signals in |set|.
   sigset_t GetUnblockedSet(const sigset_t &set);
 
+  // Add a signal to the reset list.
+  void SetResetOnHandle(int signum) LOCKS_EXCLUDED(signal_to_reset_lock_);
+
+  // Check if a signal needs to reset handler.
+  bool IsResetOnHandle(int signum) LOCKS_EXCLUDED(signal_to_reset_lock_);
+
  private:
   SignalManager() = default;  // Private to enforce singleton.
   SignalManager(SignalManager const &) = delete;
@@ -68,6 +78,9 @@ class SignalManager {
   mutable absl::Mutex signal_to_sigaction_lock_;
   absl::flat_hash_map<int, std::unique_ptr<struct sigaction>>
       signal_to_sigaction_ GUARDED_BY(signal_to_sigaction_lock_);
+
+  mutable absl::Mutex signal_to_reset_lock_;
+  absl::flat_hash_set<int> signal_to_reset_ GUARDED_BY(signal_to_reset_lock_);
 
   thread_local static sigset_t signal_mask_;
 };

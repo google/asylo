@@ -37,6 +37,9 @@ message SignalTestInput {
     // Tests sigaction(2) that specifies signals to be blocked during the
     // execution of the registered signal handler.
     SIGACTIONMASK = 5;
+    // Tests sigaction(2) that specifies the flag SA_RESETHAND to reset the
+    // handler to default upon entry into the signal handler.
+    RESETHANDLER = 6;
   }
   // The type of signal test.
   optional SignalTestType signal_test_type = 1;

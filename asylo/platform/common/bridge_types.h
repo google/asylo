@@ -145,6 +145,12 @@ enum SignalCode {
   BRIDGE_SI_MESGQ = 5,
 };
 
+// The signal behavior flags.
+enum SignalFlags {
+  BRIDGE_SA_NODEFER = 0x01,
+  BRIDGE_SA_RESETHAND = 0x02,
+};
+
 // The address info ai_flags bitset constituent values that specify options of
 // an addrinfo struct.
 enum AddrInfoFlags {
@@ -444,6 +450,7 @@ struct bridge_siginfo_t {
 struct BridgeSignalHandler {
   void (*sigaction)(int, struct bridge_siginfo_t *, void *);
   bridge_sigset_t mask;
+  int flags;
 };
 
 struct BridgeRUsage {

@@ -723,6 +723,7 @@ int ocall_enc_untrusted_register_signal_handler(
   }
   // Set the flag so that sa_sigaction is registered as the signal handler
   // instead of sa_handler.
+  newact.sa_flags = asylo::FromBridgeSignalFlags(handler->flags);
   newact.sa_flags |= SA_SIGINFO;
   struct sigaction oldact;
   return sigaction(signum, &newact, &oldact);

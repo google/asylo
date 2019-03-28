@@ -429,6 +429,20 @@ struct bridge_siginfo_t *ToBridgeSigInfo(
   return bridge_siginfo;
 }
 
+int FromBridgeSignalFlags(int bridge_sa_flags) {
+  int sa_flags = 0;
+  if (bridge_sa_flags & BRIDGE_SA_NODEFER) sa_flags |= SA_NODEFER;
+  if (bridge_sa_flags & BRIDGE_SA_RESETHAND) sa_flags |= SA_RESETHAND;
+  return sa_flags;
+}
+
+int ToBridgeSignalFlags(int sa_flags) {
+  int bridge_sa_flags = 0;
+  if (sa_flags & SA_NODEFER) bridge_sa_flags |= BRIDGE_SA_NODEFER;
+  if (sa_flags & SA_RESETHAND) bridge_sa_flags |= BRIDGE_SA_RESETHAND;
+  return bridge_sa_flags;
+}
+
 int FromBridgeAddressInfoFlags(int bridge_ai_flag) {
   int ai_flag = 0;
   if (bridge_ai_flag & BRIDGE_AI_CANONNAME) ai_flag |= AI_CANONNAME;

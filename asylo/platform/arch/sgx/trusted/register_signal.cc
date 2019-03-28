@@ -20,8 +20,8 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
-extern "C" int enc_register_signal(int signum, const sigset_t mask,
+extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags,
                                    const char *enclave_name) {
   return enc_untrusted_register_signal_handler(
-      signum, /*bridge_sigaction=*/nullptr, mask, enclave_name);
+      signum, /*bridge_sigaction=*/nullptr, mask, flags, enclave_name);
 }

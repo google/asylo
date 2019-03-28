@@ -45,11 +45,15 @@ SignalManager *SignalManager::GetInstance() {
 
 Status SignalManager::HandleSignal(int signum, siginfo_t *info,
                                    void *ucontext) {
-  const struct sigaction *act = GetSigAction(signum);
+  std::unique_ptr<struct sigaction> act =
+      ::absl::make_unique<struct sigaction>(*GetSigAction(signum));
   if (!act) {
     return Status(
         error::GoogleError::INTERNAL,
         absl::StrCat("No handler has been registered for signal: ", signum));
+  }
+  if (IsResetOnHandle(signum)) {
+    ClearSigAction(signum);
   }
   Status status;
   sigset_t old_mask = GetSignalMask();
@@ -91,6 +95,11 @@ const struct sigaction *SignalManager::GetSigAction(int signum) const {
   return sigaction_iterator->second.get();
 }
 
+void SignalManager::ClearSigAction(int signum) {
+  absl::MutexLock lock(&signal_to_sigaction_lock_);
+  signal_to_sigaction_.erase(signum);
+}
+
 void SignalManager::BlockSignals(const sigset_t &set) {
   for (int signum = 0; signum < kMaxSignalsInMask; ++signum) {
     if (sigismember(&set, signum)) {
@@ -120,6 +129,16 @@ sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
     }
   }
   return signals_to_unblock;
+}
+
+void SignalManager::SetResetOnHandle(int signum) {
+  absl::MutexLock lock(&signal_to_reset_lock_);
+  signal_to_reset_.insert(signum);
+}
+
+bool SignalManager::IsResetOnHandle(int signum) {
+  absl::MutexLock lock(&signal_to_reset_lock_);
+  return signal_to_reset_.find(signum) != signal_to_reset_.end();
 }
 
 }  // namespace asylo

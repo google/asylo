@@ -180,5 +180,17 @@ TEST_F(ActiveEnclaveSignalTest, SigactionMaskTest) {
   EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
 }
 
+// Test sigaction(2) that registers a signal handler and specifies an
+// SA_RESETHAND flag, which resets the signal handler to default upon entry into
+// the signal hander.
+TEST_F(ActiveEnclaveSignalTest, ResetHandlerTest) {
+  EnclaveInput enclave_input;
+  enclave_input.MutableExtension(signal_test_input)
+      ->set_signal_test_type(SignalTestInput::RESETHANDLER);
+  EXPECT_THAT(RunSignalTest(enclave_input), IsOk());
+  // Verify that the handler for SIGUSR1 is now default.
+  EXPECT_EXIT(raise(SIGUSR1), ::testing::KilledBySignal(SIGUSR1), ".*");
+}
+
 }  // namespace
 }  // namespace asylo

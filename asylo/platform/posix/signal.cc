@@ -52,12 +52,13 @@ int sigaction(int signum, const struct sigaction *act,
     errno = EINVAL;
     return -1;
   }
+
+  asylo::SignalManager *signal_manager = asylo::SignalManager::GetInstance();
   // Guards sigaction calls. This is to ensure that signal handlers are not
   // overwritten between the time sigaction gets |oldact| and sets |act|.
   static absl::Mutex sigaction_lock;
   {
     absl::MutexLock lock(&sigaction_lock);
-    asylo::SignalManager *signal_manager = asylo::SignalManager::GetInstance();
     if (oldact) {
       if (signal_manager->GetSigAction(signum)) {
         oldact = const_cast<struct sigaction *>(
@@ -70,13 +71,18 @@ int sigaction(int signum, const struct sigaction *act,
   }
   sigset_t mask;
   sigemptyset(&mask);
+  int flags = 0;
   if (act) {
     mask = act->sa_mask;
+    flags = act->sa_flags;
+  }
+  if (flags & SA_RESETHAND) {
+    signal_manager->SetResetOnHandle(signum);
   }
   const std::string enclave_name = asylo::GetEnclaveName();
   // Pass a C string because enc_register_signal has C linkage. This string is
   // copied to untrusted memory when going across enclave boundary.
-  return enc_register_signal(signum, mask, enclave_name.c_str());
+  return enc_register_signal(signum, mask, flags, enclave_name.c_str());
 }
 
 // Sets the signal mask with |set|.

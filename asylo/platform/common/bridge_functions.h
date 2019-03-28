@@ -117,6 +117,14 @@ siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,
 struct bridge_siginfo_t *ToBridgeSigInfo(
     const siginfo_t *siginfo, struct bridge_siginfo_t *bridge_siginfo);
 
+// Converts |bridge_sa_flags| to a runtime sa_flags. Returns 0 if no supported
+// flags are provided.
+int FromBridgeSignalFlags(int bridge_sa_flags);
+
+// Converts |sa_flags| to a bridge sa_flags. Returns 0 if no supported flags are
+// provided.
+int ToBridgeSignalFlags(int sa_flags);
+
 // Converts |bridge_ai_flag| to a runtime file flag. Returns 0 if no supported
 // flags are provided.
 int FromBridgeAddressInfoFlags(int bridge_ai_flag);

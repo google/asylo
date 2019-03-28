@@ -741,7 +741,7 @@ int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
 
 int enc_untrusted_register_signal_handler(
     int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
-    const sigset_t mask, const char *enclave_name) {
+    const sigset_t mask, int flags, const char *enclave_name) {
   int bridge_signum = asylo::ToBridgeSignal(signum);
   if (bridge_signum < 0) {
     errno = EINVAL;
@@ -750,6 +750,7 @@ int enc_untrusted_register_signal_handler(
   BridgeSignalHandler handler;
   handler.sigaction = bridge_sigaction;
   asylo::ToBridgeSigSet(&mask, &handler.mask);
+  handler.flags = asylo::ToBridgeSignalFlags(flags);
   int ret;
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
       &ret, bridge_signum, &handler, enclave_name));
