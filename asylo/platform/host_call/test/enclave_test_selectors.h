@@ -74,6 +74,8 @@ constexpr uint64_t kTestTruncate =
     kFirstSelector + asylo::system_call::kSYS_truncate;
 constexpr uint64_t kTestRmdir =
     kFirstSelector + asylo::system_call::kSYS_rmdir;
+constexpr uint64_t kTestSocket =
+    kFirstSelector + asylo::system_call::kSYS_socket;
 
 }  // namespace host_call
 }  // namespace asylo

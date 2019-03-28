@@ -17,7 +17,7 @@
  */
 
 #include "asylo/platform/host_call/trusted/host_calls.h"
-#include "asylo/platform/host_call/type_conversions/generated_types_functions.h"
+#include "asylo/platform/host_call/type_conversions/types_functions.h"
 
 extern "C" {
 
@@ -117,6 +117,12 @@ int enc_untrusted_truncate(const char *path, off_t length) {
 
 int enc_untrusted_rmdir(const char *path) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_rmdir, path);
+}
+
+int enc_untrusted_socket(int domain, int type, int protocol) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_socket,
+                               TokLinuxAfFamily(domain),
+                               TokLinuxSocketType(type), protocol);
 }
 
 }  // extern "C"

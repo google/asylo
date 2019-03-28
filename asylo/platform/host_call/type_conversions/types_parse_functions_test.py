@@ -33,15 +33,14 @@ class TypesParseFunctionsTest(TestCase):
   def test_get_enums_with_only_default_vals(self):
     define_enum('TestEnum', ['a', 'b'])
     self.assertEqual(
-        get_enums(),
-        '#define ENUMS_INIT \\\n{"TestEnum", {0, 0, false, {{a, "a"}, {b, "b"}}}}'
-    )
+        get_enums(), '#define ENUMS_INIT \\\n'
+        '{"TestEnum", {0, 0, false, false, {{"a", a}, {"b", b}}}}')
 
   def test_get_enums_with_all_vals(self):
     define_enum('TestEnum', ['a'], 1, 2, True)
     self.assertEqual(
         get_enums(),
-        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, {{a, "a"}}}}')
+        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, false, {{"a", a}}}}')
 
   def test_prefix(self):
     prefix_string = 'test_prefix'
@@ -60,10 +59,12 @@ class TypesParseFunctionsTest(TestCase):
   def test_get_includes(self):
     include('iostream')
     include('stdio')
-    self.assertEqual(get_includes_as_include_macros(),
-                     '#include <iostream>\n#include <stdio>\n')
-    self.assertEqual(get_includes_in_define_macro(),
-                     '#define INCLUDES "iostream", \\\n"stdio"')
+    self.assertEqual(
+        get_includes_as_include_macros(),
+        '#include <stdbool.h>\n#include <iostream>\n#include <stdio>\n')
+    self.assertEqual(
+        get_includes_in_define_macro(),
+        '#define INCLUDES "stdbool.h", \\\n"iostream", \\\n"stdio"')
 
 
 if __name__ == '__main__':

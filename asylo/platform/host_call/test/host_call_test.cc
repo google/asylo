@@ -536,6 +536,30 @@ TEST_F(HostCallTest, TestRmdir) {
   EXPECT_FALSE(stat(dir_to_del.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode));
 }
 
+// Tests enc_untrusted_socket() by trying to obtain a valid (greater than 0)
+// socket file descriptor when the method is called from inside the enclave.
+TEST_F(HostCallTest, TestSocket) {
+  primitives::UntrustedParameterStack params;
+  // Setup bidirectional IPv6 socket.
+  *(params.PushAlloc<int>()) = AF_INET6;
+  *(params.PushAlloc<int>()) = SOCK_STREAM;
+  *(params.PushAlloc<int>()) = 0;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Gt(0));
+
+  // Setup socket for local bidirectional communication between two processes on
+  // the host.
+  *(params.PushAlloc<int>()) = AF_UNIX;
+  *(params.PushAlloc<int>()) = SOCK_STREAM;
+  *(params.PushAlloc<int>()) = 0;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Gt(0));
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

@@ -39,8 +39,9 @@ py_test(
 
 # Binary for the .py file to be parsed for generating the C macros.
 py_binary(
-    name = "types",
+    name = "generate_macros",
     srcs = ["types.py"],
+    main = "types.py",
     deps = [
         ":types_parse_functions",
     ],
@@ -51,8 +52,8 @@ py_binary(
 genrule(
     name = "do_generate_macros",
     outs = ["types_macros.inc"],
-    cmd = "$(location types) > $(@)",
-    tools = [":types"],
+    cmd = "$(location generate_macros) > $(@)",
+    tools = [":generate_macros"],
 )
 
 # Code generator utility emitting definitions and metadata describing the symbols defined in
@@ -87,28 +88,58 @@ genrule(
     tools = [":generate_types"],
 )
 
-# Library containing the generated type definitions and data conversions
-# between newlib and the Linux host for the Primitives interface.
+# Library containing type definitions (generated or manually written).
 cc_library(
-    name = "generated_types",
-    srcs = ["generated_types_functions.cc"],
-    hdrs = [
-        "generated_types.h",
-        "generated_types_functions.h",
-    ],
+    name = "types_definitions",
+    hdrs = ["generated_types.h"],
     copts = ASYLO_DEFAULT_COPTS,
 )
 
-# Tests the generated types conversion functions.
+# Library containing the type conversion functions (generated or manually
+# written) for the type definitions.
+cc_library(
+    name = "types_functions",
+    srcs = [
+        "generated_types_functions.cc",
+        "manual_types_functions.cc",
+    ],
+    hdrs = [
+        "generated_types_functions.h",
+        "manual_types_functions.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [":types_definitions"],
+)
+
+# Tests for generated and manually written type conversion functions.
 cc_test(
-    name = "generated_types_functions_test",
-    srcs = ["generated_types_functions_test.cc"],
+    name = "types_functions_test",
+    srcs = [
+        "generated_types_functions_test.cc",
+        "manual_types_functions_test.cc",
+    ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":generated_types",
+        ":types_functions",
         "//asylo/test/util:finite_domain_fuzz",
         "//asylo/test/util:test_main",
-        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
+    ],
+)
+
+# Library containing the type definitions and type conversion functions
+# between newlib and the target host implementation. This library contains
+# both the auto-generated as well as manually written type definitions and
+# type conversion functions.
+cc_library(
+    name = "types",
+    hdrs = [
+        "types.h",
+        "types_functions.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":types_definitions",
+        ":types_functions",
     ],
 )

@@ -27,6 +27,7 @@ from asylo.platform.host_call.type_conversions.types_parse_functions import set_
 from asylo.platform.host_call.type_conversions.types_parse_functions import write_output
 
 include("fcntl.h")
+include("sys/socket.h")
 
 set_prefix("kLinux")
 
@@ -47,5 +48,25 @@ define_enum(
     multi_valued=False,
     default_value_host=-1,
     default_value_newlib=-1)
+
+define_enum(
+    name="AfFamily",
+    values=[
+        "AF_UNIX", "AF_LOCAL", "AF_INET", "AF_AX25", "AF_IPX", "AF_APPLETALK",
+        "AF_X25", "AF_ATMPVC", "AF_INET6", "AF_DECnet", "AF_KEY", "AF_NETLINK",
+        "AF_PACKET", "AF_RDS", "AF_PPPOX", "AF_LLC", "AF_CAN", "AF_TIPC",
+        "AF_BLUETOOTH", "AF_ALG", "AF_VSOCK", "AF_UNSPEC"
+    ],
+    multi_valued=False,
+    default_value_host="AF_UNSPEC",
+    default_value_newlib="AF_UNSPEC")
+
+define_enum(
+    name="SocketType",
+    values=[
+        "SOCK_STREAM", "SOCK_DGRAM", "SOCK_SEQPACKET", "SOCK_RAW", "SOCK_RDM",
+        "SOCK_PACKET", "SOCK_NONBLOCK", "SOCK_CLOEXEC"
+    ],
+    skip_conversions_generation=True)
 
 write_output()

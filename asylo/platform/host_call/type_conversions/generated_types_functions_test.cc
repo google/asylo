@@ -17,13 +17,15 @@
  */
 
 #include "asylo/platform/host_call/type_conversions/generated_types_functions.h"
-#include "asylo/platform/host_call/type_conversions/generated_types.h"
 
 #include <gtest/gtest.h>
 #include "asylo/test/util/finite_domain_fuzz.h"
 
 namespace asylo {
 namespace host_call {
+namespace {
+
+using ::testing::Eq;
 
 // These tests only validate the behavior and correctness of the generated types
 // conversion functions. It does not test the internal implementation of the
@@ -71,5 +73,31 @@ TEST_F(GeneratedTypesFunctionsTest, FcntlCommandTest) {
               to_matcher);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, AfFamilyTest) {
+  std::vector<int> from_bits = {
+      kLinux_AF_UNIX,      kLinux_AF_LOCAL,  kLinux_AF_INET,
+      kLinux_AF_AX25,      kLinux_AF_IPX,    kLinux_AF_APPLETALK,
+      kLinux_AF_X25,       kLinux_AF_ATMPVC, kLinux_AF_INET6,
+      kLinux_AF_DECnet,    kLinux_AF_KEY,    kLinux_AF_NETLINK,
+      kLinux_AF_PACKET,    kLinux_AF_RDS,    kLinux_AF_PPPOX,
+      kLinux_AF_LLC,       kLinux_AF_CAN,    kLinux_AF_TIPC,
+      kLinux_AF_BLUETOOTH, kLinux_AF_ALG,    kLinux_AF_VSOCK,
+      kLinux_AF_UNSPEC};
+  std::vector<int> to_bits = {
+      AF_UNIX,      AF_LOCAL,  AF_INET,  AF_AX25,   AF_IPX, AF_APPLETALK,
+      AF_X25,       AF_ATMPVC, AF_INET6, AF_DECnet, AF_KEY, AF_NETLINK,
+      AF_PACKET,    AF_RDS,    AF_PPPOX, AF_LLC,    AF_CAN, AF_TIPC,
+      AF_BLUETOOTH, AF_ALG,    AF_VSOCK, AF_UNSPEC};
+
+  // We do not use FiniteDomain matcher here because the domain does not map
+  // exactly to a predefined range. AF_UNIX and AF_LOCAL here may map to the
+  // same value depending on the host platform.
+  for (int i = 0; i < from_bits.size(); i++) {
+    EXPECT_THAT(TokLinuxAfFamily(to_bits[i]), Eq(from_bits[i]));
+    EXPECT_THAT(FromkLinuxAfFamily(from_bits[i]), Eq(to_bits[i]));
+  }
+}
+
+}  // namespace
 }  // namespace host_call
 }  // namespace asylo

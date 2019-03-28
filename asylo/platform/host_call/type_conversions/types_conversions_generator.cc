@@ -33,10 +33,14 @@ struct EnumProperties {
   int default_value_host;
   int default_value_newlib;
   bool multi_valued;
+  bool skip_conversions_generation;
 
-  // A map of enum values in the format {Enum value, Enum name}. Enum name is
-  // simply a literal describing the enum value as a string.
-  std::map<int, std::string> values;
+  // A vector of enum values in the format std::pair{Enum name, Enum value}.
+  // Enum name is simply a literal describing the enum value as a string. This
+  // cannot be simply a map from enum values to enum names since multiple enum
+  // names may resolve to the same enum value.
+  // Eg. AF_UNIX and AF_LOCAL both share the same value (typically 1).
+  std::vector<std::pair<std::string, int>> values;
 };
 
 DEFINE_string(output_dir, "", "Path of the output dir for generated types.");
@@ -74,14 +78,19 @@ void WriteTypeDefinitions(const absl::flat_hash_map<std::string, EnumProperties>
   *os << "#ifndef " << header_guard_name << "\n"
       << "#define " << header_guard_name << "\n";
 
+  // Write the includes. These may be needed when manually writing conversion
+  // functions for certain automatically generated enums (where
+  // skip_conversions_generation = true)
+  WriteMacroProvidedIncludes(os);
+
   for (const auto &it : *enum_properties_table) {
     *os << absl::StreamFormat("\nenum %s {\n", it.first);
 
     // Accumulate comma separated resolved enum pairs (eg. kLinux_F_GETFD = 1,
     // kLinux_F_SETFD = 2,).
     for (const auto &current : it.second.values) {
-      *os << absl::StreamFormat("  %s_%s = %d,\n", prefix, current.second,
-                                current.first);
+      *os << absl::StreamFormat("  %s_%s = %d,\n", prefix, current.first,
+                                current.second);
     }
     *os << "};\n";
   }
@@ -109,11 +118,11 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   // Generate or-based enum result accumulation.
   for (const auto &enum_pair : enum_properties.values) {
     func_body << "  if (" << input_variable_name << " & "
-              << (to_prefix ? enum_pair.second
-                            : absl::StrCat(prefix, "_", enum_pair.second))
+              << (to_prefix ? enum_pair.first
+                            : absl::StrCat(prefix, "_", enum_pair.first))
               << ") " << result_variable_name << " |= "
-              << (to_prefix ? absl::StrCat(prefix, "_", enum_pair.second)
-                            : enum_pair.second)
+              << (to_prefix ? absl::StrCat(prefix, "_", enum_pair.first)
+                            : enum_pair.first)
               << ";\n";
   }
 
@@ -124,34 +133,32 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
 }
 
 // Generate the function body for enum type conversions where the enums cannot
-// be multi-valued. Uses a switch case based implementation to find the matching
-// enum.
-std::string GetSwitchBasedEnumBody(bool to_prefix, const std::string &enum_name,
-                                   const EnumProperties &enum_properties) {
+// be multi-valued. Uses an if condition based implementation to find the
+// matching enum. A switch case should not be used here because enum values may
+// be duplicate.
+std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
+                               const EnumProperties &enum_properties) {
   std::ostringstream func_body;
   std::string input_variable_name =
       to_prefix ? enum_name : absl::StrCat(prefix, "_", enum_name);
 
-  // Generate switch declaration on input variable.
-  func_body << "  switch(" << input_variable_name << ") {\n";
   for (const auto &enum_pair : enum_properties.values) {
-    func_body << "    case "
-              << (to_prefix ? enum_pair.second
-                            : absl::StrCat(prefix, "_", enum_pair.second))
-              << ":\n";
+    func_body << "  if (" << input_variable_name << " == "
+              << (to_prefix ? enum_pair.first
+                            : absl::StrCat(prefix, "_", enum_pair.first))
+              << ") {\n";
     func_body << "      return "
-              << (to_prefix ? absl::StrCat(prefix, "_", enum_pair.second)
-                            : enum_pair.second)
+              << (to_prefix ? absl::StrCat(prefix, "_", enum_pair.first)
+                            : enum_pair.first)
               << ";\n";
+    func_body << "  }\n";
   }
 
   // Generate code for handling default case.
-  func_body << "    default:\n"
-            << "      return "
+  func_body << "  return "
             << (to_prefix ? enum_properties.default_value_host
                           : enum_properties.default_value_newlib)
             << ";\n";
-  func_body << "  }\n";
 
   return func_body.str();
 }
@@ -179,6 +186,10 @@ void WriteTypesConversions(
            "generated_types.h\"\n";
 
   for (const auto &it : *enum_properties_table) {
+    if (it.second.skip_conversions_generation) {
+      continue;
+    }
+
     std::string enum_name_lower = it.first;
     std::transform(enum_name_lower.begin(), enum_name_lower.end(),
                    enum_name_lower.begin(), ::tolower);
@@ -204,12 +215,10 @@ void WriteTypesConversions(
     } else {
       *os_cc << "\n"
              << to_prefix_declaration.str() << " {\n"
-             << GetSwitchBasedEnumBody(true, enum_name_lower, it.second)
-             << "}\n";
+             << GetIfBasedEnumBody(true, enum_name_lower, it.second) << "}\n";
       *os_cc << "\n"
              << from_prefix_declaration.str() << " {\n"
-             << GetSwitchBasedEnumBody(false, enum_name_lower, it.second)
-             << "}\n";
+             << GetIfBasedEnumBody(false, enum_name_lower, it.second) << "}\n";
     }
   }
 

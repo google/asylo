@@ -42,7 +42,9 @@ import sys
 # Stores system header includes as a list. Only header file names are expected
 # with or without the .h extension and without the '#include' directive
 # prefixed.
-_includes = []
+# We include stdbool.h by default so that the generated output (as .inc file) is
+# also readable by a C program.
+_includes = ['stdbool.h']
 
 # Map from enum names to dictionary of enum properties and their values.
 _enum_map = collections.defaultdict(dict)
@@ -89,16 +91,24 @@ def define_enum(name,
                 values,
                 default_value_host=0,
                 default_value_newlib=0,
-                multi_valued=False):
+                multi_valued=False,
+                skip_conversions_generation=False):
   """Defines a collection of related enumeration values and their properties.
 
   Args:
     name: Name of the collection of enumeration values.
     values: C Enumeration values provided as a list of strings.
     default_value_host: Default enum value on the target host implementation.
-    default_value_newlib: Default enum value in newlib.
+      This can be an actual int value or the enum value provided as a string.
+    default_value_newlib: Default enum value in newlib. This can be an actual
+      int value or the enum value provided as a string.
     multi_valued: Boolean indicating if the enum values can be combined using
       bitwise OR operations.
+    skip_conversions_generation: Boolean indicating if generation of types
+      conversion functions be skipped, and only enum definitions be generated.
+      Useful when conversion functions are complex and need to be written
+      manually, but the enum definitions can be generated automatically by
+      resolving the enum values from the target host implementation.
   """
 
   # The enum values here are written twice, once as a string literal, then as an
@@ -108,13 +118,14 @@ def define_enum(name,
   # is non-trivial in c++.
   # An example 'values', like ['ENUM_VAL1', 'ENUM_VAL2'] looks like the
   # following stored as a dictionary entry -
-  # {ENUM_VAL1, "ENUM_VAL1"}, {ENUM_VAL2, "ENUM_VAL2"}
+  # {"ENUM_VAL1", ENUM_VAL1}, {"ENUM_VAL2", ENUM_VAL2}
   _enum_map[name]['values'] = ', '.join(
-      '{{{}, "{}"}}'.format(val, val) for val in values)
+      '{{"{}", {}}}'.format(val, val) for val in values)
 
   _enum_map[name]['default_value_host'] = default_value_host
   _enum_map[name]['default_value_newlib'] = default_value_newlib
   _enum_map[name]['multi_valued'] = multi_valued
+  _enum_map[name]['skip_conversions_generation'] = skip_conversions_generation
 
 
 def get_prefix():
@@ -149,19 +160,23 @@ def get_enums():
   typical output of get_enums looks like the following -
 
   #define ENUMS_INIT \
-  {"FcntlCmd", {-1, -1, false, {{F_GETFD, "F_GETFD"}, {F_SETFD, "F_SETFD"}}}}, \
-  {"FileFlags", {0, 0, true, {{O_RDONLY, "O_RDONLY"}, {O_WRONLY, "O_WRONLY"}}}}
+  {"FcntlCmd", {-1, -1, false, false, {{"F_GETFD", F_GETFD}, {"F_SETFD",
+  F_SETFD}}}}, \
+  {"FileFlags", {0, 0, true, false, {{"O_RDONLY", O_RDONLY}, {"O_WRONLY",
+  O_WRONLY}}}}
 
   Each line contains an enum, and follows the pattern -
-  {"EnumName", {defaultValueHost, defaultValueNewlib, isMultivalued,
-  {{enum_val1, "enum_val1"}, {enum_val2, "enum_val2"}}}}, \
+  {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
+  skip_conversions_generation, {{"enum_val1", enum_val1}, {"enum_val2",
+  enum_val2}}}}, \
   """
   enum_row = []
   for enum_name, enum_properties in _enum_map.items():
-    enum_row.append('{{{}, {{{}, {}, {}, {{{}}}}}}}'.format(
+    enum_row.append('{{{}, {{{}, {}, {}, {}, {{{}}}}}}}'.format(
         '"{}"'.format(enum_name), enum_properties['default_value_host'],
         enum_properties['default_value_newlib'],
         'true' if enum_properties['multi_valued'] else 'false',
+        'true' if enum_properties['skip_conversions_generation'] else 'false',
         enum_properties['values']))
 
   return '#define ENUMS_INIT \\\n{}'.format(', \\\n'.join(enum_row))

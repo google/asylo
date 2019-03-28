@@ -29,7 +29,7 @@ cc_library(
     hdrs = ["trusted/host_calls.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/host_call/type_conversions:generated_types",
+        "//asylo/platform/host_call/type_conversions:types",
         "//asylo/platform/system_call",
     ],
 )

@@ -270,6 +270,18 @@ primitives::PrimitiveStatus TestRmdir(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestSocket(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+
+  int protocol = params->Pop<int>();
+  int type = params->Pop<int>();
+  int domain = params->Pop<int>();
+  *(params->PushAlloc<int>()) = enc_untrusted_socket(domain, type, protocol);
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -321,6 +333,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestTruncate, primitives::EntryHandler{TestTruncate}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestRmdir, primitives::EntryHandler{TestRmdir}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestSocket, primitives::EntryHandler{TestSocket}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
