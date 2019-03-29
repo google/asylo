@@ -76,7 +76,6 @@ cc_library(
         "inotify.cc",
         "ioctl.cc",
         "malloc_lock.cc",
-        "math.cc",
         "mman.cc",
         "poll.cc",
         "pthread.cc",
