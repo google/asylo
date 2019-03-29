@@ -56,4 +56,13 @@ ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
   --config=asylo --define=ASYLO_SIM=1 "${SIM_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
+RED='\e[1;31m'
+GREEN='\e[1;32m'
+RESET='\e[0m'
+
+if [[ ${STAT} -eq 0 ]]; then
+  echo -e "${GREEN}ALL TESTS PASSED${RESET}"
+else
+  echo -e "${RED}ONE OR MORE TESTS FAILED${RESET}"
+fi
 exit ${STAT}

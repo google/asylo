@@ -31,7 +31,7 @@ RUN apt-get update && \
         wget \
         zlib1g-dev
 
-COPY . /opt/asylo/distrib/
+COPY . /opt/asylo/distrib/toolchain/
 
 # Build and install the toolchain.
 RUN /opt/asylo/distrib/toolchain/install-toolchain \
