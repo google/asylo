@@ -44,6 +44,7 @@ asylo_proto_library(
     name = "platform_provisioning_proto",
     srcs = ["platform_provisioning.proto"],
     visibility = ["//asylo:implementation"],
+    deps = ["//asylo/crypto:algorithms_proto"],
 )
 
 asylo_proto_library(

@@ -18,6 +18,8 @@ syntax = "proto2";
 
 package asylo.sgx;
 
+import "asylo/crypto/algorithms.proto";
+
 // This file defines messages representing properties involved in SGX platform
 // provisioning.
 //
@@ -38,6 +40,24 @@ package asylo.sgx;
 message Ppid {
   // The bytes of the PPID. Must be exactly 16 bytes long. Required.
   optional bytes value = 1;
+}
+
+// A public encryption key used by the Provisioning Certification Enclave (PCE)
+// to encrypt the PPID.
+message PpidEncryptionKey {
+  // Asymmetric encryption scheme used by |public_key|. Required.
+  //
+  // Note that not all possible values of |encryption_scheme| are necessarily
+  // supported by the PCE. The supported values are:
+  //   * RSA3072_OAEP
+  optional AsymmetricEncryptionScheme encryption_scheme = 1;
+
+  // Encoding of |public_key|. This does not represent the encoding expected by
+  // the PCE. Required.
+  optional PublicKeyEncoding encoding = 2;
+
+  // An encoded public encryption key. Required.
+  optional bytes public_key = 3;
 }
 
 // A CPU SVN. The CPU SVN contains security-relevant information about the Intel

@@ -40,5 +40,19 @@ enum AeadScheme {
 
 enum SignatureScheme {
   UNKNOWN_SIGNATURE_SCHEME = 0;
+
   ECDSA_P256_SHA256 = 1;
 };
+
+enum AsymmetricEncryptionScheme {
+  UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME = 0;
+
+  RSA2048_OAEP = 1;
+  RSA3072_OAEP = 2;
+};
+
+enum PublicKeyEncoding {
+  UNKNOWN_PUBLIC_KEY_ENCODING = 0;
+
+  PUBLIC_KEY_PEM = 1;
+}
