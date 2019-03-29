@@ -40,6 +40,7 @@ namespace asylo {
 namespace {
 
 using ::testing::_;
+using ::testing::DoAll;
 using ::testing::HasSubstr;
 using ::testing::InSequence;
 using ::testing::Return;
