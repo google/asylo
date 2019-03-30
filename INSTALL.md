@@ -124,12 +124,11 @@ installed.
 
 *   ocaml-nox
 *   ocamlbuild
-*   python-jinja2
 
 On Debian, these can be installed with the following command:
 
 ```bash
-sudo apt install ocaml-nox ocamlbuild python-jinja2
+sudo apt install ocaml-nox ocamlbuild
 ```
 
 ## Next steps

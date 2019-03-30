@@ -57,7 +57,6 @@ RUN apt-get update && \
         ocaml-nox \
         ocamlbuild \
         openjdk-8-jdk-headless \
-        python-jinja2 \
         vim \
         && \
     apt-get clean && \

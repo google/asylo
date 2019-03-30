@@ -59,9 +59,9 @@ py_library(
     visibility = ["//visibility:private"],
     deps = [
         ":host_calls_proto_py",
+        "@com_github_pallets_jinja//:jinja2",
         "@io_abseil_py//absl:app",
         "@io_abseil_py//absl/flags",
-        "@jinja//:jinja2",
     ],
 )
 

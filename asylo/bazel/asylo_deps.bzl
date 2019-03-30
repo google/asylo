@@ -248,17 +248,34 @@ cc_library(
     )
 
     # Jinja for code_generator.py
-    if "jinja" not in native.existing_rules():
+    if "com_github_pallets_jinja" not in native.existing_rules():
         http_archive(
-            name = "jinja",
+            name = "com_github_pallets_jinja",
             # Jinja release 2.10
             url = "https://github.com/pallets/jinja/archive/2.10.tar.gz",
             build_file_content = """py_library(
     name = "jinja2",
     visibility = ["//visibility:public"],
     srcs = glob(["jinja2/*.py"]),
+    deps = ["@com_github_pallets_markupsafe//:markupsafe"],
 )""",
             sha256 = "0d31d3466c313a9ca014a2d904fed18cdac873a5ba1f7b70b8fd8b206cd860d6",
+            strip_prefix = "jinja-2.10",
+        )
+
+    # Markupsafe for Jinja
+    if "com_github_pallets_markupsafe" not in native.existing_rules():
+        http_archive(
+            name = "com_github_pallets_markupsafe",
+            url = "https://github.com/pallets/markupsafe/archive/1.1.1.tar.gz",
+            build_file_content = """py_library(
+    name = "markupsafe",
+    visibility = ["//visibility:public"],
+    srcs = glob(["markupsafe/*.py"]),
+)""",
+            # Markupsafe release 1.1.1
+            sha256 = "222a10e3237d92a9cd45ed5ea882626bc72bc5e0264d3ed0f2c9129fa69fc167",
+            strip_prefix = "markupsafe-1.1.1/src",
         )
 
 def asylo_go_deps():
