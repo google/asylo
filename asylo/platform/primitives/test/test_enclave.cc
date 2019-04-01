@@ -16,6 +16,8 @@
  *
  */
 
+#include <vector>
+
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -168,6 +170,30 @@ PrimitiveStatus UntrustedLocalAllocTest(void *context,
   return PrimitiveStatus::OkStatus();
 }
 
+// Tests multiple parameters handling: copies them from IN to OUT stack.
+PrimitiveStatus CopyMultipleParams(void *context,
+                                   TrustedParameterStack *params) {
+  // Retrieve IN parameters and stow them in a vector (ordered from top to
+  // bottom).
+  std::vector<TrustedParameterStack::ExtentPtr> params_vector;
+  params_vector.reserve(params->size());
+  while (!params->empty()) {
+    params_vector.emplace_back(params->Pop());
+  }
+  // Now push them into the OUT stack in reverse order: former top becomes
+  // bottom and vice versa.
+  for (auto &param : params_vector) {
+    auto p = params->PushAlloc(param->size());
+    memcpy(p.data(), param->data(), p.size());
+    // Release IN parameter.
+    param.reset();
+  }
+  // Add one more parameter at the top of the stack.
+  static constexpr char foo[] = "Foo";
+  params->PushAlloc<char>(foo, strlen(foo));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -184,6 +210,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       kTrustedMallocTest, EntryHandler{TrustedMallocTest}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       kUntrustedLocalAllocTest, EntryHandler{UntrustedLocalAllocTest}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      kCopyMultipleParamsSelector, EntryHandler{CopyMultipleParams}));
   return PrimitiveStatus::OkStatus();
 }
 

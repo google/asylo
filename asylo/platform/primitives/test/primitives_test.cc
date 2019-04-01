@@ -44,6 +44,7 @@ using ::testing::MockFunction;
 using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Return;
+using ::testing::StrEq;
 
 namespace asylo {
 namespace primitives {
@@ -321,6 +322,40 @@ TEST_F(PrimitivesTest, UnrustedAlloc) {
   ASYLO_EXPECT_OK(client->EnclaveCall(kUntrustedLocalAllocTest, &params));
   EXPECT_FALSE(params.empty());
   EXPECT_TRUE(params.Pop<bool>());
+  EXPECT_TRUE(params.empty());
+}
+
+// Ensure multiple parameters are passed back and forth.
+TEST_F(PrimitivesTest, CopyMultipleParams) {
+  auto client = LoadTestEnclaveOrDie(/*reload=*/false);
+  const std::string in1 = "Param1";
+  const uint64_t in2 = 12345;
+  const char in3[] = "Param3";
+  UntrustedParameterStack params;
+  params.PushAlloc<char>(in1.data(), in1.size());
+  *params.PushAlloc<uint64_t>() = in2;
+  params.PushAlloc<char>(in3, strlen(in3) + 1);
+  ASYLO_ASSERT_OK(client->EnclaveCall(kCopyMultipleParamsSelector, &params));
+  EXPECT_THAT(params.size(), Eq(4));
+  {
+    auto outp4 = params.Pop();
+    std::string out4(reinterpret_cast<const char *>(outp4->data()),
+                     outp4->size());
+    EXPECT_THAT(out4, StrEq("Foo"));
+  }
+  {
+    auto outp3 = params.Pop();
+    std::string out3(reinterpret_cast<const char *>(outp3->data()),
+                     outp3->size());
+    EXPECT_THAT(out3, StrEq(in1));
+  }
+  EXPECT_THAT(params.Pop<uint64_t>(), Eq(in2));
+  {
+    auto outp1 = params.Pop();
+    ASSERT_THAT(outp1->size(), strlen(in3) + 1);
+    const char *out1s = reinterpret_cast<const char *>(outp1->data());
+    EXPECT_THAT(out1s, StrEq(in3));
+  }
   EXPECT_TRUE(params.empty());
 }
 
