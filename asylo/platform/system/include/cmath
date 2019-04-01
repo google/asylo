@@ -23,10 +23,75 @@
 
 namespace std {
 
-
+using ::acosh;
+using ::acoshf;
+using ::asinh;
+using ::asinhf;
+using ::atanh;
+using ::atanhf;
+using ::cbrt;
+using ::cbrtf;
+using ::copysign;
+using ::copysignf;
+using ::erf;
+using ::erff;
+using ::erfc;
+using ::erfcf;
+using ::exp2;
+using ::exp2f;
+using ::expm1;
+using ::expm1f;
+using ::fdim;
+using ::fdimf;
+using ::fma;
+using ::fmaf;
+using ::fmax;
+using ::fmaxf;
+using ::fmin;
+using ::fminf;
+using ::hypot;
+using ::hypotf;
+using ::hypotl;
+using ::ilogb;
+using ::ilogbf;
+using ::lgamma;
+using ::lgammaf;
+using ::llrint;
+using ::llrintf;
+using ::llround;
+using ::llroundf;
 using ::log1p;
+using ::log1pf;
 using ::log2;
+using ::log2f;
+using ::logb;
+using ::logbf;
+using ::lrint;
+using ::lrintf;
+using ::lround;
+using ::lroundf;
+using ::nan;
+using ::nanf;
+using ::nearbyint;
+using ::nearbyintf;
 using ::nextafter;
+using ::nextafterf;
+using ::remainder;
+using ::remainderf;
+using ::remquo;
+using ::remquof;
+using ::rint;
+using ::rintf;
+using ::round;
+using ::roundf;
+using ::scalbln;
+using ::scalblnf;
+using ::scalbn;
+using ::scalbnf;
+using ::tgamma;
+using ::tgammaf;
+using ::trunc;
+using ::truncf;
 
 }
 
