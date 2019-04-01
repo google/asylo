@@ -65,6 +65,9 @@ constexpr int kRsa3072ModulusSize = 384;
 // and consequently this size is 16 bytes.
 constexpr int kSgxMacSize = AES_BLOCK_SIZE;
 
+// Size of a Platform Provisioning ID (PPID).
+constexpr int kPpidSize = 16;
+
 // Size of the CPU's SVN (Security Version Number). The value of CPU SVN
 // is used by the CPU to specialize/access-control various SGX keys.
 constexpr int kCpusvnSize = 16;

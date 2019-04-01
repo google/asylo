@@ -20,7 +20,11 @@ licenses(["notice"])  # Apache v2.0
 # key-management library.
 
 # Used to selectively enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_enclave_test",
+    "cc_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
@@ -472,6 +476,35 @@ cc_enclave_test(
         ":hardware_interface",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
+    ],
+)
+
+cc_library(
+    name = "platform_provisioning",
+    srcs = ["platform_provisioning.cc"],
+    hdrs = ["platform_provisioning.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":hardware_types",
+        ":platform_provisioning_proto_cc",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "platform_provisioning_test",
+    srcs = ["platform_provisioning_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "platform_provisioning_enclave_test",
+    deps = [
+        ":platform_provisioning",
+        ":platform_provisioning_proto_cc",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
     ],
 )
 
