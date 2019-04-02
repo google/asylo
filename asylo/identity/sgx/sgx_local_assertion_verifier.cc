@@ -100,8 +100,8 @@ Status SgxLocalAssertionVerifier::CreateAssertionRequest(
   // proto.
   sgx::Targetinfo targetinfo;
   sgx::SetTargetinfoFromSelfIdentity(&targetinfo);
-  additional_info.set_targetinfo(reinterpret_cast<const char *>(&targetinfo),
-                                 sizeof(targetinfo));
+  additional_info.set_targetinfo(
+      ConvertTrivialObjectToBinaryString(targetinfo));
 
   if (!additional_info.SerializeToString(
           request->mutable_additional_information())) {
@@ -150,12 +150,6 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
                   "Failed to parse LocalAssertion");
   }
 
-  sgx::Report report;
-  if (local_assertion.report().size() != sizeof(report)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "REPORT from Assertion has incorrect size");
-  }
-
   // First, verify the hardware REPORT embedded in the assertion. This will only
   // succeed if the REPORT is targeted at this enclave. Note that since the
   // layout and endianness of the REPORT structure is defined by the Intel SGX
@@ -164,7 +158,9 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   // assertion originates from a machine that supports the Intel SGX
   // architecture and was copied into the assertion byte-for-byte, so is safe to
   // restore the REPORT structure directly from the deserialized LocalAssertion.
-  report = TrivialObjectFromBinaryString<sgx::Report>(local_assertion.report());
+  sgx::Report report;
+  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromBinaryString<sgx::Report>(
+      local_assertion.report(), &report));
   ASYLO_RETURN_IF_ERROR(sgx::VerifyHardwareReport(report));
 
   // Next, verify that the REPORT is cryptographically-bound to the provided

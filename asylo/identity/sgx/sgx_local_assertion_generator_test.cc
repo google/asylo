@@ -366,8 +366,9 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
   sgx::LocalAssertion local_assertion;
   ASSERT_TRUE(local_assertion.ParseFromString(assertion.assertion()));
 
-  *report =
-      TrivialObjectFromBinaryString<sgx::Report>(local_assertion.report());
+  ASSERT_THAT(SetTrivialObjectFromBinaryString<sgx::Report>(
+                  local_assertion.report(), report.get()),
+              IsOk());
   EXPECT_THAT(sgx::VerifyHardwareReport(*report), IsOk())
       << ConvertTrivialObjectToHexString(*report);
 

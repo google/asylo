@@ -20,6 +20,7 @@
 #define ASYLO_CRYPTO_UTIL_TRIVIAL_OBJECT_UTIL_H_
 
 #include <openssl/rand.h>
+#include <string>
 #include <type_traits>
 
 #include "absl/strings/escaping.h"
@@ -104,12 +105,27 @@ T TrivialOnesObject() {
 }
 
 template <class T>
-const T &TrivialObjectFromBinaryString(absl::string_view view) {
+Status SetTrivialObjectFromBinaryString(absl::string_view view, T *obj) {
 #ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
 #endif  // __ASYLO__
-  return *reinterpret_cast<const T *>(view.data());
+  if (view.size() != sizeof(*obj)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Cannot set a ", sizeof(*obj), "byte object",
+                               " from a string of size ", view.size()));
+  }
+  memcpy(obj, view.data(), view.size());
+  return Status::OkStatus();
+}
+
+template <class T>
+std::string ConvertTrivialObjectToBinaryString(const T &obj) {
+#ifndef __ASYLO__
+  static_assert(std::is_trivially_copy_assignable<T>::value,
+                "Template parameter is not trivially copy-assignable.");
+#endif  // __ASYLO__
+  return std::string(reinterpret_cast<const char *>(&obj), sizeof(obj));
 }
 
 }  // namespace asylo

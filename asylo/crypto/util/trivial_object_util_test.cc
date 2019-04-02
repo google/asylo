@@ -30,6 +30,8 @@
 namespace asylo {
 namespace {
 
+using ::testing::Not;
+
 // A trivial structure consisting of trivial members.
 struct TrivialStructure {
   UnsafeBytes<24> foo;
@@ -116,6 +118,21 @@ TYPED_TEST(TypedTrivialObjectUtilTest, Ones) {
   }
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString<TypeParam>(str, &obj2));
   EXPECT_EQ(obj, obj2);
+}
+
+// Test the correctness of conversion of to and from a binary string.
+TYPED_TEST(TypedTrivialObjectUtilTest, BinaryStringConversions) {
+  TypeParam obj1 = TrivialRandomObject<TypeParam>();
+
+  std::string str = ConvertTrivialObjectToBinaryString(obj1);
+  ASSERT_EQ(str.size(), sizeof(obj1));
+
+  TypeParam obj2;
+  ASYLO_ASSERT_OK(SetTrivialObjectFromBinaryString(str, &obj2));
+  EXPECT_EQ(obj1, obj2);
+
+  str.push_back('a');
+  EXPECT_THAT(SetTrivialObjectFromBinaryString(str, &obj2), Not(IsOk()));
 }
 
 }  // namespace

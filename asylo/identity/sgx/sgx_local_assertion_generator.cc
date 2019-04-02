@@ -137,12 +137,6 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
                   "AssertionRequest specifies non-local attestation domain");
   }
 
-  sgx::AlignedTargetinfoPtr tinfo;
-  if (additional_info.targetinfo().size() != sizeof(*tinfo)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "TARGETINFO from AssertionRequest has incorrect size");
-  }
-
   // The layout and endianness of the TARGETINFO structure is defined by the
   // Intel SGX architecture. Consequently, two SGX-enabled machines can use a
   // common wire-format for this structure by simply dumping the raw bytes of
@@ -151,8 +145,9 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   // architecture, and was copied into the request byte-for-byte. Since the
   // LocalAssertionGenerator runs inside an SGX enclave, it is safe to restore
   // the TARGETINFO structure directly from the request.
-  *tinfo = TrivialObjectFromBinaryString<sgx::Targetinfo>(
-      additional_info.targetinfo());
+  sgx::AlignedTargetinfoPtr tinfo;
+  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromBinaryString<sgx::Targetinfo>(
+      additional_info.targetinfo(), tinfo.get()));
 
   // The REPORTDATA is a user-provided input to the hardware report that is
   // included in the report's MAC. Use a SHA256 hash of |user_data| as the
@@ -181,8 +176,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   // between two SGX-enabled machines. An SGX-enabled assertion verifier should
   // be able to restore these bytes into a valid REPORT structure.
   sgx::LocalAssertion local_assertion;
-  local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
-                             sizeof(*report));
+  local_assertion.set_report(ConvertTrivialObjectToBinaryString(*report));
 
   if (!local_assertion.SerializeToString(assertion->mutable_assertion())) {
     return Status(error::GoogleError::INTERNAL,
