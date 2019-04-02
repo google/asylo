@@ -104,16 +104,16 @@ PrimitiveStatus AveragePerThread(void *context, TrustedParameterStack *params) {
 PrimitiveStatus TrustedFibonacci(void *context, TrustedParameterStack *params) {
   if (params->empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
-            "TrustedFiboncci called with incorrent argument(s)."};
+            "TrustedFibonacci called with incorrent argument(s)."};
   }
   const int32_t n = params->Pop<int32_t>();
   if (!params->empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
-            "TrustedFiboncci called with incorrent argument(s)."};
+            "TrustedFibonacci called with incorrent argument(s)."};
   }
   if (n >= 50) {
     return {error::GoogleError::INVALID_ARGUMENT,
-            "TrustedFiboncci called with invalid input."};
+            "TrustedFibonacci called with invalid input."};
   }
 
   PrimitiveStatus status;
@@ -138,7 +138,7 @@ PrimitiveStatus TrustedMallocTest(void *context,
                                   TrustedParameterStack *params) {
   if (!params->empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
-            "TrustedFiboncci called with incorrent argument(s)."};
+            "TrustedMallocTest called with incorrent argument(s)."};
   }
   bool passed = true;
   for (int i = 0; i < 20; i++) {
@@ -157,7 +157,7 @@ PrimitiveStatus UntrustedLocalAllocTest(void *context,
                                         TrustedParameterStack *params) {
   if (!params->empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
-            "TrustedFiboncci called with incorrent argument(s)."};
+            "UntrustedLocalAllocTest called with incorrent argument(s)."};
   }
   bool passed = true;
   for (int i = 0; i < 20; i++) {
@@ -194,6 +194,33 @@ PrimitiveStatus CopyMultipleParams(void *context,
   return PrimitiveStatus::OkStatus();
 }
 
+// Running multiple random malloc/frees.
+PrimitiveStatus StressMallocs(void *context, TrustedParameterStack *params) {
+  if (params->size() != 2) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "StressMallocs called with incorrent argument(s)."};
+  }
+
+  uint64_t num_allocs = params->Pop<uint64_t>();
+  uint64_t max_alloc_size = params->Pop<uint64_t>();
+  auto allocs = static_cast<void **>(calloc(num_allocs, sizeof(void *)));
+  for (uint64_t i = 0; i < num_allocs; ++i) {
+    allocs[i] = malloc(max_alloc_size);
+  }
+  uint64_t failed_count = 0;
+  for (uint64_t i = 0; i < num_allocs; ++i) {
+    if (allocs[i]) {
+      free(allocs[i]);
+    } else {
+      failed_count++;
+    }
+  }
+  free(allocs);
+
+  *params->PushAlloc<uint64_t>() = failed_count;
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -212,6 +239,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       kUntrustedLocalAllocTest, EntryHandler{UntrustedLocalAllocTest}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       kCopyMultipleParamsSelector, EntryHandler{CopyMultipleParams}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      kStressMallocs, EntryHandler{StressMallocs}));
   return PrimitiveStatus::OkStatus();
 }
 

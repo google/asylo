@@ -26,6 +26,7 @@ package(
 cc_library(
     name = "trusted_sim",
     srcs = [
+        "malloc_lock.cc",
         "runtime_stubs.c",
         "runtime_syscalls.c",
         "shared_sim.h",

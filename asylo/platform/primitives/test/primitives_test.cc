@@ -105,6 +105,18 @@ int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
   return res;
 }
 
+uint64_t StressMallocsOrDie(const std::shared_ptr<Client> &client,
+                            uint64_t malloc_count, uint64_t malloc_size) {
+  UntrustedParameterStack params;
+  *params.PushAlloc<uint64_t>() = malloc_size;
+  *params.PushAlloc<uint64_t>() = malloc_count;
+  ASYLO_EXPECT_OK(client->EnclaveCall(kStressMallocs, &params));
+  EXPECT_FALSE(params.empty());
+  const uint64_t res = params.Pop<uint64_t>();
+  EXPECT_TRUE(params.empty());
+  return res;
+}
+
 // Ensure making an invalid call into an enclave returns an appropriate failure
 // status.
 TEST_F(PrimitivesTest, BadCall) {
@@ -239,16 +251,16 @@ TEST_F(PrimitivesTest, CallChain) {
           UntrustedParameterStack *params) -> Status {
     if (params->empty()) {
       return Status{error::GoogleError::INVALID_ARGUMENT,
-                    "TrustedFiboncci called with incorrent argument(s)."};
+                    "TrustedFibonacci called with incorrent argument(s)."};
     }
     const int32_t n = params->Pop<int32_t>();
     if (!params->empty()) {
       return Status{error::GoogleError::INVALID_ARGUMENT,
-                    "TrustedFiboncci called with incorrent argument(s)."};
+                    "TrustedFibonacci called with incorrent argument(s)."};
     }
     if (n >= 50) {
       return Status{error::GoogleError::INVALID_ARGUMENT,
-                    "UntrustedFiboncci called with invalid argument."};
+                    "UntrustedFibonacci called with invalid argument."};
     }
     *params->PushAlloc<int32_t>() =
         n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2);
@@ -271,6 +283,25 @@ TEST_F(PrimitivesTest, ThreadedTest) {
       threads.emplace_back([&client, j]() {
         auto result = MultiplyByTwoOrDie(client, j);
         EXPECT_THAT(result, Eq(2 * j));
+      });
+    }
+    for (auto &thread : threads) {
+      thread.join();
+    }
+  }
+}
+
+TEST_F(PrimitivesTest, ThreadedStressMallocsTest) {
+  constexpr int kNumThreads = 64;
+  constexpr uint64_t kMallocCount = 64;
+  constexpr uint64_t kMallocSize = 16;
+  auto client = LoadTestEnclaveOrDie(/*reload=*/false);
+  for (int i = 0; i < 32; i++) {
+    std::vector<std::thread> threads;
+    for (int j = 0; j < kNumThreads; j++) {
+      threads.emplace_back([&client]() {
+        auto result = StressMallocsOrDie(client, kMallocCount, kMallocSize);
+        EXPECT_THAT(result, Eq(0));
       });
     }
     for (auto &thread : threads) {
