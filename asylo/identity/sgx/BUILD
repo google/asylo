@@ -20,11 +20,7 @@ licenses(["notice"])  # Apache v2.0
 # key-management library.
 
 # Used to selectively enable gtest tests to run inside an enclave.
-load(
-    "//asylo/bazel:asylo.bzl",
-    "cc_enclave_test",
-    "cc_test",
-)
+load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
@@ -93,6 +89,7 @@ cc_library(
 cc_test(
     name = "remote_assertion_util_test",
     srcs = ["remote_assertion_util_test.cc"],
+    enclave_test_name = "remote_assertion_util_enclave_test",
     deps = [
         ":code_identity_proto_cc",
         ":code_identity_util",
@@ -142,6 +139,7 @@ cc_test(
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_generator_test.cc",
     ],
+    enclave_test_name = "sgx_local_assertion_generator_enclave_test",
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
@@ -195,6 +193,7 @@ cc_test(
         "sgx_local_assertion_verifier.h",
         "sgx_local_assertion_verifier_test.cc",
     ],
+    enclave_test_name = "sgx_local_assertion_verifier_enclave_test",
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
@@ -218,6 +217,9 @@ cc_test(
     ],
 )
 
+# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
+# should not be used inside a real enclave, this test does not have an
+# "enclave_test_name" attribute.
 cc_test(
     name = "sgx_local_assertion_authority_test",
     srcs = [
@@ -297,6 +299,9 @@ cc_library(
     ],
 )
 
+# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
+# should not be used inside a real enclave, this test does not have an
+# "enclave_test_name" attribute.
 cc_test(
     name = "code_identity_util_test",
     srcs = ["code_identity_util_test.cc"],
@@ -339,6 +344,7 @@ cc_library(
 cc_test(
     name = "attributes_util_test",
     srcs = ["attributes_util_test.cc"],
+    enclave_test_name = "attributes_util_enclave_test",
     deps = [
         ":attributes_proto_cc",
         ":attributes_util",
@@ -369,6 +375,7 @@ cc_test(
         "sgx_code_identity_expectation_matcher.h",
         "sgx_code_identity_expectation_matcher_test.cc",
     ],
+    enclave_test_name = "sgx_code_identity_expectation_matcher_enclave_test",
     deps = [
         ":code_identity_constants",
         ":code_identity_proto_cc",
@@ -405,6 +412,7 @@ cc_test(
     name = "secs_attributes_test",
     srcs = ["secs_attributes_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "secs_attributes_enclave_test",
     deps = [
         ":attributes_proto_cc",
         ":hardware_types",
@@ -468,14 +476,18 @@ cc_test(
 )
 
 # Test for VerifyHardwareReport in SGX-sim and SGX-hw.
-cc_enclave_test(
+cc_test(
     name = "verify_hardware_report_test",
     srcs = ["verify_hardware_report_test.cc"],
+    enclave_test_name = "verify_hardware_report_enclave_test",
     deps = [
         ":code_identity_util",
         ":hardware_interface",
+        ":hardware_types",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
     ],
 )
 
@@ -560,6 +572,9 @@ cc_library(
     ],
 )
 
+# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
+# should not be used inside a real enclave, this test does not have an
+# "enclave_test_name" attribute.
 cc_test(
     name = "sgx_local_secret_sealer_test",
     srcs = ["sgx_local_secret_sealer_test.cc"],
@@ -603,6 +618,7 @@ cc_library(
 cc_test(
     name = "proto_format_test",
     srcs = ["proto_format_test.cc"],
+    enclave_test_name = "proto_format_enclave_test",
     deps = [
         ":code_identity_proto_cc",
         ":code_identity_util",
