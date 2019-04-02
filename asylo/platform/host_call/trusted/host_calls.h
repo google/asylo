@@ -37,7 +37,6 @@ extern "C" {
 
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
-int enc_untrusted_getcwd(char *buf, size_t bufsize);
 int enc_untrusted_access(const char *path_name, int mode);
 int enc_untrusted_close(int fd);
 pid_t enc_untrusted_getpid();

@@ -40,8 +40,6 @@ constexpr uint64_t kFirstSelector = primitives::kSelectorUser + 1;
 // untrusted side, and its corresponding trusted handler is responsible for
 // triggering a host call to test it, and sending the results back to the
 // untrusted side for validation.
-constexpr uint64_t kTestGetCwd =
-    kFirstSelector + asylo::system_call::kSYS_getcwd;
 constexpr uint64_t kTestAccess =
     kFirstSelector + asylo::system_call::kSYS_access;
 constexpr uint64_t kTestClose = kFirstSelector + asylo::system_call::kSYS_close;

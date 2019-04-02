@@ -21,10 +21,6 @@
 
 extern "C" {
 
-int enc_untrusted_getcwd(char *buf, size_t bufsize) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getcwd, buf, bufsize);
-}
-
 int enc_untrusted_access(const char *path_name, int mode) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_access, path_name,
                                mode);

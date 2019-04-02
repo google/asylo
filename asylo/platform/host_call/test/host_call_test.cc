@@ -70,21 +70,6 @@ class HostCallTest : public ::testing::Test {
   std::shared_ptr<primitives::Client> client_;
 };
 
-// Tests enc_untrusted_getcwd() by calling it from inside the enclave and
-// comparing the results with native system call getcwd().
-TEST_F(HostCallTest, TestGetcwd) {
-  char buffer_expected[PATH_MAX];
-  getcwd(buffer_expected, sizeof(buffer_expected));
-
-  primitives::UntrustedParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetCwd, &params));
-
-  ASSERT_THAT(params.size(), Eq(2));
-  EXPECT_THAT(params.Pop()->As<char>(), StrEq(buffer_expected));
-  EXPECT_THAT(params.Pop<int>(),
-              strlen(buffer_expected) + 1);  // pop return value at last
-}
-
 // Tests enc_untrusted_access() by creating a file and calling
 // enc_untrusted_access() from inside the enclave and verifying its return
 // value.

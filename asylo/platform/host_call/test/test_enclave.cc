@@ -36,18 +36,6 @@ primitives::PrimitiveStatus Abort(void *context,
   return primitives::PrimitiveStatus::OkStatus();
 }
 
-primitives::PrimitiveStatus TestGetcwd(
-    void *context, primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
-
-  char buffer[PATH_MAX];
-
-  *(params->PushAlloc<int>()) = enc_untrusted_getcwd(buffer, sizeof(buffer));
-  params->PushAlloc<char>(buffer, strlen(buffer) + 1);
-
-  return primitives::PrimitiveStatus::OkStatus();
-}
-
 primitives::PrimitiveStatus TestAccess(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
@@ -291,8 +279,6 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
 
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kAbortEnclaveSelector, primitives::EntryHandler{Abort}));
-  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
-      kTestGetCwd, primitives::EntryHandler{TestGetcwd}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestAccess, primitives::EntryHandler{TestAccess}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
