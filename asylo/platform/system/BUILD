@@ -22,7 +22,7 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 filegroup(
@@ -40,4 +40,13 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = ASYLO_ALL_BACKENDS,
+)
+
+cc_enclave_test(
+    name = "cmath_enclave_test",
+    srcs = ["cmath_test.cc"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_googletest//:gtest",
+    ],
 )
