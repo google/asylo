@@ -4906,6 +4906,30 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/
  #ifdef __CYGWIN__
  
  #if __POSIX_VISIBLE >= 200809
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/resource.h ./newlib/libc/include/sys/resource.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/sys/resource.h
++++ ./newlib/libc/include/sys/resource.h
+@@ -3,6 +3,10 @@
+ 
+ #include <sys/time.h>
+ 
++#if defined (__ASYLO__) && defined( __cplusplus)
++extern "C" {
++#endif
++
+ #define	RUSAGE_SELF	0		/* calling process */
+ #define	RUSAGE_CHILDREN	-1		/* terminated child processes */
+ 
+@@ -13,5 +17,9 @@
+ 
+ int	_EXFUN(getrusage, (int, struct rusage*));
+ 
++#if defined(__ASYLO__) && defined( __cplusplus)
++}  // extern "C"
++#endif
++
+ #endif
+ 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/libc/include/sys/signal.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h
 +++ ./newlib/libc/include/sys/signal.h
