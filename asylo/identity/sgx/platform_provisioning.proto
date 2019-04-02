@@ -23,7 +23,7 @@ import "asylo/crypto/algorithms.proto";
 // This file defines messages representing properties involved in SGX platform
 // provisioning.
 //
-// Many of the represented properties are Security Version Numbers (SVNs). An
+// Several of the represented properties are Security Version Numbers (SVNs). An
 // SVN is a version number indicating security-relevant changes to a system
 // component. A version of a component of a system with a given SVN is free of
 // or protected from some vulnerability in a version with a lower SVN.
@@ -79,4 +79,21 @@ message PceSvn {
 message PceId {
   // The value of the PCE ID. Must be a valid unsigned 16-bit integer. Required.
   optional uint32 value = 1;
+}
+
+// An SGX REPORT structure. REPORT is a CPU-generated attestation of an
+// enclave's code identity. It is an output of the ENCLU[EREPORT] instruction.
+message ReportProto {
+  // The bytes of the REPORT structure. Must be exactly 432 bytes in size.
+  // Required.
+  optional bytes value = 1;
+}
+
+// An SGX TARGETINFO structure. TARGETINFO serves to identify the target enclave
+// that will be able to cryptographically verify a REPORT. It is an input to the
+// ENCLU[EREPORT] instruction.
+message TargetInfoProto {
+  // The bytes of the TARGETINFO structure. Must be exactly 512 bytes in size.
+  // Required.
+  optional bytes value = 1;
 }
