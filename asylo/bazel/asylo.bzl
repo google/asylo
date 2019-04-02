@@ -488,6 +488,16 @@ def cc_enclave_binary(
 
     loader_kwargs = {}
 
+    # This is a temporary workaround to resolve conflicts in building Asylo
+    # directly and importing Asylo as a dependency. Currently when we import
+    # "com_google_asylo" from inside Asylo, bazel treats them as two different
+    # sources and generates conflict symbol errors. Therefore we need to
+    # differentiate the two cases based on the package name.
+    if "asylo" in native.package_name():
+        _workspace_name = "//asylo"
+    else:
+        _workspace_name = "@com_google_asylo//asylo"
+
     # The "args" attribute should be moved to the loader since cc_library does
     # not support it. The whole-application wrapper contains all the machinery
     # necessary to propagate the arguments.
@@ -537,7 +547,7 @@ def cc_enclave_binary(
         tags = ["asylo-sgx"],
         deps = [
             ":" + application_library_name,
-            "//asylo/bazel/application_wrapper:application_wrapper_enclave_core",
+            _workspace_name + "/bazel/application_wrapper:application_wrapper_enclave_core",
         ],
         **enclave_kwargs
     )
@@ -546,7 +556,7 @@ def cc_enclave_binary(
         name = name,
         embedded_enclaves = {_APPLICATION_WRAPPER_ENCLAVE_SECTION: ":" + enclave_name},
         copts = ASYLO_DEFAULT_COPTS,
-        deps = ["//asylo/bazel/application_wrapper:application_wrapper_driver"],
+        deps = [_workspace_name + "/bazel/application_wrapper:application_wrapper_driver"],
         **loader_kwargs
     )
 
@@ -715,7 +725,7 @@ def cc_test_and_cc_enclave_test(
 
     This is most useful if imported as
       load(
-          "//asylo/bazel:asylo.bzl",
+          _workspace_name + "/bazel:asylo.bzl",
           cc_test = "cc_test_and_cc_enclave_test",
       )
     so any cc_test defined in the BUILD file will generate both native and
@@ -773,10 +783,20 @@ def cc_enclave_test(
       **kwargs: cc_test arguments.
     """
 
+    # This is a temporary workaround to resolve conflicts in building Asylo
+    # directly and importing Asylo as a dependency. Currently when we import
+    # "com_google_asylo" from inside Asylo, bazel treats them as two different
+    # sources and generates conflict symbol errors. Therefore we need to
+    # differentiate the two cases based on the package name.
+    if "asylo" in native.package_name():
+        _workspace_name = "//asylo"
+    else:
+        _workspace_name = "@com_google_asylo//asylo"
+
     # Create a copy of the gtest enclave runner
     host_test_name = name + "_host_driver"
     copy_from_host(
-        target = "//asylo/bazel:test_shim_loader",
+        target = _workspace_name + "/bazel:test_shim_loader",
         output = host_test_name,
         name = name + "_as_host",
     )
@@ -793,7 +813,7 @@ def cc_enclave_test(
     sgx_enclave(
         name = enclave_name,
         srcs = srcs,
-        deps = deps + ["//asylo/bazel:test_shim_enclave"],
+        deps = deps + [_workspace_name + "/bazel:test_shim_enclave"],
         testonly = 1,
         **enclave_kwargs
     )

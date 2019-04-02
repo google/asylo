@@ -67,11 +67,16 @@ def sim_enclave(
     if ".so" in name:
         binary_name = name.replace(".so", "_simulated.so", 1)
 
+    if "asylo" in native.package_name():
+        _workspace_name = "//asylo"
+    else:
+        _workspace_name = "@com_google_asylo//asylo"
+
     native.cc_binary(
         name = binary_name,
         deps = deps + [
-            "//asylo/platform/primitives:trusted_primitives",
-            "//asylo/platform/primitives/sim:trusted_sim",
+            _workspace_name + "/platform/primitives:trusted_primitives",
+            _workspace_name + "/platform/primitives/sim:trusted_sim",
         ],
         linkopts = [
             "-Wl,-Bsymbolic",
