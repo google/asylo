@@ -37,6 +37,36 @@ PrimitiveStatus asylo_enclave_init();
 PrimitiveStatus asylo_enclave_fini();
 }
 
+// Support for calls from trusted code to untrusted.
+constexpr uint64_t sim_trampoline_address = 0x7e0000000000;
+
+// Trampoline magic number and version.
+constexpr uint64_t kTrampolineMagicNumber = 0x53696d54724d6167;  // "SimTrMag"
+constexpr uint64_t kTrampolineVersion = 0;
+
+// Collection of handlers implemented by untrusted sim component and passed to
+// the trusted one to use. The trusted component is statically built shared
+// library, so it cannot just link to them; leaving them unresolved does not
+// allow specifying the trusted shared library as 'fully_static_link' and
+// mandates setting linkopts = "-rdynamic" when building the unrtusted driver
+// application. Instead of all this, it is now allocated at a predefines address
+// and accessed by casting that address to SimTrampoline, allowing to specify
+// 'fully_static_link' for the trusted library and eliminating the need in
+// "-rdynamic" flag for the untrusted one.
+struct SimTrampoline {
+  uint64_t magic_number;
+  uint64_t version;
+  PrimitiveStatus (*asylo_exit_call)(uint64_t untrusted_selector, void *params);
+  void *(*asylo_local_alloc_handler)(size_t size);
+  void (*asylo_local_free_handler)(void *ptr);
+};
+
+// Global accessor to SimTrampoline (can be used by both trusted and untrusted
+// components).
+inline SimTrampoline *GetSimTrampoline() {
+  return reinterpret_cast<SimTrampoline *>(sim_trampoline_address);
+}
+
 }  // namespace primitives
 }  // namespace asylo
 

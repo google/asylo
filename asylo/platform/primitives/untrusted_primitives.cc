@@ -51,16 +51,5 @@ PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
           untrusted_selector, params, current_client_));
 }
 
-// External functions below need to be dynamically linked to the loaded enclave
-// binary. This is a responsibility of the respective backend loader.
-extern "C" PrimitiveStatus asylo_exit_call(uint64_t untrusted_selector,
-                                           UntrustedParameterStack *params) {
-  return Client::ExitCallback(untrusted_selector, params);
-}
-
-extern "C" void *asylo_local_alloc_handler(size_t size) { return malloc(size); }
-
-extern "C" void asylo_local_free_handler(void *ptr) { return free(ptr); }
-
 }  // namespace primitives
 }  // namespace asylo

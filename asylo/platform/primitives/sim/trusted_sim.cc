@@ -31,16 +31,6 @@
 namespace asylo {
 namespace primitives {
 
-// External functions in trusted sim_enclave code to be dynamically linked to
-// their implementations in untrusted host. This linkage is simulator-specific,
-// in other backends (e.g. SGX) loader needs to make this linkage.
-extern "C" {
-PrimitiveStatus asylo_exit_call(uint64_t untrusted_selector,
-                                TrustedParameterStack *params);
-void *asylo_local_alloc_handler(size_t size);
-void asylo_local_free_handler(void *ptr);
-}
-
 namespace {
 
 // Maximum number of supported enclave entry points.
@@ -101,6 +91,13 @@ PrimitiveStatus ReservedEntry(void *context, TrustedParameterStack *params) {
 
 // Initialized the enclave if it has not been initialized already.
 void EnsureInitialized() {
+  if (GetSimTrampoline()->magic_number != kTrampolineMagicNumber ||
+      GetSimTrampoline()->version != kTrampolineVersion) {
+    TrustedPrimitives::BestEffortAbort(
+        "Simulator trampoline version or magic number mismatch");
+    return;
+  }
+
   SpinLockGuard lock(&simulator.initialization_lock);
   if (!(simulator.flags & Flag::kInitialized)) {
     // Register the enclave finalization entry handler.
@@ -195,18 +192,18 @@ bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
 }
 
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) {
-  return asylo_local_alloc_handler(size);
+  return GetSimTrampoline()->asylo_local_alloc_handler(size);
 }
 
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) {
-  asylo_local_free_handler(ptr);
+  GetSimTrampoline()->asylo_local_free_handler(ptr);
 }
 
 PrimitiveStatus TrustedPrimitives::UntrustedCall(
     uint64_t untrusted_selector,
     ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
                    TrustedPrimitives::UntrustedLocalFree> *params) {
-  return asylo_exit_call(untrusted_selector, params);
+  return GetSimTrampoline()->asylo_exit_call(untrusted_selector, params);
 }
 
 }  // namespace primitives

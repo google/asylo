@@ -437,8 +437,6 @@ def sim_enclave_loader(
       **kwargs: cc_binary arguments.
     """
     linkopts = kwargs.pop("linkopts", [])
-    if "-rdynamic" not in linkopts:
-        linkopts += ["-rdynamic"]
     if "-ldl" not in linkopts:
         linkopts += ["-ldl"]
 
@@ -659,14 +657,9 @@ def sim_enclave_test(
     if "asylo-sim" not in tags:
         tags += ["asylo-sim"]
 
-    linkopts = kwargs.pop("linkopts", [])
-    if "-rdynamic" not in linkopts:
-        linkopts += ["-rdynamic"]
-
     enclave_test(
         name,
         tags = tags,
-        linkopts = linkopts,
         **kwargs
     )
 

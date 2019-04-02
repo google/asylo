@@ -66,6 +66,7 @@ cc_library(
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/util:error_codes",
         "//asylo/util:status",
+        "@com_google_absl//absl/base",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",

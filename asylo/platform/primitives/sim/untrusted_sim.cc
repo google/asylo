@@ -19,18 +19,21 @@
 #include "asylo/platform/primitives/sim/untrusted_sim.h"
 
 #include <dlfcn.h>
+#include <sys/mman.h>
 #include <unistd.h>
-
+#include <cstddef>
 #include <cstdlib>
 #include <memory>
 #include <utility>
 
+#include "absl/base/call_once.h"
 #include "absl/debugging/leak_check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/util/error_codes.h"
@@ -39,6 +42,48 @@
 
 namespace asylo {
 namespace primitives {
+
+namespace {
+
+PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector, void *params) {
+  return Client::ExitCallback(
+      untrusted_selector, reinterpret_cast<UntrustedParameterStack *>(params));
+}
+
+void *sim_asylo_local_alloc_handler(size_t size) { return malloc(size); }
+
+void sim_asylo_local_free_handler(void *ptr) { return free(ptr); }
+
+inline size_t RoundUpToPageBoundary(size_t size) {
+  const size_t kPageSize = getpagesize();
+  return ((size + kPageSize - 1) / kPageSize) * kPageSize;
+}
+
+absl::once_flag init_trampoline_once;
+
+void InitTrampolineOnce() {
+  static SimTrampoline *sim_trampoline = nullptr;
+  if (sim_trampoline != nullptr) {
+    return;
+  }
+  sim_trampoline = static_cast<SimTrampoline *>(mmap(
+      /*addr=*/reinterpret_cast<void *>(sim_trampoline_address),
+      /*len=*/RoundUpToPageBoundary(sizeof(SimTrampoline)),
+      /*prot=*/PROT_EXEC | PROT_READ | PROT_WRITE,
+      /*flags=*/MAP_ANONYMOUS | MAP_PRIVATE,
+      /*fd=*/-1,
+      /*offset=*/0));
+  CHECK_EQ(sim_trampoline, GetSimTrampoline())
+      << "Failed to map sim_trampoline, errno=" << strerror(errno);
+  GetSimTrampoline()->magic_number = kTrampolineMagicNumber;
+  GetSimTrampoline()->version = kTrampolineVersion;
+  GetSimTrampoline()->asylo_exit_call = &sim_asylo_exit_call;
+  GetSimTrampoline()->asylo_local_alloc_handler =
+      &sim_asylo_local_alloc_handler;
+  GetSimTrampoline()->asylo_local_free_handler = &sim_asylo_local_free_handler;
+}
+
+}  // namespace
 
 SimEnclaveClient::~SimEnclaveClient() {
   if (dl_handle_) {
@@ -53,6 +98,11 @@ SimEnclaveClient::~SimEnclaveClient() {
 StatusOr<std::shared_ptr<Client>> SimBackend::Load(
     const std::string &path,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
+  // Initialize trampoline once. absl::call_once guarantees that initialization
+  // will run exactly once across all threads, and all other threads will not
+  // run it, but will instead wait for the first one to finish running.
+  absl::call_once(init_trampoline_once, &InitTrampolineOnce);
+
   std::shared_ptr<SimEnclaveClient> client(
       new SimEnclaveClient(std::move(exit_call_provider)));
 
@@ -90,7 +140,7 @@ Status SimEnclaveClient::Destroy() {
     dlclose(dl_handle_);
     dl_handle_ = nullptr;
   }
-  return Status::OkStatus();;
+  return Status::OkStatus();
 }
 
 Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
