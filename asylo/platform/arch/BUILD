@@ -180,16 +180,19 @@ cc_library(
         "sgx/trusted/exceptions.cc",
         "sgx/trusted/host_calls.cc",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
-    ] + select({
-        "@linux_sgx//:sgx_hw": [
-            "sgx/trusted/hardware_random.cc",
-            "sgx/trusted/register_signal.cc",
-        ],
-        "@linux_sgx//:sgx_sim": [
-            "sgx_sim/trusted/hardware_random.cc",
-            "sgx_sim/trusted/register_signal.cc",
-        ],
-    }),
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": [
+                "sgx/trusted/hardware_random.cc",
+                "sgx/trusted/register_signal.cc",
+            ],
+            "@linux_sgx//:sgx_sim": [
+                "sgx_sim/trusted/hardware_random.cc",
+                "sgx_sim/trusted/register_signal.cc",
+            ],
+        },
+        "Expected an SGX backend configuration (e.g., --config=sgx)",
+    ),
     hdrs = [
         "include/trusted/enclave_interface.h",
         "include/trusted/entry_points.h",

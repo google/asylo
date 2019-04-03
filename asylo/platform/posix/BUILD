@@ -49,9 +49,12 @@ cc_library(
     name = "trusted_posix",
     copts = ASYLO_DEFAULT_COPTS,
     tags = ASYLO_ALL_BACKENDS,
-    deps = select({
-        "//asylo/platform/arch:sgx": [":posix"],
-    }),
+    deps = select(
+        {
+            "//asylo/platform/arch:sgx": [":posix"],
+        },
+        "Expected a trusted backend configuration (e.g., --config=sgx)",
+    ),
 )
 
 cc_library(
