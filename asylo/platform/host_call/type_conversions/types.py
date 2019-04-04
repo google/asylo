@@ -69,4 +69,11 @@ define_enum(
     ],
     skip_conversions_generation=True)
 
+define_enum(
+    name="FDFlag",
+    values=["FD_CLOEXEC"],
+    multi_valued=True,
+    default_value_host=0,
+    default_value_newlib=0)
+
 write_output()

@@ -270,6 +270,30 @@ primitives::PrimitiveStatus TestSocket(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestFcntl(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+
+  int arg = params->Pop<int>();
+  int cmd = params->Pop<int>();
+  int fd = params->Pop<int>();
+  *(params->PushAlloc<int>()) = enc_untrusted_fcntl(fd, cmd, arg);
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus TestChown(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+
+  gid_t group = params->Pop<gid_t>();
+  uid_t owner = params->Pop<uid_t>();
+  const auto pathname = params->Pop();
+  *(params->PushAlloc<int>()) =
+      enc_untrusted_chown(pathname->As<char>(), owner, group);
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -321,6 +345,10 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestRmdir, primitives::EntryHandler{TestRmdir}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestSocket, primitives::EntryHandler{TestSocket}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestFcntl, primitives::EntryHandler{TestFcntl}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestChown, primitives::EntryHandler{TestChown}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

@@ -64,6 +64,7 @@ cc_library(
     deps = [
         ":enclave_test_selectors",
         "//asylo/platform/host_call:host_call_handlers_initializer",
+        "//asylo/platform/host_call/type_conversions:types",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/test/util:status_matchers",

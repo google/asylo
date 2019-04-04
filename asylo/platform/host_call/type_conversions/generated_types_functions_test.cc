@@ -98,6 +98,20 @@ TEST_F(GeneratedTypesFunctionsTest, AfFamilyTest) {
   }
 }
 
+TEST_F(GeneratedTypesFunctionsTest, FDFlagTest) {
+  std::vector<int> from_bits = {kLinux_FD_CLOEXEC};
+  std::vector<int> to_bits = {FD_CLOEXEC};
+
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromkLinuxFDFlag);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(from_bits, to_bits, kIterationCount),
+      from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxFDFlag);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(to_bits, from_bits, kIterationCount),
+      to_matcher);
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

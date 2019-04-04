@@ -58,6 +58,8 @@ ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz);
 int enc_untrusted_truncate(const char *path, off_t length);
 int enc_untrusted_rmdir(const char *path);
 int enc_untrusted_socket(int domain, int type, int protocol);
+int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */);
+int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group);
 
 #ifdef __cplusplus
 }  // extern "C"

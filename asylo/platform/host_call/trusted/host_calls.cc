@@ -121,4 +121,65 @@ int enc_untrusted_socket(int domain, int type, int protocol) {
                                TokLinuxSocketType(type), protocol);
 }
 
+int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
+  // We do not currently support file locks in Asylo, so arg is not expected to
+  // be a pointer to struct flock.
+  int64_t arg = 0;
+  va_list ap;
+  va_start(ap, cmd);
+  arg = va_arg(ap, int64_t);
+  va_end(ap);
+
+  int kLinux_cmd = TokLinuxFcntlCommand(cmd);
+  if (kLinux_cmd == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  switch (cmd) {
+    case F_SETFL: {
+      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                   kLinux_cmd, TokLinuxFileStatusFlag(arg));
+    }
+    case F_SETFD: {
+      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                   kLinux_cmd, TokLinuxFDFlag(arg));
+    }
+    case F_GETFL: {
+      int result = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                         kLinux_cmd, arg);
+      if (result != -1) {
+        result = FromkLinuxFileStatusFlag(result);
+      }
+
+      return result;
+    }
+    case F_GETFD: {
+      int result = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                         kLinux_cmd, arg);
+      if (result != -1) {
+        result = FromkLinuxFDFlag(result);
+      }
+      return result;
+    }
+    case F_GETPIPE_SZ:
+    case F_SETPIPE_SZ: {
+      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                   kLinux_cmd, arg);
+    }
+    // We do not handle the case for F_DUPFD. It is expected to be handled at
+    // a higher abstraction, as we need not exit the enclave for duplicating
+    // the file descriptor.
+    default: {
+      errno = EINVAL;
+      return -1;
+    }
+  }
+}
+
+int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_chown, pathname, owner,
+                               group);
+}
+
 }  // extern "C"

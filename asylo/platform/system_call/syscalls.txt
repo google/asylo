@@ -83,6 +83,8 @@ SYSCALL_DEFINE2(getcwd, \out char * [bound:size], buf, unsigned long, size)
 SYSCALL_DEFINE2(lstat, const char *, filename, \out struct stat *, statbuf)
 SYSCALL_DEFINE2(pipe2, \out int * [count:2], fildes, int, flags)
 SYSCALL_DEFINE2(stat, const char *, filename, \out struct stat *, statbuf)
+SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned int, arg)
+SYSCALL_DEFINE3(chown, const char *, filename, uid_t, user, gid_t, group)
 SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 SYSCALL_DEFINE3(open, const char *, filename, int, flags, umode_t, mode)
 SYSCALL_DEFINE3(read, unsigned int, fd, \out char * [bound:count], buf, size_t,
