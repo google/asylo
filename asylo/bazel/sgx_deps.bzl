@@ -25,7 +25,7 @@ def sgx_deps():
     """Macro to include Asylo's SGX backend dependencies in a WORKSPACE."""
 
     # Intel's SGX SDK with patches to make it fit our toolchain.
-    if "linux_sgx" not in native.existing_rules():
+    if not native.existing_rule("linux_sgx"):
         patch_repository(
             name = "linux_sgx",
             urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.3.tar.gz"],

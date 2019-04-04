@@ -49,14 +49,14 @@ def asylo_backend_deps():
     """Macro to include Asylo's tools for defining a backend."""
 
     # enclave_info.bzl
-    if "com_google_asylo_backend_provider" not in native.existing_rules():
+    if not native.existing_rule("com_google_asylo_backend_provider"):
         _asylo_backend_deps(name = "com_google_asylo_backend_provider")
 
 def asylo_testonly_deps():
     """Macro to include Asylo's testing-only dependencies in a WORKSPACE."""
 
     # GoogleTest/GoogleMock framework. Used by most unit-tests.
-    if "com_google_googletest" not in native.existing_rules():
+    if not native.existing_rule("com_google_googletest"):
         http_archive(
             name = "com_google_googletest",
             urls = [
@@ -67,7 +67,7 @@ def asylo_testonly_deps():
         )
 
     # gflags
-    if "com_github_gflags_gflags" not in native.existing_rules():
+    if not native.existing_rule("com_github_gflags_gflags"):
         http_archive(
             name = "com_github_gflags_gflags",
             # Release v2.2.2
@@ -125,7 +125,7 @@ def asylo_deps(toolchain_path = None):
     )
 
     # Boringssl
-    if "boringssl" not in native.existing_rules():
+    if not native.existing_rule("boringssl"):
         http_archive(
             name = "boringssl",
             # Non-release commit to master-with-bazel branch from March 8, 2018
@@ -137,7 +137,7 @@ def asylo_deps(toolchain_path = None):
         )
 
     # RE2 regular-expression framework. Used by some unit-tests.
-    if "com_googlesource_code_re2" not in native.existing_rules():
+    if not native.existing_rule("com_googlesource_code_re2"):
         http_archive(
             name = "com_googlesource_code_re2",
             urls = ["https://github.com/google/re2/archive/2018-03-01.tar.gz"],
@@ -146,7 +146,7 @@ def asylo_deps(toolchain_path = None):
         )
 
     # Absl for C++
-    if "com_google_absl" not in native.existing_rules():
+    if not native.existing_rule("com_google_absl"):
         http_archive(
             name = "com_google_absl",
             # Head commit on 2019-01-31.
@@ -158,7 +158,7 @@ def asylo_deps(toolchain_path = None):
         )
 
     # Absl for python
-    if "io_abseil_py" not in native.existing_rules():
+    if not native.existing_rule("io_abseil_py"):
         http_archive(
             name = "io_abseil_py",
             # Pre-release commit dated 01/30/2018
@@ -168,7 +168,7 @@ def asylo_deps(toolchain_path = None):
         )
 
     # Protobuf
-    if "com_google_protobuf" not in native.existing_rules():
+    if not native.existing_rule("com_google_protobuf"):
         http_archive(
             name = "com_google_protobuf",
             strip_prefix = "protobuf-3.6.1.2",
@@ -177,7 +177,7 @@ def asylo_deps(toolchain_path = None):
         )
 
     # gRPC
-    if "com_github_grpc_grpc" not in native.existing_rules():
+    if not native.existing_rule("com_github_grpc_grpc"):
         patch_repository(
             name = "com_github_grpc_grpc",
             urls = ["https://github.com/grpc/grpc/archive/v1.19.1.tar.gz"],
@@ -187,7 +187,7 @@ def asylo_deps(toolchain_path = None):
         )
 
     # Google certificate transparency has a merkletree implementation.
-    if "com_google_certificate_transparency" not in native.existing_rules():
+    if not native.existing_rule("com_google_certificate_transparency"):
         http_archive(
             name = "com_google_certificate_transparency",
             # Non-release commit 335536d introduced Merkle trees. They have not been
@@ -227,7 +227,7 @@ cc_library(
         )
 
     # required by protobuf_python
-    if "six_archive" not in native.existing_rules():
+    if not native.existing_rule("six_archive"):
         http_archive(
             name = "six_archive",
             build_file = "@com_google_protobuf//:six.BUILD",
@@ -248,7 +248,7 @@ cc_library(
     )
 
     # Jinja for code_generator.py
-    if "com_github_pallets_jinja" not in native.existing_rules():
+    if not native.existing_rule("com_github_pallets_jinja"):
         http_archive(
             name = "com_github_pallets_jinja",
             # Jinja release 2.10
@@ -264,7 +264,7 @@ cc_library(
         )
 
     # Markupsafe for Jinja
-    if "com_github_pallets_markupsafe" not in native.existing_rules():
+    if not native.existing_rule("com_github_pallets_markupsafe"):
         http_archive(
             name = "com_github_pallets_markupsafe",
             url = "https://github.com/pallets/markupsafe/archive/1.1.1.tar.gz",
@@ -282,7 +282,7 @@ def asylo_go_deps():
     """Macro to include Asylo's Go dependencies in a WORKSPACE."""
 
     # go rules for EKEP's go_binary usage.
-    if "io_bazel_rules_go" not in native.existing_rules():
+    if not native.existing_rule("io_bazel_rules_go"):
         http_archive(
             name = "io_bazel_rules_go",
             url = "https://github.com/bazelbuild/rules_go/releases/download/0.17.0/rules_go-0.17.0.tar.gz",
@@ -290,7 +290,7 @@ def asylo_go_deps():
         )
 
     # go crypto for EKEP's go_binary usage.
-    if "com_github_golang_crypto" not in native.existing_rules():
+    if not native.existing_rule("com_github_golang_crypto"):
         http_archive(
             name = "com_github_golang_crypto",
             build_file_content = """
