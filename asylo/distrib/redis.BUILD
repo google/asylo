@@ -1,6 +1,6 @@
 # Description:
 #   Redis (http://redis.io) is an open source, advanced key-value store.
-#   This is the bazel BUILD file for Redis 5.0.4.
+#   This is a bazel BUILD file for Redis 5.0.4.
 
 package(
     default_visibility = ["//visibility:public"],
@@ -59,7 +59,7 @@ cc_library(
 # on //third_party/lua. We want to make sure Redis users get a consistent
 # experience, down to Lua language features. This reflects the intention of
 # the Redis developers; see
-# http://google3/third_party/redis/v3_2_0/deps/README.md?l=51.
+# https://github.com/antirez/redis/blob/unstable/deps/README.md#lua.
 cc_library(
     name = "lua_lib",
     srcs = ["deps/lua/src/" + filename for filename in [
@@ -264,10 +264,6 @@ cc_library(
         ":hiredis_lib",
         ":linenoise_lib",
         ":lua_lib",
-        # Instead of using jemalloc (as stock Redis does), we simply
-        # depend on the Google default (tcmalloc). If we need to precisely
-        # mirror stock Redis's performance and fragmentation behavior,
-        # we should consider adding a dependency on //third_party/jemalloc.
     ],
 )
 
@@ -283,8 +279,8 @@ cc_library(
         "src/childinfo.c",
         "src/cluster.h",
         "src/crc64.h",
-        "src/dict.h",
         "src/defrag.c",
+        "src/dict.h",
         "src/endianconv.h",
         "src/evict.c",
         "src/expire.c",
@@ -300,9 +296,9 @@ cc_library(
         "src/lolwut5.c",
         "src/module.c",
         "src/quicklist.h",
-        "src/redismodule.h",
-        "src/redis-check-aof.c",
         "src/rdb.h",
+        "src/redis-check-aof.c",
+        "src/redismodule.h",
         "src/rio.h",
         "src/server.c",
         "src/server.h",
