@@ -18,13 +18,13 @@
 from unittest import main
 from unittest import TestCase
 
-from asylo.platform.host_call.type_conversions.types_parse_functions import define_enum
-from asylo.platform.host_call.type_conversions.types_parse_functions import get_enums
-from asylo.platform.host_call.type_conversions.types_parse_functions import get_includes_as_include_macros
-from asylo.platform.host_call.type_conversions.types_parse_functions import get_includes_in_define_macro
-from asylo.platform.host_call.type_conversions.types_parse_functions import get_prefix
-from asylo.platform.host_call.type_conversions.types_parse_functions import include
-from asylo.platform.host_call.type_conversions.types_parse_functions import set_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_enums
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_as_include_macros
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_in_define_macro
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import include
+from asylo.platform.system_call.type_conversions.types_parse_functions import set_prefix
 
 
 class TypesParseFunctionsTest(TestCase):

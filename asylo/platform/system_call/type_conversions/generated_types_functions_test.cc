@@ -16,13 +16,13 @@
  *
  */
 
-#include "asylo/platform/host_call/type_conversions/generated_types_functions.h"
+#include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
 
 #include <gtest/gtest.h>
 #include "asylo/test/util/finite_domain_fuzz.h"
 
 namespace asylo {
-namespace host_call {
+namespace system_call {
 namespace {
 
 using ::testing::Eq;
@@ -113,5 +113,5 @@ TEST_F(GeneratedTypesFunctionsTest, FDFlagTest) {
 }
 
 }  // namespace
-}  // namespace host_call
+}  // namespace system_call
 }  // namespace asylo

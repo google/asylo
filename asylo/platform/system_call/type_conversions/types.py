@@ -21,10 +21,10 @@ Describes the types that need to be generated with the default values on the
 target implementation.
 """
 
-from asylo.platform.host_call.type_conversions.types_parse_functions import define_enum
-from asylo.platform.host_call.type_conversions.types_parse_functions import include
-from asylo.platform.host_call.type_conversions.types_parse_functions import set_prefix
-from asylo.platform.host_call.type_conversions.types_parse_functions import write_output
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import include
+from asylo.platform.system_call.type_conversions.types_parse_functions import set_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import write_output
 
 include("fcntl.h")
 include("sys/socket.h")

@@ -16,13 +16,15 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_
-#define ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_
+#ifndef ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_
+#define ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_
 
-// This is the top-level include file for using type conversion functions
-// between newlib and the host implementation.
+// This file provides the manually written type conversion functions for types
+// (enums, structs etc.) between newlib and target host implementation.
 
-#include "asylo/platform/host_call/type_conversions/generated_types_functions.h"
-#include "asylo/platform/host_call/type_conversions/manual_types_functions.h"
+#include "asylo/platform/system_call/type_conversions/generated_types.h"
 
-#endif  // ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_
+int TokLinuxSocketType(int sock_type);
+int FromkLinuxSocketType(int kLinux_sock_type);
+
+#endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

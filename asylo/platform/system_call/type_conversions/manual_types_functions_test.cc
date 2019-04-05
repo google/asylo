@@ -16,14 +16,14 @@
  *
  */
 
-#include "asylo/platform/host_call/type_conversions/manual_types_functions.h"
+#include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 using ::testing::Eq;
 
 namespace asylo {
-namespace host_call {
+namespace system_call {
 namespace {
 
 TEST(ManualTypesFunctionsTest, SocketTypeTest) {
@@ -59,5 +59,5 @@ TEST(ManualTypesFunctionsTest, SocketTypeTest) {
 }
 
 }  // namespace
-}  // namespace host_call
+}  // namespace system_call
 }  // namespace asylo

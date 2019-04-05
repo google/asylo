@@ -25,10 +25,10 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
-#include "asylo/platform/host_call/type_conversions/types_functions.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 

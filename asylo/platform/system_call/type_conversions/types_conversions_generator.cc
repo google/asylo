@@ -25,7 +25,7 @@
 #include "absl/strings/str_format.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/host_call/type_conversions/types_macros.inc"
+#include "asylo/platform/system_call/type_conversions/types_macros.inc"
 
 // A struct describing properties and values of a enum desired to be generated
 // by the types conversions generator.
@@ -73,7 +73,7 @@ void WriteTypeDefinitions(const absl::flat_hash_map<std::string, EnumProperties>
                           std::ostream *os) {
   // Write #ifdef guard
   std::string header_guard_name =
-      "ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_GENERATED_TYPES_"
+      "ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_GENERATED_TYPES_"
       "H_";
   *os << "#ifndef " << header_guard_name << "\n"
       << "#define " << header_guard_name << "\n";
@@ -171,7 +171,7 @@ void WriteTypesConversions(
     std::ostream *os_h, std::ostream *os_cc) {
   // Write #ifdef guard for .h file.
   std::string header_guard_name =
-      "ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_GENERATED_TYPES_"
+      "ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_GENERATED_TYPES_"
       "FUNCTIONS_H_";
   *os_h << "#ifndef " << header_guard_name << "\n"
         << "#define " << header_guard_name << "\n\n";
@@ -179,10 +179,10 @@ void WriteTypesConversions(
   // Write all the includes.
   WriteMacroProvidedIncludes(os_h);
   *os_cc << "#include "
-            "\"asylo/platform/host_call/type_conversions/"
+            "\"asylo/platform/system_call/type_conversions/"
             "generated_types_functions.h\"\n";
   *os_h << "#include "
-           "\"asylo/platform/host_call/type_conversions/"
+           "\"asylo/platform/system_call/type_conversions/"
            "generated_types.h\"\n";
 
   for (const auto &it : *enum_properties_table) {

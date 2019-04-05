@@ -17,7 +17,7 @@
  */
 
 #include "asylo/platform/host_call/trusted/host_calls.h"
-#include "asylo/platform/host_call/type_conversions/types_functions.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 extern "C" {
 

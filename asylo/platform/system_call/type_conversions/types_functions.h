@@ -16,12 +16,13 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_TYPES_H_
-#define ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_TYPES_H_
+#ifndef ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_
+#define ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_
 
-// This is the top-level include wrapper for using type definitions, generated
-// or otherwise.
+// This is the top-level include file for using type conversion functions
+// between newlib and the host implementation.
 
-#include "asylo/platform/host_call/type_conversions/generated_types.h"
+#include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
+#include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 
-#endif  // ASYLO_PLATFORM_HOST_CALL_TYPE_CONVERSIONS_TYPES_H_
+#endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_

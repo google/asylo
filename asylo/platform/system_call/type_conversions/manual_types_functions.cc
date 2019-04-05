@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/host_call/type_conversions/manual_types_functions.h"
+#include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 
 int TokLinuxSocketType(int sock_type) {
   int kLinux_sock_type = 0;
