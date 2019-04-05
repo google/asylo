@@ -7,9 +7,9 @@ Copyright 2018 Asylo authors
 The Asylo project documentation can be found at
 [asylo.dev](https://asylo.dev/docs).
 
-[Example source code](https://asylo.dev/asylo-examples.tar.gz) that contains a
-working Bazel workspace can be downloaded from the Asylo website and used as a
-template for a new project.
+[Example source code](https://github.com/google/asylo-examples/archive/master.tar.gz)
+that contains a working Bazel workspace can be downloaded from the Asylo website
+and used as a template for a new project.
 
 ## Support
 
@@ -44,14 +44,15 @@ for additional details on how to pull images from Google's Container Registry.
 #### Running the `hello_world` example
 
 To run the `hello_world` example, first use the following set of commands to
-grab the [examples source code](https://asylo.dev/asylo-examples.tar.gz), and
-save it to any directory of your choice.
+grab the
+[examples source code](https://github.com/google/asylo-examples/archive/master.tar.gz),
+and save it to any directory of your choice.
 
 ```bash
 MY_PROJECT=~/asylo-examples
 mkdir -p "${MY_PROJECT}"
-wget -q -O - https://asylo.dev/asylo-examples.tar.gz | \
-    tar -zxv --directory "${MY_PROJECT}"
+wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
+    tar -zxv --strip 1 --directory "${MY_PROJECT}"
 ```
 
 Next, use Docker to build and run the `hello_world` application, using a
@@ -181,14 +182,14 @@ which can be a directory of your choice. For example:
 #### Running the `hello_world` example
 
 To run the `hello_world` example, first use the following commands to grab the
-[examples source code](https://asylo.dev/asylo-examples.tar.gz) and save it to
-any directory of your choice.
+[examples source code](https://github.com/google/asylo-examples/archive/master.tar.gz)
+and save it to any directory of your choice.
 
 ```bash
 MY_PROJECT=~/asylo-examples
 mkdir -p "${MY_PROJECT}"
-wget -q -O - https://asylo.dev/asylo-examples.tar.gz | \
-    tar -zxv --directory "${MY_PROJECT}"
+wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
+    tar -zxv --strip 1 --directory "${MY_PROJECT}"
 ```
 
 Next, use Bazel to build and run the `hello_world` application, which uses a

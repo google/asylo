@@ -80,8 +80,8 @@ instructions on Docker usage.
 docker pull gcr.io/asylo-framework/asylo
 MY_PROJECT=~/asylo-examples
 mkdir -p "${MY_PROJECT}"
-wget -q -O - https://asylo.dev/asylo-examples.tar.gz | \
-    tar -zxv --directory "${MY_PROJECT}"
+wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
+    tar -zxv --strip 1 --directory "${MY_PROJECT}"
 ```
 
 Note that you can set `MY_PROJECT` to any directory of your choice. This
