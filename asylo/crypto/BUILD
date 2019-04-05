@@ -32,6 +32,14 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
 )
 
+# Defines key structures for various asymmetric key types.
+asylo_proto_library(
+    name = "keys_proto",
+    srcs = ["keys.proto"],
+    visibility = ["//asylo:implementation"],
+    deps = [":algorithms_proto"],
+)
+
 # A generic cryptor wrapping an AEAD key and a NonceGeneratorInterface.
 cc_library(
     name = "aead_cryptor",
