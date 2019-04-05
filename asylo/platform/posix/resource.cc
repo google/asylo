@@ -24,6 +24,8 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 
+extern "C" {
+
 int getrlimit(int resource, struct rlimit *rlim) {
   switch (resource) {
     case RLIMIT_NOFILE:
@@ -47,5 +49,7 @@ int setrlimit(int resource, const struct rlimit *rlim) {
 int getrusage(int who, struct rusage *usage) {
   return enc_untrusted_getrusage(who, usage);
 }
+
+}  // extern "C"
 
 #endif  // THIRD_PARTY_ASYLO_PLATFORM_POSIX_SRC_RESOURCE_H_
