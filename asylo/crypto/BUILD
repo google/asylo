@@ -80,7 +80,6 @@ cc_library(
     srcs = ["aead_key.cc"],
     hdrs = ["aead_key.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_proto_cc",
         "//asylo/crypto/util:bssl_util",
@@ -145,7 +144,6 @@ cc_library(
     name = "nonce_generator_interface",
     hdrs = ["nonce_generator_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/util:status",
         "@com_google_absl//absl/types:span",
@@ -158,7 +156,6 @@ cc_library(
     srcs = ["random_nonce_generator.cc"],
     hdrs = ["random_nonce_generator.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":nonce_generator_interface",
         "//asylo/crypto/util:bssl_util",
