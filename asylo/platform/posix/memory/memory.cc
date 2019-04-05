@@ -24,21 +24,39 @@
 
 namespace {
 
-uint8_t *switched_heap_base = nullptr;
-size_t switched_heap_bytes_left = 0;
+// The next available address in the switched heap. It's set to the base address
+// of the switched heap when heap_switch is called, and moving forward after
+// each memory allocation on the switched heap.
+uint8_t *switched_heap_next = nullptr;
+
+// The bytes left to be allocated on the switched heap. It's set to the total
+// size of the switched heap when heap_switch is called, and is reduced in each
+// memory allocation. New malloc/realloc on switched heap will fail if the
+// requested size is larger than the remaining size.
+size_t switched_heap_remaining = 0;
 
 // Allocate memory on an address space provided by the user.
 // This function is not thread-safe. This should only be used by fork during
 // snapshotting/restoring while other threads are not allowed to enter the
 // enclave.
-void *MallocHook(size_t size, void *pool) {
-  if (!switched_heap_base || switched_heap_bytes_left < size) {
+void *AllocateMemoryOnSwitchedHeap(size_t size, void *pool) {
+  if (!switched_heap_next || switched_heap_remaining < size) {
     return nullptr;
   }
-  void *ret = switched_heap_base;
-  switched_heap_base += size;
-  switched_heap_bytes_left -= size;
+  void *ret = switched_heap_next;
+  switched_heap_next += size;
+  switched_heap_remaining -= size;
   return ret;
+}
+
+void *MallocHook(size_t size, void *pool) {
+  return AllocateMemoryOnSwitchedHeap(size, pool);
+}
+
+// realloc() is doing exactly the same thing as malloc() on switched heap, since
+// free simply returns.
+void *ReallocHook(void *ptr, size_t size, void *pool) {
+  return AllocateMemoryOnSwitchedHeap(size, pool);
 }
 
 // Free does nothing on the switched heap. User should take caution to avoid
@@ -50,14 +68,16 @@ void FreeHook(void *address, void *pool) { return; }
 // This function is not thread-safe.
 void heap_switch(void *base, size_t size) {
   if (base && size > 0) {
-    switched_heap_base = static_cast<uint8_t *>(base);
-    switched_heap_bytes_left = size;
+    switched_heap_next = static_cast<uint8_t *>(base);
+    switched_heap_remaining = size;
     set_malloc_hook(&MallocHook, /*pool=*/nullptr);
+    set_realloc_hook(&ReallocHook, /*pool=*/nullptr);
     set_free_hook(&FreeHook, /*pool=*/nullptr);
   } else {
-    switched_heap_base = nullptr;
-    switched_heap_bytes_left = 0;
+    switched_heap_next = nullptr;
+    switched_heap_remaining = 0;
     set_malloc_hook(/*malloc_hook=*/nullptr, /*pool=*/nullptr);
+    set_realloc_hook(/*realloc_hook=*/nullptr, /*pool=*/nullptr);
     set_free_hook(/*free_hook=*/nullptr, /*pool=*/nullptr);
   }
 }
