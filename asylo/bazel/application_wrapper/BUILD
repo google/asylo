@@ -113,7 +113,7 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:protobuf_lite",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
