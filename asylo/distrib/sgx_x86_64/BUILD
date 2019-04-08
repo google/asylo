@@ -19,6 +19,6 @@ licenses(["notice"])  # Apache v2.0
 package(default_visibility = ["//visibility:public"])
 
 exports_files([
-    "linux_sgx_2_3.patch",
+    "linux_sgx_2_4.patch",
     "enclave_test_pem.patch",
 ])

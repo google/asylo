@@ -53,11 +53,18 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
 
   int updated;
   sgx_status_t status;
+  const uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_ASYLO;
+  asylo_sgx_config_t create_config = {
+    .base_address = &client->base_address_,
+    .enclave_size = enclave_size,
+    .enable_user_utility = config.enable_fork()
+  };
+  const void* ex_features_p[32] = { nullptr };
+  ex_features_p[SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX] = &create_config;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
-    status = sgx_create_enclave_with_utility_and_address(
+    status = sgx_create_enclave_ex(
         std::string(enclave_path).c_str(), debug, &client->token_, &updated,
-        &client->id_, /*misc_attr=*/nullptr, &client->base_address_,
-        enclave_size, config.enable_fork());
+        &client->id_, /*misc_attr=*/nullptr, ex_features, ex_features_p);
 
     LOG_IF(WARNING, status != SGX_SUCCESS)
         << "Failed to create an enclave, attempt=" << i
@@ -95,13 +102,20 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   ASYLO_ASSIGN_OR_RETURN(enclave_buffer, self_binary_reader.GetSectionData(
                                              std::string(section_name)));
 
-  int updated;
   sgx_status_t status;
+  const uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_ASYLO;
+  asylo_sgx_config_t create_config = {
+    .base_address = &client->base_address_,
+    .enclave_size = enclave_size,
+    .enable_user_utility = config.enable_fork()
+  };
+  const void* ex_features_p[32] = { nullptr };
+  ex_features_p[SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX] = &create_config;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
-    status = sgx_create_enclave_from_buffer(
+    status = sgx_create_enclave_from_buffer_ex(
         const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
-        debug, &client->token_, &updated, &client->id_, /*misc_attr=*/nullptr,
-        &client->base_address_, enclave_size, config.enable_fork());
+        debug, &client->id_, /*misc_attr=*/nullptr, ex_features,
+        ex_features_p);
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;

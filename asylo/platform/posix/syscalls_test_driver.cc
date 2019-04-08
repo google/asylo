@@ -61,7 +61,9 @@ void PrintTo(const struct stat &stat_buffer, std::ostream *output_stream) {
 namespace asylo {
 namespace {
 
+using ::testing::Eq;
 using ::testing::Not;
+using ::testing::UnorderedElementsAreArray;
 
 const char *kCustomHostName = "CustomHostName";
 const char *kCustomWorkingDirectory = "/tmp/testworkingdir";
@@ -935,6 +937,15 @@ TEST_F(SyscallsTest, ChMod) {
   EXPECT_EQ(stat_buffer.st_mode & 0777, 0644);
 }
 
+MATCHER_P(MatchIfAddrs, that, "") {
+  return SockaddrsEqual(arg->ifa_addr, that->ifa_addr) &&
+         SockaddrsEqual(arg->ifa_netmask, that->ifa_netmask) &&
+         SockaddrsEqual(arg->ifa_ifu.ifu_dstaddr, that->ifa_ifu.ifu_dstaddr) &&
+         (strcmp(arg->ifa_name, that->ifa_name) == 0) &&
+         IfAddrsFlagsEqual(arg->ifa_flags, that->ifa_flags) && !arg->ifa_data &&
+         !that->ifa_data;
+}
+
 // Tests getifaddrs by calling it from inside the enclave and ensuring that
 // the result is equivalent to what is returned by a call to getifaddrs made
 // outside the enclave. There is a minor caveat: asylo doesn't support
@@ -952,52 +963,30 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   ASSERT_EQ(ret, 0);
   struct ifaddrs *enclave_front = nullptr;
   std::string serialized_ifaddrs = test_output.serialized_proto_return();
-  asylo::DeserializeIfAddrs(serialized_ifaddrs, &enclave_front);
+  ASSERT_TRUE(asylo::DeserializeIfAddrs(serialized_ifaddrs, &enclave_front));
   // Since we cannot rely on any sort of ordering in the linked lists, we will
   // only verify that every IPv4/IPv6 entry in the enclave list also exists in
   // the host list. Furthermore, we shall verify that all IPv4/IPv6 entries in
   // the host list are indeed found in the enclave list. We shall also verify
   // that there are no duplicates in the enclave list.
   absl::flat_hash_set<struct ifaddrs *> found_in_enclave;
+  std::vector<::testing::Matcher<struct ifaddrs *>> expected;
   for (struct ifaddrs *enclave_list_curr = enclave_front;
        enclave_list_curr != nullptr;
        enclave_list_curr = enclave_list_curr->ifa_next) {
-    bool entry_found = false;
-    for (struct ifaddrs *host_list_curr = host_front; host_list_curr != nullptr;
-         host_list_curr = host_list_curr->ifa_next) {
-      bool sockaddrs_eq = SockaddrsEqual(enclave_list_curr->ifa_addr,
-                                         host_list_curr->ifa_addr) &&
-                          SockaddrsEqual(enclave_list_curr->ifa_netmask,
-                                         host_list_curr->ifa_netmask) &&
-                          SockaddrsEqual(enclave_list_curr->ifa_ifu.ifu_dstaddr,
-                                         host_list_curr->ifa_ifu.ifu_dstaddr);
-      bool names_eq =
-          strcmp(enclave_list_curr->ifa_name, host_list_curr->ifa_name) == 0;
-      bool flags_eq = IfAddrsFlagsEqual(enclave_list_curr->ifa_flags,
-                                        host_list_curr->ifa_flags);
-      bool data_null =
-          !enclave_list_curr->ifa_data && !host_list_curr->ifa_data;
-      if (sockaddrs_eq && names_eq && flags_eq && data_null) {
-        entry_found = true;
-        // Check for duplicates: this should be the first time we encounter this
-        // particular entry.
-        EXPECT_TRUE(found_in_enclave.find(host_list_curr) ==
-                    found_in_enclave.end());
-        found_in_enclave.insert(host_list_curr);
-        break;
-      }
-    }
-    ASSERT_TRUE(entry_found);
+    expected.push_back(MatchIfAddrs(enclave_list_curr));
   }
+  std::vector<struct ifaddrs *> supported_host;
   // Make a second pass through the host list to ensure that all IPv4/IPv6
   // entries encountered are in our set.
   for (struct ifaddrs *host_list_curr = host_front; host_list_curr != nullptr;
        host_list_curr = host_list_curr->ifa_next) {
     if (IfAddrSupported(host_list_curr)) {
-      EXPECT_TRUE(found_in_enclave.find(host_list_curr) !=
-                  found_in_enclave.end());
+      supported_host.push_back(host_list_curr);
     }
   }
+  EXPECT_THAT(supported_host.size(), Eq(expected.size())) << serialized_ifaddrs;
+  EXPECT_THAT(supported_host, UnorderedElementsAreArray(expected));
   asylo::FreeDeserializedIfAddrs(enclave_front);
   freeifaddrs(host_front);
 }

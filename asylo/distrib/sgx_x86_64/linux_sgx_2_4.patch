@@ -41,7 +41,7 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     because we are using BoringSSL instead of Intel's tlibcrypto.
 
 
-## Modifications to Intel's SDK release 2.3 (in ``)
+## Modifications to Intel's SDK release 2.4 (in ``)
 ### Downstreamed PRs
 * [PR210](https://github.com/intel/linux-sgx/pull/210): Language conformance to
   resolve conflict with newlib.
@@ -74,10 +74,6 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
     - Affected files:
       + `trts_internal.h`
       + `trts_nsp.cpp`
-* [PR308](https://github.com/intel/linux-sgx/pull/308): Change use of undefined
-  MIN macro to the intended meaning.
-    - Affected files:
-      + `common/inc/internal/mini_snprintf.h`
 * [PR316](https://github.com/intel/linux-sgx/pull/316): Allow enclaves to be
   created from buffers.
     - Affected files:
@@ -85,7 +81,16 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
       + `psw/urts/enclave.cpp`
       + `psw/urts/urts_com.h`
       + `psw/urts/linux/urts.cpp`
-    - The version in this patch differs slightly from the PR.
+    - The version in this patch differs slightly from the both the PR and the
+      feature that Intel added in v2.4.
+* [PR368](https://github.com/intel/linux-sgx/pull/368): Remove unused ill-
+   defined "storage" field.
+    - Affected files:
+      + `common/inc/sgx_random_buffers.h`
+* [PR369](https://github.com/intel/linux-sgx/pull/369): Change static extern "C"
+   to just extern "C". The combination is not supported outside GCC.
+    - Affected files:
+      + `sdk/trts/trts_switchless.cpp`
 
 ### Non-upstreamed changes
 * `sdk/trts/init_enclave.cpp`: Remove a memset_s of the enclave heap since
@@ -138,10 +143,9 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   handlers for SIGSEGV, SIGFPE, SIGBUS, and SIGTRAP.
 * Allow enclaves to be created at specified address.
   `common/inc/sgx_urts.h`, `psw/urts/linux/urts.cpp` added
-  `enclave_base_addr` as an argument to `sgx_create_enclave`, and pass it down
-  to `_create_enclave`.
-  `psw/urts/urts_com.h` added `enclave_base_addr` as an argument to
-  `_create_enclave` and `__create_enclave`, and pass it down to
+  `SGX_CREATE_ENCLAVE_EX_ASYLO` for `ex_features` to carry Asylo-specific enclave-
+  features.
+  `psw/urts/urts_com.h` passes some Asylo creation data along to
   `CLoader::load_enclave_ex`.
   `psw/urts/loader.h`, `psw/urts/loader.cpp` added
   `enclave_base_addr` as an argument to `load_enclave_ex`, `load_enclave`,
@@ -217,7 +221,14 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `sdk/trts/trts_util.h` provide implementation for `get_memory_layout` by
   getting the address and size of data/bss/heap from `global_data`, and get
   thread and stack from `thread_data`.
-
+  `sdk/selib/sgx_create_report.cpp` replace use of custom tlibc `__memset` with
+  `memset`.
+  `sdk/tlibc/gen/spinlock.c` rename `_mm_pause` to `alt_mm_pause` to avoid
+  errors around redefining builtin functions.
+  `sdk/trts/trts_nsp.cpp` move `init_stack_guard` into its own library
+  `trts_nsp_internal` to allow for `-fno-stack-protector` to apply to just the
+  one function for compilers that don't support
+  `__attribute__((optimize(...)))`.
 
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
@@ -267,23 +278,11 @@ diff -Nur common/inc/internal/metadata.h common/inc/internal/metadata.h
  #define SSA_NUM_MIN 2
  #define SSA_FRAME_SIZE_MIN 1
  #define SSA_FRAME_SIZE_MAX 2
--#define STACK_SIZE_MIN 0x1000
+-#define STACK_SIZE_MIN 0x2000
 +#define STACK_SIZE_MIN 0x3000
  #define STACK_SIZE_MAX 0x40000
  #define HEAP_SIZE_MIN 0x1000
  #define HEAP_SIZE_MAX 0x1000000
-diff -Nur common/inc/internal/mini_snprintf.h common/inc/internal/mini_snprintf.h
---- common/inc/internal/mini_snprintf.h
-+++ common/inc/internal/mini_snprintf.h
-@@ -52,6 +52,8 @@
- #include <stdarg.h>
- #include <limits.h>
- 
-+#include "sl_util.h"
-+
- /*===========================================================================
-  * Interface
-  *===========================================================================*/
 diff -Nur common/inc/internal/pcl_common.h common/inc/internal/pcl_common.h
 --- common/inc/internal/pcl_common.h
 +++ common/inc/internal/pcl_common.h
@@ -347,7 +346,7 @@ diff -Nur common/inc/internal/se_tcrypto_common.h common/inc/internal/se_tcrypto
 +#include <limits.h>
 +#include "openssl/bn.h"
 +#include "openssl/ecdsa.h"
-+#include "rts_config.h"
++#include "runtime_support/rts_config.h"
 +
  #ifdef USE_SGXSSL
  
@@ -381,7 +380,7 @@ diff -Nur common/inc/internal/trts_inst.h common/inc/internal/trts_inst.h
 +++ common/inc/internal/trts_inst.h
 @@ -68,6 +68,7 @@
  int sgx_accept_forward(si_flags_t sfl, size_t lo, size_t hi);
- void do_ereport(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report);
+ int do_ereport(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report);
  int do_egetkey(const sgx_key_request_t *key_request, sgx_key_128bit_t *key);
 +sgx_status_t egetkey_status_to_sgx_status(int egetkey_status);
  uint32_t do_rdrand(uint32_t *rand);
@@ -390,14 +389,14 @@ diff -Nur common/inc/internal/trts_inst.h common/inc/internal/trts_inst.h
 diff -Nur common/inc/sgx_edger8r.h common/inc/sgx_edger8r.h
 --- common/inc/sgx_edger8r.h
 +++ common/inc/sgx_edger8r.h
-@@ -47,6 +47,7 @@
+@@ -43,6 +43,7 @@
+ #ifndef _SGX_EDGER8R_H_
+ #define _SGX_EDGER8R_H_
+ 
++#include <stdbool.h>
+ #include "sgx_defs.h"
  #include "sgx_error.h"
  #include "sgx_eid.h"
- #include <stddef.h>         /* for size_t */
-+#include <stdbool.h>
- 
- /* The `sgx_edger8r' tool will generate C interfaces. */
- #ifdef __cplusplus
 @@ -90,11 +91,13 @@
  sgx_status_t SGXAPI sgx_ecall(const sgx_enclave_id_t eid,
                                const int index,
@@ -427,61 +426,93 @@ diff -Nur common/inc/sgx_pcl_guid.h common/inc/sgx_pcl_guid.h
  /*
   * GUID enables coupling of PCL lib (e.g. libsgx_pcl.a) and sealed blob
   * Before the PCL unseals the sealed blob, the PCL must verify the AAD 
+diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
+--- common/inc/sgx_random_buffers.h
++++ common/inc/sgx_random_buffers.h
+@@ -129,7 +129,8 @@
+ template <class T, std::size_t A, unsigned M = 0x1000>
+ struct alignas(A)randomly_placed_buffer
+ {
+-    static constexpr std::size_t size(std::size_t count = 1)
++    static constexpr std::size_t default_size_count = 1;
++    static constexpr std::size_t size(std::size_t count = default_size_count)
+     {
+         //
+         // gives error with gcc 4.8
+@@ -249,9 +250,6 @@
+         free(ptr);
+     }
+ 
+-    template <unsigned C = 1>
+-    using storage = char[size(C)] alignas(A);
+-
+ private:
+     struct alignas(A)_T_instantiator_
+     {
+@@ -277,7 +275,7 @@
+         }
+     };
+ 
+-    char __bigger_[size()];
++    char __bigger_[size(default_size_count)];
+ };
+ 
+ template <class T, unsigned M = 0x1000>
 diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 --- common/inc/sgx_trts.h
 +++ common/inc/sgx_trts.h
-@@ -32,6 +32,7 @@
- #ifndef _SGX_TRTS_H_
- #define _SGX_TRTS_H_
- 
-+#include "rts_config.h"
+@@ -35,6 +35,7 @@
  #include "sgx_error.h"
  #include "stddef.h"
  #include "sgx_defs.h"
++#include "runtime_support/rts_config.h"
+ 
+ #ifdef __cplusplus
+ extern "C" {
 @@ -82,6 +83,48 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
 +struct SgxMemoryLayout {
-+    // Base address of the initialized data section in the current enclave.
-+    void *data_base;
-+    // Size of the initialized data section in the current enclave.
-+    size_t data_size;
-+    // Base address of the uninitialized data section in the current enclave.
-+    void *bss_base;
-+    // Size of the uninitialized data section in the current enclave.
-+    size_t bss_size;
-+    // Base address of heap in the current enclave.
-+    void *heap_base;
-+    // size of heap in the current enclave.
-+    size_t heap_size;
-+    // Base address of the thread data for the current tcs.
-+    void *thread_base;
-+    // Size of the thread data for the current tcs.
-+    size_t thread_size;
-+    // Base address of the stack for the current tcs.
-+    void *stack_base;
-+    // Limit address of the stack for the current tcs.
-+    void *stack_limit;
-+    // Base address of the reserved data storage section.
-+    void *reserved_data_base;
-+    // Size of the reserved data storage section.
-+    size_t reserved_data_size;
-+    // Base address of the reserved bss storage section.
-+    void *reserved_bss_base;
-+    // Size of the reserved bss storage section.
-+    size_t reserved_bss_size;
-+    // Base address of the reserved heap storage section.
-+    void *reserved_heap_base;
-+    // Size of the reserved heap storage section.
-+    size_t reserved_heap_size;
++  // Base address of the initialized data section in the current enclave.
++  void *data_base;
++  // Size of the initialized data section in the current enclave.
++  size_t data_size;
++  // Base address of the uninitialized data section in the current enclave.
++  void *bss_base;
++  // Size of the uninitialized data section in the current enclave.
++  size_t bss_size;
++  // Base address of heap in the current enclave.
++  void *heap_base;
++  // size of heap in the current enclave.
++  size_t heap_size;
++  // Base address of the thread data for the current tcs.
++  void *thread_base;
++  // Size of the thread data for the current tcs.
++  size_t thread_size;
++  // Base address of the stack for the current tcs.
++  void *stack_base;
++  // Limit address of the stack for the current tcs.
++  void *stack_limit;
++  // Base address of the reserved data storage section.
++  void *reserved_data_base;
++  // Size of the reserved data storage section.
++  size_t reserved_data_size;
++  // Base address of the reserved bss storage section.
++  void *reserved_bss_base;
++  // Size of the reserved bss storage section.
++  size_t reserved_bss_size;
++  // Base address of the reserved heap storage section.
++  void *reserved_heap_base;
++  // Size of the reserved heap storage section.
++  size_t reserved_heap_size;
 +};
 +
 +/* sgx_memory_layout()
 + * Parameters:
 + *      memory_layout - Receives the memory layout of the current enclave
 + *      (data/bss/heap) and for current tcs(thread data/stack).
-+*/
++ */
 +void SGXAPI sgx_memory_layout(struct SgxMemoryLayout *memory_layout);
 +
  #ifdef __cplusplus
@@ -499,54 +530,37 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  #include "sgx_attributes.h"
  #include "sgx_error.h"
  #include "sgx_eid.h"
-@@ -73,7 +75,23 @@
-                                        sgx_enclave_id_t *enclave_id, 
-                                        sgx_misc_attribute_t *misc_attr);
+@@ -54,6 +56,8 @@
  
--
-+sgx_status_t SGXAPI sgx_create_enclave_with_utility_and_address(
-+    const char *file_name, 
-+    const int debug, 
-+    sgx_launch_token_t *launch_token, 
-+    int *launch_token_updated, 
-+    sgx_enclave_id_t *enclave_id, 
-+    sgx_misc_attribute_t *misc_attr,
-+    void **enclave_base_addr,
-+    const size_t enclave_size,
-+    bool enable_user_utility);
+ #define SGX_CREATE_ENCLAVE_EX_KSS_BIT_IDX           2U
+ #define SGX_CREATE_ENCLAVE_EX_KSS                  (1U << SGX_CREATE_ENCLAVE_EX_KSS_BIT_IDX)  // Bit 2 for Key Separation & Sharing 
++#define SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX  3U
++#define SGX_CREATE_ENCLAVE_EX_ASYLO         (1U << SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX)  // Bit 3 for Asylo extensions
+ 
+ #pragma pack(push, 1)
+ 
+@@ -64,11 +68,17 @@
+     sgx_config_svn_t config_svn;
+ } sgx_kss_config_t;
+ 
++typedef struct _asylo_sgx_config_t {
++  void **base_address;
++  size_t enclave_size;
++  bool enable_user_utility;
++} asylo_sgx_config_t;
 +
-+sgx_status_t SGXAPI sgx_create_enclave_from_buffer(
-+        uint8_t *buffer, size_t buffer_size, const int debug,
-+        sgx_launch_token_t *launch_token, int *launch_token_updated,
-+        sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr,
-+        void **enclave_base_addr, const size_t enclave_size,
-+        bool enable_user_utility);
- 
- sgx_status_t SGXAPI sgx_create_enclave_ex(const char * file_name, 
-                                           const int debug, 
-@@ -82,7 +100,10 @@
-                                           sgx_enclave_id_t * enclave_id, 
-                                           sgx_misc_attribute_t * misc_attr,  
-                                           const uint32_t ex_features, 
--                                          const void* ex_features_p[32]);
-+                                          const void* ex_features_p[32],
-+                                          void **enclave_base_addr,
-+                                          const size_t enclave_size,
-+                                          bool enable_user_utility);
+ #pragma pack(pop)
  
  
- sgx_status_t SGXAPI sgx_create_encrypted_enclave(
-@@ -92,10 +113,19 @@
-                         int *launch_token_updated,
-                         sgx_enclave_id_t *enclave_id,
-                         sgx_misc_attribute_t *misc_attr,
--                        uint8_t* sealed_key);
-+                        uint8_t* sealed_key,
-+                        void **enclave_base_addr,
-+                        const size_t enclave_size,
-+                        bool enable_user_utility);
+ //update the following when adding new extended feature
+-#define _SGX_LAST_EX_FEATURE_IDX_  SGX_CREATE_ENCLAVE_EX_KSS_BIT_IDX 
++#define _SGX_LAST_EX_FEATURE_IDX_  SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX 
  
- sgx_status_t SGXAPI sgx_destroy_enclave(const sgx_enclave_id_t enclave_id);
+ #define _SGX_EX_FEATURES_MASK_ (((uint32_t)-1) >> (MAX_EX_FEATURES_COUNT - 1  - _SGX_LAST_EX_FEATURE_IDX_))
+ 
+@@ -132,6 +142,12 @@
+ 	const sgx_enclave_id_t enclave_id,
+ 	sgx_target_info_t* target_info);
  
 +int SGXAPI sgx_is_tcs_active(const sgx_enclave_id_t enclave_id);
 +
@@ -557,17 +571,6 @@ diff -Nur common/inc/sgx_urts.h common/inc/sgx_urts.h
  #ifdef __cplusplus
  }
  #endif
-diff -Nur common/inc/sgx_uswitchless.h common/inc/sgx_uswitchless.h
---- common/inc/sgx_uswitchless.h
-+++ common/inc/sgx_uswitchless.h
-@@ -72,7 +72,6 @@
- #include "sgx_error.h"
- #include "sgx_eid.h"
- #include "sgx_defs.h"
--#include "sgx_urts.h"
- 
- /*
-  * A worker can be either trusted (executed inside enclave) or untrusted
 diff -Nur common/inc/tlibc/string.h common/inc/tlibc/string.h
 --- common/inc/tlibc/string.h
 +++ common/inc/tlibc/string.h
@@ -577,17 +580,18 @@ diff -Nur common/inc/tlibc/string.h common/inc/tlibc/string.h
  size_t _TLIBC_CDECL_ strlcpy(char *, const char *, size_t);
 -errno_t _TLIBC_CDECL_ memset_s(void *s, size_t smax, int c, size_t n);
 +// Declared in rts_config.h
-+//errno_t _TLIBC_CDECL_ memset_s(void *s, size_t smax, int c, size_t n);
++// errno_t _TLIBC_CDECL_ memset_s(void *s, size_t smax, int c, size_t n);
  
  /*
   * Deprecated C99.
-@@ -92,7 +93,8 @@
+@@ -92,7 +93,9 @@
   */
  char * _TLIBC_CDECL_ strndup(const char *, size_t);
  size_t _TLIBC_CDECL_ strnlen(const char *, size_t);
 -int    _TLIBC_CDECL_ consttime_memequal(const void *b1, const void *b2, size_t len);
 +// Declared in rts_config.h
-+//int    _TLIBC_CDECL_ consttime_memequal(const void *b1, const void *b2, size_t len);
++// int    _TLIBC_CDECL_ consttime_memequal(const void *b1, const void *b2,
++// size_t len);
  
  /*
   * Non-C99
@@ -603,35 +607,6 @@ diff -Nur common/src/linux/xsave_gnu.S common/src/linux/xsave_gnu.S
  .macro DO_XSAVEC
  #if defined(LINUX64)
      .byte   0x48, 0x0f, 0xc7, 0x21
-diff -Nur common/src/sgx_profile.cpp common/src/sgx_profile.cpp
---- common/src/sgx_profile.cpp
-+++ common/src/sgx_profile.cpp
-@@ -38,7 +38,6 @@
- #include "sgx_profile.h"
- #include "se_time.h"
- #include <string.h>
--using namespace std;
- 
- typedef struct _profile_item_t{
-     const char *str;  /* tag */
-@@ -46,7 +45,7 @@
-     long long time;   /* current time */
- } profile_item_t;
- 
--static vector<profile_item_t> profile_items;
-+static std::vector<profile_item_t> profile_items;
- static int alloc_size;
- static int used_size;
- const int MALLOC_SIZE = 1000;
-@@ -108,7 +107,7 @@
- {
-     int i,j;
- 
--    ofstream fs;
-+    std::ofstream fs;
-     fs.open(filename); /* do not overwritten previous value */
- 
-     fs << "freq: " << freq <<endl;
 diff -Nur external/rdrand/src/config.h external/rdrand/src/config.h
 --- external/rdrand/src/config.h
 +++ external/rdrand/src/config.h
@@ -727,15 +702,14 @@ diff -Nur psw/ae/common/inc/IAEMessage.h psw/ae/common/inc/IAEMessage.h
 diff -Nur psw/ae/common/proto/messages.proto psw/ae/common/proto/messages.proto
 --- psw/ae/common/proto/messages.proto
 +++ psw/ae/common/proto/messages.proto
-@@ -30,6 +30,8 @@
+@@ -29,6 +29,7 @@
+  *
   */
  
- 
 +syntax = "proto2";
-+
+ 
  package aesm.message;
  
- message Request{
 diff -Nur psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSerializer.cpp
 --- psw/ae/common/src/ProtobufSerializer.cpp
 +++ psw/ae/common/src/ProtobufSerializer.cpp
@@ -747,6 +721,17 @@ diff -Nur psw/ae/common/src/ProtobufSerializer.cpp psw/ae/common/src/ProtobufSer
  #include <IAEMessage.h>
  
  #include <IAERequest.h>
+diff -Nur psw/ae/inc/internal/pse_inc.h psw/ae/inc/internal/pse_inc.h
+--- psw/ae/inc/internal/pse_inc.h
++++ psw/ae/inc/internal/pse_inc.h
+@@ -35,7 +35,6 @@
+ 
+ #include "se_cdefs.h"
+ #include "sgx_utils.h"
+-#include "sgx_trts.h"
+ #include "string.h"
+ #include "aeerror.h"
+ 
 diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_enclave_common.cpp
 --- psw/enclave_common/sgx_enclave_common.cpp
 +++ psw/enclave_common/sgx_enclave_common.cpp
@@ -783,7 +768,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
  {
      se_mutex_lock(&s_device_mutex);
  
-@@ -196,7 +198,15 @@
+@@ -225,7 +227,15 @@
          return NULL;
      }
  
@@ -800,7 +785,7 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
      if (enclave_base == MAP_FAILED) {
          SE_TRACE(SE_TRACE_WARNING, "\ncreate enclave: mmap failed, errno = %d\n", errno);
          if (enclave_error != NULL)
-@@ -441,6 +451,13 @@
+@@ -471,6 +481,13 @@
      }
  
      se_mutex_lock(&s_enclave_mutex);
@@ -829,14 +814,12 @@ diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 --- psw/urts/enclave.cpp
 +++ psw/urts/enclave.cpp
-@@ -43,12 +43,11 @@
+@@ -43,10 +43,12 @@
  #include "rts_cmd.h"
  #include <assert.h>
  #include "rts.h"
--
--
--using namespace std;
 +#include <unistd.h>
+ 
  
  int do_ecall(const int fn, const void *ocall_table, const void *ms, CTrustThread *trust_thread);
  int do_ocall(const bridge_fn_t bridge, void *ms);
@@ -844,7 +827,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  CEnclave::CEnclave(CLoader &ldr)
      : m_loader(ldr)
-@@ -68,6 +67,8 @@
+@@ -66,6 +68,8 @@
      , m_sealed_key(NULL)
      , m_uswitchless(NULL)
      , m_us_has_started(false)
@@ -852,8 +835,8 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 +    , m_user_utility_thread_id(0)
  {
      memset(&m_enclave_info, 0, sizeof(debug_enclave_info_t));
-     se_init_rwlock(&m_rwlock);
-@@ -93,7 +94,7 @@
+     memset(&m_target_info, 0, sizeof(sgx_target_info_t));
+@@ -92,7 +96,7 @@
          goto on_exit;
      }
  
@@ -862,59 +845,18 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
      if (status != SGX_SUCCESS) goto on_exit;
  
      if (sl_uswitchless_init_workers(m_uswitchless)) {
-@@ -112,19 +113,21 @@
- 
- sgx_status_t CEnclave::initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool)
- {
--    uint32_t name_len = file.name_len;
--    if (file.unicode)
--        name_len *= (uint32_t)sizeof(wchar_t);
--
--    const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
--
--    m_enclave_info.lpFileName = calloc(1, buf_len);
--    if (m_enclave_info.lpFileName == NULL)
--        return SGX_ERROR_OUT_OF_MEMORY;
--
--    memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
--    m_enclave_info.unicode = file.unicode?0:1;
--    m_enclave_info.file_name_size = name_len;
-+    if (file.name != NULL) {
-+        uint32_t name_len = file.name_len;
-+        if (file.unicode)
-+            name_len *= (uint32_t)sizeof(wchar_t);
-+
-+        const int buf_len = name_len + 4; //+4, because we need copy the charactor of string end ('\0').;
-+
-+        m_enclave_info.lpFileName = calloc(1, buf_len);
-+        if (m_enclave_info.lpFileName == NULL)
-+            return SGX_ERROR_OUT_OF_MEMORY;
-+
-+        memcpy_s(m_enclave_info.lpFileName, name_len, file.name, name_len);
-+        m_enclave_info.unicode = file.unicode?0:1;
-+        m_enclave_info.file_name_size = name_len;
-+    }
- 
-     m_enclave_info.struct_version = DEBUG_INFO_STRUCT_VERSION;
- 
-@@ -224,6 +227,16 @@
+@@ -234,6 +238,10 @@
      m_sealed_key = sealed_key;
  }
  
-+pid_t CEnclave::process_id()
-+{
-+    return m_process_id;
-+}
++pid_t CEnclave::process_id() { return m_process_id; }
 +
-+void CEnclave::set_process_id()
-+{
-+    m_process_id = getpid();
-+}
++void CEnclave::set_process_id() { m_process_id = getpid(); }
 +
  sgx_status_t CEnclave::error_trts2urts(unsigned int trts_error)
  {
      if(trts_error == (unsigned int)SE_ERROR_READ_LOCK_FAIL)
-@@ -241,7 +254,7 @@
+@@ -251,7 +259,7 @@
      return (sgx_status_t)trts_error;
  }
  
@@ -923,7 +865,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  {
      if(se_try_rdlock(&m_rwlock))
      {
-@@ -273,7 +286,20 @@
+@@ -283,7 +291,20 @@
  on_fallback:
          //Handle normal ECall or fallback'ed switchless ECall
          //do sgx_ecall
@@ -945,7 +887,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
          unsigned ret = SGX_ERROR_OUT_OF_TCS;
  
          if(NULL != trust_thread)
-@@ -315,7 +341,20 @@
+@@ -325,7 +346,20 @@
                  }
              }
  
@@ -966,7 +908,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
          }
          put_tcs(trust_thread);
  
-@@ -388,7 +427,15 @@
+@@ -398,7 +432,15 @@
      return &m_enclave_info;
  }
  
@@ -983,7 +925,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
  
  CTrustThread * CEnclave::get_tcs(int ecall_cmd)
  {
-@@ -487,9 +534,9 @@
+@@ -497,9 +539,9 @@
      //m_loader.destroy_enclave();
  }
  
@@ -998,13 +940,15 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 diff -Nur psw/urts/enclave_creator_hw_com.cpp psw/urts/enclave_creator_hw_com.cpp
 --- psw/urts/enclave_creator_hw_com.cpp
 +++ psw/urts/enclave_creator_hw_com.cpp
-@@ -66,8 +66,7 @@
+@@ -66,8 +66,9 @@
      if (is_EDMM_supported(enclave_id))
              info.system_feature_set[0] |= EDMM_ENABLE_BIT;
  
 -
 -    int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
-+    int status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info), /*is_utility=*/false);
++    int status =
++        enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info),
++                       /*is_utility=*/false);
      //free the tcs used by initialization;
      enclave->get_thread_pool()->reset();
  
@@ -1025,39 +969,37 @@ diff -Nur psw/urts/enclave.h psw/urts/enclave.h
      CTrustThreadPool * get_thread_pool() { return m_thread_pool; }
      uint64_t get_size() { return m_size; };
 -    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms, const bool is_fast = false);
-+    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms, bool is_utility, const bool is_switchless = false);
++    sgx_status_t ecall(const int proc, const void *ocall_table, void *ms, bool is_utility, const bool is_fast = false);
      int ocall(const unsigned int proc, const sgx_ocall_table_t *ocall_table, void *ms);
      void destroy();
      uint32_t atomic_inc_ref() { return se_atomic_inc(&m_ref); }
 @@ -67,7 +69,7 @@
      void mark_zombie()  { m_zombie = true; }
      bool is_zombie() { return m_zombie; }
-     sgx_status_t initialize(const se_file_t& file, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
+     sgx_status_t initialize(const se_file_t& file, const secs_t& secs, const sgx_enclave_id_t enclave_id, void * const start_addr, const uint64_t enclave_size, const uint32_t tcs_policy, const uint32_t enclave_version, const uint32_t tcs_min_pool);
 -    void add_thread(tcs_t * const tcs, bool is_unallocated);
 +    void add_thread(tcs_t * const tcs, bool is_unallocated, bool enable_user_utility);
      void add_thread(CTrustThread * const trust_thread);
      const debug_enclave_info_t* get_debug_info();
      void set_dbg_flag(bool dbg_flag) { m_dbg_flag = dbg_flag; }
-@@ -85,7 +87,12 @@
+@@ -85,6 +87,11 @@
      void set_sealed_key(uint8_t *sealed_key);
      sgx_status_t init_uswitchless(const sgx_uswitchless_config_t* config);
      void destroy_uswitchless(void);
--	
 +    void set_process_id();
 +    pid_t process_id();
 +#ifdef SE_SIM
 +    tcs_t *get_tcs_info();
 +#endif
-+
+     sgx_target_info_t get_target_info();
+ 
  private:
-     CTrustThread * get_tcs(int ecall_cmd);
-     void put_tcs(CTrustThread *trust_thread);
-@@ -111,7 +118,8 @@
+@@ -112,7 +119,9 @@
      uint8_t                 *m_sealed_key;
      struct sl_uswitchless*  m_uswitchless;
      bool                    m_us_has_started;
--	
-+    pid_t                   m_process_id;
++    pid_t m_process_id;
+     sgx_target_info_t       m_target_info;
 +    se_thread_id_t          m_user_utility_thread_id;
  };
  
@@ -1077,7 +1019,7 @@ diff -Nur psw/urts/file.h psw/urts/file.h
 diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_hw.cpp
 --- psw/urts/linux/enclave_creator_hw.cpp
 +++ psw/urts/linux/enclave_creator_hw.cpp
-@@ -171,10 +171,10 @@
+@@ -174,10 +174,10 @@
  
      enclave_create_sgx_t enclave_create_sgx = {0};
      if (0 != memcpy_s(enclave_create_sgx.secs, SECS_SIZE, secs, SECS_SIZE))
@@ -1090,7 +1032,7 @@ diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_h
  
      if (enclave_error)
          return error_api2urts(enclave_error);
-@@ -208,7 +208,7 @@
+@@ -211,7 +211,7 @@
  
      enclave_init_sgx_t enclave_init_sgx = {0};
      if (0 != memcpy_s(enclave_init_sgx.sigstruct, SIGSTRUCT_SIZE, enclave_css, SIGSTRUCT_SIZE))
@@ -1099,21 +1041,6 @@ diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_h
  
      uint32_t enclave_error = ENCLAVE_ERROR_SUCCESS;
      enclave_initialize((void*)enclave_id, &enclave_init_sgx, sizeof(enclave_init_sgx), &enclave_error);
-diff -Nur psw/urts/linux/misc.cpp psw/urts/linux/misc.cpp
---- psw/urts/linux/misc.cpp
-+++ psw/urts/linux/misc.cpp
-@@ -34,10 +34,8 @@
- #include <dirent.h>
- #include <vector>
- 
--using namespace std;
--
- //get all thread id of current process.
--void get_thread_set(vector<se_thread_id_t> &thread_vector)
-+void get_thread_set(std::vector<se_thread_id_t> &thread_vector)
- {
-     DIR*   dir = NULL;
-     struct dirent* dirent = NULL;
 diff -Nur psw/urts/linux/read_xcr0.h psw/urts/linux/read_xcr0.h
 --- psw/urts/linux/read_xcr0.h
 +++ psw/urts/linux/read_xcr0.h
@@ -1129,16 +1056,17 @@ diff -Nur psw/urts/linux/read_xcr0.h psw/urts/linux/read_xcr0.h
 diff -Nur psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
 --- psw/urts/linux/sig_handler.cpp
 +++ psw/urts/linux/sig_handler.cpp
-@@ -113,7 +113,7 @@
+@@ -113,7 +113,8 @@
          //If exception is raised in trts again and again, the SSA will overflow, and finally it is EENTER exception.
          assert(reinterpret_cast<tcs_t *>(xbx) == param->tcs);
          CEnclave *enclave = param->trust_thread->get_enclave();
 -        unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL);
-+        unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL, /*is_utility=*/false);
++        unsigned int ret = enclave->ecall(ECMD_EXCEPT, param->ocall_table, NULL,
++                                          /*is_utility=*/false);
          if(SGX_SUCCESS == ret)
          {
              //ERESUME execute
-@@ -198,23 +198,11 @@
+@@ -198,23 +199,11 @@
      }
      else
      {
@@ -1162,18 +1090,20 @@ diff -Nur psw/urts/linux/sig_handler.cpp psw/urts/linux/sig_handler.cpp
  }
  
  //trust_thread is saved at stack for ocall.
-@@ -231,7 +219,10 @@
+@@ -231,8 +220,11 @@
      CEnclave* enclave = trust_thread->get_enclave();
      //check if it is current pid, it is to simulate fork() scenario on HW
      sgx_enclave_id_t eid = enclave->get_enclave_id();
 -    if((pid_t)(eid >> 32) != getpid())
-+    //If process id is set, this is an enclave created by enclave_fork. Check
-+    //the process id instead of the enclave id.
-+    if ((enclave->process_id() != 0 && enclave->process_id() != getpid())
-+        || (enclave->process_id() == 0 && (pid_t)(eid >> 32) != getpid()))
-         return SGX_ERROR_ENCLAVE_LOST;
+-        return SGX_ERROR_ENCLAVE_LOST;
++    // If process id is set, this is an enclave created by enclave_fork. Check
++    // the process id instead of the enclave id.
++    if ((enclave->process_id() != 0 && enclave->process_id() != getpid()) ||
++        (enclave->process_id() == 0 && (pid_t)(eid >> 32) != getpid()))
++      return SGX_ERROR_ENCLAVE_LOST;
  #endif
  
+     tcs_t *tcs = trust_thread->get_tcs();
 diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 --- psw/urts/linux/urts.cpp
 +++ psw/urts/linux/urts.cpp
@@ -1187,192 +1117,79 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  #include "sgx_error.h"
  #include "sgx_urts.h"
  #include "sgx_uswitchless.h"
-@@ -37,6 +38,7 @@
+@@ -37,13 +38,15 @@
  #include <errno.h>
  #include <fcntl.h>
  #include <limits.h>
 +#include <sys/mman.h>
++#include <iostream>
  
  #include "urts_com.h"
  
-@@ -72,10 +74,22 @@
-                                                 sgx_enclave_id_t *enclave_id, 
-                                                 sgx_misc_attribute_t *misc_attr,
-                                                 const uint32_t ex_features,
--                                                const void* ex_features_p[32])
-+                                                const void* ex_features_p[32],
-+                                                void **enclave_base_addr,
-+                                                const size_t enclave_size,
-+                                                bool enable_user_utility)
+ static bool inline _check_ex_params_(const uint32_t ex_features, const void* ex_features_p[32])
  {
-     sgx_status_t ret = SGX_SUCCESS;
+     //update last feature index if it fails here
+-    se_static_assert(_SGX_LAST_EX_FEATURE_IDX_ == SGX_CREATE_ENCLAVE_EX_KSS_BIT_IDX);
++    se_static_assert(_SGX_LAST_EX_FEATURE_IDX_ == SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX);
+     
+     uint32_t i;
  
+@@ -65,6 +68,27 @@
+     return ((ex_features | _SGX_EX_FEATURES_MASK_) == _SGX_EX_FEATURES_MASK_);
+ }
+ 
++static sgx_status_t place_enclave(const uint32_t ex_features, const void* ex_features_p[32])
++{
++    asylo_sgx_config_t *asylo_config = nullptr;
++    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_ASYLO, ex_features,
++                                ex_features_p, (void**)&asylo_config) == -1) {
++      return SGX_ERROR_INVALID_PARAMETER;
++    }
 +    // Reserve the memory to load the enclave if the address to load the enclave
 +    // is specified.
-+    if (enclave_base_addr && *enclave_base_addr && enclave_size > 0)
++    if (asylo_config->base_address && *asylo_config->base_address &&
++        asylo_config->enclave_size > 0)
 +    {
-+        void *reserved_address = mmap(*enclave_base_addr, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-+        if (reserved_address != *enclave_base_addr)
++        void *reserved_address = mmap(*asylo_config->base_address,
++                                      asylo_config->enclave_size, PROT_NONE,
++                                      MAP_SHARED | MAP_ANONYMOUS, -1, 0);
++        if (reserved_address != *asylo_config->base_address)
 +            return SGX_ERROR_MEMORY_MAP_CONFLICT;
 +    }
++    return SGX_SUCCESS;
++}
 +
+ extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name, 
+                                                 const int debug, 
+                                                 sgx_launch_token_t *launch_token, 
+@@ -74,7 +98,10 @@
+                                                 const uint32_t ex_features,
+                                                 const void* ex_features_p[32])
+ {
+-    sgx_status_t ret = SGX_SUCCESS;
++    sgx_status_t ret = place_enclave(ex_features, ex_features_p);
++    if (ret != SGX_SUCCESS) {
++      return ret;
++    }
+ 
      //Only true or false is valid
      if(TRUE != debug &&  FALSE != debug)
-         return SGX_ERROR_INVALID_PARAMETER;
-@@ -96,7 +110,7 @@
-     file.name = realpath(file_name, resolved_path);
-     file.name_len = (uint32_t)strlen(resolved_path);
+@@ -158,7 +185,10 @@
+                                                           const uint32_t ex_features,
+                                                           const void* ex_features_p[32])
+ {
+-    sgx_status_t ret = SGX_SUCCESS;
++    sgx_status_t ret = place_enclave(ex_features, ex_features_p);
++    if (ret != SGX_SUCCESS) {
++      return ret;
++    }
  
--    ret = _create_enclave_ex(!!debug, fd, file, NULL, launch_token, launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
-+    ret = _create_enclave_ex(!!debug, fd, file, enclave_base_addr, enable_user_utility, NULL, launch_token, launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
-     if(SGX_SUCCESS != ret && misc_attr)
-     {
-         sgx_misc_attribute_t plat_cap;
-@@ -110,14 +124,99 @@
-     return ret;
+     // Only true or false is valid
+     if (TRUE != debug &&  FALSE != debug)
+@@ -205,3 +235,19 @@
+         launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
  }
  
--extern "C" sgx_status_t sgx_create_enclave(const char *file_name, 
--                                           const int debug, 
--                                           sgx_launch_token_t *launch_token, 
--                                           int *launch_token_updated, 
--                                           sgx_enclave_id_t *enclave_id, 
--                                           sgx_misc_attribute_t *misc_attr) 
-+extern "C" sgx_status_t __sgx_create_enclave_from_buffer_ex(
-+        uint8_t *buffer,
-+        size_t buffer_size,
-+        const int debug,
-+        sgx_launch_token_t *launch_token,
-+        int *launch_token_updated,
-+        sgx_enclave_id_t *enclave_id,
-+        sgx_misc_attribute_t *misc_attr,
-+        const uint32_t ex_features,
-+        const void* ex_features_p[32],
-+        void **enclave_base_addr,
-+        const size_t enclave_size,
-+        bool enable_user_utility)
-+{
-+    sgx_status_t ret = SGX_SUCCESS;
-+
-+    // Reserve the memory to load the enclave if the address to load the enclave
-+    // is specified.
-+    if (enclave_base_addr && *enclave_base_addr && enclave_size > 0)
-+    {
-+        void *reserved_address = mmap(*enclave_base_addr, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS, -1, 0);
-+        if (reserved_address != *enclave_base_addr)
-+            return SGX_ERROR_MEMORY_MAP_CONFLICT;
-+    }
-+
-+    // Only true or false is valid
-+    if (TRUE != debug &&  FALSE != debug)
-+    {
-+        return SGX_ERROR_INVALID_PARAMETER;
-+    }
-+
-+    if (!_check_ex_params_(ex_features, ex_features_p))
-+    {
-+        return SGX_ERROR_INVALID_PARAMETER;
-+    }
-+
-+    se_file_t file = {NULL, 0, false};
-+    ret = _create_enclave_from_buffer_ex(
-+        buffer, buffer_size, !!debug, file, enclave_base_addr,
-+        enable_user_utility, NULL, launch_token, launch_token_updated,
-+        enclave_id, misc_attr, ex_features, ex_features_p);
-+    if (SGX_SUCCESS != ret && misc_attr)
-+    {
-+        sgx_misc_attribute_t plat_cap;
-+        memset(&plat_cap, 0, sizeof(plat_cap));
-+        get_enclave_creator()->get_plat_cap(&plat_cap);
-+        memcpy_s(misc_attr, sizeof(sgx_misc_attribute_t), &plat_cap,
-+                 sizeof(sgx_misc_attribute_t));
-+    }
-+
-+    return ret;
-+}
-+
-+extern "C" sgx_status_t sgx_create_enclave(const char *file_name,
-+                                           const int debug,
-+                                           sgx_launch_token_t *launch_token,
-+                                           int *launch_token_updated,
-+                                           sgx_enclave_id_t *enclave_id,
-+                                           sgx_misc_attribute_t *misc_attr)
- {
--    return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL);
-+  return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL, NULL, 0, false);
-+}
-+
-+extern "C" sgx_status_t sgx_create_enclave_with_utility_and_address(
-+    const char *file_name,
-+    const int debug,
-+    sgx_launch_token_t *launch_token,
-+    int *launch_token_updated,
-+    sgx_enclave_id_t *enclave_id,
-+    sgx_misc_attribute_t *misc_attr,
-+    void **enclave_base_addr,
-+    const size_t enclave_size,
-+    bool enable_user_utility)
-+{
-+    return __sgx_create_enclave_ex(file_name, debug, launch_token, launch_token_updated, enclave_id, misc_attr, 0, NULL, enclave_base_addr, enclave_size, enable_user_utility);
-+}
-+
-+
-+extern "C" sgx_status_t sgx_create_enclave_from_buffer(
-+        uint8_t *buffer,
-+        size_t buffer_size,
-+        const int debug,
-+        sgx_launch_token_t *launch_token,
-+        int *launch_token_updated,
-+        sgx_enclave_id_t *enclave_id,
-+        sgx_misc_attribute_t *misc_attr,
-+        void **enclave_base_addr,
-+        const size_t enclave_size,
-+        bool enable_user_utility)
-+{
-+    return __sgx_create_enclave_from_buffer_ex(
-+        buffer, buffer_size, debug, launch_token, launch_token_updated,
-+        enclave_id, misc_attr, 0, NULL, enclave_base_addr, enclave_size, enable_user_utility);
- }
- 
- 
-@@ -128,11 +227,15 @@
-                                                sgx_enclave_id_t *enclave_id,
-                                                sgx_misc_attribute_t *misc_attr,
-                                                const uint32_t ex_features,
--                                               const void* ex_features_p[32])
-+                                               const void* ex_features_p[32],
-+                                               void **enclave_base_addr,
-+                                               const size_t enclave_size,
-+                                               bool enable_user_utility)
- {
- 
-     return __sgx_create_enclave_ex(file_name, debug, launch_token,
--        launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
-+        launch_token_updated, enclave_id, misc_attr, ex_features,
-+        ex_features_p, enclave_base_addr, enclave_size, enable_user_utility);
- }
- 
- 
-@@ -144,12 +247,33 @@
-     int *launch_token_updated,
-     sgx_enclave_id_t *enclave_id,
-     sgx_misc_attribute_t *misc_attr,
--    uint8_t* sealed_key)
-+    uint8_t* sealed_key,
-+    void **enclave_base_addr,
-+    const size_t enclave_size,
-+    bool enable_user_utility)
- {
-     uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_PCL;
-     const void* ex_features_p[32] = { 0 };
-     ex_features_p[SGX_CREATE_ENCLAVE_EX_PCL_BIT_IDX] = (void*)sealed_key;
- 
-     return __sgx_create_enclave_ex(file_name, debug, launch_token,
--        launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
-+        launch_token_updated, enclave_id, misc_attr, ex_features,
-+        ex_features_p, enclave_base_addr, enclave_size, enable_user_utility);
-+}
-+
 +extern "C" int is_tcs_sim_active(const tcs_t *tcs);
 +
 +extern "C" int sgx_is_tcs_active(const sgx_enclave_id_t enclave_id)
@@ -1388,7 +1205,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 +  }
 +#endif
 +  return 0;
- }
++}
 diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
 --- psw/urts/loader.cpp
 +++ psw/urts/loader.cpp
@@ -1402,15 +1219,6 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  #include <inttypes.h>
  #include <sys/mman.h>
  
-@@ -103,7 +105,7 @@
- }
- 
- // is_relocation_page returns true if the specified RVA is a writable relocation page based on the bitmap.
--bool CLoader::is_relocation_page(const uint64_t rva, vector<uint8_t> *bitmap)
-+bool CLoader::is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitmap)
- {
-     uint64_t page_frame = rva >> SE_PAGE_SHIFT;
-     //NOTE:
 @@ -146,7 +148,7 @@
                  {
                      SE_TRACE(SE_TRACE_WARNING, "mprotect(rva=0x%llx, len=%d, flags=%d) failed\n",
@@ -1420,50 +1228,22 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
                  }
              }
          }
-@@ -181,7 +183,7 @@
-     return SGX_SUCCESS;
- }
- 
--int CLoader::build_sections(vector<uint8_t> *bitmap)
-+int CLoader::build_sections(std::vector<uint8_t> *bitmap)
- {
-     int ret = SGX_SUCCESS;
-     std::vector<Section*> sections = m_parser.get_sections();
-@@ -372,7 +374,7 @@
-                 ptcs->ogs_base += rva;
-                 if(!(attributes & PAGE_ATTR_EREMOVE))
-                 {
--                    m_tcs_list.push_back(make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
-+                    m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), false));
-                 }
-                 sinfo.flags = layout->si_flags;
-                 if(SGX_SUCCESS != (ret = build_pages(rva, ((uint64_t)layout->page_count) << SE_PAGE_SHIFT, added_page, sinfo, attributes)))
-@@ -417,7 +419,7 @@
- #ifndef SE_SIM
-         if(layout->id == LAYOUT_ID_TCS_DYN)
-         {
--            m_tcs_list.push_back(make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
-+            m_tcs_list.push_back(std::make_pair(GET_PTR(tcs_t, m_start_addr, rva), true));
-         }
- #endif
-     }
 @@ -450,7 +452,7 @@
      }
      return SGX_SUCCESS;
  }
--int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_misc_attribute_t * const misc_attr)
-+int CLoader::build_secs(sgx_attributes_t * const secs_attr, void **enclave_base_addr, sgx_misc_attribute_t * const misc_attr)
+-int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr)
++int CLoader::build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, void **enclave_base_addr, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr)
  {
      memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
      //create secs structure.
-@@ -463,20 +465,31 @@
+@@ -470,11 +472,20 @@
  
      EnclaveCreator *enclave_creator = get_enclave_creator();
      if(NULL == enclave_creator)
 -        return SGX_ERROR_UNEXPECTED;
 +        return SGX_ERROR_ENCLAVE_CRASHED;
-+    if (enclave_base_addr)
-+    {
++    if (enclave_base_addr) {
 +      // If |enclave_base_addr| is NULL, the address to create the enclave will
 +      // be chosen by the kernel by default. Otherwise the enclave is created at
 +      // |enclave_base_addr|, unless it's not available.
@@ -1473,102 +1253,63 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      if(SGX_SUCCESS == ret)
      {
          SE_TRACE(SE_TRACE_NOTICE, "enclave start address = %p, size = 0x%llx\n", m_start_addr, m_metadata->enclave_size);
-+        if (enclave_base_addr)
-+        {
-+          *enclave_base_addr = m_start_addr;
-+        }
++      if (enclave_base_addr) {
++        *enclave_base_addr = m_start_addr;
++      }
      }
+ 	// m_secs.mr_enclave value is not set previously
+     if(memcpy_s(&m_secs.mr_enclave, sizeof(sgx_measurement_t), &m_metadata->enclave_css.body.enclave_hash, sizeof(sgx_measurement_t)))
+@@ -482,12 +493,12 @@
+ 
      return ret;
  }
--int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
-+int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, void **enclave_base_addr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
+-int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
++int CLoader::build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, void **enclave_base_addr, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr)
  {
      int ret = SGX_SUCCESS;
  
  
--    if(SGX_SUCCESS != (ret = build_secs(secs_attr, misc_attr)))
-+    if(SGX_SUCCESS != (ret = build_secs(secs_attr, enclave_base_addr, misc_attr)))
+-    if(SGX_SUCCESS != (ret = build_secs(secs_attr, config_id, config_svn, misc_attr)))
++    if(SGX_SUCCESS != (ret = build_secs(secs_attr, config_id, enclave_base_addr, config_svn, misc_attr)))
      {
          SE_TRACE(SE_TRACE_WARNING, "build secs failed\n");
          return ret;
-@@ -486,7 +499,7 @@
-     // If load_enclave_ex try to load the enclave for the 2nd time,
-     // the enclave image is already patched, and parser cannot read the information.
-     // For linux, there's no map conflict. We assume load_enclave_ex will not do the retry.
--    vector<uint8_t> bitmap;
-+    std::vector<uint8_t> bitmap;
-     if(!m_parser.get_reloc_bitmap(bitmap))
-         return SGX_ERROR_INVALID_ENCLAVE;
- 
-@@ -564,12 +577,12 @@
- {
-     layout_t *layout_start = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset);
-     layout_t *layout_end = GET_PTR(layout_t, m_metadata, m_metadata->dirs[DIR_LAYOUT].offset + m_metadata->dirs[DIR_LAYOUT].size);
--    vector<pair<uint64_t, uint64_t>> rva_vector;
-+    std::vector<std::pair<uint64_t, uint64_t>> rva_vector;
-     for (layout_t *layout = layout_start; layout < layout_end; layout++)
-     {
-         if(!IS_GROUP_ID(layout->entry.id))  // layout entry
-         {
--            rva_vector.push_back(make_pair(layout->entry.rva, ((uint64_t)layout->entry.page_count) << SE_PAGE_SHIFT));
-+            rva_vector.push_back(std::make_pair(layout->entry.rva, ((uint64_t)layout->entry.page_count) << SE_PAGE_SHIFT));
-             if(layout->entry.content_offset)
-             {
-                 if(false == is_metadata_buffer(layout->entry.content_offset, layout->entry.content_size))
-@@ -598,7 +611,7 @@
-                     {
-                         return SGX_ERROR_INVALID_METADATA;
-                     }
--                    rva_vector.push_back(make_pair(entry->rva + load_step, ((uint64_t)entry->page_count) << SE_PAGE_SHIFT));
-+                    rva_vector.push_back(std::make_pair(entry->rva + load_step, ((uint64_t)entry->page_count) << SE_PAGE_SHIFT));
-                     // no need to check integer overflow for entry->rva + load_step, because
-                     // entry->rva and load_step are less than enclave_size, whose size is no more than 37 bit
-                 }
-@@ -606,7 +619,7 @@
-         }
-     }
-     sort(rva_vector.begin(), rva_vector.end());
--    for (vector<pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
-+    for (std::vector<std::pair<uint64_t, uint64_t>>::iterator it = rva_vector.begin(); it != rva_vector.end(); it++)
-     {
-         if(!IS_PAGE_ALIGNED(it->first))
-         {
-@@ -710,7 +723,7 @@
+@@ -721,7 +732,7 @@
      return false;
  }
  
--int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
-+int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, void **enclave_base_addr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
+-int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
++int CLoader::load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, void **enclave_base_addr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
  {
      int ret = SGX_SUCCESS;
      sgx_misc_attribute_t sgx_misc_attr;
-@@ -730,7 +743,7 @@
+@@ -741,7 +752,7 @@
          return ret;
      }
  
--    ret = build_image(lc, &sgx_misc_attr.secs_attr, prd_css_file, &sgx_misc_attr);
-+    ret = build_image(lc, &sgx_misc_attr.secs_attr, enclave_base_addr, prd_css_file, &sgx_misc_attr);
+-    ret = build_image(lc, &sgx_misc_attr.secs_attr, config_id, config_svn, prd_css_file, &sgx_misc_attr);
++    ret = build_image(lc, &sgx_misc_attr.secs_attr, config_id, enclave_base_addr, config_svn, prd_css_file, &sgx_misc_attr);
      // Update misc_attr with secs.attr upon success.
      if(SGX_SUCCESS == ret)
      {
-@@ -745,14 +758,14 @@
+@@ -757,14 +768,14 @@
      return ret;
  }
  
--int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
-+int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, void **enclave_base_addr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
+-int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
++int CLoader::load_enclave_ex(SGXLaunchToken *lc, bool debug, const metadata_t *metadata, void **enclave_base_addr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t *misc_attr)
  {
      unsigned int ret = SGX_SUCCESS, map_conflict_count = 3;
      bool retry = true;
  
      while (retry)
      {
--        ret = this->load_enclave(lc, debug, metadata, prd_css_file, misc_attr);
-+        ret = this->load_enclave(lc, debug, metadata, enclave_base_addr, prd_css_file, misc_attr);
+-        ret = this->load_enclave(lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
++        ret = this->load_enclave(lc, debug, metadata, enclave_base_addr, config_id, config_svn, prd_css_file, misc_attr);
          switch(ret)
          {
              //If CreateEnclave failed due to power transition, we retry it.
-@@ -788,7 +801,7 @@
+@@ -800,7 +811,7 @@
      //set memory protection for segments
      if(m_parser.set_memory_protection((uint64_t)m_start_addr, is_after_initialization) != true)
      {
@@ -1577,7 +1318,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      }
  
      if (is_after_initialization &&
-@@ -859,7 +872,7 @@
+@@ -871,7 +882,7 @@
                           (uint64_t)m_start_addr + layout->entry.rva + delta, 
                           (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, 
                            prot);
@@ -1593,164 +1334,36 @@ diff -Nur psw/urts/loader.h psw/urts/loader.h
  public:
      CLoader(uint8_t *mapped_file_base, BinParser &parser);
      virtual ~CLoader();
--    int load_enclave(SGXLaunchToken *lc, int flag, const metadata_t *metadata, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
--    int load_enclave_ex(SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
-+    int load_enclave(SGXLaunchToken *lc, int debug, const metadata_t *metadata, void **enclave_base_addr, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
-+    int load_enclave_ex(SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, void **enclave_base_addr, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
+-    int load_enclave(SGXLaunchToken *lc, int flag, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
+-    int load_enclave_ex(SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
++    int load_enclave(SGXLaunchToken *lc, int flag, const metadata_t *metadata, void **enclave_base_addr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
++    int load_enclave_ex(SGXLaunchToken *lc, bool is_debug, const metadata_t *metadata, void **enclave_base_addr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file = NULL, sgx_misc_attribute_t *misc_attr = NULL);
      int destroy_enclave();
      sgx_enclave_id_t get_enclave_id() const;
      const void* get_start_addr() const;
-@@ -71,13 +71,13 @@
+@@ -71,8 +71,8 @@
  
  private:
      int build_mem_region(const section_info_t &sec_info);
--    int build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr);
--    int build_secs(sgx_attributes_t * const secs_attr, sgx_misc_attribute_t * const misc_attr);
-+    int build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, void **enclave_base_addr, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr);
-+    int build_secs(sgx_attributes_t * const secs_attr, void **enclave_base_addr, sgx_misc_attribute_t * const misc_attr);
+-    int build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr);
+-    int build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr);
++    int build_image(SGXLaunchToken * const lc, sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, void **enclave_base_addr, sgx_config_svn_t config_svn, le_prd_css_file_t *prd_css_file, sgx_misc_attribute_t * const misc_attr);
++    int build_secs(sgx_attributes_t * const secs_attr, sgx_config_id_t *config_id, void **enclave_base_addr, sgx_config_svn_t config_svn, sgx_misc_attribute_t * const misc_attr);
      int build_context(const uint64_t start_rva, layout_entry_t *layout);
      int build_contexts(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
      int build_partial_page(const uint64_t rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
-     int build_pages(const uint64_t start_rva, const uint64_t size, const void *source, const sec_info_t &sinfo, const uint32_t attr);
--    bool is_relocation_page(const uint64_t rva, vector<uint8_t> *bitmap);
-+    bool is_relocation_page(const uint64_t rva, std::vector<uint8_t> *bitmap);
- 
-     bool is_ae(const enclave_css_t *enclave_css);
-     bool is_metadata_buffer(uint32_t offset, uint32_t size);
-@@ -86,7 +86,7 @@
-     int validate_patch_table();
-     int validate_metadata();
-     int get_debug_flag(const token_t * const launch);
--    virtual int build_sections(vector<uint8_t> *bitmap);
-+    virtual int build_sections(std::vector<uint8_t> *bitmap);
-     int set_context_protection(layout_t *layout_start, layout_t *layout_end, uint64_t delta);
- 
-     uint8_t             *m_mapped_file_base;
-diff -Nur psw/urts/parser/binparser.h psw/urts/parser/binparser.h
---- psw/urts/parser/binparser.h
-+++ psw/urts/parser/binparser.h
-@@ -41,8 +41,6 @@
- #include <stdint.h>
- #include <vector>
- #include <string>
--using std::vector;
--using std::string;
- 
- #define ENCLAVE_MAX_SIZE_32 0xffffffff
- #define ENCLAVE_MAX_SIZE_64 0x1fffffffff
-@@ -77,17 +75,17 @@
-     virtual const uint8_t* get_start_addr() const = 0;
- 
-     // Get a vector of sections to be loaded
--    virtual const vector<Section *>& get_sections() const = 0;
-+    virtual const std::vector<Section *>& get_sections() const = 0;
- 
-     // Get the TLS section
-     virtual const Section* get_tls_section() const = 0;
- 
-     virtual uint64_t get_symbol_rva(const char* name) const = 0;
- 
--    virtual bool get_reloc_bitmap(vector<uint8_t> &bitmap) = 0;
-+    virtual bool get_reloc_bitmap(std::vector<uint8_t> &bitmap) = 0;
- 
-     virtual void get_reloc_entry_offset(const char* sec_name,
--                                        vector<uint64_t>& offsets) = 0;
-+                                        std::vector<uint64_t>& offsets) = 0;
- 
-     // !We need to put this method into BinParser class since
-     // !the `global_data_t' is platform-dependent as the parser.
-@@ -107,7 +105,7 @@
- 
-     virtual sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info) = 0;
- 
--    virtual void get_executable_sections(vector<const char *>& xsec_names) const = 0;
-+    virtual void get_executable_sections(std::vector<const char *>& xsec_names) const = 0;
-     virtual bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization) = 0;
-     virtual void get_pages_to_protect(uint64_t, std::vector<std::tuple<uint64_t, uint64_t, uint32_t>>&) const = 0;
-     virtual bool has_init_section() const = 0;
 diff -Nur psw/urts/parser/elfparser.cpp psw/urts/parser/elfparser.cpp
 --- psw/urts/parser/elfparser.cpp
 +++ psw/urts/parser/elfparser.cpp
-@@ -184,7 +184,7 @@
-  * We only need to search `.dynsym' for undefined symbols.
-  */
- bool check_symbol_table(const ElfW(Ehdr) *elf_hdr, const ElfW(Dyn) *dyn_info,
--                        map<string, uint64_t>& sym_table)
-+                        std::map<std::string, uint64_t>& sym_table)
- {
-     const ElfW(Shdr) *sh_symtab = get_section_by_addr(elf_hdr, dyn_info[DT_SYMTAB].d_un.d_ptr);
- 
-@@ -245,7 +245,7 @@
-     // If the enclave if compiled/linked with -fpie/-pie, and setting the
-     // enclave entry to `enclave_entry', the `st_name' for `enclave_entry'
-     // will be 0 in `.dynsym'.
--    map<string, uint64_t>::const_iterator it = sym_table.find("enclave_entry");
-+    std::map<std::string, uint64_t>::const_iterator it = sym_table.find("enclave_entry");
-     if (it == sym_table.end())
-     {
-         sym_table["enclave_entry"] = (uint64_t)elf_hdr->e_entry;
-@@ -504,7 +504,7 @@
- }
- 
- bool build_regular_sections(const uint8_t* start_addr,
--                            vector<Section *>& sections,
-+                            std::vector<Section *>& sections,
-                             const Section*& tls_sec,
-                             uint64_t& metadata_offset,
-                             uint64_t& metadata_block_size)
-@@ -565,7 +565,7 @@
-     return true;
- }
- 
--const Section* get_max_rva_section(const vector<Section*> sections)
-+const Section* get_max_rva_section(const std::vector<Section*> sections)
- {
-     size_t sec_size = sections.size();
- 
-@@ -672,7 +672,7 @@
-     return m_start_addr;
- }
- 
--const vector<Section *>& ElfParser::get_sections() const
-+const std::vector<Section *>& ElfParser::get_sections() const
- {
-     return m_sections;
- }
-@@ -684,7 +684,7 @@
- 
- uint64_t ElfParser::get_symbol_rva(const char* name) const
- {
--    map<string, uint64_t>::const_iterator it = m_sym_table.find(name);
-+  std::map<std::string, uint64_t>::const_iterator it = m_sym_table.find(name);
-     if (it != m_sym_table.end())
-         return it->second;
-     else
-@@ -700,7 +700,7 @@
-     return false;
- }
- 
--bool ElfParser::get_reloc_bitmap(vector<uint8_t>& bitmap)
-+bool ElfParser::get_reloc_bitmap(std::vector<uint8_t>& bitmap)
- {
-     // Clear the `bitmap' so that it is in a known state
-     bitmap.clear();
-@@ -781,7 +781,7 @@
-     return true;
- }
- 
--void ElfParser::get_reloc_entry_offset(const char* sec_name, vector<uint64_t>& offsets)
-+void ElfParser::get_reloc_entry_offset(const char* sec_name, std::vector<uint64_t>& offsets)
- {
-     if (sec_name == NULL)
-         return;
-@@ -844,6 +844,18 @@
+@@ -844,6 +844,19 @@
          return false;
      }
      *data_size = sizeof(global_data_t);
 +
 +    // Record the data and bss section address and size.
 +    global_data_t *global_data = reinterpret_cast<global_data_t *>(data);
-+    const ElfW(Ehdr) *elf_hdr = reinterpret_cast<const ElfW(Ehdr) *>(m_start_addr);
++    const ElfW(Ehdr) *elf_hdr =
++        reinterpret_cast<const ElfW(Ehdr) *>(m_start_addr);
 +    const ElfW(Shdr) *shdr = get_section_by_name(elf_hdr, ELF_DATA);
 +    global_data->data_offset = static_cast<sys_word_t>(shdr->sh_addr);
 +    global_data->data_size = static_cast<sys_word_t>(shdr->sh_size);
@@ -1762,74 +1375,6 @@ diff -Nur psw/urts/parser/elfparser.cpp psw/urts/parser/elfparser.cpp
      return do_update_global_data(metadata, create_param, (global_data_t *)data);
  }
  
-@@ -859,7 +871,7 @@
-     return SGX_SUCCESS;
- }
- 
--void ElfParser::get_executable_sections(vector<const char *>& xsec_names) const
-+void ElfParser::get_executable_sections(std::vector<const char *>& xsec_names) const
- {
-     xsec_names.clear();
- 
-diff -Nur psw/urts/parser/elfparser.h psw/urts/parser/elfparser.h
---- psw/urts/parser/elfparser.h
-+++ psw/urts/parser/elfparser.h
-@@ -39,9 +39,6 @@
- #include <string>
- #include <map>
- 
--using std::map;
--using std::string;
--
- class ElfParser : public BinParser, private Uncopyable {
- public:
-     // The `start_addr' cannot be NULL
-@@ -63,11 +60,11 @@
- 
-     // The `section' here is a section in PE's concept.
-     // It is in fact a `segment' in ELF's view.
--    const vector<Section *>& get_sections() const;
-+    const std::vector<Section *>& get_sections() const;
-     const Section* get_tls_section() const;
-     uint64_t get_symbol_rva(const char* name) const;
- 
--    bool get_reloc_bitmap(vector<uint8_t> &bitmap);
-+    bool get_reloc_bitmap(std::vector<uint8_t> &bitmap);
-     bool has_text_reloc() const;
-     uint32_t get_global_data_size();
-     bool update_global_data(const metadata_t *const metadata,
-@@ -86,11 +83,11 @@
-     // To check whether current enclave has any TEXTREL:
-     //   get_reloc_entry_offset(".text", offsets);
-     void get_reloc_entry_offset(const char* sec_name,
--                                vector<uint64_t>& offsets);
-+                                std::vector<uint64_t>& offsets);
- 
-     sgx_status_t modify_info(enclave_diff_info_t *enclave_diff_info);
-     sgx_status_t get_info(enclave_diff_info_t *enclave_diff_info);
--    void get_executable_sections(vector<const char *>& xsec_names) const;
-+    void get_executable_sections(std::vector<const char *>& xsec_names) const;
-     bool is_enclave_encrypted() const;
- 
-     bool set_memory_protection(uint64_t enclave_base_addr, bool is_after_initialization);
-@@ -102,7 +99,7 @@
-     const uint8_t*      m_start_addr;
-     uint64_t            m_len;
-     bin_fmt_t           m_bin_fmt;
--    vector<Section *>   m_sections;
-+    std::vector<Section *>   m_sections;
-     const Section*      m_tls_section;
-     uint64_t            m_metadata_offset;
-     uint64_t            m_metadata_block_size;/*multiple metadata block size*/
-@@ -110,7 +107,7 @@
-     ElfW(Dyn)           m_dyn_info[DT_NUM + DT_ADDRNUM];
- 
-     // A map from symbol name to its RVA
--    map<string, uint64_t> m_sym_table;
-+    std::map<std::string, uint64_t> m_sym_table;
- };
- 
- #endif
 diff -Nur psw/urts/parser/update_global_data.hxx psw/urts/parser/update_global_data.hxx
 --- psw/urts/parser/update_global_data.hxx
 +++ psw/urts/parser/update_global_data.hxx
@@ -1888,31 +1433,10 @@ diff -Nur psw/urts/routine.cpp psw/urts/routine.cpp
  }
  
  extern "C"
-diff -Nur psw/urts/section_info.h psw/urts/section_info.h
---- psw/urts/section_info.h
-+++ psw/urts/section_info.h
-@@ -36,8 +36,6 @@
- #include "util.h"
- #include <vector>
- 
--using namespace std;
--
- typedef struct _section_info_t
- {
-     const uint8_t *raw_data;          //The file pointer to the first page of the section.
-@@ -45,7 +43,7 @@
-     uint64_t rva;               //The address of the first byte of the section relative to the image base when section is loaded into memory.
-     uint64_t virtual_size;      //The total size of the section when loaded into memory.
-     si_flags_t flag;            //the attribute of memory region.
--    vector<uint8_t> *bitmap;    //bitmap of the total image page, if bit is 1, the page should be writable.
-+    std::vector<uint8_t> *bitmap;    //bitmap of the total image page, if bit is 1, the page should be writable.
-     //the first bit of scetion in the bitmap is bitmap[(rva >> PAGE_SHIFT) / 8] & (1 << ((rva >> PAGE_SHIFT) % 8))
-     //if the bitmap is NULL, then no restrict on page attribute.
- } section_info_t;
 diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
 --- psw/urts/tcs.cpp
 +++ psw/urts/tcs.cpp
-@@ -94,21 +94,23 @@
+@@ -94,8 +94,10 @@
  {
      m_thread_list = NULL;
      m_utility_thread = NULL;
@@ -1923,44 +1447,19 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
  }
  
  CTrustThreadPool::~CTrustThreadPool()
- {
-     LockGuard lock(&m_thread_mutex);
-     //destroy free tcs list
--    for(vector<CTrustThread *>::iterator it=m_free_thread_vector.begin(); it!=m_free_thread_vector.end(); it++)
-+    for(std::vector<CTrustThread *>::iterator it=m_free_thread_vector.begin(); it!=m_free_thread_vector.end(); it++)
-     {
-         delete *it;
-     }
-     m_free_thread_vector.clear();
-     //destroy unallocated tcs list
--    for(vector<CTrustThread *>::iterator it=m_unallocated_threads.begin(); it!=m_unallocated_threads.end(); it++)
-+    for(std::vector<CTrustThread *>::iterator it=m_unallocated_threads.begin(); it!=m_unallocated_threads.end(); it++)
-     {
-         delete *it;
-     }
-@@ -130,13 +132,17 @@
+@@ -130,7 +132,10 @@
          delete m_utility_thread;
          m_utility_thread = NULL;
      }
 -
-+    if (m_user_utility_thread)
-+    {
-+        delete m_user_utility_thread;
-+        m_user_utility_thread = NULL;
++    if (m_user_utility_thread) {
++      delete m_user_utility_thread;
++      m_user_utility_thread = NULL;
 +    }
  }
  
--void get_thread_set(vector<se_thread_id_t> &thread_vector);
--inline int CTrustThreadPool::find_thread(vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id)
-+void get_thread_set(std::vector<se_thread_id_t> &thread_vector);
-+inline int CTrustThreadPool::find_thread(std::vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id)
- {
--    for(vector<se_thread_id_t>::iterator it=thread_vector.begin(); it!=thread_vector.end(); it++)
-+    for(std::vector<se_thread_id_t>::iterator it=thread_vector.begin(); it!=thread_vector.end(); it++)
-         if(*it == thread_id)
-             return TRUE;
-     return FALSE;
-@@ -209,7 +215,7 @@
+ void get_thread_set(std::vector<se_thread_id_t> &thread_vector);
+@@ -209,7 +214,7 @@
      return trust_thread;
  }
  
@@ -1969,7 +1468,7 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
  {
      CTrustThread *trust_thread = new CTrustThread(tcs, enclave);
      LockGuard lock(&m_thread_mutex);
-@@ -218,6 +224,8 @@
+@@ -218,6 +223,8 @@
      {
          if (g_enclave_creator->is_EDMM_supported(enclave->get_enclave_id()) && !m_utility_thread && (enclave->get_dynamic_tcs_list_size() != 0))
              m_utility_thread = trust_thread;
@@ -1978,24 +1477,13 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
          else
              m_free_thread_vector.push_back(trust_thread);
      }
-@@ -252,9 +260,9 @@
- {
-     LockGuard lock(&m_thread_mutex);
- 
--    vector<CTrustThread *> threads;
-+    std::vector<CTrustThread *> threads;
- 
--    for(vector<CTrustThread *>::iterator it = m_free_thread_vector.begin(); it != m_free_thread_vector.end(); it++)
-+    for(std::vector<CTrustThread *>::iterator it = m_free_thread_vector.begin(); it != m_free_thread_vector.end(); it++)
-     {
-         threads.push_back(*it);
-     }
-@@ -309,7 +317,7 @@
+@@ -309,7 +316,8 @@
      //try to get tcs from thread cache
      se_thread_id_t thread_id = get_thread_id();
      CTrustThread *trust_thread = get_bound_thread(thread_id);
 -    if(NULL != trust_thread  && m_utility_thread != trust_thread)
-+    if(NULL != trust_thread && m_utility_thread != trust_thread && m_user_utility_thread != trust_thread)
++    if(NULL != trust_thread  && m_utility_thread != trust_thread &&
++        m_user_utility_thread != trust_thread)
      {
          return trust_thread;
      }
@@ -2009,42 +1497,39 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
  
      if(is_special_ecall == true)
      {
-@@ -357,6 +366,23 @@
+@@ -357,6 +366,21 @@
              trust_thread = _acquire_thread();
          }
      }
 +    else if (is_user_utility)
 +    {
-+        if (m_user_utility_thread)
-+        {
-+            // An active user utility thread could be used to enter the enclave
-+            // only if it is for exception handling.
-+            if (m_user_utility_thread_in_use.exchange(true) && !is_user_utility_exception)
-+            {
-+                return NULL;
-+            }
-+            trust_thread = m_user_utility_thread;
-+            assert(trust_thread != NULL);
-+        } else
++      if (m_user_utility_thread) {
++        // An active user utility thread could be used to enter the enclave
++        // only if it is for exception handling.
++        if (m_user_utility_thread_in_use.exchange(true) && !is_user_utility_exception)
 +        {
 +            return NULL;
 +        }
++        trust_thread = m_user_utility_thread;
++        assert(trust_thread != NULL);
++      } else {
++        return NULL;
++      }
 +    }
      else
      {
          trust_thread = _acquire_thread();
-@@ -392,6 +418,10 @@
+@@ -392,6 +416,9 @@
  //Do nothing for bind mode, the tcs is always bound to a thread.
  void CTrustThreadPool::release_thread(CTrustThread * const trust_thread)
  {
-+    if (trust_thread == m_user_utility_thread)
-+    {
-+        m_user_utility_thread_in_use = false;
-+    }
++  if (trust_thread == m_user_utility_thread) {
++    m_user_utility_thread_in_use = false;
++  }
      LockGuard lock(&m_thread_mutex);
      trust_thread->decrease_ref();
      return;
-@@ -454,7 +484,7 @@
+@@ -454,7 +481,7 @@
  
  sgx_status_t CTrustThreadPool::new_thread()
  {
@@ -2053,19 +1538,10 @@ diff -Nur psw/urts/tcs.cpp psw/urts/tcs.cpp
      if(!m_utility_thread)
      {
          return ret;
-@@ -533,7 +563,7 @@
- 
-     //if free list is NULL, recycle tcs.
-     //get thread id set of current process
--    vector<se_thread_id_t> thread_vector;
-+    std::vector<se_thread_id_t> thread_vector;
-     get_thread_set(thread_vector);
-     //walk through thread cache to see if there is any thread that has exited
-     Node<se_thread_id_t, CTrustThread*>* it = m_thread_list, *pre = NULL, *tmp = NULL;
 diff -Nur psw/urts/tcs.h psw/urts/tcs.h
 --- psw/urts/tcs.h
 +++ psw/urts/tcs.h
-@@ -38,11 +38,10 @@
+@@ -38,6 +38,7 @@
  #include "sgx_error.h"
  #include "se_debugger_lib.h"
  #include "se_lock.hpp"
@@ -2073,12 +1549,7 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
  #include <vector>
  #include "node.h"
  
--using namespace std;
--
- typedef int (*bridge_fn_t)(const void*);
- 
- class CEnclave;
-@@ -77,7 +76,7 @@
+@@ -75,7 +76,7 @@
      virtual ~CTrustThreadPool();
      CTrustThread * acquire_thread(int ecall_cmd);
      void release_thread(CTrustThread * const trust_thread);
@@ -2087,26 +1558,7 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
      CTrustThread *get_bound_thread(const tcs_t *tcs);
      std::vector<CTrustThread *> get_thread_list();
      void reset();
-@@ -88,15 +87,15 @@
-     bool is_dynamic_thread_exist();
- protected:
-     virtual int garbage_collect() = 0;
--    inline int find_thread(vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id);
-+    inline int find_thread(std::vector<se_thread_id_t> &thread_vector, se_thread_id_t thread_id);
-     inline CTrustThread * get_free_thread();
-     int bind_thread(const se_thread_id_t thread_id, CTrustThread * const trust_thread);
-     void unbind_thread(const se_thread_id_t thread_id);
-     CTrustThread * get_bound_thread(const se_thread_id_t thread_id);
-     void add_to_free_thread_vector(CTrustThread* it);
-     
--    vector<CTrustThread *>                  m_free_thread_vector;
--    vector<CTrustThread *>                  m_unallocated_threads; 
-+    std::vector<CTrustThread *>                  m_free_thread_vector;
-+    std::vector<CTrustThread *>                  m_unallocated_threads; 
-     Node<se_thread_id_t, CTrustThread *>    *m_thread_list;
-     Mutex                                   m_thread_mutex; //protect thread_cache list. The mutex is recursive.
-                                                             //Thread can operate the list when it get the mutex
-@@ -105,8 +104,10 @@
+@@ -103,8 +104,10 @@
  private:
      CTrustThread * _acquire_thread();
      CTrustThread *m_utility_thread;
@@ -2120,25 +1572,92 @@ diff -Nur psw/urts/tcs.h psw/urts/tcs.h
 diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 --- psw/urts/urts_com.h
 +++ psw/urts/urts_com.h
-@@ -189,6 +189,8 @@
-                             se_file_t& file, 
-                             const bool debug, 
-                             SGXLaunchToken *lc, 
-+                            void **enclave_base_addr,
-+                            bool enable_user_utility,
-                             le_prd_css_file_t *prd_css_file, 
-                             sgx_enclave_id_t *enclave_id, 
-                             sgx_misc_attribute_t *misc_attr,
-@@ -201,7 +203,7 @@
-     int ret = SGX_SUCCESS;
+@@ -67,7 +67,6 @@
+ 
+ 
+ 
+-#define GET_FEATURE_POINTER(feature_name, ex_features_p)    ex_features_p[feature_name##_BIT_IDX]
+ // Get the corresponding feature pointer for the input feature name
+ // This function should only be called for the features which have the corresponding feature structs
+ // Return value: 
+@@ -79,32 +78,20 @@
+     bool fbit_set = (feature_name & ex_features) ? true : false;
+     void *pointer = NULL;
+     int ret = -1;
++    #define FEATURE_CASE(name) case name:                                \
++        if (ex_features_p != NULL)                                       \
++            pointer = const_cast<void *>(ex_features_p[name##_BIT_IDX]); \
++        if (fbit_set && pointer)                                         \
++            ret = 1;                                                     \
++        else if (!fbit_set && !pointer)                                  \
++            ret = 0;                                                     \
++        break;
+     switch(feature_name)
+     {
+-    case SGX_CREATE_ENCLAVE_EX_PCL:
+-        if (ex_features_p != NULL)
+-            pointer = const_cast<void *>(GET_FEATURE_POINTER(SGX_CREATE_ENCLAVE_EX_PCL, ex_features_p));
+-        if (fbit_set && pointer)
+-            ret = 1;
+-        else if (!fbit_set && !pointer)
+-            ret = 0;
+-        break;
+-    case SGX_CREATE_ENCLAVE_EX_SWITCHLESS:
+-        if (ex_features_p != NULL)
+-            pointer = const_cast<void *>(GET_FEATURE_POINTER(SGX_CREATE_ENCLAVE_EX_SWITCHLESS, ex_features_p));
+-        if (fbit_set && pointer)
+-            ret = 1;
+-        else if (!fbit_set && !pointer)
+-            ret = 0;
+-        break;
+-    case SGX_CREATE_ENCLAVE_EX_KSS:
+-        if (ex_features_p != NULL)
+-            pointer = const_cast<void *>(GET_FEATURE_POINTER(SGX_CREATE_ENCLAVE_EX_KSS, ex_features_p));
+-        if (fbit_set && pointer)
+-            ret = 1;
+-        else if (!fbit_set && !pointer)
+-            ret = 0;
+-        break;
++    FEATURE_CASE(SGX_CREATE_ENCLAVE_EX_PCL);
++    FEATURE_CASE(SGX_CREATE_ENCLAVE_EX_SWITCHLESS);
++    FEATURE_CASE(SGX_CREATE_ENCLAVE_EX_KSS);
++    FEATURE_CASE(SGX_CREATE_ENCLAVE_EX_ASYLO);
+     default:
+         break;
+     }
+@@ -250,19 +237,29 @@
+     sgx_config_id_t *config_id = NULL;
+     sgx_config_svn_t config_svn = 0;
+     sgx_kss_config_t *kss_config = NULL;
++    void **enclave_base_addr = NULL;
++    bool enable_user_utility = false;
++    asylo_sgx_config_t *asylo_config = NULL;
+     sgx_uswitchless_config_t* us_config = NULL;
+     
      CLoader loader(base_addr, parser);
  
--    ret = loader.load_enclave_ex(lc, debug, metadata, prd_css_file, misc_attr);
-+    ret = loader.load_enclave_ex(lc, debug, metadata, enclave_base_addr, prd_css_file, misc_attr);
+-    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_KSS, ex_features, ex_features_p, (void **)&kss_config) == -1)
++    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_KSS, ex_features, ex_features_p, (void **)&kss_config) == -1 ||
++        get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_ASYLO, ex_features,
++                           ex_features_p, (void**)&asylo_config) == -1)
+         return SGX_ERROR_INVALID_PARAMETER;
+     if (kss_config)
+     {
+         config_id = &(kss_config->config_id);
+         config_svn = kss_config->config_svn;
+     }
++    if (asylo_config)
++    {
++        enclave_base_addr = asylo_config->base_address;
++        enable_user_utility = asylo_config->enable_user_utility;
++    }
+ 
+-    ret = loader.load_enclave_ex(lc, debug, metadata, config_id, config_svn, prd_css_file, misc_attr);
++    ret = loader.load_enclave_ex(lc, debug, metadata, enclave_base_addr, config_id, config_svn, prd_css_file, misc_attr);
      if (ret != SGX_SUCCESS)
      {
          return ret;
-@@ -257,13 +259,13 @@
+@@ -326,13 +323,13 @@
      {
          loader.destroy_enclave();
          delete enclave;
@@ -2154,160 +1673,17 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
          SE_TRACE(SE_TRACE_DEBUG, "add tcs %p\n", tcs_list[idx].first);
      }
      
-@@ -423,32 +425,30 @@
- }
- 
- 
--sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
--	                            sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, 
--                                sgx_misc_attribute_t *misc_attr, const uint32_t ex_features, const void* ex_features_p[32])
-+
-+sgx_status_t _create_enclave_ex_internal(
-+        uint8_t *base_addr,
-+        uint64_t file_size,
-+        const bool debug,
-+        se_file_t& file,
-+        void **enclave_base_addr,
-+        bool enable_user_utility,
-+        le_prd_css_file_t *prd_css_file,
-+        sgx_launch_token_t *launch,
-+        int *launch_updated,
-+        sgx_enclave_id_t *enclave_id,
-+        sgx_misc_attribute_t *misc_attr,
-+        const uint32_t ex_features,
-+        const void* ex_features_p[32])
- {
-     unsigned int ret = SGX_SUCCESS;
-     sgx_status_t lt_result = SGX_SUCCESS;
--    uint32_t file_size = 0;
--    map_handle_t* mh = NULL;
-     sgx_misc_attribute_t sgx_misc_attr;
-     metadata_t *metadata = NULL;
-     SGXLaunchToken *lc = NULL;
-     memset(&sgx_misc_attr, 0, sizeof(sgx_misc_attribute_t));
- 
--    if(NULL == launch || NULL == launch_updated || NULL == enclave_id)
--        return SGX_ERROR_INVALID_PARAMETER;
--#ifndef SE_SIM
--    ret = validate_platform();
--    if(ret != SGX_SUCCESS)
--        return (sgx_status_t)ret;
--#endif
--
--    mh = map_file(pfile, &file_size);
--    if (!mh)
--        return SGX_ERROR_OUT_OF_MEMORY;
--
--    PARSER parser(const_cast<uint8_t *>(mh->base_addr), (uint64_t)(file_size));
-+    PARSER parser(base_addr, file_size);
-     if(SGX_SUCCESS != (ret = parser.run_parser()))
-     {
-         goto clean_return;
-@@ -516,7 +516,7 @@
- 
-     //Need to set the whole misc_attr instead of just secs_attr.
-     do {
--        ret = __create_enclave(parser, mh->base_addr, metadata, file, debug, lc, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
-+        ret = __create_enclave(parser, base_addr, metadata, file, debug, lc, enclave_base_addr, enable_user_utility, prd_css_file, enclave_id, misc_attr, ex_features, ex_features_p);
-         //SGX_ERROR_ENCLAVE_LOST caused by initializing enclave while power transition occurs
-     } while(SGX_ERROR_ENCLAVE_LOST == ret);
- 
-@@ -541,17 +541,80 @@
- 
- 
- clean_return:
--    if(mh != NULL)
--        unmap_file(mh);
-     if(lc != NULL)
-         delete lc;
-     return (sgx_status_t)ret;
- }
- 
--sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, le_prd_css_file_t *prd_css_file, 
--                             sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr) 
-+
-+sgx_status_t _create_enclave_ex(const bool debug, se_file_handle_t pfile, se_file_t& file, void **enclave_base_addr,
-+                                bool enable_user_utility, le_prd_css_file_t *prd_css_file, sgx_launch_token_t *launch,
-+                                int *launch_updated, sgx_enclave_id_t *enclave_id, sgx_misc_attribute_t *misc_attr,
-+                                const uint32_t ex_features, const void* ex_features_p[32])
-+{
-+    unsigned int ret = SGX_SUCCESS;
-+    uint32_t file_size = 0;
-+    map_handle_t* mh = NULL;
-+
-+    if(NULL == launch || NULL == launch_updated || NULL == enclave_id)
-+        return SGX_ERROR_INVALID_PARAMETER;
-+#ifndef SE_SIM
-+    ret = validate_platform();
-+    if(ret != SGX_SUCCESS)
-+        return (sgx_status_t)ret;
-+#endif
-+
-+    mh = map_file(pfile, &file_size);
-+    if (!mh)
-+        return SGX_ERROR_OUT_OF_MEMORY;
-+
-+    ret = _create_enclave_ex_internal(
-+            mh->base_addr, (uint64_t)file_size, debug, file, enclave_base_addr, enable_user_utility, prd_css_file, launch,
-+            launch_updated, enclave_id, misc_attr, ex_features, ex_features_p);
-+
-+    if(mh != NULL)
-+        unmap_file(mh);
-+    return (sgx_status_t)ret;
-+}
-+
-+sgx_status_t _create_enclave_from_buffer_ex(
-+        uint8_t *buffer,
-+        size_t buffer_size,
-+        const bool debug,
-+        se_file_t& file,
-+        void **enclave_base_addr,
-+        bool enable_user_utility,
-+        le_prd_css_file_t *prd_css_file,
-+        sgx_launch_token_t *launch,
-+        int *launch_updated,
-+        sgx_enclave_id_t *enclave_id,
-+        sgx_misc_attribute_t *misc_attr,
-+        const uint32_t ex_features,
-+        const void* ex_features_p[32])
-+{
-+    unsigned int ret = SGX_SUCCESS;
-+
-+    if(NULL == buffer || NULL == launch || NULL == launch_updated || NULL == enclave_id)
-+        return SGX_ERROR_INVALID_PARAMETER;
-+#ifndef SE_SIM
-+    ret = validate_platform();
-+    if(ret != SGX_SUCCESS)
-+        return (sgx_status_t)ret;
-+#endif
-+
-+    ret = _create_enclave_ex_internal(
-+            buffer, (uint64_t)buffer_size, debug, file, enclave_base_addr, enable_user_utility,
-+            prd_css_file, launch, launch_updated, enclave_id, misc_attr, ex_features, ex_features_p);
-+
-+    return (sgx_status_t)ret;
-+}
-+
-+sgx_status_t _create_enclave(const bool debug, se_file_handle_t pfile, se_file_t& file, void **enclave_base_addr, bool enable_user_utility,
-+                             le_prd_css_file_t *prd_css_file,  sgx_launch_token_t *launch, int *launch_updated, sgx_enclave_id_t *enclave_id,
-+                             sgx_misc_attribute_t *misc_attr)
- {
--    return _create_enclave_ex(debug, pfile, file, prd_css_file, launch, launch_updated, enclave_id, misc_attr, 0, NULL);
-+    return _create_enclave_ex(debug, pfile, file, enclave_base_addr, enable_user_utility, prd_css_file, launch, launch_updated, enclave_id,
-+                              misc_attr, 0, NULL);
- }
- 
- 
-@@ -565,7 +628,7 @@
+@@ -658,7 +655,8 @@
              debug_enclave_info_t *debug_info = const_cast<debug_enclave_info_t *>(enclave->get_debug_info());
              generate_enclave_debug_event(URTS_EXCEPTION_PREREMOVEENCLAVE, debug_info);
              enclave->destroy_uswitchless();
 -            enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL);
-+            enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL, /*is_utility=*/false);
++            enclave->ecall(ECMD_UNINIT_ENCLAVE, NULL, NULL,
++                           /*is_utility=*/false);
              CEnclavePool::instance()->unref_enclave(enclave);
          }
      }
-@@ -580,4 +643,22 @@
+@@ -673,4 +671,21 @@
  
      return status;
  }
@@ -2328,7 +1704,6 @@ diff -Nur psw/urts/urts_com.h psw/urts/urts_com.h
 +    }
 +    return 0;
 +}
-+
  #endif
 diff -Nur psw/uswitchless/sl_workers_untrusted.c psw/uswitchless/sl_workers_untrusted.c
 --- psw/uswitchless/sl_workers_untrusted.c
@@ -2602,7 +1977,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
  
    (* Rare case - the trusted function doesn't have parameter nor return value.
     * In this situation, no marshaling structure is required - passing in NULL.
-@@ -1372,7 +1463,7 @@
+@@ -1377,7 +1468,7 @@
       List.fold_left (fun acc s -> acc ^ s) s2 do_gen_ocalloc_block
  
  (* Generate trusted proxy code for a given untrusted function. *)
@@ -2611,7 +1986,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let fd = ufunc.Ast.uf_fdecl in
    let propagate_errno = ufunc.Ast.uf_propagate_errno in
    let func_open = sprintf "%s\n{\n" (gen_tproxy_proto fd) in
-@@ -1435,7 +1526,13 @@
+@@ -1440,7 +1531,13 @@
                               Ast.PTVal _ -> acc
                 | Ast.PTPtr(ty, attr) -> acc ^ copy_memory attr declr) "" plist in
  
@@ -2626,7 +2001,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let func_close = sprintf "%s%s%s\n%s%s\n"
                             (handle_out_ptr fd.Ast.plist)
                             set_errno
-@@ -1495,12 +1592,16 @@
+@@ -1500,12 +1597,16 @@
        ec.tfunc_decls
        (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
    in
@@ -2644,7 +2019,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      List.iter (fun s -> output_string out_chan (s ^ "\n")) ubridge_list;
      output_string out_chan (gen_ocall_table ec);
      List.iter (fun s -> output_string out_chan (s ^ "\n")) uproxy_list;
-@@ -1537,14 +1638,18 @@
+@@ -1542,14 +1643,18 @@
      List.map (fun tfd -> gen_func_tbridge tfd dummy_var) trusted_fds in
    let ecall_table = gen_ecall_table ec.tfunc_decls in
    let entry_table = gen_entry_table ec in
@@ -2664,7 +2039,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
      output_string out_chan (ecall_table ^ "\n");
      output_string out_chan (entry_table ^ "\n");
      output_string out_chan "\n";
-@@ -1647,10 +1752,18 @@
+@@ -1652,10 +1757,18 @@
    in
      List.iter check_ecall priv_ecall_names
  
@@ -2686,16 +2061,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    then failwithf "the enclave `%s' contains no public root ECALL.\n" ec.file_shortnm
    else report_orphaned_priv_ecall ec
  
-@@ -1665,7 +1778,7 @@
-  *)
- let reduce_import (ec: enclave_content) =
-   (* Append a EDL list to another. Keep the first element and replace the
--   second one with empty element contains functions not in the first one 
-+   second one with empty element contains functions not in the first one
-    if both lists contain a same EDL. The function sequence is backwards compatible.*)
-   let join (ec1: enclave_content list) (ec2: enclave_content list) =
-     let join_one (acc: enclave_content list) (ec: enclave_content) =
-@@ -1743,6 +1856,7 @@
+@@ -1748,6 +1861,7 @@
          include_list = acc.include_list @ ec2.include_list;
          import_exprs = [];
          comp_defs    = acc.comp_defs   @ ec2.comp_defs;
@@ -2703,7 +2069,7 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
          tfunc_decls  = acc.tfunc_decls @ ec2.tfunc_decls;
          ufunc_decls  = acc.ufunc_decls @ ec2.ufunc_decls; }
    in
-@@ -1758,7 +1872,7 @@
+@@ -1763,7 +1877,7 @@
      create_dir ep.trusted_dir;
      check_duplication ec;
      check_allow_list ec;
@@ -2789,18 +2155,45 @@ diff -Nur sdk/edger8r/linux/Parser.mly sdk/edger8r/linux/Parser.mly
    | expressions enclave_functions             { Ast.Interface($2) :: $1 }
    ;
  
+diff -Nur sdk/selib/sgx_create_report.cpp sdk/selib/sgx_create_report.cpp
+--- sdk/selib/sgx_create_report.cpp
++++ sdk/selib/sgx_create_report.cpp
+@@ -48,8 +48,6 @@
+ // add a version to tservice.
+ SGX_ACCESS_VERSION(tservice, 1)
+ 
+-extern "C" void * __memset(void *dst, int c, size_t n);
+-
+ sgx_status_t sgx_create_report(const sgx_target_info_t *target_info, const sgx_report_data_t *report_data, sgx_report_t *report)
+ {
+     static_assert(sizeof(*target_info) == 512, "sgx_target_info_t");
+@@ -57,11 +55,11 @@
+     static_assert(sizeof(*report) == 432, "sgx_report_t");
+ 
+     alignas(REPORT_DATA_ALIGN_SIZE) sgx_report_data_t tmp_report_data;
+-    __memset((void *)&tmp_report_data, 0, sizeof(sgx_report_data_t));
++    memset((void *)&tmp_report_data, 0, sizeof(sgx_report_data_t));
+     alignas(TARGET_INFO_ALIGN_SIZE) sgx_target_info_t tmp_target_info;
+-    __memset((void *)&tmp_target_info, 0, sizeof(sgx_target_info_t));    
++    memset((void *)&tmp_target_info, 0, sizeof(sgx_target_info_t));
+     alignas(REPORT_ALIGN_SIZE)sgx_report_t tmp_report;
+-    __memset((void *)&tmp_report, 0, sizeof(sgx_report_t));
++    memset((void *)&tmp_report, 0, sizeof(sgx_report_t));
+ 
+     // check parameters
+     //
 diff -Nur sdk/selib/sgx_get_key.cpp sdk/selib/sgx_get_key.cpp
 --- sdk/selib/sgx_get_key.cpp
 +++ sdk/selib/sgx_get_key.cpp
-@@ -55,7 +55,6 @@
-     size_t size = 0, buf_ptr =0;
+@@ -56,7 +56,6 @@
+     size_t size = 0, buf_ptr = 0;
      sgx_key_request_t *tmp_key_request = NULL;
      sgx_key_128bit_t *tmp_key = NULL;
 -    egetkey_status_t egetkey_status = EGETKEY_SUCCESS;
      int i = 0;
- 
+     const sgx_report_t *report = NULL;
      // check parameters
-@@ -133,29 +132,7 @@
+@@ -143,29 +142,7 @@
      memcpy_s(tmp_key_request, sizeof(*tmp_key_request), key_request, sizeof(*key_request));
  
      // Do EGETKEY
@@ -2831,113 +2224,18 @@ diff -Nur sdk/selib/sgx_get_key.cpp sdk/selib/sgx_get_key.cpp
  
  CLEANUP:
      if((SGX_SUCCESS != err) && (NULL != key))
-diff -Nur sdk/sign_tool/SignTool/elf_helper.h sdk/sign_tool/SignTool/elf_helper.h
---- sdk/sign_tool/SignTool/elf_helper.h
-+++ sdk/sign_tool/SignTool/elf_helper.h
-@@ -41,11 +41,9 @@
- 
- static void dump_textrel(const uint64_t& offset)
+diff -Nur sdk/sign_tool/SignTool/sign_tool.cpp sdk/sign_tool/SignTool/sign_tool.cpp
+--- sdk/sign_tool/SignTool/sign_tool.cpp
++++ sdk/sign_tool/SignTool/sign_tool.cpp
+@@ -101,7 +101,7 @@
+ static int load_enclave(BinParser *parser, metadata_t *metadata)
  {
--    using namespace std;
--
--    cerr << "warning: TEXTRELs found at offset: "
--         << std::hex << showbase     /* show the '0x' prefix */
--         << offset << endl;
-+    std::cerr << "warning: TEXTRELs found at offset: "
-+              << std::hex << std::showbase     /* show the '0x' prefix */
-+              << offset << std::endl;
+     std::unique_ptr<CLoader> ploader(new CLoader(const_cast<uint8_t *>(parser->get_start_addr()), *parser));
+-    return ploader->load_enclave_ex(NULL, 0, metadata, NULL,  0, NULL);
++    return ploader->load_enclave_ex(NULL, 0, metadata, NULL, NULL, 0, NULL);
  }
  
- template <int N>
-@@ -87,13 +85,13 @@
  
-     static bool dump_textrels(BinParser *bp)
-     {
--        vector<uint64_t> offsets;
-+        std::vector<uint64_t> offsets;
-         bool no_rel = true;
-         /* The dynamic_cast<> shouldn't fail. */
-         elf_parser_t   * p = dynamic_cast<elf_parser_t*>(bp);
-         if (p == NULL)
-             return no_rel;
--        vector<const char *> sec_names;
-+        std::vector<const char *> sec_names;
-         p->get_executable_sections(sec_names);
-         /* Warn user of TEXTRELs */
-         for (unsigned i = 0; i< sec_names.size(); i++)
-diff -Nur sdk/sign_tool/SignTool/manage_metadata.cpp sdk/sign_tool/SignTool/manage_metadata.cpp
---- sdk/sign_tool/SignTool/manage_metadata.cpp
-+++ sdk/sign_tool/SignTool/manage_metadata.cpp
-@@ -55,7 +55,11 @@
- #include <iomanip>
- #include <fstream>
- 
--using namespace tinyxml2;
-+using tinyxml2::XML_ERROR_FILE_COULD_NOT_BE_OPENED;
-+using tinyxml2::XML_ERROR_FILE_NOT_FOUND;
-+using tinyxml2::XML_SUCCESS;
-+using tinyxml2::XMLElement;
-+using tinyxml2::XMLError;
- 
- #define ALIGN_SIZE 0x1000
- 
-@@ -227,7 +231,7 @@
-     if(timeinfo  == NULL)
-         return false;
-     uint32_t tmp_date = (timeinfo->tm_year+1900)*10000 + (timeinfo->tm_mon+1)*100 + timeinfo->tm_mday;
--    stringstream ss;
-+    std::stringstream ss;
-     ss<<"0x"<<tmp_date;
-     ss>>std::hex>>tmp_date;
-     *date = tmp_date;
-@@ -513,7 +517,7 @@
-     guard_page.entry.id = LAYOUT_ID_GUARD;
-     guard_page.entry.page_count = SE_GUARD_PAGE_SIZE >> SE_PAGE_SHIFT;
- 
--    vector<layout_t> thread_layouts;
-+    std::vector<layout_t> thread_layouts;
-     // heap
-     layout.entry.id = LAYOUT_ID_HEAP_MIN;
-     layout.entry.page_count = (uint32_t)(m_create_param.heap_min_size >> SE_PAGE_SHIFT);
-@@ -702,7 +706,7 @@
-     }
-     return true;
- }
--bool CMetadata::build_patch_entries(vector<patch_entry_t> &patches)
-+bool CMetadata::build_patch_entries(std::vector<patch_entry_t> &patches)
- {
-     uint32_t size = (uint32_t)(patches.size() * sizeof(patch_entry_t));
-     patch_entry_t *patch_table = (patch_entry_t *) alloc_buffer_from_metadata(size);
-@@ -724,7 +728,7 @@
- bool CMetadata::build_patch_table()
- {
-     const uint8_t *base_addr = (const uint8_t *)m_parser->get_start_addr();
--    vector<patch_entry_t> patches;
-+    std::vector<patch_entry_t> patches;
-     patch_entry_t patch;
-     memset(&patch, 0, sizeof(patch));
- 
-diff -Nur sdk/sign_tool/SignTool/manage_metadata.h sdk/sign_tool/SignTool/manage_metadata.h
---- sdk/sign_tool/SignTool/manage_metadata.h
-+++ sdk/sign_tool/SignTool/manage_metadata.h
-@@ -100,7 +100,7 @@
-     bool build_patch_table();
-     bool update_layout_entries();
-     bool build_layout_entries();
--    bool build_patch_entries(vector<patch_entry_t> &patches);
-+    bool build_patch_entries(std::vector<patch_entry_t> &patches);
- 
-     layout_entry_t *get_entry_by_id(uint16_t id);
-     bool build_tcs_template(tcs_t *tcs);
-@@ -113,7 +113,7 @@
-     metadata_t *m_metadata;
-     BinParser *m_parser;
-     create_param_t m_create_param;
--    vector <layout_t> m_layouts;
-+    std::vector <layout_t> m_layouts;
-     uint64_t m_rva;
-     uint32_t m_gd_size;
-     uint8_t *m_gd_template;
 diff -Nur sdk/simulation/driver_api/driver_api.cpp sdk/simulation/driver_api/driver_api.cpp
 --- sdk/simulation/driver_api/driver_api.cpp
 +++ sdk/simulation/driver_api/driver_api.cpp
@@ -2949,24 +2247,6 @@ diff -Nur sdk/simulation/driver_api/driver_api.cpp sdk/simulation/driver_api/dri
  
      ce = reinterpret_cast<CEnclaveSim*>(DoECREATE_SW(&pinfo));
      if (ce == NULL) {
-diff -Nur sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
---- sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
-+++ sdk/simulation/SEConfigureCPUSVN/linux/config_cpusvn.cpp
-@@ -49,13 +49,11 @@
- #include <string>
- #include <sstream>
- 
--using namespace std;
--
- static void convert_cpusvn_to_string(sgx_cpu_svn_t &cpusvn, string &str)
- {
-     uint32_t buffer[4];
-     memcpy_s(&buffer, sizeof(uint32_t)*4, &cpusvn, sizeof(sgx_cpu_svn_t));
--    stringstream ss;
-+    std::stringstream ss;
-     for(int i=0; i<4; i++)
-     {
-         buffer[i] = __builtin_bswap32(buffer[i]);
 diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instructions.cpp
 --- sdk/simulation/uinst/u_instructions.cpp
 +++ sdk/simulation/uinst/u_instructions.cpp
@@ -2982,19 +2262,21 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/enclave_creator_sim.cpp
 --- sdk/simulation/urtssim/enclave_creator_sim.cpp
 +++ sdk/simulation/urtssim/enclave_creator_sim.cpp
-@@ -246,7 +246,7 @@
+@@ -226,7 +226,9 @@
      get_cpu_features(&info.cpu_features, (unsigned int*)info.cpuinfo_table);
      info.version = SDK_VERSION_1_5;
      info.sealed_key = enclave->get_sealed_key();
 -    status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
-+    status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info), /*is_utility=*/false);
++    status =
++        enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info),
++                       /*is_utility=*/false);
      //free the tcs used by initialization;
      enclave->get_thread_pool()->reset();
      if(SGX_SUCCESS == status)
 diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
 --- sdk/simulation/urtssim/get_state.cpp
 +++ sdk/simulation/urtssim/get_state.cpp
-@@ -0,0 +1,44 @@
+@@ -0,0 +1,40 @@
 +/*
 + * Copyright (C) 2011-2017 Intel Corporation. All rights reserved.
 + *
@@ -3026,19 +2308,77 @@ diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.
 + *
 + */
 +
-+
 +#include "td_mngr.h"
 +
-+extern "C" int is_tcs_sim_active(const tcs_t *tcs)
-+{
-+  if (tcs)
-+  {
++extern "C" int is_tcs_sim_active(const tcs_t* tcs) {
++  if (tcs) {
 +    tcs_sim_t* tcs_sim = (tcs_sim_t*)(tcs->reserved);
-+    if (tcs_sim)
-+      return (tcs_sim->tcs_state == TCS_STATE_ACTIVE ? 1 : 0);
++    if (tcs_sim) return (tcs_sim->tcs_state == TCS_STATE_ACTIVE ? 1 : 0);
 +  }
 +  return 0;
 +}
+diff -Nur sdk/switchless/src/sl_siglines.c sdk/switchless/src/sl_siglines.c
+--- sdk/switchless/src/sl_siglines.c
++++ sdk/switchless/src/sl_siglines.c
+@@ -70,11 +70,12 @@
+     uint64_t* free_lines = NULL;
+     if (is_direction_sender(dir)) 
+     {
++        uint32_t i = 0;
+         free_lines = malloc(sizeof(uint64_t) * nlong);
+         if (free_lines == NULL) 
+             return -ENOMEM;
+ 		
+-        for (uint32_t i = 0; i < nlong; i++) 
++        for (; i < nlong; i++) 
+             free_lines[i] = (uint64_t)(-1);// 1's -> free
+     }
+     sglns->free_lines = free_lines;
+diff -Nur sdk/switchless/src/sl_workers.c sdk/switchless/src/sl_workers.c
+--- sdk/switchless/src/sl_workers.c
++++ sdk/switchless/src/sl_workers.c
+@@ -69,11 +69,12 @@
+     size_t table_size = sizeof(sl_fcall_table_t)
+                       + sizeof(sl_fcall_func_t) * num_ecalls;
+     sl_fcall_table_t* fcall_table = malloc(table_size);
++    uint32_t fi = 0;
+     if (fcall_table == NULL) return NULL;
+ 
+     fcall_table->ftb_size = num_ecalls;
+ 
+-    for (uint32_t fi = 0; fi < num_ecalls; fi++) 
++    for (; fi < num_ecalls; fi++)
+     {
+         const ecall_info_t* ecall_info = &g_ecall_table.ecall_table[fi];
+         fcall_table->ftb_func[fi] = ecall_info->is_priv == 0 ? (sl_fcall_func_t) ecall_info->ecall_addr : NULL;
+diff -Nur sdk/tlibc/gen/spinlock.c sdk/tlibc/gen/spinlock.c
+--- sdk/tlibc/gen/spinlock.c
++++ sdk/tlibc/gen/spinlock.c
+@@ -31,10 +31,13 @@
+ 
+ #include <sgx_spinlock.h>
+ 
+-static inline void _mm_pause(void) __attribute__((always_inline));
++/* clang disallows defining builtin functions.
++ * GCC does allow defining alt_mm_pause as _mm_pause with -ffreestanding
++ */
++static inline void alt_mm_pause(void) __attribute__((always_inline));
+ static inline int _InterlockedExchange(int volatile * dst, int val) __attribute__((always_inline));
+ 
+-static inline void _mm_pause(void)  /* definition requires -ffreestanding */
++static inline void alt_mm_pause(void)
+ {
+     __asm __volatile(
+         "pause"
+@@ -63,7 +66,7 @@
+     while(_InterlockedExchange((volatile int *)lock, 1) != 0) {
+         while (*lock) {
+             /* tell cpu we are spinning */
+-            _mm_pause();
++            alt_mm_pause();
+         } 
+     }
+ 
 diff -Nur sdk/tlibc/string/memset_s.c sdk/tlibc/string/memset_s.c
 --- sdk/tlibc/string/memset_s.c
 +++ sdk/tlibc/string/memset_s.c
@@ -3046,7 +2386,7 @@ diff -Nur sdk/tlibc/string/memset_s.c sdk/tlibc/string/memset_s.c
  #include <errno.h>
  #include <stdint.h>
  #include <string.h>
-+#include "rts_config.h"
++#include "runtime_support/rts_config.h"
  
  /*
   * __memset_vp is a volatile pointer to a function.
@@ -3064,24 +2404,25 @@ diff -Nur sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp sdk/tlibcrypto/sgxssl/sgx_cmac12
 diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
 --- sdk/trts/init_enclave.cpp
 +++ sdk/trts/init_enclave.cpp
-@@ -47,6 +47,7 @@
- #include "trts_internal.h"
- #include "linux/elf_parser.h"
+@@ -49,14 +49,15 @@
  #include "rts.h"
-+#include "rts_config.h"
  #include "trts_util.h"
  #include "se_memcpy.h"
++#include "runtime_support/rts_config.h"
  
-@@ -55,7 +56,7 @@
+ // The global cpu feature bits from uRTS
+ uint64_t g_cpu_feature_indicator __attribute__((section(RELRO_SECTION_NAME))) = 0;
  int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
  sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
  
 -const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4,
+-   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
 +const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6, 7, 8,
-    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
++    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
  uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
  
-@@ -172,17 +173,18 @@
+ extern "C" {
+@@ -172,17 +173,17 @@
      void *enclave_base = get_enclave_base();
      if(ENCLAVE_INIT_NOT_STARTED != lock_enclave())
      {
@@ -3096,20 +2437,21 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
  
  #ifndef SE_SIM
 -    if (SGX_SUCCESS != do_init_thread(tcs, true))
-+    sgx_status_t ret = do_init_thread(tcs, true);
-+    if (SGX_SUCCESS != ret)
-     {
+-    {
 -        return SGX_ERROR_UNEXPECTED;
++    sgx_status_t ret = do_init_thread(tcs, true);
++    if (SGX_SUCCESS != ret) {
 +        return ret;
      }
  
      /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
-@@ -197,7 +199,7 @@
+@@ -197,7 +198,8 @@
      else
  #endif
      {
 -        memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
-+        // memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset), g_global_data.heap_size, 0, g_global_data.heap_size);
++      // memset_s(GET_PTR(void, enclave_base, g_global_data.heap_offset),
++      // g_global_data.heap_size, 0, g_global_data.heap_size);
      }
  
      g_enclave_state = ENCLAVE_INIT_DONE;
@@ -3150,18 +2492,17 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
  #include "global_data.h"
  #include "trts_internal.h"
  #include "internal/rts.h"
-+#include "rts_config.h"
 +#include "trts_util.h"
++#include "runtime_support/rts_config.h"
  
  #ifdef SE_SIM
  #include "t_instructions.h"    /* for `g_global_data_sim' */
-@@ -318,3 +320,24 @@
+@@ -318,6 +320,27 @@
      return 0;
  }
  
-+void sgx_memory_layout(struct SgxMemoryLayout *memory_layout)
-+{
-+    get_memory_layout(memory_layout);
++void sgx_memory_layout(struct SgxMemoryLayout *memory_layout) {
++  get_memory_layout(memory_layout);
 +}
 +
 +sgx_status_t egetkey_status_to_sgx_status(int egetkey_status) {
@@ -3180,22 +2521,26 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
 +      return SGX_ERROR_UNEXPECTED;
 +  }
 +}
++
+ void random_stack_notify_gdb(void *addr, size_t size)
+ {
+     UNUSED(addr);
 diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
 --- sdk/trts/trts_ecall.cpp
 +++ sdk/trts/trts_ecall.cpp
-@@ -66,6 +66,11 @@
+@@ -67,6 +67,11 @@
              return SGX_ERROR_ECALL_NOT_ALLOWED;
          return SGX_SUCCESS;
      }
 +    // Exception handlers should be allowed no matter what ocall status it is.
-+    if (g_ecall_table.ecall_table[ordinal].is_exception)
++    if(g_ecall_table.ecall_table[ordinal].is_exception)
 +    {
-+      return SGX_SUCCESS;
++        return SGX_SUCCESS;
 +    }
      ocall_context_t *context = reinterpret_cast<ocall_context_t*>(thread_data->last_sp);
      if(context->ocall_flag != OCALL_FLAG)
      {
-@@ -109,7 +114,7 @@
+@@ -125,7 +130,7 @@
      *addr = const_cast<void *>(g_ecall_table.ecall_table[ordinal].ecall_addr);
      if(!sgx_is_within_enclave(*addr, 0))
      {
@@ -3204,7 +2549,7 @@ diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
      }
  
      return SGX_SUCCESS;
-@@ -328,7 +333,7 @@
+@@ -344,7 +349,7 @@
  
      if(0 != GET_TLS_INFO(&__ImageBase, &tls_addr, &tdata_size))
      {
@@ -3213,7 +2558,7 @@ diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
      }
      if(tls_addr)
      {
-@@ -339,7 +344,7 @@
+@@ -355,7 +360,7 @@
      return SGX_SUCCESS;
  }
  
@@ -3222,14 +2567,15 @@ diff -Nur sdk/trts/trts_ecall.cpp sdk/trts/trts_ecall.cpp
  {
      sgx_status_t status = SGX_ERROR_UNEXPECTED;
      if(ENCLAVE_INIT_DONE != get_enclave_state())
-@@ -347,7 +352,9 @@
+@@ -363,7 +368,10 @@
          return status;
      }
      thread_data_t *thread_data = get_thread_data();
 -    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
 +    // The thread local storage should not be cleared if this is a signal
 +    // handling ecall that interrupts the original ecall.
-+    if(!interrupted && ((NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy))))
++    if (!interrupted && ( (NULL == thread_data) ||
++         ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy))))
      {
          status = do_init_thread(tcs, false);
          if(0 != status)
@@ -3260,22 +2606,42 @@ diff -Nur sdk/trts/trts_internal.h sdk/trts/trts_internal.h
 diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 --- sdk/trts/trts_nsp.cpp
 +++ sdk/trts/trts_nsp.cpp
-@@ -48,7 +48,8 @@
+@@ -47,29 +47,7 @@
+ #include "global_data.h"
  #include "trts_internal.h"
  #include "internal/rts.h"
- 
+-
 -static void init_stack_guard(void *tcs)
-+static void __attribute__((optimize("no-stack-protector")))
-+init_stack_guard(void *tcs)
- {
-     thread_data_t *thread_data = get_thread_data();
-     if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
-@@ -87,13 +88,24 @@
+-{
+-    thread_data_t *thread_data = get_thread_data();
+-    if( (NULL == thread_data) || ((thread_data->stack_base_addr == thread_data->last_sp) && (0 != g_global_data.thread_policy)))
+-    {
+-         thread_data = GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
+-    }
+-    else
+-    {
+-        return;
+-    }
+-
+-    assert(thread_data != NULL);
+-
+-    size_t tmp_stack_guard = 0;
+-    if (SGX_SUCCESS != sgx_read_rand(
+-                (unsigned char*)&tmp_stack_guard,
+-                sizeof(tmp_stack_guard)))
+-        abort();
+-
+-    thread_data->stack_guard = tmp_stack_guard;
+-}
++#include "sdk/trts/trts_nsp_internal.h"
+ 
+ extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa) __attribute__((section(".nipx")));
+ 
+@@ -87,13 +65,25 @@
          return error;
      }
  
 -    if(cssa == 0)
--    {
 +    // Check whether the incoming ecall is a user exception. If index is within
 +    // range of the ecall table size, the is_exception field will be true for
 +    // user exceptions.
@@ -3285,7 +2651,8 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 +    // For a user exception, call |do_ecall| to enter enclave and handle the
 +    // signal, in this case cssa could be 0 or 1 (which is likely to be 1 when
 +    // an enclave is interrupted by an exception).
-+    if(cssa == 0 || (is_user_exception && cssa == 1))    {
++    if(cssa == 0 || (is_user_exception && cssa == 1))
+     {
          if((index >= 0) || (index == ECMD_INIT_SWITCHLESS) || (index == ECMD_RUN_SWITCHLESS_TWORKER))
          {
              // Initialize stack guard if necessary
@@ -3298,30 +2665,108 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
          }
          else if(index == ECMD_INIT_ENCLAVE)
          {
+diff -Nur sdk/trts/trts_nsp_internal.cpp sdk/trts/trts_nsp_internal.cpp
+--- sdk/trts/trts_nsp_internal.cpp
++++ sdk/trts/trts_nsp_internal.cpp
+@@ -0,0 +1,29 @@
++#include "sdk/trts/trts_nsp_internal.h"
++
++#include <assert.h>
++#include <stddef.h>
++#include "global_data.h"
++#include "sgx_trts.h"
++#include "thread_data.h"
++#include "util.h"
++
++void init_stack_guard(void *tcs) {
++  thread_data_t *thread_data = get_thread_data();
++  if ((NULL == thread_data) ||
++      ((thread_data->stack_base_addr == thread_data->last_sp) &&
++       (0 != g_global_data.thread_policy))) {
++    thread_data =
++        GET_PTR(thread_data_t, tcs, g_global_data.td_template.self_addr);
++  } else {
++    return;
++  }
++
++  assert(thread_data != NULL);
++
++  size_t tmp_stack_guard = 0;
++  if (SGX_SUCCESS !=
++      sgx_read_rand((unsigned char *)&tmp_stack_guard, sizeof(tmp_stack_guard)))
++    abort();
++
++  thread_data->stack_guard = tmp_stack_guard;
++}
+diff -Nur sdk/trts/trts_nsp_internal.h sdk/trts/trts_nsp_internal.h
+--- sdk/trts/trts_nsp_internal.h
++++ sdk/trts/trts_nsp_internal.h
+@@ -0,0 +1,6 @@
++#ifndef THIRD_PARTY_LINUX_SGX_V_2_4_SDK_TRTS_TRTS_NSP_H_
++#define THIRD_PARTY_LINUX_SGX_V_2_4_SDK_TRTS_TRTS_NSP_H_
++
++void init_stack_guard(void *tcs);
++
++#endif  // THIRD_PARTY_LINUX_SGX_V_2_4_SDK_TRTS_TRTS_NSP_H_
 diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 --- sdk/trts/trts_shared_constants.h
 +++ sdk/trts/trts_shared_constants.h
-@@ -47,7 +47,7 @@
+@@ -46,9 +46,7 @@
+ #define RED_ZONE_SIZE   0
  #endif
  
- 
+-
 -#define STATIC_STACK_SIZE   688
-+#define STATIC_STACK_SIZE   (8 * 1024)
- 
+-
++#define STATIC_STACK_SIZE (8 * 1024)
  
  #endif
+ 
+diff -Nur sdk/trts/trts_switchless.cpp sdk/trts/trts_switchless.cpp
+--- sdk/trts/trts_switchless.cpp
++++ sdk/trts/trts_switchless.cpp
+@@ -35,23 +35,19 @@
+ #include "global_data.h"
+ #include "util.h"
+ 
+-extern "C" {
+-
+ struct sl_uswitchless;
+ 
+-static sgx_status_t dummy_init_switchless(void* ms) {
+-    UNUSED(ms);
+-    return SGX_ERROR_UNEXPECTED;
++extern "C" sgx_status_t dummy_init_switchless(void* ms) {
++  UNUSED(ms);
++  return SGX_ERROR_UNEXPECTED;
+ }
+ /* Switchless SGX provides the real implementation for sl_init_uswitchless */
+ weak_alias(dummy_init_switchless, do_init_switchless);
+ 
+-
+-static sgx_status_t dummy_run_switchless_tworker(void* ms) {
+-    UNUSED(ms);
+-    return SGX_ERROR_UNEXPECTED;
++extern "C" sgx_status_t dummy_run_switchless_tworker(void* ms) {
++  UNUSED(ms);
++  return SGX_ERROR_UNEXPECTED;
+ }
+ /* Switchless SGX provides the real implementation for do_run_switchless_tworker */
+ weak_alias(dummy_run_switchless_tworker, do_run_switchless_tworker);
+ 
+-}
 diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 --- sdk/trts/trts_util.cpp
 +++ sdk/trts/trts_util.cpp
-@@ -30,6 +30,7 @@
-  */
- 
- 
-+#include "trts_internal.h"
- #include "trts_util.h"
+@@ -34,6 +34,7 @@
  #include "global_data.h"
  #include "util.h"
-@@ -72,6 +73,45 @@
+ #include "thread_data.h"
++#include "trts_internal.h"
+ 
+ // No need to check the state of enclave or thread.
+ // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
+@@ -72,6 +73,47 @@
      return heap_size;
  }
  
@@ -3334,35 +2779,37 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +static char reserved_heap[1024 * 1024]
 +    __attribute__((section(".reserved_heap")));
 +
-+void get_memory_layout(struct SgxMemoryLayout *memory_layout)
-+{
-+    // Enclave initialized data/uninitialized data/heap.
-+    memory_layout->data_base = GET_PTR(void, &__ImageBase, g_global_data.data_offset);
-+    memory_layout->data_size = static_cast<size_t>(g_global_data.data_size);
-+    memory_layout->bss_base = GET_PTR(void, &__ImageBase, g_global_data.bss_offset);
-+    memory_layout->bss_size = static_cast<size_t>(g_global_data.bss_size);
-+    memory_layout->heap_base = get_heap_base();
-+    memory_layout->heap_size = get_heap_size();
++void get_memory_layout(struct SgxMemoryLayout *memory_layout) {
++  // Enclave initialized data/uninitialized data/heap.
++  memory_layout->data_base =
++      GET_PTR(void, &__ImageBase, g_global_data.data_offset);
++  memory_layout->data_size = static_cast<size_t>(g_global_data.data_size);
++  memory_layout->bss_base =
++      GET_PTR(void, &__ImageBase, g_global_data.bss_offset);
++  memory_layout->bss_size = static_cast<size_t>(g_global_data.bss_size);
++  memory_layout->heap_base = get_heap_base();
++  memory_layout->heap_size = get_heap_size();
 +
-+    // Current tcs thread data/stack.
-+    thread_data_t *thread_data = get_thread_data();
-+    memory_layout->thread_base = reinterpret_cast<void *>(thread_data);
-+    memory_layout->thread_size = sizeof(thread_data_t);
-+    memory_layout->stack_base = reinterpret_cast<void *>(thread_data->stack_base_addr);
-+    memory_layout->stack_limit = reinterpret_cast<void *>(thread_data->stack_limit_addr);
++  // Current tcs thread data/stack.
++  thread_data_t *thread_data = get_thread_data();
++  memory_layout->thread_base = reinterpret_cast<void *>(thread_data);
++  memory_layout->thread_size = sizeof(thread_data_t);
++  memory_layout->stack_base = reinterpret_cast<void *>(
++      thread_data->stack_base_addr);
++  memory_layout->stack_limit =
++      reinterpret_cast<void *>(thread_data->stack_limit_addr);
 +
-+    // Temporary storage data buffer section.
-+    memory_layout->reserved_data_base = reinterpret_cast<void *>(reserved_data);
-+    memory_layout->reserved_data_size = sizeof(reserved_data);
++  // Temporary storage data buffer section.
++  memory_layout->reserved_data_base = reinterpret_cast<void *>(reserved_data);
++  memory_layout->reserved_data_size = sizeof(reserved_data);
 +
-+    // Temporary storage bss buffer section.
-+    memory_layout->reserved_bss_base = reinterpret_cast<void *>(reserved_bss);
-+    memory_layout->reserved_bss_size = sizeof(reserved_bss);
++  // Temporary storage bss buffer section.
++  memory_layout->reserved_bss_base = reinterpret_cast<void *>(reserved_bss);
++  memory_layout->reserved_bss_size = sizeof(reserved_bss);
 +
-+    // Temporary storage heap buffer section.
-+    memory_layout->reserved_heap_base = reinterpret_cast<void *>(reserved_heap);
-+    memory_layout->reserved_heap_size = sizeof(reserved_heap);
-+}
++  // Temporary storage heap buffer section.
++  memory_layout->reserved_heap_base = reinterpret_cast<void *>(reserved_heap);
++  memory_layout->reserved_heap_size = sizeof(reserved_heap);}
 +
  int * get_errno_addr(void)
  {
@@ -3388,7 +2835,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1207 @@
+@@ -0,0 +1,1250 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3442,12 +2889,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +
 +proto_library(
-+    name = "ipc_common_proto",
++    name = "ipc_common_proto_cc",
 +    srcs = ["psw/ae/common/proto/messages.proto"],
 +)
++
 +cc_proto_library(
-+    name = "ipc_common_proto_cc",
-+    deps = [":ipc_common_proto"],
++    name = "ipc_common_proto_cc_cc_proto",
++    deps = [":ipc_common_proto_cc"],
 +)
 +
 +SL_COMMON_SRCS = [
@@ -3622,7 +3070,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":epid_inc",
-+        ":ipc_common_proto_cc",
++        ":ipc_common_proto_cc_cc_proto",
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
 +    ],
@@ -3657,7 +3105,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":epid_inc",
-+        ":ipc_common_proto_cc",
++        ":ipc_common_proto_cc_cc_proto",
 +        ":ittnotify_lib",
 +        ":psw_switchless",
 +        ":rts_common",
@@ -3730,7 +3178,26 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ],
 +)
 +
++# trts_nsp uses a function that must be compiled without the stack protector
++# transformation. There is no way in clang to disable it on a per-function
++# basis, so its implementation is moved to this library.
++cc_library(
++    name = "trts_nsp_internal",
++    srcs = ["sdk/trts/trts_nsp_internal.cpp"],
++    hdrs = ["sdk/trts/trts_nsp_internal.h"],
++    copts = [
++        "-fno-stack-protector",
++        "-Iexternal/linux_sgx/common/inc/internal",
++    ],
++    deps = [
++        ":common_inc_internal",
++        ":trusted_inc",
++    ],
++)
++
 +TRTS_COMMON_SRCS = RTS_COMMON_SRCS + [
++    "sdk/selib/sgx_create_report.cpp",
++    "sdk/selib/tservice_version.cpp",
 +    "sdk/trts/init_enclave.cpp",
 +    "sdk/trts/init_optimized_lib.cpp",
 +    "sdk/trts/linux/elf_parser.c",
@@ -3803,9 +3270,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":rts_common",
++        ":sgx_runtime_support",
++        ":sgx_spin_lock",
 +        ":trts_common",
++        ":trts_nsp_internal",
 +        ":trusted_inc",
 +        ":trusted_inc_internal",
++        ":trusted_random_buffers",
 +        "@boringssl//:crypto",
 +    ],
 +)
@@ -3823,7 +3294,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "sdk/switchless/src/sl_workers.c",
 +    ],
 +    copts = [
-+        "-std=c11",
 +        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +    ],
@@ -3840,10 +3310,9 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +cc_library(
 +    name = "trts_sim",
 +    srcs = TRTS_COMMON_SRCS + TRTS_COMMON_HDRS + [
-+        "sdk/selib/sgx_create_report.cpp",
 +        "sdk/selib/sgx_get_key.cpp",
 +        "sdk/selib/sgx_verify_report.cpp",
-+        "sdk/selib/tservice_version.cpp",
++        "sdk/tseal/tSeal_internal.h",
 +    ],
 +    copts = [
 +        "-DSE_SIM=1",
@@ -3853,6 +3322,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-DSL_INSIDE_ENCLAVE",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts",
++        "-Iexternal/linux_sgx/sdk/tseal",
 +        "-Iexternal/linux_sgx/sdk/simulation/tinst",
 +        "-Iexternal/linux_sgx/sdk/cpprt/linux/libunwind/src/x86_64",
 +    ],
@@ -3863,11 +3333,16 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    linkstatic = 1,
 +    textual_hdrs = TRTS_COMMON_TEXTUAL_HDRS,
 +    deps = [
++        ":common_inc",
 +        ":common_inc_internal",
++        ":sgx_runtime_support",
++        ":sgx_spin_lock",
 +        ":tinst_sim",
 +        ":trts_common",
++        ":trts_nsp_internal",
 +        ":trusted_inc",
 +        ":trusted_inc_internal",
++        ":trusted_random_buffers",
 +    ],
 +    alwayslink = 1,
 +)
@@ -3941,6 +3416,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Iexternal/linux_sgx/sdk/simulation/assembly",
 +    ],
 +    deps = [
++        ":common_inc",
++        ":common_inc_internal",
 +        ":sim_common",
 +        ":trusted_inc",
 +        ":trusted_inc_internal",
@@ -3989,11 +3466,11 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":epid_inc",
-+        ":ipc_common_proto_cc",
++        ":ipc_common_proto_cc_cc_proto",
++        ":pse_types",
 +        ":sim_common",
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
-+        ":untrusted_sim_inc",
 +    ],
 +)
 +
@@ -4007,7 +3484,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +    ],
 +    deps = [
-+        ":ipc_common_proto_cc",
++        ":ipc_common_proto_cc_cc_proto",
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":se_wrapper",
@@ -4031,7 +3508,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 +
 +cc_library(
-+    name = "untrusted_sim_inc",
++    name = "pse_types",
 +    hdrs = [
 +        "psw/ae/inc/internal/pse_types.h",
 +    ],
@@ -4114,15 +3591,15 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":epid_inc",
-+        ":ipc_common_proto_cc",
++        ":ipc_common_proto_cc_cc_proto",
 +        ":ittnotify_lib",
++        ":pse_types",
 +        ":psw_switchless",
 +        ":se_wrapper",
 +        ":sim_common",
 +        ":uae_service_sim",
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
-+        ":untrusted_sim_inc",
 +        "@boringssl//:crypto",
 +    ],
 +)
@@ -4370,6 +3847,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ],
 +    copts = [
 +        "-ffreestanding",
++        "-Iexternal/linux_sgx/common/inc/internal",
 +    ],
 +    deps = [
 +        ":common_inc",
@@ -4387,19 +3865,27 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "sdk/tlibc/string/consttime_memequal.c",
 +        "sdk/tlibc/string/memset_s.c",
 +    ],
-+    hdrs = [
-+        "runtime_support/rts_config.h",
-+    ],
-+    includes = ["runtime_support"],
-+    visibility = ["//visibility:public"],
++    hdrs = ["runtime_support/rts_config.h"],
 +    deps = [":common_inc"],
++)
++
++cc_library(
++    name = "trusted_random_buffers",
++    hdrs = ["common/inc/sgx_random_buffers.h"],
++    copts = [
++        "-Wno-vla",
++        "-Iexternal/linux_sgx/common/inc/internal",
++    ],
++    deps = [
++        ":common_inc_internal",
++        ":trusted_inc_internal",
++    ],
 +)
 +
 +cc_library(
 +    name = "trusted_inc_internal",
 +    hdrs = [
 +        "common/inc/internal/cpprt_internal.h",
-+        "common/inc/internal/dh.h",
 +        "common/inc/internal/ecp_interface.h",
 +        "common/inc/internal/global_init.h",
 +        "common/inc/internal/pcl_common.h",
@@ -4417,13 +3903,18 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    copts = [
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts/",
++        "-Iexternal/linux_sgx/psw/ae/inc/internal",  # bad layering for pse_types
 +        "-Iexternal/boringssl",
 +    ],
 +    linkopts = ["-Wl,--export-dynamic"],
 +    deps = [
 +        ":common_inc",
++        ":common_inc_internal",
 +        ":epid_inc",
++        ":pse_types",
++        ":sgx_runtime_support",
 +        ":sgx_spin_lock",
++        ":trusted_inc",
 +        "@boringssl//:crypto",
 +    ],
 +)
@@ -4446,6 +3937,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
++        ":sgx_spin_lock",
 +        ":trts_common",
 +        ":trusted_inc",
 +        ":trusted_inc_internal",
@@ -4470,6 +3962,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
++        ":sgx_runtime_support",
 +        ":trusted_inc",
 +        ":trusted_inc_internal",
 +        "@boringssl//:crypto",
@@ -4495,9 +3988,6 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    name = "sgx_spin_lock",
 +    srcs = ["sdk/tlibc/gen/spinlock.c"],
 +    hdrs = ["common/inc/sgx_spinlock.h"],
-+    copts = [
-+        "-ffreestanding",
-+    ],
 +    deps = [":common_inc"],
 +)
 +
@@ -4923,12 +4413,12 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 --- /dev/null
 +++ include/se_memcpy.h
 @@ -0,0 +1,6 @@
-+#ifndef _V_2_3_INCLUDE_SE_MEMCPY_H_
-+#define _V_2_3_INCLUDE_SE_MEMCPY_H_
++#ifndef _INCLUDE_SE_MEMCPY_H_
++#define _INCLUDE_SE_MEMCPY_H_
 +
 +#include "common/inc/internal/se_memcpy.h"  // IWYU pragma: export
 +
-+#endif  // _V_2_3_INCLUDE_SE_MEMCPY_H_
++#endif  // _INCLUDE_SE_MEMCPY_H_
 --- /dev/null
 +++ include/sgx.h
 @@ -0,0 +1,6 @@
