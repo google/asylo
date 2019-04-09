@@ -119,6 +119,19 @@ TEST(ParameterStackTest, PushAllocPointerCopyTest) {
   }
 }
 
+TEST(ParameterStackTest, PushCopyTest) {
+  ParameterStack<malloc, free> params;
+
+  for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
+    params.PushCopy(Extent{&iter, sizeof(iter)});
+    EXPECT_EQ(params.size(), iter);
+  }
+  for (int32_t iter = kNumIterations; iter >= 1; --iter) {
+    EXPECT_THAT(params.Pop<int32_t>(), iter);
+  }
+  EXPECT_TRUE(params.empty());
+}
+
 }  // namespace
 }  // namespace primitives
 }  // namespace asylo

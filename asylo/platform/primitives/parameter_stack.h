@@ -145,7 +145,7 @@ class ParameterStack {
   // Returns the Extent at the top of the stack. Valid only if !empty().
   Extent Top() { return top_->extent; }
 
-  // Pushes a extent, owned by the caller.
+  // Pushes an extent, owned by the caller.
   void Push(Extent extent) {
     auto item = static_cast<Item *>((*ALLOCATOR)(sizeof(Item)));
     item->extent = extent;
@@ -166,6 +166,20 @@ class ParameterStack {
     top_ = item;
     size_++;
     return item->extent;
+  }
+
+  // If invoked inside an enclave, the extent is copied into a buffer allocated
+  // on the enclave's trusted heap. Outside the enclave, the extent is copied
+  // into a buffer allocated as-by malloc(). In both cases allocated buffers are
+  // owned by the stack and will be deleted as-by free() at the end of its
+  // lifetime or when Pop-ed from the stack by the handler code.
+  // This method is suitable for cases where the lifetime of the stack exceeds
+  // the lifetime of the object referred to by |extent|.
+  void PushCopy(Extent extent) {
+    auto item = PushAlloc(extent.size());
+    if (extent.size() > 0) {
+      memcpy(item.data(), extent.data(), extent.size());
+    }
   }
 
   // Push and Pop specializations for known type T.  Enable only if T
