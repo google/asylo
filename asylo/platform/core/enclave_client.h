@@ -50,12 +50,12 @@ class EnclaveClient {
   virtual Status EnterAndRun(const EnclaveInput &input,
                              EnclaveOutput *output) = 0;
 
- protected:
   /// Returns the name of the enclave.
   ///
   /// \return The name of the enclave.
-  const std::string &get_name() const { return name_; }
+  virtual const std::string &get_name() const { return name_; }
 
+ protected:
   /// Called by the EnclaveManager to create a client instance.
   ///
   /// \param name The enclave name as registered with the EnclaveManager.

@@ -32,6 +32,7 @@ class MockEnclaveClient : public EnclaveClient {
   MockEnclaveClient() : EnclaveClient("mock") {}
 
   MOCK_METHOD2(EnterAndRun, Status(const EnclaveInput &, EnclaveOutput *));
+  MOCK_CONST_METHOD0(get_name, const std::string &());
   MOCK_METHOD1(EnterAndInitialize, Status(const EnclaveConfig &));
   MOCK_METHOD1(EnterAndFinalize, Status(const EnclaveFinal &));
   MOCK_METHOD0(EnterAndDonateThread, Status());
