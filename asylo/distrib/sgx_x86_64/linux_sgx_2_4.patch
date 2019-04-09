@@ -1134,16 +1134,19 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
      
      uint32_t i;
  
-@@ -65,6 +68,27 @@
+@@ -65,6 +68,30 @@
      return ((ex_features | _SGX_EX_FEATURES_MASK_) == _SGX_EX_FEATURES_MASK_);
  }
  
 +static sgx_status_t place_enclave(const uint32_t ex_features, const void* ex_features_p[32])
 +{
 +    asylo_sgx_config_t *asylo_config = nullptr;
-+    if (get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_ASYLO, ex_features,
-+                                ex_features_p, (void**)&asylo_config) == -1) {
++    int has_feature = get_ex_feature_pointer(SGX_CREATE_ENCLAVE_EX_ASYLO, ex_features,
++                                ex_features_p, (void**)&asylo_config);
++    if (has_feature == -1) {
 +      return SGX_ERROR_INVALID_PARAMETER;
++    } else if (has_feature == 0) {
++      return SGX_SUCCESS;
 +    }
 +    // Reserve the memory to load the enclave if the address to load the enclave
 +    // is specified.
@@ -1162,7 +1165,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  extern "C" sgx_status_t __sgx_create_enclave_ex(const char *file_name, 
                                                  const int debug, 
                                                  sgx_launch_token_t *launch_token, 
-@@ -74,7 +98,10 @@
+@@ -74,7 +101,10 @@
                                                  const uint32_t ex_features,
                                                  const void* ex_features_p[32])
  {
@@ -1174,7 +1177,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  
      //Only true or false is valid
      if(TRUE != debug &&  FALSE != debug)
-@@ -158,7 +185,10 @@
+@@ -158,7 +188,10 @@
                                                            const uint32_t ex_features,
                                                            const void* ex_features_p[32])
  {
@@ -1186,7 +1189,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
  
      // Only true or false is valid
      if (TRUE != debug &&  FALSE != debug)
-@@ -205,3 +235,19 @@
+@@ -205,3 +238,19 @@
          launch_token_updated, enclave_id, misc_attr, ex_features, ex_features_p);
  }
  
