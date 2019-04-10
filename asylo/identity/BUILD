@@ -86,7 +86,7 @@ cc_test(
 cc_library(
     name = "descriptions",
     hdrs = ["descriptions.h"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         ":identity_proto_cc",
         "//asylo/identity/null_identity:null_identity_constants",
