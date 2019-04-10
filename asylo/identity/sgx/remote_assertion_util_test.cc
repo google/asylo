@@ -23,12 +23,13 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
-#include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/proto_matchers.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace sgx {

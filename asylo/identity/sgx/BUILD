@@ -58,6 +58,7 @@ asylo_proto_library(
     deps = [
         ":code_identity_proto",
         "//asylo/crypto:algorithms_proto",
+        "//asylo/crypto:certificate_proto",
     ],
 )
 
@@ -80,6 +81,7 @@ cc_library(
         ":code_identity_proto_cc",
         ":remote_assertion_proto_cc",
         "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto:certificate_proto_cc",
         "//asylo/crypto:signing_key",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
@@ -95,6 +97,7 @@ cc_test(
         ":code_identity_util",
         ":remote_assertion_proto_cc",
         ":remote_assertion_util",
+        "//asylo/crypto:certificate_proto_cc",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",

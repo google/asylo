@@ -1,0 +1,57 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+// A certificate for a public key.
+message Certificate {
+  // Defines different certificate formats.
+  enum CertificateFormat {
+    UNKNOWN = 0;
+
+    // An X.509 certificate encoded in DER format (.der file).
+    X509_DER = 1;
+  }
+
+  // The format of the certificate in |data|.
+  optional CertificateFormat format = 1;
+
+  // The raw bytes of an encoded certificate.
+  optional bytes data = 2;
+}
+
+// A chain of certificates. In general, the following properties apply:
+//
+//   * The first certificate in the chain is the end-entity certificate. This
+//   certificate belongs to an entity that is presenting a certificate chain in
+//   order to prove a public key trustworthy.
+//   * Certificates in the range [1, N-1] belong to intermediate certificate
+//   authorities.
+//   * The last certificate in the chain represents the root certificate. This
+//   certificate is self-signed, and belongs to an entity that is trusted by the
+//   relying party for some out-of-band reason.
+//   * A certificate with index i in the range [0, N-1] is signed by the private
+//   key corresponding to the certificate with index i+1.
+//
+// Additional properties may apply for particular certificate types.
+//
+// Note that a CertificateChain may use more than one certificate format.
+message CertificateChain {
+  // A chain of certificates.
+  repeated Certificate certificates = 1;
+}

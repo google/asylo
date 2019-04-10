@@ -22,6 +22,7 @@
 #include <string>
 #include <vector>
 
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
