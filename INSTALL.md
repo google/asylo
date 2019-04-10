@@ -37,7 +37,7 @@ You can manually install the toolchain by following these steps:
     *   bison
     *   build-essential
     *   flex
-    *   libisl-0.18-dev
+    *   libisl-dev
     *   libmpc-dev
     *   libmpfr-dev
     *   rsync
@@ -48,7 +48,7 @@ You can manually install the toolchain by following these steps:
     For example, on Debian:
 
     ```bash
-    sudo apt install bison build-essential flex libisl-0.18-dev libmpc-dev \
+    sudo apt install bison build-essential flex libisl-dev libmpc-dev \
         libmpfr-dev rsync texinfo wget zlib1g-dev
     ```
 
@@ -99,7 +99,7 @@ curl https://bazel.build/bazel-release.pub.gpg | sudo apt-key add -
 echo "deb http://storage.googleapis.com/bazel-apt stable jdk1.8" | \
     sudo tee /etc/apt/sources.list.d/bazel.list
 sudo apt update
-sudo apt install bazel openjdk-8-jdk-headless
+sudo apt install bazel
 ```
 
 The Asylo toolchain requires Bazel's version to be at least `0.22`. You can

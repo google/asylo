@@ -56,7 +56,6 @@ RUN apt-get update && \
         libfl2 \
         ocaml-nox \
         ocamlbuild \
-        openjdk-8-jdk-headless \
         vim \
         && \
     apt-get clean && \
