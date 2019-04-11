@@ -1,4 +1,23 @@
-# Running Redis 5.0.4 with Asylo
+<!--jekyll-front-matter
+---
+
+title: Running Redis with Asylo
+
+overview: Wrap an entire application in an enclave.
+
+location: /_docs/guides/redis.md
+
+order: 50
+
+layout: docs
+
+type: markdown
+
+toc: true
+
+---
+{% include home.html %}
+jekyll-front-matter-->
 
 ## Overview
 
@@ -24,7 +43,7 @@ file that allows external sources to be built with Bazel.
 Asylo provides a custom Docker image that contains all required dependencies, as
 well as Asylo's custom toolchain, which is a convenient tool for compiling
 enclave applications without manually installing the toolchain. To get started,
-please follow the instructions
+please follow
 [the Docker instructions in the Asylo repository README.md](https://github.com/google/asylo/blob/master/README.md)
 to setup the environment for Docker.
 
