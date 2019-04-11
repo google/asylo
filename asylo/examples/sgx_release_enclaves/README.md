@@ -255,7 +255,7 @@ ${BAZEL} run --define=SGX_SIM=0 //package/path:enclave_loader \
     to SGX hardware.
 
 [^1]: Only users that have a
-    [commercial license agreement with Intel](https://software.intel.com/en-us/sgx/commercial-use-license-request)
+    [commercial license agreement with Intel](https://software.intel.com/en-us/articles/intel-software-guard-extensions-product-licensing-faq)
     are authorized to run release mode Intel SGX enclaves via a whitelisted
     signing key. In release mode, the debug bit is unset, which means that
     enclave memory is guarded from inspection. Debug enclaves can have their
