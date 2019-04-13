@@ -19,6 +19,8 @@
 #include "asylo/platform/arch/include/trusted/fork.h"
 
 #include <openssl/rand.h>
+#include <sys/socket.h>
+
 #include <cstddef>
 #include <vector>
 
@@ -345,25 +347,43 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
   // Loop till the handshake finishes.
   char buf[1024];
   while (result == EkepHandshaker::Result::IN_PROGRESS) {
-    int bytes_received = 0;
     do {
       outgoing_bytes.clear();
-      int rc = enc_untrusted_read(socket, buf, sizeof(buf));
-      if (rc <= 0) {
+      // Use MSG_PEEK flag here to read the data without removing it from the
+      // receiving queue.
+      ssize_t bytes_received =
+          enc_untrusted_recvfrom(socket, buf, sizeof(buf), MSG_PEEK,
+                                 /*src_addr=*/nullptr, /*addrlen=*/nullptr);
+      if (bytes_received <= 0) {
         return Status(static_cast<error::PosixError>(errno), "Read failed");
       }
-      bytes_received += rc;
       result =
           handshaker->NextHandshakeStep(buf, bytes_received, &outgoing_bytes);
+
+      int bytes_used = bytes_received;
+      if (result == EkepHandshaker::Result::COMPLETED) {
+        // If there are unused bytes left in the handshaker when the handshake
+        // is finished, do not remove them from the receiving buffer. They
+        // should later be read as the encrypted snapshot key.
+        auto unused_bytes_result = handshaker->GetUnusedBytes();
+        if (!unused_bytes_result.ok()) {
+          return unused_bytes_result.status();
+        }
+        size_t unused_bytes_size = unused_bytes_result.ValueOrDie().size();
+        bytes_used -= unused_bytes_size;
+      }
+      // Remove the used data from the receiving buffer.
+      enc_untrusted_recvfrom(socket, buf, bytes_used, /*flag=*/0,
+                             /*src_addr=*/nullptr, /*addrlen=*/nullptr);
     } while (result == EkepHandshaker::Result::NOT_ENOUGH_DATA);
 
     if (result == EkepHandshaker::Result::ABORTED) {
       return Status(error::GoogleError::INTERNAL, "EKEP handshake has aborted");
     }
 
-    // The last step is the child receives the last message from the parent. No
-    // need to write to the parent after this step.
     if (result == EkepHandshaker::Result::COMPLETED && !is_parent) {
+      // The last step is the child receives the last message from the parent.
+      // No need to write to the parent after this step.
       break;
     }
 
