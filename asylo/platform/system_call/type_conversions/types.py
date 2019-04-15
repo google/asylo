@@ -22,14 +22,18 @@ target implementation.
 """
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
 from asylo.platform.system_call.type_conversions.types_parse_functions import include
-from asylo.platform.system_call.type_conversions.types_parse_functions import set_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import set_bridge_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import write_output
 
 include("fcntl.h")
 include("sys/socket.h")
+include("stdint.h")
 
-set_prefix("kLinux")
+set_klinux_prefix("kLinux")
+set_bridge_prefix("bridge")
 
 define_enum(
     name="FileStatusFlag",
@@ -67,7 +71,7 @@ define_enum(
         "SOCK_STREAM", "SOCK_DGRAM", "SOCK_SEQPACKET", "SOCK_RAW", "SOCK_RDM",
         "SOCK_PACKET", "SOCK_NONBLOCK", "SOCK_CLOEXEC"
     ],
-    skip_conversions_generation=True)
+    skip_conversions=True)
 
 define_enum(
     name="FDFlag",
@@ -75,5 +79,15 @@ define_enum(
     multi_valued=True,
     default_value_host=0,
     default_value_newlib=0)
+
+define_struct(
+    name="stat",
+    values=[("int64_t", "st_dev"), ("int64_t", "st_ino"),
+            ("int64_t", "st_mode"), ("int64_t", "st_nlink"),
+            ("int64_t", "st_uid"), ("int64_t", "st_gid"),
+            ("int64_t", "st_rdev"), ("int64_t", "st_size"),
+            ("int64_t", "st_atime"), ("int64_t", "st_mtime"),
+            ("int64_t", "st_ctime"), ("int64_t", "st_blksize"),
+            ("int64_t", "st_blocks")])
 
 write_output()

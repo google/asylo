@@ -19,12 +19,16 @@ from unittest import main
 from unittest import TestCase
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_bridge_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_enums
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_as_include_macros
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_in_define_macro
-from asylo.platform.system_call.type_conversions.types_parse_functions import get_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_klinux_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_structs
 from asylo.platform.system_call.type_conversions.types_parse_functions import include
-from asylo.platform.system_call.type_conversions.types_parse_functions import set_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import set_bridge_prefix
+from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
 
 
 class TypesParseFunctionsTest(TestCase):
@@ -34,19 +38,40 @@ class TypesParseFunctionsTest(TestCase):
     define_enum('TestEnum', ['a', 'b'])
     self.assertEqual(
         get_enums(), '#define ENUMS_INIT \\\n'
-        '{"TestEnum", {0, 0, false, false, {{"a", a}, {"b", b}}}}')
+        '{"TestEnum", {0, 0, false, false, {{"a", a}, {"b", b}}}}\n')
 
   def test_get_enums_with_all_vals(self):
     define_enum('TestEnum', ['a'], 1, 2, True)
     self.assertEqual(
         get_enums(),
-        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, false, {{"a", a}}}}')
+        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, false, {{"a", a}}}}\n'
+    )
 
-  def test_prefix(self):
+  def test_get_structs_with_only_default_vals(self):
+    define_struct('TestStruct', [('a', 'b')])
+    self.assertEqual(
+        get_structs(), '#define STRUCTS_INIT \\\n'
+        '{"TestStruct", {true, false, {{"b", "a"}}}}\n')
+
+  def test_get_structs_with_all_vals(self):
+    define_struct('TestStruct', [('a', 'b')], False, True)
+    self.assertEqual(
+        get_structs(), '#define STRUCTS_INIT \\\n'
+        '{"TestStruct", {false, true, {{"b", "a"}}}}\n')
+
+  def test_klinux_prefix(self):
     prefix_string = 'test_prefix'
-    set_prefix(prefix_string)
-    self.assertEqual(get_prefix(),
-                     'const char prefix[] = "{}";\n'.format(prefix_string))
+    set_klinux_prefix(prefix_string)
+    self.assertEqual(
+        get_klinux_prefix(),
+        'const char klinux_prefix[] = "{}";\n'.format(prefix_string))
+
+  def test_bridge_prefix(self):
+    prefix_string = 'test_prefix'
+    set_bridge_prefix(prefix_string)
+    self.assertEqual(
+        get_bridge_prefix(),
+        'const char bridge_prefix[] = "{}";\n'.format(prefix_string))
 
   def test_include_exceptions(self):
     with self.assertRaises(ValueError):

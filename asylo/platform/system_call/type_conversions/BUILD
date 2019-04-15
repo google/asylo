@@ -93,6 +93,7 @@ cc_library(
     name = "types_definitions",
     hdrs = ["generated_types.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deps = ["@com_google_absl//absl/base:core_headers"],
 )
 
 # Library containing the type conversion functions (generated or manually

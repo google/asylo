@@ -49,14 +49,30 @@ _includes = ['stdbool.h']
 # Map from enum names to dictionary of enum properties and their values.
 _enum_map = collections.defaultdict(dict)
 
-# Declare prefix to used for C enum declarations and conversion functions.
-_prefix = 'kLinux'
+# Map from struct names to dictionary of struct properties and its members.
+_struct_map = collections.defaultdict(dict)
+
+# Declare the prefix to be used for C enum declarations and conversion
+# functions. This prefix should be used for direct conversions between newlib
+# and host library, ones which do not involve an intermediate bridge.
+_klinux_prefix = 'kLinux'
+
+# Declare the prefix to be used for bridge types and conversions. This prefix
+# should be used when conversions between newlib and host library involve the
+# use of an intermediate bridge type like in a struct.
+_bridge_prefix = 'bridge'
 
 
-def set_prefix(pref):
-  """Sets the prefix used for all enum definitions and conversion functions."""
-  global _prefix
-  _prefix = pref
+def set_klinux_prefix(pref):
+  """Sets the prefix used for enum definitions and conversion functions."""
+  global _klinux_prefix
+  _klinux_prefix = pref
+
+
+def set_bridge_prefix(pref):
+  """Sets the prefix used for struct definitions and conversion functions."""
+  global _bridge_prefix
+  _bridge_prefix = pref
 
 
 def include(filename):
@@ -92,7 +108,7 @@ def define_enum(name,
                 default_value_host=0,
                 default_value_newlib=0,
                 multi_valued=False,
-                skip_conversions_generation=False):
+                skip_conversions=False):
   """Defines a collection of related enumeration values and their properties.
 
   Args:
@@ -104,7 +120,7 @@ def define_enum(name,
       int value or the enum value provided as a string.
     multi_valued: Boolean indicating if the enum values can be combined using
       bitwise OR operations.
-    skip_conversions_generation: Boolean indicating if generation of types
+    skip_conversions: Boolean indicating if generation of types
       conversion functions be skipped, and only enum definitions be generated.
       Useful when conversion functions are complex and need to be written
       manually, but the enum definitions can be generated automatically by
@@ -125,12 +141,41 @@ def define_enum(name,
   _enum_map[name]['default_value_host'] = default_value_host
   _enum_map[name]['default_value_newlib'] = default_value_newlib
   _enum_map[name]['multi_valued'] = multi_valued
-  _enum_map[name]['skip_conversions_generation'] = skip_conversions_generation
+  _enum_map[name]['skip_conversions'] = skip_conversions
 
 
-def get_prefix():
+def define_struct(name, values, pack_attributes=True, skip_conversions=False):
+  """Defines a collection of structs and their properties.
+
+  Args:
+    name: Name of the struct. This should be the same as the struct name used in
+      newlib/libc libraries for the system calls. Eg. 'stat', 'timeval'
+    values: List containing tuples of struct member types and struct member
+      names. The struct members names should match the corresponding struct
+      member names in the struct from newlib/libc. Eg. [("int64_t", "st_dev"),
+      ("int64_t", "st_ino")].
+    pack_attributes: Boolean indicating if the compiler should be prevented from
+      padding the generated bridge struct members from their natural alignment.
+    skip_conversions: Boolean indicating if generation of types conversion
+      functions be skipped, and only bridge struct definitions be generated.
+      Useful when bridge conversion functions are complex and need to be written
+      manually, but the struct definitions can be generated automatically.
+  """
+  _struct_map[name]['values'] = ', '.join(
+      '{{"{}", "{}"}}'.format(member_name, member_type)
+      for member_type, member_name in values)
+  _struct_map[name]['pack_attributes'] = pack_attributes
+  _struct_map[name]['skip_conversions'] = skip_conversions
+
+
+def get_klinux_prefix():
   """Gets the prefix for generated C enums and conversion functions."""
-  return 'const char prefix[] = "{}";\n'.format(_prefix)
+  return 'const char klinux_prefix[] = "{}";\n'.format(_klinux_prefix)
+
+
+def get_bridge_prefix():
+  """Gets the prefix for generated C structs and conversion functions."""
+  return 'const char bridge_prefix[] = "{}";\n'.format(_bridge_prefix)
 
 
 def get_includes_as_include_macros():
@@ -165,26 +210,55 @@ def get_enums():
   {"FileFlags", {0, 0, true, false, {{"O_RDONLY", O_RDONLY}, {"O_WRONLY",
   O_WRONLY}}}}
 
-  Each line contains an enum, and follows the pattern -
+  Each line contains an enum, and has the following pattern -
   {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
-  skip_conversions_generation, {{"enum_val1", enum_val1}, {"enum_val2",
+  skip_conversions, {{"enum_val1", enum_val1}, {"enum_val2",
   enum_val2}}}}, \
   """
-  enum_row = []
+  enum_rows = []
   for enum_name, enum_properties in _enum_map.items():
-    enum_row.append('{{{}, {{{}, {}, {}, {}, {{{}}}}}}}'.format(
+    enum_rows.append('{{{}, {{{}, {}, {}, {}, {{{}}}}}}}'.format(
         '"{}"'.format(enum_name), enum_properties['default_value_host'],
         enum_properties['default_value_newlib'],
         'true' if enum_properties['multi_valued'] else 'false',
-        'true' if enum_properties['skip_conversions_generation'] else 'false',
+        'true' if enum_properties['skip_conversions'] else 'false',
         enum_properties['values']))
 
-  return '#define ENUMS_INIT \\\n{}'.format(', \\\n'.join(enum_row))
+  return '#define ENUMS_INIT \\\n{}\n'.format(', \\\n'.join(enum_rows))
+
+
+def get_structs():
+  r"""Returns a macro containing all struct descriptions.
+
+  The returned macro is used by types conversion generator to initialize a
+  struct description table (struct_properties_table) mapping struct names to a
+  struct (StructProperties) describing the struct properties, including struct
+  members. A typical output of get_structs looks like the following -
+
+  #define STRUCTS_INIT \
+  {"stat", {true, false, {{"st_dev", "int64_t"}, {"st_ino", "int64_t"}}}}, \
+  {"timespec", {true, false, {{"tv_sec", "int64_t"}, {"tv_nsec", "int64_t"}}}}
+
+  Each line contains a struct, and has the following pattern -
+  {"struct_name", {pack_attributes, skip_conversions, \
+  {{"member_name1", "member_type1"}, {"member_name2", "member_type2"}}}}
+  """
+  struct_rows = []
+  for struct_name, struct_properties in _struct_map.items():
+    struct_rows.append('{{{}, {{{}, {}, {{{}}}}}}}'.format(
+        '"{}"'.format(struct_name),
+        'true' if struct_properties['pack_attributes'] else 'false',
+        'true' if struct_properties['skip_conversions'] else 'false',
+        struct_properties['values']))
+
+  return '#define STRUCTS_INIT \\\n{}\n'.format(', \\\n'.join(struct_rows))
 
 
 def write_output(stream=sys.stdout):
   """Writes the macros to a stream, default to stdout."""
   print(get_includes_as_include_macros(), file=stream)
   print(get_includes_in_define_macro(), file=stream)
-  print(get_prefix(), file=stream)
+  print(get_klinux_prefix(), file=stream)
+  print(get_bridge_prefix(), file=stream)
   print(get_enums(), file=stream)
+  print(get_structs(), file=stream)
