@@ -2064,6 +2064,15 @@ diff -Nur sdk/edger8r/linux/CodeGen.ml sdk/edger8r/linux/CodeGen.ml
    let func_close = sprintf "%s%s%s\n%s%s\n"
                             (handle_out_ptr fd.Ast.plist)
                             set_errno
+@@ -1480,7 +1577,7 @@
+         (fun acc proto -> acc ^ "\t\t(void*)" ^ proto ^ ",\n") "" func_proto_ubridge
+     in "\t{\n" ^ ocall_members ^ "\t}\n"
+   in
+-    sprintf "static const struct {\n\
++    sprintf "SGX_EXTERNC const struct {\n\
+ \tsize_t nr_ocall;\n\
+ \tvoid * table[%d];\n\
+ } %s = {\n\
 @@ -1500,12 +1597,16 @@
        ec.tfunc_decls
        (Util.mk_seq 0 (List.length ec.tfunc_decls - 1))
