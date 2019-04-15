@@ -32,8 +32,8 @@ applications for various enclave backends.
 docker run -it --rm gcr.io/asylo-framework/asylo
 ```
 
-See the [Dockerfile](asylo/distrib/Dockerfile) for an in-depth view of what's
-inside the container image.
+See the [Dockerfile](asylo/distrib/toolchain/Dockerfile) for an in-depth view of
+what's inside the container image.
 
 See this
 [guide](https://cloud.google.com/container-registry/docs/pushing-and-pulling#pulling_images_from_the_registry)
