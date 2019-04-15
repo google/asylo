@@ -31,6 +31,8 @@ namespace primitives {
 
 namespace {
 
+bool initialized = false;
+
 // Constructor function to illustrate ExitCall before the enclave is fully
 // initialized.
 void __attribute__((constructor)) InitConstructor() {
@@ -45,6 +47,7 @@ void __attribute__((constructor)) InitConstructor() {
   if (status.ok()) {
     const auto res = init_params.Pop();
     TrustedPrimitives::DebugPuts(reinterpret_cast<const char *>(res->data()));
+    initialized = true;
   } else {
     TrustedPrimitives::DebugPuts(status.error_message());
   }
@@ -241,7 +244,10 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       kCopyMultipleParamsSelector, EntryHandler{CopyMultipleParams}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       kStressMallocs, EntryHandler{StressMallocs}));
-  return PrimitiveStatus::OkStatus();
+  return initialized
+             ? PrimitiveStatus::OkStatus()
+             : PrimitiveStatus{::asylo::error::GoogleError::FAILED_PRECONDITION,
+                               "Enclave not initialized"};
 }
 
 // Implements the required enclave finalization function.
