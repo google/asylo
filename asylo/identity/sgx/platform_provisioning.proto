@@ -18,8 +18,6 @@ syntax = "proto2";
 
 package asylo.sgx;
 
-import "asylo/crypto/algorithms.proto";
-
 // This file defines messages representing properties involved in SGX platform
 // provisioning.
 //
