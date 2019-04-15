@@ -63,13 +63,13 @@ class FakeEnclaveTest : public ::testing::Test {
     // or tweaked copies of it as needed.
     enclave_.SetRandomIdentity();
 
+    // First, set the default seal key request to all zeros.
+    *seal_key_request_ = TrivialZeroObject<Keyrequest>();
     // Set up the default seal key request
     seal_key_request_->keyname = KeyrequestKeyname::SEAL_KEY;
     // By default, set keyrequest to care about both, mrenclave and mrsigner.
-    seal_key_request_->keypolicy = 0x3;
-    seal_key_request_->isvsvn = 0;
-    seal_key_request_->reserved1.fill(0);
-    seal_key_request_->cpusvn.fill(0);
+    seal_key_request_->keypolicy =
+        kKeypolicyMrenclaveBitMask | kKeypolicyMrsignerBitMask;
 
     // Set attributemask to care about all attributes except for those that
     // are on the default "Do Not Care" list.
@@ -80,7 +80,6 @@ class FakeEnclaveTest : public ::testing::Test {
     // Only one bit in miscmask is defined. It is safest to treat all bits
     // as security sensitive.
     seal_key_request_->miscmask = 0xffffffff;
-    seal_key_request_->reserved2.fill(0);
 
     // Set up default report key request.
     *report_key_request_ = *seal_key_request_;
@@ -347,11 +346,10 @@ TEST_F(FakeEnclaveTest, Report) {
     *reportdata = TrivialRandomObject<Reportdata>();
 
     AlignedTargetinfoPtr tinfo;
+    *tinfo = TrivialZeroObject<Targetinfo>();
     tinfo->measurement = enclave2.get_mrenclave();
     tinfo->attributes = enclave2.get_attributes();
     tinfo->miscselect = enclave2.get_miscselect();
-    tinfo->reserved1.fill(0);
-    tinfo->reserved2.fill(0);
 
     AlignedReportPtr report;
     ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *reportdata, report.get()));

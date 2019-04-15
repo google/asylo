@@ -26,6 +26,7 @@
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
@@ -113,18 +114,20 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
 
   // Create and populate an aligned KEYREQUEST structure.
   AlignedKeyrequestPtr req;
+
+  // Zero-out the KEYREQUEST.
+  *req = TrivialZeroObject<Keyrequest>();
+
   req->keyname = KeyrequestKeyname::SEAL_KEY;
   req->keypolicy = ConvertMatchSpecToKeypolicy(sgx_expectation.match_spec());
   req->isvsvn =
       sgx_expectation.reference_identity().signer_assigned_identity().isvsvn();
-  req->reserved1.fill(0);
   req->cpusvn = cpusvn;
   ConvertSecsAttributeRepresentation(
       sgx_expectation.match_spec().attributes_match_mask(),
       &req->attributemask);
   // req->keyid is populated uniquely on each call to GetHardwareKey().
   req->miscmask = sgx_expectation.match_spec().miscselect_match_mask();
-  req->reserved2.fill(0);
 
   key->resize(0);
   key->reserve(key_size);

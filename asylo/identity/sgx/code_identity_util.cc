@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/attributes.pb.h"
@@ -56,13 +57,12 @@ Status GetReportKey(const UnsafeBytes<kKeyrequestKeyidSize> &keyid,
   // the report to be verified.
   AlignedKeyrequestPtr request;
 
+  // Zero-out the KEYREQUEST. SGX hardware requires that the reserved fields of
+  // KEYREQUEST be set to zero.
+  *request = TrivialZeroObject<Keyrequest>();
+
   request->keyname = KeyrequestKeyname::REPORT_KEY;
   request->keyid = keyid;
-
-  // SGX hardware requires that the reserved fields of KEYREQUEST be set to
-  // zero.
-  request->reserved1.fill(0);
-  request->reserved2.fill(0);
 
   // The following fields of KEYREQUEST are ignored by the SGX hardware. These
   // are just initialized to some sane values.
@@ -367,11 +367,14 @@ Status SerializeSgxExpectation(
 
 void SetTargetinfoFromSelfIdentity(Targetinfo *tinfo) {
   const SelfIdentity *self_identity = GetSelfIdentity();
+
+  // Zero-out the destination.
+  *tinfo = TrivialZeroObject<Targetinfo>();
+
+  // Fill the appropriate fields based on self identity.
   tinfo->measurement = self_identity->mrenclave;
   tinfo->attributes = self_identity->attributes;
   tinfo->miscselect = self_identity->miscselect;
-  tinfo->reserved1.fill(0);
-  tinfo->reserved2.fill(0);
 }
 
 Status VerifyHardwareReport(const Report &report) {

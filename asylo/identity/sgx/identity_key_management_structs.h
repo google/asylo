@@ -114,11 +114,13 @@ static_assert(sizeof(SigstructHeader) == 128,
 struct SigstructBody {
   uint32_t miscselect;
   uint32_t miscmask;
-  UnsafeBytes<20> reserved1;  // Field size taken from the Intel SDM.
+  UnsafeBytes<4> reserved1;  // Field size taken from the Intel SDM.
+  UnsafeBytes<16> isvfamilyid;
   SecsAttributeSet attributes;
   SecsAttributeSet attributemask;
   UnsafeBytes<SHA256_DIGEST_LENGTH> enclavehash;
-  UnsafeBytes<32> reserved2;  // Field size taken from the Intel SDM.
+  UnsafeBytes<16> reserved2;  // Field size taken from the Intel SDM.
+  UnsafeBytes<16> isvextprodid;
   uint16_t isvprodid;
   uint16_t isvsvn;
 } ABSL_ATTRIBUTE_PACKED;
@@ -187,13 +189,23 @@ enum class KeyrequestKeyname : uint16_t {
 constexpr int kKeyrequestKeyidSize = 32;
 
 // KEYPOLICY is a 16-bit bitfield indicating what parts of enclave measurement
-// should be included in derivation of an SGX key. Bit 0 indicates whether
-// MRENCLAVE should be included, whereas bit 1 indicates whether MRSIGNER
-// should be included. All the remaining bits of KEYPOLICY are reserved.
+// should be included in derivation of an SGX key.
+//  * Bit 0: Indicates whether MRENCLAVE should be included.
+//  * Bit 1: Indicates whether MRSIGNER should be included.
+//  * Bit 2: Indicates whether ISVPRODID should be omitted.
+//  * Bit 3: Indicates whether CONFIGID and CONFIGSVN should be included.
+//  * Bit 4: Indicates whether ISVFAMILYID should be included.
+//  * Bit 5: Indicates whether ISVEXTPRODID should be included.
+//
+// All the remaining bits of KEYPOLICY are reserved.
 //
 // The following constants define masks for the non-reserved bits of KEYPOLICY.
 constexpr uint16_t kKeypolicyMrenclaveBitMask = 0x1;
 constexpr uint16_t kKeypolicyMrsignerBitMask = 0x2;
+constexpr uint16_t kKeypolicyNoisvprodidBitMask = 0x4;
+constexpr uint16_t kKeypolicyConfigidBitMask = 0x8;
+constexpr uint16_t kKeypolicyIsvfamilyidBitMask = 0x10;
+constexpr uint16_t kKeypolicyIsvextprodidBitMask = 0x20;
 
 // Defines the KEYREQUEST architectural structure, which is used by an enclave
 // to request various hardware keys from the CPU. A KEYREQUEST is provided as an
@@ -207,7 +219,8 @@ struct Keyrequest {
   SecsAttributeSet attributemask;
   UnsafeBytes<kKeyrequestKeyidSize> keyid;
   uint32_t miscmask;
-  UnsafeBytes<436> reserved2;  // Field size taken from the Intel SDM.
+  uint16_t configsvn;
+  UnsafeBytes<434> reserved2;  // Field size taken from the Intel SDM.
 } ABSL_ATTRIBUTE_PACKED;
 
 static_assert(sizeof(Keyrequest) == 512,
@@ -224,9 +237,12 @@ using AlignedKeyrequestPtr = AlignedObjectPtr<Keyrequest, 512>;
 struct Targetinfo {
   UnsafeBytes<SHA256_DIGEST_LENGTH> measurement;
   SecsAttributeSet attributes;
-  UnsafeBytes<4> reserved1;  // Field size taken from the Intel SDM.
+  UnsafeBytes<2> reserved1;  // Field size taken from the Intel SDM.
+  uint16_t configsvn;
   uint32_t miscselect;
-  UnsafeBytes<456> reserved2;  // Field size taken from the Intel SDM.
+  UnsafeBytes<8> reserved2;  // Field size taken from the Intel SDM.
+  UnsafeBytes<64> configid;
+  UnsafeBytes<384> reserved3;  // Field size take from the Intel SDM.
 } ABSL_ATTRIBUTE_PACKED;
 
 static_assert(sizeof(Targetinfo) == 512,
@@ -266,15 +282,19 @@ static_assert(kReportKeyidSize == kKeyrequestKeyidSize,
 struct Report {
   UnsafeBytes<kCpusvnSize> cpusvn;
   uint32_t miscselect;
-  UnsafeBytes<28> reserved1;  // Field size taken from the Intel SDM.
+  UnsafeBytes<12> reserved1;  // Field size taken from the Intel SDM.
+  UnsafeBytes<16> isvextprodid;
   SecsAttributeSet attributes;
   UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave;
   UnsafeBytes<32> reserved2;  // Field size taken from the Intel SDM.
   UnsafeBytes<SHA256_DIGEST_LENGTH> mrsigner;
-  UnsafeBytes<96> reserved3;  // Field size taken from the Intel SDM.
+  UnsafeBytes<32> reserved3;  // Field size taken from the Intel SDM.
+  UnsafeBytes<64> configid;
   uint16_t isvprodid;
   uint16_t isvsvn;
-  UnsafeBytes<60> reserved4;  // Field size taken from the Intel SDM.
+  uint16_t configsvn;
+  UnsafeBytes<42> reserved4;  // Field size taken from the Intel SDM.
+  UnsafeBytes<16> isvfamilyid;
   Reportdata reportdata;
   UnsafeBytes<kReportKeyidSize> keyid;
   UnsafeBytes<kSgxMacSize> mac;

@@ -540,6 +540,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:identity_acl_proto_cc",
         "//asylo/identity:identity_proto_cc",
         "//asylo/identity:sealed_secret_proto_cc",
