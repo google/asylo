@@ -1007,6 +1007,16 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     return -1;
   }
 
+  // Create a pipe used to pass the child process fork state to the parent
+  // process. If the child process failed to restore the enclave, the parent
+  // fork should return error as well.
+  int pipefd[2];
+  if (pipe(pipefd) < 0) {
+    LOG(ERROR) << "Failed to create pipe";
+    errno = EFAULT;
+    return -1;
+  }
+
   pid_t pid = fork();
   if (pid == -1) {
     return pid;
@@ -1024,6 +1034,11 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
   }
 
   if (pid == 0) {
+    if (close(pipefd[0]) < 0) {
+      LOG(ERROR) << "failed to close pipefd: " << strerror(errno);
+      errno = EFAULT;
+      return -1;
+    }
     // Load an enclave at the same virtual space as the parent.
     status = manager->LoadEnclave(enclave_name, *loader, enclave_config,
                                   enclave_base_address, enclave_size);
@@ -1045,9 +1060,17 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
       return -1;
     }
 
+    std::string child_result = "Child fork succeeded";
     asylo::Status status = DoSnapshotKeyTransfer(
         manager, client, socket_pair[0], socket_pair[1], /*is_parent=*/false);
     if (!status.ok()) {
+      // Inform the parent process about the failure.
+      child_result = "Child DoSnapshotKeyTransfer failed";
+      if (write(pipefd[1], child_result.data(), child_result.size()) < 0) {
+        LOG(ERROR) << "Failed to write child fork result to: " << pipefd[1]
+                   << ", error: " << strerror(errno);
+        return -1;
+      }
       LOG(ERROR) << "DoSnapshotKeyTransfer failed: " << status;
       errno = EFAULT;
       return -1;
@@ -1056,17 +1079,68 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     // Enters the child enclave and restore the enclave memory.
     status = manager->EnterAndRestore(client, snapshot_layout);
     if (!status.ok()) {
+      // Inform the parent process about the failure.
+      child_result = "Child EnterAndRestore failed";
+      if (write(pipefd[1], child_result.data(), child_result.size()) < 0) {
+        LOG(ERROR) << "Failed to write child fork result to: " << pipefd[1]
+                   << ", error: " << strerror(errno);
+        return -1;
+      }
       LOG(ERROR) << "EnterAndRestore failed: " << status;
       errno = EAGAIN;
       return -1;
     }
+    // Inform the parent that child fork has succeeded.
+    if (write(pipefd[1], child_result.data(), child_result.size()) < 0) {
+      LOG(ERROR) << "Failed to write child fork result to: " << pipefd[1]
+                 << ", error: " << strerror(errno);
+      return -1;
+    }
   } else {
+    if (close(pipefd[1]) < 0) {
+      LOG(ERROR) << "Failed to close pipefd: " << strerror(errno);
+      errno = EFAULT;
+      return -1;
+    }
     asylo::Status status = DoSnapshotKeyTransfer(
         manager, client, /*self_socket=*/socket_pair[1],
         /*peer_socket=*/socket_pair[0], /*is_parent=*/true);
     if (!status.ok()) {
       LOG(ERROR) << "DoSnapshotKeyTransfer failed: " << status;
       errno = EFAULT;
+      return -1;
+    }
+    // Wait for the information from the child process to confirm whether the
+    // child enclave has been successfully restored. Timeout at 5 seconds.
+    const int timeout_seconds = 5;
+    fd_set read_fds;
+    FD_ZERO(&read_fds);
+    FD_SET(pipefd[0], &read_fds);
+    struct timeval timeout;
+    timeout.tv_sec = timeout_seconds;
+    timeout.tv_usec = 0;
+    int wait_result =
+        select(/*nfds=*/pipefd[0] + 1, &read_fds, /*writefds=*/nullptr,
+               /*exceptfds=*/nullptr, &timeout);
+    if (wait_result < 0) {
+      LOG(ERROR) << "Error while waiting for child fork result: "
+                 << strerror(errno);
+      return -1;
+    } else if (wait_result == 0) {
+      LOG(ERROR) << "Timeout waiting for fork result from the child";
+      errno = EFAULT;
+      return -1;
+    }
+    // Child fork result is ready to be read.
+    char buf[64];
+    int rc = read(pipefd[0], buf, sizeof(buf));
+    if (rc <= 0) {
+      LOG(ERROR) << "Failed to read child fork result";
+      return -1;
+    }
+    buf[rc] = '\0';
+    if (strncmp(buf, "Child fork succeeded", sizeof(buf)) != 0) {
+      LOG(ERROR) << buf;
       return -1;
     }
   }
