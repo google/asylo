@@ -201,9 +201,15 @@ cc_library(
         "include/trusted/memory.h",
         "include/trusted/register_signal.h",
     ],
-    copts = [
-        "-mrdrnd",
-    ] + ASYLO_DEFAULT_COPTS,
+    copts = select(
+        {
+            "@linux_sgx//:sgx_hw": [
+                "-mrdrnd",  # All SGX chips also support RDRAND
+            ],
+            "@linux_sgx//:sgx_sim": [],
+        },
+        "Must be built for SGX hardware or simulation backend",
+    ) + ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = ["asylo-sgx"],
     visibility = ["//visibility:private"],

@@ -429,7 +429,67 @@ diff -Nur common/inc/sgx_pcl_guid.h common/inc/sgx_pcl_guid.h
 diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
 --- common/inc/sgx_random_buffers.h
 +++ common/inc/sgx_random_buffers.h
-@@ -129,7 +129,8 @@
+@@ -36,6 +36,11 @@
+ #   error This header needs c++11 or later
+ #endif
+ 
++#ifdef SE_SIM
++#include <stdint.h>
++#include <limits>
++#include <random>
++#endif
+ #include <utility>
+ #include <string.h>
+ #include <stdlib.h>
+@@ -43,6 +48,33 @@
+ 
+ extern int EDMM_supported;
+ 
++#ifdef SE_SIM
++class InsecureRandomGenerator {
++ public:
++  using result_type = unsigned;
++
++  result_type operator()() {
++    return rand_r(&seed_);
++  }
++
++  result_type min() { return std::numeric_limits<result_type>::min(); }
++
++  result_type max() { return std::numeric_limits<result_type>::max(); }
++
++ private:
++  // Avoid a system call like time() since this may be used before system calls
++  // are available.
++  unsigned seed_ = static_cast<unsigned>(reinterpret_cast<uintptr_t>(this));
++};
++
++template <class R = unsigned>
++R insecure_rand(void) {
++  thread_local InsecureRandomGenerator generator;
++  std::uniform_int_distribution<R> dist;
++  return dist(generator);
++}
++#endif
++
+ /*
+  * This function is equivalent to __builtin_rdrand16/32/64_step() except it
+  * returns the random value instead of writing it to memory, which is required
+@@ -51,9 +83,13 @@
+ template <class R = unsigned>
+ inline R rdrand(void)
+ {
++#ifndef SE_SIM
+     R r;
+     __asm__ volatile ("rdrand %0" : "=r"(r));
+     return r;
++#else
++    return insecure_rand<R>();
++#endif
+ }
+ 
+ /*
+@@ -129,7 +165,8 @@
  template <class T, std::size_t A, unsigned M = 0x1000>
  struct alignas(A)randomly_placed_buffer
  {
@@ -439,7 +499,7 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
      {
          //
          // gives error with gcc 4.8
-@@ -249,9 +250,6 @@
+@@ -249,9 +286,6 @@
          free(ptr);
      }
  
@@ -449,7 +509,7 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
  private:
      struct alignas(A)_T_instantiator_
      {
-@@ -277,7 +275,7 @@
+@@ -277,7 +311,7 @@
          }
      };
  
@@ -2838,7 +2898,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1250 @@
+@@ -0,0 +1,1256 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3837,7 +3897,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ],
 +)
 +
-+# The following targets are designed with to be build with the Asylo toolchain.
++# The following targets are designed with to be built with the Asylo toolchain.
 +cc_library(
 +    name = "trusted_inc",
 +    srcs = [
@@ -3878,7 +3938,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    copts = [
 +        "-Wno-vla",
 +        "-Iexternal/linux_sgx/common/inc/internal",
-+    ],
++    ] + select(
++        {
++            ":sgx_hw": ["-mrdrand"],
++            ":sgx_sim": ["-DSE_SIM=1"],
++        },
++        "Expected to be built in either SGX hardware- or simulation mode",
++    ),
 +    deps = [
 +        ":common_inc_internal",
 +        ":trusted_inc_internal",
