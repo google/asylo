@@ -122,13 +122,14 @@ Build timestamp as int: 1548680288
 The following packages are used by Asylo and its dependencies, and must also be
 installed.
 
+*   git
 *   ocaml-nox
 *   ocamlbuild
 
 On Debian, these can be installed with the following command:
 
 ```bash
-sudo apt install ocaml-nox ocamlbuild
+sudo apt install git ocaml-nox ocamlbuild
 ```
 
 ## Next steps

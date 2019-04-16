@@ -53,6 +53,7 @@ RUN apt-get update && \
     apt-get install -y \
         bazel \
         build-essential \
+        git \
         libfl2 \
         ocaml-nox \
         ocamlbuild \
