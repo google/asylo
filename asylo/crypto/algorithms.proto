@@ -26,7 +26,7 @@ enum HashAlgorithm {
   SHA256 = 2;
   SHA384 = 3;
   SHA512 = 4;
-};
+}
 
 enum AeadScheme {
   UNKNOWN_AEAD_SCHEME = 0;
@@ -36,23 +36,23 @@ enum AeadScheme {
 
   AES128_GCM_SIV = 3;
   AES256_GCM_SIV = 4;
-};
+}
 
 enum SignatureScheme {
   UNKNOWN_SIGNATURE_SCHEME = 0;
 
   ECDSA_P256_SHA256 = 1;
-};
+}
 
 enum AsymmetricEncryptionScheme {
   UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME = 0;
 
   RSA2048_OAEP = 1;
   RSA3072_OAEP = 2;
-};
+}
 
-enum PublicKeyEncoding {
-  UNKNOWN_PUBLIC_KEY_ENCODING = 0;
+enum AsymmetricKeyEncoding {
+  UNKNOWN_ASYMMETRIC_KEY_ENCODING = 0;
 
-  PUBLIC_KEY_PEM = 1;
+  ASYMMETRIC_KEY_PEM = 1;
 }

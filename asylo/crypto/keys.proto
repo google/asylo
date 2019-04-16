@@ -20,14 +20,44 @@ package asylo;
 
 import "asylo/crypto/algorithms.proto";
 
-// A public encryption key.
+// An encryption or decryption key.
 message AsymmetricEncryptionKey {
-  // Asymmetric encryption scheme used by |public_key|. Required.
-  optional AsymmetricEncryptionScheme encryption_scheme = 1;
+  enum KeyType {
+    UNKNOWN = 0;
+    ENCRYPTION_KEY = 1;
+    DECRYPTION_KEY = 2;
+  }
 
-  // Encoding of |public_key|. Required.
-  optional PublicKeyEncoding encoding = 2;
+  // Indicates whether |key| is an encryption key or decryption key.
+  optional KeyType key_type = 1;
 
-  // An encoded public encryption key. Required.
-  optional bytes public_key = 3;
+  // Asymmetric encryption scheme used by |key|. Required.
+  optional AsymmetricEncryptionScheme encryption_scheme = 2;
+
+  // Encoding of |key|. Required.
+  optional AsymmetricKeyEncoding encoding = 3;
+
+  // An encoded asymmetric key. Required.
+  optional bytes key = 4;
+}
+
+// A signing key or verifying key.
+message AsymmetricSigningKey {
+  enum KeyType {
+    UNKNOWN = 0;
+    SIGNING_KEY = 1;
+    VERIFYING_KEY = 2;
+  }
+
+  // Indicates whether |key| is a signing key or verifying key.
+  optional KeyType key_type = 1;
+
+  // Signature scheme used by |key|. Required.
+  optional SignatureScheme signature_scheme = 2;
+
+  // Encoding of |key|. Required.
+  optional AsymmetricKeyEncoding encoding = 3;
+
+  // An encoded asymmetric key. Required.
+  optional bytes key = 4;
 }

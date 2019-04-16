@@ -32,19 +32,19 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
 )
 
-# Defines messages for certificates and certificate chains.
-asylo_proto_library(
-    name = "certificate_proto",
-    srcs = ["certificate.proto"],
-    visibility = ["//asylo:implementation"],
-)
-
 # Defines key structures for various asymmetric key types.
 asylo_proto_library(
     name = "keys_proto",
     srcs = ["keys.proto"],
     visibility = ["//asylo:implementation"],
     deps = [":algorithms_proto"],
+)
+
+# Defines messages for certificates and certificate chains.
+asylo_proto_library(
+    name = "certificate_proto",
+    srcs = ["certificate.proto"],
+    visibility = ["//asylo:implementation"],
 )
 
 # A generic cryptor wrapping an AEAD key and a NonceGeneratorInterface.
