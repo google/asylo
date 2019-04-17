@@ -26,6 +26,9 @@ message Certificate {
 
     // An X.509 certificate encoded in DER format (.der file).
     X509_DER = 1;
+
+    // An X.509 certificate encoded in PEM format (.pem file).
+    X509_PEM = 2;
   }
 
   // The format of the certificate in |data|.
