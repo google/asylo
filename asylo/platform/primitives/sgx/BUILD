@@ -16,6 +16,10 @@
 
 licenses(["notice"])  # Apache v2.0
 
+package(
+    default_visibility = ["//asylo:implementation"],
+)
+
 exports_files([
     "bridge.edl",
     "errno.edl",
@@ -23,21 +27,28 @@ exports_files([
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-package(
-    default_visibility = ["//asylo:implementation"],
-)
-
 # Trusted runtime components for SGX.
 cc_library(
     name = "trusted_sgx",
     srcs = [
         "trusted_runtime.cc",
+        "trusted_sgx.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     tags = ["asylo-sgx"],
-    deps = [
-        "//asylo/platform/primitives:trusted_runtime",
-    ],
+    deps = select(
+        {
+            "//asylo/platform/primitives:asylo_sgx": [
+                "//asylo/platform/primitives",
+                "//asylo/platform/primitives:trusted_primitives",
+                "//asylo/platform/primitives:trusted_runtime",
+                "//asylo/platform/primitives/util:primitive_locks",
+                "//asylo/platform/primitives/x86:spin_lock",
+                "//asylo/util:error_codes",
+            ],
+        },
+        no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",
+    ),
 )
 
 cc_library(
