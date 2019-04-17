@@ -191,7 +191,7 @@ cc_library(
                 "sgx_sim/trusted/register_signal.cc",
             ],
         },
-        "Expected an SGX backend configuration (e.g., --config=sgx)",
+        no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
     ),
     hdrs = [
         "include/trusted/enclave_interface.h",

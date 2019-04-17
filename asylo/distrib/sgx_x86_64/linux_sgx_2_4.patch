@@ -2907,7 +2907,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1256 @@
+@@ -0,0 +1,1254 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3952,7 +3952,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +            ":sgx_hw": ["-mrdrand"],
 +            ":sgx_sim": ["-DSE_SIM=1"],
 +        },
-+        "Expected to be built in either SGX hardware- or simulation mode",
++        no_match_error = "Expected to be built in either SGX hardware- or simulation mode",
 +    ),
 +    deps = [
 +        ":common_inc_internal",
@@ -4083,15 +4083,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":trusted_inc",
-+    ] + select({
-+        "//conditions:default": [],
-+        ":sgx_hw": [
-+            ":trts_hw",
-+        ],
-+        ":sgx_sim": [
-+            ":trts_sim",
-+        ],
-+    }),
++    ] + select(
++        {
++            ":sgx_hw": [":trts_hw"],
++            ":sgx_sim": [":trts_sim"],
++        },
++        no_match_error = "Expected to be built in either SGX hardware- or simulation mode",
++    ),
 +)
 +
 +# The edger8r tool uses an language unsupported by Bazel, so call ocamlbuild

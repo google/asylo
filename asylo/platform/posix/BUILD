@@ -53,7 +53,7 @@ cc_library(
         {
             "//asylo/platform/arch:sgx": [":posix"],
         },
-        "Expected a trusted backend configuration (e.g., --config=sgx)",
+        no_match_error = "Expected a trusted backend configuration (e.g., --config=sgx)",
     ),
 )
 
