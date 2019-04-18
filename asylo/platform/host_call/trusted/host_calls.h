@@ -24,6 +24,8 @@
 // an adversarial implementation.
 
 #include <fcntl.h>
+#include <sys/socket.h>
+
 #include <cstdarg>
 #include <cstddef>
 #include <cstdint>
@@ -60,6 +62,8 @@ int enc_untrusted_rmdir(const char *path);
 int enc_untrusted_socket(int domain, int type, int protocol);
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */);
 int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group);
+int enc_untrusted_setsockopt(int sockfd, int level, int optname,
+                             const void *optval, socklen_t optlen);
 
 #ifdef __cplusplus
 }  // extern "C"

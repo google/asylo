@@ -17,6 +17,7 @@
  */
 
 #include "asylo/platform/host_call/trusted/host_calls.h"
+
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 extern "C" {
@@ -90,11 +91,13 @@ int enc_untrusted_rename(const char *oldpath, const char *newpath) {
 }
 
 ssize_t enc_untrusted_read(int fd, void *buf, size_t count) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_read, fd, buf, count);
+  return static_cast<ssize_t>(
+      enc_untrusted_syscall(asylo::system_call::kSYS_read, fd, buf, count));
 }
 
 ssize_t enc_untrusted_write(int fd, const void *buf, size_t count) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_write, fd, buf, count);
+  return static_cast<ssize_t>(
+      enc_untrusted_syscall(asylo::system_call::kSYS_write, fd, buf, count));
 }
 
 int enc_untrusted_symlink(const char *target, const char *linkpath) {
@@ -103,8 +106,8 @@ int enc_untrusted_symlink(const char *target, const char *linkpath) {
 }
 
 ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_readlink, pathname, buf,
-                               bufsiz);
+  return static_cast<ssize_t>(enc_untrusted_syscall(
+      asylo::system_call::kSYS_readlink, pathname, buf, bufsiz));
 }
 
 int enc_untrusted_truncate(const char *path, off_t length) {
@@ -180,6 +183,13 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
 int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_chown, pathname, owner,
                                group);
+}
+
+int enc_untrusted_setsockopt(int sockfd, int level, int optname,
+                             const void *optval, socklen_t optlen) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_setsockopt, sockfd,
+                               level, TokLinuxOptionName(level, optname),
+                               optval, optlen);
 }
 
 }  // extern "C"

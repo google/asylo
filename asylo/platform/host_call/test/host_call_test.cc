@@ -20,6 +20,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+
 #include <string>
 
 #include <gmock/gmock.h>
@@ -34,6 +35,7 @@
 
 using ::testing::Eq;
 using ::testing::Gt;
+using ::testing::Not;
 using ::testing::StrEq;
 
 namespace asylo {
@@ -603,6 +605,42 @@ TEST_F(HostCallTest, TestChown) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChown, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
   EXPECT_THAT(params.Pop<int>(), Eq(0));
+}
+
+// Tests enc_untrusted_setsockopt() by creating a socket on the untrusted side,
+// passing the socket file descriptor to the trusted side, and invoking
+// the host call for setsockopt() from inside the enclave. Verifies the return
+// value obtained from the host call to confirm that the new options have been
+// set.
+TEST_F(HostCallTest, TestSetSockOpt) {
+  // Create an TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
+  int socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  // Bind the TCP socket to port 0 for any IP address. Once bind is successful
+  // for UDP sockets application can operate on the socket descriptor for
+  // sending or receiving data.
+  struct sockaddr_in6 sa;
+  memset(&sa, 0, sizeof(sa));
+  sa.sin6_family = AF_INET6;
+  sa.sin6_flowinfo = 0;
+  sa.sin6_addr = in6addr_any;
+  sa.sin6_port = htons(0);
+  EXPECT_THAT(bind(socket_fd, reinterpret_cast<struct sockaddr*>(&sa),
+                   sizeof(sa)),
+              Not(Eq(-1)));
+
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = /*sockfd=*/ socket_fd;
+  *(params.PushAlloc<int>()) = /*level=*/ SOL_SOCKET;
+  *(params.PushAlloc<int>()) = /*optname=*/ SO_REUSEADDR;
+  *(params.PushAlloc<int>()) = /*option=*/ 1;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSockOpt, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Gt(-1));
+
+  close(socket_fd);
 }
 
 }  // namespace

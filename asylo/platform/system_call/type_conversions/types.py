@@ -18,7 +18,8 @@
 """Declares the include files and symbols to be processed by the code generator.
 
 Describes the types that need to be generated with the default values on the
-target implementation.
+target implementation. For each type, only include the values/members that are
+present in newlib as well as the target host library.
 """
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
@@ -29,8 +30,10 @@ from asylo.platform.system_call.type_conversions.types_parse_functions import se
 from asylo.platform.system_call.type_conversions.types_parse_functions import write_output
 
 include("fcntl.h")
-include("sys/socket.h")
+include("netdb.h")
+include("netinet/tcp.h")
 include("stdint.h")
+include("sys/socket.h")
 
 set_klinux_prefix("kLinux")
 set_bridge_prefix("bridge")
@@ -79,6 +82,38 @@ define_enum(
     multi_valued=True,
     default_value_host=0,
     default_value_newlib=0)
+
+define_enum(
+    name="TcpOptionName",
+    values=["TCP_NODELAY", "TCP_KEEPIDLE", "TCP_KEEPINTVL", "TCP_KEEPCNT"],
+    multi_valued=False,
+    default_value_host=-1,
+    default_value_newlib=-1)
+
+define_enum(
+    name="IpV6OptionName",
+    values=[
+        "IPV6_V6ONLY", "IPV6_RECVPKTINFO", "IPV6_PKTINFO", "IPV6_RECVHOPLIMIT",
+        "IPV6_HOPLIMIT", "IPV6_RECVHOPOPTS", "IPV6_HOPOPTS",
+        "IPV6_RTHDRDSTOPTS", "IPV6_RECVRTHDR", "IPV6_RTHDR", "IPV6_RECVDSTOPTS",
+        "IPV6_DSTOPTS"
+    ],
+    multi_valued=False,
+    default_value_host=-1,
+    default_value_newlib=-1)
+
+define_enum(
+    name="SocketOptionName",
+    values=[
+        "SO_DEBUG", "SO_REUSEADDR", "SO_TYPE", "SO_ERROR", "SO_DONTROUTE",
+        "SO_BROADCAST", "SO_SNDBUF", "SO_RCVBUF", "SO_SNDBUFFORCE",
+        "SO_RCVBUFFORCE", "SO_KEEPALIVE", "SO_OOBINLINE", "SO_NO_CHECK",
+        "SO_PRIORITY", "SO_LINGER", "SO_BSDCOMPAT", "SO_REUSEPORT",
+        "SO_RCVTIMEO", "SO_SNDTIMEO"
+    ],
+    multi_valued=False,
+    default_value_host=-1,
+    default_value_newlib=-1)
 
 define_struct(
     name="stat",

@@ -22,6 +22,7 @@
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/system_call.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -294,6 +295,22 @@ primitives::PrimitiveStatus TestChown(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestSetsockopt(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 4);
+
+  int option = params->Pop<int>();
+  int klinux_optname = params->Pop<int>();
+  int level = params->Pop<int>();
+  int sockfd = params->Pop<int>();
+
+  *(params->PushAlloc<int>()) = enc_untrusted_setsockopt(
+      sockfd, level, FromkLinuxOptionName(level, klinux_optname),
+      (void *)&option, sizeof(option));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -349,6 +366,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestFcntl, primitives::EntryHandler{TestFcntl}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestChown, primitives::EntryHandler{TestChown}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestSetSockOpt, primitives::EntryHandler{TestSetsockopt}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

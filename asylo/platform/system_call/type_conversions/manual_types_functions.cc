@@ -17,6 +17,7 @@
  */
 
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
+#include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
 
 int TokLinuxSocketType(int sock_type) {
   int kLinux_sock_type = 0;
@@ -103,4 +104,30 @@ int FromkLinuxSocketType(int kLinux_sock_type) {
   }
 
   return sock_type;
+}
+
+int TokLinuxOptionName(int level, int option_name) {
+  if (level == IPPROTO_TCP) {
+    return TokLinuxTcpOptionName(option_name);
+  }
+  if (level == IPPROTO_IPV6) {
+    return TokLinuxIpV6OptionName(option_name);
+  }
+  if (level == SOL_SOCKET) {
+    return TokLinuxSocketOptionName(option_name);
+  }
+  return -1;
+}
+
+int FromkLinuxOptionName(int level, int klinux_option_name) {
+  if (level == IPPROTO_TCP) {
+    return FromkLinuxTcpOptionName(klinux_option_name);
+  }
+  if (level == IPPROTO_IPV6) {
+    return TokLinuxIpV6OptionName(klinux_option_name);
+  }
+  if (level == SOL_SOCKET) {
+    return FromkLinuxSocketOptionName(klinux_option_name);
+  }
+  return -1;
 }

@@ -26,5 +26,7 @@
 
 int TokLinuxSocketType(int sock_type);
 int FromkLinuxSocketType(int kLinux_sock_type);
+int TokLinuxOptionName(int level, int option_name);
+int FromkLinuxOptionName(int level, int klinux_option_name);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_
