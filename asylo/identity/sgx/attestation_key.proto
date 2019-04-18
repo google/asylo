@@ -1,0 +1,46 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/crypto/keys.proto";
+
+// A message that encapsulates information about an attestation key that is
+// certified by the Intel Provisioning Certification Enclave (PCE).
+message AttestationPublicKey {
+  // The public part of the attestation key used to produce assertions.
+  // Required.
+  optional AsymmetricSignatureKey attestation_public_key = 1;
+
+  // Version of the AttestationPublicKey. Required.
+  optional string version = 2;
+
+  // Purpose of the AttestationPublicKey. Required.
+  optional string purpose = 3;
+}
+
+// A serialized PceSignReportPayload is used as an input for generating the
+// REPORTDATA for a REPORT that is signed by the PCE. The exact algorithm for
+// generating REPORTDATA is not specified here.
+message PceSignReportPayload {
+  // Describes the attestation key that is certified. Required.
+  optional AttestationPublicKey attestation_public_key = 1;
+
+  // Version of the PceSignReportPayload. Required.
+  optional string version = 2;
+}

@@ -48,6 +48,12 @@ asylo_proto_library(
 )
 
 asylo_proto_library(
+    name = "attestation_key_proto",
+    srcs = ["attestation_key.proto"],
+    deps = ["//asylo/crypto:keys_proto"],
+)
+
+asylo_proto_library(
     name = "local_assertion_proto",
     srcs = ["local_assertion.proto"],
 )
