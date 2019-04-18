@@ -34,14 +34,21 @@ namespace asylo {
 // signature verification and SHA256 for message hashing.
 class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
  public:
+  // Creates an ECDSA P256 verifying key from the given DER-encoded
+  // |serialized_key|.
+  static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> CreateFromDer(
+      ByteContainerView serialized_key);
+
   // Creates a new EcdsaP56VerifyingKey from the given |public_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> Create(
       bssl::UniquePtr<EC_KEY> public_key);
 
   // From VerifyingKey.
+
   SignatureScheme GetSignatureScheme() const override;
 
-  // From VerifyingKey.
+  StatusOr<std::string> SerializeToDer() const override;
+
   Status Verify(ByteContainerView message,
                 ByteContainerView signature) const override;
 

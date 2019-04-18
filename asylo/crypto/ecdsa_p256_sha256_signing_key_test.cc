@@ -51,6 +51,22 @@ constexpr char kTestKey[] =
     "593a1e662aafe9e98f085c00dd94ec6c703df0145972eb578a1b5927b62b35379d51a5645a"
     "c339aa24cfb7b89685da";
 
+constexpr char kTestMessageHex[] = "436f66666565206973206c6966652e0a";
+
+constexpr char kTestSignatureHex[] =
+    "304502207f504d6040ded5ddd1bd2b87b5ae2febe09b579f19c094b7fae24d8f47137eda02"
+    "2100b45795608442ed963abac8850d93d37e028ce187d53dc2b7577e2d2190b9ea47";
+
+constexpr char kInvalidSignatureHex[] =
+    "3046022100b5071aa5a029409df562d8b71a5f48"
+    "dc03d4f1864762bc14d1c5d849ac8fd5660221008e0879f733c326f7855e4d681d809c9374"
+    "6390a519edb7acdca752afe2eedc51";
+
+constexpr char kTestVerifyingKeyDer[] =
+    "3059301306072a8648ce3d020106082a8648ce3d03010703420004eaeda5103e89194f43bf"
+    "e0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe6"
+    "1c69fc9eeada1fe29a567d6ceb468e16bd";
+
 constexpr uint8_t kBadKey[] = "bad key";
 
 class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
@@ -62,28 +78,77 @@ class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
 
       auto signing_key_result =
           EcdsaP256Sha256SigningKey::CreateFromDer(serialized_signing_key_bin);
-      ASSERT_THAT(signing_key_result, IsOk());
+      ASYLO_ASSERT_OK(signing_key_result);
       signing_key_ = std::move(signing_key_result).ValueOrDie();
 
       LOG(INFO) << "Using provided SigningKey: "
                 << FLAGS_serialized_signing_key;
     } else {
       auto signing_key_result = EcdsaP256Sha256SigningKey::Create();
-      ASSERT_THAT(signing_key_result, IsOk());
+      ASYLO_ASSERT_OK(signing_key_result);
       signing_key_ = std::move(signing_key_result).ValueOrDie();
 
       CleansingVector<uint8_t> serialized;
-      ASSERT_THAT(signing_key_->SerializeToDer(&serialized), IsOk());
+      ASYLO_ASSERT_OK(signing_key_->SerializeToDer(&serialized));
 
       LOG(INFO) << "Using random SigningKey: "
                 << absl::BytesToHexString(absl::string_view(
                        reinterpret_cast<const char *>(serialized.data()),
                        serialized.size()));
     }
+
+    // Set up verifying key.
+    serialized_verifying_key_bin_ =
+        absl::HexStringToBytes(kTestVerifyingKeyDer);
+
+    auto verifying_key_result = EcdsaP256Sha256VerifyingKey::CreateFromDer(
+        serialized_verifying_key_bin_);
+    ASYLO_ASSERT_OK(verifying_key_result);
+
+    verifying_key_ = std::move(verifying_key_result).ValueOrDie();
   }
 
   std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key_;
+
+  // The following fields are unrelated to the signing_key_ member.
+  std::string serialized_verifying_key_bin_;
+  std::unique_ptr<EcdsaP256Sha256VerifyingKey> verifying_key_;
 };
+
+// Verify that creating a key from an invalid DER-encoding fails.
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       CreateVerifyingKeyFromInvalidSerializationFails) {
+  std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
+
+  EXPECT_THAT(EcdsaP256Sha256VerifyingKey::CreateFromDer(serialized_key),
+              Not(IsOk()));
+}
+
+// Verify that a EcdsaP256Sha256VerifyingKey created from a DER-encoded key
+// produces the same encoded key through SerializeToDer().
+TEST_F(EcdsaP256Sha256SigningKeyTest, CreateAndSerializeToDerVerifyingKey) {
+  EXPECT_THAT(verifying_key_->SerializeToDer(),
+              IsOkAndHolds(serialized_verifying_key_bin_));
+}
+
+// Verify that a EcdsaP256Sha256VerifyingKey created from a DER-encoded key
+// verifies a valid signature.
+TEST_F(EcdsaP256Sha256SigningKeyTest, CreateVerifyingKeyFromDerVerifySuccess) {
+  std::string valid_signature(absl::HexStringToBytes(kTestSignatureHex));
+  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
+
+  ASYLO_EXPECT_OK(verifying_key_->Verify(valid_message, valid_signature));
+}
+
+// Verify that a EcdsaP256Sha256VerifyingKey created from a DER-encoded key
+// does not verify an invalid signature.
+TEST_F(EcdsaP256Sha256SigningKeyTest, CreateVerifyingKeyFromDerVerifyFailure) {
+  std::string invalid_signature(absl::HexStringToBytes(kInvalidSignatureHex));
+  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
+
+  EXPECT_THAT(verifying_key_->Verify(valid_message, invalid_signature),
+              Not(IsOk()));
+}
 
 // Verify that EcdsaP256Sha256SigningKey::Create() fails when the key has an
 // incorrect group.
@@ -110,7 +175,7 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, HashAlgorithm) {
             SignatureScheme::ECDSA_P256_SHA256);
 
   auto verifying_key_result = signing_key_->GetVerifyingKey();
-  ASSERT_THAT(verifying_key_result, IsOk());
+  ASYLO_ASSERT_OK(verifying_key_result);
 
   std::unique_ptr<VerifyingKey> verifying_key =
       std::move(verifying_key_result).ValueOrDie();
@@ -125,14 +190,14 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerify) {
   ASSERT_TRUE(RAND_bytes(message.data(), kMessageSize));
 
   std::vector<uint8_t> signature;
-  ASSERT_THAT(signing_key_->Sign(message, &signature), IsOk());
+  ASYLO_ASSERT_OK(signing_key_->Sign(message, &signature));
 
   auto verifying_key_result = signing_key_->GetVerifyingKey();
-  ASSERT_THAT(verifying_key_result, IsOk());
+  ASYLO_ASSERT_OK(verifying_key_result);
 
   std::unique_ptr<VerifyingKey> verifying_key =
       std::move(verifying_key_result).ValueOrDie();
-  EXPECT_THAT(verifying_key->Verify(message, signature), IsOk());
+  ASYLO_EXPECT_OK(verifying_key->Verify(message, signature));
 
   // Ensure that the signature is not verifiable if one bit is flipped.
   signature.back() ^= 1;
@@ -145,11 +210,11 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerify) {
 // signature produced by the original key successfully.
 TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToDerAndRestoreSigningKey) {
   CleansingVector<uint8_t> serialized_key;
-  ASSERT_THAT(signing_key_->SerializeToDer(&serialized_key), IsOk());
+  ASYLO_ASSERT_OK(signing_key_->SerializeToDer(&serialized_key));
 
   auto signing_key_result2 =
       EcdsaP256Sha256SigningKey::CreateFromDer(serialized_key);
-  ASSERT_THAT(signing_key_result2, IsOk());
+  ASYLO_ASSERT_OK(signing_key_result2);
 
   std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key2 =
       std::move(signing_key_result2).ValueOrDie();
@@ -159,15 +224,15 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToDerAndRestoreSigningKey) {
   ASSERT_TRUE(RAND_bytes(message.data(), kMessageSize));
 
   std::vector<uint8_t> signature;
-  ASSERT_THAT(signing_key_->Sign(message, &signature), IsOk());
+  ASYLO_ASSERT_OK(signing_key_->Sign(message, &signature));
 
   auto verifying_key_result = signing_key2->GetVerifyingKey();
-  ASSERT_THAT(verifying_key_result, IsOk());
+  ASYLO_ASSERT_OK(verifying_key_result);
 
   std::unique_ptr<VerifyingKey> verifying_key =
       std::move(verifying_key_result).ValueOrDie();
 
-  EXPECT_THAT(verifying_key->Verify(message, signature), IsOk());
+  ASYLO_EXPECT_OK(verifying_key->Verify(message, signature));
 }
 
 // Verify that an EcdsaP256Sha256SigningKey created from a serialized key
@@ -182,7 +247,7 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, RestoreFromAndSerializeToDerSigningKey) {
 
   auto signing_key_result2 =
       EcdsaP256Sha256SigningKey::CreateFromDer(serialized_key_bin_expected);
-  ASSERT_THAT(signing_key_result2, IsOk());
+  ASYLO_ASSERT_OK(signing_key_result2);
 
   std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key2 =
       std::move(signing_key_result2).ValueOrDie();
@@ -195,7 +260,8 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, RestoreFromAndSerializeToDerSigningKey) {
 
 // Verify that creating an EcdsaP256Sha256SigningKey from an invalid DER
 // serialization fails.
-TEST_F(EcdsaP256Sha256SigningKeyTest, CreateFromInvalidSerializationFails) {
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       CreateSigningKeyFromInvalidSerializationFails) {
   std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
 
   EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromDer(serialized_key),

@@ -20,9 +20,11 @@
 
 #include <openssl/bytestring.h>
 #include <openssl/crypto.h>
+#include <openssl/ec_key.h>
 #include <openssl/ecdsa.h>
 #include <openssl/mem.h>
 #include <openssl/nid.h>
+#include <openssl/x509.h>
 
 #include <cstdint>
 #include <vector>
@@ -57,6 +59,22 @@ StatusOr<bssl::UniquePtr<EC_KEY>> CreatePublicKeyFromPrivateKey(
 // EcdsaP256Sha256VerifyingKey
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
+EcdsaP256Sha256VerifyingKey::CreateFromDer(ByteContainerView serialized_key) {
+  // The input data containing the serialized public key.
+  uint8_t const *serialized_key_data = serialized_key.data();
+
+  // Create a public key from the input data. If |a| was set, the EC_KEY object
+  // referenced by |a| would be freed and |a| would be updated to point to the
+  // returned object.
+  bssl::UniquePtr<EC_KEY> key(d2i_EC_PUBKEY(/*a=*/nullptr, &serialized_key_data,
+                                            serialized_key.size()));
+  if (!key) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Create(std::move(key));
+}
+
+StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
 EcdsaP256Sha256VerifyingKey::Create(bssl::UniquePtr<EC_KEY> public_key) {
   if (EC_GROUP_get_curve_name(EC_KEY_get0_group(public_key.get())) !=
       NID_X9_62_prime256v1) {
@@ -71,6 +89,16 @@ EcdsaP256Sha256VerifyingKey::Create(bssl::UniquePtr<EC_KEY> public_key) {
 
 SignatureScheme EcdsaP256Sha256VerifyingKey::GetSignatureScheme() const {
   return SignatureScheme::ECDSA_P256_SHA256;
+}
+
+StatusOr<std::string> EcdsaP256Sha256VerifyingKey::SerializeToDer() const {
+  uint8_t *key = nullptr;
+  int length = i2d_EC_PUBKEY(public_key_.get(), &key);
+  if (length <= 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  bssl::UniquePtr<uint8_t> deleter(key);
+  return std::string(reinterpret_cast<char *>(key), length);
 }
 
 Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,

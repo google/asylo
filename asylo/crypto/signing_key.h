@@ -37,6 +37,10 @@ class VerifyingKey {
   // Returns the signature scheme used by this VerifyingKey.
   virtual SignatureScheme GetSignatureScheme() const = 0;
 
+  // Serializes this VerifyingKey into a DER-encoded key structure and returns
+  // the serialized key.
+  virtual StatusOr<std::string> SerializeToDer() const = 0;
+
   // Verifies that |signature| is a valid signature over a hash of |message|
   // produced by the underlying hash function. Returns true if verification
   // succeeds, and false if verification failed or an error occurred during
