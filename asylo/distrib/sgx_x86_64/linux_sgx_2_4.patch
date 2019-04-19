@@ -529,7 +529,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -82,6 +83,48 @@
+@@ -82,6 +83,53 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
@@ -574,6 +574,11 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 + *      (data/bss/heap) and for current tcs(thread data/stack).
 + */
 +void SGXAPI sgx_memory_layout(struct SgxMemoryLayout *memory_layout);
++
++/* sgx_get_active_enclave_entries()
++ * Return Value - the number of active ecalls inside the enclave.
++ */
++int SGXAPI sgx_get_active_enclave_entries();
 +
  #ifdef __cplusplus
  }
@@ -2569,12 +2574,16 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
  
  #ifdef SE_SIM
  #include "t_instructions.h"    /* for `g_global_data_sim' */
-@@ -318,6 +320,27 @@
+@@ -318,6 +320,31 @@
      return 0;
  }
  
 +void sgx_memory_layout(struct SgxMemoryLayout *memory_layout) {
 +  get_memory_layout(memory_layout);
++}
++
++int sgx_get_active_enclave_entries() {
++  return get_ecall_count();
 +}
 +
 +sgx_status_t egetkey_status_to_sgx_status(int egetkey_status) {
@@ -2678,9 +2687,11 @@ diff -Nur sdk/trts/trts_internal.h sdk/trts/trts_internal.h
 diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 --- sdk/trts/trts_nsp.cpp
 +++ sdk/trts/trts_nsp.cpp
-@@ -47,29 +47,7 @@
+@@ -46,30 +46,9 @@
+ #include "thread_data.h"
  #include "global_data.h"
  #include "trts_internal.h"
++#include "trts_util.h"
  #include "internal/rts.h"
 -
 -static void init_stack_guard(void *tcs)
@@ -2709,11 +2720,19 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
  
  extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa) __attribute__((section(".nipx")));
  
-@@ -87,13 +65,25 @@
+@@ -87,13 +66,33 @@
          return error;
      }
  
 -    if(cssa == 0)
++    // Increase the count if an ecall enters an enclave. The ocalls returning to
++    // the enclave shouldn't be counted in, since the ecall that invokes them is
++    // still active.
++    if (index != ECMD_ORET)
++    {
++        increase_ecall_count();
++    }
++
 +    // Check whether the incoming ecall is a user exception. If index is within
 +    // range of the ecall table size, the is_exception field will be true for
 +    // user exceptions.
@@ -2737,6 +2756,17 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
          }
          else if(index == ECMD_INIT_ENCLAVE)
          {
+@@ -124,5 +123,10 @@
+     {
+         set_enclave_state(ENCLAVE_CRASHED);
+     }
++    // The ecall has finished and is leaving the enclave.
++    if (index != ECMD_ORET)
++    {
++        decrease_ecall_count();
++    }
+     return error;
+ }
 diff -Nur sdk/trts/trts_nsp_internal.cpp sdk/trts/trts_nsp_internal.cpp
 --- sdk/trts/trts_nsp_internal.cpp
 +++ sdk/trts/trts_nsp_internal.cpp
@@ -2830,15 +2860,27 @@ diff -Nur sdk/trts/trts_switchless.cpp sdk/trts/trts_switchless.cpp
 diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 --- sdk/trts/trts_util.cpp
 +++ sdk/trts/trts_util.cpp
-@@ -34,6 +34,7 @@
+@@ -29,11 +29,19 @@
+  *
+  */
+ 
++#include <atomic>
+ 
+ #include "trts_util.h"
  #include "global_data.h"
  #include "util.h"
  #include "thread_data.h"
 +#include "trts_internal.h"
++
++std::atomic<int> ecall_count(0);
++
++void increase_ecall_count() { ecall_count++; }
++void decrease_ecall_count() { ecall_count--; }
++int get_ecall_count() { return ecall_count; }
  
  // No need to check the state of enclave or thread.
  // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
-@@ -72,6 +73,47 @@
+@@ -72,6 +80,47 @@
      return heap_size;
  }
  
@@ -2897,11 +2939,14 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -44,6 +45,7 @@
+@@ -44,6 +45,10 @@
  void * get_heap_base(void);
  size_t get_heap_size(void);
  size_t get_heap_min_size(void);
 +void get_memory_layout(struct SgxMemoryLayout *memory_layout);
++void increase_ecall_count();
++void decrease_ecall_count();
++int get_ecall_count();
  int * get_errno_addr(void);
  bool is_stack_addr(void *address, size_t size);
  bool is_valid_sp(uintptr_t sp);
