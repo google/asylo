@@ -40,11 +40,16 @@ enclave {
       sgx_thread_setwait_untrusted_events_ocall,
       sgx_thread_set_multiple_untrusted_events_ocall;
 
-  from "../../../platform/primitives/sgx/bridge.edl" import *;
   from "../../../platform/primitives/sgx/errno.edl" import *;
   from "host_calls_generator/generated_bridge.edl" import *;
 
   trusted {
+    // Invokes the trusted entry point designated by `selector`.
+    // WARNING: Do not add calls before ecall_displatch_trusted_call, as callers
+    // may assume this to be the first entry in the generated ecall table.
+    public int ecall_dispatch_trusted_call(uint64_t selector,
+                                          [user_check] void *buffer);
+
     // Initializes enclave. The behavior of a call into an uninitialized enclave
     // is implementation defined. The caller is responsible for freeing *output
     // if *output_len > 0

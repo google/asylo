@@ -114,7 +114,6 @@ genrule(
     name = "generate_bridge",
     srcs = [
         "sgx/bridge.edl",
-        "//asylo/platform/primitives/sgx:bridge.edl",
         "//asylo/platform/primitives/sgx:errno.edl",
         "//asylo/third_party/intel:sgx_tstdc.edl",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_bridge.edl",
@@ -221,6 +220,8 @@ cc_library(
         "//asylo/platform/common:memory",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/posix/signal:signal_manager",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:trusted_sgx",
         "//asylo/util:logging",

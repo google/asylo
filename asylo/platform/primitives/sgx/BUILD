@@ -21,7 +21,6 @@ package(
 )
 
 exports_files([
-    "bridge.edl",
     "errno.edl",
 ])
 
@@ -63,6 +62,7 @@ cc_library(
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:status",
+        "@linux_sgx//:public",
         "@linux_sgx//:urts",
     ],
 )
