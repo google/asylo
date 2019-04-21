@@ -26,6 +26,12 @@
 extern "C" {
 #endif
 
+// Gets the next available address on the switched heap.
+void *GetSwitchedHeapNext();
+
+// Gets the remaining size of the switched heap.
+size_t GetSwitchedHeapRemaining();
+
 // Temporarily switch malloc to allocate memory on user provided address space,
 // with the base address |base| and size |size|. To switch back to normal heap,
 // call it with |base| as a nullptr.

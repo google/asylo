@@ -18,6 +18,44 @@ syntax = "proto2";
 
 package asylo;
 
+import "asylo/enclave.proto";
+
+// A snapshot layout entry message that contains the base address and size of
+// the ciphertext and nonce.
+message SnapshotLayoutEntry {
+  // Start address of the ciphertext in the snapshot.
+  optional uint64 ciphertext_base = 1;
+
+  // Size of the ciphertext in the snapshot.
+  optional uint64 ciphertext_size = 2;
+
+  // Start address of the nonce in the snapshot.
+  optional uint64 nonce_base = 3;
+
+  // Size of the nonce in the snapshot.
+  optional uint64 nonce_size = 4;
+}
+
+// A snapshot layout message that contains the base address and size of the
+// following: enclave's data section, enclave's bss section, enclave heap,
+// and stack for the enclave thread that took the snapshot.
+message SnapshotLayout {
+  // The encrypted enclave data section in the snapshot.
+  optional SnapshotLayoutEntry data = 1;
+
+  // The encrypted enclave bss section in the snapshot.
+  optional SnapshotLayoutEntry bss = 2;
+
+  // The encrypted enclave heap in the snapshot.
+  optional SnapshotLayoutEntry heap = 3;
+
+  // The encrypted enclave thread related information the snapshot.
+  optional SnapshotLayoutEntry thread = 4;
+
+  // The encrypted stack for the calling thread in the snapshot.
+  optional SnapshotLayoutEntry stack = 5;
+}
+
 // A handshake input message that contains the socket used for communication,
 // and whether it's a parent or child enclave.
 message ForkHandshakeConfig {
@@ -35,4 +73,8 @@ message EncryptedSnapshotKey {
   optional bytes ciphertext = 1;
   // The nonce bytes of the encrypted snapshot key.
   optional bytes nonce = 2;
+}
+
+extend EnclaveOutput {
+  optional SnapshotLayout snapshot = 238362825;
 }

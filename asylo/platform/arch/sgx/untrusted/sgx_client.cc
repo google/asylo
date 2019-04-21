@@ -422,8 +422,8 @@ Status SgxClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
 }
 
 Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
-  LOG(WARNING) << "ENCLAVE FORK IS INSECURE CURRENTLY. THE SNAPSHOT IS "
-                  "UNENCRYPTED AND IT LEAKS ALL ENCLAVE DATA!";
+  LOG(WARNING) << "THE SECURITY FEATURES FOR ENCLAVE FORK ARE NOT COMPLETELY "
+                  "IMPLEMENTED YET. IT MAY CAUSE SECURITY ISSUE";
   char *output_buf = nullptr;
   size_t output_len = 0;
 
@@ -443,7 +443,7 @@ Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
 
   // Set the output parameter if necessary.
   if (snapshot_layout) {
-    *snapshot_layout = local_output.snapshot_layout();
+    *snapshot_layout = local_output.GetExtension(snapshot);
   }
 
   return status;
@@ -468,6 +468,10 @@ Status SgxClient::EnterAndRestore(const SnapshotLayout &snapshot_layout) {
   status_proto.ParseFromArray(output, output_len);
   Status status;
   status.RestoreFrom(status_proto);
+
+  // |output| points to an untrusted memory buffer allocated by the enclave. It
+  // is the untrusted caller's responsibility to free this buffer.
+  free(output);
 
   return status;
 }

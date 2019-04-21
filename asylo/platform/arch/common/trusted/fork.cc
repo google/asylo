@@ -30,18 +30,25 @@ pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config) {
                             /*restore_required=*/false);
 }
 
+bool IsSecureForkSupported() { return false; }
+
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // Only supported in the SGX hardware backend.
   abort();
 }
 
-Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
+Status RestoreForFork(const char *input, size_t input_len) {
   // Only supported in the SGX hardware backend.
   abort();
 }
 
 Status TransferSecureSnapshotKey(
     const ForkHandshakeConfig &fork_handshake_config) {
+  // Only supported in the SGX hardware backend.
+  abort();
+}
+
+void SaveThreadLayoutForSnapshot() {
   // Only supported in the SGX hardware backend.
   abort();
 }

@@ -24,8 +24,10 @@
 #include <cstddef>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "asylo/crypto/aead_cryptor.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/client_ekep_handshaker.h"
 #include "asylo/grpc/auth/core/server_ekep_handshaker.h"
@@ -36,6 +38,7 @@
 #include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
 #include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/posix/memory/memory.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/posix_error_space.h"
@@ -45,6 +48,21 @@ using AeadCryptor = asylo::experimental::AeadCryptor;
 
 namespace asylo {
 namespace {
+
+// Size of snapshot key, which is used to encrypt/decrypt enclave snapshot. We
+// use an AES256-GCM-SIV key to encrypt the snapshot.
+constexpr size_t kSnapshotKeySize = 32;
+
+const char kSnapshotKeyAssociatedDataBuf[] = "AES256-GCM-SIV snapshot key";
+
+const char kDataAssociatedDataBuf[] = "enclave data section";
+const char kBssAssociatedDataBuf[] = "enclave bss section";
+const char kHeapAssociatedDataBuf[] = "enclave heap";
+const char kThreadAssociatedDataBuf[] = "enclave thread info";
+const char kStackAssociatedDataBuf[] = "enclave stack";
+
+// AES256-GCM-SIV snapshot key, which is used to encrypt/decrypt snapshot.
+static CleansingVector<uint8_t> *global_snapshot_key;
 
 // Structure describing the layout of per-thread memory resources.
 struct ThreadMemoryLayout {
@@ -67,31 +85,11 @@ struct ThreadMemoryLayout {
 static struct ThreadMemoryLayout forked_thread_memory_layout = {
     nullptr, 0, nullptr, nullptr};
 
-// Saves the thread memory layout, including the base address and size of the
-// stack/thread info of the calling TCS.
-void SaveThreadLayoutForSnapshot() {
-  struct EnclaveMemoryLayout enclave_memory_layout;
-  enc_get_memory_layout(&enclave_memory_layout);
-  struct ThreadMemoryLayout thread_memory_layout;
-  thread_memory_layout.thread_base = enclave_memory_layout.thread_base;
-  thread_memory_layout.thread_size = enclave_memory_layout.thread_size;
-  thread_memory_layout.stack_base = enclave_memory_layout.stack_base;
-  thread_memory_layout.stack_limit = enclave_memory_layout.stack_limit;
-  forked_thread_memory_layout = thread_memory_layout;
-}
-
 // Gets the previous saved thread memory layout, including the base address and
 // size of the stack/thread info for the TCS that saved the layout.
 const struct ThreadMemoryLayout GetThreadLayoutForSnapshot() {
   return forked_thread_memory_layout;
 }
-
-// Size of snapshot key, which is used to encrypt/decrypt enclave snapshot. We
-// use an AES256-GCM-SIV key to encrypt the snapshot.
-constexpr size_t kSnapshotKeySize = 32;
-
-// AES256-GCM-SIV snapshot key, which is used to encrypt/decrypt snapshot.
-static CleansingVector<uint8_t> *global_snapshot_key;
 
 void DeleteSnapshotKey() {
   if (global_snapshot_key) {
@@ -116,9 +114,106 @@ bool GetSnapshotKey(CleansingVector<uint8_t> *key) {
   return true;
 }
 
-const char kSnapshotKeyAssociatedDataBuf[] = "AES256-GCM-SIV snapshot key";
+// Encrypts the enclave memory from |source_base| with |source_size| with
+// |cryptor|, and saves the encrypted data in untrusted memory |snapshot_entry|,
+// which includes both the ciphertext and nonce. |snapshot_entry| is a protobuf
+// that's passed across enclave boundary. It contains 64-bit integer
+// representations of the pointers to untrusted memory that contains the
+// encrypted data.
+Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
+                                const size_t source_size,
+                                ByteContainerView associated_data,
+                                SnapshotLayoutEntry *snapshot_entry) {
+  ByteContainerView plaintext(source_base, source_size);
+  int maximum_ciphertext_size = source_size + cryptor->MaxSealOverhead();
+  void *destination_base = enc_untrusted_malloc(maximum_ciphertext_size);
+  size_t destination_size;
+  if (!destination_base) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to allocate untrusted memory for snapshot");
+  }
+  size_t nonce_size = cryptor->NonceSize();
+  void *nonce_base = enc_untrusted_malloc(nonce_size);
+  if (!nonce_base) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to allocate untrusted memory for snapshot nonce");
+  }
+  ASYLO_RETURN_IF_ERROR(cryptor->Seal(
+      plaintext, associated_data,
+      absl::MakeSpan(reinterpret_cast<uint8_t *>(nonce_base), nonce_size),
+      absl::MakeSpan(reinterpret_cast<uint8_t *>(destination_base),
+                     maximum_ciphertext_size),
+      &destination_size));
+
+  snapshot_entry->set_ciphertext_base(
+      reinterpret_cast<uint64_t>(destination_base));
+  snapshot_entry->set_ciphertext_size(static_cast<uint64_t>(destination_size));
+  snapshot_entry->set_nonce_base(reinterpret_cast<uint64_t>(nonce_base));
+  snapshot_entry->set_nonce_size(static_cast<uint64_t>(nonce_size));
+  return Status::OkStatus();
+}
+
+// Decrypts the untrusted source from |snapshot_entry| with |cryptor| to the
+// enclave memory location at |destination_base| with |destination_size|.
+// |snapshot_entry| is a protobuf that is passed from untrusted side, it
+// contains both the ciphertext and nonce of the data, stored in 64-bit
+// integers.
+Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
+                                  SnapshotLayoutEntry snapshot_entry,
+                                  ByteContainerView associated_data,
+                                  void *destination_base,
+                                  size_t destination_size) {
+  // The address stored in snapshot are 64-bit integers, they need to be casted
+  // to pointer type before decryption.
+  void *source_base =
+      reinterpret_cast<void *>(snapshot_entry.ciphertext_base());
+  size_t source_size = static_cast<size_t>(snapshot_entry.ciphertext_size());
+  if (!enc_is_outside_enclave(source_base, source_size)) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot is not outside the enclave");
+  }
+  void *nonce_base = reinterpret_cast<void *>(snapshot_entry.nonce_base());
+  size_t nonce_size = static_cast<size_t>(snapshot_entry.nonce_size());
+  if (!enc_is_outside_enclave(nonce_base, nonce_size)) {
+    return Status(error::GoogleError::INTERNAL,
+                  "snapshot nonce is not outside the enclave");
+  }
+  ByteContainerView ciphertext(source_base, source_size);
+  std::vector<uint8_t> nonce(
+      reinterpret_cast<uint8_t *>(nonce_base),
+      reinterpret_cast<uint8_t *>(nonce_base) + nonce_size);
+  size_t size;
+  return cryptor->Open(
+      ciphertext, associated_data, nonce,
+      absl::MakeSpan(reinterpret_cast<uint8_t *>(destination_base),
+                     destination_size),
+      &size);
+}
+
+void CopyNonOkStatus(const Status &non_ok_status,
+                     error::GoogleError *error_code, char *error_message,
+                     size_t message_buffer_size) {
+  *error_code = non_ok_status.CanonicalCode();
+  strncpy(error_message, non_ok_status.error_message().data(),
+          std::min(message_buffer_size, non_ok_status.error_message().size()));
+}
 
 }  // namespace
+
+bool IsSecureForkSupported() { return true; }
+
+// Saves the thread memory layout, including the base address and size of the
+// stack/thread info of the calling TCS.
+void SaveThreadLayoutForSnapshot() {
+  struct EnclaveMemoryLayout enclave_memory_layout;
+  enc_get_memory_layout(&enclave_memory_layout);
+  struct ThreadMemoryLayout thread_memory_layout;
+  thread_memory_layout.thread_base = enclave_memory_layout.thread_base;
+  thread_memory_layout.thread_size = enclave_memory_layout.thread_size;
+  thread_memory_layout.stack_base = enclave_memory_layout.stack_base;
+  thread_memory_layout.stack_limit = enclave_memory_layout.stack_limit;
+  forked_thread_memory_layout = thread_memory_layout;
+}
 
 // Takes a snapshot of the enclave data/bss/heap and stack for the calling
 // thread by copying to untrusted memory.
@@ -153,6 +248,17 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
                   "Can't locate the stack of the thread calling fork");
   }
 
+  if (enclave_layout.reserved_data_size < enclave_layout.data_size) {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "Reserved data section can not hold the enclave data section");
+  }
+
+  if (enclave_layout.reserved_bss_size < enclave_layout.bss_size) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Reserved bss section can not hold the enclave bss section");
+  }
+
   // Generate an AES256-GCM-SIV snapshot key.
   CleansingVector<uint8_t> snapshot_key(kSnapshotKeySize);
   if (!RAND_bytes(snapshot_key.data(), kSnapshotKeySize)) {
@@ -165,160 +271,312 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
                   "Failed to save snapshot key inside enclave");
   }
 
-  void *snapshot_data = enc_untrusted_malloc(enclave_layout.data_size);
-  if (!snapshot_data) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed allocate untrusted memory for data of the snapshot");
-  }
-  snapshot_layout->set_data_base(reinterpret_cast<uint64_t>(snapshot_data));
-  memcpy(snapshot_data, enclave_layout.data_base, enclave_layout.data_size);
-  snapshot_layout->set_data_size(enclave_layout.data_size);
+  // Copy the data and bss section to reserved sections to avoid modifying
+  // the data/bss sections while encrypting and copying them to the
+  // snapshot.
+  memcpy(enclave_layout.reserved_data_base, enclave_layout.data_base,
+         enclave_layout.data_size);
 
-  // Allocate and copy bss section.
-  void *snapshot_bss = enc_untrusted_malloc(enclave_layout.bss_size);
-  if (!snapshot_bss) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        "Failed to allocate untrusted memory for bss of the snapshot");
-  }
-  snapshot_layout->set_bss_base(reinterpret_cast<uint64_t>(snapshot_bss));
-  memcpy(snapshot_bss, enclave_layout.bss_base, enclave_layout.bss_size);
-  snapshot_layout->set_bss_size(enclave_layout.bss_size);
+  memcpy(enclave_layout.reserved_bss_base, enclave_layout.bss_base,
+         enclave_layout.bss_size);
 
-  // Allocate and copy thread data for the calling thread.
-  void *snapshot_thread = enc_untrusted_malloc(enclave_layout.thread_size);
-  if (!snapshot_thread) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        "Failed to allocate untrusted memory for thread data of the snapshot");
-  }
-  snapshot_layout->set_thread_base(reinterpret_cast<uint64_t>(snapshot_thread));
-  memcpy(snapshot_thread, thread_layout.thread_base, thread_layout.thread_size);
-  snapshot_layout->set_thread_size(enclave_layout.thread_size);
+  SnapshotLayoutEntry *data_entry = snapshot_layout->mutable_data();
+  SnapshotLayoutEntry *bss_entry = snapshot_layout->mutable_bss();
+  SnapshotLayoutEntry *heap_entry = snapshot_layout->mutable_heap();
+  SnapshotLayoutEntry *thread_entry = snapshot_layout->mutable_thread();
+  SnapshotLayoutEntry *stack_entry = snapshot_layout->mutable_stack();
 
-  // Allocate and copy heap.
-  void *snapshot_heap = enc_untrusted_malloc(enclave_layout.heap_size);
-  if (!snapshot_heap) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        "Failed to allocate untrusted memory for heap of the snapshot");
-  }
-  snapshot_layout->set_heap_base(reinterpret_cast<uint64_t>(snapshot_heap));
-  memcpy(snapshot_heap, enclave_layout.heap_base, enclave_layout.heap_size);
-  snapshot_layout->set_heap_size(enclave_layout.heap_size);
+  // Stack-allocated error code and error message. A Status object is later
+  // created from these components after the heap has been switched back.
+  error::GoogleError error_code = error::GoogleError::OK;
+  char error_message[1024];
 
-  // Allocate and copy stack for the calling thread.
-  size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
-                      reinterpret_cast<size_t>(thread_layout.stack_limit);
-  void *snapshot_stack = enc_untrusted_malloc(stack_size);
-  if (!snapshot_stack) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        "Failed to allocate untrusted memory for stack of the snapshot");
-  }
-  snapshot_layout->set_stack_base(reinterpret_cast<uint64_t>(snapshot_stack));
-  memcpy(snapshot_stack, thread_layout.stack_limit, stack_size);
-  snapshot_layout->set_stack_size(stack_size);
+  // Switch heap allocation to a reserved memory section to avoid modifying
+  // the enclave's heap while creating and encrypting a snapshot of the
+  // enclave.
+  heap_switch(enclave_layout.reserved_heap_base,
+              enclave_layout.reserved_heap_size);
 
+  // All memory allocated on heap below needs to go out of scope before heap
+  // is switched back to the normal one, otherwise free() will crash.
+  // This is put in a do-while loop because everytime an error happens, we
+  // cannot return the error directly. We should first make all objects
+  // allocated on the new heap go out of scope by exiting the loop, then
+  // switch heap back, and create the return status on real heap.
+  do {
+    // Create a cryptor based on the AES256-GCM-SIV snapshot key to encrypt
+    // the whole enclave memory.
+    auto cryptor_result = AeadCryptor::CreateAesGcmSivCryptor(snapshot_key);
+    if (!cryptor_result.ok()) {
+      CopyNonOkStatus(cryptor_result.status(), &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+    std::unique_ptr<AeadCryptor> cryptor =
+        std::move(cryptor_result.ValueOrDie());
+
+    // Allocate and encrypt reserved data section to an untrusted snapshot.
+    ByteContainerView data_associated_data(kDataAssociatedDataBuf,
+                                           sizeof(kDataAssociatedDataBuf));
+
+    Status status = EncryptToUntrustedMemory(
+        cryptor.get(), enclave_layout.reserved_data_base,
+        enclave_layout.data_size, data_associated_data, data_entry);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Allocate and encrypt reserved bss section to an untrusted snapshot.
+    ByteContainerView bss_associated_data(kBssAssociatedDataBuf,
+                                          sizeof(kBssAssociatedDataBuf));
+
+    status = EncryptToUntrustedMemory(
+        cryptor.get(), enclave_layout.reserved_bss_base,
+        enclave_layout.bss_size, bss_associated_data, bss_entry);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Allocate and encrypt thread data for the calling thread.
+    ByteContainerView thread_associated_data(kThreadAssociatedDataBuf,
+                                             sizeof(kThreadAssociatedDataBuf));
+
+    status = EncryptToUntrustedMemory(cryptor.get(), thread_layout.thread_base,
+                                      thread_layout.thread_size,
+                                      thread_associated_data, thread_entry);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Allocate and encrypt heap to an untrusted snapshot.
+    ByteContainerView heap_associated_data(kHeapAssociatedDataBuf,
+                                           sizeof(kHeapAssociatedDataBuf));
+
+    status = EncryptToUntrustedMemory(cryptor.get(), enclave_layout.heap_base,
+                                      enclave_layout.heap_size,
+                                      heap_associated_data, heap_entry);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Allocate and encrypt stack for the calling thread.
+    size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
+                        reinterpret_cast<size_t>(thread_layout.stack_limit);
+    ByteContainerView stack_associated_data(kStackAssociatedDataBuf,
+                                            sizeof(kStackAssociatedDataBuf));
+
+    status = EncryptToUntrustedMemory(cryptor.get(), thread_layout.stack_limit,
+                                      stack_size, stack_associated_data,
+                                      stack_entry);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+  } while (0);
+
+  // Switch heap back before creating the return status.
+  heap_switch(/*address=*/nullptr, /*size=*/0);
+  if (error_code != error::GoogleError::OK) {
+    return Status(error_code, error_message);
+  }
   return Status::OkStatus();
 }
 
-// Restore the current enclave states from an untrusted snapshot.
-Status RestoreForFork(const SnapshotLayout &snapshot_layout) {
-  Cleanup delete_snapshot_key(DeleteSnapshotKey);
-  // Get the information of current enclave layout.
-  struct EnclaveMemoryLayout enclave_layout;
-  enc_get_memory_layout(&enclave_layout);
+// Decrypts and restores the enclave data/bss section and heap from
+// |snapshot_layout|, restores in enclave address space specified in
+// |enclave_layout|, with a cryptor created with |snapshot_key|.
+Status DecryptAndRestoreEnclaveDataBssHeap(
+    const SnapshotLayout &snapshot_layout,
+    const EnclaveMemoryLayout &enclave_layout,
+    const CleansingVector<uint8_t> &snapshot_key) {
   if (!enclave_layout.data_base ||
       !enc_is_within_enclave(enclave_layout.data_base,
-                             snapshot_layout.data_size())) {
+                             snapshot_layout.data().ciphertext_size())) {
     return Status(error::GoogleError::INTERNAL,
                   "enclave data section is not found or unexpected");
   }
   if (!enclave_layout.bss_base ||
       !enc_is_within_enclave(enclave_layout.bss_base,
-                             snapshot_layout.bss_size())) {
+                             snapshot_layout.bss().ciphertext_size())) {
     return Status(error::GoogleError::INTERNAL,
                   "enclave bss section is not found or unexpected");
   }
   if (!enclave_layout.heap_base ||
       !enc_is_within_enclave(enclave_layout.heap_base,
-                             snapshot_layout.heap_size())) {
+                             snapshot_layout.heap().ciphertext_size())) {
     return Status(error::GoogleError::INTERNAL,
                   "enclave heap not found or unexpected");
   }
+  // Create a cryptor based on the AES256-GCM-SIV snapshot key to decrypt the
+  // snapshot and restore the enclave.
+  std::unique_ptr<AeadCryptor> cryptor;
+  ASYLO_ASSIGN_OR_RETURN(cryptor,
+                         AeadCryptor::CreateAesGcmSivCryptor(snapshot_key));
 
-  // Restore data section.
-  if (!enc_is_outside_enclave(
-          reinterpret_cast<void *>(snapshot_layout.data_base()),
-          snapshot_layout.data_size())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "snapshot data section is not outside the enclave");
-  }
-  memcpy(enclave_layout.data_base,
-         reinterpret_cast<void *>(snapshot_layout.data_base()),
-         snapshot_layout.data_size());
+  // Decrypt the data section to reserved data, to avoid overwriting data used
+  // by the cryptor.
+  ByteContainerView data_associated_data(kDataAssociatedDataBuf,
+                                         sizeof(kDataAssociatedDataBuf));
+  ASYLO_RETURN_IF_ERROR(DecryptFromUntrustedMemory(
+      cryptor.get(), snapshot_layout.data(), data_associated_data,
+      enclave_layout.reserved_data_base, enclave_layout.data_size));
 
-  // Restore bss section.
-  if (!enc_is_outside_enclave(
-          reinterpret_cast<void *>(snapshot_layout.bss_base()),
-          snapshot_layout.bss_size())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "snapshot bss section is not outside the enclave");
-  }
-  memcpy(enclave_layout.bss_base,
-         reinterpret_cast<void *>(snapshot_layout.bss_base()),
-         snapshot_layout.bss_size());
+  // Decrypt the bss section to reserved bss, to avoid overwriting bss used
+  // by the cryptor.
+  ByteContainerView bss_associated_data(kBssAssociatedDataBuf,
+                                        sizeof(kBssAssociatedDataBuf));
+  ASYLO_RETURN_IF_ERROR(DecryptFromUntrustedMemory(
+      cryptor.get(), snapshot_layout.bss(), bss_associated_data,
+      enclave_layout.reserved_bss_base, enclave_layout.bss_size));
 
-  // Restore heap.
-  if (!enc_is_outside_enclave(
-          reinterpret_cast<void *>(snapshot_layout.heap_base()),
-          snapshot_layout.heap_size())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "snapshot heap is not outside the enclave");
-  }
-  memcpy(enclave_layout.heap_base,
-         reinterpret_cast<void *>(snapshot_layout.heap_base()),
-         snapshot_layout.heap_size());
+  // Decrypt and restore the heap. It is safe to overwrite the heap here because
+  // the heap used by the cryptor is allocated on the switched heap.
+  ByteContainerView heap_associated_data(kHeapAssociatedDataBuf,
+                                         sizeof(kHeapAssociatedDataBuf));
+  ASYLO_RETURN_IF_ERROR(DecryptFromUntrustedMemory(
+      cryptor.get(), snapshot_layout.heap(), heap_associated_data,
+      enclave_layout.heap_base, enclave_layout.heap_size));
+
+  void *switched_heap_next = GetSwitchedHeapNext();
+  size_t switched_heap_remaining = GetSwitchedHeapRemaining();
+
+  // Copy the restored data and bss section to real data and bss.
+  memcpy(enclave_layout.data_base, enclave_layout.reserved_data_base,
+         enclave_layout.data_size);
+  memcpy(enclave_layout.bss_base, enclave_layout.reserved_bss_base,
+         enclave_layout.bss_size);
+
+  // Reset the heap switch, because it has been overwritten while restoring the
+  // data and bss. We should set to the memory address before overwriting the
+  // data, to avoid overwriting the existing memory on the switched heap.
+  heap_switch(switched_heap_next, switched_heap_remaining);
+  return Status::OkStatus();
+}
+
+// Decrypts and restores the thread information and stack of the thread that
+// calls fork. It creates a cryptor with |snapshot_key|, decrypts |thread_entry|
+// and |stack_entry| into the enclave.
+Status DecryptAndRestoreThreadStack(
+    const SnapshotLayout &snapshot_layout,
+    const CleansingVector<uint8_t> &snapshot_key) {
+  std::unique_ptr<AeadCryptor> cryptor;
+  ASYLO_ASSIGN_OR_RETURN(cryptor,
+                         AeadCryptor::CreateAesGcmSivCryptor(snapshot_key));
 
   // Get the information of the thread that calls fork. These are saved in data
   // section, and should be available now since data/bss are restored.
   struct ThreadMemoryLayout thread_layout = GetThreadLayoutForSnapshot();
   if (!thread_layout.thread_base ||
       !enc_is_within_enclave(thread_layout.thread_base,
-                             snapshot_layout.thread_size())) {
+                             snapshot_layout.thread().ciphertext_size())) {
     return Status(error::GoogleError::INTERNAL,
                   "target tcs thread data not found or unexpected");
   }
   if (!thread_layout.stack_base ||
       !enc_is_within_enclave(thread_layout.stack_limit,
-                             snapshot_layout.stack_size())) {
+                             snapshot_layout.stack().ciphertext_size())) {
     return Status(error::GoogleError::INTERNAL,
                   "target tcs stack not found or unexpected");
   }
 
-  // Restore thread data for the calling thread.
-  if (!enc_is_outside_enclave(
-          reinterpret_cast<void *>(snapshot_layout.thread_base()),
-          snapshot_layout.thread_size())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "snapshot thread is not outside the enclave");
-  }
-  memcpy(thread_layout.thread_base,
-         reinterpret_cast<void *>(snapshot_layout.thread_base()),
-         snapshot_layout.thread_size());
+  // Decrypt and restore the thread information. Restore happens in a different
+  // tcs (enclave thread) from the thread that requests fork(). Therefore it is
+  // OK to overwrite the stack since we are using different stack now.
+  ByteContainerView thread_associated_data(kThreadAssociatedDataBuf,
+                                           sizeof(kThreadAssociatedDataBuf));
+  ASYLO_RETURN_IF_ERROR(DecryptFromUntrustedMemory(
+      cryptor.get(), snapshot_layout.thread(), thread_associated_data,
+      thread_layout.thread_base, thread_layout.thread_size));
 
-  // Restore stack for the calling thread.
-  if (!enc_is_outside_enclave(
-          reinterpret_cast<void *>(snapshot_layout.stack_base()),
-          snapshot_layout.stack_size())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "snapshot stack is not outside the enclave");
-  }
-  memcpy(thread_layout.stack_limit,
-         reinterpret_cast<void *>(snapshot_layout.stack_base()),
-         snapshot_layout.stack_size());
+  // Decrypt and restore the stack, it is safe to restore it directly since we
+  // are decrypting it in a different tcs from the thread that requests fork().
+  size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
+                      reinterpret_cast<size_t>(thread_layout.stack_limit);
+  ByteContainerView stack_associated_data(kStackAssociatedDataBuf,
+                                          sizeof(kStackAssociatedDataBuf));
+  ASYLO_RETURN_IF_ERROR(DecryptFromUntrustedMemory(
+      cryptor.get(), snapshot_layout.stack(), stack_associated_data,
+      thread_layout.stack_limit, stack_size));
+  return Status::OkStatus();
+}
 
+// Restore the current enclave states from an untrusted snapshot.
+Status RestoreForFork(const char *input, size_t input_len) {
+  Cleanup delete_snapshot_key(DeleteSnapshotKey);
+  // Get the information of current enclave layout.
+  struct EnclaveMemoryLayout enclave_layout;
+  enc_get_memory_layout(&enclave_layout);
+
+  error::GoogleError error_code = error::GoogleError::OK;
+  char error_message[1024];
+
+  // Switch heap allocation to a reserved memory section so that we are not
+  // overwriting the heap memory used by the cryptor when restoring heap.
+  heap_switch(enclave_layout.reserved_heap_base,
+              enclave_layout.reserved_heap_size);
+
+  // All memory allocated on heap below needs to go out of scope before heap is
+  // switched back to the normal one, otherwise free() will crash.
+  // This is put in a do-while loop because everytime an error happens, we
+  // cannot return the error directly. We should destroy all objects allocated
+  // on the new heap by exiting the loop, then switch heap back, and create the
+  // return status on real heap.
+  do {
+    asylo::SnapshotLayout snapshot_layout;
+    if (!snapshot_layout.ParseFromArray(input, input_len)) {
+      Status status(error::GoogleError::INVALID_ARGUMENT,
+                    "Failed to parse SnapshotLayout");
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Get the snapshot key received from the parent.
+    CleansingVector<uint8_t> snapshot_key;
+
+    if (!GetSnapshotKey(&snapshot_key)) {
+      Status status(error::GoogleError::INTERNAL,
+                    "Failed to get the snapshot key");
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Decrypt and restore data, bss section and heap before restoring thread
+    // information and stack.
+    Status status = DecryptAndRestoreEnclaveDataBssHeap(
+        snapshot_layout, enclave_layout, snapshot_key);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+
+    // Now that data is restored, the information of the thread and stack
+    // address of the calling thread can be retrieved. Decrypts the thread
+    // information and stack.
+    status = DecryptAndRestoreThreadStack(snapshot_layout, snapshot_key);
+    if (!status.ok()) {
+      CopyNonOkStatus(status, &error_code, error_message,
+                      ABSL_ARRAYSIZE(error_message));
+      break;
+    }
+  } while (0);
+
+  // Switch back to real heap.
+  heap_switch(/*address=*/nullptr, /*size=*/0);
+  if (error_code != error::GoogleError::OK) {
+    return Status(error_code, error_message);
+  }
   return Status::OkStatus();
 }
 

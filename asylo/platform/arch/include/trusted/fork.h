@@ -29,18 +29,29 @@ namespace asylo {
 
 pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config);
 
+// Returns whether secure fork is supported in the current backend.
+bool IsSecureForkSupported();
+
 // Copies enclave data/bss/heap and stack for the calling thread to untrusted
 // memory.
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout);
 
 // Copies the snapshot from untrusted memory to replace data/bss/heap and stack
-// for the calling thread in the current enclave.
-Status RestoreForFork(const SnapshotLayout &snapshot_layout);
+// for the calling thread in the current enclave. This method takes an |input|
+// and |input_len|, and deserializes it into a SnapshotLayout protobuf. The
+// protobuf is heap-allocated so we need to create the protobuf after the heap
+// switch to avoid it being overwritten while restoring heap.
+Status RestoreForFork(const char *input, size_t input_len);
 
 // Does a handshake between the parent and child enclave, and parent encrypts
 // and transfers the snapshot key to the child.
 Status TransferSecureSnapshotKey(
     const ForkHandshakeConfig &fork_handshake_config);
+
+// Saves the thread memory layout, including the base address and size of the
+// stack/thread info of the calling TCS. Returns error Status if not in SGX
+// hardware mode.
+void SaveThreadLayoutForSnapshot();
 
 }  // namespace asylo
 

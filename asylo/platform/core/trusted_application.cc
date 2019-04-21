@@ -20,9 +20,11 @@
 
 #include <sys/ucontext.h>
 #include <unistd.h>
+
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
+#include <functional>
 #include <string>
 
 #include "absl/memory/memory.h"
@@ -79,7 +81,8 @@ class StatusSerializer {
       : output_proto_{output_proto},
         status_proto_{status_proto},
         output_{output},
-        output_len_{output_len} {}
+        output_len_{output_len},
+        custom_allocator_{nullptr} {}
 
   // Creates a new StatusSerializer that saves Status objects to |status_proto|.
   // StatusSerializer does not take ownership of any of the input pointers.
@@ -88,7 +91,21 @@ class StatusSerializer {
       : output_proto_{&proto},
         status_proto_{&proto},
         output_{output},
-        output_len_{output_len} {}
+        output_len_{output_len},
+        custom_allocator_{nullptr} {}
+
+  // Creates a new StatusSerializer that saves Status objects to |status_proto|.
+  // The output buffer is created by |custom_allocator_| allocator.
+  // StatusSerializer does not take ownership of any of the input pointers.
+  // Input pointers must remain valid for the lifetime of the StatusSerializer.
+  StatusSerializer(const OutputProto *output_proto, StatusProto *status_proto,
+                   char **output, size_t *output_len,
+                   std::function<void *(size_t)> allocator)
+      : output_proto_{output_proto},
+        status_proto_{status_proto},
+        output_{output},
+        output_len_{output_len},
+        custom_allocator_{allocator} {}
 
   // Saves the given |status| into the StatusSerializer's status_proto_. Then
   // serializes its output_proto_ into a buffer. On success 0 is returned, else
@@ -107,11 +124,16 @@ class StatusSerializer {
       return 1;
     }
 
-    // Instance of the global memory pool singleton.
-    asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
-        asylo::UntrustedCacheMalloc::Instance();
-    *output_ =
-        reinterpret_cast<char *>(untrusted_cache_malloc->Malloc(*output_len_));
+    // Use the custom allocator if specified.
+    if (custom_allocator_) {
+      *output_ = reinterpret_cast<char *>(custom_allocator_(*output_len_));
+    } else {
+      // Instance of the global memory pool singleton.
+      asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
+          asylo::UntrustedCacheMalloc::Instance();
+      *output_ = reinterpret_cast<char *>(
+          untrusted_cache_malloc->Malloc(*output_len_));
+    }
     memcpy(*output_, trusted_output.get(), *output_len_);
     return 0;
   }
@@ -122,6 +144,7 @@ class StatusSerializer {
   StatusProto *status_proto_;
   char **output_;
   size_t *output_len_;
+  std::function<void *(size_t)> custom_allocator_;
 };
 
 }  // namespace
@@ -437,8 +460,12 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
     return 1;
   }
   EnclaveOutput enclave_output;
+  // Take snapshot should not change any enclave states. Call
+  // enc_untrusted_malloc directly to create the StatusSerializer to avoid
+  // change the state of UntrustedCacheMalloc instance after snapshotting.
   StatusSerializer<EnclaveOutput> status_serializer(
-      &enclave_output, enclave_output.mutable_status(), output, output_len);
+      &enclave_output, enclave_output.mutable_status(), output, output_len,
+      &enc_untrusted_malloc);
 
   asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
       asylo::GetEnclaveConfig();
@@ -461,7 +488,9 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
     return status_serializer.Serialize(status);
   }
 
-  status = TakeSnapshotForFork(enclave_output.mutable_snapshot_layout());
+  SnapshotLayout snapshot_layout;
+  status = TakeSnapshotForFork(&snapshot_layout);
+  *enclave_output.MutableExtension(snapshot) = snapshot_layout;
   return status_serializer.Serialize(status);
 }
 
@@ -488,13 +517,6 @@ int __asylo_restore(const char *input, size_t input_len, char **output,
     return status_serializer.Serialize(status);
   }
 
-  asylo::SnapshotLayout snapshot_layout;
-  if (!snapshot_layout.ParseFromArray(input, input_len)) {
-    status = Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Failed to parse SnapshotLayout");
-    return status_serializer.Serialize(status);
-  }
-
   TrustedApplication *trusted_application = GetApplicationInstance();
   if (trusted_application->GetState() != EnclaveState::kRunning) {
     status = Status(error::GoogleError::FAILED_PRECONDITION,
@@ -502,7 +524,13 @@ int __asylo_restore(const char *input, size_t input_len, char **output,
     return status_serializer.Serialize(status);
   }
 
-  status = RestoreForFork(snapshot_layout);
+  // |input| contains a serialized SnapshotLayout. We pass it to
+  // RestoreForFork() without deserializing it because this proto requires
+  // heap-allocated memory. Since restoring for fork() requires use of
+  // a separate heap, we must take care to invoke this protos's allocators and
+  // deallocators using the same heap. Consequently, we wait to deserialize this
+  // message until after switching heaps in RestoreForFork().
+  status = RestoreForFork(input, input_len);
   return status_serializer.Serialize(status);
 }
 

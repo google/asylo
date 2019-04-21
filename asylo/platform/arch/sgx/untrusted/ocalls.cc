@@ -144,6 +144,20 @@ asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
   return asylo::Status::OkStatus();
 }
 
+// A helper class to free the snapshot memory allocated during fork.
+class SnapshotDataDeleter {
+ public:
+  explicit SnapshotDataDeleter(const asylo::SnapshotLayoutEntry &entry)
+      : ciphertext_deleter_(asylo::MallocUniquePtr<void>(
+            reinterpret_cast<void *>(entry.ciphertext_base()))),
+        nonce_deleter_(asylo::MallocUniquePtr<void>(
+            reinterpret_cast<void *>(entry.nonce_base()))) {}
+
+ private:
+  asylo::MallocUniquePtr<void> ciphertext_deleter_;
+  asylo::MallocUniquePtr<void> nonce_deleter_;
+};
+
 }  // namespace
 
 // Threading implementation-defined untrusted thread donate routine.
@@ -977,16 +991,11 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
 
   // The snapshot memory should be freed in both the parent and the child
   // process.
-  asylo::MallocUniquePtr<void> snapshot_data_deleter(reinterpret_cast<void *>(
-      snapshot_layout.data_base()));
-  asylo::MallocUniquePtr<void> snapshot_bss_deleter(reinterpret_cast<void *>(
-      snapshot_layout.bss_base()));
-  asylo::MallocUniquePtr<void> snapshot_heap_deleter(reinterpret_cast<void *>(
-      snapshot_layout.heap_base()));
-  asylo::MallocUniquePtr<void> snapshot_thread_deleter(reinterpret_cast<void *>(
-      snapshot_layout.thread_base()));
-  asylo::MallocUniquePtr<void> snapshot_stack_deleter(reinterpret_cast<void *>(
-      snapshot_layout.stack_base()));
+  SnapshotDataDeleter data_deleter(snapshot_layout.data());
+  SnapshotDataDeleter bss_deleter(snapshot_layout.bss());
+  SnapshotDataDeleter heap_deleter(snapshot_layout.heap());
+  SnapshotDataDeleter thread_deleter(snapshot_layout.thread());
+  SnapshotDataDeleter stack_deleter(snapshot_layout.stack());
 
   asylo::SgxLoader *loader =
       dynamic_cast<asylo::SgxLoader *>(manager->GetLoaderFromClient(client));

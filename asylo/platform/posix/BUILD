@@ -16,9 +16,9 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKENDS",
     "sgx_enclave_test",
     cc_test = "cc_test_and_cc_enclave_test",
-    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -204,6 +204,37 @@ sgx_enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+sgx_enclave(
+    name = "fork_security_test.so",
+    srcs = ["fork_security_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/arch:trusted_fork",
+        "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+sgx_enclave_test(
+    name = "fork_security_test",
+    srcs = ["fork_security_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": "fork_security_test.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo:enclave_proto_cc",
+        "//asylo/platform/arch:fork_proto_cc",
+        "//asylo/platform/common:memory",
+        "//asylo/platform/core:untrusted_core",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_googletest//:gtest",
     ],

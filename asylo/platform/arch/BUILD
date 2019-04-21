@@ -32,6 +32,7 @@ asylo_proto_library(
     name = "fork_proto",
     srcs = ["fork.proto"],
     visibility = ["//visibility:public"],
+    deps = ["//asylo:enclave_proto"],
 )
 
 # Target exposing trusted architecture-dependent components for the build
@@ -297,8 +298,11 @@ cc_library(
         "//asylo:enclave_proto_cc",
     ] + select({
         "@linux_sgx//:sgx_hw": [
+            "@com_google_absl//absl/base:core_headers",
             "//asylo/crypto:aead_cryptor",
             "//asylo/crypto/util:bssl_util",
+            "//asylo/crypto/util:byte_container_view",
+            "//asylo/platform/posix/memory:memory",
             "//asylo/platform/primitives/sgx:sgx_error_space",
             "//asylo/grpc/auth/core:client_ekep_handshaker",
             "//asylo/grpc/auth/core:server_ekep_handshaker",

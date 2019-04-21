@@ -65,6 +65,10 @@ void FreeHook(void *address, void *pool) { return; }
 
 }  // namespace
 
+void *GetSwitchedHeapNext() { return switched_heap_next; }
+
+size_t GetSwitchedHeapRemaining() { return switched_heap_remaining; }
+
 // This function is not thread-safe.
 void heap_switch(void *base, size_t size) {
   if (base && size > 0) {
