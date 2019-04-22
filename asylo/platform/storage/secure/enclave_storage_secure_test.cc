@@ -26,7 +26,6 @@
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
 #include "absl/strings/str_cat.h"
-#include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
 #include "asylo/platform/storage/secure/enclave_storage_secure.h"
@@ -34,6 +33,7 @@
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -45,6 +45,7 @@ using platform::storage::kBlockLength;
 using platform::storage::kCipherBlockLength;
 using platform::storage::kFileHashLength;
 using platform::storage::secure_close;
+using platform::storage::secure_fstat;
 using platform::storage::secure_lseek;
 using platform::storage::secure_open;
 using platform::storage::secure_read;
@@ -67,7 +68,7 @@ class EnclaveStorageSecureTest : public ::testing::Test,
   const void *GetWriteBuffer() const {
     return reinterpret_cast<const void *>(write_buffer_);
   }
-  void *GetReadBuffer() { return reinterpret_cast<void*>(read_buffer_); }
+  void *GetReadBuffer() { return reinterpret_cast<void *>(read_buffer_); }
   const void *GetZeroBuffer() const {
     return reinterpret_cast<const void *>(zero_buffer_);
   }
@@ -476,6 +477,27 @@ TEST_P(EnclaveStorageSecureTest, SimpleMisalignedReadSuccess) {
   // Lseek to the middle of the first block.
   off_t offset = kBlockLength / 2;
   EXPECT_THAT(OpenReadVerifyClose(offset, test_buf_len_ - offset), IsOk());
+}
+
+TEST_P(EnclaveStorageSecureTest, StatReturnLogicalFileSizeSuccess) {
+  EXPECT_THAT(OpenWriteClose(0), IsOk());
+  int fd = secure_open(GetPath().c_str(), O_RDONLY);
+  ASSERT_GE(fd, 0);
+  ASSERT_EQ(EmulateSetKeyIoctl(fd), 0);
+  struct stat file_stat;
+  EXPECT_EQ(secure_fstat(fd, &file_stat), 0);
+  EXPECT_EQ(file_stat.st_size, test_buf_len_);
+  EXPECT_EQ(secure_close(fd), 0);
+}
+
+TEST_P(EnclaveStorageSecureTest, LseekEndSuccess) {
+  EXPECT_THAT(OpenWriteClose(0), IsOk());
+  int fd = secure_open(GetPath().c_str(), O_RDONLY);
+  ASSERT_GE(fd, 0);
+  ASSERT_EQ(EmulateSetKeyIoctl(fd), 0);
+  off_t offset = secure_lseek(fd, 0, SEEK_END);
+  EXPECT_EQ(offset, test_buf_len_);
+  EXPECT_EQ(secure_close(fd), 0);
 }
 
 //
