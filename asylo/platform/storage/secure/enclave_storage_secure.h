@@ -23,6 +23,7 @@
 // invoked via POSIX IO API in the enclave environment. Assures authentication
 // and confidentiality of stored data, backed by AE.
 
+#include <sys/stat.h>
 // IO syscall interface types.
 #include <sys/types.h>
 
@@ -45,6 +46,9 @@ ssize_t secure_write(int fd, const void *buf, size_t count);
 int secure_close(int fd);
 
 off_t secure_lseek(int fd, off_t offset, int whence);
+
+// |st->st_size| will be set to logical file size on success.
+int secure_fstat(int fd, struct stat* st);
 
 }  // namespace storage
 }  // namespace platform

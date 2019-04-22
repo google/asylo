@@ -26,11 +26,11 @@
 
 #include <stdarg.h>
 
-#include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/platform/storage/utils/offset_translator.h"
+#include "asylo/util/logging.h"
 
 namespace asylo {
 namespace platform {
@@ -114,13 +114,8 @@ off_t secure_lseek(int fd, off_t offset, int whence) {
       logical_offset = logical_cur_offset + offset;
     } break;
     case SEEK_END: {
-      off_t physical_eof_offset = enc_untrusted_lseek(fd, 0, SEEK_END);
-      if (physical_eof_offset == -1) {
-        LOG(ERROR) << "Failed to retrieve EOF offset on descriptor: " << fd;
-        return -1;
-      }
       off_t logical_eof_offset =
-          offset_translator.PhysicalToLogical(physical_eof_offset);
+          AeadHandler::GetInstance().GetLogicalFileSize(fd);
       logical_offset = logical_eof_offset + offset;
     } break;
   }
@@ -134,6 +129,15 @@ off_t secure_lseek(int fd, off_t offset, int whence) {
     return -1;
   }
   return offset_translator.PhysicalToLogical(physical_offset);
+}
+
+int secure_fstat(int fd, struct stat *st) {
+  int ret = enc_untrusted_fstat(fd, st);
+  if (ret == 0) {
+    // Rewrite to logical file size.
+    st->st_size = AeadHandler::GetInstance().GetLogicalFileSize(fd);
+  }
+  return ret;
 }
 
 }  // namespace storage
