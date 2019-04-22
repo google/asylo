@@ -53,7 +53,7 @@ int IOContextSecure::LSeek(off_t offset, int whence) {
 int IOContextSecure::FSync() { return enc_untrusted_fsync(host_fd_); }
 
 int IOContextSecure::FStat(struct stat *st) {
-  return enc_untrusted_fstat(host_fd_, st);
+  return platform::storage::secure_fstat(host_fd_, st);
 }
 
 int IOContextSecure::Isatty() { return enc_untrusted_isatty(host_fd_); }

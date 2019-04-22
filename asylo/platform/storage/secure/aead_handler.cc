@@ -937,6 +937,18 @@ const OffsetTranslator &AeadHandler::GetOffsetTranslator() const {
   return *offset_translator_;
 }
 
+off_t AeadHandler::GetLogicalFileSize(int fd) {
+  absl::MutexLock global_lock(&mu_);
+  auto entry = fmap_.find(fd);
+  if (entry == fmap_.end()) {
+    LOG(ERROR)
+        << "Attempt made to get logical file size on an unopened file, fd = "
+        << fd;
+    return -1;
+  }
+  return entry->second->logical_size;
+}
+
 }  // namespace storage
 }  // namespace platform
 }  // namespace asylo

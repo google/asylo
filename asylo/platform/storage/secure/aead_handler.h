@@ -101,6 +101,9 @@ class AeadHandler {
   int SetMasterKey(int fd, const uint8_t *key_data, uint32_t key_length)
       LOCKS_EXCLUDED(mu_);
 
+  // Returns the logical file size, or -1 on failure.
+  off_t GetLogicalFileSize(int fd) LOCKS_EXCLUDED(mu_);
+
   const OffsetTranslator &GetOffsetTranslator() const;
 
  private:
