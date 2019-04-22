@@ -36,3 +36,14 @@ def sgx_deps():
             ],
             strip_prefix = "linux-sgx-sgx_2.4",
         )
+
+    # Intel's SGX Data Center Attestation Primitives with patches to make it
+    # build with Bazel.
+    if not native.existing_rule("sgx_dcap"):
+        patch_repository(
+            name = "sgx_dcap",
+            urls = ["https://github.com/intel/SGXDataCenterAttestationPrimitives/archive/DCAP_1.0.1.tar.gz"],
+            sha256 = "54093b468e6340cccbaf24d68f4ea13a409372efe12cad3e0cac889c1ce19604",
+            patches = ["@com_google_asylo//asylo/distrib:sgx_dcap_1_0_1.patch"],
+            strip_prefix = "SGXDataCenterAttestationPrimitives-DCAP_1.0.1",
+        )

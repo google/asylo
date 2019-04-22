@@ -2952,7 +2952,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1254 @@
+@@ -0,0 +1,1256 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3748,6 +3748,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    includes = [
 +        "common/inc",
 +    ],
++    visibility = ["@sgx_dcap//:__pkg__"],
 +)
 +
 +cc_library(
@@ -3755,6 +3756,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    hdrs = [
 +        "common/inc/sgx_urts.h",
 +    ],
++    visibility = ["@sgx_dcap//:__pkg__"],
 +    deps = [":common_inc"],
 +)
 +
