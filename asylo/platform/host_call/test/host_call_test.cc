@@ -658,9 +658,11 @@ TEST_F(HostCallTest, TestSetSockOpt) {
 
 // Tests enc_untrusted_flock() by trying to acquire an exclusive lock on a valid
 // file from inside the enclave by making the untrusted host call and verifying
-// its return value. A different process (child process) then tries acquiring
-// exclusive lock to the same file using native system call to flock(), to
-// validate that lock acquisition is unsuccessful.
+// its return value. We do not validate if the locked file can be accessed from
+// another process. A child process created using fork() would be able to access
+// the file since both the processes refer to the same lock, and this lock may
+// be modified or released by either processes, as specified in the man page for
+// flock.
 TEST_F(HostCallTest, TestFlock) {
   std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
@@ -677,12 +679,6 @@ TEST_F(HostCallTest, TestFlock) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
   EXPECT_THAT(params.Pop<int>(), Eq(0));
-
-  // Try acquiring lock to the file again from a different process.
-  pid_t pid = fork();
-  if (pid == 0) {  // Inside the child process
-    EXPECT_THAT(flock(fd, LOCK_EX | LOCK_NB), Eq(-1));
-  }
   flock(fd, LOCK_UN);
 }
 
