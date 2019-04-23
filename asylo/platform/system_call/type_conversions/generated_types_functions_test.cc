@@ -112,6 +112,83 @@ TEST_F(GeneratedTypesFunctionsTest, FDFlagTest) {
       to_matcher);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, TcpOptionNameTest) {
+  std::vector<int> from_consts = {kLinux_TCP_NODELAY, kLinux_TCP_KEEPIDLE,
+                                  kLinux_TCP_KEEPINTVL, kLinux_TCP_KEEPCNT};
+  std::vector<int> to_consts = {TCP_NODELAY, TCP_KEEPIDLE, TCP_KEEPINTVL,
+                                TCP_KEEPCNT};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromkLinuxTcpOptionName);
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxTcpOptionName);
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, IpV6OptionNameTest) {
+  std::vector<int> from_consts = {
+      kLinux_IPV6_V6ONLY,      kLinux_IPV6_RECVPKTINFO,
+      kLinux_IPV6_PKTINFO,     kLinux_IPV6_RECVHOPLIMIT,
+      kLinux_IPV6_HOPLIMIT,    kLinux_IPV6_RECVHOPOPTS,
+      kLinux_IPV6_HOPOPTS,     kLinux_IPV6_RTHDRDSTOPTS,
+      kLinux_IPV6_RECVRTHDR,   kLinux_IPV6_RTHDR,
+      kLinux_IPV6_RECVDSTOPTS, kLinux_IPV6_DSTOPTS};
+  std::vector<int> to_consts = {
+      IPV6_V6ONLY,    IPV6_RECVPKTINFO, IPV6_PKTINFO,     IPV6_RECVHOPLIMIT,
+      IPV6_HOPLIMIT,  IPV6_RECVHOPOPTS, IPV6_HOPOPTS,     IPV6_RTHDRDSTOPTS,
+      IPV6_RECVRTHDR, IPV6_RTHDR,       IPV6_RECVDSTOPTS, IPV6_DSTOPTS};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromkLinuxIpV6OptionName);
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxIpV6OptionName);
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, SocketOptionNameTest) {
+  std::vector<int> from_consts = {
+      kLinux_SO_DEBUG,       kLinux_SO_REUSEADDR, kLinux_SO_TYPE,
+      kLinux_SO_ERROR,       kLinux_SO_DONTROUTE, kLinux_SO_BROADCAST,
+      kLinux_SO_SNDBUF,      kLinux_SO_RCVBUF,    kLinux_SO_SNDBUFFORCE,
+      kLinux_SO_RCVBUFFORCE, kLinux_SO_KEEPALIVE, kLinux_SO_OOBINLINE,
+      kLinux_SO_NO_CHECK,    kLinux_SO_PRIORITY,  kLinux_SO_LINGER,
+      kLinux_SO_BSDCOMPAT,   kLinux_SO_REUSEPORT, kLinux_SO_RCVTIMEO,
+      kLinux_SO_SNDTIMEO};
+  std::vector<int> to_consts = {
+      SO_DEBUG,     SO_REUSEADDR, SO_TYPE,     SO_ERROR,       SO_DONTROUTE,
+      SO_BROADCAST, SO_SNDBUF,    SO_RCVBUF,   SO_SNDBUFFORCE, SO_RCVBUFFORCE,
+      SO_KEEPALIVE, SO_OOBINLINE, SO_NO_CHECK, SO_PRIORITY,    SO_LINGER,
+      SO_BSDCOMPAT, SO_REUSEPORT, SO_RCVTIMEO, SO_SNDTIMEO};
+  auto from_matcher =
+      IsFiniteRestrictionOf<int, int>(FromkLinuxSocketOptionName);
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxSocketOptionName);
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, FlockOperationTest) {
+  std::vector<int> from_bits = {kLinux_LOCK_SH, kLinux_LOCK_EX, kLinux_LOCK_NB,
+                                kLinux_LOCK_UN};
+  std::vector<int> to_bits = {LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
+
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromkLinuxFLockOperation);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(from_bits, to_bits, kIterationCount),
+      from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxFLockOperation);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(to_bits, from_bits, kIterationCount),
+      to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

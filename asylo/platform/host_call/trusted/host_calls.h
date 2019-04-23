@@ -64,6 +64,7 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */);
 int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group);
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen);
+int enc_untrusted_flock(int fd, int operation);
 
 #ifdef __cplusplus
 }  // extern "C"

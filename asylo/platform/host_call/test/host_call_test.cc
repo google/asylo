@@ -18,6 +18,7 @@
 
 #include <fcntl.h>
 #include <sys/socket.h>
+#include <sys/file.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -29,6 +30,7 @@
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
@@ -77,7 +79,7 @@ class HostCallTest : public ::testing::Test {
 // enc_untrusted_access() from inside the enclave and verifying its return
 // value.
 TEST_F(HostCallTest, TestAccess) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/access_test.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
   int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_GE(fd, 0);
 
@@ -106,8 +108,9 @@ TEST_F(HostCallTest, TestAccessNonExistentPath) {
 // Tests enc_untrusted_close() by creating a file to be closed and calling
 // enc_untrusted_close() from inside the enclave to close the file handle.
 TEST_F(HostCallTest, TestClose) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/file_to_close.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(fcntl(fd, F_GETFD), -1);  // check fd is an open file descriptor.
 
@@ -165,6 +168,7 @@ TEST_F(HostCallTest, TestLink) {
   std::string newpath = absl::StrCat(FLAGS_test_tmpdir, "/new_name.tmp");
 
   int fd = open(oldpath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
@@ -183,9 +187,10 @@ TEST_F(HostCallTest, TestLink) {
 // enc_untrusted_leek() from inside the enclave and verify the return value for
 // the provided offset.
 TEST_F(HostCallTest, TestLseek) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/file_to_lseek.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   EXPECT_THAT(write(fd, "hello", 5), Eq(5));
@@ -201,9 +206,10 @@ TEST_F(HostCallTest, TestLseek) {
 }
 
 TEST_F(HostCallTest, TestLseekBadReturn) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/file_to_lseek.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   EXPECT_THAT(write(fd, "hello", 5), Eq(5));
@@ -250,7 +256,7 @@ TEST_F(HostCallTest, TestMkdirNonExistentPath) {
 // Tests enc_untrusted_open() by using it to create a new file from inside the
 // enclave and verifying that it exists.
 TEST_F(HostCallTest, TestOpen) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/file_to_open.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
   primitives::UntrustedParameterStack params;
   params.PushAlloc<char>(path.c_str(), path.length() + 1);
@@ -266,7 +272,7 @@ TEST_F(HostCallTest, TestOpen) {
 // Test enc_untrusted_open() by opening an existing file (omit passing mode when
 // opening the file).
 TEST_F(HostCallTest, TestOpenExistingFile) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/file_to_open.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
@@ -284,7 +290,7 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
 // Tests enc_untrusted_unlink() by deleting an existing file on the untrusted
 // side from inside the enclave using the host call.
 TEST_F(HostCallTest, TestUnlink) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/file_to_delete.tmp");
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
@@ -374,6 +380,7 @@ TEST_F(HostCallTest, TestRead) {
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -402,6 +409,7 @@ TEST_F(HostCallTest, TestWrite) {
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -430,6 +438,7 @@ TEST_F(HostCallTest, TestSymlink) {
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -452,6 +461,7 @@ TEST_F(HostCallTest, TestReadlink) {
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -480,6 +490,7 @@ TEST_F(HostCallTest, TestTruncate) {
   std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -551,9 +562,10 @@ TEST_F(HostCallTest, TestSocket) {
 // from inside the enclave and validating the return valueswith those obtained
 // from native host call to fcntl().
 TEST_F(HostCallTest, TestFcntl) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/fcntl.tmp");
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -594,6 +606,7 @@ TEST_F(HostCallTest, TestChown) {
   std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
@@ -641,6 +654,36 @@ TEST_F(HostCallTest, TestSetSockOpt) {
   EXPECT_THAT(params.Pop<int>(), Gt(-1));
 
   close(socket_fd);
+}
+
+// Tests enc_untrusted_flock() by trying to acquire an exclusive lock on a valid
+// file from inside the enclave by making the untrusted host call and verifying
+// its return value. A different process (child process) then tries acquiring
+// exclusive lock to the same file using native system call to flock(), to
+// validate that lock acquisition is unsuccessful.
+TEST_F(HostCallTest, TestFlock) {
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = /*fd=*/ fd;
+  *(params.PushAlloc<int>()) = /*level=*/ TokLinuxFLockOperation(LOCK_EX);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+
+  // Try acquiring lock to the file again from a different process.
+  pid_t pid = fork();
+  if (pid == 0) {  // Inside the child process
+    EXPECT_THAT(flock(fd, LOCK_EX | LOCK_NB), Eq(-1));
+  }
+  flock(fd, LOCK_UN);
 }
 
 }  // namespace

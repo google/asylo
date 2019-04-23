@@ -192,4 +192,9 @@ int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                                optval, optlen);
 }
 
+int enc_untrusted_flock(int fd, int operation) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_flock, fd,
+                               TokLinuxFLockOperation(operation));
+}
+
 }  // extern "C"

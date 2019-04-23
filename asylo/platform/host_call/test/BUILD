@@ -66,6 +66,7 @@ cc_library(
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/test:test_backend",
+        "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/system_call/type_conversions:types",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",

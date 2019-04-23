@@ -311,6 +311,19 @@ primitives::PrimitiveStatus TestSetsockopt(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestFlock(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+
+  int operation =
+      params->Pop<int>();  // The operation is expected to be
+                           // already converted from a kLinux_ operation.
+  int fd = params->Pop<int>();
+  *(params->PushAlloc<int>()) = enc_untrusted_flock(fd, operation);
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -368,6 +381,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestChown, primitives::EntryHandler{TestChown}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestSetSockOpt, primitives::EntryHandler{TestSetsockopt}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestFlock, primitives::EntryHandler{TestFlock}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

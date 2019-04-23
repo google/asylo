@@ -52,7 +52,6 @@ define_enum(
         "F_GETFD", "F_SETFD", "F_GETFL", "F_SETFL", "F_GETPIPE_SZ",
         "F_SETPIPE_SZ"
     ],
-    multi_valued=False,
     default_value_host=-1,
     default_value_newlib=-1)
 
@@ -64,7 +63,6 @@ define_enum(
         "AF_PACKET", "AF_RDS", "AF_PPPOX", "AF_LLC", "AF_CAN", "AF_TIPC",
         "AF_BLUETOOTH", "AF_ALG", "AF_VSOCK", "AF_UNSPEC"
     ],
-    multi_valued=False,
     default_value_host="AF_UNSPEC",
     default_value_newlib="AF_UNSPEC")
 
@@ -79,14 +77,11 @@ define_enum(
 define_enum(
     name="FDFlag",
     values=["FD_CLOEXEC"],
-    multi_valued=True,
-    default_value_host=0,
-    default_value_newlib=0)
+    multi_valued=True)
 
 define_enum(
     name="TcpOptionName",
     values=["TCP_NODELAY", "TCP_KEEPIDLE", "TCP_KEEPINTVL", "TCP_KEEPCNT"],
-    multi_valued=False,
     default_value_host=-1,
     default_value_newlib=-1)
 
@@ -98,7 +93,6 @@ define_enum(
         "IPV6_RTHDRDSTOPTS", "IPV6_RECVRTHDR", "IPV6_RTHDR", "IPV6_RECVDSTOPTS",
         "IPV6_DSTOPTS"
     ],
-    multi_valued=False,
     default_value_host=-1,
     default_value_newlib=-1)
 
@@ -111,9 +105,13 @@ define_enum(
         "SO_PRIORITY", "SO_LINGER", "SO_BSDCOMPAT", "SO_REUSEPORT",
         "SO_RCVTIMEO", "SO_SNDTIMEO"
     ],
-    multi_valued=False,
     default_value_host=-1,
     default_value_newlib=-1)
+
+define_enum(
+    name="FLockOperation",
+    values=["LOCK_SH", "LOCK_EX", "LOCK_NB", "LOCK_UN"],
+    multi_valued=True)
 
 define_struct(
     name="stat",
