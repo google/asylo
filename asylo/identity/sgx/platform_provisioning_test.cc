@@ -20,6 +20,8 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -27,6 +29,8 @@
 namespace asylo {
 namespace sgx {
 namespace {
+
+using ::testing::Eq;
 
 TEST(ProvisioningPlatformTest, PpidWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidatePpid(Ppid()),
@@ -106,6 +110,93 @@ TEST(PlatformProvisioningTest, ValidPceIdIsValid) {
   PceId pce_id;
   pce_id.set_value(10000);
   ASYLO_EXPECT_OK(ValidatePceId(pce_id));
+}
+
+TEST(PlatformProvisioningTest, ReportProtoWithoutValueFieldIsInvalid) {
+  ReportProto report_proto;
+  EXPECT_THAT(ValidateReportProto(report_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PlatformProvisioningTest, ReportProtoWithValueFieldOfBadLengthIsInvalid) {
+  ReportProto report_proto;
+  report_proto.set_value("short");
+  EXPECT_THAT(ValidateReportProto(report_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  Report report = TrivialRandomObject<Report>();
+  std::string report_bin = ConvertTrivialObjectToBinaryString(report);
+  // One byte too long.
+  report_bin.push_back('a');
+  report_proto.set_value(report_bin);
+  EXPECT_THAT(ValidateReportProto(report_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PlatformProvisioningTest, TargetInfoProtoWithoutValueFieldIsInvalid) {
+  TargetInfoProto target_info_proto;
+  EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PlatformProvisioningTest,
+     TargetInfoProtoWithValueFieldOfBadLengthIsInvalid) {
+  TargetInfoProto target_info_proto;
+  target_info_proto.set_value("short");
+  EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  Targetinfo targetinfo = TrivialRandomObject<Targetinfo>();
+  std::string targetinfo_bin = ConvertTrivialObjectToBinaryString(targetinfo);
+  // One byte too long.
+  targetinfo_bin.push_back('a');
+  target_info_proto.set_value(targetinfo_bin);
+  EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PlatformProvisioningTest, ValidReportCanBeConvertedToHardwareReport) {
+  Report expected = TrivialRandomObject<Report>();
+
+  ReportProto report_proto;
+  report_proto.set_value(ConvertTrivialObjectToBinaryString(expected));
+
+  auto report_result = ConvertReportProtoToHardwareReport(report_proto);
+  ASYLO_ASSERT_OK(report_result);
+
+  std::string expected_hex = ConvertTrivialObjectToHexString<Report>(expected);
+  std::string actual_hex =
+      ConvertTrivialObjectToHexString(report_result.ValueOrDie());
+  EXPECT_THAT(actual_hex, Eq(expected_hex));
+}
+
+TEST(PlatformProvisioningTest, ValidTargetInfoProtoCanBeConvertedToTargetinfo) {
+  Targetinfo expected = TrivialRandomObject<Targetinfo>();
+
+  TargetInfoProto target_info_proto;
+  target_info_proto.set_value(ConvertTrivialObjectToBinaryString(expected));
+
+  auto targetinfo_result =
+      ConvertTargetInfoProtoToTargetinfo(target_info_proto);
+  ASYLO_ASSERT_OK(targetinfo_result);
+
+  std::string expected_hex =
+      ConvertTrivialObjectToHexString<Targetinfo>(expected);
+  std::string actual_hex =
+      ConvertTrivialObjectToHexString(targetinfo_result.ValueOrDie());
+  EXPECT_THAT(actual_hex, Eq(expected_hex));
 }
 
 }  // namespace

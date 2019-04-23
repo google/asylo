@@ -19,8 +19,10 @@
 #ifndef ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
 #define ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
 
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
@@ -40,6 +42,24 @@ Status ValidatePceSvn(const PceSvn &pce_svn);
 // Validates a PceId message. Returns an OK status if and only if the message
 // is valid.
 Status ValidatePceId(const PceId &pce_id);
+
+// Validates a ReportProto message. Returns an OK status if and only if the
+// message is valid.
+Status ValidateReportProto(const ReportProto &report_proto);
+
+// Validates a TargetInfoProto message. Returns an OK status if and only if the
+// message is valid.
+Status ValidateTargetInfoProto(const TargetInfoProto &target_info_proto);
+
+// Extracts the contents of |report_proto| to a REPORT structure. Returns an
+// error if the message is invalid.
+StatusOr<Report> ConvertReportProtoToHardwareReport(
+    const ReportProto &report_proto);
+
+// Extracts the contents of |target_info_proto| to a TARGETINFO structure.
+// Returns an error if the message is invalid.
+StatusOr<Targetinfo> ConvertTargetInfoProtoToTargetinfo(
+    const TargetInfoProto &target_info_proto);
 
 }  // namespace sgx
 }  // namespace asylo

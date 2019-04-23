@@ -509,6 +509,7 @@ cc_library(
     deps = [
         ":hardware_types",
         ":platform_provisioning_proto_cc",
+        "//asylo/crypto/util:trivial_object_util",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],
@@ -520,8 +521,10 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "platform_provisioning_enclave_test",
     deps = [
+        ":hardware_types",
         ":platform_provisioning",
         ":platform_provisioning_proto_cc",
+        "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

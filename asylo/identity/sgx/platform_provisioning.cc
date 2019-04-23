@@ -22,7 +22,7 @@
 #include <limits>
 
 #include "absl/strings/str_cat.h"
-#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 
 namespace asylo {
 namespace sgx {
@@ -101,6 +101,40 @@ Status ValidatePceId(const PceId &pce_id) {
   }
 
   return Status::OkStatus();
+}
+
+Status ValidateReportProto(const ReportProto &report_proto) {
+  return ConvertReportProtoToHardwareReport(report_proto).status();
+}
+
+Status ValidateTargetInfoProto(const TargetInfoProto &target_info_proto) {
+  return ConvertTargetInfoProtoToTargetinfo(target_info_proto).status();
+}
+
+StatusOr<Report> ConvertReportProtoToHardwareReport(
+    const ReportProto &report_proto) {
+  if (!report_proto.has_value()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "ReportProto does not have a \"value\" field");
+  }
+
+  Report report;
+  ASYLO_RETURN_IF_ERROR(
+      SetTrivialObjectFromBinaryString<Report>(report_proto.value(), &report));
+  return report;
+}
+
+StatusOr<Targetinfo> ConvertTargetInfoProtoToTargetinfo(
+    const TargetInfoProto &target_info_proto) {
+  if (!target_info_proto.has_value()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "TargetInfoProto does not have a \"value\" field");
+  }
+
+  Targetinfo targetinfo;
+  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromBinaryString<Targetinfo>(
+      target_info_proto.value(), &targetinfo));
+  return targetinfo;
 }
 
 }  // namespace sgx
