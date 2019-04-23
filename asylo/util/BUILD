@@ -183,6 +183,33 @@ cc_library(
 )
 
 cc_library(
+    name = "mutex_guarded",
+    hdrs = ["mutex_guarded.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_absl//absl/types:optional",
+    ],
+)
+
+cc_test(
+    name = "mutex_guarded_test",
+    srcs = ["mutex_guarded_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":mutex_guarded",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "error_codes",
     hdrs = ["error_codes.h"],
     copts = ASYLO_DEFAULT_COPTS,
