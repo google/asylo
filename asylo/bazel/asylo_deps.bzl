@@ -226,7 +226,15 @@ cc_library(
             strip_prefix = "certificate-transparency-335536d7276e375bdcfd740056506bf503221f03",
         )
 
-    # required by protobuf_python
+    # Required by protobuf
+    if not native.existing_rule("bazel_skylib"):
+        http_archive(
+            name = "bazel_skylib",
+            urls = ["https://github.com/bazelbuild/bazel-skylib/releases/download/0.8.0/bazel-skylib.0.8.0.tar.gz"],
+            sha256 = "2ef429f5d7ce7111263289644d233707dba35e39696377ebab8b0bc701f7818e",
+        )
+
+    # Required by protobuf_python
     if not native.existing_rule("six_archive"):
         http_archive(
             name = "six_archive",
