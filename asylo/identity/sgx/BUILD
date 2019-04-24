@@ -532,6 +532,39 @@ cc_test(
     ],
 )
 
+# A utility library associated with SGX PCE protocols.
+cc_library(
+    name = "pce_util",
+    srcs = ["pce_util.cc"],
+    hdrs = ["pce_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/crypto:algorithms_proto_cc",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/types:optional",
+        "@sgx_dcap//:pce_wrapper",
+    ],
+)
+
+# This target depends on an untrusted library (pce_wrapper). Consequently, it
+# is not tested inside the enclave and does not have an "enclave_test_name"
+# attribute.
+cc_test(
+    name = "pce_util_test",
+    srcs = ["pce_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":pce_util",
+        "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_googletest//:gtest",
+        "@sgx_dcap//:pce_wrapper",
+    ],
+)
+
 cc_library(
     name = "local_secret_sealer_helpers",
     srcs = ["local_secret_sealer_helpers.cc"],
