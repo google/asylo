@@ -650,7 +650,6 @@ def sim_enclave_test(
     Args:
       name: enclave_test name
       **kwargs: same as enclave_test kwargs
-
     """
 
     tags = kwargs.pop("tags", [])
