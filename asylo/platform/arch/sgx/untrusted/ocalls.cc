@@ -41,6 +41,7 @@
 #include <syslog.h>
 #include <unistd.h>
 #include <utime.h>
+
 #include <algorithm>
 #include <cerrno>
 #include <csignal>
@@ -48,6 +49,8 @@
 #include <cstdio>
 #include <cstdlib>
 #include <ctime>
+#include <iterator>
+#include <vector>
 
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"
@@ -148,10 +151,8 @@ asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
 class SnapshotDataDeleter {
  public:
   explicit SnapshotDataDeleter(const asylo::SnapshotLayoutEntry &entry)
-      : ciphertext_deleter_(asylo::MallocUniquePtr<void>(
-            reinterpret_cast<void *>(entry.ciphertext_base()))),
-        nonce_deleter_(asylo::MallocUniquePtr<void>(
-            reinterpret_cast<void *>(entry.nonce_base()))) {}
+      : ciphertext_deleter_(reinterpret_cast<void *>(entry.ciphertext_base())),
+        nonce_deleter_(reinterpret_cast<void *>(entry.nonce_base())) {}
 
  private:
   asylo::MallocUniquePtr<void> ciphertext_deleter_;
@@ -991,11 +992,43 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
 
   // The snapshot memory should be freed in both the parent and the child
   // process.
-  SnapshotDataDeleter data_deleter(snapshot_layout.data());
-  SnapshotDataDeleter bss_deleter(snapshot_layout.bss());
-  SnapshotDataDeleter heap_deleter(snapshot_layout.heap());
-  SnapshotDataDeleter thread_deleter(snapshot_layout.thread());
-  SnapshotDataDeleter stack_deleter(snapshot_layout.stack());
+  std::vector<SnapshotDataDeleter> data_deleter_;
+  std::vector<SnapshotDataDeleter> bss_deleter_;
+  std::vector<SnapshotDataDeleter> heap_deleter_;
+  std::vector<SnapshotDataDeleter> thread_deleter_;
+  std::vector<SnapshotDataDeleter> stack_deleter_;
+
+  std::transform(snapshot_layout.data().cbegin(), snapshot_layout.data().cend(),
+                 std::back_inserter(data_deleter_),
+                 [](const asylo::SnapshotLayoutEntry &entry) {
+                   return SnapshotDataDeleter(entry);
+                 });
+
+  std::transform(snapshot_layout.bss().cbegin(), snapshot_layout.bss().cend(),
+                 std::back_inserter(bss_deleter_),
+                 [](const asylo::SnapshotLayoutEntry &entry) {
+                   return SnapshotDataDeleter(entry);
+                 });
+
+  std::transform(snapshot_layout.heap().cbegin(), snapshot_layout.heap().cend(),
+                 std::back_inserter(heap_deleter_),
+                 [](const asylo::SnapshotLayoutEntry &entry) {
+                   return SnapshotDataDeleter(entry);
+                 });
+
+  std::transform(snapshot_layout.thread().cbegin(),
+                 snapshot_layout.thread().cend(),
+                 std::back_inserter(thread_deleter_),
+                 [](const asylo::SnapshotLayoutEntry &entry) {
+                   return SnapshotDataDeleter(entry);
+                 });
+
+  std::transform(snapshot_layout.stack().cbegin(),
+                 snapshot_layout.stack().cend(),
+                 std::back_inserter(stack_deleter_),
+                 [](const asylo::SnapshotLayoutEntry &entry) {
+                   return SnapshotDataDeleter(entry);
+                 });
 
   asylo::SgxLoader *loader =
       dynamic_cast<asylo::SgxLoader *>(manager->GetLoaderFromClient(client));

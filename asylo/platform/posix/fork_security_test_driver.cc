@@ -17,7 +17,9 @@
  */
 
 #include <openssl/rand.h>
+
 #include <string>
+#include <vector>
 
 #include <gtest/gtest.h>
 #include "asylo/client.h"
@@ -58,19 +60,34 @@ class SnapshotDeleter {
   };
 
   void Reset(const SnapshotLayout &snapshot_layout) {
-    data_deleter_.Reset(snapshot_layout.data());
-    bss_deleter_.Reset(snapshot_layout.bss());
-    heap_deleter_.Reset(snapshot_layout.heap());
-    thread_deleter_.Reset(snapshot_layout.thread());
-    stack_deleter_.Reset(snapshot_layout.stack());
+    data_deleter_.resize(snapshot_layout.data_size());
+    bss_deleter_.resize(snapshot_layout.bss_size());
+    heap_deleter_.resize(snapshot_layout.heap_size());
+    thread_deleter_.resize(snapshot_layout.thread_size());
+    stack_deleter_.resize(snapshot_layout.stack_size());
+    for (int i = 0; i < snapshot_layout.data_size(); ++i) {
+      data_deleter_[i].Reset(snapshot_layout.data(i));
+    }
+    for (int i = 0; i < snapshot_layout.bss_size(); ++i) {
+      bss_deleter_[i].Reset(snapshot_layout.bss(i));
+    }
+    for (int i = 0; i < snapshot_layout.heap_size(); ++i) {
+      heap_deleter_[i].Reset(snapshot_layout.heap(i));
+    }
+    for (int i = 0; i < snapshot_layout.thread_size(); ++i) {
+      thread_deleter_[i].Reset(snapshot_layout.thread(i));
+    }
+    for (int i = 0; i < snapshot_layout.stack_size(); ++i) {
+      stack_deleter_[i].Reset(snapshot_layout.stack(i));
+    }
   }
 
  private:
-  SnapshotEntryDeleter data_deleter_;
-  SnapshotEntryDeleter bss_deleter_;
-  SnapshotEntryDeleter heap_deleter_;
-  SnapshotEntryDeleter thread_deleter_;
-  SnapshotEntryDeleter stack_deleter_;
+  std::vector<SnapshotEntryDeleter> data_deleter_;
+  std::vector<SnapshotEntryDeleter> bss_deleter_;
+  std::vector<SnapshotEntryDeleter> heap_deleter_;
+  std::vector<SnapshotEntryDeleter> thread_deleter_;
+  std::vector<SnapshotEntryDeleter> stack_deleter_;
 };
 
 class ForkSecurityTest : public ::testing::Test {
@@ -112,12 +129,23 @@ class ForkSecurityTest : public ::testing::Test {
     return Status::OkStatus();
   }
 
-  void FlipRandomSnapshotLayoutEntryBit(SnapshotLayoutEntry *entry) {
+  // Flip a random bit in the snapshot memory. |entry| stores the layout
+  // (address and size) of the snapshot memory.
+  void FlipRandomSnapshotLayoutEntryBit(
+      const google::protobuf::RepeatedPtrField<SnapshotLayoutEntry> &entry) {
+    // Choose a random part to have one bit flipped.
+    uint8_t random_index;
+    RAND_bytes(&random_index, sizeof(random_index));
+    random_index %= entry.size();
+
+    // Choose a random byte in the selected part to have one bit flipped.
     uint8_t random_byte_position;
     RAND_bytes(&random_byte_position, sizeof(random_byte_position));
-    random_byte_position %= entry->ciphertext_size();
+    random_byte_position %= entry[random_index].ciphertext_size();
     uint8_t *snapshot_ciphertext =
-        reinterpret_cast<uint8_t *>(entry->ciphertext_base());
+        reinterpret_cast<uint8_t *>(entry[random_index].ciphertext_base());
+
+    // Flip one bit in the selected byte.
     snapshot_ciphertext[random_byte_position] ^= 1;
   }
 
@@ -150,7 +178,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyData) {
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted data
     // section in the snapshot.
-    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.mutable_data());
+    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.data());
     // Restoring from modified data section should cause the enclave to return
     // an error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
@@ -170,7 +198,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted bss section
     // in the snapshot.
-    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.mutable_bss());
+    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.bss());
     // Restoring from modified bss section should cause the enclave to return an
     // error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
@@ -191,7 +219,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted thread
     // information in the snapshot.
-    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.mutable_thread());
+    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.thread());
     // Restoring from modified thread information should cause the enclave to
     // return an error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
@@ -211,7 +239,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted stack in
     // the snapshot.
-    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.mutable_stack());
+    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.stack());
     // Restoring from modified stack should cause the enclave to return an
     // error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
@@ -232,7 +260,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyHeap) {
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted heap in the
     // snapshot.
-    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.mutable_heap());
+    FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.heap());
     // Restoring from modified heap should kill the enclave.
     EXPECT_EXIT(manager_->EnterAndRestore(client_, snapshot_layout_),
                 ::testing::KilledBySignal(SIGSEGV), ".*");

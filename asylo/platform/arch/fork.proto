@@ -41,19 +41,19 @@ message SnapshotLayoutEntry {
 // and stack for the enclave thread that took the snapshot.
 message SnapshotLayout {
   // The encrypted enclave data section in the snapshot.
-  optional SnapshotLayoutEntry data = 1;
+  repeated SnapshotLayoutEntry data = 1;
 
   // The encrypted enclave bss section in the snapshot.
-  optional SnapshotLayoutEntry bss = 2;
+  repeated SnapshotLayoutEntry bss = 2;
 
   // The encrypted enclave heap in the snapshot.
-  optional SnapshotLayoutEntry heap = 3;
+  repeated SnapshotLayoutEntry heap = 3;
 
   // The encrypted enclave thread related information the snapshot.
-  optional SnapshotLayoutEntry thread = 4;
+  repeated SnapshotLayoutEntry thread = 4;
 
   // The encrypted stack for the calling thread in the snapshot.
-  optional SnapshotLayoutEntry stack = 5;
+  repeated SnapshotLayoutEntry stack = 5;
 }
 
 // A handshake input message that contains the socket used for communication,
