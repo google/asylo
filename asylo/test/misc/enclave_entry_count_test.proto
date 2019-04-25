@@ -1,0 +1,49 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/enclave.proto";
+
+// Input to an enclave entry count test case, specifying what the thread does
+// inside the enclave.
+message EnclaveEntryCountTestInput {
+  enum ThreadType {
+    UNSUPPORTED = 0;
+    // The thread does nothing, just exit after entering.
+    DONOTHING = 1;
+    // The thread just enters the enclave and stay idle.
+    WAIT = 2;
+    // The thread enters the enclave and counts all active enclave entries.
+    COUNT = 3;
+  }
+  // The type of the thread entering the enclave.
+  optional ThreadType thread_type = 1;
+
+  // The expected entries in the enclave.
+  optional uint32 expected_entries = 2;
+}
+
+extend EnclaveInput {
+  optional EnclaveEntryCountTestInput enclave_entry_count_test_input =
+      244056756;
+}
+
+extend EnclaveOutput {
+  optional uint32 number_entries = 244056756;
+}

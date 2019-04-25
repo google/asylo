@@ -82,6 +82,9 @@ struct EnclaveMemoryLayout {
 
 void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout);
 
+// Returns the number of total active enclave entries.
+int get_active_enclave_entries();
+
 // A macro expanding to an expression appropriate for use as the body of a busy
 // loop.
 #ifdef __x86_64__

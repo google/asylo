@@ -21,9 +21,9 @@ licenses(["notice"])  # Apache v2.0
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 load(
     "//asylo/bazel:asylo.bzl",
-    "copy_from_host",
     "cc_enclave_test",
     "cc_test",
+    "copy_from_host",
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
@@ -35,6 +35,12 @@ load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 asylo_proto_library(
     name = "signal_test_proto",
     srcs = ["signal_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
+asylo_proto_library(
+    name = "enclave_entry_count_test_proto",
+    srcs = ["enclave_entry_count_test.proto"],
     deps = ["//asylo:enclave_proto"],
 )
 
@@ -56,6 +62,18 @@ sgx_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
+    ],
+)
+
+# SGX enclave used to test enclave entry counting.
+sgx_enclave(
+    name = "enclave_entry_count_test.so",
+    srcs = ["enclave_entry_count_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":enclave_entry_count_test_proto_cc",
+        "//asylo/test/util:enclave_test_application",
+        "@com_google_absl//absl/synchronization",
     ],
 )
 
@@ -341,6 +359,17 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
+)
+
+sgx_enclave_test(
+    name = "enclave_entry_count_test",
+    srcs = ["enclave_entry_count_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": "enclave_entry_count_test.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        ":enclave_entry_count_test_proto_cc",
+    ] + TEST_DEPS_COMMON,
 )
 
 sgx_enclave_test(

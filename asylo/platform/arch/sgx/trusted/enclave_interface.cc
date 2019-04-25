@@ -64,4 +64,6 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
   enclave_memory_layout->reserved_heap_size = memory_layout.reserved_heap_size;
 }
 
+int get_active_enclave_entries() { return sgx_get_active_enclave_entries(); }
+
 }  //  extern "C"
