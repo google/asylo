@@ -23,8 +23,7 @@
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
-#include "asylo/platform/primitives/util/primitive_locks.h"
-#include "asylo/platform/primitives/x86/spin_lock.h"
+#include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status_macros.h"
 
@@ -33,35 +32,13 @@ namespace primitives {
 
 namespace {
 
-// Maximum number of supported enclave entry points.
-static constexpr size_t kEntryPointMax = 4096;
-
 // Size of the enclave heap in bytes, set here to 128 megabytes for rough parity
 // with Intel SGX. This is the size of the nominally secure heap considered
 // "trusted" for purposes of the simulation.
 constexpr size_t kSimulatorHeapSize = 128 * 1024 * 1024;
 
-// Enclave status flag bits.
-enum Flag : uint64_t { kInitialized = 0x1, kAborted = 0x2 };
-
 // A statically initialized record describing the state of the simulator.
 struct {
-  // Lock ensuring thread-safe enclave initialization. Note that this lock must
-  // always be acquired *before* flags_write_lock.
-  asylo_spinlock_t initialization_lock = ASYLO_SPIN_LOCK_INITIALIZER;
-
-  // Status flag bitmap.
-  uint64_t flags = 0;
-
-  // Lock protecting writes to the flags bitmap.
-  asylo_spinlock_t flags_write_lock = ASYLO_SPIN_LOCK_INITIALIZER;
-
-  // Table of enclave entry handlers.
-  EntryHandler entry_table[kEntryPointMax];
-
-  // Lock protecting entry_table.
-  asylo_spinlock_t entry_table_lock = ASYLO_SPIN_LOCK_INITIALIZER;
-
   // The simulator heap is implemented as a block of static storage allocated at
   // enclave load time by dlopen(). Note that the newlib malloc implementation
   // expects sbrk() to return maximally aligned addresses.
@@ -71,6 +48,8 @@ struct {
   // the heap.
   uint8_t *brk = heap;
 } simulator;
+
+}  // namespace
 
 // Message handler installed by the runtime to finalize the enclave at the time
 // it is destroyed.
@@ -84,57 +63,24 @@ PrimitiveStatus FinalizeEnclave(void *context, TrustedParameterStack *params) {
   return status;
 }
 
-// Placeholder message handler installed for selectors reserved by the runtime.
-PrimitiveStatus ReservedEntry(void *context, TrustedParameterStack *params) {
-  return {error::GoogleError::INTERNAL, "Invalid call to reserved selector."};
-}
-
-// Initialized the enclave if it has not been initialized already.
-void EnsureInitialized() {
-  if (GetSimTrampoline()->magic_number != kTrampolineMagicNumber ||
-      GetSimTrampoline()->version != kTrampolineVersion) {
+// Registers simulator specific entry handlers.
+void RegisterInternalHandlers() {
+  // Register the enclave finalization entry handler.
+  EntryHandler handler{FinalizeEnclave};
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
+             .ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+  // Invoke the user-defined initialization routine.
+  if (!asylo_enclave_init().ok()) {
     TrustedPrimitives::BestEffortAbort(
-        "Simulator trampoline version or magic number mismatch");
+        "asylo_enclave_init() returned failure.");
     return;
   }
-
-  SpinLockGuard lock(&simulator.initialization_lock);
-  if (!(simulator.flags & Flag::kInitialized)) {
-    // Register the enclave finalization entry handler.
-    EntryHandler handler{FinalizeEnclave};
-    if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
-             .ok()) {
-      TrustedPrimitives::BestEffortAbort("Could not register entry handler");
-    }
-
-    // Register placeholder handlers for reserved entry points.
-    for (uint64_t i = kSelectorAsyloFini + 1; i < kSelectorUser; i++) {
-      EntryHandler handler{ReservedEntry};
-      if (!TrustedPrimitives::RegisterEntryHandler(i, handler).ok()) {
-        TrustedPrimitives::BestEffortAbort("Could not register entry handler");
-      }
-    }
-
-    // Invoke the user-defined initialization routine.
-    if (!asylo_enclave_init().ok()) {
-      TrustedPrimitives::BestEffortAbort(
-          "asylo_enclave_init() returned failure.");
-      return;
-    }
-
-    // Mark this enclave as initialized.
-    {
-      SpinLockGuard lock(&simulator.flags_write_lock);
-      simulator.flags |= Flag::kInitialized;
-    }
-  }
 }
 
-}  // namespace
-
 void TrustedPrimitives::BestEffortAbort(const char *message) {
-  SpinLockGuard lock(&simulator.flags_write_lock);
-  simulator.flags |= Flag::kAborted;
+  MarkEnclaveAborted();
 }
 
 void TrustedPrimitives::DebugPuts(const char *message) {
@@ -143,15 +89,7 @@ void TrustedPrimitives::DebugPuts(const char *message) {
 
 PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
     uint64_t trusted_selector, const EntryHandler &handler) {
-  SpinLockGuard lock(&simulator.entry_table_lock);
-  if (trusted_selector >= kEntryPointMax ||
-      !simulator.entry_table[trusted_selector].IsNull()) {
-    return {error::GoogleError::OUT_OF_RANGE,
-            "Invalid selector in RegisterEntryHandler."};
-  }
-
-  simulator.entry_table[trusted_selector] = handler;
-  return PrimitiveStatus::OkStatus();
+  return asylo::primitives::RegisterEntryHandler(trusted_selector, handler);
 }
 
 extern "C" void *enclave_sbrk(intptr_t increment) {
@@ -165,23 +103,13 @@ extern "C" void *enclave_sbrk(intptr_t increment) {
 
 extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
                                               TrustedParameterStack *params) {
-  // Initialize the enclave if necessary.
-  EnsureInitialized();
-
-  // Ensure the enclave has not been aborted.
-  if (simulator.flags & Flag::kAborted) {
-    return {error::GoogleError::ABORTED, "Invalid call to aborted enclave."};
+  if (GetSimTrampoline()->magic_number != kTrampolineMagicNumber ||
+      GetSimTrampoline()->version != kTrampolineVersion) {
+    TrustedPrimitives::BestEffortAbort(
+        "Simulator trampoline version or magic number mismatch");
+    return PrimitiveStatus::OkStatus();
   }
-
-  // Bounds check the passed selector.
-  if (selector >= kEntryPointMax || simulator.entry_table[selector].IsNull()) {
-    return {error::GoogleError::OUT_OF_RANGE,
-            "Invalid selector passed in call to asylo_enclave_call."};
-  }
-
-  // Invoke the entry point handler.
-  auto &handler = simulator.entry_table[selector];
-  return handler.callback(handler.context, params);
+  return InvokeEntryHandler(selector, params);
 }
 
 bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {

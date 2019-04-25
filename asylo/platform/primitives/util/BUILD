@@ -111,3 +111,20 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+# A dispatch table implementation of Client::ExitCallProvider.
+cc_library(
+    name = "trusted_runtime_helper",
+    srcs = ["trusted_runtime_helper.cc"],
+    hdrs = ["trusted_runtime_helper.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives/util:primitive_locks",
+        "//asylo/platform/primitives/x86:spin_lock",
+        "//asylo/util:error_codes",
+        "//asylo/util:status_macros",
+    ],
+)

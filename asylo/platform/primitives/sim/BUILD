@@ -41,6 +41,7 @@ cc_library(
                 "//asylo/platform/primitives",
                 "//asylo/platform/primitives/util:primitive_locks",
                 "//asylo/platform/primitives/x86:spin_lock",
+                "//asylo/platform/primitives/util:trusted_runtime_helper",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
                 "//asylo/util:error_codes",
