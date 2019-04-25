@@ -302,6 +302,7 @@ cc_library(
             "//asylo/crypto:aead_cryptor",
             "//asylo/crypto/util:bssl_util",
             "//asylo/crypto/util:byte_container_view",
+            "//asylo/crypto/util:trivial_object_util",
             "//asylo/platform/posix/memory:memory",
             "//asylo/platform/primitives/sgx:sgx_error_space",
             "//asylo/grpc/auth/core:client_ekep_handshaker",

@@ -29,6 +29,7 @@
 #include "asylo/crypto/aead_cryptor.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/client_ekep_handshaker.h"
 #include "asylo/grpc/auth/core/server_ekep_handshaker.h"
@@ -64,12 +65,6 @@ std::atomic<bool> fork_requested(false);
 std::atomic<bool> snapshot_key_transfer_requested(false);
 
 const char kSnapshotKeyAssociatedDataBuf[] = "AES256-GCM-SIV snapshot key";
-
-const char kDataAssociatedDataBuf[] = "enclave data section";
-const char kBssAssociatedDataBuf[] = "enclave bss section";
-const char kHeapAssociatedDataBuf[] = "enclave heap";
-const char kThreadAssociatedDataBuf[] = "enclave thread info";
-const char kStackAssociatedDataBuf[] = "enclave stack";
 
 // AES256-GCM-SIV snapshot key, which is used to encrypt/decrypt snapshot.
 static CleansingVector<uint8_t> *global_snapshot_key;
@@ -147,7 +142,6 @@ bool GetSnapshotKey(CleansingVector<uint8_t> *key) {
 // encrypted data.
 Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
                                 const size_t source_size,
-                                ByteContainerView associated_data,
                                 SnapshotLayoutEntry *snapshot_entry) {
   ByteContainerView plaintext(source_base, source_size);
   int maximum_ciphertext_size = source_size + cryptor->MaxSealOverhead();
@@ -163,8 +157,11 @@ Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
     return Status(error::GoogleError::INTERNAL,
                   "Failed to allocate untrusted memory for snapshot nonce");
   }
+
+  // Use the enclave address being encrypted as the associated data to make sure
+  // that it's restored to exactly the same address space in the child enclave.
   ASYLO_RETURN_IF_ERROR(cryptor->Seal(
-      plaintext, associated_data,
+      plaintext, ConvertTrivialObjectToBinaryString(source_base),
       absl::MakeSpan(reinterpret_cast<uint8_t *>(nonce_base), nonce_size),
       absl::MakeSpan(reinterpret_cast<uint8_t *>(destination_base),
                      maximum_ciphertext_size),
@@ -186,7 +183,6 @@ Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
 // |actual_plaintext_size|.
 Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
                                   SnapshotLayoutEntry snapshot_entry,
-                                  ByteContainerView associated_data,
                                   void *destination_base,
                                   size_t destination_size,
                                   size_t *actual_plaintext_size) {
@@ -209,8 +205,11 @@ Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
   std::vector<uint8_t> nonce(
       reinterpret_cast<uint8_t *>(nonce_base),
       reinterpret_cast<uint8_t *>(nonce_base) + nonce_size);
+
+  // Use the enclave address being restored as the associated data to make sure
+  // that it's restoring from the same address space in the parent enclave.
   return cryptor->Open(
-      ciphertext, associated_data, nonce,
+      ciphertext, ConvertTrivialObjectToBinaryString(destination_base), nonce,
       absl::MakeSpan(reinterpret_cast<uint8_t *>(destination_base),
                      destination_size),
       actual_plaintext_size);
@@ -231,16 +230,14 @@ void CopyNonOkStatus(const Status &non_ok_status,
 // written to |entry|.
 Status EncryptToSnapshot(AeadCryptor *cryptor, void *source_base,
                          size_t source_size,
-                         const ByteContainerView associated_data,
                          google::protobuf::RepeatedPtrField<SnapshotLayoutEntry> *entry) {
   size_t bytes_left = source_size;
   uint8_t *current_position = reinterpret_cast<uint8_t *>(source_base);
 
   while (bytes_left > 0) {
     size_t plaintext_size = std::min(cryptor->MaxMessageSize(), bytes_left);
-    ASYLO_RETURN_IF_ERROR(
-        EncryptToUntrustedMemory(cryptor, current_position, plaintext_size,
-                                 associated_data, entry->Add()));
+    ASYLO_RETURN_IF_ERROR(EncryptToUntrustedMemory(
+        cryptor, current_position, plaintext_size, entry->Add()));
 
     bytes_left -= plaintext_size;
     current_position += plaintext_size;
@@ -254,7 +251,6 @@ Status EncryptToSnapshot(AeadCryptor *cryptor, void *source_base,
 // |destination_base| with |destination_size|.
 Status DecryptFromSnapshot(
     AeadCryptor *cryptor, void *destination_base, size_t destination_size,
-    ByteContainerView associated_data,
     const google::protobuf::RepeatedPtrField<SnapshotLayoutEntry> &entry) {
   uint8_t *current_position = reinterpret_cast<uint8_t *>(destination_base);
   size_t bytes_left = destination_size;
@@ -274,8 +270,8 @@ Status DecryptFromSnapshot(
 
     size_t actual_plaintext_size;
     ASYLO_RETURN_IF_ERROR(DecryptFromUntrustedMemory(
-        cryptor, entry[i], associated_data, current_position,
-        expected_plaintext_size, &actual_plaintext_size));
+        cryptor, entry[i], current_position, expected_plaintext_size,
+        &actual_plaintext_size));
     if (actual_plaintext_size != expected_plaintext_size) {
       return Status(error::GoogleError::INTERNAL,
                     "The snapshot size does not match expectation");
@@ -408,13 +404,9 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
         std::move(cryptor_result.ValueOrDie());
 
     // Allocate and encrypt reserved data section to an untrusted snapshot.
-    ByteContainerView data_associated_data(kDataAssociatedDataBuf,
-                                           sizeof(kDataAssociatedDataBuf));
-
-    Status status =
-        EncryptToSnapshot(cryptor.get(), enclave_layout.reserved_data_base,
-                          enclave_layout.data_size, data_associated_data,
-                          tmp_snapshot_layout.mutable_data());
+    Status status = EncryptToSnapshot(
+        cryptor.get(), enclave_layout.reserved_data_base,
+        enclave_layout.data_size, tmp_snapshot_layout.mutable_data());
 
     if (!status.ok()) {
       CopyNonOkStatus(status, &error_code, error_message,
@@ -423,11 +415,8 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
     }
 
     // Allocate and encrypt reserved bss section to an untrusted snapshot.
-    ByteContainerView bss_associated_data(kBssAssociatedDataBuf,
-                                          sizeof(kBssAssociatedDataBuf));
-
     status = EncryptToSnapshot(cryptor.get(), enclave_layout.reserved_bss_base,
-                               enclave_layout.bss_size, bss_associated_data,
+                               enclave_layout.bss_size,
                                tmp_snapshot_layout.mutable_bss());
 
     if (!status.ok()) {
@@ -437,12 +426,9 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
     }
 
     // Allocate and encrypt thread data for the calling thread.
-    ByteContainerView thread_associated_data(kThreadAssociatedDataBuf,
-                                             sizeof(kThreadAssociatedDataBuf));
-
-    status = EncryptToSnapshot(
-        cryptor.get(), thread_layout.thread_base, thread_layout.thread_size,
-        thread_associated_data, tmp_snapshot_layout.mutable_thread());
+    status = EncryptToSnapshot(cryptor.get(), thread_layout.thread_base,
+                               thread_layout.thread_size,
+                               tmp_snapshot_layout.mutable_thread());
 
     if (!status.ok()) {
       CopyNonOkStatus(status, &error_code, error_message,
@@ -451,11 +437,8 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
     }
 
     // Allocate and encrypt heap to an untrusted snapshot.
-    ByteContainerView heap_associated_data(kHeapAssociatedDataBuf,
-                                           sizeof(kHeapAssociatedDataBuf));
-
     status = EncryptToSnapshot(cryptor.get(), enclave_layout.heap_base,
-                               enclave_layout.heap_size, heap_associated_data,
+                               enclave_layout.heap_size,
                                tmp_snapshot_layout.mutable_heap());
 
     if (!status.ok()) {
@@ -467,12 +450,9 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
     // Allocate and encrypt stack for the calling thread.
     size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
                         reinterpret_cast<size_t>(thread_layout.stack_limit);
-    ByteContainerView stack_associated_data(kStackAssociatedDataBuf,
-                                            sizeof(kStackAssociatedDataBuf));
 
     status = EncryptToSnapshot(cryptor.get(), thread_layout.stack_limit,
-                               stack_size, stack_associated_data,
-                               tmp_snapshot_layout.mutable_stack());
+                               stack_size, tmp_snapshot_layout.mutable_stack());
 
     if (!status.ok()) {
       CopyNonOkStatus(status, &error_code, error_message,
@@ -518,30 +498,21 @@ Status DecryptAndRestoreEnclaveDataBssHeap(
 
   // Decrypt the data section to reserved data, to avoid overwriting data used
   // by the cryptor.
-  ByteContainerView data_associated_data(kDataAssociatedDataBuf,
-                                         sizeof(kDataAssociatedDataBuf));
-
-  ASYLO_RETURN_IF_ERROR(DecryptFromSnapshot(
-      cryptor.get(), enclave_layout.reserved_data_base,
-      enclave_layout.data_size, data_associated_data, snapshot_layout.data()));
+  ASYLO_RETURN_IF_ERROR(
+      DecryptFromSnapshot(cryptor.get(), enclave_layout.reserved_data_base,
+                          enclave_layout.data_size, snapshot_layout.data()));
 
   // Decrypt the bss section to reserved bss, to avoid overwriting bss used
   // by the cryptor.
-  ByteContainerView bss_associated_data(kBssAssociatedDataBuf,
-                                        sizeof(kBssAssociatedDataBuf));
-
-  ASYLO_RETURN_IF_ERROR(DecryptFromSnapshot(
-      cryptor.get(), enclave_layout.reserved_bss_base, enclave_layout.bss_size,
-      bss_associated_data, snapshot_layout.bss()));
+  ASYLO_RETURN_IF_ERROR(
+      DecryptFromSnapshot(cryptor.get(), enclave_layout.reserved_bss_base,
+                          enclave_layout.bss_size, snapshot_layout.bss()));
 
   // Decrypt and restore the heap. It is safe to overwrite the heap here because
   // the heap used by the cryptor is allocated on the switched heap.
-  ByteContainerView heap_associated_data(kHeapAssociatedDataBuf,
-                                         sizeof(kHeapAssociatedDataBuf));
-
-  ASYLO_RETURN_IF_ERROR(DecryptFromSnapshot(
-      cryptor.get(), enclave_layout.heap_base, enclave_layout.heap_size,
-      heap_associated_data, snapshot_layout.heap()));
+  ASYLO_RETURN_IF_ERROR(
+      DecryptFromSnapshot(cryptor.get(), enclave_layout.heap_base,
+                          enclave_layout.heap_size, snapshot_layout.heap()));
 
   void *switched_heap_next = GetSwitchedHeapNext();
   size_t switched_heap_remaining = GetSwitchedHeapRemaining();
@@ -576,22 +547,16 @@ Status DecryptAndRestoreThreadStack(
   // Decrypt and restore the thread information. Restore happens in a different
   // tcs (enclave thread) from the thread that requests fork(). Therefore it is
   // OK to overwrite the stack since we are using different stack now.
-  ByteContainerView thread_associated_data(kThreadAssociatedDataBuf,
-                                           sizeof(kThreadAssociatedDataBuf));
-
-  ASYLO_RETURN_IF_ERROR(DecryptFromSnapshot(
-      cryptor.get(), thread_layout.thread_base, thread_layout.thread_size,
-      thread_associated_data, snapshot_layout.thread()));
+  ASYLO_RETURN_IF_ERROR(
+      DecryptFromSnapshot(cryptor.get(), thread_layout.thread_base,
+                          thread_layout.thread_size, snapshot_layout.thread()));
 
   // are decrypting it in a different tcs from the thread that requests fork().
   size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
                       reinterpret_cast<size_t>(thread_layout.stack_limit);
-  ByteContainerView stack_associated_data(kStackAssociatedDataBuf,
-                                          sizeof(kStackAssociatedDataBuf));
-
   ASYLO_RETURN_IF_ERROR(
       DecryptFromSnapshot(cryptor.get(), thread_layout.stack_limit, stack_size,
-                          stack_associated_data, snapshot_layout.stack()));
+                          snapshot_layout.stack()));
 
   return Status::OkStatus();
 }
