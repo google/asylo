@@ -209,11 +209,18 @@ sgx_enclave_test(
     ],
 )
 
+asylo_proto_library(
+    name = "fork_security_test_proto",
+    srcs = ["fork_security_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
 sgx_enclave(
     name = "fork_security_test.so",
     srcs = ["fork_security_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":fork_security_test_proto_cc",
         "//asylo/platform/arch:trusted_fork",
         "//asylo/test/util:enclave_test_application",
     ],
@@ -226,6 +233,7 @@ sgx_enclave_test(
     enclaves = {"enclave": "fork_security_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
+        ":fork_security_test_proto_cc",
         "//asylo:enclave_client",
         "//asylo:enclave_proto_cc",
         "//asylo/platform/arch:fork_proto_cc",

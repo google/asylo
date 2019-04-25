@@ -21,6 +21,7 @@
 #include <openssl/rand.h>
 #include <sys/socket.h>
 
+#include <atomic>
 #include <cstddef>
 #include <vector>
 
@@ -53,6 +54,15 @@ namespace {
 // use an AES256-GCM-SIV key to encrypt the snapshot.
 constexpr size_t kSnapshotKeySize = 32;
 
+// Indicates whether a fork request has been made from inside the enclave. A
+// snapshot ecall is only allowed to enter the enclave if it's set.
+std::atomic<bool> fork_requested(false);
+
+// Indicates whether a snapshot key transfer request is made. This is only
+// allowed after a snapshot is taken (which is requested from fork inside an
+// enclave).
+std::atomic<bool> snapshot_key_transfer_requested(false);
+
 const char kSnapshotKeyAssociatedDataBuf[] = "AES256-GCM-SIV snapshot key";
 
 const char kDataAssociatedDataBuf[] = "enclave data section";
@@ -84,6 +94,21 @@ struct ThreadMemoryLayout {
 // snapshot when the reserved fork() implementation thread reenters.
 static struct ThreadMemoryLayout forked_thread_memory_layout = {
     nullptr, 0, nullptr, nullptr};
+
+// Clears the fork requested bit, and returns its value before it's cleared.
+bool ClearForkRequested() { return fork_requested.exchange(false); }
+
+// Clears the snapshot key transfer requested bit, and returns its value before
+// it's cleared.
+bool ClearSnapshotKeyTransferRequested() {
+  return snapshot_key_transfer_requested.exchange(false);
+}
+
+// Sets snapshot key transfer request, which allows a snapshot key transfer from
+// the current enclave to be made.
+void SetSnapshotKeyTransferRequested() {
+  snapshot_key_transfer_requested = true;
+}
 
 // Gets the previous saved thread memory layout, including the base address and
 // size of the stack/thread info for the TCS that saved the layout.
@@ -278,9 +303,16 @@ void SaveThreadLayoutForSnapshot() {
   forked_thread_memory_layout = thread_memory_layout;
 }
 
+void SetForkRequested() { fork_requested = true; }
+
 // Takes a snapshot of the enclave data/bss/heap and stack for the calling
 // thread by copying to untrusted memory.
 Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
+  // A snapshot is not allowed unless fork is requested from inside an enclave.
+  if (!ClearForkRequested()) {
+    return Status(error::GoogleError::PERMISSION_DENIED,
+                  "Snapshot is not allowed unless fork is requested");
+  }
   if (!snapshot_layout) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Snapshot layout is nullptr");
@@ -464,6 +496,10 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   if (error_code != error::GoogleError::OK) {
     return Status(error_code, error_message);
   }
+
+  // Request a snapshot key transfer to the child. This bit should only be set
+  // after the snapshot is taken.
+  SetSnapshotKeyTransferRequested();
   return Status::OkStatus();
 }
 
@@ -836,6 +872,16 @@ Status TransferSecureSnapshotKey(
                   "The socket field for handshake is invalid");
   }
 
+  bool is_parent = fork_handshake_config.is_parent();
+
+  // The parent should only start a key transfer if it's requested by a fork
+  // request inside an enclave.
+  if (is_parent && !ClearSnapshotKeyTransferRequested()) {
+    return Status(error::GoogleError::PERMISSION_DENIED,
+                  "Snapshot key transfer is not allowed unless requested by "
+                  "fork inside an enclave");
+  }
+
   AssertionDescription description;
   SetSgxLocalAssertionDescription(&description);
 
@@ -847,7 +893,6 @@ Status TransferSecureSnapshotKey(
   // The parent enclave acts as the client, since the parent enclave will
   // initialize the handshake. The child enclave acts as the server.
   std::unique_ptr<EkepHandshaker> handshaker;
-  bool is_parent = fork_handshake_config.is_parent();
   if (is_parent) {
     handshaker = ClientEkepHandshaker::Create(options);
   } else {
@@ -886,6 +931,8 @@ pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config) {
   // Saves the current stack/thread address info for snapshot.
   asylo::SaveThreadLayoutForSnapshot();
 
+  // Set the fork requested bit.
+  SetForkRequested();
   std::string buf;
   if (!config.SerializeToString(&buf)) {
     errno = EFAULT;

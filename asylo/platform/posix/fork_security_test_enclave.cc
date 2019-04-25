@@ -17,6 +17,7 @@
  */
 
 #include "asylo/platform/arch/include/trusted/fork.h"
+#include "asylo/platform/posix/fork_security_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 
 namespace asylo {
@@ -29,6 +30,19 @@ class ForkSecurityTest : public EnclaveTestCase {
     if (!IsSecureForkSupported()) {
       return Status(error::GoogleError::UNAVAILABLE,
                     "Secure fork not supported in non SGX hardware mode");
+    }
+    if (!input.HasExtension(fork_security_test_input)) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing input extension");
+    }
+    ForkSecurityTestInput test_input =
+        input.GetExtension(fork_security_test_input);
+    if (!test_input.has_request_fork()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Missing thread type");
+    }
+    if (test_input.request_fork()) {
+      SetForkRequested();
     }
     SaveThreadLayoutForSnapshot();
     return Status::OkStatus();

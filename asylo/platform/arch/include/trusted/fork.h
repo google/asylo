@@ -53,6 +53,9 @@ Status TransferSecureSnapshotKey(
 // hardware mode.
 void SaveThreadLayoutForSnapshot();
 
+// Sets fork request, which allows a snapshot of the enclave to be taken.
+void SetForkRequested();
+
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_

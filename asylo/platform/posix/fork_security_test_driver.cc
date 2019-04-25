@@ -28,6 +28,7 @@
 #include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
+#include "asylo/platform/posix/fork_security_test.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -110,7 +111,8 @@ class ForkSecurityTest : public ::testing::Test {
         IsOk());
   }
 
-  Status LoadEnclaveAndTakeSnapshot(const std::string &enclave_name) {
+  Status LoadEnclaveAndTakeSnapshot(const std::string &enclave_name,
+                                    bool request_fork) {
     SgxLoader loader(FLAGS_enclave_path, /*debug=*/true);
     EnclaveConfig config;
     // Allow a user utility thread for snapshotting and restoring.
@@ -121,7 +123,10 @@ class ForkSecurityTest : public ::testing::Test {
     // Enter the enclave and saves the thread and stack address for
     // snapshotting.
     EnclaveInput input;
+    input.MutableExtension(fork_security_test_input)
+        ->set_request_fork(request_fork);
     ASYLO_RETURN_IF_ERROR(client_->EnterAndRun(input, /*output=*/nullptr));
+
     // Enter the enclave and take a snapshot of enclave memory.
     ASYLO_RETURN_IF_ERROR(
         manager_->EnterAndTakeSnapshot(client_, &snapshot_layout_));
@@ -157,9 +162,34 @@ class ForkSecurityTest : public ::testing::Test {
 
 EnclaveManager *ForkSecurityTest::manager_ = nullptr;
 
+// Tests that trying to take a snapshot or initialize a key transfer without
+// setting the fork requested bit fails.
+TEST_F(ForkSecurityTest, SnapshotFailsWithourForkRequest) {
+  Status status =
+      LoadEnclaveAndTakeSnapshot("Snapshot blocked", /*request_fork=*/false);
+  if (status != Status(error::GoogleError::UNAVAILABLE,
+                       "Secure fork not supported in non SGX hardware mode")) {
+    // Snapshot should be rejected without fork request set.
+    ASSERT_THAT(status,
+                StatusIs(error::GoogleError::PERMISSION_DENIED,
+                         "Snapshot is not allowed unless fork is requested"));
+
+    // Tansferring key should be rejected without transfer key request set.
+    asylo::ForkHandshakeConfig fork_handshake_config;
+    fork_handshake_config.set_is_parent(true);
+    fork_handshake_config.set_socket(0);
+    EXPECT_THAT(manager_->EnterAndTransferSecureSnapshotKey(
+                    client_, fork_handshake_config),
+                StatusIs(error::GoogleError::PERMISSION_DENIED,
+                         "Snapshot key transfer is not allowed unless "
+                         "requested by fork inside an enclave"));
+  }
+}
+
 // Tests that restoring the enclave from its own snapshot succeeds.
 TEST_F(ForkSecurityTest, RestoreSucceed) {
-  Status status = LoadEnclaveAndTakeSnapshot("Restore succeed");
+  Status status =
+      LoadEnclaveAndTakeSnapshot("Restore succeed", /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Enter the enclave and restore it.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_), IsOk());
@@ -174,7 +204,8 @@ TEST_F(ForkSecurityTest, RestoreSucceed) {
 
 // Tests that restoring the enclave with data bits modified returns error.
 TEST_F(ForkSecurityTest, RestoreWithModifyData) {
-  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified data");
+  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified data",
+                                             /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted data
     // section in the snapshot.
@@ -194,7 +225,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyData) {
 
 // Tests that restoring the enclave with bss bits modified returns error.
 TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
-  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified bss");
+  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified bss",
+                                             /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted bss section
     // in the snapshot.
@@ -215,7 +247,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
 // Tests that restoring the enclave with thread information bits modified
 // returns error.
 TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
-  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified thread");
+  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified thread",
+                                             /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted thread
     // information in the snapshot.
@@ -235,7 +268,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
 
 // Tests that restoring the enclave with stack bits modified returns error.
 TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
-  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified stack");
+  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified stack",
+                                             /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted stack in
     // the snapshot.
@@ -256,7 +290,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
 // Tests that restoring the enclave with heap bits modified kills the enclave,
 // as the heap is zeroed out when restoring failed.
 TEST_F(ForkSecurityTest, RestoreWithModifyHeap) {
-  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified heap");
+  Status status = LoadEnclaveAndTakeSnapshot("Restore with modified heap",
+                                             /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Flip one bit in a random byte in encrypted heap in the
     // snapshot.

@@ -53,4 +53,9 @@ void SaveThreadLayoutForSnapshot() {
   abort();
 }
 
+void SetForkRequested() {
+  // Only supported in the SGX hardware backend.
+  abort();
+}
+
 }  // namespace asylo
