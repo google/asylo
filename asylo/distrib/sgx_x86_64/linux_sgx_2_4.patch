@@ -529,7 +529,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -82,6 +83,53 @@
+@@ -82,6 +83,63 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
@@ -579,6 +579,16 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 + * Return Value - the number of active ecalls inside the enclave.
 + */
 +int SGXAPI sgx_get_active_enclave_entries();
++
++/* sgx_block_ecalls()
++ * Block all ecalls entering the enclave.
++ */
++void SGXAPI sgx_block_ecalls();
++
++/* sgx_unblock_ecalls()
++ * Unblock ecalls entering the enclave.
++ */
++void SGXAPI sgx_unblock_ecalls();
 +
  #ifdef __cplusplus
  }
@@ -2574,7 +2584,7 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
  
  #ifdef SE_SIM
  #include "t_instructions.h"    /* for `g_global_data_sim' */
-@@ -318,6 +320,31 @@
+@@ -318,6 +320,35 @@
      return 0;
  }
  
@@ -2585,6 +2595,10 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
 +int sgx_get_active_enclave_entries() {
 +  return get_ecall_count();
 +}
++
++void sgx_block_ecalls() { set_block_ecalls(/*block=*/true); }
++
++void sgx_unblock_ecalls() { set_block_ecalls(/*block=*/false); }
 +
 +sgx_status_t egetkey_status_to_sgx_status(int egetkey_status) {
 +  switch ((egetkey_status_t)egetkey_status) {
@@ -2720,7 +2734,7 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
  
  extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa) __attribute__((section(".nipx")));
  
-@@ -87,13 +66,33 @@
+@@ -87,13 +66,37 @@
          return error;
      }
  
@@ -2728,7 +2742,7 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 +    // Increase the count if an ecall enters an enclave. The ocalls returning to
 +    // the enclave shouldn't be counted in, since the ecall that invokes them is
 +    // still active.
-+    if (index != ECMD_ORET)
++    if (index != ECMD_ORET && index != ECMD_EXCEPT)
 +    {
 +        increase_ecall_count();
 +    }
@@ -2739,10 +2753,14 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 +    uint8_t is_user_exception =
 +        (index >= 0 && index < int(g_ecall_table.nr_ecall)) &&
 +        g_ecall_table.ecall_table[index].is_exception;
++
++    if (index != ECMD_ORET && index != ECMD_EXCEPT && get_block_ecalls()) {
++      error = SGX_ERROR_ECALL_NOT_ALLOWED;
++    }
 +    // For a user exception, call |do_ecall| to enter enclave and handle the
 +    // signal, in this case cssa could be 0 or 1 (which is likely to be 1 when
 +    // an enclave is interrupted by an exception).
-+    if(cssa == 0 || (is_user_exception && cssa == 1))
++    else if(cssa == 0 || (is_user_exception && cssa == 1))
      {
          if((index >= 0) || (index == ECMD_INIT_SWITCHLESS) || (index == ECMD_RUN_SWITCHLESS_TWORKER))
          {
@@ -2756,12 +2774,12 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
          }
          else if(index == ECMD_INIT_ENCLAVE)
          {
-@@ -124,5 +123,10 @@
+@@ -124,5 +127,10 @@
      {
          set_enclave_state(ENCLAVE_CRASHED);
      }
 +    // The ecall has finished and is leaving the enclave.
-+    if (index != ECMD_ORET)
++    if (index != ECMD_ORET && index != ECMD_EXCEPT)
 +    {
 +        decrease_ecall_count();
 +    }
@@ -2860,7 +2878,7 @@ diff -Nur sdk/trts/trts_switchless.cpp sdk/trts/trts_switchless.cpp
 diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 --- sdk/trts/trts_util.cpp
 +++ sdk/trts/trts_util.cpp
-@@ -29,11 +29,19 @@
+@@ -29,11 +29,23 @@
   *
   */
  
@@ -2873,14 +2891,18 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +#include "trts_internal.h"
 +
 +std::atomic<int> ecall_count(0);
++std::atomic<bool> block_ecalls(false);
 +
 +void increase_ecall_count() { ecall_count++; }
 +void decrease_ecall_count() { ecall_count--; }
 +int get_ecall_count() { return ecall_count; }
++
++void set_block_ecalls(bool block) { block_ecalls = block; }
++bool get_block_ecalls() { return block_ecalls; }
  
  // No need to check the state of enclave or thread.
  // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
-@@ -72,6 +80,47 @@
+@@ -72,6 +84,47 @@
      return heap_size;
  }
  
@@ -2939,7 +2961,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -44,6 +45,10 @@
+@@ -44,6 +45,12 @@
  void * get_heap_base(void);
  size_t get_heap_size(void);
  size_t get_heap_min_size(void);
@@ -2947,6 +2969,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +void increase_ecall_count();
 +void decrease_ecall_count();
 +int get_ecall_count();
++void set_block_ecalls(bool block);
++bool get_block_ecalls();
  int * get_errno_addr(void);
  bool is_stack_addr(void *address, size_t size);
  bool is_valid_sp(uintptr_t sp);
