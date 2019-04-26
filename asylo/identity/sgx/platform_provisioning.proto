@@ -61,6 +61,12 @@ message PceId {
   optional uint32 value = 1;
 }
 
+// FMSPC (Family-Model-Stepping-Platform-CustomSKU).
+message Fmspc {
+  // Must be exactly 6 bytes long. Required.
+  optional bytes value = 1;
+}
+
 // An SGX REPORT structure. REPORT is a CPU-generated attestation of an
 // enclave's code identity. It is an output of the ENCLU[EREPORT] instruction.
 message ReportProto {
