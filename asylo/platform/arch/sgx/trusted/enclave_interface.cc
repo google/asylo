@@ -42,6 +42,10 @@ bool enc_is_outside_enclave(void const *address, size_t size) {
   return sgx_is_outside_enclave(address, size) == 1;
 }
 
+void enc_block_ecalls() { sgx_block_ecalls(); }
+
+void enc_unblock_ecalls() { sgx_unblock_ecalls(); }
+
 void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
   if (!enclave_memory_layout) return;
   struct SgxMemoryLayout memory_layout;

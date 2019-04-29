@@ -1,0 +1,44 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/enclave.proto";
+
+// Input to a block enclave entries test case, specifying what the thread does
+// inside the enclave.
+message BlockEnclaveEntriesTestInput {
+  enum ThreadType {
+    UNSUPPORTED = 0;
+    // The thread enters the enclave and blocks/unblocks entries.
+    BLOCK = 1;
+    // The thread checks whether entering enclave is blocked.
+    CHECK = 2;
+  }
+  // The type of the thread entering the enclave.
+  optional ThreadType thread_type = 1;
+
+  // The socket fd that is used for communication between the block thread
+  // inside the enclave and the check thread outside the enclave.
+  optional int32 socket = 2;
+}
+
+extend EnclaveInput {
+  optional BlockEnclaveEntriesTestInput block_enclave_entries_test_input =
+      244686748;
+}

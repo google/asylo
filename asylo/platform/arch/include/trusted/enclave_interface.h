@@ -80,6 +80,12 @@ struct EnclaveMemoryLayout {
   size_t reserved_heap_size;
 };
 
+// Blocks all ecalls from entering the enclave.
+void enc_block_ecalls();
+
+// Unblocks ecalls from entering the enclave.
+void enc_unblock_ecalls();
+
 void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout);
 
 // Returns the number of total active enclave entries.
