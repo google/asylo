@@ -58,3 +58,23 @@ message CertificateChain {
   // A chain of certificates.
   repeated Certificate certificates = 1;
 }
+
+// A Certificate Revocation List (CRL).
+message CertificateRevocationList {
+  // Defines different certificate revocation list formats.
+  enum CertificateRevocationListFormat {
+    UNKNOWN = 0;
+
+    // An X.509 certificate revocation list in DER format (.der file).
+    X509_DER = 1;
+
+    // An X.509 certificate revocation list in PEM format (.pem file).
+    X509_PEM = 2;
+  }
+
+  // The format of the certificate revocation list in |data|. Required.
+  optional CertificateRevocationListFormat format = 1;
+
+  // The raw bytes of an encoded certificate revocation list. Required.
+  optional bytes data = 2;
+}
