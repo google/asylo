@@ -92,6 +92,9 @@ class SnapshotDeleter {
 };
 
 class ForkSecurityTest : public ::testing::Test {
+ public:
+  ForkSecurityTest() : enclave_finalized_(false) {}
+
  protected:
   static void SetUpTestCase() {
     EnclaveManager::Configure(EnclaveManagerOptions());
@@ -106,9 +109,11 @@ class ForkSecurityTest : public ::testing::Test {
     ASSERT_NE(manager_, nullptr);
     ASSERT_NE(client_, nullptr);
     EnclaveFinal efinal;
-    EXPECT_THAT(
-        manager_->DestroyEnclave(client_, efinal, /*skip_finalize=*/false),
-        IsOk());
+    // Only finalize the enclave if it's not finalized already by a failed
+    // restore.
+    EXPECT_THAT(manager_->DestroyEnclave(client_, efinal,
+                                         /*skip_finalize=*/enclave_finalized_),
+                IsOk());
   }
 
   Status LoadEnclaveAndTakeSnapshot(const std::string &enclave_name,
@@ -158,6 +163,7 @@ class ForkSecurityTest : public ::testing::Test {
   SgxClient *client_;
   SnapshotLayout snapshot_layout_;
   SnapshotDeleter snapshot_deleter_;
+  bool enclave_finalized_;
 };
 
 EnclaveManager *ForkSecurityTest::manager_ = nullptr;
@@ -214,6 +220,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyData) {
     // an error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
                 Not(IsOk()));
+    enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
@@ -235,6 +242,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
     // error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
                 Not(IsOk()));
+    enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
@@ -257,6 +265,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
     // return an error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
                 Not(IsOk()));
+    enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
@@ -278,6 +287,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
     // error.
     ASSERT_THAT(manager_->EnterAndRestore(client_, snapshot_layout_),
                 Not(IsOk()));
+    enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
@@ -299,6 +309,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyHeap) {
     // Restoring from modified heap should kill the enclave.
     EXPECT_EXIT(manager_->EnterAndRestore(client_, snapshot_layout_),
                 ::testing::KilledBySignal(SIGSEGV), ".*");
+    enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.

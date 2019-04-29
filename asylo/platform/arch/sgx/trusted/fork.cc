@@ -309,6 +309,21 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
     return Status(error::GoogleError::PERMISSION_DENIED,
                   "Snapshot is not allowed unless fork is requested");
   }
+
+  // Unblock all ecalls after taking snapshot finishes.
+  Cleanup unblock_ecalls(enc_unblock_ecalls);
+
+  // Block all other entries during snapshotting.
+  enc_block_ecalls();
+
+  // Check for other entries inside the enclave. Currently there should be two
+  // ecall entries inside the enclave: snapshot ecall and the run ecall which
+  // calls fork. Only start snapshotting if there are no other existing entries.
+  if (get_active_enclave_entries() > 2) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  "There are other enclave entries while taking a snapshot");
+  }
+
   if (!snapshot_layout) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Snapshot layout is nullptr");
@@ -564,6 +579,18 @@ Status DecryptAndRestoreThreadStack(
 // Restore the current enclave states from an untrusted snapshot.
 Status RestoreForFork(const char *input, size_t input_len) {
   Cleanup delete_snapshot_key(DeleteSnapshotKey);
+
+  // Block all other enclave entry calls.
+  enc_block_ecalls();
+
+  // There shouldn't be any other ecalls running inside the child enclave at
+  // this moment.
+  if (get_active_enclave_entries() != 1) {
+    return Status(
+        error::GoogleError::FAILED_PRECONDITION,
+        "There are other enclave entries while restoring the enclave");
+  }
+
   // Get the information of current enclave layout.
   struct EnclaveMemoryLayout enclave_layout;
   enc_get_memory_layout(&enclave_layout);
@@ -629,6 +656,13 @@ Status RestoreForFork(const char *input, size_t input_len) {
   if (error_code != error::GoogleError::OK) {
     return Status(error_code, error_message);
   }
+
+  // Only unblock other entries if restoring the child enclave succeeds.
+  // Otherwise this enclave blocks all entries. The entries are blocked at this
+  // point because they were blocked when the snapshot is taken, and inherited
+  // during restoring.
+  enc_unblock_ecalls();
+
   return Status::OkStatus();
 }
 

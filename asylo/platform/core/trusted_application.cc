@@ -531,6 +531,18 @@ int __asylo_restore(const char *input, size_t input_len, char **output,
   // deallocators using the same heap. Consequently, we wait to deserialize this
   // message until after switching heaps in RestoreForFork().
   status = RestoreForFork(input, input_len);
+
+  if (!status.ok()) {
+    // Finalize the enclave as this enclave shouldn't be entered again.
+    ThreadManager *thread_manager = ThreadManager::GetInstance();
+    thread_manager->Finalize();
+
+    // Delete instance of the global memory pool singleton freeing all memory
+    // held by the pool.
+    delete asylo::UntrustedCacheMalloc::Instance();
+    trusted_application->SetState(EnclaveState::kFinalized);
+  }
+
   return status_serializer.Serialize(status);
 }
 
