@@ -422,8 +422,6 @@ Status SgxClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
 }
 
 Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
-  LOG(WARNING) << "THE SECURITY FEATURES FOR ENCLAVE FORK ARE NOT COMPLETELY "
-                  "IMPLEMENTED YET. IT MAY CAUSE SECURITY ISSUE";
   char *output_buf = nullptr;
   size_t output_len = 0;
 
