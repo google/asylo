@@ -118,6 +118,7 @@ genrule(
         "//asylo/platform/primitives/sgx:errno.edl",
         "//asylo/third_party/intel:sgx_tstdc.edl",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_bridge.edl",
+        "//asylo/platform/primitives/sgx:bridge.edl",
     ],
     outs = [
         "sgx/trusted/generated_bridge_t.c",
@@ -263,7 +264,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = ["asylo-sgx"],
-    visibility = ["//visibility:private"],
     deps = [
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/core:shared_name",

@@ -16,11 +16,16 @@
  *
  */
 
+#include "absl/strings/str_cat.h"
+#include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
 #include "asylo/util/error_codes.h"
+#include "asylo/util/status.h"
+#include "include/sgx_trts.h"
 
 extern "C" void *enc_untrusted_malloc(size_t size);
 extern "C" void enc_untrusted_free(void *ptr);
@@ -29,6 +34,19 @@ namespace asylo {
 namespace primitives {
 
 namespace {
+
+#define CHECK_OCALL(status_)                                                 \
+  do {                                                                       \
+    sgx_status_t status##__COUNTER__ = status_;                              \
+    if (status##__COUNTER__ != SGX_SUCCESS) {                                \
+      TrustedPrimitives::DebugPuts(                                          \
+          absl::StrCat(                                                      \
+              __FILE__, ":", __LINE__, ": ",                                 \
+              asylo::Status(status##__COUNTER__, "ocall failed").ToString()) \
+              .c_str());                                                     \
+      abort();                                                               \
+    }                                                                        \
+  } while (0)
 
 // Maximum number of supported enclave entry points.
 constexpr size_t kEntryPointMax = 4096;
@@ -60,6 +78,22 @@ void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) {
 
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) {
   enc_untrusted_free(ptr);
+}
+
+void TrustedPrimitives::DebugPuts(const char *message) {
+  abort();
+}
+
+PrimitiveStatus TrustedPrimitives::UntrustedCall(
+    uint64_t untrusted_selector,
+    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
+                   TrustedPrimitives::UntrustedLocalFree> *params) {
+  void *status;
+  CHECK_OCALL(ocall_dispatch_untrusted_call(&status, untrusted_selector,
+                                            reinterpret_cast<void *>(params)));
+  auto ret = PrimitiveStatus(*reinterpret_cast<PrimitiveStatus *>(status));
+  enc_untrusted_free(status);
+  return ret;
 }
 
 }  // namespace primitives
