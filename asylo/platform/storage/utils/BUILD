@@ -75,3 +75,33 @@ cc_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "random_access_storage",
+    srcs = ["untrusted_file.cc"],
+    hdrs = [
+        "random_access_storage_interface.h",
+        "untrusted_file.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/util:logging",
+        "//asylo/util:status",
+    ],
+)
+
+cc_test(
+    name = "untrusted_file_test",
+    srcs = ["untrusted_file_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":fd_closer",
+        ":random_access_storage",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_flags",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
