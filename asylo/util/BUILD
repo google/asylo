@@ -199,6 +199,7 @@ cc_test(
     name = "mutex_guarded_test",
     srcs = ["mutex_guarded_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ["noregression"],
     deps = [
         ":mutex_guarded",
         "//asylo/test/util:test_main",
