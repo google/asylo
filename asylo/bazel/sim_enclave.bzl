@@ -78,13 +78,9 @@ def sim_enclave(
             _workspace_name + "/platform/primitives:trusted_primitives",
             _workspace_name + "/platform/primitives/sim:trusted_sim",
         ],
-        linkopts = [
-            "-Wl,-Bsymbolic",
-            "-static",
-        ],
+        linkopts = ["-Wl,-Bsymbolic"],
         linkshared = True,
-        # Link with runtime libraries and don't error on unresolved symbols.
-        features = ["dynamic_linking_mode"],
+        features = ["mostly_static_linking_mode"],
         linkstatic = False,  # Allow the .so to be created, not .a.
         **kwargs
     )
