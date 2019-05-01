@@ -67,7 +67,7 @@ std::atomic<bool> snapshot_key_transfer_requested(false);
 const char kSnapshotKeyAssociatedDataBuf[] = "AES256-GCM-SIV snapshot key";
 
 // AES256-GCM-SIV snapshot key, which is used to encrypt/decrypt snapshot.
-static CleansingVector<uint8_t> *global_snapshot_key;
+static CleansingVector<uint8_t> *global_snapshot_key(nullptr);
 
 // Structure describing the layout of per-thread memory resources.
 struct ThreadMemoryLayout {
@@ -115,6 +115,7 @@ void DeleteSnapshotKey() {
   if (global_snapshot_key) {
     delete global_snapshot_key;
   }
+  global_snapshot_key = nullptr;
 }
 
 bool SetSnapshotKey(const CleansingVector<uint8_t> &key) {
