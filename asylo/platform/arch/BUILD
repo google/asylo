@@ -196,7 +196,6 @@ cc_library(
     ),
     hdrs = [
         "include/trusted/enclave_interface.h",
-        "include/trusted/entry_points.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/memory.h",
@@ -220,6 +219,7 @@ cc_library(
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:memory",
+        "//asylo/platform/core:entry_points",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/primitives",

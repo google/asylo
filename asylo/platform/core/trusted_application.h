@@ -25,7 +25,7 @@
 
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/arch/fork.pb.h"
-#include "asylo/platform/arch/include/trusted/entry_points.h"
+#include "asylo/platform/core/entry_points.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/util/status.h"
 

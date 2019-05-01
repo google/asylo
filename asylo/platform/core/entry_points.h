@@ -16,8 +16,10 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_ENTRY_POINTS_H_
-#define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_ENTRY_POINTS_H_
+#ifndef ASYLO_PLATFORM_CORE_ENTRY_POINTS_H_
+#define ASYLO_PLATFORM_CORE_ENTRY_POINTS_H_
+
+#include <unistd.h>
 
 namespace asylo {
 
@@ -93,4 +95,4 @@ int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_ENTRY_POINTS_H_
+#endif  // ASYLO_PLATFORM_CORE_ENTRY_POINTS_H_

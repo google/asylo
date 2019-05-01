@@ -276,8 +276,8 @@ void InitializeIO(const EnclaveConfig &config) {
 
 // Asylo enclave entry points.
 //
-// See asylo/platform/arch/include/trusted/entry_points.h for detailed
-// documentation for each function.
+// See asylo/platform/core/entry_points.h for detailed documentation for each
+// function.
 extern "C" {
 
 int __asylo_user_init(const char *name, const char *config, size_t config_len,

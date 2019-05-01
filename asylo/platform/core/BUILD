@@ -105,6 +105,7 @@ cc_library(
     linkstatic = 1,
     tags = ASYLO_ALL_BACKENDS,
     deps = [
+        ":entry_points",
         ":shared_name",
         ":trusted_core",
         ":untrusted_cache_malloc",
@@ -128,6 +129,13 @@ cc_library(
 cc_library(
     name = "atomic",
     hdrs = ["atomic.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+)
+
+# Enclave entry points.
+cc_library(
+    name = "entry_points",
+    hdrs = ["entry_points.h"],
     copts = ASYLO_DEFAULT_COPTS,
 )
 
