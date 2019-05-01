@@ -1030,10 +1030,12 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
                    return SnapshotDataDeleter(entry);
                  });
 
-  asylo::SgxLoader *loader =
-      dynamic_cast<asylo::SgxLoader *>(manager->GetLoaderFromClient(client));
+  asylo::EnclaveLoader *loader = manager->GetLoaderFromClient(client);
 
-  if (!loader) {
+  // The child enclave should use the same loader as the parent. It loads by an
+  // SGX loader or SGX embedded loader depending on the parent enclave.
+  if (!dynamic_cast<asylo::SgxLoader *>(loader) &&
+      !dynamic_cast<asylo::SgxEmbeddedLoader *>(loader)) {
     LOG(ERROR) << "Failed to get the loader for the enclave to fork";
     errno = EFAULT;
     return -1;
