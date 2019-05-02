@@ -86,7 +86,7 @@ TEST(HostCallHandlersTest, ValidRequestOnParameterStackTest) {
 TEST(HostCallHandlersTest, InvalidRequestOnParameterStackTest) {
   primitives::UntrustedParameterStack params;
   char request_str[] = "illegal_request";
-  params.Push(primitives::Extent{request_str, strlen(request_str)});
+  params.PushByReference(primitives::Extent{request_str, strlen(request_str)});
   auto status = SystemCallHandler(nullptr, nullptr, &params);
 
   ASSERT_THAT(status, StatusIs(error::GoogleError::INVALID_ARGUMENT));

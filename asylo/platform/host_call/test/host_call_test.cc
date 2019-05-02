@@ -84,7 +84,7 @@ TEST_F(HostCallTest, TestAccess) {
   ASSERT_GE(fd, 0);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path.c_str(), path.length() + 1);
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
   *(params.PushAlloc<int>()) = /*mode=*/ R_OK | W_OK;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &params));
@@ -97,7 +97,7 @@ TEST_F(HostCallTest, TestAccessNonExistentPath) {
   const char* path = "illegal_path";
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path, strlen(path) + 1);
+  params.PushByCopy<char>(path, strlen(path) + 1);
   *(params.PushAlloc<int>()) = /*mode=*/ F_OK;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &params));
@@ -173,8 +173,8 @@ TEST_F(HostCallTest, TestLink) {
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(oldpath.c_str(), oldpath.length() + 1);
-  params.PushAlloc<char>(newpath.c_str(), newpath.length() + 1);
+  params.PushByCopy<char>(oldpath.c_str(), oldpath.length() + 1);
+  params.PushByCopy<char>(newpath.c_str(), newpath.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLink, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
@@ -230,7 +230,7 @@ TEST_F(HostCallTest, TestMkdir) {
   std::string path = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_make");
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path.c_str(), path.length() + 1);
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
   *(params.PushAlloc<mode_t>()) = /*mode=*/ 0777;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &params));
@@ -245,7 +245,7 @@ TEST_F(HostCallTest, TestMkdirNonExistentPath) {
   std::string path = absl::StrCat("/non-existent-path/dir_to_make");
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path.c_str(), path.length() + 1);
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
   *(params.PushAlloc<mode_t>()) = /*mode=*/ 0777;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &params));
@@ -259,7 +259,7 @@ TEST_F(HostCallTest, TestOpen) {
   std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path.c_str(), path.length() + 1);
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
   *(params.PushAlloc<int>()) = /*flags=*/ O_RDWR | O_CREAT | O_TRUNC;
   *(params.PushAlloc<mode_t>()) = /*mode=*/ S_IRUSR | S_IWUSR;
 
@@ -278,7 +278,7 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path.c_str(), path.length() + 1);
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
   *(params.PushAlloc<int>()) = /*flags*/ O_RDWR | O_CREAT | O_TRUNC;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &params));
@@ -295,7 +295,7 @@ TEST_F(HostCallTest, TestUnlink) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path.c_str(), path.length() + 1);
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
@@ -308,7 +308,7 @@ TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
   ASSERT_THAT(access(path, F_OK), Eq(-1));
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(path, strlen(path) + 1);
+  params.PushByCopy<char>(path, strlen(path) + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
@@ -361,8 +361,8 @@ TEST_F(HostCallTest, TestRename) {
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(oldpath.c_str(), strlen(oldpath.c_str()) + 1);
-  params.PushAlloc<char>(newpath.c_str(), strlen(newpath.c_str()) + 1);
+  params.PushByCopy<char>(oldpath.c_str(), strlen(oldpath.c_str()) + 1);
+  params.PushByCopy<char>(newpath.c_str(), strlen(newpath.c_str()) + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRename, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
@@ -416,7 +416,7 @@ TEST_F(HostCallTest, TestWrite) {
   std::string write_buf = "text to be written";
   primitives::UntrustedParameterStack params;
   *(params.PushAlloc<int>()) = /*fd=*/ fd;
-  params.PushAlloc<char>(write_buf.c_str(), write_buf.length() + 1);
+  params.PushByCopy<char>(write_buf.c_str(), write_buf.length() + 1);
   *(params.PushAlloc<size_t>()) = /*count=*/ write_buf.length() + 1;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestWrite, &params));
@@ -443,8 +443,8 @@ TEST_F(HostCallTest, TestSymlink) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(test_file.c_str(), test_file.length() + 1);
-  params.PushAlloc<char>(target.c_str(), target.length() + 1);
+  params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
+  params.PushByCopy<char>(target.c_str(), target.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSymlink, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
@@ -469,7 +469,7 @@ TEST_F(HostCallTest, TestReadlink) {
   ASSERT_THAT(symlink(test_file.c_str(), sym_file.c_str()), Eq(0));
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(sym_file.c_str(), sym_file.length() + 1);
+  params.PushByCopy<char>(sym_file.c_str(), sym_file.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadLink, &params));
 
@@ -501,7 +501,7 @@ TEST_F(HostCallTest, TestTruncate) {
 
   primitives::UntrustedParameterStack params;
   constexpr int kTruncLen = 5;
-  params.PushAlloc<char>(test_file.c_str(), test_file.length() + 1);
+  params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
   *(params.PushAlloc<off_t>()) = /*length=*/ kTruncLen;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestTruncate, &params));
@@ -523,7 +523,7 @@ TEST_F(HostCallTest, TestRmdir) {
   ASSERT_THAT(mkdir(dir_to_del.c_str(), O_CREAT | O_RDWR), Eq(0));
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(dir_to_del.c_str(), dir_to_del.length() + 1);
+  params.PushByCopy<char>(dir_to_del.c_str(), dir_to_del.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRmdir, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
@@ -611,7 +611,7 @@ TEST_F(HostCallTest, TestChown) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   primitives::UntrustedParameterStack params;
-  params.PushAlloc<char>(test_file.c_str(), test_file.length() + 1);
+  params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
   *(params.PushAlloc<uid_t>()) = /*owner=*/ getuid();
   *(params.PushAlloc<gid_t>()) = /*group=*/ getgid();
 

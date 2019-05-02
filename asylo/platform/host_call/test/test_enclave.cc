@@ -196,7 +196,7 @@ primitives::PrimitiveStatus TestRead(
   char read_buf[20];
 
   *(params->PushAlloc<ssize_t>()) = enc_untrusted_read(fd, read_buf, count);
-  params->PushAlloc<char>(read_buf, strlen(read_buf) + 1);
+  params->PushByCopy<char>(read_buf, strlen(read_buf) + 1);
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -234,7 +234,7 @@ primitives::PrimitiveStatus TestReadlink(
   *(params->PushAlloc<ssize_t>()) = len;
 
   buf[len] = '\0';
-  params->PushAlloc<char>(buf, strlen(buf) + 1);
+  params->PushByCopy<char>(buf, strlen(buf) + 1);
   return primitives::PrimitiveStatus::OkStatus();
 }
 

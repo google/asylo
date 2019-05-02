@@ -59,7 +59,7 @@ TEST(ParameterStackTest, PushPopNotOwnedSpans) {
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     for (int32_t i = 0; i < kNumParams; ++i) {
       values[i] = i * i;
-      params.Push<int32_t>(values[i]);
+      params.PushByReference<int32_t>(values[i]);
     }
     EXPECT_FALSE(params.empty());
     EXPECT_EQ(params.size(), kNumParams);
@@ -113,7 +113,7 @@ TEST(ParameterStackTest, PushAllocPointerCopyTest) {
 
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     const char *buffer = "hello world";
-    params.PushAlloc<char>(buffer, strlen(buffer) + 1);
+    params.PushByCopy<char>(buffer, strlen(buffer) + 1);
     EXPECT_THAT(params.Top().As<char>(), StrEq(buffer));
     EXPECT_EQ(params.size(), iter);
   }
@@ -123,7 +123,7 @@ TEST(ParameterStackTest, PushCopyTest) {
   ParameterStack<malloc, free> params;
 
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
-    params.PushCopy(Extent{&iter, sizeof(iter)});
+    params.PushByCopy(Extent{&iter, sizeof(iter)});
     EXPECT_EQ(params.size(), iter);
   }
   for (int32_t iter = kNumIterations; iter >= 1; --iter) {

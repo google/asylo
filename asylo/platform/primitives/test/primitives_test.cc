@@ -84,7 +84,7 @@ class PrimitivesTest : public ::testing::Test {
 int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
                            int32_t value) {
   UntrustedParameterStack params;
-  params.Push<int32_t>(value);
+  params.PushByReference<int32_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kTimesTwoSelector, &params));
   EXPECT_FALSE(params.empty());
   const int32_t res = params.Pop<int32_t>();
@@ -97,7 +97,7 @@ int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
 int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
                               int64_t value) {
   UntrustedParameterStack params;
-  params.Push<int64_t>(value);
+  params.PushByReference<int64_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kAveragePerThreadSelector, &params));
   EXPECT_FALSE(params.empty());
   const int64_t res = params.Pop<int64_t>();
@@ -194,7 +194,7 @@ TEST_F(PrimitivesTest, LoadEnclave) {
   // Ensure a call to a destroyed enclave fails.
   UntrustedParameterStack params;
   int32_t input = 1;
-  params.Push<int32_t>(input);
+  params.PushByReference<int32_t>(input);
   Status status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 }
@@ -221,7 +221,7 @@ TEST_F(PrimitivesTest, AbortEnclave) {
   // Check that we can't enter the enclave again.
   int32_t value = 10;
   UntrustedParameterStack params;
-  params.Push<int32_t>(value);
+  params.PushByReference<int32_t>(value);
   Status status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 
@@ -363,9 +363,9 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
   const uint64_t in2 = 12345;
   const char in3[] = "Param3";
   UntrustedParameterStack params;
-  params.PushAlloc<char>(in1.data(), in1.size());
+  params.PushByCopy<char>(in1.data(), in1.size());
   *params.PushAlloc<uint64_t>() = in2;
-  params.PushAlloc<char>(in3, strlen(in3) + 1);
+  params.PushByCopy<char>(in3, strlen(in3) + 1);
   ASYLO_ASSERT_OK(client->EnclaveCall(kCopyMultipleParamsSelector, &params));
   EXPECT_THAT(params.size(), Eq(4));
   {

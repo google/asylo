@@ -65,7 +65,7 @@ class HelloTest : public ::testing::Test {
                              UntrustedParameterStack *params) {
     static std::array<char, 4> test_data{{'T', 'e', 's', 't'}};
     // Push our message on to the parameter stack to pass to the enclave
-    params->Push(Extent{test_data.data(), test_data.size()});
+    params->PushByReference(Extent{test_data.data(), test_data.size()});
     return Status::OkStatus();
   }
 };

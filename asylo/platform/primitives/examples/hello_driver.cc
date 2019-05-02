@@ -39,7 +39,7 @@ static constexpr char kHello[] = "Hello";
 Status hello_handler(std::shared_ptr<Client> client, void *context,
                      UntrustedParameterStack *params) {
   // Push our message on to the parameter stack to pass to the enclave
-  params->Push(Extent{const_cast<char *>(kHello), strlen(kHello)});
+  params->PushByReference(Extent{const_cast<char *>(kHello), strlen(kHello)});
   return Status::OkStatus();
 }
 

@@ -193,7 +193,7 @@ PrimitiveStatus CopyMultipleParams(void *context,
   }
   // Add one more parameter at the top of the stack.
   static constexpr char foo[] = "Foo";
-  params->PushAlloc<char>(foo, strlen(foo));
+  params->PushByCopy<char>(foo, strlen(foo));
   return PrimitiveStatus::OkStatus();
 }
 

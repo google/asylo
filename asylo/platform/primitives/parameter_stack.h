@@ -43,7 +43,7 @@ namespace primitives {
 // enable the same code to allocate stack items on the untrusted local
 // heap: directly using ParameterStack<malloc, free> by untrusted
 // code, or indirectly using ParameterStack<UntrustedLocalAlloc,
-// UntrustedLocalFree> by trusted code.  The same ParameterStack
+// UntrustedLocalFree> by trusted code. The same ParameterStack
 // object can thus be shared between untrusted and trusted code.
 //
 // The class is NOT thread-safe.
@@ -146,7 +146,7 @@ class ParameterStack {
   Extent Top() { return top_->extent; }
 
   // Pushes an extent, owned by the caller.
-  void Push(Extent extent) {
+  void PushByReference(Extent extent) {
     auto item = static_cast<Item *>((*ALLOCATOR)(sizeof(Item)));
     item->extent = extent;
     item->owned = false;
@@ -175,9 +175,9 @@ class ParameterStack {
   // lifetime or when Pop-ed from the stack by the handler code.
   // This method is suitable for cases where the lifetime of the stack exceeds
   // the lifetime of the object referred to by |extent|.
-  void PushCopy(Extent extent) {
+  void PushByCopy(Extent extent) {
     auto item = PushAlloc(extent.size());
-    if (extent.size() > 0) {
+    if (!extent.empty()) {
       memcpy(item.data(), extent.data(), extent.size());
     }
   }
@@ -202,21 +202,22 @@ class ParameterStack {
   }
 
   template <typename T>
-  void Push(const T &value) {
+  void PushByReference(const T &value) {
     static_assert(!std::is_pointer<T>::value,
                   "ParameterStack should not be used with pointers");
-    return Push(Extent{const_cast<T *>(&value)});
+    return PushByReference(Extent{const_cast<T *>(&value)});
   }
 
   // Allocate and copy a buffer of known type T and given size. Enable only if T
   // is not a pointer type.
   template <typename T>
-  void PushAlloc(const T *buffer, size_t size) {
+  void PushByCopy(const T *buffer, size_t size) {
     static_assert(!std::is_pointer<T>::value,
                   "ParameterStack should not be used with pointers");
-
-    Extent response_extent = PushAlloc(size);
-    memcpy(response_extent.As<T>(), buffer, size);
+    if (size > 0) {
+      Extent response_extent = PushAlloc(size);
+      memcpy(response_extent.As<T>(), buffer, size);
+    }
   }
 
 #define ASYLO_RETURN_IF_STACK_EMPTY(params)             \
