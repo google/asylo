@@ -22,6 +22,8 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+#include <cstddef>
+
 namespace {
 
 // The next available address in the switched heap. It's set to the base address
@@ -40,12 +42,21 @@ size_t switched_heap_remaining = 0;
 // snapshotting/restoring while other threads are not allowed to enter the
 // enclave.
 void *AllocateMemoryOnSwitchedHeap(size_t size, void *pool) {
+  // Align the memory address.
+  size_t align = alignof(std::max_align_t);
+  int shift =
+      (align - (reinterpret_cast<uintptr_t>(switched_heap_next) % align)) %
+      align;
+
+  size += shift;
   if (!switched_heap_next || switched_heap_remaining < size) {
     return nullptr;
   }
-  void *ret = switched_heap_next;
+
+  void *ret = switched_heap_next + shift;
   switched_heap_next += size;
   switched_heap_remaining -= size;
+
   return ret;
 }
 

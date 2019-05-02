@@ -17,6 +17,8 @@
  */
 
 #include <stdlib.h>
+
+#include <cstddef>
 #include <memory>
 
 #include <gmock/gmock.h>
@@ -51,7 +53,7 @@ TEST(HeapSwitchTest, HeapSwitch) {
 
   // Switch heap and verifies the newly heap-allocated variables are on switched
   // heap.
-  char switched_heap[8];
+  char switched_heap[16];
   heap_switch(switched_heap, sizeof(switched_heap));
   {
     std::unique_ptr<int> variable_on_heap = absl::make_unique<int>(0);
@@ -67,6 +69,52 @@ TEST(HeapSwitchTest, HeapSwitch) {
   EXPECT_TRUE(IsAddressInRange(variable_on_heap_after_switch.get(),
                                enclave_memory_layout.heap_base,
                                enclave_memory_layout.heap_size));
+}
+
+TEST(HeapSwitchTest, MemoryAlignment) {
+  char switched_heap[64];
+  size_t align = alignof(std::max_align_t);
+  heap_switch(switched_heap, sizeof(switched_heap));
+  {
+    // Verifies that heap-allocation has been switched, and the returned memory
+    // address is aligned.
+    std::unique_ptr<uint8_t> first_pointer_on_switched_heap =
+        absl::make_unique<uint8_t>(0);
+    EXPECT_TRUE(IsAddressInRange(first_pointer_on_switched_heap.get(),
+                                 switched_heap, sizeof(switched_heap)));
+    EXPECT_EQ(
+        reinterpret_cast<uintptr_t>(first_pointer_on_switched_heap.get()) %
+            align,
+        0);
+
+    // Allocates a second time, and verifies that memory allocated is on the
+    // switched heap and is aligned.
+    std::unique_ptr<uint8_t> second_pointer_on_switched_heap =
+        absl::make_unique<uint8_t>(0);
+    EXPECT_TRUE(IsAddressInRange(second_pointer_on_switched_heap.get(),
+                                 switched_heap, sizeof(switched_heap)));
+    EXPECT_EQ(
+        reinterpret_cast<uintptr_t>(second_pointer_on_switched_heap.get()) %
+            align,
+        0);
+  }
+
+  // Change the switched heap with an odd shift, and verifies returned memory
+  // address is aligned.
+  int shift = 29;
+  heap_switch(switched_heap + shift, sizeof(switched_heap) - shift);
+  {
+    std::unique_ptr<uint8_t> pointer_on_shifted_switched_heap =
+        absl::make_unique<uint8_t>(0);
+    EXPECT_TRUE(IsAddressInRange(pointer_on_shifted_switched_heap.get(),
+                                 switched_heap + shift,
+                                 sizeof(switched_heap) - shift));
+    EXPECT_EQ(
+        reinterpret_cast<uintptr_t>(pointer_on_shifted_switched_heap.get()) %
+            align,
+        0);
+  }
+  heap_switch(/*address=*/nullptr, /*size=*/0);
 }
 
 }  // namespace
