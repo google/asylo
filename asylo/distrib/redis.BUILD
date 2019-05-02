@@ -14,6 +14,10 @@ licenses(["notice"])  # BSD
 
 exports_files(["LICENSE"])
 
+# Redefine the redis zcalloc function name to avoid collisions with zlib, which
+# is a dependency of protobuf.
+ZCALLOC_COPT = ["-Dzcalloc=redis_zcalloc"]
+
 # Libraries for Redis deps.
 
 cc_library(
@@ -43,7 +47,7 @@ cc_library(
         # does not apply to us even though we specifiy "GNU_SOURCE", so it still
         # results in  the correct functionality.
         "-U_GNU_SOURCE",
-    ],
+    ] + ZCALLOC_COPT,
     textual_hdrs = ["deps/hiredis/dict.c"],
 )
 
@@ -131,7 +135,7 @@ cc_library(
         "-Wno-error=unused-variable",
         # Needed to enable the cjson Lua module.
         "-DENABLE_CJSON_GLOBAL",
-    ],
+    ] + ZCALLOC_COPT,
 )
 
 sh_binary(
@@ -251,7 +255,7 @@ cc_library(
         # doubles, therefore we use llround instead for it since it's sufficent
         # and we don't currently support "llroundl".
         "-Dllroundl=llround",
-    ],
+    ] + ZCALLOC_COPT,
     includes = [
         "deps/hiredis",
         "deps/linenoise",
@@ -312,6 +316,7 @@ cc_library(
         "src/ziplist.h",
         "src/zipmap.h",
     ],
+    copts = ZCALLOC_COPT,
     nocopts = "-Wframe-larger-than=16384",
     deps = [":redis_lib"],
 )
@@ -319,6 +324,7 @@ cc_library(
 cc_library(
     name = "redis_benchmark",
     srcs = ["src/redis-benchmark.c"],
+    copts = ZCALLOC_COPT,
     nocopts = "-Wframe-larger-than=16384",
     deps = [":redis_lib"],
 )
@@ -330,6 +336,7 @@ cc_library(
         "src/help.h",
         "src/redis-cli.c",
     ],
+    copts = ZCALLOC_COPT,
     nocopts = "-Wframe-larger-than=16384",
     deps = [":redis_lib"],
 )
