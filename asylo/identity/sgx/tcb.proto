@@ -1,0 +1,91 @@
+syntax = "proto2";
+
+package asylo.sgx;
+
+import "google/protobuf/timestamp.proto";
+import "asylo/identity/sgx/platform_provisioning.proto";
+
+// This file defines the messages representing information about an SGX
+// platform's Trusted Computing Base (TCB).
+
+// SGX Trusted Computing Base (TCB).
+message Tcb {
+  // The components of the TCB. Must be exactly 16 bytes. Required.
+  optional bytes components = 1;
+
+  // PCE SVN. Required.
+  optional PceSvn pce_svn = 2;
+}
+
+// Representation of a combination of CPUSVN and PCESVN.
+message RawTcb {
+  // Required.
+  optional CpuSvn cpu_svn = 1;
+
+  // Required.
+  optional PceSvn pce_svn = 2;
+}
+
+// SGX TCB status.
+message TcbStatus {
+  enum StatusType {
+    UNKNOWN = 0;
+
+    // Indicates the TCB is up to date.
+    UP_TO_DATE = 1;
+
+    // Indicates the TCB is out of date.
+    OUT_OF_DATE = 2;
+
+    // User configuration is required to bring the platform to an up-to-date
+    // TCB.
+    CONFIGURATION_NEEDED = 3;
+
+    // Indicates the TCB has been revoked by Intel.
+    REVOKED = 4;
+  }
+  oneof value {
+    StatusType known_status = 1;
+    string unknown_status = 2;
+  }
+}
+
+// TCB level info.
+message TcbLevel {
+  // Required.
+  optional Tcb tcb = 1;
+
+  // Status of the TcbLevel. Required.
+  optional TcbStatus status = 2;
+}
+
+// SGX TCB Info implementation.
+message TcbInfoImpl {
+  // Version of the TcbInfo returned from Intel. Required.
+  optional int32 version = 1;
+
+  // Date and time the TCB information was created. Required.
+  optional google.protobuf.Timestamp issue_date = 2;
+
+  // Date and time by which next TCB information will be issued. Required.
+  optional google.protobuf.Timestamp next_update = 3;
+
+  // FMSPC. Required.
+  optional Fmspc fmspc = 4;
+
+  // PCE identifier. Required.
+  optional PceId pce_id = 5;
+
+  repeated TcbLevel tcb_levels = 6;
+}
+
+// SGX TCB info.
+//
+// To account for vastly different variants of this message, for instance,
+// if Intel makes wild changes of their format, we make TcbInfo contain
+// oneof value.
+message TcbInfo {
+  oneof value {
+    TcbInfoImpl impl = 1;
+  }
+}

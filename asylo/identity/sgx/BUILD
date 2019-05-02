@@ -79,6 +79,16 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
 )
 
+asylo_proto_library(
+    name = "tcb_proto",
+    srcs = ["tcb.proto"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":platform_provisioning_proto",
+        "@com_google_protobuf//:timestamp",
+    ],
+)
+
 cc_library(
     name = "remote_assertion_util",
     srcs = ["remote_assertion_util.cc"],
