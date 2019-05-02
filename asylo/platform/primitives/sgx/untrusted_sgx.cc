@@ -18,6 +18,7 @@
 
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 
+#include <sys/mman.h>
 #include <unistd.h>
 #include <cstdlib>
 
@@ -28,8 +29,8 @@
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
-#include "include/sgx_urts.h"
 #include "include/sgx_edger8r.h"
+#include "include/sgx_urts.h"
 
 // Edger8r-generated ocall table.
 struct ocall_table_t {
@@ -118,6 +119,15 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
       new SgxEnclaveClient(std::move(exit_call_provider)));
   client->base_address_ = base_address;
 
+  // If an address is specified to load the enclave, temporarily reserve it to
+  // prevent these mappings from occupying that location.
+  if (base_address && enclave_size > 0 &&
+      mmap(base_address, enclave_size, PROT_NONE, MAP_SHARED | MAP_ANONYMOUS,
+           -1, 0) != base_address) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to reserve enclave memory");
+  }
+
   FileMapping self_binary_mapping;
   ASYLO_ASSIGN_OR_RETURN(self_binary_mapping, FileMapping::CreateFromFile(
                                                   kCallingProcessBinaryFile));
@@ -129,6 +139,12 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   absl::Span<const uint8_t> enclave_buffer;
   ASYLO_ASSIGN_OR_RETURN(enclave_buffer, self_binary_reader.GetSectionData(
                                              std::string(section_name)));
+
+  if (base_address && enclave_size > 0 &&
+      munmap(base_address, enclave_size) < 0) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to release enclave memory");
+  }
 
   sgx_status_t status;
   const uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_ASYLO;
