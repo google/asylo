@@ -52,9 +52,6 @@ constexpr absl::string_view kCallingProcessBinaryFile = "/proc/self/exe";
 constexpr int kMaxEnclaveCreateAttempts = 5;
 
 // Edger8r-generated primitives ecall marshalling struct.
-// This struct doesn't conform to go/c-style naming conventions as it is meant
-// to match an edger8r generated struct output by the arch:generate_bridge
-// genrule
 struct ms_ecall_dispatch_trusted_call_t {
   // Return value from the trusted call.
   int ms_retval;
