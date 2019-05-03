@@ -2979,7 +2979,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1252 @@
+@@ -0,0 +1,1253 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3064,6 +3064,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "include/sgx_edger8r.h",
 +        "include/sgx_eid.h",
 +        "include/sgx_error.h",
++        "include/sgx_key.h",
 +        "include/sgx_lfence.h",
 +        "include/sgx_quote.h",
 +        "include/sgx_report.h",
@@ -4610,6 +4611,15 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_error.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_ERROR_H_
+--- /dev/null
++++ include/sgx_key.h
+@@ -0,0 +1,6 @@
++#ifndef _INCLUDE_SGX_KEY_H_
++#define _INCLUDE_SGX_KEY_H_
++
++#include "common/inc/sgx_key.h"  // IWYU pragma: export
++
++#endif  // _INCLUDE_SGX_KEY_H_
 --- /dev/null
 +++ include/sgx_lfence.h
 @@ -0,0 +1,6 @@
