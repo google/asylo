@@ -84,9 +84,6 @@ struct ExitHandler {
 // ParameterStack to be used in untrusted code.
 using UntrustedParameterStack = ParameterStack<malloc, free>;
 
-// ExitCallPtr to be used in untrusted code.
-using UntrustedExitCallPtr = ExitCallPtr<malloc, free>;
-
 // A reference to an enclave held by untrusted code.
 class Client : public std::enable_shared_from_this<Client> {
  public:

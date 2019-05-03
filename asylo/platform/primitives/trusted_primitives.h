@@ -96,10 +96,6 @@ using TrustedParameterStack =
     ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
                    TrustedPrimitives::UntrustedLocalFree>;
 
-// ExitCallPtr to be used in trusted code.
-using TrustedExitCallPtr = ExitCallPtr<TrustedPrimitives::UntrustedLocalAlloc,
-                                       TrustedPrimitives::UntrustedLocalFree>;
-
 // Callback structure for dispatching messages passed to the enclave.
 struct EntryHandler {
   using Callback = PrimitiveStatus (*)(void *, TrustedParameterStack *);
