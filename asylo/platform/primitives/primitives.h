@@ -42,15 +42,6 @@ static constexpr uint64_t kSelectorUser = 128;
 // for untrusted host call handlers and cannot be used by any other component.
 static constexpr uint64_t kSelectorHostCall = 112;
 
-// Type signature of the enclave alloc function pointer.
-// Allocates 'size' bytes on the untrusted memory heap and returns pointer.
-using UntrustedLocalAllocCallPtr = void *(*)(size_t size);
-
-// Type signature of the enclave untrusted free function pointer.
-// Releases memory pointed by 'ptr', previously allocated in the untrusted
-// memory heap.
-using UntrustedLocalFreeCallPtr = void (*)(void *ptr);
-
 }  // namespace primitives
 }  // namespace asylo
 
