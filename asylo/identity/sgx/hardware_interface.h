@@ -47,8 +47,8 @@ using AlignedHardwareKeyPtr = AlignedObjectPtr<HardwareKey, 16>;
 // Gets a 64-bit random number using the RDRAND instruction. The function
 // attempts to obtain the desired entropy by executing the RDRAND instruction
 // at most 10 times (as recommended by Intel). If the execution of RDRAND fails
-// on all of those attempts, the function returns false, else the function
-// true.
+// on all of those attempts, the function returns an error; otherwise, the
+// function returns an OK status.
 ABSL_MUST_USE_RESULT Status GetHardwareRand64(uint64_t *value);
 
 // Gets the hardware key described by the input KEYREQUEST struct. The function
