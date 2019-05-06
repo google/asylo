@@ -43,7 +43,6 @@ asylo_py_proto_library(
 py_binary(
     name = "code_generator",
     srcs = ["code_generator.py"],
-    python_version = "PY2",
     visibility = ["//visibility:private"],
     deps = [":code_generator_lib"],
 )
@@ -80,7 +79,6 @@ genrule(
 py_test(
     name = "code_generator_test",
     srcs = ["code_generator_test.py"],
-    python_version = "PY2",
     deps = [
         ":code_generator_lib",
     ],
