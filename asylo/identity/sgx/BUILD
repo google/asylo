@@ -59,6 +59,12 @@ asylo_proto_library(
 )
 
 asylo_proto_library(
+    name = "miscselect_proto",
+    srcs = ["miscselect.proto"],
+    visibility = ["//asylo:implementation"],
+)
+
+asylo_proto_library(
     name = "remote_assertion_proto",
     srcs = ["remote_assertion.proto"],
     deps = [
@@ -410,14 +416,19 @@ cc_test(
 
 cc_library(
     name = "hardware_types",
-    srcs = ["secs_attributes.cc"],
+    srcs = [
+        "secs_attributes.cc",
+        "secs_miscselect.cc",
+    ],
     hdrs = [
         "identity_key_management_structs.h",
         "secs_attributes.h",
+        "secs_miscselect.h",
     ],
     visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_proto_cc",
+        ":miscselect_proto_cc",
         "//asylo/crypto/util:bytes",
         "//asylo/identity/util:aligned_object_ptr",
         "//asylo/util:logging",
@@ -439,6 +450,19 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "secs_miscselect_test",
+    srcs = ["secs_miscselect_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "secs_miscselect_enclave_test",
+    deps = [
+        ":hardware_types",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -664,6 +688,7 @@ cc_library(
         ":attributes_proto_cc",
         ":code_identity_proto_cc",
         ":hardware_types",
+        ":miscselect_proto_cc",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
@@ -679,6 +704,7 @@ cc_test(
         ":code_identity_proto_cc",
         ":code_identity_util",
         ":hardware_types",
+        ":miscselect_proto_cc",
         ":proto_format",
         "//asylo/identity/util:sha256_hash_proto_cc",
         "//asylo/test/util:test_main",

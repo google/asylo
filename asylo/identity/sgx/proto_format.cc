@@ -27,7 +27,9 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_join.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 
 namespace asylo {
@@ -51,17 +53,17 @@ class AttributesFlagsPrinter : public TextFormat::FastFieldValuePrinter {
  public:
   void PrintUInt64(uint64_t value,
                    TextFormat::BaseTextGenerator *generator) const override {
-  Attributes attributes;
-  attributes.set_flags(value);
-  attributes.set_xfrm(0);
+    Attributes attributes;
+    attributes.set_flags(value);
+    attributes.set_xfrm(0);
 
-  generator->PrintLiteral("[");
+    generator->PrintLiteral("[");
 
-  std::vector<std::string> printable_attributes;
-  GetPrintableAttributeList(attributes, &printable_attributes);
-  generator->PrintString(absl::StrJoin(printable_attributes, ", "));
+    std::vector<std::string> printable_attributes;
+    GetPrintableAttributeList(attributes, &printable_attributes);
+    generator->PrintString(absl::StrJoin(printable_attributes, ", "));
 
-  generator->PrintLiteral("]");
+    generator->PrintLiteral("]");
   }
 };
 
@@ -71,17 +73,33 @@ class AttributesXfrmPrinter : public TextFormat::FastFieldValuePrinter {
  public:
   void PrintUInt64(uint64_t value,
                    TextFormat::BaseTextGenerator *generator) const override {
-  Attributes attributes;
-  attributes.set_flags(0);
-  attributes.set_xfrm(value);
+    Attributes attributes;
+    attributes.set_flags(0);
+    attributes.set_xfrm(value);
 
-  generator->PrintLiteral("[");
+    generator->PrintLiteral("[");
 
-  std::vector<std::string> printable_attributes;
-  GetPrintableAttributeList(attributes, &printable_attributes);
-  generator->PrintString(absl::StrJoin(printable_attributes, ", "));
+    std::vector<std::string> printable_attributes;
+    GetPrintableAttributeList(attributes, &printable_attributes);
+    generator->PrintString(absl::StrJoin(printable_attributes, ", "));
 
-  generator->PrintLiteral("]");
+    generator->PrintLiteral("]");
+  }
+};
+
+// A FieldValuePrinter that prints the name of each MISCSELECT bit that is set
+// in the MISCSELECT bit vector.
+class MiscSelectPrinter : public TextFormat::FastFieldValuePrinter {
+ public:
+  void PrintUInt32(uint32_t value,
+                   TextFormat::BaseTextGenerator *generator) const override {
+    generator->PrintLiteral("[");
+
+    std::vector<std::string> printable_misc_select =
+        GetPrintableMiscselectList(value);
+    generator->PrintString(absl::StrJoin(printable_misc_select, ", "));
+
+    generator->PrintLiteral("]");
   }
 };
 
@@ -101,6 +119,23 @@ std::unique_ptr<TextFormat::Printer> CreateSgxProtoPrinter() {
   descriptor = Sha256HashProto::descriptor();
   printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("hash"),
                                      new BytesPrinter());
+
+  // Register a special printer for Miscselect protos that prints the name of
+  // each value in the MISCSELECT bit vector that is set.
+  descriptor = Miscselect::descriptor();
+  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("value"),
+                                     new MiscSelectPrinter());
+
+  // CodeIdentity and CodeIdentityMatchSpec define MISCSELECT as a uint32 field
+  // rather than as a Miscselect message. Update these fields to use the special
+  // Miscselect printer.
+  descriptor = CodeIdentity::descriptor();
+  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("miscselect"),
+                                     new MiscSelectPrinter());
+  descriptor = CodeIdentityMatchSpec::descriptor();
+  printer->RegisterFieldValuePrinter(
+      descriptor->FindFieldByName("miscselect_match_mask"),
+                                     new MiscSelectPrinter());
 
   return printer;
 }

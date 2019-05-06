@@ -16,6 +16,8 @@
  *
  */
 
+#include "asylo/identity/sgx/proto_format.h"
+
 #include <string>
 #include <vector>
 
@@ -24,8 +26,9 @@
 #include "absl/strings/escaping.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
-#include "asylo/identity/sgx/proto_format.h"
+#include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 
 namespace asylo {
@@ -44,6 +47,31 @@ TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
   GetPrintableAttributeList(identity.attributes(), &named_attributes);
   for (const std::string &attribute : named_attributes) {
     EXPECT_THAT(text, HasSubstr(attribute));
+  }
+}
+
+TEST(ProtoFormatTest, MiscselectBitsByName) {
+  Miscselect miscselect;
+  miscselect.set_value(UINT32_C(1)
+                       << static_cast<size_t>(SecsMiscselectBit::EXINFO));
+  std::string text = FormatProto(miscselect);
+
+  std::vector<std::string> named_miscselect_bits =
+      GetPrintableMiscselectList(miscselect);
+  for (const std::string &miscselect_bit : named_miscselect_bits) {
+    EXPECT_THAT(text, HasSubstr(miscselect_bit));
+  }
+}
+
+TEST(ProtoFormatTest, CodeIdentityHasMiscselectBitsByName) {
+  CodeIdentity identity;
+  SetSelfCodeIdentity(&identity);
+  std::string text = FormatProto(identity);
+
+  std::vector<std::string> named_miscselect_bits =
+      GetPrintableMiscselectList(identity.miscselect());
+  for (const std::string &miscselect_bit : named_miscselect_bits) {
+    EXPECT_THAT(text, HasSubstr(miscselect_bit));
   }
 }
 
@@ -69,6 +97,18 @@ TEST(ProtoFormatTest, CodeIdentityMatchSpecHasAttributesByName) {
                             &named_attributes);
   for (const std::string &attribute : named_attributes) {
     EXPECT_THAT(text, HasSubstr(attribute));
+  }
+}
+
+TEST(ProtoFormatTest, CodeIdentityMatchSpecHasMiscselectBitsByName) {
+  CodeIdentityMatchSpec match_spec;
+  SetDefaultMatchSpec(&match_spec);
+  std::string text = FormatProto(match_spec);
+
+  std::vector<std::string> named_miscselect_bits =
+      GetPrintableMiscselectList(match_spec.miscselect_match_mask());
+  for (const std::string &miscselect_bit : named_miscselect_bits) {
+    EXPECT_THAT(text, HasSubstr(miscselect_bit));
   }
 }
 
