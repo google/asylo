@@ -29,7 +29,7 @@
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
-#include "absl/synchronization/mutex.h"
+#include "absl/synchronization/notification.h"
 
 using ::testing::Eq;
 using ::testing::StrEq;
@@ -56,20 +56,12 @@ class ThreadIdTest : public ::testing::Test {
   class ThreadContext {
    public:
     ThreadContext()
-        : thread_(absl::make_unique<std::thread>([this] {
-            auto thread_signaled = [this] {
-              mutex_.AssertReaderHeld();
-              return is_exiting_;
-            };
-            absl::MutexLock lock(&mutex_);
-            mutex_.Await(absl::Condition(&thread_signaled));
+        : is_exiting_(false), thread_(absl::make_unique<std::thread>([this] {
+            is_exiting_.WaitForNotification();
           })) {}
     ~ThreadContext() {
       // Signal to `thread_` that it should wake up and exit.
-      {
-        absl::MutexLock lock(&mutex_);
-        is_exiting_ = true;
-      }
+      is_exiting_.Notify();
       if (thread_->joinable()) {
         thread_->join();
       }
@@ -77,8 +69,7 @@ class ThreadIdTest : public ::testing::Test {
     ThreadId thread_id() const { return ThreadId(thread_->get_id()); }
 
    private:
-    absl::Mutex mutex_;
-    bool is_exiting_ GUARDED_BY(mutex_) = false;
+    absl::Notification is_exiting_;
     const std::unique_ptr<std::thread> thread_;
   };
 

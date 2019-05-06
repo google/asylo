@@ -21,10 +21,10 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "absl/synchronization/mutex.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/util/asylo_macros.h"
+#include "asylo/util/mutex_guarded.h"
 
 namespace asylo {
 namespace primitives {
@@ -32,25 +32,22 @@ namespace primitives {
 // Implementation of ExitCallProvider based on dispatch table (thread safe).
 class DispatchTable : public Client::ExitCallProvider {
  public:
-  DispatchTable() = default;
+  DispatchTable() : exit_table_(absl::flat_hash_map<uint64_t, ExitHandler>()) {}
 
   // Registers a callback as the handler routine for an enclave exit point
   // `untrusted_selector`. Returns an error code if a handler has already been
   // registered for `trusted_selector` or if an invalid selector value is
   // passed.
   Status RegisterExitHandler(uint64_t untrusted_selector,
-                             const ExitHandler &handler) override
-      ASYLO_MUST_USE_RESULT LOCKS_EXCLUDED(mutex_);
+                             const ExitHandler &handler) override;
 
   // Finds and invokes an exit handler, setting an error status on failure.
   Status InvokeExitHandler(uint64_t untrusted_selector,
                            UntrustedParameterStack *params,
-                           Client *client) override ASYLO_MUST_USE_RESULT
-      LOCKS_EXCLUDED(mutex_);
+                           Client *client) override ASYLO_MUST_USE_RESULT;
 
  private:
-  absl::Mutex mutex_;
-  absl::flat_hash_map<uint64_t, ExitHandler> exit_table_ GUARDED_BY(mutex_);
+  MutexGuarded<absl::flat_hash_map<uint64_t, ExitHandler>> exit_table_;
 };
 
 }  // namespace primitives

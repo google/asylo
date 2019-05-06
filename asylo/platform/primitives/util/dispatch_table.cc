@@ -17,9 +17,8 @@
  */
 
 #include "asylo/platform/primitives/util/dispatch_table.h"
-#include <memory>
 
-#include "absl/synchronization/mutex.h"
+#include <memory>
 
 namespace asylo {
 namespace primitives {
@@ -31,13 +30,12 @@ namespace primitives {
 Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
                                           const ExitHandler &handler) {
   // Ensure no handler is installed for untrusted_selector.
-  absl::MutexLock lock(&mutex_);
-  auto it = exit_table_.find(untrusted_selector);
-  if (it != exit_table_.end()) {
+  auto locked_exit_table = exit_table_.Lock();
+  if (locked_exit_table->contains(untrusted_selector)) {
     return {error::GoogleError::ALREADY_EXISTS,
             "Invalid selector in RegisterExitHandler."};
   }
-  exit_table_.emplace(untrusted_selector, handler);
+  locked_exit_table->emplace(untrusted_selector, handler);
   return Status::OkStatus();
 }
 
@@ -45,18 +43,17 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
 Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
                                         UntrustedParameterStack *params,
                                         Client *client) {
-  ExitHandler *handler;
+  ExitHandler handler;
   {
-    absl::ReaderMutexLock lock(&mutex_);
-    auto it = exit_table_.find(untrusted_selector);
-    if (it == exit_table_.end()) {
+    auto locked_exit_table = exit_table_.ReaderLock();
+    auto it = locked_exit_table->find(untrusted_selector);
+    if (it == locked_exit_table->end()) {
       return {error::GoogleError::OUT_OF_RANGE,
               "Invalid selector in enclave exit."};
     }
-    handler = &it->second;
+    handler = it->second;
   }
-  return handler->callback(client->shared_from_this(), handler->context,
-                           params);
+  return handler.callback(client->shared_from_this(), handler.context, params);
 }
 
 }  // namespace primitives
