@@ -77,15 +77,28 @@ cc_enclave_test(
 )
 
 cc_library(
+    name = "test_utils",
+    testonly = 1,
+    srcs = ["test_utils.cc"],
+    hdrs = ["test_utils.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/test/util:test_flags",
+        "//asylo/util:logging",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_library(
     name = "random_access_storage",
     srcs = ["untrusted_file.cc"],
     hdrs = [
-        "random_access_storage_interface.h",
+        "random_access_storage.h",
         "untrusted_file.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/util:logging",
+        "//asylo/util:asylo_macros",
         "//asylo/util:status",
     ],
 )
@@ -97,11 +110,44 @@ cc_test(
     deps = [
         ":fd_closer",
         ":random_access_storage",
+        ":test_utils",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
-        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "record_store",
+    hdrs = [
+        "record_store.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":random_access_storage",
+        "//asylo/util:asylo_macros",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+cc_test(
+    name = "record_store_test",
+    srcs = [
+        "record_store_test.cc",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":fd_closer",
+        ":random_access_storage",
+        ":record_store",
+        ":test_utils",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

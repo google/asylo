@@ -19,12 +19,12 @@
 #ifndef ASYLO_PLATFORM_STORAGE_UTILS_UNTRUSTED_FILE_H_
 #define ASYLO_PLATFORM_STORAGE_UTILS_UNTRUSTED_FILE_H_
 
-#include "asylo/platform/storage/utils/random_access_storage_interface.h"
+#include "asylo/platform/storage/utils/random_access_storage.h"
 
 namespace asylo {
 
-// An implementation of StorageInterface backed by a file.
-class UntrustedFile : public RandomAccessStorageInterface {
+// An implementation of RandomAccessStorage backed by a file.
+class UntrustedFile : public RandomAccessStorage {
  public:
   // Constructs an UntrustedFile wrapping an open file descriptor. |fd| is
   // expected to support read(2), write(2), lseek(2), ftruncate(2), and

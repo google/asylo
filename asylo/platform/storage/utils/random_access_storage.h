@@ -16,13 +16,14 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_STORAGE_UTILS_RANDOM_ACCESS_STORAGE_INTERFACE_H_
-#define ASYLO_PLATFORM_STORAGE_UTILS_RANDOM_ACCESS_STORAGE_INTERFACE_H_
+#ifndef ASYLO_PLATFORM_STORAGE_UTILS_RANDOM_ACCESS_STORAGE_H_
+#define ASYLO_PLATFORM_STORAGE_UTILS_RANDOM_ACCESS_STORAGE_H_
 
 #include <sys/types.h>
 
 #include <cstddef>
 
+#include "asylo/util/asylo_macros.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -32,35 +33,37 @@ namespace asylo {
 // collection of variable-size records indexed by their byte offset into a flat
 // array. This is provided to isolate the secure storage implementation from the
 // underlying untrusted storage implementation.
-class RandomAccessStorageInterface {
+class RandomAccessStorage {
  public:
-  virtual ~RandomAccessStorageInterface() = default;
+  virtual ~RandomAccessStorage() = default;
 
   // Returns the size of the storage resource in bytes, or a Status if an I/O
   // error occurs.
   virtual StatusOr<size_t> Size() const = 0;
 
   // Reads |size| bytes of data from storage at a byte offset |offset|.
-  virtual Status Read(void *buffer, off_t offset, size_t size) = 0;
+  virtual ASYLO_MUST_USE_RESULT Status Read(void *buffer, off_t offset,
+                                            size_t size) = 0;
 
   // Writes |size| bytes to storage at a byte offset |offset|. If Size() if less
   // than |offset| + |size| then the resource is extended to a length of
   // |offset| + |size| bytes as-if by Truncate() before the write is performed.
-  virtual Status Write(const void *buffer, off_t offset, size_t size) = 0;
+  virtual ASYLO_MUST_USE_RESULT Status Write(const void *buffer, off_t offset,
+                                             size_t size) = 0;
 
   // Commits pending writes to the underlying storage resource. This method is
   // provided for implementations where Write() does not commit to durable
   // storage synchronously, for instance because it writes via a user-space
   // cache or because writes are buffered by the kernel. Each implementation
   // should document what Sync() guarantees.
-  virtual Status Sync() = 0;
+  virtual ASYLO_MUST_USE_RESULT Status Sync() = 0;
 
   // Truncates the storage resource to a specified length. If |size| is greater
   // than Size() then the underlying resource is extended to a length of |size|
   // bytes by appending zero-initialized storage.
-  virtual Status Truncate(size_t size) = 0;
+  virtual ASYLO_MUST_USE_RESULT Status Truncate(size_t size) = 0;
 };
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_STORAGE_UTILS_RANDOM_ACCESS_STORAGE_INTERFACE_H_
+#endif  // ASYLO_PLATFORM_STORAGE_UTILS_RANDOM_ACCESS_STORAGE_H_

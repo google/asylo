@@ -18,29 +18,17 @@
 
 #include "asylo/platform/storage/utils/untrusted_file.h"
 
-#include <fcntl.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/platform/storage/utils/fd_closer.h"
+#include "asylo/platform/storage/utils/test_utils.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/test/util/test_flags.h"
 
 namespace asylo {
 namespace {
 
-// Create and open an empty temporary file, returning a file descriptor.
-int CreateEmptyFile(absl::string_view basename) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/", basename);
-  int result = open(path.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);
-  CHECK_NE(result, -1) << "Could not create temporary file: " << path;
-  return result;
-}
-
 TEST(UntrustedFileTest, WriteRead) {
-  int fd = CreateEmptyFile("write_read.tmp");
+  int fd = CreateEmptyTempFileOrDie("write_read.tmp");
   platform::storage::FdCloser closer(fd);
 
   UntrustedFile file(fd);
@@ -63,7 +51,7 @@ TEST(UntrustedFileTest, WriteRead) {
 }
 
 TEST(UntrustedFileTest, WriteHoles) {
-  int fd = CreateEmptyFile("write_holes.tmp");
+  int fd = CreateEmptyTempFileOrDie("write_holes.tmp");
   asylo::platform::storage::FdCloser closer(fd);
 
   UntrustedFile file(fd);
