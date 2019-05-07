@@ -599,6 +599,37 @@ cc_test(
     ],
 )
 
+# Defines an interface for interacting with Intel Architectural Enclaves.
+cc_library(
+    name = "intel_architectural_enclave_interface",
+    hdrs = ["intel_architectural_enclave_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_types",
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+# Implementation of IntelArchitecturalEnclaveInterface using Intel's SGX Data
+# Center Attestation Primitives (DCAP) library.
+cc_library(
+    name = "dcap_intel_architectural_enclave_interface",
+    srcs = ["dcap_intel_architectural_enclave_interface.cc"],
+    hdrs = ["dcap_intel_architectural_enclave_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_types",
+        ":intel_architectural_enclave_interface",
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/types:span",
+        "@linux_sgx//:public",
+        "@sgx_dcap//:pce_wrapper",
+    ],
+)
+
 cc_library(
     name = "local_secret_sealer_helpers",
     srcs = ["local_secret_sealer_helpers.cc"],
