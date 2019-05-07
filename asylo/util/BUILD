@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves")
+load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves", "sim_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
@@ -394,6 +394,50 @@ cc_test(
     deps = [
         ":path",
         "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# A library that implements asylo::Thread
+cc_library(
+    name = "thread",
+    srcs = ["std_thread.h"],
+    hdrs = ["thread.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps =
+        [
+            "//asylo/util:logging",
+        ],
+)
+
+cc_test(
+    name = "thread_test",
+    srcs = ["thread_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "thread_enclave_test",
+    deps = [
+        ":mutex_guarded",
+        ":thread",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+sim_enclave_test(
+    name = "primitives_thread_test",
+    srcs = ["thread_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":mutex_guarded",
+        ":thread",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
     ],
 )
