@@ -319,10 +319,12 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
 
   // Check for other entries inside the enclave. Currently there should be two
   // ecall entries inside the enclave: snapshot ecall and the run ecall which
-  // calls fork. Only start snapshotting if there are no other existing entries.
+  // calls fork. Send a warning message if there are other threads running
+  // during snapshotting, as it could result in undefined behavior.
   if (get_active_enclave_entries() > 2) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "There are other enclave entries while taking a snapshot");
+    LOG(WARNING) << "There are other threads running inside the enclave. Fork "
+                    "in multithreaded environment may result "
+                    "in undefined behavior or potential security issues.";
   }
 
   if (!snapshot_layout) {
