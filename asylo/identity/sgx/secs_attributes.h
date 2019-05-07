@@ -27,6 +27,7 @@
 #include "absl/base/attributes.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
@@ -34,16 +35,10 @@ namespace sgx {
 // SGX defines 128 bits of enclave attributes, which are located in the SECS
 // (Secure Enclave Control Structure) of the enclave. The low 64 bits of these
 // attributes are treated as individual flags, whereas the upper 64 bits are
-// collectively called XFRM (eXtended Feature Request Mask).
-struct SecsAttributeSet {
-  uint64_t flags;
-  uint64_t xfrm;
-} ABSL_ATTRIBUTE_PACKED;
-
-// The following enum defines the various attribute bits and assigns them a
-// value that is same as their bit position in the SECS attributes
-// bit vector. The names of these bits are taken verbatim from the Intel
-// SDM (Software Developer's Manual).
+// collectively called XFRM (eXtended Feature Request Mask). The following enum
+// defines the various attribute bits and assigns them a value that is same as
+// their bit position in the SECS attributes bit vector. The names of these bits
+// are taken verbatim from the Intel SDM (Software Developer's Manual).
 enum class SecsAttributeBit {
   INIT = 0,       // Indicates whether the enclave has been
                   // initialized via EINIT instruction.
@@ -85,6 +80,16 @@ enum class SecsAttributeBit {
   PKRU = 64 + 9  // Determines the behavior of the Page Protection Keys.
 };
 
+// A structure representing a set of SECS attributes.
+struct SecsAttributeSet {
+  uint64_t flags;
+  uint64_t xfrm;
+} ABSL_ATTRIBUTE_PACKED;
+
+// Converts an SecsAttributeBit list to an SecsAttributeSet.
+StatusOr<SecsAttributeSet> MakeSecsAttributeSet(
+    const std::vector<SecsAttributeBit> &attribute_list);
+
 // Clears all bits of an SecsAttributeSet.
 void ClearSecsAttributeSet(SecsAttributeSet *attributes);
 
@@ -92,9 +97,19 @@ void ClearSecsAttributeSet(SecsAttributeSet *attributes);
 SecsAttributeSet operator|(const SecsAttributeSet &lhs,
                            const SecsAttributeSet &rhs);
 
+// Computes bitwise OR of two SecsAttributeSet values, and overwrites the lhs
+// with the result.
+SecsAttributeSet &operator|=(SecsAttributeSet &lhs,
+                             const SecsAttributeSet &rhs);
+
 // Computes bitwise AND of two SecsAttributeSet values.
 SecsAttributeSet operator&(const SecsAttributeSet &lhs,
                            const SecsAttributeSet &rhs);
+
+// Computes bitwise AND of two SecsAttributeSet values, and overwrites the lhs
+// with the result.
+SecsAttributeSet &operator&=(SecsAttributeSet &lhs,
+                             const SecsAttributeSet &rhs);
 
 // Computes bitwise negation of an SecsAttributeSet value.
 SecsAttributeSet operator~(const SecsAttributeSet &value);

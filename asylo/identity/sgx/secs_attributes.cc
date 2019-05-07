@@ -132,6 +132,16 @@ const char *GetAttributeName(SecsAttributeBit attribute) {
 
 }  // namespace
 
+StatusOr<SecsAttributeSet> MakeSecsAttributeSet(
+    const std::vector<SecsAttributeBit> &attribute_list) {
+  SecsAttributeSet attribute_set;
+  if (!ConvertSecsAttributeRepresentation(attribute_list, &attribute_set)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Input attribute list contains invalid attribute bits");
+  }
+  return attribute_set;
+}
+
 void ClearSecsAttributeSet(SecsAttributeSet *attributes) {
   attributes->flags = 0;
   attributes->xfrm = 0;
@@ -146,6 +156,14 @@ SecsAttributeSet operator|(const SecsAttributeSet &lhs,
   return result;
 }
 
+SecsAttributeSet &operator|=(SecsAttributeSet &lhs,
+                             const SecsAttributeSet &rhs) {
+  lhs.flags |= rhs.flags;
+  lhs.xfrm |= rhs.xfrm;
+
+  return lhs;
+}
+
 SecsAttributeSet operator&(const SecsAttributeSet &lhs,
                            const SecsAttributeSet &rhs) {
   SecsAttributeSet result;
@@ -153,6 +171,14 @@ SecsAttributeSet operator&(const SecsAttributeSet &lhs,
   result.xfrm = lhs.xfrm & rhs.xfrm;
 
   return result;
+}
+
+SecsAttributeSet &operator&=(SecsAttributeSet &lhs,
+                             const SecsAttributeSet &rhs) {
+  lhs.flags &= rhs.flags;
+  lhs.xfrm &= rhs.xfrm;
+
+  return lhs;
 }
 
 SecsAttributeSet operator~(const SecsAttributeSet &value) {

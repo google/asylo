@@ -90,11 +90,6 @@ class SecsAttributesTest : public ::testing::Test {
 };
 
 #define EXPECT_LOG(TYPE, MESSAGE)
-#if 0
-#define EXPECT_LOG(TYPE, MESSAGE)                                            \
-  EXPECT_CALL(mock_log_, Log(TYPE, ::testing::_, ::testing::StrEq(MESSAGE))) \
-      .Times(1)
-#endif
 
 // Verify the correctness of ClearSecsAttributeSet.
 TEST_F(SecsAttributesTest, ClearSecsAttributeSet) {
@@ -131,14 +126,16 @@ TEST_F(SecsAttributesTest, Inequality) {
 
 // Verify the correctness of bit-wise OR operator.
 TEST_F(SecsAttributesTest, BitwiseOr) {
-  SecsAttributeSet result;
+  SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>();
 
+  // Verify that ORing an attribute set with itself does not change the set.
   for (const SecsAttributeSet &set : attribute_sets_) {
     result = set | set;
     EXPECT_EQ(result.flags, set.flags);
     EXPECT_EQ(result.xfrm, set.xfrm);
   }
 
+  // Verify that attribute accumulation via ORing works correctly.
   result = TrivialZeroObject<SecsAttributeSet>();
   for (const SecsAttributeSet &set : attribute_sets_) {
     result = result | set;
@@ -146,23 +143,73 @@ TEST_F(SecsAttributesTest, BitwiseOr) {
   EXPECT_EQ(result.flags, all_attributes_.flags);
   EXPECT_EQ(result.xfrm, all_attributes_.xfrm);
 
-  SecsAttributeSet cleared_set = TrivialZeroObject<SecsAttributeSet>();
-  result = result | cleared_set;
+  // Verify that ORing an attribute set with all zeros does not change the set.
+  result = result | TrivialZeroObject<SecsAttributeSet>();
+  EXPECT_EQ(result.flags, all_attributes_.flags);
+  EXPECT_EQ(result.xfrm, all_attributes_.xfrm);
+}
+
+// Verify the correctness of bit-wise OR-assign operator.
+TEST_F(SecsAttributesTest, BitwiseOrAssign) {
+  SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>();
+
+  // Verify that ORing an attribute set with itself does not change the set.
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    result = set;
+    result |= set;
+    EXPECT_EQ(result.flags, set.flags);
+    EXPECT_EQ(result.xfrm, set.xfrm);
+  }
+
+  // Verify that attribute accumulation via ORing works correctly.
+  result = TrivialZeroObject<SecsAttributeSet>();
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    result |= set;
+  }
+  EXPECT_EQ(result.flags, all_attributes_.flags);
+  EXPECT_EQ(result.xfrm, all_attributes_.xfrm);
+
+  // Verify that ORing an attribute set with all zeros does not change the set.
+  result |= TrivialZeroObject<SecsAttributeSet>();
   EXPECT_EQ(result.flags, all_attributes_.flags);
   EXPECT_EQ(result.xfrm, all_attributes_.xfrm);
 }
 
 // Verify the correctness of bit-wise AND operator.
 TEST_F(SecsAttributesTest, BitwiseAnd) {
+  // Verify that ANDing a single-bit attribute set with an attribute set that
+  // has all the attributes lit yields correct result.
   for (const SecsAttributeSet &set : attribute_sets_) {
     SecsAttributeSet result = all_attributes_ & set;
     EXPECT_EQ(result.flags, set.flags);
     EXPECT_EQ(result.xfrm, set.xfrm);
   }
 
-  SecsAttributeSet cleared_set = TrivialZeroObject<SecsAttributeSet>();
+  // Verify that ANDing an attribute set with all zeros yields an attribute set
+  // with all zeros.
   for (const SecsAttributeSet &set : attribute_sets_) {
-    SecsAttributeSet result = cleared_set & set;
+    SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>() & set;
+    EXPECT_EQ(result.flags, 0);
+    EXPECT_EQ(result.xfrm, 0);
+  }
+}
+
+// Verify the correctness of bit-wise AND-assign operator.
+TEST_F(SecsAttributesTest, BitwiseAndAssign) {
+  // Verify that ANDing a single-bit attribute set with an attribute set that
+  // has all the attributes lit yields correct result.
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    SecsAttributeSet result = all_attributes_;
+    result &= set;
+    EXPECT_EQ(result.flags, set.flags);
+    EXPECT_EQ(result.xfrm, set.xfrm);
+  }
+
+  // Verify that ANDing an attribute set with all zeros yields an attribute set
+  // with all zeros.
+  SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>();
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    result &= set;
     EXPECT_EQ(result.flags, 0);
     EXPECT_EQ(result.xfrm, 0);
   }
@@ -363,6 +410,28 @@ TEST_F(SecsAttributesTest, TestAttributeAttributesError) {
   Attributes attributes;
   EXPECT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_, &attributes));
   EXPECT_FALSE(TestAttribute(bad_attribute_, attributes));
+}
+
+// Verify that MakeSecsAttributeSet works correctly for valid attribute bits.
+TEST_F(SecsAttributesTest, MakeSecsAttributeSetPositive) {
+  std::vector<SecsAttributeBit> all_attributes_vector;
+  ASSERT_TRUE(ConvertSecsAttributeRepresentation(all_attributes_,
+                                                 &all_attributes_vector));
+  for (auto bit1 : all_attributes_vector) {
+    SecsAttributeSet attributes;
+    ASYLO_ASSERT_OK_AND_ASSIGN(attributes, MakeSecsAttributeSet({bit1}));
+    for (auto bit2 : all_attributes_vector) {
+      EXPECT_EQ(TestAttribute(bit2, attributes), (bit1 == bit2));
+    }
+  }
+  EXPECT_THAT(MakeSecsAttributeSet({bad_attribute_}).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that MakeSecsAttributeSet fails for an invalid attribute bit.
+TEST_F(SecsAttributesTest, MakeSecsAttributeSetNegative) {
+  EXPECT_THAT(MakeSecsAttributeSet({bad_attribute_}).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that SetDefaultSecsAttributesMask creates a mask that is the logical
