@@ -88,31 +88,6 @@ cc_test(
     ],
 )
 
-# A library that uses implementation-defined behavior of std::thread::id
-# to serialize and deserialize it.
-cc_library(
-    name = "serializable_thread_id",
-    srcs = ["serializable_thread_id.cc"],
-    hdrs = ["serializable_thread_id.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-)
-
-cc_test(
-    name = "serializable_thread_id_test",
-    srcs = ["serializable_thread_id_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//visibility:private"],
-    deps = [
-        ":serializable_thread_id",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 # A dispatch table implementation of Client::ExitCallProvider.
 cc_library(
     name = "trusted_runtime_helper",
