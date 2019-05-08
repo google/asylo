@@ -35,6 +35,11 @@ namespace sgx {
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme);
 
+// Converts an AsymmetricEncryptionScheme to an equivalent signature scheme
+// representation used by the PCE.
+absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
+    SignatureScheme signature_scheme);
+
 }  // namespace sgx
 }  // namespace asylo
 

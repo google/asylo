@@ -37,47 +37,90 @@ using ::testing::Eq;
 using ::testing::Optional;
 
 // All encryption schemes supported by the PCE.
-constexpr AsymmetricEncryptionScheme kSupportedSchemes[] = {RSA3072_OAEP};
+constexpr AsymmetricEncryptionScheme kSupportedEncryptionSchemes[] = {
+    RSA3072_OAEP};
 
-// The crypto suite corresponding to each scheme in kSupportedSchemes.
-constexpr uint8_t kTranslatedSchemes[] = {PCE_ALG_RSA_OAEP_3072};
+// The crypto suite corresponding to each scheme in kSupportedEncryptionSchemes.
+constexpr uint8_t kTranslatedEncryptionSchemes[] = {PCE_ALG_RSA_OAEP_3072};
+
+// All signature schemes supported by the PCE.
+constexpr SignatureScheme kSupportedSignatureSchemes[] = {ECDSA_P256_SHA256};
+
+// The signature scheme corresponding to each scheme in
+// kSupportedSignatureSchemes.
+constexpr uint8_t kTranslatedSignatureSchemes[] = {PCE_NIST_P256_ECDSA_SHA256};
 
 class PceUtilTest : public ::testing::Test {
  public:
   void SetUp() override {
-    supported_schemes_.reserve(ABSL_ARRAYSIZE(kSupportedSchemes));
-    for (int i = 0; i < ABSL_ARRAYSIZE(kSupportedSchemes); ++i) {
-      ASSERT_TRUE(supported_schemes_
-                      .emplace(kSupportedSchemes[i], kTranslatedSchemes[i])
+    supported_encryption_schemes_.reserve(
+        ABSL_ARRAYSIZE(kSupportedEncryptionSchemes));
+    for (int i = 0; i < ABSL_ARRAYSIZE(kSupportedEncryptionSchemes); ++i) {
+      ASSERT_TRUE(supported_encryption_schemes_
+                      .emplace(kSupportedEncryptionSchemes[i],
+                               kTranslatedEncryptionSchemes[i])
                       .second);
     }
-
     for (int i = 0; i < AsymmetricEncryptionScheme_ARRAYSIZE; ++i) {
       if (AsymmetricEncryptionScheme_IsValid(i)) {
         AsymmetricEncryptionScheme scheme =
             static_cast<AsymmetricEncryptionScheme>(i);
-        if (!supported_schemes_.contains(scheme)) {
-          unsupported_schemes_.push_back(scheme);
+        if (!supported_encryption_schemes_.contains(scheme)) {
+          unsupported_encryption_schemes_.push_back(scheme);
+        }
+      }
+    }
+
+    supported_signature_schemes_.reserve(
+        ABSL_ARRAYSIZE(kSupportedSignatureSchemes));
+    for (int i = 0; i < ABSL_ARRAYSIZE(kSupportedSignatureSchemes); ++i) {
+      ASSERT_TRUE(supported_signature_schemes_
+                      .emplace(kSupportedSignatureSchemes[i],
+                               kTranslatedSignatureSchemes[i])
+                      .second);
+    }
+    for (int i = 0; i < SignatureScheme_ARRAYSIZE; ++i) {
+      if (SignatureScheme_IsValid(i)) {
+        SignatureScheme scheme = static_cast<SignatureScheme>(i);
+        if (!supported_signature_schemes_.contains(scheme)) {
+          unsupported_signature_schemes_.push_back(scheme);
         }
       }
     }
   }
 
-  absl::flat_hash_map<AsymmetricEncryptionScheme, uint8_t> supported_schemes_;
-  std::vector<AsymmetricEncryptionScheme> unsupported_schemes_;
+  absl::flat_hash_map<AsymmetricEncryptionScheme, uint8_t>
+      supported_encryption_schemes_;
+  absl::flat_hash_map<SignatureScheme, uint8_t> supported_signature_schemes_;
+
+  std::vector<AsymmetricEncryptionScheme> unsupported_encryption_schemes_;
+  std::vector<SignatureScheme> unsupported_signature_schemes_;
 };
 
 TEST_F(PceUtilTest, AsymmetricEncryptionSchemeToPceCryptoSuiteSupported) {
-  for (const auto &pair : supported_schemes_) {
+  for (const auto &pair : supported_encryption_schemes_) {
     EXPECT_THAT(AsymmetricEncryptionSchemeToPceCryptoSuite(pair.first),
                 Optional(pair.second));
   }
 }
 
 TEST_F(PceUtilTest, AsymmetricEncryptionSchemeToPceCryptoSuiteUnsupported) {
-  for (AsymmetricEncryptionScheme scheme : unsupported_schemes_) {
+  for (AsymmetricEncryptionScheme scheme : unsupported_encryption_schemes_) {
     EXPECT_THAT(AsymmetricEncryptionSchemeToPceCryptoSuite(scheme),
                 Eq(absl::nullopt));
+  }
+}
+
+TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeSupported) {
+  for (const auto &pair : supported_signature_schemes_) {
+    EXPECT_THAT(SignatureSchemeToPceSignatureScheme(pair.first),
+                Optional(pair.second));
+  }
+}
+
+TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeUnsupported) {
+  for (SignatureScheme scheme : unsupported_signature_schemes_) {
+    EXPECT_THAT(SignatureSchemeToPceSignatureScheme(scheme), Eq(absl::nullopt));
   }
 }
 

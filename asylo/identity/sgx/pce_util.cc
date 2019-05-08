@@ -36,5 +36,15 @@ absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
   }
 }
 
+absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
+    SignatureScheme signature_scheme) {
+  switch (signature_scheme) {
+    case ECDSA_P256_SHA256:
+      return static_cast<uint8_t>(PCE_NIST_P256_ECDSA_SHA256);
+    default:
+      return absl::nullopt;
+  }
+}
+
 }  // namespace sgx
 }  // namespace asylo
