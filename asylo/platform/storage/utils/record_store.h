@@ -196,13 +196,14 @@ class RecordStore {
     }
   }
 
+  size_t capacity_;  // Size of the cache in items of type T.
+
   // Number of items present in the cache. Although std::list::size() is
   // required to have constant time complexity since C++11, not all library
   // implementions conform to this requirement. In particular, libstdc++
   // versions <= 4.8 implement size() as std::distance(head, tail).
   size_t count_;
 
-  size_t capacity_;          // Size of the cache in items of type T.
   RandomAccessStorage *io_;  // Record backing store.
 
   // Entries in the cache, maintained in LRU order. This implementation does not
