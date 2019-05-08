@@ -207,6 +207,20 @@ constexpr uint16_t kKeypolicyConfigidBitMask = 0x8;
 constexpr uint16_t kKeypolicyIsvfamilyidBitMask = 0x10;
 constexpr uint16_t kKeypolicyIsvextprodidBitMask = 0x20;
 
+// The following constants define the logical groupings of KEYPOLICY bits.
+
+// KEYPOLICY bits that can only be set if the KSS attribute is set.
+constexpr uint16_t kKeypolicyKssBits =
+    kKeypolicyNoisvprodidBitMask | kKeypolicyConfigidBitMask |
+    kKeypolicyIsvfamilyidBitMask | kKeypolicyIsvextprodidBitMask;
+
+// All non-reserved KEYPOLICY bits.
+constexpr uint16_t kKeypolicyAllBits =
+    kKeypolicyMrenclaveBitMask | kKeypolicyMrsignerBitMask | kKeypolicyKssBits;
+
+// Reserved KEYPOLICY bits.
+constexpr uint16_t kKeypolicyReservedBits = ~kKeypolicyAllBits;
+
 // Defines the KEYREQUEST architectural structure, which is used by an enclave
 // to request various hardware keys from the CPU. A KEYREQUEST is provided as an
 // input to the ENCLU[EGETKEY] instruction.

@@ -147,15 +147,23 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
     LOG(FATAL) << "Input parameters are not correctly aligned.";
   }
 
-  // Make sure that the reserved fields/bits in KEYREQUEST and KEYPOLICY
-  // are set to zero. If they are not zero, SGX hardware throws a #GP(0)
+  // Make sure that the KEYREQUEST struct is valid. The KEYREQUEST struct is
+  // invalid if any of its reserved bits are set or if the embedded KEYPOLICY
+  // field is invalid. In such a situation, the SGX hardware throws a #GP(0)
   // exception. Here, this behavior is simulated by invoking the LOG(FATAL)
   // macro.
   if (request.reserved1 != TrivialZeroObject<decltype(request.reserved1)>() ||
-      request.reserved2 != TrivialZeroObject<decltype(request.reserved2)>() ||
-      (request.keypolicy &
-       ~(kKeypolicyMrenclaveBitMask | kKeypolicyMrsignerBitMask)) != 0) {
+      request.reserved2 != TrivialZeroObject<decltype(request.reserved2)>()) {
     LOG(FATAL) << "Reserved fields/bits in input parameters are not zeroed.";
+  }
+
+  // The KEYPOLICY field is invalid if any of its reserved bits are set or if
+  // any of its KSS-related bits are set when the enclave's KSS SECS attribute
+  // bit is not set.
+  if ((request.keypolicy & kKeypolicyReservedBits) != 0 ||
+      (!TestAttribute(SecsAttributeBit::KSS, attributes_) &&
+       (request.keypolicy & kKeypolicyKssBits) != 0)) {
+    LOG(FATAL) << "Input parameter KEYPOLICY is not valid.";
   }
 
   // Populate a KEYDEPENDENCIES structure based on the KEYREQUEST. This
