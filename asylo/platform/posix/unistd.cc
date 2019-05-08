@@ -123,6 +123,8 @@ int dup2(int oldfd, int newfd) {
 
 int fsync(int fd) { return IOManager::GetInstance().FSync(fd); }
 
+int fdatasync(int fd) { return IOManager::GetInstance().FDataSync(fd); }
+
 char *getcwd(char *buf, size_t bufsize) {
   asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
       asylo::GetEnclaveConfig();

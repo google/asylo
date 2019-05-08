@@ -781,6 +781,12 @@ int IOManager::FSync(int fd) {
       fd, [](std::shared_ptr<IOContext> context) { return context->FSync(); });
 }
 
+int IOManager::FDataSync(int fd) {
+  return CallWithContext(fd, [](std::shared_ptr<IOContext> context) {
+    return context->FDataSync();
+  });
+}
+
 int IOManager::FStat(int fd, struct stat *stat_buffer) {
   return CallWithContext(fd, [stat_buffer](std::shared_ptr<IOContext> context) {
     return context->FStat(stat_buffer);

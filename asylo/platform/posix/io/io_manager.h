@@ -89,6 +89,9 @@ class IOManager {
       return -1;
     }
 
+    // Implements IOManager::FDataSync.
+    virtual int FDataSync() { return FSync(); }
+
     // Implements IOManager::FStat.
     virtual int FStat(struct stat *st) {
       errno = ENOSYS;
@@ -503,6 +506,9 @@ class IOManager {
 
   // Implements fsync(2).
   int FSync(int fd);
+
+  // Implements fdatasync(2).
+  int FDataSync(int fd);
 
   // Implements ioctl(2).
   int Ioctl(int fd, int request, void *argp);
