@@ -18,6 +18,7 @@
 
 #include <openssl/aes.h>
 #include <openssl/cmac.h>
+
 #include <string>
 #include <vector>
 
@@ -165,7 +166,7 @@ TEST_F(FakeEnclaveTest, SetIdentity) {
 // the function call). This check relies on the fact that the probability of a
 // generated key being all zeros is O(2^-128). Again, this is just a smoke
 // test.
-TEST_F(FakeEnclaveTest, SealKey1) {
+TEST_F(FakeEnclaveTest, SealKeyGeneratesNonZeroKey) {
   FakeEnclave::EnterEnclave(enclave_);
 
   AlignedHardwareKeyPtr key;
@@ -181,10 +182,10 @@ TEST_F(FakeEnclaveTest, SealKey1) {
   FakeEnclave::ExitEnclave();
 }
 
-// Verify that changing MRENCLAVE changes the key value when
-// bit 0 of key_policy is set, and does not change value when that bit
+// Verify that changing MRENCLAVE changes the key value if and only if the
+// MRENCLAVE bit of key_policy is set, and does not change value when that bit
 // is not set.
-TEST_F(FakeEnclaveTest, SealKey2) {
+TEST_F(FakeEnclaveTest, SealKeyChangesWithMrenclave) {
   FakeEnclave::EnterEnclave(enclave_);
   AlignedHardwareKeyPtr key1, key2;
   AlignedKeyrequestPtr request;
@@ -200,16 +201,22 @@ TEST_F(FakeEnclaveTest, SealKey2) {
     enclave->set_mrenclave(TrivialRandomObject<Measurement>());
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    EXPECT_EQ((*key1 == *key2), ((request->keypolicy & 0x1) == 0))
+
+    // The new MRENCLAVE value is extremely unlikely to match the old value, so
+    // expect the seal key to change if and only if the MRSIGNER KEYPOLICY bit
+    // is set.
+    bool expect_key_change =
+        (request->keypolicy & kKeypolicyMrenclaveBitMask) != 0;
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
   FakeEnclave::ExitEnclave();
 }
 
-// Verify that changing MRSIGNER changes the key value when
-// bit 2 of key_policy is set, and does not change value when that bit
-// is not set.
-TEST_F(FakeEnclaveTest, SealKey3) {
+// Verify that changing MRSIGNER changes the key value if and only if the
+// MRSIGNER bit of key_policy is set, and does not change value when that bit is
+// not set.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithMrsigner) {
   FakeEnclave::EnterEnclave(enclave_);
   AlignedHardwareKeyPtr key1, key2;
   AlignedKeyrequestPtr request;
@@ -225,7 +232,13 @@ TEST_F(FakeEnclaveTest, SealKey3) {
     enclave->set_mrsigner(TrivialRandomObject<Measurement>());
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    EXPECT_EQ((*key1 == *key2), ((request->keypolicy & 0x2) == 0))
+
+    // The new MRSIGNER value is extremely unlikely to match the old value, so
+    // expect the seal key to change if and only if the MRSIGNER KEYPOLICY bit
+    // is set.
+    bool expect_key_change =
+        (request->keypolicy & kKeypolicyMrsignerBitMask) != 0;
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
   FakeEnclave::ExitEnclave();
@@ -255,9 +268,25 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvprodid) {
     enclave->set_isvprodid(TrivialRandomObject<uint16_t>() & 0x0F);
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    EXPECT_EQ((*key1 == *key2), (enclave->get_isvprodid() == prev_isvprodid))
+
+    // A key change is expected if and only if the new ISVPRODID value is
+    // different than the old value and the NOISVPRODID KEYPOLICY bit is clear.
+    bool expect_key_change =
+        (enclave->get_isvprodid() != prev_isvprodid) &&
+        ((request->keypolicy & kKeypolicyNoisvprodidBitMask) == 0);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that changing ISVSVN changes the key value.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvsvn) {
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key1, key2;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   request->isvsvn = enclave->get_isvsvn();
   for (int i = 0; i < 1000; i++) {
@@ -272,7 +301,11 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvprodid) {
     request->isvsvn = isvsvn;
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    EXPECT_EQ((*key1 == *key2), (isvsvn == prev_isvsvn))
+
+    // A key change is expected if and only if the new ISVSVN value is
+    // different than the old value.
+    bool expect_key_change = (isvsvn != prev_isvsvn);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
   FakeEnclave::ExitEnclave();
@@ -280,7 +313,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvprodid) {
 
 // Verify that changing ATTRIBUTES changes the key value when
 // ATTRIBUTESMASK selects those bits.
-TEST_F(FakeEnclaveTest, SealKey5) {
+TEST_F(FakeEnclaveTest, SealKeyChangesWithAttributes) {
   FakeEnclave::EnterEnclave(enclave_);
   AlignedHardwareKeyPtr key1, key2;
   AlignedKeyrequestPtr request;
@@ -303,9 +336,12 @@ TEST_F(FakeEnclaveTest, SealKey5) {
     next = enclave->get_attributes();
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    bool are_attributes_effectively_unchanged =
-        (prev & ~do_not_care_attributes_) == (next & ~do_not_care_attributes_);
-    EXPECT_EQ((*key1 == *key2), are_attributes_effectively_unchanged)
+
+    // A key change is expected if and only if any of attributes selected by the
+    // KEPOLICY mask have changed.
+    bool expect_key_change =
+        (prev & ~do_not_care_attributes_) != (next & ~do_not_care_attributes_);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
   FakeEnclave::ExitEnclave();
@@ -313,7 +349,7 @@ TEST_F(FakeEnclaveTest, SealKey5) {
 
 // Verify that changing MISCSELECT changes the key value when
 // MISCSELECTMASK selects those bits (which is always the case).
-TEST_F(FakeEnclaveTest, SealKey6) {
+TEST_F(FakeEnclaveTest, SealKeyChangesWithMiscselect) {
   FakeEnclave::EnterEnclave(enclave_);
   AlignedHardwareKeyPtr key1, key2;
   AlignedKeyrequestPtr request;
@@ -325,17 +361,17 @@ TEST_F(FakeEnclaveTest, SealKey6) {
   for (int i = 0; i < 100; i++) {
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    // Modify SECS attributes randomly. There are 14 attributes defined.
-    // Of these, 3 attributes are defined by the architecture as must-be-one,
-    // and 6 others are do-not-care. Thus, there are only 5 attributes that
-    // one cares about that are variable. This makes the probability of
-    // new attributes effectively matching the previous attributes equal to
-    // 1/32.
+    // Modify MISCSELECT randomly. Since only one MISCSELECT bit is defined, the
+    // probability that this new value will match the old value is 1/2.
     uint32_t prev = enclave->get_miscselect();
     enclave->set_miscselect(TrivialRandomObject<uint32_t>() & 0x1);
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    EXPECT_EQ((*key1 == *key2), (prev == enclave->get_miscselect()))
+
+    // Since the MISCMASK is set to all 1s, a key change is expected if and
+    // only if the new MISCSELECT is different than the old one.
+    bool expect_key_change = (prev != enclave->get_miscselect());
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
   FakeEnclave::ExitEnclave();

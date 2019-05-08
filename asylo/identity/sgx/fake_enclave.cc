@@ -229,7 +229,11 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
                       "ISVSVN value in KEYREQUEST is too large.");
       }
       dependencies->keyname = KeyrequestKeyname::SEAL_KEY;
-      dependencies->isvprodid = isvprodid_;
+      if (request.keypolicy & kKeypolicyNoisvprodidBitMask) {
+        dependencies->isvprodid = 0;
+      } else {
+        dependencies->isvprodid = isvprodid_;
+      }
       dependencies->isvsvn = request.isvsvn;
       dependencies->ownerepoch = ownerepoch_;
       dependencies->attributes =
