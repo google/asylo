@@ -37,6 +37,7 @@
 #include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
+#include "asylo/util/thread.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -278,7 +279,7 @@ TEST_F(PrimitivesTest, ThreadedTest) {
   constexpr int kNumThreads = 64;
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   for (int i = 0; i < 32; i++) {
-    std::vector<std::thread> threads;
+    std::vector<Thread> threads;
     for (int j = 0; j < kNumThreads; j++) {
       threads.emplace_back([&client, j]() {
         auto result = MultiplyByTwoOrDie(client, j);
@@ -286,7 +287,7 @@ TEST_F(PrimitivesTest, ThreadedTest) {
       });
     }
     for (auto &thread : threads) {
-      thread.join();
+      thread.Join();
     }
   }
 }
@@ -297,7 +298,7 @@ TEST_F(PrimitivesTest, ThreadedStressMallocsTest) {
   constexpr uint64_t kMallocSize = 16;
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   for (int i = 0; i < 32; i++) {
-    std::vector<std::thread> threads;
+    std::vector<Thread> threads;
     for (int j = 0; j < kNumThreads; j++) {
       threads.emplace_back([&client]() {
         auto result = StressMallocsOrDie(client, kMallocCount, kMallocSize);
@@ -305,7 +306,7 @@ TEST_F(PrimitivesTest, ThreadedStressMallocsTest) {
       });
     }
     for (auto &thread : threads) {
-      thread.join();
+      thread.Join();
     }
   }
 }
@@ -315,7 +316,7 @@ TEST_F(PrimitivesTest, ThreadLocalStorageTest) {
   constexpr int kNumCount = 256;
   constexpr int kNumThreads = 64;
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
-  std::vector<std::thread> threads;
+  std::vector<Thread> threads;
   for (int64_t thread_index = 0; thread_index < kNumThreads; thread_index++) {
     threads.emplace_back([&client, thread_index]() {
       int64_t sum = 0;
@@ -330,7 +331,7 @@ TEST_F(PrimitivesTest, ThreadLocalStorageTest) {
     });
   }
   for (auto &thread : threads) {
-    thread.join();
+    thread.Join();
   }
 }
 

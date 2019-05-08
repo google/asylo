@@ -81,6 +81,7 @@ cc_test(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:thread",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",

@@ -31,6 +31,7 @@
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/thread.h"
 
 using ::testing::_;
 using ::testing::Eq;
@@ -50,9 +51,7 @@ class MockedEnclaveClient : public Client {
 
   // Virtual methods not used in this test.
   bool IsClosed() const override { return false; }
-  Status Destroy() override {
-    return Status::OkStatus();
-  }
+  Status Destroy() override { return Status::OkStatus(); }
   Status EnclaveCallInternal(uint64_t selector,
                              UntrustedParameterStack *params) override {
     return Status::OkStatus();
@@ -117,28 +116,27 @@ TEST(DispatchTableTest, HandlersInMultipleThreads) {
   for (size_t i = 0; i < kThreads; ++i) {
     EXPECT_CALL(callbacks[i], Call(Eq(client), _, _)).Times(kCount);
   }
-  std::vector<std::unique_ptr<std::thread>> threads;
+  std::vector<Thread> threads;
   threads.reserve(kThreads);
   for (size_t i = 0; i < kThreads; ++i) {
-    threads.emplace_back(
-        absl::make_unique<std::thread>([i, &client, &callbacks] {
-          std::mt19937 rand_engine;
-          std::uniform_int_distribution<uint64_t> rand_gen(10, 100);
-          absl::SleepFor(absl::Milliseconds(rand_gen(rand_engine)));
-          ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
-                          i, ExitHandler{callbacks[i].AsStdFunction()}),
-                      IsOk());
-          UntrustedParameterStack params;
-          for (size_t c = 0; c < kCount; ++c) {
-            absl::SleepFor(absl::Milliseconds(rand_gen(rand_engine)));
-            EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-                            i, &params, client.get()),
-                        IsOk());
-          }
-        }));
+    threads.emplace_back([i, &client, &callbacks] {
+      std::mt19937 rand_engine;
+      std::uniform_int_distribution<uint64_t> rand_gen(10, 100);
+      absl::SleepFor(absl::Milliseconds(rand_gen(rand_engine)));
+      ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                      i, ExitHandler{callbacks[i].AsStdFunction()}),
+                  IsOk());
+      UntrustedParameterStack params;
+      for (size_t c = 0; c < kCount; ++c) {
+        absl::SleepFor(absl::Milliseconds(rand_gen(rand_engine)));
+        EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                        i, &params, client.get()),
+                    IsOk());
+      }
+    });
   }
   for (auto &thread : threads) {
-    thread->join();
+    thread.Join();
   }
 }
 

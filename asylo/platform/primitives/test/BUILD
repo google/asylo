@@ -71,6 +71,7 @@ cc_library(
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/test/util:status_matchers",
         "//asylo/util:status",
+        "//asylo/util:thread",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",
