@@ -40,6 +40,20 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+constexpr char kHardcodedPkcs15PaddingHex[] =
+    "0001"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "FFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFF"
+    "003031300D060960864801650304020105000420";
+
 std::string FormatAttributeSet(const SecsAttributeSet &set) {
   Attributes attributes;
   // The following variant of ConvertSecsAttributeRepresentation() never fails,
@@ -136,14 +150,14 @@ Status FakeEnclave::GetHardwareRand64(uint64_t *value) {
   return Status::OkStatus();
 }
 
-Status FakeEnclave::DeriveKey(const KeyDependencies &dependencies,
+Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
                               HardwareKey *key) {
   static_assert(HardwareKey::size() == AES_BLOCK_SIZE,
                 "Mismatch between kHardwareKeySize and AES_BLOCK_SIZE");
 
   if (AES_CMAC(key->data(), root_key_.data(), root_key_.size(),
-               reinterpret_cast<const uint8_t *>(&dependencies),
-               sizeof(dependencies)) != 1) {
+               reinterpret_cast<const uint8_t *>(&key_dependencies),
+               sizeof(key_dependencies)) != 1) {
     // Clear-out any leftover state from the output.
     key->Cleanse();
     return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
@@ -197,7 +211,8 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
   // code is pretty much directly taken from the Intel SDM. However only
   // two of the five SGX keys are currently supported. Support for additional
   // keys will be added if and when needed.
-  KeyDependencies dependencies;
+  KeyDependencies key_dependencies;
+  KeyDependenciesBase *dependencies = &key_dependencies.dependencies;
   switch (request.keyname) {
     case KeyrequestKeyname::SEAL_KEY:
       // Intel does not specify how they compare two CPUSVNs with each
@@ -213,45 +228,51 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
         return Status(SGX_ERROR_INVALID_ISVSVN,
                       "ISVSVN value in KEYREQUEST is too large.");
       }
-      dependencies.keyname = KeyrequestKeyname::SEAL_KEY;
-      dependencies.isvprodid = isvprodid_;
-      dependencies.isvsvn = request.isvsvn;
-      dependencies.ownerepoch = ownerepoch_;
-      dependencies.attributes =
+      dependencies->keyname = KeyrequestKeyname::SEAL_KEY;
+      dependencies->isvprodid = isvprodid_;
+      dependencies->isvsvn = request.isvsvn;
+      dependencies->ownerepoch = ownerepoch_;
+      dependencies->attributes =
           ((kRequiredSealingAttributesMask | request.attributemask) &
            attributes_);
-      dependencies.attributemask = request.attributemask;
+      dependencies->attributemask = request.attributemask;
       if (request.keypolicy & kKeypolicyMrenclaveBitMask) {
-        dependencies.mrenclave = mrenclave_;
+        dependencies->mrenclave = mrenclave_;
       } else {
-        dependencies.mrenclave.fill(0);
+        dependencies->mrenclave.fill(0);
       }
       if (request.keypolicy & kKeypolicyMrsignerBitMask) {
-        dependencies.mrsigner = mrsigner_;
+        dependencies->mrsigner = mrsigner_;
       } else {
-        dependencies.mrsigner.fill(0);
+        dependencies->mrsigner.fill(0);
       }
-      dependencies.keyid = request.keyid;
-      dependencies.seal_key_fuses = seal_fuses_;
-      dependencies.cpusvn = request.cpusvn;
-      dependencies.miscselect = (miscselect_ & request.miscmask);
-      dependencies.miscmask = request.miscmask;
+      dependencies->keyid = request.keyid;
+      dependencies->seal_key_fuses = seal_fuses_;
+      dependencies->cpusvn = request.cpusvn;
+      SetTrivialObjectFromHexString(kHardcodedPkcs15PaddingHex,
+                                    &dependencies->padding);
+      dependencies->miscselect = (miscselect_ & request.miscmask);
+      dependencies->miscmask = request.miscmask;
+      dependencies->keypolicy = request.keypolicy;
       break;
 
     case KeyrequestKeyname::REPORT_KEY:
-      dependencies.keyname = KeyrequestKeyname::REPORT_KEY;
-      dependencies.isvprodid = 0;
-      dependencies.isvsvn = 0;
-      dependencies.ownerepoch = ownerepoch_;
-      dependencies.attributes = attributes_;
-      ClearSecsAttributeSet(&dependencies.attributemask);
-      dependencies.mrenclave = mrenclave_;
-      dependencies.mrsigner.fill(0);
-      dependencies.keyid = request.keyid;
-      dependencies.seal_key_fuses = seal_fuses_;
-      dependencies.cpusvn = cpusvn_;
-      dependencies.miscselect = miscselect_;
-      dependencies.miscmask = 0;
+      dependencies->keyname = KeyrequestKeyname::REPORT_KEY;
+      dependencies->isvprodid = 0;
+      dependencies->isvsvn = 0;
+      dependencies->ownerepoch = ownerepoch_;
+      dependencies->attributes = attributes_;
+      ClearSecsAttributeSet(&dependencies->attributemask);
+      dependencies->mrenclave = mrenclave_;
+      dependencies->mrsigner.fill(0);
+      dependencies->keyid = request.keyid;
+      dependencies->seal_key_fuses = seal_fuses_;
+      dependencies->cpusvn = cpusvn_;
+      SetTrivialObjectFromHexString(kHardcodedPkcs15PaddingHex,
+                                    &dependencies->padding);
+      dependencies->miscselect = miscselect_;
+      dependencies->miscmask = 0;
+      dependencies->keypolicy = 0;
       break;
 
     default:
@@ -260,7 +281,7 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
           absl::StrCat("Key name ", static_cast<uint64_t>(request.keyname),
                        " is not supported"));
   }
-  return DeriveKey(dependencies, key);
+  return DeriveKey(key_dependencies, key);
 }
 
 Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
@@ -310,24 +331,28 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   // Prepare a KeyDependencies struct to generate the appropriate report key.
   // This code is pretty much directly taken from the EREPORT instruction
   // description in the Intel SDM.
-  KeyDependencies dependencies;
+  KeyDependencies key_dependencies;
+  KeyDependenciesBase *dependencies = &key_dependencies.dependencies;
 
-  dependencies.keyname = KeyrequestKeyname::REPORT_KEY;
-  dependencies.isvprodid = 0;
-  dependencies.isvsvn = 0;
-  dependencies.ownerepoch = ownerepoch_;
-  dependencies.attributes = tinfo.attributes;
-  ClearSecsAttributeSet(&dependencies.attributemask);
-  dependencies.mrenclave = tinfo.measurement;
-  dependencies.mrsigner.fill(0);
-  dependencies.keyid = report_keyid_;
-  dependencies.seal_key_fuses = seal_fuses_;
-  dependencies.cpusvn = cpusvn_;
-  dependencies.miscselect = tinfo.miscselect;
-  dependencies.miscmask = 0;
+  dependencies->keyname = KeyrequestKeyname::REPORT_KEY;
+  dependencies->isvprodid = 0;
+  dependencies->isvsvn = 0;
+  dependencies->ownerepoch = ownerepoch_;
+  dependencies->attributes = tinfo.attributes;
+  ClearSecsAttributeSet(&dependencies->attributemask);
+  dependencies->mrenclave = tinfo.measurement;
+  dependencies->mrsigner.fill(0);
+  dependencies->keyid = report_keyid_;
+  dependencies->seal_key_fuses = seal_fuses_;
+  dependencies->cpusvn = cpusvn_;
+  SetTrivialObjectFromHexString(kHardcodedPkcs15PaddingHex,
+                                &dependencies->padding);
+  dependencies->miscselect = tinfo.miscselect;
+  dependencies->miscmask = 0;
+  dependencies->keypolicy = 0;
 
   SafeBytes<kHardwareKeySize> report_key;
-  ASYLO_RETURN_IF_ERROR(DeriveKey(dependencies, &report_key));
+  ASYLO_RETURN_IF_ERROR(DeriveKey(key_dependencies, &report_key));
 
   // Compute the report MAC. SGX uses CMAC to MAC the contents of the report.
   // The last two fields (KEYID and MAC) from the REPORT struct are not
