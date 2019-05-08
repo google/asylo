@@ -112,7 +112,9 @@ class FakeEnclave {
   }
   void set_isvprodid(uint16_t value) { isvprodid_ = value; }
   void set_isvsvn(uint16_t value) { isvsvn_ = value; }
-  void set_attributes(const SecsAttributeSet &value) { attributes_ = value; }
+  void set_attributes(const SecsAttributeSet &value) {
+    attributes_ = (value & valid_attributes_) | required_attributes_;
+  }
   void set_miscselect(uint32_t value) { miscselect_ = value; }
   void set_cpusvn(const UnsafeBytes<kCpusvnSize> &value) { cpusvn_ = value; }
   void set_report_keyid(const UnsafeBytes<kReportKeyidSize> &value) {
@@ -126,6 +128,24 @@ class FakeEnclave {
   }
   void set_seal_fuses(const SafeBytes<AES_BLOCK_SIZE> &value) {
     seal_fuses_ = value;
+  }
+  void set_valid_attributes(const SecsAttributeSet &value) {
+    valid_attributes_ = value;
+  }
+  void add_valid_attribute(SecsAttributeBit bit) {
+    valid_attributes_ |= MakeSecsAttributeSet({bit}).ValueOrDie();
+  }
+  void remove_valid_attribute(SecsAttributeBit bit) {
+    valid_attributes_ &= ~MakeSecsAttributeSet({bit}).ValueOrDie();
+  }
+  void set_required_attributes(const SecsAttributeSet &value) {
+    required_attributes_ = value;
+  }
+  void add_required_attribute(SecsAttributeBit bit) {
+    required_attributes_ |= MakeSecsAttributeSet({bit}).ValueOrDie();
+  }
+  void remove_required_attribute(SecsAttributeBit bit) {
+    required_attributes_ &= ~MakeSecsAttributeSet({bit}).ValueOrDie();
   }
 
   // Accessors
@@ -144,7 +164,10 @@ class FakeEnclave {
   const SafeBytes<kOwnerEpochSize> &get_ownerepoch() { return ownerepoch_; }
   const SafeBytes<SHA256_DIGEST_LENGTH> &get_root_key() { return root_key_; }
   const SafeBytes<AES_BLOCK_SIZE> &get_seal_fuses() { return seal_fuses_; }
-
+  const SecsAttributeSet &get_valid_attributes() { return valid_attributes_; }
+  const SecsAttributeSet &get_required_attributes() {
+    return required_attributes_;
+  }
   // Initializes data members that represent the enclave's identity to random
   // values. Ensures that the random identity conforms to the various
   // constraints specified by the SGX architecture.
@@ -260,6 +283,14 @@ class FakeEnclave {
   // The SDM describes this as a "package-wide control register that is 128 bits
   // in size.
   SafeBytes<AES_BLOCK_SIZE> seal_fuses_;
+
+  // Settable SECS attributes. Any attributes in this set that are clear cannot
+  // be set.
+  SecsAttributeSet valid_attributes_;
+
+  // SECS attribute bits that must be set for the enclave to be considered a
+  // valid enclave.
+  SecsAttributeSet required_attributes_;
 
   // Current fake enclave.
   static FakeEnclave *current_;

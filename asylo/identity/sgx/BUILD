@@ -493,7 +493,10 @@ cc_library(
             "@linux_sgx//:trts",
         ],
         "//conditions:default": [
+            ":attributes_proto_cc",
             ":code_identity_proto_cc",
+            ":proto_format",
+            "@com_google_absl//absl/strings",
             "//asylo/crypto/util:bssl_util",
             "//asylo/crypto/util:trivial_object_util",
             "//asylo/identity/util:sha256_hash_proto_cc",

@@ -20,6 +20,7 @@
 
 #include <openssl/cmac.h>
 #include <openssl/rand.h>
+
 #include <cstddef>
 #include <cstdlib>
 #include <iostream>
@@ -29,21 +30,37 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 
 namespace asylo {
 namespace sgx {
+namespace {
+
+std::string FormatAttributeSet(const SecsAttributeSet &set) {
+  Attributes attributes;
+  // The following variant of ConvertSecsAttributeRepresentation() never fails,
+  // so the return value is ignored.
+  ConvertSecsAttributeRepresentation(set, &attributes);
+  return FormatProto(attributes);
+}
+
+}  // namespace
 
 FakeEnclave *FakeEnclave::current_ = nullptr;
 
 FakeEnclave::FakeEnclave() {
+  GetAllSecsAttributes(&valid_attributes_);
+  remove_valid_attribute(SecsAttributeBit::KSS);
+  GetMustBeSetSecsAttributes(&required_attributes_);
   mrenclave_.fill(0);
   mrsigner_.fill(0);
   isvprodid_ = 0;
   isvsvn_ = 0;
-  ClearSecsAttributeSet(&attributes_);
+  attributes_ = required_attributes_;
   miscselect_ = 0;
   cpusvn_.fill(0);
   report_keyid_.fill(0);
@@ -81,12 +98,10 @@ void FakeEnclave::SetRandomIdentity() {
   isvprodid_ = TrivialRandomObject<uint16_t>();
   isvsvn_ = TrivialRandomObject<uint16_t>();
 
-  // Set attributes_ field to a legal random value.
-  GetAllSecsAttributes(&attributes_);
-  attributes_ = attributes_ & TrivialRandomObject<SecsAttributeSet>();
-  SecsAttributeSet must_be_set_attributes;
-  GetMustBeSetSecsAttributes(&must_be_set_attributes);
-  attributes_ = attributes_ | must_be_set_attributes;
+  // Set attributes_ field to a legal random value. The set_attributes() method
+  // accounts for valid_attributes_ and required_attributes_ constraints.
+  set_attributes(TrivialRandomObject<SecsAttributeSet>());
+
   // All bits of MISCSELECT, except for bit 0, must be zero.
   miscselect_ = TrivialRandomObject<uint32_t>() & 0x1;
 }
@@ -100,6 +115,18 @@ void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
   if (!ConvertSecsAttributeRepresentation(identity.attributes(),
                                           &attributes_)) {
     LOG(FATAL) << "Error while reading attributes from identity.";
+  }
+  if ((attributes_ & valid_attributes_) != attributes_) {
+    LOG(FATAL) << "Identity contains illegal attributes. "
+               << "Identity Attributes: " << FormatAttributeSet(attributes_)
+               << ". Valid Attributes: "
+               << FormatAttributeSet(valid_attributes_);
+  }
+  if ((attributes_ & required_attributes_) != required_attributes_) {
+    LOG(FATAL) << "Identity is missing required attributes. "
+               << "Identity Attributes: " << FormatAttributeSet(attributes_)
+               << ". Required Attributes: "
+               << FormatAttributeSet(required_attributes_);
   }
   miscselect_ = identity.miscselect();
 }

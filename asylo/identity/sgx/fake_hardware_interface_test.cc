@@ -54,10 +54,11 @@ class FakeEnclaveTest : public ::testing::Test {
  protected:
   FakeEnclaveTest() {
     // Set the various SecsAttributeSet values.
-    GetAllSecsAttributes(&all_attributes_);
-    GetMustBeSetSecsAttributes(&must_be_set_attributes_);
     GetDefaultDoNotCareSecsAttributes(&do_not_care_attributes_);
     always_care_attributes_ = kRequiredSealingAttributesMask;
+
+    // Allow the enclave to set the KSS attribute.
+    enclave_.add_valid_attribute(SecsAttributeBit::KSS);
 
     // Set up a fake enclave. All tests use this enclave either directly,
     // or tweaked copies of it as needed.
@@ -86,11 +87,18 @@ class FakeEnclaveTest : public ::testing::Test {
     report_key_request_->keyname = KeyrequestKeyname::REPORT_KEY;
   }
 
+  uint16_t GenerateRandomKeypolicy(const SecsAttributeSet &attributes) {
+    uint16_t keypolicy_valid_bits =
+        kKeypolicyMrenclaveBitMask | kKeypolicyMrsignerBitMask;
+    if (TestAttribute(SecsAttributeBit::KSS, attributes)) {
+      keypolicy_valid_bits |= kKeypolicyKssBits;
+    }
+    return TrivialRandomObject<uint16_t>() & keypolicy_valid_bits;
+  }
+
   FakeEnclave enclave_;
   AlignedKeyrequestPtr seal_key_request_;
   AlignedKeyrequestPtr report_key_request_;
-  SecsAttributeSet all_attributes_;
-  SecsAttributeSet must_be_set_attributes_;
   SecsAttributeSet do_not_care_attributes_;
   SecsAttributeSet always_care_attributes_;
 };
@@ -136,13 +144,15 @@ TEST_F(FakeEnclaveTest, GetHardwareRand) {
 
 // Verify that FakeEnclave's identity can be set correctly from a CodeIdentity.
 TEST_F(FakeEnclaveTest, SetIdentity) {
+  enclave_.remove_valid_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
   FakeEnclave::EnterEnclave(enclave_);
   CodeIdentity identity = GetSelfIdentity()->identity;
+  FakeEnclave::ExitEnclave();
 
   FakeEnclave enclave2;
   enclave2.SetIdentity(identity);
 
-  FakeEnclave::ExitEnclave();
   FakeEnclave::EnterEnclave(enclave2);
   CodeIdentity identity2 = GetSelfIdentity()->identity;
 
@@ -182,7 +192,7 @@ TEST_F(FakeEnclaveTest, SealKey2) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   for (int i = 0; i < 1000; i++) {
-    request->keypolicy = TrivialRandomObject<uint16_t>() & 0x3;
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set mrenclave to a new random value. The probability that
@@ -207,7 +217,7 @@ TEST_F(FakeEnclaveTest, SealKey3) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   for (int i = 0; i < 1000; i++) {
-    request->keypolicy = TrivialRandomObject<uint16_t>() & 0x3;
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set mrsigner to a new random value. The probability that
@@ -221,8 +231,14 @@ TEST_F(FakeEnclaveTest, SealKey3) {
   FakeEnclave::ExitEnclave();
 }
 
-// Verify that changing ISVPRODID or ISVSVN changes the key value.
-TEST_F(FakeEnclaveTest, SealKey4) {
+// Verify that changing ISVPRODID changes the key value only if the NOISVPRODID
+// bit in KEYPOLICY is not set.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvprodid) {
+  // This test requires that the KSS attribute bit is set. So add this bit to
+  // the "must be set" bits of this enclave, and generate a new random identity.
+  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
+
   FakeEnclave::EnterEnclave(enclave_);
   AlignedHardwareKeyPtr key1, key2;
   AlignedKeyrequestPtr request;
@@ -230,6 +246,7 @@ TEST_F(FakeEnclaveTest, SealKey4) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   for (int i = 0; i < 1000; i++) {
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set ISVPRODID to a new random value. The probability that
@@ -244,6 +261,7 @@ TEST_F(FakeEnclaveTest, SealKey4) {
 
   request->isvsvn = enclave->get_isvsvn();
   for (int i = 0; i < 1000; i++) {
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     // Set ISVSVN to a new random value. The probability that
@@ -269,10 +287,8 @@ TEST_F(FakeEnclaveTest, SealKey5) {
   *request = *seal_key_request_;
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
-  SecsAttributeSet next =
-      TrivialRandomObject<SecsAttributeSet>() & all_attributes_;
-  next = next | must_be_set_attributes_;
-  enclave->set_attributes(next);
+  enclave->set_attributes(TrivialRandomObject<SecsAttributeSet>());
+  SecsAttributeSet next = enclave->get_attributes();
   for (int i = 0; i < 1000; i++) {
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
@@ -283,9 +299,8 @@ TEST_F(FakeEnclaveTest, SealKey5) {
     // new attributes effectively matching the previous attributes equal to
     // 1/32.
     SecsAttributeSet prev = enclave->get_attributes();
-    next = TrivialRandomObject<SecsAttributeSet>() & all_attributes_;
-    next = next | must_be_set_attributes_;
-    enclave->set_attributes(next);
+    enclave->set_attributes(TrivialRandomObject<SecsAttributeSet>());
+    next = enclave->get_attributes();
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
     bool are_attributes_effectively_unchanged =
