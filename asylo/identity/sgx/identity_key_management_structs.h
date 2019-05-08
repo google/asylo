@@ -78,6 +78,15 @@ constexpr int kCpusvnSize = 16;
 // Size of the two SIGSTRUCT headers (defined below).
 constexpr int kSigstructHeaderSize = 16;
 
+// Size of CONFIGID.
+constexpr int kConfigidSize = 64;
+
+// Size of ISVFAMILYID.
+constexpr int kIsvfamilyidSize = 16;
+
+// Size of ISVEXTPRODID.
+constexpr int kIsvextprodidSize = 16;
+
 // Date defines the format of the "date" field embedded in a SIGSTRUCT.
 //
 // Note that this is not an architectural structure.
@@ -115,12 +124,12 @@ struct SigstructBody {
   uint32_t miscselect;
   uint32_t miscmask;
   UnsafeBytes<4> reserved1;  // Field size taken from the Intel SDM.
-  UnsafeBytes<16> isvfamilyid;
+  UnsafeBytes<kIsvfamilyidSize> isvfamilyid;
   SecsAttributeSet attributes;
   SecsAttributeSet attributemask;
   UnsafeBytes<SHA256_DIGEST_LENGTH> enclavehash;
   UnsafeBytes<16> reserved2;  // Field size taken from the Intel SDM.
-  UnsafeBytes<16> isvextprodid;
+  UnsafeBytes<kIsvextprodidSize> isvextprodid;
   uint16_t isvprodid;
   uint16_t isvsvn;
 } ABSL_ATTRIBUTE_PACKED;
@@ -255,7 +264,7 @@ struct Targetinfo {
   uint16_t configsvn;
   uint32_t miscselect;
   UnsafeBytes<8> reserved2;  // Field size taken from the Intel SDM.
-  UnsafeBytes<64> configid;
+  UnsafeBytes<kConfigidSize> configid;
   UnsafeBytes<384> reserved3;  // Field size take from the Intel SDM.
 } ABSL_ATTRIBUTE_PACKED;
 
@@ -297,18 +306,18 @@ struct Report {
   UnsafeBytes<kCpusvnSize> cpusvn;
   uint32_t miscselect;
   UnsafeBytes<12> reserved1;  // Field size taken from the Intel SDM.
-  UnsafeBytes<16> isvextprodid;
+  UnsafeBytes<kIsvextprodidSize> isvextprodid;
   SecsAttributeSet attributes;
   UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave;
   UnsafeBytes<32> reserved2;  // Field size taken from the Intel SDM.
   UnsafeBytes<SHA256_DIGEST_LENGTH> mrsigner;
   UnsafeBytes<32> reserved3;  // Field size taken from the Intel SDM.
-  UnsafeBytes<64> configid;
+  UnsafeBytes<kConfigidSize> configid;
   uint16_t isvprodid;
   uint16_t isvsvn;
   uint16_t configsvn;
   UnsafeBytes<42> reserved4;  // Field size taken from the Intel SDM.
-  UnsafeBytes<16> isvfamilyid;
+  UnsafeBytes<kIsvfamilyidSize> isvfamilyid;
   Reportdata reportdata;
   UnsafeBytes<kReportKeyidSize> keyid;
   UnsafeBytes<kSgxMacSize> mac;
