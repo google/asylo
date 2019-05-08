@@ -1218,6 +1218,18 @@ int ocall_enc_untrusted_utime(const char *filename,
   return utime(filename, asylo::FromBridgeUtimbuf(times, &tmp));
 }
 
+int ocall_enc_untrusted_utimes(
+    const char *filename, const struct bridge_timeval *bridge_access_time,
+    const struct bridge_timeval *bridge_modification_time) {
+  struct timeval times[2];
+  if (!asylo::FromBridgeTimeVal(bridge_access_time, &times[0]) ||
+      !asylo::FromBridgeTimeVal(bridge_modification_time, &times[1])) {
+    errno = EBADE;
+    return -1;
+  }
+  return utimes(filename, times);
+}
+
 //////////////////////////////////////
 //           Runtime support        //
 //////////////////////////////////////

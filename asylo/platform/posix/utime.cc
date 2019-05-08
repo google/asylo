@@ -17,13 +17,19 @@
  */
 
 #include <sys/time.h>
+#include <utime.h>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/posix/io/io_manager.h"
 
 extern "C" {
 
 int utime(const char *filename, const struct utimbuf *times) {
   return enc_untrusted_utime(filename, times);
+}
+
+int utimes(const char *filename, const struct timeval times[2]) {
+  return asylo::io::IOManager::GetInstance().Utimes(filename, times);
 }
 
 }  // extern "C"

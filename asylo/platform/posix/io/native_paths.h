@@ -87,6 +87,7 @@ class NativePathHandler : public io::IOManager::VirtualPathHandler {
   int Rename(const char *oldpath, const char *newpath) override;
   int Access(const char *path, int mode) override;
   int ChMod(const char *pathname, mode_t mode) override;
+  int Utimes(const char *filename, const struct timeval times[2]) override;
 };
 
 }  // namespace io

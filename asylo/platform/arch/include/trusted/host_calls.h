@@ -289,6 +289,7 @@ pid_t enc_untrusted_fork(const char *enclave_name, const char *config,
 //////////////////////////////////////
 
 int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
+int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 
 //////////////////////////////////////
 //           wait.h                 //

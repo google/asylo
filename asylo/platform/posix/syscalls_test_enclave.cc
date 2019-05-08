@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
+#include <openssl/rand.h>
 #include <regex.h>
 #include <sched.h>
 #include <stdio.h>
@@ -27,6 +28,8 @@
 #include <sys/uio.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+#include <utime.h>
+
 #include <algorithm>
 
 #include "absl/container/flat_hash_set.h"
@@ -148,6 +151,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunItimerTest();
     } else if (test_input.test_target() == "rename") {
       return RunRenameTest(test_input.path_name());
+    } else if (test_input.test_target() == "utimes") {
+      return RunUtimesTest(test_input.path_name());
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1375,6 +1380,56 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("failed to rename file in: ", path,
                                  ", error: ", strerror(errno)));
+    }
+
+    return Status::OkStatus();
+  }
+
+  Status RunUtimesTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+    }
+
+    if (open(path.c_str(), O_RDWR | O_CREAT, 0777) < 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("failed to create file in: ", path,
+                                 ", error: ", strerror(errno)));
+    }
+
+    // Set the access and modification time to be a random value larger than the
+    // current time.
+    struct timeval times[2];
+    gettimeofday(&times[0], /*tz=*/nullptr);
+    gettimeofday(&times[1], /*tz=*/nullptr);
+
+    uint8_t random_access_time_shift, random_modification_time_shift;
+    RAND_bytes(&random_access_time_shift, sizeof(random_access_time_shift));
+    RAND_bytes(&random_modification_time_shift,
+               sizeof(random_modification_time_shift));
+    times[0].tv_sec += random_access_time_shift;
+    times[1].tv_sec += random_modification_time_shift;
+
+    if (utimes(path.c_str(), times) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("utimes failed: ", strerror(errno)));
+    }
+
+    // Get the access and modification time of the file to verify they are set
+    // correctly.
+    struct stat stat_buffer;
+    if (stat(path.c_str(), &stat_buffer) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("stat failed: ", strerror(errno)));
+    }
+
+    if (stat_buffer.st_atime != times[0].tv_sec) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Access time is not set correctly");
+    }
+
+    if (stat_buffer.st_mtime != times[1].tv_sec) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Modification time is not set correctly");
     }
 
     return Status::OkStatus();

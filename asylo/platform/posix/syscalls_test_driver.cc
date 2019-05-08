@@ -1068,5 +1068,14 @@ TEST_F(SyscallsTest, Rename) {
   close(fd);
 }
 
+// Tests utimes(). Calls utimes() inside enclave to change the access and
+// modification time inside the enclave, and calls stat() to verify the times
+// are correctly set.
+TEST_F(SyscallsTest, Utimes) {
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("utimes", FLAGS_test_tmpdir + "/utimes", nullptr),
+      IsOk());
+}
+
 }  // namespace
 }  // namespace asylo

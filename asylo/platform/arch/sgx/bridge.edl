@@ -382,6 +382,12 @@ enclave {
         const struct bridge_utimbuf *times)
         propagate_errno;
 
+    int ocall_enc_untrusted_utimes(
+        [in, string] const char *filename,
+	[in] const struct bridge_timeval *bridge_access_time,
+	[in] const struct bridge_timeval *bridge_modification_time)
+	propagate_errno;
+
     //////////////////////////////////////
     //             wait.h               //
     //////////////////////////////////////

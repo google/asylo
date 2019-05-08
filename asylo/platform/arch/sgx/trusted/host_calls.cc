@@ -1039,6 +1039,20 @@ int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
   return ret;
 }
 
+int enc_untrusted_utimes(const char *filename, const struct timeval times[2]) {
+  int ret;
+  bridge_timeval bridge_access_time;
+  bridge_timeval bridge_modification_time;
+  if (!asylo::ToBridgeTimeVal(&times[0], &bridge_access_time) ||
+      !asylo::ToBridgeTimeVal(&times[1], &bridge_modification_time)) {
+    errno = EBADE;
+    return -1;
+  }
+  CHECK_OCALL(ocall_enc_untrusted_utimes(&ret, filename, &bridge_access_time,
+                                         &bridge_modification_time));
+  return ret;
+}
+
 //////////////////////////////////////
 //           Runtime support        //
 //////////////////////////////////////
