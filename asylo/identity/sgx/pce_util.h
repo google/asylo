@@ -19,10 +19,16 @@
 #ifndef ASYLO_IDENTITY_SGX_PCE_UTIL_H_
 #define ASYLO_IDENTITY_SGX_PCE_UTIL_H_
 
+#include <openssl/base.h>
+#include <openssl/rsa.h>
+
 #include <cstdint>
+#include <vector>
 
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
@@ -39,6 +45,24 @@ absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
 // representation used by the PCE.
 absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
     SignatureScheme signature_scheme);
+
+// Parses an RSA-3072 public key from |public_key|. The input |public_key| is
+// expected to be a 388-byte buffer that contains a serialized key in the
+// following format:
+//
+//   modulus [384] || public_exponent [4]
+//
+// where modulus and public_exponent are in big-endian format.
+StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
+    absl::Span<const uint8_t> public_key);
+
+// Serializes the given RSA-3072 public key from |rsa| into a 388-byte buffer
+// with the following format:
+//
+//   modulus [384] || public_exponent [4]
+//
+// where modulus and public_exponent are in big-endian format.
+StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(RSA *rsa);
 
 }  // namespace sgx
 }  // namespace asylo

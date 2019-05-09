@@ -577,8 +577,13 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
         "@sgx_dcap//:pce_wrapper",
     ],
 )
@@ -593,9 +598,13 @@ cc_test(
     deps = [
         ":pce_util",
         "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
         "@sgx_dcap//:pce_wrapper",

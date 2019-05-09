@@ -18,11 +18,19 @@
 
 #include "asylo/identity/sgx/pce_util.h"
 
+#include <openssl/bn.h>
+
 #include "absl/base/macros.h"
+#include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/bssl_util.h"
+#include "asylo/util/status.h"
 #include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h"
 
 namespace asylo {
 namespace sgx {
+
+constexpr size_t kRsa3072ModulusSize = 384;
+constexpr size_t kRsa3072ExponentSize = 4;
 
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme) {
@@ -44,6 +52,45 @@ absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
     default:
       return absl::nullopt;
   }
+}
+
+StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
+    absl::Span<const uint8_t> public_key) {
+  if (public_key.size() != kRsa3072ModulusSize + kRsa3072ExponentSize) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid public key size: ", public_key.size()));
+  }
+
+  bssl::UniquePtr<BIGNUM> modulus(BN_new());
+  if (!modulus) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  bssl::UniquePtr<BIGNUM> exponent(BN_new());
+  if (!exponent) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  bssl::UniquePtr<RSA> rsa(RSA_new());
+  if (!rsa) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  BN_bin2bn(public_key.data(), /*len=*/kRsa3072ModulusSize, modulus.get());
+  BN_bin2bn(public_key.data() + kRsa3072ModulusSize,
+            /*len=*/kRsa3072ExponentSize, exponent.get());
+
+  // Takes ownership of |modulus| and |exponent|.
+  if (RSA_set0_key(rsa.get(), modulus.release(), exponent.release(),
+                   /*d=*/nullptr) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return rsa;
+}
+
+StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(RSA *rsa) {
+  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
 }
 
 }  // namespace sgx
