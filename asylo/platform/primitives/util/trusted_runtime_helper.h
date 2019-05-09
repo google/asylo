@@ -39,7 +39,7 @@ void RegisterInternalHandlers();
 // Registers a mapping between |trusted_selector| and |handler| in the entry
 // table.
 PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
-                                       const EntryHandler &handler);
+                                     const EntryHandler &handler);
 
 // Invokes the enclave entry handler mapped to |selector|.
 PrimitiveStatus InvokeEntryHandler(uint64_t selector,

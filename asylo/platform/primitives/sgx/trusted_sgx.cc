@@ -17,11 +17,17 @@
  */
 
 #include "absl/strings/str_cat.h"
+#include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
+#include "asylo/platform/core/entry_points.h"
+#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
+#include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
@@ -48,28 +54,51 @@ namespace {
     }                                                                        \
   } while (0)
 
-// Maximum number of supported enclave entry points.
-constexpr size_t kEntryPointMax = 4096;
-
-// Table of enclave entry handlers.
-EntryHandler entry_table[kEntryPointMax];
-
-// Lock protecting entry_table.
-asylo_spinlock_t entry_table_lock = ASYLO_SPIN_LOCK_INITIALIZER;
+// Handler installed by the runtime to initialize the enclave.
+PrimitiveStatus Initialize(void *context, TrustedParameterStack *params) {
+  auto output_len = params->Pop();
+  auto output = params->Pop();
+  const auto input = params->Pop();
+  const auto enclave_name = params->Pop();
+  int result = 0;
+  try {
+    result = asylo::__asylo_user_init(enclave_name->As<const char>(),
+                                      /*config=*/input->As<const char>(),
+                                      /*config_len=*/input->size(),
+                                      output->As<char *>(),
+                                      output_len->As<size_t>());
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  return PrimitiveStatus(result);
+}
 
 }  // namespace
 
-PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
-    uint64_t trusted_selector, const EntryHandler &handler) {
-  SpinLockGuard lock(&entry_table_lock);
-  if (trusted_selector >= kEntryPointMax ||
-      !entry_table[trusted_selector].IsNull()) {
-    return {error::GoogleError::OUT_OF_RANGE,
-            "Invalid selector in RegisterEntryHandler."};
+// Register SGX backend entry handlers.
+void RegisterInternalHandlers() {
+  // Register the enclave initialization entry handler.
+  EntryHandler handler(Initialize);
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloInit, handler)
+            .ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
+}
 
-  entry_table[trusted_selector] = handler;
-  return PrimitiveStatus::OkStatus();
+void TrustedPrimitives::BestEffortAbort(const char *message) {
+  MarkEnclaveAborted();
+  abort();
+}
+
+PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
+    uint64_t selector, const EntryHandler &handler) {
+  return asylo::primitives::RegisterEntryHandler(selector, handler);
+}
+
+int asylo_enclave_call(uint64_t selector, void *params) {
+  PrimitiveStatus status = InvokeEntryHandler(
+      selector, reinterpret_cast<TrustedParameterStack *>(params));
+  return !status.ok();
 }
 
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) {

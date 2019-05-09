@@ -307,8 +307,8 @@ Status SgxClient::EnterAndInitialize(const EnclaveConfig &config) {
 
   char *output = nullptr;
   size_t output_len = 0;
-  ASYLO_RETURN_IF_ERROR(initialize(id_, get_name().c_str(), buf.data(),
-                                   buf.size(), &output, &output_len));
+  ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->Initialize(
+      get_name().c_str(), buf.data(), buf.size(), &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.

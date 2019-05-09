@@ -33,6 +33,7 @@ cc_library(
     srcs = [
         "trusted_runtime.cc",
         "trusted_sgx.cc",
+        "trusted_sgx.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     tags = ["asylo-sgx"],
@@ -40,9 +41,12 @@ cc_library(
         {
             "//asylo/platform/primitives:asylo_sgx": [
                 "//asylo/platform/primitives",
+                "//asylo/platform/core:entry_points",
+                "//asylo/util:logging",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
                 "//asylo/platform/primitives/util:primitive_locks",
+                "//asylo/platform/primitives/util:trusted_runtime_helper",
                 "//asylo/platform/primitives/x86:spin_lock",
                 "//asylo/util:error_codes",
                 "//asylo/platform/arch:trusted_sgx_bridge",

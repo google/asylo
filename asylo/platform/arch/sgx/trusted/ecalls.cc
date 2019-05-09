@@ -30,6 +30,7 @@
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/core/entry_points.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "include/sgx_trts.h"
@@ -176,6 +177,8 @@ int ecall_transfer_secure_snapshot_key(const char *input,
   return result;
 }
 
+// Invokes the trusted entry point designated by |selector|. Returns a
+// non-zero error code on failure.
 int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
-  abort();
+  return asylo::primitives::asylo_enclave_call(selector, buffer);
 }

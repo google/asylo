@@ -106,7 +106,7 @@ PrimitiveStatus RegisterEntryHandler(
 }
 
 PrimitiveStatus InvokeEntryHandler(uint64_t selector,
-                                     TrustedParameterStack *params) {
+                                   TrustedParameterStack *params) {
   // Initialize the enclave if necessary.
   EnsureInitialized();
 
