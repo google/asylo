@@ -222,12 +222,12 @@ TEST_F(PceUtilTest, DISABLED_ParseRsa3072PublicKeyRestoreFromSerializedKey) {
   // Verify that both keys have the same modulus size.
   EXPECT_THAT(RSA_size(rsa2.get()), Eq(RSA_size(rsa1.get())));
 
-  // Verify that the restored key can decrypt a message encrypted by the
-  // original key.
+  // Verify that the original key can decrypt a message encrypted by the
+  // restored key.
   std::vector<uint8_t> ciphertext(RSA_size(rsa1.get()));
   size_t out_len;
   ASSERT_EQ(
-      RSA_encrypt(rsa1.get(), &out_len, ciphertext.data(), ciphertext.size(),
+      RSA_encrypt(rsa2.get(), &out_len, ciphertext.data(), ciphertext.size(),
                   plaintext_.data(), plaintext_.size(), RSA_PKCS1_OAEP_PADDING),
       1)
       << BsslLastErrorString();
@@ -235,7 +235,7 @@ TEST_F(PceUtilTest, DISABLED_ParseRsa3072PublicKeyRestoreFromSerializedKey) {
 
   std::vector<uint8_t> decrypted(RSA_size(rsa2.get()));
   ASSERT_EQ(
-      RSA_decrypt(rsa2.get(), &out_len, decrypted.data(), decrypted.size(),
+      RSA_decrypt(rsa1.get(), &out_len, decrypted.data(), decrypted.size(),
                   ciphertext.data(), ciphertext.size(), RSA_PKCS1_OAEP_PADDING),
       1)
       << BsslLastErrorString();
