@@ -991,6 +991,12 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   freeifaddrs(host_front);
 }
 
+// Test getsockname() success scenario
+TEST_F(SyscallsTest, Sockname_SUCCESS) {
+  EXPECT_THAT(RunSyscallInsideEnclave("getsockname_success", "", nullptr),
+              IsOk());
+}
+
 // Tests various failure modes of getsockname(). The enclave code sets up each
 // test and tests against the expected retval.
 TEST_F(SyscallsTest, SocknameFailure_EBADF) {

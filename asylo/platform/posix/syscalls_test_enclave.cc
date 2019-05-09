@@ -125,6 +125,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunChModTest(test_input.path_name());
     } else if (test_input.test_target() == "getifaddrs") {
       return RunGetIfAddrsTest(output);
+    } else if (test_input.test_target() == "getsockname_success") {
+      return RunGetSocknameTest_SUCCESS();
     } else if (test_input.test_target() == "getsockname_ebadf") {
       return RunGetSocknameFailureTest_EBADF();
     } else if (test_input.test_target() == "getsockname_efault") {
@@ -1113,7 +1115,24 @@ class SyscallsEnclave : public EnclaveTestCase {
   }
 
   // getsockname()
+  // SUCCESS.
+  Status RunGetSocknameTest_SUCCESS() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
 
+    int fd = socket(AF_UNIX, SOCK_STREAM, 0);
+
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
+    }
+
+    if (getsockname(fd, &sa, &sa_len) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    "getSockname failed");
+    }
+    return Status::OkStatus();
+  }
   // EBADF: Returned if you pass an invalid file descriptor.
   Status RunGetSocknameFailureTest_EBADF() {
     sockaddr sa;

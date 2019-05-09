@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/str_cat.h"
 #include "asylo/client.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/posix/sockets/socket_client.h"
@@ -46,10 +47,12 @@ class DomainSocketDriver : public EnclaveTest {
  protected:
   // Builds an enclave input from the given parameters..
   EnclaveInput BuildEnclaveInput(const SocketTestInput::SocketAction &action,
-                                 const std::string &socket_name) {
+                                 const std::string &socket_name,
+                                 bool use_path_len) {
     SocketTestInput test_input;
     test_input.set_action(action);
     test_input.set_socket_name(socket_name);
+    test_input.set_use_path_len(use_path_len);
 
     EnclaveInput ret;
     *ret.MutableExtension(socket_test_input) = test_input;
@@ -57,10 +60,37 @@ class DomainSocketDriver : public EnclaveTest {
     return ret;
   }
 
+  // Prepares unix domain socket
+  std::string GetServerSocket(std::string sub_path) {
+    std::string server_socket = absl::StrCat(FLAGS_test_tmpdir, sub_path);
+
+    // Adds check of file path length here to make sure we provide a file path
+    // within the limit of UNIX domain socket. When |FLAGS_test_tmpdir| is too
+    // long, "/tmp" is selected if it exits and the user has r+w permission on
+    // it. If we can not provide a proper file for the test, the test just
+    // fails.
+    if (server_socket.length() >= kMaxSocketNameLen) {
+      struct stat stat_buf;
+      EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode) &&
+                  (stat_buf.st_mode & S_IRUSR) && (stat_buf.st_mode & S_IWUSR));
+      server_socket = absl::StrCat("/tmp", sub_path);
+    }
+    EXPECT_THAT(server_socket.length(), Lt(kMaxSocketNameLen));
+    LOG(INFO) << "Cleaning up socket file if present, server_socket = "
+              << server_socket;
+    int res = remove(server_socket.c_str());
+    if (res != 0) {
+      LOG(INFO) << "remove failed";
+    }
+    return server_socket;
+  }
+
   // Sets up UNIX domain-socket server thread outside enclave.
   static void AppServerSetup(SocketServer *app_socket_server,
-                             const std::string &app_server_socket) {
-    EXPECT_THAT(app_socket_server->ServerSetup(app_server_socket), IsOk());
+                             const std::string &app_server_socket,
+                             bool use_path_len) {
+    EXPECT_THAT(app_socket_server->ServerSetup(app_server_socket, use_path_len),
+                IsOk());
   }
 
   // Runs UNIX domain-socket server thread outside enclave.
@@ -70,38 +100,40 @@ class DomainSocketDriver : public EnclaveTest {
   }
 
   // Runs UNIX domain-socket client thread outside enclave.
-  static void AppClientThread(const std::string &enc_server_socket) {
+  static void AppClientThread(const std::string &enc_server_socket,
+                              bool use_path_len) {
     SocketClient app_socket_client;
-    EXPECT_THAT(app_socket_client.ClientSetup(enc_server_socket, nullptr),
-                IsOk());
+    EXPECT_THAT(
+        app_socket_client.ClientSetup(enc_server_socket, nullptr, use_path_len),
+        IsOk());
     EXPECT_THAT(ClientTransmit(&app_socket_client), IsOk());
   }
 };
+
 // Tests UNIX domain-socket ClientSetup, Read and Write functions of
 // SocketClient object inside enclave. Tests UNIX domain-socket ServerSetup,
 // Read and Write functions of SocketClient object outside enclave.
-TEST_F(DomainSocketDriver, EnclaveClientTest) {
-  std::string app_server_socket = FLAGS_test_tmpdir + "/app_server_socket";
-
-  // Adds check of file path length here to make sure we provide a file path
-  // within the limit of UNIX domain socket. When |FLAGS_test_tmpdir| is too
-  // long, "/tmp" is selected if it exits and the user has r+w permission on it.
-  // If we can not provide a proper file for the test, the test just fails.
-  if (app_server_socket.length() >= kMaxSocketNameLen) {
-    struct stat stat_buf;
-    EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode) &&
-                (stat_buf.st_mode & S_IRUSR) && (stat_buf.st_mode & S_IWUSR));
-    app_server_socket = "/tmp/app_server_socket";
-  }
-  EXPECT_THAT(app_server_socket.length(), Lt(kMaxSocketNameLen));
-  LOG(INFO) << "Cleaning up socket file if present, app_server_socket = "
-            << app_server_socket;
-  remove(app_server_socket.c_str());
+TEST_F(DomainSocketDriver, EnclaveClientTestWithUsePathLenFalse) {
+  std::string app_server_socket = GetServerSocket("/app_server_socket");
   SocketServer app_socket_server;
-  AppServerSetup(&app_socket_server, app_server_socket);
+  AppServerSetup(&app_socket_server, app_server_socket, /*use_path_len=*/false);
   std::thread app_server_thread(&AppServerThread, &app_socket_server);
-  EnclaveInput enclave_input =
-      BuildEnclaveInput(SocketTestInput::RUNCLIENT, app_server_socket);
+  EnclaveInput enclave_input = BuildEnclaveInput(
+      SocketTestInput::RUNCLIENT, app_server_socket, /*use_path_len=*/false);
+  EXPECT_THAT(client_->EnterAndRun(enclave_input, nullptr), IsOk());
+  app_server_thread.join();
+}
+
+// Tests UNIX domain-socket ClientSetup, Read and Write functions of
+// SocketClient object inside enclave. Tests UNIX domain-socket ServerSetup,
+// Read and Write functions of SocketClient object outside enclave.
+TEST_F(DomainSocketDriver, EnclaveClientTestWithUsePathLenTrue) {
+  std::string app_server_socket = GetServerSocket("/app_server_socket");
+  SocketServer app_socket_server;
+  AppServerSetup(&app_socket_server, app_server_socket, /*use_path_len=*/true);
+  std::thread app_server_thread(&AppServerThread, &app_socket_server);
+  EnclaveInput enclave_input = BuildEnclaveInput(
+      SocketTestInput::RUNCLIENT, app_server_socket, /*use_path_len=*/true);
   EXPECT_THAT(client_->EnterAndRun(enclave_input, nullptr), IsOk());
   app_server_thread.join();
 }
@@ -109,29 +141,31 @@ TEST_F(DomainSocketDriver, EnclaveClientTest) {
 // Tests UNIX domain-socket ServerSetup, Read and Write functions of
 // SocketClient object inside enclave. Tests UNIX domain-socket ClientSetup,
 // Read and Write functions of SocketClient object outside enclave.
-TEST_F(DomainSocketDriver, EnclaveServerTest) {
-  std::string enc_server_socket = FLAGS_test_tmpdir + "/enc_server_socket";
-
-  // Adds check of file path length here to make sure we provide a file path
-  // within the limit of UNIX domain socket. When |FLAGS_test_tmpdir| is too
-  // long, "/tmp" is selected if it exits and the user has r+w permission on it.
-  // If we can not provide a proper file for the test, the test just fails.
-  if (enc_server_socket.length() >= kMaxSocketNameLen) {
-    struct stat stat_buf;
-    EXPECT_TRUE(!stat("/tmp", &stat_buf) && S_ISDIR(stat_buf.st_mode) &&
-                (stat_buf.st_mode & S_IRUSR) && (stat_buf.st_mode & S_IWUSR));
-    enc_server_socket = "/tmp/enc_server_socket";
-  }
-  EXPECT_THAT(enc_server_socket.length(), Lt(kMaxSocketNameLen));
-  LOG(INFO) << "Cleaning up socket file if present, enc_server_socket = "
-            << enc_server_socket;
-  remove(enc_server_socket.c_str());
-  EnclaveInput enclave_input =
-      BuildEnclaveInput(SocketTestInput::INITSERVER, enc_server_socket);
+TEST_F(DomainSocketDriver, EnclaveServerTestWithUsePathLenTrue) {
+  std::string enc_server_socket = GetServerSocket("/enc_server_socket");
+  EnclaveInput enclave_input = BuildEnclaveInput(
+      SocketTestInput::INITSERVER, enc_server_socket, /*use_path_len=*/true);
   EXPECT_THAT(client_->EnterAndRun(enclave_input, nullptr), IsOk());
-  std::thread app_client_thread(&AppClientThread, enc_server_socket);
-  enclave_input =
-      BuildEnclaveInput(SocketTestInput::RUNSERVER, enc_server_socket);
+  std::thread app_client_thread(&AppClientThread, enc_server_socket,
+                                /*use_path_len=*/true);
+  enclave_input = BuildEnclaveInput(SocketTestInput::RUNSERVER,
+                                    enc_server_socket, /*use_path_len=*/true);
+  EXPECT_THAT(client_->EnterAndRun(enclave_input, nullptr), IsOk());
+  app_client_thread.join();
+}
+
+// Tests UNIX domain-socket ServerSetup, Read and Write functions of
+// SocketClient object inside enclave. Tests UNIX domain-socket ClientSetup,
+// Read and Write functions of SocketClient object outside enclave.
+TEST_F(DomainSocketDriver, EnclaveServerTestWithUsePathLenFalse) {
+  std::string enc_server_socket = GetServerSocket("/enc_server_socket");
+  EnclaveInput enclave_input =
+      BuildEnclaveInput(SocketTestInput::INITSERVER, enc_server_socket, false);
+  EXPECT_THAT(client_->EnterAndRun(enclave_input, nullptr), IsOk());
+  std::thread app_client_thread(&AppClientThread, enc_server_socket,
+                                /*use_path_len=*/false);
+  enclave_input = BuildEnclaveInput(SocketTestInput::RUNSERVER,
+                                    enc_server_socket, /*use_path_len=*/false);
   EXPECT_THAT(client_->EnterAndRun(enclave_input, nullptr), IsOk());
   app_client_thread.join();
 }

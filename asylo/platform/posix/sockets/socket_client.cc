@@ -108,7 +108,7 @@ Status SocketClient::ClientSetup(const std::string &server_ip, int server_port,
 }
 
 Status SocketClient::ClientSetup(const std::string &socket_name,
-                                 sockaddr_un *out_addr) {
+                                 sockaddr_un *out_addr, bool use_path_len) {
   connection_fd_ = socket(AF_UNIX, SOCK_STREAM, 0);
   if (connection_fd_ < 0) {
     LOG(ERROR) << kLogOrigin << "client socket error";
@@ -127,10 +127,15 @@ Status SocketClient::ClientSetup(const std::string &socket_name,
     *out_addr = serv_addr;
   }
 
-  Status status = ClientConnection(
-      connection_fd_, reinterpret_cast<struct sockaddr *>(&serv_addr),
-      sizeof(serv_addr));
-  return status;
+  if (use_path_len) {
+    return ClientConnection(
+        connection_fd_, reinterpret_cast<struct sockaddr *>(&serv_addr),
+        sizeof(serv_addr.sun_family) + strlen(serv_addr.sun_path) + 1);
+  } else {
+    return ClientConnection(connection_fd_,
+                            reinterpret_cast<struct sockaddr *>(&serv_addr),
+                            sizeof(serv_addr));
+  }
 }
 
 Status SocketClient::ClientRoundtripTransmit(int buf_len, int round_trip) {

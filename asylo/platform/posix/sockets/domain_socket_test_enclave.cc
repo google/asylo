@@ -43,11 +43,11 @@ class DomainSocketTest : public EnclaveTestCase {
     std::string socket_name = test_input.socket_name();
 
     if (enc_command == SocketTestInput::INITSERVER) {
-      return EncSetupServer(socket_name);
+      return EncSetupServer(socket_name, test_input.use_path_len());
     } else if (enc_command == SocketTestInput::RUNSERVER) {
       return EncRunServer();
     } else if (enc_command == SocketTestInput::RUNCLIENT) {
-      return EncRunClient(socket_name);
+      return EncRunClient(socket_name, test_input.use_path_len());
     } else {
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     "Unrecognized command for domain socket test");
@@ -56,8 +56,8 @@ class DomainSocketTest : public EnclaveTestCase {
 
  private:
   // Sets up UNIX domain-socket server inside enclave.
-  Status EncSetupServer(const std::string &socket_name) {
-    if (!enc_socket_server_.ServerSetup(socket_name).ok()) {
+  Status EncSetupServer(const std::string &socket_name, bool use_path_len) {
+    if (!enc_socket_server_.ServerSetup(socket_name, use_path_len).ok()) {
       return Status(error::GoogleError::INTERNAL, "Server setup failed");
     }
     return Status::OkStatus();
@@ -75,10 +75,11 @@ class DomainSocketTest : public EnclaveTestCase {
   }
 
   // Runs UNIX domain-socket client inside enclave.
-  Status EncRunClient(const std::string &socket_name) {
+  Status EncRunClient(const std::string &socket_name, bool use_path_len) {
     SocketClient enc_socket_client;
     sockaddr_un app_server_sockaddr;
-    if (!enc_socket_client.ClientSetup(socket_name, &app_server_sockaddr)
+    if (!enc_socket_client
+             .ClientSetup(socket_name, &app_server_sockaddr, use_path_len)
              .ok()) {
       return Status(error::GoogleError::INTERNAL, "Client setup failed");
     }
@@ -93,12 +94,6 @@ class DomainSocketTest : public EnclaveTestCase {
         &peer_sockaddr_len);
     if (!retval.ok()) {
       return retval;
-    }
-    if (peer_sockaddr_len != sizeof(app_server_sockaddr)) {
-      LOG(ERROR) << "peer addrlen " << peer_sockaddr_len
-                 << " doesn't match server addr len "
-                 << sizeof(app_server_sockaddr);
-      return Status(error::GoogleError::INTERNAL, "getpeername failure 1");
     }
     sockaddr_un *peer_sockaddr_un = (sockaddr_un *)&peer_sockaddr;
     if (app_server_sockaddr.sun_family != peer_sockaddr_un->sun_family) {

@@ -326,8 +326,11 @@ int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr) {
   if (ret == -1) {
     return ret;
   }
-  asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
-                          addr);
+  if (!asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp),
+                               sizeof(tmp), addr)) {
+    errno = EFAULT;
+    return -1;
+  }
   return ret;
 }
 
@@ -457,8 +460,11 @@ int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr) {
 
   // Only marshal the sockaddr if a valid one was returned.
   if (ret == 0) {
-    asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
-                            addr);
+    if (!asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp),
+                                 sizeof(tmp), addr)) {
+      errno = EFAULT;
+      return -1;
+    }
   }
   return ret;
 }
@@ -469,8 +475,11 @@ int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr) {
   int ret =
       getpeername(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
   if (ret == 0) {
-    asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp), tmp_len,
-                            addr);
+    if (!asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp),
+                                 tmp_len, addr)) {
+      errno = EFAULT;
+      return -1;
+    }
   }
   return ret;
 }

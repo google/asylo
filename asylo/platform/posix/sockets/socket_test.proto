@@ -40,6 +40,7 @@ message SocketTestInput {
   optional int32 server_port = 3;    // IPv6 server port
   optional int32 buf_len = 4;        // Size of buffer used in socket perf
   optional int32 round_trip = 5;     // Amount of roundtrips in socket perf
+  optional bool use_path_len = 6;    // Decide the addrlen value used by UDS
 }
 
 // Used by socket tests to receive output from the enclave

@@ -359,6 +359,7 @@ struct bridge_sockaddr_in {
 } ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_sockaddr_un {
+  uint32_t len;
   char sun_path[108];
 } ABSL_ATTRIBUTE_PACKED;
 

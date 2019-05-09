@@ -99,7 +99,8 @@ Status SocketServer::ServerSetup(int server_port) {
   return status;
 }
 
-Status SocketServer::ServerSetup(const std::string &socket_name) {
+Status SocketServer::ServerSetup(const std::string &socket_name,
+                                 bool use_path_len) {
   int fd = socket(AF_UNIX, SOCK_STREAM, 0);
   if (fd < 0) {
     LOG(ERROR) << kLogOrigin << "server socket error";
@@ -113,10 +114,14 @@ Status SocketServer::ServerSetup(const std::string &socket_name) {
   serv_addr.sun_family = AF_UNIX;
   strncpy(serv_addr.sun_path, socket_name.c_str(),
           sizeof(serv_addr.sun_path) - 1);
-
-  Status status = ServerConnection(
-      fd, reinterpret_cast<struct sockaddr *>(&serv_addr), sizeof(serv_addr));
-  return status;
+  if (use_path_len) {
+    return ServerConnection(
+        fd, reinterpret_cast<struct sockaddr *>(&serv_addr),
+        sizeof(serv_addr.sun_family) + strlen(serv_addr.sun_path) + 1);
+  } else {
+    return ServerConnection(fd, reinterpret_cast<struct sockaddr *>(&serv_addr),
+                            sizeof(serv_addr));
+  }
 }
 
 Status SocketServer::ServerAccept() {

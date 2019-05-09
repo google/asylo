@@ -50,10 +50,13 @@ class SocketClient {
   // Sets up a UNIX domain client connecting to local UNIX domain server on
   // |socket_name|. Connection is fulfilled on |connection_fd_|.
   // If |out_addr| is not null, and the OK status is returned, the sockaddr
-  // of the made connection is written to |out_addr|.
+  // of the made connection is written to |out_addr|. If |use_path_len| is true,
+  // then instead of size of sockaddr_un struct, the len of sun_path plus size
+  // of sun_family is used as the value of addrlen.
   // Returns an OK Status on success or a Status with corresponding error code
   // on failure.
-  Status ClientSetup(const std::string &socket_name, sockaddr_un *out_addr);
+  Status ClientSetup(const std::string &socket_name, sockaddr_un *out_addr,
+                     bool use_path_len);
 
   // Calls Read method of |sock_transmit_| to read |read_len| bytes from
   // |connection_fd_| into |buf| and propagates the return value.

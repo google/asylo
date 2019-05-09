@@ -34,9 +34,9 @@ size_t bridge_type_size(const std::string &type_name) {
   } else if (type_name == "bridge_sockaddr_in") {
     return 14;
   } else if (type_name == "bridge_sockaddr_un") {
-    return 108;
+    return 112;
   } else if (type_name == "bridge_sockaddr") {
-    return 110;
+    return 114;
   } else if (type_name == "bridge_timeval") {
     return 16;
   } else if (type_name == "bridge_timespec") {

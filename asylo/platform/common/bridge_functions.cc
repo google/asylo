@@ -697,8 +697,9 @@ void ReinterpretCopySingle(T *dst, const U *src) {
 }
 
 template <typename T, size_t M, typename U, size_t N>
-void ReinterpretCopyArray(T (&dst)[M], const U (&src)[N]) {
-  memcpy(dst, src, std::min(sizeof(T) * M, sizeof(U) * N));
+void ReinterpretCopyArray(T (&dst)[M], const U (&src)[N],
+                          size_t max_len = SIZE_MAX) {
+  memcpy(dst, src, std::min(max_len, std::min(sizeof(T) * M, sizeof(U) * N)));
 }
 
 template <typename T>
@@ -738,8 +739,9 @@ struct sockaddr *FromBridgeSockaddr(const struct bridge_sockaddr *bridge_addr,
     sockaddr_un_out.sun_family = family;
     InitializeToZeroArray(sockaddr_un_out.sun_path);
     ReinterpretCopyArray(sockaddr_un_out.sun_path,
-                         bridge_addr->addr_un.sun_path);
-    return CopySockaddr(&sockaddr_un_out, sizeof(sockaddr_un_out), addr,
+                         bridge_addr->addr_un.sun_path,
+                         bridge_addr->addr_un.len - sizeof(family));
+    return CopySockaddr(&sockaddr_un_out, bridge_addr->addr_un.len, addr,
                         addrlen);
   } else if (family == AF_INET6) {
     struct sockaddr_in6 sockaddr_in6_out;
@@ -784,14 +786,16 @@ struct bridge_sockaddr *ToBridgeSockaddr(const struct sockaddr *addr,
   }
   if (bridge_addr->sa_family == BRIDGE_AF_UNIX ||
       bridge_addr->sa_family == BRIDGE_AF_LOCAL) {
-    if (addrlen < sizeof(struct sockaddr_un)) {
-      return nullptr;
-    }
     struct sockaddr_un *sockaddr_un_in = const_cast<struct sockaddr_un *>(
         reinterpret_cast<const struct sockaddr_un *>(addr));
     InitializeToZeroArray(bridge_addr->addr_un.sun_path);
+    if (addrlen <= sizeof(bridge_addr->sa_family)) {
+      return nullptr;
+    }
     ReinterpretCopyArray(bridge_addr->addr_un.sun_path,
-                         sockaddr_un_in->sun_path);
+                         sockaddr_un_in->sun_path,
+                         addrlen - sizeof(bridge_addr->sa_family));
+    bridge_addr->addr_un.len = addrlen;
   } else if (bridge_addr->sa_family == BRIDGE_AF_INET6) {
     if (addrlen < sizeof(struct sockaddr_in6)) {
       return nullptr;

@@ -45,10 +45,12 @@ class SocketServer {
   Status ServerSetup(int server_port = 0);
 
   // Sets up a UNIX domain server on |socket_name|. Calls Serverconnection to
-  // fulfill server binding and listening.
+  // fulfill server binding and listening. If |use_path_len| is true, then
+  // instead of size of sockaddr_un struct, the len of sun_path plus size of
+  // sun_family is used as the value of addrlen.
   // Returns an OK Status on success or a Status with corresponding error code
   // on failure.
-  Status ServerSetup(const std::string &socket_name);
+  Status ServerSetup(const std::string &socket_name, bool use_path_len);
 
   // Accepts a single connection at the socket bound by ServerSetup and
   // directs the first incoming connection request to |connection_fd_|.
