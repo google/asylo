@@ -33,6 +33,7 @@ include("fcntl.h")
 include("netdb.h")
 include("netinet/tcp.h")
 include("stdint.h")
+include("sys/inotify.h")
 include("sys/socket.h")
 
 set_klinux_prefix("kLinux")
@@ -74,10 +75,7 @@ define_enum(
     ],
     skip_conversions=True)
 
-define_enum(
-    name="FDFlag",
-    values=["FD_CLOEXEC"],
-    multi_valued=True)
+define_enum(name="FDFlag", values=["FD_CLOEXEC"], multi_valued=True)
 
 define_enum(
     name="TcpOptionName",
@@ -111,6 +109,19 @@ define_enum(
 define_enum(
     name="FLockOperation",
     values=["LOCK_SH", "LOCK_EX", "LOCK_NB", "LOCK_UN"],
+    multi_valued=True)
+
+define_enum(
+    name="InotifyFlag", values=["IN_NONBLOCK", "IN_CLOEXEC"], multi_valued=True)
+
+define_enum(
+    name="InotifyEventMask",
+    values=[
+        "IN_ACCESS", "IN_MODIFY", "IN_ATTRIB", "IN_CLOSE_WRITE",
+        "IN_CLOSE_NOWRITE", "IN_OPEN", "IN_MOVED_FROM", "IN_MOVED_TO",
+        "IN_CREATE", "IN_DELETE", "IN_DELETE_SELF", "IN_MOVE_SELF",
+        "IN_UNMOUNT", "IN_Q_OVERFLOW", "IN_IGNORED"
+    ],
     multi_valued=True)
 
 define_struct(

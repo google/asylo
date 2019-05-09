@@ -197,4 +197,19 @@ int enc_untrusted_flock(int fd, int operation) {
                                TokLinuxFLockOperation(operation));
 }
 
+int enc_untrusted_inotify_init1(int flags) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_init1,
+                               TokLinuxInotifyFlag(flags));
+}
+
+int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
+                                    uint32_t mask) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_add_watch, fd,
+                               pathname, TokLinuxInotifyEventMask(mask));
+}
+int enc_untrusted_inotify_rm_watch(int fd, int wd) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_rm_watch, fd,
+                               wd);
+}
+
 }  // extern "C"

@@ -47,7 +47,7 @@ constexpr char kEpilogue[] = R"(
 // ```
 int main(int argc, char **argv) {
   std::cout << kPrologue;
-  for (int i = 0; i < asylo::system_call::LastSystemCall(); i++) {
+  for (int i = 0; i <= asylo::system_call::LastSystemCall(); i++) {
     asylo::system_call::SystemCallDescriptor syscall(i);
     if (syscall.is_valid()) {
       std::cout << absl::StreamFormat("  constexpr int kSYS_%s = %i;\n",

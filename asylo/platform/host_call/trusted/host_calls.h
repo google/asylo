@@ -65,6 +65,10 @@ int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group);
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen);
 int enc_untrusted_flock(int fd, int operation);
+int enc_untrusted_inotify_init1(int flags);
+int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
+                                    uint32_t mask);
+int enc_untrusted_inotify_rm_watch(int fd, int wd);
 
 #ifdef __cplusplus
 }  // extern "C"

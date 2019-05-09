@@ -42,6 +42,7 @@ INCLUDE("sys/socket.h")
 INCLUDE("sys/stat.h")
 INCLUDE("sys/syscall.h")
 INCLUDE("sys/types.h")
+INCLUDE("sys/inotify.h")
 
 // File Descriptors
 // ================
@@ -159,3 +160,11 @@ SYSCALL_DEFINE0(getuid)
 SYSCALL_DEFINE0(geteuid)
 SYSCALL_DEFINE0(getgid)
 SYSCALL_DEFINE0(getegid)
+
+// INotify
+// =======
+
+SYSCALL_DEFINE1(inotify_init1, int, flags)
+SYSCALL_DEFINE2(inotify_rm_watch, int, fd, int, wd)
+SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char *, pathname,
+                uint32_t, mask)

@@ -324,6 +324,41 @@ primitives::PrimitiveStatus TestFlock(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestInotifyInit1(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+
+  int flags = params->Pop<int>();  // The operation is expected to be already
+                                   // converted from a kLinux_ operation.
+  *(params->PushAlloc<int>()) = enc_untrusted_inotify_init1(flags);
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus TestInotifyAddWatch(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+
+  uint32_t mask =
+      params->Pop<uint32_t>();  // The operation is expected to be already
+                                // converted from a kLinux_ operation.
+  const auto pathname = params->Pop();
+  int fd = params->Pop<int>();
+  *(params->PushAlloc<int>()) =
+      enc_untrusted_inotify_add_watch(fd, pathname->As<char>(), mask);
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus TestInotifyRmWatch(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+
+  int wd = params->Pop<int>();
+  int fd = params->Pop<int>();
+  *(params->PushAlloc<int>()) = enc_untrusted_inotify_rm_watch(fd, wd);
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -383,6 +418,12 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestSetSockOpt, primitives::EntryHandler{TestSetsockopt}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestFlock, primitives::EntryHandler{TestFlock}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestInotifyInit1, primitives::EntryHandler{TestInotifyInit1}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestInotifyAddWatch, primitives::EntryHandler{TestInotifyAddWatch}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestInotifyRmWatch, primitives::EntryHandler{TestInotifyRmWatch}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

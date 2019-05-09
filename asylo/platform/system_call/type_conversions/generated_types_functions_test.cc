@@ -189,6 +189,44 @@ TEST_F(GeneratedTypesFunctionsTest, FlockOperationTest) {
       to_matcher);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, InotifyFlagsTest) {
+  std::vector<int> from_bits = {kLinux_IN_NONBLOCK, kLinux_IN_CLOEXEC};
+  std::vector<int> to_bits = {IN_NONBLOCK, IN_CLOEXEC};
+
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromkLinuxInotifyFlag);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(from_bits, to_bits, kIterationCount),
+      from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxInotifyFlag);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(to_bits, from_bits, kIterationCount),
+      to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, InotifyEventMaskTest) {
+  std::vector<int> from_bits = {
+      kLinux_IN_ACCESS,      kLinux_IN_MODIFY,        kLinux_IN_ATTRIB,
+      kLinux_IN_CLOSE_WRITE, kLinux_IN_CLOSE_NOWRITE, kLinux_IN_OPEN,
+      kLinux_IN_MOVED_FROM,  kLinux_IN_MOVED_TO,      kLinux_IN_CREATE,
+      kLinux_IN_DELETE,      kLinux_IN_DELETE_SELF,   kLinux_IN_MOVE_SELF,
+      kLinux_IN_UNMOUNT,     kLinux_IN_Q_OVERFLOW,    kLinux_IN_IGNORED};
+  std::vector<int> to_bits = {IN_ACCESS,      IN_MODIFY,        IN_ATTRIB,
+                              IN_CLOSE_WRITE, IN_CLOSE_NOWRITE, IN_OPEN,
+                              IN_MOVED_FROM,  IN_MOVED_TO,      IN_CREATE,
+                              IN_DELETE,      IN_DELETE_SELF,   IN_MOVE_SELF,
+                              IN_UNMOUNT,     IN_Q_OVERFLOW,    IN_IGNORED};
+
+  auto from_matcher =
+      IsFiniteRestrictionOf<int, int>(FromkLinuxInotifyEventMask);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(from_bits, to_bits, kIterationCount),
+      from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(TokLinuxInotifyEventMask);
+  EXPECT_THAT(
+      FuzzBitsetTranslationFunction(to_bits, from_bits, kIterationCount),
+      to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

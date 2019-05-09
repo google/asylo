@@ -17,8 +17,9 @@
  */
 
 #include <fcntl.h>
-#include <sys/socket.h>
 #include <sys/file.h>
+#include <sys/inotify.h>
+#include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 
@@ -674,12 +675,130 @@ TEST_F(HostCallTest, TestFlock) {
 
   primitives::UntrustedParameterStack params;
   *(params.PushAlloc<int>()) = /*fd=*/ fd;
-  *(params.PushAlloc<int>()) = /*level=*/ TokLinuxFLockOperation(LOCK_EX);
+  *(params.PushAlloc<int>()) = /*level=*/ FromkLinuxFLockOperation(LOCK_EX);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
   EXPECT_THAT(params.Pop<int>(), Eq(0));
   flock(fd, LOCK_UN);
+}
+
+// Tests enc_untrusted_inotify_init1() by initializing a new inotify instance
+// from inside the enclave and verifying that a file descriptor associated with
+// a new inotify event queue is returned. Only the return value, i.e. the file
+// descriptor value is verified to be positive.
+TEST_F(HostCallTest, TestInotifyInit1) {
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = /*flags=*/ FromkLinuxInotifyFlag(IN_NONBLOCK);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyInit1, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  int inotify_fd = params.Pop<int>();
+  EXPECT_THAT(inotify_fd, Gt(0));
+  close(inotify_fd);
+}
+
+// Tests enc_untrusted_inotify_add_watch() by initializing an inotify instance
+// on the untrusted side, making the enclave call to trigger an untrusted host
+// call to inotify_add_watch(), and validating that the correct events are
+// recorded in the event buffer for the folder we are monitoring with inotify.
+TEST_F(HostCallTest, TestInotifyAddWatch) {
+  int inotify_fd = inotify_init1(IN_NONBLOCK);
+  ASSERT_THAT(inotify_fd, Gt(0));
+
+  // Call inotify_add_watch from inside the enclave for monitoring tmpdir for
+  // all events supported by inotify.
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = inotify_fd;
+  params.PushByCopy<char>(FLAGS_test_tmpdir.c_str(),
+                          FLAGS_test_tmpdir.length() + 1);
+  *(params.PushAlloc<int>()) = FromkLinuxInotifyEventMask(IN_ALL_EVENTS);
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyAddWatch, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(1));
+
+  // Read the event buffer when no events have occurred in tmpdir.
+  constexpr size_t event_size = sizeof(struct inotify_event);
+  constexpr size_t buf_len = 10 * (event_size + NAME_MAX + 1);
+  char buf[buf_len];
+  EXPECT_THAT(read(inotify_fd, buf, buf_len), Eq(-1));
+
+  // Perform an event by creating a file in tmpdir.
+  std::string file_name = "test_file.tmp";
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/", file_name);
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Read the event buffer after the event.
+  EXPECT_THAT(read(inotify_fd, buf, buf_len), Gt(0));
+
+  auto* event = reinterpret_cast<struct inotify_event*>(&buf[0]);
+  EXPECT_THAT(event->mask, Eq(IN_MODIFY));
+  EXPECT_THAT(event->name, StrEq(file_name));
+  EXPECT_THAT(event->cookie, Eq(0));
+
+  event =
+      reinterpret_cast<struct inotify_event*>(&buf[event_size + event->len]);
+  EXPECT_THAT(event->mask, Eq(IN_OPEN));
+  EXPECT_THAT(event->name, StrEq(file_name));
+  EXPECT_THAT(event->cookie, Eq(0));
+
+  close(inotify_fd);
+}
+
+// Tests enc_untrusted_inotify_rm_watch() by de-registering an event from inside
+// the enclave on the untrusted side and verifying that subsequent activity
+// on the unregistered event is not recorded by inotify.
+TEST_F(HostCallTest, TestInotifyRmWatch) {
+  int inotify_fd = inotify_init1(IN_NONBLOCK);
+  int wd =
+      inotify_add_watch(inotify_fd, FLAGS_test_tmpdir.c_str(), IN_ALL_EVENTS);
+  ASSERT_THAT(inotify_fd, Gt(0));
+  ASSERT_THAT(wd, Eq(1));
+
+  // Perform an event by creating a file in tmpdir.
+  std::string file_name = "test_file.tmp";
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/", file_name);
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Read the event buffer after the event.
+  constexpr size_t event_size = sizeof(struct inotify_event);
+  constexpr size_t buf_len = 10 * (event_size + NAME_MAX + 1);
+  char buf[buf_len];
+  EXPECT_THAT(read(inotify_fd, buf, buf_len), Gt(0));
+
+  auto* event = reinterpret_cast<struct inotify_event*>(&buf[0]);
+  EXPECT_THAT(event->mask, Eq(IN_MODIFY));
+  EXPECT_THAT(event->name, StrEq(file_name));
+  EXPECT_THAT(event->cookie, Eq(0));
+
+  event =
+      reinterpret_cast<struct inotify_event*>(&buf[event_size + event->len]);
+  EXPECT_THAT(event->mask, Eq(IN_OPEN));
+  EXPECT_THAT(event->name, StrEq(file_name));
+  EXPECT_THAT(event->cookie, Eq(0));
+
+  // Call inotify_rm_watch from inside the enclave, verify the return value.
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = inotify_fd;
+  *(params.PushAlloc<int>()) = wd;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyRmWatch, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+
+  // Perform another event on the file.
+  ASSERT_THAT(unlink(test_file.c_str()), Eq(0));
+
+  // Read from the event buffer again to verify that the event was not recorded.
+  EXPECT_THAT(read(inotify_fd, buf, buf_len), Gt(-1));
+  close(inotify_fd);
 }
 
 }  // namespace
