@@ -28,9 +28,10 @@ namespace host_call {
 
 class MockedEnclaveClient : public primitives::Client {
  public:
-  explicit MockedEnclaveClient(
+  MockedEnclaveClient(
+      const absl::string_view name,
       std::unique_ptr<primitives::Client::ExitCallProvider> dispatch_table)
-      : primitives::Client(std::move(dispatch_table)) {}
+      : primitives::Client(name, std::move(dispatch_table)) {}
 
   // Virtual methods not used in this test.
   bool IsClosed() const override {
@@ -60,7 +61,7 @@ TEST(HostCallHandlersInitializerTest, RegisterSystemCallHandlerTest) {
   ASSERT_THAT(dispatch_table.status(), IsOk());
 
   const auto client = std::make_shared<MockedEnclaveClient>(
-      std::move(dispatch_table.ValueOrDie()));
+      /*name=*/"mock_enclave", std::move(dispatch_table.ValueOrDie()));
 
   // Verify that |kSystemCallHandler| is in use by attempting to re-register the
   // handler.

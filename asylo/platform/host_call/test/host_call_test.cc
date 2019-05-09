@@ -58,6 +58,7 @@ class HostCallTest : public ::testing::Test {
     ASYLO_EXPECT_OK(exit_call_provider);
     const auto client =
         primitives::test::TestBackend::Get()->LoadTestEnclaveOrDie(
+            /*enclave_name=*/"host_call_test_enclave",
             std::move(exit_call_provider.ValueOrDie()));
 
     return client;

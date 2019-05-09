@@ -45,7 +45,8 @@ class HelloTest : public ::testing::Test {
   StatusOr<std::shared_ptr<Client>> LoadTestEnclave() {
     std::shared_ptr<Client> client;
     ASYLO_ASSIGN_OR_RETURN(
-        client, LoadEnclave<SimBackend>(FLAGS_enclave_binary,
+        client, LoadEnclave<SimBackend>(/*enclave_name=*/"hello_test",
+                                        FLAGS_enclave_binary,
                                         absl::make_unique<DispatchTable>()));
     ASYLO_RETURN_IF_ERROR(client->exit_call_provider()->RegisterExitHandler(
         kExternalHelloHandler, ExitHandler{test_handler}));

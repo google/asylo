@@ -71,7 +71,7 @@ class PrimitivesTest : public ::testing::Test {
     ASYLO_EXPECT_OK(exit_call_provider->RegisterExitHandler(
         kUntrustedInit, ExitHandler{mock_init_handler.AsStdFunction()}));
     return test::TestBackend::Get()->LoadTestEnclaveOrDie(
-        std::move(exit_call_provider));
+        /*enclave_name=*/"primitives_test", std::move(exit_call_provider));
   }
 
   static void TearDownTestCase() {

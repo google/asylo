@@ -54,7 +54,8 @@ Status call_enclave() {
   // callback function "exit_handler" to service the exit type specified by the
   // selector "kExitHandler."
   ASYLO_ASSIGN_OR_RETURN(
-      client, LoadEnclave<SimBackend>(FLAGS_enclave_path,
+      client, LoadEnclave<SimBackend>(/*enclave_name=*/"hello_test",
+                                      FLAGS_enclave_path,
                                       absl::make_unique<DispatchTable>()));
 
   auto status = client->exit_call_provider()->RegisterExitHandler(

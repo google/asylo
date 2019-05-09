@@ -47,7 +47,8 @@ class MockedEnclaveClient : public Client {
       MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
                           UntrustedParameterStack *params)>;
 
-  MockedEnclaveClient() : Client(absl::make_unique<DispatchTable>()) {}
+  MockedEnclaveClient() : Client(
+    /*name=*/"mock_enclave", absl::make_unique<DispatchTable>()) {}
 
   // Virtual methods not used in this test.
   bool IsClosed() const override { return false; }

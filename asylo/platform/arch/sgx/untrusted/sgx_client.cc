@@ -249,7 +249,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
   ASYLO_ASSIGN_OR_RETURN(
       primitive_client,
       primitives::LoadEnclave<primitives::SgxBackend>(
-          base_address, enclave_path_, enclave_size, config, debug_,
+          name, base_address, enclave_path_, enclave_size, config, debug_,
           absl::make_unique<primitives::DispatchTable>()));
 
   client->Sync(primitive_client);
@@ -274,7 +274,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
   ASYLO_ASSIGN_OR_RETURN(
       primitive_client,
       primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
-          base_address, section_name_, enclave_size, config, debug_,
+          name, base_address, section_name_, enclave_size, config, debug_,
           absl::make_unique<primitives::DispatchTable>()));
   client->Sync(primitive_client);
 

@@ -37,8 +37,10 @@ namespace primitives {
 namespace test {
 
 StatusOr<std::shared_ptr<Client>> SimTestBackend::LoadTestEnclave(
+    const absl::string_view enclave_name,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
-  return LoadEnclave<SimBackend>(FLAGS_enclave_binary,
+  return LoadEnclave<SimBackend>(enclave_name,
+                                 FLAGS_enclave_binary,
                                  std::move(exit_call_provider));
 }
 

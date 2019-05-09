@@ -134,6 +134,11 @@ class Client : public std::enable_shared_from_this<Client> {
   // operations by concurrent client threads.
   virtual Status Destroy() = 0;
 
+  /// Returns the name of the enclave.
+  ///
+  /// \return The name of the enclave.
+  virtual const absl::string_view &Name() const { return name_; }
+
   // Enters the enclave synchronously at an entry point to trusted code
   // designated by `selector`.
   // Input `params` is copied into the enclave, which occurs locally inside the
@@ -150,8 +155,9 @@ class Client : public std::enable_shared_from_this<Client> {
   ExitCallProvider *exit_call_provider() { return exit_call_provider_.get(); }
 
  protected:
-  explicit Client(std::unique_ptr<ExitCallProvider> exit_call_provider)
-      : exit_call_provider_(std::move(exit_call_provider)) {}
+  Client(const absl::string_view name,
+      std::unique_ptr<ExitCallProvider> exit_call_provider)
+      : exit_call_provider_(std::move(exit_call_provider)), name_(name) {}
 
   // Provides implementation of EnclaveCall.
   virtual Status EnclaveCallInternal(uint64_t selector,
@@ -165,6 +171,9 @@ class Client : public std::enable_shared_from_this<Client> {
   // Thread-local reference to the enclave that makes exit call.
   // Can be set by EnclaveCall, enclave loader.
   static thread_local Client *current_client_;
+
+  // Enclave name.
+  absl::string_view name_;
 };
 
 }  // namespace primitives

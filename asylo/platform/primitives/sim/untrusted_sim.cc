@@ -96,6 +96,7 @@ SimEnclaveClient::~SimEnclaveClient() {
 }
 
 StatusOr<std::shared_ptr<Client>> SimBackend::Load(
+    const absl::string_view enclave_name,
     const std::string &path,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   // Initialize trampoline once. absl::call_once guarantees that initialization
@@ -104,7 +105,7 @@ StatusOr<std::shared_ptr<Client>> SimBackend::Load(
   absl::call_once(init_trampoline_once, &InitTrampolineOnce);
 
   std::shared_ptr<SimEnclaveClient> client(
-      new SimEnclaveClient(std::move(exit_call_provider)));
+      new SimEnclaveClient(enclave_name, std::move(exit_call_provider)));
 
   // Open the enclave shared object file.
   {

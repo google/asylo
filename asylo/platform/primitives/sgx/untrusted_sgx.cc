@@ -70,11 +70,12 @@ struct ms_ecall_dispatch_trusted_call_t {
 SgxEnclaveClient::~SgxEnclaveClient() = default;
 
 StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
-    void *base_address, absl::string_view enclave_path, size_t enclave_size,
+    const absl::string_view enclave_name, void *base_address,
+    absl::string_view enclave_path, size_t enclave_size,
     const EnclaveConfig &config, bool debug,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   std::shared_ptr<SgxEnclaveClient> client(
-      new SgxEnclaveClient(std::move(exit_call_provider)));
+      new SgxEnclaveClient(enclave_name, std::move(exit_call_provider)));
   client->base_address_ = base_address;
 
   int updated;
@@ -109,11 +110,12 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
 }
 
 StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
-    void *base_address, absl::string_view section_name, size_t enclave_size,
+    const absl::string_view enclave_name, void *base_address,
+    absl::string_view section_name, size_t enclave_size,
     const EnclaveConfig &config, bool debug,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   std::shared_ptr<SgxEnclaveClient> client(
-      new SgxEnclaveClient(std::move(exit_call_provider)));
+      new SgxEnclaveClient(enclave_name, std::move(exit_call_provider)));
   client->base_address_ = base_address;
 
   // If an address is specified to load the enclave, temporarily reserve it to

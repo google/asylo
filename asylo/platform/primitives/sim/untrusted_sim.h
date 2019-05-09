@@ -48,6 +48,7 @@ struct SimBackend {
   // application. Returns a client to the loaded enclave or an error status on
   // failure.
   static StatusOr<std::shared_ptr<Client>> Load(
+      const absl::string_view enclave_name,
       const std::string &path,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
@@ -66,9 +67,10 @@ class SimEnclaveClient : public Client {
   friend SimBackend;
 
   // Constructor.
-  explicit SimEnclaveClient(
+  SimEnclaveClient(
+      const absl::string_view name,
       std::unique_ptr<ExitCallProvider> exit_call_provider)
-      : Client(std::move(exit_call_provider)) {}
+      : Client(name, std::move(exit_call_provider)) {}
 
   // Dynamic library handle for enclave instance loaded at runtime.
   void *dl_handle_ = nullptr;

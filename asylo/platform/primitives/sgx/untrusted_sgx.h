@@ -36,7 +36,8 @@ struct SgxBackend {
   // Loads an SGX enclave and returns a client to the loaded enclave or an
   // error status on failure.
   static StatusOr<std::shared_ptr<Client>> Load(
-      void *base_address, absl::string_view enclave_path, size_t enclave_size,
+      const absl::string_view enclave_name, void *base_address,
+      absl::string_view enclave_path, size_t enclave_size,
       const EnclaveConfig &config, bool debug,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
@@ -48,7 +49,8 @@ struct SgxEmbeddedBackend {
   // Loads an embedded SGX enclave and returns a client to the loaded enclave or
   // an error status on failure.
   static StatusOr<std::shared_ptr<Client>> Load(
-      void *base_address, absl::string_view section_name, size_t enclave_size,
+      const absl::string_view enclave_name, void *base_address,
+      absl::string_view section_name, size_t enclave_size,
       const EnclaveConfig &config, bool debug,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
@@ -86,9 +88,10 @@ class SgxEnclaveClient : public Client {
   friend SgxEmbeddedBackend;
 
   // Constructor.
-  explicit SgxEnclaveClient(
+  SgxEnclaveClient(
+      const absl::string_view name,
       std::unique_ptr<ExitCallProvider> exit_call_provider)
-      : Client(std::move(exit_call_provider)) {}
+      : Client(name, std::move(exit_call_provider)) {}
 
   sgx_launch_token_t token_ = {0};  // SGX SDK launch token.
   sgx_enclave_id_t id_;             // SGX SDK enclave identifier.
