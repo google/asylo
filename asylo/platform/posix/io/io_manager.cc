@@ -827,6 +827,13 @@ int IOManager::Rename(const char *oldpath, const char *newpath) {
       });
 }
 
+int IOManager::Utime(const char *filename, const struct utimbuf *times) {
+  return CallWithHandler(filename, [times](VirtualPathHandler *handler,
+                                           const char *canonical_path) {
+    return handler->Utime(canonical_path, times);
+  });
+}
+
 int IOManager::Utimes(const char *filename, const struct timeval times[2]) {
   return CallWithHandler(filename, [times](VirtualPathHandler *handler,
                                            const char *canonical_path) {

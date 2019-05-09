@@ -264,6 +264,11 @@ int NativePathHandler::ChMod(const char *path, mode_t mode) {
   return enc_untrusted_chmod(path, mode);
 }
 
+int NativePathHandler::Utime(const char *filename,
+                             const struct utimbuf *times) {
+  return enc_untrusted_utime(filename, times);
+}
+
 int NativePathHandler::Utimes(const char *filename,
                               const struct timeval times[2]) {
   return enc_untrusted_utimes(filename, times);

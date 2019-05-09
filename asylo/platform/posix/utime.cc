@@ -25,7 +25,7 @@
 extern "C" {
 
 int utime(const char *filename, const struct utimbuf *times) {
-  return enc_untrusted_utime(filename, times);
+  return asylo::io::IOManager::GetInstance().Utime(filename, times);
 }
 
 int utimes(const char *filename, const struct timeval times[2]) {

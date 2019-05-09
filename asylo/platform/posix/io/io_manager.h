@@ -26,6 +26,7 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 #include <sys/types.h>
+#include <utime.h>
 
 #include <atomic>
 #include <cerrno>
@@ -318,6 +319,11 @@ class IOManager {
       return -1;
     }
 
+    virtual int Utime(const char *filename, const struct utimbuf *times) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     virtual int Utimes(const char *filename, const struct timeval times[2]) {
       errno = ENOSYS;
       return -1;
@@ -573,6 +579,9 @@ class IOManager {
 
   // Implements chmod(2).
   int ChMod(const char *pathname, mode_t mode);
+
+  // Implements utime(2).
+  int Utime(const char *filename, const struct utimbuf *times);
 
   // Implements utimes(2).
   int Utimes(const char *filename, const struct timeval times[2]);
