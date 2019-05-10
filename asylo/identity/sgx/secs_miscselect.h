@@ -39,6 +39,14 @@ enum class SecsMiscselectBit {
   EXINFO = 0,
 };
 
+// Masks for various MISCSELECT bits.
+constexpr uint32_t kMiscselectExinfoMask =
+    static_cast<uint32_t>(1) << static_cast<size_t>(SecsMiscselectBit::EXINFO);
+
+// MISCSELECT bit groupings.
+constexpr uint32_t kMiscselectAllBits = kMiscselectExinfoMask;
+constexpr uint32_t kMiscselectReservedBits = ~kMiscselectAllBits;
+
 // Tests if |miscselect_bit| is set in the |miscselect| bit vector
 // representation of MISCSELECT.
 StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,

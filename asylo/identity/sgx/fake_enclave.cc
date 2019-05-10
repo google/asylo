@@ -26,6 +26,7 @@
 #include <iostream>
 #include <vector>
 
+#include "absl/strings/str_join.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -76,6 +77,10 @@ FakeEnclave::FakeEnclave() {
   isvsvn_ = 0;
   attributes_ = required_attributes_;
   miscselect_ = 0;
+  configsvn_ = 0;
+  isvextprodid_.fill(0);
+  isvfamilyid_.fill(0);
+  configid_.fill(0);
   cpusvn_.fill(0);
   report_keyid_.fill(0);
   ownerepoch_.fill(0);
@@ -107,8 +112,8 @@ void FakeEnclave::ExitEnclave() {
 }
 
 void FakeEnclave::SetRandomIdentity() {
-  mrenclave_ = TrivialRandomObject<decltype(mrenclave_)>();
-  mrsigner_ = TrivialRandomObject<decltype(mrsigner_)>();
+  mrenclave_ = TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>();
+  mrsigner_ = TrivialRandomObject<UnsafeBytes<SHA256_DIGEST_LENGTH>>();
   isvprodid_ = TrivialRandomObject<uint16_t>();
   isvsvn_ = TrivialRandomObject<uint16_t>();
 
@@ -118,6 +123,20 @@ void FakeEnclave::SetRandomIdentity() {
 
   // All bits of MISCSELECT, except for bit 0, must be zero.
   miscselect_ = TrivialRandomObject<uint32_t>() & 0x1;
+
+  // If ATTRIBUTES.KSS is zero, all KSS-related fields must be zero, else they
+  // should be set randomly.
+  if (!TestAttribute(SecsAttributeBit::KSS, attributes_)) {
+    configsvn_ = 0;
+    isvextprodid_.fill(0);
+    isvfamilyid_.fill(0);
+    configid_.fill(0);
+  } else {
+    configsvn_ = TrivialRandomObject<uint16_t>();
+    isvfamilyid_ = TrivialRandomObject<UnsafeBytes<kIsvfamilyidSize>>();
+    isvextprodid_ = TrivialRandomObject<UnsafeBytes<kIsvextprodidSize>>();
+    configid_ = TrivialRandomObject<UnsafeBytes<kConfigidSize>>();
+  }
 }
 
 void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
@@ -228,7 +247,21 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
         return Status(SGX_ERROR_INVALID_ISVSVN,
                       "ISVSVN value in KEYREQUEST is too large.");
       }
+      if (request.configsvn > configsvn_) {
+        return Status(SGX_ERROR_INVALID_ISVSVN,
+                      "CONFIGSVN value in KEYREQUEST is too large.");
+      }
       dependencies->keyname = KeyrequestKeyname::SEAL_KEY;
+      if (request.keypolicy & kKeypolicyIsvfamilyidBitMask) {
+        dependencies->isvfamilyid = isvfamilyid_;
+      } else {
+        dependencies->isvfamilyid.fill(0);
+      }
+      if (request.keypolicy & kKeypolicyIsvextprodidBitMask) {
+        dependencies->isvextprodid = isvextprodid_;
+      } else {
+        dependencies->isvextprodid.fill(0);
+      }
       if (request.keypolicy & kKeypolicyNoisvprodidBitMask) {
         dependencies->isvprodid = 0;
       } else {
@@ -258,10 +291,20 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
       dependencies->miscselect = (miscselect_ & request.miscmask);
       dependencies->miscmask = request.miscmask;
       dependencies->keypolicy = request.keypolicy;
+
+      if (request.keypolicy & kKeypolicyConfigidBitMask) {
+        dependencies->configid = configid_;
+        dependencies->configsvn = configsvn_;
+      } else {
+        dependencies->configid.fill(0);
+        dependencies->configsvn = 0;
+      }
       break;
 
     case KeyrequestKeyname::REPORT_KEY:
       dependencies->keyname = KeyrequestKeyname::REPORT_KEY;
+      dependencies->isvfamilyid.fill(0);
+      dependencies->isvextprodid.fill(0);
       dependencies->isvprodid = 0;
       dependencies->isvsvn = 0;
       dependencies->ownerepoch = ownerepoch_;
@@ -277,6 +320,8 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
       dependencies->miscselect = miscselect_;
       dependencies->miscmask = 0;
       dependencies->keypolicy = 0;
+      dependencies->configid = configid_;
+      dependencies->configsvn = configsvn_;
       break;
 
     default:
@@ -321,14 +366,18 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   report->cpusvn = cpusvn_;
   report->miscselect = miscselect_;
   report->reserved1.fill(0);
+  report->isvextprodid = isvextprodid_;
   report->attributes = attributes_;
   report->mrenclave = mrenclave_;
   report->reserved2.fill(0);
   report->mrsigner = mrsigner_;
   report->reserved3.fill(0);
+  report->configid = configid_;
   report->isvprodid = isvprodid_;
   report->isvsvn = isvsvn_;
+  report->configsvn = configsvn_;
   report->reserved4.fill(0);
+  report->isvfamilyid = isvfamilyid_;
   report->reportdata = reportdata;
   report->keyid = report_keyid_;
 
@@ -339,6 +388,8 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   KeyDependenciesBase *dependencies = &key_dependencies.dependencies;
 
   dependencies->keyname = KeyrequestKeyname::REPORT_KEY;
+  dependencies->isvfamilyid.fill(0);
+  dependencies->isvextprodid.fill(0);
   dependencies->isvprodid = 0;
   dependencies->isvsvn = 0;
   dependencies->ownerepoch = ownerepoch_;
@@ -354,6 +405,8 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   dependencies->miscselect = tinfo.miscselect;
   dependencies->miscmask = 0;
   dependencies->keypolicy = 0;
+  dependencies->configid = tinfo.configid;
+  dependencies->configsvn = tinfo.configsvn;
 
   SafeBytes<kHardwareKeySize> report_key;
   ASYLO_RETURN_IF_ERROR(DeriveKey(key_dependencies, &report_key));

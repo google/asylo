@@ -19,6 +19,7 @@
 #include <openssl/aes.h>
 #include <openssl/cmac.h>
 
+#include <limits>
 #include <string>
 #include <vector>
 
@@ -29,7 +30,9 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -49,6 +52,10 @@ std::string HexDumpObjectPair(const char *obj1_name, T1 obj1,
   return absl::StrCat(obj1_name, ":\n", ConvertTrivialObjectToHexString(obj1),
                       "\n", obj2_name, ":\n",
                       ConvertTrivialObjectToHexString(obj2), "\n");
+}
+
+void FlipLowFourBits(uint8_t *data) {
+  *data ^= TrivialRandomObject<uint8_t>() & static_cast<uint8_t>(0xF);
 }
 
 class FakeEnclaveTest : public ::testing::Test {
@@ -244,11 +251,11 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithMrsigner) {
   FakeEnclave::ExitEnclave();
 }
 
-// Verify that changing ISVPRODID changes the key value only if the NOISVPRODID
-// bit in KEYPOLICY is not set.
+// Verify that changing ISVPRODID changes the key value if and only if the
+// NOISVPRODID bit in KEYPOLICY is not set.
 TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvprodid) {
   // This test requires that the KSS attribute bit is set. So add this bit to
-  // the "must be set" bits of this enclave, and generate a new random identity.
+  // the "required" bits of this enclave, and generate a new random identity.
   enclave_.add_required_attribute(SecsAttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
@@ -325,12 +332,12 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithAttributes) {
   for (int i = 0; i < 1000; i++) {
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    // Modify SECS attributes randomly. There are 14 attributes defined.
+    // Modify SECS attributes randomly. There are 15 attributes defined.
     // Of these, 3 attributes are defined by the architecture as must-be-one,
-    // and 6 others are do-not-care. Thus, there are only 5 attributes that
+    // and 6 others are do-not-care. Thus, there are only 6 attributes that
     // one cares about that are variable. This makes the probability of
     // new attributes effectively matching the previous attributes equal to
-    // 1/32.
+    // 1/64.
     SecsAttributeSet prev = enclave->get_attributes();
     enclave->set_attributes(TrivialRandomObject<SecsAttributeSet>());
     next = enclave->get_attributes();
@@ -338,7 +345,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithAttributes) {
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
 
     // A key change is expected if and only if any of attributes selected by the
-    // KEPOLICY mask have changed.
+    // KEYPOLICY mask have changed.
     bool expect_key_change =
         (prev & ~do_not_care_attributes_) != (next & ~do_not_care_attributes_);
     EXPECT_EQ(*key1 != *key2, expect_key_change)
@@ -357,14 +364,13 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithMiscselect) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 
   // Only least-significant bit in miscselect can be set.
-  enclave->set_miscselect(TrivialRandomObject<uint32_t>() & 0x1);
+  enclave->set_miscselect(TrivialRandomObject<uint32_t>() & kMiscselectAllBits);
   for (int i = 0; i < 100; i++) {
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
-    // Modify MISCSELECT randomly. Since only one MISCSELECT bit is defined, the
-    // probability that this new value will match the old value is 1/2.
     uint32_t prev = enclave->get_miscselect();
-    enclave->set_miscselect(TrivialRandomObject<uint32_t>() & 0x1);
+    enclave->set_miscselect(TrivialRandomObject<uint32_t>() &
+                            kMiscselectAllBits);
     ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
 
@@ -374,6 +380,224 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithMiscselect) {
     EXPECT_EQ(*key1 != *key2, expect_key_change)
         << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   }
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that changing ISVFAMILYID changes the seal key if and only the
+// ISVFAMILYID bit in KEYPOLICY is set.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvfamilyid) {
+  // This test requires that the KSS attribute bit is set. So add this bit to
+  // the "required" bits of this enclave, and generate a new random identity.
+  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
+
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key1, key2;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+  for (int i = 0; i < 1000; i++) {
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+    // Randomly flip first four bits of ISVFAMILYID. The probability that
+    // the new value will match the old value is 1/16.
+    UnsafeBytes<kIsvfamilyidSize> prev_isvfamilyid = enclave->get_isvfamilyid();
+    UnsafeBytes<kIsvfamilyidSize> isvfamilyid = prev_isvfamilyid;
+    FlipLowFourBits(isvfamilyid.data());
+    enclave->set_isvfamilyid(isvfamilyid);
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+
+    // A key change is expected if and only if the new ISVFAMILYID is different
+    // than the old one and the ISVFAMILYID bit in KEYPOLICY is set.
+    bool expect_key_change =
+        (isvfamilyid != prev_isvfamilyid) &&
+        ((request->keypolicy & kKeypolicyIsvfamilyidBitMask) != 0);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+  }
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that changing ISVEXTPRODID changes the seal key if and only the
+// ISVEXTPRODID bit in KEYPOLICY is set.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvextprodid) {
+  // This test requires that the KSS attribute bit is set. So add this bit to
+  // the "required" bits of this enclave, and generate a new random identity.
+  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
+
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key1, key2;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+  for (int i = 0; i < 1000; i++) {
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+    // Randomly flip first four bits of ISVFAMILYID. The probability that
+    // the new value will match the old value is 1/16.
+    UnsafeBytes<kIsvextprodidSize> prev_isvextprodid =
+        enclave->get_isvextprodid();
+    UnsafeBytes<kIsvextprodidSize> isvextprodid = prev_isvextprodid;
+    FlipLowFourBits(isvextprodid.data());
+    enclave->set_isvextprodid(isvextprodid);
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+
+    // A key change is expected if and only if the new ISVEXTPRODID is different
+    // than the old one and the ISVEXTPRODID bit in KEYPOLICY is set.
+    bool expect_key_change =
+        (isvextprodid != prev_isvextprodid) &&
+        ((request->keypolicy & kKeypolicyIsvextprodidBitMask) != 0);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+  }
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that changing CONFIGID changes the seal key if and only the
+// CONFIGID bit in KEYPOLICY is set.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithConfigid) {
+  // This test requires that the KSS attribute bit is set. So add this bit to
+  // the "required" bits of this enclave, and generate a new random identity.
+  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
+
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key1, key2;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+  for (int i = 0; i < 1000; i++) {
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+    // Randomly flip first four bits of ISV. The probability that
+    // the new value will match the old value is 1/16.
+    UnsafeBytes<kConfigidSize> prev_configid = enclave->get_configid();
+    UnsafeBytes<kConfigidSize> configid = prev_configid;
+    FlipLowFourBits(configid.data());
+    enclave->set_configid(configid);
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+
+    // A key change is expected if and only if the new CONFIGID is different
+    // than the old one and the CONFIGID bit in KEYPOLICY is set.
+    bool expect_key_change =
+        (configid != prev_configid) &&
+        ((request->keypolicy & kKeypolicyConfigidBitMask) != 0);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+  }
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that changing CONFIGSVN changes the seal key if and only the
+// CONFIGID bit in KEYPOLICY is set.
+TEST_F(FakeEnclaveTest, SealKeyChangesWithConfigsvn) {
+  // This test requires that the KSS attribute bit is set. So add this bit to
+  // the "required" bits of this enclave, and generate a new random identity.
+  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
+
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key1, key2;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+  request->configsvn = enclave->get_configsvn();
+  for (int i = 0; i < 1000; i++) {
+    request->keypolicy = GenerateRandomKeypolicy(enclave->get_attributes());
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key1.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+    // Randomly flip low four bits of CONFIGSVN. The probability that
+    // the new value will match the old value is 1/16.
+    uint16_t prev_configsvn = enclave->get_configsvn();
+    uint16_t configsvn = prev_configsvn;
+    FlipLowFourBits(reinterpret_cast<uint8_t *>(&configsvn));
+    enclave->set_configsvn(configsvn);
+    request->configsvn = configsvn;
+    ASYLO_ASSERT_OK(GetHardwareKey(*request, key2.get()))
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+
+    // A key change is expected if and only if the new CONFIGSVN is different
+    // than the old one and the CONFIGID bit in KEYPOLICY is set.
+    bool expect_key_change =
+        (configsvn != prev_configsvn) &&
+        ((request->keypolicy & kKeypolicyConfigidBitMask) != 0);
+    EXPECT_EQ(*key1 != *key2, expect_key_change)
+        << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+  }
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that an enclave can access a seal key with a KEYREQUEST.ISVSVN value
+// that is lower than its own ISVSVN and cannot access a seal key with
+// KEYREQUEST.ISVSVN value that is higher than its own ISVSVN.
+TEST_F(FakeEnclaveTest, SealKeyIsvsvnAccessControl) {
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+  // Set ISVSVN to a value in [1, MAX - 1].
+  while (enclave->get_isvsvn() == 0 ||
+         enclave->get_isvsvn() == std::numeric_limits<uint16_t>::max()) {
+    enclave->set_isvsvn(TrivialRandomObject<uint16_t>());
+  }
+
+  // Request a key corresponding to a lower ISVSVN.
+  request->isvsvn = enclave->get_isvsvn() - 1;
+  ASYLO_EXPECT_OK(GetHardwareKey(*request, key.get()))
+      << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+
+  // Request a key corresponding to a higher ISVSVN.
+  request->isvsvn = enclave->get_isvsvn() + 1;
+  EXPECT_THAT(GetHardwareKey(*request, key.get()),
+              StatusIs(SGX_ERROR_INVALID_ISVSVN))
+      << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+  FakeEnclave::ExitEnclave();
+}
+
+// Verify that an enclave can access a seal key with a KEYREQUEST.CONFIGSVN
+// value that is lower than its own CONFIGSVN and cannot access a seal key with
+// KEYREQUEST.CONFIGSVN value that is higher than its own CONFIGSVN.
+TEST_F(FakeEnclaveTest, SealKeyConfigsvnAccessControl) {
+  // This test requires that the KSS attribute bit is set. So add this bit to
+  // the "required" bits of this enclave, and generate a new random identity.
+  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.SetRandomIdentity();
+
+  FakeEnclave::EnterEnclave(enclave_);
+  AlignedHardwareKeyPtr key;
+  AlignedKeyrequestPtr request;
+  *request = *seal_key_request_;
+  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+  // Set CONFIGSVN to a value in [1, MAX - 1].
+  while (enclave->get_configsvn() == 0 ||
+         enclave->get_configsvn() == std::numeric_limits<uint16_t>::max()) {
+    enclave->set_configsvn(TrivialRandomObject<uint16_t>());
+  }
+
+  // Request a key corresponding to a lower CONFIGSVN.
+  request->configsvn = enclave->get_configsvn() - 1;
+  ASYLO_EXPECT_OK(GetHardwareKey(*request, key.get()))
+      << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
+
+  // Request a key corresponding to a higher CONFIGSVN.
+  request->configsvn = enclave->get_configsvn() + 1;
+  EXPECT_THAT(GetHardwareKey(*request, key.get()),
+              StatusIs(SGX_ERROR_INVALID_ISVSVN))
+      << HexDumpObjectPair("Enclave", *enclave, "Keyrequest", *request);
   FakeEnclave::ExitEnclave();
 }
 
@@ -401,6 +625,8 @@ TEST_F(FakeEnclaveTest, Report) {
     tinfo->measurement = enclave2.get_mrenclave();
     tinfo->attributes = enclave2.get_attributes();
     tinfo->miscselect = enclave2.get_miscselect();
+    tinfo->configid = enclave2.get_configid();
+    tinfo->configsvn = enclave2.get_configsvn();
 
     AlignedReportPtr report;
     ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *reportdata, report.get()));
@@ -410,6 +636,7 @@ TEST_F(FakeEnclaveTest, Report) {
     EXPECT_EQ(report->miscselect, enclave1.get_miscselect());
     EXPECT_EQ(report->reserved1,
               TrivialZeroObject<decltype(report->reserved1)>());
+    EXPECT_EQ(report->isvextprodid, enclave1.get_isvextprodid());
     EXPECT_EQ(report->attributes, enclave1.get_attributes());
     EXPECT_EQ(report->mrenclave, enclave1.get_mrenclave());
     EXPECT_EQ(report->reserved2,
@@ -417,10 +644,13 @@ TEST_F(FakeEnclaveTest, Report) {
     EXPECT_EQ(report->mrsigner, enclave1.get_mrsigner());
     EXPECT_EQ(report->reserved3,
               TrivialZeroObject<decltype(report->reserved3)>());
+    EXPECT_EQ(report->configid, enclave1.get_configid());
     EXPECT_EQ(report->isvprodid, enclave1.get_isvprodid());
     EXPECT_EQ(report->isvsvn, enclave1.get_isvsvn());
+    EXPECT_EQ(report->configsvn, enclave1.get_configsvn());
     EXPECT_EQ(report->reserved4,
               TrivialZeroObject<decltype(report->reserved4)>());
+    EXPECT_EQ(report->isvfamilyid, enclave1.get_isvfamilyid());
     EXPECT_EQ(report->reportdata.data, reportdata->data);
     EXPECT_EQ(report->keyid, enclave1.get_report_keyid());
 

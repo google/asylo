@@ -120,6 +120,16 @@ class FakeEnclave {
     attributes_ = (value & valid_attributes_) | required_attributes_;
   }
   void set_miscselect(uint32_t value) { miscselect_ = value; }
+  void set_configsvn(uint16_t value) { configsvn_ = value; }
+  void set_isvfamilyid(const UnsafeBytes<kIsvfamilyidSize> &value) {
+    isvfamilyid_ = value;
+  }
+  void set_isvextprodid(const UnsafeBytes<kIsvextprodidSize> &value) {
+    isvextprodid_ = value;
+  }
+  void set_configid(const UnsafeBytes<kConfigidSize> &value) {
+    configid_ = value;
+  }
   void set_cpusvn(const UnsafeBytes<kCpusvnSize> &value) { cpusvn_ = value; }
   void set_report_keyid(const UnsafeBytes<kReportKeyidSize> &value) {
     report_keyid_ = value;
@@ -153,25 +163,44 @@ class FakeEnclave {
   }
 
   // Accessors
-  const UnsafeBytes<SHA256_DIGEST_LENGTH> &get_mrenclave() {
+  const UnsafeBytes<SHA256_DIGEST_LENGTH> &get_mrenclave() const {
     return mrenclave_;
   }
-  const UnsafeBytes<SHA256_DIGEST_LENGTH> &get_mrsigner() { return mrsigner_; }
-  uint16_t get_isvprodid() { return isvprodid_; }
-  uint16_t get_isvsvn() { return isvsvn_; }
-  const SecsAttributeSet &get_attributes() { return attributes_; }
-  uint32_t get_miscselect() { return miscselect_; }
-  const UnsafeBytes<kCpusvnSize> &get_cpusvn() { return cpusvn_; }
-  const UnsafeBytes<kReportKeyidSize> &get_report_keyid() {
+  const UnsafeBytes<SHA256_DIGEST_LENGTH> &get_mrsigner() const {
+    return mrsigner_;
+  }
+  uint16_t get_isvprodid() const { return isvprodid_; }
+  uint16_t get_isvsvn() const { return isvsvn_; }
+  const SecsAttributeSet &get_attributes() const { return attributes_; }
+  uint32_t get_miscselect() const { return miscselect_; }
+  uint16_t get_configsvn() const { return configsvn_; }
+  const UnsafeBytes<kIsvextprodidSize> &get_isvextprodid() const {
+    return isvextprodid_;
+  }
+  const UnsafeBytes<kIsvfamilyidSize> &get_isvfamilyid() const {
+    return isvfamilyid_;
+  }
+  const UnsafeBytes<kConfigidSize> &get_configid() const { return configid_; }
+  const UnsafeBytes<kCpusvnSize> &get_cpusvn() const { return cpusvn_; }
+  const UnsafeBytes<kReportKeyidSize> &get_report_keyid() const {
     return report_keyid_;
   }
-  const SafeBytes<kOwnerEpochSize> &get_ownerepoch() { return ownerepoch_; }
-  const SafeBytes<SHA256_DIGEST_LENGTH> &get_root_key() { return root_key_; }
-  const SafeBytes<AES_BLOCK_SIZE> &get_seal_fuses() { return seal_fuses_; }
-  const SecsAttributeSet &get_valid_attributes() { return valid_attributes_; }
-  const SecsAttributeSet &get_required_attributes() {
+  const SafeBytes<kOwnerEpochSize> &get_ownerepoch() const {
+    return ownerepoch_;
+  }
+  const SafeBytes<SHA256_DIGEST_LENGTH> &get_root_key() const {
+    return root_key_;
+  }
+  const SafeBytes<AES_BLOCK_SIZE> &get_seal_fuses() const {
+    return seal_fuses_;
+  }
+  const SecsAttributeSet &get_valid_attributes() const {
+    return valid_attributes_;
+  }
+  const SecsAttributeSet &get_required_attributes() const {
     return required_attributes_;
   }
+
   // Initializes data members that represent the enclave's identity to random
   // values. Ensures that the random identity conforms to the various
   // constraints specified by the SGX architecture.
@@ -233,6 +262,10 @@ class FakeEnclave {
     uint32_t miscselect;
     uint32_t miscmask;
     uint16_t keypolicy;
+    uint16_t configsvn;
+    UnsafeBytes<kIsvextprodidSize> isvextprodid;
+    UnsafeBytes<kIsvfamilyidSize> isvfamilyid;
+    UnsafeBytes<kConfigidSize> configid;
   } ABSL_ATTRIBUTE_PACKED;
 
   // Since the KeyDependenciesBase structure is non-architectural, the size of
@@ -289,6 +322,18 @@ class FakeEnclave {
 
   // SGX-defined MISCSELECT value of this fake enclave.
   uint32_t miscselect_;
+
+  // SGX-defined CONFIGSVN value of this fake enclave.
+  uint16_t configsvn_;
+
+  // SGX-defined ISVEXTPRODID value of this fake enclave.
+  UnsafeBytes<kIsvextprodidSize> isvextprodid_;
+
+  // SGX-defined ISVFAMILYID value of this fake enclave.
+  UnsafeBytes<kIsvfamilyidSize> isvfamilyid_;
+
+  // SGX-defined CONFIGID value of this fake enclave.
+  UnsafeBytes<kConfigidSize> configid_;
 
   // SGX-defined CPUSVN value.
   UnsafeBytes<kCpusvnSize> cpusvn_;

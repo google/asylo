@@ -510,8 +510,10 @@ cc_test(
     deps = [
         ":code_identity_util",
         ":hardware_interface",
+        ":hardware_types",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
