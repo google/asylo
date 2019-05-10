@@ -76,7 +76,7 @@ constexpr char kStatusMoveAssignmentMsg[] =
 /// Sample usage:
 ///
 /// ```
-///   asylo::StatusOr<std::unique_ptr<Foo>> = CalculateFoo();
+///   asylo::StatusOr<std::unique_ptr<Foo>> result = CalculateFoo();
 ///   if (result.ok()) {
 ///     std::unique_ptr<Foo> foo = std::move(result).ValueOrDie();
 ///     foo->DoSomethingCool();
