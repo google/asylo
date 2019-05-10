@@ -43,12 +43,12 @@ void Sha256HashToHexString(const Sha256HashProto &h, std::string *str) {
   *str = absl::BytesToHexString(h.hash());
 }
 
-bool operator==(const Sha256HashProto &left, const Sha256HashProto &right) {
-  return ::google::protobuf::util::MessageDifferencer::Equivalent(left, right);
+bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs) {
+  return ::google::protobuf::util::MessageDifferencer::Equivalent(lhs, rhs);
 }
 
-bool operator!=(const Sha256HashProto &left, const Sha256HashProto &right) {
-  return !(left == right);
+bool operator!=(const Sha256HashProto &lhs, const Sha256HashProto &rhs) {
+  return !(lhs == rhs);
 }
 
 }  // namespace asylo

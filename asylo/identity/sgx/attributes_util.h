@@ -28,19 +28,19 @@ namespace sgx {
 //
 // The operator does not differentiate between unset fields and fields that have
 // been set to default values.
-Attributes operator&(const Attributes &left, const Attributes &right);
+Attributes operator&(const Attributes &lhs, const Attributes &rhs);
 
 // Checks two Attributes protos for equality.
 //
 // The operator does not differentiate between unset fields and fields that have
 // been set to default values.
-bool operator==(const Attributes &left, const Attributes &right);
+bool operator==(const Attributes &lhs, const Attributes &rhs);
 
 // Checks two Attributes protos for inequality.
 //
 // The operator does not differentiate between unset fields and fields that have
 // been set to default values.
-bool operator!=(const Attributes &left, const Attributes &right);
+bool operator!=(const Attributes &lhs, const Attributes &rhs);
 
 }  // namespace sgx
 }  // namespace asylo

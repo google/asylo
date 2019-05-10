@@ -211,10 +211,10 @@ class FakeEnclave {
   void SetIdentity(const CodeIdentity &identity);
 
   // Equality operator--only needed for testing purposes.
-  bool operator==(const FakeEnclave &rhs) const;
+  bool operator==(const FakeEnclave &other) const;
 
   // Equality operator--only needed for testing purposes.
-  bool operator!=(const FakeEnclave &rhs) const;
+  bool operator!=(const FakeEnclave &other) const;
 
   // Fake implementation of RdRand64.
   static Status GetHardwareRand64(uint64_t *value);

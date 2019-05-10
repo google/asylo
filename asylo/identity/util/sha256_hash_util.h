@@ -35,10 +35,10 @@ bool Sha256HashFromHexString(const std::string &hex, Sha256HashProto *h);
 void Sha256HashToHexString(const Sha256HashProto &h, std::string *str);
 
 // Compares two Sha256Hash protobufs for equality.
-bool operator==(const Sha256HashProto &left, const Sha256HashProto &right);
+bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs);
 
 // Compares two Sha256Hash protobufs for inequality.
-bool operator!=(const Sha256HashProto &left, const Sha256HashProto &right);
+bool operator!=(const Sha256HashProto &lhs, const Sha256HashProto &rhs);
 
 }  // namespace asylo
 

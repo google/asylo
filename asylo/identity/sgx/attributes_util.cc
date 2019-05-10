@@ -27,19 +27,19 @@
 namespace asylo {
 namespace sgx {
 
-Attributes operator&(const Attributes &left, const Attributes &right) {
+Attributes operator&(const Attributes &lhs, const Attributes &rhs) {
   Attributes result;
-  result.set_flags(left.flags() & right.flags());
-  result.set_xfrm(left.xfrm() & right.xfrm());
+  result.set_flags(lhs.flags() & rhs.flags());
+  result.set_xfrm(lhs.xfrm() & rhs.xfrm());
   return result;
 }
 
-bool operator==(const Attributes &left, const Attributes &right) {
-  return ::google::protobuf::util::MessageDifferencer::Equivalent(left, right);
+bool operator==(const Attributes &lhs, const Attributes &rhs) {
+  return ::google::protobuf::util::MessageDifferencer::Equivalent(lhs, rhs);
 }
 
-bool operator!=(const Attributes &left, const Attributes &right) {
-  return (!(left == right));
+bool operator!=(const Attributes &lhs, const Attributes &rhs) {
+  return (!(lhs == rhs));
 }
 
 }  // namespace sgx

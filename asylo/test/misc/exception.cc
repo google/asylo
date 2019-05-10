@@ -23,12 +23,12 @@ namespace asylo {
 TestException::TestException(int code, const std::string &message)
     : code_(code), message_(message) {}
 
-TestException::TestException(const TestException &e)
-    : code_(e.code_), message_(e.message_) {}
+TestException::TestException(const TestException &other)
+    : code_(other.code_), message_(other.message_) {}
 
-TestException &TestException::operator=(const TestException &e) {
-  code_ = e.code_;
-  message_ = e.message_;
+TestException &TestException::operator=(const TestException &other) {
+  code_ = other.code_;
+  message_ = other.message_;
   return *this;
 }
 

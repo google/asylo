@@ -184,17 +184,18 @@ Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
   return Status::OkStatus();
 }
 
-bool FakeEnclave::operator==(const FakeEnclave &rhs) const {
-  return (mrenclave_ == rhs.mrenclave_ && mrsigner_ == rhs.mrsigner_ &&
-          isvprodid_ == rhs.isvprodid_ && isvsvn_ == rhs.isvsvn_ &&
-          attributes_ == rhs.attributes_ && miscselect_ == rhs.miscselect_ &&
-          cpusvn_ == rhs.cpusvn_ && report_keyid_ == rhs.report_keyid_ &&
-          ownerepoch_ == rhs.ownerepoch_ && root_key_ == rhs.root_key_ &&
-          seal_fuses_ == rhs.seal_fuses_);
+bool FakeEnclave::operator==(const FakeEnclave &other) const {
+  return (mrenclave_ == other.mrenclave_ && mrsigner_ == other.mrsigner_ &&
+          isvprodid_ == other.isvprodid_ && isvsvn_ == other.isvsvn_ &&
+          attributes_ == other.attributes_ &&
+          miscselect_ == other.miscselect_ && cpusvn_ == other.cpusvn_ &&
+          report_keyid_ == other.report_keyid_ &&
+          ownerepoch_ == other.ownerepoch_ && root_key_ == other.root_key_ &&
+          seal_fuses_ == other.seal_fuses_);
 }
 
-bool FakeEnclave::operator!=(const FakeEnclave &rhs) const {
-  return !(*this == rhs);
+bool FakeEnclave::operator!=(const FakeEnclave &other) const {
+  return !(*this == other);
 }
 
 Status FakeEnclave::GetHardwareKey(const Keyrequest &request,

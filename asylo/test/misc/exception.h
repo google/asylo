@@ -27,8 +27,8 @@ namespace asylo {
 class TestException {
  public:
   TestException(int code, const std::string &message);
-  TestException(const TestException &);
-  TestException &operator=(const TestException &);
+  TestException(const TestException &other);
+  TestException &operator=(const TestException &other);
 
   int Code() const { return code_; }
 
