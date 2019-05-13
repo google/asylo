@@ -24,9 +24,11 @@
 #include <openssl/ecdsa.h>
 #include <openssl/mem.h>
 #include <openssl/nid.h>
+#include <openssl/pem.h>
 #include <openssl/x509.h>
 
 #include <cstdint>
+#include <utility>
 #include <vector>
 
 #include "absl/memory/memory.h"
@@ -71,6 +73,23 @@ EcdsaP256Sha256VerifyingKey::CreateFromDer(ByteContainerView serialized_key) {
   if (!key) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
+  return Create(std::move(key));
+}
+
+StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
+EcdsaP256Sha256VerifyingKey::CreateFromPem(ByteContainerView serialized_key) {
+  // The input bio object containing the serialized public key.
+  bssl::UniquePtr<BIO> key_bio(
+      BIO_new_mem_buf(serialized_key.data(), serialized_key.size()));
+
+  // Create a public key from the input PEM data. For more information, see
+  // https://www.openssl.org/docs/man1.1.0/man3/PEM_read_bio_EC_PUBKEY.html.
+  bssl::UniquePtr<EC_KEY> key(PEM_read_bio_EC_PUBKEY(
+      key_bio.get(), /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr));
+  if (!key) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
   return Create(std::move(key));
 }
 

@@ -23,13 +23,20 @@
 #include <openssl/nid.h>
 #include <openssl/rand.h>
 
+#include <cstdint>
+#include <functional>
 #include <memory>
+#include <string>
+#include <utility>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/signing_key.h"
+#include "asylo/crypto/util/byte_container_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/status_matchers.h"
@@ -45,11 +52,13 @@ using ::testing::Not;
 const int kBadGroup = NID_secp224r1;
 const int kMessageSize = 1000;
 
-constexpr char kTestKey[] =
+constexpr char kTestSigningKeyDer[] =
     "3077020101042000ac5fbc99687708ff1cbf0a3a7c35beeb3ef8e1071a704e8c3bf4c99f01"
     "9dfba00a06082a8648ce3d030107a14403420004f7504d4ada23fab9878a03d86dc93578e5"
     "593a1e662aafe9e98f085c00dd94ec6c703df0145972eb578a1b5927b62b35379d51a5645a"
     "c339aa24cfb7b89685da";
+
+constexpr uint8_t kBadKey[] = "bad key";
 
 constexpr char kTestMessageHex[] = "436f66666565206973206c6966652e0a";
 
@@ -67,7 +76,86 @@ constexpr char kTestVerifyingKeyDer[] =
     "e0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe6"
     "1c69fc9eeada1fe29a567d6ceb468e16bd";
 
-constexpr uint8_t kBadKey[] = "bad key";
+// The same key as kTestVerifyingKeyDer, but PEM-encoded.
+constexpr char kTestVerifyingKeyPem[] =
+    R"(-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8
+kjfH6o3c1n4ix1zXURnqmqAvds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==
+-----END PUBLIC KEY-----)";
+
+struct VerifyingKeyParam {
+  std::function<StatusOr<std::unique_ptr<VerifyingKey>>(ByteContainerView)>
+      factory;
+  std::string key_data;
+};
+
+// Verify that EcdsaP256Sha256VerifyingKey::Create() fails when the key has an
+// incorrect group.
+TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
+     CreateVerifyingKeyWithBadGroupFails) {
+  bssl::UniquePtr<EC_KEY> bad_key(EC_KEY_new_by_curve_name(kBadGroup));
+  ASSERT_EQ(EC_KEY_generate_key(bad_key.get()), 1);
+  ASSERT_THAT(EcdsaP256Sha256VerifyingKey::Create(std::move(bad_key)),
+              Not(IsOk()));
+}
+
+class EcdsaP256Sha256VerifyingKeyTest
+    : public ::testing::TestWithParam<VerifyingKeyParam> {
+ public:
+  void SetUp() override {
+    ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key_,
+                               GetParam().factory(GetParam().key_data));
+  }
+  std::unique_ptr<VerifyingKey> verifying_key_;
+};
+
+// Verify that creating a key from an invalid encoding fails.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest,
+       CreateVerifyingKeyFromInvalidSerializationFails) {
+  std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
+
+  EXPECT_THAT(GetParam().factory(serialized_key), Not(IsOk()));
+}
+
+// Verify that an EcdsaP256Sha256VerifyingKey produces an equivalent
+// DER-encoding through SerializeToDer().
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyingKeySerializeToDer) {
+  EXPECT_THAT(verifying_key_->SerializeToDer(),
+              IsOkAndHolds(absl::HexStringToBytes(kTestVerifyingKeyDer)));
+}
+
+// Verify that an EcdsaP256Sha256VerifyingKey verifies a valid signature.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifySuccess) {
+  std::string valid_signature(absl::HexStringToBytes(kTestSignatureHex));
+  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
+
+  ASYLO_EXPECT_OK(verifying_key_->Verify(valid_message, valid_signature));
+}
+
+// Verify that an EcdsaP256Sha256VerifyingKey does not verify an invalid
+// signature.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithIncorrectSignatureFails) {
+  std::string invalid_signature(absl::HexStringToBytes(kInvalidSignatureHex));
+  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
+
+  EXPECT_THAT(verifying_key_->Verify(valid_message, invalid_signature),
+              Not(IsOk()));
+}
+
+// Verify that GetSignatureScheme() indicates ECDSA P-256 SHA256 for
+// EcdsaP256Sha256VerifyingKey.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, SignatureScheme) {
+  EXPECT_EQ(verifying_key_->GetSignatureScheme(),
+            SignatureScheme::ECDSA_P256_SHA256);
+}
+
+INSTANTIATE_TEST_SUITE_P(
+    AllTests, EcdsaP256Sha256VerifyingKeyTest,
+    ::testing::Values(
+        VerifyingKeyParam({EcdsaP256Sha256VerifyingKey::CreateFromDer,
+                           absl::HexStringToBytes(kTestVerifyingKeyDer)}),
+        VerifyingKeyParam({EcdsaP256Sha256VerifyingKey::CreateFromPem,
+                           kTestVerifyingKeyPem})));
 
 class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
  public:
@@ -92,94 +180,28 @@ class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
       ASYLO_ASSERT_OK(signing_key_->SerializeToDer(&serialized));
 
       LOG(INFO) << "Using random SigningKey: "
-                << absl::BytesToHexString(absl::string_view(
-                       reinterpret_cast<const char *>(serialized.data()),
-                       serialized.size()));
+                << absl::BytesToHexString(
+                       CopyToByteContainer<std::string>(serialized));
     }
-
-    // Set up verifying key.
-    serialized_verifying_key_bin_ =
-        absl::HexStringToBytes(kTestVerifyingKeyDer);
-
-    auto verifying_key_result = EcdsaP256Sha256VerifyingKey::CreateFromDer(
-        serialized_verifying_key_bin_);
-    ASYLO_ASSERT_OK(verifying_key_result);
-
-    verifying_key_ = std::move(verifying_key_result).ValueOrDie();
   }
 
   std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key_;
-
-  // The following fields are unrelated to the signing_key_ member.
-  std::string serialized_verifying_key_bin_;
-  std::unique_ptr<EcdsaP256Sha256VerifyingKey> verifying_key_;
 };
 
-// Verify that creating a key from an invalid DER-encoding fails.
-TEST_F(EcdsaP256Sha256SigningKeyTest,
-       CreateVerifyingKeyFromInvalidSerializationFails) {
-  std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
-
-  EXPECT_THAT(EcdsaP256Sha256VerifyingKey::CreateFromDer(serialized_key),
-              Not(IsOk()));
-}
-
-// Verify that a EcdsaP256Sha256VerifyingKey created from a DER-encoded key
-// produces the same encoded key through SerializeToDer().
-TEST_F(EcdsaP256Sha256SigningKeyTest, CreateAndSerializeToDerVerifyingKey) {
-  EXPECT_THAT(verifying_key_->SerializeToDer(),
-              IsOkAndHolds(serialized_verifying_key_bin_));
-}
-
-// Verify that a EcdsaP256Sha256VerifyingKey created from a DER-encoded key
-// verifies a valid signature.
-TEST_F(EcdsaP256Sha256SigningKeyTest, CreateVerifyingKeyFromDerVerifySuccess) {
-  std::string valid_signature(absl::HexStringToBytes(kTestSignatureHex));
-  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
-
-  ASYLO_EXPECT_OK(verifying_key_->Verify(valid_message, valid_signature));
-}
-
-// Verify that a EcdsaP256Sha256VerifyingKey created from a DER-encoded key
-// does not verify an invalid signature.
-TEST_F(EcdsaP256Sha256SigningKeyTest, CreateVerifyingKeyFromDerVerifyFailure) {
-  std::string invalid_signature(absl::HexStringToBytes(kInvalidSignatureHex));
-  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
-
-  EXPECT_THAT(verifying_key_->Verify(valid_message, invalid_signature),
-              Not(IsOk()));
-}
 
 // Verify that EcdsaP256Sha256SigningKey::Create() fails when the key has an
 // incorrect group.
-TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyWithBadGroup) {
+TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyWithBadGroupFails) {
   bssl::UniquePtr<EC_KEY> bad_key(EC_KEY_new_by_curve_name(kBadGroup));
   ASSERT_TRUE(EC_KEY_generate_key(bad_key.get()));
   ASSERT_THAT(EcdsaP256Sha256SigningKey::Create(std::move(bad_key)),
               Not(IsOk()));
 }
 
-// Verify that EcdsaP256Sha256VerifyingKey::Create() fails when the key has an
-// incorrect group.
-TEST_F(EcdsaP256Sha256SigningKeyTest, CreateVerifyingKeyWithBadGroup) {
-  bssl::UniquePtr<EC_KEY> bad_key(EC_KEY_new_by_curve_name(kBadGroup));
-  ASSERT_TRUE(EC_KEY_generate_key(bad_key.get()));
-  ASSERT_THAT(EcdsaP256Sha256VerifyingKey::Create(std::move(bad_key)),
-              Not(IsOk()));
-}
-
-// Verify that GetSignatureScheme() indicates ECDSA P-256 SHA256 for both
-// EcdsaP256Sha256VerifyingKey and EcdsaP256Sha256SigningKey.
-TEST_F(EcdsaP256Sha256SigningKeyTest, HashAlgorithm) {
+// Verify that GetSignatureScheme() indicates ECDSA P-256 SHA256 for
+// EcdsaP256Sha256SigningKey.
+TEST_F(EcdsaP256Sha256SigningKeyTest, SignatureScheme) {
   EXPECT_EQ(signing_key_->GetSignatureScheme(),
-            SignatureScheme::ECDSA_P256_SHA256);
-
-  auto verifying_key_result = signing_key_->GetVerifyingKey();
-  ASYLO_ASSERT_OK(verifying_key_result);
-
-  std::unique_ptr<VerifyingKey> verifying_key =
-      std::move(verifying_key_result).ValueOrDie();
-  EXPECT_EQ(verifying_key->GetSignatureScheme(),
             SignatureScheme::ECDSA_P256_SHA256);
 }
 
@@ -238,12 +260,9 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToDerAndRestoreSigningKey) {
 // Verify that an EcdsaP256Sha256SigningKey created from a serialized key
 // produces the same serialization as the one it was constructed from.
 TEST_F(EcdsaP256Sha256SigningKeyTest, RestoreFromAndSerializeToDerSigningKey) {
-  std::string serialized_key_hex(absl::HexStringToBytes(kTestKey));
-  const uint8_t *serialized_key_hex_ptr =
-      reinterpret_cast<const uint8_t *>(serialized_key_hex.data());
-  CleansingVector<uint8_t> serialized_key_bin_expected(
-      serialized_key_hex_ptr,
-      serialized_key_hex_ptr + serialized_key_hex.size());
+  std::string serialized_key_hex(absl::HexStringToBytes(kTestSigningKeyDer));
+  CleansingVector<uint8_t> serialized_key_bin_expected =
+      CopyToByteContainer<CleansingVector<uint8_t>>(serialized_key_hex);
 
   auto signing_key_result2 =
       EcdsaP256Sha256SigningKey::CreateFromDer(serialized_key_bin_expected);

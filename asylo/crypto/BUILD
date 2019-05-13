@@ -296,6 +296,9 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ecdsa_p256_sha256_signing_key",
+        ":signing_key",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
