@@ -29,8 +29,8 @@
 namespace asylo {
 namespace sgx {
 
+const size_t kRsa3072SerializedExponentSize = 4;
 constexpr size_t kRsa3072ModulusSize = 384;
-constexpr size_t kRsa3072ExponentSize = 4;
 
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme) {
@@ -56,7 +56,8 @@ absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
 
 StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
     absl::Span<const uint8_t> public_key) {
-  if (public_key.size() != kRsa3072ModulusSize + kRsa3072ExponentSize) {
+  if (public_key.size() !=
+      kRsa3072ModulusSize + kRsa3072SerializedExponentSize) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   absl::StrCat("Invalid public key size: ", public_key.size()));
   }
@@ -78,7 +79,7 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
 
   BN_bin2bn(public_key.data(), /*len=*/kRsa3072ModulusSize, modulus.get());
   BN_bin2bn(public_key.data() + kRsa3072ModulusSize,
-            /*len=*/kRsa3072ExponentSize, exponent.get());
+            /*len=*/kRsa3072SerializedExponentSize, exponent.get());
 
   // Takes ownership of |modulus| and |exponent|.
   if (RSA_set0_key(rsa.get(), modulus.release(), exponent.release(),
@@ -89,8 +90,28 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
   return rsa;
 }
 
-StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(RSA *rsa) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
+  size_t rsa_size = RSA_size(rsa);
+  if (rsa_size != kRsa3072ModulusSize) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid public key size: ", rsa_size));
+  }
+
+  const BIGNUM *n;
+  const BIGNUM *e;
+
+  // The private exponent, d, is not set for a public key.
+  RSA_get0_key(rsa, &n, &e, /*out_d=*/nullptr);
+
+  std::vector<uint8_t> output(kRsa3072ModulusSize +
+                              kRsa3072SerializedExponentSize);
+  if (!BN_bn2bin_padded(output.data(), /*len=*/kRsa3072ModulusSize, n) ||
+      !BN_bn2bin_padded(output.data() + kRsa3072ModulusSize,
+                        /*len=*/kRsa3072SerializedExponentSize, e)) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to serialize public key");
+  }
+  return output;
 }
 
 }  // namespace sgx

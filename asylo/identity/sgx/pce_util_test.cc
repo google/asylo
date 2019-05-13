@@ -62,6 +62,7 @@ constexpr char kModulusBigEndianHex[] =
 
 using ::testing::Eq;
 using ::testing::Optional;
+using ::testing::SizeIs;
 
 // All encryption schemes supported by the PCE.
 constexpr AsymmetricEncryptionScheme kSupportedEncryptionSchemes[] = {
@@ -199,7 +200,42 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeySuccess) {
   EXPECT_EQ(BN_cmp(n, expected_n.get()), 0);
 }
 
-TEST_F(PceUtilTest, DISABLED_ParseRsa3072PublicKeyRestoreFromSerializedKey) {
+// Verify that an RSA public key can be serialized, and the serialization result
+// contains correct modulus and exponent data in expected format.
+TEST_F(PceUtilTest, SerializeRsa3072PublicKeySuccess) {
+  bssl::UniquePtr<RSA> rsa(RSA_new());
+  bssl::UniquePtr<BIGNUM> e(BN_new());
+  ASSERT_EQ(BN_set_word(e.get(), RSA_F4), 1) << BsslLastErrorString();
+  ASSERT_EQ(
+      RSA_generate_key_ex(rsa.get(), /*bits=*/3072, e.get(), /*cb=*/nullptr), 1)
+      << BsslLastErrorString();
+
+  auto result = SerializeRsa3072PublicKey(rsa.get());
+  ASYLO_ASSERT_OK(result);
+  std::vector<uint8_t> serialized_key = std::move(result).ValueOrDie();
+  ASSERT_THAT(serialized_key,
+              SizeIs(RSA_size(rsa.get()) + kRsa3072SerializedExponentSize));
+
+  const BIGNUM *expected_n;
+  const BIGNUM *expected_e;
+
+  // The private exponent, d, is not set for a public key.
+  RSA_get0_key(rsa.get(), &expected_n, &expected_e, /*out_d=*/nullptr);
+
+  // Verify that both modulus and exponent are correct.
+  bssl::UniquePtr<BIGNUM> actual_n(BN_new());
+  BN_bin2bn(serialized_key.data(), RSA_size(rsa.get()), actual_n.get());
+  EXPECT_EQ(BN_cmp(actual_n.get(), expected_n), 0);
+
+  bssl::UniquePtr<BIGNUM> actual_e(BN_new());
+  BN_bin2bn(serialized_key.data() + RSA_size(rsa.get()),
+            kRsa3072SerializedExponentSize, actual_e.get());
+  EXPECT_EQ(BN_cmp(actual_e.get(), expected_e), 0);
+}
+
+// Verify that an RSA public key can be serialized and then restored, and that
+// the original key can decrypt a message encrypted by the restored key.
+TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
   bssl::UniquePtr<RSA> rsa1(RSA_new());
   bssl::UniquePtr<BIGNUM> e(BN_new());
 
