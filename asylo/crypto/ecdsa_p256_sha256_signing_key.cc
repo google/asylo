@@ -181,6 +181,22 @@ EcdsaP256Sha256SigningKey::CreateFromDer(ByteContainerView serialized_key) {
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>
+EcdsaP256Sha256SigningKey::CreateFromPem(ByteContainerView serialized_key) {
+  // The input bio object containing the serialized public key.
+  bssl::UniquePtr<BIO> key_bio(
+      BIO_new_mem_buf(serialized_key.data(), serialized_key.size()));
+
+  // Create a private key from the input PEM data.
+  bssl::UniquePtr<EC_KEY> key(PEM_read_bio_ECPrivateKey(
+      key_bio.get(), /*x=*/nullptr, /*cb=*/nullptr, /*u=*/nullptr));
+  if (!key) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return Create(std::move(key));
+}
+
+StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>
 EcdsaP256Sha256SigningKey::Create(bssl::UniquePtr<EC_KEY> private_key) {
   if (EC_GROUP_get_curve_name(EC_KEY_get0_group(private_key.get())) !=
       NID_X9_62_prime256v1) {

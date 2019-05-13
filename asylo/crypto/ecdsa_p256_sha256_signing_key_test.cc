@@ -53,10 +53,18 @@ const int kBadGroup = NID_secp224r1;
 const int kMessageSize = 1000;
 
 constexpr char kTestSigningKeyDer[] =
-    "3077020101042000ac5fbc99687708ff1cbf0a3a7c35beeb3ef8e1071a704e8c3bf4c99f01"
-    "9dfba00a06082a8648ce3d030107a14403420004f7504d4ada23fab9878a03d86dc93578e5"
-    "593a1e662aafe9e98f085c00dd94ec6c703df0145972eb578a1b5927b62b35379d51a5645a"
-    "c339aa24cfb7b89685da";
+    "30770201010420fe1dd5d79b11d1ba5f2f7be044d8b7eefc2396f77e903ca91fce637a525f"
+    "e830a00a06082a8648ce3d030107a14403420004eaeda5103e89194f43bfe0d844f3e79f00"
+    "0957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe61c69fc9eeada1f"
+    "e29a567d6ceb468e16bd";
+
+// The PEM-encoded equivalent of kTestSigningKeyDer.
+constexpr char kTestSigningKeyPem[] =
+    R"(-----BEGIN EC PRIVATE KEY-----
+MHcCAQEEIP4d1debEdG6Xy974ETYt+78I5b3fpA8qR/OY3pSX+gwoAoGCCqGSM49
+AwEHoUQDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8kjfH6o3c1n4ix1zXURnqmqAv
+ds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==
+-----END EC PRIVATE KEY-----)";
 
 constexpr uint8_t kBadKey[] = "bad key";
 
@@ -76,7 +84,7 @@ constexpr char kTestVerifyingKeyDer[] =
     "e0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe6"
     "1c69fc9eeada1fe29a567d6ceb468e16bd";
 
-// The same key as kTestVerifyingKeyDer, but PEM-encoded.
+// The PEM-encoded equivalent of kTestVerifyingKeyDer.
 constexpr char kTestVerifyingKeyPem[] =
     R"(-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8
@@ -205,6 +213,21 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SignatureScheme) {
             SignatureScheme::ECDSA_P256_SHA256);
 }
 
+// Verify that an EcdsaP256Sha256SigningKey created from a PEM-encoded key
+// serializes to the correct DER-encoding.
+TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyFromPemMatchesDer) {
+  std::unique_ptr<SigningKey> signing_key_pem;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key_pem,
+      EcdsaP256Sha256SigningKey::CreateFromPem(kTestSigningKeyPem));
+
+  CleansingVector<uint8_t> serialized_der;
+  ASYLO_ASSERT_OK(signing_key_pem->SerializeToDer(&serialized_der));
+
+  EXPECT_EQ(ByteContainerView(serialized_der),
+            ByteContainerView(absl::HexStringToBytes(kTestSigningKeyDer)));
+}
+
 // Verify that a randomly-generated EcdsaP256Sha256SigningKey can produce a
 // signature that the corresponding EcdsaP256Sha256VerifyingKey can verify.
 TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerify) {
@@ -280,10 +303,20 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, RestoreFromAndSerializeToDerSigningKey) {
 // Verify that creating an EcdsaP256Sha256SigningKey from an invalid DER
 // serialization fails.
 TEST_F(EcdsaP256Sha256SigningKeyTest,
-       CreateSigningKeyFromInvalidSerializationFails) {
+       CreateSigningKeyFromInvalidDerSerializationFails) {
   std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
 
   EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromDer(serialized_key),
+              Not(IsOk()));
+}
+
+// Verify that creating an EcdsaP256Sha256SigningKey from an invalid PEM
+// serialization fails.
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       CreateSigningKeyFromInvalidPemSerializationFails) {
+  std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
+
+  EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromPem(serialized_key),
               Not(IsOk()));
 }
 

@@ -76,6 +76,11 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
   static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> CreateFromDer(
       ByteContainerView serialized_key);
 
+  // Creates an ECDSA P256 signing key from the given PEM-encoded
+  // |serialized_key|.
+  static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> CreateFromPem(
+      ByteContainerView serialized_key);
+
   // Creates an ECDSA P256 signing key from the given |private_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> Create(
       bssl::UniquePtr<EC_KEY> private_key);
