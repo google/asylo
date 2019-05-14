@@ -16,10 +16,10 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load("//asylo/bazel:asylo.bzl", "cc_test", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # An enclave configuration that should keep up with gRPC's resource usage.
 sgx_enclave_configuration(
@@ -89,8 +89,8 @@ cc_library(
         ":enclave_server_proto_cc",
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
+        "//asylo/util:mutex_guarded",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
-        "@com_google_absl//absl/synchronization",
     ],
 )

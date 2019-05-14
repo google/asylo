@@ -23,10 +23,10 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
-#include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/trusted_application.h"
+#include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -61,13 +61,15 @@ class EnclaveServer final : public TrustedApplication {
 
   EnclaveServer(std::unique_ptr<::grpc::Service> service,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
-      : service_{std::move(service)},
+      : server_{nullptr},
+        service_{std::move(service)},
         service_factory_{NoFactory},
         credentials_{credentials} {}
 
   EnclaveServer(GrpcServiceFactory service_factory,
                 std::shared_ptr<::grpc::ServerCredentials> credentials)
-      : service_factory_{service_factory},
+      : server_{nullptr},
+        service_factory_{service_factory},
         credentials_{credentials} {}
 
   ~EnclaveServer() = default;
@@ -109,21 +111,20 @@ class EnclaveServer final : public TrustedApplication {
  private:
   // Initializes a gRPC server. If the server is already initialized, does
   // nothing.
-  Status InitializeServer() LOCKS_EXCLUDED(server_mutex_) {
+  Status InitializeServer() {
     // Ensure that the server is only created and initialized once.
-    absl::MutexLock lock(&server_mutex_);
-    if (server_) {
+    auto server_view(server_.Lock());
+    if (*server_view) {
       return Status::OkStatus();
     }
 
-    ASYLO_ASSIGN_OR_RETURN(server_, CreateServer());
+    ASYLO_ASSIGN_OR_RETURN(*server_view, CreateServer());
     return Status::OkStatus();
   }
 
   // Creates a gRPC server that hosts service_ on host_ and port_ with
   // credentials_.
-  StatusOr<std::unique_ptr<::grpc::Server>> CreateServer()
-      EXCLUSIVE_LOCKS_REQUIRED(server_mutex_) {
+  StatusOr<std::unique_ptr<::grpc::Server>> CreateServer() {
     int port;
     ::grpc::ServerBuilder builder;
     builder.AddListeningPort(absl::StrCat(host_, ":", port_), credentials_,
@@ -154,20 +155,19 @@ class EnclaveServer final : public TrustedApplication {
 
   // Gets the address of the hosted gRPC server and writes it to
   // server_output_config extension of |output|.
-  void GetServerAddress(EnclaveOutput *output)
-      EXCLUSIVE_LOCKS_REQUIRED(server_mutex_) {
+  void GetServerAddress(EnclaveOutput *output) {
     ServerConfig *config = output->MutableExtension(server_output_config);
     config->set_host(host_);
     config->set_port(port_);
   }
 
   // Finalizes the gRPC server by calling ::gprc::Server::Shutdown().
-  void FinalizeServer() LOCKS_EXCLUDED(server_mutex_) {
-    absl::MutexLock lock(&server_mutex_);
-    if (server_) {
+  void FinalizeServer() {
+    auto server_view(server_.Lock());
+    if (*server_view) {
       LOG(INFO) << "Shutting down...";
-      server_->Shutdown();
-      server_ = nullptr;
+      (*server_view)->Shutdown();
+      *server_view = nullptr;
     }
   }
 
@@ -175,11 +175,8 @@ class EnclaveServer final : public TrustedApplication {
     return Status(error::GoogleError::INTERNAL, "No factory configured");
   }
 
-  // Guards state related to the gRPC server (|server_| and |port_|).
-  absl::Mutex server_mutex_;
-
   // A gRPC server hosting |messenger_|.
-  std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
+  MutexGuarded<std::unique_ptr<::grpc::Server>> server_;
 
   // The host and port of the server's address.
   std::string host_;
