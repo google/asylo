@@ -53,6 +53,11 @@ class SgxClient : public EnclaveClient {
   // Sets a new expected process ID for an existing SGX enclave.
   void SetProcessId();
 
+  // Returns the primitive SGX client.
+  std::shared_ptr<primitives::SgxEnclaveClient> GetPrimitivesClient() {
+    return primitive_sgx_client_;
+  }
+
  private:
   friend class SgxLoader;
   friend class SgxEmbeddedLoader;
