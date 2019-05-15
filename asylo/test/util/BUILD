@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_test", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
@@ -250,36 +250,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "fake_local_enclave_client",
-    testonly = 1,
-    hdrs = ["fake_local_enclave_client.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deprecation = "Use mock_enclave_client instead",
-    visibility = ["//visibility:public"],
-    deps = [
-        "//asylo:enclave_client",
-        "//asylo/util:status",
-        "@com_google_absl//absl/base:core_headers",
-    ],
-)
-
-# A fake EnclaveClient that can pass EnterAndRun calls directly to enclave code.
-# This is useful for testing enclaves that can be built by the native compiler,
-# since it lets them be tested without any special configuration.
-cc_test(
-    name = "fake_local_enclave_client_test",
-    size = "small",
-    srcs = ["fake_local_enclave_client_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":fake_local_enclave_client",
-        ":test_main",
-        "//asylo/test/util:status_matchers",
         "@com_google_googletest//:gtest",
     ],
 )
