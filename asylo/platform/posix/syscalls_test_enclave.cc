@@ -123,6 +123,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunRlimitInvalidNoFileTest(test_input.path_name());
     } else if (test_input.test_target() == "chmod") {
       return RunChModTest(test_input.path_name());
+    } else if (test_input.test_target() == "fchmod") {
+      return RunFChModTest(test_input.path_name());
     } else if (test_input.test_target() == "getifaddrs") {
       return RunGetIfAddrsTest(output);
     } else if (test_input.test_target() == "getsockname_success") {
@@ -1076,6 +1078,20 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (chmod(path.c_str(), 0644) != 0) {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("chmod failed: ", strerror(errno)));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunFChModTest(const std::string &path) {
+    int fd = open(path.c_str(), O_RDWR | O_CREAT, 0777);
+    if (fd < 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("failed to open file: ", strerror(errno)));
+    }
+
+    if (fchmod(fd, 0644) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("fchmod failed: ", strerror(errno)));
     }
     return Status::OkStatus();
   }

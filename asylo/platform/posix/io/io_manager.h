@@ -113,6 +113,11 @@ class IOManager {
       return -1;
     }
 
+    virtual int FChMod(mode_t mode) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     // Implements IOManager::Ioctl.
     virtual int Ioctl(int request, void *argp) {
       errno = ENOSYS;
@@ -514,6 +519,9 @@ class IOManager {
   // Implements lseek(2).
   int LSeek(int fd, off_t offset, int whence);
 
+  // Implements fchmod(2).
+  int FChMod(int fd, mode_t mode);
+
   // Implements fcntl(2).
   int FCntl(int fd, int cmd, int64_t arg);
 
@@ -730,3 +738,4 @@ class IOManager {
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_POSIX_IO_IO_MANAGER_H_
+

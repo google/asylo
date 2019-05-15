@@ -58,6 +58,10 @@ int IOContextNative::FTruncate(off_t length) {
   return enc_untrusted_ftruncate(host_fd_, length);
 }
 
+int IOContextNative::FChMod(mode_t mode) {
+  return enc_untrusted_fchmod(host_fd_, mode);
+}
+
 int IOContextNative::Isatty() { return enc_untrusted_isatty(host_fd_); }
 
 int IOContextNative::FLock(int operation) {

@@ -35,6 +35,10 @@ int chmod(const char *pathname, mode_t mode) {
   return IOManager::GetInstance().ChMod(pathname, mode);
 }
 
+int fchmod(int fd, mode_t mode) {
+  return IOManager::GetInstance().FChMod(fd, mode);
+}
+
 int mkdir(const char *pathname, mode_t mode) {
   return IOManager::GetInstance().Mkdir(pathname, mode);
 }

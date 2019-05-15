@@ -237,6 +237,7 @@ int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
 int enc_untrusted_mkdir(const char *path, int mode);
 mode_t enc_untrusted_umask(mode_t mask);
 int enc_untrusted_chmod(const char *pathname, mode_t mode);
+int enc_untrusted_fchmod(int fd, mode_t mode);
 
 //////////////////////////////////////
 //         sys/syslog.h             //

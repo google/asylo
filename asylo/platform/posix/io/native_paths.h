@@ -42,6 +42,7 @@ class IOContextNative : public IOManager::IOContext {
   int FLock(int operation) override;
   int Close() override;
   int FTruncate(off_t length) override;
+  int FChMod(mode_t mode) override;
   ssize_t Writev(const struct iovec *iov, int iovcnt) override;
   ssize_t Readv(const struct iovec *iov, int iovcnt) override;
   int SetSockOpt(int level, int option_name, const void *option_value,

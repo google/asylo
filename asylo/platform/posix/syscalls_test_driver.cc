@@ -937,6 +937,16 @@ TEST_F(SyscallsTest, ChMod) {
   EXPECT_EQ(stat_buffer.st_mode & 0777, 0644);
 }
 
+// Tests fchmod() by changing the mode of a file inside an enclave, and verifies
+// the mode is changed correctly.
+TEST_F(SyscallsTest, FChMod) {
+  const std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/chmod");
+  ASSERT_THAT(RunSyscallInsideEnclave("fchmod", test_file, nullptr), IsOk());
+  struct stat stat_buffer;
+  ASSERT_EQ(stat(test_file.c_str(), &stat_buffer), 0);
+  EXPECT_EQ(stat_buffer.st_mode & 0777, 0644);
+}
+
 MATCHER_P(MatchIfAddrs, that, "") {
   return SockaddrsEqual(arg->ifa_addr, that->ifa_addr) &&
          SockaddrsEqual(arg->ifa_netmask, that->ifa_netmask) &&

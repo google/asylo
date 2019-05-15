@@ -458,6 +458,19 @@ host_calls {
   }
 }
 
+host_calls {
+  name: "fchmod"
+  return_type: "int"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+  parameters {
+    name: "mode"
+    type: "mode_t"
+  }
+}
+
 ######################################
 ##             unistd.h             ##
 ######################################

@@ -751,6 +751,12 @@ int IOManager::ChMod(const char *pathname, mode_t mode) {
   });
 }
 
+int IOManager::FChMod(int fd, mode_t mode) {
+  return CallWithContext(fd, [mode](std::shared_ptr<IOContext> context) {
+    return context->FChMod(mode);
+  });
+}
+
 int IOManager::LSeek(int fd, off_t offset, int whence) {
   return CallWithContext(fd,
                          [offset, whence](std::shared_ptr<IOContext> context) {
