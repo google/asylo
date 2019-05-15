@@ -34,6 +34,7 @@
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 
@@ -122,7 +123,7 @@ void FakeEnclave::SetRandomIdentity() {
   set_attributes(TrivialRandomObject<SecsAttributeSet>());
 
   // All bits of MISCSELECT, except for bit 0, must be zero.
-  miscselect_ = TrivialRandomObject<uint32_t>() & 0x1;
+  miscselect_ = TrivialRandomObject<uint32_t>() & kMiscselectAllBits;
 
   // If ATTRIBUTES.KSS is zero, all KSS-related fields must be zero, else they
   // should be set randomly.
@@ -164,24 +165,29 @@ void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
   miscselect_ = identity.miscselect();
 }
 
-Status FakeEnclave::GetHardwareRand64(uint64_t *value) {
-  RAND_bytes(reinterpret_cast<uint8_t *>(value), sizeof(*value));
-  return Status::OkStatus();
-}
+StatusOr<CodeIdentity> FakeEnclave::GetIdentity() const {
+  CodeIdentity code_identity;
 
-Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
-                              HardwareKey *key) {
-  static_assert(HardwareKey::size() == AES_BLOCK_SIZE,
-                "Mismatch between kHardwareKeySize and AES_BLOCK_SIZE");
 
-  if (AES_CMAC(key->data(), root_key_.data(), root_key_.size(),
-               reinterpret_cast<const uint8_t *>(&key_dependencies),
-               sizeof(key_dependencies)) != 1) {
-    // Clear-out any leftover state from the output.
-    key->Cleanse();
-    return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
+  if (!ConvertSecsAttributeRepresentation(attributes_,
+                                          code_identity.mutable_attributes())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to convert attributes representation");
   }
-  return Status::OkStatus();
+
+  code_identity.mutable_mrenclave()->set_hash(
+      ConvertTrivialObjectToBinaryString(mrenclave_));
+
+  SignerAssignedIdentity *signer_assigned_identity =
+      code_identity.mutable_signer_assigned_identity();
+  signer_assigned_identity->mutable_mrsigner()->set_hash(
+      ConvertTrivialObjectToBinaryString(mrsigner_));
+  signer_assigned_identity->set_isvprodid(isvprodid_);
+  signer_assigned_identity->set_isvsvn(isvsvn_);
+
+  code_identity.set_miscselect(miscselect_);
+
+  return code_identity;
 }
 
 bool FakeEnclave::operator==(const FakeEnclave &other) const {
@@ -198,8 +204,13 @@ bool FakeEnclave::operator!=(const FakeEnclave &other) const {
   return !(*this == other);
 }
 
+Status FakeEnclave::GetHardwareRand64(uint64_t *value) {
+  RAND_bytes(reinterpret_cast<uint8_t *>(value), sizeof(*value));
+  return Status::OkStatus();
+}
+
 Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
-                                   HardwareKey *key) {
+                                   HardwareKey *key) const {
   // Check the alignment of the input parameters. If the parameters are
   // not correctly aligned, SGX hardware throws a #GP(0) exception.
   // Here, this behavior is simulated by invoking the LOG(FATAL) macro.
@@ -336,7 +347,7 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
 
 Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
                                       const Reportdata &reportdata,
-                                      Report *report) {
+                                      Report *report) const {
   // The SGX EREPORT instruction throws the #GP(0) exception if the parameters
   // are not correctly aligned. This behavior is simulated here by means of a
   // LOG(FATAL) macro.
@@ -354,8 +365,7 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   SecsAttributeSet all_attributes;
   GetAllSecsAttributes(&all_attributes);
   SecsAttributeSet reserved_attributes = ~all_attributes;
-  // All bits other than bit 0 of misc select are reserved.
-  uint32_t misc_select_reserved_bits = ~0x1;
+  uint32_t misc_select_reserved_bits = ~kMiscselectAllBits;
   if (tinfo.reserved1 != TrivialZeroObject<decltype(tinfo.reserved1)>() ||
       tinfo.reserved2 != TrivialZeroObject<decltype(tinfo.reserved2)>() ||
       (tinfo.miscselect & misc_select_reserved_bits) != 0 ||
@@ -426,6 +436,21 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
                offsetof(Report, keyid)) != 1) {
     // Clear-out any leftover state from the output.
     report->mac.Cleanse();
+    return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
+Status FakeEnclave::DeriveKey(const KeyDependencies &key_dependencies,
+                              HardwareKey *key) const {
+  static_assert(HardwareKey::size() == AES_BLOCK_SIZE,
+                "Mismatch between kHardwareKeySize and AES_BLOCK_SIZE");
+
+  if (AES_CMAC(key->data(), root_key_.data(), root_key_.size(),
+               reinterpret_cast<const uint8_t *>(&key_dependencies),
+               sizeof(key_dependencies)) != 1) {
+    // Clear-out any leftover state from the output.
+    key->Cleanse();
     return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());
   }
   return Status::OkStatus();

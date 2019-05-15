@@ -43,6 +43,8 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+using ::testing::Not;
+
 using Measurement = UnsafeBytes<SHA256_DIGEST_LENGTH>;
 using Keyid = UnsafeBytes<kReportKeyidSize>;
 
@@ -166,6 +168,34 @@ TEST_F(FakeEnclaveTest, SetIdentity) {
 
   EXPECT_THAT(identity, EqualsProto(identity2));
   FakeEnclave::ExitEnclave();
+}
+
+TEST_F(FakeEnclaveTest, GetIdentity) {
+  FakeEnclave enclave1;
+  enclave1.remove_valid_attribute(SecsAttributeBit::KSS);
+  enclave1.SetRandomIdentity();
+
+  auto identity_result = enclave1.GetIdentity();
+  ASYLO_ASSERT_OK(identity_result.status());
+  CodeIdentity identity = identity_result.ValueOrDie();
+
+  FakeEnclave::EnterEnclave(enclave1);
+  EXPECT_THAT(identity, EqualsProto(GetSelfIdentity()->identity));
+  FakeEnclave::ExitEnclave();
+
+  FakeEnclave enclave2;
+  enclave2.SetIdentity(identity);
+
+  EXPECT_THAT(enclave2.GetIdentity(), IsOkAndHolds(EqualsProto(identity)));
+
+  FakeEnclave enclave3;
+  enclave3.remove_valid_attribute(SecsAttributeBit::KSS);
+  enclave3.SetRandomIdentity();
+
+  // The probability that the two identities are identical is exceedingly
+  // unlikely. The probability of MRENCLAVE equality is 2^-256. The probability
+  // of MRSIGNER equality is also 2^-256.
+  EXPECT_THAT(enclave3.GetIdentity(), IsOkAndHolds(Not(EqualsProto(identity))));
 }
 
 // Verify that key-generation actually writes something in its output

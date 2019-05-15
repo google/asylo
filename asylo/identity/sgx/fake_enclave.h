@@ -30,6 +30,7 @@
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 #ifdef __ASYLO__
 #error \
@@ -210,6 +211,9 @@ class FakeEnclave {
   // the |identity|. Does not perform any consistency checks on |identity|.
   void SetIdentity(const CodeIdentity &identity);
 
+  // Gets a CodeIdentity representation of this enclave's identity.
+  StatusOr<CodeIdentity> GetIdentity() const;
+
   // Equality operator--only needed for testing purposes.
   bool operator==(const FakeEnclave &other) const;
 
@@ -220,11 +224,11 @@ class FakeEnclave {
   static Status GetHardwareRand64(uint64_t *value);
 
   // Fake implementation of the SGX EGETKEY instruction.
-  Status GetHardwareKey(const Keyrequest &request, HardwareKey *key);
+  Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) const;
 
   // Fake implementation of the SGX EREPORT instruction.
   Status GetHardwareReport(const Targetinfo &tinfo,
-                           const Reportdata &reportdata, Report *report);
+                           const Reportdata &reportdata, Report *report) const;
 
  private:
   // The Intel SDM (Software Developer's Manual) refers to a structure
@@ -303,7 +307,8 @@ class FakeEnclave {
   // description of the EGETKEY pseudo-code, it looks like this key-derivation
   // function returns a 128-bit key. The fake key-derivation function also uses
   // the "root key" stored in the FakeEnclave singleton as a key for this KDF.
-  Status DeriveKey(const KeyDependencies &key_dependencies, HardwareKey *key);
+  Status DeriveKey(const KeyDependencies &key_dependencies,
+                   HardwareKey *key) const;
 
   // SGX-defined MRENCLAVE value of this fake enclave.
   UnsafeBytes<SHA256_DIGEST_LENGTH> mrenclave_;
