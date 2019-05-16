@@ -376,6 +376,18 @@ TEST_F(SyscallsTest, Mkdir) {
   closedir(directory);
 }
 
+// Tests rmdir(). Calls mkdir() to create a directory, then calls rmdir() inside
+// the enclave to remove it. Verifies the directory is deleted outside the
+// enclave.
+TEST_F(SyscallsTest, Rmdir) {
+  const std::string test_directory = absl::StrCat(FLAGS_test_tmpdir, "/rmdir");
+  EXPECT_EQ(mkdir(test_directory.c_str(), 0644), 0);
+  EXPECT_THAT(RunSyscallInsideEnclave("rmdir", test_directory, nullptr),
+              IsOk());
+  DIR *directory = opendir(test_directory.c_str());
+  EXPECT_EQ(directory, nullptr);
+}
+
 // Tests dup() and dup2(). Calls dup() and dup2() on a file descriptor, and
 // checks whether the new file descriptor behaves the same as the original one.
 TEST_F(SyscallsTest, Dup) {

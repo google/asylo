@@ -76,6 +76,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunFcntlTest(test_input.path_name());
     } else if (test_input.test_target() == "mkdir") {
       return RunMkdirTest(test_input.path_name());
+    } else if (test_input.test_target() == "rmdir") {
+      return RunRmDirTest(test_input.path_name());
     } else if (test_input.test_target() == "dup") {
       return RunDupTest(test_input.path_name());
     } else if (test_input.test_target() == "gethostname") {
@@ -407,6 +409,18 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (mkdir(path.c_str(), 0644) == -1) {
       return Status(static_cast<error::PosixError>(errno),
                     absl::StrCat("Mkdir:", path, " failed: ", strerror(errno)));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunRmDirTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+    }
+
+    if (rmdir(path.c_str()) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("Rmdir:", path, " failed: ", strerror(errno)));
     }
     return Status::OkStatus();
   }

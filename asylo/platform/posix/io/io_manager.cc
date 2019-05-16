@@ -824,6 +824,13 @@ int IOManager::Mkdir(const char *path, mode_t mode) {
       });
 }
 
+int IOManager::RmDir(const char *pathname) {
+  return CallWithHandler(
+      pathname, [](VirtualPathHandler *handler, const char *canonical_path) {
+        return handler->RmDir(canonical_path);
+      });
+}
+
 int IOManager::Rename(const char *oldpath, const char *newpath) {
   return CallWithHandler(
       oldpath, newpath,

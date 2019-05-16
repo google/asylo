@@ -299,6 +299,11 @@ class IOManager {
       return -1;
     }
 
+    virtual int RmDir(const char *pathname) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     virtual int Rename(const char *oldpath, const char *newpath) {
       errno = ENOSYS;
       return -1;
@@ -572,6 +577,9 @@ class IOManager {
 
   // Implements mkdir(2).
   int Mkdir(const char *pathname, mode_t mode);
+
+  // Implements rmdir(2).
+  int RmDir(const char *pathname);
 
   // Implements rename(2).
   int Rename(const char *oldpath, const char *newpath);

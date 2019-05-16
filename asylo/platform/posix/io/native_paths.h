@@ -87,6 +87,7 @@ class NativePathHandler : public io::IOManager::VirtualPathHandler {
   int Stat(const char *pathname, struct stat *stat_buffer) override;
   int LStat(const char *pathname, struct stat *stat_buffer) override;
   int Mkdir(const char *path, mode_t mode) override;
+  int RmDir(const char *pathname) override;
   int Rename(const char *oldpath, const char *newpath) override;
   int Access(const char *path, int mode) override;
   int ChMod(const char *pathname, mode_t mode) override;

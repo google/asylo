@@ -180,6 +180,10 @@ int chdir(const char *path) {
   return 0;
 }
 
+int rmdir(const char *pathname) {
+  return IOManager::GetInstance().RmDir(pathname);
+}
+
 uid_t getuid() { return enc_untrusted_getuid(); }
 
 uid_t geteuid() { return enc_untrusted_geteuid(); }

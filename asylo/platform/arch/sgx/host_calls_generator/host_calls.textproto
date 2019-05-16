@@ -520,6 +520,21 @@ host_calls {
 }
 
 host_calls {
+  name: "rmdir"
+  return_type: "int"
+  parameters {
+    name: "pathname"
+    type: "const char *"
+    pointer_attributes {
+      attribute: IN
+    }
+    pointer_attributes {
+      attribute: STRING
+    }
+  }
+}
+
+host_calls {
   name: "truncate"
   return_type: "int"
   parameters {
