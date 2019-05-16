@@ -34,6 +34,7 @@ class IOContextNative : public IOManager::IOContext {
 
   ssize_t Read(void *buf, size_t count) override;
   ssize_t Write(const void *buf, size_t count) override;
+  int FChOwn(uid_t owner, gid_t group) override;
   int LSeek(off_t offset, int whence) override;
   int FCntl(int cmd, int64_t arg) override;
   int FSync() override;

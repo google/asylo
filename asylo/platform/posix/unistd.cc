@@ -43,6 +43,10 @@ int chown(const char *path, uid_t owner, gid_t group) {
   return IOManager::GetInstance().Chown(path, owner, group);
 }
 
+int fchown(int fd, uid_t owner, gid_t group) {
+  return IOManager::GetInstance().FChOwn(fd, owner, group);
+}
+
 ssize_t readlink(const char *path_name, char *buf, size_t bufsize) {
   return IOManager::GetInstance().ReadLink(path_name, buf, bufsize);
 }

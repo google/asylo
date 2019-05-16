@@ -95,6 +95,12 @@ class IOManager {
     // Implements IOManager::FDataSync.
     virtual int FDataSync() { return FSync(); }
 
+    // Implements IOManager::FChOwn.
+    virtual int FChOwn(uid_t owner, gid_t group) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     // Implements IOManager::FStat.
     virtual int FStat(struct stat *st) {
       errno = ENOSYS;
@@ -520,6 +526,9 @@ class IOManager {
 
   // Closes and finalizes the stream, returning 0 on success or -1 on error.
   int Close(int fd) LOCKS_EXCLUDED(fd_table_lock_);
+
+  // Implements fchown(2).
+  int FChOwn(int fd, uid_t owner, gid_t group);
 
   // Implements lseek(2).
   int LSeek(int fd, off_t offset, int whence);

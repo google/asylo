@@ -40,6 +40,10 @@ ssize_t IOContextNative::Write(const void *buf, size_t count) {
   return enc_untrusted_write(host_fd_, buf, count);
 }
 
+int IOContextNative::FChOwn(uid_t owner, gid_t group) {
+  return enc_untrusted_fchown(host_fd_, owner, group);
+}
+
 int IOContextNative::LSeek(off_t offset, int whence) {
   return enc_untrusted_lseek(host_fd_, offset, whence);
 }

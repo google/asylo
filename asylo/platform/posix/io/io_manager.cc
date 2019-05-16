@@ -751,6 +751,13 @@ int IOManager::ChMod(const char *pathname, mode_t mode) {
   });
 }
 
+int IOManager::FChOwn(int fd, uid_t owner, gid_t group) {
+  return CallWithContext(fd,
+                         [owner, group](std::shared_ptr<IOContext> context) {
+                           return context->FChOwn(owner, group);
+                         });
+}
+
 int IOManager::FChMod(int fd, mode_t mode) {
   return CallWithContext(fd, [mode](std::shared_ptr<IOContext> context) {
     return context->FChMod(mode);

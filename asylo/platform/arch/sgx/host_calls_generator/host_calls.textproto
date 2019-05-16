@@ -476,6 +476,23 @@ host_calls {
 ######################################
 
 host_calls {
+  name: "fchown"
+  return_type: "int"
+  parameters {
+    name: "fd"
+    type: "int"
+  }
+  parameters {
+    name: "owner"
+    type: "uint32_t"
+  }
+  parameters {
+    name: "group"
+    type: "uint32_t"
+  }
+}
+
+host_calls {
   name: "usleep"
   return_type: "int"
   parameters {
