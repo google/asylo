@@ -46,9 +46,13 @@ class SgxClient : public EnclaveClient {
   // simulation mode.
   bool IsTcsActive();
 
-  void *base_address() { return base_address_; }
-  const void *base_address() const { return base_address_; }
-  const size_t &size() { return size_; }
+  void *base_address() { return primitive_sgx_client_->GetBaseAddress(); }
+
+  const void *base_address() const {
+    return primitive_sgx_client_->GetBaseAddress();
+  }
+
+  size_t size() { return primitive_sgx_client_->GetEnclaveSize(); }
 
   // Sets a new expected process ID for an existing SGX enclave.
   void SetProcessId();
@@ -62,10 +66,6 @@ class SgxClient : public EnclaveClient {
   friend class SgxLoader;
   friend class SgxEmbeddedLoader;
 
-  // Syncs the SgxClient instance with the SgxEnclaveClient instance defined in
-  // primitives.
-  void Sync(std::shared_ptr<primitives::Client> primitive_client);
-
   Status EnterAndInitialize(const EnclaveConfig &config) override;
   Status EnterAndFinalize(const EnclaveFinal &final_input) override;
   Status EnterAndDonateThread() override;
@@ -75,12 +75,6 @@ class SgxClient : public EnclaveClient {
   Status EnterAndTransferSecureSnapshotKey(
       const ForkHandshakeConfig &fork_handshake_config) override;
   Status DestroyEnclave() override;
-
-  std::string path_;                // Path to enclave object file.
-  sgx_launch_token_t token_ = {0};  // SGX SDK launch token.
-  sgx_enclave_id_t id_;       // SGX SDK enclave identifier.
-  void *base_address_;        // Enclave base address.
-  size_t size_;               // Enclave size.
 
   // Primitive SGX client.
   std::shared_ptr<primitives::SgxEnclaveClient> primitive_sgx_client_;
