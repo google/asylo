@@ -53,6 +53,22 @@ cc_library(
     ],
 )
 
+# Target exposing trusted backend-dependent components for the build configuration.
+cc_library(
+    name = "trusted_backend",
+    hdrs = [
+        "trusted_runtime.h",
+        "//asylo/platform/primitives/util:trusted_memory.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = select({
+        "//asylo/platform/primitives:sgx": [
+            "//asylo/platform/primitives/sgx:trusted_sgx",
+        ],
+        "//conditions:default": [],
+    }),
+)
+
 # Primitive API headers for trusted code.
 cc_library(
     name = "trusted_primitives",
@@ -125,5 +141,13 @@ config_setting(
     name = "asylo_sgx",
     values = {
         "define": "ASYLO_SGX=1",
+    },
+)
+
+# Set when we are compiling for sgx backend.
+config_setting(
+    name = "sgx",
+    values = {
+        "crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
     },
 )

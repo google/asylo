@@ -22,6 +22,9 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "include/sgx_thread.h"
+#include "include/sgx_trts.h"
+
 namespace {
 
 // Pointer to start of the heap.
@@ -64,5 +67,52 @@ void *enclave_sbrk(intptr_t increment) {
   heap_size = new_heap_size;
   return reinterpret_cast<void *>(prev_heap_end);
 }
+
+// The SGX SDK function sgx_thread_self() returns nullptr during early
+// initialization. To return a non-zero, distinct value for each thread and
+// satisfy the specification of enc_thread_self(), return the address of a
+// thread-local variable instead. Since each thread is allocated a distinct
+// instance of this variable, and all instances are in the same address space,
+// this guarantees a distinct non-zero value is provisioned to each thread.
+uint64_t enc_thread_self() {
+  static thread_local int thread_identity;
+  return reinterpret_cast<uint64_t>(&thread_identity);
+}
+
+bool enc_is_within_enclave(void const *address, size_t size) {
+  return sgx_is_within_enclave(address, size) == 1;
+}
+
+bool enc_is_outside_enclave(void const *address, size_t size) {
+  return sgx_is_outside_enclave(address, size) == 1;
+}
+
+void enc_block_ecalls() { sgx_block_ecalls(); }
+
+void enc_unblock_ecalls() { sgx_unblock_ecalls(); }
+
+void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
+  if (!enclave_memory_layout) return;
+  struct SgxMemoryLayout memory_layout;
+  sgx_memory_layout(&memory_layout);
+  enclave_memory_layout->data_base = memory_layout.data_base;
+  enclave_memory_layout->data_size = memory_layout.data_size;
+  enclave_memory_layout->bss_base = memory_layout.bss_base;
+  enclave_memory_layout->bss_size = memory_layout.bss_size;
+  enclave_memory_layout->heap_base = memory_layout.heap_base;
+  enclave_memory_layout->heap_size = memory_layout.heap_size;
+  enclave_memory_layout->thread_base = memory_layout.thread_base;
+  enclave_memory_layout->thread_size = memory_layout.thread_size;
+  enclave_memory_layout->stack_base = memory_layout.stack_base;
+  enclave_memory_layout->stack_limit = memory_layout.stack_limit;
+  enclave_memory_layout->reserved_data_base = memory_layout.reserved_data_base;
+  enclave_memory_layout->reserved_data_size = memory_layout.reserved_data_size;
+  enclave_memory_layout->reserved_bss_base = memory_layout.reserved_bss_base;
+  enclave_memory_layout->reserved_bss_size = memory_layout.reserved_bss_size;
+  enclave_memory_layout->reserved_heap_base = memory_layout.reserved_heap_base;
+  enclave_memory_layout->reserved_heap_size = memory_layout.reserved_heap_size;
+}
+
+int get_active_enclave_entries() { return sgx_get_active_enclave_entries(); }
 
 }  //  extern "C"

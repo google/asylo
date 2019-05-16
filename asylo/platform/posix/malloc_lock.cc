@@ -18,7 +18,7 @@
 
 #include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 // The newlib implementation of malloc and free in mallocr.c depends on symbols
 // _malloc_lock and _malloc_unlock, and requires that a thread waiting on a lock

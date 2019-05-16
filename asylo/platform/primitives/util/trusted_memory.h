@@ -16,13 +16,12 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_MEMORY_H_
-#define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_MEMORY_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_TRUSTED_MEMORY_H_
+#define ASYLO_PLATFORM_PRIMITIVES_UTIL_TRUSTED_MEMORY_H_
 
 #include <memory>
 
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 // Forward declaration of the API exposed by UntrustedCacheMalloc which allows
 // C code to depend on the global memory pool singleton. This forward
@@ -53,4 +52,4 @@ bool IsValidEnclaveAddress(const T *pointer) {
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_MEMORY_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_UTIL_TRUSTED_MEMORY_H_

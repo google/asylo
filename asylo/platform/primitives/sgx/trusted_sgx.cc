@@ -26,6 +26,7 @@
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
@@ -86,6 +87,7 @@ void RegisterInternalHandlers() {
 }
 
 void TrustedPrimitives::BestEffortAbort(const char *message) {
+  enc_block_ecalls();
   MarkEnclaveAborted();
   abort();
 }

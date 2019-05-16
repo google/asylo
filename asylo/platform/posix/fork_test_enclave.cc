@@ -20,8 +20,8 @@
 #include <unistd.h>
 
 #include "asylo/util/logging.h"
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"

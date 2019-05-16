@@ -24,8 +24,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/posix/memory/memory.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
 namespace {

@@ -40,16 +40,14 @@ asylo_proto_library(
 cc_library(
     name = "trusted_arch",
     hdrs = [
-        "include/trusted/enclave_interface.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
-        "include/trusted/memory.h",
         "include/trusted/register_signal.h",
         "include/trusted/time.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({
-        "//asylo/platform/arch:sgx": ["trusted_sgx"],
+        "//asylo/platform/primitives:sgx": ["trusted_sgx"],
         "//conditions:default": ["trusted_build_only"],
     }) + [
         "//asylo:enclave_proto_cc",
@@ -176,7 +174,6 @@ cc_library(
     name = "trusted_sgx",
     srcs = [
         "sgx/trusted/ecalls.cc",
-        "sgx/trusted/enclave_interface.cc",
         "sgx/trusted/enclave_syscalls.cc",
         "sgx/trusted/exceptions.cc",
         "sgx/trusted/host_calls.cc",
@@ -195,10 +192,8 @@ cc_library(
         no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
     ),
     hdrs = [
-        "include/trusted/enclave_interface.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
-        "include/trusted/memory.h",
         "include/trusted/register_signal.h",
     ],
     copts = select(
@@ -223,6 +218,7 @@ cc_library(
         "//asylo/platform/core:shared_name",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:trusted_sgx",
@@ -243,10 +239,8 @@ cc_library(
 cc_library(
     name = "trusted_build_only",
     hdrs = [
-        "include/trusted/enclave_interface.h",
         "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
-        "include/trusted/memory.h",
     ],
     visibility = ["//visibility:private"],
     deps = ["//asylo/platform/core:shared_name"],
@@ -272,14 +266,6 @@ cc_library(
     ],
 )
 
-# Set when we are compiling for sgx backend.
-config_setting(
-    name = "sgx",
-    values = {
-        "crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
-    },
-)
-
 # fork related runtime.
 cc_library(
     name = "trusted_fork",
@@ -294,6 +280,7 @@ cc_library(
     deps = [
         ":fork_proto_cc",
         ":trusted_arch",
+        "//asylo/platform/primitives:trusted_backend",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_proto_cc",
     ] + select({

@@ -52,6 +52,8 @@ cc_library(
                 "//asylo/platform/arch:trusted_sgx_bridge",
                 "//asylo/util:status",
                 "//asylo/platform/primitives/sgx:sgx_error_space",
+                "@linux_sgx//:public",
+                "@linux_sgx//:trts",
             ],
         },
         no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",

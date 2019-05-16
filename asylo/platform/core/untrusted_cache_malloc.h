@@ -24,8 +24,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
-#include "asylo/platform/arch/include/trusted/memory.h"
 #include "asylo/platform/common/spin_lock.h"
+#include "asylo/platform/primitives/util/trusted_memory.h"
 
 namespace asylo {
 

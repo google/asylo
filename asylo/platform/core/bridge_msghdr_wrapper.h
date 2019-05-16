@@ -22,8 +22,8 @@
 #include <sys/socket.h>
 #include <vector>
 
-#include "asylo/platform/arch/include/trusted/memory.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/primitives/util/trusted_memory.h"
 
 namespace asylo {
 

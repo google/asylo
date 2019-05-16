@@ -21,8 +21,8 @@
 
 #include <cstdint>
 
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/core/atomic.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
 

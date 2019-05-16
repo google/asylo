@@ -366,6 +366,7 @@ cc_enclave_test(
     srcs = ["memory_layout_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/primitives:trusted_backend",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
@@ -390,6 +391,7 @@ sgx_enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":enclave_entry_count_test_proto_cc",
+        "//asylo/platform/primitives:trusted_backend",
     ] + TEST_DEPS_COMMON,
 )
 
@@ -447,6 +449,7 @@ sgx_enclave_test(
     deps = [
         ":block_enclave_entries_test_proto_cc",
         "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/platform/primitives:trusted_backend",
     ] + TEST_DEPS_COMMON,
 )
 

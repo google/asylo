@@ -21,7 +21,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 extern "C" {
 // Expose the untrusted memory cache via a C API. This interface allows C code

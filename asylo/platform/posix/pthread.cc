@@ -27,14 +27,14 @@
 #include <array>
 #include <bitset>
 
-#include "asylo/platform/arch/include/trusted/enclave_interface.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
-#include "asylo/platform/arch/include/trusted/memory.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/include/semaphore.h"
 #include "asylo/platform/posix/pthread_impl.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/trusted_memory.h"
 
 namespace {
 

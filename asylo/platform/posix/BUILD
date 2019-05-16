@@ -51,7 +51,7 @@ cc_library(
     tags = ASYLO_ALL_BACKENDS,
     deps = select(
         {
-            "//asylo/platform/arch:sgx": [":posix"],
+            "//asylo/platform/primitives:sgx": [":posix"],
         },
         no_match_error = "Expected a trusted backend configuration (e.g., --config=sgx)",
     ),
@@ -101,7 +101,9 @@ cc_library(
     hdrs = [
         ":posix_headers",
     ] + select({
-        "//asylo/platform/arch:sgx": ["//asylo/third_party/intel:posix_sgx_headers"],
+        "//asylo/platform/primitives:sgx": [
+            "//asylo/third_party/intel:posix_sgx_headers",
+        ],
         "//conditions:default": [],
     }),
     copts = ASYLO_DEFAULT_COPTS,
@@ -120,12 +122,13 @@ cc_library(
         "//asylo/platform/core:trusted_core",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/sockets",
+        "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/system",
         "//asylo/util:status",
     ] + select({
-        "//asylo/platform/arch:sgx": ["@linux_sgx//:trts"],
+        "//asylo/platform/primitives:sgx": ["@linux_sgx//:trts"],
         "//conditions:default": [],
     }),
 )
@@ -222,6 +225,7 @@ sgx_enclave(
     deps = [
         ":fork_security_test_proto_cc",
         "//asylo/platform/arch:trusted_fork",
+        "//asylo/platform/primitives:trusted_backend",
         "//asylo/test/util:enclave_test_application",
     ],
 )

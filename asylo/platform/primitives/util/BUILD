@@ -20,6 +20,10 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+exports_files([
+    "trusted_memory.h",
+])
+
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Utilities for conversions between Asylo Status and PrimitiveStatus.

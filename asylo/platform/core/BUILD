@@ -153,6 +153,7 @@ cc_library(
         ":atomic",
         ":untrusted_cache_malloc",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/primitives:trusted_backend",
     ],
 )
 
@@ -169,6 +170,7 @@ cc_library(
     deps = [
         ":atomic",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/primitives:trusted_backend",
     ],
 )
 
@@ -207,6 +209,7 @@ cc_library(
         ":trusted_spin_lock",
         ":untrusted_mutex",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/primitives:trusted_backend",
     ],
 )
 
@@ -239,6 +242,7 @@ cc_library(
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:memory",
         "//asylo/platform/common:spin_lock",
+        "//asylo/platform/primitives:trusted_backend",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",
     ],
@@ -267,7 +271,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":untrusted_cache_malloc",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:bridge_types",
+        "//asylo/platform/primitives:trusted_backend",
     ],
 )
