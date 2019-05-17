@@ -19,6 +19,7 @@
 #include <unistd.h>
 
 #include <sys/stat.h>
+#include <sys/wait.h>
 #include <cstdlib>
 #include <cstring>
 
@@ -32,6 +33,32 @@ using asylo::io::IOManager;
 
 // Simulated page size, used by the POSIX wrappers.
 constexpr size_t kPageSize = 4096;
+
+namespace {
+
+pid_t ForkEnclave() {
+  asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
+      asylo::GetEnclaveConfig();
+
+  if (!config_result.ok()) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
+  if (!config->has_enable_fork()) {
+    errno = EFAULT;
+    return -1;
+  }
+  if (!config->enable_fork()) {
+    errno = ENOSYS;
+    return -1;
+  }
+
+  return asylo::enc_fork(asylo::GetEnclaveName().c_str(), *config);
+}
+
+}  // namespace
 
 extern "C" {
 
@@ -200,6 +227,30 @@ pid_t getppid() { return enc_untrusted_getppid(); }
 
 pid_t setsid() { return enc_untrusted_setsid(); }
 
+int truncate(const char *path, off_t length) {
+  return IOManager::GetInstance().Truncate(path, length);
+}
+
+int ftruncate(int fd, off_t length) {
+  return IOManager::GetInstance().FTruncate(fd, length);
+}
+
+pid_t vfork() {
+  pid_t ret = ForkEnclave();
+  if (ret < 0) {
+    return ret;
+  }
+  // Suspend the parent and waits till the child finishes.
+  if (ret != 0) {
+    int status;
+    if (wait(&status) == -1) {
+      // Errno is set by wait() call.
+      return -1;
+    }
+  }
+  return ret;
+}
+
 // The functions below are prefixed with |enclave_|, as they are plumbed in from
 // newlib.
 int enclave_getpid() {
@@ -221,38 +272,10 @@ int enclave_unlink(const char *pathname) {
   return IOManager::GetInstance().Unlink(pathname);
 }
 
-int truncate(const char *path, off_t length) {
-  return IOManager::GetInstance().Truncate(path, length);
-}
-
-int ftruncate(int fd, off_t length) {
-  return IOManager::GetInstance().FTruncate(fd, length);
-}
-
 void enclave_exit(int rc) {
   enc_untrusted__exit(rc);
 }
 
-pid_t enclave_fork() {
-  asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
-      asylo::GetEnclaveConfig();
-
-  if (!config_result.ok()) {
-    errno = EFAULT;
-    return -1;
-  }
-
-  const asylo::EnclaveConfig *config = config_result.ValueOrDie();
-  if (!config->has_enable_fork()) {
-    errno = EFAULT;
-    return -1;
-  }
-  if (!config->enable_fork()) {
-    errno = ENOSYS;
-    return -1;
-  }
-
-  return asylo::enc_fork(asylo::GetEnclaveName().c_str(), *config);
-}
+pid_t enclave_fork() { return ForkEnclave(); }
 
 }  // extern "C"
