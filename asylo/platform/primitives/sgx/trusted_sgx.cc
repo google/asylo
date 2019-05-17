@@ -16,15 +16,16 @@
  *
  */
 
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
+
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/core/entry_points.h"
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/primitive_status.h"
+#include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
-#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
@@ -81,7 +82,7 @@ void RegisterInternalHandlers() {
   // Register the enclave initialization entry handler.
   EntryHandler handler(Initialize);
   if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloInit, handler)
-            .ok()) {
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 }
@@ -116,15 +117,16 @@ void TrustedPrimitives::DebugPuts(const char *message) {
 }
 
 PrimitiveStatus TrustedPrimitives::UntrustedCall(
-    uint64_t untrusted_selector,
-    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                   TrustedPrimitives::UntrustedLocalFree> *params) {
-  void *status;
-  CHECK_OCALL(ocall_dispatch_untrusted_call(&status, untrusted_selector,
+    uint64_t untrusted_selector, TrustedParameterStack *params) {
+  int ret;
+
+  if (enc_is_within_enclave(params, sizeof(TrustedParameterStack))) {
+    abort();
+  }
+
+  CHECK_OCALL(ocall_dispatch_untrusted_call(&ret, untrusted_selector,
                                             reinterpret_cast<void *>(params)));
-  auto ret = PrimitiveStatus(*reinterpret_cast<PrimitiveStatus *>(status));
-  enc_untrusted_free(status);
-  return ret;
+  return PrimitiveStatus(ret);
 }
 
 }  // namespace primitives

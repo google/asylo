@@ -33,7 +33,7 @@
 enclave {
   untrusted {
     // Invokes the untrusted entry point designated by `selector`.
-    void *ocall_dispatch_untrusted_call(uint64_t selector,
+    int ocall_dispatch_untrusted_call(uint64_t selector,
         [user_check] void *buffer);
   };
 };

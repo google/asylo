@@ -58,7 +58,7 @@ class HostCallTest : public ::testing::Test {
     ASYLO_EXPECT_OK(exit_call_provider);
     const auto client =
         primitives::test::TestBackend::Get()->LoadTestEnclaveOrDie(
-            /*enclave_name=*/"host_call_test_enclave",
+            /*enclave_name=*/ "host_call_test_enclave",
             std::move(exit_call_provider.ValueOrDie()));
 
     return client;
@@ -96,7 +96,7 @@ TEST_F(HostCallTest, TestAccess) {
 
 // Tests enc_untrusted_access() against a non-existent path.
 TEST_F(HostCallTest, TestAccessNonExistentPath) {
-  const char* path = "illegal_path";
+  const char *path = "illegal_path";
 
   primitives::UntrustedParameterStack params;
   params.PushByCopy<char>(path, strlen(path) + 1);
@@ -306,7 +306,7 @@ TEST_F(HostCallTest, TestUnlink) {
 }
 
 TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
-  const char* path = "obviously-illegal-file.tmp";
+  const char *path = "obviously-illegal-file.tmp";
   ASSERT_THAT(access(path, F_OK), Eq(-1));
 
   primitives::UntrustedParameterStack params;
@@ -641,9 +641,9 @@ TEST_F(HostCallTest, TestSetSockOpt) {
   sa.sin6_flowinfo = 0;
   sa.sin6_addr = in6addr_any;
   sa.sin6_port = htons(0);
-  EXPECT_THAT(bind(socket_fd, reinterpret_cast<struct sockaddr*>(&sa),
-                   sizeof(sa)),
-              Not(Eq(-1)));
+  EXPECT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
 
   primitives::UntrustedParameterStack params;
   *(params.PushAlloc<int>()) = /*sockfd=*/ socket_fd;
@@ -736,13 +736,13 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
   // Read the event buffer after the event.
   EXPECT_THAT(read(inotify_fd, buf, buf_len), Gt(0));
 
-  auto* event = reinterpret_cast<struct inotify_event*>(&buf[0]);
+  auto *event = reinterpret_cast<struct inotify_event *>(&buf[0]);
   EXPECT_THAT(event->mask, Eq(IN_MODIFY));
   EXPECT_THAT(event->name, StrEq(file_name));
   EXPECT_THAT(event->cookie, Eq(0));
 
   event =
-      reinterpret_cast<struct inotify_event*>(&buf[event_size + event->len]);
+      reinterpret_cast<struct inotify_event *>(&buf[event_size + event->len]);
   EXPECT_THAT(event->mask, Eq(IN_OPEN));
   EXPECT_THAT(event->name, StrEq(file_name));
   EXPECT_THAT(event->cookie, Eq(0));
@@ -775,13 +775,13 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
   char buf[buf_len];
   EXPECT_THAT(read(inotify_fd, buf, buf_len), Gt(0));
 
-  auto* event = reinterpret_cast<struct inotify_event*>(&buf[0]);
+  auto *event = reinterpret_cast<struct inotify_event *>(&buf[0]);
   EXPECT_THAT(event->mask, Eq(IN_MODIFY));
   EXPECT_THAT(event->name, StrEq(file_name));
   EXPECT_THAT(event->cookie, Eq(0));
 
   event =
-      reinterpret_cast<struct inotify_event*>(&buf[event_size + event->len]);
+      reinterpret_cast<struct inotify_event *>(&buf[event_size + event->len]);
   EXPECT_THAT(event->mask, Eq(IN_OPEN));
   EXPECT_THAT(event->name, StrEq(file_name));
   EXPECT_THAT(event->cookie, Eq(0));
@@ -806,7 +806,7 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
 }  // namespace host_call
 }  // namespace asylo
 
-int main(int argc, char* argv[]) {
+int main(int argc, char *argv[]) {
   ::testing::InitGoogleTest(&argc, argv);
   ::google::ParseCommandLineFlags(&argc, &argv, true);
 

@@ -145,7 +145,9 @@ class ParameterStack {
   // Returns the Extent at the top of the stack. Valid only if !empty().
   Extent Top() { return top_->extent; }
 
-  // Pushes an extent, owned by the caller.
+  // Pushes an extent, owned by the caller. We assume that untrusted memory is
+  // accessible from the trusted memory, but not vice-versa. Therefore, the
+  // memory pointed by the extent is expected to be on the untrusted side.
   void PushByReference(Extent extent) {
     auto item = static_cast<Item *>((*ALLOCATOR)(sizeof(Item)));
     item->extent = extent;
@@ -201,6 +203,7 @@ class ParameterStack {
     return PushAlloc(sizeof(T)).template As<T>();
   }
 
+  // |value| is expected to be accessible from the trusted memory.
   template <typename T>
   void PushByReference(const T &value) {
     static_assert(!std::is_pointer<T>::value,

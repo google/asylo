@@ -21,6 +21,8 @@
 
 // This file declares the trusted runtime interface for SGX.
 
+#include <cstdint>
+
 namespace asylo {
 namespace primitives {
 

@@ -1295,14 +1295,12 @@ int ocall_enc_untrusted_thread_create(const char *name) {
   return 0;
 }
 
-void *ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
+int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
   asylo::primitives::PrimitiveStatus status =
       asylo::primitives::Client::ExitCallback(
           selector,
           reinterpret_cast<asylo::primitives::UntrustedParameterStack *>(
               buffer));
 
-  void *ret = malloc(sizeof(status));
-  memcpy(ret, reinterpret_cast<void *>(&status), sizeof(status));
-  return ret;
+  return status.error_code();
 }
