@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
 #define ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
 
+#include <cstdint>
+
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/util/status.h"
@@ -26,6 +28,15 @@
 
 namespace asylo {
 namespace sgx {
+
+// The maximum value of an Fmspc's |value| field.
+extern const int kFmspcSize;
+
+// The maximum value of a PceSvn's |value| field.
+extern const uint32_t kPceSvnMaxValue;
+
+// The maximum value of a PceId's |value| field.
+extern const uint32_t kPceIdMaxValue;
 
 // Validates a Ppid message. Returns an OK status if and only if the message is
 // valid.
@@ -42,6 +53,10 @@ Status ValidatePceSvn(const PceSvn &pce_svn);
 // Validates a PceId message. Returns an OK status if and only if the message
 // is valid.
 Status ValidatePceId(const PceId &pce_id);
+
+// Validates an Fmspc message. Returns an OK status if and only if the message
+// is valid.
+Status ValidateFmspc(const Fmspc &fmspc);
 
 // Validates a ReportProto message. Returns an OK status if and only if the
 // message is valid.

@@ -112,6 +112,28 @@ TEST(PlatformProvisioningTest, ValidPceIdIsValid) {
   ASYLO_EXPECT_OK(ValidatePceId(pce_id));
 }
 
+TEST(PlatformProvisioningTest, FmspcWithoutValueFieldIsInvalid) {
+  EXPECT_THAT(ValidateFmspc(Fmspc()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PlatformProvisioningTest, FmspcWithValueFieldOfBadLengthIsInvalid) {
+  Fmspc fmspc;
+  fmspc.set_value("short");
+  EXPECT_THAT(ValidateFmspc(fmspc),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  fmspc.set_value("toolong");
+  EXPECT_THAT(ValidateFmspc(fmspc),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(PlatformProvisioningTest, ValidFmspcIsValid) {
+  Fmspc fmspc;
+  fmspc.set_value("000000");
+  ASYLO_EXPECT_OK(ValidateFmspc(fmspc));
+}
+
 TEST(PlatformProvisioningTest, ReportProtoWithoutValueFieldIsInvalid) {
   ReportProto report_proto;
   EXPECT_THAT(ValidateReportProto(report_proto),

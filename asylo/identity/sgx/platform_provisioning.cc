@@ -18,7 +18,6 @@
 
 #include "asylo/identity/sgx/platform_provisioning.h"
 
-#include <cstdint>
 #include <limits>
 
 #include "absl/strings/str_cat.h"
@@ -26,15 +25,12 @@
 
 namespace asylo {
 namespace sgx {
-namespace {
 
-// The maximum value of a PceSvn's |value| field.
-constexpr uint32_t kPceSvnMaxValue = std::numeric_limits<uint16_t>::max();
+const int kFmspcSize = 6;
 
-// The maximum value of a PceId's |value| field.
-constexpr uint32_t kPceIdMaxValue = std::numeric_limits<uint16_t>::max();
+const uint32_t kPceSvnMaxValue = std::numeric_limits<uint16_t>::max();
 
-}  // namespace
+const uint32_t kPceIdMaxValue = std::numeric_limits<uint16_t>::max();
 
 Status ValidatePpid(const Ppid &ppid) {
   if (!ppid.has_value()) {
@@ -98,6 +94,22 @@ Status ValidatePceId(const PceId &pce_id) {
         error::GoogleError::INVALID_ARGUMENT,
         absl::StrCat("PceId's \"value\" field is too large (must be less than ",
                      kPceIdMaxValue, ")"));
+  }
+
+  return Status::OkStatus();
+}
+
+Status ValidateFmspc(const Fmspc &fmspc) {
+  if (!fmspc.has_value()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Fmspc does not have a \"value\" field");
+  }
+
+  if (fmspc.value().size() != kFmspcSize) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Fmspc's \"value\" has an invalid size (must be exactly ",
+                     kFmspcSize, " bytes)"));
   }
 
   return Status::OkStatus();
