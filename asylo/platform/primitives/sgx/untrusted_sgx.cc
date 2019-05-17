@@ -174,17 +174,6 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   return client;
 }
 
-Status SgxEnclaveClient::Initialize(
-    const char *enclave_name, const char *input, size_t input_len,
-    char **output, size_t *output_len) {
-  UntrustedParameterStack params;
-  params.PushByReference(Extent{enclave_name});
-  params.PushByReference(Extent{input, input_len});
-  params.PushByReference(Extent{output});
-  params.PushByReference(Extent{output_len});
-  return EnclaveCall(kSelectorAsyloInit, &params);
-}
-
 Status SgxEnclaveClient::Destroy() {
   sgx_status_t status = sgx_destroy_enclave(id_);
   if (status != SGX_SUCCESS) {

@@ -46,27 +46,16 @@ namespace asylo {
 // this case, the caller cannot make any assumptions about the contents of
 // |output|. Otherwise, |output| points to a buffer of length *|output_len| that
 // contains output from the enclave.
-static Status initialize(sgx_enclave_id_t eid, const char *name,
-                         const char *input, size_t input_len, char **output,
-                         size_t *output_len) {
-  int result;
-  bridge_size_t bridge_output_len;
-  sgx_status_t sgx_status = ecall_initialize(
-      eid, &result, name, input, static_cast<bridge_size_t>(input_len), output,
-      &bridge_output_len);
-  if (output_len) {
-    *output_len = static_cast<size_t>(bridge_output_len);
-  }
-  if (sgx_status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(sgx_status, "Call to ecall_initialize failed");
-  } else if (result || *output_len == 0) {
-    // Non-zero return code indicates that the enclave was not able to return
-    // any output from Initialize().
-    return Status(error::GoogleError::INTERNAL, "No output from enclave");
-  }
-
-  return Status::OkStatus();
+Status SgxClient::Initialize(
+    const char *enclave_name, const char *input, size_t input_len,
+    char **output, size_t *output_len) {
+  primitives::UntrustedParameterStack params;
+  params.PushByReference(primitives::Extent{enclave_name});
+  params.PushByReference(primitives::Extent{input, input_len});
+  params.PushByReference(primitives::Extent{output});
+  params.PushByReference(primitives::Extent{output_len});
+  return primitive_sgx_client_->EnclaveCall(
+      primitives::kSelectorAsyloInit, &params);
 }
 
 // Enters the enclave and invokes the execution entry-point. If the ecall fails,
@@ -301,8 +290,8 @@ Status SgxClient::EnterAndInitialize(const EnclaveConfig &config) {
 
   char *output = nullptr;
   size_t output_len = 0;
-  ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->Initialize(
-      get_name().c_str(), buf.data(), buf.size(), &output, &output_len));
+  ASYLO_RETURN_IF_ERROR(Initialize(get_name().c_str(), buf.data(), buf.size(),
+                                   &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.

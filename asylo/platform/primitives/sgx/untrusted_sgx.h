@@ -74,10 +74,6 @@ class SgxEnclaveClient : public Client {
   // Updates |token| with the SGX SDK launch token.
   void GetLaunchToken(sgx_launch_token_t *token) const;
 
-  // Calls the enclave initialization routine.
-  Status Initialize(const char *enclave_name, const char *input,
-                    size_t input_len, char **output, size_t *output_len);
-
  protected:
   Status EnclaveCallInternal(uint64_t selector,
                              UntrustedParameterStack *params) override;
