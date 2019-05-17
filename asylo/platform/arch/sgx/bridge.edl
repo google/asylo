@@ -392,9 +392,14 @@ enclave {
     //             wait.h               //
     //////////////////////////////////////
 
-    pid_t ocall_enc_untrusted_wait3([out] struct BridgeWStatus *wstatus,
+    pid_t ocall_enc_untrusted_wait3([out] struct BridgeWStatus *bridge_wstatus,
                                     int options,
-                                    [out] struct BridgeRUsage *rusage);
+                                    [out] struct BridgeRUsage *bridge_usage)
+				    propagate_errno;
+
+    pid_t ocall_enc_untrusted_waitpid(
+        pid_t pid, [out] struct BridgeWStatus *wstatus, int options)
+	propagate_errno;
 
     //////////////////////////////////////
     //           Runtime support        //

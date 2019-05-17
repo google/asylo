@@ -299,7 +299,8 @@ int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 //////////////////////////////////////
 
 int enc_untrusted_wait(int *wstatus);
-pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage);
+pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *usage);
+pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options);
 
 //////////////////////////////////////
 //            Runtime support       //

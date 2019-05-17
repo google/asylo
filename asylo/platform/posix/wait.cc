@@ -24,8 +24,12 @@ extern "C" {
 
 int enclave_wait(int *wstatus) { return enc_untrusted_wait(wstatus); }
 
-pid_t wait3(int *wstatus, int options, struct rusage *rusage) {
-  return enc_untrusted_wait3(wstatus, options, rusage);
+pid_t wait3(int *wstatus, int options, struct rusage *usage) {
+  return enc_untrusted_wait3(wstatus, options, usage);
+}
+
+pid_t waitpid(pid_t pid, int *wstatus, int options) {
+  return enc_untrusted_waitpid(pid, wstatus, options);
 }
 
 }  // extern "C"

@@ -1013,17 +1013,28 @@ pid_t enc_untrusted_fork(const char *enclave_name, const char *config,
 //             wait.h               //
 //////////////////////////////////////
 
-pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *rusage) {
+pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *usage) {
   pid_t ret;
   struct BridgeWStatus bridge_wstatus;
-  BridgeRUsage bridge_rusage;
+  BridgeRUsage bridge_usage;
   CHECK_OCALL(ocall_enc_untrusted_wait3(&ret, &bridge_wstatus,
                                         asylo::ToBridgeWaitOptions(options),
-                                        &bridge_rusage));
+                                        &bridge_usage));
   if (wstatus) {
     *wstatus = asylo::FromBridgeWStatus(bridge_wstatus);
   }
-  asylo::FromBridgeRUsage(&bridge_rusage, rusage);
+  asylo::FromBridgeRUsage(&bridge_usage, usage);
+  return ret;
+}
+
+pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options) {
+  pid_t ret;
+  struct BridgeWStatus bridge_wstatus;
+  CHECK_OCALL(ocall_enc_untrusted_waitpid(&ret, pid, &bridge_wstatus,
+                                          asylo::ToBridgeWaitOptions(options)));
+  if (wstatus) {
+    *wstatus = asylo::FromBridgeWStatus(bridge_wstatus);
+  }
   return ret;
 }
 
