@@ -20,6 +20,7 @@
 #include <functional>
 #include <string>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -29,6 +30,7 @@
 #include "absl/strings/string_view.h"
 #include "asylo/bazel/application_wrapper/application_wrapper.pb.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "gflags/gflags.h"
 #include "asylo/test/util/status_matchers.h"
@@ -62,6 +64,12 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
     if (!args_.empty()) {
       absl::StrAppend(&expected_stdout, "\n");
     }
+    absl::StrAppend(&expected_stdout,
+                    absl::StrJoin(environment_variables_, "\n",
+                                  EnvironmentVariableFormatter()));
+    if (!environment_variables_.empty()) {
+      absl::StrAppend(&expected_stdout, "\n");
+    }
 
     EnclaveOutput output;
     Status status = client_->EnterAndRun(EnclaveInput(), &output);
@@ -72,7 +80,7 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
  protected:
   // SetUpTestCase() configures and retrieves the enclave manager.
   static void SetUpTestCase() {
-    EnclaveManager::Configure(EnclaveManagerOptions());
+    ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions()));
     ASYLO_ASSERT_OK_AND_ASSIGN(manager_, EnclaveManager::Instance());
   }
 
@@ -80,11 +88,14 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
     ASYLO_ASSERT_OK_AND_ASSIGN(enclave_stdout_, Pipe::CreatePipe());
   }
 
-  // Loads the enclave with the given command-line arguments and directs its
-  // stdout into a pipe. Returns the Status returned by manager_->LoadEnclave().
-  Status LoadEnclave(std::vector<std::string> argv) {
-    // Save the command-line arguments.
+  // Loads the enclave with the given command-line arguments and environment
+  // variables, and directs its stdout into a pipe. Returns the Status returned
+  // by manager_->LoadEnclave().
+  Status LoadEnclave(std::vector<std::string> argv,
+                     std::vector<std::pair<std::string, std::string>> envp) {
+    // Save the command-line arguments and environment variables.
     args_ = std::move(argv);
+    environment_variables_ = std::move(envp);
 
     // Create an EnclaveConfig that redirects the enclave's stdout and stderr
     // into the appropriate pipes and contains the command-line arguments.
@@ -93,6 +104,11 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
     CommandLineArgs *args = config.MutableExtension(command_line_args);
     for (const std::string &argument : args_) {
       args->add_arguments(argument);
+    }
+    for (const auto &pair : environment_variables_) {
+      EnvironmentVariable *variable = config.add_environment_variables();
+      variable->set_name(pair.first);
+      variable->set_value(pair.second);
     }
 
     // Load the enclave.
@@ -137,16 +153,22 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
     EXPECT_EQ(pipe_output, expected_stdout);
 
     // Check that the main_return_value extension is set to
-    // expected_stdout->size().
+    // args_.size().
     if (!expected_stdout.empty()) {
       ASSERT_TRUE(enclave_output.HasExtension(main_return_value));
-      EXPECT_EQ(
-          enclave_output.GetExtension(main_return_value),
-          std::count(expected_stdout.begin(), expected_stdout.end(), '\n'));
+      EXPECT_EQ(enclave_output.GetExtension(main_return_value), args_.size());
     }
   }
 
+  struct EnvironmentVariableFormatter {
+    void operator()(std::string *out,
+                    std::pair<std::string, std::string> variable) {
+      out->append(absl::StrCat(variable.first, "=\"", variable.second, "\""));
+    }
+  };
+
   std::vector<std::string> args_;
+  std::vector<std::pair<std::string, std::string>> environment_variables_;
 };
 
 EnclaveManager *ApplicationWrapperEnclaveTest::manager_ = nullptr;
@@ -154,7 +176,7 @@ EnclaveManager *ApplicationWrapperEnclaveTest::manager_ = nullptr;
 // Tests that ApplicationWrapperEnclave forwards 0 command-line arguments
 // correctly.
 TEST_F(ApplicationWrapperEnclaveTest, NoArgs) {
-  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}));
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}, /*envp=*/{}));
   ASYLO_EXPECT_OK(RunEnclave());
   ASYLO_EXPECT_OK(DestroyEnclave());
 }
@@ -162,7 +184,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoArgs) {
 // Tests that ApplicationWrapperEnclave forwards 1 command-line argument
 // correctly.
 TEST_F(ApplicationWrapperEnclaveTest, OneArg) {
-  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{"foo"}));
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{"foo"}, /*envp=*/{}));
   ASYLO_EXPECT_OK(RunEnclave());
   ASYLO_EXPECT_OK(DestroyEnclave());
 }
@@ -172,7 +194,27 @@ TEST_F(ApplicationWrapperEnclaveTest, OneArg) {
 TEST_F(ApplicationWrapperEnclaveTest, ManyArgs) {
   ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/
                               {"the", "quick", "brown", "fox", "jumps", "over",
-                               "the", "lazy", "dog"}));
+                               "the", "lazy", "dog"},
+                              /*envp=*/{}));
+  ASYLO_EXPECT_OK(RunEnclave());
+  ASYLO_EXPECT_OK(DestroyEnclave());
+}
+
+// Tests that ApplicationWrapperEnclave forwards the rest of the EnclaveConfig
+// correctly.
+TEST_F(ApplicationWrapperEnclaveTest, NoArgsAndEnvironmentVariables) {
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}, /*envp=*/{{"FOO", "foooo"}}));
+  ASYLO_EXPECT_OK(RunEnclave());
+  ASYLO_EXPECT_OK(DestroyEnclave());
+}
+
+// Tests that ApplicationWrapperEnclave forwards command-line arguments and the
+// rest of the EnclaveConfig correctly.
+TEST_F(ApplicationWrapperEnclaveTest, ManyArgsAndEnvironmentVariables) {
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/
+                              {"the", "quick", "brown", "fox", "jumps", "over",
+                               "the", "lazy", "dog"},
+                              /*envp=*/{{"FOO", "foooo"}}));
   ASYLO_EXPECT_OK(RunEnclave());
   ASYLO_EXPECT_OK(DestroyEnclave());
 }
@@ -190,7 +232,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoArgsExtension) {
 // Tests that ApplicationWrapperEnclave does not allow the enclave application
 // to run twice.
 TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRun) {
-  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}));
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}, /*envp=*/{}));
   ASYLO_EXPECT_OK(RunEnclave());
   EXPECT_THAT(RunEnclave(), StatusIs(error::GoogleError::FAILED_PRECONDITION,
                                      "Application has already run"));
@@ -218,7 +260,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRunFromMultipleThreads) {
       kNumTestThreads - 1, already_run_status_matcher);
   expected_statuses.push_back(IsOk());
 
-  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}));
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{}, /*envp=*/{}));
 
   // A vector to hold the statuses returned by each thread's call to
   // RunEnclave().
@@ -250,7 +292,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRunFromMultipleThreads) {
 TEST_F(ApplicationWrapperEnclaveTest, FinalizeLogsWarningIfNoRun) {
   constexpr char kTestApplicationName[] = "Jean-Luc Picard";
 
-  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{kTestApplicationName}));
+  ASYLO_ASSERT_OK(LoadEnclave(/*argv=*/{kTestApplicationName}, /*envp=*/{}));
   ASYLO_EXPECT_OK(DestroyEnclave());
 
   ASYLO_ASSERT_OK(enclave_stdout_.CloseWriteFd());

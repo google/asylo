@@ -36,7 +36,7 @@ StatusOr<int> ApplicationWrapperDriverMain(const EnclaveLoader &loader,
   ASYLO_ASSIGN_OR_RETURN(manager, EnclaveManager::Instance());
 
   // Marshal the command-line arguments into the EnclaveConfig.
-  EnclaveConfig config;
+  EnclaveConfig config = GetApplicationConfig();
   Argv::WriteArgvToRepeatedStringField(
       argc, argv,
       config.MutableExtension(command_line_args)->mutable_arguments());

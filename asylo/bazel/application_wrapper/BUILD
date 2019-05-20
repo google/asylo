@@ -16,11 +16,11 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKENDS",
     "cc_enclave_binary",
     "cc_test",
     "copy_from_host",
     "sgx_enclave_test",
-    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -81,11 +81,22 @@ cc_library(
         ":application_wrapper_proto_cc",
         ":argv",
         "//asylo:enclave_client",
+        "//asylo:enclave_proto_cc",
         "//asylo/util:cleanup",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/types:optional",
     ],
+)
+
+# A default implementation of GetApplicationConfig().
+cc_library(
+    name = "default_config",
+    srcs = ["default_config.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
+    deps = ["//asylo:enclave_proto_cc"],
 )
 
 # The whole-application wrapper's driver as a library.
@@ -162,6 +173,7 @@ sgx_enclave_test(
         ":application_wrapper_proto_cc",
         ":argv",
         "//asylo:enclave_client",
+        "//asylo:enclave_proto_cc",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:fd_utils",
@@ -194,6 +206,15 @@ cc_test(
     ],
 )
 
+# A custom implementation of GetApplicationConfig() to use for the end-to-end
+# test.
+cc_library(
+    name = "test_config",
+    srcs = ["test_config.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = ["//asylo:enclave_proto_cc"],
+)
+
 # A test application.
 cc_binary(
     name = "test_application",
@@ -206,6 +227,7 @@ cc_binary(
 cc_enclave_binary(
     name = "test_enclave_application",
     srcs = ["test_application.cc"],
+    application_enclave_config = ":test_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo/util:logging"],
 )

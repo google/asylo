@@ -31,8 +31,14 @@ ARGS_BY_LINE="$(printf "the\nquick\nbrown\nfox\njumps\nover\nthe\nlazy\ndog\n")"
 EXPECTED_RETURN=10
 
 # Test that the application at $1 prints each of its command-line arguments on a
-# new line, in order. If $2 is specified, then its value is used instead of $1
-# for the expected value of the first command-line argument (argv[0]).
+# new line, in order.
+#
+# If $2 is specified, then its value is used instead of $1 for the expected
+# value of the first command-line argument (argv[0]).
+#
+# If $3 is specified, then test_application also expects that $1 prints $3 after
+# printing its command-line arguments. This should only be used for testing
+# features of the application wrapper that are specific to enclaves.
 function test_application() {
   APPLICATION=$1
   if [[ -n "$2" ]]; then
@@ -41,7 +47,7 @@ function test_application() {
     APP_NAME="${APPLICATION}"
   fi
 
-  EXPECTED_OUTPUT="$(printf "${APP_NAME}\n${ARGS_BY_LINE}")"
+  EXPECTED_OUTPUT="$(printf "${APP_NAME}\n${ARGS_BY_LINE}\n$3")"
 
   set +e
   APP_OUTPUT="$($APPLICATION $TEST_ARGS)"
@@ -52,13 +58,13 @@ function test_application() {
   expect_int_eq "${APP_RETURN}" "${EXPECTED_RETURN}"
 }
 
-function test::normal_application_prints_command_line_args() {
+function test::normal_application_prints_command_line_args_and_environment_variables() {
   test_application "${NORMAL_APPLICATION}"
 }
 
-function test::enclave_application_prints_command_line_args() {
+function test::enclave_application_prints_command_line_args_and_foo_variable() {
   test_application "${ENCLAVE_APPLICATION}" \
-      "./${ENCLAVE_APPLICATION}_host_loader"
+      "./${ENCLAVE_APPLICATION}_host_loader" "$(printf 'FOO="foooo"\n')"
 }
 
 test_main

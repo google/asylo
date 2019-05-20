@@ -36,6 +36,14 @@
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
+extern "C" asylo::EnclaveConfig GetApplicationConfig() {
+  asylo::EnclaveConfig config;
+  config.set_stdin_fd(2);
+  config.set_stdout_fd(3);
+  config.set_stderr_fd(5);
+  return config;
+}
+
 namespace asylo {
 namespace {
 
@@ -49,7 +57,7 @@ using ::testing::StrictMock;
 
 // A text fixture for the ApplicationWrapperDriverMain() tests.
 class ApplicationWrapperDriverMainTest : public ::testing::Test {
- public:
+ protected:
   ApplicationWrapperDriverMainTest()
       : client_owned_(new StrictMock<MockEnclaveClient>) {
     client_ = client_owned_.get();
@@ -59,7 +67,6 @@ class ApplicationWrapperDriverMainTest : public ::testing::Test {
     ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions()));
   }
 
- protected:
   // Returns an EnclaveLoader that loads client_.
   FakeEnclaveLoader Loader() {
     return FakeEnclaveLoader(std::move(client_owned_));
@@ -218,6 +225,28 @@ TEST_F(ApplicationWrapperDriverMainTest,
   // Since the EnterAndFinalize() call fails, ApplicationWrapperDriverMain()
   // will not have destroyed the enclave.
   DestroyClient();
+}
+
+// Tests that ApplicationWrapperDriverMain() correctly propagates the user-
+// provided EnclaveConfig from GetApplicationConfig().
+TEST_F(ApplicationWrapperDriverMainTest, PropagatesApplicationConfig) {
+  EnclaveConfig expected_config = GetApplicationConfig();
+
+  EnclaveOutput enclave_output;
+  enclave_output.SetExtension(main_return_value, 0);
+
+  EXPECT_CALL(*client_, EnterAndInitialize(Partially(expected_config)));
+  EXPECT_CALL(*client_, EnterAndRun(_, _))
+      .WillOnce(
+          DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
+  EXPECT_CALL(*client_, EnterAndFinalize(_));
+  EXPECT_CALL(*client_, DestroyEnclave());
+
+  char *arg = nullptr;
+  EXPECT_THAT(
+      ApplicationWrapperDriverMain(Loader(), "custom_config", /*argc=*/0,
+                                   /*argv=*/&arg),
+      IsOkAndHolds(0));
 }
 
 // Tests that ApplicationWrapperDriverMain() correctly propagates argv and argc

@@ -21,8 +21,13 @@
 
 #include <string>
 
+#include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/util/statusor.h"
+
+// A function that returns an EnclaveConfig to be used by the application
+// enclave. This function will only ever be called once.
+extern "C" asylo::EnclaveConfig GetApplicationConfig();
 
 namespace asylo {
 

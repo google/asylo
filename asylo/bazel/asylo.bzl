@@ -399,6 +399,7 @@ def enclave_loader(
     # toolchain, even when its enclaves argument is empty.
     embed_enclaves(
         name = loader_name,
+        testonly = kwargs.get("testonly", 0),
         elf_file = loader_plain_name,
         enclaves = embedded_enclaves,
         executable = 1,
@@ -455,7 +456,8 @@ _APPLICATION_WRAPPER_ENCLAVE_SECTION = "enclave"
 
 def cc_enclave_binary(
         name,
-        enclave_config = "",
+        application_enclave_config = "",
+        enclave_build_config = "",
         application_library_linkstatic = True,
         **kwargs):
     """Creates a cc_binary that runs an application inside an enclave.
@@ -474,8 +476,11 @@ def cc_enclave_binary(
 
     Args:
       name: Name for the build target.
-      enclave_config: An sgx_enclave_configuration target to be passed to the
-          enclave. Optional.
+      application_enclave_config: A target that defines a function called
+          ApplicationConfig() returning and EnclaveConfig. The returned config
+          is passed to the application enclave. Optional.
+      enclave_build_config: An sgx_enclave_configuration target to be passed to
+          the enclave. Optional.
       application_library_linkstatic: When building the application as a
           library, whether to allow that library to be statically linked. See
           the `linkstatic` option on `cc_library`. Optional.
@@ -484,6 +489,7 @@ def cc_enclave_binary(
     application_library_name = name + "_application_library"
     enclave_name = name + "_application_enclave.so"
 
+    enclave_kwargs = {}
     loader_kwargs = {}
 
     # This is a temporary workaround to resolve conflicts in building Asylo
@@ -524,10 +530,12 @@ def cc_enclave_binary(
     if "stamp" in kwargs:
         fail("stamp option not supported in cc_enclave_binary")
 
+    if "testonly" in kwargs:
+        enclave_kwargs["testonly"] = kwargs["testonly"]
+        loader_kwargs["testonly"] = kwargs["testonly"]
+
     # The user probably wants their tags applied to the loader.
     loader_kwargs["tags"] = kwargs.pop("tags", [])
-    if "asylo-sgx" not in loader_kwargs["tags"]:
-        loader_kwargs["tags"] += ["asylo-sgx"]
 
     native.cc_library(
         name = application_library_name,
@@ -535,9 +543,11 @@ def cc_enclave_binary(
         **kwargs
     )
 
-    enclave_kwargs = {}
-    if enclave_config:
-        enclave_kwargs["config"] = enclave_config
+    if not application_enclave_config:
+        application_enclave_config = _workspace_name + "/bazel/application_wrapper:default_config"
+
+    if enclave_build_config:
+        enclave_kwargs["config"] = enclave_build_config
 
     sgx_enclave(
         name = enclave_name,
@@ -554,7 +564,13 @@ def cc_enclave_binary(
         name = name,
         embedded_enclaves = {_APPLICATION_WRAPPER_ENCLAVE_SECTION: ":" + enclave_name},
         copts = ASYLO_DEFAULT_COPTS,
-        deps = [_workspace_name + "/bazel/application_wrapper:application_wrapper_driver"],
+        # This option prevents the linker from discarding the definition of
+        # GetApplicationConfig() before it encounters a reference to it.
+        linkopts = ["-Wl,--undefined=GetApplicationConfig"],
+        deps = [
+            application_enclave_config,
+            _workspace_name + "/bazel/application_wrapper:application_wrapper_driver",
+        ],
         **loader_kwargs
     )
 
