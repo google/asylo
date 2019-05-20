@@ -168,6 +168,37 @@ cc_test(
 )
 
 cc_library(
+    name = "additional_authenticated_data_generator",
+    srcs = ["additional_authenticated_data_generator.cc"],
+    hdrs = ["additional_authenticated_data_generator.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo/identity:__subpackages__"],
+    deps = [
+        "//asylo/crypto:sha256_hash",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "additional_authenticated_data_generator_test",
+    srcs = ["additional_authenticated_data_generator_test.cc"],
+    deps = [
+        ":additional_authenticated_data_generator",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "assertion_description_util",
     srcs = ["assertion_description_util.cc"],
     hdrs = ["assertion_description_util.h"],
