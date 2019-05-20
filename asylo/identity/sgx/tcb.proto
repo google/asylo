@@ -29,7 +29,7 @@ message RawTcb {
 // SGX TCB status.
 message TcbStatus {
   enum StatusType {
-    UNKNOWN = 0;
+    INVALID = 0;
 
     // Indicates the TCB is up to date.
     UP_TO_DATE = 1;
@@ -45,7 +45,16 @@ message TcbStatus {
     REVOKED = 4;
   }
   oneof value {
+    // Indicates that Intel's API returned a "status" string corresponding to
+    // one of the values in StatusType.
     StatusType known_status = 1;
+
+    // Indicates that Intel's API returned a "status" string with no
+    // corresponding value in StatusType at the time that the message was
+    // created.
+    //
+    // Values may be added to StatusType. In that case, some old message may
+    // have |unknown_status|es that correspond to the new values in StatusType.
     string unknown_status = 2;
   }
 }

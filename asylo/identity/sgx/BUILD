@@ -91,7 +91,7 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":platform_provisioning_proto",
-        "@com_google_protobuf//:timestamp",
+        "@com_google_protobuf//:timestamp_proto",
     ],
 )
 
@@ -610,6 +610,39 @@ cc_test(
         "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
         "@sgx_dcap//:pce_wrapper",
+    ],
+)
+
+cc_library(
+    name = "tcb",
+    srcs = ["tcb.cc"],
+    hdrs = ["tcb.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":platform_provisioning",
+        ":tcb_proto_cc",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "tcb_test",
+    srcs = ["tcb_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "tcb_enclave_test",
+    deps = [
+        ":platform_provisioning_proto_cc",
+        ":tcb",
+        ":tcb_proto_cc",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:cc_wkt_protos",
     ],
 )
 
