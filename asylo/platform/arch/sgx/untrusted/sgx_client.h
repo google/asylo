@@ -79,7 +79,8 @@ class SgxClient : public EnclaveClient {
   // Calls the enclave initialization routine.
   Status Initialize(const char *enclave_name, const char *input,
                     size_t input_len, char **output, size_t *output_len);
-
+  Status Run(const char *input, size_t input_len, char **output,
+             size_t *output_len);
   // Primitive SGX client.
   std::shared_ptr<primitives::SgxEnclaveClient> primitive_sgx_client_;
 };

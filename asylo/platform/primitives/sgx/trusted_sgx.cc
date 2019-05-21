@@ -75,13 +75,42 @@ PrimitiveStatus Initialize(void *context, TrustedParameterStack *params) {
   return PrimitiveStatus(result);
 }
 
+// Handler installed by the runtime to invoke the enclave run entry point.
+PrimitiveStatus Run(void *context, TrustedParameterStack *params) {
+  size_t *output_len = params->Pop()->As<size_t>();
+  char **output = params->Pop()->As<char *>();
+  auto input_extent = params->Pop();
+
+  const char *input = input_extent->As<const char>();
+  size_t input_len = input_extent->size();
+  if (!enc_is_outside_enclave(*output, *output_len)
+      || !enc_is_outside_enclave(input, input_len)) {
+    Status(SGX_ERROR_INVALID_PARAMETER,
+        "Unexpected reference to resource inside the enclave.");
+  }
+  int result = 0;
+  try {
+    result = asylo::__asylo_user_run(input, input_len, output, output_len);
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  return PrimitiveStatus(result);
+}
+
 }  // namespace
 
 // Register SGX backend entry handlers.
 void RegisterInternalHandlers() {
   // Register the enclave initialization entry handler.
-  EntryHandler handler(Initialize);
-  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloInit, handler)
+  EntryHandler init_handler(Initialize);
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloInit, init_handler)
+            .ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+
+  // Register the enclave run entry handler.
+  EntryHandler run_handler(Run);
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloRun, run_handler)
            .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }

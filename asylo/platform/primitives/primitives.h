@@ -34,8 +34,11 @@ static constexpr uint64_t kSelectorAsyloInvalid = 0;
 // Enclave initialization entry point selector.
 static constexpr uint64_t kSelectorAsyloInit = 1;
 
+// Enclave run entry point selector.
+static constexpr uint64_t kSelectorAsyloRun = 2;
+
 // Enclave finalization entry point selector.
-static constexpr uint64_t kSelectorAsyloFini = 2;
+static constexpr uint64_t kSelectorAsyloFini = 3;
 
 // Selector values less than `kSelectorUser` are reserved by the runtime and may
 // not be registered by the applications.

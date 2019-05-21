@@ -63,27 +63,14 @@ Status SgxClient::Initialize(
 // case, the caller cannot make any assumptions about the contents of |output|.
 // Otherwise, |output| points to a buffer of length *|output_len| that contains
 // output from the enclave.
-static Status run(sgx_enclave_id_t eid, const char *input, size_t input_len,
-                  char **output, size_t *output_len) {
-  int result;
-  bridge_size_t bridge_output_len;
-  sgx_status_t sgx_status =
-      ecall_run(eid, &result, input, static_cast<bridge_size_t>(input_len),
-                output, &bridge_output_len);
-  if (output_len) {
-    *output_len = static_cast<size_t>(bridge_output_len);
-  }
-  if (sgx_status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(sgx_status, "Call to ecall_run failed");
-  } else if (result || *output_len == 0) {
-    // Ecall succeeded but did not return a value. This indicates that the
-    // trusted code failed to propagate error information over the enclave
-    // boundary (e.g. serialization failure).
-    return Status(error::GoogleError::INTERNAL, "No output from enclave");
-  }
-
-  return Status::OkStatus();
+Status SgxClient::Run(const char *input, size_t input_len,
+    char **output, size_t *output_len) {
+  primitives::UntrustedParameterStack params;
+  params.PushByReference(primitives::Extent{input, input_len});
+  params.PushByReference(primitives::Extent{output});
+  params.PushByReference(primitives::Extent{output_len});
+  return primitive_sgx_client_->EnclaveCall(
+      primitives::kSelectorAsyloRun, &params);
 }
 
 // Enters the enclave and invokes the finalization entry-point. If the ecall
@@ -320,8 +307,7 @@ Status SgxClient::EnterAndRun(const EnclaveInput &input,
 
   char *output_buf = nullptr;
   size_t output_len = 0;
-  ASYLO_RETURN_IF_ERROR(run(primitive_sgx_client_->GetEnclaveId(), buf.data(),
-                            buf.size(), &output_buf, &output_len));
+  ASYLO_RETURN_IF_ERROR(Run(buf.data(), buf.size(), &output_buf, &output_len));
 
   // Enclave entry-point was successfully invoked. |output_buf| is guaranteed to
   // have a value.
