@@ -40,48 +40,6 @@
 // code into trusted memory and then passed here. Consequently, there is no
 // possibility for TOCTOU attacks on these parameters.
 
-// Invokes the enclave initialization entry-point. Returns a non-zero error code
-// on failure.
-int ecall_initialize(const char *name, const char *input,
-                     bridge_size_t input_len, char **output,
-                     bridge_size_t *output_len) {
-  int result = 0;
-  size_t tmp_output_len;
-  try {
-    result =
-        asylo::__asylo_user_init(name, input, static_cast<size_t>(input_len),
-                                 output, &tmp_output_len);
-  } catch (...) {
-    LOG(FATAL) << "Uncaught exception in enclave";
-  }
-
-  if (output_len) {
-    *output_len = static_cast<bridge_size_t>(tmp_output_len);
-  }
-
-  return result;
-}
-
-// Invokes the enclave run entry-point. Returns a non-zero error code on
-// failure.
-int ecall_run(const char *input, bridge_size_t input_len, char **output,
-              bridge_size_t *output_len) {
-  int result = 0;
-  size_t tmp_output_len;
-  try {
-    result = asylo::__asylo_user_run(input, static_cast<size_t>(input_len),
-                                     output, &tmp_output_len);
-  } catch (...) {
-    LOG(FATAL) << "Uncaught exception in enclave";
-  }
-
-  if (output_len) {
-    *output_len = static_cast<bridge_size_t>(tmp_output_len);
-  }
-
-  return result;
-}
-
 int ecall_donate_thread() { return asylo::__asylo_threading_donate(); }
 
 // Invokes the enclave signal handling entry-point. Returns a non-zero error

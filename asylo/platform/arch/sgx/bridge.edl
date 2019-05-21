@@ -51,21 +51,6 @@ enclave {
     public int ecall_dispatch_trusted_call(uint64_t selector,
                                           [user_check] void *buffer);
 
-    // Initializes enclave. The behavior of a call into an uninitialized enclave
-    // is implementation defined. The caller is responsible for freeing *output
-    // if *output_len > 0
-    public int ecall_initialize([in, string] const char *name,
-                                [in, size=input_len] const char *input,
-                                bridge_size_t input_len,
-                                [out] char **output,
-                                [out] bridge_size_t *output_len);
-
-    // Invokes execution entry point.
-    public int ecall_run([in, size=input_len] const char *input,
-                         bridge_size_t input_len,
-                         [out] char **output,
-                         [out] bridge_size_t *output_len);
-
     // Invokes finalization entry point.
     public int ecall_finalize([in, size=input_len] const char *input,
                               bridge_size_t input_len,
