@@ -18,6 +18,26 @@ syntax = "proto2";
 
 package asylo;
 
+// A certificate signing request (CSR) for a public key.
+message CertificateSigningRequest {
+  // Defines different CSR formats.
+  enum CertificateSigningRequestFormat {
+    UNKNOWN = 0;
+
+    // A PKCS #10 certificate request encoded in DER format (.der file).
+    PKCS10_DER = 1;
+
+    // A PKCS #10 certificate request encoded in PEM format (.pem file).
+    PKCS10_PEM = 2;
+  }
+
+  // The format of the CSR in |data|. Required.
+  optional CertificateSigningRequestFormat format = 1;
+
+  // The raw bytes of an encoded CSR. Required.
+  optional bytes data = 2;
+}
+
 // A certificate for a public key.
 message Certificate {
   // Defines different certificate formats.
@@ -31,10 +51,10 @@ message Certificate {
     X509_PEM = 2;
   }
 
-  // The format of the certificate in |data|.
+  // The format of the certificate in |data|. Required.
   optional CertificateFormat format = 1;
 
-  // The raw bytes of an encoded certificate.
+  // The raw bytes of an encoded certificate. Required.
   optional bytes data = 2;
 }
 
