@@ -29,6 +29,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -66,6 +67,11 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
 //
 // where modulus and public_exponent are in big-endian format.
 StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa);
+
+// Creates a REPORTDATA based on |asymmetric_encryption_scheme| and |rsa| that
+// is suitable for use in the PCE's GetPceInfo protocol.
+StatusOr<Reportdata> CreateReportdataForGetPceInfo(
+    AsymmetricEncryptionScheme asymmetric_encryption_scheme, const RSA *rsa);
 
 }  // namespace sgx
 }  // namespace asylo

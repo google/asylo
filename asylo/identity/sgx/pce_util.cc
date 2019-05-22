@@ -20,17 +20,25 @@
 
 #include <openssl/bn.h>
 
+#include <cstdint>
+#include <string>
+
 #include "absl/base/macros.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/string_view.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h"
 
 namespace asylo {
 namespace sgx {
 
 const size_t kRsa3072SerializedExponentSize = 4;
-constexpr size_t kRsa3072ModulusSize = 384;
 
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme) {
@@ -112,6 +120,51 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
                   "Failed to serialize public key");
   }
   return output;
+}
+
+StatusOr<Reportdata> CreateReportdataForGetPceInfo(
+    AsymmetricEncryptionScheme asymmetric_encryption_scheme, const RSA *rsa) {
+  size_t rsa_size = RSA_size(rsa);
+  if (rsa_size != kRsa3072ModulusSize) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid modulus size: ", rsa_size));
+  }
+
+  if (asymmetric_encryption_scheme !=
+      AsymmetricEncryptionScheme::RSA3072_OAEP) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Unsupported encryption scheme: ",
+                               AsymmetricEncryptionScheme_Name(
+                                   asymmetric_encryption_scheme)));
+  }
+
+  absl::optional<uint8_t> crypto_suite =
+      AsymmetricEncryptionSchemeToPceCryptoSuite(
+          AsymmetricEncryptionScheme::RSA3072_OAEP);
+  if (!crypto_suite.has_value()) {
+    return Status(error::GoogleError::INTERNAL,
+                  absl::StrCat("No conversion from AsymmetricEncryptionScheme "
+                               "to PCE crypto suite for ",
+                               AsymmetricEncryptionScheme_Name(
+                                   asymmetric_encryption_scheme)));
+  }
+
+  std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator;
+  ASYLO_ASSIGN_OR_RETURN(
+      aad_generator,
+      AdditionalAuthenticatedDataGenerator::CreateGetPceInfoAadGenerator());
+  std::vector<uint8_t> data_collector;
+  ASYLO_ASSIGN_OR_RETURN(data_collector, SerializeRsa3072PublicKey(rsa));
+  data_collector.insert(data_collector.begin(), crypto_suite.value());
+  std::string aad_generate_input(data_collector.cbegin(),
+                                 data_collector.cend());
+  std::string aad;
+  ASYLO_ASSIGN_OR_RETURN(aad, aad_generator->Generate(aad_generate_input));
+
+  Reportdata reportdata;
+  ASYLO_RETURN_IF_ERROR(
+      SetTrivialObjectFromBinaryString(aad, &reportdata.data));
+  return reportdata;
 }
 
 }  // namespace sgx

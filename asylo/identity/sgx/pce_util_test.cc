@@ -34,7 +34,11 @@
 #include "absl/types/optional.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status_macros.h"
 #include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h"
 
 namespace asylo {
@@ -59,6 +63,10 @@ constexpr char kModulusBigEndianHex[] =
     "f9d04103097079a2b65d6041f339cf589bd8452dfc7683d7c1d5f7bfacc0039dd263f4a447"
     "af1909db1c1f6f0196218754dfeb2cd9b63f5268c6b51f39124765aed40af4e5dd78626aed"
     "43b51ae86688da36864bb063cab5";
+
+constexpr char kExpectedReportdata[] =
+    "7d9c51052da08dede50b007ff0c2abcc105761b8252243f3b8f627560401ea970000000000"
+    "000000000000000000000000000000000000000000000000000000";
 
 using ::testing::Eq;
 using ::testing::Optional;
@@ -120,6 +128,20 @@ class PceUtilTest : public ::testing::Test {
         std::vector<uint8_t>(reinterpret_cast<const uint8_t *>(kSecretMessage),
                              reinterpret_cast<const uint8_t *>(kSecretMessage) +
                                  sizeof(kSecretMessage));
+  }
+
+  StatusOr<bssl::UniquePtr<RSA>> CreateRsaPublicKey(int number_of_bits) {
+    bssl::UniquePtr<RSA> rsa(RSA_new());
+    bssl::UniquePtr<BIGNUM> e(BN_new());
+
+    if (BN_set_word(e.get(), RSA_F4) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+    if (RSA_generate_key_ex(rsa.get(), number_of_bits, e.get(),
+                            /*cb=*/nullptr) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+    return rsa;
   }
 
   absl::flat_hash_map<AsymmetricEncryptionScheme, uint8_t>
@@ -204,11 +226,7 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeySuccess) {
 // contains correct modulus and exponent data in expected format.
 TEST_F(PceUtilTest, SerializeRsa3072PublicKeySuccess) {
   bssl::UniquePtr<RSA> rsa(RSA_new());
-  bssl::UniquePtr<BIGNUM> e(BN_new());
-  ASSERT_EQ(BN_set_word(e.get(), RSA_F4), 1) << BsslLastErrorString();
-  ASSERT_EQ(
-      RSA_generate_key_ex(rsa.get(), /*bits=*/3072, e.get(), /*cb=*/nullptr), 1)
-      << BsslLastErrorString();
+  ASYLO_ASSERT_OK_AND_ASSIGN(rsa, CreateRsaPublicKey(/*number_of_bits=*/3072));
 
   auto result = SerializeRsa3072PublicKey(rsa.get());
   ASYLO_ASSERT_OK(result);
@@ -237,13 +255,7 @@ TEST_F(PceUtilTest, SerializeRsa3072PublicKeySuccess) {
 // the original key can decrypt a message encrypted by the restored key.
 TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
   bssl::UniquePtr<RSA> rsa1(RSA_new());
-  bssl::UniquePtr<BIGNUM> e(BN_new());
-
-  ASSERT_EQ(BN_set_word(e.get(), RSA_F4), 1) << BsslLastErrorString();
-  ASSERT_EQ(
-      RSA_generate_key_ex(rsa1.get(), /*bits=*/3072, e.get(), /*cb=*/nullptr),
-      1)
-      << BsslLastErrorString();
+  ASYLO_ASSERT_OK_AND_ASSIGN(rsa1, CreateRsaPublicKey(/*number_of_bits=*/3072));
 
   auto result1 = SerializeRsa3072PublicKey(rsa1.get());
   ASYLO_ASSERT_OK(result1);
@@ -278,6 +290,56 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
   decrypted.resize(out_len);
 
   EXPECT_THAT(decrypted, Eq(plaintext_));
+}
+
+TEST_F(PceUtilTest, CreateReportdataForGetPceInfoSuccess) {
+  std::string modulus = absl::HexStringToBytes(kModulusBigEndianHex);
+  std::string exponent = absl::HexStringToBytes(kExponentBigEndianHex);
+
+  std::vector<uint8_t> public_key;
+  public_key.insert(public_key.end(), modulus.cbegin(), modulus.cend());
+  public_key.insert(public_key.end(), exponent.cbegin(), exponent.cend());
+
+  bssl::UniquePtr<RSA> rsa;
+  ASYLO_ASSERT_OK_AND_ASSIGN(rsa,
+                             ParseRsa3072PublicKey(absl::MakeSpan(public_key)));
+
+  Reportdata reportdata;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      reportdata, CreateReportdataForGetPceInfo(
+                      AsymmetricEncryptionScheme::RSA3072_OAEP, rsa.get()));
+
+  Reportdata expected_reportdata;
+  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kExpectedReportdata,
+                                                &expected_reportdata.data));
+  EXPECT_THAT(reportdata.data, Eq(expected_reportdata.data));
+}
+
+TEST_F(PceUtilTest,
+       CreateReportdataForGetPceInfoInvalidAsymmetricEncryptionSchemeFails) {
+  bssl::UniquePtr<RSA> rsa(RSA_new());
+  ASYLO_ASSERT_OK_AND_ASSIGN(rsa, CreateRsaPublicKey(/*number_of_bits=*/3072));
+
+  EXPECT_THAT(
+      CreateReportdataForGetPceInfo(AsymmetricEncryptionScheme::RSA2048_OAEP,
+                                    rsa.get())
+          .status(),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+               absl::StrCat("Unsupported encryption scheme: ",
+                            AsymmetricEncryptionScheme_Name(
+                                AsymmetricEncryptionScheme::RSA2048_OAEP))));
+}
+
+TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidRsaModulusSizeFails) {
+  bssl::UniquePtr<RSA> rsa(RSA_new());
+  ASYLO_ASSERT_OK_AND_ASSIGN(rsa, CreateRsaPublicKey(/*number_of_bits=*/2048));
+
+  EXPECT_THAT(
+      CreateReportdataForGetPceInfo(AsymmetricEncryptionScheme::RSA3072_OAEP,
+                                    rsa.get())
+          .status(),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+               absl::StrCat("Invalid modulus size: ", RSA_size(rsa.get()))));
 }
 
 }  // namespace
