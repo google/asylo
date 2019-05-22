@@ -78,7 +78,11 @@ class Cleanup {
 
   // Releases the contained cleanup function so that it is not called when this
   // object is destroyed. Returns the cleanup function.
-  std::function<void()> release() { return std::move(cleanup_function_); }
+  std::function<void()> release() {
+    auto ret = std::move(cleanup_function_);
+    cleanup_function_ = nullptr;
+    return ret;
+  }
 
  private:
   std::function<void()> cleanup_function_;
