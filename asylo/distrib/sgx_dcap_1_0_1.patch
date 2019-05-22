@@ -62,7 +62,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/quote_wrapper/
 Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and QuoteVerification/Src/AttestationApp/sampleData/quote.dat differ
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,242 @@
+@@ -0,0 +1,251 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -227,6 +227,15 @@ Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and Quote
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
 +    ],
++    # The linker option below works around a linker issue. The PCE interface is
++    # implemented twice in both SGX DCAP and SGX SDK. The latter is used to
++    # build aesmd to avoid circular dependency, which results in compiling
++    # sources from SGX SDK and SGX DCAP together. The implementations are
++    # provided in separate targets in the SGX DCAP and SGX SDK BUILD files,
++    # which leaves some symbols in this library unresolved. Marking the symbol
++    # as undefined here keeps the linker from complaining about those
++    # unresolved symbols.
++    linkopts = ["-Wl,--undefined=sgx_pce_sign_report"],
 +    visibility = ["@linux_sgx//:__subpackages__"],
 +    deps = [
 +        ":common_inc_internal",
