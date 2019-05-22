@@ -17,6 +17,7 @@
  */
 
 #include <sys/syscall.h>
+#include <sys/socket.h>
 
 #include <array>
 #include <cstdint>
@@ -27,6 +28,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "absl/strings/str_cat.h"
 #include "absl/base/casts.h"
 #include "asylo/platform/system_call/message.h"
 
@@ -35,6 +37,7 @@ namespace system_call {
 namespace {
 
 using testing::StrEq;
+using testing::Eq;
 
 // Casts a generic value to an unsigned 64-bit integer.
 template <typename T>
@@ -141,6 +144,209 @@ TEST(MessageTest, BoundedOutTest) {
   char buf[1024];
   EXPECT_THAT(FormatResponse(SYS_read, 0, 0, buf, sizeof(buf)),
               StrEq("response: read [returns: 0] (1: buf [bounded 1024])"));
+}
+
+TEST(MessageTest, MessageHeaderNotCompleteTest) {
+  uint8_t *response_buffer = nullptr;
+  MessageReader reader({response_buffer, 0});
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_message(),
+              StrEq("Message malformed: no completed header present"));
+}
+
+TEST(MessageTest, MessageMagicNumberMissMatchTest) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, sizeof(buf));
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size()};
+  writer.Write(&message);
+  reinterpret_cast<MessageHeader *>(message.data())->magic = -1;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_message(),
+              StrEq("Message malformed: magic number mismatched"));
+}
+
+TEST(MessageTest, MessageFlagBothRequestResponseTest) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, sizeof(buf));
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size()};
+  writer.Write(&message);
+  reinterpret_cast<MessageHeader *>(message.data())->flags = 0xFFFFFFFF;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_message(),
+              StrEq("Message malformed: should be either a request or a "
+                    "response"));
+}
+
+TEST(MessageTest, MessageSystemCallNumberInvalidTest) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, sizeof(buf));
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size()};
+  writer.Write(&message);
+  reinterpret_cast<MessageHeader *>(message.data())->sysno = -1;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: sysno ",
+                                 -1, " is invalid")));
+}
+
+TEST(MessageTest, FixedDataSizeMissMatchTest) {
+  struct sockaddr *usockaddr = nullptr;
+  int usockaddr_len[1] = {0};
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, usockaddr, usockaddr_len);
+  auto writer = MessageWriter::ResponseWriter(SYS_getsockname, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message(buffer.data(), buffer.size());
+  writer.Write(&message);
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  // 2nd parameter is kFixed and have mismatched size.
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 "1 size mismatched")));
+}
+
+TEST(MessageTest, ScalarDataSizeMissMatchTest) {
+  void *buff = nullptr;
+  size_t len = 0;
+  uint32_t flags = 0;
+  struct sockaddr *addr = nullptr;
+  int addr_len = 0;
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buff, len, flags, addr, addr_len);
+  auto writer = MessageWriter::ResponseWriter(SYS_sendto, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message(buffer.data(), buffer.size());
+  writer.Write(&message);
+  reinterpret_cast<MessageHeader *>(message.data())->size[1] = 1;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  // 2nd parameter is kScalar and have mismatched size.
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 "1 size mismatched")));
+}
+
+TEST(MessageTest, StringDataSizeMissMatchTest) {
+  const char *path = "abc\0";
+  int length = 3;
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], path, length);
+  auto writer = MessageWriter::RequestWriter(SYS_truncate, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message(buffer.data(), buffer.size());
+  writer.Write(&message);
+  reinterpret_cast<MessageHeader *>(message.data())->size[0] = 5;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  // 1st parameter is kString and have mismatched size.
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 "0 size mismatched")));
+}
+
+TEST(MessageTest, NonNullTerminatedStringParameterTest) {
+  const char *path = "abc";
+  int length = 3;
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], path, length);
+  auto writer = MessageWriter::RequestWriter(SYS_truncate, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message(buffer.data(), buffer.size());
+  writer.Write(&message);
+  reinterpret_cast<MessageHeader *>(message.data())->size[0] = 2;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  // 1st parameter is kString and not null terminated.
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 "0 size mismatched")));
+}
+
+TEST(MessageTest, NegativeSizeTest) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, 0);
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size()};
+  writer.Write(&message);
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::OK));
+}
+
+TEST(MessageTest, OffsetDriftTest) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, sizeof(buf));
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size()};
+  writer.Write(&message);
+  // there are three parameters: path, buf and size. buf is the only output.
+  reinterpret_cast<MessageHeader *>(message.data())->offset[1] = 0;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 1, " has drifted offset")));
+}
+
+TEST(MessageTest, OffsetOverflowTest) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, sizeof(buf));
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size() - 1};
+  writer.Write(&message);
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  // there are three parameters: path, buf and size. buf is the only output.
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 1, " overflowed from buffer memory")));
+}
+
+TEST(MessageTest, OffsetOverflowFromUint64Test) {
+  char buf[1024] = "abc";
+  std::array<uint64_t, 6> parameters;
+  CollectParameters(&parameters[0], 0, buf, sizeof(buf));
+  auto writer = MessageWriter::ResponseWriter(SYS_read, 0, parameters);
+  std::vector<uint8_t> buffer(writer.MessageSize());
+  primitives::Extent message{buffer.data(), buffer.size()};
+  writer.Write(&message);
+  // there are three parameters: path, buf and size. buf is the only output.
+  reinterpret_cast<MessageHeader *>(message.data())->size[1] = SIZE_MAX;
+  MessageReader reader(message);
+  primitives::PrimitiveStatus status = reader.Validate();
+  EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(status.error_message(),
+              StrEq(absl::StrCat("Message malformed: parameter under index ",
+                                 1, " resides above max offset")));
 }
 
 }  // namespace

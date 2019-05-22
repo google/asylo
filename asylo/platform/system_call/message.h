@@ -103,7 +103,7 @@ class MessageReader {
     return *reinterpret_cast<const T *>(extent_.As<char>() + offset(index));
   }
 
-  // Interprets a message parameter as an pointer to a value of type T and
+  // Interprets a message parameter as a pointer to a value of type T and
   // returns it.
   template <typename T = const void *>
   T parameter_address(int index) const {
@@ -121,6 +121,22 @@ class MessageReader {
   // the given `index` into the parameter list, or zero if this parameter is
   // null or not used by this encoding.
   size_t offset(int index) const { return header()->offset[index]; }
+
+  // Returns a PrimitiveStatus indicating an invalid argument with a message
+  // |reason|.
+  primitives::PrimitiveStatus invalid_argument_status(
+      const std::string &reason) const;
+
+  // Checks the validity of this message header, returning an OK status on
+  // success.
+  primitives::PrimitiveStatus ValidateMessageHeader() const;
+
+  // Returns true if the parameter into the parameters list is used by this
+  // encoding.
+  bool parameter_is_used(ParameterDescriptor parameter) const;
+
+  // Returns true if the parameter size is correct.
+  bool IsValidParameterSize(int index) const;
 
   primitives::Extent extent_;
 };
@@ -147,6 +163,10 @@ class MessageWriter {
  private:
   MessageWriter(int sysno, uint64_t result, bool is_request,
                 const std::array<uint64_t, kParameterMax> &parameters);
+
+  // Returns true if the parameter into the parameters list is used by this
+  // encoding.
+  bool parameter_is_used(ParameterDescriptor parameter) const;
 
   // Returns true if the parameter at offset |index| into the parameters list is
   // used by this encoding.

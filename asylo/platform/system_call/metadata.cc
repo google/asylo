@@ -28,7 +28,7 @@ namespace {
 
 enum ParameterFlag : uint16_t {
   kIn = 1 << 0,        // Parameter copied "in" to the kernel.
-  kOut = 1 << 1,       // Parameter copied "out" tof the kernel.
+  kOut = 1 << 1,       // Parameter copied "out" of the kernel.
   kUnsigned = 1 << 2,  // Signed scalar value.
   kSigned = 1 << 3,    // Unsigned scalar value.
   kPointer = 1 << 4,   // Pointer value.

@@ -85,6 +85,12 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   // Copy outputs back into pointer parameters.
   auto response_reader =
       asylo::system_call::MessageReader({response_buffer, response_size});
+  const asylo::primitives::PrimitiveStatus response_status =
+      response_reader.Validate();
+  if (!response_status.ok()) {
+    abort();
+  }
+
   for (int i = 0; i < asylo::system_call::kParameterMax; i++) {
     asylo::system_call::ParameterDescriptor parameter = descriptor.parameter(i);
     if (parameter.is_out()) {

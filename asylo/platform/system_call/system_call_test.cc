@@ -57,6 +57,21 @@ asylo::primitives::PrimitiveStatus SystemCallDispatcher(
   return asylo::primitives::PrimitiveStatus::OkStatus();
 }
 
+// A system call dispatch function that return invalid response.
+asylo::primitives::PrimitiveStatus InvalidResponseDispatcher(
+    const uint8_t *request_buffer, size_t request_size,
+    uint8_t **response_buffer, size_t *response_size) {
+  primitives::Extent response;
+
+  ASYLO_RETURN_IF_ERROR(
+      UntrustedInvoke({request_buffer, request_size}, &response));
+
+  *response_buffer = response.As<uint8_t>();
+  *response_size = 1;
+
+  return asylo::primitives::PrimitiveStatus::OkStatus();
+}
+
 // A system call dispatch function that always fails.
 asylo::primitives::PrimitiveStatus AlwaysFailingDispatcher(
     const uint8_t *request_buffer, size_t request_size,
@@ -220,6 +235,13 @@ TEST(SystemCallTest, AbortOnCallbackFailure) {
 // Ensure that syscall aborts if incorrect sysno provided.
 TEST(SystemCallTest, AbortOnSerializationFailure) {
   EXPECT_EXIT(enc_untrusted_syscall(1000000),
+              ::testing::KilledBySignal(SIGABRT), ".*");
+}
+
+// Ensure that syscall aborts if incorrect response received.
+TEST(SystemCallTest, AbortOnResponseMessageFailure) {
+  enc_set_dispatch_syscall(InvalidResponseDispatcher);
+  EXPECT_EXIT(enc_untrusted_syscall(SYS_getpid),
               ::testing::KilledBySignal(SIGABRT), ".*");
 }
 

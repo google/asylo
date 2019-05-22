@@ -26,14 +26,29 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "asylo/platform/system_call/metadata.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace system_call {
 
 namespace {
 
+// Returns the smallest multiple of 8 greater than or equal to |value|, or 0 on
+// integer overflow.
 uint64_t RoundUpToMultipleOf8(uint64_t value) {
   return value + (8 - value % 8) % 8;
+}
+
+// Returns the largest multiple of 8 less than or equal to |value|.
+uint64_t RoundDownToMultipleOf8(uint64_t value) {
+  return (value / 8) * 8;
+}
+
+// Returns true if the sum of two input values overflow, after round up to
+// multiple of 8.
+bool SumOverflowOnRoundUpToMultipleOf8(uint64_t v1, uint64_t v2) {
+  return v2 > RoundDownToMultipleOf8(SIZE_MAX) ||
+         v1 > RoundDownToMultipleOf8(SIZE_MAX) - v2;
 }
 
 }  // namespace
@@ -76,14 +91,122 @@ std::string FormatMessage(primitives::Extent extent) {
   return result;
 }
 
-primitives::PrimitiveStatus MessageReader::Validate() const {
-  return true;
-}
+bool MessageReader::IsValidParameterSize(int index) const {
+  if (!parameter_is_used(index)) {
+    return true;
+  }
 
-bool MessageReader::parameter_is_used(int index) const {
   SystemCallDescriptor syscall(sysno());
   ParameterDescriptor parameter = syscall.parameter(index);
+  if (parameter.is_scalar()) {
+    return header()->size[index] == sizeof(uint64_t);
+  }
 
+  if (parameter.is_fixed()) {
+    return header()->size[index] == parameter.size();
+  }
+
+  if (header()->size[index] == 0) {
+    return true;
+  }
+
+  if (parameter.is_string()) {
+    const char *value = this->parameter_address<const char *>(
+        parameter.index());
+
+    if (value[header()->size[index] - 1] != '\0') {
+      return false;
+    }
+
+    return header()->size[index] == strlen(value) + 1;
+  }
+
+  // Bounded parameter size could not be verified here, simply return true.
+  // The general validations that checks parameter size does not extend outside
+  // the message still apply.
+  if (parameter.is_bounded()) {
+    return true;
+  }
+
+  // The following line is expected to be unreachable.
+  abort();
+}
+
+primitives::PrimitiveStatus MessageReader::invalid_argument_status(
+    const std::string &reason) const {
+  return primitives::PrimitiveStatus{
+      error::GoogleError::INVALID_ARGUMENT, reason};
+}
+
+primitives::PrimitiveStatus MessageReader::ValidateMessageHeader() const {
+  size_t next_offset = sizeof(MessageHeader);
+  if (extent_.size() < next_offset) {
+    return invalid_argument_status(
+        "Message malformed: no completed header present");
+  }
+
+  if (header()->magic != kMessageMagic) {
+    return invalid_argument_status(
+        "Message malformed: magic number mismatched");
+  }
+
+  if (is_request() == is_response()) {
+    return invalid_argument_status(
+        "Message malformed: should be either a request or a response");
+  }
+
+  SystemCallDescriptor syscall(sysno());
+
+  if (!syscall.is_valid()) {
+    return invalid_argument_status(
+        absl::StrCat("Message malformed: sysno ", sysno(), " is invalid"));
+  }
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus MessageReader::Validate() const {
+  ASYLO_RETURN_IF_ERROR(ValidateMessageHeader());
+
+  size_t next_offset = sizeof(MessageHeader);
+  SystemCallDescriptor syscall(sysno());
+
+  for (int i = 0; i < kParameterMax; i++) {
+    ParameterDescriptor parameter = syscall.parameter(i);
+    if (!parameter_is_used(parameter)) {
+      continue;
+    }
+
+    if (header()->offset[i] != next_offset) {
+      return invalid_argument_status(
+          absl::StrCat("Message malformed: parameter under index ", i,
+                       " has drifted offset"));
+    }
+
+    if (SumOverflowOnRoundUpToMultipleOf8(header()->size[i], next_offset)) {
+      return invalid_argument_status(
+          absl::StrCat("Message malformed: parameter under index ", i,
+                       " resides above max offset"));
+    }
+
+    next_offset = RoundUpToMultipleOf8(next_offset + header()->size[i]);
+    if (next_offset > extent_.size()) {
+      return invalid_argument_status(
+          absl::StrCat("Message malformed: parameter under index ", i,
+                       " overflowed from buffer memory"));
+    }
+
+    if (!IsValidParameterSize(i)) {
+      return invalid_argument_status(
+          absl::StrCat("Message malformed: parameter under index ", i,
+                       " size mismatched"));
+    }
+  }
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+bool MessageReader::parameter_is_used(ParameterDescriptor parameter) const {
   if (!parameter.is_valid()) {
     return false;
   }
@@ -99,6 +222,12 @@ bool MessageReader::parameter_is_used(int index) const {
   }
 
   return true;
+}
+
+bool MessageReader::parameter_is_used(int index) const {
+  SystemCallDescriptor syscall(sysno());
+  ParameterDescriptor parameter = syscall.parameter(index);
+  return parameter_is_used(parameter);
 }
 
 MessageWriter::MessageWriter(
@@ -133,10 +262,7 @@ size_t MessageWriter::MessageSize() const {
   return result;
 }
 
-bool MessageWriter::parameter_is_used(int index) const {
-  SystemCallDescriptor syscall(sysno_);
-  ParameterDescriptor parameter = syscall.parameter(index);
-
+bool MessageWriter::parameter_is_used(ParameterDescriptor parameter) const {
   if (!parameter.is_valid()) {
     return false;
   }
@@ -154,11 +280,17 @@ bool MessageWriter::parameter_is_used(int index) const {
   return true;
 }
 
+bool MessageWriter::parameter_is_used(int index) const {
+  SystemCallDescriptor syscall(sysno_);
+  ParameterDescriptor parameter = syscall.parameter(index);
+  return parameter_is_used(parameter);
+}
+
 size_t MessageWriter::ParameterSize(ParameterDescriptor parameter) const {
   SystemCallDescriptor syscall(sysno_);
 
   // Return a size of zero for unused parameters.
-  if (!parameter_is_used(parameter.index())) {
+  if (!parameter_is_used(parameter)) {
     return 0;
   }
 
@@ -202,12 +334,12 @@ bool MessageWriter::Write(primitives::Extent *message) const {
   }
 
   // Write each parameter value into the buffer.
-  std::size_t next_offset = sizeof(MessageHeader);
+  size_t next_offset = sizeof(MessageHeader);
 
   SystemCallDescriptor syscall(sysno_);
   for (int i = 0; i < kParameterMax; i++) {
     ParameterDescriptor parameter = syscall.parameter(i);
-    if (!parameter_is_used(i)) {
+    if (!parameter_is_used(parameter)) {
       continue;
     }
 
