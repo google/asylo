@@ -285,6 +285,8 @@ cc_enclave_test(
     srcs = ["malloc_stress_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/util:binary_search",
+        "//asylo/util:logging",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

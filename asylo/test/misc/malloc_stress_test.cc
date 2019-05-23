@@ -17,12 +17,14 @@
  */
 
 #include <pthread.h>
-
 #include <stdlib.h>
+#include <unistd.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/util/logging.h"
+#include "asylo/util/binary_search.h"
 
 namespace asylo {
 namespace {
@@ -31,7 +33,20 @@ constexpr size_t kNumThreads = 5;
 constexpr size_t kAllocations = 100;
 constexpr size_t kAllocationSize = 10000;
 
-static void *MallocStress(void *) {
+// Return the largest malloc which succeeds, using binary search
+size_t LargestSuccessfulMalloc() {
+  auto malloc_succeeds = [](size_t size) {
+    void *ptr = malloc(size);
+    if (ptr != NULL) {
+      free(ptr);
+      return true;
+    }
+    return false;
+  };
+  return BinarySearch(malloc_succeeds);
+}
+
+void *MallocStress(void *) {
   void *mem[kAllocations];
   for (int i = 0; i < kAllocations; ++i) {
     mem[i] = malloc(kAllocationSize);
@@ -46,14 +61,26 @@ static void *MallocStress(void *) {
 // Creates kNumThreads that run |MallocStress| and waits for all threads to
 // join.
 TEST(MallocTest, EnclaveMalloc) {
+  LOG(INFO) << "Largest malloc that succeeds at test start is: "
+            << LargestSuccessfulMalloc() << " bytes";
   pthread_t threads[kNumThreads];
-
-  for (int i = 0; i < kNumThreads; ++i) {
-    ASSERT_EQ(pthread_create(&threads[i], nullptr, &MallocStress, nullptr), 0);
-  }
-
-  for (int i = 0; i < kNumThreads; ++i) {
-    ASSERT_EQ(pthread_join(threads[i], nullptr), 0);
+  // Keep track of the break pointer at the start of the malloc stress test.
+  // This can be used to calculate total allocated heap memory.
+  void *brk_start = sbrk(0);
+  try {
+    for (int i = 0; i < kNumThreads; ++i) {
+      ASSERT_EQ(pthread_create(&threads[i], nullptr, &MallocStress, nullptr),
+                0);
+    }
+    for (int i = 0; i < kNumThreads; ++i) {
+      ASSERT_EQ(pthread_join(threads[i], nullptr), 0);
+    }
+  } catch (const std::bad_alloc &e) {
+    LOG(ERROR) << "Failed to allocate with malloc: " << e.what() << std::endl
+               << "Total memory allocated (using sbrk subtraction) is: "
+               << (size_t)sbrk(0) - (size_t)brk_start << " bytes" << std::endl
+               << "Largest malloc that succeeds at the moment is: "
+               << LargestSuccessfulMalloc() << " bytes";
   }
 }
 

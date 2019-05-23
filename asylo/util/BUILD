@@ -30,6 +30,26 @@ cc_library(
     visibility = ["//asylo:implementation"],
 )
 
+# Implementation of binary search over size_t.
+cc_library(
+    name = "binary_search",
+    hdrs = ["binary_search.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+)
+
+cc_test(
+    name = "binary_search_test",
+    srcs = ["binary_search_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "binary_search_enclave_test",
+    deps = [
+        ":binary_search",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # A library for cleanup objects.
 cc_library(
     name = "cleanup",
