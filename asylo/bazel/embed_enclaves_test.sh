@@ -58,12 +58,9 @@ function test::section_contents_equals_expected_file() {
     "${OBJCOPY}" --dump-section "${SECTION_NAME}=${ACTUAL_CONTENTS_FILE}" \
         "${ELF_FILE_LOCATION}" /dev/null
   else
-    INTERMEDIATE_FILE=$(mktemp)
-    "${OBJCOPY}" --set-section-flags "${SECTION_NAME}=alloc" \
-        "${ELF_FILE_LOCATION}" "${INTERMEDIATE_FILE}"
     "${OBJCOPY}" -O binary --only-section "${SECTION_NAME}" \
-        "${INTERMEDIATE_FILE}" "${ACTUAL_CONTENTS_FILE}"
-    rm "${INTERMEDIATE_FILE}"
+        --set-section-flags "${SECTION_NAME}=alloc" \
+        "${ELF_FILE_LOCATION}" "${ACTUAL_CONTENTS_FILE}"
   fi
 
   # Since diff exits with status 1 on a non-empty diff, and since we set -e at
