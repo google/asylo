@@ -10039,7 +10039,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/limits.h ./n
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/machine/_types.h ./newlib/libc/sys/enclave/include/machine/_types.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/machine/_types.h
 +++ ./newlib/libc/sys/enclave/include/machine/_types.h
-@@ -0,0 +1,40 @@
+@@ -0,0 +1,45 @@
 +#ifndef _MACHINE__TYPES_H
 +#define _MACHINE__TYPES_H
 +
@@ -10074,6 +10074,11 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/machine/_typ
 +#define __machine_nlink_t_defined
 +typedef __uint64_t __nlink_t;
 +#endif  // __machine_nlink_t_defined
++
++#ifndef __machine_sa_family_t_defined
++#define __machine_sa_family_t_defined
++typedef __uint16_t __sa_family_t;
++#endif  // __machine_sa_family_t_defined
 +
 +#define __TM_GMTOFF tm_gmtoff
 +#define __TM_ZONE   tm_zone
