@@ -92,7 +92,8 @@ function expect_regular_file() {
 _ASYLO_LOCATION_DEBUG_TEXT="$(cat << EOF
   It looks like a \$\(location ...\) or \$\(locations ...\) expression failed to
   expand in Bazel.
-EOF)"
+EOF
+)"
 
 # A location function to provide users with a helpful debug message if a
 # $(location ...) expression fails to expand.
