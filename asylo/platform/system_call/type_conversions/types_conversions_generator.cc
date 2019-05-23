@@ -86,30 +86,23 @@ void WriteMacroProvidedIncludes(std::ostream *os) {
 std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
                                const EnumProperties &enum_properties) {
   std::ostringstream os;
-  std::string input_name =
-      to_prefix ? enum_name : absl::StrCat(klinux_prefix, "_", enum_name);
-  std::string result_name =
-      to_prefix ? absl::StrCat(klinux_prefix, "_", enum_name) : enum_name;
 
-  // Generate result variable declaration.
-  os << "  int " << result_name << " = "
+  // Generate result initialization.
+  os << "  *output = "
      << (to_prefix ? enum_properties.default_value_host
                    : enum_properties.default_value_newlib)
      << ";\n";
 
   // Generate or-based enum result accumulation.
   for (const auto &enum_pair : enum_properties.values) {
-    os << "  if (" << input_name << " & "
+    os << "  if (*input & "
        << (to_prefix ? enum_pair.first
                      : absl::StrCat(klinux_prefix, "_", enum_pair.first))
-       << ") " << result_name << " |= "
+       << ") *output |= "
        << (to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
                      : enum_pair.first)
        << ";\n";
   }
-
-  // Generate return statement.
-  os << "  return " << result_name << ";\n";
 
   return os.str();
 }
@@ -121,23 +114,24 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
 std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
                                const EnumProperties &enum_properties) {
   std::ostringstream os;
-  std::string input_name =
-      to_prefix ? enum_name : absl::StrCat(klinux_prefix, "_", enum_name);
-
   for (const auto &enum_pair : enum_properties.values) {
-    os << "  if (" << input_name << " == "
-       << (to_prefix ? enum_pair.first
-                     : absl::StrCat(klinux_prefix, "_", enum_pair.first))
-       << ") {\n";
-    os << "      return "
-       << (to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
-                     : enum_pair.first)
-       << ";\n";
-    os << "  }\n";
+    std::string input_val =
+        to_prefix ? enum_pair.first
+                  : absl::StrCat(klinux_prefix, "_", enum_pair.first);
+    std::string output_val =
+        to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
+                  : enum_pair.first;
+
+    os << absl::StrReplaceAll(
+        "  if (*input == $input_val) {\n"
+        "    *output = $output_val;\n"
+        "    return;\n"
+        "  }\n",
+        {{"$input_val", input_val}, {"$output_val", output_val}});
   }
 
   // Generate code for handling default case.
-  os << "  return "
+  os << "  *output = "
      << (to_prefix ? enum_properties.default_value_host
                    : enum_properties.default_value_newlib)
      << ";\n";
@@ -153,8 +147,7 @@ std::string GetStructConversionsFuncBody(
     const std::string &output_struct,
     const StructProperties &struct_properties) {
   std::ostringstream os;
-  os << "  if (!" << input_struct << " || !" << output_struct << ") "
-     << "return nullptr;\n";
+  os << "  if (!" << input_struct << " || !" << output_struct << ") return;\n";
 
   for (const auto &member_decl : struct_properties.values) {
     std::string bridge_member =
@@ -166,7 +159,7 @@ std::string GetStructConversionsFuncBody(
        << input_struct << "->" << input_member << ";\n";
   }
 
-  os << "  return " << output_struct << ";\n";
+  os << "\n";
   return os.str();
 }
 
@@ -184,31 +177,31 @@ void WriteEnumConversions(const absl::flat_hash_map<std::string, EnumProperties>
     std::transform(enum_name_lower.begin(), enum_name_lower.end(),
                    enum_name_lower.begin(), ::tolower);
 
-    std::ostringstream to_prefix_declaration, from_prefix_declaration;
-    to_prefix_declaration << "int To" << klinux_prefix << it.first << "(int "
-                          << enum_name_lower << ")";
-    from_prefix_declaration << "int From" << klinux_prefix << it.first
-                            << "(int " << klinux_prefix << "_"
-                            << enum_name_lower << ")";
+    std::string to_prefix_decl = absl::StrReplaceAll(
+        "void To$klinux_prefix$enum_name(const int *input, int *output)",
+        {{"$klinux_prefix", klinux_prefix}, {"$enum_name", it.first}});
+    std::string from_prefix_decl = absl::StrReplaceAll(
+        "void From$klinux_prefix$enum_name(const int *input, int *output)",
+        {{"$klinux_prefix", klinux_prefix}, {"$enum_name", it.first}});
 
     // Write the function declarations to the header file.
-    *os_h << "\n" << to_prefix_declaration.str() << "; \n";
-    *os_h << "\n" << from_prefix_declaration.str() << "; \n";
+    *os_h << "\n" << to_prefix_decl << "; \n";
+    *os_h << "\n" << from_prefix_decl << "; \n";
 
     // Write the function body to the cc file.
     if (it.second.multi_valued) {
       *os_cc << "\n"
-             << to_prefix_declaration.str() << " {\n"
+             << to_prefix_decl << " {\n"
              << GetOrBasedEnumBody(true, enum_name_lower, it.second) << "}\n";
       *os_cc << "\n"
-             << from_prefix_declaration.str() << " {\n"
+             << from_prefix_decl << " {\n"
              << GetOrBasedEnumBody(false, enum_name_lower, it.second) << "}\n";
     } else {
       *os_cc << "\n"
-             << to_prefix_declaration.str() << " {\n"
+             << to_prefix_decl << " {\n"
              << GetIfBasedEnumBody(true, enum_name_lower, it.second) << "}\n";
       *os_cc << "\n"
-             << from_prefix_declaration.str() << " {\n"
+             << from_prefix_decl << " {\n"
              << GetIfBasedEnumBody(false, enum_name_lower, it.second) << "}\n";
     }
   }
@@ -230,7 +223,7 @@ void WriteStructConversions(
         absl::StrCat("_", bridge_prefix, struct_var);
 
     std::string to_bridge_declaration = absl::StrReplaceAll(
-        "struct $bridge_prefix_$name *To$bridge_prefix$name"
+        "void To$bridge_prefix$name"
         "(const struct $name *$struct_var, "
         "struct $bridge_prefix_$name *$bridge_struct_var)",
         {{"$bridge_prefix", bridge_prefix},
@@ -239,7 +232,7 @@ void WriteStructConversions(
          {"$bridge_struct_var", bridge_struct_var}});
 
     std::string from_bridge_declaration = absl::StrReplaceAll(
-        "struct $name *From$bridge_prefix$name(const struct "
+        "void From$bridge_prefix$name(const struct "
         "$bridge_prefix_$name *$bridge_struct_var, struct $name *$struct_var)",
         {{"$bridge_prefix", bridge_prefix},
          {"$name", it.first},

@@ -17,117 +17,115 @@
  */
 
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
+
 #include "asylo/platform/system_call/type_conversions/generated_types_functions.h"
 
-int TokLinuxSocketType(int sock_type) {
-  int kLinux_sock_type = 0;
+void TokLinuxSocketType(const int *input, int *output) {
+  int sock_type = *input;
+  *output = 0;
 
   if (sock_type & SOCK_NONBLOCK) {
-    kLinux_sock_type |= kLinux_SOCK_NONBLOCK;
+    *output |= kLinux_SOCK_NONBLOCK;
     sock_type &= ~SOCK_NONBLOCK;
   }
 
   if (sock_type & SOCK_CLOEXEC) {
-    kLinux_sock_type |= kLinux_SOCK_CLOEXEC;
+    *output |= kLinux_SOCK_CLOEXEC;
     sock_type &= ~SOCK_CLOEXEC;
   }
 
   if (!sock_type) {  // Only SOCK_CLOEXEC or SOCK_NONBLOCK are present.
-    return kLinux_sock_type;
+    return;
   }
 
   switch (sock_type) {
     case SOCK_STREAM:
-      kLinux_sock_type |= kLinux_SOCK_STREAM;
+      *output |= kLinux_SOCK_STREAM;
       break;
     case SOCK_DGRAM:
-      kLinux_sock_type |= kLinux_SOCK_DGRAM;
+      *output |= kLinux_SOCK_DGRAM;
       break;
     case SOCK_SEQPACKET:
-      kLinux_sock_type |= kLinux_SOCK_SEQPACKET;
+      *output |= kLinux_SOCK_SEQPACKET;
       break;
     case SOCK_RAW:
-      kLinux_sock_type |= kLinux_SOCK_RAW;
+      *output |= kLinux_SOCK_RAW;
       break;
     case SOCK_RDM:
-      kLinux_sock_type |= kLinux_SOCK_RDM;
+      *output |= kLinux_SOCK_RDM;
       break;
     case SOCK_PACKET:
-      kLinux_sock_type |= kLinux_SOCK_PACKET;
+      *output |= kLinux_SOCK_PACKET;
       break;
     default:
-      return -1;  // Unsupported
+      *output = -1;  // Unsupported
   }
-
-  return kLinux_sock_type;
 }
 
-int FromkLinuxSocketType(int kLinux_sock_type) {
-  int sock_type = 0;
+void FromkLinuxSocketType(const int *input, int *output) {
+  int kLinux_sock_type = *input;
+  *output = 0;
 
   if (kLinux_sock_type & kLinux_SOCK_NONBLOCK) {
-    sock_type |= SOCK_NONBLOCK;
+    *output |= SOCK_NONBLOCK;
     kLinux_sock_type &= ~kLinux_SOCK_NONBLOCK;
   }
 
   if (kLinux_sock_type & kLinux_SOCK_CLOEXEC) {
-    sock_type |= SOCK_CLOEXEC;
+    *output |= SOCK_CLOEXEC;
     kLinux_sock_type &= ~kLinux_SOCK_CLOEXEC;
   }
 
   if (!kLinux_sock_type) {  // Only kLinux_SOCK_CLOEXEC or kLinux_SOCK_NONBLOCK
                             // are present.
-    return sock_type;
+    return;
   }
 
   switch (kLinux_sock_type) {
     case kLinux_SOCK_STREAM:
-      sock_type |= SOCK_STREAM;
+      *output |= SOCK_STREAM;
       break;
     case kLinux_SOCK_DGRAM:
-      sock_type |= SOCK_DGRAM;
+      *output |= SOCK_DGRAM;
       break;
     case kLinux_SOCK_SEQPACKET:
-      sock_type |= SOCK_SEQPACKET;
+      *output |= SOCK_SEQPACKET;
       break;
     case kLinux_SOCK_RAW:
-      sock_type |= SOCK_RAW;
+      *output |= SOCK_RAW;
       break;
     case kLinux_SOCK_RDM:
-      sock_type |= SOCK_RDM;
+      *output |= SOCK_RDM;
       break;
     case kLinux_SOCK_PACKET:
-      sock_type |= SOCK_PACKET;
+      *output |= SOCK_PACKET;
       break;
     default:
-      return -1;  // Unsupported
+      *output = -1;  // Unsupported
   }
-
-  return sock_type;
 }
 
-int TokLinuxOptionName(int level, int option_name) {
-  if (level == IPPROTO_TCP) {
-    return TokLinuxTcpOptionName(option_name);
+void TokLinuxOptionName(const int *level, const int *option_name, int *output) {
+  if (*level == IPPROTO_TCP) {
+    TokLinuxTcpOptionName(option_name, output);
+  } else if (*level == IPPROTO_IPV6) {
+    TokLinuxIpV6OptionName(option_name, output);
+  } else if (*level == SOL_SOCKET) {
+    TokLinuxSocketOptionName(option_name, output);
+  } else {
+    *output = -1;
   }
-  if (level == IPPROTO_IPV6) {
-    return TokLinuxIpV6OptionName(option_name);
-  }
-  if (level == SOL_SOCKET) {
-    return TokLinuxSocketOptionName(option_name);
-  }
-  return -1;
 }
 
-int FromkLinuxOptionName(int level, int klinux_option_name) {
-  if (level == IPPROTO_TCP) {
-    return FromkLinuxTcpOptionName(klinux_option_name);
+void FromkLinuxOptionName(const int *level, const int *klinux_option_name,
+                          int *output) {
+  if (*level == IPPROTO_TCP) {
+    FromkLinuxTcpOptionName(klinux_option_name, output);
+  } else if (*level == IPPROTO_IPV6) {
+    TokLinuxIpV6OptionName(klinux_option_name, output);
+  } else if (*level == SOL_SOCKET) {
+    FromkLinuxSocketOptionName(klinux_option_name, output);
+  } else {
+    *output = -1;
   }
-  if (level == IPPROTO_IPV6) {
-    return TokLinuxIpV6OptionName(klinux_option_name);
-  }
-  if (level == SOL_SOCKET) {
-    return FromkLinuxSocketOptionName(klinux_option_name);
-  }
-  return -1;
 }

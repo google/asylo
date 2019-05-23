@@ -578,8 +578,11 @@ TEST_F(HostCallTest, TestFcntl) {
   *(params.PushAlloc<int>()) = /*arg=*/ 0;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(),
-              Eq(FromkLinuxFileStatusFlag(fcntl(fd, F_GETFL, 0))));
+
+  int fcntl_return;
+  int klinux_fcntl_return = fcntl(fd, F_GETFL, 0);
+  FromkLinuxFileStatusFlag(&klinux_fcntl_return, &fcntl_return);
+  EXPECT_THAT(params.Pop<int>(), Eq(fcntl_return));
 
   // Turn on one or more of the file status flags for a descriptor.
   int flags_to_set = O_APPEND | O_NONBLOCK | O_RDONLY;
@@ -588,8 +591,10 @@ TEST_F(HostCallTest, TestFcntl) {
   *(params.PushAlloc<int>()) = /*arg=*/ flags_to_set;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(),
-              Eq(FromkLinuxFileStatusFlag(fcntl(fd, F_SETFL, flags_to_set))));
+
+  klinux_fcntl_return = fcntl(fd, F_SETFL, flags_to_set);
+  FromkLinuxFileStatusFlag(&klinux_fcntl_return, &fcntl_return);
+  EXPECT_THAT(params.Pop<int>(), Eq(fcntl_return));
 }
 
 TEST_F(HostCallTest, TestFcntlInvalidCmd) {
@@ -674,9 +679,12 @@ TEST_F(HostCallTest, TestFlock) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
+  int klinux_lock = LOCK_EX;
+  int lock;
+  FromkLinuxFLockOperation(&klinux_lock, &lock);
   primitives::UntrustedParameterStack params;
   *(params.PushAlloc<int>()) = /*fd=*/ fd;
-  *(params.PushAlloc<int>()) = /*level=*/ FromkLinuxFLockOperation(LOCK_EX);
+  *(params.PushAlloc<int>()) = /*operation=*/ lock;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
@@ -690,7 +698,10 @@ TEST_F(HostCallTest, TestFlock) {
 // descriptor value is verified to be positive.
 TEST_F(HostCallTest, TestInotifyInit1) {
   primitives::UntrustedParameterStack params;
-  *(params.PushAlloc<int>()) = /*flags=*/ FromkLinuxInotifyFlag(IN_NONBLOCK);
+  int inotify_flag;
+  int klinux_inotify_flag = IN_NONBLOCK;
+  FromkLinuxInotifyFlag(&klinux_inotify_flag, &inotify_flag);
+  *(params.PushAlloc<int>()) = /*flags=*/ inotify_flag;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyInit1, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
@@ -713,7 +724,11 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
   *(params.PushAlloc<int>()) = inotify_fd;
   params.PushByCopy<char>(FLAGS_test_tmpdir.c_str(),
                           FLAGS_test_tmpdir.length() + 1);
-  *(params.PushAlloc<int>()) = FromkLinuxInotifyEventMask(IN_ALL_EVENTS);
+
+  int event_mask;
+  int klinux_event_mask = IN_ALL_EVENTS;
+  FromkLinuxInotifyEventMask(&klinux_event_mask, &event_mask);
+  *(params.PushAlloc<int>()) = event_mask;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyAddWatch, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
   EXPECT_THAT(params.Pop<int>(), Eq(1));

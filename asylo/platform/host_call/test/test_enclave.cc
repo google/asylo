@@ -304,9 +304,10 @@ primitives::PrimitiveStatus TestSetsockopt(
   int level = params->Pop<int>();
   int sockfd = params->Pop<int>();
 
+  int optname;
+  FromkLinuxOptionName(&level, &klinux_optname, &optname);
   *(params->PushAlloc<int>()) = enc_untrusted_setsockopt(
-      sockfd, level, FromkLinuxOptionName(level, klinux_optname),
-      (void *)&option, sizeof(option));
+      sockfd, level, optname, (void *)&option, sizeof(option));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

@@ -37,24 +37,32 @@ TEST(ManualTypesFunctionsTest, SocketTypeTest) {
                               SOCK_NONBLOCK, SOCK_CLOEXEC};
 
   for (int i = 0; i < from_bits.size(); i++) {
-    EXPECT_THAT(TokLinuxSocketType(to_bits[i]), Eq(from_bits[i]));
-    EXPECT_THAT(FromkLinuxSocketType(from_bits[i]), Eq(to_bits[i]));
+    int output;
+    TokLinuxSocketType(&to_bits[i], &output);
+    EXPECT_THAT(output, Eq(from_bits[i]));
+    FromkLinuxSocketType(&from_bits[i], &output);
+    EXPECT_THAT(output, Eq(to_bits[i]));
 
     int from = kLinux_SOCK_CLOEXEC | kLinux_SOCK_NONBLOCK | from_bits[i];
     int to = SOCK_CLOEXEC | SOCK_NONBLOCK | to_bits[i];
-
-    EXPECT_THAT(TokLinuxSocketType(to), Eq(from));
-    EXPECT_THAT(FromkLinuxSocketType(from), Eq(to));
+    TokLinuxSocketType(&to, &output);
+    EXPECT_THAT(output, Eq(from));
+    FromkLinuxSocketType(&from, &output);
+    EXPECT_THAT(output, Eq(to));
 
     from = kLinux_SOCK_CLOEXEC | from_bits[i];
     to = SOCK_CLOEXEC | to_bits[i];
-    EXPECT_THAT(TokLinuxSocketType(to), Eq(from));
-    EXPECT_THAT(FromkLinuxSocketType(from), Eq(to));
+    TokLinuxSocketType(&to, &output);
+    EXPECT_THAT(output, Eq(from));
+    FromkLinuxSocketType(&from, &output);
+    EXPECT_THAT(output, Eq(to));
 
     from = kLinux_SOCK_NONBLOCK | from_bits[i];
     to = SOCK_NONBLOCK | to_bits[i];
-    EXPECT_THAT(TokLinuxSocketType(to), Eq(from));
-    EXPECT_THAT(FromkLinuxSocketType(from), Eq(to));
+    TokLinuxSocketType(&to, &output);
+    EXPECT_THAT(output, Eq(from));
+    FromkLinuxSocketType(&from, &output);
+    EXPECT_THAT(output, Eq(to));
   }
 }
 

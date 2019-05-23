@@ -61,8 +61,10 @@ int enc_untrusted_open(const char *pathname, int flags, ...) {
     va_end(ap);
   }
 
+  int klinux_flags;
+  TokLinuxFileStatusFlag(&flags, &klinux_flags);
   return enc_untrusted_syscall(asylo::system_call::kSYS_open, pathname,
-                               TokLinuxFileStatusFlag(flags), mode);
+                               klinux_flags, mode);
 }
 
 int enc_untrusted_unlink(const char *pathname) {
@@ -119,9 +121,12 @@ int enc_untrusted_rmdir(const char *path) {
 }
 
 int enc_untrusted_socket(int domain, int type, int protocol) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_socket,
-                               TokLinuxAfFamily(domain),
-                               TokLinuxSocketType(type), protocol);
+  int klinux_domain;
+  int klinux_type;
+  TokLinuxAfFamily(&domain, &klinux_domain);
+  TokLinuxSocketType(&type, &klinux_type);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_socket, klinux_domain,
+                               klinux_type, protocol);
 }
 
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
@@ -133,42 +138,52 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   arg = va_arg(ap, int64_t);
   va_end(ap);
 
-  int kLinux_cmd = TokLinuxFcntlCommand(cmd);
-  if (kLinux_cmd == -1) {
+  int klinux_cmd;
+  TokLinuxFcntlCommand(&cmd, &klinux_cmd);
+  if (klinux_cmd == -1) {
     errno = EINVAL;
     return -1;
   }
 
+  int intarg = arg;
   switch (cmd) {
     case F_SETFL: {
+      int klinux_arg;
+      TokLinuxFileStatusFlag(&intarg, &klinux_arg);
       return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                   kLinux_cmd, TokLinuxFileStatusFlag(arg));
+                                   klinux_cmd, klinux_arg);
     }
     case F_SETFD: {
+      int klinux_arg;
+      TokLinuxFDFlag(&intarg, &klinux_arg);
       return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                   kLinux_cmd, TokLinuxFDFlag(arg));
+                                   klinux_cmd, klinux_arg);
     }
     case F_GETFL: {
-      int result = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                         kLinux_cmd, arg);
-      if (result != -1) {
-        result = FromkLinuxFileStatusFlag(result);
+      int retval = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                         klinux_cmd, arg);
+      if (retval != -1) {
+        int result;
+        FromkLinuxFileStatusFlag(&retval, &result);
+        retval = result;
       }
 
-      return result;
+      return retval;
     }
     case F_GETFD: {
-      int result = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                         kLinux_cmd, arg);
-      if (result != -1) {
-        result = FromkLinuxFDFlag(result);
+      int retval = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                         klinux_cmd, arg);
+      if (retval != -1) {
+        int result;
+        FromkLinuxFDFlag(&retval, &result);
+        retval = result;
       }
-      return result;
+      return retval;
     }
     case F_GETPIPE_SZ:
     case F_SETPIPE_SZ: {
       return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                   kLinux_cmd, arg);
+                                   klinux_cmd, arg);
     }
     // We do not handle the case for F_DUPFD. It is expected to be handled at
     // a higher abstraction, as we need not exit the enclave for duplicating
@@ -187,26 +202,34 @@ int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group) {
 
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
+  int klinux_option_name;
+  TokLinuxOptionName(&level, &optname, &klinux_option_name);
   return enc_untrusted_syscall(asylo::system_call::kSYS_setsockopt, sockfd,
-                               level, TokLinuxOptionName(level, optname),
-                               optval, optlen);
+                               level, klinux_option_name, optval, optlen);
 }
 
 int enc_untrusted_flock(int fd, int operation) {
+  int klinux_operation;
+  TokLinuxFLockOperation(&operation, &klinux_operation);
   return enc_untrusted_syscall(asylo::system_call::kSYS_flock, fd,
-                               TokLinuxFLockOperation(operation));
+                               klinux_operation);
 }
 
 int enc_untrusted_inotify_init1(int flags) {
+  int klinux_flags;
+  TokLinuxInotifyFlag(&flags, &klinux_flags);
   return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_init1,
-                               TokLinuxInotifyFlag(flags));
+                               klinux_flags);
 }
 
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask) {
+  int klinux_mask, input_mask = mask;
+  TokLinuxInotifyEventMask(&input_mask, &klinux_mask);
   return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_add_watch, fd,
-                               pathname, TokLinuxInotifyEventMask(mask));
+                               pathname, klinux_mask);
 }
+
 int enc_untrusted_inotify_rm_watch(int fd, int wd) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_rm_watch, fd,
                                wd);
