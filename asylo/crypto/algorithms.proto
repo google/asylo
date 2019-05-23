@@ -55,4 +55,5 @@ enum AsymmetricKeyEncoding {
   UNKNOWN_ASYMMETRIC_KEY_ENCODING = 0;
 
   ASYMMETRIC_KEY_PEM = 1;
+  ASYMMETRIC_KEY_DER = 2;
 }
