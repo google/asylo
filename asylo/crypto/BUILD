@@ -309,3 +309,16 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "asymmetric_encryption_key",
+    hdrs = ["asymmetric_encryption_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
+    ],
+)
