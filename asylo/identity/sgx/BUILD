@@ -82,7 +82,7 @@ asylo_proto_library(
 asylo_proto_library(
     name = "sgx_local_assertion_authority_config_proto",
     srcs = ["sgx_local_assertion_authority_config.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
 )
 
 asylo_proto_library(
