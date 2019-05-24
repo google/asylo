@@ -501,6 +501,20 @@ struct BridgeFDSet {
   uint8_t file_descriptor_set[BRIDGE_FD_SETSIZE];
 };
 
+// The maximum size of the passwd struct strings we support, including name,
+// passwd, gecos, user information, home directory, and shell program.
+#define BRIDGE_PASSWD_FIELD_LENGTH 1024
+
+struct BridgePassWd {
+  char pw_name[BRIDGE_PASSWD_FIELD_LENGTH];
+  char pw_passwd[BRIDGE_PASSWD_FIELD_LENGTH];
+  uid_t pw_uid;
+  gid_t pw_gid;
+  char pw_gecos[BRIDGE_PASSWD_FIELD_LENGTH];
+  char pw_dir[BRIDGE_PASSWD_FIELD_LENGTH];
+  char pw_shell[BRIDGE_PASSWD_FIELD_LENGTH];
+};
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif

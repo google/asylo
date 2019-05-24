@@ -26,6 +26,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
+#include <pwd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -36,6 +37,7 @@
 #include <sys/utsname.h>
 #include <unistd.h>
 #include <utime.h>
+
 #include <cstring>
 #include <string>
 #include <vector>
@@ -68,6 +70,10 @@ namespace {
       abort();                                                               \
     }                                                                        \
   } while (0)
+
+// A global passwd struct. The address of it is used as the return value of
+// getpwuid.
+struct passwd global_password;
 
 }  // namespace
 }  // namespace asylo
@@ -706,6 +712,31 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
 
 void enc_untrusted_freeifaddrs(struct ifaddrs *ifa) {
   asylo::FreeDeserializedIfAddrs(ifa);
+}
+
+//////////////////////////////////////
+//            pwd.h                 //
+//////////////////////////////////////
+
+struct passwd *enc_untrusted_getpwuid(uid_t uid) {
+  struct BridgePassWd bridge_password;
+  int ret = 0;
+  CHECK_OCALL(ocall_enc_untrusted_getpwuid(&ret, uid, &bridge_password));
+  if (ret != 0) {
+    return nullptr;
+  }
+
+  // Store the buffers in static storage wrapped in struct BridgePassWd, and
+  // direct the pointers in |global_password| to those buffers.
+  static struct BridgePassWd password_buffers;
+
+  if (!asylo::CopyBridgePassWd(&bridge_password, &password_buffers) ||
+      !asylo::FromBridgePassWd(&password_buffers, &asylo::global_password)) {
+    errno = EFAULT;
+    return nullptr;
+  }
+
+  return &asylo::global_password;
 }
 
 //////////////////////////////////////

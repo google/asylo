@@ -244,6 +244,13 @@ enclave {
         [out] bridge_ssize_t *serialized_ifaddrs_len) propagate_errno;
 
     //////////////////////////////////////
+    //            pwd.h                 //
+    //////////////////////////////////////
+
+    int ocall_enc_untrusted_getpwuid(
+        uid_t uid, [out] struct BridgePassWd *bridge_password) propagate_errno;
+
+    //////////////////////////////////////
     //           sched.h                //
     //////////////////////////////////////
 

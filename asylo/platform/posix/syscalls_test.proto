@@ -90,6 +90,19 @@ message SyscallsTestOutput {
 
   // Value of struct utsname from system call.
   optional UtsName utsname_syscall_return = 7;
+
+  message PassWd {
+    optional string pw_name = 1;
+    optional string pw_passwd = 2;
+    optional int64 pw_uid = 3;
+    optional int64 pw_gid = 4;
+    optional string pw_gecos = 5;
+    optional string pw_dir = 6;
+    optional string pw_shell = 7;
+  }
+
+  // Value of struct passwd from system call.
+  optional PassWd passwd_syscall_return = 8;
 }
 
 extend EnclaveInput {

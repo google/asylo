@@ -17,9 +17,10 @@
  */
 
 #include <pwd.h>
-
 #include <stdlib.h>
 #include <sys/types.h>
+
+#include "asylo/platform/arch/include/trusted/host_calls.h"
 
 extern "C" {
 
@@ -31,6 +32,10 @@ int getpwuid_r(uid_t uid, struct passwd *pwd, char *buf, size_t buflen,
 int getpwnam_r(const char *name, struct passwd *pwd, char *buf, size_t buflen,
                struct passwd **result) {
   abort();
+}
+
+struct passwd *getpwuid(uid_t uid) {
+  return enc_untrusted_getpwuid(uid);
 }
 
 }  // extern "C"

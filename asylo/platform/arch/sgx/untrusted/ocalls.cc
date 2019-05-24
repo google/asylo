@@ -28,6 +28,7 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <poll.h>
+#include <pwd.h>
 #include <sched.h>
 #include <sys/epoll.h>
 #include <sys/file.h>
@@ -671,6 +672,23 @@ int ocall_enc_untrusted_getifaddrs(char **serialized_ifaddrs,
   *serialized_ifaddrs_len = static_cast<bridge_ssize_t>(len);
   freeifaddrs(ifaddr_list);
   return ret;
+}
+
+//////////////////////////////////////
+//            pwd.h                 //
+//////////////////////////////////////
+
+int ocall_enc_untrusted_getpwuid(uid_t uid,
+                                 struct BridgePassWd *bridge_password) {
+  struct passwd *password = getpwuid(uid);
+  if (!password) {
+    return -1;
+  }
+  if (!asylo::ToBridgePassWd(password, bridge_password)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return 0;
 }
 
 //////////////////////////////////////

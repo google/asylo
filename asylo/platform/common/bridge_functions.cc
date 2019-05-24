@@ -1298,4 +1298,77 @@ bool CStringCopy(const char *source_buf, char *dest_buf, size_t size) {
   return ret >= 0 && static_cast<size_t>(ret) < size;
 }
 
+struct passwd *FromBridgePassWd(struct BridgePassWd *bridge_password,
+                                struct passwd *password) {
+  if (!bridge_password || !password) {
+    return nullptr;
+  }
+
+  password->pw_name = bridge_password->pw_name;
+  password->pw_passwd = bridge_password->pw_passwd;
+  password->pw_uid = bridge_password->pw_uid;
+  password->pw_gid = bridge_password->pw_gid;
+  password->pw_gecos = bridge_password->pw_gecos;
+  password->pw_dir = bridge_password->pw_dir;
+  password->pw_shell = bridge_password->pw_shell;
+
+  return password;
+}
+
+struct BridgePassWd *ToBridgePassWd(const struct passwd *password,
+                                    struct BridgePassWd *bridge_password) {
+  if (!password || !bridge_password) {
+    return nullptr;
+  }
+
+  bridge_password->pw_uid = password->pw_uid;
+  bridge_password->pw_gid = password->pw_gid;
+
+  if (!CStringCopy(password->pw_name, bridge_password->pw_name,
+                   sizeof(bridge_password->pw_name)) ||
+      !CStringCopy(password->pw_passwd, bridge_password->pw_passwd,
+                   sizeof(bridge_password->pw_passwd)) ||
+      !CStringCopy(password->pw_gecos, bridge_password->pw_gecos,
+                   sizeof(bridge_password->pw_gecos)) ||
+      !CStringCopy(password->pw_dir, bridge_password->pw_dir,
+                   sizeof(bridge_password->pw_dir)) ||
+      !CStringCopy(password->pw_shell, bridge_password->pw_shell,
+                   sizeof(bridge_password->pw_shell))) {
+    return nullptr;
+  }
+
+  return bridge_password;
+}
+
+struct BridgePassWd *CopyBridgePassWd(
+    const struct BridgePassWd *source_bridge_password,
+    struct BridgePassWd *destination_bridge_password) {
+  if (!source_bridge_password || !destination_bridge_password) {
+    return nullptr;
+  }
+
+  destination_bridge_password->pw_uid = source_bridge_password->pw_uid;
+  destination_bridge_password->pw_gid = source_bridge_password->pw_gid;
+
+  if (!CStringCopy(source_bridge_password->pw_name,
+                   destination_bridge_password->pw_name,
+                   sizeof(destination_bridge_password->pw_name)) ||
+      !CStringCopy(source_bridge_password->pw_passwd,
+                   destination_bridge_password->pw_passwd,
+                   sizeof(destination_bridge_password->pw_passwd)) ||
+      !CStringCopy(source_bridge_password->pw_gecos,
+                   destination_bridge_password->pw_gecos,
+                   sizeof(destination_bridge_password->pw_gecos)) ||
+      !CStringCopy(source_bridge_password->pw_dir,
+                   destination_bridge_password->pw_dir,
+                   sizeof(destination_bridge_password->pw_dir)) ||
+      !CStringCopy(source_bridge_password->pw_shell,
+                   destination_bridge_password->pw_shell,
+                   sizeof(destination_bridge_password->pw_shell))) {
+    return nullptr;
+  }
+
+  return destination_bridge_password;
+}
+
 }  // namespace asylo

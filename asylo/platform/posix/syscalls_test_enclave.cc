@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <ifaddrs.h>
 #include <openssl/rand.h>
+#include <pwd.h>
 #include <regex.h>
 #include <sched.h>
 #include <stdio.h>
@@ -159,6 +160,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunRenameTest(test_input.path_name());
     } else if (test_input.test_target() == "utimes") {
       return RunUtimesTest(test_input.path_name());
+    } else if (test_input.test_target() == "getpwuid") {
+      return RunGetPWUidTest(output);
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -253,6 +256,28 @@ class SyscallsEnclave : public EnclaveTestCase {
                                sizeof(utsname_buf.machine));
     proto_utsname->set_domainname(utsname_buf.domainname,
                                   sizeof(utsname_buf.domainname));
+  }
+
+  // Encodes a struct passwd in the passwd_syscall_return field of a
+  // SyscallsTestOutput protobuf.
+  bool EncodePassWdInTestOutput(struct passwd *password,
+                                SyscallsTestOutput *test_output) {
+    if (!password || !test_output) {
+      return false;
+    }
+
+    SyscallsTestOutput::PassWd *proto_passwd =
+        test_output->mutable_passwd_syscall_return();
+
+    proto_passwd->set_pw_name(password->pw_name, strlen(password->pw_name));
+    proto_passwd->set_pw_passwd(password->pw_passwd,
+                                strlen(password->pw_passwd));
+    proto_passwd->set_pw_uid(password->pw_uid);
+    proto_passwd->set_pw_gid(password->pw_gid);
+    proto_passwd->set_pw_gecos(password->pw_gecos, strlen(password->pw_gecos));
+    proto_passwd->set_pw_dir(password->pw_dir, strlen(password->pw_dir));
+    proto_passwd->set_pw_shell(password->pw_shell, strlen(password->pw_shell));
+    return true;
   }
 
   StatusOr<int> OpenFile(const std::string &path, int flags, mode_t mode) {
@@ -1481,6 +1506,19 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "Modification time is not set correctly");
     }
 
+    return Status::OkStatus();
+  }
+
+  Status RunGetPWUidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    if (!EncodePassWdInTestOutput(getpwuid(getuid()), &output_ret)) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Failed to encode passwd into proto");
+    }
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
     return Status::OkStatus();
   }
 };

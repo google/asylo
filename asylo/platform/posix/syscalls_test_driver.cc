@@ -22,11 +22,13 @@
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netinet/in.h>
+#include <pwd.h>
 #include <sched.h>
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <sys/utsname.h>
 #include <unistd.h>
+
 #include <cstring>
 #include <iostream>
 
@@ -263,6 +265,34 @@ MATCHER_P(EqualsStat, rhs_stat_buffer, "") {
          (arg.st_ctime == rhs_stat_buffer.st_ctime) &&
          (arg.st_blksize == rhs_stat_buffer.st_blksize) &&
          (arg.st_blocks == rhs_stat_buffer.st_blocks);
+}
+
+// Compares a struct passwd with the result from the passwd_syscall_return field
+// of a SyscallsTestOutput protobuf. Returns true if all fields are the same.
+bool ComparePassWd(const SyscallsTestOutput &test_output,
+                   struct passwd *password) {
+  if (!test_output.has_passwd_syscall_return() || !password) {
+    return false;
+  }
+
+  const SyscallsTestOutput::PassWd &proto_passwd =
+      test_output.passwd_syscall_return();
+
+  if (!proto_passwd.has_pw_name() ||
+      proto_passwd.pw_name() != password->pw_name ||
+      !proto_passwd.has_pw_passwd() ||
+      proto_passwd.pw_passwd() != password->pw_passwd ||
+      !proto_passwd.has_pw_uid() || proto_passwd.pw_uid() != password->pw_uid ||
+      !proto_passwd.has_pw_gid() || proto_passwd.pw_gid() != password->pw_gid ||
+      !proto_passwd.has_pw_gecos() ||
+      proto_passwd.pw_gecos() != password->pw_gecos ||
+      !proto_passwd.has_pw_dir() || proto_passwd.pw_dir() != password->pw_dir ||
+      !proto_passwd.has_pw_shell() ||
+      proto_passwd.pw_shell() != password->pw_shell) {
+    return false;
+  }
+
+  return true;
 }
 
 // class that runs syscall tests with default enclave config.
@@ -1103,6 +1133,20 @@ TEST_F(SyscallsTest, Utimes) {
   EXPECT_THAT(
       RunSyscallInsideEnclave("utimes", FLAGS_test_tmpdir + "/utimes", nullptr),
       IsOk());
+}
+
+// Tests getpwuid() by comparing the value of the getpwuid() inside and outside
+// the enclave. Transmits the passwd structure across the enclave boundary using
+// |passwd_syscall_return|.
+TEST_F(SyscallsTest, GetPWUid) {
+  SyscallsTestOutput test_output;
+
+  ASSERT_THAT(
+      RunSyscallInsideEnclave("getpwuid", /*file_path=*/"", &test_output),
+      IsOk());
+
+  // Compare the passwd result from the enclave with the one on the host.
+  EXPECT_TRUE(ComparePassWd(test_output, getpwuid(getuid())));
 }
 
 }  // namespace

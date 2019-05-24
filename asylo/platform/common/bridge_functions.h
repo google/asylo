@@ -22,6 +22,7 @@
 #include <netdb.h>
 #include <netinet/tcp.h>
 #include <poll.h>
+#include <pwd.h>
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -31,6 +32,7 @@
 #include <sys/wait.h>
 #include <syslog.h>
 #include <utime.h>
+
 #include <csignal>
 #include <cstdint>
 
@@ -340,6 +342,24 @@ fd_set *FromBridgeFDSet(const struct BridgeFDSet *bridge_fds, fd_set *fds);
 // Converts |fds| to a bridge fd_set. Returns nullptr if unsuccessful.
 struct BridgeFDSet *ToBridgeFDSet(const fd_set *fds,
                                   struct BridgeFDSet *bridge_fds);
+
+// Converts |bridge_password| to a runtime passwd. Returns nullptr if
+// unsuccessful. This method does not copy and data, just sets the pointers in
+// |passwd| to point to the buffers in |bridge_password|.
+struct passwd *FromBridgePassWd(struct BridgePassWd *bridge_password,
+                                struct passwd *password);
+
+// Converts |password| to a bridge passwd. Returns nullptr if unsuccessful. This
+// method copies all buffers from |password| to |bridge_password|.
+struct BridgePassWd *ToBridgePassWd(const struct passwd *password,
+                                    struct BridgePassWd *bridge_password);
+
+// Copies all the string fields from |source_bridge_passwd| to
+// |destination_bridge_password|. This is used to copy the data from untrusted
+// side to a global buffer inside the enclave.
+struct BridgePassWd *CopyBridgePassWd(
+    const struct BridgePassWd *source_bridge_password,
+    struct BridgePassWd *destination_bridge_password);
 
 // These functions follow the standard for the analogous functions in
 // http://man7.org/linux/man-pages/man3/CPU_SET.3.html.

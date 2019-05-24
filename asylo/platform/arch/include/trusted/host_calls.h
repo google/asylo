@@ -26,6 +26,7 @@
 #include <arpa/inet.h>
 #include <ifaddrs.h>
 #include <poll.h>
+#include <pwd.h>
 #include <sched.h>
 #include <stddef.h>
 #include <stdint.h>
@@ -187,6 +188,12 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
 
 int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
 void enc_untrusted_freeifaddrs(struct ifaddrs *ifa);
+
+//////////////////////////////////////
+//              pwd.h               //
+//////////////////////////////////////
+
+struct passwd *enc_untrusted_getpwuid(uid_t uid);
 
 //////////////////////////////////////
 //            sched.h               //
