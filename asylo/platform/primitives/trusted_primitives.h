@@ -75,7 +75,15 @@ class TrustedPrimitives {
 
   // Exits the enclave synchronously at an entry point to untrusted code
   // designated by `untrusted_selector`. Inputs and results are passed through
-  // `params`, which data items must be located in untrusted memory.
+  // |params|. |params| and its extent data can be located in trusted or
+  // untrusted memory. If |params| is declared in trusted memory, a new
+  // untrusted stack is initialized in untrusted memory, and all the trusted
+  // data held by |params| is copied to the untrusted stack before making the
+  // ocall. Also in this case, after returning from the ocall, the resulting
+  // items on the untrusted stack are copied back to |params|, which now owns
+  // the extents, and the untrusted stack and its extents are deallocated. If
+  // |params| and its data extents point to untrusted memory, we skip the copy
+  // and directly make the ocall using the untrusted |params|.
   static PrimitiveStatus UntrustedCall(
       uint64_t untrusted_selector,
       ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
