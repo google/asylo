@@ -180,10 +180,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_github_grpc_grpc"):
         patch_repository(
             name = "com_github_grpc_grpc",
-            urls = ["https://github.com/grpc/grpc/archive/v1.19.1.tar.gz"],
-            sha256 = "f869c648090e8bddaa1260a271b1089caccbe735bf47ac9cd7d44d35a02fb129",
-            patches = ["@com_google_asylo//asylo/distrib:grpc_1_19_1.patch"],
-            strip_prefix = "grpc-1.19.1",
+            urls = ["https://github.com/grpc/grpc/archive/v1.21.0.tar.gz"],
+            sha256 = "8da7f32cc8978010d2060d740362748441b81a34e5425e108596d3fcd63a97f2",
+            patches = ["@com_google_asylo//asylo/distrib:grpc_1_21_0.patch"],
+            strip_prefix = "grpc-1.21.0",
         )
 
     # Google certificate transparency has a merkletree implementation.
