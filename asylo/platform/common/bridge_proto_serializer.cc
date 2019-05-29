@@ -34,7 +34,8 @@ namespace asylo {
 namespace {
 
 // Sockaddr conversion functions
-bool ConvertToSockaddr(const SockaddrProto &in, struct sockaddr **out) {
+bool ConvertToSockaddr(const SockaddrProto &in, struct sockaddr **out,
+                       socklen_t *addrlen) {
   if (!out) return false;
 
   if (in.family_case() == SockaddrProto::kSockaddrIn6) {  // IPv6
@@ -47,6 +48,9 @@ bool ConvertToSockaddr(const SockaddrProto &in, struct sockaddr **out) {
            kIn6AddrNumBytes);
     sock->sin6_scope_id = in.sockaddr_in6().sin6_scope_id();
     *out = reinterpret_cast<struct sockaddr *>(sock);
+    if (addrlen) {
+      *addrlen = sizeof(*sock);
+    }
   } else if (in.family_case() == SockaddrProto::kSockaddrIn) {  // IPv4
     struct sockaddr_in *sock = static_cast<struct sockaddr_in *>(
         calloc(1, sizeof(struct sockaddr_in)));
@@ -54,6 +58,9 @@ bool ConvertToSockaddr(const SockaddrProto &in, struct sockaddr **out) {
     sock->sin_port = in.sockaddr_in().sin_port();
     sock->sin_addr.s_addr = in.sockaddr_in().sin_addr();
     *out = reinterpret_cast<struct sockaddr *>(sock);
+    if (addrlen) {
+      *addrlen = sizeof(*sock);
+    }
   } else {
     return false;  // unsupported sa_family
   }
@@ -117,9 +124,9 @@ bool ConvertToAddrinfo(const AddrinfosProto *in, struct addrinfo **out) {
       return false;
     }
     info->ai_protocol = info_proto.ai_protocol();
-    info->ai_addrlen = info_proto.ai_addrlen();
     if (info_proto.has_ai_addr() &&
-        !ConvertToSockaddr(info_proto.ai_addr(), &info->ai_addr)) {
+        !ConvertToSockaddr(info_proto.ai_addr(), &info->ai_addr,
+                           &info->ai_addrlen)) {
       return false;
     }
     if (info_proto.has_ai_canonname() &&
@@ -165,7 +172,6 @@ bool ConvertToAddrinfoProtobuf(const struct addrinfo *in, AddrinfosProto *out,
     // A protocol number is from a standard set of numbers:
     // https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
     info_proto->set_ai_protocol(info->ai_protocol);
-    info_proto->set_ai_addrlen(info->ai_addrlen);
     if (info->ai_addr) {
       SockaddrProto *sock_proto = info_proto->mutable_ai_addr();
       if (!ConvertToSockaddrProtobuf(info->ai_addr, sock_proto,
@@ -346,13 +352,15 @@ bool ConvertToIfAddrs(const IfAddrsProto &in, struct ifaddrs **out) {
     ifaddr_node->ifa_name = strdup(ifaddr_proto.ifa_name().c_str());
     ifaddr_node->ifa_flags = FromProtoIffFlags(ifaddr_proto);
     if ((ifaddr_proto.has_ifa_addr() &&
-         !ConvertToSockaddr(ifaddr_proto.ifa_addr(), &ifaddr_node->ifa_addr)) ||
+         !ConvertToSockaddr(ifaddr_proto.ifa_addr(), &ifaddr_node->ifa_addr,
+                            /*addrlen=*/nullptr)) ||
         (ifaddr_proto.has_ifa_netmask() &&
          !ConvertToSockaddr(ifaddr_proto.ifa_netmask(),
-                            &ifaddr_node->ifa_netmask)) ||
+                            &ifaddr_node->ifa_netmask, /*addrlen=*/nullptr)) ||
         (ifaddr_proto.has_ifa_ifu() &&
          !ConvertToSockaddr(ifaddr_proto.ifa_ifu(),
-                            &((ifaddr_node->ifa_ifu).ifu_dstaddr)))) {
+                            &((ifaddr_node->ifa_ifu).ifu_dstaddr),
+                            /*addrlen=*/nullptr))) {
       FreeDeserializedIfAddrs(*out);
       *out = nullptr;
       return false;
@@ -875,7 +883,8 @@ bool DeserializeRecvFromSrcAddr(absl::string_view in,
   }
   // The caller is responsible for freeing the memory allocated by
   // ConvertToSockaddr.
-  return ConvertToSockaddr(addr_proto.src_addr(), src_addr);
+  return ConvertToSockaddr(addr_proto.src_addr(), src_addr,
+                           /*addrlen=*/nullptr);
 }
 
 }  // namespace asylo

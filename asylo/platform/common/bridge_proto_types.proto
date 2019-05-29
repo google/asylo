@@ -17,6 +17,7 @@
 syntax = "proto2";
 
 package asylo;
+
 message SockaddrProto {
   message SockaddrIn {
     optional uint32 sin_port = 1;
@@ -40,7 +41,6 @@ message AddrinfoProto {
   optional int32 ai_socktype = 3;
   optional int32 ai_protocol = 4;
 
-  optional uint32 ai_addrlen = 5;
   optional SockaddrProto ai_addr = 6;  // Not required for hints
   optional string ai_canonname = 7;    // Only if AI_CANONNAME in hints.ai_flags
 }
