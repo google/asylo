@@ -16,7 +16,6 @@
  *
  */
 
-#include "absl/strings/str_cat.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
@@ -141,6 +140,16 @@ primitives::PrimitiveStatus TestUnlink(
   const auto pathname = params->Pop();
 
   *(params->PushAlloc<int>()) = enc_untrusted_unlink(pathname->As<char>());
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus TestUmask(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+
+  mode_t mask = params->Pop<mode_t>();
+
+  *(params->PushAlloc<mode_t>()) = enc_untrusted_umask(mask);
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -387,6 +396,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestOpen, primitives::EntryHandler{TestOpen}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestUnlink, primitives::EntryHandler{TestUnlink}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestUmask, primitives::EntryHandler{TestUmask}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestGetUid, primitives::EntryHandler{TestGetuid}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(

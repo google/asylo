@@ -50,6 +50,7 @@ sim_enclave(
         "//asylo/platform/host_call:host_call_dispatcher",
         "//asylo/platform/host_call:host_calls",
         "//asylo/platform/system_call",
+        "//asylo/platform/system_call/type_conversions:types",
         "//asylo/util:status_macros",
     ],
 )
@@ -70,6 +71,7 @@ cc_library(
         "//asylo/platform/system_call/type_conversions:types",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -69,6 +69,7 @@ int enc_untrusted_inotify_init1(int flags);
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask);
 int enc_untrusted_inotify_rm_watch(int fd, int wd);
+mode_t enc_untrusted_umask(mode_t mask);
 
 #ifdef __cplusplus
 }  // extern "C"

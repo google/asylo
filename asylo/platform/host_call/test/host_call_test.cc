@@ -27,6 +27,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/str_cat.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/test/test_backend.h"
@@ -324,6 +325,48 @@ TEST_F(HostCallTest, TestGetuid) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
   EXPECT_THAT(params.Pop<uid_t>(), Eq(getuid()));
+}
+
+// Tests enc_untrusted_umask() by calling it from inside the enclave to mask
+// certain permission bits(S_IWGRP | S_IWOTH) and verifying newly created
+// directory or file will not have masked permission.
+TEST_F(HostCallTest, TestUmask) {
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = /*mask=*/ S_IWGRP | S_IWOTH;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
+  mode_t default_mode = params.Pop<mode_t>();
+
+  struct stat sb;
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_make");
+
+  // Make sure the directory does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    EXPECT_NE(rmdir(path.c_str()), -1);
+  }
+
+  EXPECT_NE(mkdir(path.c_str(), DEFFILEMODE), -1);
+  EXPECT_TRUE(stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode));
+  EXPECT_TRUE(!(sb.st_mode & S_IWGRP) && !(sb.st_mode & S_IWOTH));
+  EXPECT_NE(rmdir(path.c_str()), -1);
+
+  path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    EXPECT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  ASSERT_GE(fd, 0);
+  EXPECT_NE(access(path.c_str(), F_OK), -1);
+  EXPECT_TRUE(stat(path.c_str(), &sb) == 0 && S_ISREG(sb.st_mode));
+  EXPECT_TRUE(!(sb.st_mode & S_IWGRP) && !(sb.st_mode & S_IWOTH));
+  EXPECT_NE(unlink(path.c_str()), -1);
+
+  *(params.PushAlloc<int>()) = /*mask=*/ default_mode;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  ASSERT_THAT(params.Pop<mode_t>(), Eq(S_IWGRP | S_IWOTH));
 }
 
 // Tests enc_untrusted_getgid() by making the host call from inside the enclave

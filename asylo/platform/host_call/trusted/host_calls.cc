@@ -235,4 +235,8 @@ int enc_untrusted_inotify_rm_watch(int fd, int wd) {
                                wd);
 }
 
+mode_t enc_untrusted_umask(mode_t mask) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_umask, mask);
+}
+
 }  // extern "C"

@@ -52,6 +52,8 @@ constexpr uint64_t kTestMkdir = kFirstSelector + asylo::system_call::kSYS_mkdir;
 constexpr uint64_t kTestOpen = kFirstSelector + asylo::system_call::kSYS_open;
 constexpr uint64_t kTestUnlink =
     kFirstSelector + asylo::system_call::kSYS_unlink;
+constexpr uint64_t kTestUmask =
+    kFirstSelector + asylo::system_call::kSYS_umask;
 constexpr uint64_t kTestGetUid =
     kFirstSelector + asylo::system_call::kSYS_getuid;
 constexpr uint64_t kTestGetGid =
