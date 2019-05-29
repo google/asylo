@@ -388,6 +388,37 @@ cc_test(
     ],
 )
 
+# A library to help with the google.protobuf.Value representation of JSON.
+cc_library(
+    name = "proto_struct_util",
+    srcs = ["proto_struct_util.cc"],
+    hdrs = ["proto_struct_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":status",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:cc_wkt_protos",
+    ],
+)
+
+# Tests for proto struct utilities.
+cc_test(
+    name = "proto_struct_util_test",
+    srcs = ["proto_struct_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "proto_struct_util_enclave_test",
+    deps = [
+        ":proto_struct_util",
+        ":status",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:cc_wkt_protos",
+    ],
+)
+
 # Protobuf representation for asylo::Status.
 asylo_proto_library(
     name = "status_proto",
