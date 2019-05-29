@@ -22,6 +22,7 @@
 #include <ostream>
 #include <string>
 #include <type_traits>
+#include <utility>
 
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
@@ -205,12 +206,12 @@ class Status {
 
  private:
   // Sets this object to hold an error code |code| and error message |message|.
-  template <typename Enum>
-  void Set(Enum code, absl::string_view message) {
+  template <typename Enum, typename StringT>
+  void Set(Enum code, StringT &&message) {
     error_space_ = error::error_enum_traits<Enum>::get_error_space();
     error_code_ = static_cast<int>(code);
     if (error_code_ != 0) {
-      message_ = std::string(message);
+      message_ = std::string(std::forward<StringT>(message));
     } else {
       message_.clear();
     }
