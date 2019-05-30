@@ -55,15 +55,15 @@ You can manually install the toolchain by following these steps:
 1.  Build and install the toolchain.
 
     ```bash
-    "${ASYLO}"/sdk/asylo/distrib/sgx_x86_64/install-toolchain \
+    "${ASYLO}"/sdk/asylo/distrib/toolchain/install-toolchain \
         --user \
-        --prefix "${ASYLO}"/toolchains/sgx_x86_64
+        --prefix "${ASYLO}"/toolchains/default
     ```
 
-    This will install the toolchain under `"${ASYLO}"/toolchains/sgx_x84_64`
+    This will install the toolchain under `"${ASYLO}"/toolchains/default`
 
-See [distrib/README.md](asylo/distrib/README.md) for additional details on
-installing the toolchain.
+See [toolchain/README.md](asylo/distrib/toolchain/README.md) for additional
+details on installing the toolchain.
 
 ## Intel SGX SDK
 
