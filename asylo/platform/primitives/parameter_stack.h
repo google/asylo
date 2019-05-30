@@ -92,7 +92,7 @@ class ParameterStack {
     // Frees parameter extent too, if owned by the item.
     // Must be used instead of (disallowed) destructor.
     void Delete() {
-      if (owned && !extent.empty()) {
+      if (owned) {
         (*FREER)(extent.data());
       }
       (*FREER)(this);

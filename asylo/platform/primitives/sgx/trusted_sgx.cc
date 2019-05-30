@@ -35,6 +35,7 @@
 #include "asylo/platform/primitives/x86/spin_lock.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
 
 extern "C" void *enc_untrusted_malloc(size_t size);
@@ -62,44 +63,74 @@ using UntrustedAllocatorStack =
     }                                                                        \
   } while (0)
 
+// Validates that the address-range [|address|, |address| +|size|) is fully
+// contained outside of the enclave.
+PrimitiveStatus VerifyUntrustedAddressRange(void *address, size_t size) {
+  if (!enc_is_outside_enclave(address, size)) {
+    return PrimitiveStatus(SGX_ERROR_INVALID_PARAMETER,
+        "Unexpected reference to resource inside the enclave.");
+  }
+  return PrimitiveStatus::OkStatus();
+}
+
 // Handler installed by the runtime to initialize the enclave.
 PrimitiveStatus Initialize(void *context, TrustedParameterStack *params) {
-  auto output_len = params->Pop();
-  auto output = params->Pop();
-  const auto input = params->Pop();
-  const auto enclave_name = params->Pop();
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+  TrustedParameterStack::ExtentPtr input_extent = params->Pop();
+  TrustedParameterStack::ExtentPtr name_extent = params->Pop();
+
+  void *tmp_input = input_extent->data();
+  size_t input_len = input_extent->size();
+  ASYLO_RETURN_IF_ERROR(VerifyUntrustedAddressRange(tmp_input, input_len));
+  std::unique_ptr<char> input(reinterpret_cast<char *>(malloc(input_len)));
+  memcpy(input.get(), tmp_input, input_len);
+
+  void *tmp_name = name_extent->data();
+  size_t name_len = name_extent->size();
+  ASYLO_RETURN_IF_ERROR(VerifyUntrustedAddressRange(tmp_name, name_len));
+  std::unique_ptr<char> name(reinterpret_cast<char *>(malloc(name_len)));
+  memcpy(name.get(), tmp_name, name_len);
+
+  char *output = nullptr;
+  size_t output_len = 0;
   int result = 0;
   try {
-    result = asylo::__asylo_user_init(enclave_name->As<const char>(),
-                                      /*config=*/input->As<const char>(),
-                                      /*config_len=*/input->size(),
-                                      output->As<char *>(),
-                                      output_len->As<size_t>());
+    result = asylo::__asylo_user_init(name.get(), /*config=*/input.get(),
+                                      /*config_len=*/input_len, &output,
+                                      &output_len);
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
+  if (!result) {
+    params->PushByCopy(Extent{output, output_len});
+  }
+  enc_untrusted_free(output);
   return PrimitiveStatus(result);
 }
 
 // Handler installed by the runtime to invoke the enclave run entry point.
 PrimitiveStatus Run(void *context, TrustedParameterStack *params) {
-  size_t *output_len = params->Pop()->As<size_t>();
-  char **output = params->Pop()->As<char *>();
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
   auto input_extent = params->Pop();
-
-  const char *input = input_extent->As<const char>();
+  void *tmp_input = input_extent->data();
   size_t input_len = input_extent->size();
-  if (!enc_is_outside_enclave(*output, *output_len) ||
-      !enc_is_outside_enclave(input, input_len)) {
-    Status(SGX_ERROR_INVALID_PARAMETER,
-           "Unexpected reference to resource inside the enclave.");
-  }
+  ASYLO_RETURN_IF_ERROR(VerifyUntrustedAddressRange(tmp_input, input_len));
+  std::unique_ptr<char> input(reinterpret_cast<char *>(malloc(input_len)));
+  memcpy(input.get(), tmp_input, input_len);
+
+  char *output = nullptr;
+  size_t output_len = 0;
   int result = 0;
   try {
-    result = asylo::__asylo_user_run(input, input_len, output, output_len);
+    result = asylo::__asylo_user_run(input.get(), input_len, &output,
+                                     &output_len);
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
+  if (!result) {
+    params->PushByCopy(Extent{output, output_len});
+  }
+  enc_untrusted_free(output);
   return PrimitiveStatus(result);
 }
 

@@ -77,7 +77,7 @@ class SgxClient : public EnclaveClient {
   Status DestroyEnclave() override;
 
   // Calls the enclave initialization routine.
-  Status Initialize(const char *enclave_name, const char *input,
+  Status Initialize(const char *name, size_t name_len, const char *input,
                     size_t input_len, char **output, size_t *output_len);
   Status Run(const char *input, size_t input_len, char **output,
              size_t *output_len);

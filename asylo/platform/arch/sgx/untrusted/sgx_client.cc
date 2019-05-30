@@ -45,32 +45,50 @@ namespace asylo {
 // fails, or the enclave does not return any output, returns a non-OK status. In
 // this case, the caller cannot make any assumptions about the contents of
 // |output|. Otherwise, |output| points to a buffer of length *|output_len| that
-// contains output from the enclave.
+// contains output from the enclave. The caller is responsible for freeing the
+// memory pointed to by |output|.
 Status SgxClient::Initialize(
-    const char *enclave_name, const char *input, size_t input_len,
+    const char *name, size_t name_len, const char *input, size_t input_len,
     char **output, size_t *output_len) {
   primitives::UntrustedParameterStack params;
-  params.PushByReference(primitives::Extent{enclave_name});
-  params.PushByReference(primitives::Extent{input, input_len});
-  params.PushByReference(primitives::Extent{output});
-  params.PushByReference(primitives::Extent{output_len});
-  return primitive_sgx_client_->EnclaveCall(
-      primitives::kSelectorAsyloInit, &params);
+  params.PushByCopy(primitives::Extent{name, name_len});
+  params.PushByCopy(primitives::Extent{input, input_len});
+  ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->EnclaveCall(
+      primitives::kSelectorAsyloInit, &params));
+
+  if (params.empty()) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "Parameter stack empty but expected to contain output extent."};
+  }
+  primitives::UntrustedParameterStack::ExtentPtr output_extent = params.Pop();
+  *output_len = output_extent->size();
+  *output = reinterpret_cast<char *>(malloc(*output_len));
+  memcpy(*output, output_extent->As<char>(), *output_len);
+  return Status::OkStatus();
 }
 
 // Enters the enclave and invokes the execution entry-point. If the ecall fails,
 // or the enclave does not return any output, returns a non-OK status. In this
 // case, the caller cannot make any assumptions about the contents of |output|.
 // Otherwise, |output| points to a buffer of length *|output_len| that contains
-// output from the enclave.
+// output from the enclave. The caller is responsible for freeing the memory
+// pointed to by |output|.
 Status SgxClient::Run(const char *input, size_t input_len,
     char **output, size_t *output_len) {
   primitives::UntrustedParameterStack params;
-  params.PushByReference(primitives::Extent{input, input_len});
-  params.PushByReference(primitives::Extent{output});
-  params.PushByReference(primitives::Extent{output_len});
-  return primitive_sgx_client_->EnclaveCall(
-      primitives::kSelectorAsyloRun, &params);
+  params.PushByCopy(primitives::Extent{input, input_len});
+  ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->EnclaveCall(
+      primitives::kSelectorAsyloRun, &params));
+
+  if (params.empty()) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "Parameter stack empty but expected to contain output extent."};
+  }
+  primitives::UntrustedParameterStack::ExtentPtr output_extent = params.Pop();
+  *output_len = output_extent->size();
+  *output = reinterpret_cast<char *>(malloc(*output_len));
+  memcpy(*output, output_extent->As<char>(), *output_len);
+  return Status::OkStatus();
 }
 
 // Enters the enclave and invokes the finalization entry-point. If the ecall
@@ -277,8 +295,10 @@ Status SgxClient::EnterAndInitialize(const EnclaveConfig &config) {
 
   char *output = nullptr;
   size_t output_len = 0;
-  ASYLO_RETURN_IF_ERROR(Initialize(get_name().c_str(), buf.data(), buf.size(),
-                                   &output, &output_len));
+  std::string enclave_name = get_name();
+  ASYLO_RETURN_IF_ERROR(
+      Initialize(enclave_name.c_str(), enclave_name.size() + 1, buf.data(),
+                 buf.size(), &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.
