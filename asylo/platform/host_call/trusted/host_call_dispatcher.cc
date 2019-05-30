@@ -41,8 +41,7 @@ primitives::PrimitiveStatus HostCallDispatcher(const uint8_t *request_buffer,
   // |request_buffer| is owned by the caller and only accessible inside the
   // enclave; have parameters own the request to make it accessible by the
   // untrusted code.
-  primitives::Extent request = parameters.PushAlloc(request_size);
-  memcpy(request.As<uint8_t>(), request_buffer, request_size);
+  parameters.PushByCopy(primitives::Extent{request_buffer, request_size});
 
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::UntrustedCall(
       kSystemCallHandler, &parameters));

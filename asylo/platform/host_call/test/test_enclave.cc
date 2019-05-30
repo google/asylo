@@ -43,8 +43,7 @@ primitives::PrimitiveStatus TestAccess(
   int mode = params->Pop<int>();
   const auto path_name = params->Pop();
 
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_access(path_name->As<char>(), mode);
+  params->PushByCopy<int>(enc_untrusted_access(path_name->As<char>(), mode));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -55,8 +54,7 @@ primitives::PrimitiveStatus TestChmod(
   mode_t mode = params->Pop<mode_t>();
   const auto path_name = params->Pop();
 
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_chmod(path_name->As<char>(), mode);
+  params->PushByCopy<int>(enc_untrusted_chmod(path_name->As<char>(), mode));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -65,7 +63,7 @@ primitives::PrimitiveStatus TestClose(
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
 
   int fd = params->Pop<int>();
-  *(params->PushAlloc<int>()) = enc_untrusted_close(fd);
+  params->PushByCopy<int>(enc_untrusted_close(fd));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -76,8 +74,7 @@ primitives::PrimitiveStatus TestFchmod(
   mode_t mode = params->Pop<mode_t>();
   int fd = params->Pop<int>();
 
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_fchmod(fd, mode);
+  params->PushByCopy<int>(enc_untrusted_fchmod(fd, mode));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -85,7 +82,7 @@ primitives::PrimitiveStatus TestGetpid(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_STACK_EMPTY(params);
 
-  *(params->PushAlloc<pid_t>()) = enc_untrusted_getpid();
+  params->PushByCopy<pid_t>(enc_untrusted_getpid());
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -96,7 +93,7 @@ primitives::PrimitiveStatus TestKill(
   int sig = params->Pop<int>();
   pid_t pid = params->Pop<pid_t>();
 
-  *(params->PushAlloc<int>()) = enc_untrusted_kill(pid, sig);
+  params->PushByCopy<int>(enc_untrusted_kill(pid, sig));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -107,8 +104,8 @@ primitives::PrimitiveStatus TestLink(
   const auto new_path = params->Pop();
   const auto old_path = params->Pop();
 
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_link(old_path->As<char>(), new_path->As<char>());
+  params->PushByCopy<int>(
+      enc_untrusted_link(old_path->As<char>(), new_path->As<char>()));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -120,7 +117,7 @@ primitives::PrimitiveStatus TestLseek(
   off_t offset = params->Pop<off_t>();
   int fd = params->Pop<int>();
 
-  *(params->PushAlloc<off_t>()) = enc_untrusted_lseek(fd, offset, whence);
+  params->PushByCopy<off_t>(enc_untrusted_lseek(fd, offset, whence));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -131,7 +128,7 @@ primitives::PrimitiveStatus TestMkdir(
   mode_t mode = params->Pop<mode_t>();
   const auto pathname = params->Pop();
 
-  *(params->PushAlloc<int>()) = enc_untrusted_mkdir(pathname->As<char>(), mode);
+  params->PushByCopy<int>(enc_untrusted_mkdir(pathname->As<char>(), mode));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -142,13 +139,12 @@ primitives::PrimitiveStatus TestOpen(
     mode_t mode = params->Pop<mode_t>();
     int flags = params->Pop<int>();
     const auto pathname = params->Pop();
-    *(params->PushAlloc<int>()) =
-        enc_untrusted_open(pathname->As<char>(), flags, mode);
+    params->PushByCopy<int>(
+        enc_untrusted_open(pathname->As<char>(), flags, mode));
   } else if (params->size() == 2) {
     int flags = params->Pop<int>();
     const auto pathname = params->Pop();
-    *(params->PushAlloc<int>()) =
-        enc_untrusted_open(pathname->As<char>(), flags);
+    params->PushByCopy<int>(enc_untrusted_open(pathname->As<char>(), flags));
   } else {
     return {error::GoogleError::INVALID_ARGUMENT,
             "Unexpected number of arguments. open() expects 2 or 3 arguments."};
@@ -163,7 +159,7 @@ primitives::PrimitiveStatus TestUnlink(
 
   const auto pathname = params->Pop();
 
-  *(params->PushAlloc<int>()) = enc_untrusted_unlink(pathname->As<char>());
+  params->PushByCopy<int>(enc_untrusted_unlink(pathname->As<char>()));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -173,7 +169,7 @@ primitives::PrimitiveStatus TestUmask(
 
   mode_t mask = params->Pop<mode_t>();
 
-  *(params->PushAlloc<mode_t>()) = enc_untrusted_umask(mask);
+  params->PushByCopy<mode_t>(enc_untrusted_umask(mask));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -181,7 +177,7 @@ primitives::PrimitiveStatus TestGetuid(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_STACK_EMPTY(params);
 
-  *(params->PushAlloc<uid_t>()) = enc_untrusted_getuid();
+  params->PushByCopy<uid_t>(enc_untrusted_getuid());
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -189,7 +185,7 @@ primitives::PrimitiveStatus TestGetgid(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_STACK_EMPTY(params);
 
-  *(params->PushAlloc<gid_t>()) = enc_untrusted_getgid();
+  params->PushByCopy<gid_t>(enc_untrusted_getgid());
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -197,7 +193,7 @@ primitives::PrimitiveStatus TestGeteuid(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_STACK_EMPTY(params);
 
-  *(params->PushAlloc<uid_t>()) = enc_untrusted_geteuid();
+  params->PushByCopy<uid_t>(enc_untrusted_geteuid());
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -205,7 +201,7 @@ primitives::PrimitiveStatus TestGetegid(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_STACK_EMPTY(params);
 
-  *(params->PushAlloc<gid_t>()) = enc_untrusted_getegid();
+  params->PushByCopy<gid_t>(enc_untrusted_getegid());
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -216,8 +212,8 @@ primitives::PrimitiveStatus TestRename(
   const auto newpath = params->Pop();
   const auto oldpath = params->Pop();
 
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_rename(oldpath->As<char>(), newpath->As<char>());
+  params->PushByCopy<int>(
+      enc_untrusted_rename(oldpath->As<char>(), newpath->As<char>()));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -228,7 +224,7 @@ primitives::PrimitiveStatus TestRead(
   int fd = params->Pop<int>();
   char read_buf[20];
 
-  *(params->PushAlloc<ssize_t>()) = enc_untrusted_read(fd, read_buf, count);
+  params->PushByCopy<ssize_t>(enc_untrusted_read(fd, read_buf, count));
   params->PushByCopy<char>(read_buf, strlen(read_buf) + 1);
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -240,8 +236,8 @@ primitives::PrimitiveStatus TestWrite(
   const auto write_buf = params->Pop();
   int fd = params->Pop<int>();
 
-  *(params->PushAlloc<ssize_t>()) =
-      enc_untrusted_write(fd, write_buf->As<char>(), count);
+  params->PushByCopy<ssize_t>(
+      enc_untrusted_write(fd, write_buf->As<char>(), count));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -251,8 +247,8 @@ primitives::PrimitiveStatus TestSymlink(
   const auto linkpath = params->Pop();
   const auto target = params->Pop();
 
-  *(params->PushAlloc<ssize_t>()) =
-      enc_untrusted_symlink(target->As<char>(), linkpath->As<char>());
+  params->PushByCopy<ssize_t>(
+      enc_untrusted_symlink(target->As<char>(), linkpath->As<char>()));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -264,7 +260,7 @@ primitives::PrimitiveStatus TestReadlink(
   char buf[PATH_MAX];
   ssize_t len =
       enc_untrusted_readlink(pathname->As<char>(), buf, sizeof(buf) - 1);
-  *(params->PushAlloc<ssize_t>()) = len;
+  params->PushByCopy<ssize_t>(len);
 
   buf[len] = '\0';
   params->PushByCopy<char>(buf, strlen(buf) + 1);
@@ -277,8 +273,7 @@ primitives::PrimitiveStatus TestTruncate(
   off_t length = params->Pop<off_t>();
   const auto path = params->Pop();
 
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_truncate(path->As<char>(), length);
+  params->PushByCopy<int>(enc_untrusted_truncate(path->As<char>(), length));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -288,7 +283,7 @@ primitives::PrimitiveStatus TestRmdir(
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
   const auto path = params->Pop();
 
-  *(params->PushAlloc<int>()) = enc_untrusted_rmdir(path->As<char>());
+  params->PushByCopy<int>(enc_untrusted_rmdir(path->As<char>()));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -299,7 +294,7 @@ primitives::PrimitiveStatus TestSocket(
   int protocol = params->Pop<int>();
   int type = params->Pop<int>();
   int domain = params->Pop<int>();
-  *(params->PushAlloc<int>()) = enc_untrusted_socket(domain, type, protocol);
+  params->PushByCopy<int>(enc_untrusted_socket(domain, type, protocol));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -311,7 +306,7 @@ primitives::PrimitiveStatus TestFcntl(
   int arg = params->Pop<int>();
   int cmd = params->Pop<int>();
   int fd = params->Pop<int>();
-  *(params->PushAlloc<int>()) = enc_untrusted_fcntl(fd, cmd, arg);
+  params->PushByCopy<int>(enc_untrusted_fcntl(fd, cmd, arg));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -323,8 +318,8 @@ primitives::PrimitiveStatus TestChown(
   gid_t group = params->Pop<gid_t>();
   uid_t owner = params->Pop<uid_t>();
   const auto pathname = params->Pop();
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_chown(pathname->As<char>(), owner, group);
+  params->PushByCopy<int>(
+      enc_untrusted_chown(pathname->As<char>(), owner, group));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -339,8 +334,8 @@ primitives::PrimitiveStatus TestSetsockopt(
 
   int optname;
   FromkLinuxOptionName(&level, &klinux_optname, &optname);
-  *(params->PushAlloc<int>()) = enc_untrusted_setsockopt(
-      sockfd, level, optname, (void *)&option, sizeof(option));
+  params->PushByCopy<int>(enc_untrusted_setsockopt(
+      sockfd, level, optname, (void *)&option, sizeof(option)));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -353,7 +348,7 @@ primitives::PrimitiveStatus TestFlock(
       params->Pop<int>();  // The operation is expected to be
                            // already converted from a kLinux_ operation.
   int fd = params->Pop<int>();
-  *(params->PushAlloc<int>()) = enc_untrusted_flock(fd, operation);
+  params->PushByCopy<int>(enc_untrusted_flock(fd, operation));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -364,7 +359,7 @@ primitives::PrimitiveStatus TestInotifyInit1(
 
   int flags = params->Pop<int>();  // The operation is expected to be already
                                    // converted from a kLinux_ operation.
-  *(params->PushAlloc<int>()) = enc_untrusted_inotify_init1(flags);
+  params->PushByCopy<int>(enc_untrusted_inotify_init1(flags));
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -377,8 +372,8 @@ primitives::PrimitiveStatus TestInotifyAddWatch(
                                 // converted from a kLinux_ operation.
   const auto pathname = params->Pop();
   int fd = params->Pop<int>();
-  *(params->PushAlloc<int>()) =
-      enc_untrusted_inotify_add_watch(fd, pathname->As<char>(), mask);
+  params->PushByCopy<int>(
+      enc_untrusted_inotify_add_watch(fd, pathname->As<char>(), mask));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -389,7 +384,7 @@ primitives::PrimitiveStatus TestInotifyRmWatch(
 
   int wd = params->Pop<int>();
   int fd = params->Pop<int>();
-  *(params->PushAlloc<int>()) = enc_untrusted_inotify_rm_watch(fd, wd);
+  params->PushByCopy<int>(enc_untrusted_inotify_rm_watch(fd, wd));
   return primitives::PrimitiveStatus::OkStatus();
 }
 

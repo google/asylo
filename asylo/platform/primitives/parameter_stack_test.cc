@@ -35,31 +35,13 @@ namespace {
 constexpr size_t kNumIterations = 64;
 constexpr size_t kNumParams = 256;
 
-TEST(ParameterStackTest, PushPopOwnedSpans) {
+TEST(ParameterStackTest, PushPopSpans) {
   ParameterStack<malloc, free> params;
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     EXPECT_TRUE(params.empty());
     EXPECT_EQ(params.size(), 0);
     for (int32_t i = 0; i < kNumParams; ++i) {
-      *params.PushAlloc<int32_t>() = i * i;
-    }
-    EXPECT_FALSE(params.empty());
-    EXPECT_EQ(params.size(), kNumParams);
-    for (int32_t i = kNumParams; --i >= 0;) {
-      EXPECT_THAT(params.Pop<int32_t>(), Eq(i * i));
-    }
-    EXPECT_TRUE(params.empty());
-    EXPECT_EQ(params.size(), 0);
-  }
-}
-
-TEST(ParameterStackTest, PushPopNotOwnedSpans) {
-  ParameterStack<malloc, free> params;
-  std::array<int32_t, kNumParams> values;
-  for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
-    for (int32_t i = 0; i < kNumParams; ++i) {
-      values[i] = i * i;
-      params.PushByReference<int32_t>(values[i]);
+      params.PushByCopy<int32_t>(i * i);
     }
     EXPECT_FALSE(params.empty());
     EXPECT_EQ(params.size(), kNumParams);
@@ -78,7 +60,7 @@ TEST(ParameterStackTest, PushPopMixture) {
     EXPECT_TRUE(params.empty());
     EXPECT_EQ(params.size(), 0);
     for (int32_t i = 0; i < kNumParams; ++i) {
-      *params.PushAlloc<int32_t>() = i * i;
+      params.PushByCopy<int32_t>(i * i);
     }
     // Pop some of them and verify. Leave 'iter' on the stack.
     EXPECT_FALSE(params.empty());
@@ -90,7 +72,7 @@ TEST(ParameterStackTest, PushPopMixture) {
     EXPECT_FALSE(params.empty());
     EXPECT_EQ(params.size(), iter);
     for (int32_t i = 0; i < kNumParams; ++i) {
-      *params.PushAlloc<int32_t>() = i * i;
+      params.PushByCopy<int32_t>(i * i);
     }
     // Pop all parameters and verify.
     EXPECT_FALSE(params.empty());
@@ -108,7 +90,7 @@ TEST(ParameterStackTest, PushPopMixture) {
   }
 }
 
-TEST(ParameterStackTest, PushAllocPointerCopyTest) {
+TEST(ParameterStackTest, PushByCopyPointerCopyTest) {
   ParameterStack<malloc, free> params;
 
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {

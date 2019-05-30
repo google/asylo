@@ -39,8 +39,7 @@ void __attribute__((constructor)) InitConstructor() {
   TrustedPrimitives::DebugPuts("InitConstructor start\n");
   constexpr char init_message[] = "InitConstructor";
   TrustedParameterStack init_params;
-  auto params_message = init_params.PushAlloc(sizeof(init_message));
-  memcpy(params_message.data(), init_message, params_message.size());
+  init_params.PushByCopy(Extent{init_message, sizeof(init_message)});
   const auto status =
       TrustedPrimitives::UntrustedCall(kUntrustedInit, &init_params);
   TrustedPrimitives::DebugPuts("InitConstructor done: ");
@@ -77,7 +76,7 @@ PrimitiveStatus MultiplyByTwo(void *context, TrustedParameterStack *params) {
     return {error::GoogleError::INVALID_ARGUMENT,
             "MultiplyByTwo called with incorrect argument(s)."};
   }
-  *params->PushAlloc<int32_t>() = 2 * input;
+  params->PushByCopy<int32_t>(2 * input);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -98,7 +97,7 @@ PrimitiveStatus AveragePerThread(void *context, TrustedParameterStack *params) {
   // No lock is needed, since these are thread-local variables.
   per_thread_sum += input;
   ++per_thread_count;
-  *params->PushAlloc<int64_t>() = per_thread_sum / per_thread_count;
+  params->PushByCopy<int64_t>(per_thread_sum / per_thread_count);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -122,7 +121,7 @@ PrimitiveStatus TrustedFibonacci(void *context, TrustedParameterStack *params) {
   PrimitiveStatus status;
   auto untrusted_fibonacci = [&status](int32_t n) -> int32_t {
     TrustedParameterStack nested_params;
-    *nested_params.PushAlloc<int32_t>() = n;
+    nested_params.PushByCopy<int32_t>(n);
     status =
         TrustedPrimitives::UntrustedCall(kUntrustedFibonacci, &nested_params);
     const int32_t res = nested_params.Pop<int32_t>();
@@ -130,8 +129,8 @@ PrimitiveStatus TrustedFibonacci(void *context, TrustedParameterStack *params) {
   };
   ASYLO_RETURN_IF_ERROR(status);
 
-  *params->PushAlloc<int32_t>() =
-      n <= 1 ? n : untrusted_fibonacci(n - 1) + untrusted_fibonacci(n - 2);
+  params->PushByCopy<int32_t>(
+      n <= 1 ? n : untrusted_fibonacci(n - 1) + untrusted_fibonacci(n - 2));
   return PrimitiveStatus{};
 }
 
@@ -150,7 +149,7 @@ PrimitiveStatus TrustedMallocTest(void *context,
     passed = passed && TrustedPrimitives::IsTrustedExtent(buffer, sz);
     free(buffer);
   }
-  *params->PushAlloc<bool>() = passed;
+  params->PushByCopy<bool>(passed);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -169,7 +168,7 @@ PrimitiveStatus UntrustedLocalAllocTest(void *context,
     passed = passed && !TrustedPrimitives::IsTrustedExtent(buffer, sz);
     TrustedPrimitives::UntrustedLocalFree(buffer);
   }
-  *params->PushAlloc<bool>() = passed;
+  params->PushByCopy<bool>(passed);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -186,8 +185,7 @@ PrimitiveStatus CopyMultipleParams(void *context,
   // Now push them into the OUT stack in reverse order: former top becomes
   // bottom and vice versa.
   for (auto &param : params_vector) {
-    auto p = params->PushAlloc(param->size());
-    memcpy(p.data(), param->data(), p.size());
+    params->PushByCopy(Extent{param->data(), param->size()});
     // Release IN parameter.
     param.reset();
   }
@@ -220,7 +218,7 @@ PrimitiveStatus StressMallocs(void *context, TrustedParameterStack *params) {
   }
   free(allocs);
 
-  *params->PushAlloc<uint64_t>() = failed_count;
+  params->PushByCopy<uint64_t>(failed_count);
   return PrimitiveStatus::OkStatus();
 }
 

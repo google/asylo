@@ -31,20 +31,19 @@
 namespace asylo {
 namespace primitives {
 
-// A stack of Extent objects and ownership data. An extent can be
-// added as owned or not owned, and when owned extent is removed, its
-// memory is freed automatically. Template parameters provide the
-// appropriate allocator and freer - plain function pointers, not
-// std::functions, to accommodate malloc and free.
+// A stack of owned Extent objects. An extent is always added as 'owned',
+// meaning when the extent is removed, its memory is freed automatically.
+// Template parameters provide the appropriate allocator and freer - plain
+// function pointers, not std::functions, to accommodate malloc and free.
 //
-// These two parameters specify an allocation strategy used for the
-// item nodes in a linked list representing the stack entries, as well
-// as the Extents associated with those nodes. This is provided to
-// enable the same code to allocate stack items on the untrusted local
-// heap: directly using ParameterStack<malloc, free> by untrusted
-// code, or indirectly using ParameterStack<UntrustedLocalAlloc,
-// UntrustedLocalFree> by trusted code. The same ParameterStack
-// object can thus be shared between untrusted and trusted code.
+// These two parameters specify an allocation strategy used for the item nodes
+// in a linked list representing the stack entries, as well as the Extents
+// associated with those nodes. This is provided to enable the same code to
+// allocate stack items on the untrusted local heap: directly using
+// ParameterStack<malloc, free> by untrusted code, or indirectly using
+// ParameterStack<UntrustedLocalAlloc, UntrustedLocalFree> by trusted code. The
+// same ParameterStack object can thus be shared between untrusted and trusted
+// code.
 //
 // The class is NOT thread-safe.
 template <void *(*ALLOCATOR)(size_t), void (*FREER)(void *)>
@@ -57,7 +56,6 @@ class ParameterStack {
   // next.
   struct Item {
     Item *next;
-    bool owned;  // True means parameter owns the extent.
     Extent extent;
 
     // Non-copyable object.
@@ -79,9 +77,6 @@ class ParameterStack {
       static_assert(offsetof(Item, next) == 0x0,
                     "Unexpected layout for field "
                     "ParameterStack::Item::next");
-      static_assert(offsetof(Item, owned) == sizeof(uint64_t),
-                    "Unexpected layout for field "
-                    "ParameterStack::Item::owned");
       static_assert(offsetof(Item, extent) == 2 * sizeof(uint64_t),
                     "Unexpected layout for field "
                     "ParameterStack::Item::extent");
@@ -89,12 +84,10 @@ class ParameterStack {
     }
 
     // Frees memory allocated for the item using FREER template parameter.
-    // Frees parameter extent too, if owned by the item.
-    // Must be used instead of (disallowed) destructor.
+    // Frees parameter extent too. Must be used instead of (disallowed)
+    // destructor.
     void Delete() {
-      if (owned) {
-        (*FREER)(extent.data());
-      }
+      (*FREER)(extent.data());
       (*FREER)(this);
     }
   };
@@ -131,8 +124,8 @@ class ParameterStack {
   // Returns the number of items on the stack.
   size_t size() const { return size_; }
 
-  // Pops the front extent and, if owned, releases it, once it goes out of
-  // scope. Valid only if !empty().
+  // Pops the front extent and releases it, once it goes out of scope. Valid
+  // only if !empty().
   ExtentPtr Pop() {
     auto item = top_;
     top_ = item->next;
@@ -145,25 +138,11 @@ class ParameterStack {
   // Returns the Extent at the top of the stack. Valid only if !empty().
   Extent Top() { return top_->extent; }
 
-  // Pushes an extent, owned by the caller. We assume that untrusted memory is
-  // accessible from the trusted memory, but not vice-versa. Therefore, the
-  // memory pointed by the extent is expected to be on the untrusted side.
-  void PushByReference(Extent extent) {
-    auto item = static_cast<Item *>((*ALLOCATOR)(sizeof(Item)));
-    item->extent = extent;
-    item->owned = false;
-    item->next = top_;
-    top_ = item;
-    size_++;
-  }
-
-  // Allocates and pushes a new extent of the specified size,
-  // owned by ParameterStack.
+  // Allocates and pushes a new extent of the specified size.
   Extent PushAlloc(size_t extent_size) {
     auto item = static_cast<Item *>((*ALLOCATOR)(sizeof(Item)));
     item->extent =
         Extent{static_cast<void *>((*ALLOCATOR)(extent_size)), extent_size};
-    item->owned = true;
     item->next = top_;
     top_ = item;
     size_++;
@@ -203,24 +182,23 @@ class ParameterStack {
     return PushAlloc(sizeof(T)).template As<T>();
   }
 
-  // |value| is expected to be accessible from the trusted memory.
-  template <typename T>
-  void PushByReference(const T &value) {
-    static_assert(!std::is_pointer<T>::value,
-                  "ParameterStack should not be used with pointers");
-    return PushByReference(Extent{const_cast<T *>(&value)});
-  }
-
   // Allocate and copy a buffer of known type T and given size. Enable only if T
   // is not a pointer type.
   template <typename T>
   void PushByCopy(const T *buffer, size_t size) {
     static_assert(!std::is_pointer<T>::value,
                   "ParameterStack should not be used with pointers");
+    Extent response_extent = PushAlloc(size);
     if (size > 0) {
-      Extent response_extent = PushAlloc(size);
       memcpy(response_extent.As<T>(), buffer, size);
     }
+  }
+
+  template <typename T>
+  void PushByCopy(const T &value) {
+    static_assert(!std::is_pointer<T>::value,
+                  "ParameterStack should not be used with pointers");
+    return PushByCopy(Extent{const_cast<T *>(&value)});
   }
 
 #define ASYLO_RETURN_IF_STACK_EMPTY(params)             \

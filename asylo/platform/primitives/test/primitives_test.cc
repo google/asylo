@@ -85,7 +85,7 @@ class PrimitivesTest : public ::testing::Test {
 int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
                            int32_t value) {
   UntrustedParameterStack params;
-  params.PushByReference<int32_t>(value);
+  params.PushByCopy<int32_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kTimesTwoSelector, &params));
   EXPECT_FALSE(params.empty());
   const int32_t res = params.Pop<int32_t>();
@@ -98,7 +98,7 @@ int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
 int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
                               int64_t value) {
   UntrustedParameterStack params;
-  params.PushByReference<int64_t>(value);
+  params.PushByCopy<int64_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kAveragePerThreadSelector, &params));
   EXPECT_FALSE(params.empty());
   const int64_t res = params.Pop<int64_t>();
@@ -109,8 +109,8 @@ int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
 uint64_t StressMallocsOrDie(const std::shared_ptr<Client> &client,
                             uint64_t malloc_count, uint64_t malloc_size) {
   UntrustedParameterStack params;
-  *params.PushAlloc<uint64_t>() = malloc_size;
-  *params.PushAlloc<uint64_t>() = malloc_count;
+  params.PushByCopy<uint64_t>(malloc_size);
+  params.PushByCopy<uint64_t>(malloc_count);
   ASYLO_EXPECT_OK(client->EnclaveCall(kStressMallocs, &params));
   EXPECT_FALSE(params.empty());
   const uint64_t res = params.Pop<uint64_t>();
@@ -195,7 +195,7 @@ TEST_F(PrimitivesTest, LoadEnclave) {
   // Ensure a call to a destroyed enclave fails.
   UntrustedParameterStack params;
   int32_t input = 1;
-  params.PushByReference<int32_t>(input);
+  params.PushByCopy<int32_t>(input);
   Status status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 }
@@ -222,7 +222,7 @@ TEST_F(PrimitivesTest, AbortEnclave) {
   // Check that we can't enter the enclave again.
   int32_t value = 10;
   UntrustedParameterStack params;
-  params.PushByReference<int32_t>(value);
+  params.PushByCopy<int32_t>(value);
   Status status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 
@@ -237,7 +237,7 @@ TEST_F(PrimitivesTest, CallChain) {
 
   auto trusted_fibonacci = [&client](int32_t n) -> int32_t {
     UntrustedParameterStack params;
-    *params.PushAlloc<int32_t>() = n;
+    params.PushByCopy<int32_t>(n);
     ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedFibonacci, &params));
     EXPECT_FALSE(params.empty());
     const int32_t res = params.Pop<int32_t>();
@@ -263,8 +263,8 @@ TEST_F(PrimitivesTest, CallChain) {
       return Status{error::GoogleError::INVALID_ARGUMENT,
                     "UntrustedFibonacci called with invalid argument."};
     }
-    *params->PushAlloc<int32_t>() =
-        n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2);
+    params->PushByCopy<int32_t>(
+        n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2));
     return Status::OkStatus();
   };
 
@@ -365,7 +365,7 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
   const char in3[] = "Param3";
   UntrustedParameterStack params;
   params.PushByCopy<char>(in1.data(), in1.size());
-  *params.PushAlloc<uint64_t>() = in2;
+  params.PushByCopy<uint64_t>(in2);
   params.PushByCopy<char>(in3, strlen(in3) + 1);
   ASYLO_ASSERT_OK(client->EnclaveCall(kCopyMultipleParamsSelector, &params));
   EXPECT_THAT(params.size(), Eq(4));
