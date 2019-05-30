@@ -95,26 +95,23 @@ Status SgxClient::Run(const char *input, size_t input_len,
 // fails, or the enclave does not return any output, returns a non-OK status. In
 // this case, the caller cannot make any assumptions about the contents of
 // |output|. Otherwise, |output| points to a buffer of length *|output_len| that
-// contains output from the enclave.
-static Status finalize(sgx_enclave_id_t eid, const char *input,
-                       size_t input_len, char **output, size_t *output_len) {
-  int result;
-  bridge_size_t bridge_output_len;
-  sgx_status_t sgx_status =
-      ecall_finalize(eid, &result, input, static_cast<bridge_size_t>(input_len),
-                     output, &bridge_output_len);
-  if (output_len) {
-    *output_len = static_cast<size_t>(bridge_output_len);
-  }
-  if (sgx_status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(sgx_status, "Call to ecall_finalize failed");
-  } else if (result || *output_len == 0) {
-    // Non-zero return code indicates that the enclave was not able to return
-    // any output from Finalize().
-    return Status(error::GoogleError::INTERNAL, "No output from enclave");
-  }
+// contains output from the enclave. The caller is responsible for freeing the
+// memory pointed to by |output|.
+Status SgxClient::Finalize(const char *input, size_t input_len,
+    char **output, size_t *output_len) {
+  primitives::UntrustedParameterStack params;
+  params.PushByCopy(primitives::Extent{input, input_len});
+  ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->EnclaveCall(
+      primitives::kSelectorAsyloFini, &params));
 
+  if (params.empty()) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "Parameter stack empty but expected to contain output extent."};
+  }
+  primitives::UntrustedParameterStack::ExtentPtr output_extent = params.Pop();
+  *output_len = output_extent->size();
+  *output = reinterpret_cast<char *>(malloc(*output_len));
+  memcpy(*output, output_extent->As<char>(), *output_len);
   return Status::OkStatus();
 }
 
@@ -359,8 +356,7 @@ Status SgxClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   char *output = nullptr;
   size_t output_len = 0;
 
-  ASYLO_RETURN_IF_ERROR(finalize(primitive_sgx_client_->GetEnclaveId(),
-                                 buf.data(), buf.size(), &output, &output_len));
+  ASYLO_RETURN_IF_ERROR(Finalize(buf.data(), buf.size(), &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.

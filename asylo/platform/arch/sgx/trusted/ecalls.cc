@@ -58,27 +58,6 @@ int ecall_handle_signal(const char *input, bridge_size_t input_len) {
   return result;
 }
 
-// Invokes the enclave finalization entry-point. Returns a non-zero error code
-// on failure.
-int ecall_finalize(const char *input, bridge_size_t input_len, char **output,
-                   bridge_size_t *output_len) {
-  int result = 0;
-  size_t tmp_output_len;
-  try {
-    result =
-        asylo::__asylo_user_fini(input, static_cast<size_t>(input_len), output,
-                                 &tmp_output_len);
-  } catch (...) {
-    LOG(FATAL) << "Uncaught exception in enclave";
-  }
-
-  if (output_len) {
-    *output_len = static_cast<bridge_size_t>(tmp_output_len);
-  }
-
-  return result;
-}
-
 // Invokes the enclave snapshotting entry-point. Returns a non-zero error code
 // on failure.
 int ecall_take_snapshot(char **output, bridge_size_t *output_len) {

@@ -134,6 +134,33 @@ PrimitiveStatus Run(void *context, TrustedParameterStack *params) {
   return PrimitiveStatus(result);
 }
 
+// Handler installed by the runtime to invoke the enclave finalization entry
+// point.
+PrimitiveStatus Finalize(void *context, TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+  auto input_extent = params->Pop();
+  void *tmp_input = input_extent->data();
+  size_t input_len = input_extent->size();
+  ASYLO_RETURN_IF_ERROR(VerifyUntrustedAddressRange(tmp_input, input_len));
+  std::unique_ptr<char> input(reinterpret_cast<char *>(malloc(input_len)));
+  memcpy(input.get(), tmp_input, input_len);
+
+  char *output = nullptr;
+  size_t output_len = 0;
+  int result = 0;
+  try {
+    result = asylo::__asylo_user_fini(input.get(), input_len, &output,
+                                     &output_len);
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  if (!result) {
+    params->PushByCopy(Extent{output, output_len});
+  }
+  enc_untrusted_free(output);
+  return PrimitiveStatus(result);
+}
+
 std::unique_ptr<UntrustedAllocatorStack,
                 decltype(TrustedPrimitives::UntrustedLocalFree) *>
 InitUntrustedStack() {
@@ -175,6 +202,13 @@ void RegisterInternalHandlers() {
   EntryHandler run_handler(Run);
   if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloRun, run_handler)
            .ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+
+  // Register the enclave finalization entry handler.
+  EntryHandler handler{Finalize};
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
+             .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 }
