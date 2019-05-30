@@ -239,4 +239,12 @@ mode_t enc_untrusted_umask(mode_t mask) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_umask, mask);
 }
 
+int enc_untrusted_chmod(const char *path_name, mode_t mode) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_chmod, path_name, mode);
+}
+
+int enc_untrusted_fchmod(int fd, mode_t mode) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_fchmod, fd, mode);
+}
+
 }  // extern "C"

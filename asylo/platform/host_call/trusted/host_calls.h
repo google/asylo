@@ -70,6 +70,8 @@ int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask);
 int enc_untrusted_inotify_rm_watch(int fd, int wd);
 mode_t enc_untrusted_umask(mode_t mask);
+int enc_untrusted_chmod(const char *path, mode_t mode);
+int enc_untrusted_fchmod(int fd, mode_t mode);
 
 #ifdef __cplusplus
 }  // extern "C"

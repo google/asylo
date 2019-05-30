@@ -48,12 +48,36 @@ primitives::PrimitiveStatus TestAccess(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestChmod(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+
+  mode_t mode = params->Pop<mode_t>();
+  const auto path_name = params->Pop();
+
+  *(params->PushAlloc<int>()) =
+      enc_untrusted_chmod(path_name->As<char>(), mode);
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 primitives::PrimitiveStatus TestClose(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
 
   int fd = params->Pop<int>();
   *(params->PushAlloc<int>()) = enc_untrusted_close(fd);
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus TestFchmod(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+
+  mode_t mode = params->Pop<mode_t>();
+  int fd = params->Pop<int>();
+
+  *(params->PushAlloc<int>()) =
+      enc_untrusted_fchmod(fd, mode);
   return primitives::PrimitiveStatus::OkStatus();
 }
 
@@ -381,7 +405,11 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestAccess, primitives::EntryHandler{TestAccess}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestChmod, primitives::EntryHandler{TestChmod}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestClose, primitives::EntryHandler{TestClose}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestFchmod, primitives::EntryHandler{TestFchmod}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestGetPid, primitives::EntryHandler{TestGetpid}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(

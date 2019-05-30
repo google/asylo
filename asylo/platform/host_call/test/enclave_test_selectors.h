@@ -42,7 +42,10 @@ constexpr uint64_t kFirstSelector = primitives::kSelectorUser + 1;
 // untrusted side for validation.
 constexpr uint64_t kTestAccess =
     kFirstSelector + asylo::system_call::kSYS_access;
+constexpr uint64_t kTestChmod = kFirstSelector + asylo::system_call::kSYS_chmod;
 constexpr uint64_t kTestClose = kFirstSelector + asylo::system_call::kSYS_close;
+constexpr uint64_t kTestFchmod =
+    kFirstSelector + asylo::system_call::kSYS_fchmod;
 constexpr uint64_t kTestGetPid =
     kFirstSelector + asylo::system_call::kSYS_getpid;
 constexpr uint64_t kTestKill = kFirstSelector + asylo::system_call::kSYS_kill;

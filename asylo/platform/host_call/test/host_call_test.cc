@@ -108,6 +108,49 @@ TEST_F(HostCallTest, TestAccessNonExistentPath) {
   EXPECT_THAT(params.Pop<int>(), access(path, F_OK));
 }
 
+// Tests enc_untrusted_chmod() by creating a file with multiple mode bits
+// and calling enc_untrusted_chmod() from inside the enclave to remove one mode
+// bit, and verifying that the expected mode gets removed from the file.
+TEST_F(HostCallTest, TestChmod) {
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    EXPECT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  platform::storage::FdCloser fd_closer(fd);
+
+  ASSERT_GE(fd, 0);
+  struct stat sb;
+  ASSERT_NE(stat(path.c_str(), &sb), -1);
+  ASSERT_NE((sb.st_mode & S_IRUSR), 0);
+  primitives::UntrustedParameterStack params;
+  params.PushByCopy<char>(path.c_str(), path.length() + 1);
+  *(params.PushAlloc<mode_t>()) = /*mode=*/ DEFFILEMODE ^ S_IRUSR;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChmod, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  ASSERT_THAT(params.Pop<int>(), Eq(0));
+  ASSERT_NE(stat(path.c_str(), &sb), -1);
+  ASSERT_EQ((sb.st_mode & S_IRUSR), 0);
+  EXPECT_NE(unlink(path.c_str()), -1);
+}
+
+// Tests enc_untrusted_chmod() against a non-existent path.
+TEST_F(HostCallTest, TestChmodNonExistentFile) {
+  const char *path = "illegal_path";
+
+  primitives::UntrustedParameterStack params;
+  params.PushByCopy<char>(path, strlen(path) + 1);
+  *(params.PushAlloc<mode_t>()) = /*mode=*/ S_IWUSR;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChmod, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  EXPECT_THAT(params.Pop<int>(), Eq(access(path, F_OK)));
+}
+
 // Tests enc_untrusted_close() by creating a file to be closed and calling
 // enc_untrusted_close() from inside the enclave to close the file handle.
 TEST_F(HostCallTest, TestClose) {
@@ -133,6 +176,47 @@ TEST_F(HostCallTest, TestCloseNonExistentFile) {
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+}
+
+// Tests enc_untrusted_fchmod() by creating a file with multiple mode bits
+// and calling enc_untrusted_fchmod() from inside the enclave to remove one mode
+// bit, and verifying that the expected mode gets removed from the file.
+TEST_F(HostCallTest, TestFchmod) {
+  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    EXPECT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  platform::storage::FdCloser fd_closer(fd);
+
+  ASSERT_GE(fd, 0);
+  struct stat sb;
+  ASSERT_NE(stat(path.c_str(), &sb), -1);
+  ASSERT_NE((sb.st_mode & S_IRUSR), 0);
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = fd;
+  *(params.PushAlloc<mode_t>()) = /*mode=*/ DEFFILEMODE ^ S_IRUSR;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFchmod, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  ASSERT_THAT(params.Pop<int>(), Eq(0));
+  ASSERT_NE(stat(path.c_str(), &sb), -1);
+  ASSERT_EQ((sb.st_mode & S_IRUSR), 0);
+  EXPECT_NE(unlink(path.c_str()), -1);
+}
+
+// Tests enc_untrusted_fchmod() against a non-existent file descriptor.
+TEST_F(HostCallTest, TestFchmodNonExistentFile) {
+  primitives::UntrustedParameterStack params;
+  *(params.PushAlloc<int>()) = -1;
+  *(params.PushAlloc<mode_t>()) = /*mode=*/ S_IWUSR;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFchmod, &params));
+  ASSERT_THAT(params.size(), Eq(1));
   EXPECT_THAT(params.Pop<int>(), Eq(-1));
 }
 
