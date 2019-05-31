@@ -59,11 +59,12 @@ def asylo_testonly_deps():
     if not native.existing_rule("com_google_googletest"):
         http_archive(
             name = "com_google_googletest",
+            # Commit from 2019 May 29.
             urls = [
-                "https://github.com/google/googletest/archive/eb9225ce361affe561592e0912320b9db84985d0.tar.gz",
+                "https://github.com/google/googletest/archive/8ffb7e5c88b20a297a2e786c480556467496463b.tar.gz",
             ],
-            sha256 = "a4cb4b0c3ebb191b798594aca674ad47eee255dcb4c26885cf7f49777703484f",
-            strip_prefix = "googletest-eb9225ce361affe561592e0912320b9db84985d0",
+            sha256 = "93f19ff843442af5cdcb02250ec5b681803aa7325fcc847452e90f2e3f07ac62",
+            strip_prefix = "googletest-8ffb7e5c88b20a297a2e786c480556467496463b",
         )
 
     # gflags
