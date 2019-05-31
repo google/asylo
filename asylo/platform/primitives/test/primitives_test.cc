@@ -59,7 +59,7 @@ class PrimitivesTest : public ::testing::Test {
     auto exit_call_provider = absl::make_unique<DispatchTable>();
     // Register init exit call invoked during test_enclave.cc initialization.
     MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
-                        UntrustedParameterStack *params)>
+                        NativeParameterStack *params)>
         mock_init_handler;
     if (reload) {
       EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _))
@@ -84,7 +84,7 @@ class PrimitivesTest : public ::testing::Test {
 // on failure.
 int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
                            int32_t value) {
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   params.PushByCopy<int32_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kTimesTwoSelector, &params));
   EXPECT_FALSE(params.empty());
@@ -97,7 +97,7 @@ int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
 // running average, aborting on failure.
 int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
                               int64_t value) {
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   params.PushByCopy<int64_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kAveragePerThreadSelector, &params));
   EXPECT_FALSE(params.empty());
@@ -108,7 +108,7 @@ int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
 
 uint64_t StressMallocsOrDie(const std::shared_ptr<Client> &client,
                             uint64_t malloc_count, uint64_t malloc_size) {
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   params.PushByCopy<uint64_t>(malloc_size);
   params.PushByCopy<uint64_t>(malloc_count);
   ASYLO_EXPECT_OK(client->EnclaveCall(kStressMallocs, &params));
@@ -124,16 +124,16 @@ TEST_F(PrimitivesTest, BadCall) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
 
   // Enter the enclave with an invalid selector.
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   params.PushAlloc(4096);
   Status status = client->EnclaveCall(kNotRegisteredSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 
   // Invoke a selector with invalid number of arguments.
-  UntrustedParameterStack params_0_arg;
+  NativeParameterStack params_0_arg;
   status = client->EnclaveCall(kTimesTwoSelector, &params_0_arg);
   EXPECT_THAT(status, Not(IsOk()));
-  UntrustedParameterStack params_2_arg;
+  NativeParameterStack params_2_arg;
   params_2_arg.PushAlloc(4096);
   params_2_arg.PushAlloc(4096);
   status = client->EnclaveCall(kTimesTwoSelector, &params_2_arg);
@@ -193,7 +193,7 @@ TEST_F(PrimitivesTest, LoadEnclave) {
   EXPECT_TRUE(client->IsClosed());
 
   // Ensure a call to a destroyed enclave fails.
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   int32_t input = 1;
   params.PushByCopy<int32_t>(input);
   Status status = client->EnclaveCall(kTimesTwoSelector, &params);
@@ -216,12 +216,12 @@ TEST_F(PrimitivesTest, AbortEnclave) {
   EXPECT_THAT(MultiplyByTwoOrDie(client, 1), Eq(2));
 
   // Abort the enclave.
-  UntrustedParameterStack abort_params;
+  NativeParameterStack abort_params;
   ASYLO_EXPECT_OK(client->EnclaveCall(kAbortEnclaveSelector, &abort_params));
 
   // Check that we can't enter the enclave again.
   int32_t value = 10;
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   params.PushByCopy<int32_t>(value);
   Status status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
@@ -236,7 +236,7 @@ TEST_F(PrimitivesTest, CallChain) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
 
   auto trusted_fibonacci = [&client](int32_t n) -> int32_t {
-    UntrustedParameterStack params;
+    NativeParameterStack params;
     params.PushByCopy<int32_t>(n);
     ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedFibonacci, &params));
     EXPECT_FALSE(params.empty());
@@ -249,7 +249,7 @@ TEST_F(PrimitivesTest, CallChain) {
   // enclave recursively.
   ExitHandler::Callback fibonacci_handler =
       [&](std::shared_ptr<Client> client, void *context,
-          UntrustedParameterStack *params) -> Status {
+          NativeParameterStack *params) -> Status {
     if (params->empty()) {
       return Status{error::GoogleError::INVALID_ARGUMENT,
                     "TrustedFibonacci called with incorrent argument(s)."};
@@ -339,7 +339,7 @@ TEST_F(PrimitivesTest, ThreadLocalStorageTest) {
 // TrustedPrimitives::IsTrustedExtent().
 TEST_F(PrimitivesTest, TrustedMalloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedMallocTest, &params));
   EXPECT_FALSE(params.empty());
   EXPECT_TRUE(params.Pop<bool>());
@@ -350,7 +350,7 @@ TEST_F(PrimitivesTest, TrustedMalloc) {
 // TrustedPrimitives::IsTrustedExtent().
 TEST_F(PrimitivesTest, UnrustedAlloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   ASYLO_EXPECT_OK(client->EnclaveCall(kUntrustedLocalAllocTest, &params));
   EXPECT_FALSE(params.empty());
   EXPECT_TRUE(params.Pop<bool>());
@@ -363,7 +363,7 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
   const std::string in1 = "Param1";
   const uint64_t in2 = 12345;
   const char in3[] = "Param3";
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   params.PushByCopy<char>(in1.data(), in1.size());
   params.PushByCopy<uint64_t>(in2);
   params.PushByCopy<char>(in3, strlen(in3) + 1);

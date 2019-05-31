@@ -33,7 +33,7 @@ namespace host_call {
 // message if a serialization error has occurred.
 Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context,
-                         primitives::UntrustedParameterStack *parameters);
+                         primitives::NativeParameterStack *parameters);
 
 }  // namespace host_call
 }  // namespace asylo

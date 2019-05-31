@@ -45,7 +45,7 @@ class MockedEnclaveClient : public Client {
  public:
   using MockExitHandlerCallback =
       MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
-                          UntrustedParameterStack *params)>;
+                          NativeParameterStack *params)>;
 
   MockedEnclaveClient() : Client(
     /*name=*/"mock_enclave", absl::make_unique<DispatchTable>()) {}
@@ -54,7 +54,7 @@ class MockedEnclaveClient : public Client {
   bool IsClosed() const override { return false; }
   Status Destroy() override { return Status::OkStatus(); }
   Status EnclaveCallInternal(uint64_t selector,
-                             UntrustedParameterStack *params) override {
+                             NativeParameterStack *params) override {
     return Status::OkStatus();
   }
 };
@@ -94,7 +94,7 @@ TEST(DispatchTableTest, HandlersInvocation) {
   ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   20, ExitHandler{callbacks[2].AsStdFunction()}),
               IsOk());
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   EXPECT_THAT(
       client->exit_call_provider()->InvokeExitHandler(0, &params, client.get()),
       IsOk());
@@ -127,7 +127,7 @@ TEST(DispatchTableTest, HandlersInMultipleThreads) {
       ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
                       i, ExitHandler{callbacks[i].AsStdFunction()}),
                   IsOk());
-      UntrustedParameterStack params;
+      NativeParameterStack params;
       for (size_t c = 0; c < kCount; ++c) {
         absl::SleepFor(absl::Milliseconds(rand_gen(rand_engine)));
         EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(

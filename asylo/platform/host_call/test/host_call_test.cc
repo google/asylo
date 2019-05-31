@@ -86,7 +86,7 @@ TEST_F(HostCallTest, TestAccess) {
   int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_GE(fd, 0);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
   params.PushByCopy<int>(/*value=mode=*/R_OK | W_OK);
 
@@ -99,7 +99,7 @@ TEST_F(HostCallTest, TestAccess) {
 TEST_F(HostCallTest, TestAccessNonExistentPath) {
   const char *path = "illegal_path";
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path, strlen(path) + 1);
   params.PushByCopy<int>(/*value=mode=*/F_OK);
 
@@ -126,7 +126,7 @@ TEST_F(HostCallTest, TestChmod) {
   struct stat sb;
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_NE((sb.st_mode & S_IRUSR), 0);
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
   params.PushByCopy<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
 
@@ -142,7 +142,7 @@ TEST_F(HostCallTest, TestChmod) {
 TEST_F(HostCallTest, TestChmodNonExistentFile) {
   const char *path = "illegal_path";
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path, strlen(path) + 1);
   params.PushByCopy<mode_t>(/*value=mode=*/S_IWUSR);
 
@@ -160,7 +160,7 @@ TEST_F(HostCallTest, TestClose) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(fcntl(fd, F_GETFD), -1);  // check fd is an open file descriptor.
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(fd);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &params));
@@ -171,7 +171,7 @@ TEST_F(HostCallTest, TestClose) {
 // Tries closing a non-existent file handle by calling enc_untrusted_close()
 // from inside the enclave.
 TEST_F(HostCallTest, TestCloseNonExistentFile) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/123456);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &params));
@@ -197,7 +197,7 @@ TEST_F(HostCallTest, TestFchmod) {
   struct stat sb;
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_NE((sb.st_mode & S_IRUSR), 0);
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(fd);
   params.PushByCopy<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
 
@@ -211,7 +211,7 @@ TEST_F(HostCallTest, TestFchmod) {
 
 // Tests enc_untrusted_fchmod() against a non-existent file descriptor.
 TEST_F(HostCallTest, TestFchmodNonExistentFile) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/-1);
   params.PushByCopy<mode_t>(/*value=mode=*/S_IWUSR);
 
@@ -223,7 +223,7 @@ TEST_F(HostCallTest, TestFchmodNonExistentFile) {
 // Tests enc_untrusted_getpid() by calling it from inside the enclave and
 // verifying its return value against pid obtained from native system call.
 TEST_F(HostCallTest, TestGetpid) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPid, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
   EXPECT_THAT(params.Pop<pid_t>(), Eq(getpid()));
@@ -238,7 +238,7 @@ TEST_F(HostCallTest, TestKill) {
     sleep(1000);  // The child process waits until it's killed by the parent.
   }
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<pid_t>(/*value=pid=*/pid);
   params.PushByCopy<int>(/*value=sig=*/SIGABRT);
 
@@ -259,7 +259,7 @@ TEST_F(HostCallTest, TestLink) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(oldpath.c_str(), oldpath.length() + 1);
   params.PushByCopy<char>(newpath.c_str(), newpath.length() + 1);
 
@@ -282,7 +282,7 @@ TEST_F(HostCallTest, TestLseek) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   EXPECT_THAT(write(fd, "hello", 5), Eq(5));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<off_t>(/*value=offset=*/2);
   params.PushByCopy<int>(/*value=whence=*/SEEK_SET);
@@ -301,7 +301,7 @@ TEST_F(HostCallTest, TestLseekBadReturn) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   EXPECT_THAT(write(fd, "hello", 5), Eq(5));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<off_t>(/*value=offset=*/0);
   params.PushByCopy<int>(/*value=whence=*/1000);
@@ -316,7 +316,7 @@ TEST_F(HostCallTest, TestLseekBadReturn) {
 TEST_F(HostCallTest, TestMkdir) {
   std::string path = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_make");
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
   params.PushByCopy<mode_t>(/*value=mode=*/0777);
 
@@ -331,7 +331,7 @@ TEST_F(HostCallTest, TestMkdir) {
 TEST_F(HostCallTest, TestMkdirNonExistentPath) {
   std::string path = absl::StrCat("/non-existent-path/dir_to_make");
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
   params.PushByCopy<mode_t>(/*value=mode=*/0777);
 
@@ -345,7 +345,7 @@ TEST_F(HostCallTest, TestMkdirNonExistentPath) {
 TEST_F(HostCallTest, TestOpen) {
   std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
   params.PushByCopy<int>(/*value=flags=*/O_RDWR | O_CREAT | O_TRUNC);
   params.PushByCopy<mode_t>(/*value=mode=*/S_IRUSR | S_IWUSR);
@@ -364,7 +364,7 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
   params.PushByCopy<int>(/*value=flags*/ O_RDWR | O_CREAT | O_TRUNC);
 
@@ -381,7 +381,7 @@ TEST_F(HostCallTest, TestUnlink) {
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &params));
@@ -394,7 +394,7 @@ TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
   const char *path = "obviously-illegal-file.tmp";
   ASSERT_THAT(access(path, F_OK), Eq(-1));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(path, strlen(path) + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &params));
@@ -405,7 +405,7 @@ TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
 // Tests enc_untrusted_getuid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getuid().
 TEST_F(HostCallTest, TestGetuid) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
   EXPECT_THAT(params.Pop<uid_t>(), Eq(getuid()));
@@ -415,7 +415,7 @@ TEST_F(HostCallTest, TestGetuid) {
 // certain permission bits(S_IWGRP | S_IWOTH) and verifying newly created
 // directory or file will not have masked permission.
 TEST_F(HostCallTest, TestUmask) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=mask=*/S_IWGRP | S_IWOTH);
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
@@ -456,7 +456,7 @@ TEST_F(HostCallTest, TestUmask) {
 // Tests enc_untrusted_getgid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getgid().
 TEST_F(HostCallTest, TestGetgid) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetGid, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
   EXPECT_THAT(params.Pop<gid_t>(), Eq(getgid()));
@@ -465,7 +465,7 @@ TEST_F(HostCallTest, TestGetgid) {
 // Tests enc_untrusted_geteuid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native geteuid().
 TEST_F(HostCallTest, TestGetEuid) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEuid, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
   EXPECT_THAT(params.Pop<uid_t>(), Eq(geteuid()));
@@ -474,7 +474,7 @@ TEST_F(HostCallTest, TestGetEuid) {
 // Tests enc_untrusted_getegid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getegid().
 TEST_F(HostCallTest, TestGetEgid) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEgid, &params));
   ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
   EXPECT_THAT(params.Pop<gid_t>(), Eq(getegid()));
@@ -489,7 +489,7 @@ TEST_F(HostCallTest, TestRename) {
   creat(oldpath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(oldpath.c_str(), strlen(oldpath.c_str()) + 1);
   params.PushByCopy<char>(newpath.c_str(), strlen(newpath.c_str()) + 1);
 
@@ -521,7 +521,7 @@ TEST_F(HostCallTest, TestRead) {
 
   // We do not push the empty read buffer on the stack since a read buffer would
   // need to be created inside the enclave anyway.
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<size_t>(/*value=count=*/expected_content.length() + 1);
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRead, &params));
@@ -543,7 +543,7 @@ TEST_F(HostCallTest, TestWrite) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   std::string write_buf = "text to be written";
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<char>(write_buf.c_str(), write_buf.length() + 1);
   params.PushByCopy<size_t>(/*value=count=*/write_buf.length() + 1);
@@ -571,7 +571,7 @@ TEST_F(HostCallTest, TestSymlink) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
   params.PushByCopy<char>(target.c_str(), target.length() + 1);
 
@@ -597,7 +597,7 @@ TEST_F(HostCallTest, TestReadlink) {
   // Create a symlink to be read by readlink.
   ASSERT_THAT(symlink(test_file.c_str(), sym_file.c_str()), Eq(0));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(sym_file.c_str(), sym_file.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadLink, &params));
@@ -628,7 +628,7 @@ TEST_F(HostCallTest, TestTruncate) {
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   constexpr int kTruncLen = 5;
   params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
   params.PushByCopy<off_t>(/*value=length=*/kTruncLen);
@@ -651,7 +651,7 @@ TEST_F(HostCallTest, TestRmdir) {
   std::string dir_to_del = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_del");
   ASSERT_THAT(mkdir(dir_to_del.c_str(), O_CREAT | O_RDWR), Eq(0));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(dir_to_del.c_str(), dir_to_del.length() + 1);
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRmdir, &params));
@@ -666,7 +666,7 @@ TEST_F(HostCallTest, TestRmdir) {
 // Tests enc_untrusted_socket() by trying to obtain a valid (greater than 0)
 // socket file descriptor when the method is called from inside the enclave.
 TEST_F(HostCallTest, TestSocket) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   // Setup bidirectional IPv6 socket.
   params.PushByCopy<int>(/*value=domain=*/AF_INET6);
   params.PushByCopy<int>(/*value=type=*/SOCK_STREAM);
@@ -699,7 +699,7 @@ TEST_F(HostCallTest, TestFcntl) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   // Get file flags and compare to those obtained from native fcntl() syscall.
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<int>(/*value=cmd=*/F_GETFL);
   params.PushByCopy<int>(/*value=arg=*/0);
@@ -725,7 +725,7 @@ TEST_F(HostCallTest, TestFcntl) {
 }
 
 TEST_F(HostCallTest, TestFcntlInvalidCmd) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/0);
   params.PushByCopy<int>(/*value=cmd=*/10000000);
   params.PushByCopy<int>(/*value=arg=*/0);
@@ -744,7 +744,7 @@ TEST_F(HostCallTest, TestChown) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
   params.PushByCopy<uid_t>(/*value=owner=*/getuid());
   params.PushByCopy<gid_t>(/*value=group=*/getgid());
@@ -769,7 +769,7 @@ TEST_F(HostCallTest, TestFChown) {
   EXPECT_THAT(sb.st_uid, Eq(getuid()));
   EXPECT_THAT(sb.st_gid, Eq(getgid()));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<uid_t>(/*value=owner=*/ getuid());
   params.PushByCopy<gid_t>(/*value=group=*/ getgid());
@@ -811,7 +811,7 @@ TEST_F(HostCallTest, TestSetSockOpt) {
       bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
       Not(Eq(-1)));
 
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=sockfd=*/socket_fd);
   params.PushByCopy<int>(/*value=level=*/SOL_SOCKET);
   params.PushByCopy<int>(/*value=optname=*/SO_REUSEADDR);
@@ -843,7 +843,7 @@ TEST_F(HostCallTest, TestFlock) {
   int klinux_lock = LOCK_EX;
   int lock;
   FromkLinuxFLockOperation(&klinux_lock, &lock);
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(/*value=fd=*/fd);
   params.PushByCopy<int>(/*value=operation=*/lock);
 
@@ -858,7 +858,7 @@ TEST_F(HostCallTest, TestFlock) {
 // a new inotify event queue is returned. Only the return value, i.e. the file
 // descriptor value is verified to be positive.
 TEST_F(HostCallTest, TestInotifyInit1) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   int inotify_flag;
   int klinux_inotify_flag = IN_NONBLOCK;
   FromkLinuxInotifyFlag(&klinux_inotify_flag, &inotify_flag);
@@ -881,7 +881,7 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
 
   // Call inotify_add_watch from inside the enclave for monitoring tmpdir for
   // all events supported by inotify.
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(inotify_fd);
   params.PushByCopy<char>(FLAGS_test_tmpdir.c_str(),
                           FLAGS_test_tmpdir.length() + 1);
@@ -963,7 +963,7 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
   EXPECT_THAT(event->cookie, Eq(0));
 
   // Call inotify_rm_watch from inside the enclave, verify the return value.
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy<int>(inotify_fd);
   params.PushByCopy<int>(wd);
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyRmWatch, &params));

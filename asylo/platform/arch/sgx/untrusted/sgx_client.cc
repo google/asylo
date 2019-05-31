@@ -50,7 +50,7 @@ namespace asylo {
 Status SgxClient::Initialize(
     const char *name, size_t name_len, const char *input, size_t input_len,
     char **output, size_t *output_len) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy(primitives::Extent{name, name_len});
   params.PushByCopy(primitives::Extent{input, input_len});
   ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->EnclaveCall(
@@ -60,7 +60,7 @@ Status SgxClient::Initialize(
     return {error::GoogleError::INVALID_ARGUMENT,
             "Parameter stack empty but expected to contain output extent."};
   }
-  primitives::UntrustedParameterStack::ExtentPtr output_extent = params.Pop();
+  primitives::NativeParameterStack::ExtentPtr output_extent = params.Pop();
   *output_len = output_extent->size();
   *output = reinterpret_cast<char *>(malloc(*output_len));
   memcpy(*output, output_extent->As<char>(), *output_len);
@@ -75,7 +75,7 @@ Status SgxClient::Initialize(
 // pointed to by |output|.
 Status SgxClient::Run(const char *input, size_t input_len,
     char **output, size_t *output_len) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy(primitives::Extent{input, input_len});
   ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->EnclaveCall(
       primitives::kSelectorAsyloRun, &params));
@@ -84,7 +84,7 @@ Status SgxClient::Run(const char *input, size_t input_len,
     return {error::GoogleError::INVALID_ARGUMENT,
             "Parameter stack empty but expected to contain output extent."};
   }
-  primitives::UntrustedParameterStack::ExtentPtr output_extent = params.Pop();
+  primitives::NativeParameterStack::ExtentPtr output_extent = params.Pop();
   *output_len = output_extent->size();
   *output = reinterpret_cast<char *>(malloc(*output_len));
   memcpy(*output, output_extent->As<char>(), *output_len);
@@ -99,7 +99,7 @@ Status SgxClient::Run(const char *input, size_t input_len,
 // memory pointed to by |output|.
 Status SgxClient::Finalize(const char *input, size_t input_len,
     char **output, size_t *output_len) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy(primitives::Extent{input, input_len});
   ASYLO_RETURN_IF_ERROR(primitive_sgx_client_->EnclaveCall(
       primitives::kSelectorAsyloFini, &params));
@@ -108,7 +108,7 @@ Status SgxClient::Finalize(const char *input, size_t input_len,
     return {error::GoogleError::INVALID_ARGUMENT,
             "Parameter stack empty but expected to contain output extent."};
   }
-  primitives::UntrustedParameterStack::ExtentPtr output_extent = params.Pop();
+  primitives::NativeParameterStack::ExtentPtr output_extent = params.Pop();
   *output_len = output_extent->size();
   *output = reinterpret_cast<char *>(malloc(*output_len));
   memcpy(*output, output_extent->As<char>(), *output_len);
@@ -363,7 +363,7 @@ Status SgxClient::EnterAndFinalize(const EnclaveFinal &final_input) {
 }
 
 Status SgxClient::EnterAndDonateThread() {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   Status status = primitive_sgx_client_->EnclaveCall(
       primitives::kSelectorAsyloDonateThread, &params);
   if (!status.ok()) {

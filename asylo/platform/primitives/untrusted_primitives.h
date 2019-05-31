@@ -57,9 +57,8 @@ StatusOr<std::shared_ptr<class Client>> LoadEnclave(Args &&... args) {
 
 // Callback structure for dispatching messages from the enclave.
 struct ExitHandler {
-  using Callback =
-      std::function<Status(std::shared_ptr<class Client> enclave, void *,
-                           ParameterStack<malloc, free> *)>;
+  using Callback = std::function<Status(std::shared_ptr<class Client> enclave,
+                                        void *, NativeParameterStack *)>;
 
   ExitHandler() : context(nullptr) {}
 
@@ -81,9 +80,6 @@ struct ExitHandler {
   void *context;
 };
 
-// ParameterStack to be used in untrusted code.
-using UntrustedParameterStack = ParameterStack<malloc, free>;
-
 // A reference to an enclave held by untrusted code.
 class Client : public std::enable_shared_from_this<Client> {
  public:
@@ -102,7 +98,7 @@ class Client : public std::enable_shared_from_this<Client> {
 
     // Finds and invokes an exit handler. Returns an error status on failure.
     virtual Status InvokeExitHandler(uint64_t untrusted_selector,
-                                     UntrustedParameterStack *params,
+                                     NativeParameterStack *params,
                                      Client *client) ASYLO_MUST_USE_RESULT = 0;
   };
 
@@ -145,11 +141,11 @@ class Client : public std::enable_shared_from_this<Client> {
   // same address space.
   // Conversely, results are copied and returned in 'params'.
   Status EnclaveCall(uint64_t selector,
-                     UntrustedParameterStack *params) ASYLO_MUST_USE_RESULT;
+                     NativeParameterStack *params) ASYLO_MUST_USE_RESULT;
 
   // Enclave exit callback function shared with the enclave.
   static PrimitiveStatus ExitCallback(uint64_t untrusted_selector,
-                                      UntrustedParameterStack *params);
+                                      NativeParameterStack *params);
 
   // Accessor to exit call provider.
   ExitCallProvider *exit_call_provider() { return exit_call_provider_.get(); }
@@ -161,7 +157,7 @@ class Client : public std::enable_shared_from_this<Client> {
 
   // Provides implementation of EnclaveCall.
   virtual Status EnclaveCallInternal(uint64_t selector,
-                                     UntrustedParameterStack *params)
+                                     NativeParameterStack *params)
       ASYLO_MUST_USE_RESULT = 0;
 
  private:

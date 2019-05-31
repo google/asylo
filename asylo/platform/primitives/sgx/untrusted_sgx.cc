@@ -197,7 +197,7 @@ bool SgxEnclaveClient::IsClosed() const {
 }
 
 Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
-                                             UntrustedParameterStack *params) {
+                                             NativeParameterStack *params) {
   ms_ecall_dispatch_trusted_call_t ms;
   ms.ms_selector = selector;
   ms.ms_buffer = reinterpret_cast<void *>(params);

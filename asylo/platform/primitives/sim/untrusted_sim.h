@@ -59,7 +59,7 @@ class SimEnclaveClient : public Client {
   ~SimEnclaveClient() override;
   Status Destroy() override;
   Status EnclaveCallInternal(uint64_t selector,
-                             UntrustedParameterStack *params) override;
+                             NativeParameterStack *params) override;
   bool IsClosed() const override;
 
  private:

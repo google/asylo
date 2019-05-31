@@ -35,13 +35,13 @@ namespace primitives {
 
 thread_local Client *Client::current_client_ = nullptr;
 
-Status Client::EnclaveCall(uint64_t selector, UntrustedParameterStack *params) {
+Status Client::EnclaveCall(uint64_t selector, NativeParameterStack *params) {
   ScopedCurrentClient scoped_client(this);
   return EnclaveCallInternal(selector, params);
 }
 
 PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
-                                     UntrustedParameterStack *params) {
+                                     NativeParameterStack *params) {
   if (!current_client_->exit_call_provider()) {
     return PrimitiveStatus{error::GoogleError::FAILED_PRECONDITION,
                            "Exit call provider not set yet"};

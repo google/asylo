@@ -37,7 +37,7 @@ static constexpr char kHello[] = "Hello";
 
 // When the enclave asks for it, send "Hello"
 Status hello_handler(std::shared_ptr<Client> client, void *context,
-                     UntrustedParameterStack *params) {
+                     NativeParameterStack *params) {
   // Push our message on to the parameter stack to pass to the enclave
   params->PushByCopy(Extent{const_cast<char *>(kHello), strlen(kHello)});
   return Status::OkStatus();
@@ -61,7 +61,7 @@ Status call_enclave() {
   auto status = client->exit_call_provider()->RegisterExitHandler(
       kExternalHelloHandler, ExitHandler{hello_handler});
 
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   status = client->EnclaveCall(kHelloEnclaveSelector, &params);
   if (status.ok()) {
     auto span = params.Pop();

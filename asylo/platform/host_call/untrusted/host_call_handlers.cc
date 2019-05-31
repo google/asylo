@@ -26,7 +26,7 @@ namespace host_call {
 
 Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context,
-                         primitives::UntrustedParameterStack *parameters) {
+                         primitives::NativeParameterStack *parameters) {
   if (parameters->empty()) {
     return Status(
         error::GoogleError::FAILED_PRECONDITION,

@@ -36,7 +36,7 @@ constexpr size_t kNumIterations = 64;
 constexpr size_t kNumParams = 256;
 
 TEST(ParameterStackTest, PushPopSpans) {
-  ParameterStack<malloc, free> params;
+  NativeParameterStack params;
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     EXPECT_TRUE(params.empty());
     EXPECT_EQ(params.size(), 0);
@@ -54,7 +54,7 @@ TEST(ParameterStackTest, PushPopSpans) {
 }
 
 TEST(ParameterStackTest, PushPopMixture) {
-  ParameterStack<malloc, free> params;
+  NativeParameterStack params;
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     // Push many parameters into an empty stack.
     EXPECT_TRUE(params.empty());
@@ -91,7 +91,7 @@ TEST(ParameterStackTest, PushPopMixture) {
 }
 
 TEST(ParameterStackTest, PushByCopyPointerCopyTest) {
-  ParameterStack<malloc, free> params;
+  NativeParameterStack params;
 
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     const char *buffer = "hello world";
@@ -102,7 +102,7 @@ TEST(ParameterStackTest, PushByCopyPointerCopyTest) {
 }
 
 TEST(ParameterStackTest, PushCopyTest) {
-  ParameterStack<malloc, free> params;
+  NativeParameterStack params;
 
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
     params.PushByCopy(Extent{&iter, sizeof(iter)});

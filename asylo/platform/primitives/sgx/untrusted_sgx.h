@@ -76,7 +76,7 @@ class SgxEnclaveClient : public Client {
 
  protected:
   Status EnclaveCallInternal(uint64_t selector,
-                             UntrustedParameterStack *params) override;
+                             NativeParameterStack *params) override;
   bool IsClosed() const override;
 
  private:

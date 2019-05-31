@@ -32,7 +32,7 @@ namespace host_call {
 namespace {
 
 TEST(HostCallHandlersTest, EmptyParameterStackTest) {
-  primitives::UntrustedParameterStack empty_params;
+  primitives::NativeParameterStack empty_params;
 
   EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &empty_params),
               StatusIs(error::GoogleError::FAILED_PRECONDITION,
@@ -41,7 +41,7 @@ TEST(HostCallHandlersTest, EmptyParameterStackTest) {
 }
 
 TEST(HostCallHandlersTest, MoreThanOneRequestOnStackTest) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   params.PushByCopy(1);  // request 1
   params.PushByCopy(1);  // request 2
 
@@ -60,7 +60,7 @@ TEST(HostCallHandlersTest, MoreThanOneRequestOnStackTest) {
 // syscall.
 TEST(HostCallHandlersTest, ValidRequestOnParameterStackTest) {
   std::array<uint64_t, system_call::kParameterMax> request_params;
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   primitives::Extent request;  // To be owned by params.
 
   auto request_extent_allocator = [&params](size_t size) {
@@ -84,7 +84,7 @@ TEST(HostCallHandlersTest, ValidRequestOnParameterStackTest) {
 // interpreted from the request is illegal. Check if the syscall was made
 // and it returned appropriate google error code for the illegal sysno.
 TEST(HostCallHandlersTest, InvalidRequestOnParameterStackTest) {
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   char request_str[] = "illegal_request";
   params.PushByCopy(primitives::Extent{request_str, strlen(request_str)});
   auto status = SystemCallHandler(nullptr, nullptr, &params);

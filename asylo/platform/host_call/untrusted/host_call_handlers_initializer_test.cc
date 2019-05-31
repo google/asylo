@@ -45,7 +45,7 @@ class MockedEnclaveClient : public primitives::Client {
   }
 
   Status EnclaveCallInternal(
-      uint64_t selector, primitives::UntrustedParameterStack *params) override {
+      uint64_t selector, primitives::NativeParameterStack *params) override {
     LOG(FATAL);
     return Status::OkStatus();
   }
@@ -71,7 +71,7 @@ TEST(HostCallHandlersInitializerTest, RegisterSystemCallHandlerTest) {
 
   // Verify that |kSystemCallHandler| points to |SystemCallHandler| by making a
   // call with an empty request.
-  primitives::UntrustedParameterStack params;
+  primitives::NativeParameterStack params;
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSystemCallHandler, &params, client.get()),
               StatusIs(error::GoogleError::FAILED_PRECONDITION));

@@ -1317,8 +1317,7 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
   asylo::primitives::PrimitiveStatus status =
       asylo::primitives::Client::ExitCallback(
           selector,
-          reinterpret_cast<asylo::primitives::UntrustedParameterStack *>(
-              buffer));
+          reinterpret_cast<asylo::primitives::NativeParameterStack *>(buffer));
 
   return status.error_code();
 }

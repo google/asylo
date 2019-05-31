@@ -235,20 +235,15 @@ class ParameterStack {
   size_t size_ = 0;
 };
 
+// ParameterStack that allocates memory in its local context using malloc and
+// free provided by the local environment.
+using NativeParameterStack = ParameterStack<malloc, free>;
+
 // Type signature of the enclave entry function pointer. All data extents in
 // `params` are expected to be located in untrusted memory.
-using EnclaveCallPtr = PrimitiveStatus (*)(
-    uint64_t trusted_selector,              // Trusted selector value.
-    ParameterStack<malloc, free> *params);  // Parameters list.
-
-// Type signature of the enclave exit function pointer. Templated, because
-// ALLOCATOR and FREER are declared differently when ExitCallPtr is used by
-// trusted and untrusted code.
-template <void *(*ALLOCATOR)(size_t), void (*FREER)(void *)>
-using ExitCallPtr = PrimitiveStatus (*)(
-    void *context,                              // Uninterpreted context.
-    uint64_t untrusted_selector,                // Untrusted selector value.
-    ParameterStack<ALLOCATOR, FREER> *params);  // Parameters list
+using EnclaveCallPtr =
+    PrimitiveStatus (*)(uint64_t trusted_selector,  // Trusted selector value.
+                        NativeParameterStack *params);  // Parameters list.
 
 }  // namespace primitives
 }  // namespace asylo

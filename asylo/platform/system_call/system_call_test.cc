@@ -87,7 +87,7 @@ asylo::primitives::PrimitiveStatus DispatchWithCustomAllocator(
   primitives::Extent response;
 
   // The stack going to own `response`
-  primitives::UntrustedParameterStack stack;
+  primitives::NativeParameterStack stack;
 
   auto custom_response_allocator = [&stack](size_t size) -> primitives::Extent {
     return stack.PushAlloc(size);

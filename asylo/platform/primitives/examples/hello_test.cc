@@ -63,7 +63,7 @@ class HelloTest : public ::testing::Test {
  private:
   // When the enclave asks for it, send "Test"
   static Status test_handler(std::shared_ptr<Client> client, void *context,
-                             UntrustedParameterStack *params) {
+                             NativeParameterStack *params) {
     static std::array<char, 4> test_data{{'T', 'e', 's', 't'}};
     // Push our message on to the parameter stack to pass to the enclave
     params->PushByCopy(Extent{test_data.data(), test_data.size()});
@@ -74,7 +74,7 @@ class HelloTest : public ::testing::Test {
 TEST_F(HelloTest, Hello) {
   auto client = LoadTestEnclaveOrDie();
 
-  UntrustedParameterStack params;
+  NativeParameterStack params;
   auto status = client->EnclaveCall(kHelloEnclaveSelector, &params);
   EXPECT_FALSE(params.empty());
   auto message = params.Pop();

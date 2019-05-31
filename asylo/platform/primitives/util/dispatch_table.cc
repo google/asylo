@@ -41,7 +41,7 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
 
 // Finds and invokes an exit handler, setting an error status on failure.
 Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
-                                        UntrustedParameterStack *params,
+                                        NativeParameterStack *params,
                                         Client *client) {
   ExitHandler handler;
   {

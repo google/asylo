@@ -46,8 +46,8 @@ namespace primitives {
 namespace {
 
 PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector, void *params) {
-  return Client::ExitCallback(
-      untrusted_selector, reinterpret_cast<UntrustedParameterStack *>(params));
+  return Client::ExitCallback(untrusted_selector,
+                              reinterpret_cast<NativeParameterStack *>(params));
 }
 
 void *sim_asylo_local_alloc_handler(size_t size) { return malloc(size); }
@@ -88,7 +88,7 @@ void InitTrampolineOnce() {
 SimEnclaveClient::~SimEnclaveClient() {
   if (dl_handle_) {
     if (enclave_call_) {
-      UntrustedParameterStack fini_params;
+      NativeParameterStack fini_params;
       enclave_call_(kSelectorAsyloFini, &fini_params);
     }
     dlclose(dl_handle_);
@@ -145,7 +145,7 @@ Status SimEnclaveClient::Destroy() {
 }
 
 Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
-                                             UntrustedParameterStack *params) {
+                                             NativeParameterStack *params) {
   PrimitiveStatus primitive_status;
 
   // Ensure client is properly initialized.
