@@ -115,16 +115,6 @@ Status SgxClient::Finalize(const char *input, size_t input_len,
   return Status::OkStatus();
 }
 
-static int donate_thread(sgx_enclave_id_t eid, sgx_status_t *status) {
-  int result;
-  sgx_status_t local_status = ecall_donate_thread(eid, &result);
-  if (status) *status = local_status;
-  if (local_status != SGX_SUCCESS) {
-    return -1;
-  }
-  return result;
-}
-
 // Enters the enclave and invokes the signal handle entry-point. If the ecall
 // fails, returns a non-OK status.
 static Status handle_signal(sgx_enclave_id_t eid, const char *input,
@@ -373,16 +363,9 @@ Status SgxClient::EnterAndFinalize(const EnclaveFinal &final_input) {
 }
 
 Status SgxClient::EnterAndDonateThread() {
-  sgx_status_t sgx_status;
-  int result =
-      donate_thread(primitive_sgx_client_->GetEnclaveId(), &sgx_status);
-  Status status;
-  if (sgx_status != SGX_SUCCESS) {
-    status = Status(sgx_status, "Failed to donate thread to enclave");
-  } else if (result) {
-    status = Status(static_cast<error::PosixError>(result),
-                    "Failed to donate thread to enclave");
-  }
+  primitives::UntrustedParameterStack params;
+  Status status = primitive_sgx_client_->EnclaveCall(
+      primitives::kSelectorAsyloDonateThread, &params);
   if (!status.ok()) {
     LOG(ERROR) << "EnterAndDonateThread failed " << status;
   }

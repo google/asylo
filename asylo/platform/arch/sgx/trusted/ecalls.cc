@@ -40,8 +40,6 @@
 // code into trusted memory and then passed here. Consequently, there is no
 // possibility for TOCTOU attacks on these parameters.
 
-int ecall_donate_thread() { return asylo::__asylo_threading_donate(); }
-
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
 int ecall_handle_signal(const char *input, bridge_size_t input_len) {

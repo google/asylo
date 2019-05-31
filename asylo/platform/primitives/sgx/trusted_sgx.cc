@@ -161,6 +161,19 @@ PrimitiveStatus Finalize(void *context, TrustedParameterStack *params) {
   return PrimitiveStatus(result);
 }
 
+// Handler installed by the runtime to invoke the enclave donate thread entry
+// point.
+PrimitiveStatus DonateThread(void *context, TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 0);
+  int result;
+  try {
+    result = asylo::__asylo_threading_donate();;
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  return PrimitiveStatus(result);
+}
+
 std::unique_ptr<UntrustedAllocatorStack,
                 decltype(TrustedPrimitives::UntrustedLocalFree) *>
 InitUntrustedStack() {
@@ -206,9 +219,16 @@ void RegisterInternalHandlers() {
   }
 
   // Register the enclave finalization entry handler.
-  EntryHandler handler{Finalize};
-  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
-             .ok()) {
+  EntryHandler finalize_handler{Finalize};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          kSelectorAsyloFini, finalize_handler).ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+
+  // Register the enclave donate thread entry handler.
+  EntryHandler donate_thread_handler{DonateThread};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          kSelectorAsyloDonateThread, donate_thread_handler).ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 }

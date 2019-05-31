@@ -51,11 +51,6 @@ enclave {
     public int ecall_dispatch_trusted_call(uint64_t selector,
                                           [user_check] void *buffer);
 
-    // Intended for use by the SGX pthreads implementation.
-    //
-    // Donates the calling thread to the enclave.
-    public int ecall_donate_thread();
-
     // Intended for use by enclave signal implementaion.
     //
     // Invokes signal handling entry point.
