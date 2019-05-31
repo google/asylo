@@ -323,6 +323,17 @@ primitives::PrimitiveStatus TestChown(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestFChown(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+
+  auto group = params->Pop<gid_t>();
+  auto owner = params->Pop<uid_t>();
+  int fd = params->Pop<int>();
+  params->PushByCopy<int>(enc_untrusted_fchown(fd, owner, group));
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 primitives::PrimitiveStatus TestSetsockopt(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 4);
@@ -449,6 +460,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestFcntl, primitives::EntryHandler{TestFcntl}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestChown, primitives::EntryHandler{TestChown}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestFChown, primitives::EntryHandler{TestFChown}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestSetSockOpt, primitives::EntryHandler{TestSetsockopt}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(

@@ -754,6 +754,40 @@ TEST_F(HostCallTest, TestChown) {
   EXPECT_THAT(params.Pop<int>(), Eq(0));
 }
 
+// Tests enc_untrusted_fchown() by attempting to change file ownership by making
+// the host call from inside the enclave and verifying the return value.
+TEST_F(HostCallTest, TestFChown) {
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  struct stat sb = {};
+  EXPECT_THAT(fstat(fd, &sb), Eq(0));
+  EXPECT_THAT(sb.st_uid, Eq(getuid()));
+  EXPECT_THAT(sb.st_gid, Eq(getgid()));
+
+  primitives::UntrustedParameterStack params;
+  params.PushByCopy<int>(/*value=fd=*/fd);
+  params.PushByCopy<uid_t>(/*value=owner=*/ getuid());
+  params.PushByCopy<gid_t>(/*value=group=*/ getgid());
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+
+  // Attempt to fchown with invalid uid and gid, should return an error.
+  params.PushByCopy<int>(/*value=fd=*/fd);
+  params.PushByCopy<uid_t>(/*value=owner=*/ 0);
+  params.PushByCopy<gid_t>(/*value=group=*/ 0);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+}
+
 // Tests enc_untrusted_setsockopt() by creating a socket on the untrusted side,
 // passing the socket file descriptor to the trusted side, and invoking
 // the host call for setsockopt() from inside the enclave. Verifies the return

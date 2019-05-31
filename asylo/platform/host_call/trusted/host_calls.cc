@@ -200,6 +200,11 @@ int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group) {
                                group);
 }
 
+int enc_untrusted_fchown(int fd, uid_t owner, gid_t group) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_fchown, fd, owner,
+                               group);
+}
+
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
   int klinux_option_name;
