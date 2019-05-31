@@ -15,7 +15,6 @@
  * limitations under the License.
  *
  */
-#include "asylo/platform/primitives/examples/hello_enclave.h"
 
 #include <array>
 #include <memory>
@@ -24,41 +23,35 @@
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "gflags/gflags.h"
+#include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/sim/untrusted_sim.h"
+#include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
-DEFINE_string(enclave_binary, "",
-              "Path to the Sim enclave binary to be loaded");
-
 namespace asylo {
 namespace primitives {
 namespace test {
 
 class HelloTest : public ::testing::Test {
- public:
+ protected:
   // Loads an instance of a sim test enclave, aborting on failure.
-  StatusOr<std::shared_ptr<Client>> LoadTestEnclave() {
-    std::shared_ptr<Client> client;
-    ASYLO_ASSIGN_OR_RETURN(
-        client, LoadEnclave<SimBackend>(/*enclave_name=*/"hello_test",
-                                        FLAGS_enclave_binary,
-                                        absl::make_unique<DispatchTable>()));
-    ASYLO_RETURN_IF_ERROR(client->exit_call_provider()->RegisterExitHandler(
-        kExternalHelloHandler, ExitHandler{test_handler}));
-    return client;
+  void SetUp() override {
+    client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
+        /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());
+    ASYLO_EXPECT_OK(client_->exit_call_provider()->RegisterExitHandler(
+       kExternalHelloHandler, ExitHandler{test_handler}));
   }
 
-  // Loads an instance of a sim test enclave, aborting on failure.
-  std::shared_ptr<Client> LoadTestEnclaveOrDie() {
-    auto result = LoadTestEnclave();
-    EXPECT_THAT(result.status(), IsOk());
-    return result.ValueOrDie();
+  void TearDown() override {
+    ASYLO_EXPECT_OK(client_->Destroy());
   }
+
+  std::shared_ptr<Client> client_;
 
  private:
   // When the enclave asks for it, send "Test"
@@ -72,10 +65,8 @@ class HelloTest : public ::testing::Test {
 };
 
 TEST_F(HelloTest, Hello) {
-  auto client = LoadTestEnclaveOrDie();
-
   NativeParameterStack params;
-  auto status = client->EnclaveCall(kHelloEnclaveSelector, &params);
+  auto status = client_->EnclaveCall(kHelloEnclaveSelector, &params);
   EXPECT_FALSE(params.empty());
   auto message = params.Pop();
   EXPECT_TRUE(params.empty());

@@ -23,12 +23,9 @@
 #include "gflags/gflags.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/sim/untrusted_sim.h"
+#include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
-#include "asylo/util/status_macros.h"
-
-DEFINE_string(enclave_path, "",
-              "Path to the Simulated enclave binary (hello_world.so)");
 
 namespace asylo {
 namespace primitives {
@@ -44,7 +41,6 @@ Status hello_handler(std::shared_ptr<Client> client, void *context,
 }
 
 Status call_enclave() {
-  std::shared_ptr<Client> client;
   // Trusted code must exit the enclave to interact with untrusted
   // components like the host operating system. In the Asylo
   // primitives model this is accomplished via "exit handlers," where
@@ -53,10 +49,9 @@ Status call_enclave() {
   // enclave with an empty table of exit handlers and then adds a trivial
   // callback function "exit_handler" to service the exit type specified by the
   // selector "kExitHandler."
-  ASYLO_ASSIGN_OR_RETURN(
-      client, LoadEnclave<SimBackend>(/*enclave_name=*/"hello_test",
-                                      FLAGS_enclave_path,
-                                      absl::make_unique<DispatchTable>()));
+  std::shared_ptr<Client> client =
+      test::TestBackend::Get()->LoadTestEnclaveOrDie(
+          /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());
 
   auto status = client->exit_call_provider()->RegisterExitHandler(
       kExternalHelloHandler, ExitHandler{hello_handler});
