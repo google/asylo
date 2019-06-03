@@ -75,6 +75,8 @@ constexpr uint64_t kTestReadLink =
     kFirstSelector + asylo::system_call::kSYS_readlink;
 constexpr uint64_t kTestTruncate =
     kFirstSelector + asylo::system_call::kSYS_truncate;
+constexpr uint64_t kTestFTruncate =
+    kFirstSelector + asylo::system_call::kSYS_ftruncate;
 constexpr uint64_t kTestRmdir = kFirstSelector + asylo::system_call::kSYS_rmdir;
 constexpr uint64_t kTestSocket =
     kFirstSelector + asylo::system_call::kSYS_socket;

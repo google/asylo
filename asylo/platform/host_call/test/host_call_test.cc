@@ -645,6 +645,47 @@ TEST_F(HostCallTest, TestTruncate) {
   EXPECT_THAT(read_buf, StrEq(file_content.substr(0, kTruncLen)));
 }
 
+// Tests enc_untrusted_ftruncate() by making a call from inside the enclave and
+// verifying that the file is indeed truncated on the untrusted side by reading
+// the file.
+TEST_F(HostCallTest, TestFTruncate) {
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Write something to the file.
+  std::string file_content = "some random content.";
+  ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
+              Eq(file_content.length() + 1));
+
+  primitives::NativeParameterStack params;
+  constexpr int kTruncLen = 5;
+  params.PushByCopy<int>(/*value=fd=*/fd);
+  params.PushByCopy<off_t>(/*value=length=*/kTruncLen);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), 0);
+
+  // Verify contents of the file by reading it.
+  char read_buf[10];
+  ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
+  EXPECT_THAT(read(fd, read_buf, 10), Eq(kTruncLen));
+  read_buf[kTruncLen] = '\0';
+  EXPECT_THAT(read_buf, StrEq(file_content.substr(0, kTruncLen)));
+
+  // Force an error and verify that the return value is non-zero.
+  params.PushByCopy<int>(/*value=fd=*/-1);
+  params.PushByCopy<off_t>(/*value=length=*/kTruncLen);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), -1);
+}
+
 // Tests enc_untrusted_rmdir() by making a call from inside the enclave and
 // verifying that the directory is indeed deleted.
 TEST_F(HostCallTest, TestRmdir) {

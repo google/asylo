@@ -116,6 +116,10 @@ int enc_untrusted_truncate(const char *path, off_t length) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_truncate, path, length);
 }
 
+int enc_untrusted_ftruncate(int fd, off_t length) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_ftruncate, fd, length);
+}
+
 int enc_untrusted_rmdir(const char *path) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_rmdir, path);
 }

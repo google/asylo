@@ -65,6 +65,7 @@ SYSCALL_DEFINE2(mkdir, const char *, pathname, umode_t, mode)
 SYSCALL_DEFINE2(rename, const char *, oldname, const char *, newname)
 SYSCALL_DEFINE2(symlink, const char *, oldname, const char *, newname)
 SYSCALL_DEFINE2(truncate, const char *, path, long, length)
+SYSCALL_DEFINE2(ftruncate, unsigned int, fd, unsigned long, length)
 SYSCALL_DEFINE2(flock, int, fd, int, operation)
 
 // I/O Synchronization

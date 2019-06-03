@@ -278,6 +278,17 @@ primitives::PrimitiveStatus TestTruncate(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestFTruncate(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+  auto length = params->Pop<off_t>();
+  int fd = params->Pop<int>();
+
+  params->PushByCopy<int>(enc_untrusted_ftruncate(fd, length));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 primitives::PrimitiveStatus TestRmdir(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
@@ -452,6 +463,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestReadLink, primitives::EntryHandler{TestReadlink}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestTruncate, primitives::EntryHandler{TestTruncate}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestFTruncate, primitives::EntryHandler{TestFTruncate}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestRmdir, primitives::EntryHandler{TestRmdir}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(

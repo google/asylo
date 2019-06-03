@@ -58,6 +58,7 @@ ssize_t enc_untrusted_write(int fd, const void *buf, size_t count);
 int enc_untrusted_symlink(const char *target, const char *linkpath);
 ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz);
 int enc_untrusted_truncate(const char *path, off_t length);
+int enc_untrusted_ftruncate(int fd, off_t length);
 int enc_untrusted_rmdir(const char *path);
 int enc_untrusted_socket(int domain, int type, int protocol);
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */);
