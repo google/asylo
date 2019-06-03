@@ -21,7 +21,7 @@ package asylo;
 import "asylo/crypto/algorithms.proto";
 
 // An encryption or decryption key.
-message AsymmetricEncryptionKey {
+message AsymmetricEncryptionKeyProto {
   enum KeyType {
     UNKNOWN = 0;
     ENCRYPTION_KEY = 1;
@@ -42,7 +42,7 @@ message AsymmetricEncryptionKey {
 }
 
 // A signing key or verifying key.
-message AsymmetricSigningKey {
+message AsymmetricSigningKeyProto {
   enum KeyType {
     UNKNOWN = 0;
     SIGNING_KEY = 1;
