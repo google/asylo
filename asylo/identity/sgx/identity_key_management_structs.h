@@ -72,6 +72,9 @@ constexpr int kPpidSize = 16;
 // is used by the CPU to specialize/access-control various SGX keys.
 constexpr int kCpusvnSize = 16;
 
+// The size of an Fmspc's |value| field.
+constexpr int kFmspcSize = 6;
+
 // The following constants are specific to the SIGSTRUCT architectural
 // structure, and are taken from the Intel SDM.
 

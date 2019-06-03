@@ -26,8 +26,6 @@
 namespace asylo {
 namespace sgx {
 
-const int kFmspcSize = 6;
-
 const uint32_t kPceSvnMaxValue = std::numeric_limits<uint16_t>::max();
 
 const uint32_t kPceIdMaxValue = std::numeric_limits<uint16_t>::max();

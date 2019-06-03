@@ -29,9 +29,6 @@
 namespace asylo {
 namespace sgx {
 
-// The maximum value of an Fmspc's |value| field.
-extern const int kFmspcSize;
-
 // The maximum value of a PceSvn's |value| field.
 extern const uint32_t kPceSvnMaxValue;
 
