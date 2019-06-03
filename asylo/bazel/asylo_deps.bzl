@@ -71,7 +71,6 @@ def asylo_testonly_deps():
     if not native.existing_rule("com_github_gflags_gflags"):
         http_archive(
             name = "com_github_gflags_gflags",
-            # Release v2.2.2
             urls = ["https://github.com/gflags/gflags/archive/v2.2.2.tar.gz"],
             sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
             strip_prefix = "gflags-2.2.2",
@@ -129,7 +128,6 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("boringssl"):
         http_archive(
             name = "boringssl",
-            # Non-release commit to master-with-bazel branch from March 8, 2018
             urls = [
                 "https://github.com/google/boringssl/archive/241dc59bb90f8c45ebc8473fc7599b861a93bfa6.tar.gz",
             ],
@@ -150,7 +148,7 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_google_absl"):
         http_archive(
             name = "com_google_absl",
-            # Head commit on 2019-01-31.
+            # Commit from 2019 January 31.
             urls = [
                 "https://github.com/abseil/abseil-cpp/archive/d78310fe5a82f2e0e6e16509ef8079c8d7e4674e.tar.gz",
             ],
@@ -162,7 +160,7 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("io_abseil_py"):
         http_archive(
             name = "io_abseil_py",
-            # Pre-release commit dated 01/30/2018
+            # Commit from 2018 January 30.
             urls = ["https://github.com/abseil/abseil-py/archive/5e343642d987268df199b4c851b7dd3d687ac316.tar.gz"],
             sha256 = "3c83ba6be3df1ea6d2dd1608830853981d47d2a0faa6c9505e4c8022fc41c912",
             strip_prefix = "abseil-py-5e343642d987268df199b4c851b7dd3d687ac316",
@@ -240,7 +238,6 @@ cc_library(
         http_archive(
             name = "six_archive",
             build_file = "@com_google_protobuf//:six.BUILD",
-            # Release 1.10.0
             url = "https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz",
             sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
         )
@@ -274,7 +271,6 @@ cc_library(
     if not native.existing_rule("com_github_pallets_jinja"):
         http_archive(
             name = "com_github_pallets_jinja",
-            # Jinja release 2.10
             url = "https://github.com/pallets/jinja/archive/2.10.tar.gz",
             build_file_content = """py_library(
     name = "jinja2",
@@ -296,7 +292,6 @@ cc_library(
     visibility = ["//visibility:public"],
     srcs = glob(["markupsafe/*.py"]),
 )""",
-            # Markupsafe release 1.1.1
             sha256 = "222a10e3237d92a9cd45ed5ea882626bc72bc5e0264d3ed0f2c9129fa69fc167",
             strip_prefix = "markupsafe-1.1.1/src",
         )
@@ -349,8 +344,7 @@ go_library(
     visibility = ["//visibility:public"],
 )
 """,
-            # Non-release commit from January 31, 2019. golang/crypto does not
-            # have releases.
+            # Commit from 2019 January 31.
             urls = ["https://github.com/golang/crypto/archive/b8fe1690c61389d7d2a8074a507d1d40c5d30448.tar.gz"],
             sha256 = "21bded0f669be39373c16b5bff02916aeaf971f0f5d8696f69fa89297844586d",
             strip_prefix = "crypto-b8fe1690c61389d7d2a8074a507d1d40c5d30448",
