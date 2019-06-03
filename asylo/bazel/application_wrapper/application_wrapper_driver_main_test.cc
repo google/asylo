@@ -63,7 +63,7 @@ class ApplicationWrapperDriverMainTest : public ::testing::Test {
     client_ = client_owned_.get();
   }
 
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions()));
   }
 

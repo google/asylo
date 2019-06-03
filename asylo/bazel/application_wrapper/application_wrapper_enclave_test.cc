@@ -79,7 +79,7 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
 
  protected:
   // SetUpTestCase() configures and retrieves the enclave manager.
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions()));
     ASYLO_ASSERT_OK_AND_ASSIGN(manager_, EnclaveManager::Instance());
   }

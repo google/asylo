@@ -74,7 +74,7 @@ class PrimitivesTest : public ::testing::Test {
         /*enclave_name=*/"primitives_test", std::move(exit_call_provider));
   }
 
-  static void TearDownTestCase() {
+  static void TearDownTestSuite() {
     // Clean up the backend.
     delete test::TestBackend::Get();
   }

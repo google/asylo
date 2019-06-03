@@ -96,7 +96,7 @@ class ForkSecurityTest : public ::testing::Test {
   ForkSecurityTest() : enclave_finalized_(false) {}
 
  protected:
-  static void SetUpTestCase() {
+  static void SetUpTestSuite() {
     EnclaveManager::Configure(EnclaveManagerOptions());
     StatusOr<EnclaveManager *> manager_result = EnclaveManager::Instance();
     if (!manager_result.ok()) {
