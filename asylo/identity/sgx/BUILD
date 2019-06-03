@@ -626,6 +626,7 @@ cc_library(
     srcs = ["tcb.cc"],
     hdrs = ["tcb.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":platform_provisioning",
         ":tcb_proto_cc",
@@ -651,6 +652,55 @@ cc_test(
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:cc_wkt_protos",
+    ],
+)
+
+cc_library(
+    name = "tcb_info_from_json",
+    srcs = ["tcb_info_from_json.cc"],
+    hdrs = ["tcb_info_from_json.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":platform_provisioning",
+        ":platform_provisioning_proto_cc",
+        ":tcb",
+        ":tcb_proto_cc",
+        "//asylo/util:logging",
+        "//asylo/util:proto_struct_util",
+        "//asylo/util:status",
+        "@com_google_absl//absl/base",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/time",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "tcb_info_from_json_test",
+    srcs = ["tcb_info_from_json_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "tcb_info_from_json_enclave_test",
+    deps = [
+        ":platform_provisioning_proto_cc",
+        ":tcb",
+        ":tcb_info_from_json",
+        ":tcb_proto_cc",
+        "//asylo/test/util:output_collector",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
