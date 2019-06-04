@@ -826,7 +826,6 @@ TEST_F(HostCallTest, TestFChown) {
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_setsockopt() by creating a socket on the untrusted side,
