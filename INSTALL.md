@@ -125,6 +125,7 @@ installed.
 *   git
 *   ocaml-nox
 *   ocamlbuild
+*   python3
 
 On Debian, these can be installed with the following command:
 

@@ -63,6 +63,7 @@ RUN apt-get update && \
         libfl2 \
         ocaml-nox \
         ocamlbuild \
+        python3 \
         vim \
         && \
     rm bazel.deb bazel.sha256 && \
