@@ -322,3 +322,40 @@ cc_library(
         "//asylo/util:status",
     ],
 )
+
+cc_library(
+    name = "rsa_oaep_encryption_key",
+    srcs = ["rsa_oaep_encryption_key.cc"],
+    hdrs = ["rsa_oaep_encryption_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "asymmetric_encryption_key",
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "rsa_oaep_encryption_key_test",
+    srcs = ["rsa_oaep_encryption_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "asymmetric_encryption_key",
+        "rsa_oaep_encryption_key",
+        ":algorithms_proto_cc",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
