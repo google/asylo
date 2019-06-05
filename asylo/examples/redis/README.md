@@ -70,16 +70,19 @@ http_archive(
 # Redis
 http_archive(
     name = "com_github_antirez_redis",
-    build_file = "//asylo/distrib:redis.BUILD",
+    build_file = "@com_google_asylo//asylo/distrib:redis.BUILD",
     urls = ["https://github.com/antirez/redis/archive/5.0.4.tar.gz"],
     strip_prefix = "redis-5.0.4",
 )
 
-load("//asylo/bazel:asylo_deps.bzl", "asylo_deps")
+load("@com_google_asylo//asylo/bazel:asylo_deps.bzl", "asylo_deps")
 asylo_deps()
 
-load("//asylo/bazel:sgx_deps.bzl", "sgx_deps")
+load("@com_google_asylo//asylo/bazel:sgx_deps.bzl", "sgx_deps")
 sgx_deps()
+
+load("@com_google_asylo//asylo/bazel:asylo_deps.bzl", "asylo_go_deps")
+asylo_go_deps()
 ```
 
 This bazel rule imports Asylo and Redis. To build Redis with Bazel, Asylo
@@ -103,7 +106,7 @@ and add the following lines to it.
 ```BUILD
 licenses(["notice"])
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_binary")
+load("@com_google_asylo//asylo/bazel:asylo.bzl", "cc_enclave_binary")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
 
 sgx_enclave_configuration(
