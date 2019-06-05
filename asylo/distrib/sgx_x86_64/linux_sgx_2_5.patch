@@ -4356,7 +4356,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +                   "the enclave"),
 +        ),
 +        "tcs_policy": attr.string(
-+            default = "1",
++            default = "0",
 +            doc = ("The TCS management policy (" +
 +                   "0 - The TCS is bound to the untrusted thread, " +
 +                   "1 - The TCS is unbound to the untrusted thread)"),
