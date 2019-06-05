@@ -21,11 +21,22 @@
 
 #include <string>
 
+#include "google/protobuf/struct.pb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
+
+// Parses |json_string| into a Tcb proto. If the |json_string| is not a JSON
+// string that follows the specification of the "tcb" field of the JSON returned
+// by Intel's Get PCK certificates API (as documented at
+// https://api.portal.trustedservices.intel.com/documentation#pcs-certificates),
+// then TcbFromJson() returns an error.
+//
+// If unrecognized fields are encountered, then TcbFromJson() logs warnings
+// but does not return an error.
+StatusOr<Tcb> TcbFromJson(const std::string &json_string);
 
 // Parses |json_string| into a TcbInfo proto. If the |json_string| does not
 // match the specification of the "tcbInfo" field of the JSON returned by

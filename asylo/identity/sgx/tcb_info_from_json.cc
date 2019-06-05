@@ -127,10 +127,9 @@ StatusOr<PceSvn> PceSvnFromJson(const google::protobuf::Value &pce_svn_json) {
   return pce_svn;
 }
 
-// Parses a valid Tcb from |tcb_json|.
-StatusOr<Tcb> TcbFromJson(const google::protobuf::Value &tcb_json) {
+StatusOr<Tcb> TcbFromJsonValue(const google::protobuf::Value &json_value) {
   const google::protobuf::Struct *tcb_object;
-  ASYLO_ASSIGN_OR_RETURN(tcb_object, JsonGetObject(tcb_json));
+  ASYLO_ASSIGN_OR_RETURN(tcb_object, JsonGetObject(json_value));
 
   Tcb tcb;
 
@@ -154,7 +153,7 @@ StatusOr<Tcb> TcbFromJson(const google::protobuf::Value &tcb_json) {
   // as a "pcesvn" field.
   if (tcb_object->fields().size() > kTcbComponentsSize + 1) {
     std::string json_string;
-    if (!google::protobuf::util::MessageToJsonString(tcb_json, &json_string).ok()) {
+    if (!google::protobuf::util::MessageToJsonString(json_value, &json_string).ok()) {
       json_string = "TCB JSON";
     }
     LOG(WARNING) << absl::StrCat("Encountered unrecognized fields in ",
@@ -188,7 +187,7 @@ StatusOr<TcbLevel> TcbLevelFromJson(
   const google::protobuf::Value *tcb_json;
   ASYLO_ASSIGN_OR_RETURN(tcb_json,
                          JsonObjectGetField(*tcb_level_object, "tcb"));
-  ASYLO_ASSIGN_OR_RETURN(*tcb_level.mutable_tcb(), TcbFromJson(*tcb_json));
+  ASYLO_ASSIGN_OR_RETURN(*tcb_level.mutable_tcb(), TcbFromJsonValue(*tcb_json));
 
   const google::protobuf::Value *status_json;
   ASYLO_ASSIGN_OR_RETURN(status_json,
@@ -364,6 +363,13 @@ StatusOr<TcbInfo> TcbInfoFromJsonV1(
 }
 
 }  // namespace
+
+StatusOr<Tcb> TcbFromJson(const std::string &json_string) {
+  google::protobuf::Value tcb_json;
+  ASYLO_RETURN_IF_ERROR(
+      Status(google::protobuf::util::JsonStringToMessage(json_string, &tcb_json)));
+  return TcbFromJsonValue(tcb_json);
+}
 
 StatusOr<TcbInfo> TcbInfoFromJson(const std::string &json_string) {
   google::protobuf::Value tcb_info_json;

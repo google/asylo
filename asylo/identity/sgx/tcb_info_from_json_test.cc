@@ -35,6 +35,7 @@
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace sgx {
@@ -42,6 +43,34 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::HasSubstr;
+
+// Returns a valid Tcb JSON object.
+google::protobuf::Value CreateValidTcbJson() {
+  constexpr char kValidTcbJson[] = R"json({
+        "sgxtcbcomp01svn": 0,
+        "sgxtcbcomp02svn": 1,
+        "sgxtcbcomp03svn": 2,
+        "sgxtcbcomp04svn": 3,
+        "sgxtcbcomp05svn": 4,
+        "sgxtcbcomp06svn": 5,
+        "sgxtcbcomp07svn": 6,
+        "sgxtcbcomp08svn": 7,
+        "sgxtcbcomp09svn": 8,
+        "sgxtcbcomp10svn": 9,
+        "sgxtcbcomp11svn": 10,
+        "sgxtcbcomp12svn": 11,
+        "sgxtcbcomp13svn": 12,
+        "sgxtcbcomp14svn": 13,
+        "sgxtcbcomp15svn": 14,
+        "sgxtcbcomp16svn": 15,
+        "pcesvn": 2
+      })json";
+
+  google::protobuf::Value tcb;
+  ASYLO_CHECK_OK(
+      Status(google::protobuf::util::JsonStringToMessage(kValidTcbJson, &tcb)));
+  return tcb;
+}
 
 // Returns a valid TCB info JSON object with one TCB level.
 google::protobuf::Value CreateValidTcbInfoJson() {
@@ -86,6 +115,109 @@ std::string JsonToString(const google::protobuf::Value &json) {
   std::string json_string;
   ASYLO_CHECK_OK(Status(google::protobuf::util::MessageToJsonString(json, &json_string)));
   return json_string;
+}
+
+TEST(TcbFromJsonValueTest, ImproperJsonFailsToParse) {
+  EXPECT_THAT(TcbFromJson("} Wait a minute! This isn't proper JSON!").status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, NonObjectJsonValueFailsToParse) {
+  EXPECT_THAT(TcbFromJson("[\"An array, not an object\"]").status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, MissingSgxTcbComponentSvnFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  json.mutable_struct_value()->mutable_fields()->erase("sgxtcbcomp09svn");
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, NonIntegerSgxTcbComponentSvnFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  json.mutable_struct_value()
+      ->mutable_fields()
+      ->at("sgxtcbcomp06svn")
+      .mutable_list_value();
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, OutOfBoundsSgxTcbComponentSvnFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  json.mutable_struct_value()
+      ->mutable_fields()
+      ->at("sgxtcbcomp15svn")
+      .set_number_value(-7.);
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  json.mutable_struct_value()
+      ->mutable_fields()
+      ->at("sgxtcbcomp15svn")
+      .set_number_value(1000.);
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, WithoutPceSvnFieldFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  json.mutable_struct_value()->mutable_fields()->erase("pcesvn");
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, NonIntegerPceSvnFieldFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  json.mutable_struct_value()->mutable_fields()->at("pcesvn").set_string_value(
+      "");
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, OutOfBoundsPceSvnFieldFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  json.mutable_struct_value()->mutable_fields()->at("pcesvn").set_number_value(
+      -15);
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  json.mutable_struct_value()->mutable_fields()->at("pcesvn").set_number_value(
+      70000);
+  EXPECT_THAT(TcbFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbFromJsonTest, CorrectTcbJsonParsesSuccessfully) {
+  constexpr char kExpectedTcbProto[] = R"proto(
+    components: "\x00\x01\x02\x03\x04\x05\x06\x07\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f"
+    pce_svn { value: 2 }
+  )proto";
+
+  Tcb tcb;
+  ASYLO_ASSERT_OK_AND_ASSIGN(tcb,
+                             TcbFromJson(JsonToString(CreateValidTcbJson())));
+  ASYLO_ASSERT_OK(ValidateTcb(tcb));
+
+  Tcb expected_tcb;
+  ASSERT_TRUE(
+      google::protobuf::TextFormat::ParseFromString(kExpectedTcbProto, &expected_tcb));
+  EXPECT_THAT(tcb, EqualsProto(expected_tcb));
+}
+
+TEST(TcbFromJsonTest, ExtraFieldsCausesLogWarning) {
+  google::protobuf::Value json = CreateValidTcbJson();
+  google::protobuf::Value value;
+  value.set_number_value(0.);
+  json.mutable_struct_value()->mutable_fields()->insert({"extra", value});
+
+  Tcb tcb;
+  OutputCollector warning_collector(kCollectStdout);
+  ASYLO_ASSERT_OK_AND_ASSIGN(tcb, TcbFromJson(JsonToString(json)));
+  ASYLO_ASSERT_OK(ValidateTcb(tcb));
+  EXPECT_THAT(warning_collector.CollectOutputSoFar(),
+              IsOkAndHolds(HasSubstr("Encountered unrecognized fields")));
 }
 
 TEST(TcbInfoFromJsonTest, ImproperJsonFailsToParse) {
