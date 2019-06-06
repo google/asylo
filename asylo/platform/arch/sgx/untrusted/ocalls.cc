@@ -142,8 +142,9 @@ asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
   asylo::ForkHandshakeConfig fork_handshake_config;
   fork_handshake_config.set_is_parent(is_parent);
   fork_handshake_config.set_socket(self_socket);
-  ASYLO_RETURN_IF_ERROR(manager->EnterAndTransferSecureSnapshotKey(
-      client, fork_handshake_config));
+  asylo::SgxClient *sgx_client = dynamic_cast<asylo::SgxClient *>(client);
+  ASYLO_RETURN_IF_ERROR(sgx_client->EnterAndTransferSecureSnapshotKey(
+      fork_handshake_config));
 
   return asylo::Status::OkStatus();
 }
@@ -1009,8 +1010,7 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
   // current enclave memory.
   void *enclave_base_address = client->base_address();
   asylo::SnapshotLayout snapshot_layout;
-  asylo::Status status =
-      manager->EnterAndTakeSnapshot(client, &snapshot_layout);
+  asylo::Status status = client->EnterAndTakeSnapshot(&snapshot_layout);
   if (!status.ok()) {
     LOG(ERROR) << "EnterAndTakeSnapshot failed: " << status;
     errno = ENOMEM;
@@ -1148,7 +1148,7 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     }
 
     // Enters the child enclave and restore the enclave memory.
-    status = manager->EnterAndRestore(client, snapshot_layout);
+    status = client->EnterAndRestore(snapshot_layout);
     if (!status.ok()) {
       // Inform the parent process about the failure.
       child_result = "Child EnterAndRestore failed";

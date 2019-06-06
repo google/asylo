@@ -61,6 +61,10 @@ class SgxClient : public EnclaveClient {
   std::shared_ptr<primitives::SgxEnclaveClient> GetPrimitivesClient() {
     return primitive_sgx_client_;
   }
+  Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout);
+  Status EnterAndRestore(const SnapshotLayout &snapshot_layout);
+  Status EnterAndTransferSecureSnapshotKey(
+      const ForkHandshakeConfig &fork_handshake_config);
 
  private:
   friend class SgxLoader;
@@ -70,10 +74,6 @@ class SgxClient : public EnclaveClient {
   Status EnterAndFinalize(const EnclaveFinal &final_input) override;
   Status EnterAndDonateThread() override;
   Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
-  Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) override;
-  Status EnterAndRestore(const SnapshotLayout &snapshot_layout) override;
-  Status EnterAndTransferSecureSnapshotKey(
-      const ForkHandshakeConfig &fork_handshake_config) override;
   Status DestroyEnclave() override;
 
   // Calls the enclave initialization routine.

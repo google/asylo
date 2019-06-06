@@ -78,17 +78,6 @@ class EnclaveClient {
   // Enters the enclave and invokes its signal handling entry point.
   virtual Status EnterAndHandleSignal(const EnclaveSignal &signal) = 0;
 
-  // Enters the enclave and invokes its snapshotting entry point.
-  virtual Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) = 0;
-
-  // Enters the enclave and invokes its restoring entry point.
-  virtual Status EnterAndRestore(const SnapshotLayout &snapshot_layout) = 0;
-
-  // Enters the enclave and invokes its secure snapshot key transfer entry
-  // point.
-  virtual Status EnterAndTransferSecureSnapshotKey(
-      const ForkHandshakeConfig &fork_handshake_config) = 0;
-
   // Invoked by the EnclaveManager immediately before the enclave is
   // destroyed. This hook is provided to enable execution of custom logic by the
   // client at the time the enclave is destroyed.

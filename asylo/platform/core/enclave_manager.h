@@ -247,36 +247,6 @@ class EnclaveManager {
                         bool skip_finalize = false)
       LOCKS_EXCLUDED(client_table_lock_);
 
-  /// Enters an enclave and takes a snapshot of its memory. This method calls
-  /// `client's` EnterAndTakeSnapshot entry point, with snapshot layout (in
-  /// untrusted memory) stored in |snapshot_layout|.
-  ///
-  /// \param client A client attached to the enclave to enter.
-  /// \param snapshot_layout The snapshot layout in untrusted memory to be
-  ///                        filled up by snapshotting.
-  Status EnterAndTakeSnapshot(EnclaveClient *client,
-                              SnapshotLayout *snapshot_layout);
-
-  /// Enters an enclave and restores it from an untrusted snapshot. This method
-  /// calls `client's` EnterAndRestore entry point, with snapshot layout (in
-  /// untrusted memory) passed in |snapshot_layout|.
-  ///
-  /// \param client A client attached to the enclave to enter.
-  /// \param snapshot_layout The snapshot layout in untrusted memory used to
-  ///                        restore enclave states.
-  Status EnterAndRestore(EnclaveClient *client,
-                         const SnapshotLayout &snapshot_layout);
-
-  /// Enters an enclave and securely transfers snapshot key with another
-  /// enclave. This method calls `client's` EnterAndTransferSecureSnapshotKey
-  /// entry_point.
-  ///
-  /// \param client A client attached to the enclave to enter.
-  /// \param fork_handshake_config The input specifies the socket and type of
-  ///                              enclave(parent/child).
-  Status EnterAndTransferSecureSnapshotKey(
-      EnclaveClient *client, const ForkHandshakeConfig &fork_handshake_config);
-
   /// Fetches the shared resource manager object.
   ///
   /// \return The SharedResourceManager instance.
