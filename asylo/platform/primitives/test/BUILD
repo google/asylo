@@ -96,6 +96,25 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "sgx_test_backend",
+    testonly = 1,
+    srcs = ["sgx_test_backend.cc"],
+    hdrs = ["sgx_test_backend.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":test_backend",
+        "//asylo:enclave_proto_cc",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sgx:untrusted_sgx",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/util:status",
+        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
 sim_enclave_test(
     name = "primitives_test",
     size = "small",
