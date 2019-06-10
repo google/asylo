@@ -32,6 +32,7 @@ ASYLO_TOOLCHAINS = [
 [
     cc_toolchain_config_rule(
         name = x[0] + "_config",
+        compiler = x[1],
         cpu = x[0],
     )
     for x in ASYLO_TOOLCHAINS

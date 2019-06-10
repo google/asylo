@@ -30,6 +30,70 @@ load(
 )
 load("@bazel_tools//tools/build_defs/cc:action_names.bzl", "ACTION_NAMES")
 
+def _get_tools(compiler):
+    if compiler == "gcc":
+        return struct(
+            ar = tool_path(
+                name = "ar",
+                path = "bin/x86_64-elf-ar",
+            ),
+            cpp = tool_path(
+                name = "cpp",
+                path = "bin/x86_64-elf-cpp",
+            ),
+            gcc = tool_path(
+                name = "gcc",
+                path = "bin/x86_64-elf-gcc",
+            ),
+            gpp = tool_path(
+                name = "g++",
+                path = "bin/x86_64-elf-g++",
+            ),
+            gcov = tool_path(
+                name = "gcov",
+                path = "bin/x86_64-elf-gcov",
+            ),
+            ld = tool_path(
+                name = "ld",
+                path = "bin/x86_64-elf-ld",
+            ),
+            nm = tool_path(
+                name = "nm",
+                path = "bin/x86_64-elf-nm",
+            ),
+            objcopy = tool_path(
+                name = "objcopy",
+                path = "bin/x86_64-elf-objcopy",
+            ),
+            objdump = tool_path(
+                name = "objdump",
+                path = "bin/x86_64-elf-objdump",
+            ),
+            strip = tool_path(
+                name = "strip",
+                path = "bin/x86_64-elf-strip",
+            ),
+        )
+    else:
+        fail("Unsupported compiler: " + compiler)
+
+def _get_include_directories(compiler):
+    if compiler == "gcc":
+        return [
+            "asylo/platform/posix/include",
+            "asylo/platform/system/include",
+            "external/com_google_asylo/asylo/platform/posix/include",
+            "external/com_google_asylo/asylo/platform/system/include",
+            "x86_64-elf/include",
+            "x86_64-elf/include/c++/7.4.0",
+            "x86_64-elf/include/c++/7.4.0/x86_64-elf",
+            "x86_64-elf/include/c++/7.4.0/backward",
+            "lib/gcc/x86_64-elf/7.4.0/include",
+            "lib/gcc/x86_64-elf/7.4.0/include-fixed",
+        ]
+    else:
+        fail("Unsupported compiler: " + compiler)
+
 def _impl(ctx):
     if (ctx.attr.cpu == "k8"):
         toolchain_identifier = "asylo_k8"
@@ -51,7 +115,7 @@ def _impl(ctx):
 
     target_libc = "newlib-2.5.0.20180922"
 
-    compiler = "compiler"
+    compiler = ctx.attr.compiler
 
     abi_version = "sgx_x86_64"
 
@@ -60,6 +124,8 @@ def _impl(ctx):
     cc_target_os = "asylo"
 
     builtin_sysroot = None
+
+    tools = _get_tools(compiler)
 
     all_link_actions = [
         ACTION_NAMES.cpp_link_executable,
@@ -76,7 +142,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     cpp_module_compile_action = action_config(
@@ -88,7 +154,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     cpp_link_static_library_action = action_config(
@@ -98,7 +164,7 @@ def _impl(ctx):
             "libraries_to_link",
             "linker_param_file",
         ],
-        tools = [tool(path = "bin/x86_64-elf-ar")],
+        tools = [tool(path = tools.ar.path)],
     )
 
     cpp_link_nodeps_dynamic_library_action = action_config(
@@ -117,7 +183,7 @@ def _impl(ctx):
             "linker_param_file",
             "sysroot",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     cpp_compile_action = action_config(
@@ -141,7 +207,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     assemble_action = action_config(
@@ -153,7 +219,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     cpp_module_codegen_action = action_config(
@@ -165,7 +231,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     preprocess_assemble_action = action_config(
@@ -177,7 +243,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     cpp_link_dynamic_library_action = action_config(
@@ -196,7 +262,7 @@ def _impl(ctx):
             "linker_param_file",
             "sysroot",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     strip_action = action_config(
@@ -236,7 +302,7 @@ def _impl(ctx):
                 ],
             ),
         ],
-        tools = [tool(path = "bin/x86_64-elf-strip")],
+        tools = [tool(path = tools.strip.path)],
     )
 
     cpp_link_executable_action = action_config(
@@ -254,7 +320,7 @@ def _impl(ctx):
             "linker_param_file",
             "sysroot",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     cpp_link_interface_dynamic_library_action = action_config(
@@ -266,7 +332,7 @@ def _impl(ctx):
             "libraries_to_link",
             "linker_param_file",
         ],
-        tools = [tool(path = "bin/x86_64-elf-ld")],
+        tools = [tool(path = tools.ld.path)],
     )
 
     linkstamp_compile_action = action_config(
@@ -278,7 +344,7 @@ def _impl(ctx):
             "compiler_input_flags",
             "compiler_output_flags",
         ],
-        tools = [tool(path = "bin/x86_64-elf-gcc")],
+        tools = [tool(path = tools.gcc.path)],
     )
 
     action_configs = [
@@ -547,9 +613,7 @@ def _impl(ctx):
                             "-isystemasylo/platform/system/include",
                             "-isystemexternal/com_google_asylo/asylo/platform/posix/include",
                             "-isystemexternal/com_google_asylo/asylo/platform/system/include",
-                            "-D__LITTLE_ENDIAN",
                             "-D__ASYLO__",
-                            "-D__LITTLE_ENDIAN__",
                             "-DCOMPILER_GCC3",
                             "-D__LINUX_ERRNO_EXTENSIONS__",
                             "-D_GLIBCXX_USE_C99",
@@ -1380,55 +1444,23 @@ def _impl(ctx):
         mostly_static_linking_mode_feature,
     ]
 
-    cxx_builtin_include_directories = [
-        "asylo/platform/posix/include",
-        "asylo/platform/system/include",
-        "external/com_google_asylo/asylo/platform/posix/include",
-        "external/com_google_asylo/asylo/platform/system/include",
-        "x86_64-elf/include",
-        "x86_64-elf/include/c++/7.4.0",
-        "x86_64-elf/include/c++/7.4.0/x86_64-elf",
-        "x86_64-elf/include/c++/7.4.0/backward",
-        "lib/gcc/x86_64-elf/7.4.0/include",
-        "lib/gcc/x86_64-elf/7.4.0/include-fixed",
-    ]
+    cxx_builtin_include_directories = _get_include_directories(compiler)
 
     artifact_name_patterns = []
 
     make_variables = []
 
     tool_paths = [
-        tool_path(name = "ar", path = "bin/x86_64-elf-ar"),
-        tool_path(
-            name = "cpp",
-            path = "bin/x86_64-elf-cpp",
-        ),
-        tool_path(
-            name = "gcc",
-            path = "bin/x86_64-elf-gcc",
-        ),
-        tool_path(
-            name = "g++",
-            path = "bin/x86_64-elf-g++",
-        ),
-        tool_path(
-            name = "gcov",
-            path = "bin/x86_64-elf-gcov",
-        ),
-        tool_path(name = "ld", path = "bin/x86_64-elf-ld"),
-        tool_path(name = "nm", path = "bin/x86_64-elf-nm"),
-        tool_path(
-            name = "objcopy",
-            path = "bin/x86_64-elf-objcopy",
-        ),
-        tool_path(
-            name = "objdump",
-            path = "bin/x86_64-elf-objdump",
-        ),
-        tool_path(
-            name = "strip",
-            path = "bin/x86_64-elf-strip",
-        ),
+        tools.ar,
+        tools.cpp,
+        tools.gcc,
+        tools.gpp,
+        tools.gcov,
+        tools.ld,
+        tools.nm,
+        tools.objcopy,
+        tools.objdump,
+        tools.strip,
     ]
 
     out = ctx.actions.declare_file(ctx.label.name)
@@ -1462,6 +1494,7 @@ cc_toolchain_config_rule = rule(
     implementation = _impl,
     attrs = {
         "cpu": attr.string(mandatory = True, values = ["k8", "sgx_x86_64"]),
+        "compiler": attr.string(mandatory = True, values = ["gcc", "llvm"]),
     },
     provides = [CcToolchainConfigInfo],
     executable = True,
