@@ -40,7 +40,7 @@ class LockTest : public ::testing::Test {
 typedef ::testing::Types<UntrustedMutex, TrustedSpinLock, TrustedMutex>
     Implementations;
 
-TYPED_TEST_CASE(LockTest, Implementations);
+TYPED_TEST_SUITE(LockTest, Implementations);
 
 TYPED_TEST(LockTest, RecursiveTest) {
   EXPECT_FALSE(this->lock_.Owned());

@@ -45,7 +45,7 @@ const off_t header_length_vals[] = {10, 40, 120};
 const off_t payload_length_vals[] = {10, 40, 120};
 const off_t meta_length_vals[] = {10, 40, 120};
 
-INSTANTIATE_TEST_CASE_P(
+INSTANTIATE_TEST_SUITE_P(
     Instance1, OffsetTranslatorTest,
     ::testing::Combine(::testing::ValuesIn(header_length_vals),
                        ::testing::ValuesIn(payload_length_vals),

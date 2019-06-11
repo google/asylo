@@ -87,7 +87,7 @@ class EnclaveStorageSecureTest : public ::testing::Test,
 
 const size_t buffer_length_vals[] = {128, 160, 512, 544};
 
-INSTANTIATE_TEST_CASE_P(Instance1, EnclaveStorageSecureTest,
+INSTANTIATE_TEST_SUITE_P(Instance1, EnclaveStorageSecureTest,
                         ::testing::ValuesIn(buffer_length_vals));
 
 void EnclaveStorageSecureTest::PrepareTest() {
