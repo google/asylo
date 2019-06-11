@@ -129,7 +129,7 @@ class Status {
   /// \return The associated error message.
   absl::string_view error_message() const;
 
-  /// Gets the string error message for this object.
+  /// Gets the error space for this object.
   ///
   /// \return The associated error space.
   const error::ErrorSpace *error_space() const;
