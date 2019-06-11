@@ -4537,11 +4537,11 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    """Implementation of an automated signing process of an unsigned enclave."""
 +    ctx.actions.run_shell(
 +        inputs = [
-+            ctx.executable._sign_tool,
 +            ctx.file.unsigned,
 +            ctx.file._key,
 +            ctx.file.config,
 +        ],
++        tools = [ctx.executable._sign_tool],
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Signing for debug: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
