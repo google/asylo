@@ -24,6 +24,7 @@
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 
 namespace asylo {
@@ -60,6 +61,9 @@ class EnclaveClient {
   ///
   /// \param name The enclave name as registered with the EnclaveManager.
   explicit EnclaveClient(const std::string &name) : name_(name) {}
+
+  // Primitive enclave client. Populated by the implementation of EnclaveLoader.
+  std::shared_ptr<primitives::Client> primitive_client_;
 
  private:
   friend class EnclaveManager;

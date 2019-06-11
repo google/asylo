@@ -225,16 +225,16 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
-  std::shared_ptr<primitives::Client> primitive_client;
 
   ASYLO_ASSIGN_OR_RETURN(
-      primitive_client,
+      client->primitive_client_,
       primitives::LoadEnclave<primitives::SgxBackend>(
           name, base_address, enclave_path_, enclave_size, config, debug_,
           absl::make_unique<primitives::DispatchTable>()));
 
   client->primitive_sgx_client_ =
-      std::static_pointer_cast<primitives::SgxEnclaveClient>(primitive_client);
+      std::static_pointer_cast<primitives::SgxEnclaveClient>(
+          client->primitive_client_);
 
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
@@ -251,16 +251,16 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
   std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
-  std::shared_ptr<primitives::Client> primitive_client;
 
   ASYLO_ASSIGN_OR_RETURN(
-      primitive_client,
+      client->primitive_client_,
       primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
           name, base_address, section_name_, enclave_size, config, debug_,
           absl::make_unique<primitives::DispatchTable>()));
 
   client->primitive_sgx_client_ =
-      std::static_pointer_cast<primitives::SgxEnclaveClient>(primitive_client);
+      std::static_pointer_cast<primitives::SgxEnclaveClient>(
+          client->primitive_client_);
 
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
