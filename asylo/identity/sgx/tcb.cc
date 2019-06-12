@@ -25,12 +25,83 @@
 #include <google/protobuf/util/time_util.h>
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
+
+// Compares two objects of type T, which must have <, ==, and > operators.
+// Should only be used with types where exactly one of:
+//
+//   * x < y
+//   * x == y
+//   * x > y
+//
+// Is true for any given |x| and |y| of type T.
+template <typename T>
+PartialOrder CompareTotal(const T &lhs, const T &rhs) {
+  if (lhs < rhs) {
+    return PartialOrder::kLess;
+  } else if (lhs == rhs) {
+    return PartialOrder::kEqual;
+  } else {
+    return PartialOrder::kGreater;
+  }
+}
+
+// Returns the order between two pairs in a product ordering, assuming that
+// |lhs| and |rhs| represent the orders between the pairs' first elements and
+// their second elements, respectively.
+//
+// That is, let |lhs| be the order between A and B and |rhs| be the order
+// between C and D. Then OrderCombine(lhs, rhs) returns the order between the
+// pairs (A, C) and (B, D) in the product ordering.
+//
+// Put another way, consider a PartialOrder as representing a combination of two
+// bools: an is_less_than_or_equal_to bool and an is_greater_than_or_equal_to
+// bool. The OrderCombine() of two PartialOrders is a PartialOrder each of whose
+// component bools is the logical-and of the same bool in the original
+// PartialOrders.
+//
+// This represents the semantics described above because (A, C) is less than or
+// equal to (B, D) if and only if:
+//
+//     A <= B && C <= D
+//
+// And similarly for greater-than-or-equal-to.
+//
+// The result of the function is shown in the following table:
+//
+// OrderCombine()|    kLess    |   kEqual    |  kGreater   |kIncomparable
+// --------------+-------------------------------------------------------
+// kLess         |    kLess    |    kLess    |kIncomparable|kIncomparable
+// kEqual        |    kLess    |   kEqual    |  kGreater   |kIncomparable
+// kGreater      |kIncomparable|  kGreater   |  kGreater   |kIncomparable
+// kIncomparable |kIncomparable|kIncomparable|kIncomparable|kIncomparable
+//
+// For more information on the product ordering, see:
+// https://en.wikipedia.org/wiki/Product_order.
+PartialOrder OrderCombine(PartialOrder lhs, PartialOrder rhs) {
+  switch (lhs) {
+    case PartialOrder::kLess:
+      return rhs == PartialOrder::kLess || rhs == PartialOrder::kEqual
+                 ? PartialOrder::kLess
+                 : PartialOrder::kIncomparable;
+    case PartialOrder::kEqual:
+      return rhs;
+    case PartialOrder::kGreater:
+      return rhs == PartialOrder::kEqual || rhs == PartialOrder::kGreater
+                 ? PartialOrder::kGreater
+                 : PartialOrder::kIncomparable;
+    case PartialOrder::kIncomparable:
+      return PartialOrder::kIncomparable;
+  }
+  // GCC 4.9 requires this unreachable return statement.
+  return PartialOrder::kIncomparable;
+}
 
 // Validates a google.protobuf.Timestamp message. Returns an OK status if and
 // only if the message is valid.
@@ -240,6 +311,20 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info) {
   }
 
   return ValidateTcbInfoImpl(tcb_info.impl());
+}
+
+PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs) {
+  ByteContainerView lhs_bytes(lhs.components());
+  ByteContainerView rhs_bytes(rhs.components());
+  PartialOrder current = PartialOrder::kEqual;
+  for (int i = 0; i < kTcbComponentsSize; ++i) {
+    current = OrderCombine(current, CompareTotal(lhs_bytes[i], rhs_bytes[i]));
+    if (current == PartialOrder::kIncomparable) {
+      return PartialOrder::kIncomparable;
+    }
+  }
+  return OrderCombine(
+      current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
 }
 
 }  // namespace sgx

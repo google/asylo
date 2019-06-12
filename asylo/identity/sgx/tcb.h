@@ -21,9 +21,25 @@
 
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
+
+// The possible orders between two objects in a partial ordering.
+//
+// A partial ordering is an ordering in which one object may be less than, equal
+// to, or greater than another, or also entirely incomparable to it. For
+// instance, a class hierarchy is partially ordered by the subclass relation.
+//
+// For more information about partial orderings, see:
+// https://en.wikipedia.org/wiki/Partially_ordered_set.
+enum class PartialOrder {
+  kLess,
+  kEqual,
+  kGreater,
+  kIncomparable,
+};
 
 // Size of the |components| field of a Tcb message. This value is fixed at 16.
 extern const int kTcbComponentsSize;
@@ -66,6 +82,30 @@ Status ValidateRawTcb(const RawTcb &raw_tcb);
 // that represents an existing StatusType value. This allows new cases to be
 // added to TcbStatus.StatusType without invalidating old data.
 Status ValidateTcbInfo(const TcbInfo &tcb_info);
+
+// Returns the order between |lhs| and |rhs|. Both |lhs| and |rhs| must be valid
+// Tcb objects.
+//
+// The algorithm used to determine the ordering of TCBs is inferred from the
+// instructions at
+// https://api.portal.trustedservices.intel.com/documentation#pcs-tcb-info.
+//
+// In brief, |lhs| is less than or equal to |rhs| if both:
+//
+//   * For each i in the range [0, kTcbComponentsSize), the following is true:
+//
+//         lhs.components(i) <= rhs.components(i)
+//
+//   * Also:
+//
+//         lhs.pce_svn().value() <= rhs.pce_svn().value()
+//
+// As usual in a partial order, |lhs| is greater than or equal to |rhs| if |rhs|
+// is less than or equal to |lhs|. In either of those cases, if |lhs| is not
+// actually equal to |rhs|, then it is strictly less or greater. If |lhs| is
+// neither less than or equal to nor greater than or equal to |rhs|, then |lhs|
+// and |rhs| are incomparable.
+PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs);
 
 }  // namespace sgx
 }  // namespace asylo

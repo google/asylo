@@ -18,8 +18,12 @@
 
 #include "asylo/identity/sgx/tcb.h"
 
+#include <tuple>
+
 #include "google/protobuf/timestamp.pb.h"
 #include <gtest/gtest.h>
+#include "absl/base/macros.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
@@ -30,6 +34,8 @@
 namespace asylo {
 namespace sgx {
 namespace {
+
+using ::testing::Eq;
 
 // Returns a valid Tcb message.
 Tcb CreateValidTcb() {
@@ -277,6 +283,51 @@ TEST(TcbTest,
   TcbInfo tcb_info = CreateValidTcbInfo();
   *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
   ASYLO_EXPECT_OK(ValidateTcbInfo(tcb_info));
+}
+
+TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
+  constexpr absl::string_view kBaseComponents = "0123456789abcdef";
+  constexpr int kBasePceSvn = 5;
+
+  constexpr absl::string_view kLessComponents = "0011223344556677";
+  constexpr absl::string_view kEqualComponents = kBaseComponents;
+  constexpr absl::string_view kGreaterComponents = "8899aabbccddeeff";
+  constexpr absl::string_view kIncomparableComponents = "fedcba9876543210";
+
+  constexpr int kLessPceSvn = 2;
+  constexpr int kEqualPceSvn = kBasePceSvn;
+  constexpr int kGreaterPceSvn = 8;
+
+  const std::tuple<absl::string_view, int, PartialOrder> test_cases[12] = {
+      std::make_tuple(kLessComponents, kLessPceSvn, PartialOrder::kLess),
+      std::make_tuple(kLessComponents, kEqualPceSvn, PartialOrder::kLess),
+      std::make_tuple(kLessComponents, kGreaterPceSvn,
+                      PartialOrder::kIncomparable),
+      std::make_tuple(kEqualComponents, kLessPceSvn, PartialOrder::kLess),
+      std::make_tuple(kEqualComponents, kEqualPceSvn, PartialOrder::kEqual),
+      std::make_tuple(kEqualComponents, kGreaterPceSvn, PartialOrder::kGreater),
+      std::make_tuple(kGreaterComponents, kLessPceSvn,
+                      PartialOrder::kIncomparable),
+      std::make_tuple(kGreaterComponents, kEqualPceSvn, PartialOrder::kGreater),
+      std::make_tuple(kGreaterComponents, kGreaterPceSvn,
+                      PartialOrder::kGreater),
+      std::make_tuple(kIncomparableComponents, kLessPceSvn,
+                      PartialOrder::kIncomparable),
+      std::make_tuple(kIncomparableComponents, kEqualPceSvn,
+                      PartialOrder::kIncomparable),
+      std::make_tuple(kIncomparableComponents, kGreaterPceSvn,
+                      PartialOrder::kIncomparable)};
+
+  Tcb rhs;
+  rhs.set_components(kBaseComponents.data(), kBaseComponents.size());
+  rhs.mutable_pce_svn()->set_value(kBasePceSvn);
+  for (int i = 0; i < ABSL_ARRAYSIZE(test_cases); ++i) {
+    Tcb lhs;
+    absl::string_view components = std::get<0>(test_cases[i]);
+    lhs.set_components(components.data(), components.size());
+    lhs.mutable_pce_svn()->set_value(std::get<1>(test_cases[i]));
+    EXPECT_THAT(CompareTcbs(lhs, rhs), Eq(std::get<2>(test_cases[i])));
+  }
 }
 
 }  // namespace
