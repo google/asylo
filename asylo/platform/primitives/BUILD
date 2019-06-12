@@ -27,6 +27,7 @@ cc_library(
     name = "primitives",
     hdrs = [
         "extent.h",
+        "message.h",
         "parameter_stack.h",
         "primitive_status.h",
         "primitives.h",
@@ -92,6 +93,19 @@ cc_test(
     name = "parameter_stack_test",
     size = "small",
     srcs = ["parameter_stack_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":primitives",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Test MessageReader and MessageWriter implementation.
+cc_test(
+    name = "message_test",
+    size = "small",
+    srcs = ["message_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":primitives",
