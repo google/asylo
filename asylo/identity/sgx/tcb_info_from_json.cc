@@ -22,11 +22,13 @@
 #include <limits>
 #include <memory>
 #include <string>
+#include <utility>
 
 #include "google/protobuf/struct.pb.h"
 #include "google/protobuf/timestamp.pb.h"
 #include <google/protobuf/repeated_field.h>
 #include <google/protobuf/util/json_util.h>
+#include <google/protobuf/util/message_differencer.h>
 #include <google/protobuf/util/time_util.h>
 #include "absl/base/call_once.h"
 #include "absl/container/flat_hash_map.h"
@@ -296,9 +298,33 @@ StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
   const google::protobuf::ListValue *tcb_levels_array;
   ASYLO_ASSIGN_OR_RETURN(tcb_levels_array, JsonGetArray(tcb_levels_json));
 
+  absl::flat_hash_map<std::string, TcbStatus> tcb_to_status_map;
   google::protobuf::RepeatedPtrField<TcbLevel> tcb_levels;
   for (const auto &tcb_level_json : tcb_levels_array->values()) {
-    ASYLO_ASSIGN_OR_RETURN(*tcb_levels.Add(), TcbLevelFromJson(tcb_level_json));
+    TcbLevel tcb_level;
+    ASYLO_ASSIGN_OR_RETURN(tcb_level, TcbLevelFromJson(tcb_level_json));
+    std::string map_key = absl::StrCat(tcb_level.tcb().components(),
+                                       tcb_level.tcb().pce_svn().value());
+    auto insert_pair = tcb_to_status_map.insert({map_key, tcb_level.status()});
+    if (!insert_pair.second) {
+      if (!google::protobuf::util::MessageDifferencer::Equals(insert_pair.first->second,
+                                                    tcb_level.status())) {
+        return Status(
+            error::GoogleError::INVALID_ARGUMENT,
+            "TCB info JSON contains the same TCB level multiple times with "
+            "different statuses");
+      } else {
+        std::string json_string;
+        if (!google::protobuf::util::MessageToJsonString(tcb_levels_json, &json_string)
+                 .ok()) {
+          json_string = "TCB levels JSON";
+        }
+        LOG(WARNING) << absl::StrCat("Encountered duplicate TCB entries in ",
+                                     json_string);
+        continue;
+      }
+    }
+    *tcb_levels.Add() = std::move(tcb_level);
   }
   return tcb_levels;
 }

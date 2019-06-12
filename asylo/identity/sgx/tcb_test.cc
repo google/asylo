@@ -256,8 +256,27 @@ TEST(TcbTest, TcbStatusWithUnknownKnownStatusVariantIsInvalid) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
+TEST(TcbTest,
+     TcbInfoImplWithMultipleTcbLevelsWithSameTcbButDifferentStatusesIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfo();
+  *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
+  tcb_info.mutable_impl()
+      ->mutable_tcb_levels(1)
+      ->mutable_status()
+      ->set_known_status(TcbStatus::OUT_OF_DATE);
+  EXPECT_THAT(ValidateTcbInfo(tcb_info),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
 TEST(TcbTest, ValidTcbInfoIsValid) {
   ASYLO_EXPECT_OK(ValidateTcbInfo(CreateValidTcbInfo()));
+}
+
+TEST(TcbTest,
+     TcbInfoImplWithMultipleTcbLevelsWithSameTcbAnsSameStatusesIsValid) {
+  TcbInfo tcb_info = CreateValidTcbInfo();
+  *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
+  ASYLO_EXPECT_OK(ValidateTcbInfo(tcb_info));
 }
 
 }  // namespace

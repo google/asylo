@@ -49,6 +49,11 @@ StatusOr<Tcb> TcbFromJson(const std::string &json_string);
 //
 // If unrecognized fields are encountered, then TcbInfoFromJson() logs warnings
 // but does not return an error.
+//
+// If |json_string| contains multiple TCB levels with the same "tcb" and the
+// same "status", then they are de-duplicated and a warning is logged. If it
+// contains multiple TCB levels with the same "tcb" and different "status"es,
+// then an error is returned.
 StatusOr<TcbInfo> TcbInfoFromJson(const std::string &json_string);
 
 }  // namespace sgx

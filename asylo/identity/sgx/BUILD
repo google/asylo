@@ -631,6 +631,7 @@ cc_library(
         ":platform_provisioning",
         ":tcb_proto_cc",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:cc_wkt_protos",
         "@com_google_protobuf//:protobuf",

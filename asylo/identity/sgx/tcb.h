@@ -55,6 +55,7 @@ Status ValidateRawTcb(const RawTcb &raw_tcb);
 //   * Each element of |tcb_levels| is valid (see below).
 //   * The |version| is a known value (currently just 1).
 //   * The |issue_date| is before the |next_update|.
+//   * Any contained TcbLevels with the same |tcb| also have the same |status|.
 //
 // Each TcbLevel is valid if and only if its |tcb| and |status| fields are both
 // set, the |tcb| field is valid according to ValidateTcb(), and either the

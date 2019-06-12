@@ -41,8 +41,11 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+using ::testing::ContainsRegex;
 using ::testing::Eq;
-using ::testing::HasSubstr;
+using ::testing::SizeIs;
+
+constexpr char kLogWarningRegex[] = "  WARNING  ";
 
 // Returns a valid Tcb JSON object.
 google::protobuf::Value CreateValidTcbJson() {
@@ -217,7 +220,7 @@ TEST(TcbFromJsonTest, ExtraFieldsCausesLogWarning) {
   ASYLO_ASSERT_OK_AND_ASSIGN(tcb, TcbFromJson(JsonToString(json)));
   ASYLO_ASSERT_OK(ValidateTcb(tcb));
   EXPECT_THAT(warning_collector.CollectOutputSoFar(),
-              IsOkAndHolds(HasSubstr("Encountered unrecognized fields")));
+              IsOkAndHolds(ContainsRegex(kLogWarningRegex)));
 }
 
 TEST(TcbInfoFromJsonTest, ImproperJsonFailsToParse) {
@@ -630,6 +633,23 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithNonStringStatusFailsToParse) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
+TEST(TcbInfoFromJsonTest,
+     TcbInfoJsonWithDuplicateTcbsWithDifferentStatusesFailsToParse) {
+  google::protobuf::Value json = CreateValidTcbInfoJson();
+  google::protobuf::ListValue *tcb_levels = json.mutable_struct_value()
+                                                ->mutable_fields()
+                                                ->at("tcbLevels")
+                                                .mutable_list_value();
+  google::protobuf::Value *new_level = tcb_levels->add_values();
+  *new_level = tcb_levels->values(0);
+  new_level->mutable_struct_value()
+      ->mutable_fields()
+      ->at("status")
+      .set_string_value("OutOfDate");
+  EXPECT_THAT(TcbInfoFromJson(JsonToString(json)).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
 TEST(TcbInfoFromJsonTest, CorrectTcbInfoJsonParsesSuccessfully) {
   constexpr char kExpectedTcbInfoProto[] = R"proto(
     impl {
@@ -701,6 +721,24 @@ TEST(TcbInfoFromJsonTest,
   }
 }
 
+TEST(TcbInfoFromJsonTest,
+     TcbLevelJsonWithRepeatedTcbLevelsIsDeduplicatedAndCausesLogWarning) {
+  google::protobuf::Value json = CreateValidTcbInfoJson();
+  google::protobuf::ListValue *tcb_levels = json.mutable_struct_value()
+                                                ->mutable_fields()
+                                                ->at("tcbLevels")
+                                                .mutable_list_value();
+  *tcb_levels->add_values() = tcb_levels->values(0);
+
+  TcbInfo tcb_info;
+  OutputCollector warning_collector(kCollectStdout);
+  ASYLO_ASSERT_OK_AND_ASSIGN(tcb_info, TcbInfoFromJson(JsonToString(json)));
+  ASYLO_ASSERT_OK(ValidateTcbInfo(tcb_info));
+  EXPECT_THAT(tcb_info.impl().tcb_levels(), SizeIs(1));
+  EXPECT_THAT(warning_collector.CollectOutputSoFar(),
+              IsOkAndHolds(ContainsRegex(kLogWarningRegex)));
+}
+
 TEST(TcbInfoFromJsonTest, TcbInfoJsonWithExtraFieldsCausesLogWarning) {
   google::protobuf::Value json = CreateValidTcbInfoJson();
   google::protobuf::Value value;
@@ -712,7 +750,7 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithExtraFieldsCausesLogWarning) {
   ASYLO_ASSERT_OK_AND_ASSIGN(tcb_info, TcbInfoFromJson(JsonToString(json)));
   ASYLO_ASSERT_OK(ValidateTcbInfo(tcb_info));
   EXPECT_THAT(warning_collector.CollectOutputSoFar(),
-              IsOkAndHolds(HasSubstr("Encountered unrecognized fields")));
+              IsOkAndHolds(ContainsRegex(kLogWarningRegex)));
 }
 
 TEST(TcbInfoFromJsonTest, TcbLevelJsonWithExtraFieldsCausesLogWarning) {
@@ -733,7 +771,7 @@ TEST(TcbInfoFromJsonTest, TcbLevelJsonWithExtraFieldsCausesLogWarning) {
   ASYLO_ASSERT_OK_AND_ASSIGN(tcb_info, TcbInfoFromJson(JsonToString(json)));
   ASYLO_ASSERT_OK(ValidateTcbInfo(tcb_info));
   EXPECT_THAT(warning_collector.CollectOutputSoFar(),
-              IsOkAndHolds(HasSubstr("Encountered unrecognized fields")));
+              IsOkAndHolds(ContainsRegex(kLogWarningRegex)));
 }
 
 TEST(TcbInfoFromJsonTest, TcbJsonWithExtraFieldsCausesLogWarning) {
@@ -757,7 +795,7 @@ TEST(TcbInfoFromJsonTest, TcbJsonWithExtraFieldsCausesLogWarning) {
   ASYLO_ASSERT_OK_AND_ASSIGN(tcb_info, TcbInfoFromJson(JsonToString(json)));
   ASYLO_ASSERT_OK(ValidateTcbInfo(tcb_info));
   EXPECT_THAT(warning_collector.CollectOutputSoFar(),
-              IsOkAndHolds(HasSubstr("Encountered unrecognized fields")));
+              IsOkAndHolds(ContainsRegex(kLogWarningRegex)));
 }
 
 }  // namespace
