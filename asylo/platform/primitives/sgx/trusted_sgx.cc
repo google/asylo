@@ -33,7 +33,6 @@
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
-#include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"

@@ -27,7 +27,8 @@
 #include "absl/meta/type_traits.h"
 #include "absl/strings/string_view.h"
 #include "asylo/util/logging.h"
-#include "asylo/util/error_space.h"  // IWYU: pragma export
+#include "asylo/util/error_codes.h"  // IWYU pragma: export
+#include "asylo/util/error_space.h"  // IWYU pragma: export
 #include "asylo/util/status.pb.h"
 #include "asylo/util/status_error_space.h"
 #include "asylo/util/status_internal.h"

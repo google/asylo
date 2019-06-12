@@ -23,7 +23,6 @@
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/test/test_selectors.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
-#include "asylo/util/error_codes.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

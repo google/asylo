@@ -27,8 +27,6 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
-#include "asylo/util/error_codes.h"
-#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace primitives {

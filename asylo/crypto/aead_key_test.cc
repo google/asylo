@@ -30,7 +30,7 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
-#include "asylo/util/error_codes.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace {

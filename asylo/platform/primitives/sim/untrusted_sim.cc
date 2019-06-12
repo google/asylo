@@ -36,7 +36,6 @@
 #include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
-#include "asylo/util/error_codes.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

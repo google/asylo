@@ -104,7 +104,5 @@ cc_library(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/x86:spin_lock",
-        "//asylo/util:error_codes",
-        "//asylo/util:status_macros",
     ],
 )

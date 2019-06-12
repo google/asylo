@@ -53,7 +53,6 @@ sim_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":test_selectors",
-        "//asylo/util:error_codes",
     ],
 )
 

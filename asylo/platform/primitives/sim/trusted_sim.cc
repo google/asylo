@@ -22,9 +22,9 @@
 
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sim/shared_sim.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
-#include "asylo/util/error_codes.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

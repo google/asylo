@@ -49,7 +49,6 @@ cc_library(
         ":primitives",
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/util:asylo_macros",
-        "//asylo/util:error_codes",
         "//asylo/util:status",
     ],
 )

@@ -26,7 +26,7 @@
 #include <string>
 #include <type_traits>
 
-#include "asylo/util/error_codes.h"
+#include "asylo/util/error_codes.h"  // IWYU pragma: export
 
 namespace asylo {
 namespace primitives {
