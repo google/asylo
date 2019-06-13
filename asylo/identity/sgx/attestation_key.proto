@@ -16,7 +16,7 @@
 
 syntax = "proto2";
 
-package asylo;
+package asylo.sgx;
 
 import "asylo/crypto/keys.proto";
 
@@ -25,7 +25,7 @@ import "asylo/crypto/keys.proto";
 message AttestationPublicKey {
   // The public part of the attestation key used to produce assertions.
   // Required.
-  optional AsymmetricSignatureKey attestation_public_key = 1;
+  optional AsymmetricSigningKeyProto attestation_public_key = 1;
 
   // Version of the AttestationPublicKey. Required.
   optional string version = 2;
