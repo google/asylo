@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_PRIMITIVES_MESSAGE_H_
-#define ASYLO_PLATFORM_PRIMITIVES_MESSAGE_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
+#define ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 
 #include <functional>
 #include <memory>
@@ -172,4 +172,4 @@ class MessageReader {
 }  // namespace primitives
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_PRIMITIVES_MESSAGE_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_

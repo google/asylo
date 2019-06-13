@@ -106,3 +106,25 @@ cc_library(
         "//asylo/platform/primitives/x86:spin_lock",
     ],
 )
+
+cc_library(
+    name = "message_reader_writer",
+    hdrs = ["message.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives",
+    ],
+)
+
+# Test MessageReader and MessageWriter implementation.
+cc_test(
+    name = "message_reader_writer_test",
+    size = "small",
+    srcs = ["message_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":message_reader_writer",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)

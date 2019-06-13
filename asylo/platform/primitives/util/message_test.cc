@@ -16,13 +16,12 @@
  *
  */
 
-#include "asylo/platform/primitives/message.h"
+#include "asylo/platform/primitives/util/message.h"
 
 #include <memory>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/platform/primitives/extent.h"
 
 using ::testing::Eq;
 using ::testing::StrEq;
