@@ -166,8 +166,8 @@ LogMessage::LogMessage(const char *file, int line, const std::string &result) {
   stream() << "Check failed: " << result << " ";
 }
 
-static constexpr const char *LogSeverityNames[4] = {"INFO", "WARNING", "ERROR",
-                                                    "FATAL"};
+static constexpr const char *LogSeverityNames[5] = {"INFO", "WARNING", "ERROR",
+                                                    "FATAL", "QFATAL"};
 
 void LogMessage::Init(const char *file, int line, LogSeverity severity) {
   // Disallow recursive fatal messages.
@@ -175,7 +175,7 @@ void LogMessage::Init(const char *file, int line, LogSeverity severity) {
     abort();
   }
   severity_ = severity;
-  if (severity_ == FATAL) {
+  if (severity_ == FATAL || severity_ == QFATAL) {
     log_panic = true;
   }
 
@@ -226,6 +226,9 @@ void LogMessage::SendToLog(const std::string &message_text) {
   // if FATAL occurs, abort enclave.
   if (severity_ == FATAL) {
     abort();
+  }
+  if (severity_ == QFATAL) {
+    _exit(1);
   }
 }
 

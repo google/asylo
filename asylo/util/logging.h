@@ -33,7 +33,7 @@
   ::asylo::LogMessage(__FILE__, __LINE__, WARNING)
 #define COMPACT_ASYLO_LOG_ERROR ::asylo::LogMessage(__FILE__, __LINE__, ERROR)
 #define COMPACT_ASYLO_LOG_FATAL ::asylo::LogMessage(__FILE__, __LINE__, FATAL)
-#define COMPACT_ASYLO_LOG_QFATAL COMPACT_ASYLO_LOG_FATAL
+#define COMPACT_ASYLO_LOG_QFATAL ::asylo::LogMessage(__FILE__, __LINE__, QFATAL)
 
 #ifdef NDEBUG
 #define COMPACT_ASYLO_LOG_DFATAL COMPACT_ASYLO_LOG_ERROR
@@ -101,7 +101,7 @@
 
 /// Severity level definitions. These represent the four severity levels INFO
 /// through FATAL.
-enum LogSeverity { INFO, WARNING, ERROR, FATAL };
+enum LogSeverity { INFO, WARNING, ERROR, FATAL, QFATAL };
 
 namespace asylo {
 
