@@ -16,13 +16,15 @@ BAZEL="bazel --bazelrc=${BAZELRC}"
 delete_bazelrc() { rm "${BAZELRC}"; }
 CLEANUP_FUNCS+=(delete_bazelrc)
 
+PKG="//asylo"
+
 # Query for all of the tests marked as regression tests excluding tests in
 # platform/primitives.
-ASYLO_TESTS="tests(//asylo/...)"
-ASYLO_SGX_TESTS="attr(tags, \"asylo-sgx\", tests(//asylo/...))"
-ASYLO_SIM_TESTS="attr(tags, \"asylo-sim\", tests(//asylo/...))"
-ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(//asylo/...))"
-ASYLO_PRIMITIVES="tests(//asylo/platform/primitives/...)"
+ASYLO_TESTS="tests(${PKG}/...)"
+ASYLO_SGX_TESTS="attr(tags, \"asylo-sgx\", tests(${PKG}/...))"
+ASYLO_SIM_TESTS="attr(tags, \"asylo-sim\", tests(${PKG}/...))"
+ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(${PKG}/...))"
+ASYLO_PRIMITIVES="tests(${PKG}/platform/primitives/...)"
 NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
 HOST_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
   ${NOREGRESSION_TESTS}")
@@ -52,6 +54,10 @@ STAT=$(($STAT || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
   --config=enc-sim "${SGX_REGRESSION_TESTS[@]}"
+STAT=$((${STAT} || $?))
+
+${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
+  -c opt --config=enc-sim "${SGX_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
