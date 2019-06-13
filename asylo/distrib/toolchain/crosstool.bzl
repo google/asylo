@@ -661,10 +661,6 @@ def _impl(ctx):
                             "-ffunction-sections",
                             "-fdata-sections",
                             "-fPIE",
-                            # The following are needed to compile Intel's SGX SDK in opt mode
-                            "-Wno-array-bounds",
-                            "-Wno-strict-aliasing",
-                            "-Wno-maybe-uninitialized",
                         ],
                     ),
                 ],

@@ -79,7 +79,7 @@ UntrustedCacheMalloc::~UntrustedCacheMalloc() {
 }
 
 void *UntrustedCacheMalloc::GetBuffer() {
-  void **buffers;
+  void **buffers = nullptr;
   void *buffer;
   bool is_pool_empty;
 

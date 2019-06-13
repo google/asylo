@@ -118,6 +118,7 @@ off_t secure_lseek(int fd, off_t offset, int whence) {
           AeadHandler::GetInstance().GetLogicalFileSize(fd);
       logical_offset = logical_eof_offset + offset;
     } break;
+    default: logical_offset = 0;  // Satisfy -Wmaybe-uninitialized
   }
 
   // The net physical offset that corresponds to the requested logical offset.

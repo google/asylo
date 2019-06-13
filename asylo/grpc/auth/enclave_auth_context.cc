@@ -39,7 +39,7 @@ StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(
   }
 
   EnclaveIdentities identities;
-  uint32_t record_protocol;
+  uint32_t record_protocol = 0;
   for (auto it = auth_context.begin(); it != auth_context.end(); ++it) {
     ::grpc::AuthProperty auth_property = *it;
 

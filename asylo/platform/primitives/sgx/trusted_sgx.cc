@@ -164,9 +164,9 @@ PrimitiveStatus Finalize(void *context, TrustedParameterStack *params) {
 // point.
 PrimitiveStatus DonateThread(void *context, TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 0);
-  int result;
+  int result = 0;
   try {
-    result = asylo::__asylo_threading_donate();;
+    result = asylo::__asylo_threading_donate();
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
