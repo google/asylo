@@ -107,8 +107,6 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
 #define IPPROTO_RAW 255      // Raw IP packets.
 #define IPPROTO_MAX
 
-#define AI_PASSIVE 0x0001  // Socket address is intended for `bind'.
-
 #define IPV6_V6ONLY 26
 
 #define INET_ADDRSTRLEN 16
