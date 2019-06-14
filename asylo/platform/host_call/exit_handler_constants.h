@@ -34,6 +34,9 @@ namespace host_call {
 // Exit handler constant for |SystemCallHandler|.
 static constexpr uint64_t kSystemCallHandler = primitives::kSelectorHostCall;
 
+// Exit handler constant for |IsAttyHandler|.
+static constexpr uint64_t kIsAttyHandler = primitives::kSelectorHostCall + 1;
+
 }  // namespace host_call
 }  // namespace asylo
 

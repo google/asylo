@@ -18,6 +18,9 @@
 
 #include "asylo/platform/host_call/trusted/host_calls.h"
 
+#include "asylo/platform/host_call/exit_handler_constants.h"
+#include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 extern "C" {
@@ -254,6 +257,18 @@ int enc_untrusted_chmod(const char *path_name, mode_t mode) {
 
 int enc_untrusted_fchmod(int fd, mode_t mode) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_fchmod, fd, mode);
+}
+
+int enc_untrusted_isatty(int fd) {
+  asylo::primitives::TrustedParameterStack params;
+  params.PushByCopy(fd);
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(
+          asylo::host_call::kIsAttyHandler, &params);
+  if (!status.ok()) {
+    abort();
+  }
+  return params.Pop<int>();
 }
 
 }  // extern "C"

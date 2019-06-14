@@ -29,6 +29,8 @@ cc_library(
     hdrs = ["trusted/host_calls.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":exit_handler_constants",
+        ":host_call_dispatcher",
         "//asylo/platform/system_call",
         "//asylo/platform/system_call/type_conversions:types",
     ],

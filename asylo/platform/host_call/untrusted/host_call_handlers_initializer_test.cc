@@ -54,7 +54,7 @@ class MockedEnclaveClient : public primitives::Client {
 // Verify that the result of GetHostCallHandlersMapping() can be used to
 // initialize an enclave client, and |SystemCallHandler| is correctly registered
 // as an exit handler.
-TEST(HostCallHandlersInitializerTest, RegisterSystemCallHandlerTest) {
+TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   StatusOr<std::unique_ptr<primitives::Client::ExitCallProvider>>
       dispatch_table = GetHostCallHandlersMapping();
 
@@ -75,6 +75,18 @@ TEST(HostCallHandlersInitializerTest, RegisterSystemCallHandlerTest) {
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSystemCallHandler, &params, client.get()),
               StatusIs(error::GoogleError::FAILED_PRECONDITION));
+
+  // Verify that |kIsAttyHandler| is in use by attempting to re-register the
+  // handler.
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                  kIsAttyHandler, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+
+  // Verify that |kIsAttyHandler| points to |IsAttyHandler| by making a
+  // call with an empty request.
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                  kIsAttyHandler, &params, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 }  // namespace host_call

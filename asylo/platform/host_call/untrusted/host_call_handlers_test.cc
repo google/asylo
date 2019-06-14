@@ -31,7 +31,7 @@ namespace asylo {
 namespace host_call {
 namespace {
 
-TEST(HostCallHandlersTest, EmptyParameterStackTest) {
+TEST(HostCallHandlersTest, SyscallHandlerEmptyParameterStackTest) {
   primitives::NativeParameterStack empty_params;
 
   EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &empty_params),
@@ -40,7 +40,7 @@ TEST(HostCallHandlersTest, EmptyParameterStackTest) {
                        "to be called!"));
 }
 
-TEST(HostCallHandlersTest, MoreThanOneRequestOnStackTest) {
+TEST(HostCallHandlersTest, SyscallHandlerMoreThanOneRequestOnStackTest) {
   primitives::NativeParameterStack params;
   params.PushByCopy(1);  // request 1
   params.PushByCopy(1);  // request 2
@@ -58,7 +58,7 @@ TEST(HostCallHandlersTest, MoreThanOneRequestOnStackTest) {
 // system call was made successfully, i.e. without serialization or other
 // errors. We do not verify the validity of the response itself obtained by the
 // syscall.
-TEST(HostCallHandlersTest, ValidRequestOnParameterStackTest) {
+TEST(HostCallHandlersTest, SyscallHandlerValidRequestOnParameterStackTest) {
   std::array<uint64_t, system_call::kParameterMax> request_params;
   primitives::NativeParameterStack params;
   primitives::Extent request;  // To be owned by params.
@@ -83,7 +83,7 @@ TEST(HostCallHandlersTest, ValidRequestOnParameterStackTest) {
 // attempt a system call for any non-zero sized request, even if the sysno
 // interpreted from the request is illegal. Check if the syscall was made
 // and it returned appropriate google error code for the illegal sysno.
-TEST(HostCallHandlersTest, InvalidRequestOnParameterStackTest) {
+TEST(HostCallHandlersTest, SyscallHandlerInvalidRequestOnParameterStackTest) {
   primitives::NativeParameterStack params;
   char request_str[] = "illegal_request";
   params.PushByCopy(primitives::Extent{request_str, strlen(request_str)});
@@ -94,6 +94,37 @@ TEST(HostCallHandlersTest, InvalidRequestOnParameterStackTest) {
   EXPECT_TRUE(params.empty());
 }
 
+// Invokes an IsAtty hostcall for an invalid request. It tests that the correct
+// error error is returned for an empty parameter stack and for a parameter
+// stack with more than one item.
+TEST(HostCallHandlersTest, IsAttyIncorrectParameterStackSizeTest) {
+  primitives::NativeParameterStack params;
+
+  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  params.PushByCopy(1);
+  params.PushByCopy(2);
+
+  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Invokes an IsAtty hostcall for a valid request, and verifies that an ok
+// response code is returned, and that the correct response is included on
+// the parameter stack.
+TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
+  primitives::NativeParameterStack params;
+
+  params.PushByCopy(0);
+  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
+              StatusIs(error::GoogleError::OK));
+
+  int result = params.Pop<int>();
+  EXPECT_EQ(result, 0);
+}
+
 }  // namespace
+
 }  // namespace host_call
 }  // namespace asylo

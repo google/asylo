@@ -410,12 +410,21 @@ primitives::PrimitiveStatus TestInotifyRmWatch(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestIsAtty(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+
+  int fd = params->Pop<int>();
+  params->PushByCopy<int>(enc_untrusted_isatty(fd));
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
 extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
   // Register the host call dispatcher.
-  enc_set_dispatch_syscall(HostCallDispatcher);
+  enc_set_dispatch_syscall(SystemCallDispatcher);
 
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kAbortEnclaveSelector, primitives::EntryHandler{Abort}));
@@ -485,6 +494,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestInotifyAddWatch, primitives::EntryHandler{TestInotifyAddWatch}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestInotifyRmWatch, primitives::EntryHandler{TestInotifyRmWatch}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestIsAtty, primitives::EntryHandler{TestIsAtty}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

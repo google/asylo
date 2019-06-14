@@ -20,25 +20,32 @@
 #define ASYLO_PLATFORM_HOST_CALL_TRUSTED_HOST_CALL_DISPATCHER_H_
 
 #include <stddef.h>
+
 #include <cstdint>
+
 #include "asylo/platform/primitives/primitive_status.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 
 namespace asylo {
 namespace host_call {
 
-// Provides the only host call dispatcher on the trusted side that is used for
-// making system calls and other untrusted host calls in general. This
-// dispatcher is installed as a callback by the |system_call| library for making
-// system calls across the enclave boundary. Takes in a serialized
+// Provides the dispatcher used for making host calls that are system calls.
+// This dispatcher is installed as a callback by the |system_call| library for
+// making system calls across the enclave boundary. Takes in a serialized
 // |request_buffer| (containing the system call number and its corresponding
 // arguments), and provides a serialized |response_buffer| (containing the
 // system call return value and the response arguments). Returns ok status when
 // successful, otherwise a status containing the error code and error message
 // when serialization, dispatch or other errors occur.
-primitives::PrimitiveStatus HostCallDispatcher(const uint8_t *request_buffer,
-                                               size_t request_size,
-                                               uint8_t **response_buffer,
-                                               size_t *response_size);
+primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
+                                                 size_t request_size,
+                                                 uint8_t** response_buffer,
+                                                 size_t* response_size);
+
+// Provides a dispatcher to wrap the UntrustedCall function and perform basic
+// validations. Used for host calls which are not implemented using syscalls.
+primitives::PrimitiveStatus NonSystemCallDispatcher(
+    uint64_t exit_selector, primitives::TrustedParameterStack* parameters);
 
 }  // namespace host_call
 }  // namespace asylo

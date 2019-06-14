@@ -25,10 +25,10 @@
 namespace asylo {
 namespace host_call {
 
-primitives::PrimitiveStatus HostCallDispatcher(const uint8_t *request_buffer,
-                                               size_t request_size,
-                                               uint8_t **response_buffer,
-                                               size_t *response_size) {
+primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
+                                                 size_t request_size,
+                                                 uint8_t** response_buffer,
+                                                 size_t* response_size) {
   primitives::TrustedParameterStack parameters;
 
   if (request_size == 0 || request_buffer == nullptr) {
@@ -66,6 +66,29 @@ primitives::PrimitiveStatus HostCallDispatcher(const uint8_t *request_buffer,
   // worry about freeing the memory we allocate here.
   *response_buffer = reinterpret_cast<uint8_t *>(malloc(*response_size));
   memcpy(*response_buffer, response->As<uint8_t>(), *response_size);
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus NonSystemCallDispatcher(
+    uint64_t exit_selector, primitives::TrustedParameterStack* parameters) {
+  if (parameters == nullptr || parameters->empty()) {
+    return primitives::PrimitiveStatus{
+        error::GoogleError::FAILED_PRECONDITION,
+        "Null or empty parameter stack provided. Need a valid request to "
+        "dispatch the host call"};
+  }
+
+  ASYLO_RETURN_IF_ERROR(
+      primitives::TrustedPrimitives::UntrustedCall(exit_selector, parameters));
+
+  // Parameter stack should at least contain the host call return value.
+  if (parameters->empty()) {
+    return primitives::PrimitiveStatus{
+        error::GoogleError::DATA_LOSS,
+        "No response received for the host call, or response lost while "
+        "crossing the enclave boundary."};
+  }
 
   return primitives::PrimitiveStatus::OkStatus();
 }

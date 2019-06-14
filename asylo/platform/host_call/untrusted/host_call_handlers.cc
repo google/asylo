@@ -17,6 +17,9 @@
  */
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
+
+#include <unistd.h>
+
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/system_call/untrusted_invoke.h"
 #include "asylo/util/status_macros.h"
@@ -51,6 +54,19 @@ Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
       *request, &response, response_extent_allocator);
 
   return primitives::MakeStatus(status);
+}
+
+Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
+                     void *context,
+                     primitives::NativeParameterStack *parameters) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(parameters, 1);
+
+  int fd = parameters->Pop<int>();
+
+  int result = isatty(fd);
+  parameters->PushByCopy(result);
+
+  return Status::OkStatus();
 }
 
 }  // namespace host_call

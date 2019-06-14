@@ -36,6 +36,10 @@ constexpr uint64_t kAbortEnclaveSelector = primitives::kSelectorUser;
 // |kSelectorUser|.
 constexpr uint64_t kFirstSelector = primitives::kSelectorUser + 1;
 
+// Offset to be used when starting non-syscall host call entry handler
+// constants relative to |kSelectorUser|.
+constexpr uint64_t kNonSyscallFirstSelector = primitives::kSelectorUser + 1024;
+
 // Each entry handler constant below corresponds to an unit test on the
 // untrusted side, and its corresponding trusted handler is responsible for
 // triggering a host call to test it, and sending the results back to the
@@ -95,6 +99,7 @@ constexpr uint64_t kTestInotifyAddWatch =
 constexpr uint64_t kTestInotifyRmWatch =
     kFirstSelector + asylo::system_call::kSYS_inotify_rm_watch;
 
+constexpr uint64_t kTestIsAtty = kNonSyscallFirstSelector;
 
 }  // namespace host_call
 }  // namespace asylo

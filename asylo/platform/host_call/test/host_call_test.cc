@@ -1019,6 +1019,24 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
   close(inotify_fd);
 }
 
+// Tests enc_untrusted_isatty() by testing with a non-terminal file descriptor,
+// it should return 0 since the file is not referring to a terminal.
+TEST_F(HostCallTest, TestIsAtty) {
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  primitives::NativeParameterStack params;
+  params.PushByCopy<int>(/*value=fd=*/fd);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestIsAtty, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
