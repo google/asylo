@@ -227,6 +227,10 @@ int enc_untrusted_flock(int fd, int operation) {
                                klinux_operation);
 }
 
+int enc_untrusted_fsync(int fd) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_fsync, fd);
+}
+
 int enc_untrusted_inotify_init1(int flags) {
   int klinux_flags;
   TokLinuxInotifyFlag(&flags, &klinux_flags);

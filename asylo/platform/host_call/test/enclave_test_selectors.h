@@ -92,6 +92,7 @@ constexpr uint64_t kTestSetSockOpt =
     kFirstSelector + asylo::system_call::kSYS_setsockopt;
 constexpr uint64_t kTestFlock =
     kFirstSelector + asylo::system_call::kSYS_flock;
+constexpr uint64_t kTestFsync = kFirstSelector + asylo::system_call::kSYS_fsync;
 constexpr uint64_t kTestInotifyInit1 =
     kFirstSelector + asylo::system_call::kSYS_inotify_init1;
 constexpr uint64_t kTestInotifyAddWatch =

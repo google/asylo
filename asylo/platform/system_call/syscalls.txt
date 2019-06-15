@@ -82,6 +82,7 @@ SYSCALL_DEFINE5(select, int, n, fd_set *, inp, fd_set *, outp, fd_set *, exp,
 
 SYSCALL_DEFINE1(chdir, const char *, filename)
 SYSCALL_DEFINE1(close, unsigned int, fd)
+SYSCALL_DEFINE1(fsync, unsigned int, fd)
 SYSCALL_DEFINE1(pipe, \out int * [count:2], fildes)
 SYSCALL_DEFINE2(access, const char *, filename, int, mode)
 SYSCALL_DEFINE2(fstat, unsigned int, fd, \out struct stat *, statbuf)

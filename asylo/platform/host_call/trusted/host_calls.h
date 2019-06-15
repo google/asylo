@@ -67,6 +67,7 @@ int enc_untrusted_fchown(int fd, uid_t owner, gid_t group);
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen);
 int enc_untrusted_flock(int fd, int operation);
+int enc_untrusted_fsync(int fd);
 int enc_untrusted_inotify_init1(int flags);
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask);

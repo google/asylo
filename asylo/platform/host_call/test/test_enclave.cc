@@ -375,6 +375,16 @@ primitives::PrimitiveStatus TestFlock(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestFsync(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+
+  int fd = params->Pop<int>();
+  params->PushByCopy<int>(enc_untrusted_fsync(fd));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 primitives::PrimitiveStatus TestInotifyInit1(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
@@ -488,6 +498,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestSetSockOpt, primitives::EntryHandler{TestSetsockopt}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestFlock, primitives::EntryHandler{TestFlock}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestFsync, primitives::EntryHandler{TestFsync}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestInotifyInit1, primitives::EntryHandler{TestInotifyInit1}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(

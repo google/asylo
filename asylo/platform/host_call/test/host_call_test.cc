@@ -894,6 +894,29 @@ TEST_F(HostCallTest, TestFlock) {
   flock(fd, LOCK_UN);
 }
 
+// Tests enc_untrusted_fsync by writing to a valid file, and then running fsync
+// on it. Ensures that a successful code of 0 is returned.
+TEST_F(HostCallTest, TestFsync) {
+  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Write something to the file.
+  std::string file_content = "some random content.";
+  ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
+              Eq(file_content.length() + 1));
+
+  primitives::NativeParameterStack params;
+  params.PushByCopy<int>(/*value=fd*/ fd);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFsync, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+}
+
 // Tests enc_untrusted_inotify_init1() by initializing a new inotify instance
 // from inside the enclave and verifying that a file descriptor associated with
 // a new inotify event queue is returned. Only the return value, i.e. the file
