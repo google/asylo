@@ -163,8 +163,6 @@ enum AddrInfoFlags {
   BRIDGE_AI_NUMERICSERV = 0x0080,
   BRIDGE_AI_IDN = 0x0100,
   BRIDGE_AI_CANONIDN = 0x0200,
-  BRIDGE_AI_IDN_ALLOW_UNASSIGNED = 0x0400,
-  BRIDGE_AI_IDN_USE_STD3_ASCII_RULES = 0x0800,
 };
 
 // The possible return error codes for getaddrinfo.

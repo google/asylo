@@ -154,9 +154,7 @@ TEST_F(BridgeTest, BridgeAddressInfoFlagsTest) {
                       BRIDGE_AI_PASSIVE,
                       BRIDGE_AI_NUMERICSERV,
                       BRIDGE_AI_IDN,
-                      BRIDGE_AI_CANONIDN,
-                      BRIDGE_AI_IDN_ALLOW_UNASSIGNED,
-                      BRIDGE_AI_IDN_USE_STD3_ASCII_RULES};
+                      BRIDGE_AI_CANONIDN};
   intvec to_bits = {AI_CANONNAME,
                     AI_NUMERICHOST,
                     AI_V4MAPPED,
@@ -165,9 +163,7 @@ TEST_F(BridgeTest, BridgeAddressInfoFlagsTest) {
                     AI_PASSIVE,
                     AI_NUMERICSERV,
                     AI_IDN,
-                    AI_CANONIDN,
-                    AI_IDN_ALLOW_UNASSIGNED,
-                    AI_IDN_USE_STD3_ASCII_RULES};
+                    AI_CANONIDN};
   auto from_matcher =
       IsFiniteRestrictionOf<int, int>(FromBridgeAddressInfoFlags);
   EXPECT_THAT(FuzzBitsetTranslationFunction(from_bits, to_bits, ITER_BOUND),

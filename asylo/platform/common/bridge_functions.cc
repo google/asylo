@@ -454,12 +454,6 @@ int FromBridgeAddressInfoFlags(int bridge_ai_flag) {
   if (bridge_ai_flag & BRIDGE_AI_NUMERICSERV) ai_flag |= AI_NUMERICSERV;
   if (bridge_ai_flag & BRIDGE_AI_IDN) ai_flag |= AI_IDN;
   if (bridge_ai_flag & BRIDGE_AI_CANONIDN) ai_flag |= AI_CANONIDN;
-  if (bridge_ai_flag & BRIDGE_AI_IDN_ALLOW_UNASSIGNED) {
-    ai_flag |= AI_IDN_ALLOW_UNASSIGNED;
-  }
-  if (bridge_ai_flag & BRIDGE_AI_IDN_USE_STD3_ASCII_RULES) {
-    ai_flag |= AI_IDN_USE_STD3_ASCII_RULES;
-  }
   return ai_flag;
 }
 
@@ -474,12 +468,6 @@ int ToBridgeAddressInfoFlags(int ai_flag) {
   if (ai_flag & AI_NUMERICSERV) bridge_ai_flag |= BRIDGE_AI_NUMERICSERV;
   if (ai_flag & AI_IDN) bridge_ai_flag |= BRIDGE_AI_IDN;
   if (ai_flag & AI_CANONIDN) bridge_ai_flag |= BRIDGE_AI_CANONIDN;
-  if (ai_flag & AI_IDN_ALLOW_UNASSIGNED) {
-    bridge_ai_flag |= BRIDGE_AI_IDN_ALLOW_UNASSIGNED;
-  }
-  if (ai_flag & AI_IDN_USE_STD3_ASCII_RULES) {
-    bridge_ai_flag |= BRIDGE_AI_IDN_USE_STD3_ASCII_RULES;
-  }
   return bridge_ai_flag;
 }
 

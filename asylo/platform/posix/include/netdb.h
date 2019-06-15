@@ -40,8 +40,6 @@ const char *gai_strerror(int ecode);
 #define AI_NUMERICSERV 0x0080
 #define AI_IDN 0x0100
 #define AI_CANONIDN 0x0200
-#define AI_IDN_ALLOW_UNASSIGNED 0x0400
-#define AI_IDN_USE_STD3_ASCII_RULES 0x0800
 
 // Error values for getaddrinfo
 #define EAI_BADFLAGS -1       // Invalid value for `ai_flags' field.
