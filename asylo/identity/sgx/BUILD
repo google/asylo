@@ -295,7 +295,7 @@ cc_library(
         "code_identity_util.cc",
         "self_identity_internal.h",
     ] + select({
-        "@linux_sgx//:sgx": ["self_identity.cc"],
+        "@com_google_asylo//asylo": ["self_identity.cc"],
         "//conditions:default": ["fake_self_identity.cc"],
     }),
     hdrs = [
@@ -470,14 +470,14 @@ cc_test(
 cc_library(
     name = "hardware_interface",
     srcs = select({
-        "@linux_sgx//:sgx": ["hardware_interface.cc"],
+        "@com_google_asylo//asylo": ["hardware_interface.cc"],
         "//conditions:default": [
             "fake_enclave.cc",
             "fake_hardware_interface.cc",
         ],
     }),
     hdrs = ["hardware_interface.h"] + select({
-        "@linux_sgx//:sgx": [],
+        "@com_google_asylo//asylo": [],
         "//conditions:default": ["fake_enclave.h"],
     }),
     deps = [
@@ -489,7 +489,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
     ] + select({
-        "@linux_sgx//:sgx": [
+        "@com_google_asylo//asylo": [
             "@linux_sgx//:trts",
         ],
         "//conditions:default": [
