@@ -555,3 +555,22 @@ sgx_enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = TEST_DEPS_COMMON,
 )
+
+sgx_enclave(
+    name = "fail_finalize_enclave.so",
+    srcs = ["fail_finalize_enclave.cc"],
+    deps = ["//asylo:enclave_runtime"],
+)
+
+sgx_enclave_test(
+    name = "fail_finalize_enclave_test",
+    size = "small",
+    srcs = ["fail_finalize_enclave_test.cc"],
+    embedded_enclaves = {"enclave": ":fail_finalize_enclave.so"},
+    deps = [
+        "//asylo:enclave_client",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)

@@ -237,12 +237,16 @@ class EnclaveManager {
   /// point with final_input unless `skip_finalize` is true, then calls
   /// `client's` DestroyEnclave method, and then removes client's name from the
   /// EnclaveManager client registry. The manager owns the client, so removing
-  /// it calls client's destructor and frees its memory.
+  /// it calls client's destructor and frees its memory. The client is destroyed
+  /// regardless of whether `client's` EnterAndFinalize method succeeds or
+  /// fails. This method must not be invoked more than once.
   ///
   /// \param client A client attached to the enclave to destroy.
   /// \param final_input Input to pass the enclave's finalizer.
   /// \param skip_finalize If true, the enclave is destroyed without invoking
   ///                      its Finalize method.
+  /// \return The Status returned by the enclave's Finalize method, or an
+  ///         OK Status if that was skipped.
   Status DestroyEnclave(EnclaveClient *client, const EnclaveFinal &final_input,
                         bool skip_finalize = false)
       LOCKS_EXCLUDED(client_table_lock_);

@@ -385,10 +385,6 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
 
   // Invoke the enclave entry-point.
   status = trusted_application->Finalize(enclave_final);
-  if (!status.ok()) {
-    trusted_application->SetState(EnclaveState::kRunning);
-    return status_serializer.Serialize(status);
-  }
 
   ThreadManager *thread_manager = ThreadManager::GetInstance();
   thread_manager->Finalize();

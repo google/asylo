@@ -72,17 +72,6 @@ class ApplicationWrapperDriverMainTest : public ::testing::Test {
     return FakeEnclaveLoader(std::move(client_owned_));
   }
 
-  // Destroys client_. Should only be used when ApplicationWrapperDriverMain()
-  // does not destroy client_.
-  void DestroyClient() {
-    EnclaveManager *instance;
-    ASYLO_ASSERT_OK_AND_ASSIGN(instance, EnclaveManager::Instance());
-
-    EXPECT_CALL(*client_, EnterAndFinalize(_));
-    EXPECT_CALL(*client_, DestroyEnclave());
-    ASYLO_EXPECT_OK(instance->DestroyEnclave(client_, EnclaveFinal()));
-  }
-
   // The EnclaveClient to use for testing.
   StrictMock<MockEnclaveClient> *client_;
 
@@ -181,7 +170,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
       .WillOnce(Return(enter_and_run_failure));
   EXPECT_CALL(*client_, EnterAndFinalize(_))
       .WillOnce(Return(destroy_enclave_failure));
-  EXPECT_CALL(*client_, DestroyEnclave()).Times(0);
+  EXPECT_CALL(*client_, DestroyEnclave());
 
   char *arg = nullptr;
   OutputCollector collect_stderr(kCollectStderr);
@@ -193,10 +182,6 @@ TEST_F(ApplicationWrapperDriverMainTest,
               IsOkAndHolds(HasSubstr(
                   absl::StrCat("Failed to destroy the application enclave: ",
                                destroy_enclave_failure.ToString()))));
-
-  // Since the EnterAndFinalize() call fails, ApplicationWrapperDriverMain()
-  // will not have destroyed the enclave.
-  DestroyClient();
 }
 
 // Tests that ApplicationWrapperDriverMain() returns the same status as
@@ -214,17 +199,13 @@ TEST_F(ApplicationWrapperDriverMainTest,
           DoAll(SetArgPointee<1>(enclave_output), Return(Status::OkStatus())));
   EXPECT_CALL(*client_, EnterAndFinalize(_))
       .WillOnce(Return(destroy_enclave_failure));
-  EXPECT_CALL(*client_, DestroyEnclave()).Times(0);
+  EXPECT_CALL(*client_, DestroyEnclave());
 
   char *arg = nullptr;
   EXPECT_EQ(ApplicationWrapperDriverMain(Loader(), "destory_failure",
                                          /*argc=*/0, /*argv=*/&arg)
                 .status(),
             destroy_enclave_failure);
-
-  // Since the EnterAndFinalize() call fails, ApplicationWrapperDriverMain()
-  // will not have destroyed the enclave.
-  DestroyClient();
 }
 
 // Tests that ApplicationWrapperDriverMain() correctly propagates the user-

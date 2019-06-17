@@ -167,21 +167,27 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
     return Status::OkStatus();
   }
 
+  Status finalize_status;
   if (!skip_finalize) {
-    ASYLO_RETURN_IF_ERROR(client->EnterAndFinalize(final_input));
+    finalize_status = client->EnterAndFinalize(final_input);
   }
 
-  ASYLO_RETURN_IF_ERROR(client->DestroyEnclave());
-  const Status status =
+  Status status = client->DestroyEnclave();
+  LOG_IF(ERROR, !status.ok()) << "Client's DestroyEnclave failed: " << status;
+
+  status =
       EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
           client);
+  LOG_IF(ERROR, !status.ok())
+      << "DeregisterAllSignalsForClient failed: " << status;
+
   absl::WriterMutexLock lock(&client_table_lock_);
   const auto &name = name_by_client_[client];
   client_by_name_.erase(name);
   name_by_client_.erase(client);
   loader_by_client_.erase(client);
 
-  return status;
+  return finalize_status;
 }
 
 EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
