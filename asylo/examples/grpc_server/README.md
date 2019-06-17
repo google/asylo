@@ -288,8 +288,8 @@ This example implements the driver in
 
 #### Driver setting definitions
 
-The driver defines two flags and a `constexpr` string to hold the information it
-needs:
+The driver defines three flags and a `constexpr` string to hold the information
+it needs:
 
 ```cpp
 DEFINE_string(enclave_path, "", "Path to enclave to load");
@@ -298,11 +298,13 @@ DEFINE_int32(server_max_lifetime, 300,
              "The longest amount of time (in seconds) that the server should "
              "be allowed to run");
 
-constexpr char kServerAddress[] = "[::1]:0";
+DEFINE_int32(port, 0, "Port number that server listens to");
+
+constexpr char kServerAddress[] = "[::1]";
 ```
 
-The address `[::1]:0` indicates that the server should run locally on a port
-chosen by the operating system.
+The address `[::1]` indicates that the server should run locally. Default port
+value 0 indicates that the port will be chosen by the operating system.
 
 #### Parsing flags and creating configuration
 
@@ -323,6 +325,8 @@ asylo::EnclaveConfig config;
 config.SetExtension(examples::grpc_server::server_address, kServerAddress);
 config.SetExtension(examples::grpc_server::server_max_lifetime,
                     FLAGS_server_max_lifetime);
+config.SetExtension(examples::grpc_server::port, FLAGS_port);
+
 ```
 
 #### Starting the enclave
@@ -477,6 +481,17 @@ For example, to set a maximum server lifetime of ten seconds, run:
 $ bazel run --config=enc-sim \
     //asylo/examples/grpc_server:grpc_server -- \
     --server_max_lifetime=10
+```
+
+In addition, if you want the server listen on a specific port, you can use the
+`--port` flag that is defined in the [driver](#driving-the-enclave).
+
+For example, to make server listen on port 8558, run:
+
+```bash
+$ bazel run --config=enc-sim \
+    //asylo/examples/grpc_server:grpc_server -- \
+    --port=8558
 ```
 
 For this example, use the

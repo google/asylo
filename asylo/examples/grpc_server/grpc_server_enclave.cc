@@ -22,6 +22,7 @@
 #include "absl/base/thread_annotations.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
+#include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
 #include "asylo/examples/grpc_server/translator_server.h"
@@ -94,6 +95,11 @@ asylo::Status GrpcServerEnclave::Initialize(
                          "Expected a server_max_lifetime extension on config.");
   }
 
+  if (!enclave_config.HasExtension(port)) {
+    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                         "Expected a port extension on config.");
+  }
+
   shutdown_timeout_ =
       absl::Seconds(enclave_config.GetExtension(server_max_lifetime));
 
@@ -116,8 +122,10 @@ asylo::Status GrpcServerEnclave::Initialize(
   // Neither the server nor its clients are authenticated, and no channels are
   // secured. This configuration is not suitable for a production environment.
   int selected_port;
-  builder.AddListeningPort(enclave_config.GetExtension(server_address),
-                           ::grpc::InsecureServerCredentials(), &selected_port);
+  builder.AddListeningPort(
+      absl::StrCat(enclave_config.GetExtension(server_address), ":",
+                   enclave_config.GetExtension(port)),
+      ::grpc::InsecureServerCredentials(), &selected_port);
 
   // Add the translator service to the server.
   builder.RegisterService(&service_);

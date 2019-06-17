@@ -29,9 +29,11 @@ DEFINE_int32(server_max_lifetime, 300,
              "be allowed to run");
 DEFINE_int32(server_lifetime, -1, "Deprecated alias for server_max_lifetime");
 
-// A port of 0 is used to indicate that the system should choose an available
-// port.
-constexpr char kServerAddress[] = "[::1]:0";
+// Default value 0 is used to indicate that the system should choose an
+// available port.
+DEFINE_int32(port, 0, "Port that the server listens to");
+
+constexpr char kServerAddress[] = "[::1]";
 
 int main(int argc, char *argv[]) {
   // Parse command-line arguments.
@@ -48,6 +50,7 @@ int main(int argc, char *argv[]) {
   config.SetExtension(examples::grpc_server::server_max_lifetime,
                       FLAGS_server_lifetime >= 0 ? FLAGS_server_lifetime
                                                  : FLAGS_server_max_lifetime);
+  config.SetExtension(examples::grpc_server::port, FLAGS_port);
 
   // Configure and retrieve the EnclaveManager.
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());

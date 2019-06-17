@@ -28,4 +28,7 @@ extend asylo.EnclaveConfig {
   // The maximum amount of time in seconds before the server is shut down.
   // Required.
   optional int32 server_max_lifetime = 225604125;
+
+  // The port that the gRPC server listens to. Required.
+  optional int32 port = 253106740;
 }
