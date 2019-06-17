@@ -25,7 +25,6 @@
 #include "gflags/gflags.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/sim/untrusted_sim.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
@@ -39,7 +38,7 @@ namespace test {
 
 class HelloTest : public ::testing::Test {
  protected:
-  // Loads an instance of a sim test enclave, aborting on failure.
+  // Loads an instance of a test enclave, aborting on failure.
   void SetUp() override {
     client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
         /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());

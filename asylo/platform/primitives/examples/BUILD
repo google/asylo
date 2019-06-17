@@ -55,7 +55,6 @@ sim_enclave_loader(
     deps = [
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sim:untrusted_sim",
         "//asylo/platform/primitives/test:sim_test_backend",
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:dispatch_table",
@@ -80,7 +79,6 @@ sim_enclave_test(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sim:untrusted_sim",
         "//asylo/platform/primitives/test:sim_test_backend",
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:dispatch_table",

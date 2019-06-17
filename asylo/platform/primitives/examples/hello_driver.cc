@@ -22,7 +22,6 @@
 
 #include "gflags/gflags.h"
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/sim/untrusted_sim.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
