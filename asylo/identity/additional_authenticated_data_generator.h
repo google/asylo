@@ -28,8 +28,8 @@
 
 namespace asylo {
 
-extern constexpr int kAdditionalAuthenticatedDataUuidSize = 16;
-extern constexpr int kAdditionalAuthenticatedDataPurposeSize = 16;
+constexpr int kAdditionalAuthenticatedDataUuidSize = 16;
+constexpr int kAdditionalAuthenticatedDataPurposeSize = 16;
 
 // Generates additional authenticated data for use in security protocols that
 // use enclave assertions. The produced additional authenticated data is 64
