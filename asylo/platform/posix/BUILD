@@ -70,6 +70,7 @@ cc_library(
     srcs = [
         "dirent.cc",
         "dlfcn.cc",
+        "endian.cc",
         "epoll.cc",
         "errno.cc",
         "eventfd.cc",
@@ -140,6 +141,18 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Test for endian.h functions.
+cc_test(
+    name = "endian_test",
+    srcs = ["endian_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
     ],
 )
