@@ -53,7 +53,7 @@ size_t BinarySearch(Func f) {
     if (i != max_bits - 1) {
       upper_bound = lower_bound << 1;
     } else {
-      upper_bound = std::numeric_limits<std::size_t>::max();
+      upper_bound = std::numeric_limits<std::ptrdiff_t>::max();
       if (f(upper_bound)) {
         return upper_bound;
       }

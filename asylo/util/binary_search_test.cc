@@ -37,7 +37,8 @@ TEST(BinarySearchTest, ConstantsSearchTest) {
   auto less_than_a_lot = [](size_t x) { return x < 99999; };
   EXPECT_EQ(BinarySearch(less_than_a_lot), 99998);
   auto always_true = [](size_t x) { return true; };
-  EXPECT_EQ(BinarySearch(always_true), std::numeric_limits<std::size_t>::max());
+  EXPECT_EQ(BinarySearch(always_true),
+            std::numeric_limits<std::ptrdiff_t>::max());
 }
 
 }  // namespace
