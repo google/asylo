@@ -4482,7 +4482,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave.c ./libgloss/enclav
 +  return enclave_lseek(file, ptr, dir);
 +}
 +
-+int _mkdir(const char *pathname, int mode)
++int _mkdir(const char *pathname, mode_t mode)
 +{
 +  return enclave_mkdir(pathname, mode);
 +}
@@ -4507,7 +4507,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave.c ./libgloss/enclav
 +  return enclave_stat(file, st);
 +}
 +
-+int _times(struct tms *buf)
++clock_t _times(struct tms *buf)
 +{
 +  return enclave_times(buf);
 +}
@@ -4545,8 +4545,8 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 --- ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h
 +++ ./libgloss/enclave/enclave_syscalls.h
 @@ -0,0 +1,40 @@
-+#ifndef THIRD_PARTY_LINUX_SGX_BSP_CALLTABLE_H_
-+#define THIRD_PARTY_LINUX_SGX_BSP_CALLTABLE_H_
++#ifndef THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
++#define THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
 +
 +#include <stdint.h>
 +#include <sys/stat.h>
@@ -4575,7 +4575,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 +int enclave_read(int file, char *ptr, int len);
 +void *enclave_sbrk(int incr);
 +int enclave_stat(const char *file, struct stat *st);
-+int enclave_times(struct tms *buf);
++clock_t enclave_times(struct tms *buf);
 +int enclave_unlink(char *name);
 +int enclave_wait(int *status);
 +int enclave_write(int file, char *ptr, int len);
@@ -4584,7 +4584,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 +}
 +#endif
 +
-+#endif // THIRD_PARTY_LINUX_SGX_BSP_CALLTABLE_H_
++#endif  // THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/enclave/Makefile.in
 --- ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in
 +++ ./libgloss/enclave/Makefile.in
