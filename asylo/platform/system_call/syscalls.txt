@@ -155,6 +155,11 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event *, events, int,
                 maxevents, int, timeout, const sigset_t *, sigmask, size_t,
                 sigsetsize)
 
+// Scheduling
+// ==========
+
+SYSCALL_DEFINE0(sched_yield)
+
 // Synchronization
 // ===============
 

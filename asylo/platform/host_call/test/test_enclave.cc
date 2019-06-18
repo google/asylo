@@ -420,6 +420,14 @@ primitives::PrimitiveStatus TestInotifyRmWatch(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestSchedYield(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_STACK_EMPTY(params);
+
+  params->PushByCopy<int>(enc_untrusted_sched_yield());
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 primitives::PrimitiveStatus TestIsAtty(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
@@ -506,6 +514,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestInotifyAddWatch, primitives::EntryHandler{TestInotifyAddWatch}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestInotifyRmWatch, primitives::EntryHandler{TestInotifyRmWatch}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestSchedYield, primitives::EntryHandler{TestSchedYield}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestIsAtty, primitives::EntryHandler{TestIsAtty}));
 

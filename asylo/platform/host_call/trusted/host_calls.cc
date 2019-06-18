@@ -263,6 +263,10 @@ int enc_untrusted_fchmod(int fd, mode_t mode) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_fchmod, fd, mode);
 }
 
+int enc_untrusted_sched_yield() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_sched_yield);
+}
+
 int enc_untrusted_isatty(int fd) {
   asylo::primitives::TrustedParameterStack params;
   params.PushByCopy(fd);

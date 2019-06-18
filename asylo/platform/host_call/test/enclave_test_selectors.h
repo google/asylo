@@ -99,6 +99,8 @@ constexpr uint64_t kTestInotifyAddWatch =
     kFirstSelector + asylo::system_call::kSYS_inotify_add_watch;
 constexpr uint64_t kTestInotifyRmWatch =
     kFirstSelector + asylo::system_call::kSYS_inotify_rm_watch;
+constexpr uint64_t kTestSchedYield =
+    kFirstSelector + asylo::system_call::kSYS_sched_yield;
 
 constexpr uint64_t kTestIsAtty = kNonSyscallFirstSelector;
 

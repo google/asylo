@@ -75,6 +75,7 @@ int enc_untrusted_inotify_rm_watch(int fd, int wd);
 mode_t enc_untrusted_umask(mode_t mask);
 int enc_untrusted_chmod(const char *path, mode_t mode);
 int enc_untrusted_fchmod(int fd, mode_t mode);
+int enc_untrusted_sched_yield();
 
 // Non-syscall hostcalls are defined below.
 int enc_untrusted_isatty(int fd);

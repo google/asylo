@@ -1042,6 +1042,16 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
   close(inotify_fd);
 }
 
+// Tests enc_untrusted_sched_yield by calling it and ensuring that 0 is
+// returned.
+TEST_F(HostCallTest, TestSchedYield) {
+  primitives::NativeParameterStack params;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSchedYield, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+}
+
 // Tests enc_untrusted_isatty() by testing with a non-terminal file descriptor,
 // it should return 0 since the file is not referring to a terminal.
 TEST_F(HostCallTest, TestIsAtty) {
