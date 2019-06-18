@@ -18,6 +18,8 @@
 
 #include "asylo/identity/sgx/tcb_info_from_json.h"
 
+#include <endian.h>
+
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -288,7 +290,8 @@ StatusOr<PceId> PceIdFromJson(const google::protobuf::Value &pce_id_json) {
   }
 
   PceId pce_id;
-  pce_id.set_value(pce_id_bytes[0] * 256 + pce_id_bytes[1]);
+  pce_id.set_value(
+      le16toh(*reinterpret_cast<const uint16_t *>(pce_id_bytes.data())));
   return pce_id;
 }
 

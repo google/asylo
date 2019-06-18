@@ -18,6 +18,8 @@
 
 #include "asylo/identity/sgx/tcb_info_from_json.h"
 
+#include <endian.h>
+
 #include "google/protobuf/struct.pb.h"
 #include <google/protobuf/text_format.h>
 #include <google/protobuf/util/json_util.h>
@@ -682,7 +684,7 @@ TEST(TcbInfoFromJsonTest, CorrectTcbInfoJsonParsesSuccessfully) {
 TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonZeroPceIdParsesSuccessfully) {
   google::protobuf::Value json = CreateValidTcbInfoJson();
   json.mutable_struct_value()->mutable_fields()->at("pceId").set_string_value(
-      "0123");
+      "2301");
 
   TcbInfo tcb_info;
   ASYLO_ASSERT_OK_AND_ASSIGN(tcb_info, TcbInfoFromJson(JsonToString(json)));
