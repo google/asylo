@@ -58,6 +58,14 @@ void *MallocStress(void *) {
   return nullptr;
 }
 
+void LogBadAlloc(const std::bad_alloc &e, void *brk_start) {
+  LOG(ERROR) << "Failed to allocate with malloc: " << e.what() << std::endl
+             << "Total memory allocated (using sbrk subtraction) is: "
+             << (size_t)sbrk(0) - (size_t)brk_start << " bytes" << std::endl
+             << "Largest malloc that succeeds at the moment is: "
+             << LargestSuccessfulMalloc() << " bytes";
+}
+
 // Creates kNumThreads that run |MallocStress| and waits for all threads to
 // join.
 TEST(MallocTest, EnclaveMalloc) {
@@ -72,15 +80,19 @@ TEST(MallocTest, EnclaveMalloc) {
       ASSERT_EQ(pthread_create(&threads[i], nullptr, &MallocStress, nullptr),
                 0);
     }
+  } catch (const std::bad_alloc &e) {
+    LOG(ERROR) << "Caught bad_alloc during pthread_create";
+    LogBadAlloc(e, brk_start);
+    FAIL();
+  }
+  try {
     for (int i = 0; i < kNumThreads; ++i) {
       ASSERT_EQ(pthread_join(threads[i], nullptr), 0);
     }
   } catch (const std::bad_alloc &e) {
-    LOG(ERROR) << "Failed to allocate with malloc: " << e.what() << std::endl
-               << "Total memory allocated (using sbrk subtraction) is: "
-               << (size_t)sbrk(0) - (size_t)brk_start << " bytes" << std::endl
-               << "Largest malloc that succeeds at the moment is: "
-               << LargestSuccessfulMalloc() << " bytes";
+    LOG(ERROR) << "Caught bad_alloc during pthread_join";
+    LogBadAlloc(e, brk_start);
+    FAIL();
   }
 }
 
