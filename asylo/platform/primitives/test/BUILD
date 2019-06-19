@@ -109,7 +109,6 @@ cc_library(
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",
-        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
     ],
 )

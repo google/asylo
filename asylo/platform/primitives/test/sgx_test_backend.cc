@@ -21,7 +21,6 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
-#include "gflags/gflags.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
