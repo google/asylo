@@ -38,6 +38,14 @@ pid_t enc_untrusted_getpid() {
   return enc_untrusted_syscall(asylo::system_call::kSYS_getpid);
 }
 
+pid_t enc_untrusted_getppid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_getppid);
+}
+
+pid_t enc_untrusted_setsid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_setsid);
+}
+
 int enc_untrusted_kill(pid_t pid, int sig) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_kill, pid, sig);
 }

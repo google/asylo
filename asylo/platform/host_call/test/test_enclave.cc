@@ -86,6 +86,22 @@ primitives::PrimitiveStatus TestGetpid(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestGetPpid(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_STACK_EMPTY(params);
+
+  params->PushByCopy<pid_t>(enc_untrusted_getppid());
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+primitives::PrimitiveStatus TestSetSid(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_STACK_EMPTY(params);
+
+  params->PushByCopy<pid_t>(enc_untrusted_setsid());
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 primitives::PrimitiveStatus TestKill(
     void *context, primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
@@ -456,6 +472,10 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestFchmod, primitives::EntryHandler{TestFchmod}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestGetPid, primitives::EntryHandler{TestGetpid}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestGetPpid, primitives::EntryHandler{TestGetPpid}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestSetSid, primitives::EntryHandler{TestSetSid}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestKill, primitives::EntryHandler{TestKill}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(

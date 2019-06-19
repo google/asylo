@@ -42,6 +42,8 @@ extern "C" {
 int enc_untrusted_access(const char *path_name, int mode);
 int enc_untrusted_close(int fd);
 pid_t enc_untrusted_getpid();
+pid_t enc_untrusted_getppid();
+pid_t enc_untrusted_setsid();
 int enc_untrusted_kill(pid_t pid, int sig);
 int enc_untrusted_link(const char *oldpath, const char *newpath);
 off_t enc_untrusted_lseek(int fd, off_t offset, int whence);

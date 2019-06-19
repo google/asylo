@@ -229,6 +229,25 @@ TEST_F(HostCallTest, TestGetpid) {
   EXPECT_THAT(params.Pop<pid_t>(), Eq(getpid()));
 }
 
+// Tests enc_untrusted_getppid() by calling it from inside the enclave and
+// verifying its return value against ppid obtained from native system call.
+TEST_F(HostCallTest, TestGetPpid) {
+  primitives::NativeParameterStack params;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPpid, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
+  EXPECT_THAT(params.Pop<pid_t>(), Eq(getppid()));
+}
+
+// Tests enc_untrusted_setsid() by calling it from inside the enclave and
+// verifying its return value against sid obtained from getsid(0), which
+// gets the sid of the current process.
+TEST_F(HostCallTest, TestSetSid) {
+  primitives::NativeParameterStack params;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &params));
+  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
+  EXPECT_THAT(params.Pop<pid_t>(), Eq(getsid(0)));
+}
+
 // Tests enc_untrusted_kill() by forking the current process and putting the
 // child process to sleep, then calling enc_untrusted_kill() from inside the
 // enclave to kill the child process.

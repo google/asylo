@@ -106,6 +106,8 @@ SYSCALL_DEFINE3(write, unsigned int, fd, const char * [bound:count], buf,
 // ==================
 
 SYSCALL_DEFINE0(getpid)
+SYSCALL_DEFINE0(getppid)
+SYSCALL_DEFINE0(setsid)
 SYSCALL_DEFINE1(exit, int, error_code)
 
 // Signals
