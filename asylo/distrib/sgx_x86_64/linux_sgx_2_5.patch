@@ -423,7 +423,7 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
  #include <utility>
  #include <string.h>
  #include <stdlib.h>
-@@ -43,6 +48,33 @@
+@@ -43,6 +48,37 @@
  
  extern int EDMM_supported;
  
@@ -436,9 +436,13 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
 +    return rand_r(&seed_);
 +  }
 +
-+  result_type min() { return std::numeric_limits<result_type>::min(); }
++  static constexpr result_type min() {
++    return std::numeric_limits<result_type>::min();
++  }
 +
-+  result_type max() { return std::numeric_limits<result_type>::max(); }
++  static constexpr result_type max() {
++    return std::numeric_limits<result_type>::max();
++  }
 +
 + private:
 +  // Avoid a system call like time() since this may be used before system calls
@@ -457,7 +461,7 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
  /*
   * This function is equivalent to __builtin_rdrand16/32/64_step() except it
   * returns the random value instead of writing it to memory, which is required
-@@ -51,9 +83,13 @@
+@@ -51,9 +87,13 @@
  template <class R = unsigned>
  inline R rdrand(void)
  {
@@ -471,7 +475,7 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
  }
  
  /*
-@@ -129,7 +165,8 @@
+@@ -129,7 +169,8 @@
  template <class T, std::size_t A, unsigned M = 0x1000>
  struct alignas(A)randomly_placed_buffer
  {
@@ -481,7 +485,7 @@ diff -Nur common/inc/sgx_random_buffers.h common/inc/sgx_random_buffers.h
      {
          //
          // gives error with gcc 4.8
-@@ -274,7 +311,7 @@
+@@ -274,7 +315,7 @@
          }
      };
  
