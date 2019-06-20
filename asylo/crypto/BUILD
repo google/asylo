@@ -133,6 +133,34 @@ cc_test(
     ],
 )
 
+# Library to use with certificates.
+cc_library(
+    name = "certificate_util",
+    srcs = ["certificate_util.cc"],
+    hdrs = ["certificate_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":certificate_proto_cc",
+        "//asylo/util:status",
+    ],
+)
+
+# Test for certificate util library.
+cc_test(
+    name = "certificate_util_test",
+    srcs = ["certificate_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_proto_cc",
+        ":certificate_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Defines a C++ interface for hash functions.
 cc_library(
     name = "hash_interface",
