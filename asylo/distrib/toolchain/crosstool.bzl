@@ -616,7 +616,7 @@ def _impl(ctx):
                             "-D__ASYLO__",
                             "-DCOMPILER_GCC3",
                             "-D__LINUX_ERRNO_EXTENSIONS__",
-                            "-D_GLIBCXX_USE_C99",
+                            "-D_GLIBCXX_USE_C99",  # DEPRECATED: To be removed.
                             "-D_GNU_SOURCE=1",
                         ],
                     ),

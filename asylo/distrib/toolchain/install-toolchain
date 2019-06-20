@@ -477,6 +477,8 @@ export CXXFLAGS_FOR_TARGET="${CXXFLAGS}"
    echo "#define HAVE_HYPOTL" >> x86_64-elf/libstdc++-v3/config.h &&
    echo "#define HAVE_SQRTL" >> x86_64-elf/libstdc++-v3/config.h &&
    echo "#define _GLIBCXX_USE_RANDOM_TR1" >> x86_64-elf/libstdc++-v3/config.h &&
+   # Use an extended version of libc++.
+   echo "#define _GLIBCXX_USE_C99 1" >> x86_64-elf/libstdc++-v3/config.h &&
    make -j"${JOBS}" && make install &&
    echo "installed compiler")
 
