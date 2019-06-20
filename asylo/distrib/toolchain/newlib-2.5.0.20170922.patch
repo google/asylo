@@ -4960,6 +4960,22 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/signal.h ./newlib/li
  #endif /* defined(__CYGWIN__) */
  
  #if __BSD_VISIBLE || __XSI_VISIBLE >= 4 || __POSIX_VISIBLE >= 200809
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/stat.h ./newlib/libc/include/sys/stat.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/sys/stat.h
++++ ./newlib/libc/include/sys/stat.h
+@@ -152,8 +152,11 @@
+ int	_EXFUN(stat,( const char *__restrict __path, struct stat *__restrict __sbuf ));
+ mode_t	_EXFUN(umask,( mode_t __mask ));
+ 
+-#if defined (__SPU__) || defined(__rtems__) || defined(__CYGWIN__) && !defined(__INSIDE_CYGWIN__)
++#if defined (__SPU__) || defined(__rtems__) || defined(__CYGWIN__) && !defined(__INSIDE_CYGWIN__) || defined(__ASYLO__)
+ int	_EXFUN(lstat,( const char *__restrict __path, struct stat *__restrict __buf ));
++#endif
++
++#if defined (__SPU__) || defined(__rtems__) || defined(__CYGWIN__) && !defined(__INSIDE_CYGWIN__)
+ int	_EXFUN(mknod,( const char *__path, mode_t __mode, dev_t __dev ));
+ #endif
+ 
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h ./newlib/libc/include/sys/_types.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h
 +++ ./newlib/libc/include/sys/_types.h

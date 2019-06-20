@@ -16,6 +16,9 @@
  *
  */
 
+// FILE DEPRECATED. Add Asylo-specific #ifdefs to newlib patch to include in
+// the toolchain. This file is staged for removal when lstat and mkdir are
+// declared in newlib for __ASYLO__.
 #include_next <sys/stat.h>
 
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_STAT_H_

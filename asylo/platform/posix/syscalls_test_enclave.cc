@@ -26,6 +26,7 @@
 #include <stdio.h>
 #include <sys/mman.h>
 #include <sys/resource.h>
+#include <sys/stat.h>
 #include <sys/uio.h>
 #include <sys/utsname.h>
 #include <unistd.h>
