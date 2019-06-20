@@ -100,6 +100,7 @@ const absl::flat_hash_map<std::string, TcbStatus::StatusType>
         {"UpToDate", TcbStatus::UP_TO_DATE},
         {"OutOfDate", TcbStatus::OUT_OF_DATE},
         {"ConfigurationNeeded", TcbStatus::CONFIGURATION_NEEDED},
+        {"Revoked", TcbStatus::REVOKED},
     });
   });
   return *map;

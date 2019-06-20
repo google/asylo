@@ -695,10 +695,10 @@ TEST(TcbInfoFromJsonTest, TcbInfoJsonWithNonZeroPceIdParsesSuccessfully) {
 TEST(TcbInfoFromJsonTest,
      TcbLevelJsonWithDifferentKnownStatusValuesParseSuccessfully) {
   constexpr absl::string_view kKnownStatusStrings[] = {
-      "UpToDate", "ConfigurationNeeded", "OutOfDate"};
+      "UpToDate", "ConfigurationNeeded", "OutOfDate", "Revoked"};
   constexpr TcbStatus::StatusType kKnownStatusValues[] = {
       TcbStatus::UP_TO_DATE, TcbStatus::CONFIGURATION_NEEDED,
-      TcbStatus::OUT_OF_DATE};
+      TcbStatus::OUT_OF_DATE, TcbStatus::REVOKED};
 
   google::protobuf::Value json = CreateValidTcbInfoJson();
   TcbInfo tcb_info;
