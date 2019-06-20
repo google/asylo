@@ -102,6 +102,7 @@ UPDATE_SDK_DEPS_COMMAND = (
     "-e 's!bridge_t.h!generated_bridge_t.h!' " +
     "-e 's!sgx_trts.h!" + SGX_PREFIX + "include/sgx_trts.h!' " +
     "-e 's!sgx_edger8r.h!" + SGX_PREFIX + "include/sgx_edger8r.h!' " +
+    "-e 's!sgx_lfence.h!" + SGX_PREFIX + "include/sgx_lfence.h!' " +
     "-e 's!<mbusafecrt.h>!\"" + SGX_PREFIX + "include/se_memcpy.h\"!' " +
     "$$file && " +
     "mv $$file $$(dirname $$file)/generated_$$(basename $$file); " +
