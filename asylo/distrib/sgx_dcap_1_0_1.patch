@@ -62,7 +62,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/quote_wrapper/
 Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and QuoteVerification/Src/AttestationApp/sampleData/quote.dat differ
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,251 @@
+@@ -0,0 +1,252 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -217,6 +217,7 @@ Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and Quote
 +        "QuoteGeneration/psw/quote_wrapper/quote/src/sgx_ql_core_wrapper.h",
 +    ],
 +    copts = [
++        "-Iexternal/linux_sgx/common/inc",  # Must be first for sgx_urts.h
 +        "-Iexternal/linux_sgx/include",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/generated",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/ql/src",
