@@ -19,10 +19,11 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 #define ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 
+#include <cstring>
 #include <functional>
 #include <memory>
+#include <string>
 #include <vector>
-#include <cstring>
 
 #include "asylo/platform/primitives/extent.h"
 
