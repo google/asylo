@@ -43,6 +43,12 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "client_enclave_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":client_enclave_proto"],
+)
+
 # Simple server implementation for testing.
 cc_library(
     name = "messenger_server_impl",
@@ -100,7 +106,7 @@ sgx_enclave(
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/util:enclave_server",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
     ],
@@ -117,7 +123,7 @@ sgx_enclave(
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/grpc/util:enclave_server",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
     ],
 )
 
@@ -132,13 +138,13 @@ sgx_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":client_enclave_proto_cc",
+        ":client_enclave_cc_proto",
         ":messenger_client_impl",
         "//asylo:enclave_runtime",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/auth:sgx_local_credentials_options",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/time",
@@ -157,7 +163,7 @@ sgx_enclave_test(
         ":messenger_client_impl",
         ":messenger_server_impl",
         "//asylo:enclave_client",
-        "//asylo/grpc/util:enclave_server_proto_cc",
+        "//asylo/grpc/util:enclave_server_cc_proto",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -182,7 +188,7 @@ sgx_enclave_test(
         "//asylo:enclave_client",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
-        "//asylo/grpc/util:enclave_server_proto_cc",
+        "//asylo/grpc/util:enclave_server_cc_proto",
         "//asylo/identity:init",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:enclave_test",
@@ -209,7 +215,7 @@ cc_test(
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/util:grpc_server_launcher",
-        "//asylo/identity:enclave_assertion_authority_config_proto_cc",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
         "//asylo/identity:init",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:status_matchers",
@@ -235,10 +241,10 @@ sgx_enclave_test(
         "--client_enclave_path='{client_enclave}'",
     ],
     deps = [
-        ":client_enclave_proto_cc",
+        ":client_enclave_cc_proto",
         ":messenger_server_impl",
-        "//asylo:enclave_proto_cc",
-        "//asylo/grpc/util:enclave_server_proto_cc",
+        "//asylo:enclave_cc_proto",
+        "//asylo/grpc/util:enclave_server_cc_proto",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:enclave_test_launcher",
         "//asylo/test/util:status_matchers",

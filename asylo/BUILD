@@ -86,3 +86,9 @@ asylo_proto_library(
         "//asylo/util:status_proto",
     ],
 )
+
+cc_proto_library(
+    name = "enclave_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":enclave_proto"],
+)

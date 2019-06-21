@@ -47,6 +47,12 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
 )
 
+cc_proto_library(
+    name = "sha256_hash_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = ["sha256_hash_proto"],
+)
+
 cc_library(
     name = "sha256_hash_util",
     srcs = ["sha256_hash_util.cc"],
@@ -54,7 +60,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":sha256_hash_proto_cc",
+        ":sha256_hash_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "@com_google_absl//absl/strings",
@@ -67,7 +73,7 @@ cc_test(
     srcs = ["sha256_hash_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":sha256_hash_proto_cc",
+        ":sha256_hash_cc_proto",
         ":sha256_hash_util",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

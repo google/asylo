@@ -87,6 +87,8 @@ def asylo_proto_library(name, srcs = [], deps = [], **kwargs):
     native.cc_proto_library(
         name = name + "_cc",
         deps = [":" + name],
+        deprecation = "asylo_proto_library is deprecated in favor of using " +
+                      "proto_library and cc_proto_library explicitly",
         **kwargs
     )
 

@@ -103,7 +103,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":test_backend",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",

@@ -28,6 +28,11 @@ asylo_proto_library(
     srcs = ["null_assertion.proto"],
 )
 
+cc_proto_library(
+    name = "null_assertion_cc_proto",
+    deps = [":null_assertion_proto"],
+)
+
 # Implementation of the EnclaveAssertionGenerator interface for null
 # assertions. This library is provided by default with the enclave gRPC stack.
 cc_library(
@@ -39,7 +44,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":null_assertion_proto_cc",
+        ":null_assertion_cc_proto",
         ":null_identity_constants",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/platform/common:static_map",
@@ -60,7 +65,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":null_assertion_proto_cc",
+        ":null_assertion_cc_proto",
         ":null_identity_constants",
         ":null_identity_util",
         "//asylo/identity:enclave_assertion_verifier",
@@ -87,10 +92,10 @@ cc_test(
         ":null_identity_constants",
         "//asylo/identity:descriptions",
         "//asylo/identity:enclave_assertion_authority",
-        "//asylo/identity:enclave_assertion_authority_config_proto_cc",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/identity:enclave_assertion_verifier",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:init",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:status_matchers",
@@ -112,8 +117,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":null_identity_util",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity:identity_proto_cc",
         "@com_google_protobuf//:protobuf",
     ],
     alwayslink = 1,
@@ -131,8 +136,8 @@ cc_test(
     deps = [
         ":null_identity_constants",
         ":null_identity_expectation_matcher",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity:identity_proto_cc",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
@@ -158,7 +163,7 @@ cc_library(
     deps = [
         ":null_identity_constants",
         "//asylo/identity:descriptions",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
     ],
 )
 
@@ -171,7 +176,7 @@ cc_test(
         ":null_identity_constants",
         ":null_identity_util",
         "//asylo/identity:descriptions",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],

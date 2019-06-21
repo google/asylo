@@ -54,6 +54,11 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "test_shim_enclave_cc_proto",
+    deps = [":test_shim_enclave_proto"],
+)
+
 # Used by the cc_enclave_test rule to create enclaves that run gtest test
 # suites. Should not typically be used directly.
 cc_library(
@@ -64,7 +69,7 @@ cc_library(
     tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:public"],
     deps = [
-        ":test_shim_enclave_proto_cc",
+        ":test_shim_enclave_cc_proto",
         "//asylo/test/util:enclave_test_application",
         "//asylo/test/util:test_flags",
         "@com_github_gflags_gflags//:gflags_nothreads",
@@ -82,7 +87,7 @@ cc_binary(
     linkstatic = True,
     visibility = ["//visibility:public"],
     deps = [
-        ":test_shim_enclave_proto_cc",
+        ":test_shim_enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/test/util:test_flags",
         "//asylo/util:logging",

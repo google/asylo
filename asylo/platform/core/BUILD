@@ -42,8 +42,8 @@ cc_library(
     deps = [
         ":shared_name",
         ":shared_resource_manager",
-        "//asylo:enclave_proto_cc",
-        "//asylo/platform/arch:fork_proto_cc",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/arch:fork_cc_proto",
         "//asylo/platform/common:time_util",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/util:logging",
@@ -69,7 +69,7 @@ cc_library(
     linkstatic = 1,
     tags = ASYLO_ALL_BACKENDS,
     deps = [
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [],
@@ -89,7 +89,7 @@ cc_library(
     deps = [
         ":shared_name",
         ":trusted_global_state",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/util:status",
     ],
@@ -110,9 +110,9 @@ cc_library(
         ":shared_name",
         ":trusted_core",
         ":untrusted_cache_malloc",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/identity:init",
-        "//asylo/platform/arch:fork_proto_cc",
+        "//asylo/platform/arch:fork_cc_proto",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/posix/io:io_manager",

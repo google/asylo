@@ -58,7 +58,7 @@ cc_library(
         "//asylo/grpc/auth/core:assertion_description",
         "//asylo/grpc/auth/core:enclave_credentials_options",
         "//asylo/identity:assertion_description_util",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
     ],
 )
 
@@ -73,7 +73,7 @@ cc_test(
         "//asylo/grpc/auth:enclave_credentials_options",
         "//asylo/grpc/auth:null_credentials_options",
         "//asylo/identity:assertion_description_util",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],

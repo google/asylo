@@ -134,6 +134,11 @@ asylo_proto_library(
     srcs = ["bridge_proto_types.proto"],
 )
 
+cc_proto_library(
+    name = "bridge_types_cc_proto",
+    deps = [":bridge_types_proto"],
+)
+
 # Shared proto serializer and deserializer across bridge boundaries.
 cc_library(
     name = "bridge_proto_serializer",
@@ -142,7 +147,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":bridge_types",
-        ":bridge_types_proto_cc",
+        ":bridge_types_cc_proto",
         "@com_google_absl//absl/strings",
     ],
 )

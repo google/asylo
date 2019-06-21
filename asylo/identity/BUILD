@@ -27,6 +27,12 @@ asylo_proto_library(
     visibility = ["//visibility:public"],
 )
 
+cc_proto_library(
+    name = "identity_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = ["identity_proto"],
+)
+
 asylo_proto_library(
     name = "identity_acl_proto",
     srcs = ["identity_acl.proto"],
@@ -34,11 +40,23 @@ asylo_proto_library(
     deps = [":identity_proto"],
 )
 
+cc_proto_library(
+    name = "identity_acl_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":identity_acl_proto"],
+)
+
 asylo_proto_library(
     name = "enclave_assertion_authority_config_proto",
     srcs = ["enclave_assertion_authority_config.proto"],
     visibility = ["//visibility:public"],
     deps = [":identity_proto"],
+)
+
+cc_proto_library(
+    name = "enclave_assertion_authority_config_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = ["enclave_assertion_authority_config_proto"],
 )
 
 asylo_proto_library(
@@ -51,6 +69,12 @@ asylo_proto_library(
     ],
 )
 
+cc_proto_library(
+    name = "sealed_secret_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":sealed_secret_proto"],
+)
+
 cc_library(
     name = "init",
     srcs = ["init_internal.h"],
@@ -59,7 +83,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority",
-        ":enclave_assertion_authority_config_proto_cc",
+        ":enclave_assertion_authority_config_cc_proto",
         ":enclave_assertion_generator",
         ":enclave_assertion_verifier",
         "//asylo/util:logging",
@@ -72,7 +96,7 @@ cc_test(
     srcs = ["init_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":enclave_assertion_authority_config_proto_cc",
+        ":enclave_assertion_authority_config_cc_proto",
         ":init",
         "//asylo/identity/null_identity:null_assertion_generator",
         "//asylo/identity/null_identity:null_assertion_verifier",
@@ -88,7 +112,7 @@ cc_library(
     hdrs = ["descriptions.h"],
     visibility = ["//visibility:public"],
     deps = [
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/identity/null_identity:null_identity_constants",
         "//asylo/identity/sgx:code_identity_constants",
     ],
@@ -101,8 +125,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":identity_proto_cc",
-        ":sealed_secret_proto_cc",
+        ":identity_cc_proto",
+        ":sealed_secret_cc_proto",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/platform/common:static_map",
@@ -118,9 +142,9 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":identity_acl_proto_cc",
+        ":identity_acl_cc_proto",
+        ":identity_cc_proto",
         ":identity_expectation_matcher",
-        ":identity_proto_cc",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf_lite",
@@ -141,7 +165,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/platform/common:static_map",
@@ -156,8 +180,8 @@ cc_test(
     srcs = ["identity_expectation_matcher_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":identity_cc_proto",
         ":identity_expectation_matcher",
-        ":identity_proto_cc",
         "//asylo/platform/common:static_map",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -205,7 +229,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
@@ -219,7 +243,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":assertion_description_util",
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -232,7 +256,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/util:status",
     ],
@@ -245,7 +269,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority",
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/platform/common:static_map",
         "//asylo/util:status",
     ],
@@ -258,7 +282,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":enclave_assertion_authority",
-        ":identity_proto_cc",
+        ":identity_cc_proto",
         "//asylo/platform/common:static_map",
         "//asylo/util:status",
     ],

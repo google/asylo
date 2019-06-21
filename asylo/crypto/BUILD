@@ -32,6 +32,12 @@ asylo_proto_library(
     visibility = ["//asylo:implementation"],
 )
 
+cc_proto_library(
+    name = "algorithms_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = ["algorithms_proto"],
+)
+
 # Defines key structures for various asymmetric key types.
 asylo_proto_library(
     name = "keys_proto",
@@ -40,11 +46,23 @@ asylo_proto_library(
     deps = [":algorithms_proto"],
 )
 
+cc_proto_library(
+    name = "keys_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":keys_proto"],
+)
+
 # Defines messages for certificates and certificate chains.
 asylo_proto_library(
     name = "certificate_proto",
     srcs = ["certificate.proto"],
     visibility = ["//asylo:implementation"],
+)
+
+cc_proto_library(
+    name = "certificate_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":certificate_proto"],
 )
 
 # A generic cryptor wrapping an AEAD key and a NonceGeneratorInterface.
@@ -56,7 +74,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":aead_key",
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         ":nonce_generator_interface",
         ":random_nonce_generator",
         "//asylo/crypto/util:byte_container_view",
@@ -88,7 +106,7 @@ cc_library(
     hdrs = ["aead_key.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
@@ -121,7 +139,7 @@ cc_test(
     deps = [
         ":aead_key",
         ":aead_test_vector",
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -168,7 +186,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
     ],
@@ -239,7 +257,7 @@ cc_test(
     srcs = ["sha256_hash_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         ":sha256_hash",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/test/util:status_matchers",
@@ -294,7 +312,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
@@ -344,7 +362,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
@@ -359,7 +377,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         "asymmetric_encryption_key",
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
@@ -376,7 +394,7 @@ cc_test(
     deps = [
         "asymmetric_encryption_key",
         "rsa_oaep_encryption_key",
-        ":algorithms_proto_cc",
+        ":algorithms_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/test/util:status_matchers",

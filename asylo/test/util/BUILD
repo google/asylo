@@ -85,6 +85,11 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "test_string_cc_proto",
+    deps = [":test_string_proto"],
+)
+
 # Simple enclave launcher for testing.
 cc_library(
     name = "enclave_test_launcher",
@@ -93,9 +98,9 @@ cc_library(
     hdrs = ["enclave_test_launcher.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":test_string_proto_cc",
+        ":test_string_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
-        "//asylo:enclave_proto_cc",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
@@ -112,8 +117,8 @@ cc_library(
     tags = ASYLO_ALL_BACKENDS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":test_string_proto_cc",
-        "//asylo:enclave_proto_cc",
+        ":test_string_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
     ],
 )
@@ -176,7 +181,7 @@ cc_library(
         ":status_matchers",
         ":test_flags",
         ":test_main",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/util:status",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_googletest//:gtest",
@@ -316,7 +321,7 @@ cc_library(
     hdrs = ["grpc_debug_config.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -330,8 +335,8 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/identity:descriptions",
-        "//asylo/identity:enclave_assertion_authority_config_proto_cc",
-        "//asylo/identity/sgx:sgx_local_assertion_authority_config_proto_cc",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/util:logging",
     ],
 )

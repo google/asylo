@@ -47,7 +47,7 @@ cc_library(
         "//asylo/grpc/auth/core:grpc_security_enclave",
         "//asylo/grpc/auth/util:bridge_cpp_to_c",
         "//asylo/identity:assertion_description_util",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "@com_github_grpc_grpc//:grpc++",
     ],
 )
@@ -59,7 +59,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/identity:assertion_description_util",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
     ],
 )
 
@@ -103,8 +103,8 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/grpc/auth/core:grpc_security_enclave",
-        "//asylo/grpc/auth/core:handshake_proto_cc",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/grpc/auth/core:handshake_cc_proto",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc_secure",
@@ -120,7 +120,7 @@ cc_test(
     deps = [
         ":enclave_auth_context",
         "//asylo/grpc/auth/core:grpc_security_enclave",
-        "//asylo/grpc/auth/core:handshake_proto_cc",
+        "//asylo/grpc/auth/core:handshake_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -143,7 +143,7 @@ cc_test(
         ":null_credentials_options",
         ":sgx_local_credentials_options",
         "//asylo/identity:descriptions",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -158,9 +158,9 @@ cc_library(
     deps = [
         ":enclave_auth_context",
         "//asylo/identity:descriptions",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/sgx:code_identity_proto_cc",
+        "//asylo/identity/sgx:code_identity_cc_proto",
         "//asylo/identity/sgx:code_identity_util",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++_codegen_base",
@@ -175,8 +175,8 @@ cc_test(
     deps = [
         ":peer_identity_util",
         "//asylo/grpc/auth/test:mock_enclave_auth_context",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/sgx:code_identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/sgx:code_identity_cc_proto",
         "//asylo/identity/sgx:code_identity_util",
         "//asylo/identity/test:mock_identity_expectation_matcher",
         "//asylo/test/util:proto_matchers",

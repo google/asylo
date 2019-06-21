@@ -79,6 +79,12 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "enclave_server_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":enclave_server_proto"],
+)
+
 cc_library(
     name = "enclave_server",
     hdrs = ["enclave_server.h"],
@@ -86,7 +92,7 @@ cc_library(
     tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:public"],
     deps = [
-        ":enclave_server_proto_cc",
+        ":enclave_server_cc_proto",
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
         "//asylo/util:mutex_guarded",

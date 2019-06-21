@@ -53,6 +53,11 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "application_wrapper_cc_proto",
+    deps = [":application_wrapper_proto"],
+)
+
 # The core of the whole-application wrapper's enclave. Intended to be included
 # as a dep in a *_enclave rule.
 cc_library(
@@ -62,7 +67,7 @@ cc_library(
     tags = ASYLO_ALL_BACKENDS,
     visibility = ["//visibility:public"],
     deps = [
-        ":application_wrapper_proto_cc",
+        ":application_wrapper_cc_proto",
         ":argv",
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
@@ -78,10 +83,10 @@ cc_library(
     hdrs = ["application_wrapper_driver_main.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":application_wrapper_proto_cc",
+        ":application_wrapper_cc_proto",
         ":argv",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
-        "//asylo:enclave_proto_cc",
         "//asylo/util:cleanup",
         "//asylo/util:logging",
         "//asylo/util:status",
@@ -96,7 +101,7 @@ cc_library(
     srcs = ["default_config.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
-    deps = ["//asylo:enclave_proto_cc"],
+    deps = ["//asylo:enclave_cc_proto"],
 )
 
 # The whole-application wrapper's driver as a library.
@@ -170,10 +175,10 @@ sgx_enclave_test(
         TEST_SECTION_NAME,
     ],
     deps = [
-        ":application_wrapper_proto_cc",
+        ":application_wrapper_cc_proto",
         ":argv",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
-        "//asylo:enclave_proto_cc",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:fd_utils",
@@ -191,8 +196,8 @@ cc_test(
     srcs = ["application_wrapper_driver_main_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":application_wrapper_cc_proto",
         ":application_wrapper_driver_main",
-        ":application_wrapper_proto_cc",
         ":argv",
         "//asylo:enclave_client",
         "//asylo/test/util:fake_enclave_loader",
@@ -212,7 +217,7 @@ cc_library(
     name = "test_config",
     srcs = ["test_config.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = ["//asylo:enclave_proto_cc"],
+    deps = ["//asylo:enclave_cc_proto"],
 )
 
 # A test application.

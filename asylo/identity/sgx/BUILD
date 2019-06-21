@@ -19,7 +19,7 @@ licenses(["notice"])  # Apache v2.0
 # This package defines sgx-specific portions of the enclave-identity and
 # key-management library.
 
-# Used to selectively enable gtest tests to run inside an enclave.
+# Used to enable gtest tests to run inside an enclave.
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
@@ -28,6 +28,12 @@ asylo_proto_library(
     name = "attributes_proto",
     srcs = ["attributes.proto"],
     visibility = ["//asylo:implementation"],
+)
+
+cc_proto_library(
+    name = "attributes_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":attributes_proto"],
 )
 
 asylo_proto_library(
@@ -40,11 +46,23 @@ asylo_proto_library(
     ],
 )
 
+cc_proto_library(
+    name = "code_identity_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":code_identity_proto"],
+)
+
 asylo_proto_library(
     name = "platform_provisioning_proto",
     srcs = ["platform_provisioning.proto"],
     visibility = ["//asylo:implementation"],
     deps = ["//asylo/crypto:algorithms_proto"],
+)
+
+cc_proto_library(
+    name = "platform_provisioning_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":platform_provisioning_proto"],
 )
 
 asylo_proto_library(
@@ -53,15 +71,31 @@ asylo_proto_library(
     deps = ["//asylo/crypto:keys_proto"],
 )
 
+cc_proto_library(
+    name = "attestation_key_cc_proto",
+    deps = [":attestation_key_proto"],
+)
+
 asylo_proto_library(
     name = "local_assertion_proto",
     srcs = ["local_assertion.proto"],
+)
+
+cc_proto_library(
+    name = "local_assertion_cc_proto",
+    deps = [":local_assertion_proto"],
 )
 
 asylo_proto_library(
     name = "miscselect_proto",
     srcs = ["miscselect.proto"],
     visibility = ["//asylo:implementation"],
+)
+
+cc_proto_library(
+    name = "miscselect_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":miscselect_proto"],
 )
 
 asylo_proto_library(
@@ -74,15 +108,31 @@ asylo_proto_library(
     ],
 )
 
+cc_proto_library(
+    name = "remote_assertion_cc_proto",
+    deps = [":remote_assertion_proto"],
+)
+
 asylo_proto_library(
     name = "local_sealed_secret_proto",
     srcs = ["local_sealed_secret.proto"],
+)
+
+cc_proto_library(
+    name = "local_sealed_secret_cc_proto",
+    deps = [":local_sealed_secret_proto"],
 )
 
 asylo_proto_library(
     name = "sgx_local_assertion_authority_config_proto",
     srcs = ["sgx_local_assertion_authority_config.proto"],
     visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "sgx_local_assertion_authority_config_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = ["sgx_local_assertion_authority_config_proto"],
 )
 
 asylo_proto_library(
@@ -95,15 +145,21 @@ asylo_proto_library(
     ],
 )
 
+cc_proto_library(
+    name = "tcb_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":tcb_proto"],
+)
+
 cc_library(
     name = "remote_assertion_util",
     srcs = ["remote_assertion_util.cc"],
     hdrs = ["remote_assertion_util.h"],
     deps = [
-        ":code_identity_proto_cc",
-        ":remote_assertion_proto_cc",
-        "//asylo/crypto:algorithms_proto_cc",
-        "//asylo/crypto:certificate_proto_cc",
+        ":code_identity_cc_proto",
+        ":remote_assertion_cc_proto",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
@@ -115,11 +171,11 @@ cc_test(
     srcs = ["remote_assertion_util_test.cc"],
     enclave_test_name = "remote_assertion_util_enclave_test",
     deps = [
-        ":code_identity_proto_cc",
+        ":code_identity_cc_proto",
         ":code_identity_util",
-        ":remote_assertion_proto_cc",
+        ":remote_assertion_cc_proto",
         ":remote_assertion_util",
-        "//asylo/crypto:certificate_proto_cc",
+        "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
@@ -146,8 +202,8 @@ cc_library(
         ":code_identity_constants",
         ":hardware_interface",
         ":hardware_types",
-        ":local_assertion_proto_cc",
-        ":sgx_local_assertion_authority_config_proto_cc",
+        ":local_assertion_cc_proto",
+        ":sgx_local_assertion_authority_config_cc_proto",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
@@ -169,15 +225,15 @@ cc_test(
         ":code_identity_constants",
         ":code_identity_util",
         ":hardware_types",
-        ":local_assertion_proto_cc",
-        ":sgx_local_assertion_authority_config_proto_cc",
+        ":local_assertion_cc_proto",
+        ":sgx_local_assertion_authority_config_cc_proto",
         ":sgx_local_assertion_generator",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:enclave_assertion_generator",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -199,8 +255,8 @@ cc_library(
         ":code_identity_constants",
         ":code_identity_util",
         ":hardware_types",
-        ":local_assertion_proto_cc",
-        ":sgx_local_assertion_authority_config_proto_cc",
+        ":local_assertion_cc_proto",
+        ":sgx_local_assertion_authority_config_cc_proto",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
@@ -224,14 +280,14 @@ cc_test(
         ":code_identity_util",
         ":hardware_interface",
         ":hardware_types",
-        ":local_assertion_proto_cc",
-        ":sgx_local_assertion_authority_config_proto_cc",
+        ":local_assertion_cc_proto",
+        ":sgx_local_assertion_authority_config_cc_proto",
         ":sgx_local_assertion_verifier",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:enclave_assertion_authority",
         "//asylo/identity:enclave_assertion_verifier",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -253,15 +309,15 @@ cc_test(
         "sgx_local_assertion_verifier.h",
     ],
     deps = [
-        ":code_identity_proto_cc",
+        ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_interface",
-        ":local_assertion_proto_cc",
+        ":local_assertion_cc_proto",
         ":sgx_local_assertion_generator",
         ":sgx_local_assertion_verifier",
         "//asylo/identity:enclave_assertion_generator",
         "//asylo/identity:enclave_assertion_verifier",
-        "//asylo/identity:identity_proto_cc",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
@@ -278,13 +334,13 @@ cc_library(
     hdrs = ["code_identity_test_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":attributes_proto_cc",
-        ":code_identity_proto_cc",
+        ":attributes_cc_proto",
+        ":code_identity_cc_proto",
         ":code_identity_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/util:sha256_hash_proto_cc",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/util:sha256_hash_cc_proto",
         "//asylo/util:status",
     ],
 )
@@ -304,18 +360,18 @@ cc_library(
     ],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attributes_proto_cc",
+        ":attributes_cc_proto",
         ":attributes_util",
+        ":code_identity_cc_proto",
         ":code_identity_constants",
-        ":code_identity_proto_cc",
         ":hardware_interface",
         ":hardware_types",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/util:sha256_hash_proto_cc",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/util:sha256_hash_cc_proto",
         "//asylo/identity/util:sha256_hash_util",
         "//asylo/util:logging",
         "//asylo/util:status",
@@ -331,10 +387,10 @@ cc_test(
     name = "code_identity_util_test",
     srcs = ["code_identity_util_test.cc"],
     deps = [
-        ":attributes_proto_cc",
+        ":attributes_cc_proto",
         ":attributes_util",
+        ":code_identity_cc_proto",
         ":code_identity_constants",
-        ":code_identity_proto_cc",
         ":code_identity_test_util",
         ":code_identity_util",
         ":hardware_interface",
@@ -344,8 +400,8 @@ cc_test(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity/util:sha256_hash_proto_cc",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/util:sha256_hash_cc_proto",
         "//asylo/identity/util:sha256_hash_util",
         "//asylo/platform/common:singleton",
         "//asylo/test/util:proto_matchers",
@@ -361,7 +417,7 @@ cc_library(
     srcs = ["attributes_util.cc"],
     hdrs = ["attributes_util.h"],
     deps = [
-        ":attributes_proto_cc",
+        ":attributes_cc_proto",
         "@com_google_protobuf//:protobuf",
     ],
 )
@@ -371,7 +427,7 @@ cc_test(
     srcs = ["attributes_util_test.cc"],
     enclave_test_name = "attributes_util_enclave_test",
     deps = [
-        ":attributes_proto_cc",
+        ":attributes_cc_proto",
         ":attributes_util",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -388,8 +444,8 @@ cc_library(
     deps = [
         ":code_identity_util",
         "//asylo/identity:descriptions",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity:identity_proto_cc",
     ],
     alwayslink = 1,
 )
@@ -402,12 +458,12 @@ cc_test(
     ],
     enclave_test_name = "sgx_code_identity_expectation_matcher_enclave_test",
     deps = [
+        ":code_identity_cc_proto",
         ":code_identity_constants",
-        ":code_identity_proto_cc",
         ":code_identity_test_util",
         ":sgx_code_identity_expectation_matcher",
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity:identity_proto_cc",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -427,8 +483,8 @@ cc_library(
     ],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attributes_proto_cc",
-        ":miscselect_proto_cc",
+        ":attributes_cc_proto",
+        ":miscselect_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/identity/util:aligned_object_ptr",
         "//asylo/util:logging",
@@ -444,7 +500,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "secs_attributes_enclave_test",
     deps = [
-        ":attributes_proto_cc",
+        ":attributes_cc_proto",
         ":hardware_types",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
@@ -493,13 +549,13 @@ cc_library(
             "@linux_sgx//:trts",
         ],
         "//conditions:default": [
-            ":attributes_proto_cc",
-            ":code_identity_proto_cc",
+            ":attributes_cc_proto",
+            ":code_identity_cc_proto",
             ":proto_format",
             "@com_google_absl//absl/strings",
             "//asylo/crypto/util:bssl_util",
             "//asylo/crypto/util:trivial_object_util",
-            "//asylo/identity/util:sha256_hash_proto_cc",
+            "//asylo/identity/util:sha256_hash_cc_proto",
         ],
     }),
 )
@@ -547,7 +603,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":hardware_types",
-        ":platform_provisioning_proto_cc",
+        ":platform_provisioning_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
@@ -562,7 +618,7 @@ cc_test(
     deps = [
         ":hardware_types",
         ":platform_provisioning",
-        ":platform_provisioning_proto_cc",
+        ":platform_provisioning_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -579,7 +635,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
-        "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:additional_authenticated_data_generator",
@@ -604,7 +660,7 @@ cc_test(
     deps = [
         ":hardware_types",
         ":pce_util",
-        "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
@@ -629,7 +685,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":platform_provisioning",
-        ":tcb_proto_cc",
+        ":tcb_cc_proto",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
@@ -645,9 +701,9 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "tcb_enclave_test",
     deps = [
-        ":platform_provisioning_proto_cc",
+        ":platform_provisioning_cc_proto",
         ":tcb",
-        ":tcb_proto_cc",
+        ":tcb_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
@@ -667,9 +723,9 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":platform_provisioning",
-        ":platform_provisioning_proto_cc",
+        ":platform_provisioning_cc_proto",
         ":tcb",
-        ":tcb_proto_cc",
+        ":tcb_cc_proto",
         "//asylo/util:logging",
         "//asylo/util:proto_struct_util",
         "//asylo/util:status",
@@ -689,10 +745,10 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "tcb_info_from_json_enclave_test",
     deps = [
-        ":platform_provisioning_proto_cc",
+        ":platform_provisioning_cc_proto",
         ":tcb",
+        ":tcb_cc_proto",
         ":tcb_info_from_json",
-        ":tcb_proto_cc",
         "//asylo/test/util:output_collector",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
@@ -745,21 +801,21 @@ cc_library(
     hdrs = ["local_secret_sealer_helpers.h"],
     visibility = ["//visibility:private"],
     deps = [
-        ":code_identity_proto_cc",
+        ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_interface",
         ":hardware_types",
-        ":local_sealed_secret_proto_cc",
+        ":local_sealed_secret_cc_proto",
         "//asylo/crypto:aead_cryptor",
-        "//asylo/crypto:algorithms_proto_cc",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:identity_acl_proto_cc",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity:sealed_secret_proto_cc",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity:sealed_secret_cc_proto",
         "//asylo/platform/common:singleton",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
@@ -774,7 +830,7 @@ cc_library(
     hdrs = ["sgx_local_secret_sealer.h"],
     visibility = ["//visibility:public"],
     deps = [
-        ":code_identity_proto_cc",
+        ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_types",
         ":local_secret_sealer_helpers",
@@ -782,9 +838,9 @@ cc_library(
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
-        "//asylo/identity:identity_acl_proto_cc",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity:sealed_secret_proto_cc",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity:sealed_secret_cc_proto",
         "//asylo/identity:secret_sealer",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
@@ -799,17 +855,17 @@ cc_test(
     name = "sgx_local_secret_sealer_test",
     srcs = ["sgx_local_secret_sealer_test.cc"],
     deps = [
-        ":code_identity_proto_cc",
+        ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_interface",
-        ":local_sealed_secret_proto_cc",
+        ":local_sealed_secret_cc_proto",
         ":local_secret_sealer_helpers",
         ":sgx_local_secret_sealer",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:identity_acl_proto_cc",
-        "//asylo/identity:identity_proto_cc",
-        "//asylo/identity:sealed_secret_proto_cc",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity:sealed_secret_cc_proto",
         "//asylo/platform/common:singleton",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -825,11 +881,11 @@ cc_library(
     hdrs = ["proto_format.h"],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attributes_proto_cc",
-        ":code_identity_proto_cc",
+        ":attributes_cc_proto",
+        ":code_identity_cc_proto",
         ":hardware_types",
-        ":miscselect_proto_cc",
-        "//asylo/identity/util:sha256_hash_proto_cc",
+        ":miscselect_cc_proto",
+        "//asylo/identity/util:sha256_hash_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
@@ -841,12 +897,12 @@ cc_test(
     srcs = ["proto_format_test.cc"],
     enclave_test_name = "proto_format_enclave_test",
     deps = [
-        ":code_identity_proto_cc",
+        ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_types",
-        ":miscselect_proto_cc",
+        ":miscselect_cc_proto",
         ":proto_format",
-        "//asylo/identity/util:sha256_hash_proto_cc",
+        "//asylo/identity/util:sha256_hash_cc_proto",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

@@ -27,8 +27,8 @@ cc_library(
     name = "mock_identity_expectation_matcher",
     hdrs = ["mock_identity_expectation_matcher.h"],
     deps = [
+        "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity:identity_proto_cc",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],

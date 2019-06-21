@@ -67,6 +67,11 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "grpc_server_config_cc_proto",
+    deps = [":grpc_server_config_proto"],
+)
+
 # The enclave hosting the translation server.
 sim_enclave(
     name = "grpc_server_enclave.so",
@@ -74,7 +79,7 @@ sim_enclave(
     config = "//asylo/grpc/util:grpc_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":grpc_server_config_proto_cc",
+        ":grpc_server_config_cc_proto",
         ":translator_server",
         "//asylo:enclave_runtime",
         "//asylo/util:status",
@@ -96,7 +101,7 @@ enclave_loader(
     enclaves = {"enclave": ":grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":grpc_server_config_proto_cc",
+        ":grpc_server_config_cc_proto",
         "//asylo:enclave_client",
         "//asylo/util:logging",
         "@com_github_gflags_gflags//:gflags_nothreads",

@@ -35,6 +35,12 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "fork_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":fork_proto"],
+)
+
 # Target exposing trusted architecture-dependent components for the build
 # configuration.
 cc_library(
@@ -50,7 +56,7 @@ cc_library(
         "//asylo/platform/primitives:sgx": ["trusted_sgx"],
         "//conditions:default": ["trusted_build_only"],
     }) + [
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/core:shared_name",
         "//asylo/util:status",
     ],
@@ -64,9 +70,9 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":fork_proto_cc",
+        ":fork_cc_proto",
         ":untrusted_sgx",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/core:untrusted_core",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/util:status",
@@ -143,8 +149,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
-        ":fork_proto_cc",
-        "//asylo:enclave_proto_cc",
+        ":fork_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:debug_strings",
@@ -211,7 +217,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":trusted_sgx_bridge",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:memory",
@@ -279,11 +285,11 @@ cc_library(
     linkstatic = 1,
     tags = ASYLO_ALL_BACKENDS,
     deps = [
-        ":fork_proto_cc",
+        ":fork_cc_proto",
         ":trusted_arch",
         "//asylo/platform/primitives:trusted_backend",
         "@com_google_absl//absl/strings",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
     ] + select({
         "@linux_sgx//:sgx_hw": [
             "@com_google_absl//absl/base:core_headers",

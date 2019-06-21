@@ -21,16 +21,21 @@ licenses(["notice"])  # Apache v2.0
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 load(
     "//asylo/bazel:asylo.bzl",
-    "sgx_enclave_test",
     "cc_enclave_test",
+    "sgx_enclave_test",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 asylo_proto_library(
-    name = "config_test_proto",
+    name = "proto_test_proto",
     srcs = ["proto_test.proto"],
     deps = ["//asylo:enclave_proto"],
+)
+
+cc_proto_library(
+    name = "proto_test_cc_proto",
+    deps = [":proto_test_proto"],
 )
 
 cc_enclave_test(
@@ -51,7 +56,7 @@ sgx_enclave(
     srcs = ["proto_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":config_test_proto_cc",
+        ":proto_test_cc_proto",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/memory",
@@ -65,7 +70,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":test_proto.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":config_test_proto_cc",
+        ":proto_test_cc_proto",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -79,8 +84,8 @@ sgx_enclave(
     srcs = ["getenv_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":config_test_proto_cc",
-        "//asylo:enclave_proto_cc",
+        ":proto_test_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/strings",
     ],
@@ -93,8 +98,8 @@ sgx_enclave_test(
     enclaves = {"enclave": ":getenv_test_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":config_test_proto_cc",
-        "//asylo:enclave_proto_cc",
+        ":proto_test_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -108,7 +113,7 @@ sgx_enclave(
     srcs = ["enclave_api_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":config_test_proto_cc",
+        ":proto_test_cc_proto",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/memory",
@@ -122,7 +127,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":enclave_api_test_proto.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":config_test_proto_cc",
+        ":proto_test_cc_proto",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

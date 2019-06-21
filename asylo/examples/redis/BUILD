@@ -26,10 +26,10 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/identity:descriptions",
-        "//asylo/identity:enclave_assertion_authority_config_proto_cc",
-        "//asylo/identity/sgx:sgx_local_assertion_authority_config_proto_cc",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/util:logging",
     ],
 )

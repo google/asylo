@@ -419,9 +419,14 @@ The enclave requires the following additional targets:
 
 ```python
 asylo_proto_library(
-    name = "grpc_server_proto",
-    srcs = ["grpc_server.proto"],
+    name = "grpc_server_config_proto",
+    srcs = ["grpc_server_config.proto"],
     deps = ["//asylo:enclave_proto"],
+)
+
+cc_proto_library(
+    name = "grpc_server_config_cc_proto",
+    deps = [":grpc_server_config_proto"],
 )
 
 sim_enclave(
@@ -429,7 +434,7 @@ sim_enclave(
     srcs = ["grpc_server_enclave.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
-        ":grpc_server_config_proto_cc",
+        ":grpc_server_config_cc_proto",
         ":translator_server",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
@@ -452,7 +457,7 @@ enclave_loader(
     enclaves = {"enclave": ":grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":grpc_server_config_proto_cc",
+        ":grpc_server_config_cc_proto",
         "//asylo:enclave_client",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "//asylo/util:logging",

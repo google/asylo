@@ -268,8 +268,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":status_cc_proto",
         ":status_macros",
-        ":status_proto_cc",
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
@@ -424,6 +424,12 @@ asylo_proto_library(
     name = "status_proto",
     srcs = ["status.proto"],
     visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "status_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":status_proto"],
 )
 
 # Library for manipulating file paths.

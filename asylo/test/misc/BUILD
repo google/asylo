@@ -39,6 +39,11 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "block_enclave_entries_test_cc_proto",
+    deps = [":block_enclave_entries_test_proto"],
+)
+
 # A protobuf used by signal tests. The input contains whether to register a
 # signal hander sa_handler, which takes a single argument signum, or
 # sa_sigaction, which takes three arguments: signum, siginfo, and ucontext.
@@ -48,10 +53,20 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "signal_test_cc_proto",
+    deps = [":signal_test_proto"],
+)
+
 asylo_proto_library(
     name = "enclave_entry_count_test_proto",
     srcs = ["enclave_entry_count_test.proto"],
     deps = ["//asylo:enclave_proto"],
+)
+
+cc_proto_library(
+    name = "enclave_entry_count_test_cc_proto",
+    deps = [":enclave_entry_count_test_proto"],
 )
 
 # Trivial SGX enclave.
@@ -81,7 +96,7 @@ sgx_enclave(
     srcs = ["enclave_entry_count_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":enclave_entry_count_test_proto_cc",
+        ":enclave_entry_count_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/synchronization",
     ],
@@ -93,7 +108,7 @@ sgx_enclave(
     srcs = ["active_enclave_signal_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":signal_test_proto_cc",
+        ":signal_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -104,7 +119,7 @@ sgx_enclave(
     srcs = ["inactive_enclave_signal_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":signal_test_proto_cc",
+        ":signal_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -182,7 +197,7 @@ sgx_enclave(
     srcs = ["block_enclave_entries_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":block_enclave_entries_test_proto_cc",
+        ":block_enclave_entries_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -392,7 +407,7 @@ sgx_enclave_test(
     enclaves = {"enclave": "enclave_entry_count_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":enclave_entry_count_test_proto_cc",
+        ":enclave_entry_count_test_cc_proto",
         "//asylo/platform/primitives:trusted_backend",
     ] + TEST_DEPS_COMMON,
 )
@@ -405,7 +420,7 @@ sgx_enclave_test(
     tags = ["noregression"],
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":signal_test_proto_cc",
+        ":signal_test_cc_proto",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
     ] + TEST_DEPS_COMMON,
@@ -418,7 +433,7 @@ sgx_enclave_test(
     enclaves = {"enclave": "inactive_enclave_signal_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":signal_test_proto_cc",
+        ":signal_test_cc_proto",
     ] + TEST_DEPS_COMMON,
 )
 
@@ -449,7 +464,7 @@ sgx_enclave_test(
     enclaves = {"enclave": "block_enclave_entries_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":block_enclave_entries_test_proto_cc",
+        ":block_enclave_entries_test_cc_proto",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/primitives:trusted_backend",
     ] + TEST_DEPS_COMMON,
@@ -527,8 +542,8 @@ sgx_enclave_test(
         TEST_SECTION_NAME,
     ],
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
-        "//asylo:enclave_proto_cc",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_github_gflags_gflags//:gflags_nothreads",

@@ -343,11 +343,16 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "demo_cc_proto",
+    deps = [":demo_proto"],
+)
+
 sim_enclave(
     name = "demo_enclave",
     srcs = ["demo_enclave.cc"],
     deps = [
-        ":demo_proto_cc",
+        ":demo_cc_proto",
         "//asylo:enclave_runtime",
     ],
 )
@@ -358,7 +363,7 @@ enclave_loader(
     enclaves = {"enclave": ":demo_enclave"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":demo_proto_cc",
+        ":demo_cc_proto",
         "//asylo:enclave_client",
         "@com_github_gflags_gflags//:gflags_nothreads",
         "//asylo/util:logging",

@@ -67,7 +67,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":sgx_error_space",
-        "//asylo:enclave_proto_cc",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",

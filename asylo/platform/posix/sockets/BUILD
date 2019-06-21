@@ -130,6 +130,11 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "socket_test_cc_proto",
+    deps = ["socket_test_proto"],
+)
+
 # Enclave for UNIX domain-socket test.
 sgx_enclave(
     name = "domain_socket_test_enclave.so",
@@ -138,7 +143,7 @@ sgx_enclave(
     deps = [
         ":socket_client",
         ":socket_server",
-        ":socket_test_proto_cc",
+        ":socket_test_cc_proto",
         ":socket_test_transmit",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
@@ -156,7 +161,7 @@ sgx_enclave_test(
     deps = [
         ":socket_client",
         ":socket_server",
-        ":socket_test_proto_cc",
+        ":socket_test_cc_proto",
         ":socket_test_transmit",
         "//asylo:enclave_client",
         "//asylo/platform/arch:trusted_arch",
@@ -179,7 +184,7 @@ sgx_enclave(
     deps = [
         ":socket_client",
         ":socket_server",
-        ":socket_test_proto_cc",
+        ":socket_test_cc_proto",
         ":socket_test_transmit",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
@@ -196,7 +201,7 @@ sgx_enclave_test(
     deps = [
         ":socket_client",
         ":socket_server",
-        ":socket_test_proto_cc",
+        ":socket_test_cc_proto",
         ":socket_test_transmit",
         "//asylo:enclave_client",
         "//asylo/platform/arch:trusted_arch",
@@ -213,7 +218,7 @@ sgx_enclave(
     srcs = ["addrinfo_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":socket_test_proto_cc",
+        ":socket_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -226,7 +231,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":addrinfo_test_enclave.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":socket_test_proto_cc",
+        ":socket_test_cc_proto",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

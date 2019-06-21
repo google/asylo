@@ -231,12 +231,17 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "fork_security_test_cc_proto",
+    deps = [":fork_security_test_proto"],
+)
+
 sgx_enclave(
     name = "fork_security_test.so",
     srcs = ["fork_security_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":fork_security_test_proto_cc",
+        ":fork_security_test_cc_proto",
         "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/primitives:trusted_backend",
         "//asylo/test/util:enclave_test_application",
@@ -250,10 +255,10 @@ sgx_enclave_test(
     enclaves = {"enclave": "fork_security_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":fork_security_test_proto_cc",
+        ":fork_security_test_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
-        "//asylo:enclave_proto_cc",
-        "//asylo/platform/arch:fork_proto_cc",
+        "//asylo/platform/arch:fork_cc_proto",
         "//asylo/platform/common:memory",
         "//asylo/platform/core:untrusted_core",
         "//asylo/test/util:status_matchers",
@@ -273,13 +278,18 @@ asylo_proto_library(
     deps = ["//asylo:enclave_proto"],
 )
 
+cc_proto_library(
+    name = "syscalls_test_cc_proto",
+    deps = ["syscalls_test_proto"],
+)
+
 # SGX enclave used to test different syscalls.
 sgx_enclave(
     name = "syscalls_test.so",
     srcs = ["syscalls_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":syscalls_test_proto_cc",
+        ":syscalls_test_cc_proto",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
@@ -295,7 +305,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":syscalls_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
-        ":syscalls_test_proto_cc",
+        ":syscalls_test_cc_proto",
         "//asylo:enclave_client",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/test/util:enclave_test",
