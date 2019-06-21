@@ -16,16 +16,16 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKENDS",
     "enclave_loader",
     "sim_enclave",
     "sgx_enclave_test",
-    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:proto.bzl",
-    "asylo_proto_library",
     "asylo_grpc_proto_library",
+    "asylo_proto_library",
 )
 
 licenses(["notice"])  # Apache v2.0

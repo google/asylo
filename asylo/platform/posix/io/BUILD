@@ -16,10 +16,10 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "sgx_enclave_test",
+    "ASYLO_ALL_BACKENDS",
     "cc_enclave_test",
     "cc_test",
-    "ASYLO_ALL_BACKENDS",
+    "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")

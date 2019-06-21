@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # GCM library for secure storage.
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(

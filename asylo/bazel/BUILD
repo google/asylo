@@ -30,9 +30,9 @@ exports_files([
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKENDS",
     "cc_enclave_test",
     "embed_enclaves",
-    "ASYLO_ALL_BACKENDS",
 )
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
