@@ -95,7 +95,7 @@ TEST(HostCallHandlersTest, SyscallHandlerInvalidRequestOnParameterStackTest) {
 }
 
 // Invokes an IsAtty hostcall for an invalid request. It tests that the correct
-// error error is returned for an empty parameter stack and for a parameter
+// error is returned for an empty parameter stack or for a parameter
 // stack with more than one item.
 TEST(HostCallHandlersTest, IsAttyIncorrectParameterStackSizeTest) {
   primitives::NativeParameterStack params;
@@ -118,6 +118,36 @@ TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
 
   params.PushByCopy(0);
   EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
+              StatusIs(error::GoogleError::OK));
+
+  int result = params.Pop<int>();
+  EXPECT_EQ(result, 0);
+}
+
+// Invokes an USleep hostcall for an invalid request. It tests that the correct
+// error is returned for an empty parameter stack or for a parameter
+// stack with more than one item.
+TEST(HostCallHandlersTest, USleepIncorrectParameterStackSizeTest) {
+  primitives::NativeParameterStack params;
+
+  EXPECT_THAT(USleepHandler(nullptr, nullptr, &params),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  params.PushByCopy(1);
+  params.PushByCopy(2);
+
+  EXPECT_THAT(USleepHandler(nullptr, nullptr, &params),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Invokes an USleep hostcall for a valid request, and verifies that an ok
+// response code is returned, and that the correct response is included on
+// the parameter stack.
+TEST(HostCallHandlersTest, USleepValidRequestTest) {
+  primitives::NativeParameterStack params;
+
+  params.PushByCopy(0);
+  EXPECT_THAT(USleepHandler(nullptr, nullptr, &params),
               StatusIs(error::GoogleError::OK));
 
   int result = params.Pop<int>();

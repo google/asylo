@@ -87,6 +87,18 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kIsAttyHandler, &params, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  // Verify that |kUSleepHandler| is in use by attempting to re-register the
+  // handler.
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+      kUSleepHandler, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+
+  // Verify that |kUSleepHandler| points to |USleepHandler| by making a
+  // call with an empty request.
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+      kUSleepHandler, &params, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 }  // namespace host_call

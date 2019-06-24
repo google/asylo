@@ -63,8 +63,19 @@ Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
 
   int fd = parameters->Pop<int>();
 
-  int result = isatty(fd);
-  parameters->PushByCopy(result);
+  parameters->PushByCopy<int>(isatty(fd));
+
+  return Status::OkStatus();
+}
+
+Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
+                     void *context,
+                     primitives::NativeParameterStack *parameters) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(parameters, 1);
+
+  auto usec = parameters->Pop<useconds_t>();
+
+  parameters->PushByCopy<int>(usleep(usec));
 
   return Status::OkStatus();
 }

@@ -36,10 +36,18 @@ Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
                          primitives::NativeParameterStack *parameters);
 
 // This handler performs the IsAtty host call. IsAtty takes in a single
-// parameter from the stack (int fd), and calls the unistd function isatty,
+// parameter from the stack (int fd), and calls the libc function isatty,
 // which returns an int. The int is passed on the parameter stack to be
 // returned. Returns ok status on success, otherwise an error message.
 Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
+                     void *context,
+                     primitives::NativeParameterStack *parameters);
+
+// This handler performs the USleep host call. USleep takes in a single
+// parameter from the stack (useconds_t usec), and calls the libc function
+// usleep, which returns an int. The int is passed on the parameter stack to be
+// returned. Returns ok status on success, otherwise an error message.
+Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context,
                      primitives::NativeParameterStack *parameters);
 

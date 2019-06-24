@@ -36,6 +36,9 @@ GetHostCallHandlersMapping() {
   ASYLO_RETURN_IF_ERROR(dispatch_table->RegisterExitHandler(
       kIsAttyHandler, primitives::ExitHandler{IsAttyHandler}));
 
+  ASYLO_RETURN_IF_ERROR(dispatch_table->RegisterExitHandler(
+      kUSleepHandler, primitives::ExitHandler{USleepHandler}));
+
   return std::move(dispatch_table);
 }
 

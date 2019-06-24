@@ -453,6 +453,14 @@ primitives::PrimitiveStatus TestIsAtty(
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+primitives::PrimitiveStatus TestUSleep(
+    void *context, primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+  auto usec = params->Pop<unsigned int>();
+  params->PushByCopy<int>(enc_untrusted_usleep(usec));
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 
 // Implements the required enclave initialization function.
@@ -538,6 +546,8 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_init() {
       kTestSchedYield, primitives::EntryHandler{TestSchedYield}));
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
       kTestIsAtty, primitives::EntryHandler{TestIsAtty}));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::RegisterEntryHandler(
+      kTestUSleep, primitives::EntryHandler{TestUSleep}));
 
   return primitives::PrimitiveStatus::OkStatus();
 }

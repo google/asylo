@@ -72,6 +72,7 @@ cc_library(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
     ],
 )

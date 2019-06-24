@@ -37,6 +37,9 @@ static constexpr uint64_t kSystemCallHandler = primitives::kSelectorHostCall;
 // Exit handler constant for |IsAttyHandler|.
 static constexpr uint64_t kIsAttyHandler = primitives::kSelectorHostCall + 1;
 
+// Exit handler constant for |USleepHandler|.
+static constexpr uint64_t kUSleepHandler = primitives::kSelectorHostCall + 2;
+
 }  // namespace host_call
 }  // namespace asylo
 

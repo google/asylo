@@ -81,6 +81,7 @@ int enc_untrusted_sched_yield();
 
 // Non-syscall hostcalls are defined below.
 int enc_untrusted_isatty(int fd);
+int enc_untrusted_usleep(useconds_t usec);
 
 #ifdef __cplusplus
 }  // extern "C"

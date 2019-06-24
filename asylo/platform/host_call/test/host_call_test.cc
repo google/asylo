@@ -28,6 +28,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/test/test_backend.h"
@@ -1087,6 +1089,29 @@ TEST_F(HostCallTest, TestIsAtty) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestIsAtty, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
   EXPECT_THAT(params.Pop<int>(), Eq(0));
+}
+
+// Tests enc_untrusted_usleep() by sleeping for 1s, then ensuring that the
+// return value is 0, and that at least 1 second passed during the usleep
+// enclave call.
+TEST_F(HostCallTest, TestUSleep) {
+  primitives::NativeParameterStack params;
+
+  // Push the sleep duration as unsigned int instead of useconds_t, storing
+  // it as useconds_t causes a segfault when popping the argument from the
+  // stack on the trusted side.
+  params.PushByCopy<unsigned int>(/*value=usec=*/1000000);
+
+  absl::Time start = absl::Now();
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUSleep, &params));
+  absl::Time end = absl::Now();
+
+  auto duration = absl::ToInt64Milliseconds(end - start);
+
+  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  EXPECT_GE(duration, 1000);
+  EXPECT_LE(duration, 1200);
 }
 
 }  // namespace

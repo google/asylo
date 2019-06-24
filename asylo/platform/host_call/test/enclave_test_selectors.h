@@ -107,6 +107,7 @@ constexpr uint64_t kTestSchedYield =
     kFirstSelector + asylo::system_call::kSYS_sched_yield;
 
 constexpr uint64_t kTestIsAtty = kNonSyscallFirstSelector;
+constexpr uint64_t kTestUSleep = kNonSyscallFirstSelector + 1;
 
 }  // namespace host_call
 }  // namespace asylo

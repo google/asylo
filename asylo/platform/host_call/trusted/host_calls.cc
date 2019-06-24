@@ -287,4 +287,16 @@ int enc_untrusted_isatty(int fd) {
   return params.Pop<int>();
 }
 
+int enc_untrusted_usleep(useconds_t usec) {
+  asylo::primitives::TrustedParameterStack params;
+  params.PushByCopy(usec);
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(
+          asylo::host_call::kUSleepHandler, &params);
+  if (!status.ok()) {
+    abort();
+  }
+  return params.Pop<int>();
+}
+
 }  // extern "C"
