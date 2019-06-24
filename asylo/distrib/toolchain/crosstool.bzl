@@ -617,7 +617,7 @@ def _impl(ctx):
                             "-DCOMPILER_GCC3",
                             "-D__LINUX_ERRNO_EXTENSIONS__",
                             "-D_GLIBCXX_USE_C99",  # DEPRECATED: To be removed.
-                            "-D_GNU_SOURCE=1",
+                            "-D_GNU_SOURCE=1",  # DEPRECATED: To be removed.
                         ],
                     ),
                 ],
