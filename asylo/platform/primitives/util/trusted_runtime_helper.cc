@@ -84,8 +84,9 @@ void EnsureInitialized() {
     }
 
     // Invoke the user-defined initialization routine.
-    if (!enc_init().ok()) {
-      TrustedPrimitives::BestEffortAbort("enc_init() returned failure.");
+    if (!asylo_enclave_init().ok()) {
+      TrustedPrimitives::BestEffortAbort(
+          "asylo_enclave_init() returned failure.");
       return;
     }
 

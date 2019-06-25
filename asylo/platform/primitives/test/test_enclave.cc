@@ -26,7 +26,9 @@
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/status_macros.h"
 
+using asylo::primitives::EntryHandler;
 using asylo::primitives::PrimitiveStatus;
+using asylo::primitives::TrustedPrimitives;
 
 namespace asylo {
 namespace primitives {
@@ -225,26 +227,36 @@ PrimitiveStatus StressMallocs(void *context, TrustedParameterStack *params) {
 }
 
 }  // namespace
+}  // namespace primitives
+}  // namespace asylo
 
 // Implements the required enclave initialization function.
 extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kAbortEnclaveSelector, EntryHandler{Abort}));
+      asylo::primitives::kAbortEnclaveSelector,
+      EntryHandler{asylo::primitives::Abort}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kTrustedFibonacci, EntryHandler{TrustedFibonacci}));
+      asylo::primitives::kTrustedFibonacci,
+      EntryHandler{asylo::primitives::TrustedFibonacci}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kTimesTwoSelector, EntryHandler{MultiplyByTwo}));
+      asylo::primitives::kTimesTwoSelector,
+      EntryHandler{asylo::primitives::MultiplyByTwo}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kAveragePerThreadSelector, EntryHandler{AveragePerThread}));
+      asylo::primitives::kAveragePerThreadSelector,
+      EntryHandler{asylo::primitives::AveragePerThread}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kTrustedMallocTest, EntryHandler{TrustedMallocTest}));
+      asylo::primitives::kTrustedMallocTest,
+      EntryHandler{asylo::primitives::TrustedMallocTest}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kUntrustedLocalAllocTest, EntryHandler{UntrustedLocalAllocTest}));
+      asylo::primitives::kUntrustedLocalAllocTest,
+      EntryHandler{asylo::primitives::UntrustedLocalAllocTest}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kCopyMultipleParamsSelector, EntryHandler{CopyMultipleParams}));
+      asylo::primitives::kCopyMultipleParamsSelector,
+      EntryHandler{asylo::primitives::CopyMultipleParams}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kStressMallocs, EntryHandler{StressMallocs}));
-  return initialized
+      asylo::primitives::kStressMallocs,
+      EntryHandler{asylo::primitives::StressMallocs}));
+  return asylo::primitives::initialized
              ? PrimitiveStatus::OkStatus()
              : PrimitiveStatus{::asylo::error::GoogleError::FAILED_PRECONDITION,
                                "Enclave not initialized"};
@@ -254,8 +266,3 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
 extern "C" PrimitiveStatus asylo_enclave_fini() {
   return PrimitiveStatus::OkStatus();
 }
-
-}  // namespace primitives
-}  // namespace asylo
-
-extern "C" PrimitiveStatus enc_init() { return PrimitiveStatus::OkStatus(); }

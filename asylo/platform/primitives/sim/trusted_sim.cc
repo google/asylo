@@ -17,13 +17,15 @@
  */
 
 #include <unistd.h>
+
 #include <cstdio>
 #include <cstring>
 
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sim/shared_sim.h"
-#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/util/status_macros.h"
 
@@ -70,12 +72,6 @@ void RegisterInternalHandlers() {
   if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
              .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
-  }
-  // Invoke the user-defined initialization routine.
-  if (!asylo_enclave_init().ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "asylo_enclave_init() returned failure.");
-    return;
   }
 }
 

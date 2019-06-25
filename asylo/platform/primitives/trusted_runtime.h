@@ -28,7 +28,10 @@
 extern "C" {
 
 // Prototype of the user-defined enclave initialization function.
-asylo::primitives::PrimitiveStatus enc_init();
+asylo::primitives::PrimitiveStatus asylo_enclave_init();
+
+// Prototype of the user-defined enclave finalization function.
+asylo::primitives::PrimitiveStatus asylo_enclave_fini();
 
 // Emulates the Unix `sbrk` system call. See sbrk(2). This functions must be
 // exported by each backend to support linking against libc.

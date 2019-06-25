@@ -576,4 +576,12 @@ int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
 
 }  // namespace asylo
 
-extern "C" PrimitiveStatus enc_init() { return PrimitiveStatus::OkStatus(); }
+// Implements the required enclave initialization function.
+extern "C" PrimitiveStatus asylo_enclave_init() {
+  return PrimitiveStatus::OkStatus();
+}
+
+// Implements the required enclave finalization function.
+extern "C" PrimitiveStatus asylo_enclave_fini() {
+  return PrimitiveStatus::OkStatus();
+}

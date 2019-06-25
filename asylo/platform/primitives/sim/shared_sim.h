@@ -29,14 +29,6 @@
 namespace asylo {
 namespace primitives {
 
-extern "C" {
-// Prototype of the user-defined enclave initialization function.
-PrimitiveStatus asylo_enclave_init();
-
-// Prototype of the user-defined enclave finalization function.
-PrimitiveStatus asylo_enclave_fini();
-}
-
 // Support for calls from trusted code to untrusted.
 constexpr uint64_t sim_trampoline_address = 0x7e0000000000;
 

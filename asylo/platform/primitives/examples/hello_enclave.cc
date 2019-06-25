@@ -63,24 +63,21 @@ PrimitiveStatus Hello(void *context, TrustedParameterStack *params) {
 }
 
 }  // namespace
-
-extern "C" PrimitiveStatus asylo_enclave_init() {
-  return PrimitiveStatus::OkStatus();
-}
-
-extern "C" PrimitiveStatus asylo_enclave_fini() {
-  return PrimitiveStatus::OkStatus();
-}
-
 }  // namespace primitives
 }  // namespace asylo
 
-extern "C" PrimitiveStatus enc_init() {
+// Implements the required enclave initialization function.
+extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::primitives::kAbortEnclaveSelector,
       EntryHandler{asylo::primitives::Abort}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::primitives::kHelloEnclaveSelector,
       EntryHandler{asylo::primitives::Hello}));
+  return PrimitiveStatus::OkStatus();
+}
+
+// Implements the required enclave finalization function.
+extern "C" PrimitiveStatus asylo_enclave_fini() {
   return PrimitiveStatus::OkStatus();
 }
