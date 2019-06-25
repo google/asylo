@@ -3126,7 +3126,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1282 @@
+@@ -0,0 +1,1283 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3447,6 +3447,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Iexternal/linux_sgx/psw/urts/linux",
 +        "-Iexternal/linux_sgx/psw/urts/parser",
 +        "-Iexternal/boringssl",
++        "-Wno-unused-function",
 +    ],
 +    linkopts = [
 +        "-Wl,--no-as-needed -ldl",

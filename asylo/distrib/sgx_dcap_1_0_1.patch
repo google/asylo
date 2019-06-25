@@ -62,7 +62,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/quote_wrapper/
 Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and QuoteVerification/Src/AttestationApp/sampleData/quote.dat differ
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,252 @@
+@@ -0,0 +1,253 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -227,6 +227,7 @@ Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and Quote
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
++        "-Wno-address",
 +    ],
 +    # The linker option below works around a linker issue. The PCE interface is
 +    # implemented twice in both SGX DCAP and SGX SDK. The latter is used to
