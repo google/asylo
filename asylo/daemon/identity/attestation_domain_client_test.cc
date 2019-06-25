@@ -23,7 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "asylo/daemon/identity/attestation_domain_mock.grpc.pb.h"
+#include "asylo/daemon/identity/attestation_domain_service_mock.grpc.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
 

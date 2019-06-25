@@ -22,17 +22,29 @@ load(
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:proto.bzl",
-    "asylo_grpc_proto_library",
     "asylo_proto_library",
 )
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 licenses(["notice"])  # Apache v2.0
 
 # Service definition for testing gRPC in Asylo.
-asylo_grpc_proto_library(
-    name = "service_grpc_proto",
+proto_library(
+    name = "service_proto",
     srcs = ["service.proto"],
+)
+
+cc_proto_library(
+    name = "service_cc_proto",
+    deps = ["service_proto"],
+)
+
+cc_grpc_library(
+    name = "service",
+    srcs = [":service_proto"],
+    grpc_only = True,
+    deps = [":service_cc_proto"],
 )
 
 # Extensions used in the gRPC client enclave implementation.
@@ -57,7 +69,7 @@ cc_library(
     copts = ["-DPORTABLE_STATUS"] + ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":service_grpc_proto",
+        ":service",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/strings",
     ],
@@ -71,7 +83,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":service_grpc_proto",
+        ":service",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",

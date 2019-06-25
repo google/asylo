@@ -89,9 +89,9 @@ service Translator {
 
 This document doesn't include the server implementation because the details are
 mostly irrelevant to this example. To learn about the server implementation, see
-[translator_server.h](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.h)
+[translator_server_impl.h](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server_impl.h)
 and
-[translator_server.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.cc).
+[translator_server_impl.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server_impl.cc).
 
 ## Setting up a server enclave
 
@@ -117,6 +117,9 @@ extend asylo.EnclaveConfig {
   // The maximum amount of time in seconds before the server is shut down.
   // Required.
   optional int32 server_max_lifetime = 225604125;
+
+  // The port that the gRPC server listens to. Required.
+  optional int32 port = 253106740;
 }
 ```
 
@@ -161,7 +164,7 @@ class GrpcServerEnclave final : public asylo::TrustedApplication {
 
   std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
 
-  TranslatorServer service_;
+  TranslatorServerImpl service_;
 
   absl::Notification shutdown_requested_;
 
@@ -195,6 +198,11 @@ asylo::Status GrpcServerEnclave::Initialize(
                          "Expected a server_max_lifetime extension on config.");
   }
 
+  if (!enclave_config.HasExtension(port)) {
+    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                         "Expected a port extension on config.");
+  }
+
   shutdown_timeout_ =
       absl::Seconds(enclave_config.GetExtension(server_max_lifetime));
 
@@ -208,8 +216,10 @@ asylo::Status GrpcServerEnclave::Initialize(
   ::grpc::ServerBuilder builder;
 
   int selected_port;
-  builder.AddListeningPort(enclave_config.GetExtension(server_address),
-                           ::grpc::InsecureServerCredentials(), &selected_port);
+  builder.AddListeningPort(
+      absl::StrCat(enclave_config.GetExtension(server_address), ":",
+                   enclave_config.GetExtension(port)),
+      ::grpc::InsecureServerCredentials(), &selected_port);
 
   builder.RegisterService(&service_);
 
@@ -384,22 +394,39 @@ To build the gRPC service with Bazel, the
 [BUILD file](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/BUILD)
 needs the following targets:
 
-*   An `asylo_grpc_proto_library` target that contains the generated service
-    code
+*   A `proto_library` target that contains the proto definitions
+*   A `cc_proto_library` target that contains the C++ language specific proto
+    definitions
+*   A `cc_grpc_library` target that contains the generated service code
 *   A `cc_library` target that contains the implementation of the service
 
 ```python
-asylo_grpc_proto_library(
-    name = "translator_server_grpc_proto",
+proto_library(
+    name = "translator_server_proto",
     srcs = ["translator_server.proto"],
+    tags = ASYLO_ALL_BACKENDS,
+)
+
+cc_proto_library(
+    name = "translator_server_cc_proto",
+    tags = ASYLO_ALL_BACKENDS,
+    deps = [":translator_server_proto"],
+)
+
+cc_grpc_library(
+    name = "translator_server",
+    srcs = [":translator_server_proto"],
+    tags = ASYLO_ALL_BACKENDS,
+    grpc_only = True,
+    deps = [":translator_server_cc_proto"],
 )
 
 cc_library(
-    name = "translator_server",
-    srcs = ["translator_server.cc"],
-    hdrs = ["translator_server.h"],
+    name = "translator_server_impl",
+    srcs = ["translator_server_impl.cc"],
+    hdrs = ["translator_server_impl.h"],
     deps = [
-        ":translator_server_grpc_proto",
+        ":translator_server",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
@@ -412,7 +439,9 @@ cc_library(
 The enclave requires the following additional targets:
 
 *   An `asylo_proto_library` target that contains the extensions to the enclave
-    proto definitions
+    proto definitions.
+*   A `cc_proto_library` target that contains the C++ language specific
+    extension to the enclave proto definitions.
 *   A `sim_enclave` target that contains the actual enclave. This enclave is
     configured with `grpc_enclave_config`, which expands the heap size and
     maximum number of threads to accommodate gRPC's resource requirements.
@@ -435,7 +464,7 @@ sim_enclave(
     config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":grpc_server_config_cc_proto",
-        ":translator_server",
+        ":translator_server_impl",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
@@ -491,12 +520,12 @@ $ bazel run --config=enc-sim \
 In addition, if you want the server listen on a specific port, you can use the
 `--port` flag that is defined in the [driver](#driving-the-enclave).
 
-For example, to make server listen on port 8558, run:
+For example, to make the server listen on port 62831, run:
 
 ```bash
 $ bazel run --config=enc-sim \
     //asylo/examples/grpc_server:grpc_server -- \
-    --port=8558
+    --port=62831
 ```
 
 For this example, use the
@@ -513,15 +542,15 @@ $ cp "$(bazel info bazel-bin)/external/com_github_grpc_grpc/test/cpp/util/grpc_c
 ```
 
 In your original terminal window, start the server with the `bazel run` command
-[above](#interacting-with-the-server). After the server starts running, it
-should print a message that displays what port it's running on:
+[above](#interacting-with-the-server) passing a port of your choosing via the
+`--port` flag. After the server starts running, it should print a message:
 
 ```
 2019-10-11 12:18:46  INFO  grpc_server_enclave.cc : 136 : Server started on port 62831
 ```
 
-**NOTE:** Each time the enclave is started, it auto-selects a new port for the
-server. Your server will probably be running on a different port than 62831.
+**NOTE:** The log message printed by your enclave will only match the example
+here if you passed `--port=62831`.
 
 With the port number, you can use `grpc_cli` to make an RPC to the server:
 

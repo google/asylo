@@ -31,6 +31,5 @@ service AttestationDomainService {
   // Retrieves the local attestation domain from the AttestationDomainService
   // server.
   rpc GetAttestationDomain(GetAttestationDomainRequest)
-      returns (GetAttestationDomainResponse) {
-  }
+      returns (GetAttestationDomainResponse) {}
 }

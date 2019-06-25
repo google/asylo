@@ -20,12 +20,12 @@
 #include <memory>
 
 #include "absl/base/thread_annotations.h"
+#include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "absl/synchronization/notification.h"
-#include "absl/strings/str_cat.h"
 #include "absl/time/time.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
-#include "asylo/examples/grpc_server/translator_server.h"
+#include "asylo/examples/grpc_server/translator_server_impl.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
 #include "include/grpcpp/grpcpp.h"
@@ -36,7 +36,7 @@
 namespace examples {
 namespace grpc_server {
 
-// An enclave that runs a TranslatorServer. We override the methods of
+// An enclave that runs a TranslatorServerImpl. We override the methods of
 // TrustedApplication as follows:
 //
 // * Initialize starts the gRPC server.
@@ -71,7 +71,7 @@ class GrpcServerEnclave final : public asylo::TrustedApplication {
   std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
 
   // The translation service.
-  TranslatorServer service_;
+  TranslatorServerImpl service_;
 
   // An object that gets notified when the server receives a shutdown RPC.
   absl::Notification shutdown_requested_;

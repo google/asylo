@@ -60,6 +60,8 @@ def asylo_grpc_proto_library(
     )
     native.proto_library(
         name = proto_name,
+        deprecation = "asylo_grpc_proto_library is deprecated in favor of using " +
+                      "proto_library, cc_proto_library, and cc_grpc_library explicitly",
         srcs = srcs,
         deps = deps,
         tags = tags,

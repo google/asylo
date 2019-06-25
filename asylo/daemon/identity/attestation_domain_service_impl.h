@@ -21,7 +21,7 @@
 
 #include <string>
 
-#include "asylo/daemon/identity/attestation_domain.grpc.pb.h"
+#include "asylo/daemon/identity/attestation_domain_service.grpc.pb.h"
 #include "include/grpcpp/grpcpp.h"
 
 namespace asylo {

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_H_
-#define ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_H_
+#ifndef ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_IMPL_H_
+#define ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_IMPL_H_
 
 #include <string>
 
@@ -32,9 +32,9 @@
 namespace examples {
 namespace grpc_server {
 
-class TranslatorServer final : public Translator::Service {
+class TranslatorServerImpl final : public Translator::Service {
  public:
-  TranslatorServer(absl::Notification *shutdown_requested);
+  explicit TranslatorServerImpl(absl::Notification *shutdown_requested);
 
  private:
   ::grpc::Status GetTranslation(::grpc::ServerContext *context,
@@ -60,4 +60,4 @@ class TranslatorServer final : public Translator::Service {
 }  // namespace grpc_server
 }  // namespace examples
 
-#endif  // ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_H_
+#endif  // ASYLO_EXAMPLES_GRPC_SERVER_TRANSLATOR_SERVER_IMPL_H_

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/examples/grpc_server/translator_server.h"
+#include "asylo/examples/grpc_server/translator_server_impl.h"
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/str_cat.h"
@@ -25,7 +25,8 @@
 namespace examples {
 namespace grpc_server {
 
-TranslatorServer::TranslatorServer(absl::Notification *shutdown_requested)
+TranslatorServerImpl::TranslatorServerImpl(
+    absl::Notification *shutdown_requested)
     : Service(),
       // Initialize the translation map with a few known translations.
       translation_map_({{"asylo", "sanctuary"},
@@ -33,7 +34,7 @@ TranslatorServer::TranslatorServer(absl::Notification *shutdown_requested)
                         {"kubernetes", "helmsman"}}),
       shutdown_requested_(shutdown_requested) {}
 
-::grpc::Status TranslatorServer::GetTranslation(
+::grpc::Status TranslatorServerImpl::GetTranslation(
     ::grpc::ServerContext *context, const GetTranslationRequest *request,
     GetTranslationResponse *response) {
   // Confirm that |*request| has an |input_word| field.
@@ -56,9 +57,9 @@ TranslatorServer::TranslatorServer(absl::Notification *shutdown_requested)
   return ::grpc::Status::OK;
 }
 
-::grpc::Status TranslatorServer::Shutdown(::grpc::ServerContext *context,
-                                          const ShutdownRequest *query,
-                                          ShutdownResponse *response)
+::grpc::Status TranslatorServerImpl::Shutdown(::grpc::ServerContext *context,
+                                              const ShutdownRequest *query,
+                                              ShutdownResponse *response)
     LOCKS_EXCLUDED(shutdown_requested_mutex_) {
   // Lock shutdown_requested_mutex_ and request a shutdown.
   absl::MutexLock lock(&shutdown_requested_mutex_);

@@ -20,13 +20,32 @@ load(
     "//asylo/bazel:proto.bzl",
     "asylo_grpc_proto_library",
 )
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Service definition for the attestation-domain service.
 asylo_grpc_proto_library(
     name = "attestation_domain_grpc_proto",
-    srcs = ["attestation_domain.proto"],
+    srcs = ["attestation_domain_service.proto"],
     generate_mocks = True,
+)
+
+proto_library(
+    name = "attestation_domain_service_proto",
+    srcs = ["attestation_domain_service.proto"],
+)
+
+cc_proto_library(
+    name = "attestation_domain_service_cc_proto",
+    deps = [":attestation_domain_service_proto"],
+)
+
+cc_grpc_library(
+    name = "attestation_domain_service",
+    srcs = [":attestation_domain_service_proto"],
+    generate_mocks = True,
+    grpc_only = True,
+    deps = [":attestation_domain_service_cc_proto"],
 )
 
 # Implementation of GetAttestationDomain() that returns a string representing
@@ -54,7 +73,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":attestation_domain",
-        ":attestation_domain_grpc_proto",
+        ":attestation_domain_service",
         "@com_github_grpc_grpc//:grpc++",
     ],
 )
@@ -67,7 +86,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attestation_domain_grpc_proto",
+        ":attestation_domain_service",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
     ],
@@ -95,7 +114,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attestation_domain_client",
-        ":attestation_domain_grpc_proto",
+        ":attestation_domain_service",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
