@@ -44,10 +44,13 @@
 #include "asylo/platform/posix/io/random_devices.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
+#include "asylo/platform/primitives/primitive_status.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
+using asylo::primitives::PrimitiveStatus;
 using EnclaveState = ::asylo::TrustedApplication::State;
 using google::protobuf::RepeatedPtrField;
 
@@ -572,3 +575,5 @@ int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
 }  // extern "C"
 
 }  // namespace asylo
+
+extern "C" PrimitiveStatus enc_init() { return PrimitiveStatus::OkStatus(); }

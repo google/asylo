@@ -88,6 +88,8 @@ sim_enclave_test(
     ],
     deps = [
         ":host_call_test_lib",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/test:sim_test_backend",
     ],
 )

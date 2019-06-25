@@ -19,10 +19,14 @@
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
+#include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/system_call/system_call.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
+
+using asylo::primitives::PrimitiveStatus;
 
 namespace asylo {
 namespace host_call {
@@ -559,3 +563,5 @@ extern "C" primitives::PrimitiveStatus asylo_enclave_fini() {
 
 }  // namespace host_call
 }  // namespace asylo
+
+extern "C" PrimitiveStatus enc_init() { return PrimitiveStatus::OkStatus(); }

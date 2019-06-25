@@ -22,7 +22,12 @@
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/status_macros.h"
+
+using asylo::primitives::EntryHandler;
+using asylo::primitives::PrimitiveStatus;
+using asylo::primitives::TrustedPrimitives;
 
 namespace asylo {
 namespace primitives {
@@ -60,10 +65,6 @@ PrimitiveStatus Hello(void *context, TrustedParameterStack *params) {
 }  // namespace
 
 extern "C" PrimitiveStatus asylo_enclave_init() {
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kAbortEnclaveSelector, EntryHandler{Abort}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      kHelloEnclaveSelector, EntryHandler{Hello}));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -73,3 +74,13 @@ extern "C" PrimitiveStatus asylo_enclave_fini() {
 
 }  // namespace primitives
 }  // namespace asylo
+
+extern "C" PrimitiveStatus enc_init() {
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::primitives::kAbortEnclaveSelector,
+      EntryHandler{asylo::primitives::Abort}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::primitives::kHelloEnclaveSelector,
+      EntryHandler{asylo::primitives::Hello}));
+  return PrimitiveStatus::OkStatus();
+}

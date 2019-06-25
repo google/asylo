@@ -60,7 +60,7 @@ cc_library(
         "//asylo/platform/primitives/util:trusted_memory.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = select({
+    deps = [":primitives"] + select({
         "//asylo/platform/primitives:sgx": [
             "//asylo/platform/primitives/sgx:trusted_sgx",
         ],
@@ -84,6 +84,7 @@ cc_library(
     name = "trusted_runtime",
     hdrs = ["trusted_runtime.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deps = [":primitives"],
 )
 
 # Test ParameterStack implementation.

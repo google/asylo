@@ -23,7 +23,10 @@
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/test/test_selectors.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/status_macros.h"
+
+using asylo::primitives::PrimitiveStatus;
 
 namespace asylo {
 namespace primitives {
@@ -254,3 +257,5 @@ extern "C" PrimitiveStatus asylo_enclave_fini() {
 
 }  // namespace primitives
 }  // namespace asylo
+
+extern "C" PrimitiveStatus enc_init() { return PrimitiveStatus::OkStatus(); }

@@ -103,6 +103,7 @@ cc_library(
         ":primitive_locks",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/x86:spin_lock",
     ],
 )

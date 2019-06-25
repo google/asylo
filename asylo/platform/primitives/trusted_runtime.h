@@ -23,7 +23,12 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "asylo/platform/primitives/primitive_status.h"
+
 extern "C" {
+
+// Prototype of the user-defined enclave initialization function.
+asylo::primitives::PrimitiveStatus enc_init();
 
 // Emulates the Unix `sbrk` system call. See sbrk(2). This functions must be
 // exported by each backend to support linking against libc.

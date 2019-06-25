@@ -118,6 +118,8 @@ cc_library(
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
