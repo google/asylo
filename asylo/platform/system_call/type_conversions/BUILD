@@ -32,6 +32,7 @@ py_library(
 py_test(
     name = "types_parse_functions_test",
     srcs = ["types_parse_functions_test.py"],
+    python_version = "PY3",
     deps = [
         ":types_parse_functions",
     ],
@@ -40,8 +41,9 @@ py_test(
 # Binary for the .py file to be parsed for generating the C macros.
 py_binary(
     name = "generate_macros",
-    srcs = ["types.py"],
-    main = "types.py",
+    srcs = ["define_types.py"],
+    main = "define_types.py",
+    python_version = "PY3",
     deps = [
         ":types_parse_functions",
     ],

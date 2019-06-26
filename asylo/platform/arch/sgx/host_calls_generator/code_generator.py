@@ -173,7 +173,7 @@ def validate_host_calls_proto(host_calls_proto):
           ]
           validate_attribute_expressions(other_parameter_names, parameter_proto)
         except ValueError as error:
-          raise_host_call_error(host_call_proto.name, error.message)
+          raise_host_call_error(host_call_proto.name, str(error))
       elif parameter_proto.pointer_attributes:
         raise_host_call_error(
             host_call_proto.name, 'Pointer attributes given '

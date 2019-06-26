@@ -26,6 +26,7 @@ package(
 py_binary(
     name = "preprocess",
     srcs = ["preprocess.py"],
+    python_version = "PY3",
 )
 
 genrule(
