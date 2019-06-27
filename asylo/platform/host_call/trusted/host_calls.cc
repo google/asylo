@@ -144,6 +144,11 @@ int enc_untrusted_socket(int domain, int type, int protocol) {
                                klinux_type, protocol);
 }
 
+int enc_untrusted_listen(int sockfd, int backlog) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_listen, sockfd,
+                               backlog);
+}
+
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   // We do not currently support file locks in Asylo, so arg is not expected to
   // be a pointer to struct flock.

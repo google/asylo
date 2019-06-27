@@ -22,6 +22,7 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/types.h>
+#include <sys/un.h>
 
 #include <string>
 
@@ -747,6 +748,49 @@ TEST_F(HostCallTest, TestSocket) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &params));
   ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
   EXPECT_THAT(params.Pop<int>(), Gt(0));
+}
+
+// Tests enc_untrusted_listen() by creating a local socket and calling
+// enc_untrusted_listen() on the socket. Checks to make sure that listen returns
+// 0, then creates a client socket and attempts to connect to the address of
+// the local socket. The connect attempt will only succeed if the listen call
+// is successful.
+TEST_F(HostCallTest, TestListen) {
+  // Create a local socket and ensure that it is valid (fd > 0).
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath = absl::StrCat(FLAGS_test_tmpdir, "/sock.sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  sa.sun_path[0] = '\0';
+  strncpy(&sa.sun_path[1], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  EXPECT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+
+  // Call listen on the bound local socket.
+  primitives::NativeParameterStack params;
+  params.PushByCopy<int>(/*value=sockfd=*/socket_fd);
+  params.PushByCopy<int>(/*value=backlog=*/8);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestListen, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+
+  // Create another local socket and ensures that it is valid (fd > 0).
+  int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(client_sock, Gt(0));
+
+  // Attempt to connect the new socket to the local address. This call
+  // will only succeed if the listen is successful.
+  EXPECT_THAT(connect(client_sock, reinterpret_cast<struct sockaddr *>(&sa),
+                      sizeof(sa)),
+              Not(Eq(-1)));
+
+  close(socket_fd);
 }
 
 // Tests enc_untrusted_fcntl() by performing various file control operations

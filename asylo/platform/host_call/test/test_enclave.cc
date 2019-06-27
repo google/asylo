@@ -332,6 +332,17 @@ PrimitiveStatus TestSocket(void *context,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestListen(void *context,
+                           primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+
+  int backlog = params->Pop<int>();
+  int sockfd = params->Pop<int>();
+  params->PushByCopy<int>(enc_untrusted_listen(sockfd, backlog));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 PrimitiveStatus TestFcntl(void *context,
                           primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
@@ -549,6 +560,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestSocket,
       EntryHandler{asylo::host_call::TestSocket}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestListen,
+      EntryHandler{asylo::host_call::TestListen}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFcntl, EntryHandler{asylo::host_call::TestFcntl}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
