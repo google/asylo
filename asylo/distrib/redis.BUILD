@@ -1,6 +1,6 @@
 # Description:
 #   Redis (http://redis.io) is an open source, advanced key-value store.
-#   This is a bazel BUILD file for Redis 5.0.4.
+#   This is a bazel BUILD file for Redis 5.0.5.
 
 package(
     default_visibility = ["//visibility:public"],

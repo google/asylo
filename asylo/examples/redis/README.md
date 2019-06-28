@@ -31,12 +31,12 @@ even a user running with root privileges.
 ### Asylo support to run Redis
 
 Asylo is an open source framework for developing enclave applications. Asylo
-provides support for full-featured applications, such as Redis 5.0.4, to run
+provides support for full-featured applications, such as Redis 5.0.5, to run
 inside an enclave. We also provide an application-wrapper to make it easy to run
 an application in an enclave without any source code changes, along with a BUILD
 file that allows external sources to be built with Bazel.
 
-## Build Redis 5.0.4 with Asylo
+## Build Redis 5.0.5 with Asylo
 
 ### Setting up the environment in Docker
 
@@ -72,9 +72,9 @@ http_archive(
 http_archive(
     name = "com_github_antirez_redis",
     build_file = "@com_google_asylo//asylo/distrib:redis.BUILD",
-    urls = ["https://github.com/antirez/redis/archive/5.0.4.tar.gz"],
-    sha256 = "5f3b6b5407a76611c276ed63a7b269f1abbbe8bc7da2451744ef77ca7a905d0f",
-    strip_prefix = "redis-5.0.4",
+    urls = ["https://github.com/antirez/redis/archive/5.0.5.tar.gz"],
+    sha256 = "3313d5e09938dc6e16c6911efa4a24b1c494bacb5a917a8e7925ebd55e56be85",
+    strip_prefix = "redis-5.0.5",
 )
 
 load("@com_google_asylo//asylo/bazel:asylo_deps.bzl", "asylo_deps")
@@ -85,7 +85,7 @@ sgx_deps()
 ```
 
 This bazel rule imports Asylo and Redis. To build Redis with Bazel, Asylo
-provides the BUILD file for Redis 5.0.4, located at
+provides the BUILD file for Redis 5.0.5, located at
 `@com_google_asylo/asylo/distrib/redis.BUILD`.
 
 #### Add .bazelrc
@@ -96,7 +96,7 @@ Next, in the same workspace, create a `.bazelrc` file by copying from
 This file specifies the toolchain and configurations used to build Asylo
 targets.
 
-#### Build target for Redis 5.0.4 in SGX Simulation mode
+#### Build target for Redis 5.0.5 in SGX Simulation mode
 
 Asylo provides an application wrapper which makes it easy to run external user
 applications in Asylo. To make use of it, create a BUILD file in your workspace,
@@ -185,10 +185,10 @@ setting/getting keys:
 ```shell
 192.168.9.2:6379> ping
 PONG
-192.168.9.2:6379> set redis 5.0.4
+192.168.9.2:6379> set redis 5.0.5
 OK
 192.168.9.2:6379> get redis
-"5.0.4"
+"5.0.5"
 ```
 
 To enable snapshotting (if it's not automatically enabled by the config file),
