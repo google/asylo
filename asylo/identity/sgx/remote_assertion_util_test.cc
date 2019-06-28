@@ -42,7 +42,7 @@ TEST(RemoteAssertionUtilTest, MakeRemoteAssertionSucceeds) {
   std::vector<CertificateChain> certificate_chains;
   certificate_chains.push_back({});
   Certificate *certificate = certificate_chains.back().add_certificates();
-  certificate->set_format(Certificate_CertificateFormat_X509_DER);
+  certificate->set_format(Certificate::X509_DER);
   certificate->set_data(kCertificate);
 
   // Random signing key.
