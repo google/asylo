@@ -304,14 +304,9 @@ def asylo_go_deps():
     if not native.existing_rule("io_bazel_rules_go"):
         http_archive(
             name = "io_bazel_rules_go",
-            # Non-release commit on release-0.17 branch to pick up Bazel compatibility fix.
-            # Can return to using a release once this commit is included in one.
-            # release-0.17 branch: https://github.com/bazelbuild/rules_go/commit/0cce30d
-            # release-0.18 branch: https://github.com/bazelbuild/rules_go/commit/7042087
-            # master branch:       https://github.com/bazelbuild/rules_go/commit/40f50df
-            urls = ["https://github.com/bazelbuild/rules_go/archive/0cce30db8fb0c0f0dbe05fc16d69ff98f832b44e.tar.gz"],
-            sha256 = "055f6adef4f6e332533a7d7eb758dd18a37278b98b1dbffcba5bfc6d4c4a2a13",
-            strip_prefix = "rules_go-0cce30db8fb0c0f0dbe05fc16d69ff98f832b44e",
+            urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.6.tar.gz"],
+            sha256 = "9084496dde809363c491137e077ace81780463ead0060a0a6c3c4c0f613e9fcb",
+            strip_prefix = "rules_go-0.18.6",
         )
 
     # go crypto for EKEP's go_binary usage.
