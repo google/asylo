@@ -3005,12 +3005,12 @@ diff -Nur sdk/trts/trts_nsp_internal.h sdk/trts/trts_nsp_internal.h
 --- sdk/trts/trts_nsp_internal.h
 +++ sdk/trts/trts_nsp_internal.h
 @@ -0,0 +1,6 @@
-+#ifndef THIRD_PARTY_LINUX_SGX_V_2_5_SDK_TRTS_TRTS_NSP_H_
-+#define THIRD_PARTY_LINUX_SGX_V_2_5_SDK_TRTS_TRTS_NSP_H_
++#ifndef THIRD_PARTY_LINUX_SGX_SDK_TRTS_TRTS_NSP_H_
++#define THIRD_PARTY_LINUX_SGX_SDK_TRTS_TRTS_NSP_H_
 +
 +void init_stack_guard(void *tcs);
 +
-+#endif  // THIRD_PARTY_LINUX_SGX_V_2_5_SDK_TRTS_TRTS_NSP_H_
++#endif  // THIRD_PARTY_LINUX_SGX_SDK_TRTS_TRTS_NSP_H_
 diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 --- sdk/trts/trts_shared_constants.h
 +++ sdk/trts/trts_shared_constants.h
