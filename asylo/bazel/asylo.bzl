@@ -823,6 +823,7 @@ def cc_enclave_test(
         srcs = srcs,
         deps = deps + [_workspace_name + "/bazel:test_shim_enclave"],
         testonly = 1,
+        tags = ["asylo-sgx"],
         **enclave_kwargs
     )
 
