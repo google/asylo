@@ -149,6 +149,10 @@ int enc_untrusted_listen(int sockfd, int backlog) {
                                backlog);
 }
 
+int enc_untrusted_shutdown(int sockfd, int how) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_shutdown, sockfd, how);
+}
+
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   // We do not currently support file locks in Asylo, so arg is not expected to
   // be a pointer to struct flock.

@@ -791,6 +791,38 @@ TEST_F(HostCallTest, TestListen) {
               Not(Eq(-1)));
 
   close(socket_fd);
+  close(client_sock);
+}
+
+TEST_F(HostCallTest, TestShutdown) {
+  // Create a local socket and ensure that it is valid (fd > 0).
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath = absl::StrCat(FLAGS_test_tmpdir, "/sock.sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  sa.sun_path[0] = '\0';
+  strncpy(&sa.sun_path[1], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  EXPECT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+
+  // Call shutdown on the bound local socket.
+  primitives::NativeParameterStack params;
+  params.PushByCopy<int>(/*value=sockfd=*/socket_fd);
+  params.PushByCopy<int>(/*value=how=*/SHUT_RDWR);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestShutdown, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  EXPECT_THAT(params.Pop<int>(), Eq(0));
+
+  std::string msg = "Hello world!";
+  EXPECT_THAT(send(socket_fd, (void *)msg.c_str(), msg.length(), 0), Eq(-1));
+
+  close(socket_fd);
 }
 
 // Tests enc_untrusted_fcntl() by performing various file control operations
