@@ -106,6 +106,7 @@ cc_library(
     deps = [
         ":test_backend",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",

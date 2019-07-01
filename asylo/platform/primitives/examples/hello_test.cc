@@ -22,6 +22,7 @@
 
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "asylo/enclave_manager.h"
 #include "gflags/gflags.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
@@ -40,6 +41,7 @@ class HelloTest : public ::testing::Test {
  protected:
   // Loads an instance of a test enclave, aborting on failure.
   void SetUp() override {
+    EnclaveManager::Configure(EnclaveManagerOptions());
     client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
         /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());
     ASYLO_EXPECT_OK(client_->exit_call_provider()->RegisterExitHandler(

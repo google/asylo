@@ -36,17 +36,14 @@ extern void *loader_config;
 
 class SgxTestBackend : public TestBackend {
  public:
-  SgxTestBackend();
-
   // Loads an instance of a SGX test enclave, aborting on failure.
   StatusOr<std::shared_ptr<Client>> LoadTestEnclave(
       const absl::string_view enclave_name,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider) override {
-    LoadEnclaveConfig *config =
-        reinterpret_cast<LoadEnclaveConfig *>(loader_config);
-    return LoadEnclave<SgxBackend>(enclave_name, config->base_address,
-                                   FLAGS_enclave_binary, config->enclave_size,
-                                   config->config, config->debug,
+    return LoadEnclave<SgxBackend>(enclave_name, /*base_address=*/nullptr,
+                                   /*enclave_path=*/FLAGS_enclave_binary,
+                                   /*enclave_size=*/0,
+                                   /*config=*/EnclaveConfig(), /*debug=*/true,
                                    std::move(exit_call_provider));
   }
 

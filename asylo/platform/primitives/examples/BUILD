@@ -24,15 +24,17 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:asylo.bzl",
     "sim_enclave_loader",
+    "sgx_enclave_test",
     "sim_enclave_test",
 )
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load(
     "//asylo/bazel:sim_enclave.bzl",
     "sim_enclave",
 )
 
 sim_enclave(
-    name = "hello_enclave.so",
+    name = "hello_sim_enclave.so",
     srcs = [
         "hello_enclave.cc",
         "hello_enclave.h",
@@ -46,13 +48,13 @@ sim_enclave(
 )
 
 sim_enclave_loader(
-    name = "hello_driver",
+    name = "hello_sim_driver",
     srcs = [
         "hello_driver.cc",
         "hello_enclave.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"hello": ":hello_enclave.so"},
+    enclaves = {"hello": ":hello_sim_enclave.so"},
     deps = [
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
@@ -65,18 +67,19 @@ sim_enclave_loader(
 )
 
 sim_enclave_test(
-    name = "hello_test",
+    name = "hello_sim_test",
     size = "small",
     srcs = [
         "hello_enclave.h",
         "hello_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"hello": ":hello_enclave.so"},
+    enclaves = {"hello": ":hello_sim_enclave.so"},
     test_args = [
         "--enclave_binary='{hello}'",
     ],
     deps = [
+        "//asylo:enclave_client",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:untrusted_primitives",
