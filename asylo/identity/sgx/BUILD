@@ -22,6 +22,7 @@ licenses(["notice"])  # Apache v2.0
 # Used to enable gtest tests to run inside an enclave.
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 asylo_proto_library(
@@ -149,6 +150,25 @@ cc_proto_library(
     name = "tcb_cc_proto",
     visibility = ["//asylo:implementation"],
     deps = [":tcb_proto"],
+)
+
+proto_library(
+    name = "sgx_remote_assertion_generator_proto",
+    srcs = ["sgx_remote_assertion_generator.proto"],
+    deps = ["remote_assertion_proto"],
+)
+
+cc_proto_library(
+    name = "sgx_remote_assertion_generator_cc_proto",
+    deps = [":sgx_remote_assertion_generator_proto"],
+)
+
+cc_grpc_library(
+    name = "sgx_remote_assertion_generator",
+    srcs = [":sgx_remote_assertion_generator_proto"],
+    generate_mocks = True,
+    grpc_only = True,
+    deps = [":sgx_remote_assertion_generator_cc_proto"],
 )
 
 cc_library(
