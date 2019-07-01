@@ -18,6 +18,8 @@
 
 #include "asylo/identity/sgx/platform_provisioning.h"
 
+#include <string>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/crypto/util/trivial_object_util.h"
