@@ -204,6 +204,59 @@ cc_test(
 )
 
 cc_library(
+    name = "sgx_remote_assertion_generator_impl",
+    srcs = ["sgx_remote_assertion_generator_impl.cc"],
+    hdrs = ["sgx_remote_assertion_generator_impl.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":code_identity_util",
+        ":remote_assertion_cc_proto",
+        ":remote_assertion_util",
+        ":sgx_remote_assertion_generator",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/grpc/auth:peer_identity_util",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc++",
+    ],
+)
+
+# This test can only be run outside an enclave. Consequently, it does not have
+# an enclave_test_name parameter.
+cc_test(
+    name = "sgx_remote_assertion_generator_impl_test",
+    srcs = ["sgx_remote_assertion_generator_impl_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":code_identity_util",
+        ":remote_assertion_cc_proto",
+        ":sgx_remote_assertion_generator_client",
+        ":sgx_remote_assertion_generator_impl",
+        "//asylo:enclave_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:signing_key",
+        "//asylo/grpc/auth:grpc++_security_enclave",
+        "//asylo/grpc/auth:null_credentials_options",
+        "//asylo/grpc/auth:sgx_local_credentials_options",
+        "//asylo/identity:enclave_assertion_authority_config_cc_proto",
+        "//asylo/identity:init",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "//asylo/util:thread",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
     name = "remote_assertion_util",
     srcs = ["remote_assertion_util.cc"],
     hdrs = ["remote_assertion_util.h"],
