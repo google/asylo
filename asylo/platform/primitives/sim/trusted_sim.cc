@@ -40,7 +40,7 @@ namespace {
 constexpr size_t kSimulatorHeapSize = 128 * 1024 * 1024;
 
 // A statically initialized record describing the state of the simulator.
-struct {
+struct Simulator {
   // The simulator heap is implemented as a block of static storage allocated at
   // enclave load time by dlopen(). Note that the newlib malloc implementation
   // expects sbrk() to return maximally aligned addresses.
@@ -49,7 +49,13 @@ struct {
   // The "program break," defined as the first location after the end of the of
   // the heap.
   uint8_t *brk = heap;
-} simulator;
+
+  // Returns the singleton Simulator instance.
+  static Simulator *GetInstance() {
+    static Simulator instance;
+    return &instance;
+  }
+};
 
 }  // namespace
 
@@ -61,7 +67,7 @@ PrimitiveStatus FinalizeEnclave(void *context, TrustedParameterStack *params) {
             "FinalizeEnclave does not expect any parameters."};
   }
   PrimitiveStatus status = asylo_enclave_fini();
-  memset(&simulator, 0, sizeof(simulator));
+  memset(Simulator::GetInstance(), 0, sizeof(Simulator));
   return status;
 }
 
@@ -70,7 +76,7 @@ void RegisterInternalHandlers() {
   // Register the enclave finalization entry handler.
   EntryHandler handler{FinalizeEnclave};
   if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
-             .ok()) {
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 }
@@ -89,11 +95,12 @@ PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
 }
 
 extern "C" void *enclave_sbrk(intptr_t increment) {
-  if (simulator.brk + increment > simulator.heap + kSimulatorHeapSize) {
+  if (Simulator::GetInstance()->brk + increment >
+      Simulator::GetInstance()->heap + kSimulatorHeapSize) {
     return reinterpret_cast<void *>(INT64_C(-1));
   }
-  void *result = simulator.brk;
-  simulator.brk += increment;
+  void *result = Simulator::GetInstance()->brk;
+  Simulator::GetInstance()->brk += increment;
   return result;
 }
 
@@ -109,8 +116,8 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
 }
 
 bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
-  auto begin = reinterpret_cast<const uint8_t *>(&simulator);
-  const uint8_t *end = begin + sizeof(simulator);
+  auto begin = reinterpret_cast<const uint8_t *>(Simulator::GetInstance());
+  const uint8_t *end = begin + sizeof(Simulator);
   return reinterpret_cast<const uint8_t *>(addr) >= begin &&
          reinterpret_cast<const uint8_t *>(addr) + size < end;
 }
