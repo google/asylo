@@ -21,7 +21,6 @@ licenses(["notice"])  # Apache v2.0
 exports_files(["LICENSE"])
 
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package_group(
@@ -77,7 +76,7 @@ cc_library(
 )
 
 # Message definitions for enclave entry and exit points.
-asylo_proto_library(
+proto_library(
     name = "enclave_proto",
     srcs = ["enclave.proto"],
     visibility = ["//visibility:public"],

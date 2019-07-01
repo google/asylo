@@ -16,7 +16,6 @@
 
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 licenses(["notice"])  # Apache v2.0
@@ -79,7 +78,7 @@ cc_test(
 
 # A single string input extension for EnclaveTest to communicate test data to
 # an EnclaveTestCase.
-asylo_proto_library(
+proto_library(
     name = "test_string_proto",
     srcs = ["test_string.proto"],
     deps = ["//asylo:enclave_proto"],

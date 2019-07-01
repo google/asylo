@@ -337,7 +337,7 @@ simulated backend. See the
 on all supported backends.
 
 ```python
-asylo_proto_library(
+proto_library(
     name = "demo_proto",
     srcs = ["demo.proto"],
     deps = ["//asylo:enclave_proto"],

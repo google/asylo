@@ -34,7 +34,6 @@ load(
     "cc_enclave_test",
     "embed_enclaves",
 )
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # This tests that gtest can work inside an enclave.
@@ -48,7 +47,7 @@ cc_enclave_test(
 )
 
 # Used to pass configuration from test_shim_loader to test_shim_enclave.
-asylo_proto_library(
+proto_library(
     name = "test_shim_enclave_proto",
     srcs = ["test_shim_enclave.proto"],
     deps = ["//asylo:enclave_proto"],

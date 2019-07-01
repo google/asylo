@@ -21,7 +21,6 @@ load(
     cc_test = "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 
 licenses(["notice"])  # Apache v2.0
@@ -225,7 +224,7 @@ sgx_enclave_test(
     ],
 )
 
-asylo_proto_library(
+proto_library(
     name = "fork_security_test_proto",
     srcs = ["fork_security_test.proto"],
     deps = ["//asylo:enclave_proto"],
@@ -272,7 +271,7 @@ sgx_enclave_test(
 
 # A protobuf used by syscalls test. The input contains the target syscall to
 # test, and the output contains the output of the syscall inside enclave.
-asylo_proto_library(
+proto_library(
     name = "syscalls_test_proto",
     srcs = ["syscalls_test.proto"],
     deps = ["//asylo:enclave_proto"],

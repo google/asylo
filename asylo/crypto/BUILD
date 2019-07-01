@@ -16,7 +16,6 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
     "//asylo/bazel:asylo.bzl",
     cc_test = "cc_test_and_cc_enclave_test",
@@ -26,7 +25,7 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 # Asylo Crypto library
 
 # Defines an enum for various hashing algorithms.
-asylo_proto_library(
+proto_library(
     name = "algorithms_proto",
     srcs = ["algorithms.proto"],
     visibility = ["//asylo:implementation"],
@@ -39,7 +38,7 @@ cc_proto_library(
 )
 
 # Defines key structures for various asymmetric key types.
-asylo_proto_library(
+proto_library(
     name = "keys_proto",
     srcs = ["keys.proto"],
     visibility = ["//asylo:implementation"],
@@ -53,7 +52,7 @@ cc_proto_library(
 )
 
 # Defines messages for certificates and certificate chains.
-asylo_proto_library(
+proto_library(
     name = "certificate_proto",
     srcs = ["certificate.proto"],
     visibility = ["//asylo:implementation"],
@@ -159,7 +158,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":certificate_proto_cc",
+        ":certificate_cc_proto",
         "//asylo/util:status",
     ],
 )
@@ -170,7 +169,7 @@ cc_test(
     srcs = ["certificate_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":certificate_proto_cc",
+        ":certificate_cc_proto",
         ":certificate_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

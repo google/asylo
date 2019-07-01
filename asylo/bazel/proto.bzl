@@ -68,32 +68,6 @@ def asylo_grpc_proto_library(
         **kwargs
     )
 
-def asylo_proto_library(name, srcs = [], deps = [], **kwargs):
-    """Generates proto targets in various languages.
-
-    Args:
-      name: Name for proto_library and base for the cc_proto_library name, name +
-            "_cc".
-      srcs: Same as proto_library deps.
-      deps: Same as proto_library deps.
-      **kwargs: proto_library arguments.
-    """
-    if kwargs.get("has_services", False):
-        fail("Services are handled with asylo_grpc_proto_library.")
-    native.proto_library(
-        name = name,
-        srcs = srcs,
-        deps = deps,
-        **kwargs
-    )
-    native.cc_proto_library(
-        name = name + "_cc",
-        deps = [":" + name],
-        deprecation = "asylo_proto_library is deprecated in favor of using " +
-                      "proto_library and cc_proto_library explicitly",
-        **kwargs
-    )
-
 def asylo_py_proto_library(name, srcs = [], deps = [], **kwargs):
     """Generates proto targets for Python.
 

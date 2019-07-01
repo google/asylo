@@ -24,10 +24,9 @@ load(
     "cc_enclave_test",
     "sgx_enclave_test",
 )
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-asylo_proto_library(
+proto_library(
     name = "proto_test_proto",
     srcs = ["proto_test.proto"],
     deps = ["//asylo:enclave_proto"],

@@ -19,11 +19,10 @@ licenses(["notice"])  # Apache v2.0
 # Contains libraries related to null identity and null assertion.
 
 load("//asylo/bazel:asylo.bzl", "cc_test")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Definition of a null assertion.
-asylo_proto_library(
+proto_library(
     name = "null_assertion_proto",
     srcs = ["null_assertion.proto"],
 )

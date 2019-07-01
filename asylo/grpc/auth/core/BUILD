@@ -23,7 +23,6 @@ licenses(["notice"])  # Apache v2.0
 # Used to selectively enable gtest tests to run inside an enclave.
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 package(default_visibility = [
     "//asylo/grpc/auth:__subpackages__",
@@ -302,7 +301,7 @@ cc_test(
 )
 
 # Definition of Enclave Key Exchange Protocol (EKEP) handshake messages.
-asylo_proto_library(
+proto_library(
     name = "handshake_proto",
     srcs = ["handshake.proto"],
     deps = ["//asylo/identity:identity_proto"],

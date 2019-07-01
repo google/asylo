@@ -21,7 +21,6 @@ licenses(["notice"])  # Apache v2.0
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_test",
@@ -124,7 +123,7 @@ cc_library(
 )
 
 # Extension of EnclaveInput proto for socket tests.
-asylo_proto_library(
+proto_library(
     name = "socket_test_proto",
     srcs = ["socket_test.proto"],
     deps = ["//asylo:enclave_proto"],

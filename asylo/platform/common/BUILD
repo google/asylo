@@ -20,7 +20,6 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Utility functions for translating time values and units.
@@ -129,7 +128,7 @@ cc_test(
 )
 
 # Types for arguments to be serialized and passed across the enclave boundary.
-asylo_proto_library(
+proto_library(
     name = "bridge_types_proto",
     srcs = ["bridge_proto_types.proto"],
 )

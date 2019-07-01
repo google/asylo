@@ -22,10 +22,6 @@ load(
     "sim_enclave",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load(
-    "//asylo/bazel:proto.bzl",
-    "asylo_proto_library",
-)
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 licenses(["notice"])  # Apache v2.0
@@ -75,7 +71,7 @@ cc_library(
 )
 
 # Contains extensions to enclave protos.
-asylo_proto_library(
+proto_library(
     name = "grpc_server_config_proto",
     srcs = ["grpc_server_config.proto"],
     deps = ["//asylo:enclave_proto"],

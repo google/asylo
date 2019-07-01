@@ -18,10 +18,9 @@ licenses(["notice"])  # Apache v2.0
 
 # This package defines libraries used in enclave auth{N,Z}.
 
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-asylo_proto_library(
+proto_library(
     name = "identity_proto",
     srcs = ["identity.proto"],
     visibility = ["//visibility:public"],
@@ -33,7 +32,7 @@ cc_proto_library(
     deps = ["identity_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "identity_acl_proto",
     srcs = ["identity_acl.proto"],
     visibility = ["//visibility:public"],
@@ -46,7 +45,7 @@ cc_proto_library(
     deps = [":identity_acl_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "enclave_assertion_authority_config_proto",
     srcs = ["enclave_assertion_authority_config.proto"],
     visibility = ["//visibility:public"],
@@ -59,7 +58,7 @@ cc_proto_library(
     deps = ["enclave_assertion_authority_config_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "sealed_secret_proto",
     srcs = ["sealed_secret.proto"],
     visibility = ["//visibility:public"],

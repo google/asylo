@@ -438,8 +438,8 @@ cc_library(
 
 The enclave requires the following additional targets:
 
-*   An `asylo_proto_library` target that contains the extensions to the enclave
-    proto definitions.
+*   A `proto_library` target that contains the extensions to the enclave proto
+    definitions.
 *   A `cc_proto_library` target that contains the C++ language specific
     extension to the enclave proto definitions.
 *   A `sim_enclave` target that contains the actual enclave. This enclave is
@@ -447,7 +447,7 @@ The enclave requires the following additional targets:
     maximum number of threads to accommodate gRPC's resource requirements.
 
 ```python
-asylo_proto_library(
+proto_library(
     name = "grpc_server_config_proto",
     srcs = ["grpc_server_config.proto"],
     deps = ["//asylo:enclave_proto"],

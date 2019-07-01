@@ -23,9 +23,8 @@ licenses(["notice"])  # Apache v2.0
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
-asylo_proto_library(
+proto_library(
     name = "attributes_proto",
     srcs = ["attributes.proto"],
     visibility = ["//asylo:implementation"],
@@ -37,7 +36,7 @@ cc_proto_library(
     deps = [":attributes_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "code_identity_proto",
     srcs = ["code_identity.proto"],
     visibility = ["//asylo:implementation"],
@@ -53,7 +52,7 @@ cc_proto_library(
     deps = [":code_identity_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "platform_provisioning_proto",
     srcs = ["platform_provisioning.proto"],
     visibility = ["//asylo:implementation"],
@@ -66,7 +65,7 @@ cc_proto_library(
     deps = [":platform_provisioning_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "attestation_key_proto",
     srcs = ["attestation_key.proto"],
     deps = ["//asylo/crypto:keys_proto"],
@@ -77,7 +76,7 @@ cc_proto_library(
     deps = [":attestation_key_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "local_assertion_proto",
     srcs = ["local_assertion.proto"],
 )
@@ -87,7 +86,7 @@ cc_proto_library(
     deps = [":local_assertion_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "miscselect_proto",
     srcs = ["miscselect.proto"],
     visibility = ["//asylo:implementation"],
@@ -99,7 +98,7 @@ cc_proto_library(
     deps = [":miscselect_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "remote_assertion_proto",
     srcs = ["remote_assertion.proto"],
     deps = [
@@ -114,7 +113,7 @@ cc_proto_library(
     deps = [":remote_assertion_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "local_sealed_secret_proto",
     srcs = ["local_sealed_secret.proto"],
 )
@@ -124,7 +123,7 @@ cc_proto_library(
     deps = [":local_sealed_secret_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "sgx_local_assertion_authority_config_proto",
     srcs = ["sgx_local_assertion_authority_config.proto"],
     visibility = ["//visibility:public"],
@@ -136,7 +135,7 @@ cc_proto_library(
     deps = ["sgx_local_assertion_authority_config_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "tcb_proto",
     srcs = ["tcb.proto"],
     visibility = ["//asylo:implementation"],

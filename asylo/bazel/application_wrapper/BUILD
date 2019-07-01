@@ -23,7 +23,6 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load(
     "@linux_sgx//:sgx_sdk.bzl",
     "sgx_enclave",
@@ -47,7 +46,7 @@ cc_library(
 )
 
 # The whole-application wrapper's extensions to the enclave proto messages.
-asylo_proto_library(
+proto_library(
     name = "application_wrapper_proto",
     srcs = ["application_wrapper.proto"],
     deps = ["//asylo:enclave_proto"],

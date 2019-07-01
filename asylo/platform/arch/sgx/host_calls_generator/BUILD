@@ -23,9 +23,9 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:proto.bzl", "asylo_proto_library", "asylo_py_proto_library")
+load("//asylo/bazel:proto.bzl", "asylo_py_proto_library")
 
-asylo_proto_library(
+proto_library(
     name = "host_calls_proto",
     srcs = ["host_calls.proto"],
     visibility = ["//visibility:private"],

@@ -20,10 +20,6 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load(
-    "//asylo/bazel:proto.bzl",
-    "asylo_proto_library",
-)
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
@@ -48,7 +44,7 @@ cc_grpc_library(
 )
 
 # Extensions used in the gRPC client enclave implementation.
-asylo_proto_library(
+proto_library(
     name = "client_enclave_proto",
     srcs = ["client_enclave.proto"],
     visibility = ["//asylo:implementation"],

@@ -16,7 +16,6 @@
 
 load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves", "sim_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -420,7 +419,7 @@ cc_test(
 )
 
 # Protobuf representation for asylo::Status.
-asylo_proto_library(
+proto_library(
     name = "status_proto",
     srcs = ["status.proto"],
     visibility = ["//visibility:public"],

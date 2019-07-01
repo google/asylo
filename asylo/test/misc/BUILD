@@ -27,13 +27,12 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 
 # A protobuf used by block enclave entries test. The input contains whether the
 # thread entering the enclave is to block/unblock entries, or the thread that
 # tests whether the entries are blocked. It also contains a socket fd that is
 # used between the two threads to inform whether block/unblock is done.
-asylo_proto_library(
+proto_library(
     name = "block_enclave_entries_test_proto",
     srcs = ["block_enclave_entries_test.proto"],
     deps = ["//asylo:enclave_proto"],
@@ -47,7 +46,7 @@ cc_proto_library(
 # A protobuf used by signal tests. The input contains whether to register a
 # signal hander sa_handler, which takes a single argument signum, or
 # sa_sigaction, which takes three arguments: signum, siginfo, and ucontext.
-asylo_proto_library(
+proto_library(
     name = "signal_test_proto",
     srcs = ["signal_test.proto"],
     deps = ["//asylo:enclave_proto"],
@@ -58,7 +57,7 @@ cc_proto_library(
     deps = [":signal_test_proto"],
 )
 
-asylo_proto_library(
+proto_library(
     name = "enclave_entry_count_test_proto",
     srcs = ["enclave_entry_count_test.proto"],
     deps = ["//asylo:enclave_proto"],

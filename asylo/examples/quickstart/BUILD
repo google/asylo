@@ -25,11 +25,10 @@ load(
     "enclave_loader",
     "sim_enclave",
 )
-load("//asylo/bazel:proto.bzl", "asylo_proto_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Example and exercise for using Asylo toolkits.
-asylo_proto_library(
+proto_library(
     name = "demo_proto",
     srcs = ["demo.proto"],
     deps = ["//asylo:enclave_proto"],
