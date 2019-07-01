@@ -16,18 +16,22 @@
  *
  */
 
+#include <cstdint>
 #include <cstdlib>
+#include <string>
 
+#include <gtest/gtest.h>
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "asylo/bazel/test_shim_enclave.pb.h"
 #include "asylo/client.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/test_flags.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave to load");
-DEFINE_bool(test_in_initialize, false,
-            "Run tests in Initialize, rather than Run");
-DEFINE_int32(v, 0, "Logging verbosity level");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
+ABSL_FLAG(bool, test_in_initialize, false,
+          "Run tests in Initialize, rather than Run");
+ABSL_FLAG(int32_t, v, 0, "Logging verbosity level");
 
 namespace {
 
@@ -36,11 +40,11 @@ constexpr char kEnclaveName[] = "/test_shim_enclave";
 }  // namespace
 
 int main(int argc, char *argv[]) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  absl::ParseCommandLine(argc, argv);
 
   // If provided in the environment, pass the test output file into the enclave.
   asylo::EnclaveConfig config;
-  config.mutable_logging_config()->set_vlog_level(FLAGS_v);
+  config.mutable_logging_config()->set_vlog_level(absl::GetFlag(FLAGS_v));
   char *output_file = std::getenv("GTEST_OUTPUT");
   if (output_file != nullptr && output_file[0] != '\0') {
     asylo::TestShimEnclaveConfig *shim_config =
@@ -49,16 +53,16 @@ int main(int argc, char *argv[]) {
   }
 
   // If provided, pass the test temporary files directory into the enclave.
-  if (!FLAGS_test_tmpdir.empty()) {
+  if (!absl::GetFlag(FLAGS_test_tmpdir).empty()) {
     asylo::TestShimEnclaveConfig *shim_config =
         config.MutableExtension(asylo::test_shim_enclave_config);
-    shim_config->set_test_tmpdir(FLAGS_test_tmpdir);
+    shim_config->set_test_tmpdir(absl::GetFlag(FLAGS_test_tmpdir));
   }
 
   // Pass |test_in_initialize| value to enclave.
   asylo::TestShimEnclaveConfig *shim_config =
       config.MutableExtension(asylo::test_shim_enclave_config);
-  shim_config->set_test_in_initialize(FLAGS_test_in_initialize);
+  shim_config->set_test_in_initialize(absl::GetFlag(FLAGS_test_in_initialize));
 
   // Load the enclave
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
@@ -67,7 +71,7 @@ int main(int argc, char *argv[]) {
     LOG(QFATAL) << "Instance returned status: " << manager_result.status();
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SgxLoader loader(FLAGS_enclave_path, /*debug*/ true);
+  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug*/ true);
   asylo::Status status = manager->LoadEnclave(kEnclaveName, loader, config);
   if (!status.ok()) {
     LOG(QFATAL) << "LoadEnclave returned status: " << status;

@@ -23,6 +23,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/client.h"
 #include "asylo/util/logging.h"
@@ -62,7 +63,8 @@ class DomainSocketDriver : public EnclaveTest {
 
   // Prepares unix domain socket
   std::string GetServerSocket(std::string sub_path) {
-    std::string server_socket = absl::StrCat(FLAGS_test_tmpdir, sub_path);
+    std::string server_socket =
+        absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), sub_path);
 
     // Adds check of file path length here to make sure we provide a file path
     // within the limit of UNIX domain socket. When |FLAGS_test_tmpdir| is too

@@ -452,6 +452,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":logging.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
+        "@com_google_absl//absl/flags:flag",
         "//asylo/test/util:test_flags",
     ] + TEST_DEPS_COMMON,
 )
@@ -494,6 +495,7 @@ sgx_enclave_test(
     enclaves = {"enclave": ":die.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
+        "@com_google_absl//absl/flags:flag",
         "//asylo/test/util:exec_tester",
     ] + TEST_DEPS_COMMON,
 )
@@ -523,6 +525,7 @@ sgx_enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":exception",
+        "@com_google_absl//absl/flags:flag",
         "//asylo/test/util:exec_tester",
     ] + TEST_DEPS_COMMON,
 )
@@ -545,7 +548,7 @@ sgx_enclave_test(
         "//asylo:enclave_client",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )

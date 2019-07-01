@@ -71,9 +71,9 @@ cc_library(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
         "//asylo/util:status",
         "//asylo/util:thread",
-        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
@@ -92,9 +92,11 @@ cc_library(
         "//asylo/platform/primitives/sim:untrusted_sim",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
     ],
+    # Required to prevent the linker from dropping the flag symbol.
+    alwayslink = 1,
 )
 
 cc_library(
@@ -106,14 +108,15 @@ cc_library(
     deps = [
         ":test_backend",
         "//asylo:enclave_cc_proto",
-        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
     ],
+    # Required to prevent the linker from dropping the flag symbol.
+    alwayslink = 1,
 )
 
 sim_enclave_test(
@@ -131,6 +134,7 @@ sim_enclave_test(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sim:untrusted_sim",
         "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
     ],

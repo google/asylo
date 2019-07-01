@@ -28,6 +28,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
@@ -85,7 +86,8 @@ class HostCallTest : public ::testing::Test {
 // enc_untrusted_access() from inside the enclave and verifying its return
 // value.
 TEST_F(HostCallTest, TestAccess) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_GE(fd, 0);
 
@@ -115,7 +117,8 @@ TEST_F(HostCallTest, TestAccessNonExistentPath) {
 // and calling enc_untrusted_chmod() from inside the enclave to remove one mode
 // bit, and verifying that the expected mode gets removed from the file.
 TEST_F(HostCallTest, TestChmod) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   // Make sure the file does not exist.
   if (access(path.c_str(), F_OK) == 0) {
@@ -157,7 +160,8 @@ TEST_F(HostCallTest, TestChmodNonExistentFile) {
 // Tests enc_untrusted_close() by creating a file to be closed and calling
 // enc_untrusted_close() from inside the enclave to close the file handle.
 TEST_F(HostCallTest, TestClose) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
   ASSERT_GE(fd, 0);
@@ -186,7 +190,8 @@ TEST_F(HostCallTest, TestCloseNonExistentFile) {
 // and calling enc_untrusted_fchmod() from inside the enclave to remove one mode
 // bit, and verifying that the expected mode gets removed from the file.
 TEST_F(HostCallTest, TestFchmod) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   // Make sure the file does not exist.
   if (access(path.c_str(), F_OK) == 0) {
@@ -273,8 +278,10 @@ TEST_F(HostCallTest, TestKill) {
 // enc_untrusted_link() from inside the enclave to link it to |newpath|, then
 // verifying that |newpath| is indeed accessible.
 TEST_F(HostCallTest, TestLink) {
-  std::string oldpath = absl::StrCat(FLAGS_test_tmpdir, "/old_name.tmp");
-  std::string newpath = absl::StrCat(FLAGS_test_tmpdir, "/new_name.tmp");
+  std::string oldpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/old_name.tmp");
+  std::string newpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/new_name.tmp");
 
   int fd = open(oldpath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -296,7 +303,8 @@ TEST_F(HostCallTest, TestLink) {
 // enc_untrusted_leek() from inside the enclave and verify the return value for
 // the provided offset.
 TEST_F(HostCallTest, TestLseek) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -315,7 +323,8 @@ TEST_F(HostCallTest, TestLseek) {
 }
 
 TEST_F(HostCallTest, TestLseekBadReturn) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -336,7 +345,8 @@ TEST_F(HostCallTest, TestLseekBadReturn) {
 // Tests enc_untrusted_mkdir() by calling it from inside the enclave and
 // verifying that the directory created indeed exists.
 TEST_F(HostCallTest, TestMkdir) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_make");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_make");
 
   primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
@@ -365,7 +375,8 @@ TEST_F(HostCallTest, TestMkdirNonExistentPath) {
 // Tests enc_untrusted_open() by using it to create a new file from inside the
 // enclave and verifying that it exists.
 TEST_F(HostCallTest, TestOpen) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   primitives::NativeParameterStack params;
   params.PushByCopy<char>(path.c_str(), path.length() + 1);
@@ -381,7 +392,8 @@ TEST_F(HostCallTest, TestOpen) {
 // Test enc_untrusted_open() by opening an existing file (omit passing mode when
 // opening the file).
 TEST_F(HostCallTest, TestOpenExistingFile) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
@@ -399,7 +411,8 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
 // Tests enc_untrusted_unlink() by deleting an existing file on the untrusted
 // side from inside the enclave using the host call.
 TEST_F(HostCallTest, TestUnlink) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
@@ -444,7 +457,8 @@ TEST_F(HostCallTest, TestUmask) {
   mode_t default_mode = params.Pop<mode_t>();
 
   struct stat sb;
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_make");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_make");
 
   // Make sure the directory does not exist.
   if (access(path.c_str(), F_OK) == 0) {
@@ -456,7 +470,7 @@ TEST_F(HostCallTest, TestUmask) {
   EXPECT_TRUE(!(sb.st_mode & S_IWGRP) && !(sb.st_mode & S_IWOTH));
   EXPECT_NE(rmdir(path.c_str()), -1);
 
-  path = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   // Make sure the file does not exist.
   if (access(path.c_str(), F_OK) == 0) {
     EXPECT_NE(unlink(path.c_str()), -1);
@@ -505,8 +519,10 @@ TEST_F(HostCallTest, TestGetEgid) {
 // Tests enc_untrusted_rename() by making a host call from inside the enclave
 // and verifying that the file is indeed renamed on the untrusted side.
 TEST_F(HostCallTest, TestRename) {
-  std::string oldpath = absl::StrCat(FLAGS_test_tmpdir, "/oldname.tmp");
-  std::string newpath = absl::StrCat(FLAGS_test_tmpdir, "/newname.tmp");
+  std::string oldpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/oldname.tmp");
+  std::string newpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/newname.tmp");
 
   creat(oldpath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
@@ -527,7 +543,8 @@ TEST_F(HostCallTest, TestRename) {
 // verifying that what is read on untrusted side is identical to what is read
 // from inside the enclave for a provided file.
 TEST_F(HostCallTest, TestRead) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -556,7 +573,8 @@ TEST_F(HostCallTest, TestRead) {
 // write to a file, and verifying that the content read from the file on the
 // host matches it.
 TEST_F(HostCallTest, TestWrite) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -584,8 +602,10 @@ TEST_F(HostCallTest, TestWrite) {
 // Tests enc_untrusted_symlink() by attempting to create a symlink from inside
 // the enclave and verifying that the created symlink is accessible.
 TEST_F(HostCallTest, TestSymlink) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
-  std::string target = absl::StrCat(FLAGS_test_tmpdir, "/target.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string target =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/target.tmp");
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -607,8 +627,10 @@ TEST_F(HostCallTest, TestSymlink) {
 // verifying that the returned target path is same as that obtained from calling
 // readlink() natively on the untrusted side.
 TEST_F(HostCallTest, TestReadlink) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
-  std::string sym_file = absl::StrCat(FLAGS_test_tmpdir, "/test_sym_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string sym_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_sym_file.tmp");
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -638,7 +660,8 @@ TEST_F(HostCallTest, TestReadlink) {
 // verifying that the file is indeed truncated on the untrusted side by reading
 // the file.
 TEST_F(HostCallTest, TestTruncate) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -671,7 +694,8 @@ TEST_F(HostCallTest, TestTruncate) {
 // verifying that the file is indeed truncated on the untrusted side by reading
 // the file.
 TEST_F(HostCallTest, TestFTruncate) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -711,7 +735,8 @@ TEST_F(HostCallTest, TestFTruncate) {
 // Tests enc_untrusted_rmdir() by making a call from inside the enclave and
 // verifying that the directory is indeed deleted.
 TEST_F(HostCallTest, TestRmdir) {
-  std::string dir_to_del = absl::StrCat(FLAGS_test_tmpdir, "/dir_to_del");
+  std::string dir_to_del =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_del");
   ASSERT_THAT(mkdir(dir_to_del.c_str(), O_CREAT | O_RDWR), Eq(0));
 
   primitives::NativeParameterStack params;
@@ -760,7 +785,8 @@ TEST_F(HostCallTest, TestListen) {
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   EXPECT_THAT(socket_fd, Gt(0));
 
-  std::string sockpath = absl::StrCat(FLAGS_test_tmpdir, "/sock.sock");
+  std::string sockpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/sock.sock");
 
   // Create a local socket address and bind the socket to it.
   sockaddr_un sa = {};
@@ -799,7 +825,8 @@ TEST_F(HostCallTest, TestShutdown) {
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
   EXPECT_THAT(socket_fd, Gt(0));
 
-  std::string sockpath = absl::StrCat(FLAGS_test_tmpdir, "/sock.sock");
+  std::string sockpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/sock.sock");
 
   // Create a local socket address and bind the socket to it.
   sockaddr_un sa = {};
@@ -829,7 +856,8 @@ TEST_F(HostCallTest, TestShutdown) {
 // from inside the enclave and validating the return valueswith those obtained
 // from native host call to fcntl().
 TEST_F(HostCallTest, TestFcntl) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -875,7 +903,8 @@ TEST_F(HostCallTest, TestFcntlInvalidCmd) {
 // Tests enc_untrusted_chown() by attempting to change file ownership by making
 // the host call from inside the enclave and verifying the return value.
 TEST_F(HostCallTest, TestChown) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -895,7 +924,8 @@ TEST_F(HostCallTest, TestChown) {
 // Tests enc_untrusted_fchown() by attempting to change file ownership by making
 // the host call from inside the enclave and verifying the return value.
 TEST_F(HostCallTest, TestFChown) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -970,7 +1000,8 @@ TEST_F(HostCallTest, TestSetSockOpt) {
 // be modified or released by either processes, as specified in the man page for
 // flock.
 TEST_F(HostCallTest, TestFlock) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
@@ -994,7 +1025,8 @@ TEST_F(HostCallTest, TestFlock) {
 // Tests enc_untrusted_fsync by writing to a valid file, and then running fsync
 // on it. Ensures that a successful code of 0 is returned.
 TEST_F(HostCallTest, TestFsync) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -1044,8 +1076,8 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
   // all events supported by inotify.
   primitives::NativeParameterStack params;
   params.PushByCopy<int>(inotify_fd);
-  params.PushByCopy<char>(FLAGS_test_tmpdir.c_str(),
-                          FLAGS_test_tmpdir.length() + 1);
+  params.PushByCopy<char>(absl::GetFlag(FLAGS_test_tmpdir).c_str(),
+                          absl::GetFlag(FLAGS_test_tmpdir).length() + 1);
 
   int event_mask;
   int klinux_event_mask = IN_ALL_EVENTS;
@@ -1063,7 +1095,8 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
 
   // Perform an event by creating a file in tmpdir.
   std::string file_name = "test_file.tmp";
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/", file_name);
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/", file_name);
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -1092,14 +1125,15 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
 // on the unregistered event is not recorded by inotify.
 TEST_F(HostCallTest, TestInotifyRmWatch) {
   int inotify_fd = inotify_init1(IN_NONBLOCK);
-  int wd =
-      inotify_add_watch(inotify_fd, FLAGS_test_tmpdir.c_str(), IN_ALL_EVENTS);
+  int wd = inotify_add_watch(
+      inotify_fd, absl::GetFlag(FLAGS_test_tmpdir).c_str(), IN_ALL_EVENTS);
   ASSERT_THAT(inotify_fd, Gt(0));
   ASSERT_THAT(wd, Eq(1));
 
   // Perform an event by creating a file in tmpdir.
   std::string file_name = "test_file.tmp";
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/", file_name);
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/", file_name);
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -1152,7 +1186,8 @@ TEST_F(HostCallTest, TestSchedYield) {
 // Tests enc_untrusted_isatty() by testing with a non-terminal file descriptor,
 // it should return 0 since the file is not referring to a terminal.
 TEST_F(HostCallTest, TestIsAtty) {
-  std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "test_file.tmp");
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -1193,10 +1228,3 @@ TEST_F(HostCallTest, TestUSleep) {
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
-
-int main(int argc, char *argv[]) {
-  ::testing::InitGoogleTest(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv, true);
-
-  return RUN_ALL_TESTS();
-}

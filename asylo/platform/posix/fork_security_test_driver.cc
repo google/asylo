@@ -22,9 +22,9 @@
 #include <vector>
 
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
@@ -33,7 +33,7 @@
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave to load");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 
 namespace asylo {
 namespace {
@@ -118,7 +118,7 @@ class ForkSecurityTest : public ::testing::Test {
 
   Status LoadEnclaveAndTakeSnapshot(const std::string &enclave_name,
                                     bool request_fork) {
-    SgxLoader loader(FLAGS_enclave_path, /*debug=*/true);
+    SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
     EnclaveConfig config;
     // Allow a user utility thread for snapshotting and restoring.
     config.set_enable_fork(true);

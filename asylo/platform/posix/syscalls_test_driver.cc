@@ -35,6 +35,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
@@ -383,7 +384,8 @@ TEST_F(SyscallsTest, GetPid) {
 // it's still available.
 TEST_F(SyscallsTest, Unlink) {
   EXPECT_THAT(
-      RunSyscallInsideEnclave("unlink", FLAGS_test_tmpdir + "/unlink", nullptr),
+      RunSyscallInsideEnclave(
+          "unlink", absl::GetFlag(FLAGS_test_tmpdir) + "/unlink", nullptr),
       IsOk());
 }
 
@@ -391,7 +393,8 @@ TEST_F(SyscallsTest, Unlink) {
 // then uses F_GETFL to check whether it's set correctly.
 TEST_F(SyscallsTest, Fcntl) {
   EXPECT_THAT(
-      RunSyscallInsideEnclave("fcntl", FLAGS_test_tmpdir + "/fcntl", nullptr),
+      RunSyscallInsideEnclave(
+          "fcntl", absl::GetFlag(FLAGS_test_tmpdir) + "/fcntl", nullptr),
       IsOk());
 }
 
@@ -399,9 +402,11 @@ TEST_F(SyscallsTest, Fcntl) {
 // the existence of the directory outside enclave.
 TEST_F(SyscallsTest, Mkdir) {
   EXPECT_THAT(
-      RunSyscallInsideEnclave("mkdir", FLAGS_test_tmpdir + "/mkdir", nullptr),
+      RunSyscallInsideEnclave(
+          "mkdir", absl::GetFlag(FLAGS_test_tmpdir) + "/mkdir", nullptr),
       IsOk());
-  DIR *directory = opendir((FLAGS_test_tmpdir + "/mkdir").c_str());
+  DIR *directory =
+      opendir((absl::GetFlag(FLAGS_test_tmpdir) + "/mkdir").c_str());
   EXPECT_TRUE(directory);
   closedir(directory);
 }
@@ -410,7 +415,8 @@ TEST_F(SyscallsTest, Mkdir) {
 // the enclave to remove it. Verifies the directory is deleted outside the
 // enclave.
 TEST_F(SyscallsTest, Rmdir) {
-  const std::string test_directory = absl::StrCat(FLAGS_test_tmpdir, "/rmdir");
+  const std::string test_directory =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/rmdir");
   EXPECT_EQ(mkdir(test_directory.c_str(), 0644), 0);
   EXPECT_THAT(RunSyscallInsideEnclave("rmdir", test_directory, nullptr),
               IsOk());
@@ -421,9 +427,9 @@ TEST_F(SyscallsTest, Rmdir) {
 // Tests dup() and dup2(). Calls dup() and dup2() on a file descriptor, and
 // checks whether the new file descriptor behaves the same as the original one.
 TEST_F(SyscallsTest, Dup) {
-  EXPECT_THAT(
-      RunSyscallInsideEnclave("dup", FLAGS_test_tmpdir + "/dup", nullptr),
-      IsOk());
+  EXPECT_THAT(RunSyscallInsideEnclave(
+                  "dup", absl::GetFlag(FLAGS_test_tmpdir) + "/dup", nullptr),
+              IsOk());
 }
 
 // Tests gethostname() with default settings. Calls gethostname() inside
@@ -450,9 +456,9 @@ TEST_F(CustomConfigSyscallsTest, GetHostName) {
 // Tests link(). Calls link() inside enclave, writes to the old path, and reads
 // from the new path to check whether they are the same.
 TEST_F(SyscallsTest, Link) {
-  EXPECT_THAT(
-      RunSyscallInsideEnclave("link", FLAGS_test_tmpdir + "/link", nullptr),
-      IsOk());
+  EXPECT_THAT(RunSyscallInsideEnclave(
+                  "link", absl::GetFlag(FLAGS_test_tmpdir) + "/link", nullptr),
+              IsOk());
 }
 
 // Tests getcwd() with default settings. Calls getcwd() inside enclave and
@@ -529,7 +535,8 @@ TEST_F(CustomConfigSyscallsTest, GetCwdNoBufferInsufficientSize) {
 // with masked file modes, and check whether the mode exists in the new path.
 TEST_F(SyscallsTest, Umask) {
   ASSERT_THAT(
-      RunSyscallInsideEnclave("umask", FLAGS_test_tmpdir + "/umask", nullptr),
+      RunSyscallInsideEnclave(
+          "umask", absl::GetFlag(FLAGS_test_tmpdir) + "/umask", nullptr),
       IsOk());
 }
 
@@ -679,7 +686,8 @@ TEST_F(SyscallsTest, CpuSetMacros) {
 // enclave.
 TEST_F(SyscallsTest, Stat) {
   SyscallsTestOutput test_output;
-  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/stat");
+  const std::string test_dir =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/stat");
 
   umask(S_IWGRP | S_IWOTH);
   ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
@@ -713,9 +721,9 @@ TEST_F(SyscallsTest, Stat) {
 TEST_F(SyscallsTest, StatOnSymlink) {
   SyscallsTestOutput test_output;
   const std::string test_dir =
-      absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/stat_on_symlink");
   const std::string test_link =
-      absl::StrCat(FLAGS_test_tmpdir, "/stat_on_symlink_link");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/stat_on_symlink_link");
 
   umask(S_IWGRP | S_IWOTH);
   ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
@@ -750,7 +758,8 @@ TEST_F(SyscallsTest, StatOnSymlink) {
 // enclave.
 TEST_F(SyscallsTest, FStat) {
   SyscallsTestOutput test_output;
-  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/fstat");
+  const std::string test_dir =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/fstat");
 
   umask(S_IWGRP | S_IWOTH);
   ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
@@ -789,9 +798,9 @@ TEST_F(SyscallsTest, FStat) {
 TEST_F(SyscallsTest, FStatOnSymlink) {
   SyscallsTestOutput test_output;
   const std::string test_dir =
-      absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir) + "/fstat_on_symlink");
   const std::string test_link =
-      absl::StrCat(FLAGS_test_tmpdir + "/fstat_on_symlink_link");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir) + "/fstat_on_symlink_link");
 
   umask(S_IWGRP | S_IWOTH);
   ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
@@ -831,7 +840,8 @@ TEST_F(SyscallsTest, FStatOnSymlink) {
 // enclave.
 TEST_F(SyscallsTest, LStat) {
   SyscallsTestOutput test_output;
-  const std::string test_dir = absl::StrCat(FLAGS_test_tmpdir, "/lstat");
+  const std::string test_dir =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/lstat");
 
   umask(S_IWGRP | S_IWOTH);
   ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
@@ -865,9 +875,9 @@ TEST_F(SyscallsTest, LStat) {
 TEST_F(SyscallsTest, LStatOnSymlink) {
   SyscallsTestOutput test_output;
   const std::string test_dir =
-      absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/lstat_on_symlink");
   const std::string test_link =
-      absl::StrCat(FLAGS_test_tmpdir, "/lstat_on_symlink_link");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/lstat_on_symlink_link");
 
   umask(S_IWGRP | S_IWOTH);
   ASSERT_EQ(mkdir(test_dir.c_str(), 0777), 0)
@@ -931,7 +941,8 @@ TEST_F(SyscallsTest, Uname) {
 // read from it to compare the content.
 TEST_F(SyscallsTest, Writev) {
   EXPECT_THAT(
-      RunSyscallInsideEnclave("writev", FLAGS_test_tmpdir + "/writev", nullptr),
+      RunSyscallInsideEnclave(
+          "writev", absl::GetFlag(FLAGS_test_tmpdir) + "/writev", nullptr),
       IsOk());
 }
 
@@ -939,15 +950,17 @@ TEST_F(SyscallsTest, Writev) {
 // array by readv, compare the results.
 TEST_F(SyscallsTest, Readv) {
   EXPECT_THAT(
-      RunSyscallInsideEnclave("readv", FLAGS_test_tmpdir + "/readv", nullptr),
+      RunSyscallInsideEnclave(
+          "readv", absl::GetFlag(FLAGS_test_tmpdir) + "/readv", nullptr),
       IsOk());
 }
 
 // Tests getrlimit() and setrlimit() with RLIMIT_NOFILE by setting the limit and
 // getting it to compare the result.
 TEST_F(SyscallsTest, RlimitNoFile) {
-  EXPECT_THAT(RunSyscallInsideEnclave("rlimit nofile",
-                                      FLAGS_test_tmpdir + "/rlimit", nullptr),
+  EXPECT_THAT(RunSyscallInsideEnclave(
+                  "rlimit nofile", absl::GetFlag(FLAGS_test_tmpdir) + "/rlimit",
+                  nullptr),
               IsOk());
 }
 
@@ -955,23 +968,26 @@ TEST_F(SyscallsTest, RlimitNoFile) {
 // and checking whether it fails to open more files than that limit to confirm
 // that the limit is used correctly.
 TEST_F(SyscallsTest, RlimitLowNoFile) {
-  EXPECT_THAT(RunSyscallInsideEnclave("rlimit low nofile",
-                                      FLAGS_test_tmpdir + "/rlimit", nullptr),
+  EXPECT_THAT(RunSyscallInsideEnclave(
+                  "rlimit low nofile",
+                  absl::GetFlag(FLAGS_test_tmpdir) + "/rlimit", nullptr),
               IsOk());
 }
 
 // Tests setrlimit() with RLIMIT_NOFILE by setting the limit to an invalid
 // value, and checking that the call fails and does not change the limit.
 TEST_F(SyscallsTest, RlimitInvalidNoFile) {
-  EXPECT_THAT(RunSyscallInsideEnclave("rlimit invalid nofile",
-                                      FLAGS_test_tmpdir + "/rlimit", nullptr),
+  EXPECT_THAT(RunSyscallInsideEnclave(
+                  "rlimit invalid nofile",
+                  absl::GetFlag(FLAGS_test_tmpdir) + "/rlimit", nullptr),
               IsOk());
 }
 
 // Tests chmod() by changing the mode of a file inside an enclave, and verifies
 // the mode is changed correctly.
 TEST_F(SyscallsTest, ChMod) {
-  const std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/chmod");
+  const std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/chmod");
   ASSERT_NE(open(test_file.c_str(), O_CREAT | O_RDWR, 0777), -1);
   ASSERT_THAT(RunSyscallInsideEnclave("chmod", test_file, nullptr), IsOk());
   struct stat stat_buffer;
@@ -982,7 +998,8 @@ TEST_F(SyscallsTest, ChMod) {
 // Tests fchmod() by changing the mode of a file inside an enclave, and verifies
 // the mode is changed correctly.
 TEST_F(SyscallsTest, FChMod) {
-  const std::string test_file = absl::StrCat(FLAGS_test_tmpdir, "/chmod");
+  const std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/chmod");
   ASSERT_THAT(RunSyscallInsideEnclave("fchmod", test_file, nullptr), IsOk());
   struct stat stat_buffer;
   ASSERT_EQ(stat(test_file.c_str(), &stat_buffer), 0);
@@ -1101,9 +1118,10 @@ TEST_F(SyscallsTest, PeernameFailure_ENOTSOCK) {
 // Tests truncate and ftruncate by truncating the file inside an enclave, and
 // read from it to ensure it's truncated to the correct size.
 TEST_F(SyscallsTest, Truncate) {
-  EXPECT_THAT(RunSyscallInsideEnclave("truncate",
-                                      FLAGS_test_tmpdir + "/truncate", nullptr),
-              IsOk());
+  EXPECT_THAT(
+      RunSyscallInsideEnclave(
+          "truncate", absl::GetFlag(FLAGS_test_tmpdir) + "/truncate", nullptr),
+      IsOk());
 }
 
 // Tests that mmap(MAP_ANONYMOUS) will return an initialized, block-aligned
@@ -1119,9 +1137,10 @@ TEST_F(SyscallsTest, Itimer) {
 // Tests rename(). Calls rename() inside enclave to change the name of a file,
 // and verifies the existence of the file with the new name outside the enclave.
 TEST_F(SyscallsTest, Rename) {
-  EXPECT_THAT(RunSyscallInsideEnclave("rename", FLAGS_test_tmpdir, nullptr),
+  EXPECT_THAT(RunSyscallInsideEnclave(
+                  "rename", absl::GetFlag(FLAGS_test_tmpdir), nullptr),
               IsOk());
-  int fd = open((FLAGS_test_tmpdir + "/rename").c_str(), O_RDWR);
+  int fd = open((absl::GetFlag(FLAGS_test_tmpdir) + "/rename").c_str(), O_RDWR);
   EXPECT_GE(fd, 0);
   close(fd);
 }
@@ -1131,7 +1150,8 @@ TEST_F(SyscallsTest, Rename) {
 // are correctly set.
 TEST_F(SyscallsTest, Utimes) {
   EXPECT_THAT(
-      RunSyscallInsideEnclave("utimes", FLAGS_test_tmpdir + "/utimes", nullptr),
+      RunSyscallInsideEnclave(
+          "utimes", absl::GetFlag(FLAGS_test_tmpdir) + "/utimes", nullptr),
       IsOk());
 }
 

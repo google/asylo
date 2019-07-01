@@ -25,6 +25,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/test_flags.h"
@@ -40,7 +41,8 @@ class EnclaveLoggingTest : public EnclaveTest {
   using checker_t = std::function<void(const char *)>;
 
   void WithLogContents(const checker_t &checker) {
-    WithLogContentsFrom(FLAGS_test_tmpdir, enclave_url_, checker);
+    WithLogContentsFrom(absl::GetFlag(FLAGS_test_tmpdir), enclave_url_,
+                        checker);
   }
 
   static void WithLogContentsFrom(const std::string &log_directory,

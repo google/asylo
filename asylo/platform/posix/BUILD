@@ -165,6 +165,7 @@ cc_test(
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -219,7 +220,7 @@ sgx_enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -264,7 +265,7 @@ sgx_enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@boringssl//:crypto",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -313,6 +314,7 @@ sgx_enclave_test(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

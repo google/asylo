@@ -16,8 +16,11 @@
  *
  */
 
+#include <string>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
@@ -30,11 +33,11 @@
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
+ABSL_FLAG(std::string, client_enclave_path, "", "Path to client enclave");
+ABSL_FLAG(std::string, server_enclave_path, "", "Path to server enclave");
+
 namespace asylo {
 namespace {
-
-DEFINE_string(client_enclave_path, "", "Path to client enclave");
-DEFINE_string(server_enclave_path, "", "Path to server enclave");
 
 constexpr char kName[] = "Mellanie Rescorai";
 
@@ -47,8 +50,9 @@ class EnclaveCommunicationTest : public ::testing::Test {
   void SetUp() override {
     // Set up a base EnclaveConfig for the client and the server.
     EnclaveConfig config;
-    if (!FLAGS_test_tmpdir.empty()) {
-      config.mutable_logging_config()->set_log_directory(FLAGS_test_tmpdir);
+    if (!absl::GetFlag(FLAGS_test_tmpdir).empty()) {
+      config.mutable_logging_config()->set_log_directory(
+          absl::GetFlag(FLAGS_test_tmpdir));
     }
 
     // The client and server both use the same assertion authority configs.
@@ -67,8 +71,8 @@ class EnclaveCommunicationTest : public ::testing::Test {
     server_config->set_host("[::1]");
     server_config->set_port(0);
 
-    ASYLO_RETURN_IF_ERROR(server_launcher_.SetUp(FLAGS_server_enclave_path,
-                                                 config, "/grpc/server"));
+    ASYLO_RETURN_IF_ERROR(server_launcher_.SetUp(
+        absl::GetFlag(FLAGS_server_enclave_path), config, "/grpc/server"));
 
     // Get the gRPC server's address.
     EnclaveOutput output;
@@ -89,8 +93,8 @@ class EnclaveCommunicationTest : public ::testing::Test {
   }
 
   Status SetUpClient(const EnclaveConfig &config) {
-    ASYLO_RETURN_IF_ERROR(client_launcher_.SetUp(FLAGS_client_enclave_path,
-                                                 config, "/grpc/client"));
+    ASYLO_RETURN_IF_ERROR(client_launcher_.SetUp(
+        absl::GetFlag(FLAGS_client_enclave_path), config, "/grpc/client"));
     grpc_client_enclave_ = client_launcher_.mutable_client();
     return Status::OkStatus();
   }

@@ -349,7 +349,7 @@ cc_test(
         "//asylo/util:cleansing_types",
         "//asylo/util:logging",
         "@boringssl//:crypto",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

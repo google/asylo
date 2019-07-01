@@ -23,12 +23,12 @@
 #include <string>
 
 #include <gtest/gtest.h>
-#include "gflags/gflags.h"
+#include "absl/flags/declare.h"
 #include "asylo/test/util/enclave_test_launcher.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/status.h"
 
-DECLARE_string(enclave_path);
+ABSL_DECLARE_FLAG(std::string, enclave_path);
 
 namespace asylo {
 

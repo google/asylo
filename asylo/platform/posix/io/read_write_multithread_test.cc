@@ -20,6 +20,7 @@
 #include <fcntl.h>
 #include <stdio.h>
 #include <unistd.h>
+
 #include <future>
 #include <sstream>
 #include <string>
@@ -28,6 +29,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/common/memory.h"
@@ -110,7 +112,8 @@ Status WriteRead(const char *path) {
 TEST(ReadWriteMultiThreadTest, MultiThreadTest) {
   // Assign random file name, to avoid potential conflict with other runs
   // on the same machine, current or prior.
-  MallocUniquePtr<char> test_file(tempnam(FLAGS_test_tmpdir.c_str(), "MRWT"));
+  MallocUniquePtr<char> test_file(
+      tempnam(absl::GetFlag(FLAGS_test_tmpdir).c_str(), "MRWT"));
   Cleanup remove_file([&test_file] { remove(test_file.get()); });
 
   // Creates kNumThreads that run the given |WriteRead| and waits for all

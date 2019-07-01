@@ -20,26 +20,27 @@
 #include <string>
 #include <vector>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/strings/str_split.h"
 #include "asylo/client.h"
 #include "asylo/examples/hello_world/hello.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave to load");
-DEFINE_string(names, "",
-              "A comma-separated list of names to pass to the enclave");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
+ABSL_FLAG(std::string, names, "",
+          "A comma-separated list of names to pass to the enclave");
 
 int main(int argc, char *argv[]) {
   // Part 0: Setup
-  ::google::ParseCommandLineFlags(&argc, &argv,
-                                  /*remove_flags=*/true);
+  absl::ParseCommandLine(argc, argv);
 
-  if (FLAGS_names.empty()) {
+  if (absl::GetFlag(FLAGS_names).empty()) {
     LOG(QFATAL) << "Must supply a non-empty list of names with --names";
   }
 
-  std::vector<std::string> names = absl::StrSplit(FLAGS_names, ',');
+  std::vector<std::string> names =
+      absl::StrSplit(absl::GetFlag(FLAGS_names), ',');
 
   // Part 1: Initialization
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
@@ -48,11 +49,12 @@ int main(int argc, char *argv[]) {
     LOG(QFATAL) << "EnclaveManager unavailable: " << manager_result.status();
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  std::cout << "Loading " << FLAGS_enclave_path << std::endl;
-  asylo::SimLoader loader(FLAGS_enclave_path, /*debug=*/true);
+  std::cout << "Loading " << absl::GetFlag(FLAGS_enclave_path) << std::endl;
+  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
   asylo::Status status = manager->LoadEnclave("hello_enclave", loader);
   if (!status.ok()) {
-    LOG(QFATAL) << "Load " << FLAGS_enclave_path << " failed: " << status;
+    LOG(QFATAL) << "Load " << absl::GetFlag(FLAGS_enclave_path)
+                << " failed: " << status;
   }
 
   // Part 2: Secure execution
@@ -85,7 +87,8 @@ int main(int argc, char *argv[]) {
   asylo::EnclaveFinal final_input;
   status = manager->DestroyEnclave(client, final_input);
   if (!status.ok()) {
-    LOG(QFATAL) << "Destroy " << FLAGS_enclave_path << " failed: " << status;
+    LOG(QFATAL) << "Destroy " << absl::GetFlag(FLAGS_enclave_path)
+                << " failed: " << status;
   }
 
   return 0;

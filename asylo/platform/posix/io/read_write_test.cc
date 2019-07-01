@@ -21,11 +21,13 @@
 #include <stdio.h>
 #include <sys/ioctl.h>
 #include <unistd.h>
+
 #include <string>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/memory.h"
@@ -50,7 +52,7 @@ class ReadWriteTest : public ::testing::Test {
   void SetUp() override {
     // Assign random file name, to avoid potential conflict with other runs
     // on the same machine, current or prior.
-    test_file_.reset(tempnam(FLAGS_test_tmpdir.c_str(), "RWT"));
+    test_file_.reset(tempnam(absl::GetFlag(FLAGS_test_tmpdir).c_str(), "RWT"));
   }
 
   void TearDown() override {

@@ -27,6 +27,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/test_flags.h"
@@ -124,14 +125,16 @@ TEST(CwdTest, RelativeAbsoluteResolve) {
   // Set up the file to read, using an absolute path.
   uint8_t data[32];
   ASSERT_EQ(RAND_bytes(data, sizeof(data)), 1);
-  int fd = open(absl::StrCat(FLAGS_test_tmpdir, "/cwdtest").c_str(),
-                O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
+  int fd =
+      open(absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/cwdtest").c_str(),
+           O_RDWR | O_CREAT, S_IRWXU | S_IRWXG | S_IRWXO);
   ASSERT_NE(fd, -1);
   asylo::platform::storage::FdCloser fd_closer(fd);
   ASSERT_NE(write(fd, data, sizeof(data)), -1);
 
   // Change to a sibling directory and use a relative path to access.
-  EXPECT_EQ(chdir(absl::StrCat(FLAGS_test_tmpdir, "/foo").c_str()), 0);
+  EXPECT_EQ(
+      chdir(absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/foo").c_str()), 0);
   fd = open("../cwdtest", O_RDONLY);
   ASSERT_NE(fd, -1);
   fd_closer.reset(fd);

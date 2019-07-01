@@ -19,12 +19,13 @@ licenses(["notice"])  # Apache v2.0
 # Socket implementation, tests, and perf measurement tools.
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "sgx_enclave_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKENDS",
     "cc_test",
+    "sgx_enclave_test",
 )
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -169,7 +170,7 @@ sgx_enclave_test(
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

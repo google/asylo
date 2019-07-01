@@ -20,11 +20,13 @@
 
 #include <sys/file.h>
 #include <unistd.h>
+
 #include <cstdlib>
 #include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
@@ -49,7 +51,8 @@ constexpr char kAttestationDomainFileName[] =
 class AttestationDomainTest : public ::testing::Test {
  protected:
   AttestationDomainTest() {
-    domain_file_path_ = FLAGS_test_tmpdir + kAttestationDomainFileName;
+    domain_file_path_ =
+        absl::GetFlag(FLAGS_test_tmpdir) + kAttestationDomainFileName;
   }
 
   ~AttestationDomainTest() override {

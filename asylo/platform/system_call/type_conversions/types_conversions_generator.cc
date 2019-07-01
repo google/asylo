@@ -21,10 +21,11 @@
 #include <vector>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/system_call/type_conversions/types_macros.inc"
 
@@ -54,7 +55,8 @@ struct StructProperties {
   std::map<std::string, std::string> values;
 };
 
-DEFINE_string(output_dir, "", "Path of the output dir for generated types.");
+ABSL_FLAG(std::string, output_dir, "",
+          "Path of the output dir for generated types.");
 
 // Returns a mapping from enum name to EnumProperties.
 absl::flat_hash_map<std::string, EnumProperties> *GetEnumPropertiesTable() {
@@ -358,19 +360,21 @@ void WriteTypesConversions(
 
 int main(int argc, char **argv) {
   // Parse command-line arguments.
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  absl::ParseCommandLine(argc, argv);
 
-  CHECK(!FLAGS_output_dir.empty()) << "Must provide output dir path.";
+  CHECK(!absl::GetFlag(FLAGS_output_dir).empty())
+      << "Must provide output dir path.";
 
   auto enum_properties_table = GetEnumPropertiesTable();
   auto struct_properties_table = GetStructPropertiesTable();
   std::ofstream types_h, types_functions_h, types_functions_cc;
 
-  types_h.open(absl::StrCat(FLAGS_output_dir, "/generated_types.h"));
-  types_functions_h.open(
-      absl::StrCat(FLAGS_output_dir, "/generated_types_functions.h"));
-  types_functions_cc.open(
-      absl::StrCat(FLAGS_output_dir, "/generated_types_functions.cc"));
+  types_h.open(
+      absl::StrCat(absl::GetFlag(FLAGS_output_dir), "/generated_types.h"));
+  types_functions_h.open(absl::StrCat(absl::GetFlag(FLAGS_output_dir),
+                                      "/generated_types_functions.h"));
+  types_functions_cc.open(absl::StrCat(absl::GetFlag(FLAGS_output_dir),
+                                       "/generated_types_functions.cc"));
 
   WriteTypeDefinitions(enum_properties_table, struct_properties_table,
                        &types_h);

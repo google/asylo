@@ -15,15 +15,18 @@
  * limitations under the License.
  *
  */
+
+#include <string>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/client.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave");
 
 namespace asylo {
 namespace {
@@ -38,7 +41,8 @@ class ForkTest : public ::testing::Test {
     *config.add_enclave_assertion_authority_configs() =
         GetSgxLocalAssertionAuthorityTestConfig();
     config.set_enable_fork(true);
-    auto loader = absl::make_unique<SgxLoader>(FLAGS_enclave_path, true);
+    auto loader =
+        absl::make_unique<SgxLoader>(absl::GetFlag(FLAGS_enclave_path), true);
     ASSERT_THAT(manager_->LoadEnclave("/fork_test", *loader, config), IsOk());
     client_ = manager_->GetClient("/fork_test");
   }

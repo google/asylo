@@ -18,10 +18,12 @@
 
 #include <fcntl.h>
 #include <unistd.h>
+
 #include <cerrno>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/test_flags.h"
 
@@ -42,13 +44,13 @@ void CheckHostErrno(const char *path, int expected_errno) {
 
 TEST(EnclaveErrnoTest, ENOTDIRTest) {
   // Create a regular file.
-  std::string path = FLAGS_test_tmpdir + file_path;
+  std::string path = absl::GetFlag(FLAGS_test_tmpdir) + file_path;
   int fd = open(path.c_str(), O_WRONLY | O_CREAT | O_TRUNC, 0644);
   ASSERT_NE(fd, -1);
   ASSERT_EQ(close(fd), 0);
 
   // Try to create a file treating the earlier file as a directory.
-  path = FLAGS_test_tmpdir + bad_file_path;
+  path = absl::GetFlag(FLAGS_test_tmpdir) + bad_file_path;
   CheckHostErrno(path.c_str(), ENOTDIR);
 }
 

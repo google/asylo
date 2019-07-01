@@ -71,6 +71,8 @@ cc_library(
         "//asylo/platform/system_call/type_conversions:types",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",

@@ -102,6 +102,7 @@ cc_enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "//asylo/util:cleansing_types",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -131,6 +132,7 @@ cc_enclave_test(
         "//asylo/test/util:test_flags",
         "//asylo/util:cleanup",
         "//asylo/util:logging",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -158,6 +160,7 @@ cc_enclave_test(
     deps = [
         ":io_manager",
         "//asylo/test/util:test_flags",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
@@ -237,6 +240,7 @@ cc_test(
     deps = [
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

@@ -19,9 +19,9 @@
 #ifndef ASYLO_TEST_UTIL_TEST_FLAGS_H_
 #define ASYLO_TEST_UTIL_TEST_FLAGS_H_
 
-#include "gflags/gflags.h"
+#include "absl/flags/declare.h"
 
 // Location for all temporary test files.
-DECLARE_string(test_tmpdir);
+ABSL_DECLARE_FLAG(std::string, test_tmpdir);
 
 #endif  // ASYLO_TEST_UTIL_TEST_FLAGS_H_

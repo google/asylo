@@ -16,21 +16,25 @@
  *
  */
 
+#include "asylo/platform/system_call/system_call.h"
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
 
+#include <cerrno>
+#include <cstring>
 #include <string>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/system_call/sysno.h"
-#include "asylo/platform/system_call/system_call.h"
 #include "asylo/platform/system_call/untrusted_invoke.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/status_macros.h"
@@ -139,7 +143,8 @@ TEST(SystemCallTest, BufferOutTest) {
 // Invokes a system call which takes a scalar input parameter.
 TEST(SystemCallTest, ScalarInTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/scalar_in_test.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/scalar_in_test.tmp");
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
   EXPECT_GE(fd, 0);
@@ -156,7 +161,8 @@ TEST(SystemCallTest, ScalarInTest) {
 // Invokes a system call which takes a string input parameter.
 TEST(SystemCallTest, StringInTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/string_in_test.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/string_in_test.tmp");
   int fd = enc_untrusted_syscall(SYS_open, path.c_str(),
                                  O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
@@ -176,7 +182,8 @@ TEST(SystemCallTest, StringInTest) {
 // parameters.
 TEST(SystemCallTest, NullBufferTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/null_buffer_test.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/null_buffer_test.tmp");
   int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
 
   // Check a valid file descriptor was returned.
@@ -194,11 +201,12 @@ TEST(SystemCallTest, FixedOutTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
 
   // Call stat on the temporary file directory.
-  const char *path = FLAGS_test_tmpdir.c_str();
+  std::string path = absl::GetFlag(FLAGS_test_tmpdir);
   struct stat stat_expected;
   struct stat stat_actual;
-  int result_expected = stat(path, &stat_expected);
-  int result_actual = enc_untrusted_syscall(SYS_stat, path, &stat_actual);
+  int result_expected = stat(path.c_str(), &stat_expected);
+  int result_actual =
+      enc_untrusted_syscall(SYS_stat, path.c_str(), &stat_actual);
 
   EXPECT_THAT(result_expected, Eq(result_actual));
   EXPECT_THAT(memcmp(&stat_expected, &stat_actual, sizeof(struct stat)), Eq(0));

@@ -16,14 +16,17 @@
  *
  */
 
-#include <unistd.h>
-#include <cstdlib>
-
-#include <gtest/gtest.h>
-#include "gflags/gflags.h"
 #include "asylo/test/util/exec_tester.h"
 
-DEFINE_string(binary_path, "", "Path of the binary to execute");
+#include <unistd.h>
+
+#include <cstdlib>
+#include <string>
+
+#include <gtest/gtest.h>
+#include "absl/flags/flag.h"
+
+ABSL_FLAG(std::string, binary_path, "", "Path of the binary to execute");
 
 namespace asylo {
 namespace experimental {
@@ -31,7 +34,7 @@ namespace {
 
 class ExecTesterTest : public ::testing::Test {
  public:
-  void SetUp() override { app_ = FLAGS_binary_path; }
+  void SetUp() override { app_ = absl::GetFlag(FLAGS_binary_path); }
 
  protected:
   class UniformOutputChecker : public ExecTester {

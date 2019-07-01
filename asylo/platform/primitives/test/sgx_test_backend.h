@@ -19,14 +19,14 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_TEST_SGX_TEST_BACKEND_H_
 #define ASYLO_PLATFORM_PRIMITIVES_TEST_SGX_TEST_BACKEND_H_
 
+#include "absl/flags/flag.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
-#include "gflags/gflags.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/util/statusor.h"
 
-DEFINE_string(enclave_binary, "",
-              "Path to the SGX enclave binary to be loaded");
+ABSL_FLAG(std::string, enclave_binary, "",
+          "Path to the SGX enclave binary to be loaded");
 
 namespace asylo {
 namespace primitives {
@@ -40,11 +40,11 @@ class SgxTestBackend : public TestBackend {
   StatusOr<std::shared_ptr<Client>> LoadTestEnclave(
       const absl::string_view enclave_name,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider) override {
-    return LoadEnclave<SgxBackend>(enclave_name, /*base_address=*/nullptr,
-                                   /*enclave_path=*/FLAGS_enclave_binary,
-                                   /*enclave_size=*/0,
-                                   /*config=*/EnclaveConfig(), /*debug=*/true,
-                                   std::move(exit_call_provider));
+    return LoadEnclave<SgxBackend>(
+        enclave_name, /*base_address=*/nullptr,
+        /*enclave_path=*/absl::GetFlag(FLAGS_enclave_binary),
+        /*enclave_size=*/0, /*config=*/EnclaveConfig(), /*debug=*/true,
+        std::move(exit_call_provider));
   }
 
   // Configuration to load an instance of a SGX test enclave.

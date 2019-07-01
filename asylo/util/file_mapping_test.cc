@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <cstddef>
 #include <cstring>
@@ -32,13 +33,13 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/string_view.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 
-DEFINE_string(test_file, "", "Location of test data file");
+ABSL_FLAG(std::string, test_file, "", "Location of test data file");
 
 namespace asylo {
 namespace {
@@ -50,7 +51,7 @@ constexpr char kReplaceText[] = "Merol";
 class FileMappingTest : public ::testing::Test {
  public:
   void SetUp() override {
-    std::ifstream test_file_stream(FLAGS_test_file);
+    std::ifstream test_file_stream(absl::GetFlag(FLAGS_test_file));
     std::stringstream file_string_stream;
     file_string_stream << test_file_stream.rdbuf();
     expected_file_contents_ = file_string_stream.str();
@@ -68,7 +69,8 @@ TEST(FileMappingFixturelessTest, DefaultConstructedMappingDoesntCrash) {
 // Tests that a mapped file buffer has the same size and contents as the backing
 // file.
 TEST_F(FileMappingTest, MapsFileSuccessfully) {
-  auto from_file_result = FileMapping::CreateFromFile(FLAGS_test_file);
+  auto from_file_result =
+      FileMapping::CreateFromFile(absl::GetFlag(FLAGS_test_file));
   ASSERT_THAT(from_file_result, IsOk());
 
   FileMapping mapping = std::move(from_file_result.ValueOrDie());
@@ -82,7 +84,8 @@ TEST_F(FileMappingTest, MapsFileSuccessfully) {
 // file, but are still visible in memory.
 TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
   // Open one mapping of the file and check that it has the expected contents.
-  auto outer_from_file_result = FileMapping::CreateFromFile(FLAGS_test_file);
+  auto outer_from_file_result =
+      FileMapping::CreateFromFile(absl::GetFlag(FLAGS_test_file));
   ASSERT_THAT(outer_from_file_result, IsOk());
 
   FileMapping outer_mapping = std::move(outer_from_file_result.ValueOrDie());
@@ -98,7 +101,8 @@ TEST_F(FileMappingTest, MapExhibitsCopyOnWriteSemantics) {
 
   {
     // Open another mapping of the same file.
-    auto inner_from_file_result = FileMapping::CreateFromFile(FLAGS_test_file);
+    auto inner_from_file_result =
+        FileMapping::CreateFromFile(absl::GetFlag(FLAGS_test_file));
     ASSERT_THAT(inner_from_file_result, IsOk());
 
     // Check that the new mapping has the same contents as the original file.

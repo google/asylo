@@ -302,11 +302,11 @@ The driver defines three flags and a `constexpr` string to hold the information
 it needs:
 
 ```cpp
-DEFINE_string(enclave_path, "", "Path to enclave to load");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 
-DEFINE_int32(server_max_lifetime, 300,
-             "The longest amount of time (in seconds) that the server should "
-             "be allowed to run");
+ABSL_FLAG(int32_t, server_max_lifetime, 300,
+          "The longest amount of time (in seconds) that the server should be "
+          "allowed to run");
 
 DEFINE_int32(port, 0, "Port number that server listens to");
 
@@ -321,22 +321,20 @@ value 0 indicates that the port will be chosen by the operating system.
 The driver's `main` function starts by parsing command-line arguments:
 
 ```cpp
-google::ParseCommandLineFlags(
-    &argc, &argv, /*remove_flags=*/true);
+absl::ParseCommandLine(argc, argv);
 ```
 
 Then, the driver creates and configures a `SimLoader` using the `enclave_path`
 flag and an `EnclaveConfig` message object containing the server address:
 
 ```cpp
-asylo::SimLoader loader(FLAGS_enclave_path, /*debug=*/true);
+asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
 
 asylo::EnclaveConfig config;
 config.SetExtension(examples::grpc_server::server_address, kServerAddress);
 config.SetExtension(examples::grpc_server::server_max_lifetime,
-                    FLAGS_server_max_lifetime);
-config.SetExtension(examples::grpc_server::port, FLAGS_port);
-
+                    absl::GetFlag(FLAGS_server_max_lifetime));
+config.SetExtension(examples::grpc_server::port, absl::GetFlag(FLAGS_port));
 ```
 
 #### Starting the enclave
@@ -355,7 +353,7 @@ asylo::EnclaveManager *manager = manager_result.ValueOrDie();
 
 asylo::Status status = manager->LoadEnclave("grpc_example", loader, config);
 LOG_IF(QFATAL, !status.ok())
-    << "Load " << FLAGS_enclave_path << " failed: " << status;
+    << "Load " << absl::GetFlag(FLAGS_enclave_path) << " failed: " << status;
 ```
 
 #### Entering the enclave
@@ -368,7 +366,8 @@ asylo::EnclaveClient *client = manager->GetClient("grpc_example");
 asylo::EnclaveInput input;
 status = client->EnterAndRun(input, nullptr);
 LOG_IF(QFATAL, !status.ok())
-    << "Running " << FLAGS_enclave_path << " failed: " << status;
+    << "Running " << absl::GetFlag(FLAGS_enclave_path)
+    << " failed: " << status;
 ```
 
 As covered in the
@@ -385,7 +384,8 @@ The driver then finalizes the enclave:
 asylo::EnclaveFinal final_input;
 status = manager->DestroyEnclave(client, final_input);
 LOG_IF(QFATAL, !status.ok())
-    << "Destroy " << FLAGS_enclave_path << " failed: " << status;
+    << "Destroy " << absl::GetFlag(FLAGS_enclave_path)
+    << " failed: " << status;
 ```
 
 ## Building the application
@@ -487,8 +487,9 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":grpc_server_config_cc_proto",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
         "//asylo:enclave_client",
-        "@com_github_gflags_gflags//:gflags_nothreads",
         "//asylo/util:logging",
     ],
 )

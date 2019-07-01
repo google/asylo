@@ -16,14 +16,17 @@
  *
  */
 
+#include <string>
+
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/status_matchers.h"
 
-DEFINE_string(enclave_section, "", "The ELF section the enclave is located in");
+ABSL_FLAG(std::string, enclave_section, "",
+          "The ELF section the enclave is located in");
 
 namespace asylo {
 namespace {
@@ -38,7 +41,8 @@ TEST(EmbeddedEnclaveTest, EnclaveLoadsAndRuns) {
   EnclaveManager *manager = manager_result.ValueOrDie();
 
   // Load the enclave.
-  SgxEmbeddedLoader loader(FLAGS_enclave_section, /*debug=*/true);
+  SgxEmbeddedLoader loader(absl::GetFlag(FLAGS_enclave_section),
+                           /*debug=*/true);
   EnclaveConfig config;
   ASSERT_THAT(manager->LoadEnclave(kEnclaveName, loader, config), IsOk());
   EnclaveClient *client = manager->GetClient(kEnclaveName);

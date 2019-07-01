@@ -15,12 +15,11 @@
  * limitations under the License.
  *
  */
-#include "asylo/platform/primitives/examples/hello_enclave.h"
-
 #include <iostream>
 #include <string>
 
-#include "gflags/gflags.h"
+#include "absl/flags/parse.h"
+#include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -71,7 +70,7 @@ Status call_enclave() {
 }  // namespace asylo
 
 int main(int argc, char *argv[]) {
-  google::ParseCommandLineFlags(&argc, &argv, true);
+  absl::ParseCommandLine(argc, argv);
   auto status = ::asylo::primitives::call_enclave();
   std::cout << status.ToString() << std::endl;
   return 0;

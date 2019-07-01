@@ -25,6 +25,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
@@ -32,12 +33,12 @@
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/fd_utils.h"
 #include "asylo/util/status.h"
 
-DEFINE_string(enclave_section, "", "The ELF section to load the enclave from");
+ABSL_FLAG(std::string, enclave_section, "",
+          "The ELF section to load the enclave from");
 
 namespace asylo {
 namespace {
@@ -112,7 +113,8 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
     }
 
     // Load the enclave.
-    SgxEmbeddedLoader loader(FLAGS_enclave_section, /*debug=*/true);
+    SgxEmbeddedLoader loader(absl::GetFlag(FLAGS_enclave_section),
+                             /*debug=*/true);
     Status status = manager_->LoadEnclave(kEnclaveName, loader, config);
 
     if (status.ok()) {
@@ -222,7 +224,8 @@ TEST_F(ApplicationWrapperEnclaveTest, ManyArgsAndEnvironmentVariables) {
 // Tests that ApplicationWrapperEnclave returns an error from Initialize() if
 // the EnclaveConfig does not have a command_line_args extension.
 TEST_F(ApplicationWrapperEnclaveTest, NoArgsExtension) {
-  SgxEmbeddedLoader loader(FLAGS_enclave_section, /*debug=*/true);
+  SgxEmbeddedLoader loader(absl::GetFlag(FLAGS_enclave_section),
+                           /*debug=*/true);
   EXPECT_THAT(
       manager_->LoadEnclave(kEnclaveName, loader),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,

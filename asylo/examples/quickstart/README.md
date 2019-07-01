@@ -186,13 +186,14 @@ resources. Arguments are copied into the enclave's protected memory on entry and
 results are copied out on exit.
 
 ```cpp
-DEFINE_string(enclave_path, "", "Path to enclave binary image to load");
-DEFINE_string(message, "", "Message to encrypt");
+ABSL_FLAG(std::string, enclave_path, "",
+          "Path to enclave binary image to load");
+ABSL_FLAG(std::string, message, "", "Message to encrypt");
 
 int main(int argc, char *argv[]) {
-  google::ParseCommandLineFlags(&argc, &argv, /*remove_flags=*/true);
+  absl::ParseCommandLine(argc, argv);
 
-  LOG_IF(QFATAL, FLAGS_message.empty()) << "Empty --message flag";
+  LOG_IF(QFATAL, absl::GetFlag(FLAGS_message).empty()) << "Empty --message flag";
 
   // Part 1: Initialization
 
@@ -201,7 +202,7 @@ int main(int argc, char *argv[]) {
   LOG_IF(QFATAL, !manager_result.ok()) << "Could not obtain EnclaveManager";
 
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SimLoader loader(FLAGS_enclave_path, /*debug=*/true);
+  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
   asylo::Status status = manager->LoadEnclave("demo_enclave", loader);
   LOG_IF(QFATAL, !status.ok()) << "LoadEnclave failed with: " << status;
 
@@ -209,7 +210,7 @@ int main(int argc, char *argv[]) {
 
   asylo::EnclaveClient *client = manager->GetClient("demo_enclave");
   asylo::EnclaveInput input;
-  SetEnclaveUserMessage(&input, FLAGS_message);
+  SetEnclaveUserMessage(&input, absl::GetFlag(FLAGS_message));
 
   asylo::EnclaveOutput output;
   status = client->EnterAndRun(input, &output);
@@ -365,7 +366,7 @@ enclave_loader(
     deps = [
         ":demo_cc_proto",
         "//asylo:enclave_client",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "//asylo/util:logging",
     ],
 )

@@ -26,7 +26,6 @@
 #include <gtest/gtest.h>
 #include "absl/debugging/leak_check.h"
 #include "absl/memory/memory.h"
-#include "gflags/gflags.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -394,11 +393,3 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
 }  // namespace
 }  // namespace primitives
 }  // namespace asylo
-
-int main(int argc, char *argv[]) {
-  ::testing::InitGoogleTest(&argc, argv);
-  ::google::ParseCommandLineFlags(&argc, &argv,
-                                  /*remove_flags=*/ true);
-
-  return RUN_ALL_TESTS();
-}

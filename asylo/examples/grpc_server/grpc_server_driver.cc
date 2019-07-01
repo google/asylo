@@ -16,41 +16,46 @@
  *
  */
 
+#include <cstdint>
+#include <string>
+
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "asylo/client.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave to load");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 
 // By default, let the server run for five minutes.
-DEFINE_int32(server_max_lifetime, 300,
-             "The longest amount of time (in seconds) that the server should "
-             "be allowed to run");
-DEFINE_int32(server_lifetime, -1, "Deprecated alias for server_max_lifetime");
+ABSL_FLAG(int32_t, server_max_lifetime, 300,
+          "The longest amount of time (in seconds) that the server should be "
+          "allowed to run");
+ABSL_FLAG(int32_t, server_lifetime, -1,
+          "Deprecated alias for server_max_lifetime");
 
 // Default value 0 is used to indicate that the system should choose an
 // available port.
-DEFINE_int32(port, 0, "Port that the server listens to");
+ABSL_FLAG(int32_t, port, 0, "Port that the server listens to");
 
 constexpr char kServerAddress[] = "[::1]";
 
 int main(int argc, char *argv[]) {
   // Parse command-line arguments.
-  google::ParseCommandLineFlags(
-      &argc, &argv, /*remove_flags=*/true);
+  absl::ParseCommandLine(argc, argv);
 
   // Create a loader object using the enclave_path flag.
-  asylo::SimLoader loader(FLAGS_enclave_path, /*debug=*/true);
+  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
 
   // Build an EnclaveConfig object with the address that the gRPC server will
   // run on.
   asylo::EnclaveConfig config;
   config.SetExtension(examples::grpc_server::server_address, kServerAddress);
   config.SetExtension(examples::grpc_server::server_max_lifetime,
-                      FLAGS_server_lifetime >= 0 ? FLAGS_server_lifetime
-                                                 : FLAGS_server_max_lifetime);
-  config.SetExtension(examples::grpc_server::port, FLAGS_port);
+                      absl::GetFlag(FLAGS_server_lifetime) >= 0
+                          ? absl::GetFlag(FLAGS_server_lifetime)
+                          : absl::GetFlag(FLAGS_server_max_lifetime));
+  config.SetExtension(examples::grpc_server::port, absl::GetFlag(FLAGS_port));
 
   // Configure and retrieve the EnclaveManager.
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
@@ -64,7 +69,7 @@ int main(int argc, char *argv[]) {
   // method of the TrustedApplication.
   asylo::Status status = manager->LoadEnclave("grpc_example", loader, config);
   LOG_IF(QFATAL, !status.ok())
-      << "Load " << FLAGS_enclave_path << " failed: " << status;
+      << "Load " << absl::GetFlag(FLAGS_enclave_path) << " failed: " << status;
 
   // Wait up to FLAGS_server_max_lifetime seconds or for the server to receive
   // the shutdown RPC, whichever happens first.
@@ -72,13 +77,15 @@ int main(int argc, char *argv[]) {
   asylo::EnclaveInput input;
   status = client->EnterAndRun(input, nullptr);
   LOG_IF(QFATAL, !status.ok())
-      << "Running " << FLAGS_enclave_path << " failed: " << status;
+      << "Running " << absl::GetFlag(FLAGS_enclave_path)
+      << " failed: " << status;
 
   // Destroy the enclave.
   asylo::EnclaveFinal final_input;
   status = manager->DestroyEnclave(client, final_input);
   LOG_IF(QFATAL, !status.ok())
-      << "Destroy " << FLAGS_enclave_path << " failed: " << status;
+      << "Destroy " << absl::GetFlag(FLAGS_enclave_path)
+      << " failed: " << status;
 
   return 0;
 }

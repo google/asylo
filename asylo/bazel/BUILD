@@ -71,7 +71,7 @@ cc_library(
         ":test_shim_enclave_cc_proto",
         "//asylo/test/util:enclave_test_application",
         "//asylo/test/util:test_flags",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -90,7 +90,9 @@ cc_binary(
         "//asylo:enclave_client",
         "//asylo/test/util:test_flags",
         "//asylo/util:logging",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_googletest//:gtest",
     ],
 )
 

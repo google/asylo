@@ -19,9 +19,10 @@
 #include "asylo/platform/primitives/test/sim_test_backend.h"
 
 #include <memory>
+#include <string>
 
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
-#include "gflags/gflags.h"
 #include "asylo/platform/primitives/sim/untrusted_sim.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -29,8 +30,8 @@
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
-DEFINE_string(enclave_binary, "",
-              "Path to the Sim enclave binary to be loaded");
+ABSL_FLAG(std::string, enclave_binary, "",
+          "Path to the Sim enclave binary to be loaded");
 
 namespace asylo {
 namespace primitives {
@@ -40,7 +41,7 @@ StatusOr<std::shared_ptr<Client>> SimTestBackend::LoadTestEnclave(
     const absl::string_view enclave_name,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   return LoadEnclave<SimBackend>(enclave_name,
-                                 FLAGS_enclave_binary,
+                                 absl::GetFlag(FLAGS_enclave_binary),
                                  std::move(exit_call_provider));
 }
 

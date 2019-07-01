@@ -71,7 +71,7 @@ cc_test(
     deps = [
         ":exec_tester",
         ":test_main",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -130,8 +130,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
-        ":test_flags",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:parse",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -162,9 +161,7 @@ cc_library(
     hdrs = ["test_flags.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
-    deps = [
-        "@com_github_gflags_gflags//:gflags_nothreads",
-    ],
+    deps = ["@com_google_absl//absl/flags:flag"],
 )
 
 # Gtest wrapper around enclave_test_launcher.
@@ -182,7 +179,7 @@ cc_library(
         ":test_main",
         "//asylo:enclave_cc_proto",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
 )

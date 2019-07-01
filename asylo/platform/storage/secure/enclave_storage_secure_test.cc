@@ -19,21 +19,23 @@
 // Test suite for the Secure IO Library.
 
 // IO syscall interface constants.
+#include "asylo/platform/storage/secure/enclave_storage_secure.h"
+
 #include <fcntl.h>
 #include <openssl/rand.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
-#include "asylo/platform/storage/secure/enclave_storage_secure.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/cleansing_types.h"
-#include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -91,7 +93,8 @@ INSTANTIATE_TEST_SUITE_P(Instance1, EnclaveStorageSecureTest,
                         ::testing::ValuesIn(buffer_length_vals));
 
 void EnclaveStorageSecureTest::PrepareTest() {
-  path_ = absl::StrCat(FLAGS_test_tmpdir, "/EnclaveStorageSecureTest.txt");
+  path_ = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
+                       "/EnclaveStorageSecureTest.txt");
 
   // Note: this step should not be required, but the observation is that
   // occasionally the test is executed on the same (virtual) machine.

@@ -19,15 +19,16 @@
 #include <iostream>
 #include <string>
 
+#include "absl/flags/flag.h"
+#include "absl/flags/parse.h"
 #include "asylo/client.h"
 #include "asylo/examples/quickstart/solution/demo.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave to load");
-DEFINE_string(message1, "", "The first message to encrypt");
-DEFINE_string(message2, "", "The second message to encrypt");
-DEFINE_string(ciphertext, "", "The ciphertext message to decrypt");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
+ABSL_FLAG(std::string, message1, "", "The first message to encrypt");
+ABSL_FLAG(std::string, message2, "", "The second message to encrypt");
+ABSL_FLAG(std::string, ciphertext, "", "The ciphertext message to decrypt");
 
 // Populates |enclave_input|->value() with |user_message|.
 void SetEnclaveUserMessage(asylo::EnclaveInput *enclave_input,
@@ -46,11 +47,11 @@ const std::string GetEnclaveOutputMessage(const asylo::EnclaveOutput &output) {
 }
 
 int main(int argc, char *argv[]) {
-  ::google::ParseCommandLineFlags(&argc, &argv,
-                                  /*remove_flags=*/ true);
+  absl::ParseCommandLine(argc, argv);
 
-  LOG_IF(QFATAL, FLAGS_message1.empty() && FLAGS_message2.empty() &&
-                     FLAGS_ciphertext.empty())
+  LOG_IF(QFATAL, absl::GetFlag(FLAGS_message1).empty() &&
+                     absl::GetFlag(FLAGS_message2).empty() &&
+                     absl::GetFlag(FLAGS_ciphertext).empty())
       << "Must specify at least one of --message1, --message2, or --ciphertext "
          "flag values";
 
@@ -61,7 +62,7 @@ int main(int argc, char *argv[]) {
   LOG_IF(QFATAL, !manager_result.ok()) << "Could not obtain EnclaveManager";
 
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SimLoader loader(FLAGS_enclave_path, /*debug=*/true);
+  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
   asylo::Status status = manager->LoadEnclave("demo_enclave", loader);
   LOG_IF(QFATAL, !status.ok()) << "LoadEnclave failed with: " << status;
 
@@ -71,24 +72,26 @@ int main(int argc, char *argv[]) {
   asylo::EnclaveInput input;
   asylo::EnclaveOutput output;
 
-  if (!FLAGS_message1.empty()) {
-    SetEnclaveUserMessage(&input, FLAGS_message1, guide::asylo::Demo::ENCRYPT);
+  if (!absl::GetFlag(FLAGS_message1).empty()) {
+    SetEnclaveUserMessage(&input, absl::GetFlag(FLAGS_message1),
+                          guide::asylo::Demo::ENCRYPT);
     status = client->EnterAndRun(input, &output);
     LOG_IF(QFATAL, !status.ok()) << "EnterAndRun failed with: " << status;
     std::cout << "Encrypted message1 from driver:" << std::endl
               << GetEnclaveOutputMessage(output) << std::endl;
   }
 
-  if (!FLAGS_message2.empty()) {
-    SetEnclaveUserMessage(&input, FLAGS_message2, guide::asylo::Demo::ENCRYPT);
+  if (!absl::GetFlag(FLAGS_message2).empty()) {
+    SetEnclaveUserMessage(&input, absl::GetFlag(FLAGS_message2),
+                          guide::asylo::Demo::ENCRYPT);
     status = client->EnterAndRun(input, &output);
     LOG_IF(QFATAL, !status.ok()) << "EnterAndRun failed with: " << status;
     std::cout << "Encrypted message2 from driver:" << std::endl
               << GetEnclaveOutputMessage(output) << std::endl;
   }
 
-  if (!FLAGS_ciphertext.empty()) {
-    SetEnclaveUserMessage(&input, FLAGS_ciphertext,
+  if (!absl::GetFlag(FLAGS_ciphertext).empty()) {
+    SetEnclaveUserMessage(&input, absl::GetFlag(FLAGS_ciphertext),
                           guide::asylo::Demo::DECRYPT);
     status = client->EnterAndRun(input, &output);
     LOG_IF(QFATAL, !status.ok()) << "EnterAndRun failed with: " << status;

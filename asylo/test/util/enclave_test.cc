@@ -19,22 +19,22 @@
 #include "asylo/test/util/enclave_test.h"
 
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/enclave.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 
-DEFINE_string(enclave_path, "", "Path to enclave");
+ABSL_FLAG(std::string, enclave_path, "", "Path to enclave");
 
 namespace asylo {
 
 void EnclaveTest::SetUpBase() {
-  if (!FLAGS_test_tmpdir.empty()) {
+  if (!absl::GetFlag(FLAGS_test_tmpdir).empty()) {
     LoggingConfig *logging_config = config_.mutable_logging_config();
-    logging_config->set_log_directory(FLAGS_test_tmpdir);
+    logging_config->set_log_directory(absl::GetFlag(FLAGS_test_tmpdir));
   }
-  ASYLO_ASSERT_OK(
-      test_launcher_.SetUp(FLAGS_enclave_path, config_, enclave_url_));
+  ASYLO_ASSERT_OK(test_launcher_.SetUp(absl::GetFlag(FLAGS_enclave_path),
+                                       config_, enclave_url_));
   client_ = test_launcher_.mutable_client();
 }
 

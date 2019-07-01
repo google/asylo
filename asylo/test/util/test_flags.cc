@@ -20,13 +20,13 @@
 
 #include <cstdlib>
 
-#include "gflags/gflags.h"
+#include "absl/flags/flag.h"
 
 namespace asylo {
 namespace {
 
 std::string GetTestTempDirEnvironment() {
-  char *env_dir = std::getenv("TEST_TMPDIR");
+  char *env_dir = getenv("TEST_TMPDIR");
   if (env_dir != nullptr && env_dir[0] != '\0') {
     return env_dir;
   }
@@ -37,5 +37,5 @@ std::string GetTestTempDirEnvironment() {
 }  // namespace
 }  // namespace asylo
 
-DEFINE_string(test_tmpdir, asylo::GetTestTempDirEnvironment(),
-              "Location for all temporary test files.");
+ABSL_FLAG(std::string, test_tmpdir, asylo::GetTestTempDirEnvironment(),
+          "Location for all temporary test files.");

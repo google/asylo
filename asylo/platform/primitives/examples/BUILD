@@ -23,8 +23,8 @@ package(
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:asylo.bzl",
-    "sim_enclave_loader",
     "sgx_enclave_test",
+    "sim_enclave_loader",
     "sim_enclave_test",
 )
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
@@ -62,7 +62,7 @@ sim_enclave_loader(
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
+        "@com_google_absl//absl/flags:parse",
     ],
 )
 
@@ -89,7 +89,6 @@ sim_enclave_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
-        "@com_github_gflags_gflags//:gflags_nothreads",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],

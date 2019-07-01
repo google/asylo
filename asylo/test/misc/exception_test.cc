@@ -20,6 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/test/util/enclave_test.h"  // enclave_path
 #include "asylo/test/util/exec_tester.h"
 
@@ -31,9 +32,9 @@ class ExceptionTest : public ::testing::Test {
   // Return the status of the test subprocess.
   void RunTest(const std::string &input, int *status) {
     experimental::ExecTester test(
-        {experimental::ExecTester::BuildSiblingPath(FLAGS_enclave_path,
-                                                    "exception_app_host_bin"),
-         FLAGS_enclave_path, input});
+        {experimental::ExecTester::BuildSiblingPath(
+             absl::GetFlag(FLAGS_enclave_path), "exception_app_host_bin"),
+         absl::GetFlag(FLAGS_enclave_path), input});
     ASSERT_TRUE(test.Run("", status));
   }
 };

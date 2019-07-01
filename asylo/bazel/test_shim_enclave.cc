@@ -19,8 +19,8 @@
 #include <string>
 
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/bazel/test_shim_enclave.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/test/util/test_flags.h"
 
@@ -41,7 +41,7 @@ class TestShimEnclave : public EnclaveTestCase {
     }
 
     if (shim_config.has_test_tmpdir()) {
-      FLAGS_test_tmpdir = shim_config.test_tmpdir();
+      absl::SetFlag(&FLAGS_test_tmpdir, shim_config.test_tmpdir());
     }
 
     if (shim_config.has_test_in_initialize() &&

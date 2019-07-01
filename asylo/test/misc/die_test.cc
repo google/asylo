@@ -19,6 +19,7 @@
 #include <cstdlib>
 
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/exec_tester.h"
 
@@ -29,7 +30,7 @@ class DieTest : public ::testing::Test {
  public:
   DieTest()
       : app_(experimental::ExecTester::BuildSiblingPath(
-            FLAGS_enclave_path, "double_die_host_bin")) {}
+            absl::GetFlag(FLAGS_enclave_path), "double_die_host_bin")) {}
 
  protected:
   std::string app_;
@@ -44,7 +45,7 @@ TEST_F(DieTest, HaltExits) {
 }
 
 TEST_F(DieTest, NoEntryAfterDie) {
-  experimental::ExecTester run({app_, FLAGS_enclave_path});
+  experimental::ExecTester run({app_, absl::GetFlag(FLAGS_enclave_path)});
   int status = 0;
   EXPECT_TRUE(run.Run("", &status));
   EXPECT_FALSE(WIFSIGNALED(status)) << "Terminated by signal "
@@ -65,7 +66,7 @@ TEST_F(DieTest, CheckSIGILL) {
 
 TEST_F(DieTest, DieRaisesSIGILL) {
   experimental::ExecTester run(
-      {app_, FLAGS_enclave_path, std::string("--die")});
+      {app_, absl::GetFlag(FLAGS_enclave_path), std::string("--die")});
   int status = 0;
   EXPECT_TRUE(run.Run("", &status));
   EXPECT_FALSE(WIFEXITED(status)) << "Terminated by exit, not signal: "

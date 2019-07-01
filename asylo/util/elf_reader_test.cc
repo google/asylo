@@ -19,30 +19,33 @@
 #include "asylo/util/elf_reader.h"
 
 #include <elf.h>
+
 #include <cstring>
 #include <limits>
+#include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/file_mapping.h"
 
-DEFINE_string(elf_file, "", "The ELF file to use for testing");
-DEFINE_string(section_name, "", "The name of the section to use for testing");
-DEFINE_string(expected_contents, "",
-              "The expected contents of the test section");
+ABSL_FLAG(std::string, elf_file, "", "The ELF file to use for testing");
+ABSL_FLAG(std::string, section_name, "",
+          "The name of the section to use for testing");
+ABSL_FLAG(std::string, expected_contents, "",
+          "The expected contents of the test section");
 
 namespace asylo {
 namespace {
 
 using ::testing::Not;
 
-// A section name that is not used in FLAGS_elf_file.
+// A section name that is not used in absl::GetFlag(FLAGS_elf_file).
 constexpr char kAbsentSectionName[] = "\r%";
 
 class ElfReaderTest : public ::testing::Test {
@@ -59,8 +62,9 @@ class ElfReaderTest : public ::testing::Test {
     Elf64_Shdr *target_section_header;
 
     ElfReaderTestMembers() {
-      // Load the ELF file from FLAGS_elf_file.
-      auto from_elf_file_result = FileMapping::CreateFromFile(FLAGS_elf_file);
+      // Load the ELF file from absl::GetFlag(FLAGS_elf_file).
+      auto from_elf_file_result =
+          FileMapping::CreateFromFile(absl::GetFlag(FLAGS_elf_file));
       CHECK(from_elf_file_result.ok());
       elf_file_mapping = std::move(from_elf_file_result.ValueOrDie());
 
@@ -116,10 +120,10 @@ class ElfReaderTest : public ::testing::Test {
         char *section_i_name = reinterpret_cast<char *>(
             &elf_file[section_names_start + section_i_name_index]);
 
-        // If the name matches FLAGS_section_name, save its data.
-        if (strncmp(section_i_name, FLAGS_section_name.data(),
-                    FLAGS_section_name.size()) == 0 &&
-            section_i_name[FLAGS_section_name.size()] == '\0') {
+        // If the name matches absl::GetFlag(FLAGS_section_name), save its data.
+        if (strncmp(section_i_name, absl::GetFlag(FLAGS_section_name).data(),
+                    absl::GetFlag(FLAGS_section_name).size()) == 0 &&
+            section_i_name[absl::GetFlag(FLAGS_section_name).size()] == '\0') {
           target_section_index = i;
           target_section_header = section_header;
           break;
@@ -137,8 +141,8 @@ class ElfReaderTest : public ::testing::Test {
         target_section_header_(members.target_section_header) {}
 
   // Checks that CreateFromSpan returns an INVALID_ARGUMENT error with the given
-  // error message when asked to find the FLAGS_section_name section in
-  // elf_file_mapping_.buffer().
+  // error message when asked to find the absl::GetFlag(FLAGS_section_name)
+  // section in elf_file_mapping_.buffer().
   void ExpectBadReaderInput(absl::string_view error_message) {
     auto create_from_span_result =
         ElfReader::CreateFromSpan(elf_file_mapping_.buffer());
@@ -172,7 +176,7 @@ class ElfReaderTest : public ::testing::Test {
 // Tests that GetSectionData locates the desired section in a valid ELF file.
 TEST_F(ElfReaderTest, WorksOnValidInputs) {
   auto from_data_file_result =
-      FileMapping::CreateFromFile(FLAGS_expected_contents);
+      FileMapping::CreateFromFile(absl::GetFlag(FLAGS_expected_contents));
   ASSERT_THAT(from_data_file_result, IsOk());
   FileMapping expected_contents_mapping =
       std::move(from_data_file_result.ValueOrDie());
@@ -184,7 +188,8 @@ TEST_F(ElfReaderTest, WorksOnValidInputs) {
   EXPECT_THAT(create_from_span_result, IsOk());
   ElfReader reader = create_from_span_result.ValueOrDie();
 
-  auto get_section_data_result = reader.GetSectionData(FLAGS_section_name);
+  auto get_section_data_result =
+      reader.GetSectionData(absl::GetFlag(FLAGS_section_name));
   EXPECT_THAT(get_section_data_result, IsOk());
   absl::Span<const uint8_t> section_data = get_section_data_result.ValueOrDie();
 
@@ -328,7 +333,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfSectionTooBig) {
   target_section_header_->sh_offset = std::numeric_limits<Elf64_Off>::max() / 2;
 
   ExpectBadReaderInput(absl::StrCat("Malformed ELF file: section ",
-                                    FLAGS_section_name,
+                                    absl::GetFlag(FLAGS_section_name),
                                     " exceeds boundary of file"));
 }
 
@@ -359,12 +364,14 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfTargetSectionHasNoData) {
   ASSERT_THAT(create_from_span_result, IsOk());
   ElfReader reader = create_from_span_result.ValueOrDie();
 
-  auto get_section_data_result = reader.GetSectionData(FLAGS_section_name);
+  auto get_section_data_result =
+      reader.GetSectionData(absl::GetFlag(FLAGS_section_name));
   EXPECT_THAT(get_section_data_result, Not(IsOk()));
   EXPECT_THAT(get_section_data_result.status(),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
   EXPECT_EQ(get_section_data_result.status().error_message(),
-            absl::StrCat("Section ", FLAGS_section_name, " has no data"));
+            absl::StrCat("Section ", absl::GetFlag(FLAGS_section_name),
+                         " has no data"));
 }
 
 // Tests that CreateFromSpan returns an appropriate error if the input file is

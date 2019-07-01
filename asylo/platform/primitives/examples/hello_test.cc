@@ -23,7 +23,6 @@
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "asylo/enclave_manager.h"
-#include "gflags/gflags.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/test/test_backend.h"

@@ -259,6 +259,7 @@ sgx_enclave_test(
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

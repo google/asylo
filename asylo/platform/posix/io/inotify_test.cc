@@ -27,6 +27,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/test/util/test_flags.h"
 
@@ -40,9 +41,9 @@ constexpr size_t kEventBufSize = 4096;
 class InotifyTest : public ::testing::Test {
  protected:
   InotifyTest() {
-    file1_ = absl::StrCat(FLAGS_test_tmpdir, "/file1.out");
-    file2_ = absl::StrCat(FLAGS_test_tmpdir, "/file2.out");
-    file3_ = absl::StrCat(FLAGS_test_tmpdir, "/file3.out");
+    file1_ = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/file1.out");
+    file2_ = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/file2.out");
+    file3_ = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/file3.out");
     // Remove files in case test is run on the same machine.
     remove(file1_.c_str());
     remove(file2_.c_str());
@@ -142,7 +143,8 @@ TEST_F(InotifyTest, SingleFileRead) {
 }
 
 TEST_F(InotifyTest, SingleFileWriteDir) {
-  int wd1 = inotify_add_watch(infd_, FLAGS_test_tmpdir.c_str(), IN_MODIFY);
+  int wd1 = inotify_add_watch(infd_, absl::GetFlag(FLAGS_test_tmpdir).c_str(),
+                              IN_MODIFY);
   ASSERT_GT(wd1, 0);
   size_t len = strlen(str);
   EXPECT_EQ(write(fd1_, str, len), len);

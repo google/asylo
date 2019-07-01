@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/daemon/identity/attestation_domain.h"
 #include "asylo/test/util/status_matchers.h"
@@ -37,8 +38,8 @@ constexpr char kAttestationDomainFileName[] =
 // Verifies that the attestation domain name returned by
 // AttestationDomainServiceImpl is well-formed and consistent.
 TEST(AttestationDomainServiceImplTest, GetAttestationDomain) {
-  std::string domain_file_path =
-      absl::StrCat(FLAGS_test_tmpdir, "/", kAttestationDomainFileName);
+  std::string domain_file_path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
+                                              "/", kAttestationDomainFileName);
   AttestationDomainServiceImpl impl(domain_file_path);
 
   GetAttestationDomainRequest request;

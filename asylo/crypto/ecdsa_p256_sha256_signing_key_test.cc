@@ -32,20 +32,21 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
-#include "gflags/gflags.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
 
+ABSL_FLAG(std::string, serialized_signing_key, "",
+          "Hex-encoded DER-format SigningKey");
+
 namespace asylo {
 namespace {
-
-DEFINE_string(serialized_signing_key, "", "Hex-encoded DER-format SigningKey");
 
 using ::testing::Not;
 
@@ -168,9 +169,9 @@ INSTANTIATE_TEST_SUITE_P(
 class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
  public:
   void SetUp() override {
-    if (!FLAGS_serialized_signing_key.empty()) {
+    if (!absl::GetFlag(FLAGS_serialized_signing_key).empty()) {
       std::string serialized_signing_key_bin =
-          absl::HexStringToBytes(FLAGS_serialized_signing_key);
+          absl::HexStringToBytes(absl::GetFlag(FLAGS_serialized_signing_key));
 
       auto signing_key_result =
           EcdsaP256Sha256SigningKey::CreateFromDer(serialized_signing_key_bin);
@@ -178,7 +179,7 @@ class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
       signing_key_ = std::move(signing_key_result).ValueOrDie();
 
       LOG(INFO) << "Using provided SigningKey: "
-                << FLAGS_serialized_signing_key;
+                << absl::GetFlag(FLAGS_serialized_signing_key);
     } else {
       auto signing_key_result = EcdsaP256Sha256SigningKey::Create();
       ASYLO_ASSERT_OK(signing_key_result);

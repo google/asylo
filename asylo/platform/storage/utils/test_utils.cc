@@ -25,6 +25,8 @@
 #include <cstring>
 #include <string>
 
+#include <gtest/gtest.h>
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/test_flags.h"
@@ -32,7 +34,8 @@
 namespace asylo {
 
 int CreateEmptyTempFileOrDie(absl::string_view basename) {
-  std::string path = absl::StrCat(FLAGS_test_tmpdir, "/", basename);
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/", basename);
   int err = unlink(path.c_str());
   CHECK(err == 0 || errno == ENOENT) << strerror(errno);
   int fd = open(path.c_str(), O_CREAT | O_EXCL | O_RDWR, S_IRUSR | S_IWUSR);

@@ -17,6 +17,8 @@
  */
 
 #include <sys/wait.h>
+
+#include <cstdint>
 #include <iostream>
 #include <memory>
 #include <regex>
@@ -28,12 +30,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/thread_annotations.h"
+#include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/numbers.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
-#include "gflags/gflags.h"
 #include "asylo/test/util/exec_tester.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -41,11 +43,11 @@
 #include "include/grpcpp/security/credentials.h"
 #include "include/grpcpp/security/server_credentials.h"
 
-DEFINE_string(enclave_path, "",
-              "The path to the server enclave to pass to the enclave loader");
+ABSL_FLAG(std::string, enclave_path, "",
+          "The path to the server enclave to pass to the enclave loader");
 
-DEFINE_int32(server_max_lifetime, 10,
-             "The number of seconds to allow the server to run for this test");
+ABSL_FLAG(int32_t, server_max_lifetime, 10,
+          "The number of seconds to allow the server to run for this test");
 
 // A regex matching the log message that contains the port.
 constexpr char kPortMessageRegex[] = "Server started on port [0-9]+";
@@ -115,13 +117,14 @@ class GrpcServerTest : public ::testing::Test {
   // Spawns the enclave loader subprocess and waits for it to log the port
   // number. Fails if the log message is never seen.
   void SetUp() override LOCKS_EXCLUDED(server_thread_state_mutex_) {
-    ASSERT_NE(FLAGS_enclave_path, "");
+    ASSERT_NE(absl::GetFlag(FLAGS_enclave_path), "");
 
     const std::vector<std::string> argv({
         asylo::experimental::ExecTester::BuildSiblingPath(
-            FLAGS_enclave_path, "grpc_server_host_loader"),
-        absl::StrCat("--enclave_path=", FLAGS_enclave_path),
-        absl::StrCat("--server_max_lifetime=", FLAGS_server_max_lifetime),
+            absl::GetFlag(FLAGS_enclave_path), "grpc_server_host_loader"),
+        absl::StrCat("--enclave_path=", absl::GetFlag(FLAGS_enclave_path)),
+        absl::StrCat("--server_max_lifetime=",
+                     absl::GetFlag(FLAGS_server_max_lifetime)),
     });
 
     server_port_found_ = false;
