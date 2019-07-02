@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
+#include <cstring>
 #include <functional>
 #include <type_traits>
 
@@ -60,6 +61,12 @@ class Extent {
 
   // Returns true if the extent is empty.
   bool empty() const { return data_ == nullptr || size_ == 0; }
+
+  // Copies the contents of the extent to |out|. The caller is responsible for
+  // allocating and freeing |out| correctly.
+  void CopyTo(char *out) const {
+    memcpy(out, data_, size_);
+  }
 
   // Returns the extent data as a pointer to an object of type T, or nullptr if
   // the extent is smaller than sizeof(T).

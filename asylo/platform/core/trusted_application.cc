@@ -44,13 +44,21 @@
 #include "asylo/platform/posix/io/random_devices.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
+#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
+using asylo::primitives::Extent;
+using asylo::primitives::EntryHandler;
+using asylo::primitives::MakePrimitiveStatus;
 using asylo::primitives::PrimitiveStatus;
+using asylo::primitives::TrustedParameterStack;
+using asylo::primitives::TrustedPrimitives;
 using EnclaveState = ::asylo::TrustedApplication::State;
 using google::protobuf::RepeatedPtrField;
 
@@ -149,6 +157,117 @@ class StatusSerializer {
   size_t *output_len_;
   std::function<void *(size_t)> custom_allocator_;
 };
+
+// Validates that the address-range [|address|, |address| +|size|) is fully
+// contained outside of the enclave.
+Status VerifyUntrustedAddressRange(void *address, size_t size) {
+  if (!enc_is_outside_enclave(address, size)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+        "Unexpected reference to resource inside the enclave.");
+  }
+  return Status::OkStatus();
+}
+
+// Handler installed by the runtime to initialize the enclave.
+PrimitiveStatus Initialize(void *context, TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+  TrustedParameterStack::ExtentPtr input_extent = params->Pop();
+  TrustedParameterStack::ExtentPtr name_extent = params->Pop();
+
+  size_t input_len = input_extent->size();
+  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
+      VerifyUntrustedAddressRange(input_extent->data(), input_len)));
+  std::unique_ptr<char[]> input(new char[input_len]);
+  input_extent->CopyTo(input.get());
+
+  size_t name_len = name_extent->size();
+  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
+      VerifyUntrustedAddressRange(name_extent->data(), name_len)));
+  std::unique_ptr<char[]> name(new char[name_len]);
+  name_extent->CopyTo(name.get());
+
+  char *output = nullptr;
+  size_t output_len = 0;
+  int result = 0;
+  try {
+    result = asylo::__asylo_user_init(name.get(), /*config=*/input.get(),
+                                      /*config_len=*/input_len, &output,
+                                      &output_len);
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  if (!result) {
+    params->PushByCopy(Extent{output, output_len});
+  }
+  enc_untrusted_free(output);
+  return PrimitiveStatus(result);
+}
+
+// Handler installed by the runtime to invoke the enclave run entry point.
+PrimitiveStatus Run(void *context, TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+  auto input_extent = params->Pop();
+  size_t input_len = input_extent->size();
+  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
+      VerifyUntrustedAddressRange(input_extent->data(), input_len)));
+  std::unique_ptr<char[]> input(new char[input_len]);
+  input_extent->CopyTo(input.get());
+
+  char *output = nullptr;
+  size_t output_len = 0;
+  int result = 0;
+  try {
+    result = asylo::__asylo_user_run(input.get(), input_len, &output,
+                                     &output_len);
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  if (!result) {
+    params->PushByCopy(Extent{output, output_len});
+  }
+  enc_untrusted_free(output);
+  return PrimitiveStatus(result);
+}
+
+// Handler installed by the runtime to invoke the enclave finalization entry
+// point.
+PrimitiveStatus Finalize(void *context, TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+  auto input_extent = params->Pop();
+  size_t input_len = input_extent->size();
+  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
+      VerifyUntrustedAddressRange(input_extent->data(), input_len)));
+  std::unique_ptr<char[]> input(new char[input_len]);
+  input_extent->CopyTo(input.get());
+
+  char *output = nullptr;
+  size_t output_len = 0;
+  int result = 0;
+  try {
+    result = asylo::__asylo_user_fini(input.get(), input_len, &output,
+                                     &output_len);
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  if (!result) {
+    params->PushByCopy(Extent{output, output_len});
+  }
+  enc_untrusted_free(output);
+  return PrimitiveStatus(result);
+}
+
+// Handler installed by the runtime to invoke the enclave donate thread entry
+// point.
+PrimitiveStatus DonateThread(void *context, TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 0);
+  int result = 0;
+  try {
+    result = asylo::__asylo_threading_donate();
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  return PrimitiveStatus(result);
+}
 
 }  // namespace
 
@@ -578,6 +697,33 @@ int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
 
 // Implements the required enclave initialization function.
 extern "C" PrimitiveStatus asylo_enclave_init() {
+  // Register the enclave initialization entry handler.
+  EntryHandler init_handler{asylo::Initialize};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          asylo::primitives::kSelectorAsyloInit, init_handler).ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+  // Register the enclave run entry handler.
+  EntryHandler run_handler{asylo::Run};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          asylo::primitives::kSelectorAsyloRun, run_handler).ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+
+  // Register the enclave finalization entry handler.
+  EntryHandler finalize_handler{asylo::Finalize};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          asylo::primitives::kSelectorAsyloFini, finalize_handler).ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+
+  // Register the enclave donate thread entry handler.
+  EntryHandler donate_thread_handler{asylo::DonateThread};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          asylo::primitives::kSelectorAsyloDonateThread,
+          donate_thread_handler).ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
   return PrimitiveStatus::OkStatus();
 }
 

@@ -90,7 +90,6 @@ cc_library(
         ":shared_name",
         ":trusted_global_state",
         "//asylo:enclave_cc_proto",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/util:status",
     ],
 )
@@ -119,7 +118,9 @@ cc_library(
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/platform/primitives/util:status_conversions",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
