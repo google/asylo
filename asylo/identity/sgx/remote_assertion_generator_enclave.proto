@@ -1,0 +1,182 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.sgx;
+
+import "asylo/crypto/certificate.proto";
+import "asylo/crypto/keys.proto";
+import "asylo/enclave.proto";
+import "asylo/identity/sealed_secret.proto";
+import "asylo/identity/sgx/platform_provisioning.proto";
+
+extend EnclaveConfig {
+  optional RemoteAssertionGeneratorEnclaveConfig
+      remote_assertion_generator_enclave_config = 239071572;
+}
+
+extend EnclaveInput {
+  optional RemoteAssertionGeneratorEnclaveInput
+      remote_assertion_generator_enclave_input = 239071572;
+}
+
+extend EnclaveOutput {
+  optional RemoteAssertionGeneratorEnclaveOutput
+      remote_assertion_generator_enclave_output = 239071572;
+}
+
+// Configuration for the RemoteAssertionGenerator enclave.
+message RemoteAssertionGeneratorEnclaveConfig {
+  // Address on which the RemoteAssertionGenerator service should be run.
+  // Required.
+  optional string remote_assertion_generator_server_address = 1;
+}
+
+// An input message that instructs the RemoteAssertionGenerator enclave to start
+// a RemoteAssertionGenerator gRPC server.
+message StartServerRequestInput {
+  // If present, |sealed_secret| is unsealed and its content is passed to the
+  // RemoteAssertionGenerator gRPC server when it starts. Optional.
+  optional SealedSecret sealed_secret = 1;
+}
+
+// An output message indicates that the RemoteAssertionGenerator gRPC server
+// started successfully.
+message StartServerRequestOutput {}
+
+// An input message that is used to request an SGX hardware REPORT.
+//
+// The REPORT is generated against |pce_target_info| so that it is verifiable by
+// the Provisioning Certificate Enclave (PCE).
+message GeneratePceInfoSgxHardwareReportInput {
+  // An SGX TARGETINFO structure from the PCE running on the same platform.
+  // Required.
+  optional TargetInfoProto pce_target_info = 1;
+
+  // Used for generating the REPORTDATA of SGX hardware REPORT. Required.
+  optional AsymmetricEncryptionKeyProto ppid_encryption_key = 2;
+}
+
+// An output message containing an SGX hardware REPORT that is suitable for
+// PCE's GetPceInfo protocol.
+message GeneratePceInfoSgxHardwareReportOutput {
+  // An SGX hardware REPORT that is generated against |pce_target_info| in the
+  // corresponding input message. Required.
+  optional ReportProto report = 1;
+}
+
+message CertificateSigningRequest {
+  // The certificate authority that is responsible for interpreting |data|.
+  // Required.
+  optional string target_certificate_authority = 1;
+
+  // The raw bytes of an encoded certificate signing request. Required.
+  optional bytes data = 2;
+}
+
+// An input message that instructs the RemoteAssertionGenerator enclave to
+// generate an attestation key, an SGX hardware REPORT that is suitable for
+// PCE's GetPceInfo protocol, and any number of certificate signing requests
+// for certificate authorities that should certify the attestation public key.
+message GenerateKeyAndCsrRequestInput {
+  // An SGX TARGETINFO structure from the PCE running on the same platform.
+  // Required.
+  optional TargetInfoProto pce_target_info = 1;
+
+  // Certificate authorities for which a certificate signing request should be
+  // generated.
+  repeated string target_certificate_authorities = 2;
+}
+
+// An output message containing an attestation key, an SGX hardware REPORT that
+// is suitable for PCE's GetPceInfo protocol, and any number of certificate
+// signing requests that should certify the attestation public key.
+message GenerateKeyAndCsrRequestOutput {
+  // A SGX hardware REPORT that is generated against TARGETINFO from
+  // |pce_target_info| in the corresponding input message. Required.
+  optional ReportProto report = 1;
+
+  // Required. an attestation public key that needs to be certified.
+  optional AsymmetricSigningKeyProto public_key = 2;
+
+  // Certificate signing requests for certificate authorities that should
+  // certify |public_key|. Optional.
+  repeated CertificateSigningRequest certificate_signing_requests = 3;
+}
+
+// An input message that instructs the RemoteAssertionGenerator enclave to
+// update its certificates.
+//
+// During this operation, the RemoteAssertionGenerator gRPC server inside the
+// enclave is updated to use these certificates and the associated attestation
+// key.
+message UpdateCertsInput {
+  // Certificate chains associated with the RemoteAssertionGenerator enclave's
+  // attestation key.
+  repeated CertificateChain certificate_chains = 1;
+
+  // If the value is set to true, the RemoteAssertionGenerator enclave seals its
+  // attestation key and certificates and returns the sealed secret in the
+  // corresponding output message. Required.
+  optional bool output_sealed_secret = 2;
+}
+
+// An output message that indicates the attestation key and certificates used by
+// RemoteAssertionGenerator gRPC server have been updated successfully.
+message UpdateCertsOutput {
+  // Contains the attestation key and certificates currently in use by
+  // RemoteAssertionGenerator gRPC server. Optional.
+  optional SealedSecret sealed_secret = 1;
+}
+
+message RemoteAssertionGeneratorEnclaveSecret {
+  // The private part of the attestation key used by the
+  // RemoteAssertionGenerator enclave. Required.
+  optional AsymmetricSigningKeyProto attestation_key = 1;
+}
+
+message RemoteAssertionGeneratorEnclaveSecretAad {
+  // Certificate chains that certify a RemoteAssertionGenerator enclave's
+  // attestation key. Required.
+  repeated CertificateChain certificate_chains = 1;
+}
+
+// An input message of the RemoteAssertionGenerator enclave.
+//
+// A extension of [asylo.EnclaveInput].
+message RemoteAssertionGeneratorEnclaveInput {
+  oneof input {
+    StartServerRequestInput start_server_request_input = 1;
+    GeneratePceInfoSgxHardwareReportInput
+        generate_pce_info_sgx_hardware_report_input = 2;
+    GenerateKeyAndCsrRequestInput generate_key_and_csr_request_input = 3;
+    UpdateCertsInput update_certs_input = 4;
+  }
+}
+
+// An output message of the RemoteAssertionGenerator enclave.
+//
+// A extension of [asylo.EnclaveOutput].
+message RemoteAssertionGeneratorEnclaveOutput {
+  oneof output {
+    StartServerRequestOutput start_server_request_output = 1;
+    GeneratePceInfoSgxHardwareReportOutput
+        generate_pce_info_sgx_hardware_report_output = 2;
+    GenerateKeyAndCsrRequestOutput generate_key_and_csr_request_output = 3;
+    UpdateCertsOutput update_certs_output = 4;
+  }
+}

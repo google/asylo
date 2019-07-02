@@ -162,6 +162,20 @@ cc_proto_library(
     deps = [":sgx_remote_assertion_generator_proto"],
 )
 
+proto_library(
+    name = "remote_assertion_generator_enclave_proto",
+    srcs = ["remote_assertion_generator_enclave.proto"],
+    deps = [
+        ":platform_provisioning_proto",
+        ":remote_assertion_proto",
+        "//asylo:enclave_proto",
+        "//asylo/crypto:certificate_proto",
+        "//asylo/crypto:keys_proto",
+        "//asylo/identity:identity_proto",
+        "//asylo/identity:sealed_secret_proto",
+    ],
+)
+
 cc_grpc_library(
     name = "sgx_remote_assertion_generator",
     srcs = [":sgx_remote_assertion_generator_proto"],
