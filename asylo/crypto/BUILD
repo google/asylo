@@ -178,6 +178,52 @@ cc_test(
     ],
 )
 
+# Library of utilities for certificate chains.
+cc_library(
+    name = "certificate_chain_util",
+    srcs = ["certificate_chain_util.cc"],
+    hdrs = ["certificate_chain_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_cc_proto",
+        ":certificate_util_interface",
+        "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+# Test for certificate chain util.
+cc_test(
+    name = "certificate_chain_util_test",
+    srcs = ["certificate_chain_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_cc_proto",
+        ":certificate_chain_util",
+        ":certificate_util_interface",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Interface for performing operations on certificates.
+cc_library(
+    name = "certificate_util_interface",
+    hdrs = ["certificate_util_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_cc_proto",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+    ],
+)
+
 # Defines a C++ interface for hash functions.
 cc_library(
     name = "hash_interface",
