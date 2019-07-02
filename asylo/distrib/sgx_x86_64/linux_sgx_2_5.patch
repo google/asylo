@@ -3472,8 +3472,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":epid_inc",
++        ":external_ittnotify",
 +        ":ipc_common_proto_cc_cc_proto",
-+        ":ittnotify_lib",
 +        ":psw_switchless",
 +        ":rts_common",
 +        ":se_wrapper",
@@ -3485,7 +3485,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 +
 +cc_library(
-+    name = "ittnotify_lib",
++    name = "external_ittnotify",
 +    srcs = [
 +        "external/vtune/linux/include/legacy/ittnotify.h",
 +        "external/vtune/linux/sdk/src/ittnotify/disable_warnings.h",
@@ -3955,8 +3955,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":epid_inc",
++        ":external_ittnotify",
 +        ":ipc_common_proto_cc_cc_proto",
-+        ":ittnotify_lib",
 +        ":pse_types",
 +        ":psw_switchless",
 +        ":se_wrapper",
