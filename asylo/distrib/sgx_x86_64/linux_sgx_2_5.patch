@@ -3103,7 +3103,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1291 @@
+@@ -0,0 +1,1297 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3408,6 +3408,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ],
 +    hdrs = PSW_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/common/inc/internal/linux",
 +        "-Iexternal/linux_sgx/external/vtune/linux/include",
@@ -3434,7 +3435,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +        ":ipc_common_proto_cc_cc_proto",
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
@@ -3452,6 +3453,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    hdrs = URTS_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
 +        "-DElfParser=Elf64Parser",
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/external/vtune/linux/include",
 +        "-Iexternal/linux_sgx/external/vtune/linux/sdk/src/ittnotify",
 +        "-Iexternal/linux_sgx/psw/enclave_common",
@@ -3471,7 +3473,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +        ":external_ittnotify",
 +        ":ipc_common_proto_cc_cc_proto",
 +        ":psw_switchless",
@@ -3819,6 +3821,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    hdrs = PSW_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
 +        "-DSE_SIM=1",
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/common/inc/internal/linux",
 +        "-Iexternal/linux_sgx/external/rdrand",
@@ -3839,7 +3842,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +        ":ipc_common_proto_cc_cc_proto",
 +        ":pse_types",
 +        ":sim_common",
@@ -3855,6 +3858,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    name = "uae_service_select",
 +    hdrs = PSW_COMMON_HDRS,
 +    copts = PSW_COMMON_INCLUDES + [
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +    ],
 +    deps = [
@@ -3864,7 +3868,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":se_wrapper",
 +        ":untrusted_inc",
 +        ":untrusted_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +    ] + select({
 +        "//conditions:default": [":uae_service_sim"],
 +        ":sgx_hw": [":uae_service_hw"],
@@ -3928,6 +3932,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-DSE_SIM=1",
 +        "-DElfParser=Elf64Parser",
 +        "-Wa,--noexecstack",
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/external/vtune/linux/include",
 +        "-Iexternal/linux_sgx/external/vtune/linux/sdk/src/ittnotify",
 +        "-Iexternal/linux_sgx/common/inc/internal",
@@ -3954,7 +3959,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +        ":external_ittnotify",
 +        ":ipc_common_proto_cc_cc_proto",
 +        ":pse_types",
@@ -4057,6 +4062,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "common/inc/internal/xsave.h",
 +    ],
 +    copts = [
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        # common/inc/internal cannot be included via "includes" since
 +        # __cpuid gets overwritten with an incompatible definition from
 +        # the usual cpuid.h header file.
@@ -4068,7 +4074,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ],
 +    deps = [
 +        ":common_inc",
-+        ":epid_inc",
++        ":external_epid",
 +        "@boringssl//:crypto",
 +    ],
 +)
@@ -4099,6 +4105,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ],
 +    copts = [
 +        "-DSL_INSIDE_ENCLAVE",
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/psw/ae/inc/internal",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/common/inc",
@@ -4108,7 +4115,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +        ":untrusted_inc",
 +        "@boringssl//:crypto",
 +        "@sgx_dcap//:quote_wrapper_common",
@@ -4116,7 +4123,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 +
 +cc_library(
-+    name = "epid_inc",
++    name = "external_epid",
 +    hdrs = [
 +        "external/epid-sdk/epid/common/bitsupplier.h",
 +        "external/epid-sdk/epid/common/epiddefs.h",
@@ -4124,9 +4131,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "external/epid-sdk/epid/common/types.h",
 +        "external/epid-sdk/epid/member/api.h",
 +    ],
-+    includes = [
-+        "external/epid-sdk",
-+    ],
++    copts = ["-Iexternal/linux_sgx/external/epid-sdk"],
 +)
 +
 +# Target selecting either simulation or hardware mode untrusted include files
@@ -4228,6 +4233,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "common/inc/internal/tseal_migration_attr.h",
 +    ],
 +    copts = [
++        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/sdk/trts/",
 +        "-Iexternal/linux_sgx/psw/ae/inc/internal",  # bad layering for pse_types
@@ -4237,7 +4243,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    deps = [
 +        ":common_inc",
 +        ":common_inc_internal",
-+        ":epid_inc",
++        ":external_epid",
 +        ":pse_types",
 +        ":sgx_runtime_support",
 +        ":sgx_spin_lock",
