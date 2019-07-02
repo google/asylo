@@ -67,15 +67,6 @@ def asylo_testonly_deps():
             strip_prefix = "googletest-8ffb7e5c88b20a297a2e786c480556467496463b",
         )
 
-    # gflags
-    if not native.existing_rule("com_github_gflags_gflags"):
-        http_archive(
-            name = "com_github_gflags_gflags",
-            urls = ["https://github.com/gflags/gflags/archive/v2.2.2.tar.gz"],
-            sha256 = "34af2f15cf7367513b352bdcd2493ab14ce43692d2dcd9dfc499492966c64dcf",
-            strip_prefix = "gflags-2.2.2",
-        )
-
 def _instantiate_crosstool_impl(repository_ctx):
     """Instantiates the Asylo crosstool template with the installation path.
 
