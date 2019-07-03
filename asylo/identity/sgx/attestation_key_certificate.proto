@@ -1,0 +1,54 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.sgx;
+
+import "asylo/crypto/algorithms.proto";
+import "asylo/identity/sgx/platform_provisioning.proto";
+
+// A PCE-issued certificate for an attestation key. The certificate is signed
+// with the PCE's Provisioning Certification Key (PCK).
+//
+// The certificate can be verified by a particular PCK if the following is true:
+//   * The PCK public key verifies that |signature| is a valid signature over
+//     |report|.value.
+//   * The REPORTDATA field in |report|.value has the following format:
+//
+//       SHA256(|pce_sign_report_payload|) || 0^16 || UUID
+//
+//     where UUID is the 16-byte string "ASYLO SIGNREPORT"
+message AttestationKeyCertificate {
+  // An SGX hardware REPORT that is signed by the PCK. This REPORT is
+  // cryptographically-bound to |pce_sign_report_payload| as described above.
+  optional ReportProto report = 1;
+
+  // A serialized PceSignReportPayload message that describes the certified
+  // attestation key.
+  optional bytes pce_sign_report_payload = 2;
+
+  // A PCK signature over |report|.value.
+  optional bytes signature = 3;
+
+  // The signature scheme used to produce |signature|.
+  //
+  // Note that this value is not part of the signed payload and, as a result, is
+  // not considered trusted. A verifier should check that this value is
+  // consistent with the key type of the PCK and with the current PCE
+  // implementation.
+  optional SignatureScheme signature_scheme = 4;
+}

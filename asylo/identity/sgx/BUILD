@@ -77,6 +77,20 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "attestation_key_certificate_proto",
+    srcs = ["attestation_key_certificate.proto"],
+    deps = [
+        ":platform_provisioning_proto",
+        "//asylo/crypto:algorithms_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "attestation_key_certificate_cc_proto",
+    deps = [":attestation_key_certificate_proto"],
+)
+
+proto_library(
     name = "local_assertion_proto",
     srcs = ["local_assertion.proto"],
 )
