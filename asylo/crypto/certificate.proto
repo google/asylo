@@ -49,6 +49,10 @@ message Certificate {
 
     // An X.509 certificate encoded in PEM format (.pem file).
     X509_PEM = 2;
+
+    // A serialized sgx.AttestationKeyCertificate proto for an SGX attestation
+    // key.
+    SGX_ATTESTATION_KEY_CERTIFICATE = 3;
   }
 
   // The format of the certificate in |data|. Required.
