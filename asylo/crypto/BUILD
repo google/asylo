@@ -224,6 +224,39 @@ cc_library(
     ],
 )
 
+# X.509 certificate util.
+cc_library(
+    name = "x509_certificate_util",
+    srcs = ["x509_certificate_util.cc"],
+    hdrs = ["x509_certificate_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_cc_proto",
+        ":certificate_util_interface",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+# Tests for X.509 certificate util.
+cc_test(
+    name = "x509_certificate_util_test",
+    srcs = ["x509_certificate_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_cc_proto",
+        ":x509_certificate_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Defines a C++ interface for hash functions.
 cc_library(
     name = "hash_interface",
