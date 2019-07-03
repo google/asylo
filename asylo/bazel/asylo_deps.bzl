@@ -162,19 +162,19 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_google_protobuf"):
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-3.7.1",
-            urls = ["https://github.com/google/protobuf/archive/v3.7.1.tar.gz"],
-            sha256 = "f1748989842b46fa208b2a6e4e2785133cfcc3e4d43c17fecb023733f0f5443f",
+            strip_prefix = "protobuf-3.8.0",
+            urls = ["https://github.com/google/protobuf/archive/v3.8.0.tar.gz"],
+            sha256 = "03d2e5ef101aee4c2f6ddcf145d2a04926b9c19e7086944df3842b1b8502b783",
         )
 
     # gRPC
     if not native.existing_rule("com_github_grpc_grpc"):
         patch_repository(
             name = "com_github_grpc_grpc",
-            urls = ["https://github.com/grpc/grpc/archive/v1.21.0.tar.gz"],
-            sha256 = "8da7f32cc8978010d2060d740362748441b81a34e5425e108596d3fcd63a97f2",
-            patches = ["@com_google_asylo//asylo/distrib:grpc_1_21_0.patch"],
-            strip_prefix = "grpc-1.21.0",
+            urls = ["https://github.com/grpc/grpc/archive/v1.22.0.tar.gz"],
+            sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
+            patches = ["@com_google_asylo//asylo/distrib:grpc_1_22_0.patch"],
+            strip_prefix = "grpc-1.22.0",
         )
 
     # Google certificate transparency has a merkletree implementation.
@@ -239,24 +239,19 @@ cc_library(
         actual = "@six_archive//:six",
     )
 
-    # required by protobuf_python
+    # Required by protobuf_python
     native.bind(
         name = "python_headers",
         actual = "@com_google_protobuf//util/python:python_headers",
     )
 
-    # required by protobuf
+    # Required by protobuf and gRPC
     http_archive(
-        name = "net_zlib",
+        name = "zlib",
         build_file = "@com_google_protobuf//:third_party/zlib.BUILD",
         sha256 = "c3e5e9fdd5004dcb542feda5ee4f0ff0744628baf8ed2dd5d66f8ca1197cb1a1",
         strip_prefix = "zlib-1.2.11",
         urls = ["https://zlib.net/zlib-1.2.11.tar.gz"],
-    )
-
-    native.bind(
-        name = "zlib",
-        actual = "@net_zlib//:zlib",
     )
 
     # Jinja for code_generator.py
