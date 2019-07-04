@@ -135,6 +135,10 @@ ssize_t IOContextNative::Readv(const struct iovec *iov, int iovcnt) {
   return enc_untrusted_readv(host_fd_, iov, iovcnt, buf, size);
 }
 
+ssize_t IOContextNative::PRead(void *buf, size_t count, off_t offset) {
+  return enc_untrusted_pread(host_fd_, buf, count, offset);
+}
+
 int IOContextNative::SetSockOpt(int level, int option_name,
                                 const void *option_value,
                                 socklen_t option_len) {

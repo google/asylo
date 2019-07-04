@@ -873,6 +873,13 @@ ssize_t IOManager::Readv(int fd, const struct iovec *iov, int iovcnt) {
   });
 }
 
+ssize_t IOManager::PRead(int fd, void *buf, size_t count, off_t offset) {
+  return CallWithContext(
+      fd, [buf, count, offset](std::shared_ptr<IOContext> context) {
+        return context->PRead(buf, count, offset);
+      });
+}
+
 mode_t IOManager::Umask(mode_t mask) { return enc_untrusted_umask(mask); }
 
 int IOManager::GetRLimit(int resource, struct rlimit *rlim) {

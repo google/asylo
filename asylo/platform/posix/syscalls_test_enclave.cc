@@ -119,6 +119,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunWritevTest(test_input.path_name());
     } else if (test_input.test_target() == "readv") {
       return RunReadvTest(test_input.path_name());
+    } else if (test_input.test_target() == "pread") {
+      return RunPReadTest(test_input.path_name());
     } else if (test_input.test_target() == "rlimit nofile") {
       return RunRlimitNoFileTest(test_input.path_name());
     } else if (test_input.test_target() == "rlimit low nofile") {
@@ -992,6 +994,37 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(error::GoogleError::INTERNAL,
                     "Messages from readv do not match the expected message.");
     }
+    return Status::OkStatus();
+  }
+
+  Status RunPReadTest(const std::string &path) {
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
+    platform::storage::FdCloser fd_closer(fd);
+    const std::string message1 = "First pread message";
+    const std::string message2 = "Second pread message";
+    const std::string message = message1 + message2;
+    ssize_t rc = write(fd, message.c_str(), message.size());
+    if (rc != message.size()) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Bytes written to file does not match message size");
+    }
+
+    char buf[message2.size()];
+    ssize_t bytes_read = pread(fd, buf, message2.size(), message1.size());
+    if (bytes_read != message2.size()) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("pread returns: ", bytes_read,
+                       " does not match message size: ", message2.size()));
+    }
+    if (memcmp(buf, message2.data(), message2.size())) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Message from pread: ", buf,
+                       " does not match expected: ", message2.data()));
+    }
+
     return Status::OkStatus();
   }
 

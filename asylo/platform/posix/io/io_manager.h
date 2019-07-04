@@ -146,6 +146,11 @@ class IOManager {
       return -1;
     }
 
+    virtual ssize_t PRead(void *buf, size_t count, off_t offset) {
+      errno = ENOSYS;
+      return -1;
+    }
+
     // Implements setsockopt.
     virtual int SetSockOpt(int level, int option_name, const void *option_value,
                            socklen_t option_len) {
@@ -598,6 +603,9 @@ class IOManager {
 
   // Implements readv(2).
   ssize_t Readv(int fd, const struct iovec *iov, int iovcnt);
+
+  // Implements pread(2).
+  ssize_t PRead(int fd, void *buf, size_t count, off_t offset);
 
   // Implements umask(2).
   mode_t Umask(mode_t mask);

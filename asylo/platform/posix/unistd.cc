@@ -251,6 +251,10 @@ pid_t vfork() {
   return ret;
 }
 
+ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
+  return IOManager::GetInstance().PRead(fd, buf, count, offset);
+}
+
 // The functions below are prefixed with |enclave_|, as they are plumbed in from
 // newlib.
 int enclave_getpid() {

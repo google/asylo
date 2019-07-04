@@ -46,6 +46,7 @@ class IOContextNative : public IOManager::IOContext {
   int FChMod(mode_t mode) override;
   ssize_t Writev(const struct iovec *iov, int iovcnt) override;
   ssize_t Readv(const struct iovec *iov, int iovcnt) override;
+  ssize_t PRead(void *buf, size_t count, off_t offset) override;
   int SetSockOpt(int level, int option_name, const void *option_value,
                  socklen_t option_len) override;
   int Connect(const struct sockaddr *addr, socklen_t addrlen) override;

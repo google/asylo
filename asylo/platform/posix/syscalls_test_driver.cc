@@ -955,6 +955,15 @@ TEST_F(SyscallsTest, Readv) {
       IsOk());
 }
 
+// Tests pread() by write a message to a file, and then read it with an offset
+// by pread, compare the results.
+TEST_F(SyscallsTest, PRead) {
+  EXPECT_THAT(
+      RunSyscallInsideEnclave(
+          "pread", absl::GetFlag(FLAGS_test_tmpdir) + "/pread", nullptr),
+      IsOk());
+}
+
 // Tests getrlimit() and setrlimit() with RLIMIT_NOFILE by setting the limit and
 // getting it to compare the result.
 TEST_F(SyscallsTest, RlimitNoFile) {
