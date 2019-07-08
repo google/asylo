@@ -184,6 +184,7 @@ cc_library(
     srcs = ["certificate_chain_util.cc"],
     hdrs = ["certificate_chain_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":certificate_cc_proto",
         ":certificate_util_interface",
@@ -217,6 +218,7 @@ cc_library(
     name = "certificate_util_interface",
     hdrs = ["certificate_util_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":certificate_cc_proto",
         "//asylo/crypto/util:byte_container_view",
@@ -230,6 +232,7 @@ cc_library(
     srcs = ["x509_certificate_util.cc"],
     hdrs = ["x509_certificate_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":certificate_cc_proto",
         ":certificate_util_interface",
