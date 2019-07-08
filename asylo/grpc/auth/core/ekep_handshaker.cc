@@ -86,7 +86,7 @@ EkepHandshaker::Result EkepHandshaker::NextHandshakeStep(
     if (incoming_bytes_size != 0) {
       // The peer sent bytes before the handshake started.
       AbortHandshake(
-          Status(Abort_ErrorCode_BAD_MESSAGE,
+          Status(Abort::BAD_MESSAGE,
                  "Received bytes from peer before handshake was started"),
           outgoing_bytes);
       return Result::ABORTED;
@@ -114,9 +114,8 @@ EkepHandshaker::Result EkepHandshaker::NextHandshakeStep(
     // there are remaining bytes left over. This is not allowed at any step in
     // the protocol.
     outgoing_bytes->clear();
-    AbortHandshake(
-        Status(Abort_ErrorCode_BAD_MESSAGE, "Received unexpected bytes"),
-        outgoing_bytes);
+    AbortHandshake(Status(Abort::BAD_MESSAGE, "Received unexpected bytes"),
+                   outgoing_bytes);
     return Result::ABORTED;
   }
 
@@ -132,7 +131,7 @@ Status EkepHandshaker::EncodeFrame(
   if (message_size > max_frame_size_ ||
       sizeof(message_type) + message_size > max_frame_size_) {
     return Status(
-        Abort_ErrorCode_INTERNAL_ERROR,
+        Abort::INTERNAL_ERROR,
         absl::StrCat(
             "Attempting to create frame that exceeds max frame size of ",
             max_frame_size_));
@@ -140,7 +139,7 @@ Status EkepHandshaker::EncodeFrame(
 
   if (message_type == HandshakeMessageType::UNKNOWN_HANDSHAKE_MESSAGE) {
     return Status(
-        Abort_ErrorCode_INTERNAL_ERROR,
+        Abort::INTERNAL_ERROR,
         "Cannot create a frame with message type UNKNOWN_HANDSHAKE_MESSAGE");
   }
 
@@ -165,26 +164,25 @@ Status EkepHandshaker::ParseFrameHeader(
   // Read in the frame size.
   uint32_t frame_size;
   if (!encoded_frame.ReadLittleEndian32(&frame_size)) {
-    return Status(Abort_ErrorCode_BAD_MESSAGE, "Failed to read frame size");
+    return Status(Abort::BAD_MESSAGE, "Failed to read frame size");
   }
   if (frame_size < sizeof(*message_type) || frame_size > max_frame_size_) {
-    return Status(Abort_ErrorCode_BAD_MESSAGE,
+    return Status(Abort::BAD_MESSAGE,
                   absl::StrCat("Invalid frame size: ", frame_size));
   }
 
   // Read in the message type.
   uint32_t message_type_encoded;
   if (!encoded_frame.ReadLittleEndian32(&message_type_encoded)) {
-    return Status(Abort_ErrorCode_BAD_MESSAGE,
-                  "Failed to read frame message type");
+    return Status(Abort::BAD_MESSAGE, "Failed to read frame message type");
   }
   if (!HandshakeMessageType_IsValid(message_type_encoded)) {
     return Status(
-        Abort_ErrorCode_BAD_MESSAGE,
+        Abort::BAD_MESSAGE,
         absl::StrCat("Invalid frame message type: ", message_type_encoded));
   }
   if (message_type_encoded == HandshakeMessageType::UNKNOWN_HANDSHAKE_MESSAGE) {
-    return Status(Abort_ErrorCode_BAD_MESSAGE,
+    return Status(Abort::BAD_MESSAGE,
                   "Received frame with UNKNOWN_HANDSHAKE_MESSAGE type");
   }
 
@@ -197,7 +195,7 @@ Status EkepHandshaker::ParseFrameMessage(uint32_t message_size,
                                          google::protobuf::io::ZeroCopyInputStream *input,
                                          google::protobuf::Message *message) const {
   if (!message->ParseFromBoundedZeroCopyStream(input, message_size)) {
-    return Status(Abort_ErrorCode_DESERIALIZATION_FAILED,
+    return Status(Abort::DESERIALIZATION_FAILED,
                   "Failed to deserialize handshake message");
   }
   return Status::OkStatus();
@@ -271,8 +269,7 @@ EkepHandshaker::Result EkepHandshaker::DecodeAndHandleFrame(
 
   if ((message_type != GetExpectedMessageType()) && (message_type != ABORT)) {
     // Don't bother decoding an unexpected message, unless it's an ABORT.
-    AbortHandshake(Status(Abort_ErrorCode_PROTOCOL_ERROR, "Unexpected message"),
-                   output);
+    AbortHandshake(Status(Abort::PROTOCOL_ERROR, "Unexpected message"), output);
     return Result::ABORTED;
   }
 
@@ -358,8 +355,7 @@ Status EkepHandshaker::GetTranscriptHash(std::string *transcript_hash) {
   bool result = transcript_.Hash(transcript_hash);
   if (!result) {
     LOG(ERROR) << "Transcript hash function is not set";
-    return Status(Abort_ErrorCode_INTERNAL_ERROR,
-                  "Unable to retrieve transcript hash");
+    return Status(Abort::INTERNAL_ERROR, "Unable to retrieve transcript hash");
   }
   return Status::OkStatus();
 }

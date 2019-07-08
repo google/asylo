@@ -137,8 +137,8 @@ ClientEkepHandshaker::Result ClientEkepHandshaker::HandleHandshakeMessage(
     default:
       // This should never happen because the message_type should be verified
       // before calling this method.
-      status = Status(Abort_ErrorCode_BAD_MESSAGE,
-                      "Unrecognized handshake message type");
+      status =
+          Status(Abort::BAD_MESSAGE, "Unrecognized handshake message type");
   }
   if (!status.ok()) {
     AbortHandshake(status, output);
@@ -181,7 +181,7 @@ Status ClientEkepHandshaker::HandleServerPrecommit(
   if (!server_precommit_ptr) {
     LOG(QFATAL) << "HandleServerPrecommit() was passed a non-ServerPrecommit "
                 << "handshake message";
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
   const ServerPrecommit &server_precommit = *server_precommit_ptr;
 
@@ -189,13 +189,13 @@ Status ClientEkepHandshaker::HandleServerPrecommit(
       server_precommit.selected_ekep_version().name();
   if (!SetSelectedEkepVersion(ekep_version)) {
     return Status(
-        Abort_ErrorCode_PROTOCOL_ERROR,
+        Abort::PROTOCOL_ERROR,
         absl::StrCat("Selected EKEP version is invalid: ", ekep_version));
   }
 
   HandshakeCipher cipher_suite = server_precommit.selected_cipher_suite();
   if (!SetSelectedCipherSuite(cipher_suite)) {
-    return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+    return Status(Abort::PROTOCOL_ERROR,
                   absl::StrCat("Selected cipher suite is invalid: ",
                                HandshakeCipher_Name(cipher_suite)));
   }
@@ -208,20 +208,19 @@ Status ClientEkepHandshaker::HandleServerPrecommit(
     default:
       LOG(ERROR) << "Client handshaker has bad cipher suite configuration"
                  << HandshakeCipher_Name(selected_cipher_suite_);
-      return Status(Abort_ErrorCode_INTERNAL_ERROR,
-                    "Error using selected cipher suite");
+      return Status(Abort::INTERNAL_ERROR, "Error using selected cipher suite");
   }
 
   RecordProtocol record_protocol = server_precommit.selected_record_protocol();
   if (!SetSelectedRecordProtocol(record_protocol)) {
-    return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+    return Status(Abort::PROTOCOL_ERROR,
                   absl::StrCat("Selected record protocol is invalid: ",
                                RecordProtocol_Name(record_protocol)));
   }
 
   // Verify that the server sent an adequately-sized challenge.
   if (server_precommit.challenge().size() != kEkepChallengeSize) {
-    return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+    return Status(Abort::PROTOCOL_ERROR,
                   absl::StrCat("Challenge has incorrect size: ",
                                server_precommit.challenge().size()));
   }
@@ -229,13 +228,13 @@ Status ClientEkepHandshaker::HandleServerPrecommit(
   // Verify that the server requested a non-empty subset of the assertions that
   // were offered by the client.
   if (server_precommit.server_requests().empty()) {
-    return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+    return Status(Abort::PROTOCOL_ERROR,
                   "Server did not request any assertions");
   }
   for (const AssertionRequest &request : server_precommit.server_requests()) {
     if (FindAssertionDescription(self_assertions_, request.description()) ==
         self_assertions_.cend()) {
-      return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+      return Status(Abort::PROTOCOL_ERROR,
                     "Server requested an assertion that was not offered by the "
                     "client");
     }
@@ -244,14 +243,13 @@ Status ClientEkepHandshaker::HandleServerPrecommit(
   // Verify that the server offered a non-empty subset of the assertions that
   // were requested by the client.
   if (server_precommit.server_offers().empty()) {
-    return Status(Abort_ErrorCode_PROTOCOL_ERROR,
-                  "Server did not offer any assertions");
+    return Status(Abort::PROTOCOL_ERROR, "Server did not offer any assertions");
   }
   for (const AssertionOffer &offer : server_precommit.server_offers()) {
     if (FindAssertionDescription(accepted_peer_assertions_,
                                  offer.description()) ==
         accepted_peer_assertions_.cend()) {
-      return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+      return Status(Abort::PROTOCOL_ERROR,
                     "Server offered an assertion that was not requested by the "
                     "client");
     }
@@ -276,7 +274,7 @@ Status ClientEkepHandshaker::HandleServerId(const google::protobuf::Message &mes
   if (!server_id_ptr) {
     LOG(QFATAL) << "HandleServerId() was passed a non-ServerId handshake "
                 << "message";
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
   const ServerId &server_id = *server_id_ptr;
 
@@ -286,14 +284,14 @@ Status ClientEkepHandshaker::HandleServerId(const google::protobuf::Message &mes
   std::string ekep_context;
   if (!MakeEkepContextBlob(server_id.dh_public_key(),
                            server_assertion_transcript_, &ekep_context)) {
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Failed to generate context");
+    return Status(Abort::INTERNAL_ERROR, "Failed to generate context");
   }
 
   for (const Assertion &assertion : server_id.assertions()) {
     auto desc_it = FindAssertionDescription(expected_peer_assertions_,
                                             assertion.description());
     if (desc_it == expected_peer_assertions_.cend()) {
-      return Status(Abort_ErrorCode_BAD_ASSERTION,
+      return Status(Abort::BAD_ASSERTION,
                     "Server provided an assertion that was not previously "
                     "offered");
     }
@@ -307,8 +305,7 @@ Status ClientEkepHandshaker::HandleServerId(const google::protobuf::Message &mes
             ->Verify(/*user_data=*/ekep_context, assertion, &identity);
     if (!status.ok()) {
       LOG(ERROR) << "Assertion could not be verified: " << status;
-      return Status(Abort_ErrorCode_BAD_ASSERTION,
-                    "Assertion could not be verified");
+      return Status(Abort::BAD_ASSERTION, "Assertion could not be verified");
     }
     AddPeerIdentity(identity);
     expected_peer_assertions_.erase(desc_it);
@@ -316,7 +313,7 @@ Status ClientEkepHandshaker::HandleServerId(const google::protobuf::Message &mes
 
   if (!expected_peer_assertions_.empty()) {
     // The server did not provide all the expected assertions.
-    return Status(Abort_ErrorCode_BAD_ASSERTION,
+    return Status(Abort::BAD_ASSERTION,
                   "Server did not provide all expected assertions");
   }
 
@@ -340,7 +337,7 @@ Status ClientEkepHandshaker::HandleServerFinish(const google::protobuf::Message 
   if (!server_finish_ptr) {
     LOG(QFATAL) << "HandleServerFinish() was passed a non-ServerFinish "
                 << "handshake message";
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
   const ServerFinish &server_finish = *server_finish_ptr;
 
@@ -358,7 +355,7 @@ Status ClientEkepHandshaker::HandleServerFinish(const google::protobuf::Message 
   // Validate the server's handshake authenticator value.
   if (!CheckMacEquality(expected_server_handshake_authenticator,
                         actual_server_handshake_authenticator)) {
-    return Status(Abort_ErrorCode_BAD_AUTHENTICATOR,
+    return Status(Abort::BAD_AUTHENTICATOR,
                   "Server handshake authenticator value is incorrect");
   }
 
@@ -389,7 +386,7 @@ Status ClientEkepHandshaker::WriteClientPrecommit(std::string *output) {
 
   std::vector<uint8_t> challenge(kEkepChallengeSize);
   if (RAND_bytes(challenge.data(), kEkepChallengeSize) != 1) {
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
   client_precommit.set_challenge(challenge.data(), challenge.size());
 
@@ -402,8 +399,7 @@ Status ClientEkepHandshaker::WriteClientPrecommit(std::string *output) {
             ->CreateAssertionOffer(client_precommit.add_client_offers());
     if (!status.ok()) {
       LOG(ERROR) << "Failed to create assertion offer: " << status;
-      return Status(Abort_ErrorCode_INTERNAL_ERROR,
-                    "Failed to create assertion offer");
+      return Status(Abort::INTERNAL_ERROR, "Failed to create assertion offer");
     }
   }
 
@@ -416,7 +412,7 @@ Status ClientEkepHandshaker::WriteClientPrecommit(std::string *output) {
             ->CreateAssertionRequest(client_precommit.add_client_requests());
     if (!status.ok()) {
       LOG(ERROR) << "Failed to create assertion request: " << status;
-      return Status(Abort_ErrorCode_INTERNAL_ERROR,
+      return Status(Abort::INTERNAL_ERROR,
                     "Failed to create assertion request");
     }
   }
@@ -440,7 +436,7 @@ Status ClientEkepHandshaker::WriteClientId(
       break;
     default:
       LOG(ERROR) << "Client handshaker has bad cipher suite configuration";
-      return Status(Abort_ErrorCode_INTERNAL_ERROR,
+      return Status(Abort::INTERNAL_ERROR,
                     "Unable to use selected cipher suite");
   }
 
@@ -461,8 +457,7 @@ Status ClientEkepHandshaker::WriteClientId(
   // a hash of the current transcript and the client's public key.
   std::string ekep_context;
   if (!MakeEkepContextBlob(public_key, transcript_hash, &ekep_context)) {
-    return Status(Abort_ErrorCode_INTERNAL_ERROR,
-                  "Assertion generation failed");
+    return Status(Abort::INTERNAL_ERROR, "Assertion generation failed");
   }
 
   for (auto it = requests_first; it != requests_last; ++it) {
@@ -476,8 +471,7 @@ Status ClientEkepHandshaker::WriteClientId(
             ->Generate(ekep_context, request, client_id.add_assertions());
     if (!status.ok()) {
       LOG(ERROR) << "Assertion generation failed: " << status;
-      return Status(Abort_ErrorCode_INTERNAL_ERROR,
-                    "Assertion generation failed");
+      return Status(Abort::INTERNAL_ERROR, "Assertion generation failed");
     }
   }
 

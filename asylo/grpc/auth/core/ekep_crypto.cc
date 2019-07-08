@@ -64,7 +64,7 @@ Status Hmac(const HandshakeCipher &ciphersuite, ByteContainerView key,
       break;
     default:
       return Status(
-          Abort_ErrorCode_BAD_HANDSHAKE_CIPHER,
+          Abort::BAD_HANDSHAKE_CIPHER,
           "Ciphersuite not supported: " + HandshakeCipher_Name(ciphersuite));
   }
 
@@ -72,7 +72,7 @@ Status Hmac(const HandshakeCipher &ciphersuite, ByteContainerView key,
   if (!HMAC(digest, key.data(), key.size(), authenticated_text.data(),
             authenticated_text.size(), mac->data(), &mac_size)) {
     LOG(ERROR) << "HMAC failed: " << BsslLastErrorString();
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
   return Status::OkStatus();
 }
@@ -94,12 +94,12 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
     case CURVE25519_SHA256:
       // Sanity check the arguments.
       if (peer_dh_public_key.size() != X25519_PUBLIC_VALUE_LEN) {
-        return Status(Abort_ErrorCode_PROTOCOL_ERROR,
+        return Status(Abort::PROTOCOL_ERROR,
                       absl::StrCat("Public parameter has incorrect size: ",
                                    peer_dh_public_key.size()));
       }
       if (self_dh_private_key.size() != X25519_PRIVATE_KEY_LEN) {
-        return Status(Abort_ErrorCode_INTERNAL_ERROR,
+        return Status(Abort::INTERNAL_ERROR,
                       absl::StrCat("Private parameter has incorrect size: ",
                                    self_dh_private_key.size()));
       }
@@ -109,7 +109,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
       if (!X25519(shared_secret.data(), self_dh_private_key.data(),
                   peer_dh_public_key.data())) {
         LOG(ERROR) << "X25519 failed: " << BsslLastErrorString();
-        return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+        return Status(Abort::INTERNAL_ERROR, "Internal error");
       }
 
       // Initialize a SHA256-digest for HKDF.
@@ -117,7 +117,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
       break;
     default:
       return Status(
-          Abort_ErrorCode_BAD_HANDSHAKE_CIPHER,
+          Abort::BAD_HANDSHAKE_CIPHER,
           "Ciphersuite not supported: " + HandshakeCipher_Name(ciphersuite));
   }
 
@@ -130,7 +130,7 @@ Status DeriveSecrets(const HandshakeCipher &ciphersuite,
             reinterpret_cast<const uint8_t *>(salt.data()), salt.size(),
             transcript_hash.data(), transcript_hash.size())) {
     LOG(ERROR) << "HKDF failed: " << BsslLastErrorString();
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
 
   // Copy the master secret.
@@ -157,7 +157,7 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
       break;
     default:
       return Status(
-          Abort_ErrorCode_BAD_HANDSHAKE_CIPHER,
+          Abort::BAD_HANDSHAKE_CIPHER,
           "Ciphersuite not supported: " + HandshakeCipher_Name(ciphersuite));
   }
 
@@ -176,7 +176,7 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
       RAND_bytes(record_protocol_key->data(), record_protocol_key->size());
       break;
     default:
-      return Status(Abort_ErrorCode_BAD_RECORD_PROTOCOL,
+      return Status(Abort::BAD_RECORD_PROTOCOL,
                     "Record protocol not supported " +
                         RecordProtocol_Name(record_protocol));
   }
@@ -187,7 +187,7 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
             reinterpret_cast<const uint8_t *>(salt.data()), salt.size(),
             transcript_hash.data(), transcript_hash.size())) {
     LOG(ERROR) << "HKDF failed: " << BsslLastErrorString();
-    return Status(Abort_ErrorCode_INTERNAL_ERROR, "Internal error");
+    return Status(Abort::INTERNAL_ERROR, "Internal error");
   }
   return Status::OkStatus();
 }

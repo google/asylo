@@ -38,31 +38,26 @@ EkepErrorSpace::EkepErrorSpace()
   // EKEP Abort errors are propagated via protocol messages. They should not be
   // used outside of the core EKEP implementation. Consequently, each Abort
   // error code is mapped to the INTERNAL code from the canonical error space.
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_MESSAGE,
-                         "Bad message received from peer",
+  AddTranslationMapEntry(Abort::BAD_MESSAGE, "Bad message received from peer",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_DESERIALIZATION_FAILED,
+  AddTranslationMapEntry(Abort::DESERIALIZATION_FAILED,
                          "Frame deserialization failed",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_PROTOCOL_VERSION,
-                         "Bad protocol version",
+  AddTranslationMapEntry(Abort::BAD_PROTOCOL_VERSION, "Bad protocol version",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_HANDSHAKE_CIPHER,
-                         "Bad ciphersuite",
+  AddTranslationMapEntry(Abort::BAD_HANDSHAKE_CIPHER, "Bad ciphersuite",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_RECORD_PROTOCOL,
-                         "Bad record protocol",
+  AddTranslationMapEntry(Abort::BAD_RECORD_PROTOCOL, "Bad record protocol",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_AUTHENTICATOR, "Bad authenticator",
+  AddTranslationMapEntry(Abort::BAD_AUTHENTICATOR, "Bad authenticator",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_ASSERTION_TYPE,
-                         "Bad assertion type",
+  AddTranslationMapEntry(Abort::BAD_ASSERTION_TYPE, "Bad assertion type",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_BAD_ASSERTION, "Bad assertion",
+  AddTranslationMapEntry(Abort::BAD_ASSERTION, "Bad assertion",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_PROTOCOL_ERROR, "Protocol error",
+  AddTranslationMapEntry(Abort::PROTOCOL_ERROR, "Protocol error",
                          asylo::error::GoogleError::INTERNAL);
-  AddTranslationMapEntry(Abort_ErrorCode_INTERNAL_ERROR, "Internal error",
+  AddTranslationMapEntry(Abort::INTERNAL_ERROR, "Internal error",
                          asylo::error::GoogleError::INTERNAL);
 }
 
