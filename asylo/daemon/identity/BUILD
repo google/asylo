@@ -16,19 +16,8 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load(
-    "//asylo/bazel:proto.bzl",
-    "asylo_grpc_proto_library",
-)
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-
-# Service definition for the attestation-domain service.
-asylo_grpc_proto_library(
-    name = "attestation_domain_grpc_proto",
-    srcs = ["attestation_domain_service.proto"],
-    generate_mocks = True,
-)
 
 proto_library(
     name = "attestation_domain_service_proto",

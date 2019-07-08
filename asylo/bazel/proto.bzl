@@ -15,58 +15,8 @@
 #
 
 load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
-load("@com_github_grpc_grpc//bazel:grpc_build_system.bzl", "grpc_proto_library")
 
 """Generates proto targets in various languages."""
-
-def asylo_grpc_proto_library(
-        name,
-        srcs = [],
-        deps = [],
-        well_known_protos = False,
-        generate_mocks = False,
-        **kwargs):
-    """Generates proto targets in various languages for use by gRPC.
-
-    This macro produces two targets. The given name is for cc_library deps and
-    a derived name is for asylo_[grpc_]proto_library deps.
-
-    Args:
-      name: Name for cc_grpc_library that must be of the form
-            base_name + "_grpc_proto" for use in cc_library dependencies. The
-            macro will also produce a proto_library named base_name + "_proto"
-            for use in proto_library dependencies.
-      srcs: Same as proto_library srcs.
-      deps: Same as proto_library deps.
-      well_known_protos: Same as grpc_proto_library's well_known_protos.
-      generate_mocks: Same as grpc_proto_library's generate_mocks.
-      **kwargs: proto_library arguments.
-    """
-    if not name.endswith("_grpc_proto"):
-        fail("Expected asylo_grpc_proto_library name to end with '_grpc_proto'.")
-    base_name = name[0:-len("_grpc_proto")]
-    proto_name = base_name + "_proto"
-    tags = kwargs.pop("tags", [])
-
-    grpc_proto_library(
-        name = name,
-        srcs = srcs,
-        deps = deps,
-        has_services = True,
-        generate_mocks = generate_mocks,
-        well_known_protos = well_known_protos,
-        use_external = True,
-        **kwargs
-    )
-    native.proto_library(
-        name = proto_name,
-        deprecation = "asylo_grpc_proto_library is deprecated in favor of using " +
-                      "proto_library, cc_proto_library, and cc_grpc_library explicitly",
-        srcs = srcs,
-        deps = deps,
-        tags = tags,
-        **kwargs
-    )
 
 def asylo_py_proto_library(name, srcs = [], deps = [], **kwargs):
     """Generates proto targets for Python.

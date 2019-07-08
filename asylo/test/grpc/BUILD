@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_test",
@@ -21,7 +22,6 @@ load(
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
-load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 licenses(["notice"])  # Apache v2.0
 
