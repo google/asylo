@@ -35,4 +35,12 @@ void freeaddrinfo(struct addrinfo *res) {
   return enc_untrusted_freeaddrinfo(res);
 }
 
+struct servent *getservbyname(const char *name, const char *proto) {
+  abort();
+}
+
+struct servent *getservbyport(int port, const char *proto) {
+  abort();
+}
+
 }  // extern "C"

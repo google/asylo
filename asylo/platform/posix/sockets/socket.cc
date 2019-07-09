@@ -191,10 +191,6 @@ ssize_t recvfrom(int socket, void *buffer, size_t length, int flags,
                                            address, address_len);
 }
 
-struct servent *getservbyport(int port, const char *proto) {
-  abort();
-}
-
 int socketpair(int domain, int type, int protocol, int sv[2]) { abort(); }
 
 }  // extern "C"

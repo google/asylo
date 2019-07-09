@@ -80,6 +80,7 @@ struct servent {
 };
 
 // No implementation provided
+extern struct servent *getservbyname(const char *name, const char *proto);
 extern struct servent *getservbyport(int port, const char *proto);
 
 #ifdef __cplusplus
