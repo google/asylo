@@ -45,7 +45,6 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/arch:fork_cc_proto",
         "//asylo/platform/common:time_util",
-        "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
@@ -54,6 +53,26 @@ cc_library(
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
         "@com_google_absl//absl/types:variant",
+    ],
+)
+
+# Default implementation of EnclaveClient.
+cc_library(
+    name = "generic_enclave_client",
+    srcs = [
+        "generic_enclave_client.cc",
+    ],
+    hdrs = [
+        "generic_enclave_client.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":untrusted_core",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
     ],
 )
 
