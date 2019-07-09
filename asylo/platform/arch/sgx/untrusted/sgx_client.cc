@@ -301,8 +301,6 @@ Status SgxClient::EnterAndTransferSecureSnapshotKey(
   return status;
 }
 
-Status SgxClient::DestroyEnclave() { return primitive_sgx_client_->Destroy(); }
-
 bool SgxClient::IsTcsActive() {
   return (sgx_is_tcs_active(primitive_sgx_client_->GetEnclaveId()) != 0);
 }

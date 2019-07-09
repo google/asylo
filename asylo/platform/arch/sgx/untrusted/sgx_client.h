@@ -70,7 +70,6 @@ class SgxClient : public GenericEnclaveClient {
   friend class SgxEmbeddedLoader;
 
   Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
-  Status DestroyEnclave() override;
 
   // Primitive SGX client.
   std::shared_ptr<primitives::SgxEnclaveClient> primitive_sgx_client_;

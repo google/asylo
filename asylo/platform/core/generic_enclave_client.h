@@ -42,6 +42,7 @@ class GenericEnclaveClient : public EnclaveClient {
   Status EnterAndInitialize(const EnclaveConfig &config) override;
   Status EnterAndFinalize(const EnclaveFinal &final_input) override;
   Status EnterAndDonateThread() override;
+  Status DestroyEnclave() override;
 
   // Enters the enclave and invokes the initialization entry-point. If the ecall
   // fails, or the enclave does not return any output, returns a non-OK status.

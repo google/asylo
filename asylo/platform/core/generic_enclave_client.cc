@@ -174,4 +174,9 @@ Status GenericEnclaveClient::EnterAndDonateThread() {
   }
   return status;
 }
+
+Status GenericEnclaveClient::DestroyEnclave() {
+  return primitive_client_->Destroy();
+}
+
 }  // namespace asylo
