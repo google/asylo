@@ -339,3 +339,41 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+proto_library(
+    name = "in6_macro_test_proto",
+    srcs = ["in6_macro_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
+cc_proto_library(
+    name = "in6_macro_test_cc_proto",
+    deps = ["in6_macro_test_proto"],
+)
+
+sgx_enclave(
+    name = "in6_macro_test.so",
+    srcs = ["in6_macro_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":in6_macro_test_cc_proto",
+        "//asylo:enclave_runtime",
+        "//asylo/util:status",
+    ],
+)
+
+sgx_enclave_test(
+    name = "in6_macro_test",
+    srcs = ["in6_macro_test_loader.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": ":in6_macro_test.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        ":in6_macro_test_cc_proto",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)

@@ -75,11 +75,61 @@ extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 } \
   }
 
-#define IN6_IS_ADDR_V4MAPPED(a)                                              \
-  ((((const uint32_t *)(a))[0] == 0) && (((const uint32_t *)(a))[1] == 0) && \
-   (((const uint32_t *)(a))[2] == htonl(0xffff)))
+// Macros that test for special IPv6 addresses.
+// https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
+// https://www.iana.org/assignments/iana-ipv6-special-registry/iana-ipv6-special-registry.xhtml
+// https://www.iana.org/assignments/ipv6-multicast-addresses/ipv6-multicast-addresses.xhtml
+#define __IN6_ADDR_CAST_8(a) (((const struct in6_addr*)(a))->s6_addr)
+#define __IN6_ADDR_CAST_16(a) (((const struct in6_addr*)(a))->s6_addr16)
+#define __IN6_ADDR_CAST_32(a) (((const struct in6_addr*)(a))->s6_addr32)
+#define IN6_IS_ADDR_UNSPECIFIED(a)             \
+  ((__IN6_ADDR_CAST_32(a)[0] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[1] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[2] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[3] == 0x00000000))
+#define IN6_IS_ADDR_LOOPBACK(a)                \
+  ((__IN6_ADDR_CAST_32(a)[0] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[1] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[2] == 0x00000000) && \
+   (__IN6_ADDR_CAST_16(a)[6] == 0x0000) &&     \
+   (__IN6_ADDR_CAST_8(a)[14] == 0x00) &&       \
+   (__IN6_ADDR_CAST_8(a)[15] == 0x01))
+#define IN6_IS_ADDR_MULTICAST(a) \
+  (__IN6_ADDR_CAST_8(a)[0] == 0xff)
+#define IN6_IS_ADDR_LINKLOCAL(a)        \
+  ((__IN6_ADDR_CAST_8(a)[0] == 0xfe) && \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0xc0) == 0x80))
+#define IN6_IS_ADDR_SITELOCAL(a)        \
+  ((__IN6_ADDR_CAST_8(a)[0] == 0xfe) && \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0xc0) == 0xc0))
+#define IN6_IS_ADDR_V4MAPPED(a)                \
+  ((__IN6_ADDR_CAST_32(a)[0] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[1] == 0x00000000) && \
+   (__IN6_ADDR_CAST_16(a)[4] == 0x0000) &&     \
+   (__IN6_ADDR_CAST_16(a)[5] == 0xffff))
+#define IN6_IS_ADDR_V4COMPAT(a)                \
+  ((__IN6_ADDR_CAST_32(a)[0] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[1] == 0x00000000) && \
+   (__IN6_ADDR_CAST_32(a)[2] == 0x00000000) && \
+   !IN6_IS_ADDR_UNSPECIFIED(a) &&              \
+   !IN6_IS_ADDR_LOOPBACK(a))
+#define IN6_IS_ADDR_MC_NODELOCAL(a) \
+  (IN6_IS_ADDR_MULTICAST(a) &&      \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0x0f) == 0x01))
+#define IN6_IS_ADDR_MC_LINKLOCAL(a) \
+  (IN6_IS_ADDR_MULTICAST(a) &&      \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0x0f) == 0x02))
+#define IN6_IS_ADDR_MC_SITELOCAL(a) \
+  (IN6_IS_ADDR_MULTICAST(a) &&      \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0x0f) == 0x05))
+#define IN6_IS_ADDR_MC_ORGLOCAL(a) \
+  (IN6_IS_ADDR_MULTICAST(a) &&     \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0x0f) == 0x08))
+#define IN6_IS_ADDR_MC_GLOBAL(a) \
+  (IN6_IS_ADDR_MULTICAST(a) &&   \
+   ((__IN6_ADDR_CAST_8(a)[1] & 0x0f) == 0x0e))
 
-/* Standard well-defined IP protocols.  */
+/* Standard well-known IP protocols.  */
 #define IPPROTO_IP 0         // Dummy protocol for TCP.
 #define IPPROTO_ICMP 1       // Internet Control Message Protocol.
 #define IPPROTO_IGMP 2       // Internet Group Management Protocol
