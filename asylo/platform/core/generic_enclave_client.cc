@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
+#include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitives.h"
@@ -39,7 +40,7 @@ Status GenericEnclaveClient::Initialize(const char *name, size_t name_len,
   params.PushByCopy(primitives::Extent{name, name_len});
   params.PushByCopy(primitives::Extent{input, input_len});
   ASYLO_RETURN_IF_ERROR(
-      primitive_client_->EnclaveCall(primitives::kSelectorAsyloInit, &params));
+      primitive_client_->EnclaveCall(kSelectorAsyloInit, &params));
 
   if (params.empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
@@ -58,7 +59,7 @@ Status GenericEnclaveClient::Run(const char *input, size_t input_len,
   primitives::NativeParameterStack params;
   params.PushByCopy(primitives::Extent{input, input_len});
   ASYLO_RETURN_IF_ERROR(
-      primitive_client_->EnclaveCall(primitives::kSelectorAsyloRun, &params));
+      primitive_client_->EnclaveCall(kSelectorAsyloRun, &params));
 
   if (params.empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
@@ -77,7 +78,7 @@ Status GenericEnclaveClient::Finalize(const char *input, size_t input_len,
   primitives::NativeParameterStack params;
   params.PushByCopy(primitives::Extent{input, input_len});
   ASYLO_RETURN_IF_ERROR(
-      primitive_client_->EnclaveCall(primitives::kSelectorAsyloFini, &params));
+      primitive_client_->EnclaveCall(kSelectorAsyloFini, &params));
 
   if (params.empty()) {
     return {error::GoogleError::INVALID_ARGUMENT,
@@ -166,8 +167,8 @@ Status GenericEnclaveClient::EnterAndFinalize(const EnclaveFinal &final_input) {
 
 Status GenericEnclaveClient::EnterAndDonateThread() {
   primitives::NativeParameterStack params;
-  Status status = primitive_client_->EnclaveCall(
-      primitives::kSelectorAsyloDonateThread, &params);
+  Status status =
+      primitive_client_->EnclaveCall(kSelectorAsyloDonateThread, &params);
   if (!status.ok()) {
     LOG(ERROR) << "EnterAndDonateThread failed " << status;
   }

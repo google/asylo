@@ -36,6 +36,7 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/include/trusted/time.h"
 #include "asylo/platform/common/bridge_functions.h"
+#include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/core/shared_name_kind.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/core/untrusted_cache_malloc.h"
@@ -699,29 +700,32 @@ int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
 extern "C" PrimitiveStatus asylo_enclave_init() {
   // Register the enclave initialization entry handler.
   EntryHandler init_handler{asylo::Initialize};
-  if (!TrustedPrimitives::RegisterEntryHandler(
-          asylo::primitives::kSelectorAsyloInit, init_handler).ok()) {
+  if (!TrustedPrimitives::RegisterEntryHandler(asylo::kSelectorAsyloInit,
+                                               init_handler)
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
   // Register the enclave run entry handler.
   EntryHandler run_handler{asylo::Run};
-  if (!TrustedPrimitives::RegisterEntryHandler(
-          asylo::primitives::kSelectorAsyloRun, run_handler).ok()) {
+  if (!TrustedPrimitives::RegisterEntryHandler(asylo::kSelectorAsyloRun,
+                                               run_handler)
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 
   // Register the enclave finalization entry handler.
   EntryHandler finalize_handler{asylo::Finalize};
-  if (!TrustedPrimitives::RegisterEntryHandler(
-          asylo::primitives::kSelectorAsyloFini, finalize_handler).ok()) {
+  if (!TrustedPrimitives::RegisterEntryHandler(asylo::kSelectorAsyloFini,
+                                               finalize_handler)
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 
   // Register the enclave donate thread entry handler.
   EntryHandler donate_thread_handler{asylo::DonateThread};
   if (!TrustedPrimitives::RegisterEntryHandler(
-          asylo::primitives::kSelectorAsyloDonateThread,
-          donate_thread_handler).ok()) {
+           asylo::kSelectorAsyloDonateThread, donate_thread_handler)
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
   return PrimitiveStatus::OkStatus();

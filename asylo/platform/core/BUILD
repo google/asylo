@@ -58,6 +58,18 @@ cc_library(
 
 # Default implementation of EnclaveClient.
 cc_library(
+    name = "entry_selectors",
+    hdrs = [
+        "entry_selectors.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives",
+    ],
+)
+
+# Default implementation of EnclaveClient.
+cc_library(
     name = "generic_enclave_client",
     srcs = [
         "generic_enclave_client.cc",
@@ -67,6 +79,7 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":entry_selectors",
         ":untrusted_core",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives",
@@ -125,6 +138,7 @@ cc_library(
     tags = ASYLO_ALL_BACKENDS,
     deps = [
         ":entry_points",
+        ":entry_selectors",
         ":shared_name",
         ":trusted_core",
         ":untrusted_cache_malloc",
