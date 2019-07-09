@@ -20,8 +20,9 @@ licenses(["notice"])  # Apache v2.0
 # key-management library.
 
 # Used to enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:asylo.bzl", "cc_test", "enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 proto_library(
@@ -195,6 +196,21 @@ cc_proto_library(
     deps = ["remote_assertion_generator_enclave_proto"],
 )
 
+proto_library(
+    name = "remote_assertion_generator_test_util_enclave_proto",
+    srcs = ["remote_assertion_generator_test_util_enclave.proto"],
+    deps = [
+        ":platform_provisioning_proto",
+        ":remote_assertion_proto",
+        "//asylo:enclave_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "remote_assertion_generator_test_util_enclave_cc_proto",
+    deps = [":remote_assertion_generator_test_util_enclave_proto"],
+)
+
 cc_grpc_library(
     name = "sgx_remote_assertion_generator",
     srcs = [":sgx_remote_assertion_generator_proto"],
@@ -331,6 +347,23 @@ cc_test(
         "//asylo/util:cleansing_types",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+sgx_enclave(
+    name = "remote_assertion_generator_test_util_enclave.so",
+    testonly = 1,
+    srcs = ["remote_assertion_generator_test_util_enclave.cc"],
+    config = "//asylo/grpc/util:grpc_enclave_config",
+    deps = [
+        ":platform_provisioning",
+        ":remote_assertion_generator_test_util_enclave_cc_proto",
+        ":sgx_remote_assertion_generator_client",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_runtime",
+        "//asylo/grpc/auth:sgx_local_credentials_options",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc_secure",
     ],
 )
 

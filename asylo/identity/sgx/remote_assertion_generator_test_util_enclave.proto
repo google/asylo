@@ -1,0 +1,68 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.sgx;
+
+import "asylo/enclave.proto";
+import "asylo/identity/sgx/platform_provisioning.proto";
+import "asylo/identity/sgx/remote_assertion.proto";
+
+extend EnclaveInput {
+  optional RemoteAssertionGeneratorTestUtilEnclaveInput
+      remote_assertion_generator_test_util_enclave_input = 210804301;
+}
+
+extend EnclaveOutput {
+  optional RemoteAssertionGeneratorTestUtilEnclaveOutput
+      remote_assertion_generator_test_util_enclave_output = 210804301;
+}
+
+message GetRemoteAssertionInput {
+  optional string server_address = 1;
+}
+
+message GetRemoteAssertionOutput {
+  optional RemoteAssertion assertion = 1;
+}
+message GetTargetInfoInput {}
+
+message GetTargetInfoOutput {
+  optional TargetInfoProto target_info_proto = 1;
+}
+
+message VerifyReportInput {
+  optional ReportProto report_proto = 1;
+}
+
+message VerifyReportOutput {}
+
+message RemoteAssertionGeneratorTestUtilEnclaveInput {
+  oneof input {
+    GetRemoteAssertionInput get_remote_assertion_input = 1;
+    GetTargetInfoInput get_target_info_input = 2;
+    VerifyReportInput verify_report_input = 3;
+  }
+}
+
+message RemoteAssertionGeneratorTestUtilEnclaveOutput {
+  oneof output {
+    GetRemoteAssertionOutput get_remote_assertion_output = 1;
+    GetTargetInfoOutput get_target_info_output = 2;
+    VerifyReportOutput verify_report_output = 3;
+  }
+}
