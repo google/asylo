@@ -56,7 +56,7 @@ absl::optional<std::vector<std::pair<int, int>>> FuzzBitsetTranslationFunction(
     int in = 0;
     int out = 0;
     for (int j = 0; j < size; j++) {
-        if (rand()%2) {
+      if (rand()%2) {
         in |= input[j];
         out |= output[j];
       }
