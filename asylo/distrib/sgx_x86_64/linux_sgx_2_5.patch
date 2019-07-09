@@ -658,63 +658,20 @@ diff -Nur common/src/linux/xsave_gnu.S common/src/linux/xsave_gnu.S
  .macro DO_XSAVEC
  #if defined(LINUX64)
      .byte   0x48, 0x0f, 0xc7, 0x21
-diff -Nur external/rdrand/src/config.h external/rdrand/src/config.h
---- external/rdrand/src/config.h
-+++ external/rdrand/src/config.h
-@@ -0,0 +1,53 @@
-+/* config.h.  Generated from config.h.in by configure.  */
-+/* config.h.in.  Generated from configure.ac by autoheader.  */
-+
-+/* Define to 1 if you have the <inttypes.h> header file. */
-+#define HAVE_INTTYPES_H 1
-+
-+/* Define to 1 if you have the <memory.h> header file. */
-+#define HAVE_MEMORY_H 1
-+
-+/* Define to 1 if you have the <stdint.h> header file. */
-+#define HAVE_STDINT_H 1
-+
-+/* Define to 1 if you have the <stdlib.h> header file. */
-+#define HAVE_STDLIB_H 1
-+
-+/* Define to 1 if you have the <strings.h> header file. */
-+#define HAVE_STRINGS_H 1
-+
-+/* Define to 1 if you have the <string.h> header file. */
-+#define HAVE_STRING_H 1
-+
-+/* Define to 1 if you have the <sys/stat.h> header file. */
-+#define HAVE_SYS_STAT_H 1
-+
-+/* Define to 1 if you have the <sys/types.h> header file. */
-+#define HAVE_SYS_TYPES_H 1
-+
-+/* Define to 1 if you have the <unistd.h> header file. */
-+#define HAVE_UNISTD_H 1
-+
-+/* Define to the address where bug reports for this package should be sent. */
-+#define PACKAGE_BUGREPORT "Intel Software Network"
-+
-+/* Define to the full name of this package. */
-+#define PACKAGE_NAME "librdrand"
-+
-+/* Define to the full name and version of this package. */
-+#define PACKAGE_STRING "librdrand 1.1"
-+
-+/* Define to the one symbol short name of this package. */
-+#define PACKAGE_TARNAME "librdrand"
-+
-+/* Define to the home page for this package. */
-+#define PACKAGE_URL ""
-+
-+/* Define to the version of this package. */
-+#define PACKAGE_VERSION "1.1"
-+
-+/* Define to 1 if you have the ANSI C header files. */
-+#define STDC_HEADERS 1
-+
-+/* Define if using gcc and it supports RDRAND */
-+#define HAVE_RDRAND_IN_GCC 1
+diff -Nur common/src/sgx_read_rand.cpp common/src/sgx_read_rand.cpp
+--- common/src/sgx_read_rand.cpp
++++ common/src/sgx_read_rand.cpp
+@@ -38,7 +38,9 @@
+ #include "sgx.h"
+ #include "sgx_defs.h"
+ #include "se_wrapper.h"
+-#include "rdrand.h"
++extern "C" {
++#include "rdrand.h"
++}
+ #include "cpuid.h"
+ #include <stdio.h>
+ #ifndef UINT32_MAX
 diff -Nur psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_quote_service_bundle.cpp psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_quote_service_bundle.cpp
 --- psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_quote_service_bundle.cpp
 +++ psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_quote_service_bundle.cpp
@@ -3103,7 +3060,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1297 @@
+@@ -0,0 +1,1305 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3802,13 +3759,20 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 +
 +cc_library(
-+    name = "uae_service_sim",
-+    srcs = PSW_COMMON_SRCS + [
-+        "common/src/sgx_read_rand.cpp",
-+        "external/rdrand/rdrand.h",
++    name = "external_rdrand",
++    srcs = [
 +        "external/rdrand/src/config.h",
 +        "external/rdrand/src/rdrand.c",
 +        "external/rdrand/src/rdrand.h",
++    ],
++    hdrs = ["external/rdrand/rdrand.h"],
++    copts = ["-Iexternal/linux_sgx/external/rdrand/src"],
++)
++
++cc_library(
++    name = "uae_service_sim",
++    srcs = PSW_COMMON_SRCS + [
++        "common/src/sgx_read_rand.cpp",
 +        "psw/ae/common/se_sig_rl.cpp",
 +        "sdk/simulation/uae_service_sim/licensing_sim.cpp",
 +        "sdk/simulation/uae_service_sim/linux/platform_service_sim.cpp",
@@ -3843,6 +3807,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ":common_inc",
 +        ":common_inc_internal",
 +        ":external_epid",
++        ":external_rdrand",
 +        ":ipc_common_proto_cc_cc_proto",
 +        ":pse_types",
 +        ":sim_common",
@@ -4866,3 +4831,59 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_urts.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_URTS_H_
+--- /dev/null
++++ external/rdrand/src/config.h
+@@ -0,0 +1,53 @@
++/* config.h.  Generated from config.h.in by configure.  */
++/* config.h.in.  Generated from configure.ac by autoheader.  */
++
++/* Define to 1 if you have the <inttypes.h> header file. */
++#define HAVE_INTTYPES_H 1
++
++/* Define to 1 if you have the <memory.h> header file. */
++#define HAVE_MEMORY_H 1
++
++/* Define to 1 if you have the <stdint.h> header file. */
++#define HAVE_STDINT_H 1
++
++/* Define to 1 if you have the <stdlib.h> header file. */
++#define HAVE_STDLIB_H 1
++
++/* Define to 1 if you have the <strings.h> header file. */
++#define HAVE_STRINGS_H 1
++
++/* Define to 1 if you have the <string.h> header file. */
++#define HAVE_STRING_H 1
++
++/* Define to 1 if you have the <sys/stat.h> header file. */
++#define HAVE_SYS_STAT_H 1
++
++/* Define to 1 if you have the <sys/types.h> header file. */
++#define HAVE_SYS_TYPES_H 1
++
++/* Define to 1 if you have the <unistd.h> header file. */
++#define HAVE_UNISTD_H 1
++
++/* Define to the address where bug reports for this package should be sent. */
++#define PACKAGE_BUGREPORT "Intel Software Network"
++
++/* Define to the full name of this package. */
++#define PACKAGE_NAME "librdrand"
++
++/* Define to the full name and version of this package. */
++#define PACKAGE_STRING "librdrand 1.1"
++
++/* Define to the one symbol short name of this package. */
++#define PACKAGE_TARNAME "librdrand"
++
++/* Define to the home page for this package. */
++#define PACKAGE_URL ""
++
++/* Define to the version of this package. */
++#define PACKAGE_VERSION "1.1"
++
++/* Define to 1 if you have the ANSI C header files. */
++#define STDC_HEADERS 1
++
++/* Define if using gcc and it supports RDRAND */
++#define HAVE_RDRAND_IN_GCC 1
