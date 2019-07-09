@@ -90,7 +90,26 @@ InitUntrustedStack() {
 
 }  // namespace
 
-void RegisterInternalHandlers() {}
+// Handler installed by the runtime to finalize the enclave at the time it is
+// destroyed.
+PrimitiveStatus FinalizeEnclave(void *context, TrustedParameterStack *params) {
+  if (!params->empty()) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "FinalizeEnclave does not expect any parameters."};
+  }
+  PrimitiveStatus status = asylo_enclave_fini();
+  return status;
+}
+
+// Registers simulator specific entry handlers.
+void RegisterInternalHandlers() {
+  // Register the enclave finalization entry handler.
+  EntryHandler handler{FinalizeEnclave};
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
+           .ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+}
 
 void TrustedPrimitives::BestEffortAbort(const char *message) {
   enc_block_ecalls();

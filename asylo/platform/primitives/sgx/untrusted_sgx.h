@@ -59,6 +59,11 @@ struct SgxEmbeddedBackend {
 class SgxEnclaveClient : public Client {
  public:
   ~SgxEnclaveClient() override;
+
+  // Destroys an enclave. This method calls the user-defined
+  // asylo_enclave_fini() entry point followed by marking the enclave for
+  // destruction. Enclave destruction fails if the user defined enclave
+  // finalization function fails.
   Status Destroy() override;
 
   // Returns the sgx_enclave_id_t value of the underlying Intel SGX SDK enclave
