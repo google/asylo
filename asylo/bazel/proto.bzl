@@ -31,6 +31,8 @@ def asylo_py_proto_library(name, srcs = [], deps = [], **kwargs):
     py_proto_library(
         name = name,
         srcs = srcs,
+        deprecation = "asylo_py_proto_library is deprecated in favor of using " +
+                      "proto_library and py_proto_library explicitly",
         default_runtime = "@com_google_protobuf//:protobuf_python",
         protoc = "@com_google_protobuf//:protoc",
         **kwargs

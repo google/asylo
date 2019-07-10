@@ -19,23 +19,16 @@ licenses(["notice"])  # Apache v2.0
 # Code generator to generate serialization and bridge code for the set of
 # automated host calls.
 
+load("@com_google_protobuf//:protobuf.bzl", "py_proto_library")
+
 package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:proto.bzl", "asylo_py_proto_library")
-
-proto_library(
-    name = "host_calls_proto",
+py_proto_library(
+    name = "host_calls_proto_py_pb2",
     srcs = ["host_calls.proto"],
     visibility = ["//visibility:private"],
-)
-
-asylo_py_proto_library(
-    name = "host_calls_proto_py",
-    srcs = ["host_calls.proto"],
-    visibility = ["//visibility:private"],
-    deps = ["host_calls_proto"],
 )
 
 # The host calls code generator should only be invoked through the
@@ -59,7 +52,7 @@ py_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
-        ":host_calls_proto_py",
+        ":host_calls_proto_py_pb2",
         "@com_github_pallets_jinja//:jinja2",
         "@io_abseil_py//absl:app",
         "@io_abseil_py//absl/flags",
