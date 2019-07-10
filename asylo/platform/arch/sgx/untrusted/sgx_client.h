@@ -45,21 +45,17 @@ class SgxClient : public GenericEnclaveClient {
   // simulation mode.
   bool IsTcsActive();
 
-  void *base_address() { return primitive_sgx_client_->GetBaseAddress(); }
+  void *base_address() { return GetPrimitiveClient()->GetBaseAddress(); }
 
   const void *base_address() const {
-    return primitive_sgx_client_->GetBaseAddress();
+    return GetPrimitiveClient()->GetBaseAddress();
   }
 
-  size_t size() { return primitive_sgx_client_->GetEnclaveSize(); }
+  size_t size() { return GetPrimitiveClient()->GetEnclaveSize(); }
 
   // Sets a new expected process ID for an existing SGX enclave.
   void SetProcessId();
 
-  // Returns the primitive SGX client.
-  std::shared_ptr<primitives::SgxEnclaveClient> GetPrimitivesClient() {
-    return primitive_sgx_client_;
-  }
   Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout);
   Status EnterAndRestore(const SnapshotLayout &snapshot_layout);
   Status EnterAndTransferSecureSnapshotKey(
@@ -71,8 +67,11 @@ class SgxClient : public GenericEnclaveClient {
 
   Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
 
-  // Primitive SGX client.
-  std::shared_ptr<primitives::SgxEnclaveClient> primitive_sgx_client_;
+  // Returns the primitive SGX client.
+  std::shared_ptr<primitives::SgxEnclaveClient> GetPrimitiveClient() const {
+    return std::static_pointer_cast<primitives::SgxEnclaveClient>(
+        primitive_client_);
+  }
 };
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves

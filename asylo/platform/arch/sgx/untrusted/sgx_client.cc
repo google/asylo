@@ -158,10 +158,6 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
           name, base_address, enclave_path_, enclave_size, config, debug_,
           absl::make_unique<primitives::DispatchTable>()));
 
-  client->primitive_sgx_client_ =
-      std::static_pointer_cast<primitives::SgxEnclaveClient>(
-          client->primitive_client_);
-
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
 
@@ -183,10 +179,6 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
       primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
           name, base_address, section_name_, enclave_size, config, debug_,
           absl::make_unique<primitives::DispatchTable>()));
-
-  client->primitive_sgx_client_ =
-      std::static_pointer_cast<primitives::SgxEnclaveClient>(
-          client->primitive_client_);
 
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
@@ -213,7 +205,7 @@ Status SgxClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Failed to serialize EnclaveSignal");
   }
-  return handle_signal(primitive_sgx_client_->GetEnclaveId(),
+  return handle_signal(GetPrimitiveClient()->GetEnclaveId(),
                        serialized_enclave_signal.data(),
                        serialized_enclave_signal.size());
 }
@@ -222,7 +214,7 @@ Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
   char *output_buf = nullptr;
   size_t output_len = 0;
 
-  ASYLO_RETURN_IF_ERROR(take_snapshot(primitive_sgx_client_->GetEnclaveId(),
+  ASYLO_RETURN_IF_ERROR(take_snapshot(GetPrimitiveClient()->GetEnclaveId(),
                                       &output_buf, &output_len));
 
   // Enclave entry-point was successfully invoked. |output_buf| is guaranteed to
@@ -255,7 +247,7 @@ Status SgxClient::EnterAndRestore(const SnapshotLayout &snapshot_layout) {
   char *output = nullptr;
   size_t output_len = 0;
 
-  ASYLO_RETURN_IF_ERROR(restore(primitive_sgx_client_->GetEnclaveId(),
+  ASYLO_RETURN_IF_ERROR(restore(GetPrimitiveClient()->GetEnclaveId(),
                                 buf.data(), buf.size(), &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
@@ -284,7 +276,7 @@ Status SgxClient::EnterAndTransferSecureSnapshotKey(
   size_t output_len = 0;
 
   ASYLO_RETURN_IF_ERROR(transfer_secure_snapshot_key(
-      primitive_sgx_client_->GetEnclaveId(), buf.data(), buf.size(),
+      GetPrimitiveClient()->GetEnclaveId(), buf.data(), buf.size(),
       &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
@@ -302,11 +294,11 @@ Status SgxClient::EnterAndTransferSecureSnapshotKey(
 }
 
 bool SgxClient::IsTcsActive() {
-  return (sgx_is_tcs_active(primitive_sgx_client_->GetEnclaveId()) != 0);
+  return (sgx_is_tcs_active(GetPrimitiveClient()->GetEnclaveId()) != 0);
 }
 
 void SgxClient::SetProcessId() {
-  sgx_set_process_id(primitive_sgx_client_->GetEnclaveId());
+  sgx_set_process_id(GetPrimitiveClient()->GetEnclaveId());
 }
 
 }  //  namespace asylo
