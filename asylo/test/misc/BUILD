@@ -222,10 +222,16 @@ sgx_enclave_test(
     deps = TEST_DEPS_COMMON,
 )
 
+sgx_enclave_configuration(
+    name = "threaded_test_config",
+    tcs_num = "15",
+)
+
 cc_enclave_test(
     name = "threaded_test",
     srcs = ["threaded_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_config = ":threaded_test_config",
     deps = [
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/strings",
@@ -269,6 +275,7 @@ cc_enclave_test(
     name = "threaded_test_in_initialize",
     srcs = ["threaded_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_config = ":threaded_test_config",
     test_in_initialize = True,
     deps = [
         "@com_google_absl//absl/strings",
