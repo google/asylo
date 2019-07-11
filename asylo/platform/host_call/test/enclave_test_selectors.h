@@ -92,6 +92,7 @@ constexpr uint64_t kTestListen =
     kFirstSelector + asylo::system_call::kSYS_listen;
 constexpr uint64_t kTestShutdown =
     kFirstSelector + asylo::system_call::kSYS_shutdown;
+constexpr uint64_t kTestSend = kFirstSelector + asylo::system_call::kSYS_sendto;
 constexpr uint64_t kTestFcntl = kFirstSelector + asylo::system_call::kSYS_fcntl;
 constexpr uint64_t kTestChown = kFirstSelector + asylo::system_call::kSYS_chown;
 constexpr uint64_t kTestFChown =

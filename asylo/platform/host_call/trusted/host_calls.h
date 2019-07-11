@@ -65,6 +65,7 @@ int enc_untrusted_rmdir(const char *path);
 int enc_untrusted_socket(int domain, int type, int protocol);
 int enc_untrusted_listen(int sockfd, int backlog);
 int enc_untrusted_shutdown(int sockfd, int how);
+ssize_t enc_untrusted_send(int sockfd, const void *buf, size_t len, int flags);
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */);
 int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group);
 int enc_untrusted_fchown(int fd, uid_t owner, gid_t group);

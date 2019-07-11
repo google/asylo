@@ -354,6 +354,20 @@ PrimitiveStatus TestShutdown(void *context,
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestSend(void *context,
+                         primitives::TrustedParameterStack *params) {
+  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 4);
+
+  int flags = params->Pop<int>();
+  auto len = params->Pop<size_t>();
+  const auto buf = params->Pop();
+  int sockfd = params->Pop<int>();
+  params->PushByCopy<ssize_t>(
+      enc_untrusted_send(sockfd, buf->As<char>(), len, flags));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 PrimitiveStatus TestFcntl(void *context,
                           primitives::TrustedParameterStack *params) {
   ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
@@ -577,6 +591,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestShutdown,
       EntryHandler{asylo::host_call::TestShutdown}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSend, EntryHandler{asylo::host_call::TestSend}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFcntl, EntryHandler{asylo::host_call::TestFcntl}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(

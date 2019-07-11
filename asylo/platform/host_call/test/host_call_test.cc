@@ -852,6 +852,54 @@ TEST_F(HostCallTest, TestShutdown) {
   close(socket_fd);
 }
 
+TEST_F(HostCallTest, TestSend) {
+  // Create a local socket and ensure that it is valid (fd > 0).
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/sock.sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  sa.sun_path[0] = '\0';
+  strncpy(&sa.sun_path[1], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  EXPECT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+
+  EXPECT_THAT(listen(socket_fd, 8), Not(Eq(-1)));
+
+  // Create another local socket and ensures that it is valid (fd > 0).
+  int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(client_sock, Gt(0));
+
+  // Attempt to connect the new socket to the local address. This call
+  // will only succeed if the listen is successful.
+  EXPECT_THAT(connect(client_sock, reinterpret_cast<struct sockaddr *>(&sa),
+                      sizeof(sa)),
+              Not(Eq(-1)));
+
+  int connection_socket = accept(socket_fd, nullptr, nullptr);
+
+  std::string msg = "Hello world!";
+
+  primitives::NativeParameterStack params;
+  params.PushByCopy<int>(/*value=sockfd=*/connection_socket);
+  params.PushByCopy<char>(/*value=buf*/ msg.c_str(), msg.length());
+  params.PushByCopy<size_t>(/*value=len*/ msg.length());
+  params.PushByCopy<int>(/*value=flags*/ 0);
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSend, &params));
+  ASSERT_THAT(params.size(), Eq(1));
+  EXPECT_THAT(params.Pop<int>(), Eq(msg.length()));
+
+  close(socket_fd);
+  close(client_sock);
+  close(connection_socket);
+}
+
 // Tests enc_untrusted_fcntl() by performing various file control operations
 // from inside the enclave and validating the return valueswith those obtained
 // from native host call to fcntl().
