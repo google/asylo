@@ -71,13 +71,14 @@ cc_library(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
         "//asylo/util:status",
         "//asylo/util:thread",
         "@com_google_absl//absl/debugging:leak_check",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
+    # Required to prevent the linker from dropping the flag symbol.
+    alwayslink = 1,
 )
 
 cc_library(
