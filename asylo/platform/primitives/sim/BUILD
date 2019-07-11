@@ -34,7 +34,10 @@ cc_library(
         "trusted_sim.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["asylo-sim"],
+    tags = [
+        "asylo-sim",
+        "manual",
+    ],
     deps = select(
         {
             "//asylo/platform/primitives:asylo_sim": [

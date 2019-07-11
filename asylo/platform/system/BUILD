@@ -22,7 +22,7 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_enclave_test")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 filegroup(
@@ -39,7 +39,7 @@ cc_library(
     hdrs = [":system_headers"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
 )
 
 cc_enclave_test(

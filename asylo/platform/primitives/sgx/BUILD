@@ -36,7 +36,10 @@ cc_library(
         "trusted_sgx.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ["asylo-sgx"],
+    tags = [
+        "asylo-sgx",
+        "manual",
+    ],
     deps = select(
         {
             "//asylo/platform/primitives:asylo_sgx": [

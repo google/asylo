@@ -23,7 +23,7 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Protobuf used by fork.
@@ -214,7 +214,10 @@ cc_library(
         "Must be built for SGX hardware or simulation backend",
     ) + ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ["asylo-sgx"],
+    tags = [
+        "asylo-sgx",
+        "manual",
+    ],
     visibility = ["//visibility:private"],
     deps = [
         ":trusted_sgx_bridge",
@@ -265,7 +268,10 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ["asylo-sgx"],
+    tags = [
+        "asylo-sgx",
+        "manual",
+    ],
     deps = [
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/core:shared_name",
@@ -284,7 +290,7 @@ cc_library(
     hdrs = ["include/trusted/fork.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":fork_cc_proto",
         ":trusted_arch",

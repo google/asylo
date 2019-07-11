@@ -404,19 +404,19 @@ needs the following targets:
 proto_library(
     name = "translator_server_proto",
     srcs = ["translator_server.proto"],
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
 )
 
 cc_proto_library(
     name = "translator_server_cc_proto",
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [":translator_server_proto"],
 )
 
 cc_grpc_library(
     name = "translator_server",
     srcs = [":translator_server_proto"],
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     grpc_only = True,
     deps = [":translator_server_cc_proto"],
 )

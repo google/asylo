@@ -23,7 +23,7 @@ package(
 exports_files(["LICENSE"])
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_enclave_test")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Core untrusted Asylo components.
@@ -99,7 +99,7 @@ cc_library(
     hdrs = ["trusted_global_state.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         "//asylo:enclave_cc_proto",
         "//asylo/util:status",
@@ -117,7 +117,7 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":shared_name",
         ":trusted_global_state",
@@ -135,7 +135,7 @@ cc_library(
     hdrs = ["trusted_application.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":entry_points",
         ":entry_selectors",
@@ -310,5 +310,6 @@ cc_library(
         ":untrusted_cache_malloc",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/util:logging",
     ],
 )

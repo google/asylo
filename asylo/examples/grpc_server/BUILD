@@ -16,7 +16,7 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "ASYLO_ALL_BACKENDS",
+    "ASYLO_ALL_BACKEND_TAGS",
     "enclave_loader",
     "sgx_enclave_test",
     "sim_enclave",
@@ -36,12 +36,12 @@ package(
 proto_library(
     name = "translator_server_proto",
     srcs = ["translator_server.proto"],
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
 )
 
 cc_proto_library(
     name = "translator_server_cc_proto",
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [":translator_server_proto"],
 )
 
@@ -49,7 +49,7 @@ cc_grpc_library(
     name = "translator_server",
     srcs = [":translator_server_proto"],
     grpc_only = True,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [":translator_server_cc_proto"],
 )
 
@@ -59,7 +59,7 @@ cc_library(
     srcs = ["translator_server_impl.cc"],
     hdrs = ["translator_server_impl.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":translator_server",
         "@com_github_grpc_grpc//:grpc++",

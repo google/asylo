@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # GCM library for secure storage.
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKENDS", "cc_enclave_test")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
@@ -39,7 +39,7 @@ cc_library(
     srcs = ["gcm_cryptor.cc"],
     hdrs = ["gcm_cryptor.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",

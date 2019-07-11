@@ -30,7 +30,7 @@ exports_files([
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "ASYLO_ALL_BACKENDS",
+    "ASYLO_ALL_BACKEND_TAGS",
     "cc_enclave_test",
     "embed_enclaves",
 )
@@ -65,7 +65,7 @@ cc_library(
     testonly = 1,
     srcs = ["test_shim_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     visibility = ["//visibility:public"],
     deps = [
         ":test_shim_enclave_cc_proto",

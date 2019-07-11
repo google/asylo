@@ -16,7 +16,7 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "ASYLO_ALL_BACKENDS",
+    "ASYLO_ALL_BACKEND_TAGS",
     "sgx_enclave_test",
     cc_test = "cc_test_and_cc_enclave_test",
 )
@@ -47,7 +47,7 @@ filegroup(
 cc_library(
     name = "trusted_posix",
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = select(
         {
             "//asylo/platform/primitives:sgx": [":posix"],
@@ -108,7 +108,7 @@ cc_library(
     }),
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     visibility = ["//visibility:private"],
     deps = [
         ":pthread_impl",

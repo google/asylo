@@ -24,6 +24,10 @@
 
 #include <cstddef>
 
+extern void set_malloc_hook(void*(*hook)(size_t, void *), void *);
+extern void set_realloc_hook(void*(*hook)(void *, size_t, void *), void *);
+extern void set_free_hook(void(*hook)(void *, void *), void *);
+
 namespace {
 
 // The next available address in the switched heap. It's set to the base address

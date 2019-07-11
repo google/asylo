@@ -18,7 +18,7 @@
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_tags")
 
 # Backend tags are used by testing infrastructure to determine which platform
 # flags to provide when running tests or building targets.
@@ -29,6 +29,10 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 ASYLO_ALL_BACKENDS = [
     "asylo-sgx",
     "asylo-sim",
+]
+
+ASYLO_ALL_BACKEND_TAGS = ASYLO_ALL_BACKENDS + [
+    "manual",
 ]
 
 def _backend_tags(tags):
@@ -46,6 +50,46 @@ def _backend_tags(tags):
         if backend in tags:
             backend_tags.append(backend)
     return backend_tags
+
+def asylo_tags(backend_tag = None):
+    """Returns appropriate tags for Asylo target.
+
+    Args:
+      backend_tag: String that indicates the backend technology used. Can be
+                   one of
+                   * "asylo-sgx"
+                   * "asylo-sim"
+                   * None
+    """
+    result = []
+    if backend_tag:
+        result += [backend_tag]
+        if backend_tag == "asylo-sgx":
+            return result + sgx_tags()
+    result += ["manual"]
+    return result
+
+def extract_asylo_tags(tags):
+    """Returns all appropriate tags for each backend tag in tags.
+
+    Args:
+      tags: A target's `tags` field which may or may not contain a backend
+            tag.
+
+    Returns:
+      list: tags that indicate the backend choice and which tap tags to use for
+            testing with that backend.
+    """
+    backend_tags = _backend_tags(tags)
+    result = []
+    if backend_tags:
+        for backend_tag in backend_tags:
+            for tag in asylo_tags(backend_tag):
+                if tag not in result:
+                    result.append(tag)
+    else:
+        result = asylo_tags()
+    return result
 
 def _parse_label(label):
     """Parse a label into (package, name).
@@ -101,6 +145,7 @@ def copy_from_host(target, output, name = ""):
         output_to_bindir = 1,
         tools = [target],
         testonly = 1,
+        tags = asylo_tags(),
     )
 
 def _invert_enclave_name_mapping(names_to_targets):
@@ -349,6 +394,7 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
             objcopy_flags = " ".join(objcopy_flags),
             elf_file = elf_file_from_host,
         ),
+        tags = ["manual"],
         toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
         **kwargs
     )
@@ -411,7 +457,7 @@ def enclave_loader(
         loader = loader_name,
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
-        tags = kwargs.get("tags", []),
+        tags = kwargs.get("tags", []) + ["manual"],
         data = kwargs.get("data", []),
     )
 
@@ -440,6 +486,9 @@ def sim_enclave_loader(
     linkopts = kwargs.pop("linkopts", [])
     if "-ldl" not in linkopts:
         linkopts += ["-ldl"]
+
+    if "manual" not in kwargs.get("tags", []):
+        kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
 
     enclave_loader(
         name,
@@ -637,6 +686,8 @@ def enclave_test(
         **_ensure_static_manual(kwargs)
     )
 
+    tags = extract_asylo_tags(tags) + tags
+
     # embed_enclaves ensures that the test loader's ELF file is built with the
     # host toolchain, even when its enclaves argument is empty.
     embed_enclaves(
@@ -823,7 +874,7 @@ def cc_enclave_test(
         srcs = srcs,
         deps = deps + [_workspace_name + "/bazel:test_shim_enclave"],
         testonly = 1,
-        tags = ["asylo-sgx"],
+        tags = ["asylo-sgx"] + enclave_kwargs.pop("tags", []),
         **enclave_kwargs
     )
 
@@ -838,6 +889,8 @@ def cc_enclave_test(
 
     if "asylo-sgx" not in tags:
         tags = tags + ["asylo-sgx"]
+
+    tags = extract_asylo_tags(tags) + tags
 
     # Execute the gtest enclave using the gtest enclave runner
     _enclave_runner_test(
@@ -864,6 +917,9 @@ def sgx_enclave_test(name, srcs, **kwargs):
     enclave_test(
         name,
         srcs = srcs,
-        tags = tags + ["asylo-sgx"],
+        tags = tags + [
+            "asylo-sgx",
+            "manual",
+        ],
         **kwargs
     )

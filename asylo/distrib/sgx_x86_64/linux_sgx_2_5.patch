@@ -3060,7 +3060,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1307 @@
+@@ -0,0 +1,1313 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3115,6 +3115,9 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +# A wrapping library that wraps linux_sgx targets used by enclave.
 +cc_library(
 +    name = "intel_runtime",
++    tags = [
++        "manual",
++    ],
 +    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc",
@@ -4285,6 +4288,9 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "include/sgx_trts.h",
 +        "include/sgx_trts_exception.h",
 +    ],
++    tags = [
++        "manual",
++    ],
 +    visibility = ["//visibility:public"],
 +    deps = [
 +        ":common_inc",
@@ -4370,7 +4376,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,247 @@
+@@ -0,0 +1,256 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -4407,6 +4413,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    ]
 +    kwargs["linkshared"] = 1
 +    kwargs["linkstatic"] = 1
++
++    kwargs["tags"] = kwargs.get("tags", []) + sgx_tags()
 +    kwargs["deps"] = kwargs.get("deps", []) + [
 +        lds_label,
 +        "@linux_sgx//:intel_runtime",
@@ -4592,6 +4600,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    _sgx_debug_sign_enclave(
 +        name = name,
 +        unsigned = unsigned_name,
++        tags = sgx_tags(),
 +        config = config,
 +        testonly = testonly,
 +        **kwargs
@@ -4600,6 +4609,12 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    return name
 +
 +
++def sgx_tags():
++    """Returns tags for SGX targets."""
++    return [
++        "manual",  
++        "sgxbuilder",
++    ]
 +
 +def _extend_enclave_name(enclave, str):
 +    """Injects 'str' before '.so' if '.so' in enclave, otherwise appends 'str.so'.

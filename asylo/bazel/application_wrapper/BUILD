@@ -16,7 +16,8 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "ASYLO_ALL_BACKENDS",
+    "ASYLO_ALL_BACKEND_TAGS",
+    "asylo_tags",
     "cc_enclave_binary",
     "cc_test",
     "copy_from_host",
@@ -63,7 +64,7 @@ cc_library(
     name = "application_wrapper_enclave_core",
     srcs = ["application_wrapper_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    tags = ASYLO_ALL_BACKENDS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     visibility = ["//visibility:public"],
     deps = [
         ":application_wrapper_cc_proto",
@@ -250,8 +251,8 @@ sh_test(
         ":test_host_application",
     ],
     tags = [
-        "asylo-sgx",
         "enclave_test",
-    ],
+        "asylo-sgx",
+    ] + asylo_tags("asylo-sgx"),
     deps = ["//asylo/test/util:shell_testing"],
 )
