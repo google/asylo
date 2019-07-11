@@ -19,11 +19,12 @@ licenses(["notice"])  # Apache v2.0
 # This package defines sgx-specific portions of the enclave-identity and
 # key-management library.
 
-# Used to enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test", "enclave_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+
+# Used to enable gtest tests to run inside an enclave.
+load("//asylo/bazel:asylo.bzl", "cc_test", "sgx_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 
 proto_library(
     name = "attributes_proto",
@@ -355,6 +356,7 @@ sgx_enclave(
     testonly = 1,
     srcs = ["remote_assertion_generator_test_util_enclave.cc"],
     config = "//asylo/grpc/util:grpc_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":platform_provisioning",
         ":remote_assertion_generator_test_util_enclave_cc_proto",
@@ -364,6 +366,67 @@ sgx_enclave(
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc_secure",
+    ],
+)
+
+sgx_enclave_configuration(
+    name = "remote_assertion_generator_enclave_config",
+    heap_max_size = "0x6400000",  # ~100 MB
+    tcs_num = "50",
+)
+
+sgx_enclave(
+    name = "remote_assertion_generator_enclave.so",
+    srcs = [
+        "remote_assertion_generator_enclave.cc",
+        "remote_assertion_generator_enclave.h",
+    ],
+    config = ":remote_assertion_generator_enclave_config",
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_assertion_generator_enclave_cc_proto",
+        ":remote_assertion_generator_enclave_util",
+        ":sgx_remote_assertion_generator_impl",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_runtime",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+    ],
+)
+
+sgx_enclave_test(
+    name = "remote_assertion_generator_enclave_test",
+    srcs = ["remote_assertion_generator_enclave_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "assertion_generator_enclave": ":remote_assertion_generator_enclave.so",
+        "test_util_enclave": ":remote_assertion_generator_test_util_enclave.so",
+    },
+    test_args = [
+        "--remote_assertion_generator_enclave_path='{assertion_generator_enclave}'",
+        "--remote_assertion_generator_test_util_enclave_path='{test_util_enclave}'",
+    ],
+    deps = [
+        ":remote_assertion_cc_proto",
+        ":remote_assertion_generator_enclave_cc_proto",
+        ":remote_assertion_generator_test_util_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "//asylo/util:thread",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
     ],
 )
 
