@@ -45,6 +45,11 @@ class X509CertificateUtil : public CertificateUtilInterface {
   static StatusOr<bssl::UniquePtr<X509>> CertificateToX509(
       const Certificate &certificate);
 
+  // Creates and returns a PEM-formatted certificate equivalent to the data in
+  // |x509|. Returns a non-OK Status if the X509 object could not be
+  // transformed.
+  static StatusOr<Certificate> X509ToPemCertificate(const X509 &x509);
+
   // From CertificateUtilInterface.
 
   Status VerifyCertificate(const Certificate &certificate,

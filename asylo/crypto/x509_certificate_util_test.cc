@@ -17,6 +17,8 @@
  */
 #include "asylo/crypto/x509_certificate_util.h"
 
+#include <algorithm>
+#include <cctype>
 #include <string>
 
 #include <gmock/gmock.h>
@@ -30,19 +32,16 @@ namespace asylo {
 namespace {
 
 constexpr char kTestRootCertPem[] =
-    R"(-----BEGIN CERTIFICATE-----
-MIIB+TCCAaCgAwIBAgIRYXN5bG8gdGVzdCBjZXJ0IDEwCgYIKoZIzj0EAwIwVDEL
-MAkGA1UEBhMCVVMxCzAJBgNVBAgMAldBMREwDwYDVQQHDAhLaXJrbGFuZDEOMAwG
-A1UECwwFQXN5bG8xFTATBgNVBAMMDFRlc3QgUm9vdCBDQTAeFw0xOTA1MDMxODEz
-MjBaFw0xOTA1MDQxODEzMjBaMFQxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJXQTER
-MA8GA1UEBwwIS2lya2xhbmQxDjAMBgNVBAsMBUFzeWxvMRUwEwYDVQQDDAxUZXN0
-IFJvb3QgQ0EwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATq7aUQPokZT0O/4NhE
-8+efAAlX/DySN8fqjdzWfiLHXNdRGeqaoC92zsrLvxsv5hxp/J7q2h/imlZ9bOtG
-jha9o1MwUTAdBgNVHQ4EFgQUcN3IQ2MRK/eH7KSED3q+9it1/a0wHwYDVR0jBBgw
-FoAUcN3IQ2MRK/eH7KSED3q+9it1/a0wDwYDVR0TAQH/BAUwAwEB/zAKBggqhkjO
-PQQDAgNHADBEAiAcTIfVdk3xKvgka85I96uGdWSDYWYlShzXaUDB04crYAIgBtdS
-1WkwPDgfyWZcUO+ImDG38iEOwuPXSk18GRwMrFY=
------END CERTIFICATE-----)";
+    "-----BEGIN CERTIFICATE-----\nMIIB+TCCAaCgAwIBAgIRYXN5bG8gdGVzdCBjZXJ0IDEwC"
+    "gYIKoZIzj0EAwIwVDELMAkGA1UEBhMCVVMxCzAJBgNVBAgMAldBMREwDwYDVQQHDAhLaXJrbGF"
+    "uZDEOMAwGA1UECwwFQXN5bG8xFTATBgNVBAMMDFRlc3QgUm9vdCBDQTAeFw0xOTA1MDMxODEzM"
+    "jBaFw0xOTA1MDQxODEzMjBaMFQxCzAJBgNVBAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UEBww"
+    "IS2lya2xhbmQxDjAMBgNVBAsMBUFzeWxvMRUwEwYDVQQDDAxUZXN0IFJvb3QgQ0EwWTATBgcqh"
+    "kjOPQIBBggqhkjOPQMBBwNCAATq7aUQPokZT0O/4NhE8+efAAlX/DySN8fqjdzWfiLHXNdRGeq"
+    "aoC92zsrLvxsv5hxp/J7q2h/imlZ9bOtGjha9o1MwUTAdBgNVHQ4EFgQUcN3IQ2MRK/eH7KSED"
+    "3q+9it1/a0wHwYDVR0jBBgwFoAUcN3IQ2MRK/eH7KSED3q+9it1/a0wDwYDVR0TAQH/BAUwAwE"
+    "B/zAKBggqhkjOPQQDAgNHADBEAiAcTIfVdk3xKvgka85I96uGdWSDYWYlShzXaUDB04crYAIgB"
+    "tdS1WkwPDgfyWZcUO+ImDG38iEOwuPXSk18GRwMrFY=\n-----END CERTIFICATE-----";
 
 constexpr char kTestRootPublicKeyDerHex[] =
     "3059301306072a8648ce3d020106082a8648ce3d03010703420004eaeda5103e89194f43bf"
@@ -96,7 +95,25 @@ ovillA==
 
 constexpr char kBadData[] = "c0ff33";
 
+using ::testing::Eq;
+using ::testing::Not;
 using ::testing::Test;
+
+MATCHER_P(EqualIgnoreWhiteSpace, expected_arg, "") {
+  // Make copies for modification.
+  std::string actual = arg;
+  std::string expected = expected_arg;
+
+  actual.erase(std::remove_if(actual.begin(), actual.end(),
+                              [](unsigned char x) { return std::isspace(x); }),
+               actual.end());
+  expected.erase(
+      std::remove_if(expected.begin(), expected.end(),
+                     [](unsigned char x) { return std::isspace(x); }),
+      expected.end());
+
+  return actual == expected;
+}
 
 class X509CertificateUtilTest : public Test {
  public:
@@ -147,6 +164,46 @@ TEST_F(X509CertificateUtilTest, CertificateX509BadData) {
 
   EXPECT_THAT(X509CertificateUtil::CertificateToX509(cert).status(),
               StatusIs(error::GoogleError::INTERNAL));
+}
+
+// Verifies that CertificateToX509 followed by X509ToPemCertificate returns the
+// original PEM-encoded certificate.
+TEST_F(X509CertificateUtilTest,
+       CertificateToX509andX509ToPemCertificateSuccess) {
+  Certificate cert;
+  cert.set_format(Certificate::X509_PEM);
+  cert.set_data(kTestRootCertPem);
+
+  bssl::UniquePtr<X509> x509;
+  ASYLO_ASSERT_OK_AND_ASSIGN(x509,
+                             X509CertificateUtil::CertificateToX509(cert));
+
+  Certificate pem_formatted_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(pem_formatted_cert,
+                             X509CertificateUtil::X509ToPemCertificate(*x509));
+
+  EXPECT_THAT(pem_formatted_cert.format(), Eq(Certificate::X509_PEM));
+  EXPECT_THAT(pem_formatted_cert.data(), EqualIgnoreWhiteSpace(cert.data()));
+}
+
+// Verifies that CertificateToX509 returns a different PEM-encoding when passed
+// an X509 object with a different value.
+TEST_F(X509CertificateUtilTest,
+       CertificateToX509ModifyX509ToPemCertificateDifferent) {
+  Certificate cert;
+  cert.set_format(Certificate::X509_PEM);
+  cert.set_data(kOtherIntermediateCertPem);
+
+  bssl::UniquePtr<X509> x509;
+  ASYLO_ASSERT_OK_AND_ASSIGN(x509,
+                             X509CertificateUtil::CertificateToX509(cert));
+
+  Certificate pem_formatted_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(pem_formatted_cert,
+                             X509CertificateUtil::X509ToPemCertificate(*x509));
+
+  EXPECT_THAT(pem_formatted_cert.data(),
+              Not(EqualIgnoreWhiteSpace(kTestRootCertPem)));
 }
 
 // Verifies that a certificate signed by the signing-key counterpart to the

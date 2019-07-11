@@ -114,6 +114,24 @@ StatusOr<bssl::UniquePtr<X509>> X509CertificateUtil::CertificateToX509(
   return std::move(x509);
 }
 
+StatusOr<Certificate> X509CertificateUtil::X509ToPemCertificate(
+    const X509 &x509) {
+  bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
+  if (!PEM_write_bio_X509(bio.get(), const_cast<X509 *>(&x509))) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  char *data;
+  long length = BIO_get_mem_data(bio.get(), &data);
+  if (length <= 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  Certificate cert;
+  cert.set_format(Certificate::X509_PEM);
+  cert.set_data(data, length);
+  return cert;
+}
+
 Status X509CertificateUtil::VerifyCertificate(
     const Certificate &certificate, ByteContainerView public_key_der) const {
   bssl::UniquePtr<X509> x509;
