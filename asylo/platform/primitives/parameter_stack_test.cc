@@ -105,7 +105,7 @@ TEST(ParameterStackTest, PushCopyTest) {
   NativeParameterStack params;
 
   for (int32_t iter = 1; iter <= kNumIterations; ++iter) {
-    params.PushByCopy(Extent{&iter, sizeof(iter)});
+    params.PushByCopy(Extent{&iter});
     EXPECT_EQ(params.size(), iter);
   }
   for (int32_t iter = kNumIterations; iter >= 1; --iter) {
