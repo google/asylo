@@ -68,6 +68,9 @@ constexpr char kExpectedReportdata[] =
     "7d9c51052da08dede50b007ff0c2abcc105761b8252243f3b8f627560401ea970000000000"
     "000000000000000000000000000000000000000000000000000000";
 
+constexpr int kBadPceCryptoSuite = 42;
+constexpr int kBadPceSignatureScheme = 42;
+
 using ::testing::Eq;
 using ::testing::Optional;
 using ::testing::SizeIs;
@@ -163,9 +166,21 @@ TEST_F(PceUtilTest, AsymmetricEncryptionSchemeToPceCryptoSuiteSupported) {
 
 TEST_F(PceUtilTest, AsymmetricEncryptionSchemeToPceCryptoSuiteUnsupported) {
   for (AsymmetricEncryptionScheme scheme : unsupported_encryption_schemes_) {
-    EXPECT_THAT(AsymmetricEncryptionSchemeToPceCryptoSuite(scheme),
-                Eq(absl::nullopt));
+    EXPECT_EQ(AsymmetricEncryptionSchemeToPceCryptoSuite(scheme),
+              absl::nullopt);
   }
+}
+
+TEST_F(PceUtilTest, PceCryptoSuiteToAsymmetricEncryptionSchemeSupported) {
+  for (const auto &pair : supported_encryption_schemes_) {
+    EXPECT_EQ(PceCryptoSuiteToAsymmetricEncryptionScheme(pair.second),
+              pair.first);
+  }
+}
+
+TEST_F(PceUtilTest, PceCryptoSuiteToAsymmetricEncryptionSchemeUnsupported) {
+  EXPECT_EQ(PceCryptoSuiteToAsymmetricEncryptionScheme(kBadPceCryptoSuite),
+            UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME);
 }
 
 TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeSupported) {
@@ -177,8 +192,19 @@ TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeSupported) {
 
 TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeUnsupported) {
   for (SignatureScheme scheme : unsupported_signature_schemes_) {
-    EXPECT_THAT(SignatureSchemeToPceSignatureScheme(scheme), Eq(absl::nullopt));
+    EXPECT_EQ(SignatureSchemeToPceSignatureScheme(scheme), absl::nullopt);
   }
+}
+
+TEST_F(PceUtilTest, PceSignatureSchemeToSignatureSchemeSupported) {
+  for (const auto &pair : supported_signature_schemes_) {
+    EXPECT_EQ(PceSignatureSchemeToSignatureScheme(pair.second), pair.first);
+  }
+}
+
+TEST_F(PceUtilTest, PceSignatureSchemeToSignatureSchemeUnsupported) {
+  EXPECT_EQ(PceSignatureSchemeToSignatureScheme(kBadPceSignatureScheme),
+            UNKNOWN_SIGNATURE_SCHEME);
 }
 
 TEST_F(PceUtilTest, ParseRsa3072PublicKeyInvalidSize) {
@@ -203,7 +229,7 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeySuccess) {
 
   bssl::UniquePtr<RSA> rsa = std::move(result).ValueOrDie();
 
-  EXPECT_THAT(RSA_size(rsa.get()), modulus.size());
+  EXPECT_EQ(RSA_size(rsa.get()), modulus.size());
 
   const BIGNUM *n;
   const BIGNUM *e;
@@ -268,7 +294,7 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
   bssl::UniquePtr<RSA> rsa2(std::move(result2).ValueOrDie());
 
   // Verify that both keys have the same modulus size.
-  EXPECT_THAT(RSA_size(rsa2.get()), Eq(RSA_size(rsa1.get())));
+  EXPECT_EQ(RSA_size(rsa2.get()), RSA_size(rsa1.get()));
 
   // Verify that the original key can decrypt a message encrypted by the
   // restored key.
@@ -289,7 +315,7 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
       << BsslLastErrorString();
   decrypted.resize(out_len);
 
-  EXPECT_THAT(decrypted, Eq(plaintext_));
+  EXPECT_EQ(decrypted, plaintext_);
 }
 
 TEST_F(PceUtilTest, CreateReportdataForGetPceInfoSuccess) {
@@ -312,7 +338,7 @@ TEST_F(PceUtilTest, CreateReportdataForGetPceInfoSuccess) {
   Reportdata expected_reportdata;
   ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kExpectedReportdata,
                                                 &expected_reportdata.data));
-  EXPECT_THAT(reportdata.data, Eq(expected_reportdata.data));
+  EXPECT_EQ(reportdata.data, expected_reportdata.data);
 }
 
 TEST_F(PceUtilTest,

@@ -52,6 +52,16 @@ absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
   }
 }
 
+AsymmetricEncryptionScheme PceCryptoSuiteToAsymmetricEncryptionScheme(
+    uint8_t pce_crypto_suite) {
+  switch (pce_crypto_suite) {
+    case PCE_ALG_RSA_OAEP_3072:
+      return RSA3072_OAEP;
+    default:
+      return UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME;
+  }
+}
+
 absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
     SignatureScheme signature_scheme) {
   switch (signature_scheme) {
@@ -59,6 +69,16 @@ absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
       return static_cast<uint8_t>(PCE_NIST_P256_ECDSA_SHA256);
     default:
       return absl::nullopt;
+  }
+}
+
+SignatureScheme PceSignatureSchemeToSignatureScheme(
+    uint8_t pce_signature_scheme) {
+  switch (pce_signature_scheme) {
+    case PCE_NIST_P256_ECDSA_SHA256:
+      return ECDSA_P256_SHA256;
+    default:
+      return UNKNOWN_SIGNATURE_SCHEME;
   }
 }
 

@@ -45,10 +45,19 @@ ABSL_CONST_INIT extern const size_t kRsa3072SerializedExponentSize;
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme);
 
-// Converts an AsymmetricEncryptionScheme to an equivalent signature scheme
-// representation used by the PCE.
+// Converts a PCE crypto suite to an equivalent AsymmetricEncryptionScheme
+// value.
+AsymmetricEncryptionScheme PceCryptoSuiteToAsymmetricEncryptionScheme(
+    uint8_t pce_crypto_suite);
+
+// Converts a SignatureScheme to an equivalent signature scheme representation
+// used by the PCE.
 absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
     SignatureScheme signature_scheme);
+
+// Converts a PCE signature scheme to an equivalent SignatureScheme value.
+SignatureScheme PceSignatureSchemeToSignatureScheme(
+    uint8_t pce_signature_scheme);
 
 // Parses an RSA-3072 public key from |public_key|. The input |public_key| is
 // expected to be a 388-byte buffer that contains a serialized key in the
