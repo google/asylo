@@ -20,14 +20,18 @@
 #define ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_
 
 #include <memory>
+#include <string>
 #include <vector>
 
 #include <google/protobuf/repeated_field.h>
+#include "absl/strings/string_view.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sgx/attestation_key.pb.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
 #include "asylo/util/status.h"
@@ -37,6 +41,10 @@
 namespace asylo {
 namespace sgx {
 
+extern const char *const kAttestationPublicKeyVersion;
+extern const char *const kAttestationPublicKeyPurpose;
+extern const char *const kPceSignReportPayloadVersion;
+
 // Checks that the sealed secret header contains correct name, version, and
 // purpose.
 Status CheckRemoteAssertionGeneratorEnclaveSecretHeader(
@@ -45,6 +53,13 @@ Status CheckRemoteAssertionGeneratorEnclaveSecretHeader(
 // Creates a SealedSecretHeader and sets its name, version and purpose to
 // correct values for an AGE secret header.
 SealedSecretHeader GetRemoteAssertionGeneratorEnclaveSecretHeader();
+
+// Creates a RemoteAssertionGeneratorEnclaveSecret that contains
+// |attestation_key| and |certificate_chains|.
+StatusOr<SealedSecret> CreateSealedSecret(
+    const SealedSecretHeader &header,
+    const google::protobuf::RepeatedPtrField<CertificateChain> &certificate_chains,
+    const SigningKey &attestation_key);
 
 // Unseals |sealed_secret| to get an attestation key and certificate chains.
 // Assigns certificate chains to |certificate_chains| and then returns
@@ -62,16 +77,18 @@ StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>
 ExtractAttestationKeyFromAsymmetricSigningKeyProto(
     const AsymmetricSigningKeyProto &asymmetric_signing_key_proto);
 
-// Creates a RemoteAssertionGeneratorEnclaveSecret that contains
-// |attestation_key| and |certificate_chains|.
-StatusOr<SealedSecret> CreateSealedSecret(
-    const SealedSecretHeader &header,
-    const google::protobuf::RepeatedPtrField<CertificateChain> &certificate_chains,
-    const SigningKey &attestation_key);
+// Creates and returns an AsymmetricSigningKeyProto from |attestation_key|.
+StatusOr<AsymmetricSigningKeyProto> GetAsymmetricSigningKeyProtoFromSigningKey(
+    const SigningKey &signing_key);
 
-// Creates an AsymmetricSigningKeyProto from |attestation_key| and returns it.
-StatusOr<AsymmetricSigningKeyProto> GetAsymmetricSigningKeyProto(
-    const SigningKey &attestation_key);
+// Creates and returns a serialized PceSignReportPayload from |verifying_key|.
+StatusOr<std::string> CreateSerializedPceSignReportPayloadFromVerifyingKey(
+    const VerifyingKey &verifying_key);
+
+// Creates and returns a REPORTDATA on |serialized_pce_sign_report_payload| that
+// is suitable for the PCE's SignReport protocol.
+StatusOr<Reportdata> GenerateReportdataForPceSignReportProtocol(
+    absl::string_view serialized_pce_sign_report_payload);
 
 // Creates and Starts a gRPC server that implements the methods declared by
 // |remote_assertion_generator_service| on

@@ -28,7 +28,9 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_local_secret_sealer.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -54,6 +56,13 @@ constexpr char kCertificateChain[] = R"proto(
   certificates: { format: X509_DER data: "child" }
   certificates: { format: X509_DER data: "root" }
 )proto";
+constexpr char kTestVerifyingKeyDer[] =
+    "3059301306072a8648ce3d020106082a8648ce3d03010703420004eaeda5103e89194f43bf"
+    "e0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe6"
+    "1c69fc9eeada1fe29a567d6ceb468e16bd";
+constexpr char kReportdata[] =
+    "9c8e7ba2fbeef50173645c125a9ac25088894d4cdb41502506cfaa6ccd7771490000000000"
+    "00000000000000000000004153594c4f205349474e5245504f5254";
 
 TEST(RemoteAssertionGeneratorEnclaveUtilTest,
      TestRemoteAssertionGeneratorEnclaveHeaderSuccess) {
@@ -96,8 +105,9 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key,
                              EcdsaP256Sha256SigningKey::Create());
   AsymmetricSigningKeyProto asymmetric_signing_key_proto;
-  ASYLO_ASSERT_OK_AND_ASSIGN(asymmetric_signing_key_proto,
-                             GetAsymmetricSigningKeyProto(*attestation_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      asymmetric_signing_key_proto,
+      GetAsymmetricSigningKeyProtoFromSigningKey(*attestation_key));
 
   std::unique_ptr<SigningKey> attestation_key_extracted;
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key_extracted,
@@ -118,8 +128,9 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key,
                              EcdsaP256Sha256SigningKey::Create());
   AsymmetricSigningKeyProto asymmetric_signing_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(asymmetric_signing_key,
-                             GetAsymmetricSigningKeyProto(*attestation_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      asymmetric_signing_key,
+      GetAsymmetricSigningKeyProtoFromSigningKey(*attestation_key));
 
   // Set key type to invalid type.
   asymmetric_signing_key.set_key_type(AsymmetricSigningKeyProto::VERIFYING_KEY);
@@ -139,8 +150,9 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key,
                              EcdsaP256Sha256SigningKey::Create());
   AsymmetricSigningKeyProto asymmetric_signing_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(asymmetric_signing_key,
-                             GetAsymmetricSigningKeyProto(*attestation_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      asymmetric_signing_key,
+      GetAsymmetricSigningKeyProtoFromSigningKey(*attestation_key));
 
   // Set key type to invalid encoding.
   asymmetric_signing_key.set_encoding(
@@ -190,8 +202,9 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key,
                              EcdsaP256Sha256SigningKey::Create());
   RemoteAssertionGeneratorEnclaveSecret enclave_secret;
-  ASYLO_ASSERT_OK_AND_ASSIGN(*enclave_secret.mutable_attestation_key(),
-                             GetAsymmetricSigningKeyProto(*attestation_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      *enclave_secret.mutable_attestation_key(),
+      GetAsymmetricSigningKeyProtoFromSigningKey(*attestation_key));
 
   SealedSecret sealed_secret;
   sealer->Seal(header, {kIncorrectAad}, {enclave_secret.SerializeAsString()},
@@ -264,14 +277,15 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
 }
 
 TEST(RemoteAssertionGeneratorEnclaveUtilTest,
-     TestGetAsymmetricSigningKeySuccess) {
+     TestGetAsymmetricSigningKeyProtoForSigningKeySuccess) {
   std::unique_ptr<SigningKey> attestation_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key,
                              EcdsaP256Sha256SigningKey::Create());
 
   AsymmetricSigningKeyProto asymmetric_signing_key_proto;
-  ASYLO_ASSERT_OK_AND_ASSIGN(asymmetric_signing_key_proto,
-                             GetAsymmetricSigningKeyProto(*attestation_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      asymmetric_signing_key_proto,
+      GetAsymmetricSigningKeyProtoFromSigningKey(*attestation_key));
 
   EXPECT_THAT(asymmetric_signing_key_proto.key_type(),
               Eq(AsymmetricSigningKeyProto::SIGNING_KEY));
@@ -282,10 +296,68 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
 
   CleansingVector<uint8_t> serialized_attestation_key;
   ASYLO_ASSERT_OK(attestation_key->SerializeToDer(&serialized_attestation_key));
-  std::string key_expected = {
-      reinterpret_cast<const char *>(serialized_attestation_key.data()),
-      serialized_attestation_key.size()};
+  std::string key_expected = {serialized_attestation_key.begin(),
+                              serialized_attestation_key.end()};
   EXPECT_THAT(asymmetric_signing_key_proto.key(), Eq(key_expected));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     TestGetSerializedPceSignReportPayloadFromVerifyingKeySuccess) {
+  std::unique_ptr<SigningKey> attestation_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(attestation_key,
+                             EcdsaP256Sha256SigningKey::Create());
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key, attestation_key->GetVerifyingKey());
+
+  std::string serialized_pce_sign_report_payload;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      serialized_pce_sign_report_payload,
+      CreateSerializedPceSignReportPayloadFromVerifyingKey(*verifying_key));
+  PceSignReportPayload pce_sign_report_payload;
+  pce_sign_report_payload.ParseFromString(serialized_pce_sign_report_payload);
+
+  EXPECT_THAT(pce_sign_report_payload.version(),
+              Eq(kPceSignReportPayloadVersion));
+
+  const AttestationPublicKey &public_key =
+      pce_sign_report_payload.attestation_public_key();
+  EXPECT_THAT(public_key.purpose(), Eq(kAttestationPublicKeyPurpose));
+  EXPECT_THAT(public_key.version(), Eq(kAttestationPublicKeyVersion));
+
+  AsymmetricSigningKeyProto asymmetric_signing_key_proto =
+      public_key.attestation_public_key();
+
+  EXPECT_THAT(asymmetric_signing_key_proto.key_type(),
+              Eq(AsymmetricSigningKeyProto::VERIFYING_KEY));
+  EXPECT_THAT(asymmetric_signing_key_proto.encoding(),
+              Eq(AsymmetricKeyEncoding::ASYMMETRIC_KEY_DER));
+  EXPECT_THAT(asymmetric_signing_key_proto.signature_scheme(),
+              Eq(verifying_key->GetSignatureScheme()));
+
+  std::string serialized_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key, verifying_key->SerializeToDer());
+  EXPECT_THAT(asymmetric_signing_key_proto.key(), Eq(serialized_key));
+}
+
+TEST(RemoteAssertionGeneratorEnclaveUtilTest,
+     TestGenerateReportdataOnAttestationPublicKeySuccess) {
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key,
+                             EcdsaP256Sha256VerifyingKey::CreateFromDer(
+                                 absl::HexStringToBytes(kTestVerifyingKeyDer)));
+  std::string serialized_pce_sign_report_payload;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      serialized_pce_sign_report_payload,
+      CreateSerializedPceSignReportPayloadFromVerifyingKey(*verifying_key));
+
+  Reportdata actual_reportdata;
+  ASYLO_ASSERT_OK_AND_ASSIGN(actual_reportdata,
+                             GenerateReportdataForPceSignReportProtocol(
+                                 serialized_pce_sign_report_payload));
+  Reportdata expected_reportdata;
+  ASYLO_ASSERT_OK(
+      SetTrivialObjectFromHexString(kReportdata, &expected_reportdata.data));
+  EXPECT_THAT(actual_reportdata.data, Eq(expected_reportdata.data));
 }
 
 }  // namespace

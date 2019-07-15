@@ -18,8 +18,16 @@
 
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.h"
 
+#include <memory>
+#include <utility>
+
+#include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
 #include "asylo/util/status_macros.h"
@@ -141,11 +149,35 @@ Status RemoteAssertionGeneratorEnclave::GeneratePceInfoHardwareReport(
 Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
     const GenerateKeyAndCsrRequestInput &input,
     GenerateKeyAndCsrRequestOutput *output) {
+  if (!input.has_pce_target_info()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Input is missing pce_target_info");
+  }
+
+  std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key;
+  ASYLO_ASSIGN_OR_RETURN(signing_key, EcdsaP256Sha256SigningKey::Create());
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSIGN_OR_RETURN(verifying_key, signing_key->GetVerifyingKey());
+
+  ASYLO_ASSIGN_OR_RETURN(
+      *output->mutable_pce_sign_report_payload(),
+      CreateSerializedPceSignReportPayloadFromVerifyingKey(*verifying_key));
+
+  AlignedReportdataPtr reportdata;
+  ASYLO_ASSIGN_OR_RETURN(*reportdata,
+                         GenerateReportdataForPceSignReportProtocol(
+                             output->pce_sign_report_payload()));
+  AlignedTargetinfoPtr targetinfo;
+  ASYLO_ASSIGN_OR_RETURN(
+      *targetinfo, ConvertTargetInfoProtoToTargetinfo(input.pce_target_info()));
+  AlignedReportPtr report;
+  ASYLO_RETURN_IF_ERROR(
+      GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  output->mutable_report()->set_value(
+      ConvertTrivialObjectToBinaryString(*report));
+
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();
-
-  ASYLO_ASSIGN_OR_RETURN(attestation_key_certs_pair_locked->attestation_key,
-                         EcdsaP256Sha256SigningKey::Create());
-
+  attestation_key_certs_pair_locked->attestation_key = std::move(signing_key);
   return Status::OkStatus();
 }
 

@@ -79,18 +79,9 @@ message GeneratePceInfoSgxHardwareReportOutput {
   optional ReportProto report = 1;
 }
 
-message CertificateSigningRequest {
-  // The certificate authority that is responsible for interpreting |data|.
-  // Required.
-  optional string target_certificate_authority = 1;
-
-  // The raw bytes of an encoded certificate signing request. Required.
-  optional bytes data = 2;
-}
-
 // An input message that instructs the RemoteAssertionGenerator enclave to
 // generate an attestation key, an SGX hardware REPORT that is suitable for
-// PCE's GetPceInfo protocol, and any number of certificate signing requests
+// PCE's SignReport protocol, and any number of certificate signing requests
 // for certificate authorities that should certify the attestation public key.
 message GenerateKeyAndCsrRequestInput {
   // An SGX TARGETINFO structure from the PCE running on the same platform.
@@ -102,16 +93,19 @@ message GenerateKeyAndCsrRequestInput {
   repeated string target_certificate_authorities = 2;
 }
 
-// An output message containing an attestation key, an SGX hardware REPORT that
-// is suitable for PCE's GetPceInfo protocol, and any number of certificate
-// signing requests that should certify the attestation public key.
+// An output message containing an SGX hardware REPORT that is suitable for
+// PCE's SignReport protocol, a serialized PceSignReportPayload that is an input
+// for generating the REPORTDATA for a report that is signed by the PCE, and any
+// number of certificate signing requests that should certify the attestation
+// public key.
 message GenerateKeyAndCsrRequestOutput {
   // A SGX hardware REPORT that is generated against TARGETINFO from
   // |pce_target_info| in the corresponding input message. Required.
   optional ReportProto report = 1;
 
-  // Required. an attestation public key that needs to be certified.
-  optional AsymmetricSigningKeyProto public_key = 2;
+  // This output value accompanies |report|. It is the payload that was used to
+  // produce the REPORTDATA in |report|. Required.
+  optional bytes pce_sign_report_payload = 2;
 
   // Certificate signing requests for certificate authorities that should
   // certify |public_key|. Optional.
