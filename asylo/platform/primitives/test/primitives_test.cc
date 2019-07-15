@@ -40,10 +40,12 @@
 
 using ::testing::_;
 using ::testing::Eq;
+using ::testing::IsEmpty;
 using ::testing::MockFunction;
 using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Return;
+using ::testing::SizeIs;
 using ::testing::StrEq;
 
 namespace asylo {
@@ -86,9 +88,9 @@ int32_t MultiplyByTwoOrDie(const std::shared_ptr<Client> &client,
   NativeParameterStack params;
   params.PushByCopy<int32_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kTimesTwoSelector, &params));
-  EXPECT_FALSE(params.empty());
+  EXPECT_THAT(params, Not(IsEmpty()));
   const int32_t res = params.Pop<int32_t>();
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(params, IsEmpty());
   return res;
 }
 
@@ -99,9 +101,9 @@ int64_t AveragePerThreadOrDie(const std::shared_ptr<Client> &client,
   NativeParameterStack params;
   params.PushByCopy<int64_t>(value);
   ASYLO_EXPECT_OK(client->EnclaveCall(kAveragePerThreadSelector, &params));
-  EXPECT_FALSE(params.empty());
+  EXPECT_THAT(params, Not(IsEmpty()));
   const int64_t res = params.Pop<int64_t>();
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(params, IsEmpty());
   return res;
 }
 
@@ -111,9 +113,9 @@ uint64_t StressMallocsOrDie(const std::shared_ptr<Client> &client,
   params.PushByCopy<uint64_t>(malloc_size);
   params.PushByCopy<uint64_t>(malloc_count);
   ASYLO_EXPECT_OK(client->EnclaveCall(kStressMallocs, &params));
-  EXPECT_FALSE(params.empty());
+  EXPECT_THAT(params, Not(IsEmpty()));
   const uint64_t res = params.Pop<uint64_t>();
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(params, IsEmpty());
   return res;
 }
 
@@ -222,7 +224,7 @@ TEST_F(PrimitivesTest, AbortEnclave) {
   int32_t value = 10;
   NativeParameterStack params;
   params.PushByCopy<int32_t>(value);
-  Status status = client->EnclaveCall(kTimesTwoSelector, &params);
+  auto status = client->EnclaveCall(kTimesTwoSelector, &params);
   EXPECT_THAT(status, Not(IsOk()));
 
   // Check that we can't enter through a copy of the client.
@@ -238,9 +240,9 @@ TEST_F(PrimitivesTest, CallChain) {
     NativeParameterStack params;
     params.PushByCopy<int32_t>(n);
     ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedFibonacci, &params));
-    EXPECT_FALSE(params.empty());
+    EXPECT_THAT(params, Not(IsEmpty()));
     const int32_t res = params.Pop<int32_t>();
-    EXPECT_TRUE(params.empty());
+    EXPECT_THAT(params, IsEmpty());
     return res;
   };
 
@@ -340,9 +342,9 @@ TEST_F(PrimitivesTest, TrustedMalloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   NativeParameterStack params;
   ASYLO_EXPECT_OK(client->EnclaveCall(kTrustedMallocTest, &params));
-  EXPECT_FALSE(params.empty());
+  EXPECT_THAT(params, Not(IsEmpty()));
   EXPECT_TRUE(params.Pop<bool>());
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(params, IsEmpty());
 }
 
 // Ensure the buffers returned by untrusted alloc do not satisfy
@@ -351,9 +353,9 @@ TEST_F(PrimitivesTest, UnrustedAlloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   NativeParameterStack params;
   ASYLO_EXPECT_OK(client->EnclaveCall(kUntrustedLocalAllocTest, &params));
-  EXPECT_FALSE(params.empty());
+  EXPECT_THAT(params, Not(IsEmpty()));
   EXPECT_TRUE(params.Pop<bool>());
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(params, IsEmpty());
 }
 
 // Ensure multiple parameters are passed back and forth.
@@ -365,29 +367,28 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
   NativeParameterStack params;
   params.PushByCopy<char>(in1.data(), in1.size());
   params.PushByCopy<uint64_t>(in2);
-  params.PushByCopy<char>(in3, strlen(in3) + 1);
+  params.PushByCopy<char>(in3, strlen(in3));
   ASYLO_ASSERT_OK(client->EnclaveCall(kCopyMultipleParamsSelector, &params));
-  EXPECT_THAT(params.size(), Eq(4));
+
+  EXPECT_THAT(params, SizeIs(4));
   {
     auto outp4 = params.Pop();
-    std::string out4(reinterpret_cast<const char *>(outp4->data()),
-                     outp4->size());
-    EXPECT_THAT(out4, StrEq("Foo"));
+    const std::string out4s(outp4->As<char>(), outp4->size());
+    EXPECT_THAT(out4s, StrEq("Foo"));
   }
   {
-    auto outp3 = params.Pop();
-    std::string out3(reinterpret_cast<const char *>(outp3->data()),
-                     outp3->size());
-    EXPECT_THAT(out3, StrEq(in1));
+    auto outp1 = params.Pop();
+    ASSERT_THAT(*outp1, SizeIs(in1.size()));
+    const std::string out1s(outp1->As<char>(), outp1->size());
+    EXPECT_THAT(out1s, StrEq(in1));
   }
   EXPECT_THAT(params.Pop<uint64_t>(), Eq(in2));
   {
-    auto outp1 = params.Pop();
-    ASSERT_THAT(outp1->size(), strlen(in3) + 1);
-    const char *out1s = reinterpret_cast<const char *>(outp1->data());
-    EXPECT_THAT(out1s, StrEq(in3));
+    auto outp3 = params.Pop();
+    const std::string out3s(outp3->As<char>(), outp3->size());
+    EXPECT_THAT(out3s, StrEq(in3));
   }
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(params, IsEmpty());
 }
 
 }  // namespace

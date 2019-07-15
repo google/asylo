@@ -25,6 +25,7 @@
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/util/asylo_macros.h"
 #include "asylo/util/mutex_guarded.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace primitives {

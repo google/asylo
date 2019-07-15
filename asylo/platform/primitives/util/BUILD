@@ -70,6 +70,7 @@ cc_library(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/util:asylo_macros",
         "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
@@ -85,6 +86,7 @@ cc_test(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "//asylo/util:thread",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/time",
@@ -100,11 +102,13 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":message_reader_writer",
         ":primitive_locks",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/x86:spin_lock",
+        "//asylo/util:status_macros",
     ],
 )
 

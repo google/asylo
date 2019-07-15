@@ -75,6 +75,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:asylo_macros",
     ],
 )

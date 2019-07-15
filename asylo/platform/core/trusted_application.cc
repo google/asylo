@@ -47,19 +47,23 @@
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
+#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
-using asylo::primitives::Extent;
-using asylo::primitives::EntryHandler;
-using asylo::primitives::MakePrimitiveStatus;
-using asylo::primitives::PrimitiveStatus;
-using asylo::primitives::TrustedParameterStack;
-using asylo::primitives::TrustedPrimitives;
+using ::asylo::primitives::EntryHandler;
+using ::asylo::primitives::Extent;
+using ::asylo::primitives::MakePrimitiveStatus;
+using ::asylo::primitives::MessageReader;
+using ::asylo::primitives::MessageWriter;
+using ::asylo::primitives::PrimitiveStatus;
+using ::asylo::primitives::TrustedParameterStack;
+using ::asylo::primitives::TrustedPrimitives;
 using EnclaveState = ::asylo::TrustedApplication::State;
 using google::protobuf::RepeatedPtrField;
 
@@ -159,72 +163,63 @@ class StatusSerializer {
   std::function<void *(size_t)> custom_allocator_;
 };
 
-// Validates that the address-range [|address|, |address| +|size|) is fully
-// contained outside of the enclave.
-Status VerifyUntrustedAddressRange(void *address, size_t size) {
-  if (!enc_is_outside_enclave(address, size)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-        "Unexpected reference to resource inside the enclave.");
+// Validates that the address-range [|address|, |address| + |size|) is fully
+// contained in enclave trusted memory.
+PrimitiveStatus VerifyTrustedAddressRange(void *address, size_t size) {
+  if (!enc_is_within_enclave(address, size)) {
+    return PrimitiveStatus(
+        SGX_ERROR_INVALID_PARAMETER,
+        "Unexpected reference to resource outside the enclave trusted memory.");
   }
-  return Status::OkStatus();
+  return PrimitiveStatus::OkStatus();
 }
 
 // Handler installed by the runtime to initialize the enclave.
-PrimitiveStatus Initialize(void *context, TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
-  TrustedParameterStack::ExtentPtr input_extent = params->Pop();
-  TrustedParameterStack::ExtentPtr name_extent = params->Pop();
+PrimitiveStatus Initialize(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  auto input_extent = in->next();
+  auto name_extent = in->next();
 
-  size_t input_len = input_extent->size();
-  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
-      VerifyUntrustedAddressRange(input_extent->data(), input_len)));
-  std::unique_ptr<char[]> input(new char[input_len]);
-  input_extent->CopyTo(input.get());
+  ASYLO_RETURN_IF_ERROR(
+      VerifyTrustedAddressRange(input_extent.data(), input_extent.size()));
 
-  size_t name_len = name_extent->size();
-  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
-      VerifyUntrustedAddressRange(name_extent->data(), name_len)));
-  std::unique_ptr<char[]> name(new char[name_len]);
-  name_extent->CopyTo(name.get());
+  ASYLO_RETURN_IF_ERROR(
+      VerifyTrustedAddressRange(name_extent.data(), name_extent.size()));
 
   char *output = nullptr;
   size_t output_len = 0;
   int result = 0;
   try {
-    result = asylo::__asylo_user_init(name.get(), /*config=*/input.get(),
-                                      /*config_len=*/input_len, &output,
-                                      &output_len);
+    result = asylo::__asylo_user_init(/*name=*/name_extent.As<char>(),
+                                      /*config=*/input_extent.As<char>(),
+                                      /*config_len=*/input_extent.size(),
+                                      &output, &output_len);
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
   if (!result) {
-    params->PushByCopy(Extent{output, output_len});
+    out->PushByCopy(Extent{output, output_len});
   }
   enc_untrusted_free(output);
   return PrimitiveStatus(result);
 }
 
 // Handler installed by the runtime to invoke the enclave run entry point.
-PrimitiveStatus Run(void *context, TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
-  auto input_extent = params->Pop();
-  size_t input_len = input_extent->size();
-  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
-      VerifyUntrustedAddressRange(input_extent->data(), input_len)));
-  std::unique_ptr<char[]> input(new char[input_len]);
-  input_extent->CopyTo(input.get());
-
+PrimitiveStatus Run(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto input_extent = in->next();
   char *output = nullptr;
   size_t output_len = 0;
   int result = 0;
   try {
-    result = asylo::__asylo_user_run(input.get(), input_len, &output,
-                                     &output_len);
+    result = asylo::__asylo_user_run(input_extent.As<char>(),
+                                     input_extent.size(), &output, &output_len);
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
   if (!result) {
-    params->PushByCopy(Extent{output, output_len});
+    out->PushByCopy(Extent{output, output_len});
   }
   enc_untrusted_free(output);
   return PrimitiveStatus(result);
@@ -232,26 +227,20 @@ PrimitiveStatus Run(void *context, TrustedParameterStack *params) {
 
 // Handler installed by the runtime to invoke the enclave finalization entry
 // point.
-PrimitiveStatus Finalize(void *context, TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
-  auto input_extent = params->Pop();
-  size_t input_len = input_extent->size();
-  ASYLO_RETURN_IF_ERROR(MakePrimitiveStatus(
-      VerifyUntrustedAddressRange(input_extent->data(), input_len)));
-  std::unique_ptr<char[]> input(new char[input_len]);
-  input_extent->CopyTo(input.get());
-
+PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto input_extent = in->next();
   char *output = nullptr;
   size_t output_len = 0;
   int result = 0;
   try {
-    result = asylo::__asylo_user_fini(input.get(), input_len, &output,
-                                     &output_len);
+    result = asylo::__asylo_user_fini(
+        input_extent.As<char>(), input_extent.size(), &output, &output_len);
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
   if (!result) {
-    params->PushByCopy(Extent{output, output_len});
+    out->PushByCopy(Extent{output, output_len});
   }
   enc_untrusted_free(output);
   return PrimitiveStatus(result);
@@ -259,8 +248,9 @@ PrimitiveStatus Finalize(void *context, TrustedParameterStack *params) {
 
 // Handler installed by the runtime to invoke the enclave donate thread entry
 // point.
-PrimitiveStatus DonateThread(void *context, TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 0);
+PrimitiveStatus DonateThread(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   int result = 0;
   try {
     result = asylo::__asylo_threading_donate();

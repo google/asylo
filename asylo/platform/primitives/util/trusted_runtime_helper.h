@@ -21,6 +21,7 @@
 
 #include <cstdio>
 
+#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 
@@ -42,8 +43,10 @@ PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
                                      const EntryHandler &handler);
 
 // Invokes the enclave entry handler mapped to |selector|.
-PrimitiveStatus InvokeEntryHandler(uint64_t selector,
-                                     TrustedParameterStack *params);
+PrimitiveStatus InvokeEntryHandler(
+    uint64_t selector,
+    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
+                   TrustedPrimitives::UntrustedLocalFree> *params);
 
 // Marks enclave intitialized.
 void MarkEnclaveInitialized();

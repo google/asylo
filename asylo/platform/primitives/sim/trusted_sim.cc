@@ -26,6 +26,7 @@
 #include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/util/status_macros.h"
 
@@ -61,11 +62,9 @@ struct Simulator {
 
 // Message handler installed by the runtime to finalize the enclave at the time
 // it is destroyed.
-PrimitiveStatus FinalizeEnclave(void *context, TrustedParameterStack *params) {
-  if (!params->empty()) {
-    return {error::GoogleError::INVALID_ARGUMENT,
-            "FinalizeEnclave does not expect any parameters."};
-  }
+PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
+                                MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   PrimitiveStatus status = asylo_enclave_fini();
   memset(Simulator::GetInstance(), 0, sizeof(Simulator));
   return status;
@@ -104,8 +103,10 @@ extern "C" void *enclave_sbrk(intptr_t increment) {
   return result;
 }
 
-extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
-                                              TrustedParameterStack *params) {
+extern "C" PrimitiveStatus asylo_enclave_call(
+    uint64_t selector,
+    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
+                   TrustedPrimitives::UntrustedLocalFree> *params) {
   if (GetSimTrampoline()->magic_number != kTrampolineMagicNumber ||
       GetSimTrampoline()->version != kTrampolineVersion) {
     TrustedPrimitives::BestEffortAbort(
@@ -122,11 +123,11 @@ bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
          reinterpret_cast<const uint8_t *>(addr) + size < end;
 }
 
-void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) {
+void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
   return GetSimTrampoline()->asylo_local_alloc_handler(size);
 }
 
-void TrustedPrimitives::UntrustedLocalFree(void *ptr) {
+void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   GetSimTrampoline()->asylo_local_free_handler(ptr);
 }
 

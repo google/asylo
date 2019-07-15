@@ -70,6 +70,7 @@ cc_library(
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/test/util:status_matchers",
         "//asylo/util:status",
         "//asylo/util:thread",

@@ -41,7 +41,7 @@ constexpr uint64_t kTrampolineVersion = 0;
 // library, so it cannot just link to them; leaving them unresolved does not
 // allow specifying the trusted shared library as 'fully_static_link' and
 // mandates setting linkopts = "-rdynamic" when building the unrtusted driver
-// application. Instead of all this, it is now allocated at a predefines address
+// application. Instead of all this, it is now allocated at a predefined address
 // and accessed by casting that address to SimTrampoline, allowing to specify
 // 'fully_static_link' for the trusted library and eliminating the need in
 // "-rdynamic" flag for the untrusted one.

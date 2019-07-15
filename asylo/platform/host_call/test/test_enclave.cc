@@ -22,11 +22,15 @@
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/system_call/system_call.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
 
 using asylo::primitives::EntryHandler;
+using asylo::primitives::Extent;
+using asylo::primitives::MessageReader;
+using asylo::primitives::MessageWriter;
 using asylo::primitives::PrimitiveStatus;
 using asylo::primitives::TrustedPrimitives;
 
@@ -35,138 +39,132 @@ namespace host_call {
 namespace {
 
 // Message handler that aborts the enclave.
-PrimitiveStatus Abort(void *context,
-                      primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus Abort(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   TrustedPrimitives::BestEffortAbort("Aborting enclave");
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestAccess(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestAccess(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int mode = params->Pop<int>();
-  const auto path_name = params->Pop();
+  int mode = in->next<int>();
+  const auto path_name = in->next();
 
-  params->PushByCopy<int>(enc_untrusted_access(path_name->As<char>(), mode));
+  out->Push<int>(enc_untrusted_access(path_name.As<char>(), mode));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestChmod(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestChmod(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  mode_t mode = params->Pop<mode_t>();
-  const auto path_name = params->Pop();
+  mode_t mode = in->next<mode_t>();
+  const auto path_name = in->next();
 
-  params->PushByCopy<int>(enc_untrusted_chmod(path_name->As<char>(), mode));
+  out->Push<int>(enc_untrusted_chmod(path_name.As<char>(), mode));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestClose(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+PrimitiveStatus TestClose(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_close(fd));
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_close(fd));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestFchmod(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestFchmod(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  mode_t mode = params->Pop<mode_t>();
-  int fd = params->Pop<int>();
+  mode_t mode = in->next<mode_t>();
+  int fd = in->next<int>();
 
-  params->PushByCopy<int>(enc_untrusted_fchmod(fd, mode));
+  out->Push<int>(enc_untrusted_fchmod(fd, mode));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGetpid(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestGetpid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<pid_t>(enc_untrusted_getpid());
+  out->Push<pid_t>(enc_untrusted_getpid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGetPpid(void *context,
-                            primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestGetPpid(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<pid_t>(enc_untrusted_getppid());
+  out->Push<pid_t>(enc_untrusted_getppid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestSetSid(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestSetSid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<pid_t>(enc_untrusted_setsid());
+  out->Push<pid_t>(enc_untrusted_setsid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestKill(void *context,
-                         primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int sig = params->Pop<int>();
-  pid_t pid = params->Pop<pid_t>();
+  int sig = in->next<int>();
+  pid_t pid = in->next<pid_t>();
 
-  params->PushByCopy<int>(enc_untrusted_kill(pid, sig));
+  out->Push<int>(enc_untrusted_kill(pid, sig));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestLink(void *context,
-                         primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestLink(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  const auto new_path = params->Pop();
-  const auto old_path = params->Pop();
+  const auto new_path = in->next();
+  const auto old_path = in->next();
 
-  params->PushByCopy<int>(
-      enc_untrusted_link(old_path->As<char>(), new_path->As<char>()));
+  out->Push<int>(enc_untrusted_link(old_path.As<char>(), new_path.As<char>()));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestLseek(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+PrimitiveStatus TestLseek(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  int whence = params->Pop<int>();
-  off_t offset = params->Pop<off_t>();
-  int fd = params->Pop<int>();
+  int whence = in->next<int>();
+  off_t offset = in->next<off_t>();
+  int fd = in->next<int>();
 
-  params->PushByCopy<off_t>(enc_untrusted_lseek(fd, offset, whence));
+  out->Push<off_t>(enc_untrusted_lseek(fd, offset, whence));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestMkdir(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestMkdir(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  mode_t mode = params->Pop<mode_t>();
-  const auto pathname = params->Pop();
+  mode_t mode = in->next<mode_t>();
+  const auto pathname = in->next();
 
-  params->PushByCopy<int>(enc_untrusted_mkdir(pathname->As<char>(), mode));
+  out->Push<int>(enc_untrusted_mkdir(pathname.As<char>(), mode));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestOpen(void *context,
-                         primitives::TrustedParameterStack *params) {
+PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
   // open() can assume 2 or 3 arguments.
-  if (params->size() == 3) {
-    mode_t mode = params->Pop<mode_t>();
-    int flags = params->Pop<int>();
-    const auto pathname = params->Pop();
-    params->PushByCopy<int>(
-        enc_untrusted_open(pathname->As<char>(), flags, mode));
-  } else if (params->size() == 2) {
-    int flags = params->Pop<int>();
-    const auto pathname = params->Pop();
-    params->PushByCopy<int>(enc_untrusted_open(pathname->As<char>(), flags));
+  if (in->size() == 3) {
+    mode_t mode = in->next<mode_t>();
+    int flags = in->next<int>();
+    const auto pathname = in->next();
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags, mode));
+  } else if (in->size() == 2) {
+    int flags = in->next<int>();
+    const auto pathname = in->next();
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags));
   } else {
     return {error::GoogleError::INVALID_ARGUMENT,
             "Unexpected number of arguments. open() expects 2 or 3 arguments."};
@@ -175,331 +173,325 @@ PrimitiveStatus TestOpen(void *context,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestUnlink(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+PrimitiveStatus TestUnlink(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  const auto pathname = params->Pop();
+  const auto pathname = in->next();
 
-  params->PushByCopy<int>(enc_untrusted_unlink(pathname->As<char>()));
+  out->Push<int>(enc_untrusted_unlink(pathname.As<char>()));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestUmask(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+PrimitiveStatus TestUmask(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  mode_t mask = params->Pop<mode_t>();
+  mode_t mask = in->next<mode_t>();
 
-  params->PushByCopy<mode_t>(enc_untrusted_umask(mask));
+  out->Push<mode_t>(enc_untrusted_umask(mask));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGetuid(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestGetuid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<uid_t>(enc_untrusted_getuid());
+  out->Push<uid_t>(enc_untrusted_getuid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGetgid(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestGetgid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<gid_t>(enc_untrusted_getgid());
+  out->Push<gid_t>(enc_untrusted_getgid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGeteuid(void *context,
-                            primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestGeteuid(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<uid_t>(enc_untrusted_geteuid());
+  out->Push<uid_t>(enc_untrusted_geteuid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGetegid(void *context,
-                            primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestGetegid(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<gid_t>(enc_untrusted_getegid());
+  out->Push<gid_t>(enc_untrusted_getegid());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestRename(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestRename(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  const auto newpath = params->Pop();
-  const auto oldpath = params->Pop();
+  const auto newpath = in->next();
+  const auto oldpath = in->next();
 
-  params->PushByCopy<int>(
-      enc_untrusted_rename(oldpath->As<char>(), newpath->As<char>()));
+  out->Push<int>(enc_untrusted_rename(oldpath.As<char>(), newpath.As<char>()));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestRead(void *context,
-                         primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
-  size_t count = params->Pop<size_t>();
-  int fd = params->Pop<int>();
+PrimitiveStatus TestRead(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  size_t count = in->next<size_t>();
+  int fd = in->next<int>();
   char read_buf[20];
 
-  params->PushByCopy<ssize_t>(enc_untrusted_read(fd, read_buf, count));
-  params->PushByCopy<char>(read_buf, strlen(read_buf) + 1);
+  out->Push<ssize_t>(enc_untrusted_read(fd, read_buf, count));
+  out->PushByCopy(Extent{read_buf, strlen(read_buf) + 1});
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestWrite(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
-  size_t count = params->Pop<size_t>();
-  const auto write_buf = params->Pop();
-  int fd = params->Pop<int>();
+PrimitiveStatus TestWrite(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+  size_t count = in->next<size_t>();
+  const auto write_buf = in->next();
+  int fd = in->next<int>();
 
-  params->PushByCopy<ssize_t>(
-      enc_untrusted_write(fd, write_buf->As<char>(), count));
+  out->Push<ssize_t>(enc_untrusted_write(fd, write_buf.As<char>(), count));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestSymlink(void *context,
-                            primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
-  const auto linkpath = params->Pop();
-  const auto target = params->Pop();
+PrimitiveStatus TestSymlink(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  const auto linkpath = in->next();
+  const auto target = in->next();
 
-  params->PushByCopy<ssize_t>(
-      enc_untrusted_symlink(target->As<char>(), linkpath->As<char>()));
+  out->Push<ssize_t>(
+      enc_untrusted_symlink(target.As<char>(), linkpath.As<char>()));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestReadlink(void *context,
-                             primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
-  const auto pathname = params->Pop();
+PrimitiveStatus TestReadlink(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  const auto pathname = in->next();
 
   char buf[PATH_MAX];
   ssize_t len =
-      enc_untrusted_readlink(pathname->As<char>(), buf, sizeof(buf) - 1);
-  params->PushByCopy<ssize_t>(len);
+      enc_untrusted_readlink(pathname.As<char>(), buf, sizeof(buf) - 1);
+  out->Push<ssize_t>(len);
 
   buf[len] = '\0';
-  params->PushByCopy<char>(buf, strlen(buf) + 1);
+  out->PushByCopy(Extent{buf, strlen(buf) + 1});
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestTruncate(void *context,
-                             primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
-  off_t length = params->Pop<off_t>();
-  const auto path = params->Pop();
+PrimitiveStatus TestTruncate(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  off_t length = in->next<off_t>();
+  const auto path = in->next();
 
-  params->PushByCopy<int>(enc_untrusted_truncate(path->As<char>(), length));
-
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestFTruncate(void *context,
-                              primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
-  auto length = params->Pop<off_t>();
-  int fd = params->Pop<int>();
-
-  params->PushByCopy<int>(enc_untrusted_ftruncate(fd, length));
+  out->Push<int>(enc_untrusted_truncate(path.As<char>(), length));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestRmdir(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
-  const auto path = params->Pop();
+PrimitiveStatus TestFTruncate(void *context, MessageReader *in,
+                              MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  auto length = in->next<off_t>();
+  int fd = in->next<int>();
 
-  params->PushByCopy<int>(enc_untrusted_rmdir(path->As<char>()));
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestSocket(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
-
-  int protocol = params->Pop<int>();
-  int type = params->Pop<int>();
-  int domain = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_socket(domain, type, protocol));
+  out->Push<int>(enc_untrusted_ftruncate(fd, length));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestListen(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestRmdir(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  const auto path = in->next();
 
-  int backlog = params->Pop<int>();
-  int sockfd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_listen(sockfd, backlog));
+  out->Push<int>(enc_untrusted_rmdir(path.As<char>()));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestSocket(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+
+  int protocol = in->next<int>();
+  int type = in->next<int>();
+  int domain = in->next<int>();
+  out->Push<int>(enc_untrusted_socket(domain, type, protocol));
+
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestListen(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  int backlog = in->next<int>();
+  int sockfd = in->next<int>();
+  out->Push<int>(enc_untrusted_listen(sockfd, backlog));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestShutdown(void *context,
-                             primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestShutdown(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int how = params->Pop<int>();
-  int sockfd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_shutdown(sockfd, how));
-
-  return primitives::PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestSend(void *context,
-                         primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 4);
-
-  int flags = params->Pop<int>();
-  auto len = params->Pop<size_t>();
-  const auto buf = params->Pop();
-  int sockfd = params->Pop<int>();
-  params->PushByCopy<ssize_t>(
-      enc_untrusted_send(sockfd, buf->As<char>(), len, flags));
+  int how = in->next<int>();
+  int sockfd = in->next<int>();
+  out->Push<int>(enc_untrusted_shutdown(sockfd, how));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestFcntl(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+PrimitiveStatus TestSend(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
 
-  int arg = params->Pop<int>();
-  int cmd = params->Pop<int>();
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_fcntl(fd, cmd, arg));
+  int flags = in->next<int>();
+  auto len = in->next<size_t>();
+  const auto buf = in->next();
+  int sockfd = in->next<int>();
+  out->Push<ssize_t>(enc_untrusted_send(sockfd, buf.As<char>(), len, flags));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestFcntl(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+
+  int arg = in->next<int>();
+  int cmd = in->next<int>();
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_fcntl(fd, cmd, arg));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestChown(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+PrimitiveStatus TestChown(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  gid_t group = params->Pop<gid_t>();
-  uid_t owner = params->Pop<uid_t>();
-  const auto pathname = params->Pop();
-  params->PushByCopy<int>(
-      enc_untrusted_chown(pathname->As<char>(), owner, group));
+  gid_t group = in->next<gid_t>();
+  uid_t owner = in->next<uid_t>();
+  const auto pathname = in->next();
+  out->Push<int>(enc_untrusted_chown(pathname.As<char>(), owner, group));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestFChown(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+PrimitiveStatus TestFChown(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  auto group = params->Pop<gid_t>();
-  auto owner = params->Pop<uid_t>();
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_fchown(fd, owner, group));
+  auto group = in->next<gid_t>();
+  auto owner = in->next<uid_t>();
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_fchown(fd, owner, group));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestSetsockopt(void *context,
-                               primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 4);
+PrimitiveStatus TestSetsockopt(void *context, MessageReader *in,
+                               MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
 
-  int option = params->Pop<int>();
-  int klinux_optname = params->Pop<int>();
-  int level = params->Pop<int>();
-  int sockfd = params->Pop<int>();
+  int option = in->next<int>();
+  int klinux_optname = in->next<int>();
+  int level = in->next<int>();
+  int sockfd = in->next<int>();
 
   int optname;
   FromkLinuxOptionName(&level, &klinux_optname, &optname);
-  params->PushByCopy<int>(enc_untrusted_setsockopt(
-      sockfd, level, optname, (void *)&option, sizeof(option)));
+  out->Push<int>(enc_untrusted_setsockopt(sockfd, level, optname,
+                                          (void *)&option, sizeof(option)));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestFlock(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestFlock(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
   int operation =
-      params->Pop<int>();  // The operation is expected to be
-                           // already converted from a kLinux_ operation.
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_flock(fd, operation));
+      in->next<int>();  // The operation is expected to be
+                        // already converted from a kLinux_ operation.
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_flock(fd, operation));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestFsync(void *context,
-                          primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+PrimitiveStatus TestFsync(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_fsync(fd));
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_fsync(fd));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestInotifyInit1(void *context,
-                                 primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+PrimitiveStatus TestInotifyInit1(void *context, MessageReader *in,
+                                 MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  int flags = params->Pop<int>();  // The operation is expected to be already
-                                   // converted from a kLinux_ operation.
-  params->PushByCopy<int>(enc_untrusted_inotify_init1(flags));
+  int flags = in->next<int>();  // The operation is expected to be already
+                                // converted from a kLinux_ operation.
+  out->Push<int>(enc_untrusted_inotify_init1(flags));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestInotifyAddWatch(void *context,
-                                    primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 3);
+PrimitiveStatus TestInotifyAddWatch(void *context, MessageReader *in,
+                                    MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
   uint32_t mask =
-      params->Pop<uint32_t>();  // The operation is expected to be already
-                                // converted from a kLinux_ operation.
-  const auto pathname = params->Pop();
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(
-      enc_untrusted_inotify_add_watch(fd, pathname->As<char>(), mask));
+      in->next<uint32_t>();  // The operation is expected to be already
+                             // converted from a kLinux_ operation.
+  const auto pathname = in->next();
+  int fd = in->next<int>();
+  out->Push<int>(
+      enc_untrusted_inotify_add_watch(fd, pathname.As<char>(), mask));
 
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestInotifyRmWatch(void *context,
-                                   primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 2);
+PrimitiveStatus TestInotifyRmWatch(void *context, MessageReader *in,
+                                   MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int wd = params->Pop<int>();
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_inotify_rm_watch(fd, wd));
+  int wd = in->next<int>();
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_inotify_rm_watch(fd, wd));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestSchedYield(void *context,
-                               primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_STACK_EMPTY(params);
+PrimitiveStatus TestSchedYield(void *context, MessageReader *in,
+                               MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  params->PushByCopy<int>(enc_untrusted_sched_yield());
+  out->Push<int>(enc_untrusted_sched_yield());
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestIsAtty(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
+PrimitiveStatus TestIsAtty(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  int fd = params->Pop<int>();
-  params->PushByCopy<int>(enc_untrusted_isatty(fd));
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_isatty(fd));
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestUSleep(void *context,
-                           primitives::TrustedParameterStack *params) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(params, 1);
-  auto usec = params->Pop<unsigned int>();
-  params->PushByCopy<int>(enc_untrusted_usleep(usec));
+PrimitiveStatus TestUSleep(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto usec = in->next<unsigned int>();
+  out->Push<int>(enc_untrusted_usleep(usec));
   return PrimitiveStatus::OkStatus();
 }
 

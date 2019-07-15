@@ -30,6 +30,7 @@
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
@@ -92,10 +93,10 @@ InitUntrustedStack() {
 
 // Handler installed by the runtime to finalize the enclave at the time it is
 // destroyed.
-PrimitiveStatus FinalizeEnclave(void *context, TrustedParameterStack *params) {
-  if (!params->empty()) {
-    return {error::GoogleError::INVALID_ARGUMENT,
-            "FinalizeEnclave does not expect any parameters."};
+PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
+                                MessageWriter *out) {
+  if (in) {
+    ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   }
   PrimitiveStatus status = asylo_enclave_fini();
   return status;
@@ -124,15 +125,18 @@ PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
 
 int asylo_enclave_call(uint64_t selector, void *params) {
   PrimitiveStatus status = InvokeEntryHandler(
-      selector, reinterpret_cast<TrustedParameterStack *>(params));
+      selector,
+      reinterpret_cast<ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
+                                      TrustedPrimitives::UntrustedLocalFree> *>(
+          params));
   return !status.ok();
 }
 
-void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) {
+void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
   return enc_untrusted_malloc(size);
 }
 
-void TrustedPrimitives::UntrustedLocalFree(void *ptr) {
+void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   enc_untrusted_free(ptr);
 }
 

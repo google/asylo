@@ -20,6 +20,8 @@
 
 #include <memory>
 
+#include "asylo/util/status.h"
+
 namespace asylo {
 namespace primitives {
 

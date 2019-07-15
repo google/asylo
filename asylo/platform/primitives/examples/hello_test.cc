@@ -44,22 +44,21 @@ class HelloTest : public ::testing::Test {
     client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
         /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());
     ASYLO_EXPECT_OK(client_->exit_call_provider()->RegisterExitHandler(
-       kExternalHelloHandler, ExitHandler{test_handler}));
+        kExternalHelloHandler, ExitHandler{HelloHandler}));
   }
 
-  void TearDown() override {
-    ASYLO_EXPECT_OK(client_->Destroy());
-  }
+  void TearDown() override { ASYLO_EXPECT_OK(client_->Destroy()); }
 
   std::shared_ptr<Client> client_;
 
  private:
-  // When the enclave asks for it, send "Test"
-  static Status test_handler(std::shared_ptr<Client> client, void *context,
+  // When the enclave asks for it, send "Hello".
+  static Status HelloHandler(std::shared_ptr<Client> client, void *context,
                              NativeParameterStack *params) {
-    static std::array<char, 4> test_data{{'T', 'e', 's', 't'}};
+    static constexpr char kHello[] = "Hello";
+
     // Push our message on to the parameter stack to pass to the enclave
-    params->PushByCopy(Extent{test_data.data(), test_data.size()});
+    params->PushByCopy(Extent{const_cast<char *>(kHello), strlen(kHello) + 1});
     return Status::OkStatus();
   }
 };
@@ -72,7 +71,7 @@ TEST_F(HelloTest, Hello) {
   EXPECT_TRUE(params.empty());
   const char *message_cstr = reinterpret_cast<const char *>(message->data());
   std::string message_string(message_cstr);
-  EXPECT_THAT(message_string, ::testing::StrEq("Test, World!"));
+  EXPECT_THAT(message_string, ::testing::StrEq("Hello, World!"));
   EXPECT_THAT(status, IsOk());
 }
 

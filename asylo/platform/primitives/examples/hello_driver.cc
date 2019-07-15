@@ -15,6 +15,7 @@
  * limitations under the License.
  *
  */
+
 #include <iostream>
 #include <string>
 
@@ -28,11 +29,11 @@
 namespace asylo {
 namespace primitives {
 
-static constexpr char kHello[] = "Hello";
-
-// When the enclave asks for it, send "Hello"
+// When the enclave asks for it, send "Hello".
 Status hello_handler(std::shared_ptr<Client> client, void *context,
                      NativeParameterStack *params) {
+  static constexpr char kHello[] = "Hello";
+
   // Push our message on to the parameter stack to pass to the enclave
   params->PushByCopy(Extent{const_cast<char *>(kHello), strlen(kHello)});
   return Status::OkStatus();

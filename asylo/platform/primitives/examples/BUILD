@@ -42,7 +42,7 @@ sim_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/primitives",
-        "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status_macros",
     ],
 )

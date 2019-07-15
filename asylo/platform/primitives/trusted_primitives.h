@@ -26,6 +26,7 @@
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/asylo_macros.h"
 
 namespace asylo {
@@ -67,11 +68,11 @@ class TrustedPrimitives {
   // that untrusted local memory is not expected to be addressable from the
   // untrusted application. Even if it is addressable, the application should
   // not use it directly, only local primitives should use it.
-  static void *UntrustedLocalAlloc(size_t size) ASYLO_MUST_USE_RESULT;
+  static void *UntrustedLocalAlloc(size_t size) noexcept ASYLO_MUST_USE_RESULT;
 
   // Calls untrusted local counterpart to free memory allocated by malloc in
   // local untrusted code or by calling UntrustedLocalAlloc.
-  static void UntrustedLocalFree(void *ptr);
+  static void UntrustedLocalFree(void *ptr) noexcept;
 
   // Exits the enclave synchronously at an entry point to untrusted code
   // designated by `untrusted_selector`. Inputs and results are passed through
@@ -106,7 +107,8 @@ using TrustedParameterStack =
 
 // Callback structure for dispatching messages passed to the enclave.
 struct EntryHandler {
-  using Callback = PrimitiveStatus (*)(void *, TrustedParameterStack *);
+  using Callback = PrimitiveStatus (*)(void *context, MessageReader *in,
+                                       MessageWriter *out);
 
   EntryHandler() : callback(nullptr), context(nullptr) {}
 

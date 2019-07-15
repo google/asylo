@@ -27,8 +27,10 @@
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace primitives {
@@ -66,8 +68,8 @@ void UpdateEnclaveState(const Flag &flag) {
   enclave_state.flags |= flag;
 }
 
-PrimitiveStatus ReservedEntry(
-    void* /*context*/, TrustedParameterStack* /*params*/) {
+PrimitiveStatus ReservedEntry(void *context, MessageReader *in,
+                              MessageWriter *out) {
   return {error::GoogleError::INTERNAL, "Invalid call to reserved selector."};
 }
 
@@ -99,8 +101,8 @@ void EnsureInitialized() {
 
 }  // namespace
 
-PrimitiveStatus RegisterEntryHandler(
-    uint64_t trusted_selector, const EntryHandler &handler) {
+PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
+                                     const EntryHandler &handler) {
   SpinLockGuard lock(&enclave_state.entry_table_lock);
   if (trusted_selector >= kEntryPointMax ||
       !enclave_state.entry_table[trusted_selector].IsNull()) {
@@ -112,8 +114,10 @@ PrimitiveStatus RegisterEntryHandler(
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus InvokeEntryHandler(uint64_t selector,
-                                   TrustedParameterStack *params) {
+PrimitiveStatus InvokeEntryHandler(
+    uint64_t selector,
+    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
+                   TrustedPrimitives::UntrustedLocalFree> *params) {
   // Initialize the enclave if necessary.
   EnsureInitialized();
 
@@ -123,24 +127,25 @@ PrimitiveStatus InvokeEntryHandler(uint64_t selector,
   }
 
   // Bounds check the passed selector.
-  if (selector >= kEntryPointMax
-      || enclave_state.entry_table[selector].IsNull()) {
+  if (selector >= kEntryPointMax ||
+      enclave_state.entry_table[selector].IsNull()) {
     return {error::GoogleError::OUT_OF_RANGE,
             "Invalid selector passed in call to asylo_enclave_call."};
   }
 
   // Invoke the entry point handler.
   auto &handler = enclave_state.entry_table[selector];
-  return handler.callback(handler.context, params);
+  MessageReader in;
+  in.Deserialize(params);
+  MessageWriter out;
+  ASYLO_RETURN_IF_ERROR(handler.callback(handler.context, &in, &out));
+  out.Serialize(params);
+  return PrimitiveStatus::OkStatus();
 }
 
-void MarkEnclaveInitialized() {
-  UpdateEnclaveState(Flag::kInitialized);
-}
+void MarkEnclaveInitialized() { UpdateEnclaveState(Flag::kInitialized); }
 
-void MarkEnclaveAborted() {
-  UpdateEnclaveState(Flag::kAborted);
-}
+void MarkEnclaveAborted() { UpdateEnclaveState(Flag::kAborted); }
 
 }  // namespace primitives
 }  // namespace asylo

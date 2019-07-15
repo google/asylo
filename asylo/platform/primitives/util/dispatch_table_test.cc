@@ -31,6 +31,7 @@
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/status.h"
 #include "asylo/util/thread.h"
 
 using ::testing::_;

@@ -20,6 +20,8 @@
 
 #include <cstdlib>
 
+#include "asylo/platform/primitives/trusted_primitives.h"
+
 extern "C" int enclave_write(int fd, const void *buf, size_t count) {
   // Make a write(2) system call. This is provided as a convenience for
   // debugging, pending integration with system call marshaling across the
@@ -36,4 +38,13 @@ extern "C" int enclave_write(int fd, const void *buf, size_t count) {
       : "rcx", "r11"                   // Clobbered registers
   );
   return ret;
+}
+
+bool enc_is_within_enclave(void const *address, size_t size) {
+  return ::asylo::primitives::TrustedPrimitives::IsTrustedExtent(address, size);
+}
+
+bool enc_is_outside_enclave(void const *address, size_t size) {
+  return !::asylo::primitives::TrustedPrimitives::IsTrustedExtent(address,
+                                                                  size);
 }

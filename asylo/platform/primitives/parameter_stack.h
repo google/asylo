@@ -46,7 +46,7 @@ namespace primitives {
 // code.
 //
 // The class is NOT thread-safe.
-template <void *(*ALLOCATOR)(size_t), void (*FREER)(void *)>
+template <void *(*ALLOCATOR)(size_t) noexcept, void (*FREER)(void *) noexcept>
 class ParameterStack {
  public:
   static_assert(ALLOCATOR != nullptr && FREER != nullptr,
