@@ -19,13 +19,17 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 #define ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 
+#include <algorithm>
 #include <cstring>
 #include <functional>
 #include <memory>
 #include <string>
 #include <vector>
 
+#include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
+#include "asylo/platform/primitives/parameter_stack.h"
 
 namespace asylo {
 namespace primitives {
@@ -34,7 +38,7 @@ namespace primitives {
 // via extents and generate a serialized message. The MessageReader is a
 // serialization utility designed to make it easier and safer to pass structured
 // data over the enclave boundary. The extents pushed to the MessageWriter are
-// serialized using |Write()|, passed across the enclave boundary and
+// serialized using |Serialize()|, passed across the enclave boundary and
 // deserialized using the MessageReader for consumption. The message is simply
 // comprised of a data pointer and the size.
 // The message writer only allows pushing extents or values to it; reading data
@@ -68,19 +72,12 @@ class MessageWriter {
     return result;
   }
 
-  // Generates and writes a serialized message into a buffer owned by the
-  // caller. |*message| must be at least MessageSize() bytes long. The
-  // encoding scheme is simply repeated sequence of extent size as uint64_t
-  // followed by extent data.
-  void Write(void *message) const {
-    auto ptr = reinterpret_cast<char *>(message);
-    for (const auto &extent : extents_) {
-      uint64_t size = extent.size();
-
-      memcpy(ptr, &size, sizeof(uint64_t));  // Copy data size.
-      ptr += sizeof(uint64_t);
-      memcpy(ptr, extent.data(), size);  // Copy data.
-      ptr += size;
+  // Generates and writes a serialized message into ParameterStack owned by
+  // the caller.
+  template <void *(*ALLOCATOR)(size_t) noexcept, void (*FREER)(void *) noexcept>
+  void Serialize(ParameterStack<ALLOCATOR, FREER> *params) const {
+    for (auto extent : extents_) {
+      params->PushByCopy(extent);
     }
   }
 
@@ -139,18 +136,14 @@ class MessageReader {
   // since trusted memory would then need to remotely manage untrusted memory.
   // This necessitates deserializing and copying |data| into new owned extents,
   // since MessageReader is expected to own its memory.
-  MessageReader(const void *data, size_t size) {
-    const char *ptr = reinterpret_cast<const char *>(data);
-    const char *end_ptr = ptr + size;
-    while (ptr < end_ptr) {
-      uint64_t extent_len;
-      memcpy(&extent_len, ptr, sizeof(uint64_t));
-      ptr += sizeof(uint64_t);
-
-      char *extent_data = new char[extent_len];
-      extents_.emplace_back(std::unique_ptr<char[]>(extent_data), extent_len);
-      memcpy(extent_data, ptr, extent_len);
-      ptr += extent_len;
+  template <void *(*ALLOCATOR)(size_t) noexcept, void (*FREER)(void *) noexcept>
+  void Deserialize(ParameterStack<ALLOCATOR, FREER> *params) {
+    extents_.reserve(params->size());
+    while (!params->empty()) {
+      auto extent = params->Pop();
+      extents_.emplace_back(absl::make_unique<char[]>(extent->size()),
+                            extent->size());
+      memcpy(extents_.back().first.get(), extent->data(), extent->size());
     }
   }
 
@@ -158,12 +151,52 @@ class MessageReader {
   size_t size() const { return extents_.size(); }
 
   // Gets the next extent from the list of extents read. Extents can only be
-  // traversed and returned once.
+  // traversed and returned once. The reader owns the extent data, so it should
+  // automatically go out of scope with the reader.
   Extent next() {
     Extent result = Extent{extents_[pos_].first.get(), extents_[pos_].second};
     pos_++;
     return result;
   }
+
+  // Returns the next extent's data as a value, based on the template parameter
+  // provided.
+  template <typename T>
+  T next() {
+    Extent result = next();
+    return *(result.As<T>());
+  }
+
+  // Returns if the reader is empty, i.e. contains no extents.
+  bool empty() const { return extents_.empty(); }
+
+  // Returns if the reader traversal has reached the end.
+  bool hasNext() const { return pos_ != size(); }
+
+#define ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(reader, expected_args) \
+  do {                                                                    \
+    if ((reader).size() != expected_args) {                               \
+      return {::asylo::error::GoogleError::INVALID_ARGUMENT,              \
+              absl::StrCat(expected_args,                                 \
+                           " item(s) expected on the MessageReader.")};   \
+    }                                                                     \
+  } while (false)
+
+#define ASYLO_RETURN_IF_READER_NOT_EMPTY(reader)             \
+  do {                                                       \
+    if (!(reader).empty()) {                                 \
+      return {::asylo::error::GoogleError::INVALID_ARGUMENT, \
+              "MessageReader expected to be empty."};        \
+    }                                                        \
+  } while (false)
+
+#define ASYLO_RETURN_IF_READER_HAS_NEXT(reader)              \
+  do {                                                       \
+    if ((reader).hasNext()) {                                \
+      return {::asylo::error::GoogleError::INVALID_ARGUMENT, \
+              "More items than expected on the reader."};    \
+    }                                                        \
+  } while (false)
 
  private:
   std::vector<std::pair<std::unique_ptr<char[]>, size_t>> extents_;
