@@ -330,6 +330,40 @@ TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
   }
 }
 
+TEST(TcbTest, TcbStatusToStringSucceedsOnUnknownStatuses) {
+  TcbStatus status;
+  status.set_unknown_status("");
+  EXPECT_THAT(TcbStatusToString(status), IsOkAndHolds(""));
+
+  status.set_unknown_status("foobar");
+  EXPECT_THAT(TcbStatusToString(status), IsOkAndHolds("foobar"));
+}
+
+TEST(TcbTest, TcbStatusToStringSucceedsOnValidKnownStatusValues) {
+  TcbStatus status;
+  status.set_known_status(TcbStatus::UP_TO_DATE);
+  EXPECT_THAT(TcbStatusToString(status), IsOkAndHolds("UpToDate"));
+
+  status.set_known_status(TcbStatus::OUT_OF_DATE);
+  EXPECT_THAT(TcbStatusToString(status), IsOkAndHolds("OutOfDate"));
+
+  status.set_known_status(TcbStatus::CONFIGURATION_NEEDED);
+  EXPECT_THAT(TcbStatusToString(status), IsOkAndHolds("ConfigurationNeeded"));
+
+  status.set_known_status(TcbStatus::REVOKED);
+  EXPECT_THAT(TcbStatusToString(status), IsOkAndHolds("Revoked"));
+}
+
+TEST(TcbTest, TcbStatusToStringFailsOnBadInputs) {
+  TcbStatus status;
+  EXPECT_THAT(TcbStatusToString(status).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  status.set_known_status(TcbStatus::INVALID);
+  EXPECT_THAT(TcbStatusToString(status).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
 }  // namespace
 }  // namespace sgx
 }  // namespace asylo

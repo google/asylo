@@ -42,7 +42,7 @@ enum class PartialOrder {
 };
 
 // Size of the |components| field of a Tcb message. This value is fixed at 16.
-extern const int kTcbComponentsSize;
+constexpr int kTcbComponentsSize = 16;
 
 // Validates a Tcb message. Returns an OK status if and only if the message is
 // valid.
@@ -106,6 +106,11 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info);
 // neither less than or equal to nor greater than or equal to |rhs|, then |lhs|
 // and |rhs| are incomparable.
 PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs);
+
+// Converts a TcbStatus to a TCB level status string. Succeeds if and only if
+// |status| either has an |unknown_status| value or is one of UP_TO_DATE,
+// CONFIGURATION_NEEDED, OUT_OF_DATE, or REVOKED.
+StatusOr<std::string> TcbStatusToString(const TcbStatus &status);
 
 }  // namespace sgx
 }  // namespace asylo

@@ -261,8 +261,6 @@ Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
 
 }  // namespace
 
-const int kTcbComponentsSize = 16;
-
 Status ValidateTcb(const Tcb &tcb) {
   if (!tcb.has_components()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -325,6 +323,31 @@ PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs) {
   }
   return OrderCombine(
       current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
+}
+
+StatusOr<std::string> TcbStatusToString(const TcbStatus &status) {
+  switch (status.value_case()) {
+    case TcbStatus::kKnownStatus:
+      switch (status.known_status()) {
+        case TcbStatus::UP_TO_DATE:
+          return "UpToDate";
+        case TcbStatus::CONFIGURATION_NEEDED:
+          return "ConfigurationNeeded";
+        case TcbStatus::OUT_OF_DATE:
+          return "OutOfDate";
+        case TcbStatus::REVOKED:
+          return "Revoked";
+        default:
+          return Status(error::GoogleError::INVALID_ARGUMENT,
+                        "Unknown known status code");
+      }
+      break;
+    case TcbStatus::kUnknownStatus:
+      return status.unknown_status();
+    default:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Unknown TcbStatus variant");
+  }
 }
 
 }  // namespace sgx
