@@ -18,6 +18,8 @@
 
 #include "asylo/platform/host_call/trusted/host_calls.h"
 
+#include <errno.h>
+
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
