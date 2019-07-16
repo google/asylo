@@ -51,6 +51,11 @@ class MockedEnclaveClient : public primitives::Client {
     LOG(FATAL);
     return Status::OkStatus();
   }
+  Status DeliverSignalInternal(
+      primitives::MessageWriter *in, primitives::MessageReader *out) override {
+    LOG(FATAL) << "Unexpected enclave call";
+    return Status::OkStatus();
+  }
 };
 
 // Verify that the result of GetHostCallHandlersMapping() can be used to

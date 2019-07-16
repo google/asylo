@@ -83,6 +83,8 @@ class SgxEnclaveClient : public Client {
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                              MessageReader *output) override;
+  Status DeliverSignalInternal(
+      MessageWriter *input, MessageReader *output) override;
   bool IsClosed() const override;
 
  private:

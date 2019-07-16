@@ -41,6 +41,11 @@ Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
   return EnclaveCallInternal(selector, input, output);
 }
 
+Status Client::DeliverSignal(MessageWriter *input, MessageReader *output) {
+  ScopedCurrentClient scoped_client(this);
+  return DeliverSignalInternal(input, output);
+}
+
 PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
                                      MessageReader *in, MessageWriter *out) {
   if (!current_client_->exit_call_provider()) {

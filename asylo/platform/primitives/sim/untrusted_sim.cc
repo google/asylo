@@ -169,6 +169,11 @@ Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
   return MakeStatus(status);
 }
 
+Status SimEnclaveClient::DeliverSignalInternal(MessageWriter *input,
+                                               MessageReader *output) {
+  abort();
+}
+
 bool SimEnclaveClient::IsClosed() const { return dl_handle_ == nullptr; }
 
 }  // namespace primitives

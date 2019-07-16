@@ -146,6 +146,14 @@ class Client : public std::enable_shared_from_this<Client> {
   Status EnclaveCall(uint64_t selector, MessageWriter *input,
                      MessageReader *output) ASYLO_MUST_USE_RESULT;
 
+  // Enters the enclave synchronously and invokes the signal handling trusted
+  // code.
+  // Input `params` is copied into the enclave, which occurs locally inside the
+  // same address space.
+  // Conversely, results are copied and returned in 'params'.
+  Status DeliverSignal(
+      MessageWriter *input, MessageReader *output) ASYLO_MUST_USE_RESULT;
+
   // Enclave exit callback function shared with the enclave.
   static PrimitiveStatus ExitCallback(uint64_t untrusted_selector,
                                       MessageReader *in, MessageWriter *out);
@@ -162,6 +170,10 @@ class Client : public std::enable_shared_from_this<Client> {
   virtual Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                                      MessageReader *output)
       ASYLO_MUST_USE_RESULT = 0;
+
+  // Provides implementation of DeliverSignal.
+  virtual Status DeliverSignalInternal(
+      MessageWriter *input, MessageReader *output) ASYLO_MUST_USE_RESULT = 0;
 
  private:
   // Exit call provider for the enclave.

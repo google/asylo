@@ -228,5 +228,10 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
   return Status::OkStatus();
 }
 
+Status SgxEnclaveClient::DeliverSignalInternal(MessageWriter *input,
+                                               MessageReader *output) {
+  abort();
+}
+
 }  // namespace primitives
 }  // namespace asylo
