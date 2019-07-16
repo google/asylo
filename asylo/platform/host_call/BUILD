@@ -79,6 +79,7 @@ cc_library(
         ":exit_handler_constants",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status_macros",
     ],
 )

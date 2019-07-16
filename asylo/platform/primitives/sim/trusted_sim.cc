@@ -131,11 +131,19 @@ void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   GetSimTrampoline()->asylo_local_free_handler(ptr);
 }
 
-PrimitiveStatus TrustedPrimitives::UntrustedCall(
-    uint64_t untrusted_selector,
-    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                   TrustedPrimitives::UntrustedLocalFree> *params) {
-  return GetSimTrampoline()->asylo_exit_call(untrusted_selector, params);
+PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
+                                                 MessageWriter *input,
+                                                 MessageReader *output) {
+  ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
+                 TrustedPrimitives::UntrustedLocalFree>
+      params;
+  if (input) {
+    input->Serialize(&params);
+  }
+  ASYLO_RETURN_IF_ERROR(
+      GetSimTrampoline()->asylo_exit_call(untrusted_selector, &params));
+  output->Deserialize(&params);
+  return PrimitiveStatus::OkStatus();
 }
 
 }  // namespace primitives

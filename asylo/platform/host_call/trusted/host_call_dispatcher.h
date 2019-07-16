@@ -25,6 +25,7 @@
 
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 
 namespace asylo {
 namespace host_call {
@@ -45,7 +46,8 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
 // Provides a dispatcher to wrap the UntrustedCall function and perform basic
 // validations. Used for host calls which are not implemented using syscalls.
 primitives::PrimitiveStatus NonSystemCallDispatcher(
-    uint64_t exit_selector, primitives::TrustedParameterStack* parameters);
+    uint64_t exit_selector, primitives::MessageWriter* input,
+    primitives::MessageReader* output);
 
 }  // namespace host_call
 }  // namespace asylo

@@ -62,7 +62,6 @@ using ::asylo::primitives::MakePrimitiveStatus;
 using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
 using ::asylo::primitives::PrimitiveStatus;
-using ::asylo::primitives::TrustedParameterStack;
 using ::asylo::primitives::TrustedPrimitives;
 using EnclaveState = ::asylo::TrustedApplication::State;
 using google::protobuf::RepeatedPtrField;

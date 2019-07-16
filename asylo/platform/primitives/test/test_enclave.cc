@@ -16,8 +16,6 @@
  *
  */
 
-#include <vector>
-
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -42,16 +40,22 @@ bool initialized = false;
 // initialized.
 void __attribute__((constructor)) InitConstructor() {
   TrustedPrimitives::DebugPuts("InitConstructor start\n");
+  MessageWriter init_input;
   constexpr char init_message[] = "InitConstructor";
-  TrustedParameterStack init_params;
-  init_params.PushByCopy(Extent{init_message, sizeof(init_message)});
-  const auto status =
-      TrustedPrimitives::UntrustedCall(kUntrustedInit, &init_params);
+  init_input.PushByReference(Extent{init_message, sizeof(init_message)});
+  MessageReader init_output;
+  const auto status = TrustedPrimitives::UntrustedCall(
+      kUntrustedInit, &init_input, &init_output);
   TrustedPrimitives::DebugPuts("InitConstructor done: ");
   if (status.ok()) {
-    const auto res = init_params.Pop();
-    TrustedPrimitives::DebugPuts(reinterpret_cast<const char *>(res->data()));
-    initialized = true;
+    if (init_output.size() == 1) {
+      auto init_id = init_output.next();
+      TrustedPrimitives::DebugPuts(
+          reinterpret_cast<const char *>(init_id.data()));
+      initialized = true;
+    } else {
+      TrustedPrimitives::DebugPuts("Wrong output by kUntrustedInit");
+    }
   } else {
     TrustedPrimitives::DebugPuts(status.error_message());
   }
@@ -100,19 +104,28 @@ PrimitiveStatus TrustedFibonacci(void *context, MessageReader *in,
             "TrustedFibonacci called with invalid input."};
   }
 
-  PrimitiveStatus status;
-  auto untrusted_fibonacci = [&status](int32_t n) -> int32_t {
-    TrustedParameterStack nested_params;
-    nested_params.PushByCopy<int32_t>(n);
-    status =
-        TrustedPrimitives::UntrustedCall(kUntrustedFibonacci, &nested_params);
-    const int32_t res = nested_params.Pop<int32_t>();
-    return res;
+  auto untrusted_fibonacci =
+      [](int32_t n, MessageReader *nested_output) -> PrimitiveStatus {
+    MessageWriter nested_input;
+    nested_input.Push(n);
+    ASYLO_RETURN_IF_ERROR(TrustedPrimitives::UntrustedCall(
+        kUntrustedFibonacci, &nested_input, nested_output));
+    ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*nested_output, 1);
+    return PrimitiveStatus::OkStatus();
   };
-  ASYLO_RETURN_IF_ERROR(status);
 
-  out->Push(n <= 1 ? n
-                   : untrusted_fibonacci(n - 1) + untrusted_fibonacci(n - 2));
+  if (n <= 1) {
+    out->Push(n);
+    return PrimitiveStatus::OkStatus();
+  }
+
+  MessageReader nested_output_1;
+  MessageReader nested_output_2;
+  ASYLO_RETURN_IF_ERROR(untrusted_fibonacci(n - 1, &nested_output_1));
+  ASYLO_RETURN_IF_ERROR(untrusted_fibonacci(n - 2, &nested_output_2));
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(nested_output_1, 1);
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(nested_output_2, 1);
+  out->Push(nested_output_1.next<int32_t>() + nested_output_2.next<int32_t>());
   return PrimitiveStatus::OkStatus();
 }
 

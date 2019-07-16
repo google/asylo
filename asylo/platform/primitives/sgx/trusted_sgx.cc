@@ -144,63 +144,25 @@ void TrustedPrimitives::DebugPuts(const char *message) {
   abort();
 }
 
-PrimitiveStatus TrustedPrimitives::UntrustedCall(
-    uint64_t untrusted_selector, TrustedParameterStack *params) {
+PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
+                                                 MessageWriter *input,
+                                                 MessageReader *output) {
   int ret;
-
-  // Check whether |params| already points to untrusted memory. If so, we need
-  // not copy |params| and its data extents to a new untrusted stack, and can
-  // directly make the ocall using |params|.
-  if (enc_is_outside_enclave(params, sizeof(*params))) {
-    CHECK_OCALL(ocall_dispatch_untrusted_call(
-        &ret, untrusted_selector, reinterpret_cast<void *>(params)));
-    return PrimitiveStatus(ret);
-  }
 
   auto untrusted_stack = InitUntrustedStack();
 
-  // Copy data to |untrusted_stack|. Once data in |params| is copied, trusted
-  // data is not needed and can be cleaned up for efficient memory management.
-  // We hold the params in a vector containing the extent unique pointers, which
-  // go out of scope with the vector after the data is copied at the end of
-  // context (defined by curly braces below).
-  {
-    std::vector<TrustedParameterStack::ExtentPtr> in_params;
-    in_params.reserve(params->size());
-    while (!params->empty()) {
-      in_params.emplace_back(params->Pop());
-    }
-
-    // The order of parameters needs to be preserved, so we push the last
-    // parameter first.
-    for (auto it = in_params.rbegin(); it != in_params.rend(); ++it) {
-      untrusted_stack->PushByCopy(Extent{(*it)->data(), (*it)->size()});
-
-      if (!enc_is_outside_enclave(untrusted_stack->Top().data(),
-                                  untrusted_stack->Top().size())) {
-        abort();
-      }
-    }
+  // Copy data to |untrusted_stack|.
+  if (input) {
+    input->Serialize(untrusted_stack.get());
   }
 
   CHECK_OCALL(ocall_dispatch_untrusted_call(
       &ret, untrusted_selector,
       reinterpret_cast<void *>(untrusted_stack.get())));
 
-  // For the results obtained in untrusted_stack, copy them to params before
+  // For the results obtained in untrusted_stack, copy them to output before
   // deleting untrusted_stack.
-  std::vector<UntrustedAllocatorStack::ExtentPtr> result_params;
-  result_params.reserve(untrusted_stack->size());
-  while (!untrusted_stack->empty()) {
-    result_params.emplace_back(untrusted_stack->Pop());
-  }
-
-  // The order of parameters needs to be preserved, so we push the last
-  // parameter first. All the data on result_params is expected to be on the
-  // untrusted side - copy it to params.
-  for (auto it = result_params.rbegin(); it != result_params.rend(); ++it) {
-    params->PushByCopy(Extent{(*it)->data(), (*it)->size()});
-  }
+  output->Deserialize(untrusted_stack.get());
 
   return PrimitiveStatus::OkStatus();
 }

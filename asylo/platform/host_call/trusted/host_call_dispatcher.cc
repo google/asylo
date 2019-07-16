@@ -17,9 +17,11 @@
  */
 
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
+
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -29,8 +31,6 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
                                                  size_t request_size,
                                                  uint8_t** response_buffer,
                                                  size_t* response_size) {
-  primitives::TrustedParameterStack parameters;
-
   if (request_size == 0 || request_buffer == nullptr) {
     return primitives::PrimitiveStatus{
         error::GoogleError::FAILED_PRECONDITION,
@@ -41,49 +41,46 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
   // |request_buffer| is owned by the caller and only accessible inside the
   // enclave; have parameters own the request to make it accessible by the
   // untrusted code.
-  parameters.PushByCopy(primitives::Extent{request_buffer, request_size});
-
+  primitives::MessageWriter input;
+  input.PushByReference(primitives::Extent{request_buffer, request_size});
+  primitives::MessageReader output;
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::UntrustedCall(
-      kSystemCallHandler, &parameters));
+      kSystemCallHandler, &input, &output));
 
   // The following is merely a sanity check since the UntrustedCall to
   // |SystemCallHandler| returns a non-ok status should no response be received.
   // This check is useful if the response somehow gets lost when crossing the
   // enclave boundary, or for other host call handlers in the future if
   // they miss the check.
-  if (parameters.empty()) {
-    return primitives::PrimitiveStatus{
-        error::GoogleError::DATA_LOSS,
-        "No response received for the host call, or response lost while "
-        "crossing the enclave boundary."};
-  }
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(output, 1);
 
-  auto response = parameters.Pop();
-  *response_size = response->size();
+  auto response = output.next();
+  *response_size = response.size();
 
   // Copy |response| to *response_buffer before it goes out of scope.
   // *response_buffer is expected to be owned by the caller, so we wouldn't
   // worry about freeing the memory we allocate here.
   *response_buffer = reinterpret_cast<uint8_t *>(malloc(*response_size));
-  memcpy(*response_buffer, response->As<uint8_t>(), *response_size);
+  memcpy(*response_buffer, response.As<uint8_t>(), *response_size);
 
   return primitives::PrimitiveStatus::OkStatus();
 }
 
 primitives::PrimitiveStatus NonSystemCallDispatcher(
-    uint64_t exit_selector, primitives::TrustedParameterStack* parameters) {
-  if (parameters == nullptr || parameters->empty()) {
+    uint64_t exit_selector, primitives::MessageWriter* input,
+    primitives::MessageReader* output) {
+  if (input == nullptr || input->empty()) {
     return primitives::PrimitiveStatus{
         error::GoogleError::FAILED_PRECONDITION,
         "Null or empty parameter stack provided. Need a valid request to "
         "dispatch the host call"};
   }
 
-  ASYLO_RETURN_IF_ERROR(
-      primitives::TrustedPrimitives::UntrustedCall(exit_selector, parameters));
+  ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::UntrustedCall(
+      exit_selector, input, output));
 
   // Parameter stack should at least contain the host call return value.
-  if (parameters->empty()) {
+  if (output->empty()) {
     return primitives::PrimitiveStatus{
         error::GoogleError::DATA_LOSS,
         "No response received for the host call, or response lost while "

@@ -293,27 +293,28 @@ int enc_untrusted_sched_yield() {
 }
 
 int enc_untrusted_isatty(int fd) {
-  asylo::primitives::TrustedParameterStack params;
-  params.PushByCopy(fd);
-  asylo::primitives::PrimitiveStatus status =
-      asylo::host_call::NonSystemCallDispatcher(
-          asylo::host_call::kIsAttyHandler, &params);
-  if (!status.ok()) {
+  ::asylo::primitives::MessageWriter input;
+  input.Push(fd);
+  ::asylo::primitives::MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kIsAttyHandler, &input, &output);
+  if (!status.ok() || output.size() != 1) {
     abort();
   }
-  return params.Pop<int>();
+  return output.next<int>();
 }
 
 int enc_untrusted_usleep(useconds_t usec) {
-  asylo::primitives::TrustedParameterStack params;
-  params.PushByCopy(usec);
+  ::asylo::primitives::MessageWriter input;
+  input.Push(usec);
+  ::asylo::primitives::MessageReader output;
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
-          asylo::host_call::kUSleepHandler, &params);
-  if (!status.ok()) {
+          asylo::host_call::kUSleepHandler, &input, &output);
+  if (!status.ok() || output.size() != 1) {
     abort();
   }
-  return params.Pop<int>();
+  return output.next<int>();
 }
 
 }  // extern "C"

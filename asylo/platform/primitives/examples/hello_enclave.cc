@@ -48,12 +48,14 @@ PrimitiveStatus Hello(void *context, MessageReader *in, MessageWriter *out) {
 
   const char world_str[] = ", World!";
 
-  TrustedParameterStack external_params;
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::UntrustedCall(kExternalHelloHandler,
-                                                         &external_params));
-  const auto hello_param = external_params.Pop();
-  std::string hello_world = absl::StrCat(
-      reinterpret_cast<const char *>(hello_param->data()), world_str);
+  MessageWriter external_input;
+  MessageReader external_output;
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::UntrustedCall(
+      kExternalHelloHandler, &external_input, &external_output));
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(external_output, 1);
+  auto hello_str = external_output.next();
+  std::string hello_world =
+      absl::StrCat(reinterpret_cast<const char *>(hello_str.data()), world_str);
   out->Push(hello_world);
   return PrimitiveStatus::OkStatus();
 }
