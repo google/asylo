@@ -76,7 +76,7 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   primitives::NativeParameterStack params;
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSystemCallHandler, &params, client.get()),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   // Verify that |kIsAttyHandler| is in use by attempting to re-register the
   // handler.

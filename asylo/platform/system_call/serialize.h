@@ -33,20 +33,17 @@ using ParameterList = std::array<uint64_t, kParameterMax>;
 
 // Serializes a system call request specified by a system call number and a list
 // of parameters into a buffer. On success, `request` is populated with a buffer
-// allocated by malloc and owned by the caller, or optionally, allocated by a
-// custom allocator callback, |request_allocator|.
-primitives::PrimitiveStatus SerializeRequest(
-    int sysno, const ParameterList &parameters, primitives::Extent *request,
-    const primitives::ExtentAllocator &request_allocator = nullptr);
+// allocated by malloc and owned by the caller.
+primitives::PrimitiveStatus SerializeRequest(int sysno,
+                                             const ParameterList &parameters,
+                                             primitives::Extent *request);
 
 // Serializes a system call response specified by a system call number, a return
 // code, and a list of parameters into a buffer. On success, `response` is
-// populated with a buffer allocated by malloc and owned by the caller, or
-// optionally, allocated by a custom allocator callback, |response_allocator|.
-primitives::PrimitiveStatus SerializeResponse(
-    int sysno, uint64_t result, const ParameterList &parameters,
-    primitives::Extent *response,
-    const primitives::ExtentAllocator &response_allocator = nullptr);
+// populated with a buffer allocated by malloc and owned by the caller.
+primitives::PrimitiveStatus SerializeResponse(int sysno, uint64_t result,
+                                              const ParameterList &parameters,
+                                              primitives::Extent *response);
 
 }  // namespace system_call
 }  // namespace asylo

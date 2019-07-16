@@ -58,11 +58,11 @@ class HelloTest : public ::testing::Test {
  private:
   // When the enclave asks for it, send "Hello".
   static Status HelloHandler(std::shared_ptr<Client> client, void *context,
-                             NativeParameterStack *params) {
-    // Push our message on to the output message to pass to the enclave.
-    MessageWriter out;
-    out.Push("Hello");
-    out.Serialize(params);
+                             MessageReader *in, MessageWriter *out) {
+    ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+    // Push our message on to the parameter stack to pass to the enclave
+    out->Push("Hello");
     return Status::OkStatus();
   }
 };

@@ -71,6 +71,7 @@ cc_library(
         "//asylo/util:asylo_macros",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
+        "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
     ],

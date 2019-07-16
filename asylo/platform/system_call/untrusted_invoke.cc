@@ -31,9 +31,8 @@
 namespace asylo {
 namespace system_call {
 
-primitives::PrimitiveStatus UntrustedInvoke(
-    primitives::Extent request, primitives::Extent *response,
-    const primitives::ExtentAllocator &response_allocator) {
+primitives::PrimitiveStatus UntrustedInvoke(primitives::Extent request,
+                                            primitives::Extent *response) {
   MessageReader reader(request);
   SystemCallDescriptor descriptor(reader.sysno());
 
@@ -72,8 +71,7 @@ primitives::PrimitiveStatus UntrustedInvoke(
                             params[3], params[4], params[5]);
 
   // Build the response message.
-  return SerializeResponse(reader.sysno(), result, params, response,
-                           response_allocator);
+  return SerializeResponse(reader.sysno(), result, params, response);
 }
 
 }  // namespace system_call

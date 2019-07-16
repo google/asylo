@@ -83,36 +83,6 @@ asylo::primitives::PrimitiveStatus AlwaysFailingDispatcher(
   return {asylo::error::GoogleError::UNKNOWN, "some random failure"};
 }
 
-// A system call dispatch function that uses a custom extent allocator, in this
-// case an extent owned by a parameter stack.
-asylo::primitives::PrimitiveStatus DispatchWithCustomAllocator(
-    const uint8_t *request_buffer, size_t request_size,
-    uint8_t **response_buffer, size_t *response_size) {
-  primitives::Extent response;
-
-  // The stack going to own `response`
-  primitives::NativeParameterStack stack;
-
-  auto custom_response_allocator = [&stack](size_t size) -> primitives::Extent {
-    return stack.PushAlloc(size);
-  };
-
-  ASYLO_RETURN_IF_ERROR(UntrustedInvoke({request_buffer, request_size},
-                                        &response, custom_response_allocator));
-
-  EXPECT_EQ(stack.size(), 1);
-  EXPECT_EQ(response.data(), stack.Top().data());
-  EXPECT_EQ(response.size(), stack.Top().size());
-
-  // `response` would go out of scope when the stack goes out of scope, so copy
-  // response into response_buffer since it is needed by caller.
-  *response_buffer = reinterpret_cast<uint8_t *>(malloc(response.size()));
-  memcpy(*response_buffer, response.As<uint8_t>(), response.size());
-  *response_size = response.size();
-
-  return asylo::primitives::PrimitiveStatus::OkStatus();
-}
-
 // Invokes a system call with zero parameters.
 TEST(SystemCallTest, ZeroParameterTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
@@ -120,14 +90,6 @@ TEST(SystemCallTest, ZeroParameterTest) {
   EXPECT_THAT(enc_untrusted_syscall(SYS_geteuid), Eq(geteuid()));
   EXPECT_THAT(enc_untrusted_syscall(SYS_getgid), Eq(getgid()));
   EXPECT_THAT(enc_untrusted_syscall(SYS_getegid), Eq(getegid()));
-}
-
-// Invokes a system call using a custom extent allocator, where the response
-// extent is allocated and owned externally (by parameter stack in this case).
-TEST(SystemCallTest, CustomExtentAllocatorTest) {
-  enc_set_dispatch_syscall(DispatchWithCustomAllocator);
-  EXPECT_THAT(enc_untrusted_syscall(SYS_getpid), Eq(getpid()));
-  EXPECT_THAT(enc_untrusted_syscall(SYS_geteuid), Eq(geteuid()));
 }
 
 // Invokes a system call which copies a buffer out of the kernel.

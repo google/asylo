@@ -20,6 +20,7 @@
 
 #include <unistd.h>
 
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/system_call/untrusted_invoke.h"
 #include "asylo/util/status_macros.h"
@@ -28,55 +29,37 @@ namespace asylo {
 namespace host_call {
 
 Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
-                         void *context,
-                         primitives::NativeParameterStack *parameters) {
-  if (parameters->empty()) {
-    return Status(
-        error::GoogleError::FAILED_PRECONDITION,
-        "Received no serialized host call request. No syscall to be called!");
+                         void *context, primitives::MessageReader *input,
+                         primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  auto request = input->next();
+
+  primitives::Extent response;  // To be owned by untrusted call parameters.
+  primitives::PrimitiveStatus status =
+      system_call::UntrustedInvoke(request, &response);
+  if (!status.ok()) {
+    return primitives::MakeStatus(status);
   }
-
-  auto request = parameters->Pop();
-  if (!parameters->empty()) {
-    return Status(
-        error::GoogleError::FAILED_PRECONDITION,
-        "Received more data (requests) than expected for this host call. This "
-        "function is capable of calling only one system call at a time, using "
-        "one serialized request. No syscall to be called!");
-  }
-
-  primitives::Extent response;  // To be owned by parameters.
-  auto response_extent_allocator = [parameters](size_t size) {
-    return parameters->PushAlloc(size);
-  };
-
-  primitives::PrimitiveStatus status = system_call::UntrustedInvoke(
-      *request, &response, response_extent_allocator);
-
-  return primitives::MakeStatus(status);
+  output->PushByCopy(response);
+  free(response.data());
+  return Status::OkStatus();
 }
 
 Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
-                     void *context,
-                     primitives::NativeParameterStack *parameters) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(parameters, 1);
-
-  int fd = parameters->Pop<int>();
-
-  parameters->PushByCopy<int>(isatty(fd));
-
+                     void *context, primitives::MessageReader *input,
+                     primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  int fd = input->next<int>();
+  output->Push<int>(isatty(fd));
   return Status::OkStatus();
 }
 
 Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
-                     void *context,
-                     primitives::NativeParameterStack *parameters) {
-  ASYLO_RETURN_IF_INCORRECT_ARGUMENTS(parameters, 1);
-
-  auto usec = parameters->Pop<useconds_t>();
-
-  parameters->PushByCopy<int>(usleep(usec));
-
+                     void *context, primitives::MessageReader *input,
+                     primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  auto usec = input->next<useconds_t>();
+  output->Push<int>(usleep(usec));
   return Status::OkStatus();
 }
 

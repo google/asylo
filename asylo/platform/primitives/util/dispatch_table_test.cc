@@ -46,7 +46,7 @@ class MockedEnclaveClient : public Client {
  public:
   using MockExitHandlerCallback =
       MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
-                          NativeParameterStack *params)>;
+                          MessageReader *in, MessageWriter *out)>;
 
   MockedEnclaveClient()
       : Client(
@@ -84,9 +84,9 @@ TEST(DispatchTableTest, HandlersRegistration) {
 TEST(DispatchTableTest, HandlersInvocation) {
   const auto client = std::make_shared<MockedEnclaveClient>();
   MockedEnclaveClient::MockExitHandlerCallback callbacks[3];
-  EXPECT_CALL(callbacks[0], Call(Eq(client), _, _)).Times(2);
-  EXPECT_CALL(callbacks[1], Call(Eq(client), _, _)).Times(1);
-  EXPECT_CALL(callbacks[2], Call(Eq(client), _, _)).Times(0);
+  EXPECT_CALL(callbacks[0], Call(Eq(client), _, _, _)).Times(2);
+  EXPECT_CALL(callbacks[1], Call(Eq(client), _, _, _)).Times(1);
+  EXPECT_CALL(callbacks[2], Call(Eq(client), _, _, _)).Times(0);
   ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   0, ExitHandler{callbacks[0].AsStdFunction()}),
               IsOk());
@@ -117,7 +117,7 @@ TEST(DispatchTableTest, HandlersInMultipleThreads) {
   const auto client = std::make_shared<MockedEnclaveClient>();
   MockedEnclaveClient::MockExitHandlerCallback callbacks[kThreads];
   for (size_t i = 0; i < kThreads; ++i) {
-    EXPECT_CALL(callbacks[i], Call(Eq(client), _, _)).Times(kCount);
+    EXPECT_CALL(callbacks[i], Call(Eq(client), _, _, _)).Times(kCount);
   }
   std::vector<Thread> threads;
   threads.reserve(kThreads);

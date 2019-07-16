@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace primitives {
@@ -55,7 +56,13 @@ Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
     }
     handler = it->second;
   }
-  return handler.callback(client->shared_from_this(), handler.context, params);
+  MessageReader in;
+  in.Deserialize(params);
+  MessageWriter out;
+  ASYLO_RETURN_IF_ERROR(
+      handler.callback(client->shared_from_this(), handler.context, &in, &out));
+  out.Serialize(params);
+  return Status::OkStatus();
 }
 
 }  // namespace primitives

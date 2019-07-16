@@ -44,8 +44,8 @@ cc_library(
     hdrs = ["untrusted/host_call_handlers.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/platform/system_call:untrusted_invoke",
         "//asylo/util:status",
@@ -59,6 +59,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":untrusted_host_calls",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/platform/system_call",
         "//asylo/test/util:status_matchers",

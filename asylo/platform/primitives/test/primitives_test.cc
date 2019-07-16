@@ -40,13 +40,16 @@
 #include "asylo/util/thread.h"
 
 using ::testing::_;
+using ::testing::DoAll;
 using ::testing::Eq;
+using ::testing::Invoke;
 using ::testing::MockFunction;
 using ::testing::Not;
 using ::testing::NotNull;
 using ::testing::Return;
 using ::testing::SizeIs;
 using ::testing::StrEq;
+using ::testing::WithArgs;
 
 namespace asylo {
 namespace primitives {
@@ -59,15 +62,18 @@ class PrimitivesTest : public ::testing::Test {
   std::shared_ptr<Client> LoadTestEnclaveOrDie(bool reload) {
     auto exit_call_provider = absl::make_unique<DispatchTable>();
     // Register init exit call invoked during test_enclave.cc initialization.
-    MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
-                        NativeParameterStack *params)>
+    MockFunction<Status(std::shared_ptr<class Client> enclave, void *context,
+                        MessageReader *in, MessageWriter *out)>
         mock_init_handler;
+
     if (reload) {
-      EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _))
-          .WillRepeatedly(Return(Status::OkStatus()));
+      EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _, _))
+          .WillRepeatedly(DoAll(WithArgs<2, 3>(Invoke(CopyInOut)),
+                                Return(Status::OkStatus())));
     } else {
-      EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _))
-          .WillOnce(Return(Status::OkStatus()));
+      EXPECT_CALL(mock_init_handler, Call(NotNull(), _, _, _))
+          .WillOnce(DoAll(WithArgs<2, 3>(Invoke(CopyInOut)),
+                          Return(Status::OkStatus())));
     }
     ASYLO_EXPECT_OK(exit_call_provider->RegisterExitHandler(
         kUntrustedInit, ExitHandler{mock_init_handler.AsStdFunction()}));
@@ -78,6 +84,13 @@ class PrimitivesTest : public ::testing::Test {
   static void TearDownTestSuite() {
     // Clean up the backend.
     delete test::TestBackend::Get();
+  }
+
+ private:
+  static void CopyInOut(MessageReader *in, MessageWriter *out) {
+    while (in->hasNext()) {
+      out->PushByCopy(in->next());
+    }
   }
 };
 
@@ -258,23 +271,15 @@ TEST_F(PrimitivesTest, CallChain) {
   // An exit handler to compute a Fibonacci number, calling back into the
   // enclave recursively.
   ExitHandler::Callback fibonacci_handler =
-      [&](std::shared_ptr<Client> client, void *context,
-          NativeParameterStack *params) -> Status {
-    if (params->empty()) {
-      return Status{error::GoogleError::INVALID_ARGUMENT,
-                    "TrustedFibonacci called with incorrent argument(s)."};
-    }
-    const int32_t n = params->Pop<int32_t>();
-    if (!params->empty()) {
-      return Status{error::GoogleError::INVALID_ARGUMENT,
-                    "TrustedFibonacci called with incorrent argument(s)."};
-    }
+      [&](std::shared_ptr<Client> client, void *context, MessageReader *in,
+          MessageWriter *out) -> Status {
+    ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+    const auto n = in->next<int32_t>();
     if (n >= 50) {
       return Status{error::GoogleError::INVALID_ARGUMENT,
                     "UntrustedFibonacci called with invalid argument."};
     }
-    params->PushByCopy<int32_t>(
-        n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2));
+    out->Push(n < 2 ? n : trusted_fibonacci(n - 1) + trusted_fibonacci(n - 2));
     return Status::OkStatus();
   };
 

@@ -16,42 +16,43 @@
  *
  */
 
+#include "asylo/platform/host_call/untrusted/host_call_handlers.h"
+
 #include <sys/syscall.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/platform/host_call/untrusted/host_call_handlers.h"
+#include "asylo/platform/primitives/util/message.h"
+#include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/system_call/serialize.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/platform/primitives/util/status_conversions.h"
 
 using ::testing::Eq;
+using ::testing::IsEmpty;
+using ::testing::SizeIs;
 
 namespace asylo {
 namespace host_call {
 namespace {
 
 TEST(HostCallHandlersTest, SyscallHandlerEmptyParameterStackTest) {
-  primitives::NativeParameterStack empty_params;
-
-  EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &empty_params),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION,
-                       "Received no serialized host call request. No syscall "
-                       "to be called!"));
+  primitives::MessageReader empty_input;
+  primitives::MessageWriter empty_output;
+  EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &empty_input, &empty_output),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "1 item(s) expected on the MessageReader."));
 }
 
 TEST(HostCallHandlersTest, SyscallHandlerMoreThanOneRequestOnStackTest) {
   primitives::NativeParameterStack params;
   params.PushByCopy(1);  // request 1
   params.PushByCopy(1);  // request 2
-
-  EXPECT_THAT(
-      SystemCallHandler(nullptr, nullptr, &params),
-      StatusIs(
-          error::GoogleError::FAILED_PRECONDITION,
-          "Received more data (requests) than expected for this host call. "
-          "This function is capable of calling only one system call at a "
-          "time, using one serialized request. No syscall to be called!"));
+  primitives::MessageReader input;
+  input.Deserialize(&params);
+  primitives::MessageWriter output;
+  EXPECT_THAT(SystemCallHandler(nullptr, nullptr, &input, &output),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "1 item(s) expected on the MessageReader."));
 }
 
 // Invokes a host call for a valid serialized request. We only verify that the
@@ -60,22 +61,18 @@ TEST(HostCallHandlersTest, SyscallHandlerMoreThanOneRequestOnStackTest) {
 // syscall.
 TEST(HostCallHandlersTest, SyscallHandlerValidRequestOnParameterStackTest) {
   std::array<uint64_t, system_call::kParameterMax> request_params;
+  primitives::Extent request;  // To be allocated by Serialize.
+  ASYLO_ASSERT_OK(primitives::MakeStatus(
+      system_call::SerializeRequest(SYS_getpid, request_params, &request)));
   primitives::NativeParameterStack params;
-  primitives::Extent request;  // To be owned by params.
-
-  auto request_extent_allocator = [&params](size_t size) {
-    return params.PushAlloc(size);
-  };
-
-  Status status = primitives::MakeStatus(system_call::SerializeRequest(
-      SYS_getpid, request_params, &request, request_extent_allocator));
-
-  ASYLO_ASSERT_OK(status);
-  EXPECT_THAT(params.size(), Eq(1));  // Contains the request.
-
-  ASSERT_THAT(SystemCallHandler(nullptr, nullptr, &params),
+  params.PushByCopy(request);
+  free(request.data());
+  primitives::MessageReader input;
+  input.Deserialize(&params);
+  primitives::MessageWriter output;
+  ASSERT_THAT(SystemCallHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::OK));
-  EXPECT_THAT(params.size(), Eq(1));  // Contains the response.
+  EXPECT_THAT(output, SizeIs(1));  // Contains the response.
 }
 
 // Invokes a host call for a corrupt serialized request. The behavior of the
@@ -87,26 +84,29 @@ TEST(HostCallHandlersTest, SyscallHandlerInvalidRequestOnParameterStackTest) {
   primitives::NativeParameterStack params;
   char request_str[] = "illegal_request";
   params.PushByCopy(primitives::Extent{request_str, strlen(request_str)});
-  auto status = SystemCallHandler(nullptr, nullptr, &params);
-
+  primitives::MessageReader input;
+  input.Deserialize(&params);
+  primitives::MessageWriter output;
+  const auto status = SystemCallHandler(nullptr, nullptr, &input, &output);
   ASSERT_THAT(status, StatusIs(error::GoogleError::INVALID_ARGUMENT));
   // There should be no response populated on the stack for illegal requests.
-  EXPECT_TRUE(params.empty());
+  EXPECT_THAT(output, IsEmpty());
 }
 
 // Invokes an IsAtty hostcall for an invalid request. It tests that the correct
 // error is returned for an empty parameter stack or for a parameter
 // stack with more than one item.
 TEST(HostCallHandlersTest, IsAttyIncorrectParameterStackSizeTest) {
-  primitives::NativeParameterStack params;
-
-  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
+  primitives::MessageReader input;
+  primitives::MessageWriter output;
+  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
+  primitives::NativeParameterStack params;
   params.PushByCopy(1);
   params.PushByCopy(2);
-
-  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
+  input.Deserialize(&params);
+  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -115,11 +115,13 @@ TEST(HostCallHandlersTest, IsAttyIncorrectParameterStackSizeTest) {
 // the parameter stack.
 TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
   primitives::NativeParameterStack params;
-
   params.PushByCopy(0);
-  EXPECT_THAT(IsAttyHandler(nullptr, nullptr, &params),
-              StatusIs(error::GoogleError::OK));
-
+  primitives::MessageReader input;
+  input.Deserialize(&params);
+  primitives::MessageWriter output;
+  ASSERT_THAT(IsAttyHandler(nullptr, nullptr, &input, &output), IsOk());
+  ASSERT_THAT(output, SizeIs(1));
+  output.Serialize(&params);
   int result = params.Pop<int>();
   EXPECT_EQ(result, 0);
 }
@@ -128,15 +130,16 @@ TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
 // error is returned for an empty parameter stack or for a parameter
 // stack with more than one item.
 TEST(HostCallHandlersTest, USleepIncorrectParameterStackSizeTest) {
-  primitives::NativeParameterStack params;
-
-  EXPECT_THAT(USleepHandler(nullptr, nullptr, &params),
+  primitives::MessageReader input;
+  primitives::MessageWriter output;
+  EXPECT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
+  primitives::NativeParameterStack params;
   params.PushByCopy(1);
   params.PushByCopy(2);
-
-  EXPECT_THAT(USleepHandler(nullptr, nullptr, &params),
+  input.Deserialize(&params);
+  EXPECT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -145,11 +148,14 @@ TEST(HostCallHandlersTest, USleepIncorrectParameterStackSizeTest) {
 // the parameter stack.
 TEST(HostCallHandlersTest, USleepValidRequestTest) {
   primitives::NativeParameterStack params;
-
   params.PushByCopy(0);
-  EXPECT_THAT(USleepHandler(nullptr, nullptr, &params),
+  primitives::MessageReader input;
+  input.Deserialize(&params);
+  primitives::MessageWriter output;
+  ASSERT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::OK));
-
+  ASSERT_THAT(output, SizeIs(1));
+  output.Serialize(&params);
   int result = params.Pop<int>();
   EXPECT_EQ(result, 0);
 }

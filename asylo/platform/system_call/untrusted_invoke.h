@@ -30,9 +30,8 @@ namespace system_call {
 // Invokes the native Linux system call described by `request` and builds the
 // response message in `response`. Return true on success, otherwise false if a
 // serialization error occurred.
-primitives::PrimitiveStatus UntrustedInvoke(
-    primitives::Extent request, primitives::Extent *response,
-    const primitives::ExtentAllocator &response_allocator = nullptr);
+primitives::PrimitiveStatus UntrustedInvoke(primitives::Extent request,
+                                            primitives::Extent *response);
 
 }  // namespace system_call
 }  // namespace asylo

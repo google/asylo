@@ -58,8 +58,9 @@ StatusOr<std::shared_ptr<class Client>> LoadEnclave(Args &&... args) {
 
 // Callback structure for dispatching messages from the enclave.
 struct ExitHandler {
-  using Callback = std::function<Status(std::shared_ptr<class Client> enclave,
-                                        void *, NativeParameterStack *)>;
+  using Callback =
+      std::function<Status(std::shared_ptr<class Client> enclave, void *context,
+                           MessageReader *input, MessageWriter *output)>;
 
   ExitHandler() : context(nullptr) {}
 

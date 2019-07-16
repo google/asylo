@@ -32,11 +32,11 @@ namespace primitives {
 
 // When the enclave asks for it, send "Hello".
 Status hello_handler(std::shared_ptr<Client> client, void *context,
-                     NativeParameterStack *params) {
-  static constexpr char kHello[] = "Hello";
+                     MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
   // Push our message on to the parameter stack to pass to the enclave
-  params->PushByCopy(Extent{const_cast<char *>(kHello), strlen(kHello)});
+  out->Push("Hello");
   return Status::OkStatus();
 }
 
