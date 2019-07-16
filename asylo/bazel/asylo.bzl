@@ -634,7 +634,11 @@ def sim_enclave(name, **kwargs):
       name: The name of the signed enclave object file.
       **kwargs: cc_binary arguments.
     """
-    sgx_enclave(name, **kwargs)
+    sgx_enclave(
+        name,
+        deprecation = "The duplicate sim_enclave build rule in asylo.bzl is deprecated, and will be removed in the future. For identical behavior, use sgx_enclave.",
+        **kwargs
+    )
 
 def enclave_test(
         name,
