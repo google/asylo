@@ -163,6 +163,7 @@ cc_library(
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",

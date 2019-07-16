@@ -84,6 +84,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status",
         "//asylo/util:status_macros",
     ],

@@ -239,12 +239,6 @@ class ParameterStack {
 // free provided by the local environment.
 using NativeParameterStack = ParameterStack<malloc, free>;
 
-// Type signature of the enclave entry function pointer. All data extents in
-// `params` are expected to be located in untrusted memory.
-using EnclaveCallPtr =
-    PrimitiveStatus (*)(uint64_t trusted_selector,  // Trusted selector value.
-                        NativeParameterStack *params);  // Parameters list.
-
 }  // namespace primitives
 }  // namespace asylo
 

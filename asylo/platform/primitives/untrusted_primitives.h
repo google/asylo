@@ -27,6 +27,7 @@
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/asylo_macros.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -137,11 +138,11 @@ class Client : public std::enable_shared_from_this<Client> {
 
   // Enters the enclave synchronously at an entry point to trusted code
   // designated by `selector`.
-  // Input `params` is copied into the enclave, which occurs locally inside the
+  // Input `input` is copied into the enclave, which occurs locally inside the
   // same address space.
-  // Conversely, results are copied and returned in 'params'.
-  Status EnclaveCall(uint64_t selector,
-                     NativeParameterStack *params) ASYLO_MUST_USE_RESULT;
+  // Conversely, results are copied and returned in 'output'.
+  Status EnclaveCall(uint64_t selector, MessageWriter *input,
+                     MessageReader *output) ASYLO_MUST_USE_RESULT;
 
   // Enclave exit callback function shared with the enclave.
   static PrimitiveStatus ExitCallback(uint64_t untrusted_selector,
@@ -152,12 +153,12 @@ class Client : public std::enable_shared_from_this<Client> {
 
  protected:
   Client(const absl::string_view name,
-      std::unique_ptr<ExitCallProvider> exit_call_provider)
+         std::unique_ptr<ExitCallProvider> exit_call_provider)
       : exit_call_provider_(std::move(exit_call_provider)), name_(name) {}
 
   // Provides implementation of EnclaveCall.
-  virtual Status EnclaveCallInternal(uint64_t selector,
-                                     NativeParameterStack *params)
+  virtual Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
+                                     MessageReader *output)
       ASYLO_MUST_USE_RESULT = 0;
 
  private:

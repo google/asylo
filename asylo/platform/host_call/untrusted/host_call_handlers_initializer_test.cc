@@ -17,10 +17,12 @@
  */
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
+
 #include <gtest/gtest.h>
 #include "asylo/util/logging.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -44,8 +46,8 @@ class MockedEnclaveClient : public primitives::Client {
     return Status::OkStatus();
   }
 
-  Status EnclaveCallInternal(
-      uint64_t selector, primitives::NativeParameterStack *params) override {
+  Status EnclaveCallInternal(uint64_t selector, primitives::MessageWriter *in,
+                             primitives::MessageReader *out) override {
     LOG(FATAL);
     return Status::OkStatus();
   }
@@ -91,13 +93,13 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   // Verify that |kUSleepHandler| is in use by attempting to re-register the
   // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
-      kUSleepHandler, primitives::ExitHandler{nullptr}),
+                  kUSleepHandler, primitives::ExitHandler{nullptr}),
               StatusIs(error::GoogleError::ALREADY_EXISTS));
 
   // Verify that |kUSleepHandler| points to |USleepHandler| by making a
   // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-      kUSleepHandler, &params, client.get()),
+                  kUSleepHandler, &params, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

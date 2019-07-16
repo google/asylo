@@ -34,8 +34,10 @@
 #include "absl/time/time.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
+#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/test/util/status_matchers.h"
@@ -44,6 +46,7 @@
 using ::testing::Eq;
 using ::testing::Gt;
 using ::testing::Not;
+using ::testing::SizeIs;
 using ::testing::StrEq;
 
 namespace asylo {
@@ -91,26 +94,28 @@ TEST_F(HostCallTest, TestAccess) {
   int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_GE(fd, 0);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
-  params.PushByCopy<int>(/*value=mode=*/R_OK | W_OK);
+  primitives::MessageWriter in;
+  in.Push(path);
+  in.Push<int>(/*value=mode=*/R_OK | W_OK);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), access(path.c_str(), R_OK | W_OK));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), access(path.c_str(), R_OK | W_OK));
 }
 
 // Tests enc_untrusted_access() against a non-existent path.
 TEST_F(HostCallTest, TestAccessNonExistentPath) {
   const char *path = "illegal_path";
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path, strlen(path) + 1);
-  params.PushByCopy<int>(/*value=mode=*/F_OK);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path, strlen(path) + 1});
+  in.Push<int>(/*value=mode=*/F_OK);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), access(path, F_OK));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), access(path, F_OK));
 }
 
 // Tests enc_untrusted_chmod() by creating a file with multiple mode bits
@@ -132,13 +137,14 @@ TEST_F(HostCallTest, TestChmod) {
   struct stat sb;
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_NE((sb.st_mode & S_IRUSR), 0);
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
-  params.PushByCopy<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path.c_str(), path.length() + 1});
+  in.Push<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChmod, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  ASSERT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChmod, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  ASSERT_THAT(out.next<int>(), Eq(0));
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_EQ((sb.st_mode & S_IRUSR), 0);
   EXPECT_NE(unlink(path.c_str()), -1);
@@ -148,13 +154,14 @@ TEST_F(HostCallTest, TestChmod) {
 TEST_F(HostCallTest, TestChmodNonExistentFile) {
   const char *path = "illegal_path";
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path, strlen(path) + 1);
-  params.PushByCopy<mode_t>(/*value=mode=*/S_IWUSR);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path, strlen(path) + 1});
+  in.Push<mode_t>(/*value=mode=*/S_IWUSR);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChmod, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  EXPECT_THAT(params.Pop<int>(), Eq(access(path, F_OK)));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChmod, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next<int>(), Eq(access(path, F_OK)));
 }
 
 // Tests enc_untrusted_close() by creating a file to be closed and calling
@@ -167,23 +174,25 @@ TEST_F(HostCallTest, TestClose) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(fcntl(fd, F_GETFD), -1);  // check fd is an open file descriptor.
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(fd);
+  primitives::MessageWriter in;
+  in.Push<int>(fd);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 }
 
 // Tries closing a non-existent file handle by calling enc_untrusted_close()
 // from inside the enclave.
 TEST_F(HostCallTest, TestCloseNonExistentFile) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/123456);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/123456);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_fchmod() by creating a file with multiple mode bits
@@ -205,13 +214,14 @@ TEST_F(HostCallTest, TestFchmod) {
   struct stat sb;
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_NE((sb.st_mode & S_IRUSR), 0);
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(fd);
-  params.PushByCopy<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
+  primitives::MessageWriter in;
+  in.Push<int>(fd);
+  in.Push<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFchmod, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  ASSERT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFchmod, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  ASSERT_THAT(out.next<int>(), Eq(0));
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_EQ((sb.st_mode & S_IRUSR), 0);
   EXPECT_NE(unlink(path.c_str()), -1);
@@ -219,41 +229,45 @@ TEST_F(HostCallTest, TestFchmod) {
 
 // Tests enc_untrusted_fchmod() against a non-existent file descriptor.
 TEST_F(HostCallTest, TestFchmodNonExistentFile) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/-1);
-  params.PushByCopy<mode_t>(/*value=mode=*/S_IWUSR);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/-1);
+  in.Push<mode_t>(/*value=mode=*/S_IWUSR);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFchmod, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFchmod, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_getpid() by calling it from inside the enclave and
 // verifying its return value against pid obtained from native system call.
 TEST_F(HostCallTest, TestGetpid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<pid_t>(), Eq(getpid()));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getpid()));
 }
 
 // Tests enc_untrusted_getppid() by calling it from inside the enclave and
 // verifying its return value against ppid obtained from native system call.
 TEST_F(HostCallTest, TestGetPpid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPpid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<pid_t>(), Eq(getppid()));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPpid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getppid()));
 }
 
 // Tests enc_untrusted_setsid() by calling it from inside the enclave and
 // verifying its return value against sid obtained from getsid(0), which
 // gets the sid of the current process.
 TEST_F(HostCallTest, TestSetSid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<pid_t>(), Eq(getsid(0)));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0)));
 }
 
 // Tests enc_untrusted_kill() by forking the current process and putting the
@@ -265,13 +279,14 @@ TEST_F(HostCallTest, TestKill) {
     sleep(1000);  // The child process waits until it's killed by the parent.
   }
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<pid_t>(/*value=pid=*/pid);
-  params.PushByCopy<int>(/*value=sig=*/SIGABRT);
+  primitives::MessageWriter in;
+  in.Push<pid_t>(/*value=pid=*/pid);
+  in.Push<int>(/*value=sig=*/SIGABRT);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 }
 
 // Tests enc_untrusted_link() by creating a file (|oldpath|) and calling
@@ -288,12 +303,13 @@ TEST_F(HostCallTest, TestLink) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(oldpath.c_str(), oldpath.length() + 1);
-  params.PushByCopy<char>(newpath.c_str(), newpath.length() + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{oldpath.c_str(), oldpath.length() + 1});
+  in.Push(primitives::Extent{newpath.c_str(), newpath.length() + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLink, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
 
   EXPECT_NE(access(newpath.c_str(), F_OK), -1);
   EXPECT_NE(access(oldpath.c_str(), F_OK), -1);
@@ -312,14 +328,15 @@ TEST_F(HostCallTest, TestLseek) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   EXPECT_THAT(write(fd, "hello", 5), Eq(5));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<off_t>(/*value=offset=*/2);
-  params.PushByCopy<int>(/*value=whence=*/SEEK_SET);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<off_t>(/*value=offset=*/2);
+  in.Push<int>(/*value=whence=*/SEEK_SET);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLseek, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<off_t>(), Eq(2));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLseek, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<off_t>(), Eq(2));
 }
 
 TEST_F(HostCallTest, TestLseekBadReturn) {
@@ -332,14 +349,15 @@ TEST_F(HostCallTest, TestLseekBadReturn) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   EXPECT_THAT(write(fd, "hello", 5), Eq(5));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<off_t>(/*value=offset=*/0);
-  params.PushByCopy<int>(/*value=whence=*/1000);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<off_t>(/*value=offset=*/0);
+  in.Push<int>(/*value=whence=*/1000);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLseek, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<off_t>(), Eq(-1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLseek, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<off_t>(), Eq(-1));
 }
 
 // Tests enc_untrusted_mkdir() by calling it from inside the enclave and
@@ -348,13 +366,14 @@ TEST_F(HostCallTest, TestMkdir) {
   std::string path =
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_make");
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
-  params.PushByCopy<mode_t>(/*value=mode=*/0777);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path.c_str(), path.length() + 1});
+  in.Push<mode_t>(/*value=mode=*/0777);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   struct stat sb;
   EXPECT_TRUE(stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode));
@@ -363,13 +382,14 @@ TEST_F(HostCallTest, TestMkdir) {
 TEST_F(HostCallTest, TestMkdirNonExistentPath) {
   std::string path = absl::StrCat("/non-existent-path/dir_to_make");
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
-  params.PushByCopy<mode_t>(/*value=mode=*/0777);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path.c_str(), path.length() + 1});
+  in.Push<mode_t>(/*value=mode=*/0777);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_open() by using it to create a new file from inside the
@@ -378,14 +398,15 @@ TEST_F(HostCallTest, TestOpen) {
   std::string path =
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
-  params.PushByCopy<int>(/*value=flags=*/O_RDWR | O_CREAT | O_TRUNC);
-  params.PushByCopy<mode_t>(/*value=mode=*/S_IRUSR | S_IWUSR);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path.c_str(), path.length() + 1});
+  in.Push<int>(/*value=flags=*/O_RDWR | O_CREAT | O_TRUNC);
+  in.Push<mode_t>(/*value=mode=*/S_IRUSR | S_IWUSR);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Gt(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Gt(0));
   EXPECT_NE(access(path.c_str(), F_OK), -1);
 }
 
@@ -398,13 +419,14 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
-  params.PushByCopy<int>(/*value=flags*/ O_RDWR | O_CREAT | O_TRUNC);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path.c_str(), path.length() + 1});
+  in.Push<int>(/*value=flags*/ O_RDWR | O_CREAT | O_TRUNC);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Gt(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Gt(0));
   EXPECT_NE(access(path.c_str(), F_OK), -1);
 }
 
@@ -416,12 +438,13 @@ TEST_F(HostCallTest, TestUnlink) {
   creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path.c_str(), path.length() + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path.c_str(), path.length() + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_THAT(access(path.c_str(), F_OK), Eq(-1));
 }
 
@@ -429,32 +452,35 @@ TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
   const char *path = "obviously-illegal-file.tmp";
   ASSERT_THAT(access(path, F_OK), Eq(-1));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(path, strlen(path) + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{path, strlen(path) + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_getuid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getuid().
 TEST_F(HostCallTest, TestGetuid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<uid_t>(), Eq(getuid()));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<uid_t>(), Eq(getuid()));
 }
 
 // Tests enc_untrusted_umask() by calling it from inside the enclave to mask
 // certain permission bits(S_IWGRP | S_IWOTH) and verifying newly created
 // directory or file will not have masked permission.
 TEST_F(HostCallTest, TestUmask) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=mask=*/S_IWGRP | S_IWOTH);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain return value.
-  mode_t default_mode = params.Pop<mode_t>();
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=mask=*/S_IWGRP | S_IWOTH);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  mode_t default_mode = out.next<mode_t>();
 
   struct stat sb;
   std::string path =
@@ -483,37 +509,42 @@ TEST_F(HostCallTest, TestUmask) {
   EXPECT_TRUE(!(sb.st_mode & S_IWGRP) && !(sb.st_mode & S_IWOTH));
   EXPECT_NE(unlink(path.c_str()), -1);
 
-  params.PushByCopy<int>(/*value=mask=*/default_mode);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  ASSERT_THAT(params.Pop<mode_t>(), Eq(S_IWGRP | S_IWOTH));
+  primitives::MessageWriter in2;
+  in2.Push<int>(/*value=mask=*/default_mode);
+  primitives::MessageReader out2;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(1));
+  ASSERT_THAT(out2.next<mode_t>(), Eq(S_IWGRP | S_IWOTH));
 }
 
 // Tests enc_untrusted_getgid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getgid().
 TEST_F(HostCallTest, TestGetgid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetGid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<gid_t>(), Eq(getgid()));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetGid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<gid_t>(), Eq(getgid()));
 }
 
 // Tests enc_untrusted_geteuid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native geteuid().
 TEST_F(HostCallTest, TestGetEuid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEuid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<uid_t>(), Eq(geteuid()));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEuid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<uid_t>(), Eq(geteuid()));
 }
 
 // Tests enc_untrusted_getegid() by making the host call from inside the enclave
 // and comparing the result with the value obtained from native getegid().
 TEST_F(HostCallTest, TestGetEgid) {
-  primitives::NativeParameterStack params;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEgid, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<gid_t>(), Eq(getegid()));
+  primitives::MessageWriter in;
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEgid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<gid_t>(), Eq(getegid()));
 }
 
 // Tests enc_untrusted_rename() by making a host call from inside the enclave
@@ -527,13 +558,14 @@ TEST_F(HostCallTest, TestRename) {
   creat(oldpath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(oldpath.c_str(), strlen(oldpath.c_str()) + 1);
-  params.PushByCopy<char>(newpath.c_str(), strlen(newpath.c_str()) + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{oldpath.c_str(), strlen(oldpath.c_str()) + 1});
+  in.Push(primitives::Extent{newpath.c_str(), strlen(newpath.c_str()) + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRename, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // should only contain the return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRename, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   EXPECT_THAT(access(oldpath.c_str(), F_OK), Eq(-1));
   EXPECT_NE(access(newpath.c_str(), F_OK), -1);
@@ -560,13 +592,14 @@ TEST_F(HostCallTest, TestRead) {
 
   // We do not push the empty read buffer on the stack since a read buffer would
   // need to be created inside the enclave anyway.
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<size_t>(/*value=count=*/expected_content.length() + 1);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRead, &params));
-  ASSERT_THAT(params.size(), Eq(2));  // Contains return value and buffer.
-  EXPECT_THAT(params.Pop()->As<char>(), StrEq(expected_content));
-  EXPECT_THAT(params.Pop<ssize_t>(), Eq(expected_content.length() + 1));
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<size_t>(/*value=count=*/expected_content.length() + 1);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRead, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Contains return value and buffer.
+  EXPECT_THAT(out.next().As<char>(), StrEq(expected_content));
+  EXPECT_THAT(out.next<ssize_t>(), Eq(expected_content.length() + 1));
 }
 
 // Tests enc_untrusted_write() by making a host call from inside the enclave to
@@ -583,14 +616,15 @@ TEST_F(HostCallTest, TestWrite) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   std::string write_buf = "text to be written";
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<char>(write_buf.c_str(), write_buf.length() + 1);
-  params.PushByCopy<size_t>(/*value=count=*/write_buf.length() + 1);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push(primitives::Extent{write_buf.c_str(), write_buf.length() + 1});
+  in.Push<size_t>(/*value=count=*/write_buf.length() + 1);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestWrite, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<ssize_t>(), Eq(write_buf.length() + 1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestWrite, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<ssize_t>(), Eq(write_buf.length() + 1));
 
   ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
   char read_buf[20];
@@ -613,13 +647,14 @@ TEST_F(HostCallTest, TestSymlink) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
-  params.PushByCopy<char>(target.c_str(), target.length() + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{test_file.c_str(), test_file.length() + 1});
+  in.Push(primitives::Extent{target.c_str(), target.length() + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSymlink, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSymlink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_NE(access(target.c_str(), F_OK), -1);
 }
 
@@ -641,19 +676,20 @@ TEST_F(HostCallTest, TestReadlink) {
   // Create a symlink to be read by readlink.
   ASSERT_THAT(symlink(test_file.c_str(), sym_file.c_str()), Eq(0));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(sym_file.c_str(), sym_file.length() + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{sym_file.c_str(), sym_file.length() + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadLink, &params));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadLink, &in, &out));
 
   char buf_expected[PATH_MAX];
   ssize_t len_expected =
       readlink(sym_file.c_str(), buf_expected, sizeof(buf_expected) - 1);
   buf_expected[len_expected] = '\0';
 
-  ASSERT_THAT(params.size(), Eq(2));  // Return value and the buffer.
-  EXPECT_THAT(params.Pop()->As<char>(), StrEq(buf_expected));
-  EXPECT_THAT(params.Pop<ssize_t>(), Eq(len_expected));
+  ASSERT_THAT(out, SizeIs(2));  // Return value and the buffer.
+  EXPECT_THAT(out.next().As<char>(), StrEq(buf_expected));
+  EXPECT_THAT(out.next<ssize_t>(), Eq(len_expected));
 }
 
 // Tests enc_untrusted_truncate() by making a call from inside the enclave and
@@ -673,14 +709,15 @@ TEST_F(HostCallTest, TestTruncate) {
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
-  primitives::NativeParameterStack params;
+  primitives::MessageWriter in;
   constexpr int kTruncLen = 5;
-  params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
-  params.PushByCopy<off_t>(/*value=length=*/kTruncLen);
+  in.Push(primitives::Extent{test_file.c_str(), test_file.length() + 1});
+  in.Push<off_t>(/*value=length=*/kTruncLen);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestTruncate, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), 0);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestTruncate, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), 0);
 
   // Verify contents of the file by reading it.
   char read_buf[10];
@@ -707,14 +744,15 @@ TEST_F(HostCallTest, TestFTruncate) {
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
-  primitives::NativeParameterStack params;
+  primitives::MessageWriter in2;
   constexpr int kTruncLen = 5;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<off_t>(/*value=length=*/kTruncLen);
+  in2.Push<int>(/*value=fd=*/fd);
+  in2.Push<off_t>(/*value=length=*/kTruncLen);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), 0);
+  primitives::MessageReader out2;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out2.next<int>(), 0);
 
   // Verify contents of the file by reading it.
   char read_buf[10];
@@ -724,12 +762,14 @@ TEST_F(HostCallTest, TestFTruncate) {
   EXPECT_THAT(read_buf, StrEq(file_content.substr(0, kTruncLen)));
 
   // Force an error and verify that the return value is non-zero.
-  params.PushByCopy<int>(/*value=fd=*/-1);
-  params.PushByCopy<off_t>(/*value=length=*/kTruncLen);
+  primitives::MessageWriter in3;
+  in3.Push<int>(/*value=fd=*/-1);
+  in3.Push<off_t>(/*value=length=*/kTruncLen);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), -1);
+  primitives::MessageReader out3;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &in3, &out3));
+  ASSERT_THAT(out3, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out3.next<int>(), -1);
 }
 
 // Tests enc_untrusted_rmdir() by making a call from inside the enclave and
@@ -739,12 +779,13 @@ TEST_F(HostCallTest, TestRmdir) {
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_del");
   ASSERT_THAT(mkdir(dir_to_del.c_str(), O_CREAT | O_RDWR), Eq(0));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(dir_to_del.c_str(), dir_to_del.length() + 1);
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{dir_to_del.c_str(), dir_to_del.length() + 1});
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRmdir, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRmdir, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   // Verify that the directory does not exist.
   struct stat sb;
@@ -754,25 +795,28 @@ TEST_F(HostCallTest, TestRmdir) {
 // Tests enc_untrusted_socket() by trying to obtain a valid (greater than 0)
 // socket file descriptor when the method is called from inside the enclave.
 TEST_F(HostCallTest, TestSocket) {
-  primitives::NativeParameterStack params;
+  primitives::MessageWriter in;
   // Setup bidirectional IPv6 socket.
-  params.PushByCopy<int>(/*value=domain=*/AF_INET6);
-  params.PushByCopy<int>(/*value=type=*/SOCK_STREAM);
-  params.PushByCopy<int>(/*value=protocol=*/0);
+  in.Push<int>(/*value=domain=*/AF_INET6);
+  in.Push<int>(/*value=type=*/SOCK_STREAM);
+  in.Push<int>(/*value=protocol=*/0);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Gt(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Gt(0));
 
   // Setup socket for local bidirectional communication between two processes on
   // the host.
-  params.PushByCopy<int>(/*value=domain=*/AF_UNIX);
-  params.PushByCopy<int>(/*value=type=*/SOCK_STREAM);
-  params.PushByCopy<int>(/*value=protocol=*/0);
+  primitives::MessageWriter in2;
+  in2.Push<int>(/*value=domain=*/AF_UNIX);
+  in2.Push<int>(/*value=type=*/SOCK_STREAM);
+  in2.Push<int>(/*value=protocol=*/0);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Gt(0));
+  primitives::MessageReader out2;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out2.next<int>(), Gt(0));
 }
 
 // Tests enc_untrusted_listen() by creating a local socket and calling
@@ -798,13 +842,14 @@ TEST_F(HostCallTest, TestListen) {
       Not(Eq(-1)));
 
   // Call listen on the bound local socket.
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=sockfd=*/socket_fd);
-  params.PushByCopy<int>(/*value=backlog=*/8);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=sockfd=*/socket_fd);
+  in.Push<int>(/*value=backlog=*/8);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestListen, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestListen, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   // Create another local socket and ensures that it is valid (fd > 0).
   int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -838,13 +883,14 @@ TEST_F(HostCallTest, TestShutdown) {
       Not(Eq(-1)));
 
   // Call shutdown on the bound local socket.
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=sockfd=*/socket_fd);
-  params.PushByCopy<int>(/*value=how=*/SHUT_RDWR);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=sockfd=*/socket_fd);
+  in.Push<int>(/*value=how=*/SHUT_RDWR);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestShutdown, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestShutdown, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   std::string msg = "Hello world!";
   EXPECT_THAT(send(socket_fd, (void *)msg.c_str(), msg.length(), 0), Eq(-1));
@@ -885,15 +931,15 @@ TEST_F(HostCallTest, TestSend) {
 
   std::string msg = "Hello world!";
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=sockfd=*/connection_socket);
-  params.PushByCopy<char>(/*value=buf*/ msg.c_str(), msg.length());
-  params.PushByCopy<size_t>(/*value=len*/ msg.length());
-  params.PushByCopy<int>(/*value=flags*/ 0);
-
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSend, &params));
-  ASSERT_THAT(params.size(), Eq(1));
-  EXPECT_THAT(params.Pop<int>(), Eq(msg.length()));
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=sockfd=*/connection_socket);
+  in.Push(/*value=buf*/ msg);
+  in.Push<size_t>(/*value=len*/ msg.length());
+  in.Push<int>(/*value=flags*/ 0);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSend, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next<int>(), Eq(msg.length()));
 
   close(socket_fd);
   close(client_sock);
@@ -913,39 +959,43 @@ TEST_F(HostCallTest, TestFcntl) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   // Get file flags and compare to those obtained from native fcntl() syscall.
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<int>(/*value=cmd=*/F_GETFL);
-  params.PushByCopy<int>(/*value=arg=*/0);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<int>(/*value=cmd=*/F_GETFL);
+  in.Push<int>(/*value=arg=*/0);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
 
   int fcntl_return;
   int klinux_fcntl_return = fcntl(fd, F_GETFL, 0);
   FromkLinuxFileStatusFlag(&klinux_fcntl_return, &fcntl_return);
-  EXPECT_THAT(params.Pop<int>(), Eq(fcntl_return));
+  EXPECT_THAT(out.next<int>(), Eq(fcntl_return));
 
   // Turn on one or more of the file status flags for a descriptor.
   int flags_to_set = O_APPEND | O_NONBLOCK | O_RDONLY;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<int>(/*value=cmd=*/F_SETFL);
-  params.PushByCopy<int>(/*value=arg=*/flags_to_set);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
+  primitives::MessageWriter in2;
+  in2.Push<int>(/*value=fd=*/fd);
+  in2.Push<int>(/*value=cmd=*/F_SETFL);
+  in2.Push<int>(/*value=arg=*/flags_to_set);
+  primitives::MessageReader out2;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
 
   klinux_fcntl_return = fcntl(fd, F_SETFL, flags_to_set);
   FromkLinuxFileStatusFlag(&klinux_fcntl_return, &fcntl_return);
-  EXPECT_THAT(params.Pop<int>(), Eq(fcntl_return));
+  EXPECT_THAT(out.next<int>(), Eq(fcntl_return));
 }
 
 TEST_F(HostCallTest, TestFcntlInvalidCmd) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/0);
-  params.PushByCopy<int>(/*value=cmd=*/10000000);
-  params.PushByCopy<int>(/*value=arg=*/0);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/0);
+  in.Push<int>(/*value=cmd=*/10000000);
+  in.Push<int>(/*value=arg=*/0);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_chown() by attempting to change file ownership by making
@@ -959,14 +1009,15 @@ TEST_F(HostCallTest, TestChown) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<char>(test_file.c_str(), test_file.length() + 1);
-  params.PushByCopy<uid_t>(/*value=owner=*/getuid());
-  params.PushByCopy<gid_t>(/*value=group=*/getgid());
+  primitives::MessageWriter in;
+  in.Push(primitives::Extent{test_file.c_str(), test_file.length() + 1});
+  in.Push<uid_t>(/*value=owner=*/getuid());
+  in.Push<gid_t>(/*value=group=*/getgid());
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChown, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestChown, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 }
 
 // Tests enc_untrusted_fchown() by attempting to change file ownership by making
@@ -985,23 +1036,26 @@ TEST_F(HostCallTest, TestFChown) {
   EXPECT_THAT(sb.st_uid, Eq(getuid()));
   EXPECT_THAT(sb.st_gid, Eq(getgid()));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<uid_t>(/*value=owner=*/ getuid());
-  params.PushByCopy<gid_t>(/*value=group=*/ getgid());
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<uid_t>(/*value=owner=*/getuid());
+  in.Push<gid_t>(/*value=group=*/getgid());
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   // Attempt to fchown with invalid file descriptor, should return an error.
-  params.PushByCopy<int>(/*value=fd=*/-1);
-  params.PushByCopy<uid_t>(/*value=owner=*/ getuid());
-  params.PushByCopy<gid_t>(/*value=group=*/ getgid());
+  primitives::MessageWriter in2;
+  in2.Push<int>(/*value=fd=*/-1);
+  in2.Push<uid_t>(/*value=owner=*/getuid());
+  in2.Push<gid_t>(/*value=group=*/getgid());
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(-1));
+  primitives::MessageReader out2;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFChown, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out2.next<int>(), Eq(-1));
 }
 
 // Tests enc_untrusted_setsockopt() by creating a socket on the untrusted side,
@@ -1027,15 +1081,16 @@ TEST_F(HostCallTest, TestSetSockOpt) {
       bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
       Not(Eq(-1)));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=sockfd=*/socket_fd);
-  params.PushByCopy<int>(/*value=level=*/SOL_SOCKET);
-  params.PushByCopy<int>(/*value=optname=*/SO_REUSEADDR);
-  params.PushByCopy<int>(/*value=option=*/1);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=sockfd=*/socket_fd);
+  in.Push<int>(/*value=level=*/SOL_SOCKET);
+  in.Push<int>(/*value=optname=*/SO_REUSEADDR);
+  in.Push<int>(/*value=option=*/1);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSockOpt, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Gt(-1));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSockOpt, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Gt(-1));
 
   close(socket_fd);
 }
@@ -1060,13 +1115,14 @@ TEST_F(HostCallTest, TestFlock) {
   int klinux_lock = LOCK_EX;
   int lock;
   FromkLinuxFLockOperation(&klinux_lock, &lock);
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
-  params.PushByCopy<int>(/*value=operation=*/lock);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<int>(/*value=operation=*/lock);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
   flock(fd, LOCK_UN);
 }
 
@@ -1086,12 +1142,13 @@ TEST_F(HostCallTest, TestFsync) {
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd*/ fd);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd*/ fd);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFsync, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFsync, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 }
 
 // Tests enc_untrusted_inotify_init1() by initializing a new inotify instance
@@ -1099,15 +1156,16 @@ TEST_F(HostCallTest, TestFsync) {
 // a new inotify event queue is returned. Only the return value, i.e. the file
 // descriptor value is verified to be positive.
 TEST_F(HostCallTest, TestInotifyInit1) {
-  primitives::NativeParameterStack params;
+  primitives::MessageWriter in;
   int inotify_flag;
   int klinux_inotify_flag = IN_NONBLOCK;
   FromkLinuxInotifyFlag(&klinux_inotify_flag, &inotify_flag);
-  params.PushByCopy<int>(/*value=flags=*/inotify_flag);
+  in.Push<int>(/*value=flags=*/inotify_flag);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyInit1, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  int inotify_fd = params.Pop<int>();
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyInit1, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  int inotify_fd = out.next<int>();
   EXPECT_THAT(inotify_fd, Gt(0));
   close(inotify_fd);
 }
@@ -1122,18 +1180,20 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
 
   // Call inotify_add_watch from inside the enclave for monitoring tmpdir for
   // all events supported by inotify.
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(inotify_fd);
-  params.PushByCopy<char>(absl::GetFlag(FLAGS_test_tmpdir).c_str(),
-                          absl::GetFlag(FLAGS_test_tmpdir).length() + 1);
+  primitives::MessageWriter in;
+  in.Push<int>(inotify_fd);
+  in.PushByCopy(
+      primitives::Extent{absl::GetFlag(FLAGS_test_tmpdir).c_str(),
+                         absl::GetFlag(FLAGS_test_tmpdir).length() + 1});
 
   int event_mask;
   int klinux_event_mask = IN_ALL_EVENTS;
   FromkLinuxInotifyEventMask(&klinux_event_mask, &event_mask);
-  params.PushByCopy<int>(event_mask);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyAddWatch, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(1));
+  in.Push<int>(event_mask);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyAddWatch, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(1));
 
   // Read the event buffer when no events have occurred in tmpdir.
   constexpr size_t event_size = sizeof(struct inotify_event);
@@ -1206,12 +1266,13 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
   EXPECT_THAT(event->cookie, Eq(0));
 
   // Call inotify_rm_watch from inside the enclave, verify the return value.
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(inotify_fd);
-  params.PushByCopy<int>(wd);
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyRmWatch, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageWriter in;
+  in.Push<int>(inotify_fd);
+  in.Push<int>(wd);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyRmWatch, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 
   // Perform another event on the file.
   ASSERT_THAT(unlink(test_file.c_str()), Eq(0));
@@ -1224,11 +1285,12 @@ TEST_F(HostCallTest, TestInotifyRmWatch) {
 // Tests enc_untrusted_sched_yield by calling it and ensuring that 0 is
 // returned.
 TEST_F(HostCallTest, TestSchedYield) {
-  primitives::NativeParameterStack params;
+  primitives::MessageWriter in;
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSchedYield, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSchedYield, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 }
 
 // Tests enc_untrusted_isatty() by testing with a non-terminal file descriptor,
@@ -1242,33 +1304,35 @@ TEST_F(HostCallTest, TestIsAtty) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
-  primitives::NativeParameterStack params;
-  params.PushByCopy<int>(/*value=fd=*/fd);
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestIsAtty, &params));
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestIsAtty, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
 }
 
 // Tests enc_untrusted_usleep() by sleeping for 1s, then ensuring that the
 // return value is 0, and that at least 1 second passed during the usleep
 // enclave call.
 TEST_F(HostCallTest, TestUSleep) {
-  primitives::NativeParameterStack params;
+  primitives::MessageWriter in;
 
   // Push the sleep duration as unsigned int instead of useconds_t, storing
   // it as useconds_t causes a segfault when popping the argument from the
   // stack on the trusted side.
-  params.PushByCopy<unsigned int>(/*value=usec=*/1000000);
+  in.Push<unsigned int>(/*value=usec=*/1000000);
+  primitives::MessageReader out;
 
   absl::Time start = absl::Now();
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUSleep, &params));
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUSleep, &in, &out));
   absl::Time end = absl::Now();
 
   auto duration = absl::ToInt64Milliseconds(end - start);
 
-  ASSERT_THAT(params.size(), Eq(1));  // Should only contain return value.
-  EXPECT_THAT(params.Pop<int>(), Eq(0));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_GE(duration, 1000);
   EXPECT_LE(duration, 1200);
 }

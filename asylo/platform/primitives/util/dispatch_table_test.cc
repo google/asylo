@@ -48,14 +48,15 @@ class MockedEnclaveClient : public Client {
       MockFunction<Status(std::shared_ptr<class Client> enclave, void *,
                           NativeParameterStack *params)>;
 
-  MockedEnclaveClient() : Client(
-    /*name=*/"mock_enclave", absl::make_unique<DispatchTable>()) {}
+  MockedEnclaveClient()
+      : Client(
+            /*name=*/"mock_enclave", absl::make_unique<DispatchTable>()) {}
 
   // Virtual methods not used in this test.
   bool IsClosed() const override { return false; }
   Status Destroy() override { return Status::OkStatus(); }
-  Status EnclaveCallInternal(uint64_t selector,
-                             NativeParameterStack *params) override {
+  Status EnclaveCallInternal(uint64_t selector, MessageWriter *in,
+                             MessageReader *out) override {
     return Status::OkStatus();
   }
 };

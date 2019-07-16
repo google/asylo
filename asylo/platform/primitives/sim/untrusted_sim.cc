@@ -21,6 +21,7 @@
 #include <dlfcn.h>
 #include <sys/mman.h>
 #include <unistd.h>
+
 #include <cstddef>
 #include <cstdlib>
 #include <memory>
@@ -31,10 +32,12 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
+#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -95,8 +98,7 @@ SimEnclaveClient::~SimEnclaveClient() {
 }
 
 StatusOr<std::shared_ptr<Client>> SimBackend::Load(
-    const absl::string_view enclave_name,
-    const std::string &path,
+    absl::string_view enclave_name, const std::string &path,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   // Initialize trampoline once. absl::call_once guarantees that initialization
   // will run exactly once across all threads, and all other threads will not
@@ -144,16 +146,21 @@ Status SimEnclaveClient::Destroy() {
 }
 
 Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
-                                             NativeParameterStack *params) {
-  PrimitiveStatus primitive_status;
-
+                                             MessageWriter *input,
+                                             MessageReader *output) {
   // Ensure client is properly initialized.
   if (!dl_handle_ || !enclave_call_) {
     return Status{error::GoogleError::FAILED_PRECONDITION,
                   "Enclave client closed or uninitialized."};
   }
 
-  const auto status = enclave_call_(selector, params);
+  NativeParameterStack params;
+  if (input) {
+    input->Serialize(&params);
+  }
+  const auto status = enclave_call_(selector, &params);
+  output->Deserialize(&params);
+
   return MakeStatus(status);
 }
 

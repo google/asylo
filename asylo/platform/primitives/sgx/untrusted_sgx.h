@@ -23,6 +23,7 @@
 
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/statusor.h"
 #include "include/sgx_urts.h"
 
@@ -80,8 +81,8 @@ class SgxEnclaveClient : public Client {
   void GetLaunchToken(sgx_launch_token_t *token) const;
 
  protected:
-  Status EnclaveCallInternal(uint64_t selector,
-                             NativeParameterStack *params) override;
+  Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
+                             MessageReader *output) override;
   bool IsClosed() const override;
 
  private:

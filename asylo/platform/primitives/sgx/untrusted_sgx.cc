@@ -20,10 +20,13 @@
 
 #include <sys/mman.h>
 #include <unistd.h>
+
 #include <cstdlib>
 
+#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/elf_reader.h"
 #include "asylo/util/file_mapping.h"
 #include "asylo/util/status.h"
@@ -175,8 +178,8 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
 }
 
 Status SgxEnclaveClient::Destroy() {
-  NativeParameterStack params;
-  ASYLO_RETURN_IF_ERROR(EnclaveCall(kSelectorAsyloFini, &params));
+  MessageReader output;
+  ASYLO_RETURN_IF_ERROR(EnclaveCall(kSelectorAsyloFini, nullptr, &output));
   sgx_status_t status = sgx_destroy_enclave(id_);
   if (status != SGX_SUCCESS) {
     return Status(status, "Failed to destroy enclave");
@@ -199,10 +202,15 @@ bool SgxEnclaveClient::IsClosed() const {
 }
 
 Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
-                                             NativeParameterStack *params) {
+                                             MessageWriter *input,
+                                             MessageReader *output) {
   ms_ecall_dispatch_trusted_call_t ms;
   ms.ms_selector = selector;
-  ms.ms_buffer = reinterpret_cast<void *>(params);
+  NativeParameterStack params;
+  if (input) {
+    input->Serialize(&params);
+  }
+  ms.ms_buffer = reinterpret_cast<void *>(&params);
 
   const ocall_table_t* table = &ocall_table_bridge;
   sgx_status_t status =
@@ -216,6 +224,7 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
     return Status(
         error::GoogleError::INTERNAL, "Enclave call failed inside enclave");
   }
+  output->Deserialize(reinterpret_cast<NativeParameterStack *>(ms.ms_buffer));
   return Status::OkStatus();
 }
 

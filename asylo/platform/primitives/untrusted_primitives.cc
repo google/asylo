@@ -35,9 +35,10 @@ namespace primitives {
 
 thread_local Client *Client::current_client_ = nullptr;
 
-Status Client::EnclaveCall(uint64_t selector, NativeParameterStack *params) {
+Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
+                           MessageReader *output) {
   ScopedCurrentClient scoped_client(this);
-  return EnclaveCallInternal(selector, params);
+  return EnclaveCallInternal(selector, input, output);
 }
 
 PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,

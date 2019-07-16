@@ -117,6 +117,7 @@ cc_test(
         ":exit_handler_constants",
         ":host_call_handlers_initializer",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",

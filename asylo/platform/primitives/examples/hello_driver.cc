@@ -25,6 +25,7 @@
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/platform/primitives/util/message.h"
 
 namespace asylo {
 namespace primitives {
@@ -55,12 +56,14 @@ Status call_enclave() {
   auto status = client->exit_call_provider()->RegisterExitHandler(
       kExternalHelloHandler, ExitHandler{hello_handler});
 
-  NativeParameterStack params;
-  status = client->EnclaveCall(kHelloEnclaveSelector, &params);
+  MessageReader out;
+  status = client->EnclaveCall(kHelloEnclaveSelector, nullptr, &out);
   if (status.ok()) {
-    auto span = params.Pop();
-    char *hello = reinterpret_cast<char *>(span->data());
-    std::cerr << hello << std::endl;
+    if (out.size() != 1) {
+      std::cerr << "Incorrect output parameters received" << std::endl;
+    } else {
+      std::cerr << out.next().As<char>() << std::endl;
+    }
   } else {
     std::cerr << status.ToString() << std::endl;
   }

@@ -28,9 +28,13 @@
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
+
+using ::testing::SizeIs;
+using ::testing::StrEq;
 
 namespace asylo {
 namespace primitives {
@@ -55,24 +59,19 @@ class HelloTest : public ::testing::Test {
   // When the enclave asks for it, send "Hello".
   static Status HelloHandler(std::shared_ptr<Client> client, void *context,
                              NativeParameterStack *params) {
-    static constexpr char kHello[] = "Hello";
-
-    // Push our message on to the parameter stack to pass to the enclave
-    params->PushByCopy(Extent{const_cast<char *>(kHello), strlen(kHello) + 1});
+    // Push our message on to the output message to pass to the enclave.
+    MessageWriter out;
+    out.Push("Hello");
+    out.Serialize(params);
     return Status::OkStatus();
   }
 };
 
 TEST_F(HelloTest, Hello) {
-  NativeParameterStack params;
-  auto status = client_->EnclaveCall(kHelloEnclaveSelector, &params);
-  EXPECT_FALSE(params.empty());
-  auto message = params.Pop();
-  EXPECT_TRUE(params.empty());
-  const char *message_cstr = reinterpret_cast<const char *>(message->data());
-  std::string message_string(message_cstr);
-  EXPECT_THAT(message_string, ::testing::StrEq("Hello, World!"));
-  EXPECT_THAT(status, IsOk());
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kHelloEnclaveSelector, nullptr, &out));
+  EXPECT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next().As<char>(), StrEq("Hello, World!"));
 }
 
 }  // namespace test

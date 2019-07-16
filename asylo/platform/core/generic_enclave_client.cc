@@ -26,6 +26,7 @@
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -36,58 +37,49 @@ Status GenericEnclaveClient::Initialize(const char *name, size_t name_len,
                                         const char *input, size_t input_len,
                                         std::unique_ptr<char[]> *output,
                                         size_t *output_len) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy(primitives::Extent{name, name_len});
-  params.PushByCopy(primitives::Extent{input, input_len});
+  primitives::MessageWriter in;
+  in.PushByReference(primitives::Extent{input, input_len});
+  in.PushByReference(primitives::Extent{name, name_len});
+  primitives::MessageReader out;
   ASYLO_RETURN_IF_ERROR(
-      primitive_client_->EnclaveCall(kSelectorAsyloInit, &params));
-
-  if (params.empty()) {
-    return {error::GoogleError::INVALID_ARGUMENT,
-            "Parameter stack empty but expected to contain output extent."};
-  }
-  primitives::NativeParameterStack::ExtentPtr output_extent = params.Pop();
-  *output_len = output_extent->size();
+      primitive_client_->EnclaveCall(kSelectorAsyloInit, &in, &out));
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(out, 1);
+  auto output_extent = out.next();
+  *output_len = output_extent.size();
   output->reset(new char[*output_len]);
-  memcpy(output->get(), output_extent->As<char>(), *output_len);
+  memcpy(output->get(), output_extent.As<char>(), *output_len);
   return Status::OkStatus();
 }
 
 Status GenericEnclaveClient::Run(const char *input, size_t input_len,
                                  std::unique_ptr<char[]> *output,
                                  size_t *output_len) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy(primitives::Extent{input, input_len});
+  primitives::MessageWriter in;
+  in.PushByReference(primitives::Extent{input, input_len});
+  primitives::MessageReader out;
   ASYLO_RETURN_IF_ERROR(
-      primitive_client_->EnclaveCall(kSelectorAsyloRun, &params));
-
-  if (params.empty()) {
-    return {error::GoogleError::INVALID_ARGUMENT,
-            "Parameter stack empty but expected to contain output extent."};
-  }
-  primitives::NativeParameterStack::ExtentPtr output_extent = params.Pop();
-  *output_len = output_extent->size();
+      primitive_client_->EnclaveCall(kSelectorAsyloRun, &in, &out));
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(out, 1);
+  auto output_extent = out.next();
+  *output_len = output_extent.size();
   output->reset(new char[*output_len]);
-  memcpy(output->get(), output_extent->As<char>(), *output_len);
+  memcpy(output->get(), output_extent.As<char>(), *output_len);
   return Status::OkStatus();
 }
 
 Status GenericEnclaveClient::Finalize(const char *input, size_t input_len,
                                       std::unique_ptr<char[]> *output,
                                       size_t *output_len) {
-  primitives::NativeParameterStack params;
-  params.PushByCopy(primitives::Extent{input, input_len});
+  primitives::MessageWriter in;
+  in.PushByReference(primitives::Extent{input, input_len});
+  primitives::MessageReader out;
   ASYLO_RETURN_IF_ERROR(
-      primitive_client_->EnclaveCall(kSelectorAsyloFini, &params));
-
-  if (params.empty()) {
-    return {error::GoogleError::INVALID_ARGUMENT,
-            "Parameter stack empty but expected to contain output extent."};
-  }
-  primitives::NativeParameterStack::ExtentPtr output_extent = params.Pop();
-  *output_len = output_extent->size();
+      primitive_client_->EnclaveCall(kSelectorAsyloFini, &in, &out));
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(out, 1);
+  auto output_extent = out.next();
+  *output_len = output_extent.size();
   output->reset(new char[*output_len]);
-  memcpy(output->get(), output_extent->As<char>(), *output_len);
+  memcpy(output->get(), output_extent.As<char>(), *output_len);
   return Status::OkStatus();
 }
 
@@ -166,9 +158,9 @@ Status GenericEnclaveClient::EnterAndFinalize(const EnclaveFinal &final_input) {
 }
 
 Status GenericEnclaveClient::EnterAndDonateThread() {
-  primitives::NativeParameterStack params;
+  primitives::MessageReader out;
   Status status =
-      primitive_client_->EnclaveCall(kSelectorAsyloDonateThread, &params);
+      primitive_client_->EnclaveCall(kSelectorAsyloDonateThread, nullptr, &out);
   if (!status.ok()) {
     LOG(ERROR) << "EnterAndDonateThread failed " << status;
   }

@@ -23,6 +23,7 @@
 #include <cstdio>
 #include <cstring>
 
+#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
@@ -135,11 +136,25 @@ PrimitiveStatus InvokeEntryHandler(
 
   // Invoke the entry point handler.
   auto &handler = enclave_state.entry_table[selector];
+  // Revert input parameters order and deserialize.
   MessageReader in;
-  in.Deserialize(params);
+  {
+    NativeParameterStack in_params;
+    while (!params->empty()) {
+      in_params.PushByCopy(*params->Pop());
+    }
+    in.Deserialize(&in_params);
+  }
   MessageWriter out;
   ASYLO_RETURN_IF_ERROR(handler.callback(handler.context, &in, &out));
-  out.Serialize(params);
+  // Serialize results and revert order.
+  {
+    NativeParameterStack out_params;
+    out.Serialize(&out_params);
+    while (!out_params.empty()) {
+      params->PushByCopy(*out_params.Pop());
+    }
+  }
   return PrimitiveStatus::OkStatus();
 }
 

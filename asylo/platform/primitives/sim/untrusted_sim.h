@@ -26,6 +26,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/statusor.h"
 
 // Simulated Enclave Untrusted Primitives
@@ -42,14 +43,18 @@
 namespace asylo {
 namespace primitives {
 
+// Type signature of the enclave entry function pointer. All data extents in
+// serialized `input` message are expected to be located in untrusted memory.
+using EnclaveCallPtr = PrimitiveStatus (*)(uint64_t trusted_selector,
+                                           NativeParameterStack *params);
+
 // Simulator implementation of the generic "EnclaveBackend" concept.
 struct SimBackend {
   // Loads a simulation enclave from a file system path for the untrusted
   // application. Returns a client to the loaded enclave or an error status on
   // failure.
   static StatusOr<std::shared_ptr<Client>> Load(
-      const absl::string_view enclave_name,
-      const std::string &path,
+      const absl::string_view enclave_name, const std::string &path,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
 
@@ -58,8 +63,8 @@ class SimEnclaveClient : public Client {
  public:
   ~SimEnclaveClient() override;
   Status Destroy() override;
-  Status EnclaveCallInternal(uint64_t selector,
-                             NativeParameterStack *params) override;
+  Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
+                             MessageReader *output) override;
   bool IsClosed() const override;
 
  private:
@@ -67,9 +72,8 @@ class SimEnclaveClient : public Client {
   friend SimBackend;
 
   // Constructor.
-  SimEnclaveClient(
-      const absl::string_view name,
-      std::unique_ptr<ExitCallProvider> exit_call_provider)
+  SimEnclaveClient(absl::string_view name,
+                   std::unique_ptr<ExitCallProvider> exit_call_provider)
       : Client(name, std::move(exit_call_provider)) {}
 
   // Dynamic library handle for enclave instance loaded at runtime.

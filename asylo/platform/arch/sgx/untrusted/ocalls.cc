@@ -64,12 +64,12 @@
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/util/logging.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
-
-#include "asylo/util/logging.h"
 
 namespace {
 
@@ -143,8 +143,8 @@ asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
   fork_handshake_config.set_is_parent(is_parent);
   fork_handshake_config.set_socket(self_socket);
   asylo::SgxClient *sgx_client = dynamic_cast<asylo::SgxClient *>(client);
-  ASYLO_RETURN_IF_ERROR(sgx_client->EnterAndTransferSecureSnapshotKey(
-      fork_handshake_config));
+  ASYLO_RETURN_IF_ERROR(
+      sgx_client->EnterAndTransferSecureSnapshotKey(fork_handshake_config));
 
   return asylo::Status::OkStatus();
 }
@@ -186,7 +186,7 @@ void *ocall_enc_untrusted_malloc(bridge_size_t size) {
 void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
                                             bridge_size_t size) {
   void **buffers = reinterpret_cast<void **>(
-      malloc(static_cast<size_t>(count) * sizeof(void*)));
+      malloc(static_cast<size_t>(count) * sizeof(void *)));
   for (int i = 0; i < count; i++) {
     buffers[i] = malloc(size);
   }
@@ -397,7 +397,7 @@ int ocall_enc_untrusted_inet_pton(AfFamily af, const char *src, void *dst,
                                   bridge_size_t dst_size) {
   // The line below is needed to surpress unused variable errors, as |dst_size|
   // is needed for the edgr8r generated code.
-  (void) dst_size;
+  (void)dst_size;
   return inet_pton(asylo::FromBridgeAfFamily(af), src, dst);
 }
 
@@ -991,8 +991,8 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     return -1;
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SgxClient *client = dynamic_cast<asylo::SgxClient *>(
-      manager->GetClient(enclave_name));
+  asylo::SgxClient *client =
+      dynamic_cast<asylo::SgxClient *>(manager->GetClient(enclave_name));
 
   if (!restore_snapshot) {
     // No need to take and restore a snapshot, just set indication that the new
@@ -1318,6 +1318,5 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
       asylo::primitives::Client::ExitCallback(
           selector,
           reinterpret_cast<asylo::primitives::NativeParameterStack *>(buffer));
-
   return status.error_code();
 }

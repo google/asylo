@@ -71,7 +71,9 @@ cc_library(
     deps = [
         ":sgx_error_space",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:status",
