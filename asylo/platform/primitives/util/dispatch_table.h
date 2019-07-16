@@ -23,6 +23,7 @@
 #include "absl/container/flat_hash_map.h"
 #include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/asylo_macros.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
@@ -43,8 +44,8 @@ class DispatchTable : public Client::ExitCallProvider {
                              const ExitHandler &handler) override;
 
   // Finds and invokes an exit handler, setting an error status on failure.
-  Status InvokeExitHandler(uint64_t untrusted_selector,
-                           NativeParameterStack *params,
+  Status InvokeExitHandler(uint64_t untrusted_selector, MessageReader *input,
+                           MessageWriter *output,
                            Client *client) override ASYLO_MUST_USE_RESULT;
 
  private:

@@ -96,17 +96,17 @@ TEST(DispatchTableTest, HandlersInvocation) {
   ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   20, ExitHandler{callbacks[2].AsStdFunction()}),
               IsOk());
-  NativeParameterStack params;
-  EXPECT_THAT(
-      client->exit_call_provider()->InvokeExitHandler(0, &params, client.get()),
-      IsOk());
-  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(10, &params,
+  MessageWriter out;
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(0, nullptr, &out,
                                                               client.get()),
               IsOk());
-  EXPECT_THAT(
-      client->exit_call_provider()->InvokeExitHandler(0, &params, client.get()),
-      IsOk());
-  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(30, &params,
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(10, nullptr, &out,
+                                                              client.get()),
+              IsOk());
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(0, nullptr, &out,
+                                                              client.get()),
+              IsOk());
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(30, nullptr, &out,
                                                               client.get()),
               StatusIs(error::GoogleError::OUT_OF_RANGE));
 }
@@ -129,11 +129,11 @@ TEST(DispatchTableTest, HandlersInMultipleThreads) {
       ASSERT_THAT(client->exit_call_provider()->RegisterExitHandler(
                       i, ExitHandler{callbacks[i].AsStdFunction()}),
                   IsOk());
-      NativeParameterStack params;
       for (size_t c = 0; c < kCount; ++c) {
         absl::SleepFor(absl::Milliseconds(rand_gen(rand_engine)));
+        MessageWriter out;
         EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-                        i, &params, client.get()),
+                        i, nullptr, &out, client.get()),
                     IsOk());
       }
     });

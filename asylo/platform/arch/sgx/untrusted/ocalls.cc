@@ -1314,9 +1314,13 @@ int ocall_enc_untrusted_thread_create(const char *name) {
 }
 
 int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
-  asylo::primitives::PrimitiveStatus status =
-      asylo::primitives::Client::ExitCallback(
-          selector,
-          reinterpret_cast<asylo::primitives::NativeParameterStack *>(buffer));
+  ::asylo::primitives::MessageReader in;
+  in.Deserialize(
+      reinterpret_cast<::asylo::primitives::NativeParameterStack *>(buffer));
+  ::asylo::primitives::MessageWriter out;
+  const auto status =
+      ::asylo::primitives::Client::ExitCallback(selector, &in, &out);
+  out.Serialize(
+      reinterpret_cast<::asylo::primitives::NativeParameterStack *>(buffer));
   return status.error_code();
 }

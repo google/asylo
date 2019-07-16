@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -44,8 +45,8 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
 
 // Finds and invokes an exit handler, setting an error status on failure.
 Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
-                                        NativeParameterStack *params,
-                                        Client *client) {
+                                        MessageReader *input,
+                                        MessageWriter *output, Client *client) {
   ExitHandler handler;
   {
     auto locked_exit_table = exit_table_.ReaderLock();
@@ -56,13 +57,8 @@ Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
     }
     handler = it->second;
   }
-  MessageReader in;
-  in.Deserialize(params);
-  MessageWriter out;
-  ASYLO_RETURN_IF_ERROR(
-      handler.callback(client->shared_from_this(), handler.context, &in, &out));
-  out.Serialize(params);
-  return Status::OkStatus();
+  return handler.callback(client->shared_from_this(), handler.context, input,
+                          output);
 }
 
 }  // namespace primitives

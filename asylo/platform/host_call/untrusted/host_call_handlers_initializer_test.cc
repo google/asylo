@@ -73,9 +73,10 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
 
   // Verify that |kSystemCallHandler| points to |SystemCallHandler| by making a
   // call with an empty request.
-  primitives::NativeParameterStack params;
+  primitives::MessageReader input;
+  primitives::MessageWriter output;
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-                  kSystemCallHandler, &params, client.get()),
+                  kSystemCallHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   // Verify that |kIsAttyHandler| is in use by attempting to re-register the
@@ -87,7 +88,7 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   // Verify that |kIsAttyHandler| points to |IsAttyHandler| by making a
   // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-                  kIsAttyHandler, &params, client.get()),
+                  kIsAttyHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   // Verify that |kUSleepHandler| is in use by attempting to re-register the
@@ -99,7 +100,7 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   // Verify that |kUSleepHandler| points to |USleepHandler| by making a
   // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-                  kUSleepHandler, &params, client.get()),
+                  kUSleepHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

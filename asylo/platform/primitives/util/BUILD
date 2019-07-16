@@ -66,6 +66,7 @@ cc_library(
     hdrs = ["dispatch_table.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":message_reader_writer",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/util:asylo_macros",

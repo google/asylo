@@ -40,6 +40,7 @@
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -48,8 +49,12 @@ namespace primitives {
 namespace {
 
 PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector, void *params) {
-  return Client::ExitCallback(untrusted_selector,
-                              reinterpret_cast<NativeParameterStack *>(params));
+  MessageReader in;
+  in.Deserialize(reinterpret_cast<NativeParameterStack *>(params));
+  MessageWriter out;
+  ASYLO_RETURN_IF_ERROR(Client::ExitCallback(untrusted_selector, &in, &out));
+  out.Serialize(reinterpret_cast<NativeParameterStack *>(params));
+  return PrimitiveStatus::OkStatus();
 }
 
 void *sim_asylo_local_alloc_handler(size_t size) { return malloc(size); }

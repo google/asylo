@@ -42,14 +42,14 @@ Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
 }
 
 PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
-                                     NativeParameterStack *params) {
+                                     MessageReader *in, MessageWriter *out) {
   if (!current_client_->exit_call_provider()) {
     return PrimitiveStatus{error::GoogleError::FAILED_PRECONDITION,
                            "Exit call provider not set yet"};
   }
   return MakePrimitiveStatus(
       current_client_->exit_call_provider()->InvokeExitHandler(
-          untrusted_selector, params, current_client_));
+          untrusted_selector, in, out, current_client_));
 }
 
 }  // namespace primitives

@@ -100,7 +100,8 @@ class Client : public std::enable_shared_from_this<Client> {
 
     // Finds and invokes an exit handler. Returns an error status on failure.
     virtual Status InvokeExitHandler(uint64_t untrusted_selector,
-                                     NativeParameterStack *params,
+                                     MessageReader *input,
+                                     MessageWriter *output,
                                      Client *client) ASYLO_MUST_USE_RESULT = 0;
   };
 
@@ -147,7 +148,7 @@ class Client : public std::enable_shared_from_this<Client> {
 
   // Enclave exit callback function shared with the enclave.
   static PrimitiveStatus ExitCallback(uint64_t untrusted_selector,
-                                      NativeParameterStack *params);
+                                      MessageReader *in, MessageWriter *out);
 
   // Accessor to exit call provider.
   ExitCallProvider *exit_call_provider() { return exit_call_provider_.get(); }
