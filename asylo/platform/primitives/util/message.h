@@ -81,6 +81,13 @@ class MessageWriter {
     }
   }
 
+  // Serializes data using a given serializer.
+  void Serialize(const std::function<void(Extent)> &serializer) const {
+    for (const auto &extent : extents_) {
+      serializer(extent);
+    }
+  }
+
   // Pushes an extent to the MessageWriter by reference.
   void PushByReference(Extent extent) { extents_.emplace_back(extent); }
 
@@ -143,7 +150,23 @@ class MessageReader {
       auto extent = params->Pop();
       extents_.emplace_back(absl::make_unique<char[]>(extent->size()),
                             extent->size());
-      memcpy(extents_.back().first.get(), extent->data(), extent->size());
+      if (extent->size() > 0) {
+        memcpy(extents_.back().first.get(), extent->data(), extent->size());
+      }
+    }
+  }
+
+  // Deserializes data using a given deserializer.
+  void Deserialize(const size_t size,
+                   const std::function<Extent(size_t i)> &deserializer) {
+    extents_.reserve(size);
+    for (size_t i = 0; i < size; ++i) {
+      auto extent = deserializer(i);
+      extents_.emplace_back(absl::make_unique<char[]>(extent.size()),
+                            extent.size());
+      if (extent.size() > 0) {
+        memcpy(extents_.back().first.get(), extent.data(), extent.size());
+      }
     }
   }
 
