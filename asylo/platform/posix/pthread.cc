@@ -340,7 +340,7 @@ void QueueOperations::Clear() {
 
 bool QueueOperations::Empty() const {
   const __pthread_list_node_t *current = list_->_first;
-  return current == PTHREAD_T_NULL;
+  return current == nullptr;
 }
 
 }  //  namespace pthread_impl
