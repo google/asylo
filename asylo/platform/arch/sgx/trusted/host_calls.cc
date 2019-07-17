@@ -394,13 +394,10 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   }
 
   // Copy then free serialized res from untrusted memory
-  char tmp_serialized_res[tmp_serialized_res_len];
-  memcpy(tmp_serialized_res, tmp_serialized_res_start,
-         static_cast<size_t>(tmp_serialized_res_len));
-  enc_untrusted_free(tmp_serialized_res_start);
-
-  std::string serialized_res(tmp_serialized_res,
+  std::string serialized_res(tmp_serialized_res_start,
+                             tmp_serialized_res_start +
                              static_cast<size_t>(tmp_serialized_res_len));
+  enc_untrusted_free(tmp_serialized_res_start);
   if (!asylo::DeserializeAddrinfo(&serialized_res, res)) {
     LOG(ERROR) << "Invalid addrinfo in getaddrinfo response";
     return -1;
