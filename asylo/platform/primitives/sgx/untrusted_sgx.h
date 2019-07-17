@@ -101,6 +101,7 @@ class SgxEnclaveClient : public Client {
   sgx_enclave_id_t id_;             // SGX SDK enclave identifier.
   void *base_address_;              // Enclave base address.
   size_t size_;                     // Enclave size.
+  bool is_destroyed_ = true;        // Whether enclave is destroyed.
 };
 
 }  // namespace primitives

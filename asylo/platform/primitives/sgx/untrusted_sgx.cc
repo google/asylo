@@ -37,8 +37,8 @@
 
 // Edger8r-generated ocall table.
 struct ocall_table_t {
-    size_t nr_ocall;
-    void *table[];
+  size_t nr_ocall;
+  void *table[];
 };
 
 // This global is written into at compile time by the untrusted bridge files
@@ -65,7 +65,7 @@ struct ms_ecall_dispatch_trusted_call_t {
   // Pointer to the parameter stack passed to primitives::EnclaveCall. The
   // pointer is interpreted as a void pointer as edger8r only allows trivial
   // data types to be passed across the bridge.
-  void* ms_buffer;
+  void *ms_buffer;
 };
 
 }  // namespace
@@ -85,11 +85,10 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
   sgx_status_t status;
   const uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_ASYLO;
   asylo_sgx_config_t create_config = {
-    .base_address = &client->base_address_,
-    .enclave_size = enclave_size,
-    .enable_user_utility = config.enable_fork()
-  };
-  const void* ex_features_p[32] = { nullptr };
+      .base_address = &client->base_address_,
+      .enclave_size = enclave_size,
+      .enable_user_utility = config.enable_fork()};
+  const void *ex_features_p[32] = {nullptr};
   ex_features_p[SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX] = &create_config;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
     status = sgx_create_enclave_ex(
@@ -109,6 +108,7 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
   }
 
   client->size_ = sgx_enclave_size(client->id_);
+  client->is_destroyed_ = false;
   return client;
 }
 
@@ -151,17 +151,15 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
   sgx_status_t status;
   const uint32_t ex_features = SGX_CREATE_ENCLAVE_EX_ASYLO;
   asylo_sgx_config_t create_config = {
-    .base_address = &client->base_address_,
-    .enclave_size = enclave_size,
-    .enable_user_utility = config.enable_fork()
-  };
-  const void* ex_features_p[32] = { nullptr };
+      .base_address = &client->base_address_,
+      .enclave_size = enclave_size,
+      .enable_user_utility = config.enable_fork()};
+  const void *ex_features_p[32] = {nullptr};
   ex_features_p[SGX_CREATE_ENCLAVE_EX_ASYLO_BIT_IDX] = &create_config;
   for (int i = 0; i < kMaxEnclaveCreateAttempts; ++i) {
     status = sgx_create_enclave_from_buffer_ex(
         const_cast<uint8_t *>(enclave_buffer.data()), enclave_buffer.size(),
-        debug, &client->id_, /*misc_attr=*/nullptr, ex_features,
-        ex_features_p);
+        debug, &client->id_, /*misc_attr=*/nullptr, ex_features, ex_features_p);
 
     if (status != SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED) {
       break;
@@ -174,6 +172,7 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
     return Status(status, "Failed to create an enclave");
   }
 
+  client->is_destroyed_ = false;
   return client;
 }
 
@@ -184,6 +183,7 @@ Status SgxEnclaveClient::Destroy() {
   if (status != SGX_SUCCESS) {
     return Status(status, "Failed to destroy enclave");
   }
+  is_destroyed_ = true;
   return Status::OkStatus();
 }
 
@@ -197,13 +197,16 @@ void SgxEnclaveClient::GetLaunchToken(sgx_launch_token_t *token) const {
   memcpy(token, &token_, sizeof(token_));
 }
 
-bool SgxEnclaveClient::IsClosed() const {
-  abort();
-}
+bool SgxEnclaveClient::IsClosed() const { return is_destroyed_; }
 
 Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
                                              MessageWriter *input,
                                              MessageReader *output) {
+  if (is_destroyed_) {
+    return Status{error::GoogleError::FAILED_PRECONDITION,
+                  "Cannot make an enclave call to a closed enclave."};
+  }
+
   ms_ecall_dispatch_trusted_call_t ms;
   ms.ms_selector = selector;
   NativeParameterStack params;
@@ -212,7 +215,7 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
   }
   ms.ms_buffer = reinterpret_cast<void *>(&params);
 
-  const ocall_table_t* table = &ocall_table_bridge;
+  const ocall_table_t *table = &ocall_table_bridge;
   sgx_status_t status =
       sgx_ecall(id_, /*index=*/0, table, &ms, /*is_utility=*/false);
 
@@ -221,8 +224,8 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
     return Status(status, "Call to primitives ecall endpoint failed");
   }
   if (ms.ms_retval) {
-    return Status(
-        error::GoogleError::INTERNAL, "Enclave call failed inside enclave");
+    return Status(error::GoogleError::INTERNAL,
+                  "Enclave call failed inside enclave");
   }
   output->Deserialize(reinterpret_cast<NativeParameterStack *>(ms.ms_buffer));
   return Status::OkStatus();

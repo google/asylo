@@ -47,11 +47,16 @@ class HelloTest : public ::testing::Test {
     EnclaveManager::Configure(EnclaveManagerOptions());
     client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
         /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());
+
+    ASSERT_FALSE(client_->IsClosed());
     ASYLO_EXPECT_OK(client_->exit_call_provider()->RegisterExitHandler(
         kExternalHelloHandler, ExitHandler{HelloHandler}));
   }
 
-  void TearDown() override { ASYLO_EXPECT_OK(client_->Destroy()); }
+  void TearDown() override {
+    ASYLO_EXPECT_OK(client_->Destroy());
+    ASSERT_TRUE(client_->IsClosed());
+  }
 
   std::shared_ptr<Client> client_;
 
