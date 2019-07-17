@@ -20,10 +20,6 @@ load(
     "@com_google_asylo//asylo/bazel:installation_path.bzl",
     "installation_path",
 )
-load(
-    "@com_google_asylo//asylo/bazel:patch_repository.bzl",
-    "patch_repository",
-)
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def _asylo_backend_deps_impl(repository_ctx):
@@ -169,7 +165,7 @@ def asylo_deps(toolchain_path = None):
 
     # gRPC
     if not native.existing_rule("com_github_grpc_grpc"):
-        patch_repository(
+        http_archive(
             name = "com_github_grpc_grpc",
             urls = ["https://github.com/grpc/grpc/archive/v1.22.0.tar.gz"],
             sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",

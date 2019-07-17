@@ -22,7 +22,6 @@ exports_files([
     "asylo.bzl",
     "asylo_deps.bzl",
     "install_path.bzl",
-    "patch_repository.bzl",
     "proto.bzl",
     "sgx_deps.bzl",
     "sim_enclave.bzl",

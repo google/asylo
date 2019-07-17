@@ -16,17 +16,14 @@
 
 """Repository rule for installing Linux SGX backend dependencies."""
 
-load(
-    "@com_google_asylo//asylo/bazel:patch_repository.bzl",
-    "patch_repository",
-)
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def sgx_deps():
     """Macro to include Asylo's SGX backend dependencies in a WORKSPACE."""
 
     # Intel's SGX SDK with patches to make it fit our toolchain.
     if not native.existing_rule("linux_sgx"):
-        patch_repository(
+        http_archive(
             name = "linux_sgx",
             urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.5.tar.gz"],
             sha256 = "c1be0eb07b202cd0b67e49e55eda2d422524f509a2715750f1532bf89a98274c",
@@ -40,7 +37,7 @@ def sgx_deps():
     # Intel's SGX Data Center Attestation Primitives with patches to make it
     # build with Bazel.
     if not native.existing_rule("sgx_dcap"):
-        patch_repository(
+        http_archive(
             name = "sgx_dcap",
             urls = ["https://github.com/intel/SGXDataCenterAttestationPrimitives/archive/DCAP_1.0.1.tar.gz"],
             sha256 = "54093b468e6340cccbaf24d68f4ea13a409372efe12cad3e0cac889c1ce19604",
