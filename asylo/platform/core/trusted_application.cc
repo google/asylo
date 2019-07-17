@@ -47,7 +47,6 @@
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -167,7 +166,7 @@ class StatusSerializer {
 PrimitiveStatus VerifyTrustedAddressRange(void *address, size_t size) {
   if (!enc_is_within_enclave(address, size)) {
     return PrimitiveStatus(
-        SGX_ERROR_INVALID_PARAMETER,
+        error::GoogleError::INVALID_ARGUMENT,
         "Unexpected reference to resource outside the enclave trusted memory.");
   }
   return PrimitiveStatus::OkStatus();
