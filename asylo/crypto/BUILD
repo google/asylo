@@ -150,6 +150,40 @@ cc_test(
     ],
 )
 
+# Utility library for OpenSSL BIGNUMs.
+cc_library(
+    name = "bignum_util",
+    srcs = ["bignum_util.cc"],
+    hdrs = ["bignum_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/base",
+    ],
+)
+
+# Tests for BIGNUM utilities library.
+cc_test(
+    name = "bignum_util_test",
+    srcs = ["bignum_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":bignum_util",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Library to use with certificates.
 cc_library(
     name = "certificate_util",
