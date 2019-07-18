@@ -191,6 +191,24 @@ cc_test(
     ],
 )
 
+# Type checking for anonymous functions.
+cc_library(
+    name = "function_traits",
+    hdrs = ["function_traits.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+)
+
+cc_test(
+    name = "function_traits_test",
+    srcs = ["function_traits_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":function_traits",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Minimal logging library implementation.
 cc_library(
     name = "logging",
