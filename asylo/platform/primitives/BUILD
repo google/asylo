@@ -27,7 +27,6 @@ cc_library(
     name = "primitives",
     hdrs = [
         "extent.h",
-        "parameter_stack.h",
         "primitive_status.h",
         "primitives.h",
     ],
@@ -87,19 +86,6 @@ cc_library(
     hdrs = ["trusted_runtime.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [":primitives"],
-)
-
-# Test ParameterStack implementation.
-cc_test(
-    name = "parameter_stack_test",
-    size = "small",
-    srcs = ["parameter_stack_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":primitives",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
 )
 
 # Test extent implementation.

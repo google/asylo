@@ -29,7 +29,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/parameter_stack.h"
 
 namespace asylo {
 namespace primitives {
