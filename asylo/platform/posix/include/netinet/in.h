@@ -67,13 +67,13 @@ extern const struct in6_addr in6addr_any;       // Inet6 "::"
 extern const struct in6_addr in6addr_loopback;  // Inet6 "::1"
 
 #define IN6ADDR_ANY_INIT                               \
-  {                                                    \
+  {{                                                   \
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 } \
-  }
+  }}
 #define IN6ADDR_LOOPBACK_INIT                          \
-  {                                                    \
+  {{                                                   \
     { 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 } \
-  }
+  }}
 
 // Macros that test for special IPv6 addresses.
 // https://www.iana.org/assignments/ipv6-address-space/ipv6-address-space.xhtml
