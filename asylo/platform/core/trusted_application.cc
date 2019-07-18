@@ -258,6 +258,25 @@ PrimitiveStatus DonateThread(void *context, MessageReader *in,
   return PrimitiveStatus(result);
 }
 
+// Handler installed by the runtime to invoke the enclave signal handling entry
+// point.
+PrimitiveStatus DeliverSignal(
+    void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto input_extent = in->next();
+  int result = 0;
+  try {
+    result = asylo::__asylo_handle_signal(input_extent.As<char>(),
+                                          input_extent.size());
+  } catch (...) {
+    // Abort directly here instead of LOG(FATAL). LOG tries to obtain a mutex,
+    // and acquiring a non-reentrant mutex in signal handling may cause deadlock
+    // if the thread had already obtained that mutex when interrupted.
+    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
+  }
+  return PrimitiveStatus(result);
+}
+
 }  // namespace
 
 Status TrustedApplication::VerifyAndSetState(const EnclaveState &expected_state,
@@ -714,6 +733,14 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   if (!TrustedPrimitives::RegisterEntryHandler(
            asylo::kSelectorAsyloDonateThread, donate_thread_handler)
            .ok()) {
+    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+  }
+
+  // Register the enclave signal handling entry handler.
+  EntryHandler deliver_signal_handler{asylo::DeliverSignal};
+  if (!TrustedPrimitives::RegisterEntryHandler(
+          asylo::primitives::kSelectorAsyloDeliverSignal,
+          deliver_signal_handler).ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
   return PrimitiveStatus::OkStatus();

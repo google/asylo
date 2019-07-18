@@ -31,8 +31,11 @@ namespace primitives {
 // Invalid entry point selector.
 static constexpr uint64_t kSelectorAsyloInvalid = 0;
 
+// Enclave signal handling entry point selector.
+static constexpr uint64_t kSelectorAsyloDeliverSignal = 1;
+
 // Enclave finalization entry point selector.
-static constexpr uint64_t kSelectorAsyloFini = 1;
+static constexpr uint64_t kSelectorAsyloFini = 2;
 
 // Selector values less than `kSelectorUser` are reserved by the runtime and may
 // not be registered by the applications.
