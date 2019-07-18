@@ -4,6 +4,7 @@
   * Added `BUILD` file for Bazel support
 
 ## Modifications to v1.0.1
+  * Moved PCE constants out of sgx_pce.h to sgx_pce_constants.h
 
 ### Pending PRs
 * [PR#22](https://github.com/intel/SGXDataCenterAttestationPrimitives/pull/22)
@@ -36,6 +37,58 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/inc/interna
  typedef uint8_t		Elf_Byte;
  
  typedef uint32_t	Elf32_Addr;	/* Unsigned program address */
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h
+--- QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h
++++ QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h
+@@ -0,0 +1,20 @@
++#ifndef _SGX_PCE_CONSTANTS_H_
++#define _SGX_PCE_CONSTANTS_H_
++
++/**
++ * File: sgx_pce_constants.h
++ * Description: Definition of constants used in PCE interface.
++ *
++ * Constants used in the PCE interface
++ */
++
++/* PCE ID for the PCE in this library */
++#define PCE_ID = 0;
++
++/* Crypto_suite */
++#define PCE_ALG_RSA_OAEP_3072 1
++
++/* Signature_scheme */
++#define PCE_NIST_P256_ECDSA_SHA256 0
++
++#endif  // _SGX_PCE_CONSTANTS_H_
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h
+--- QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h
++++ QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h
+@@ -40,6 +40,7 @@
+ 
+ #include "sgx_key.h"
+ #include "sgx_report.h"
++#include "sgx_pce_constants.h"
+ 
+ #define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
+ typedef enum _sgx_pce_error_t
+@@ -56,16 +57,6 @@
+ } sgx_pce_error_t;
+ 
+ 
+-/* PCE ID for the PCE in this library */
+-#define PCE_ID = 0;
+-
+-/* Crypto_suite */
+-#define PCE_ALG_RSA_OAEP_3072 1
+-
+-/* Signature_scheme */
+-#define PCE_NIST_P256_ECDSA_SHA256 0
+-
+-
+ //TODO: in qe pce common header
+ /** Typedef enum _sgx_ql_request_policy */ 
+ typedef enum _sgx_ql_request_policy
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h QuoteGeneration/psw/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
 --- QuoteGeneration/psw/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
 +++ QuoteGeneration/psw/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
@@ -59,10 +112,9 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/psw/quote_wrapper/
  #include "sgx_ql_lib_common.h"
  #include "sgx_quote.h"
  #include "sgx_quote_3.h"
-Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and QuoteVerification/Src/AttestationApp/sampleData/quote.dat differ
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,253 @@
+@@ -0,0 +1,266 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -106,6 +158,15 @@ Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and Quote
 +    ],
 +)
 +
++cc_library(
++    name = "pce_constants",
++    hdrs = ["QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h"],
++    copts = [
++        "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
++    ],
++    visibility = ["//visibility:public"],
++)
++
 +# Library exposing the PCE wrapper interface.
 +cc_library(
 +    name = "pce_wrapper",
@@ -132,6 +193,7 @@ Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and Quote
 +    deps = [
 +        ":common_inc_internal",
 +        ":parser",
++        ":pce_constants",
 +        ":pce_untrusted",
 +        "@linux_sgx//:common_inc",
 +        "@linux_sgx//:untrusted_inc",
@@ -168,7 +230,10 @@ Binary files QuoteVerification/Src/AttestationApp/sampleData/quote.dat and Quote
 +        "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
 +    ],
 +    visibility = ["@linux_sgx//:__subpackages__"],
-+    deps = ["@linux_sgx//:public"],
++    deps = [
++        ":pce_constants",
++        "@linux_sgx//:public",
++    ],
 +)
 +
 +# The untrusted component includes for the qe3 enclave.
