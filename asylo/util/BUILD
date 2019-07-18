@@ -35,6 +35,9 @@ cc_library(
     hdrs = ["binary_search.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
+    deps = [
+        ":function_traits",
+    ],
 )
 
 cc_test(
@@ -44,6 +47,7 @@ cc_test(
     enclave_test_name = "binary_search_enclave_test",
     deps = [
         ":binary_search",
+        ":function_traits",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
