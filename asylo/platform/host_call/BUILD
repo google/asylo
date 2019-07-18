@@ -24,7 +24,7 @@ package(
 
 # Library for making host calls to the untrusted side.
 cc_library(
-    name = "host_calls",
+    name = "host_call",
     srcs = ["trusted/host_calls.cc"],
     hdrs = ["trusted/host_calls.h"],
     copts = ASYLO_DEFAULT_COPTS,

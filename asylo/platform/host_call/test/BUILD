@@ -47,8 +47,8 @@ sim_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
+        "//asylo/platform/host_call",
         "//asylo/platform/host_call:host_call_dispatcher",
-        "//asylo/platform/host_call:host_calls",
         "//asylo/platform/system_call",
         "//asylo/platform/system_call/type_conversions:types",
         "//asylo/util:status_macros",
