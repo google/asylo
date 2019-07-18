@@ -28,12 +28,14 @@
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
+#include "asylo/util/cleanup.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
@@ -45,10 +47,6 @@ namespace asylo {
 namespace primitives {
 
 namespace {
-
-using UntrustedAllocatorStack =
-    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                   TrustedPrimitives::UntrustedLocalFree>;
 
 #define CHECK_OCALL(status_)                                                 \
   do {                                                                       \
@@ -62,32 +60,6 @@ using UntrustedAllocatorStack =
       abort();                                                               \
     }                                                                        \
   } while (0)
-
-std::unique_ptr<UntrustedAllocatorStack,
-                decltype(TrustedPrimitives::UntrustedLocalFree) *>
-InitUntrustedStack() {
-  auto untrusted_stack =
-      std::unique_ptr<UntrustedAllocatorStack,
-                      decltype(TrustedPrimitives::UntrustedLocalFree) *>{
-          reinterpret_cast<UntrustedAllocatorStack *>(
-              TrustedPrimitives::UntrustedLocalAlloc(
-                  sizeof(UntrustedAllocatorStack))),
-          TrustedPrimitives::UntrustedLocalFree};
-
-  // We cannot directly call the constructor on the untrusted side to initialize
-  // untrusted_stack correctly. Therefore, we initialize an empty stack on the
-  // trusted side and copy it to untrusted_stack.
-  UntrustedAllocatorStack empty_stack;
-  memcpy(reinterpret_cast<void *>(untrusted_stack.get()),
-         reinterpret_cast<void *>(&empty_stack), sizeof(empty_stack));
-  if (!enc_is_outside_enclave(untrusted_stack.get(),
-                              sizeof(UntrustedAllocatorStack)) ||
-      untrusted_stack.get()->size() != 0 || !untrusted_stack->empty()) {
-    abort();
-  }
-
-  return untrusted_stack;
-}
 
 }  // namespace
 
@@ -123,13 +95,58 @@ PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
   return asylo::primitives::RegisterEntryHandler(selector, handler);
 }
 
-int asylo_enclave_call(uint64_t selector, void *params) {
-  PrimitiveStatus status = InvokeEntryHandler(
-      selector,
-      reinterpret_cast<ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                                      TrustedPrimitives::UntrustedLocalFree> *>(
-          params));
-  return !status.ok();
+int asylo_enclave_call(uint64_t selector, void *buffer) {
+  SgxParams *const sgx_params = reinterpret_cast<SgxParams *>(buffer);
+
+  const void *input = sgx_params->input;
+  size_t input_size = sgx_params->input_size;
+  sgx_params->input = nullptr;
+  sgx_params->input_size = 0;
+  void *output = nullptr;
+  size_t output_size = 0;
+
+  if (input) {
+    if (TrustedPrimitives::IsTrustedExtent(input, input_size)) {
+      PrimitiveStatus status{error::GoogleError::INVALID_ARGUMENT,
+                             "input should lie within untrusted memory."};
+      return status.error_code();
+    }
+    if (input_size > 0) {
+      // Copy untrusted |input| to trusted memory and pass that as input.
+      void *trusted_input = malloc(input_size);
+      memcpy(trusted_input, input, input_size);
+      TrustedPrimitives::UntrustedLocalFree(const_cast<void *>(input));
+      input = trusted_input;
+    } else {
+      TrustedPrimitives::UntrustedLocalFree(const_cast<void *>(input));
+      input = nullptr;
+    }
+  }
+
+  PrimitiveStatus status =
+      InvokeEntryHandler(selector, input, input_size, &output, &output_size);
+
+  if (output) {
+    // Copy trusted |*output| to untrusted memory and pass that as
+    // output. We also free trusted |*output| after it is copied to untrusted
+    // side. The untrusted caller is still responsible for freeing |*output|,
+    // which now points to untrusted memory.
+    if (!TrustedPrimitives::IsTrustedExtent(output, output_size)) {
+      PrimitiveStatus{error::GoogleError::INVALID_ARGUMENT,
+                      "output should lie in trusted memory"};
+      return status.error_code();
+    }
+
+    void *untrusted_output =
+        TrustedPrimitives::UntrustedLocalAlloc(output_size);
+    memcpy(untrusted_output, output, output_size);
+    free(output);
+    output = untrusted_output;
+  }
+
+  sgx_params->output = output;
+  sgx_params->output_size = static_cast<uint64_t>(output_size);
+  return status.error_code();
 }
 
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
@@ -138,6 +155,10 @@ void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
 
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   enc_untrusted_free(ptr);
+}
+
+bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
+  return enc_is_within_enclave(addr, size);
 }
 
 void TrustedPrimitives::DebugPuts(const char *message) {
@@ -149,21 +170,31 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
                                                  MessageReader *output) {
   int ret;
 
-  auto untrusted_stack = InitUntrustedStack();
-
-  // Copy data to |untrusted_stack|.
+  SgxParams *const sgx_params = reinterpret_cast<SgxParams *>(
+      TrustedPrimitives::UntrustedLocalAlloc(sizeof(SgxParams)));
+  Cleanup clean_up(
+      [sgx_params] { TrustedPrimitives::UntrustedLocalFree(sgx_params); });
+  sgx_params->input_size = 0;
+  sgx_params->input = nullptr;
   if (input) {
-    input->Serialize(untrusted_stack.get());
+    sgx_params->input_size = input->MessageSize();
+    if (sgx_params->input_size > 0) {
+      sgx_params->input =
+          TrustedPrimitives::UntrustedLocalAlloc(sgx_params->input_size);
+      // Copy data to |input_buffer|.
+      input->Serialize(const_cast<void *>(sgx_params->input));
+    }
   }
-
-  CHECK_OCALL(ocall_dispatch_untrusted_call(
-      &ret, untrusted_selector,
-      reinterpret_cast<void *>(untrusted_stack.get())));
-
-  // For the results obtained in untrusted_stack, copy them to output before
-  // deleting untrusted_stack.
-  output->Deserialize(untrusted_stack.get());
-
+  sgx_params->output_size = 0;
+  sgx_params->output = nullptr;
+  CHECK_OCALL(
+      ocall_dispatch_untrusted_call(&ret, untrusted_selector, sgx_params));
+  if (sgx_params->output) {
+    // For the results obtained in |output_buffer|, copy them to |output|
+    // before freeing the buffer.
+    output->Deserialize(sgx_params->output, sgx_params->output_size);
+    TrustedPrimitives::UntrustedLocalFree(sgx_params->output);
+  }
   return PrimitiveStatus::OkStatus();
 }
 

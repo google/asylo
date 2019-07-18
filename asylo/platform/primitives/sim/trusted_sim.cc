@@ -103,17 +103,56 @@ extern "C" void *enclave_sbrk(intptr_t increment) {
   return result;
 }
 
-extern "C" PrimitiveStatus asylo_enclave_call(
-    uint64_t selector,
-    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                   TrustedPrimitives::UntrustedLocalFree> *params) {
+extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
+                                              const void *input,
+                                              size_t input_len, void **output,
+                                              size_t *output_len) {
   if (GetSimTrampoline()->magic_number != kTrampolineMagicNumber ||
       GetSimTrampoline()->version != kTrampolineVersion) {
     TrustedPrimitives::BestEffortAbort(
         "Simulator trampoline version or magic number mismatch");
     return PrimitiveStatus::OkStatus();
   }
-  return InvokeEntryHandler(selector, params);
+
+  if (input) {
+    if (TrustedPrimitives::IsTrustedExtent(input, input_len)) {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "input should lie in untrusted memory"};
+    }
+    if (input_len > 0) {
+      // Copy untrusted |input| to trusted memory and pass that as input.
+      void *trusted_input = malloc(input_len);
+      memcpy(trusted_input, input, input_len);
+      TrustedPrimitives::UntrustedLocalFree(const_cast<void *>(input));
+      input = trusted_input;
+    } else {
+      input = nullptr;
+    }
+  }
+
+  size_t output_size = 0;
+  PrimitiveStatus status = InvokeEntryHandler(
+      selector, input, static_cast<size_t>(input_len), output, &output_size);
+  *output_len = output_size;
+
+  if (*output) {
+    if (!TrustedPrimitives::IsTrustedExtent(*output, output_size)) {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "output should lie in trusted memory"};
+    }
+
+    // Copy trusted |*output| to untrusted memory and pass that as
+    // output. We also free trusted |*output| after it is copied to untrusted
+    // side. The untrusted caller is still responsible for freeing |*output|,
+    // which now points to untrusted memory.
+    void *untrusted_output =
+        TrustedPrimitives::UntrustedLocalAlloc(output_size);
+    memcpy(untrusted_output, *output, output_size);
+    free(*output);
+    *output = untrusted_output;
+  }
+
+  return status;
 }
 
 bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
@@ -134,16 +173,27 @@ void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
 PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
                                                  MessageWriter *input,
                                                  MessageReader *output) {
-  ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                 TrustedPrimitives::UntrustedLocalFree>
-      params;
+  size_t input_size = 0;
+  void *input_buffer = nullptr;
   if (input) {
-    input->Serialize(&params);
+    input_size = input->MessageSize();
+    if (input_size > 0) {
+      input_buffer = TrustedPrimitives::UntrustedLocalAlloc(input_size);
+      input->Serialize(input_buffer);
+    }
   }
-  ASYLO_RETURN_IF_ERROR(
-      GetSimTrampoline()->asylo_exit_call(untrusted_selector, &params));
-  output->Deserialize(&params);
-  return PrimitiveStatus::OkStatus();
+  size_t output_size = 0;
+  void *output_buffer = nullptr;
+  auto status = GetSimTrampoline()->asylo_exit_call(
+      untrusted_selector, input_buffer, input_size, &output_buffer,
+      &output_size);
+  if (output_buffer) {
+    // For the results obtained in |output_buffer|, copy them to |output| before
+    // freeing the buffer.
+    output->Deserialize(output_buffer, output_size);
+    TrustedPrimitives::UntrustedLocalFree(output_buffer);
+  }
+  return status;
 }
 
 }  // namespace primitives

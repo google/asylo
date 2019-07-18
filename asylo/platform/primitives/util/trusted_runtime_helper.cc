@@ -23,7 +23,6 @@
 #include <cstdio>
 #include <cstring>
 
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
@@ -115,10 +114,17 @@ PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus InvokeEntryHandler(
-    uint64_t selector,
-    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                   TrustedPrimitives::UntrustedLocalFree> *params) {
+PrimitiveStatus InvokeEntryHandler(uint64_t selector, const void *input,
+                                   size_t input_size, void **output,
+                                   size_t *output_size) {
+  MessageReader in;
+  if (input) {
+    // Deserialize buffer to input parameters.
+    in.Deserialize(input, input_size);
+    free(const_cast<void *>(input));
+    input = nullptr;
+  }
+
   // Initialize the enclave if necessary.
   EnsureInitialized();
 
@@ -136,25 +142,19 @@ PrimitiveStatus InvokeEntryHandler(
 
   // Invoke the entry point handler.
   auto &handler = enclave_state.entry_table[selector];
-  // Revert input parameters order and deserialize.
-  MessageReader in;
-  {
-    NativeParameterStack in_params;
-    while (!params->empty()) {
-      in_params.PushByCopy(*params->Pop());
-    }
-    in.Deserialize(&in_params);
-  }
+
   MessageWriter out;
   ASYLO_RETURN_IF_ERROR(handler.callback(handler.context, &in, &out));
-  // Serialize results and revert order.
-  {
-    NativeParameterStack out_params;
-    out.Serialize(&out_params);
-    while (!out_params.empty()) {
-      params->PushByCopy(*out_params.Pop());
-    }
+
+  // Serialize results out to buffer.
+  *output_size = out.MessageSize();
+  if (*output_size > 0) {
+    *output = malloc(*output_size);
+    out.Serialize(*output);
+  } else {
+    *output = nullptr;
   }
+
   return PrimitiveStatus::OkStatus();
 }
 

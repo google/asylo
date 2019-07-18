@@ -28,7 +28,6 @@
 #include "absl/memory/memory.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"

@@ -161,6 +161,7 @@ cc_library(
         "//asylo/platform/core:untrusted_core",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/platform/primitives/sgx:sgx_params",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",

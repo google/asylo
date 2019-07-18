@@ -17,7 +17,6 @@
  */
 
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/test/test_selectors.h"
 #include "asylo/platform/primitives/trusted_primitives.h"

@@ -24,7 +24,6 @@
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/posix_error_space.h"

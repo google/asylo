@@ -23,7 +23,6 @@
 #include <cstdint>
 #include <type_traits>
 
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 
 namespace asylo {
@@ -48,7 +47,9 @@ constexpr uint64_t kTrampolineVersion = 0;
 struct SimTrampoline {
   uint64_t magic_number;
   uint64_t version;
-  PrimitiveStatus (*asylo_exit_call)(uint64_t untrusted_selector, void *params);
+  PrimitiveStatus (*asylo_exit_call)(uint64_t untrusted_selector,
+                                     const void *input, size_t input_size,
+                                     void **output, size_t *output_size);
   void *(*asylo_local_alloc_handler)(size_t size);
   void (*asylo_local_free_handler)(void *ptr);
 };

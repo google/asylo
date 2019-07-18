@@ -27,6 +27,12 @@ exports_files([
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
+cc_library(
+    name = "sgx_params",
+    hdrs = ["sgx_params.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+)
+
 # Trusted runtime components for SGX.
 cc_library(
     name = "trusted_sgx",
@@ -60,7 +66,12 @@ cc_library(
             ],
         },
         no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",
-    ),
+    ) + [
+        ":sgx_params",
+        "@com_google_absl//absl/strings",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:cleanup",
+    ],
 )
 
 cc_library(
@@ -70,10 +81,12 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":sgx_error_space",
+        ":sgx_params",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:cleanup",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:status",

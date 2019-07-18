@@ -32,7 +32,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sim/shared_sim.h"
@@ -48,13 +47,26 @@ namespace primitives {
 
 namespace {
 
-PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector, void *params) {
+PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector,
+                                    const void *input, size_t input_size,
+                                    void **output, size_t *output_size) {
   MessageReader in;
-  in.Deserialize(reinterpret_cast<NativeParameterStack *>(params));
+  in.Deserialize(input, input_size);
+  *output_size = 0;
+  *output = nullptr;
   MessageWriter out;
-  ASYLO_RETURN_IF_ERROR(Client::ExitCallback(untrusted_selector, &in, &out));
-  out.Serialize(reinterpret_cast<NativeParameterStack *>(params));
-  return PrimitiveStatus::OkStatus();
+  const auto status = Client::ExitCallback(untrusted_selector, &in, &out);
+  if (input) {
+    free(const_cast<void *>(input));
+  }
+  if (status.ok()) {
+    *output_size = out.MessageSize();
+    if (*output_size > 0) {
+      *output = malloc(*output_size);
+      out.Serialize(*output);
+    }
+  }
+  return status;
 }
 
 void *sim_asylo_local_alloc_handler(size_t size) { return malloc(size); }
@@ -95,8 +107,9 @@ void InitTrampolineOnce() {
 SimEnclaveClient::~SimEnclaveClient() {
   if (dl_handle_) {
     if (enclave_call_) {
-      NativeParameterStack fini_params;
-      enclave_call_(kSelectorAsyloFini, &fini_params);
+      size_t output_size = 0;
+      void *output = nullptr;
+      enclave_call_(kSelectorAsyloFini, nullptr, 0, &output, &output_size);
     }
     dlclose(dl_handle_);
   }
@@ -159,13 +172,23 @@ Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
                   "Enclave client closed or uninitialized."};
   }
 
-  NativeParameterStack params;
+  size_t input_size = 0;
+  void *input_buffer = nullptr;
   if (input) {
-    input->Serialize(&params);
+    input_size = input->MessageSize();
+    if (input_size > 0) {
+      input_buffer = malloc(input_size);
+      input->Serialize(input_buffer);
+    }
   }
-  const auto status = enclave_call_(selector, &params);
-  output->Deserialize(&params);
-
+  size_t output_size = 0;
+  void *output_buffer = nullptr;
+  const auto status = enclave_call_(selector, input_buffer, input_size,
+                                    &output_buffer, &output_size);
+  if (output_buffer) {
+    output->Deserialize(output_buffer, output_size);
+    free(output_buffer);
+  }
   return MakeStatus(status);
 }
 

@@ -64,6 +64,7 @@ cc_test(
         "//asylo/platform/system_call",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
 )

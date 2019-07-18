@@ -22,7 +22,6 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/platform/primitives/parameter_stack.h"
 
 using ::testing::Eq;
 using ::testing::IsEmpty;
@@ -34,7 +33,7 @@ namespace asylo {
 namespace primitives {
 namespace {
 
-constexpr size_t kNumParams = 10;
+constexpr size_t kNumbuffer = 10;
 
 TEST(MessageTest, NullReaderTest) {
   MessageReader reader;
@@ -47,11 +46,12 @@ TEST(MessageTest, EmptyWriterReaderTest) {
   EXPECT_THAT(writer, IsEmpty());
   EXPECT_THAT(writer, SizeIs(0));
 
-  NativeParameterStack params;
-  writer.Serialize(&params);
+  const size_t size = writer.MessageSize();
+  const auto buffer = absl::make_unique<char[]>(size);
+  writer.Serialize(buffer.get());
 
   MessageReader reader;
-  reader.Deserialize(&params);
+  reader.Deserialize(buffer.get(), size);
   EXPECT_THAT(reader, IsEmpty());
   EXPECT_THAT(reader, SizeIs(0));
 }
@@ -60,44 +60,46 @@ TEST(MessageTest, PushPopDataByValue) {
   MessageWriter writer;
   writer.Push(1);
   writer.Push(2);
-  writer.PushByCopy(Extent{"world", strlen("world") + 1});
   writer.PushByCopy(Extent{"hello", strlen("hello") + 1});
+  writer.PushByCopy(Extent{"world", strlen("world") + 1});
 
   EXPECT_THAT(writer, Not(IsEmpty()));
   EXPECT_THAT(writer, SizeIs(4));
 
-  NativeParameterStack params;
-  writer.Serialize(&params);
+  const size_t size = writer.MessageSize();
+  auto buffer = absl::make_unique<char[]>(size);
+  writer.Serialize(buffer.get());
 
   MessageReader reader;
-  reader.Deserialize(&params);
+  reader.Deserialize(buffer.get(), size);
 
   ASSERT_THAT(reader, Not(IsEmpty()));
   ASSERT_THAT(reader, SizeIs(4));
+  EXPECT_THAT(*(reader.next().As<int>()), Eq(1));
+  EXPECT_THAT(*(reader.next().As<int>()), Eq(2));
   EXPECT_THAT(reader.next().As<char>(), StrEq("hello"));
   EXPECT_THAT(reader.next().As<char>(), StrEq("world"));
-  EXPECT_THAT(*(reader.next().As<int>()), Eq(2));
-  EXPECT_THAT(*(reader.next().As<int>()), Eq(1));
   EXPECT_THAT(reader.hasNext(), Eq(false));
 }
 
 TEST(MessageTest, PushPopNums) {
   MessageWriter writer;
-  for (int i = 0; i < kNumParams; ++i) {
+  for (int i = 0; i < kNumbuffer; ++i) {
     writer.Push(i);
   }
   EXPECT_THAT(writer, Not(IsEmpty()));
-  EXPECT_THAT(writer, SizeIs(kNumParams));
+  EXPECT_THAT(writer, SizeIs(kNumbuffer));
 
-  NativeParameterStack params;
-  writer.Serialize(&params);
+  const size_t size = writer.MessageSize();
+  const auto buffer = absl::make_unique<char[]>(size);
+  writer.Serialize(buffer.get());
 
   MessageReader reader;
-  reader.Deserialize(&params);
+  reader.Deserialize(buffer.get(), size);
 
   ASSERT_THAT(reader, Not(IsEmpty()));
-  ASSERT_THAT(reader, SizeIs(kNumParams));
-  for (int i = kNumParams; --i >= 0;) {
+  ASSERT_THAT(reader, SizeIs(kNumbuffer));
+  for (int i = 0; i < kNumbuffer; ++i) {
     ASSERT_TRUE(reader.hasNext());
     EXPECT_THAT(*(reader.next().As<int>()), Eq(i));
   }
@@ -107,17 +109,18 @@ TEST(MessageTest, PushByReferenceTest) {
   const char *hello = "hello";
   const char *world = "world";
   MessageWriter writer;
-  writer.PushByReference(Extent{world, strlen(world) + 1});
   writer.PushByReference(Extent{hello, strlen(hello) + 1});
+  writer.PushByReference(Extent{world, strlen(world) + 1});
 
   EXPECT_THAT(writer, Not(IsEmpty()));
   EXPECT_THAT(writer, SizeIs(2));
 
-  NativeParameterStack params;
-  writer.Serialize(&params);
+  const size_t size = writer.MessageSize();
+  const auto buffer = absl::make_unique<char[]>(size);
+  writer.Serialize(buffer.get());
 
   MessageReader reader;
-  reader.Deserialize(&params);
+  reader.Deserialize(buffer.get(), size);
 
   ASSERT_THAT(reader, Not(IsEmpty()));
   ASSERT_THAT(reader, SizeIs(2));
@@ -129,61 +132,23 @@ TEST(MessageTest, PushByReferenceTest) {
 TEST(MessageTest, PushPopStrings) {
   MessageWriter writer;
   std::string hello("hello"), world("world");
-  writer.Push(world);
   writer.Push(hello);
+  writer.Push(world);
 
   EXPECT_THAT(writer, Not(IsEmpty()));
   EXPECT_THAT(writer, SizeIs(2));
 
-  NativeParameterStack params;
-  writer.Serialize(&params);
+  const size_t size = writer.MessageSize();
+  const auto buffer = absl::make_unique<char[]>(size);
+  writer.Serialize(buffer.get());
 
   MessageReader reader;
-  reader.Deserialize(&params);
+  reader.Deserialize(buffer.get(), size);
 
   ASSERT_THAT(reader, Not(IsEmpty()));
   ASSERT_THAT(reader, SizeIs(2));
   EXPECT_THAT(reader.next().As<char>(), StrEq(hello));
   EXPECT_THAT(reader.next().As<char>(), StrEq(world));
-}
-
-// The next two tests ensure parameters order match across serialization.
-TEST(MessageTest, MatchWriterStack) {
-  MessageWriter writer;
-  for (int i = 0; i < kNumParams; ++i) {
-    writer.Push(i);
-  }
-  EXPECT_THAT(writer, Not(IsEmpty()));
-  EXPECT_THAT(writer, SizeIs(kNumParams));
-
-  NativeParameterStack params;
-  writer.Serialize(&params);
-
-  ASSERT_THAT(params, Not(IsEmpty()));
-  ASSERT_THAT(params, SizeIs(kNumParams));
-  for (int i = kNumParams; --i >= 0;) {
-    ASSERT_THAT(params, Not(IsEmpty()));
-    EXPECT_THAT(*(params.Pop()->As<int>()), Eq(i));
-  }
-}
-
-TEST(MessageTest, MatchStackReader) {
-  NativeParameterStack params;
-  for (int i = 0; i < kNumParams; ++i) {
-    params.PushByCopy(i);
-  }
-  EXPECT_THAT(params, Not(IsEmpty()));
-  EXPECT_THAT(params, SizeIs(kNumParams));
-
-  MessageReader reader;
-  reader.Deserialize(&params);
-
-  ASSERT_THAT(reader, Not(IsEmpty()));
-  ASSERT_THAT(reader, SizeIs(kNumParams));
-  for (int i = kNumParams; --i >= 0;) {
-    ASSERT_TRUE(reader.hasNext());
-    EXPECT_THAT(*(reader.next().As<int>()), Eq(i));
-  }
 }
 
 }  // namespace

@@ -26,10 +26,12 @@
 namespace asylo {
 namespace primitives {
 
-// Invokes the registered handler with pointer to parameter stack |params| for
+// Invokes the registered handler with pointers to input and output message for
 // the trusted entry point designated by |selector|. Returns a non-zero error
-// code on failure.
-int asylo_enclave_call(uint64_t selector, void *params);
+// code on failure. This function is the one and only entry point inside the
+// enclave for any enclave call, including initialization and trusted function
+// calls.
+int asylo_enclave_call(uint64_t selector, void *buffer);
 
 }  // namespace primitives
 }  // namespace asylo

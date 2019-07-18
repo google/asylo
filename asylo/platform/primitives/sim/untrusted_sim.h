@@ -46,7 +46,8 @@ namespace primitives {
 // Type signature of the enclave entry function pointer. All data extents in
 // serialized `input` message are expected to be located in untrusted memory.
 using EnclaveCallPtr = PrimitiveStatus (*)(uint64_t trusted_selector,
-                                           NativeParameterStack *params);
+                                           const void *input, size_t input_size,
+                                           void **output, size_t *output_size);
 
 // Simulator implementation of the generic "EnclaveBackend" concept.
 struct SimBackend {

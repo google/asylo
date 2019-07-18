@@ -64,6 +64,7 @@
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
@@ -1314,13 +1315,24 @@ int ocall_enc_untrusted_thread_create(const char *name) {
 }
 
 int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
+  asylo::SgxParams *const sgx_params =
+      reinterpret_cast<asylo::SgxParams *>(buffer);
   ::asylo::primitives::MessageReader in;
-  in.Deserialize(
-      reinterpret_cast<::asylo::primitives::NativeParameterStack *>(buffer));
+  if (sgx_params->input) {
+    in.Deserialize(sgx_params->input, sgx_params->input_size);
+    free(const_cast<void *>(sgx_params->input));
+  }
+  sgx_params->output_size = 0;
+  sgx_params->output = nullptr;
   ::asylo::primitives::MessageWriter out;
   const auto status =
       ::asylo::primitives::Client::ExitCallback(selector, &in, &out);
-  out.Serialize(
-      reinterpret_cast<::asylo::primitives::NativeParameterStack *>(buffer));
+  if (status.ok()) {
+    sgx_params->output_size = out.MessageSize();
+    if (sgx_params->output_size > 0) {
+      sgx_params->output = malloc(sgx_params->output_size);
+      out.Serialize(sgx_params->output);
+    }
+  }
   return status.error_code();
 }

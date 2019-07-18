@@ -23,10 +23,11 @@
 
 #include <cstdlib>
 
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
+#include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/util/cleanup.h"
 #include "asylo/util/elf_reader.h"
 #include "asylo/util/file_mapping.h"
 #include "asylo/util/status.h"
@@ -62,7 +63,7 @@ struct ms_ecall_dispatch_trusted_call_t {
   // Trusted selector value.
   uint64_t ms_selector;
 
-  // Pointer to the parameter stack passed to primitives::EnclaveCall. The
+  // Pointer to the flat buffer passed to primitives::EnclaveCall. The
   // pointer is interpreted as a void pointer as edger8r only allows trivial
   // data types to be passed across the bridge.
   void *ms_buffer;
@@ -209,16 +210,32 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
 
   ms_ecall_dispatch_trusted_call_t ms;
   ms.ms_selector = selector;
-  NativeParameterStack params;
-  if (input) {
-    input->Serialize(&params);
-  }
-  ms.ms_buffer = reinterpret_cast<void *>(&params);
+  SgxParams params;
+  ms.ms_buffer = &params;
 
+  params.input_size = 0;
+  params.input = nullptr;
+  params.output = nullptr;
+  params.output_size = 0;
+  Cleanup clean_up([&params] {
+    if (params.input) {
+      free(const_cast<void *>(params.input));
+    }
+    if (params.output) {
+      free(params.output);
+    }
+  });
+
+  if (input) {
+    params.input_size = input->MessageSize();
+    if (params.input_size > 0) {
+      params.input = malloc(static_cast<size_t>(params.input_size));
+      input->Serialize(const_cast<void *>(params.input));
+    }
+  }
   const ocall_table_t *table = &ocall_table_bridge;
   sgx_status_t status =
       sgx_ecall(id_, /*index=*/0, table, &ms, /*is_utility=*/false);
-
   if (status != SGX_SUCCESS) {
     // Return a Status object in the SGX error space.
     return Status(status, "Call to primitives ecall endpoint failed");
@@ -227,7 +244,9 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
     return Status(error::GoogleError::INTERNAL,
                   "Enclave call failed inside enclave");
   }
-  output->Deserialize(reinterpret_cast<NativeParameterStack *>(ms.ms_buffer));
+  if (params.output) {
+    output->Deserialize(params.output, static_cast<size_t>(params.output_size));
+  }
   return Status::OkStatus();
 }
 

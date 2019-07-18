@@ -21,9 +21,9 @@
 
 #include <cstdio>
 
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
 
 // This file declares a trivial trusted runtime interface which can be
 // used to implement primitive backends. This interface ships with a default
@@ -43,10 +43,14 @@ PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
                                      const EntryHandler &handler);
 
 // Invokes the enclave entry handler mapped to |selector|.
-PrimitiveStatus InvokeEntryHandler(
-    uint64_t selector,
-    ParameterStack<TrustedPrimitives::UntrustedLocalAlloc,
-                   TrustedPrimitives::UntrustedLocalFree> *params);
+// |input| and |input_size| deliver input parameters in a serialized form;
+// InvokeEntryHandler takes ownership and frees them once no longer needed.
+// |*output| and |*output_size| upon successful exit provide output parameters
+// serilized into malloc-ed buffer, owned by caller. In case of an error,
+// their values do not change.
+PrimitiveStatus InvokeEntryHandler(uint64_t selector, const void *input,
+                                   size_t input_size, void **output,
+                                   size_t *output_size);
 
 // Marks enclave intitialized.
 void MarkEnclaveInitialized();

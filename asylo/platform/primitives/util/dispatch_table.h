@@ -21,7 +21,6 @@
 
 #include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
-#include "asylo/platform/primitives/parameter_stack.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/asylo_macros.h"

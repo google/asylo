@@ -52,7 +52,7 @@ cc_library(
             ],
         },
         "Trusted simulation components must be built with --define=ASYLO_SIM=1",
-    ),
+    ) + ["//asylo/util:cleanup"],
 )
 
 cc_library(
