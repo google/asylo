@@ -46,11 +46,11 @@
 // int CallTwiceAndSum(FuncT f) {
 //   // Statically assert that f returns an int
 //   static_assert(std::is_same<int,
-//                 typename FunctionTraits<FuncT>::return_type>::value,
+//                 typename FunctionTraits<FuncT>::ReturnType>::value,
 //                 "Expected return type of int");
 //   // Statically assert that f takes no arguments
 //   static_assert(std::is_same<std::tuple<>,
-//                 typename FunctionTraits<FuncT>::argument_types>::value,
+//                 typename FunctionTraits<FuncT>::ArgumentTypes>::value,
 //                 "Expected no arguments");
 //   return f() + f();
 // }
