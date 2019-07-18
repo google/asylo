@@ -583,6 +583,7 @@ sgx_enclave_test(
 sgx_enclave(
     name = "fail_finalize_enclave.so",
     srcs = ["fail_finalize_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo:enclave_runtime"],
 )
 
@@ -590,6 +591,7 @@ sgx_enclave_test(
     name = "fail_finalize_enclave_test",
     size = "small",
     srcs = ["fail_finalize_enclave_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     embedded_enclaves = {"enclave": ":fail_finalize_enclave.so"},
     deps = [
         "//asylo:enclave_client",
