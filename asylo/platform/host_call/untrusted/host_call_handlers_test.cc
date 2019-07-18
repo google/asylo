@@ -126,8 +126,7 @@ TEST(HostCallHandlersTest, SyscallHandlerInvalidRequestTest) {
 }
 
 // Invokes an IsAtty hostcall for an invalid request. It tests that the correct
-// error is returned for an empty parameter stack or for a parameter
-// stack with more than one item.
+// error is returned for an empty input or for an input with more than one item.
 TEST(HostCallHandlersTest, IsAttyIncorrectSizeTest) {
   MessageReader input;
   MessageWriter output;
@@ -146,7 +145,7 @@ TEST(HostCallHandlersTest, IsAttyIncorrectSizeTest) {
 
 // Invokes an IsAtty hostcall for a valid request, and verifies that an ok
 // response code is returned, and that the correct response is included on
-// the parameter stack.
+// the output MessageWriter.
 TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
   MessageReader input;
   FillInput([](MessageWriter *params) { params->Push(0); }, &input);
@@ -162,8 +161,7 @@ TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
 }
 
 // Invokes an USleep hostcall for an invalid request. It tests that the correct
-// error is returned for an empty parameter stack or for a parameter
-// stack with more than one item.
+// error is returned for an empty input or for an input with more than one item.
 TEST(HostCallHandlersTest, USleepIncorrectSizeTest) {
   MessageReader input;
   MessageWriter output;
@@ -182,7 +180,7 @@ TEST(HostCallHandlersTest, USleepIncorrectSizeTest) {
 
 // Invokes an USleep hostcall for a valid request, and verifies that an ok
 // response code is returned, and that the correct response is included on
-// the parameter stack.
+// the output MessageWriter.
 TEST(HostCallHandlersTest, USleepValidRequestTest) {
   MessageReader input;
   FillInput([](MessageWriter *params) { params->Push(0); }, &input);

@@ -27,10 +27,10 @@ namespace asylo {
 namespace host_call {
 
 // This is a general purpose system call exit handler capable of servicing most
-// kinds of system calls. It receives a parameter stack containing a serialized
+// kinds of system calls. It receives a MessageReader containing a serialized
 // |request| (containing a system call number and the corresponding arguments)
 // and writes back the serialized |response| containing the response message on
-// the same parameter stack. Returns ok status on success, otherwise an error
+// the output MessageWriter. Returns ok status on success, otherwise an error
 // message if a serialization error has occurred.
 Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context, primitives::MessageReader *input,
@@ -38,7 +38,7 @@ Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
 
 // This handler performs the IsAtty host call. IsAtty takes in a single
 // parameter from the stack (int fd), and calls the libc function isatty,
-// which returns an int. The int is passed on the parameter stack to be
+// which returns an int. The int is passed on the output MessageWriter to be
 // returned. Returns ok status on success, otherwise an error message.
 Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context, primitives::MessageReader *input,
@@ -46,8 +46,8 @@ Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
 
 // This handler performs the USleep host call. USleep takes in a single
 // parameter from the stack (useconds_t usec), and calls the libc function
-// usleep, which returns an int. The int is passed on the parameter stack to be
-// returned. Returns ok status on success, otherwise an error message.
+// usleep, which returns an int. The int is passed on the output MessageWriter
+// to be returned. Returns ok status on success, otherwise an error message.
 Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context, primitives::MessageReader *input,
                      primitives::MessageWriter *output);

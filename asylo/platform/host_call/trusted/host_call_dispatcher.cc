@@ -72,14 +72,14 @@ primitives::PrimitiveStatus NonSystemCallDispatcher(
   if (input == nullptr || input->empty()) {
     return primitives::PrimitiveStatus{
         error::GoogleError::FAILED_PRECONDITION,
-        "Null or empty parameter stack provided. Need a valid request to "
-        "dispatch the host call"};
+        "Null or empty input provided. Need a valid request to dispatch the "
+        "host call"};
   }
 
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::UntrustedCall(
       exit_selector, input, output));
 
-  // Parameter stack should at least contain the host call return value.
+  // Output should at least contain the host call return value.
   if (output->empty()) {
     return primitives::PrimitiveStatus{
         error::GoogleError::DATA_LOSS,
