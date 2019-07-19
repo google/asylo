@@ -941,17 +941,15 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/types:span",
-        "@sgx_dcap//:pce_wrapper",
+        "@sgx_dcap//:pce_constants",
     ],
 )
 
-# This target depends on an untrusted library (pce_wrapper). Consequently, it
-# is not tested inside the enclave and does not have an "enclave_test_name"
-# attribute.
 cc_test(
     name = "pce_util_test",
     srcs = ["pce_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "pce_util_enclave_test",
     deps = [
         ":hardware_types",
         ":pce_util",
@@ -968,7 +966,7 @@ cc_test(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
-        "@sgx_dcap//:pce_wrapper",
+        "@sgx_dcap//:pce_constants",
     ],
 )
 

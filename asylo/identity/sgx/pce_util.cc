@@ -33,7 +33,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
-#include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h"
 
 namespace asylo {
 namespace sgx {
@@ -115,7 +115,7 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
 
-  return rsa;
+  return std::move(rsa);
 }
 
 StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
