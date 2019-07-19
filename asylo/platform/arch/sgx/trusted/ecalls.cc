@@ -117,3 +117,9 @@ int ecall_transfer_secure_snapshot_key(const char *input,
 int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
   return asylo::primitives::asylo_enclave_call(selector, buffer);
 }
+
+// Invokes the enclave signal handling entry-point. Returns a non-zero error
+// code on failure.
+int ecall_deliver_signal(void *buffer) {
+  abort();
+}

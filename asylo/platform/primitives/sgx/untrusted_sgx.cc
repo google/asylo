@@ -66,6 +66,17 @@ struct ms_ecall_dispatch_trusted_call_t {
   // Pointer to the flat buffer passed to primitives::EnclaveCall. The
   // pointer is interpreted as a void pointer as edger8r only allows trivial
   // data types to be passed across the bridge.
+  void* ms_buffer;
+};
+
+// Edger8r-generated primitives ecall_deliver_signal marshalling struct.
+struct ms_ecall_deliver_signal_t {
+  // Return value from the trusted call.
+  int ms_retval;
+
+  // Pointer to the flat buffer passed to primitives::EnclaveCall. The
+  // pointer is interpreted as a void pointer as edger8r only allows trivial
+  // data types to be passed across the bridge.
   void *ms_buffer;
 };
 
@@ -252,7 +263,55 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
 
 Status SgxEnclaveClient::DeliverSignalInternal(MessageWriter *input,
                                                MessageReader *output) {
-  abort();
+  if (is_destroyed_) {
+    return Status{error::GoogleError::FAILED_PRECONDITION,
+                  "Cannot make an enclave call to a closed enclave."};
+  }
+
+  ms_ecall_dispatch_trusted_call_t ms;
+  SgxParams params;
+  ms.ms_buffer = &params;
+
+  params.input_size = 0;
+  params.input = nullptr;
+  Cleanup clean_up([&params] {
+    if (params.input) {
+      free(const_cast<void *>(params.input));
+    }
+  });
+
+  if (input) {
+    params.input_size = input->MessageSize();
+    if (params.input_size > 0) {
+      params.input = malloc(static_cast<size_t>(params.input_size));
+      input->Serialize(const_cast<void *>(params.input));
+    }
+  }
+  const ocall_table_t* table = &ocall_table_bridge;
+  sgx_status_t status =
+      sgx_ecall(id_, /*index=*/1, table, &ms, /*is_utility=*/false);
+
+  if (status != SGX_SUCCESS) {
+    // Return a Status object in the SGX error space.
+    return Status(status, "Call to primitives deliver signal endpoint failed");
+  } else if (ms.ms_retval) {
+    std::string message;
+    switch (ms.ms_retval) {
+      case 1:
+        message = "Invalid or unregistered incoming signal";
+        break;
+      case 2:
+        message = "Enclave unable to handle signal in current state";
+        break;
+      case -1:
+        message = "Incoming signal is blocked inside the enclave";
+        break;
+      default:
+        message = "Unexpected error while handling signal";
+    }
+    return Status(error::GoogleError::INTERNAL, message);
+  }
+  return Status::OkStatus();
 }
 
 }  // namespace primitives
