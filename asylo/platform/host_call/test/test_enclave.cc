@@ -49,8 +49,8 @@ PrimitiveStatus TestAccess(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int mode = in->next<int>();
   const auto path_name = in->next();
+  int mode = in->next<int>();
 
   out->Push<int>(enc_untrusted_access(path_name.As<char>(), mode));
   return PrimitiveStatus::OkStatus();
@@ -60,8 +60,8 @@ PrimitiveStatus TestChmod(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  mode_t mode = in->next<mode_t>();
   const auto path_name = in->next();
+  mode_t mode = in->next<mode_t>();
 
   out->Push<int>(enc_untrusted_chmod(path_name.As<char>(), mode));
   return PrimitiveStatus::OkStatus();
@@ -80,8 +80,8 @@ PrimitiveStatus TestFchmod(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  mode_t mode = in->next<mode_t>();
   int fd = in->next<int>();
+  mode_t mode = in->next<mode_t>();
 
   out->Push<int>(enc_untrusted_fchmod(fd, mode));
   return PrimitiveStatus::OkStatus();
@@ -114,8 +114,8 @@ PrimitiveStatus TestSetSid(void *context, MessageReader *in,
 PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int sig = in->next<int>();
   pid_t pid = in->next<pid_t>();
+  int sig = in->next<int>();
 
   out->Push<int>(enc_untrusted_kill(pid, sig));
   return PrimitiveStatus::OkStatus();
@@ -124,8 +124,8 @@ PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
 PrimitiveStatus TestLink(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  const auto new_path = in->next();
   const auto old_path = in->next();
+  const auto new_path = in->next();
 
   out->Push<int>(enc_untrusted_link(old_path.As<char>(), new_path.As<char>()));
   return PrimitiveStatus::OkStatus();
@@ -135,9 +135,9 @@ PrimitiveStatus TestLseek(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  int whence = in->next<int>();
-  off_t offset = in->next<off_t>();
   int fd = in->next<int>();
+  off_t offset = in->next<off_t>();
+  int whence = in->next<int>();
 
   out->Push<off_t>(enc_untrusted_lseek(fd, offset, whence));
   return PrimitiveStatus::OkStatus();
@@ -147,8 +147,8 @@ PrimitiveStatus TestMkdir(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  mode_t mode = in->next<mode_t>();
   const auto pathname = in->next();
+  mode_t mode = in->next<mode_t>();
 
   out->Push<int>(enc_untrusted_mkdir(pathname.As<char>(), mode));
   return PrimitiveStatus::OkStatus();
@@ -157,13 +157,13 @@ PrimitiveStatus TestMkdir(void *context, MessageReader *in,
 PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
   // open() can assume 2 or 3 arguments.
   if (in->size() == 3) {
-    mode_t mode = in->next<mode_t>();
-    int flags = in->next<int>();
     const auto pathname = in->next();
+    int flags = in->next<int>();
+    mode_t mode = in->next<mode_t>();
     out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags, mode));
   } else if (in->size() == 2) {
-    int flags = in->next<int>();
     const auto pathname = in->next();
+    int flags = in->next<int>();
     out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags));
   } else {
     return {error::GoogleError::INVALID_ARGUMENT,
@@ -229,8 +229,8 @@ PrimitiveStatus TestRename(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  const auto newpath = in->next();
   const auto oldpath = in->next();
+  const auto newpath = in->next();
 
   out->Push<int>(enc_untrusted_rename(oldpath.As<char>(), newpath.As<char>()));
   return PrimitiveStatus::OkStatus();
@@ -238,8 +238,8 @@ PrimitiveStatus TestRename(void *context, MessageReader *in,
 
 PrimitiveStatus TestRead(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
-  size_t count = in->next<size_t>();
   int fd = in->next<int>();
+  size_t count = in->next<size_t>();
   char read_buf[20];
 
   out->Push<ssize_t>(enc_untrusted_read(fd, read_buf, count));
@@ -250,9 +250,9 @@ PrimitiveStatus TestRead(void *context, MessageReader *in, MessageWriter *out) {
 PrimitiveStatus TestWrite(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
-  size_t count = in->next<size_t>();
-  const auto write_buf = in->next();
   int fd = in->next<int>();
+  const auto write_buf = in->next();
+  size_t count = in->next<size_t>();
 
   out->Push<ssize_t>(enc_untrusted_write(fd, write_buf.As<char>(), count));
   return PrimitiveStatus::OkStatus();
@@ -261,8 +261,8 @@ PrimitiveStatus TestWrite(void *context, MessageReader *in,
 PrimitiveStatus TestSymlink(void *context, MessageReader *in,
                             MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
-  const auto linkpath = in->next();
   const auto target = in->next();
+  const auto linkpath = in->next();
 
   out->Push<ssize_t>(
       enc_untrusted_symlink(target.As<char>(), linkpath.As<char>()));
@@ -287,8 +287,8 @@ PrimitiveStatus TestReadlink(void *context, MessageReader *in,
 PrimitiveStatus TestTruncate(void *context, MessageReader *in,
                              MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
-  off_t length = in->next<off_t>();
   const auto path = in->next();
+  off_t length = in->next<off_t>();
 
   out->Push<int>(enc_untrusted_truncate(path.As<char>(), length));
 
@@ -298,8 +298,8 @@ PrimitiveStatus TestTruncate(void *context, MessageReader *in,
 PrimitiveStatus TestFTruncate(void *context, MessageReader *in,
                               MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
-  auto length = in->next<off_t>();
   int fd = in->next<int>();
+  auto length = in->next<off_t>();
 
   out->Push<int>(enc_untrusted_ftruncate(fd, length));
 
@@ -319,9 +319,9 @@ PrimitiveStatus TestSocket(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  int protocol = in->next<int>();
-  int type = in->next<int>();
   int domain = in->next<int>();
+  int type = in->next<int>();
+  int protocol = in->next<int>();
   out->Push<int>(enc_untrusted_socket(domain, type, protocol));
 
   return PrimitiveStatus::OkStatus();
@@ -331,8 +331,8 @@ PrimitiveStatus TestListen(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int backlog = in->next<int>();
   int sockfd = in->next<int>();
+  int backlog = in->next<int>();
   out->Push<int>(enc_untrusted_listen(sockfd, backlog));
 
   return primitives::PrimitiveStatus::OkStatus();
@@ -342,8 +342,8 @@ PrimitiveStatus TestShutdown(void *context, MessageReader *in,
                              MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int how = in->next<int>();
   int sockfd = in->next<int>();
+  int how = in->next<int>();
   out->Push<int>(enc_untrusted_shutdown(sockfd, how));
 
   return primitives::PrimitiveStatus::OkStatus();
@@ -352,10 +352,10 @@ PrimitiveStatus TestShutdown(void *context, MessageReader *in,
 PrimitiveStatus TestSend(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
 
-  int flags = in->next<int>();
-  auto len = in->next<size_t>();
-  const auto buf = in->next();
   int sockfd = in->next<int>();
+  const auto buf = in->next();
+  auto len = in->next<size_t>();
+  int flags = in->next<int>();
   out->Push<ssize_t>(enc_untrusted_send(sockfd, buf.As<char>(), len, flags));
 
   return primitives::PrimitiveStatus::OkStatus();
@@ -365,9 +365,9 @@ PrimitiveStatus TestFcntl(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  int arg = in->next<int>();
-  int cmd = in->next<int>();
   int fd = in->next<int>();
+  int cmd = in->next<int>();
+  int arg = in->next<int>();
   out->Push<int>(enc_untrusted_fcntl(fd, cmd, arg));
 
   return PrimitiveStatus::OkStatus();
@@ -377,9 +377,9 @@ PrimitiveStatus TestChown(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  gid_t group = in->next<gid_t>();
-  uid_t owner = in->next<uid_t>();
   const auto pathname = in->next();
+  uid_t owner = in->next<uid_t>();
+  gid_t group = in->next<gid_t>();
   out->Push<int>(enc_untrusted_chown(pathname.As<char>(), owner, group));
   return PrimitiveStatus::OkStatus();
 }
@@ -388,9 +388,9 @@ PrimitiveStatus TestFChown(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
-  auto group = in->next<gid_t>();
-  auto owner = in->next<uid_t>();
   int fd = in->next<int>();
+  auto owner = in->next<uid_t>();
+  auto group = in->next<gid_t>();
   out->Push<int>(enc_untrusted_fchown(fd, owner, group));
   return PrimitiveStatus::OkStatus();
 }
@@ -399,10 +399,10 @@ PrimitiveStatus TestSetsockopt(void *context, MessageReader *in,
                                MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
 
-  int option = in->next<int>();
-  int klinux_optname = in->next<int>();
-  int level = in->next<int>();
   int sockfd = in->next<int>();
+  int level = in->next<int>();
+  int klinux_optname = in->next<int>();
+  int option = in->next<int>();
 
   int optname;
   FromkLinuxOptionName(&level, &klinux_optname, &optname);
@@ -416,10 +416,10 @@ PrimitiveStatus TestFlock(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
+  int fd = in->next<int>();
   int operation =
       in->next<int>();  // The operation is expected to be
                         // already converted from a kLinux_ operation.
-  int fd = in->next<int>();
   out->Push<int>(enc_untrusted_flock(fd, operation));
 
   return PrimitiveStatus::OkStatus();
@@ -449,11 +449,11 @@ PrimitiveStatus TestInotifyAddWatch(void *context, MessageReader *in,
                                     MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
 
+  int fd = in->next<int>();
+  const auto pathname = in->next();
   uint32_t mask =
       in->next<uint32_t>();  // The operation is expected to be already
                              // converted from a kLinux_ operation.
-  const auto pathname = in->next();
-  int fd = in->next<int>();
   out->Push<int>(
       enc_untrusted_inotify_add_watch(fd, pathname.As<char>(), mask));
 
@@ -464,8 +464,8 @@ PrimitiveStatus TestInotifyRmWatch(void *context, MessageReader *in,
                                    MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
-  int wd = in->next<int>();
   int fd = in->next<int>();
+  int wd = in->next<int>();
   out->Push<int>(enc_untrusted_inotify_rm_watch(fd, wd));
   return PrimitiveStatus::OkStatus();
 }
