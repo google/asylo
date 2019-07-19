@@ -42,6 +42,7 @@
 
 extern "C" void *enc_untrusted_malloc(size_t size);
 extern "C" void enc_untrusted_free(void *ptr);
+extern "C" int enc_untrusted_puts(const char *message);
 
 namespace asylo {
 namespace primitives {
@@ -162,7 +163,7 @@ bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
 }
 
 void TrustedPrimitives::DebugPuts(const char *message) {
-  abort();
+  enc_untrusted_puts(message);
 }
 
 PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
