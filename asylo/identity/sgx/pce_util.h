@@ -29,6 +29,7 @@
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/statusor.h"
 
@@ -76,6 +77,17 @@ StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(
 //
 // where modulus and public_exponent are in big-endian format.
 StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa);
+
+// Creates a serialized payload for the given PPID encryption key in |ppidek|.
+// The serialized payload is created according to format defined by the PCE.
+//
+// Currently, only RSA-3072 keys are supported. See SerializeRsa3072PublicKey()
+// for details on the serialization format.
+//
+// If the input is not an encryption key, or not of a supported key type,
+// returns a non-OK Status.
+StatusOr<std::vector<uint8_t>> SerializePpidek(
+    const AsymmetricEncryptionKeyProto &ppidek);
 
 // Creates a REPORTDATA based on |asymmetric_encryption_scheme| and |rsa| that
 // is suitable for use in the PCE's GetPceInfo protocol.

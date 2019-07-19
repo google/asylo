@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/rsa_oaep_encryption_key.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
@@ -37,6 +38,30 @@
 
 namespace asylo {
 namespace sgx {
+namespace {
+
+StatusOr<std::vector<uint8_t>> SerializeRsa3072Ppidek(
+    const AsymmetricEncryptionKeyProto &ppidek) {
+  std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
+  AsymmetricKeyEncoding encoding = ppidek.encoding();
+  switch (encoding) {
+    case AsymmetricKeyEncoding::ASYMMETRIC_KEY_DER:
+      ASYLO_ASSIGN_OR_RETURN(encryption_key,
+                             RsaOaepEncryptionKey::CreateFromDer(ppidek.key()));
+      break;
+    case AsymmetricKeyEncoding::ASYMMETRIC_KEY_PEM:
+      ASYLO_ASSIGN_OR_RETURN(encryption_key,
+                             RsaOaepEncryptionKey::CreateFromPem(ppidek.key()));
+      break;
+    default:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    absl::StrCat("Unsupported key encoding: ",
+                                 AsymmetricKeyEncoding_Name(encoding)));
+  }
+  return SerializeRsa3072PublicKey(encryption_key->GetRsaPublicKey());
+}
+
+}  // namespace
 
 const size_t kRsa3072SerializedExponentSize = 4;
 
@@ -140,6 +165,25 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa) {
                   "Failed to serialize public key");
   }
   return output;
+}
+
+StatusOr<std::vector<uint8_t>> SerializePpidek(
+    const AsymmetricEncryptionKeyProto &ppidek) {
+  if (ppidek.key_type() != AsymmetricEncryptionKeyProto::ENCRYPTION_KEY) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "PPIDEK must be an encryption key");
+  }
+
+  AsymmetricEncryptionScheme encryption_scheme = ppidek.encryption_scheme();
+  switch (encryption_scheme) {
+    case AsymmetricEncryptionScheme::RSA3072_OAEP:
+      return SerializeRsa3072Ppidek(ppidek);
+    default:
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("Unsupported encryption scheme: ",
+                       AsymmetricEncryptionScheme_Name(encryption_scheme)));
+  }
 }
 
 StatusOr<Reportdata> CreateReportdataForGetPceInfo(

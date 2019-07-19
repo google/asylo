@@ -931,6 +931,8 @@ cc_library(
     deps = [
         ":hardware_types",
         "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:rsa_oaep_encryption_key",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:additional_authenticated_data_generator",

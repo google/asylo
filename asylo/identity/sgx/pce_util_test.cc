@@ -31,6 +31,7 @@
 #include "absl/base/macros.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -68,10 +69,37 @@ constexpr char kExpectedReportdata[] =
     "7d9c51052da08dede50b007ff0c2abcc105761b8252243f3b8f627560401ea970000000000"
     "000000000000000000000000000000000000000000000000000000";
 
+constexpr char kRsa3072PublicKeyPem[] =
+    R"(-----BEGIN PUBLIC KEY-----
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAvxMDugH2cYvUWzjQhSgR
+D4nT5Gj/2d2NHK3eZ52hzOfwn7Rv7PvNIzKWZWsI0SWfrOyZ3cZvuqRLvuUp3ouk
+NPBfTMDGd6aUXK1U8ujgIIrSIY/Xq88tKoh3b63TuTgaMZuQhe+Yi5ME/JVMsHuc
+SiY9SmCNJSLWJbNDnY8tMpnMLo027EN7gBIPinTQJK6IeqDkdsoxFXuydpC367bJ
+qYSWSEbEgRpzrs4UUgdVMBc/fJU9zRqB50pFcVzbccFaB7XYiqZtrdqU07eorbpd
+XINBBPFdfePByVdiUW6zfsxf8eUXLVXk9TioF1MqcJcVuHMndry2na28vQG9ZNH4
+Glrb332S4+gfHYOTv5PJxLteIrWfyRstWxzuegpUcmrGSjgrMdjcuUOJjCnDJ2bW
+0r0UE9um8JQodJKpILtTpq1rV+QlseUPu90ZID3OTk5PSne6NtJe7bN+9WeJspQO
+C5xYNu944AfU3z0rnYRx0fEkiftBTiunrAioOA5jMQFHAgMBAAE=
+-----END PUBLIC KEY-----)";
+
+constexpr char kSerializedRsa3072PublicKeyHex[] =
+    "bf1303ba01f6718bd45b38d08528110f89d3e468ffd9dd8d1cadde679da1cce7f09fb46fe"
+    "cfbcd233296656b08d1259facec99ddc66fbaa44bbee529de8ba434f05f4cc0c677a6945c"
+    "ad54f2e8e0208ad2218fd7abcf2d2a88776fadd3b9381a319b9085ef988b9304fc954cb07"
+    "b9c4a263d4a608d2522d625b3439d8f2d3299cc2e8d36ec437b80120f8a74d024ae887aa0"
+    "e476ca31157bb27690b7ebb6c9a984964846c4811a73aece1452075530173f7c953dcd1a8"
+    "1e74a45715cdb71c15a07b5d88aa66dadda94d3b7a8adba5d5c834104f15d7de3c1c95762"
+    "516eb37ecc5ff1e5172d55e4f538a817532a709715b8732776bcb69dadbcbd01bd64d1f81"
+    "a5adbdf7d92e3e81f1d8393bf93c9c4bb5e22b59fc91b2d5b1cee7a0a54726ac64a382b31"
+    "d8dcb943898c29c32766d6d2bd1413dba6f094287492a920bb53a6ad6b57e425b1e50fbbd"
+    "d19203dce4e4e4f4a77ba36d25eedb37ef56789b2940e0b9c5836ef78e007d4df3d2b9d84"
+    "71d1f12489fb414e2ba7ac08a8380e6331014700010001";
+
 constexpr int kBadPceCryptoSuite = 42;
 constexpr int kBadPceSignatureScheme = 42;
 
 using ::testing::Eq;
+using ::testing::Not;
 using ::testing::Optional;
 using ::testing::SizeIs;
 
@@ -88,6 +116,20 @@ constexpr SignatureScheme kSupportedSignatureSchemes[] = {ECDSA_P256_SHA256};
 // The signature scheme corresponding to each scheme in
 // kSupportedSignatureSchemes.
 constexpr uint8_t kTranslatedSignatureSchemes[] = {PCE_NIST_P256_ECDSA_SHA256};
+
+MATCHER_P(EqualsHexBytes, b, "") {
+  return absl::BytesToHexString(absl::string_view(
+             reinterpret_cast<const char *>(arg.data()), arg.size())) == b;
+}
+
+AsymmetricEncryptionKeyProto Rsa3072PublicKeyProto() {
+  AsymmetricEncryptionKeyProto key;
+  key.set_key_type(AsymmetricEncryptionKeyProto::ENCRYPTION_KEY);
+  key.set_encoding(AsymmetricKeyEncoding::ASYMMETRIC_KEY_PEM);
+  key.set_encryption_scheme(AsymmetricEncryptionScheme::RSA3072_OAEP);
+  key.set_key(kRsa3072PublicKeyPem);
+  return key;
+}
 
 class PceUtilTest : public ::testing::Test {
  public:
@@ -275,6 +317,46 @@ TEST_F(PceUtilTest, SerializeRsa3072PublicKeySuccess) {
   BN_bin2bn(serialized_key.data() + RSA_size(rsa.get()),
             kRsa3072SerializedExponentSize, actual_e.get());
   EXPECT_EQ(BN_cmp(actual_e.get(), expected_e), 0);
+}
+
+TEST_F(PceUtilTest, SerializePpidekWithDecryptionKeyFails) {
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
+
+  EXPECT_THAT(SerializePpidek(ppidek).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "PPIDEK must be an encryption key"));
+}
+
+TEST_F(PceUtilTest, SerializePpidekWithUnsupportedEncryptionSchemeFails) {
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_encryption_scheme(AsymmetricEncryptionScheme::RSA2048_OAEP);
+
+  EXPECT_THAT(SerializePpidek(ppidek).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "Unsupported encryption scheme: RSA2048_OAEP"));
+}
+
+TEST_F(PceUtilTest, SerializePpidekWithUnsupportedKeyEncodingFails) {
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_encoding(AsymmetricKeyEncoding::UNKNOWN_ASYMMETRIC_KEY_ENCODING);
+
+  EXPECT_THAT(
+      SerializePpidek(ppidek).status(),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+               "Unsupported key encoding: UNKNOWN_ASYMMETRIC_KEY_ENCODING"));
+}
+
+TEST_F(PceUtilTest, SerializePpidekWithBadKeyFails) {
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_key("Not really a key");
+
+  EXPECT_THAT(SerializePpidek(ppidek).status(), Not(IsOk()));
+}
+
+TEST_F(PceUtilTest, SerializePpidekRsa3072Success) {
+  EXPECT_THAT(SerializePpidek(Rsa3072PublicKeyProto()),
+              IsOkAndHolds(EqualsHexBytes(kSerializedRsa3072PublicKeyHex)));
 }
 
 // Verify that an RSA public key can be serialized and then restored, and that
