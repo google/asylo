@@ -23,26 +23,6 @@ namespace asylo {
 
 extern "C" {
 
-int __asylo_user_init(const char *name, const char *config, size_t config_len,
-                      char **output, size_t *output_len) {
-  return 0;
-}
-
-int __asylo_user_run(const char *input, size_t input_len, char **output,
-                     size_t *output_len) {
-  return 0;
-}
-
-int __asylo_user_fini(const char *final_input, size_t len, char **output,
-                      size_t *output_len) {
-  return 0;
-}
-
-int __asylo_threading_donate() {
-  return 0;
-}
-
-
 int __asylo_handle_signal(const char *input, size_t input_len) {
   return 0;
 }

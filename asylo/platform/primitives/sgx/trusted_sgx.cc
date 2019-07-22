@@ -23,7 +23,6 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
-#include "asylo/platform/core/entry_points.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"

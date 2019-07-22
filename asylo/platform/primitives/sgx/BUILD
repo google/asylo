@@ -50,7 +50,6 @@ cc_library(
         {
             "//asylo/platform/primitives:asylo_sgx": [
                 "//asylo/platform/primitives",
-                "//asylo/platform/core:entry_points",
                 "//asylo/util:logging",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
