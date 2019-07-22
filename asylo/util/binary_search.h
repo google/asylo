@@ -53,7 +53,7 @@ size_t BinarySearch(FuncT f) {
   // This avoids calling f on max value for size_t
   // (which could be extremely expensive in some cases).
   for (int i = 1; i < max_bits && f(upper_bound); i++) {
-    lower_bound = 1 << i;
+    lower_bound = size_t{1} << i;
     if (i != max_bits - 1) {
       upper_bound = lower_bound << 1;
     } else {
