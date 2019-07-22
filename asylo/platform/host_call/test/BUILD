@@ -64,6 +64,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
+        "//asylo:enclave_client",
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
@@ -89,6 +90,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
+        "//asylo:enclave_client",
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",

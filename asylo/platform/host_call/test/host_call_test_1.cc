@@ -32,6 +32,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "asylo/enclave_manager.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/extent.h"
@@ -73,6 +74,7 @@ class HostCallTest : public ::testing::Test {
   }
 
   void SetUp() override {
+    EnclaveManager::Configure(EnclaveManagerOptions());
     client_ = LoadTestEnclaveOrDie();
     ASSERT_FALSE(client_->IsClosed());
   }
