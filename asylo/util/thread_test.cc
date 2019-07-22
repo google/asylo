@@ -62,14 +62,14 @@ TEST_F(ThreadTest, MovedThread) {
 }
 
 TEST_F(ThreadTest, DetachedThread) {
-  bool executed = false;
+  MutexGuarded<bool> executed(false);
   Thread::StartDetached([&executed] {
     absl::SleepFor(absl::Seconds(3));
-    executed = true;
+    *executed.Lock() = true;
   });
-  EXPECT_FALSE(executed);
+  EXPECT_FALSE(*executed.ReaderLock());
   absl::SleepFor(absl::Seconds(6));
-  EXPECT_TRUE(executed);
+  EXPECT_TRUE(*executed.ReaderLock());
 }
 
 TEST_F(ThreadTest, MultipleThreads) {
@@ -113,17 +113,17 @@ TEST_F(ThreadTest, CStyleThread) {
   EXPECT_TRUE(executed);
 }
 
-void CStyleDetachedBody(bool* executed) {
+void CStyleDetachedBody(MutexGuarded<bool> *executed) {
   absl::SleepFor(absl::Seconds(3));
-  *executed = true;
+  *executed->Lock() = true;
 }
 
 TEST_F(ThreadTest, CStyleDetachedThread) {
-  bool executed = false;
+  MutexGuarded<bool> executed(false);
   Thread::StartDetached(CStyleDetachedBody, &executed);
-  EXPECT_FALSE(executed);
+  EXPECT_FALSE(*executed.ReaderLock());
   absl::SleepFor(absl::Seconds(6));
-  EXPECT_TRUE(executed);
+  EXPECT_TRUE(*executed.ReaderLock());
 }
 
 }  // namespace
