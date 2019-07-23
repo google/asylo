@@ -50,6 +50,23 @@ class X509CertificateUtil : public CertificateUtilInterface {
   // transformed.
   static StatusOr<Certificate> X509ToPemCertificate(const X509 &x509);
 
+  // Creates and returns an X509_REQ object equivalent to the data in |csr|.
+  // Returns a non-OK Status if the certificate signing request could not be
+  // transformed to the equivalent X509_REQ object.
+  static StatusOr<bssl::UniquePtr<X509_REQ>> CertificateSigningRequestToX509Req(
+      const CertificateSigningRequest &csr);
+
+  // Creates and returns a DER-formatted certificate signing request equivalent
+  // to the data in |x509_req|. Returns a non-OK Status if the X509_REQ object
+  // could not be transformed.
+  static StatusOr<CertificateSigningRequest>
+  X509ReqToDerCertificateSigningRequest(const X509_REQ &x509_req);
+
+  // Returns the DER-encoded subject key of |csr|. Returns a non-OK Status if
+  // there was an error.
+  static StatusOr<std::string> ExtractSubjectKeyDer(
+      const CertificateSigningRequest &csr);
+
   // From CertificateUtilInterface.
 
   Status VerifyCertificate(const Certificate &certificate,

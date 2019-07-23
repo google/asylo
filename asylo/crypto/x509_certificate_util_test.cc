@@ -95,6 +95,27 @@ ovillA==
 
 constexpr char kBadData[] = "c0ff33";
 
+// CSRs with the root subject key.
+
+constexpr char kCsrPem[] =
+    R"(-----BEGIN CERTIFICATE REQUEST-----
+MIH7MIGhAgEAMAAwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAATq7aUQPokZT0O/
+4NhE8+efAAlX/DySN8fqjdzWfiLHXNdRGeqaoC92zsrLvxsv5hxp/J7q2h/imlZ9
+bOtGjha9oD8wPQYJKoZIhvcNAQkOMTAwLjAsBgiBQGNrY2VydAQgXZGA1KkHHOtx
+boMoQM/3uAjk6cpOLuJpWqOejdt79JowCgYIKoZIzj0EAwIDSQAwRgIhAMUE52Cw
+oaGJtGujUxAnJnpORdixQ8zSd2ZGRF/nTVXAAiEAz/Yc1at8SK+kkyU91TSl/4sU
+NqE+OQ+u66hUMUKYffc=
+-----END CERTIFICATE REQUEST-----)";
+
+constexpr char kCsrDerHex[] =
+    "3081fb3081a102010030003059301306072a8648ce3d020106082a8648ce3d030107034200"
+    "04eaeda5103e89194f43bfe0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea"
+    "9aa02f76cecacbbf1b2fe61c69fc9eeada1fe29a567d6ceb468e16bda03f303d06092a8648"
+    "86f70d01090e3130302e302c06088140636b6365727404205d9180d4a9071ceb716e832840"
+    "cff7b808e4e9ca4e2ee2695aa39e8ddb7bf49a300a06082a8648ce3d040302034900304602"
+    "2100c504e760b0a1a189b46ba3531027267a4e45d8b143ccd2776646445fe74d55c0022100"
+    "cff61cd5ab7c48afa493253dd534a5ff8b1436a13e390faeeba8543142987df7";
+
 using ::testing::Eq;
 using ::testing::Not;
 using ::testing::Test;
@@ -204,6 +225,84 @@ TEST_F(X509CertificateUtilTest,
 
   EXPECT_THAT(pem_formatted_cert.data(),
               Not(EqualIgnoreWhiteSpace(kTestRootCertPem)));
+}
+
+// Verifies that CertificateSigningRequestToX509Req returns an error with
+// malformed data.
+TEST_F(X509CertificateUtilTest,
+       CertificateSigningRequestToX509ReqMalformedData) {
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::PKCS10_PEM);
+  csr.set_data(kBadData);
+
+  EXPECT_THAT(
+      X509CertificateUtil::CertificateSigningRequestToX509Req(csr).status(),
+      StatusIs(error::GoogleError::INTERNAL));
+}
+
+// Verifies that CertificateSigningRequestToX509Req returns an INVALID_ARGUMENT
+// error when the csr has a format other than PKCS10_DER or PKCS10_PEM.
+TEST_F(X509CertificateUtilTest,
+       CertificateSigningRequestToX509ReqInvalidFormat) {
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::UNKNOWN);
+  csr.set_data(kCsrDerHex);
+
+  EXPECT_THAT(
+      X509CertificateUtil::CertificateSigningRequestToX509Req(csr).status(),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verifies that CertificateSigningRequestToX509Req then
+// X509ReqToDerCertificateSigningRequest returns the same data.
+TEST_F(X509CertificateUtilTest,
+       CertificateSigningRequestToX509ToDerCertificateSigningRequest) {
+  CertificateSigningRequest expected_csr;
+  expected_csr.set_format(CertificateSigningRequest::PKCS10_DER);
+  expected_csr.set_data(absl::HexStringToBytes(kCsrDerHex));
+
+  bssl::UniquePtr<X509_REQ> x509_req;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_req,
+      X509CertificateUtil::CertificateSigningRequestToX509Req(expected_csr));
+
+  CertificateSigningRequest actual_csr;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      actual_csr,
+      X509CertificateUtil::X509ReqToDerCertificateSigningRequest(*x509_req));
+  EXPECT_THAT(actual_csr.format(), Eq(expected_csr.format()));
+  EXPECT_THAT(actual_csr.data(), EqualIgnoreWhiteSpace(expected_csr.data()));
+}
+
+// Verifies that ExtractSubjectKeyDer(csr) returns the correct subject key.
+TEST_F(X509CertificateUtilTest, ExtractSubjectKeyDerCsrSuccess) {
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::PKCS10_PEM);
+  csr.set_data(kCsrPem);
+
+  EXPECT_THAT(X509CertificateUtil::ExtractSubjectKeyDer(csr),
+              IsOkAndHolds(root_public_key_));
+}
+
+// Verifies that ExtractSubjectKeyDer(csr) returns an error with malformed data.
+TEST_F(X509CertificateUtilTest, ExtractSubjectKeyDerCsrMalformedData) {
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::PKCS10_DER);
+  csr.set_data(kBadData);
+
+  EXPECT_THAT(X509CertificateUtil::ExtractSubjectKeyDer(csr).status(),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+// Verifies that ExtractSubjectKeyDer(csr) returns an INVALID_ARGUMENT error if
+// the format is not PKCS10_DER or PKCS10_PEM.
+TEST_F(X509CertificateUtilTest, ExtractSubjectKeyDerCsrInvalidFormat) {
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::UNKNOWN);
+  csr.set_data(kCsrPem);
+
+  EXPECT_THAT(X509CertificateUtil::ExtractSubjectKeyDer(csr).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verifies that a certificate signed by the signing-key counterpart to the

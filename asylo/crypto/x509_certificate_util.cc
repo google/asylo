@@ -85,6 +85,21 @@ StatusOr<bssl::UniquePtr<EVP_PKEY>> CreatePublicKey(
   }
 }
 
+// Returns the DER-encoding of |evp_key|.
+StatusOr<std::string> EvpPkeyToDer(const EVP_PKEY &evp_key) {
+  bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
+  if (i2d_PUBKEY_bio(key_bio.get(), const_cast<EVP_PKEY *>(&evp_key)) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  char *public_key_data = nullptr;
+  int64_t public_key_length = BIO_get_mem_data(key_bio.get(), &public_key_data);
+  if (public_key_length <= 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return std::string(public_key_data, public_key_length);
+}
+
 }  // namespace
 
 StatusOr<bssl::UniquePtr<X509>> X509CertificateUtil::CertificateToX509(
@@ -132,6 +147,69 @@ StatusOr<Certificate> X509CertificateUtil::X509ToPemCertificate(
   return cert;
 }
 
+StatusOr<bssl::UniquePtr<X509_REQ>>
+X509CertificateUtil::CertificateSigningRequestToX509Req(
+    const CertificateSigningRequest &csr) {
+  bssl::UniquePtr<BIO> csr_bio(
+      BIO_new_mem_buf(csr.data().data(), csr.data().size()));
+  bssl::UniquePtr<X509_REQ> req;
+  switch (csr.format()) {
+    case CertificateSigningRequest::PKCS10_PEM:
+      req.reset(PEM_read_bio_X509_REQ(csr_bio.get(), /*x=*/nullptr,
+                                      /*cb=*/nullptr,
+                                      /*u=*/nullptr));
+      break;
+    case CertificateSigningRequest::PKCS10_DER:
+      req.reset(d2i_X509_REQ_bio(csr_bio.get(), /*req=*/nullptr));
+      break;
+    default:
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat(
+              "Transformation to X509_REQ not suported for: ",
+              CertificateSigningRequest_CertificateSigningRequestFormat_Name(
+                  csr.format())));
+  }
+  if (req == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return std::move(req);
+}
+
+StatusOr<CertificateSigningRequest>
+X509CertificateUtil::X509ReqToDerCertificateSigningRequest(
+    const X509_REQ &x509_req) {
+  bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
+  if (i2d_X509_REQ_bio(x509_bio.get(), const_cast<X509_REQ *>(&x509_req)) !=
+      1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  char *data;
+  long length = BIO_get_mem_data(x509_bio.get(), &data);
+  if (length <= 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  CertificateSigningRequest csr;
+  csr.set_format(CertificateSigningRequest::PKCS10_DER);
+  csr.set_data(data, length);
+  return csr;
+}
+
+StatusOr<std::string> X509CertificateUtil::ExtractSubjectKeyDer(
+    const CertificateSigningRequest &csr) {
+  bssl::UniquePtr<X509_REQ> x509_req;
+  ASYLO_ASSIGN_OR_RETURN(x509_req, CertificateSigningRequestToX509Req(csr));
+
+  bssl::UniquePtr<EVP_PKEY> public_key(X509_REQ_get_pubkey(x509_req.get()));
+  if (public_key == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return EvpPkeyToDer(*public_key);
+}
+
 Status X509CertificateUtil::VerifyCertificate(
     const Certificate &certificate, ByteContainerView public_key_der) const {
   bssl::UniquePtr<X509> x509;
@@ -158,17 +236,7 @@ StatusOr<std::string> X509CertificateUtil::ExtractSubjectKeyDer(
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
 
-  bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
-  if (i2d_PUBKEY_bio(key_bio.get(), evp_key.get()) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-  char *public_key_data = nullptr;
-  int64_t public_key_length = BIO_get_mem_data(key_bio.get(), &public_key_data);
-  if (public_key_length <= 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-
-  return std::string(public_key_data, public_key_length);
+  return EvpPkeyToDer(*evp_key);
 }
 
 }  // namespace asylo
