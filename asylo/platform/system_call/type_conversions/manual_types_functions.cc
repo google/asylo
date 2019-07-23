@@ -129,3 +129,37 @@ void FromkLinuxOptionName(const int *level, const int *klinux_option_name,
     *output = -1;
   }
 }
+
+void FromKernelStat(const struct kernel_stat *from, struct stat *to) {
+  if (!from || !to) return;
+  to->st_atime = from->kernel_st_atime;
+  to->st_blksize = from->kernel_st_blksize;
+  to->st_blocks = from->kernel_st_blocks;
+  to->st_mtime = from->kernel_st_mtime;
+  to->st_dev = from->kernel_st_dev;
+  to->st_gid = from->kernel_st_gid;
+  to->st_ino = from->kernel_st_ino;
+  to->st_mode = from->kernel_st_mode;
+  to->st_ctime = from->kernel_st_ctime;
+  to->st_nlink = from->kernel_st_nlink;
+  to->st_rdev = from->kernel_st_rdev;
+  to->st_size = from->kernel_st_size;
+  to->st_uid = from->kernel_st_uid;
+}
+
+void ToKernelStat(const struct stat *from, struct kernel_stat *to) {
+  if (!from || !to) return;
+  to->kernel_st_atime = from->st_atime;
+  to->kernel_st_blksize = from->st_blksize;
+  to->kernel_st_blocks = from->st_blocks;
+  to->kernel_st_mtime = from->st_mtime;
+  to->kernel_st_dev = from->st_dev;
+  to->kernel_st_gid = from->st_gid;
+  to->kernel_st_ino = from->st_ino;
+  to->kernel_st_mode = from->st_mode;
+  to->kernel_st_ctime = from->st_ctime;
+  to->kernel_st_nlink = from->st_nlink;
+  to->kernel_st_rdev = from->st_rdev;
+  to->kernel_st_size = from->st_size;
+  to->kernel_st_uid = from->st_uid;
+}

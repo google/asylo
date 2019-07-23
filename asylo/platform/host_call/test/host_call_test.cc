@@ -17,6 +17,7 @@
  */
 
 #include <fcntl.h>
+#include <netinet/in.h>
 #include <sys/file.h>
 #include <sys/inotify.h>
 #include <sys/socket.h>
@@ -40,7 +41,6 @@
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
-#include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/test_flags.h"
 
@@ -970,10 +970,8 @@ TEST_F(HostCallTest, TestFcntl) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFcntl, &in, &out));
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
 
-  int fcntl_return;
   int klinux_fcntl_return = fcntl(fd, F_GETFL, 0);
-  FromkLinuxFileStatusFlag(&klinux_fcntl_return, &fcntl_return);
-  EXPECT_THAT(out.next<int>(), Eq(fcntl_return));
+  EXPECT_THAT(out.next<int>(), Eq(klinux_fcntl_return & 07777));
 
   // Turn on one or more of the file status flags for a descriptor.
   int flags_to_set = O_APPEND | O_NONBLOCK | O_RDONLY;
@@ -986,8 +984,7 @@ TEST_F(HostCallTest, TestFcntl) {
   ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
 
   klinux_fcntl_return = fcntl(fd, F_SETFL, flags_to_set);
-  FromkLinuxFileStatusFlag(&klinux_fcntl_return, &fcntl_return);
-  EXPECT_THAT(out2.next<int>(), Eq(fcntl_return));
+  EXPECT_THAT(out2.next<int>(), Eq(klinux_fcntl_return));
 }
 
 TEST_F(HostCallTest, TestFcntlInvalidCmd) {
@@ -1115,12 +1112,9 @@ TEST_F(HostCallTest, TestFlock) {
   ASSERT_GE(fd, 0);
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
-  int klinux_lock = LOCK_EX;
-  int lock;
-  FromkLinuxFLockOperation(&klinux_lock, &lock);
   primitives::MessageWriter in;
   in.Push<int>(/*value=fd=*/fd);
-  in.Push<int>(/*value=operation=*/lock);
+  in.Push<int>(/*value=operation=*/LOCK_EX);
 
   primitives::MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFlock, &in, &out));
@@ -1160,10 +1154,7 @@ TEST_F(HostCallTest, TestFsync) {
 // descriptor value is verified to be positive.
 TEST_F(HostCallTest, TestInotifyInit1) {
   primitives::MessageWriter in;
-  int inotify_flag;
-  int klinux_inotify_flag = IN_NONBLOCK;
-  FromkLinuxInotifyFlag(&klinux_inotify_flag, &inotify_flag);
-  in.Push<int>(/*value=flags=*/inotify_flag);
+  in.Push<int>(/*value=flags=*/IN_NONBLOCK);
 
   primitives::MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyInit1, &in, &out));
@@ -1187,10 +1178,7 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
   in.Push<int>(inotify_fd);
   in.Push(absl::GetFlag(FLAGS_test_tmpdir));
 
-  int event_mask;
-  int klinux_event_mask = IN_ALL_EVENTS;
-  FromkLinuxInotifyEventMask(&klinux_event_mask, &event_mask);
-  in.Push<int>(event_mask);
+  in.Push<int>(IN_ALL_EVENTS);
   primitives::MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestInotifyAddWatch, &in, &out));
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
@@ -1335,6 +1323,35 @@ TEST_F(HostCallTest, TestUSleep) {
   EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_GE(duration, 1000);
   EXPECT_LE(duration, 1200);
+}
+
+// Tests enc_untrusted_stat() by creating a file and get stat of it, ensuring
+// that the return value is 0 and returned stat contains expected value.
+TEST_F(HostCallTest, TestStat) {
+  std::string path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
+      "/test_file.tmp");
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    ASSERT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  primitives::MessageWriter in;
+
+  in.Push(path);
+  primitives::MessageReader out;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStat, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Contains return value and result stat.
+  ASSERT_THAT(out.next<int>(), Eq(0));
+  mode_t mask = umask(0777);
+  umask(mask);
+  ASSERT_THAT(out.next<int>() & DEFFILEMODE, Eq(DEFFILEMODE & ~mask));
+  EXPECT_NE(unlink(path.c_str()), -1);
 }
 
 }  // namespace

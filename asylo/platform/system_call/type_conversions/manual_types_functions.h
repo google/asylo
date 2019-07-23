@@ -22,6 +22,7 @@
 // This file provides the manually written type conversion functions for types
 // (enums, structs etc.) between enclave and target host implementation.
 
+#include "asylo/platform/system_call/kernel_type.h"
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
 
 // Converts an enclave based socket type, |*input| to a Linux socket type value.
@@ -40,5 +41,6 @@ void TokLinuxOptionName(const int *level, const int *option_name, int *output);
 // socket option. Returns -1 if socket type is not recognized.
 void FromkLinuxOptionName(const int *level, const int *klinux_option_name,
                           int *output);
-
+void FromKernelStat(const struct kernel_stat *from, struct stat *to);
+void ToKernelStat(const struct stat *from, struct kernel_stat *to);
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

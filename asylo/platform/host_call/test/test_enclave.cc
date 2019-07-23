@@ -23,6 +23,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/platform/system_call/kernel_type.h"
 #include "asylo/platform/system_call/system_call.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
@@ -368,7 +369,16 @@ PrimitiveStatus TestFcntl(void *context, MessageReader *in,
   int fd = in->next<int>();
   int cmd = in->next<int>();
   int arg = in->next<int>();
-  out->Push<int>(enc_untrusted_fcntl(fd, cmd, arg));
+  int result = enc_untrusted_fcntl(fd, cmd, arg);
+  if (cmd == F_GETFL) {
+    int tmp = result;
+    TokLinuxFileStatusFlag(&tmp, &result);
+  } else if (cmd == F_GETFD) {
+    int tmp = result;
+    TokLinuxFDFlag(&tmp, &result);
+  }
+
+  out->Push<int>(result);
 
   return PrimitiveStatus::OkStatus();
 }
@@ -417,9 +427,10 @@ PrimitiveStatus TestFlock(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
   int fd = in->next<int>();
-  int operation =
-      in->next<int>();  // The operation is expected to be
-                        // already converted from a kLinux_ operation.
+  int kLinux_operation = in->next<int>();  // The operation is expected to be
+                                           // a kLinux_ operation.
+  int operation;
+  FromkLinuxFLockOperation(&kLinux_operation, &operation);
   out->Push<int>(enc_untrusted_flock(fd, operation));
 
   return PrimitiveStatus::OkStatus();
@@ -439,8 +450,10 @@ PrimitiveStatus TestInotifyInit1(void *context, MessageReader *in,
                                  MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
-  int flags = in->next<int>();  // The operation is expected to be already
-                                // converted from a kLinux_ operation.
+  int kLinux_flags = in->next<int>();  // The operation is expected to be
+                                       // a kLinux_ operation.
+  int flags;
+  FromkLinuxInotifyFlag(&kLinux_flags, &flags);
   out->Push<int>(enc_untrusted_inotify_init1(flags));
   return PrimitiveStatus::OkStatus();
 }
@@ -451,9 +464,10 @@ PrimitiveStatus TestInotifyAddWatch(void *context, MessageReader *in,
 
   int fd = in->next<int>();
   const auto pathname = in->next();
-  uint32_t mask =
-      in->next<uint32_t>();  // The operation is expected to be already
-                             // converted from a kLinux_ operation.
+  int kLinux_mask = in->next<uint32_t>();  // The operation is expected to be
+                                           // a kLinux_ operation.
+  int mask;
+  FromkLinuxInotifyEventMask(&kLinux_mask, &mask);
   out->Push<int>(
       enc_untrusted_inotify_add_watch(fd, pathname.As<char>(), mask));
 
@@ -490,8 +504,23 @@ PrimitiveStatus TestIsAtty(void *context, MessageReader *in,
 PrimitiveStatus TestUSleep(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
   auto usec = in->next<unsigned int>();
   out->Push<int>(enc_untrusted_usleep(usec));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestStat(void *context, MessageReader *in,
+                         MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  struct stat st;
+  const auto path_name = in->next();
+  out->Push<int>(enc_untrusted_stat(path_name.As<char>(), &st));
+  int mode = st.st_mode;
+  int kLinux_mode;
+  TokLinuxFileModeFlag(&mode, &kLinux_mode);
+  out->Push<int>(kLinux_mode);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -617,6 +646,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestUSleep,
       EntryHandler{asylo::host_call::TestUSleep}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestStat,
+      EntryHandler{asylo::host_call::TestStat}));
   return PrimitiveStatus::OkStatus();
 }
 

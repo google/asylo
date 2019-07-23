@@ -71,7 +71,6 @@ cc_library(
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/storage/utils:fd_closer",
-        "//asylo/platform/system_call/type_conversions:types",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "@com_google_absl//absl/flags:flag",

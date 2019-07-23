@@ -68,6 +68,7 @@ cc_binary(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/system_call:kernel_type_definitions",
         "//asylo/util:logging",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/flags:flag",
@@ -112,7 +113,10 @@ cc_library(
         "manual_types_functions.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = [":types_definitions"],
+    deps = [
+        ":types_definitions",
+        "//asylo/platform/system_call:kernel_type_definitions",
+    ],
 )
 
 # Tests for generated and manually written type conversion functions.

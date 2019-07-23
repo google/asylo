@@ -27,6 +27,7 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/system_call/kernel_type.h"
 #include "asylo/platform/system_call/type_conversions/types_macros.inc"
 
 // A struct describing properties and values of a enum desired to be generated
@@ -95,9 +96,13 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
                    : enum_properties.default_value_newlib)
      << ";\n";
 
-  // Generate or-based enum result accumulation.
+  // Generate or-based enum result accumulation. Since there are cases that enum
+  // may contain multiple bits, the value has to be checked explicitly.
   for (const auto &enum_pair : enum_properties.values) {
-    os << "  if (*input & "
+    os << "  if ((*input & "
+       << (to_prefix ? enum_pair.first
+                     : absl::StrCat(klinux_prefix, "_", enum_pair.first))
+       << ") == "
        << (to_prefix ? enum_pair.first
                      : absl::StrCat(klinux_prefix, "_", enum_pair.first))
        << ") *output |= "

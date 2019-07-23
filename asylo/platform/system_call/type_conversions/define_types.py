@@ -48,6 +48,16 @@ define_enum(
     multi_valued=True)
 
 define_enum(
+    name="FileModeFlag",
+    values=[
+        "S_IFMT", "S_IFDIR", "S_IFCHR", "S_IFBLK", "S_IFREG", "S_IFIFO",
+        "S_IFLNK", "S_IFSOCK", "S_ISUID", "S_ISGID", "S_ISVTX", "S_IRUSR",
+        "S_IWUSR", "S_IXUSR", "S_IRGRP", "S_IWGRP", "S_IXGRP", "S_IRWXG",
+        "S_IROTH", "S_IWOTH", "S_IXOTH", "S_IRWXO"
+    ],
+    multi_valued=True)
+
+define_enum(
     name="FcntlCommand",
     values=[
         "F_GETFD", "F_SETFD", "F_GETFL", "F_SETFL", "F_GETPIPE_SZ",
