@@ -226,7 +226,6 @@ TEST_F(HostCallTest, TestListen) {
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
-  // absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/sock.sock");
 
   // Create a local socket address and bind the socket to it.
   sockaddr_un sa = {};
@@ -417,7 +416,7 @@ TEST_F(HostCallTest, TestChown) {
 // the host call from inside the enclave and verifying the return value.
 TEST_F(HostCallTest, TestFChown) {
   std::string test_file =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "test_file.tmp");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -523,7 +522,7 @@ TEST_F(HostCallTest, TestFlock) {
 // on it. Ensures that a successful code of 0 is returned.
 TEST_F(HostCallTest, TestFsync) {
   std::string test_file =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "test_file.tmp");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -624,15 +623,14 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
 // on the unregistered event is not recorded by inotify.
 TEST_F(HostCallTest, TestInotifyRmWatch) {
   int inotify_fd = inotify_init1(IN_NONBLOCK);
-  int wd = inotify_add_watch(
-      inotify_fd, absl::GetFlag(FLAGS_test_tmpdir).c_str(), IN_ALL_EVENTS);
+  std::string watch_dir = absl::GetFlag(FLAGS_test_tmpdir);
+  int wd = inotify_add_watch(inotify_fd, watch_dir.c_str(), IN_ALL_EVENTS);
   ASSERT_THAT(inotify_fd, Gt(0));
   ASSERT_THAT(wd, Eq(1));
 
   // Perform an event by creating a file in tmpdir.
   std::string file_name = "test_file.tmp";
-  std::string test_file =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/", file_name);
+  std::string test_file = absl::StrCat(watch_dir, "/", file_name);
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
@@ -688,7 +686,7 @@ TEST_F(HostCallTest, TestSchedYield) {
 // it should return 0 since the file is not referring to a terminal.
 TEST_F(HostCallTest, TestIsAtty) {
   std::string test_file =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "test_file.tmp");
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
   int fd =
       open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
   platform::storage::FdCloser fd_closer(fd);
