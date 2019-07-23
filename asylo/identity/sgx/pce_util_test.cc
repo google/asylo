@@ -98,7 +98,6 @@ constexpr char kSerializedRsa3072PublicKeyHex[] =
 constexpr int kBadPceCryptoSuite = 42;
 constexpr int kBadPceSignatureScheme = 42;
 
-using ::testing::Eq;
 using ::testing::Not;
 using ::testing::Optional;
 using ::testing::SizeIs;

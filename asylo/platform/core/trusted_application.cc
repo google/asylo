@@ -57,7 +57,6 @@
 
 using ::asylo::primitives::EntryHandler;
 using ::asylo::primitives::Extent;
-using ::asylo::primitives::MakePrimitiveStatus;
 using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
 using ::asylo::primitives::PrimitiveStatus;

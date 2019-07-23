@@ -41,8 +41,8 @@ SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
     const GenerateSgxRemoteAssertionRequest *request,
     GenerateSgxRemoteAssertionResponse *response) {
   sgx::CodeIdentity code_identity;
-  Status status = ExtractAndCheckPeerSgxCodeIdentity(
-      *context->auth_context().get(), &code_identity);
+  Status status = ExtractAndCheckPeerSgxCodeIdentity(*context->auth_context(),
+                                                     &code_identity);
   if (!status.ok()) {
     return status.ToOtherStatus<::grpc::Status>();
   }

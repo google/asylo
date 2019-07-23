@@ -33,7 +33,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:error_codes",
-        "@com_google_absl//absl/strings",
     ],
 )
 
