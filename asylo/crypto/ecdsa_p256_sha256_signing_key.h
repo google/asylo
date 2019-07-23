@@ -50,6 +50,8 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
 
   // From VerifyingKey.
 
+  bool operator==(const VerifyingKey &other) const override;
+
   SignatureScheme GetSignatureScheme() const override;
 
   StatusOr<std::string> SerializeToDer() const override;

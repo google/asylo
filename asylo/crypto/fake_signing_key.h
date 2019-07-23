@@ -43,6 +43,10 @@ class FakeVerifyingKey : public VerifyingKey {
 
   // From VerifyingKey.
 
+  // Returns true if and only if |other| is a FakeVerifyingKey and
+  // |other| has the same SerializeToDer() and signature scheme as this object.
+  bool operator==(const VerifyingKey &other) const override;
+
   // Returns the signature scheme set at construction.
   SignatureScheme GetSignatureScheme() const override;
 

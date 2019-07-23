@@ -35,6 +35,7 @@
 #include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/fake_signing_key.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -90,6 +91,13 @@ constexpr char kTestVerifyingKeyPem[] =
     R"(-----BEGIN PUBLIC KEY-----
 MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8
 kjfH6o3c1n4ix1zXURnqmqAvds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==
+-----END PUBLIC KEY-----)";
+
+// A different key from kTestVerifyingKeyPem.
+constexpr char kOtherVerifyingKeyPem[] =
+    R"(-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAHmUUiRjaRBFLAiNPXkezj/adUZg
+PhT+dvyvzddfy359Y7+zKolHkL9vEo/mn32i+FOU0vrEIIMFEAISwQ8i2Q==
 -----END PUBLIC KEY-----)";
 
 struct VerifyingKeyParam {
@@ -149,6 +157,54 @@ TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithIncorrectSignatureFails) {
 
   EXPECT_THAT(verifying_key_->Verify(valid_message, invalid_signature),
               Not(IsOk()));
+}
+
+// Verify that operator== fails with a different VerifyingKey implementation.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, EqualsFailsWithDifferentClassKeys) {
+  FakeVerifyingKey other_verifying_key(ECDSA_P256_SHA256, kTestVerifyingKeyDer);
+
+  EXPECT_FALSE(*verifying_key_ == other_verifying_key);
+}
+
+// Verify that operator!= passes with a different VerifyingKey implementation.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, NotEqualsPassesWithDifferentClassKeys) {
+  FakeVerifyingKey other_verifying_key(ECDSA_P256_SHA256, kTestVerifyingKeyDer);
+
+  EXPECT_TRUE(*verifying_key_ != other_verifying_key);
+}
+
+// Verify that operator== passes when given a key created with the same data.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, EqualsSucceedsWithEquivalentKeys) {
+  std::unique_ptr<VerifyingKey> other_verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(other_verifying_key,
+                             GetParam().factory(GetParam().key_data));
+  EXPECT_TRUE(*verifying_key_ == *other_verifying_key);
+}
+
+// Verify that operator== fails when given a key created with different data.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, EqualsFailsWithDifferentKeys) {
+  std::unique_ptr<VerifyingKey> other_verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      other_verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kOtherVerifyingKeyPem));
+  EXPECT_FALSE(*verifying_key_ == *other_verifying_key);
+}
+
+// Verify that operator!= fails when given a key created with the same data.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, NotEqualsFailsWithEquivalentKeys) {
+  std::unique_ptr<VerifyingKey> other_verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(other_verifying_key,
+                             GetParam().factory(GetParam().key_data));
+  EXPECT_FALSE(*verifying_key_ != *other_verifying_key);
+}
+
+// Verify that operator!= passes when given a key created with different data.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, NotEqualsSucceedsWithDifferentKeys) {
+  std::unique_ptr<VerifyingKey> other_verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      other_verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kOtherVerifyingKeyPem));
+  EXPECT_TRUE(*verifying_key_ != *other_verifying_key);
 }
 
 // Verify that GetSignatureScheme() indicates ECDSA P-256 SHA256 for

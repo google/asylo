@@ -34,6 +34,12 @@ class VerifyingKey {
  public:
   virtual ~VerifyingKey() = default;
 
+  virtual bool operator==(const VerifyingKey &other) const = 0;
+
+  virtual bool operator!=(const VerifyingKey &other) const {
+    return !(*this == other);
+  }
+
   // Returns the signature scheme used by this VerifyingKey.
   virtual SignatureScheme GetSignatureScheme() const = 0;
 

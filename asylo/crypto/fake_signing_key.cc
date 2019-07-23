@@ -31,6 +31,28 @@ FakeVerifyingKey::FakeVerifyingKey(
     SignatureScheme scheme, StatusOr<std::string> serialize_to_der_result)
     : scheme_(scheme), serialize_to_der_result_(serialize_to_der_result) {}
 
+bool FakeVerifyingKey::operator==(const VerifyingKey &other) const {
+  FakeVerifyingKey const *other_key =
+      dynamic_cast<FakeVerifyingKey const *>(&other);
+
+  if (other_key == nullptr) {
+    return false;
+  }
+
+  if (other_key->serialize_to_der_result_.status() !=
+      serialize_to_der_result_.status()) {
+    return false;
+  }
+
+  if (serialize_to_der_result_.ok() &&
+      other_key->serialize_to_der_result_.ValueOrDie() !=
+          serialize_to_der_result_.ValueOrDie()) {
+    return false;
+  }
+
+  return other_key->scheme_ == scheme_;
+}
+
 SignatureScheme FakeVerifyingKey::GetSignatureScheme() const { return scheme_; }
 
 StatusOr<std::string> FakeVerifyingKey::SerializeToDer() const {

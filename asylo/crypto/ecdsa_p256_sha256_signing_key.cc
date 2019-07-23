@@ -33,6 +33,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/crypto/sha256_hash.h"
+#include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -104,6 +105,24 @@ EcdsaP256Sha256VerifyingKey::Create(bssl::UniquePtr<EC_KEY> public_key) {
 
   return absl::WrapUnique<EcdsaP256Sha256VerifyingKey>(
       new EcdsaP256Sha256VerifyingKey(std::move(public_key)));
+}
+
+bool EcdsaP256Sha256VerifyingKey::operator==(const VerifyingKey &other) const {
+  EcdsaP256Sha256VerifyingKey const *other_key =
+      dynamic_cast<EcdsaP256Sha256VerifyingKey const *>(&other);
+  if (other_key == nullptr) {
+    return false;
+  }
+
+  const EC_GROUP *group = EC_KEY_get0_group(public_key_.get());
+  const EC_GROUP *other_group = EC_KEY_get0_group(other_key->public_key_.get());
+
+  const EC_POINT *point = EC_KEY_get0_public_key(public_key_.get());
+  const EC_POINT *other_point =
+      EC_KEY_get0_public_key(other_key->public_key_.get());
+
+  return (EC_GROUP_cmp(group, other_group, /*ignored=*/nullptr) == 0) &&
+         (EC_POINT_cmp(group, point, other_point, /*ctx=*/nullptr) == 0);
 }
 
 SignatureScheme EcdsaP256Sha256VerifyingKey::GetSignatureScheme() const {

@@ -35,6 +35,8 @@ namespace {
 
 constexpr char kTestKeyDer[] = "Coffee";
 
+constexpr char kOtherKeyDer[] = "#1";
+
 constexpr char kTestMessage[] = "Fun";
 
 constexpr char kTestMessageSignature[] = "CoffeeFun";
@@ -97,6 +99,74 @@ TEST(FakeSigningKeyTest, VerifyOtherMessageSignatureFails) {
               StatusIs(error::GoogleError::UNAUTHENTICATED));
 }
 
+// Verify that operator== passes when given keys with the same non-OK Status
+// and scheme.
+TEST(FakeSigningKeyTest, EqualsSucceedsWithEquivalentNonOkKeys) {
+  FakeVerifyingKey verifying_key(
+      UNKNOWN_SIGNATURE_SCHEME,
+      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+  FakeVerifyingKey other_key(
+      UNKNOWN_SIGNATURE_SCHEME,
+      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+
+  EXPECT_TRUE(verifying_key == other_key);
+}
+
+// Verify that operator== fails when given keys with the same non-OK Status and
+// different schemes.
+TEST(FakeSigningKeyTest, EqualsFailsWithEquivalentNonOkKeysDifferentSchemes) {
+  FakeVerifyingKey verifying_key(
+      UNKNOWN_SIGNATURE_SCHEME,
+      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+  FakeVerifyingKey other_key(
+      ECDSA_P256_SHA256,
+      Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+
+  EXPECT_FALSE(verifying_key == other_key);
+}
+
+// Verify that operator== passes when given a key created with the same data.
+TEST(FakeSigningKeyTest, EqualsSucceedsWithEquivalentKeys) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  FakeVerifyingKey other_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+
+  EXPECT_TRUE(verifying_key == other_key);
+}
+
+// Verify that operator== fails when given a key created with a different key
+// id.
+TEST(FakeSigningKeyTest, EqualsFailsWithDifferentKeys) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  FakeVerifyingKey other_key(UNKNOWN_SIGNATURE_SCHEME, kOtherKeyDer);
+
+  EXPECT_FALSE(verifying_key == other_key);
+}
+
+// Verify that operator== fails when given a key created with a different
+// scheme.
+TEST(FakeSigningKeyTest, EqualsFailsWithDifferentSchemes) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  FakeVerifyingKey other_key(ECDSA_P256_SHA256, kTestKeyDer);
+
+  EXPECT_FALSE(verifying_key == other_key);
+}
+
+// Verify that operator!= fails when given a key created with the same data.
+TEST(FakeSigningKeyTest, NotEqualsFailsWithEquivalentKeys) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  FakeVerifyingKey other_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+
+  EXPECT_FALSE(verifying_key != other_key);
+}
+
+// Verify that operator!= passes when given a key created with different data.
+TEST(FakeSigningKeyTest, NotEqualsSucceedsWithDifferentKeys) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  FakeVerifyingKey other_key(UNKNOWN_SIGNATURE_SCHEME, kOtherKeyDer);
+
+  EXPECT_TRUE(verifying_key != other_key);
+}
+
 // Verify that GetSignatureScheme() indicates the signature scheme passed at
 // construction time.
 TEST(FakeSigningKeyTest, SignatureScheme) {
@@ -153,6 +223,17 @@ TEST(FakeSigningKeyTest, SigningKeySignFailure) {
   std::vector<uint8_t> signature;
   EXPECT_THAT(signing_key.Sign(kTestMessage, &signature),
               StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+}
+
+// Verify that GetVerifyingKey produces the correct FakeVerifyingKey.
+TEST(FakeSigningKeyTest, SigningKeyGetVerifyingKey) {
+  FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key, signing_key.GetVerifyingKey());
+
+  EXPECT_EQ(*verifying_key,
+            FakeVerifyingKey(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer));
 }
 
 }  // namespace
