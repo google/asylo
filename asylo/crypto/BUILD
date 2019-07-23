@@ -472,6 +472,39 @@ cc_test(
 )
 
 cc_library(
+    name = "fake_signing_key",
+    testonly = 1,
+    srcs = ["fake_signing_key.cc"],
+    hdrs = ["fake_signing_key.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":algorithms_cc_proto",
+        ":signing_key",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+cc_test(
+    name = "fake_signing_key_test",
+    srcs = ["fake_signing_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":fake_signing_key",
+        ":signing_key",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "asymmetric_encryption_key",
     hdrs = ["asymmetric_encryption_key.h"],
     copts = ASYLO_DEFAULT_COPTS,
