@@ -58,9 +58,9 @@ sim_enclave(
 # Unit tests for the host calls. Use this library to run the same set of tests
 # on different enclave backends.
 cc_library(
-    name = "host_call_test_1_lib",
+    name = "host_call_test_lib",
     testonly = 1,
-    srcs = ["host_call_test_1.cc"],
+    srcs = ["host_call_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
@@ -84,9 +84,9 @@ cc_library(
 )
 
 cc_library(
-    name = "host_call_test_2_lib",
+    name = "send_test_lib",
     testonly = 1,
-    srcs = ["host_call_test_2.cc"],
+    srcs = ["send_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
@@ -111,7 +111,7 @@ cc_library(
 
 # Tests host calls against sim backend.
 sim_enclave_test(
-    name = "sim_host_call_test_1",
+    name = "sim_host_call_test",
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"sim": ":sim_test_enclave.so"},
     linkstatic = True,
@@ -119,7 +119,7 @@ sim_enclave_test(
         "--enclave_binary='{sim}'",
     ],
     deps = [
-        ":host_call_test_1_lib",
+        ":host_call_test_lib",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/test:sim_test_backend",
@@ -128,7 +128,7 @@ sim_enclave_test(
 )
 
 sim_enclave_test(
-    name = "sim_host_call_test_2",
+    name = "sim_send_test",
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"sim": ":sim_test_enclave.so"},
     linkstatic = True,
@@ -136,7 +136,7 @@ sim_enclave_test(
         "--enclave_binary='{sim}'",
     ],
     deps = [
-        ":host_call_test_2_lib",
+        ":send_test_lib",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/test:sim_test_backend",
