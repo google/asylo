@@ -30,6 +30,7 @@
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/core/entry_points.h"
+#include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
@@ -39,22 +40,6 @@
 // parameters passed by the untrusted caller are copied by the edger8r-generated
 // code into trusted memory and then passed here. Consequently, there is no
 // possibility for TOCTOU attacks on these parameters.
-
-// Invokes the enclave signal handling entry-point. Returns a non-zero error
-// code on failure.
-int ecall_handle_signal(const char *input, bridge_size_t input_len) {
-  int result = 0;
-  try {
-    result =
-        asylo::__asylo_handle_signal(input, static_cast<size_t>(input_len));
-  } catch (...) {
-    // Abort directly here instead of LOG(FATAL). LOG tries to obtain a mutex,
-    // and acquiring a non-reentrant mutex in signal handling may cause deadlock
-    // if the thread had already obtained that mutex when interrupted.
-    abort();
-  }
-  return result;
-}
 
 // Invokes the enclave snapshotting entry-point. Returns a non-zero error code
 // on failure.
@@ -121,5 +106,6 @@ int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
 int ecall_deliver_signal(void *buffer) {
-  abort();
+  return asylo::primitives::asylo_enclave_call(
+      asylo::primitives::kSelectorAsyloDeliverSignal, buffer);
 }

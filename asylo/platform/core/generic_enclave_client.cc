@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitives.h"
@@ -79,6 +80,15 @@ Status GenericEnclaveClient::Finalize(const char *input, size_t input_len,
   *output_len = output_extent.size();
   output->reset(new char[*output_len]);
   memcpy(output->get(), output_extent.As<char>(), *output_len);
+  return Status::OkStatus();
+}
+
+Status GenericEnclaveClient::DeliverSignal(const char *input,
+                                           size_t input_len) {
+  primitives::MessageWriter in;
+  in.PushByReference(primitives::Extent{input, input_len});
+  ASYLO_RETURN_IF_ERROR(
+      primitive_client_->DeliverSignal(&in, nullptr));
   return Status::OkStatus();
 }
 
@@ -164,6 +174,24 @@ Status GenericEnclaveClient::EnterAndDonateThread() {
     LOG(ERROR) << "EnterAndDonateThread failed " << status;
   }
   return status;
+}
+
+Status GenericEnclaveClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
+  EnclaveSignal enclave_signal;
+  int bridge_signum = ToBridgeSignal(signal.signum());
+  if (bridge_signum < 0) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Failed to convert signum (", signal.signum(),
+                               ") to bridge signum"));
+  }
+  enclave_signal.set_signum(bridge_signum);
+  std::string serialized_enclave_signal;
+  if (!enclave_signal.SerializeToString(&serialized_enclave_signal)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize EnclaveSignal");
+  }
+  return DeliverSignal(serialized_enclave_signal.data(),
+                       serialized_enclave_signal.size());
 }
 
 Status GenericEnclaveClient::DestroyEnclave() {

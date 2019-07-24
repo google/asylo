@@ -82,6 +82,7 @@ cc_library(
         ":entry_selectors",
         ":untrusted_core",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/common:bridge_types",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",

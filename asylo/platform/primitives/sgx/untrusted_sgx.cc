@@ -268,7 +268,7 @@ Status SgxEnclaveClient::DeliverSignalInternal(MessageWriter *input,
                   "Cannot make an enclave call to a closed enclave."};
   }
 
-  ms_ecall_dispatch_trusted_call_t ms;
+  ms_ecall_deliver_signal_t ms;
   SgxParams params;
   ms.ms_buffer = &params;
 

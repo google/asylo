@@ -41,36 +41,6 @@
 namespace asylo {
 
 
-// Enters the enclave and invokes the signal handle entry-point. If the ecall
-// fails, returns a non-OK status.
-static Status handle_signal(sgx_enclave_id_t eid, const char *input,
-                            size_t input_len) {
-  int result;
-  sgx_status_t sgx_status = ecall_handle_signal(
-      eid, &result, input, static_cast<bridge_size_t>(input_len));
-  if (sgx_status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(sgx_status, "Call to ecall_handle_signal failed");
-  } else if (result) {
-    std::string message;
-    switch (result) {
-      case 1:
-        message = "Invalid or unregistered incoming signal";
-        break;
-      case 2:
-        message = "Enclave unable to handle signal in current state";
-        break;
-      case -1:
-        message = "Incoming signal is blocked inside the enclave";
-        break;
-      default:
-        message = "Unexpected error while handling signal";
-    }
-    return Status(error::GoogleError::INTERNAL, message);
-  }
-  return Status::OkStatus();
-}
-
 // Enters the enclave and invokes the snapshotting entry-point. If the ecall
 // fails, return a non-OK status.
 static Status take_snapshot(sgx_enclave_id_t eid, char **output,
@@ -189,25 +159,6 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
     return Status(error::GoogleError::INTERNAL, "Failed to create self loader");
   }
   return std::unique_ptr<EnclaveLoader>(loader.release());
-}
-
-Status SgxClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
-  EnclaveSignal enclave_signal;
-  int bridge_signum = ToBridgeSignal(signal.signum());
-  if (bridge_signum < 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Failed to convert signum (", signal.signum(),
-                               ") to bridge signum"));
-  }
-  enclave_signal.set_signum(bridge_signum);
-  std::string serialized_enclave_signal;
-  if (!enclave_signal.SerializeToString(&serialized_enclave_signal)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize EnclaveSignal");
-  }
-  return handle_signal(GetPrimitiveClient()->GetEnclaveId(),
-                       serialized_enclave_signal.data(),
-                       serialized_enclave_signal.size());
 }
 
 Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {

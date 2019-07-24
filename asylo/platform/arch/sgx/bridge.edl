@@ -58,13 +58,6 @@ enclave {
     exception_handler public int ecall_deliver_signal(
         [user_check] void *buffer);
 
-    // Intended for use by enclave signal implementaion.
-    //
-    // Invokes signal handling entry point.
-    exception_handler public int ecall_handle_signal(
-        [in, size=input_len] const char *input,
-        bridge_size_t input_len);
-
     // Invokes a utility ecall that enters the enclave to take a snapshot.
     // This is a private ecall because it should only be invoked by an
     // ocall(fork).
