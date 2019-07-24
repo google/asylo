@@ -28,7 +28,7 @@ namespace asylo {
 
 StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromServerContext(
     const ::grpc::ServerContext &server_context) {
-  return CreateFromAuthContext(*server_context.auth_context().get());
+  return CreateFromAuthContext(*server_context.auth_context());
 }
 
 StatusOr<EnclaveAuthContext> EnclaveAuthContext::CreateFromAuthContext(

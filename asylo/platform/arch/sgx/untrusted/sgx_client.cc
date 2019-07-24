@@ -120,7 +120,7 @@ static Status transfer_secure_snapshot_key(sgx_enclave_id_t eid,
 StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
-  std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
+  auto client = absl::make_unique<SgxClient>(name);
 
   ASYLO_ASSIGN_OR_RETURN(
       client->primitive_client_,
@@ -142,7 +142,7 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxLoader::Copy() const {
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
-  std::unique_ptr<SgxClient> client = absl::make_unique<SgxClient>(name);
+  auto client = absl::make_unique<SgxClient>(name);
 
   ASYLO_ASSIGN_OR_RETURN(
       client->primitive_client_,

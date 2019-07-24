@@ -32,7 +32,6 @@
 
 using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
-using ::testing::Eq;
 using ::testing::IsEmpty;
 using ::testing::SizeIs;
 

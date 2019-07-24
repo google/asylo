@@ -18,7 +18,6 @@
 
 #include <string.h>
 
-#include "asylo/enclave.pb.h"
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
 #include "asylo/grpc/auth/enclave_credentials_options.h"

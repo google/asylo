@@ -45,8 +45,7 @@ SignalManager *SignalManager::GetInstance() {
 
 Status SignalManager::HandleSignal(int signum, siginfo_t *info,
                                    void *ucontext) {
-  std::unique_ptr<struct sigaction> act =
-      ::absl::make_unique<struct sigaction>(*GetSigAction(signum));
+  auto act = ::absl::make_unique<struct sigaction>(*GetSigAction(signum));
   if (!act) {
     return Status(
         error::GoogleError::INTERNAL,

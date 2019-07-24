@@ -76,7 +76,7 @@ void *ReallocHook(void *ptr, size_t size, void *pool) {
 
 // Free does nothing on the switched heap. User should take caution to avoid
 // mixing use of regular malloc/free with the switched malloc/heap.
-void FreeHook(void *address, void *pool) { return; }
+void FreeHook(void *address, void *pool) {}
 
 }  // namespace
 
