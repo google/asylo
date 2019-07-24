@@ -89,10 +89,10 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072PublicKey(const RSA *rsa);
 StatusOr<std::vector<uint8_t>> SerializePpidek(
     const AsymmetricEncryptionKeyProto &ppidek);
 
-// Creates a REPORTDATA based on |asymmetric_encryption_scheme| and |rsa| that
-// is suitable for use in the PCE's GetPceInfo protocol.
+// Creates and returns a REPORTDATA based on |ppidek| that is suitable for use
+// in the PCE's GetPceInfo protocol.
 StatusOr<Reportdata> CreateReportdataForGetPceInfo(
-    AsymmetricEncryptionScheme asymmetric_encryption_scheme, const RSA *rsa);
+    const AsymmetricEncryptionKeyProto &ppidek);
 
 }  // namespace sgx
 }  // namespace asylo

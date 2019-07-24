@@ -66,8 +66,8 @@ constexpr char kModulusBigEndianHex[] =
     "43b51ae86688da36864bb063cab5";
 
 constexpr char kExpectedReportdata[] =
-    "7d9c51052da08dede50b007ff0c2abcc105761b8252243f3b8f627560401ea970000000000"
-    "000000000000000000000000000000000000000000000000000000";
+    "df63e2c2dfe6baa281c008fce2c4eee28d2dd5943ef9122c871772539d778999"
+    "0000000000000000000000000000000000000000000000000000000000000000";
 
 constexpr char kRsa3072PublicKeyPem[] =
     R"(-----BEGIN PUBLIC KEY-----
@@ -400,53 +400,51 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeyRestoreFromSerializedKey) {
 }
 
 TEST_F(PceUtilTest, CreateReportdataForGetPceInfoSuccess) {
-  std::string modulus = absl::HexStringToBytes(kModulusBigEndianHex);
-  std::string exponent = absl::HexStringToBytes(kExponentBigEndianHex);
-
-  std::vector<uint8_t> public_key;
-  public_key.insert(public_key.end(), modulus.cbegin(), modulus.cend());
-  public_key.insert(public_key.end(), exponent.cbegin(), exponent.cend());
-
-  bssl::UniquePtr<RSA> rsa;
-  ASYLO_ASSERT_OK_AND_ASSIGN(rsa,
-                             ParseRsa3072PublicKey(absl::MakeSpan(public_key)));
-
-  Reportdata reportdata;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      reportdata, CreateReportdataForGetPceInfo(
-                      AsymmetricEncryptionScheme::RSA3072_OAEP, rsa.get()));
-
   Reportdata expected_reportdata;
-  ASYLO_ASSERT_OK(SetTrivialObjectFromHexString(kExpectedReportdata,
-                                                &expected_reportdata.data));
+  ASYLO_ASSERT_OK(SetTrivialObjectFromBinaryString(
+      absl::HexStringToBytes(kExpectedReportdata), &expected_reportdata.data));
+
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  Reportdata reportdata;
+  ASYLO_ASSERT_OK_AND_ASSIGN(reportdata, CreateReportdataForGetPceInfo(ppidek));
+
   EXPECT_EQ(reportdata.data, expected_reportdata.data);
 }
 
 TEST_F(PceUtilTest,
        CreateReportdataForGetPceInfoInvalidAsymmetricEncryptionSchemeFails) {
-  bssl::UniquePtr<RSA> rsa(RSA_new());
-  ASYLO_ASSERT_OK_AND_ASSIGN(rsa, CreateRsaPublicKey(/*number_of_bits=*/3072));
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_encryption_scheme(AsymmetricEncryptionScheme::RSA2048_OAEP);
 
   EXPECT_THAT(
-      CreateReportdataForGetPceInfo(AsymmetricEncryptionScheme::RSA2048_OAEP,
-                                    rsa.get())
-          .status(),
+      CreateReportdataForGetPceInfo(ppidek).status(),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                absl::StrCat("Unsupported encryption scheme: ",
                             AsymmetricEncryptionScheme_Name(
                                 AsymmetricEncryptionScheme::RSA2048_OAEP))));
 }
 
-TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidRsaModulusSizeFails) {
-  bssl::UniquePtr<RSA> rsa(RSA_new());
-  ASYLO_ASSERT_OK_AND_ASSIGN(rsa, CreateRsaPublicKey(/*number_of_bits=*/2048));
+TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidKeyTypeFails) {
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
+
+  EXPECT_THAT(CreateReportdataForGetPceInfo(ppidek).status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "PPIDEK must be an encryption key"));
+}
+
+TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidEncodingFails) {
+  AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
+  ppidek.set_encoding(AsymmetricKeyEncoding::UNKNOWN_ASYMMETRIC_KEY_ENCODING);
 
   EXPECT_THAT(
-      CreateReportdataForGetPceInfo(AsymmetricEncryptionScheme::RSA3072_OAEP,
-                                    rsa.get())
-          .status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
-               absl::StrCat("Invalid modulus size: ", RSA_size(rsa.get()))));
+      CreateReportdataForGetPceInfo(ppidek).status(),
+      StatusIs(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat(
+              "Unsupported key encoding: ",
+              AsymmetricKeyEncoding_Name(
+                  AsymmetricKeyEncoding::UNKNOWN_ASYMMETRIC_KEY_ENCODING))));
 }
 
 }  // namespace

@@ -21,7 +21,9 @@
 #include <openssl/bn.h>
 
 #include <cstdint>
+#include <memory>
 #include <string>
+#include <utility>
 
 #include "absl/base/macros.h"
 #include "absl/strings/str_cat.h"
@@ -175,6 +177,13 @@ StatusOr<std::vector<uint8_t>> SerializePpidek(
   }
 
   AsymmetricEncryptionScheme encryption_scheme = ppidek.encryption_scheme();
+  if (!AsymmetricEncryptionSchemeToPceCryptoSuite(encryption_scheme)
+           .has_value()) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Unsupported encryption scheme: ",
+                     AsymmetricEncryptionScheme_Name(encryption_scheme)));
+  }
   switch (encryption_scheme) {
     case AsymmetricEncryptionScheme::RSA3072_OAEP:
       return SerializeRsa3072Ppidek(ppidek);
@@ -187,39 +196,21 @@ StatusOr<std::vector<uint8_t>> SerializePpidek(
 }
 
 StatusOr<Reportdata> CreateReportdataForGetPceInfo(
-    AsymmetricEncryptionScheme asymmetric_encryption_scheme, const RSA *rsa) {
-  size_t rsa_size = RSA_size(rsa);
-  if (rsa_size != kRsa3072ModulusSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Invalid modulus size: ", rsa_size));
-  }
+    const AsymmetricEncryptionKeyProto &ppidek) {
+  std::vector<uint8_t> data_collector;
+  ASYLO_ASSIGN_OR_RETURN(data_collector, SerializePpidek(ppidek));
 
-  if (asymmetric_encryption_scheme !=
-      AsymmetricEncryptionScheme::RSA3072_OAEP) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Unsupported encryption scheme: ",
-                               AsymmetricEncryptionScheme_Name(
-                                   asymmetric_encryption_scheme)));
-  }
+  // This conversion is guaranteed to produce a value because |ppidek| was
+  // successfully serialized.
+  uint8_t crypto_suite =
+      AsymmetricEncryptionSchemeToPceCryptoSuite(ppidek.encryption_scheme())
+          .value();
 
-  absl::optional<uint8_t> crypto_suite =
-      AsymmetricEncryptionSchemeToPceCryptoSuite(
-          AsymmetricEncryptionScheme::RSA3072_OAEP);
-  if (!crypto_suite.has_value()) {
-    return Status(error::GoogleError::INTERNAL,
-                  absl::StrCat("No conversion from AsymmetricEncryptionScheme "
-                               "to PCE crypto suite for ",
-                               AsymmetricEncryptionScheme_Name(
-                                   asymmetric_encryption_scheme)));
-  }
-
+  data_collector.insert(data_collector.begin(), crypto_suite);
   std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator;
   ASYLO_ASSIGN_OR_RETURN(
       aad_generator,
       AdditionalAuthenticatedDataGenerator::CreateGetPceInfoAadGenerator());
-  std::vector<uint8_t> data_collector;
-  ASYLO_ASSIGN_OR_RETURN(data_collector, SerializeRsa3072PublicKey(rsa));
-  data_collector.insert(data_collector.begin(), crypto_suite.value());
   std::string aad_generate_input(data_collector.cbegin(),
                                  data_collector.cend());
   std::string aad;
