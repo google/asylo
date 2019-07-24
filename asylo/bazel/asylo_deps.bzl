@@ -148,10 +148,9 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("io_abseil_py"):
         http_archive(
             name = "io_abseil_py",
-            # Commit from 2018 January 30.
-            urls = ["https://github.com/abseil/abseil-py/archive/5e343642d987268df199b4c851b7dd3d687ac316.tar.gz"],
-            sha256 = "3c83ba6be3df1ea6d2dd1608830853981d47d2a0faa6c9505e4c8022fc41c912",
-            strip_prefix = "abseil-py-5e343642d987268df199b4c851b7dd3d687ac316",
+            urls = ["https://github.com/abseil/abseil-py/archive/pypi-v0.7.1.tar.gz"],
+            sha256 = "3d0f39e0920379ff1393de04b573bca3484d82a5f8b939e9e83b20b6106c9bbe",
+            strip_prefix = "abseil-py-pypi-v0.7.1",
         )
 
     # Protobuf
