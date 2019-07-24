@@ -47,7 +47,6 @@ cc_test(
     enclave_test_name = "binary_search_enclave_test",
     deps = [
         ":binary_search",
-        ":function_traits",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
@@ -290,7 +289,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":status_cc_proto",
-        ":status_macros",
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",

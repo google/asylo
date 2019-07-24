@@ -103,7 +103,6 @@ cc_library(
     deps = [
         ":metadata",
         "//asylo/platform/primitives",
-        "//asylo/platform/primitives:trusted_primitives",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",

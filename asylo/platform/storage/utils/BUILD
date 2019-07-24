@@ -115,7 +115,6 @@ cc_test(
         ":test_utils",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -132,7 +131,6 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/memory",
     ],
 )
 
@@ -149,7 +147,6 @@ cc_test(
         ":test_utils",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -67,7 +67,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":message_reader_writer",
-        "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/util:asylo_macros",
         "//asylo/util:mutex_guarded",
@@ -84,7 +83,6 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":dispatch_table",
-        "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -133,7 +131,6 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":message_reader_writer",
-        "//asylo/platform/primitives",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],

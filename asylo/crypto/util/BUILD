@@ -41,7 +41,6 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":byte_container_view",
-        "//asylo/util:logging",
         "//asylo/util:status",
     ],
 )

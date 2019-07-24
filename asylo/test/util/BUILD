@@ -176,7 +176,6 @@ cc_library(
         ":enclave_test_launcher",
         ":status_matchers",
         ":test_flags",
-        ":test_main",
         "//asylo:enclave_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
@@ -219,7 +218,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        "//asylo/crypto/util:bytes",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
