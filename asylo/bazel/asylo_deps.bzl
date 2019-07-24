@@ -285,9 +285,9 @@ def asylo_go_deps():
     if not native.existing_rule("io_bazel_rules_go"):
         http_archive(
             name = "io_bazel_rules_go",
-            urls = ["https://github.com/bazelbuild/rules_go/archive/0.18.6.tar.gz"],
-            sha256 = "9084496dde809363c491137e077ace81780463ead0060a0a6c3c4c0f613e9fcb",
-            strip_prefix = "rules_go-0.18.6",
+            urls = ["https://github.com/bazelbuild/rules_go/archive/0.19.1.tar.gz"],
+            sha256 = "9df48dcb181f297255c20b6405bc6a0cab445d8f0fcdc3c2af29f6aa98de727f",
+            strip_prefix = "rules_go-0.19.1",
         )
 
     # go crypto for EKEP's go_binary usage.
