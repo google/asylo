@@ -1354,6 +1354,86 @@ TEST_F(HostCallTest, TestStat) {
   EXPECT_NE(unlink(path.c_str()), -1);
 }
 
+// Tests enc_untrusted_pread64() by reading a non-empty file, ensuring that the
+// return value matches the input length and returned buffer contains the
+// expected characters.
+TEST_F(HostCallTest, TestPread64) {
+  primitives::MessageWriter in;
+
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string content = "hello";
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    EXPECT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  ASSERT_THAT(write(fd, content.c_str(), content.length()),
+              Eq(content.length()));
+  off_t offset = 1;
+  int len = 2;
+
+  in.Push<int>(fd);
+  in.Push<int>(len);
+  in.Push<off_t>(offset);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestPread64, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and buffer.
+  ASSERT_THAT(out.next<int>(), Eq(len));
+  char *buf = out.next().As<char>();
+  // Read is not expected to put eof at the end of buffer.
+  buf[len] = '\0';
+  EXPECT_STREQ(buf, content.substr(offset, len).c_str());
+}
+
+// Tests enc_untrusted_pwrite64() by writing to a non-empty file, ensuring that
+// the return value matches the input length and file is written as expected.
+TEST_F(HostCallTest, TestPwrite64) {
+  primitives::MessageWriter in;
+
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string content = "hello!";
+  std::string message_write = " world!abc";
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    EXPECT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  ASSERT_THAT(write(fd, content.c_str(), content.length()),
+              Eq(content.length()));
+  off_t offset = 5;
+  int len = 7;
+
+  in.Push<int>(fd);
+  in.Push(message_write);
+  in.Push<int>(len);
+  in.Push<off_t>(offset);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestPwrite64, &in, &out));
+
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  ASSERT_THAT(out.next<int>(), Eq(len));
+  char read_buf[20];
+  // The write operation inserts first 7 characters of ' world!abc' from offset
+  // 5(the '!' character) to the file, the result should be 'hello world!'.
+  EXPECT_THAT(pread64(fd, read_buf, 20, 0), Eq(12));
+  read_buf[12] = '\0';
+  EXPECT_THAT(read_buf, StrEq("hello world!"));
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

@@ -524,6 +524,33 @@ PrimitiveStatus TestStat(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestPread64(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+
+  int fd = in->next<int>();
+  int len = in->next<int>();
+  off_t offset = in->next<off_t>();
+  char buf[10];
+
+  out->Push<int>(enc_untrusted_pread64(fd, buf, len, offset));
+  out->Push(buf);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestPwrite64(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
+
+  int fd = in->next<int>();
+  auto buf = in->next();
+  int len = in->next<int>();
+  off_t offset = in->next<off_t>();
+
+  out->Push<int>(enc_untrusted_pwrite64(fd, buf.As<char>(), len, offset));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -649,6 +676,12 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestStat,
       EntryHandler{asylo::host_call::TestStat}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestPread64,
+      EntryHandler{asylo::host_call::TestPread64}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestPwrite64,
+      EntryHandler{asylo::host_call::TestPwrite64}));
   return PrimitiveStatus::OkStatus();
 }
 

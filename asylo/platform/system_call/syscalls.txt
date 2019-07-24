@@ -101,6 +101,10 @@ SYSCALL_DEFINE3(readlink, const char *, path, \out char * [bound:bufsiz], buf,
                 int, bufsiz)
 SYSCALL_DEFINE3(write, unsigned int, fd, const char * [bound:count], buf,
                 size_t, count)
+SYSCALL_DEFINE4(pread64, unsigned int, fd, \out void *, buf, size_t, count, off_t,
+                offset)
+SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void *, buf, size_t, count,
+                off_t, offset)
 
 // Process Management
 // ==================

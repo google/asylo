@@ -293,6 +293,17 @@ int enc_untrusted_sched_yield() {
   return enc_untrusted_syscall(asylo::system_call::kSYS_sched_yield);
 }
 
+int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_pread64, fd, buf, count,
+                               offset);
+}
+
+int enc_untrusted_pwrite64(int fd, const void *buf, size_t count,
+                           off_t offset) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_pwrite64, fd, buf,
+                               count, offset);
+}
+
 int enc_untrusted_isatty(int fd) {
   ::asylo::primitives::MessageWriter input;
   input.Push(fd);
