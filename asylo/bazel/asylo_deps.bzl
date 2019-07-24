@@ -127,9 +127,9 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_googlesource_code_re2"):
         http_archive(
             name = "com_googlesource_code_re2",
-            urls = ["https://github.com/google/re2/archive/2018-03-01.tar.gz"],
-            sha256 = "51dc7ee9d1a68ee0209672ac4bdff56766c56606dfcdd57aed022015c4784178",
-            strip_prefix = "re2-2018-03-01",
+            urls = ["https://github.com/google/re2/archive/2019-07-01.tar.gz"],
+            sha256 = "de6c3ee49b2cecdfd2936af18d6947db36726590e566b5915db3746784c55745",
+            strip_prefix = "re2-2019-07-01",
         )
 
     # Absl for C++
