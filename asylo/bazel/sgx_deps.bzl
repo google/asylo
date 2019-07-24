@@ -39,8 +39,8 @@ def sgx_deps():
     if not native.existing_rule("sgx_dcap"):
         http_archive(
             name = "sgx_dcap",
-            urls = ["https://github.com/intel/SGXDataCenterAttestationPrimitives/archive/DCAP_1.0.1.tar.gz"],
-            sha256 = "54093b468e6340cccbaf24d68f4ea13a409372efe12cad3e0cac889c1ce19604",
-            patches = ["@com_google_asylo//asylo/distrib:sgx_dcap_1_0_1.patch"],
-            strip_prefix = "SGXDataCenterAttestationPrimitives-DCAP_1.0.1",
+            urls = ["https://github.com/intel/SGXDataCenterAttestationPrimitives/archive/DCAP_1.2.tar.gz"],
+            sha256 = "36ae4227056f16d2e3e45b1a9601993ac26a3aaf27762219cbcfa98312a988ce",
+            patches = ["@com_google_asylo//asylo/distrib:sgx_dcap_1_2.patch"],
+            strip_prefix = "SGXDataCenterAttestationPrimitives-DCAP_1.2",
         )

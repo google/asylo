@@ -1,0 +1,345 @@
+# Google's Modifications to Intel's SGX Data Center Attestation Primitives
+
+## Top-level files added
+  * Added `BUILD` file for Bazel support
+
+## Modifications to v1.2
+  * Moved PCE constants out of sgx_pce.h to sgx_pce_constants.h
+  * Added include user_types.h in sgx_ql_ecdsa_quote.h
+--
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
+--- QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
++++ QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
+@@ -0,0 +1,20 @@
++#ifndef _SGX_PCE_CONSTANTS_H_
++#define _SGX_PCE_CONSTANTS_H_
++
++/**
++ * File: sgx_pce_constants.h
++ * Description: Definition of constants used in PCE interface.
++ *
++ * Constants used in the PCE interface
++ */
++
++/* PCE ID for the PCE in this library */
++#define PCE_ID = 0;
++
++/* Crypto_suite */
++#define PCE_ALG_RSA_OAEP_3072 1
++
++/* Signature_scheme */
++#define PCE_NIST_P256_ECDSA_SHA256 0
++
++#endif  // _SGX_PCE_CONSTANTS_H_
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce.h QuoteGeneration/pce_wrapper/inc/sgx_pce.h
+--- QuoteGeneration/pce_wrapper/inc/sgx_pce.h
++++ QuoteGeneration/pce_wrapper/inc/sgx_pce.h
+@@ -40,6 +40,7 @@
+ 
+ #include "sgx_key.h"
+ #include "sgx_report.h"
++#include "sgx_pce_constants.h"
+ 
+ #define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
+ typedef enum _sgx_pce_error_t
+@@ -56,16 +57,6 @@
+ } sgx_pce_error_t;
+ 
+ 
+-/* PCE ID for the PCE in this library */
+-#define PCE_ID = 0;
+-
+-/* Crypto_suite */
+-#define PCE_ALG_RSA_OAEP_3072 1
+-
+-/* Signature_scheme */
+-#define PCE_NIST_P256_ECDSA_SHA256 0
+-
+-
+ //TODO: in qe pce common header
+ /** Typedef enum _sgx_ql_request_policy */ 
+ typedef enum _sgx_ql_request_policy
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
+--- QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
++++ QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
+@@ -40,6 +40,7 @@
+ #define _SGX_QL_ECDSA_QUOTE_H_
+ 
+ #include "sgx_ql_quote.h"
++#include "user_types.h"
+ 
+ /**
+     Class definition of the reference ECDSA-P256 quoting code which implements the quoting interface, IQuote.
+--- /dev/null
++++ BUILD
+@@ -0,0 +1,270 @@
++# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
++# Center Attestation Primitives library for linux.
++
++licenses(["notice"])
++
++exports_files(["LICENSE"])
++
++# Generates code for the untrusted interface to the PCE using the edger8r tool.
++genrule(
++    name = "gen_pce",
++    srcs = ["QuoteGeneration/ae/pce/pce.edl"],
++    outs = [
++        "QuoteGeneration/pce_wrapper/generated/pce_u.c",
++        "QuoteGeneration/pce_wrapper/generated/pce_u.h",
++    ],
++    cmd = (
++        "./$(location @linux_sgx//:sgx_edger8r) $(SRCS) " +
++        "--untrusted --untrusted-dir $(@D)/QuoteGeneration/pce_wrapper/generated/"
++    ),
++    tools = ["@linux_sgx//:sgx_edger8r"],
++)
++
++# Library exposing the edger8r-generated untrusted interface to the PCE.
++cc_library(
++    name = "pce_untrusted",
++    srcs = [
++        "QuoteGeneration/ae/inc/internal/pce_cert.h",
++        "QuoteGeneration/pce_wrapper/generated/pce_u.c",
++    ],
++    hdrs = ["QuoteGeneration/pce_wrapper/generated/pce_u.h"],
++    copts = [
++        "-Iexternal/linux_sgx/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
++    ],
++    # Allow the header to be included as a global "pce_u.h".
++    strip_include_prefix = "QuoteGeneration/pce_wrapper/generated/",
++    deps = [
++        ":common_inc_internal",
++        "@linux_sgx//:common_inc",
++    ],
++)
++
++cc_library(
++    name = "pce_constants",
++    hdrs = ["QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"],
++    copts = [
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
++    ],
++    visibility = ["//visibility:public"],
++)
++
++# Library exposing the PCE wrapper interface.
++cc_library(
++    name = "pce_wrapper",
++    srcs = [
++        "QuoteGeneration/ae/inc/aeerror.h",
++        "QuoteGeneration/pce_wrapper/linux/pce_parser.cpp",
++        "QuoteGeneration/pce_wrapper/pce_wrapper.cpp",
++    ],
++    hdrs = [
++        "QuoteGeneration/pce_wrapper/inc/sgx_pce.h",
++    ],
++    copts = [
++        "-Iexternal/linux_sgx/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/linux",
++        "-Iexternal/sgx_dcap/QuoteGeneration/ae/common",
++        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/parser",
++        "-Iexternal/sgx_dcap/QuoteGeneration/parser/linux",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
++    ],
++    visibility = ["//visibility:public"],
++    deps = [
++        ":common_inc_internal",
++        ":parser",
++        ":pce_constants",
++        ":pce_untrusted",
++        "@linux_sgx//:common_inc",
++        "@linux_sgx//:untrusted_inc",
++        "@linux_sgx//:urts",
++    ],
++)
++
++# Generates code for the untrusted interface to the QE3 using the edger8r tool.
++genrule(
++    name = "gen_qe3",
++    srcs = ["QuoteGeneration/quote_wrapper/quote/enclave/qe3.edl"],
++    outs = [
++        "QuoteGeneration/quote_wrapper/generated/qe3_u.c",
++        "QuoteGeneration/quote_wrapper/generated/qe3_u.h",
++    ],
++    cmd = (
++        "./$(location @linux_sgx//:sgx_edger8r) $(SRCS) " +
++        "--untrusted --untrusted-dir $(@D)/QuoteGeneration/quote_wrapper/generated/"
++    ),
++    tools = ["@linux_sgx//:sgx_edger8r"],
++)
++
++# Includes for quote_wrapper that are common across qe3_untrusted and quote_wrapper.
++cc_library(
++    name = "quote_wrapper_common",
++    hdrs = [
++        "QuoteGeneration/pce_wrapper/inc/sgx_pce.h",
++        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h",
++        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h",
++        "QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h",
++    ],
++    copts = [
++        "-Iexternal/linux_sgx/include",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
++    ],
++    visibility = ["@linux_sgx//:__subpackages__"],
++    deps = [
++        ":pce_constants",
++        "@linux_sgx//:public",
++    ],
++)
++
++# The untrusted component includes for the qe3 enclave.
++cc_library(
++    name = "qe3_untrusted",
++    srcs = [
++        "QuoteGeneration/quote_wrapper/common/inc/user_types.h",
++        "QuoteGeneration/quote_wrapper/generated/qe3_u.c",
++        "QuoteGeneration/quote_wrapper/quote/inc/ecdsa_quote.h",
++    ],
++    hdrs = ["QuoteGeneration/quote_wrapper/generated/qe3_u.h"],
++    copts = [
++        "-Iexternal/linux_sgx/include",
++        "-Iexternal/linux_sgx/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
++    ],
++    # Allow the header to be included as a global "qe3_u.h".
++    strip_include_prefix = "QuoteGeneration/quote_wrapper/generated/",
++    deps = [
++        ":common_inc_internal",
++        ":quote_wrapper_common",
++        "@linux_sgx//:public",
++    ],
++)
++
++# Library exposing quote wrapper headers
++cc_library(
++    name = "quote_wrapper",
++    srcs = [
++        "QuoteGeneration/quote_wrapper/common/inc/user_types.h",
++        "QuoteGeneration/quote_wrapper/generated/qe3_u.h",
++        "QuoteGeneration/quote_wrapper/ql/sgx_dcap_ql_wrapper.cpp",
++        "QuoteGeneration/quote_wrapper/quote/enclave/qe3.h",
++        "QuoteGeneration/quote_wrapper/quote/inc/ecdsa_quote.h",
++        "QuoteGeneration/quote_wrapper/quote/qe_logic.cpp",
++        "QuoteGeneration/quote_wrapper/quote/qe_logic.h",
++        "QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp",
++    ],
++    hdrs = [
++        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h",
++        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h",
++        "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h",
++        "QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h",
++    ],
++    copts = [
++        "-Iexternal/linux_sgx/common/inc",  # Must be first for sgx_urts.h
++        "-Iexternal/linux_sgx/include",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/generated",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/ql/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/enclave",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
++        "-Wno-address",
++    ],
++    # The linker option below works around a linker issue. The PCE interface is
++    # implemented twice in both SGX DCAP and SGX SDK. The latter is used to
++    # build aesmd to avoid circular dependency, which results in compiling
++    # sources from SGX SDK and SGX DCAP together. The implementations are
++    # provided in separate targets in the SGX DCAP and SGX SDK BUILD files,
++    # which leaves some symbols in this library unresolved. Marking the symbol
++    # as undefined here keeps the linker from complaining about those
++    # unresolved symbols.
++    linkopts = ["-Wl,--undefined=sgx_pce_sign_report"],
++    visibility = ["@linux_sgx//:__subpackages__"],
++    deps = [
++        ":common_inc_internal",
++        ":qe3_untrusted",
++        ":quote_wrapper_common",
++        "@linux_sgx//:common_inc",
++        "@linux_sgx//:public",
++        "@linux_sgx//:untrusted_inc",
++    ],
++)
++
++cc_library(
++    name = "parser",
++    srcs = [
++        "QuoteGeneration/parser/linux/elfparser.cpp",
++        "QuoteGeneration/parser/section.cpp",
++    ],
++    hdrs = [
++        "QuoteGeneration/parser/linux/binparser.h",
++        "QuoteGeneration/parser/linux/create_param.h",
++        "QuoteGeneration/parser/linux/elfparser.h",
++        "QuoteGeneration/parser/section.h",
++    ],
++    copts = [
++        "-Iexternal/linux_sgx/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/linux",
++        "-Iexternal/sgx_dcap/QuoteGeneration/parser",
++        "-Iexternal/sgx_dcap/QuoteGeneration/parser/linux",
++    ],
++    textual_hdrs = [
++        "QuoteGeneration/parser/linux/update_global_data.hxx",
++    ],
++    deps = [
++        ":common_inc_internal",
++        "@linux_sgx//:common_inc",
++    ],
++)
++
++cc_library(
++    name = "common_inc_internal",
++    srcs = [
++        "QuoteGeneration/common/src/se_map.c",
++        "QuoteGeneration/common/src/se_thread.c",
++        "QuoteGeneration/common/src/se_trace.c",
++    ],
++    hdrs = [
++        "QuoteGeneration/common/inc/internal/cpputil.h",
++        "QuoteGeneration/common/inc/internal/elf_util.h",
++        "QuoteGeneration/common/inc/internal/elfheader/elf_common.h",
++        "QuoteGeneration/common/inc/internal/elfheader/elfstructs.h",
++        "QuoteGeneration/common/inc/internal/linux/arch.h",
++        "QuoteGeneration/common/inc/internal/linux/global_data.h",
++        "QuoteGeneration/common/inc/internal/linux/metadata.h",
++        "QuoteGeneration/common/inc/internal/linux/rts.h",
++        "QuoteGeneration/common/inc/internal/linux/rts_cmd.h",
++        "QuoteGeneration/common/inc/internal/linux/se_page_attr.h",
++        "QuoteGeneration/common/inc/internal/linux/thread_data.h",
++        "QuoteGeneration/common/inc/internal/se_cdefs.h",
++        "QuoteGeneration/common/inc/internal/se_macro.h",
++        "QuoteGeneration/common/inc/internal/se_map.h",
++        "QuoteGeneration/common/inc/internal/se_memcpy.h",
++        "QuoteGeneration/common/inc/internal/se_thread.h",
++        "QuoteGeneration/common/inc/internal/se_trace.h",
++        "QuoteGeneration/common/inc/internal/se_types.h",
++        "QuoteGeneration/common/inc/internal/uncopyable.h",
++        "QuoteGeneration/common/inc/internal/util.h",
++    ],
++    copts = [
++        "-Iexternal/linux_sgx/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/linux",
++        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/elfheader",
++    ],
++    # The contents of inst.h only makes sense if arch.h is included.
++    textual_hdrs = ["QuoteGeneration/common/inc/internal/linux/inst.h"],
++    deps = [
++        "@linux_sgx//:common_inc",
++    ],
++)

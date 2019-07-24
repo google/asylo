@@ -40,7 +40,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_macros.h"
-#include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce_constants.h"
+#include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
 
 namespace asylo {
 namespace sgx {

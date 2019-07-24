@@ -3316,8 +3316,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +]
 +
 +PSW_COMMON_INCLUDES = [
-+    "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/common/inc",
-+    "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
++    "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
++    "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +    "-Iexternal/linux_sgx/psw/ae/aesm_service/source/common",
 +    "-Iexternal/linux_sgx/psw/ae/aesm_service/source/core/ipc",
 +    "-Iexternal/linux_sgx/psw/uae_service/uae_wrapper/inc",
@@ -3373,9 +3373,9 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Iexternal/linux_sgx/common/inc/internal/linux",
 +        "-Iexternal/linux_sgx/external/vtune/linux/include",
 +        "-Iexternal/linux_sgx/external/vtune/linux/sdk/src/ittnotify",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/quote/src",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/common/inc",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +        "-Iexternal/linux_sgx/psw/ae/aesm_service/source/interfaces",
 +        "-Iexternal/linux_sgx/psw/ae/inc",
 +        "-Iexternal/linux_sgx/psw/ae/inc/internal",
@@ -4078,8 +4078,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Iexternal/linux_sgx/external/epid-sdk",
 +        "-Iexternal/linux_sgx/common/inc/internal",
 +        "-Iexternal/linux_sgx/psw/ae/inc/internal",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/psw/quote_wrapper/common/inc",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/psw/pce_wrapper/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
++        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +        "-Iexternal/boringssl",
 +    ],
 +    deps = [

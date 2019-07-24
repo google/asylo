@@ -22,7 +22,7 @@
 
 #include "include/sgx_key.h"
 #include "include/sgx_report.h"
-#include "QuoteGeneration/psw/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
 
 namespace asylo {
 namespace sgx {
