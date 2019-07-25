@@ -19,8 +19,6 @@
 #ifndef ASYLO_PLATFORM_HOST_CALL_TEST_ENCLAVE_TEST_SELECTORS_H_
 #define ASYLO_PLATFORM_HOST_CALL_TEST_ENCLAVE_TEST_SELECTORS_H_
 
-#include <cstdint>
-
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/system_call/sysno.h"
 
