@@ -510,16 +510,57 @@ PrimitiveStatus TestUSleep(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestStat(void *context, MessageReader *in, MessageWriter *out) {
+// Push meaningful stat attributes to MessageWriter.
+void PushStatAttributes(MessageWriter *out, struct stat *st) {
+  int mode = st->st_mode;
+  int kLinux_mode;
+  TokLinuxFileModeFlag(&mode, &kLinux_mode);
+
+  out->Push<uint64_t>(st->st_atime);
+  out->Push<int64_t>(st->st_blksize);
+  out->Push<int64_t>(st->st_blocks);
+  out->Push<uint64_t>(st->st_mtime);
+  out->Push<uint64_t>(st->st_dev);
+  out->Push<uint32_t>(st->st_gid);
+  out->Push<uint64_t>(st->st_ino);
+  out->Push<uint32_t>(kLinux_mode);
+  out->Push<uint64_t>(st->st_ctime);
+  out->Push<uint64_t>(st->st_nlink);
+  out->Push<uint64_t>(st->st_rdev);
+  out->Push<int64_t>(st->st_size);
+  out->Push<uint32_t>(st->st_uid);
+}
+
+PrimitiveStatus TestFstat(void *context, MessageReader *in,
+                         MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  struct stat st;
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_fstat(fd, &st));
+  PushStatAttributes(out, &st);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestLstat(void *context, MessageReader *in,
+                         MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  struct stat st;
+  const auto path_name = in->next();
+  out->Push<int>(enc_untrusted_lstat(path_name.As<char>(), &st));
+  PushStatAttributes(out, &st);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestStat(void *context, MessageReader *in,
+                         MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   struct stat st;
   const auto path_name = in->next();
   out->Push<int>(enc_untrusted_stat(path_name.As<char>(), &st));
-  int mode = st.st_mode;
-  int kLinux_mode;
-  TokLinuxFileModeFlag(&mode, &kLinux_mode);
-  out->Push<int>(kLinux_mode);
+  PushStatAttributes(out, &st);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -672,6 +713,10 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestUSleep,
       EntryHandler{asylo::host_call::TestUSleep}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestFstat, EntryHandler{asylo::host_call::TestFstat}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestLstat, EntryHandler{asylo::host_call::TestLstat}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestStat, EntryHandler{asylo::host_call::TestStat}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(

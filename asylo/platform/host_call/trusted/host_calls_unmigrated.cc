@@ -329,10 +329,34 @@ int enc_untrusted_usleep(useconds_t usec) {
   return output.next<int>();
 }
 
+int enc_untrusted_fstat(int fd, struct stat *statbuf) {
+  struct kernel_stat stat_kernel;
+  int result = enc_untrusted_syscall(asylo::system_call::kSYS_fstat, fd,
+                                     &stat_kernel);
+  FromKernelStat(&stat_kernel, statbuf);
+  int kLinux_mode = stat_kernel.kernel_st_mode;
+  int mode;
+  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
+  statbuf->st_mode = mode;
+  return result;
+}
+
+int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
+  struct kernel_stat stat_kernel;
+  int result = enc_untrusted_syscall(asylo::system_call::kSYS_lstat, pathname,
+                                     &stat_kernel);
+  FromKernelStat(&stat_kernel, statbuf);
+  int kLinux_mode = stat_kernel.kernel_st_mode;
+  int mode;
+  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
+  statbuf->st_mode = mode;
+  return result;
+}
+
 int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   struct kernel_stat stat_kernel;
   int result = enc_untrusted_syscall(asylo::system_call::kSYS_stat, pathname,
-                               &stat_kernel);
+                                     &stat_kernel);
   FromKernelStat(&stat_kernel, statbuf);
   int kLinux_mode = stat_kernel.kernel_st_mode;
   int mode;

@@ -84,6 +84,42 @@ class HostCallTest : public ::testing::Test {
     EXPECT_TRUE(client_->IsClosed());
   }
 
+  // Compares two struct stat, returning |true| if they are equal, and |false|
+  // otherwise.
+  bool EqualsStat(const struct stat *st, const struct stat *st_expected) {
+      return st->st_atime == st_expected->st_atime &&
+        st->st_blksize == st_expected->st_blksize &&
+        st->st_blocks == st_expected->st_blocks &&
+        st->st_mtime == st_expected->st_mtime &&
+        st->st_dev == st_expected->st_dev &&
+        st->st_gid == st_expected->st_gid &&
+        st->st_ino == st_expected->st_ino &&
+        st->st_mode == st_expected->st_mode &&
+        st->st_ctime == st_expected->st_ctime &&
+        st->st_nlink == st_expected->st_nlink &&
+        st->st_rdev == st_expected->st_rdev &&
+        st->st_size == st_expected->st_size &&
+        st->st_uid == st_expected->st_uid;
+}
+
+// Fills the struct stat with the information from MessageReader.
+  void LoadStatFromMessageReader(primitives::MessageReader *out,
+                                 struct stat *st) {
+      st->st_atime = out->next<uint64_t>();
+      st->st_blksize = out->next<int64_t>();
+      st->st_blocks = out->next<int64_t>();
+      st->st_mtime = out->next<uint64_t>();
+      st->st_dev = out->next<uint64_t>();
+      st->st_gid = out->next<uint32_t>();
+      st->st_ino = out->next<uint64_t>();
+      st->st_mode = out->next<uint32_t>();
+      st->st_ctime = out->next<uint64_t>();
+      st->st_nlink = out->next<uint64_t>();
+      st->st_rdev = out->next<uint64_t>();
+      st->st_size = out->next<int64_t>();
+      st->st_uid = out->next<uint32_t>();
+  }
+
   std::shared_ptr<primitives::Client> client_;
 };
 
@@ -1325,6 +1361,74 @@ TEST_F(HostCallTest, TestUSleep) {
   EXPECT_LE(duration, 1200);
 }
 
+// Tests enc_untrusted_fstat() by creating a file and get stat of it, ensuring
+// that the return value is 0 and returned stat contains expected value.
+TEST_F(HostCallTest, TestFstat) {
+  std::string path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
+      "/test_file.tmp");
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    ASSERT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  primitives::MessageWriter in;
+
+  in.Push<int>(fd);
+  primitives::MessageReader out;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFstat, &in, &out));
+  ASSERT_THAT(out, SizeIs(14));  // Contains return value and 13 result stat
+                                 // attributes.
+  ASSERT_THAT(out.next<int>(), Eq(0));
+
+  struct stat st, result_st;
+  stat(path.c_str(), &st);
+  LoadStatFromMessageReader(&out, &result_st);
+  ASSERT_THAT(EqualsStat(&result_st, &st), Eq(true));
+  EXPECT_NE(unlink(path.c_str()), -1);
+}
+
+// Tests enc_untrusted_lstat() by creating a file and get the stat from its
+// symlinked path, ensuring that the return value is 0 and returned stat
+// contains expected value.
+TEST_F(HostCallTest, TestLstat) {
+  std::string path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
+      "/test_file.tmp");
+  std::string sym_path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
+      "/test_symlink.tmp");
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    ASSERT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  ASSERT_NE(symlink(path.c_str(), sym_path.c_str()), -1);
+  primitives::MessageWriter in;
+
+  in.Push(sym_path);
+  primitives::MessageReader out;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStat, &in, &out));
+  ASSERT_THAT(out, SizeIs(14));  // Contains return value and 13 result stat
+                                 // attributes.
+  ASSERT_THAT(out.next<int>(), Eq(0));
+
+  struct stat st, result_st;
+  stat(path.c_str(), &st);
+  LoadStatFromMessageReader(&out, &result_st);
+  ASSERT_THAT(EqualsStat(&result_st, &st), Eq(true));
+  EXPECT_NE(unlink(path.c_str()), -1);
+}
+
 // Tests enc_untrusted_stat() by creating a file and get stat of it, ensuring
 // that the return value is 0 and returned stat contains expected value.
 TEST_F(HostCallTest, TestStat) {
@@ -1346,11 +1450,14 @@ TEST_F(HostCallTest, TestStat) {
   primitives::MessageReader out;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStat, &in, &out));
-  ASSERT_THAT(out, SizeIs(2));  // Contains return value and result stat.
+  ASSERT_THAT(out, SizeIs(14));  // Contains return value and 13 result stat
+                                 // attributes.
   ASSERT_THAT(out.next<int>(), Eq(0));
-  mode_t mask = umask(0777);
-  umask(mask);
-  ASSERT_THAT(out.next<int>() & DEFFILEMODE, Eq(DEFFILEMODE & ~mask));
+
+  struct stat st, result_st;
+  stat(path.c_str(), &st);
+  LoadStatFromMessageReader(&out, &result_st);
+  ASSERT_THAT(EqualsStat(&result_st, &st), Eq(true));
   EXPECT_NE(unlink(path.c_str()), -1);
 }
 

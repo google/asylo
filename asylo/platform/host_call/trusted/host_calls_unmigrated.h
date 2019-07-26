@@ -81,6 +81,8 @@ mode_t enc_untrusted_umask(mode_t mask);
 int enc_untrusted_chmod(const char *path, mode_t mode);
 int enc_untrusted_fchmod(int fd, mode_t mode);
 int enc_untrusted_sched_yield();
+int enc_untrusted_fstat(int fd, struct stat *statbuf);
+int enc_untrusted_lstat(const char *pathname, struct stat *statbuf);
 int enc_untrusted_stat(const char *pathname, struct stat *statbuf);
 int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset);
 int enc_untrusted_pwrite64(int fd, const void *buf, size_t count, off_t offset);
