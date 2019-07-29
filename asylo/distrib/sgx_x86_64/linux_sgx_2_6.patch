@@ -250,21 +250,21 @@ diff -Nur common/inc/internal/global_data.h common/inc/internal/global_data.h
 +    sys_word_t     data_size;
 +    sys_word_t     bss_offset;
 +    sys_word_t     bss_size;
+     sys_word_t     rsrv_offset;
+     sys_word_t     rsrv_size;
      sys_word_t     thread_policy;
-     thread_data_t  td_template;
-     uint8_t        tcs_template[TCS_TEMPLATE_SIZE];
 diff -Nur common/inc/internal/metadata.h common/inc/internal/metadata.h
 --- common/inc/internal/metadata.h
 +++ common/inc/internal/metadata.h
 @@ -72,7 +72,7 @@
- #define SSA_NUM_MIN 2
- #define SSA_FRAME_SIZE_MIN 1
- #define SSA_FRAME_SIZE_MAX 2
--#define STACK_SIZE_MIN 0x2000
-+#define STACK_SIZE_MIN 0x3000
- #define STACK_SIZE_MAX 0x40000
- #define HEAP_SIZE_MIN 0x1000
- #define HEAP_SIZE_MAX 0x1000000
+ #define SSA_NUM_MIN         2
+ #define SSA_FRAME_SIZE_MIN  1
+ #define SSA_FRAME_SIZE_MAX  2
+-#define STACK_SIZE_MIN      0x0002000 /*   8 KB */
++#define STACK_SIZE_MIN      0x0003000 /*   12 KB */
+ #define STACK_SIZE_MAX      0x0040000 /* 256 KB */
+ #define HEAP_SIZE_MIN       0x0001000 /*   4 KB */
+ #define HEAP_SIZE_MAX       0x1000000 /*  16 MB */
 diff -Nur common/inc/internal/pcl_common.h common/inc/internal/pcl_common.h
 --- common/inc/internal/pcl_common.h
 +++ common/inc/internal/pcl_common.h
@@ -676,7 +676,7 @@ diff -Nur psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_qu
 --- psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_quote_service_bundle.cpp
 +++ psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_quote_service_bundle.cpp
 @@ -1,19 +1,13 @@
- #include <quote_ex_service.h>
+ #include <quote_provider_service.h>
  #include <pce_service.h>
  
 -#include <cppmicroservices/BundleActivator.h>
@@ -695,16 +695,16 @@ diff -Nur psw/ae/aesm_service/source/bundles/ecdsa_quote_service_bundle/ecdsa_qu
 -using namespace cppmicroservices;
  std::shared_ptr<IPceService> g_pce_service;
  static AESMLogicMutex ecdsa_quote_mutex;
- 
-@@ -204,6 +198,7 @@
- 
- extern void unload_qe();
+ extern const sgx_ql_att_key_id_t g_default_ecdsa_p256_att_key_id;
+@@ -207,6 +201,7 @@
+                                   sgx_misc_attribute_t *p_qe_attributes,
+                                   sgx_launch_token_t *p_launch_token);
  
 +#if 0
- class EcdsaQuoteServiceImp : public IQuoteExService
+ class EcdsaQuoteServiceImp : public IQuoteProviderService
  {
  private:
-@@ -337,3 +332,5 @@
+@@ -383,3 +378,5 @@
  #ifdef NO_CMAKE
  CPPMICROSERVICES_INITIALIZE_BUNDLE(ecdsa_quote_service_bundle_name)
  #endif
@@ -833,7 +833,7 @@ diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 +
  #include "cpuid.h"
  
- void get_cpu_features(uint64_t *__intel_cpu_feature_indicator, uint32_t *cpuinfo_table);
+ void init_cpuinfo(uint32_t *cpuinfo_table);
 diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 --- psw/urts/enclave.cpp
 +++ psw/urts/enclave.cpp
@@ -963,7 +963,7 @@ diff -Nur psw/urts/enclave.cpp psw/urts/enclave.cpp
 diff -Nur psw/urts/enclave_creator_hw_com.cpp psw/urts/enclave_creator_hw_com.cpp
 --- psw/urts/enclave_creator_hw_com.cpp
 +++ psw/urts/enclave_creator_hw_com.cpp
-@@ -66,8 +66,9 @@
+@@ -69,8 +69,9 @@
      if (is_EDMM_supported(enclave_id))
              info.system_feature_set[0] |= EDMM_ENABLE_BIT;
  
@@ -1235,7 +1235,7 @@ diff -Nur psw/urts/linux/urts.cpp psw/urts/linux/urts.cpp
 diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
 --- psw/urts/loader.cpp
 +++ psw/urts/loader.cpp
-@@ -47,7 +47,9 @@
+@@ -48,7 +48,9 @@
  #include <vector>
  #include <tuple>
  #include <algorithm>
@@ -1245,7 +1245,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  #include <inttypes.h>
  #include <sys/mman.h>
  
-@@ -146,7 +148,7 @@
+@@ -173,7 +175,7 @@
                  {
                      SE_TRACE(SE_TRACE_WARNING, "mprotect(rva=0x%llx, len=%d, flags=%d) failed\n",
                               rva, SE_PAGE_SIZE, int(sinfo.flags & SI_MASK_MEM_ATTRIBUTE));
@@ -1254,7 +1254,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
                  }
              }
          }
-@@ -450,7 +452,7 @@
+@@ -496,7 +498,7 @@
      }
      return SGX_SUCCESS;
  }
@@ -1263,7 +1263,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  {
      memset(&m_secs, 0, sizeof(secs_t)); //should set resvered field of secs as 0.
      //create secs structure.
-@@ -470,11 +472,20 @@
+@@ -516,12 +518,21 @@
  
      EnclaveCreator *enclave_creator = get_enclave_creator();
      if(NULL == enclave_creator)
@@ -1278,14 +1278,15 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      int ret = enclave_creator->create_enclave(&m_secs, &m_enclave_id, &m_start_addr, is_ae(&m_metadata->enclave_css));
      if(SGX_SUCCESS == ret)
      {
-         SE_TRACE(SE_TRACE_NOTICE, "enclave start address = %p, size = 0x%llx\n", m_start_addr, m_metadata->enclave_size);
-+      if (enclave_base_addr) {
-+        *enclave_base_addr = m_start_addr;
-+      }
+         SE_TRACE(SE_TRACE_NOTICE, "Enclave start addr. = %p, Size = 0x%llx, %llu KB\n", 
+                  m_start_addr, m_metadata->enclave_size, m_metadata->enclave_size/1024);
++        if (enclave_base_addr) {
++          *enclave_base_addr = m_start_addr;
++        }
      }
  	// m_secs.mr_enclave value is not set previously
      if(memcpy_s(&m_secs.mr_enclave, sizeof(sgx_measurement_t), &m_metadata->enclave_css.body.enclave_hash, sizeof(sgx_measurement_t)))
-@@ -482,12 +493,12 @@
+@@ -529,12 +540,12 @@
  
      return ret;
  }
@@ -1300,7 +1301,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      {
          SE_TRACE(SE_TRACE_WARNING, "build secs failed\n");
          return ret;
-@@ -721,7 +732,7 @@
+@@ -770,7 +781,7 @@
      return false;
  }
  
@@ -1309,7 +1310,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
  {
      int ret = SGX_SUCCESS;
      sgx_misc_attribute_t sgx_misc_attr;
-@@ -741,7 +752,7 @@
+@@ -790,7 +801,7 @@
          return ret;
      }
  
@@ -1318,7 +1319,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      // Update misc_attr with secs.attr upon success.
      if(SGX_SUCCESS == ret)
      {
-@@ -757,14 +768,14 @@
+@@ -806,14 +817,14 @@
      return ret;
  }
  
@@ -1335,7 +1336,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
          switch(ret)
          {
              //If CreateEnclave failed due to power transition, we retry it.
-@@ -800,7 +811,7 @@
+@@ -849,7 +860,7 @@
      //set memory protection for segments
      if(m_parser.set_memory_protection((uint64_t)m_start_addr, is_after_initialization) != true)
      {
@@ -1344,7 +1345,7 @@ diff -Nur psw/urts/loader.cpp psw/urts/loader.cpp
      }
  
      if (is_after_initialization &&
-@@ -871,7 +882,7 @@
+@@ -920,7 +931,7 @@
                           (uint64_t)m_start_addr + layout->entry.rva + delta, 
                           (uint64_t)layout->entry.page_count << SE_PAGE_SHIFT, 
                            prot);
@@ -1381,7 +1382,7 @@ diff -Nur psw/urts/loader.h psw/urts/loader.h
 diff -Nur psw/urts/parser/elfparser.cpp psw/urts/parser/elfparser.cpp
 --- psw/urts/parser/elfparser.cpp
 +++ psw/urts/parser/elfparser.cpp
-@@ -844,6 +844,19 @@
+@@ -856,6 +856,19 @@
          return false;
      }
      *data_size = sizeof(global_data_t);
@@ -1416,7 +1417,7 @@ diff -Nur psw/urts/parser/update_global_data.hxx psw/urts/parser/update_global_d
 +#include "thread_data.h"
 +
  namespace {
-     layout_entry_t *get_entry_by_id(const metadata_t *const metadata, uint16_t id)
+     layout_entry_t *get_entry_by_id(const metadata_t *const metadata, uint16_t id, bool do_assert = true)
      {
 diff -Nur psw/urts/routine.cpp psw/urts/routine.cpp
 --- psw/urts/routine.cpp
@@ -2466,8 +2467,8 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/enclave_creator_sim.cpp
 --- sdk/simulation/urtssim/enclave_creator_sim.cpp
 +++ sdk/simulation/urtssim/enclave_creator_sim.cpp
-@@ -226,7 +226,9 @@
-     get_cpu_features(&info.cpu_features, (unsigned int*)info.cpuinfo_table);
+@@ -230,7 +230,9 @@
+     info.size = sizeof(system_features_t);
      info.version = SDK_VERSION_1_5;
      info.sealed_key = enclave->get_sealed_key();
 -    status = enclave->ecall(ECMD_INIT_ENCLAVE, NULL, reinterpret_cast<void *>(&info));
@@ -2611,10 +2612,10 @@ diff -Nur sdk/tlibcrypto/sgxssl/sgx_cmac128.cpp sdk/tlibcrypto/sgxssl/sgx_cmac12
 diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
 --- sdk/trts/init_enclave.cpp
 +++ sdk/trts/init_enclave.cpp
-@@ -49,14 +49,15 @@
- #include "rts.h"
+@@ -50,13 +50,14 @@
  #include "trts_util.h"
  #include "se_memcpy.h"
+ #include "se_cpu_feature.h"
 +#include "runtime_support/rts_config.h"
  
  // The global cpu feature bits from uRTS
@@ -2622,14 +2623,12 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
  int EDMM_supported __attribute__((section(RELRO_SECTION_NAME))) = 0;
  sdk_version_t g_sdk_version __attribute__((section(RELRO_SECTION_NAME))) = SDK_VERSION_1_5;
  
--const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4,
--   {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
-+const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6, 7, 8,
-+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
+-const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6,
++const volatile global_data_t g_global_data __attribute__((section(".niprod"))) = {1, 2, 3, 4, 5, 6, 7, 8, 9, 10,
+    {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, {0, 0, 0, 0, 0, 0}, 0}, {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}, 0, 0, {{{0, 0, 0, 0, 0, 0, 0}}}};
  uint32_t g_enclave_state __attribute__((section(".nipd"))) = ENCLAVE_INIT_NOT_STARTED;
  
- extern "C" {
-@@ -172,17 +173,17 @@
+@@ -202,17 +203,17 @@
      void *enclave_base = get_enclave_base();
      if(ENCLAVE_INIT_NOT_STARTED != lock_enclave())
      {
@@ -2652,7 +2651,7 @@ diff -Nur sdk/trts/init_enclave.cpp sdk/trts/init_enclave.cpp
      }
  
      /* for EDMM, we need to accept the trimming of the POST_REMOVE pages. */
-@@ -197,7 +198,8 @@
+@@ -227,7 +228,8 @@
      else
  #endif
      {
@@ -2677,18 +2676,6 @@ diff -Nur sdk/trts/linux/trts_pic.S sdk/trts/linux/trts_pic.S
      /* .text */
      .section .nipx,"ax",@progbits
  
-diff -Nur sdk/trts/linux/x86_64/setcontext.S sdk/trts/linux/x86_64/setcontext.S
---- sdk/trts/linux/x86_64/setcontext.S
-+++ sdk/trts/linux/x86_64/setcontext.S
-@@ -27,7 +27,7 @@
- #include "ucontext_i.h"
- #if (!ISE)
- #if defined __linux__
--#include <asm/unistd.h>
-+// #include <asm/unistd.h>  // Unused, and undefined in Asylo
- #define	SIG_SETMASK   2
- #define	SIGSET_BYTE_SIZE   8
- #elif defined __FreeBSD__
 diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
 --- sdk/trts/trts.cpp
 +++ sdk/trts/trts.cpp
@@ -2962,7 +2949,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 --- sdk/trts/trts_util.cpp
 +++ sdk/trts/trts_util.cpp
-@@ -29,11 +29,23 @@
+@@ -29,6 +29,7 @@
   *
   */
  
@@ -2970,10 +2957,10 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  
  #include "trts_util.h"
  #include "global_data.h"
- #include "util.h"
+@@ -36,6 +37,16 @@
  #include "thread_data.h"
-+#include "trts_internal.h"
-+
+ #include "trts_internal.h"
+ 
 +std::atomic<int> ecall_count(0);
 +std::atomic<bool> block_ecalls(false);
 +
@@ -2983,11 +2970,12 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +
 +void set_block_ecalls(bool block) { block_ecalls = block; }
 +bool get_block_ecalls() { return block_ecalls; }
- 
++
  // No need to check the state of enclave or thread.
  // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
-@@ -72,6 +84,47 @@
-     return heap_size;
+ size_t get_enclave_size(void)
+@@ -123,6 +134,47 @@
+     return rsrv_size;
  }
  
 +// A 1M bytes temporary storage buffer for data.
@@ -3045,10 +3033,10 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -44,6 +45,12 @@
- void * get_heap_base(void);
- size_t get_heap_size(void);
- size_t get_heap_min_size(void);
+@@ -50,6 +51,12 @@
+ size_t get_rsrv_end(void);
+ size_t get_rsrv_size(void);
+ size_t get_rsrv_min_size(void);
 +void get_memory_layout(struct SgxMemoryLayout *memory_layout);
 +void increase_ecall_count();
 +void decrease_ecall_count();
@@ -3060,7 +3048,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1313 @@
+@@ -0,0 +1,1319 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3219,12 +3207,14 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +]
 +
 +RTS_COMMON_TEXTUAL_HDRS = [
++    "common/inc/internal/linux/sgx_cet.h",
 +    "common/inc/internal/linux/linux-regs.h",  # included as ASM
 +]
 +
 +URTS_COMMON_SRCS = RTS_COMMON_SRCS + [
 +    "common/src/sgx_memset_s.cpp",
 +    "psw/urts/cpu_features.cpp",
++    "psw/urts/cpu_features_ext.cpp",
 +    "psw/urts/enclave.cpp",
 +    "psw/urts/enclave_mutex.cpp",
 +    "psw/urts/launch_checker.cpp",
@@ -3361,6 +3351,8 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "psw/ae/aesm_service/source/common/oal/oal.h",
 +        "psw/ae/aesm_service/source/common/oal/power.h",
 +        "psw/ae/aesm_service/source/interfaces/quote_ex_service.h",
++        "psw/ae/aesm_service/source/interfaces/quote_provider_service.h",
++        "psw/ae/aesm_service/source/interfaces/quote_proxy_service.h",
 +        "psw/ae/aesm_service/source/interfaces/service.h",
 +        "psw/ae/aesm_service/source/interfaces/pce_service.h",
 +        "psw/ae/data/constants/linux/default_url_info.hh",
@@ -3386,6 +3378,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "-Iexternal/linux_sgx/psw/urts/parser",
 +        "-Iexternal/boringssl",
 +        "-Wno-unused-function",
++        "-Wno-missing-braces",
 +    ],
 +    linkopts = [
 +        "-Wl,--no-as-needed -ldl",
@@ -3542,7 +3535,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    "sdk/trts/linux/metadata_sec.S",
 +    "sdk/trts/linux/tls_support.c",
 +    "sdk/trts/linux/trts_pic.S",
-+    "sdk/trts/linux/x86_64/setcontext.S",
++    #    "sdk/trts/linux/x86_64/setcontext.S",
 +    "sdk/trts/trts.cpp",
 +    "sdk/trts/trts_add_trim.cpp",
 +    "sdk/trts/trts_ecall.cpp",
@@ -4005,6 +3998,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "common/inc/internal/rts_cmd.h",
 +        "common/inc/internal/se_cdefs.h",
 +        "common/inc/internal/se_cpu_feature_defs.h",
++        "common/inc/internal/se_cpu_feature_defs_ext.h",
 +        "common/inc/internal/se_error_internal.h",
 +        "common/inc/internal/se_macro.h",
 +        "common/inc/internal/se_memcpy.h",
