@@ -93,6 +93,22 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "pck_certificates_proto",
+    srcs = ["pck_certificates.proto"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":tcb_proto",
+        "//asylo/crypto:certificate_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "pck_certificates_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":pck_certificates_proto"],
+)
+
+proto_library(
     name = "local_assertion_proto",
     srcs = ["local_assertion.proto"],
 )
