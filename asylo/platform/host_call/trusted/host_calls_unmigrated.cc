@@ -328,8 +328,8 @@ int enc_untrusted_usleep(useconds_t usec) {
 
 int enc_untrusted_fstat(int fd, struct stat *statbuf) {
   struct kernel_stat stat_kernel;
-  int result = enc_untrusted_syscall(asylo::system_call::kSYS_fstat, fd,
-                                     &stat_kernel);
+  int result =
+      enc_untrusted_syscall(asylo::system_call::kSYS_fstat, fd, &stat_kernel);
   FromKernelStat(&stat_kernel, statbuf);
   int kLinux_mode = stat_kernel.kernel_st_mode;
   int mode;
@@ -360,6 +360,18 @@ int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   FromkLinuxFileModeFlag(&kLinux_mode, &mode);
   statbuf->st_mode = mode;
   return result;
+}
+
+int enc_untrusted_pipe2(int pipefd[2], int flags) {
+  if (flags & ~(O_CLOEXEC | O_DIRECT | O_NONBLOCK)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  int kLinux_flags;
+  TokLinuxFileStatusFlag(&flags, &kLinux_flags);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_pipe2, pipefd,
+                               kLinux_flags);
 }
 
 }  // extern "C"

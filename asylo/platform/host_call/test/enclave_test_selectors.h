@@ -118,6 +118,7 @@ constexpr uint64_t kTestPread64 =
     kFirstSelector + asylo::system_call::kSYS_pread64;
 constexpr uint64_t kTestPwrite64 =
     kFirstSelector + asylo::system_call::kSYS_pwrite64;
+constexpr uint64_t kTestPipe2 = kFirstSelector + asylo::system_call::kSYS_pipe2;
 
 constexpr uint64_t kTestIsAtty = kNonSyscallFirstSelector;
 constexpr uint64_t kTestUSleep = kNonSyscallFirstSelector + 1;

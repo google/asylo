@@ -18,6 +18,7 @@
 
 #include <fcntl.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <sys/file.h>
 #include <sys/inotify.h>
 #include <sys/socket.h>
@@ -87,37 +88,37 @@ class HostCallTest : public ::testing::Test {
   // Compares two struct stat, returning |true| if they are equal, and |false|
   // otherwise.
   bool EqualsStat(const struct stat *st, const struct stat *st_expected) {
-      return st->st_atime == st_expected->st_atime &&
-        st->st_blksize == st_expected->st_blksize &&
-        st->st_blocks == st_expected->st_blocks &&
-        st->st_mtime == st_expected->st_mtime &&
-        st->st_dev == st_expected->st_dev &&
-        st->st_gid == st_expected->st_gid &&
-        st->st_ino == st_expected->st_ino &&
-        st->st_mode == st_expected->st_mode &&
-        st->st_ctime == st_expected->st_ctime &&
-        st->st_nlink == st_expected->st_nlink &&
-        st->st_rdev == st_expected->st_rdev &&
-        st->st_size == st_expected->st_size &&
-        st->st_uid == st_expected->st_uid;
-}
+    return st->st_atime == st_expected->st_atime &&
+           st->st_blksize == st_expected->st_blksize &&
+           st->st_blocks == st_expected->st_blocks &&
+           st->st_mtime == st_expected->st_mtime &&
+           st->st_dev == st_expected->st_dev &&
+           st->st_gid == st_expected->st_gid &&
+           st->st_ino == st_expected->st_ino &&
+           st->st_mode == st_expected->st_mode &&
+           st->st_ctime == st_expected->st_ctime &&
+           st->st_nlink == st_expected->st_nlink &&
+           st->st_rdev == st_expected->st_rdev &&
+           st->st_size == st_expected->st_size &&
+           st->st_uid == st_expected->st_uid;
+  }
 
-// Fills the struct stat with the information from MessageReader.
+  // Fills the struct stat with the information from MessageReader.
   void LoadStatFromMessageReader(primitives::MessageReader *out,
                                  struct stat *st) {
-      st->st_atime = out->next<uint64_t>();
-      st->st_blksize = out->next<int64_t>();
-      st->st_blocks = out->next<int64_t>();
-      st->st_mtime = out->next<uint64_t>();
-      st->st_dev = out->next<uint64_t>();
-      st->st_gid = out->next<uint32_t>();
-      st->st_ino = out->next<uint64_t>();
-      st->st_mode = out->next<uint32_t>();
-      st->st_ctime = out->next<uint64_t>();
-      st->st_nlink = out->next<uint64_t>();
-      st->st_rdev = out->next<uint64_t>();
-      st->st_size = out->next<int64_t>();
-      st->st_uid = out->next<uint32_t>();
+    st->st_atime = out->next<uint64_t>();
+    st->st_blksize = out->next<int64_t>();
+    st->st_blocks = out->next<int64_t>();
+    st->st_mtime = out->next<uint64_t>();
+    st->st_dev = out->next<uint64_t>();
+    st->st_gid = out->next<uint32_t>();
+    st->st_ino = out->next<uint64_t>();
+    st->st_mode = out->next<uint32_t>();
+    st->st_ctime = out->next<uint64_t>();
+    st->st_nlink = out->next<uint64_t>();
+    st->st_rdev = out->next<uint64_t>();
+    st->st_size = out->next<int64_t>();
+    st->st_uid = out->next<uint32_t>();
   }
 
   std::shared_ptr<primitives::Client> client_;
@@ -325,24 +326,35 @@ TEST_F(HostCallTest, TestSetSid) {
   EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0)));
 }
 
-// Tests enc_untrusted_kill() by forking the current process and putting the
-// child process to sleep, then calling enc_untrusted_kill() from inside the
-// enclave to kill the child process.
+bool sigabrt_received = false;
+void sigabrt_handler(int sig) {
+  if (sig == SIGABRT) sigabrt_received = true;
+}
+
+// Tests enc_untrusted_kill() by calling the method on the current process from
+// inside the enclave with a SIGABRT. We substitute the handler for SIGABRT
+// temporarily so that the current process doesn't actually get killed.
 TEST_F(HostCallTest, TestKill) {
-  pid_t pid = fork();  // child process to be killed
-  if (pid == 0) {
-    execl("sleep", "10", nullptr);
-    FAIL();
-  }
+  // Change the default signal handler for SIGABRT.
+  struct sigaction old_handler, new_handler;
+  new_handler.sa_handler = &sigabrt_handler;
+  sigemptyset(&(new_handler.sa_mask));
+  new_handler.sa_flags = 0;
+  ASSERT_THAT(sigaction(SIGABRT, &new_handler, &old_handler), Not(Eq(-1)));
 
   primitives::MessageWriter in;
-  in.Push<pid_t>(/*value=pid=*/pid);
+  in.Push<pid_t>(/*value=pid=*/getpid());
   in.Push<int>(/*value=sig=*/SIGABRT);
 
   primitives::MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &in, &out));
+  EXPECT_THAT(sigabrt_received, Eq(true));
   ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
+
+  // Restore the default handler for SIGABRT.
+  ASSERT_THAT(sigaction(SIGABRT, nullptr, &old_handler), Not(Eq(-1)));
+  sigabrt_received = false;
 }
 
 // Tests enc_untrusted_link() by creating a file (|oldpath|) and calling
@@ -1338,8 +1350,8 @@ TEST_F(HostCallTest, TestUSleep) {
 // Tests enc_untrusted_fstat() by creating a file and get stat of it, ensuring
 // that the return value is 0 and returned stat contains expected value.
 TEST_F(HostCallTest, TestFstat) {
-  std::string path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
-      "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   // Make sure the file does not exist.
   if (access(path.c_str(), F_OK) == 0) {
@@ -1371,10 +1383,10 @@ TEST_F(HostCallTest, TestFstat) {
 // symlinked path, ensuring that the return value is 0 and returned stat
 // contains expected value.
 TEST_F(HostCallTest, TestLstat) {
-  std::string path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
-      "/test_file.tmp");
-  std::string sym_path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
-      "/test_symlink.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string sym_path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_symlink.tmp");
 
   // Make sure the file does not exist.
   if (access(path.c_str(), F_OK) == 0) {
@@ -1406,8 +1418,8 @@ TEST_F(HostCallTest, TestLstat) {
 // Tests enc_untrusted_stat() by creating a file and get stat of it, ensuring
 // that the return value is 0 and returned stat contains expected value.
 TEST_F(HostCallTest, TestStat) {
-  std::string path = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),
-      "/test_file.tmp");
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   // Make sure the file does not exist.
   if (access(path.c_str(), F_OK) == 0) {
@@ -1513,6 +1525,21 @@ TEST_F(HostCallTest, TestPwrite64) {
   EXPECT_THAT(pread64(fd, read_buf, 20, 0), Eq(12));
   read_buf[12] = '\0';
   EXPECT_THAT(read_buf, StrEq("hello world!"));
+}
+
+// Tests enc_untrusted_pipe2() by passing a message to be pipe'd, calling the
+// method from inside the enclave, then writing and reading the message from the
+// pipe and verifying the message contents.
+TEST_F(HostCallTest, TestPipe2) {
+  std::string msg_to_pipe = "hello, world";
+
+  primitives::MessageWriter in;
+  in.Push(msg_to_pipe);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestPipe2, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));
+  EXPECT_THAT(out.next<int>(), Eq(0));  // Check return value.
+  EXPECT_THAT(out.next().As<char>(), msg_to_pipe);
 }
 
 }  // namespace

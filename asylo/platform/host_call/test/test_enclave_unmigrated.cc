@@ -527,7 +527,7 @@ void PushStatAttributes(MessageWriter *out, struct stat *st) {
 }
 
 PrimitiveStatus TestFstat(void *context, MessageReader *in,
-                         MessageWriter *out) {
+                          MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   struct stat st;
@@ -538,7 +538,7 @@ PrimitiveStatus TestFstat(void *context, MessageReader *in,
 }
 
 PrimitiveStatus TestLstat(void *context, MessageReader *in,
-                         MessageWriter *out) {
+                          MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   struct stat st;
@@ -548,8 +548,7 @@ PrimitiveStatus TestLstat(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestStat(void *context, MessageReader *in,
-                         MessageWriter *out) {
+PrimitiveStatus TestStat(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   struct stat st;
@@ -583,6 +582,21 @@ PrimitiveStatus TestPwrite64(void *context, MessageReader *in,
   off_t offset = in->next<off_t>();
 
   out->Push<int>(enc_untrusted_pwrite64(fd, buf.As<char>(), len, offset));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestPipe2(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  auto msg_to_pipe = in->next();
+  int p[2];
+  char inbuf[msg_to_pipe.size()];
+
+  out->Push<int>(enc_untrusted_pipe2(p, O_NONBLOCK));
+  enc_untrusted_write(p[1], msg_to_pipe.data(), msg_to_pipe.size());
+  enc_untrusted_read(p[0], inbuf, msg_to_pipe.size());
+  out->Push(std::string(inbuf, msg_to_pipe.size()));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -717,6 +731,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestPwrite64,
       EntryHandler{asylo::host_call::TestPwrite64}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestPipe2, EntryHandler{asylo::host_call::TestPipe2}));
+
   return PrimitiveStatus::OkStatus();
 }
 
