@@ -67,12 +67,14 @@ int enc_untrusted_mkdir(const char *pathname, mode_t mode) {
 }
 
 int enc_untrusted_open(const char *pathname, int flags, ...) {
-  uint32_t mode = 0;
+  int mode = 0;
   if (flags & O_CREAT) {
     va_list ap;
     va_start(ap, flags);
     mode = va_arg(ap, mode_t);
     va_end(ap);
+    int klinux_mode;
+    TokLinuxFileModeFlag(&mode, &klinux_mode);
   }
 
   int klinux_flags;

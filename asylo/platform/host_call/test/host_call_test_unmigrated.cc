@@ -505,8 +505,10 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   std::string path =
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
-  creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  ASSERT_THAT(write(fd, path.c_str(), path.length() + 1),
+              Eq(path.length() + 1));
+  ASSERT_THAT(access(path.c_str(), F_OK), Eq(0));
 
   primitives::MessageWriter in;
   in.Push(path);
@@ -516,7 +518,12 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &in, &out));
   ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
   EXPECT_THAT(out.next<int>(), Gt(0));
-  EXPECT_NE(access(path.c_str(), F_OK), -1);
+  EXPECT_THAT(access(path.c_str(), F_OK), Eq(0));
+
+  // Make sure file is truncated as specified by O_TRUNC.
+  struct stat sb;
+  EXPECT_THAT(stat(path.c_str(), &sb), Eq(0));
+  EXPECT_THAT(sb.st_size, Eq(0));
 }
 
 // Tests enc_untrusted_unlink() by deleting an existing file on the untrusted

@@ -159,12 +159,18 @@ PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
   // open() can assume 2 or 3 arguments.
   if (in->size() == 3) {
     const auto pathname = in->next();
-    int flags = in->next<int>();
-    mode_t mode = in->next<mode_t>();
+    int linux_flags = in->next<int>();
+    int linux_mode = in->next<mode_t>();
+    int flags;
+    FromkLinuxFileStatusFlag(&linux_flags, &flags);
+    int mode;
+    FromkLinuxFileModeFlag(&linux_mode, &mode);
     out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags, mode));
   } else if (in->size() == 2) {
     const auto pathname = in->next();
-    int flags = in->next<int>();
+    int kLinux_flags = in->next<int>();
+    int flags;
+    FromkLinuxFileStatusFlag(&kLinux_flags, &flags);
     out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags));
   } else {
     return {error::GoogleError::INVALID_ARGUMENT,
