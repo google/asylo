@@ -23,21 +23,14 @@ namespace asylo {
 
 extern "C" {
 
-int __asylo_handle_signal(const char *input, size_t input_len) {
-  return 0;
-}
-
-
 int __asylo_take_snapshot(char **output, size_t *output_len) {
   return 0;
 }
-
 
 int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
                     char **output, size_t *output_len) {
   return 0;
 }
-
 
 int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
                                          char **output, size_t *output_len) {
