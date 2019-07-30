@@ -162,7 +162,7 @@ int pthread_rwlock_tryrdlock_internal(pthread_rwlock_t *rwlock) {
   return EBUSY;
 }
 
-// Writes locks the given |rwlock| if possible and returns 0. On success,
+// Write locks the given |rwlock| if possible and returns 0. On success,
 // pthread_self() is removed from |rwlock|._queue and added to
 // |rwlock|._write_owner. Returns EBUSY if the |rwlock| is write locked, read
 // locked, or pthread_self() is not the front of |rwlock|._queue. |rwlock|._lock
