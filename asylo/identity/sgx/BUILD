@@ -1107,6 +1107,21 @@ cc_library(
 )
 
 cc_library(
+    name = "mock_intel_architectural_enclave_interface",
+    testonly = 1,
+    hdrs = ["mock_intel_architectural_enclave_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_types",
+        ":intel_architectural_enclave_interface",
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "local_secret_sealer_helpers",
     srcs = ["local_secret_sealer_helpers.cc"],
     hdrs = ["local_secret_sealer_helpers.h"],
