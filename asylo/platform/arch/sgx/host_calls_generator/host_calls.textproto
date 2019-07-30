@@ -511,41 +511,6 @@ host_calls {
 }
 
 host_calls {
-  name: "getuid"
-  return_type: "uid_t"
-}
-
-host_calls {
-  name: "geteuid"
-  return_type: "uid_t"
-}
-
-host_calls {
-  name: "getgid"
-  return_type: "gid_t"
-}
-
-host_calls {
-  name: "getegid"
-  return_type: "gid_t"
-}
-
-host_calls {
-  name: "getpid"
-  return_type: "pid_t"
-}
-
-host_calls {
-  name: "getppid"
-  return_type: "pid_t"
-}
-
-host_calls {
-  name: "setsid"
-  return_type: "pid_t"
-}
-
-host_calls {
   name: "rmdir"
   return_type: "int"
   parameters {

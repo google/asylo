@@ -36,4 +36,32 @@ int enc_untrusted_access(const char *path_name, int mode) {
                                mode);
 }
 
+pid_t enc_untrusted_getpid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_getpid);
+}
+
+pid_t enc_untrusted_getppid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_getppid);
+}
+
+pid_t enc_untrusted_setsid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_setsid);
+}
+
+uid_t enc_untrusted_getuid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_getuid);
+}
+
+gid_t enc_untrusted_getgid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_getgid);
+}
+
+uid_t enc_untrusted_geteuid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_geteuid);
+}
+
+gid_t enc_untrusted_getegid() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_getegid);
+}
+
 }  // extern "C"

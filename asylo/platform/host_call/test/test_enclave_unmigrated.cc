@@ -77,30 +77,6 @@ PrimitiveStatus TestFchmod(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestGetpid(void *context, MessageReader *in,
-                           MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<pid_t>(enc_untrusted_getpid());
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestGetPpid(void *context, MessageReader *in,
-                            MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<pid_t>(enc_untrusted_getppid());
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestSetSid(void *context, MessageReader *in,
-                           MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<pid_t>(enc_untrusted_setsid());
-  return PrimitiveStatus::OkStatus();
-}
-
 PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
@@ -186,38 +162,6 @@ PrimitiveStatus TestUmask(void *context, MessageReader *in,
   mode_t mask = in->next<mode_t>();
 
   out->Push<mode_t>(enc_untrusted_umask(mask));
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestGetuid(void *context, MessageReader *in,
-                           MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<uid_t>(enc_untrusted_getuid());
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestGetgid(void *context, MessageReader *in,
-                           MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<gid_t>(enc_untrusted_getgid());
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestGeteuid(void *context, MessageReader *in,
-                            MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<uid_t>(enc_untrusted_geteuid());
-  return PrimitiveStatus::OkStatus();
-}
-
-PrimitiveStatus TestGetegid(void *context, MessageReader *in,
-                            MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-
-  out->Push<gid_t>(enc_untrusted_getegid());
   return PrimitiveStatus::OkStatus();
 }
 
@@ -620,15 +564,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       asylo::host_call::kTestFchmod,
       EntryHandler{asylo::host_call::TestFchmod}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestGetPid,
-      EntryHandler{asylo::host_call::TestGetpid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestGetPpid,
-      EntryHandler{asylo::host_call::TestGetPpid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestSetSid,
-      EntryHandler{asylo::host_call::TestSetSid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestKill, EntryHandler{asylo::host_call::TestKill}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestLink, EntryHandler{asylo::host_call::TestLink}));
@@ -643,18 +578,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestUnlink}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestUmask, EntryHandler{asylo::host_call::TestUmask}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestGetUid,
-      EntryHandler{asylo::host_call::TestGetuid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestGetGid,
-      EntryHandler{asylo::host_call::TestGetgid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestGetEuid,
-      EntryHandler{asylo::host_call::TestGeteuid}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestGetEgid,
-      EntryHandler{asylo::host_call::TestGetegid}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestRename,
       EntryHandler{asylo::host_call::TestRename}));

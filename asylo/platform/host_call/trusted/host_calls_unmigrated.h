@@ -40,19 +40,12 @@ extern "C" {
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
 int enc_untrusted_close(int fd);
-pid_t enc_untrusted_getpid();
-pid_t enc_untrusted_getppid();
-pid_t enc_untrusted_setsid();
 int enc_untrusted_kill(pid_t pid, int sig);
 int enc_untrusted_link(const char *oldpath, const char *newpath);
 off_t enc_untrusted_lseek(int fd, off_t offset, int whence);
 int enc_untrusted_mkdir(const char *pathname, mode_t mode);
 int enc_untrusted_open(const char *pathname, int flags, ...);
 int enc_untrusted_unlink(const char *pathname);
-uid_t enc_untrusted_getuid();
-gid_t enc_untrusted_getgid();
-uid_t enc_untrusted_geteuid();
-gid_t enc_untrusted_getegid();
 int enc_untrusted_rename(const char *oldpath, const char *newpath);
 ssize_t enc_untrusted_read(int fd, void *buf, size_t count);
 ssize_t enc_untrusted_write(int fd, const void *buf, size_t count);

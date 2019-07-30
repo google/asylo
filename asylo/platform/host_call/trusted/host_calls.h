@@ -43,6 +43,13 @@ void init_host_calls();
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
 int enc_untrusted_access(const char *path_name, int mode);
+pid_t enc_untrusted_getpid();
+pid_t enc_untrusted_getppid();
+pid_t enc_untrusted_setsid();
+uid_t enc_untrusted_getuid();
+gid_t enc_untrusted_getgid();
+uid_t enc_untrusted_geteuid();
+gid_t enc_untrusted_getegid();
 
 #ifdef __cplusplus
 }  // extern "C"

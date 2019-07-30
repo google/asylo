@@ -295,37 +295,6 @@ TEST_F(HostCallTest, TestFchmodNonExistentFile) {
   EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
-// Tests enc_untrusted_getpid() by calling it from inside the enclave and
-// verifying its return value against pid obtained from native system call.
-TEST_F(HostCallTest, TestGetpid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getpid()));
-}
-
-// Tests enc_untrusted_getppid() by calling it from inside the enclave and
-// verifying its return value against ppid obtained from native system call.
-TEST_F(HostCallTest, TestGetPpid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPpid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getppid()));
-}
-
-// Tests enc_untrusted_setsid() by calling it from inside the enclave and
-// verifying its return value against sid obtained from getsid(0), which
-// gets the sid of the current process.
-TEST_F(HostCallTest, TestSetSid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0)));
-}
-
 bool sigabrt_received = false;
 void sigabrt_handler(int sig) {
   if (sig == SIGABRT) sigabrt_received = true;
@@ -536,16 +505,6 @@ TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
   EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
-// Tests enc_untrusted_getuid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native getuid().
-TEST_F(HostCallTest, TestGetuid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<uid_t>(), Eq(getuid()));
-}
-
 // Tests enc_untrusted_umask() by calling it from inside the enclave to mask
 // certain permission bits(S_IWGRP | S_IWOTH) and verifying newly created
 // directory or file will not have masked permission.
@@ -590,36 +549,6 @@ TEST_F(HostCallTest, TestUmask) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUmask, &in2, &out2));
   ASSERT_THAT(out2, SizeIs(1));
   ASSERT_THAT(out2.next<mode_t>(), Eq(S_IWGRP | S_IWOTH));
-}
-
-// Tests enc_untrusted_getgid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native getgid().
-TEST_F(HostCallTest, TestGetgid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetGid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<gid_t>(), Eq(getgid()));
-}
-
-// Tests enc_untrusted_geteuid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native geteuid().
-TEST_F(HostCallTest, TestGetEuid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEuid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<uid_t>(), Eq(geteuid()));
-}
-
-// Tests enc_untrusted_getegid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native getegid().
-TEST_F(HostCallTest, TestGetEgid) {
-  primitives::MessageWriter in;
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEgid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<gid_t>(), Eq(getegid()));
 }
 
 // Tests enc_untrusted_rename() by making a host call from inside the enclave

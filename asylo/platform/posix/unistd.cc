@@ -16,16 +16,17 @@
  *
  */
 
-#include <unistd.h>
-
 #include <sys/stat.h>
 #include <sys/wait.h>
+#include <unistd.h>
+
 #include <cstdlib>
 #include <cstring>
 
 #include "asylo/platform/arch/include/trusted/fork.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/util/statusor.h"
 

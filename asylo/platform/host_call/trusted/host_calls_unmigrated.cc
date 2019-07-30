@@ -32,18 +32,6 @@ int enc_untrusted_close(int fd) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_close, fd);
 }
 
-pid_t enc_untrusted_getpid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getpid);
-}
-
-pid_t enc_untrusted_getppid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getppid);
-}
-
-pid_t enc_untrusted_setsid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_setsid);
-}
-
 int enc_untrusted_kill(pid_t pid, int sig) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_kill, pid, sig);
 }
@@ -80,22 +68,6 @@ int enc_untrusted_open(const char *pathname, int flags, ...) {
 
 int enc_untrusted_unlink(const char *pathname) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_unlink, pathname);
-}
-
-uid_t enc_untrusted_getuid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getuid);
-}
-
-gid_t enc_untrusted_getgid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getgid);
-}
-
-uid_t enc_untrusted_geteuid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_geteuid);
-}
-
-gid_t enc_untrusted_getegid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getegid);
 }
 
 int enc_untrusted_rename(const char *oldpath, const char *newpath) {

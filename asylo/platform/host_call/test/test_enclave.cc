@@ -56,6 +56,62 @@ PrimitiveStatus TestAccess(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestGetpid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<pid_t>(enc_untrusted_getpid());
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestGetPpid(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<pid_t>(enc_untrusted_getppid());
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestSetSid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<pid_t>(enc_untrusted_setsid());
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestGetuid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<uid_t>(enc_untrusted_getuid());
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestGetgid(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<gid_t>(enc_untrusted_getgid());
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestGeteuid(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<uid_t>(enc_untrusted_geteuid());
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestGetegid(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  out->Push<gid_t>(enc_untrusted_getegid());
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -70,6 +126,28 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestAccess,
       EntryHandler{asylo::host_call::TestAccess}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetPid,
+      EntryHandler{asylo::host_call::TestGetpid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetPpid,
+      EntryHandler{asylo::host_call::TestGetPpid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSetSid,
+      EntryHandler{asylo::host_call::TestSetSid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetUid,
+      EntryHandler{asylo::host_call::TestGetuid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetGid,
+      EntryHandler{asylo::host_call::TestGetgid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetEuid,
+      EntryHandler{asylo::host_call::TestGeteuid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetEgid,
+      EntryHandler{asylo::host_call::TestGetegid}));
+
   return PrimitiveStatus::OkStatus();
 }
 
