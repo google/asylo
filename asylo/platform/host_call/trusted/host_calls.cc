@@ -27,4 +27,13 @@
 
 extern "C" {
 
+void init_host_calls() {
+  enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
+}
+
+int enc_untrusted_access(const char *path_name, int mode) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_access, path_name,
+                               mode);
+}
+
 }  // extern "C"

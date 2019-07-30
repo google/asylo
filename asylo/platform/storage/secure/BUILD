@@ -84,6 +84,7 @@ cc_library(
     deps = [
         ":aead_handler",
         "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/host_call",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/storage/utils:offset_translator",
         "//asylo/util:logging",

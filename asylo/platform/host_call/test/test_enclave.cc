@@ -24,7 +24,6 @@
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/system_call/kernel_type.h"
-#include "asylo/platform/system_call/system_call.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
 
@@ -46,18 +45,31 @@ PrimitiveStatus Abort(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestAccess(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  const auto path_name = in->next();
+  int mode = in->next<int>();
+
+  out->Push<int>(enc_untrusted_access(path_name.As<char>(), mode));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
 
 // Implements the required enclave initialization function.
 extern "C" PrimitiveStatus asylo_enclave_init() {
-  // Register the host call dispatcher.
-  enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
+  init_host_calls();
 
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kAbortEnclaveSelector,
       EntryHandler{asylo::host_call::Abort}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestAccess,
+      EntryHandler{asylo::host_call::TestAccess}));
   return PrimitiveStatus::OkStatus();
 }
 

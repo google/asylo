@@ -74,7 +74,7 @@ PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
   return status;
 }
 
-// Registers simulator specific entry handlers.
+// Registers internal handlers, including entry handlers.
 void RegisterInternalHandlers() {
   // Register the enclave finalization entry handler.
   EntryHandler handler{FinalizeEnclave};

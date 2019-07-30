@@ -24,6 +24,7 @@
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/entry_selectors.h"
+#include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -41,6 +42,10 @@ Status GenericEnclaveClient::Initialize(const char *name, size_t name_len,
   in.PushByReference(primitives::Extent{input, input_len});
   in.PushByReference(primitives::Extent{name, name_len});
   primitives::MessageReader out;
+
+  host_call::AddHostCallHandlersToExitCallProvider(
+      primitive_client_->exit_call_provider());
+
   ASYLO_RETURN_IF_ERROR(
       primitive_client_->EnclaveCall(kSelectorAsyloInit, &in, &out));
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(out, 1);
@@ -87,8 +92,7 @@ Status GenericEnclaveClient::DeliverSignal(const char *input,
                                            size_t input_len) {
   primitives::MessageWriter in;
   in.PushByReference(primitives::Extent{input, input_len});
-  ASYLO_RETURN_IF_ERROR(
-      primitive_client_->DeliverSignal(&in, nullptr));
+  ASYLO_RETURN_IF_ERROR(primitive_client_->DeliverSignal(&in, nullptr));
   return Status::OkStatus();
 }
 

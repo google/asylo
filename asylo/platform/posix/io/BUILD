@@ -66,6 +66,7 @@ cc_library(
         "//asylo/platform/core:untrusted_cache_malloc",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
+        "//asylo/platform/host_call",
         "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/storage/secure:aead_handler",
         "//asylo/platform/storage/secure:enclave_storage_secure",

@@ -16,8 +16,13 @@
 
 licenses(["notice"])  # Apache v2.0
 
-load("//asylo/bazel:asylo.bzl", "sim_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "sgx_enclave_test",
+    "sim_enclave_test",
+)
 load("//asylo/bazel:sim_enclave.bzl", "sim_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
@@ -49,7 +54,6 @@ sim_enclave(
         ":enclave_test_selectors",
         "//asylo/platform/host_call",
         "//asylo/platform/host_call:host_call_dispatcher",
-        "//asylo/platform/system_call",
         "//asylo/platform/system_call/type_conversions:types",
         "//asylo/util:status_macros",
     ],

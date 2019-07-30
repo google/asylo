@@ -24,12 +24,18 @@
 namespace asylo {
 namespace host_call {
 
-// Provides a mapping between the exit handler constants and host call handlers.
-// This is expected to be a comprehensive such mapping for all the host call
-// handlers that can be used by primitive enclave clients like SgxClient,
+// Creates an exit call provider and populates it with a mapping between the
+// exit handler constants and untrusted handlers for host calls. This is
+// expected to be a comprehensive such mapping for all the host call handlers
+// that can be used by primitive enclave clients like SgxClient,
 // SimEnclaveClient etc.
 StatusOr<std::unique_ptr<primitives::Client::ExitCallProvider>>
 GetHostCallHandlersMapping();
+
+// Updates an existing exit call provider with mapping between the exit handler
+// constants and untrusted handlers for host calls.
+Status AddHostCallHandlersToExitCallProvider(
+    primitives::Client::ExitCallProvider* exit_call_provider);
 
 }  // namespace host_call
 }  // namespace asylo

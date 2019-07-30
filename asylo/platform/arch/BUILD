@@ -58,6 +58,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/core:shared_name",
         "//asylo/util:status",
+        "//asylo/platform/host_call",
     ],
 )
 
@@ -229,6 +230,7 @@ cc_library(
         "//asylo/platform/common:memory",
         "//asylo/platform/core:entry_points",
         "//asylo/platform/core:shared_name",
+        "//asylo/platform/host_call",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_backend",

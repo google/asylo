@@ -17,6 +17,7 @@
  */
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
+
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 #include "asylo/util/status_macros.h"
@@ -30,16 +31,24 @@ GetHostCallHandlersMapping() {
   std::unique_ptr<primitives::Client::ExitCallProvider> dispatch_table =
       absl::make_unique<primitives::DispatchTable>();
 
-  ASYLO_RETURN_IF_ERROR(dispatch_table->RegisterExitHandler(
-      kSystemCallHandler, primitives::ExitHandler{SystemCallHandler}));
-
-  ASYLO_RETURN_IF_ERROR(dispatch_table->RegisterExitHandler(
-      kIsAttyHandler, primitives::ExitHandler{IsAttyHandler}));
-
-  ASYLO_RETURN_IF_ERROR(dispatch_table->RegisterExitHandler(
-      kUSleepHandler, primitives::ExitHandler{USleepHandler}));
+  ASYLO_RETURN_IF_ERROR(
+      AddHostCallHandlersToExitCallProvider(dispatch_table.get()));
 
   return std::move(dispatch_table);
+}
+
+Status AddHostCallHandlersToExitCallProvider(
+    primitives::Client::ExitCallProvider *exit_call_provider) {
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kSystemCallHandler, primitives::ExitHandler{SystemCallHandler}));
+
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kIsAttyHandler, primitives::ExitHandler{IsAttyHandler}));
+
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kUSleepHandler, primitives::ExitHandler{USleepHandler}));
+
+  return Status::OkStatus();
 }
 
 }  // namespace host_call

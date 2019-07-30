@@ -173,39 +173,6 @@ TEST_F(HostCallTest, TestSend) {
   close(connection_socket);
 }
 
-// Tests enc_untrusted_access() by creating a file and calling
-// enc_untrusted_access() from inside the enclave and verifying its return
-// value.
-TEST_F(HostCallTest, TestAccess) {
-  std::string path =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
-  int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-  ASSERT_GE(fd, 0);
-
-  primitives::MessageWriter in;
-  in.Push(path);
-  in.Push<int>(/*value=mode=*/R_OK | W_OK);
-
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<int>(), access(path.c_str(), R_OK | W_OK));
-}
-
-// Tests enc_untrusted_access() against a non-existent path.
-TEST_F(HostCallTest, TestAccessNonExistentPath) {
-  const char *path = "illegal_path";
-
-  primitives::MessageWriter in;
-  in.Push(primitives::Extent{path, strlen(path) + 1});
-  in.Push<int>(/*value=mode=*/F_OK);
-
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<int>(), access(path, F_OK));
-}
-
 // Tests enc_untrusted_chmod() by creating a file with multiple mode bits
 // and calling enc_untrusted_chmod() from inside the enclave to remove one mode
 // bit, and verifying that the expected mode gets removed from the file.

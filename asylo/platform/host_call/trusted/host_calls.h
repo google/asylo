@@ -37,8 +37,12 @@
 extern "C" {
 #endif
 
+// Perform initialization tasks for the host call library.
+void init_host_calls();
+
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
+int enc_untrusted_access(const char *path_name, int mode);
 
 #ifdef __cplusplus
 }  // extern "C"

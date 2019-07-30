@@ -40,6 +40,7 @@
 #include "asylo/platform/core/shared_name_kind.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/core/untrusted_cache_malloc.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/random_devices.h"
@@ -742,6 +743,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
           deliver_signal_handler).ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
+
+  init_host_calls();
   return PrimitiveStatus::OkStatus();
 }
 

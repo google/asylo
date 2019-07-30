@@ -19,12 +19,14 @@
 #include "asylo/platform/posix/io/native_paths.h"
 
 #include <fcntl.h>
+
 #include <cerrno>
 #include <cstring>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/bridge_msghdr_wrapper.h"
 #include "asylo/platform/core/untrusted_cache_malloc.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/secure_paths.h"
 
 namespace asylo {

@@ -90,7 +90,6 @@ off_t enc_untrusted_lseek(int fd, off_t offset, int whence);
 int enc_untrusted_unlink(const char *path_name);
 int enc_untrusted_fcntl(int fd, int cmd, ...);
 int enc_untrusted_fsync(int fd);
-int enc_untrusted_access(const char *path_name, int mode);
 int enc_untrusted_chown(const char *path, uid_t owner, gid_t group);
 int enc_untrusted_link(const char *from, const char *to);
 int enc_untrusted_rename(const char *oldpath, const char *newpath);

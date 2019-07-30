@@ -95,3 +95,8 @@ sim_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "entry_points",
+    srcs = ["entry_points.cc"],
+)

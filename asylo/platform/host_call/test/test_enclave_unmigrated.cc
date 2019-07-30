@@ -46,17 +46,6 @@ PrimitiveStatus Abort(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestAccess(void *context, MessageReader *in,
-                           MessageWriter *out) {
-  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
-
-  const auto path_name = in->next();
-  int mode = in->next<int>();
-
-  out->Push<int>(enc_untrusted_access(path_name.As<char>(), mode));
-  return PrimitiveStatus::OkStatus();
-}
-
 PrimitiveStatus TestChmod(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
@@ -609,9 +598,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kAbortEnclaveSelector,
       EntryHandler{asylo::host_call::Abort}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestAccess,
-      EntryHandler{asylo::host_call::TestAccess}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestChmod, EntryHandler{asylo::host_call::TestChmod}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
