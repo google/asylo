@@ -343,6 +343,38 @@ class EnclaveManager {
   static EnclaveManager *instance_ GUARDED_BY(mu_);
 };
 
+/// Abstract enclave loader.
+///
+/// Host applications must load an enclave before using it. This is accomplished
+/// via an architecture specific implementation of the AbstractEnclaveLoader
+/// interface.
+/// EnclaveLoader will be deprecated in favor of AbstractEnclaveLoader after the
+/// former's subclasses are switched to extend from the latter.
+class AbstractEnclaveLoader {
+ public:
+  virtual ~AbstractEnclaveLoader() = default;
+
+  enum EnclaveType {
+    UNKNOWN = 0,
+    SGX_HARDWARE = 1,
+    SGX_SIM = 2,
+  };
+
+ protected:
+  // Only allow the enclave loading via the manager object.
+  friend class EnclaveManager;
+
+  // Loads an enclave, returning a pointer to a client on success and a non-ok
+  // status on failure.
+  virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave() const = 0;
+
+  // Gets a copy of the loader that loaded a previous enclave. This is only used
+  // by fork to load a child enclave with the same loader as the parent.
+  virtual StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const = 0;
+
+  virtual EnclaveType GetEnclaveType() const = 0;
+};
+
 /// An abstract enclave loader.
 ///
 /// Host applications must load an enclave before using it. This is accomplished
