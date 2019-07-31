@@ -22,6 +22,7 @@
 #include <string>
 
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
+#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/statusor.h"
@@ -79,6 +80,9 @@ class SgxEnclaveClient : public Client {
 
   // Updates |token| with the SGX SDK launch token.
   void GetLaunchToken(sgx_launch_token_t *token) const;
+
+  // Enters the enclave and invokes the snapshotting entry-point.
+  Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout);
 
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,

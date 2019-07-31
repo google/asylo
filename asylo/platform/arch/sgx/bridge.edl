@@ -61,9 +61,11 @@ enclave {
     // Invokes a utility ecall that enters the enclave to take a snapshot.
     // This is a private ecall because it should only be invoked by an
     // ocall(fork).
+    // WARNING: Do not add calls before ecall_take_snapshot, as callers
+    // may assume this to be the third entry in the generated ecall table.
     utility_tcs public int ecall_take_snapshot(
-	[out] char **output,
-	[out] bridge_size_t *output_len);
+	      [out] char **output,
+	      [out] bridge_size_t *output_len);
 
     // Invokes a utility ecall that enters the enclave to restore it from a
     // snapshot.

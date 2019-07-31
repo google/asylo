@@ -82,6 +82,8 @@ cc_library(
         ":sgx_error_space",
         ":sgx_params",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/arch:fork_cc_proto",
+        "//asylo/platform/common:bridge_types",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:cleanup",

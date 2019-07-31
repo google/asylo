@@ -41,31 +41,6 @@
 namespace asylo {
 
 
-// Enters the enclave and invokes the snapshotting entry-point. If the ecall
-// fails, return a non-OK status.
-static Status take_snapshot(sgx_enclave_id_t eid, char **output,
-                            size_t *output_len) {
-  int result;
-  bridge_size_t bridge_output_len;
-  sgx_status_t sgx_status =
-      ecall_take_snapshot(eid, &result, output, &bridge_output_len);
-  if (output_len) {
-    *output_len = static_cast<size_t>(bridge_output_len);
-  }
-  if (sgx_status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(sgx_status, "Call to ecall_take_snapshot failed");
-  } else if (result || *output_len == 0) {
-    // Ecall succeeded but did not return a value. This indicates that the
-    // trusted code failed to propagate error information over the enclave
-    // boundary.
-    return Status(asylo::error::GoogleError::INTERNAL,
-                  "No output from enclave");
-  }
-
-  return Status::OkStatus();
-}
-
 // Enters the enclave and invokes the restoring entry-point. If the ecall fails,
 // return a non-OK status.
 static Status restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
@@ -162,30 +137,7 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
 }
 
 Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
-  char *output_buf = nullptr;
-  size_t output_len = 0;
-
-  ASYLO_RETURN_IF_ERROR(take_snapshot(GetPrimitiveClient()->GetEnclaveId(),
-                                      &output_buf, &output_len));
-
-  // Enclave entry-point was successfully invoked. |output_buf| is guaranteed to
-  // have a value.
-  EnclaveOutput local_output;
-  local_output.ParseFromArray(output_buf, output_len);
-  Status status;
-  status.RestoreFrom(local_output.status());
-
-  // If |output| is not null, then |output_buf| points to a memory buffer
-  // allocated inside the enclave using enc_untrusted_malloc(). It is the
-  // caller's responsibility to free this buffer.
-  free(output_buf);
-
-  // Set the output parameter if necessary.
-  if (snapshot_layout) {
-    *snapshot_layout = local_output.GetExtension(snapshot);
-  }
-
-  return status;
+  return GetPrimitiveClient()->EnterAndTakeSnapshot(snapshot_layout);
 }
 
 Status SgxClient::EnterAndRestore(const SnapshotLayout &snapshot_layout) {
