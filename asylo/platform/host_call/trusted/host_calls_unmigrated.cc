@@ -36,6 +36,11 @@ int enc_untrusted_kill(pid_t pid, int sig) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_kill, pid, sig);
 }
 
+int enc_untrusted_wait(int *wstatus) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_wait4, /*wpid=*/-1,
+                               wstatus, /*options=*/0, /*rusage=*/nullptr);
+}
+
 int enc_untrusted_link(const char *oldpath, const char *newpath) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_link, oldpath, newpath);
 }

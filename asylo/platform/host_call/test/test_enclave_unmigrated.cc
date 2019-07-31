@@ -87,6 +87,16 @@ PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestWait(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+
+  int wstatus = 0;
+
+  out->Push<int>(enc_untrusted_wait(&wstatus));
+  out->Push<int>(wstatus);
+  return PrimitiveStatus::OkStatus();
+}
+
 PrimitiveStatus TestLink(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
@@ -565,6 +575,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestFchmod}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestKill, EntryHandler{asylo::host_call::TestKill}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestWait, EntryHandler{asylo::host_call::TestWait}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestLink, EntryHandler{asylo::host_call::TestLink}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(

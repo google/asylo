@@ -41,6 +41,7 @@ extern "C" {
 // corresponding function on the host.
 int enc_untrusted_close(int fd);
 int enc_untrusted_kill(pid_t pid, int sig);
+int enc_untrusted_wait(int *wstatus);
 int enc_untrusted_link(const char *oldpath, const char *newpath);
 off_t enc_untrusted_lseek(int fd, off_t offset, int whence);
 int enc_untrusted_mkdir(const char *pathname, mode_t mode);

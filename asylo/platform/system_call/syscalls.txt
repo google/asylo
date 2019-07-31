@@ -43,6 +43,9 @@ INCLUDE("sys/stat.h")
 INCLUDE("sys/syscall.h")
 INCLUDE("sys/types.h")
 INCLUDE("sys/inotify.h")
+INCLUDE("sys/wait.h")
+INCLUDE("sys/time.h")
+INCLUDE("sys/resource.h")
 
 // File Descriptors
 // ================
@@ -113,6 +116,7 @@ SYSCALL_DEFINE0(getpid)
 SYSCALL_DEFINE0(getppid)
 SYSCALL_DEFINE0(setsid)
 SYSCALL_DEFINE1(exit, int, error_code)
+SYSCALL_DEFINE4(wait4, pid_t, upid, \out int *, stat_addr, int, options, \out struct rusage *, ru)
 
 // Signals
 // =======

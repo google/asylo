@@ -326,6 +326,37 @@ TEST_F(HostCallTest, TestKill) {
   sigabrt_received = false;
 }
 
+// Tests enc_untrusted_wait() by forking the current process, and having the
+// child process sleep for 5 seconds, then exit. The parent process performs a
+// wait, and once the wait completes, we make sure that the wait returns the pid
+// of the child process.
+TEST_F(HostCallTest, TestWait) {
+  pid_t pid = fork();  // child process to wait on
+  if (pid == 0) {
+    sleep(1);
+    _exit(0);
+  } else {
+    int returnpid = -1;
+    int wstatus = -1;
+
+    while (returnpid != pid) {
+      // We do not push the empty status pointer on the stack since we would
+      // need to create one in the enclave anyways.
+      primitives::MessageWriter in;
+      primitives::MessageReader out;
+      ASYLO_ASSERT_OK(client_->EnclaveCall(kTestWait, &in, &out));
+      ASSERT_THAT(out,
+                  SizeIs(2));  // should contain return value and wstatus ptr
+      returnpid = out.next<int>();
+      wstatus = out.next<int>();
+    }
+
+    EXPECT_THAT(returnpid, Eq(pid));
+    EXPECT_TRUE(WIFEXITED(wstatus));
+    EXPECT_THAT(WEXITSTATUS(wstatus), Eq(0));
+  }
+}
+
 // Tests enc_untrusted_link() by creating a file (|oldpath|) and calling
 // enc_untrusted_link() from inside the enclave to link it to |newpath|, then
 // verifying that |newpath| is indeed accessible.

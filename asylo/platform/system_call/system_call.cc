@@ -102,7 +102,9 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
       }
       const void *src = response_reader.parameter_address(i);
       void *dst = reinterpret_cast<void *>(parameters[i]);
-      memcpy(dst, src, size);
+      if (dst != nullptr) {
+        memcpy(dst, src, size);
+      }
     }
   }
 
