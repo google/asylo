@@ -26,9 +26,14 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
+#include "absl/time/clock.h"
 
 namespace asylo {
 namespace {
+
+static constexpr int kNumThreads = 5;
+static pthread_mutex_t many_thread_lock = PTHREAD_MUTEX_INITIALIZER;
+static int many_thread_counter = 0;
 
 static pthread_mutex_t count_lock = PTHREAD_MUTEX_INITIALIZER;
 static volatile int count = 0;
@@ -37,7 +42,43 @@ static int global_arg = 1;
 static pthread_once_t once = PTHREAD_ONCE_INIT;
 static volatile int once_count = 0;
 
+static constexpr int kNumLocks = 12;
+static pthread_mutex_t many_locks[kNumLocks];
+
+// Acquire every lock in the many_locks array. Always lock in the same order, to
+// avoid deadlocking.
+void *cycle_all_locks(void *arg) {
+  for (int i = 0; i < kNumLocks; i++) {
+    EXPECT_EQ(pthread_mutex_lock(&many_locks[i]), 0);
+  }
+  absl::SleepFor(absl::Milliseconds(100));
+  for (int i = kNumLocks - 1; i >= 0; i--) {
+    EXPECT_EQ(pthread_mutex_unlock(&many_locks[i]), 0);
+  }
+  return nullptr;
+}
+
 void once_function() { ++once_count; }
+
+// Acquire the lock guarding many_thread_counter, increment the counter,
+// decrement it, and release lock. Sleep in between each operation, to allow
+// interleaving, and ensure the counter always has the correct value.
+void *ensure_exclusive_counter(void *arg) {
+  EXPECT_EQ(pthread_mutex_lock(&many_thread_lock), 0);
+  EXPECT_EQ(many_thread_counter, 0);
+  absl::SleepFor(absl::Milliseconds(100));
+  EXPECT_EQ(many_thread_counter, 0);
+  many_thread_counter = many_thread_counter + 1;
+  EXPECT_EQ(many_thread_counter, 1);
+  absl::SleepFor(absl::Milliseconds(100));
+  EXPECT_EQ(many_thread_counter, 1);
+  many_thread_counter = many_thread_counter - 1;
+  EXPECT_EQ(many_thread_counter, 0);
+  absl::SleepFor(absl::Milliseconds(100));
+  EXPECT_EQ(many_thread_counter, 0);
+  EXPECT_EQ(pthread_mutex_unlock(&many_thread_lock), 0);
+  return nullptr;
+}
 
 void *increment_count(void *arg) {
   printf("self: %lu\n", reinterpret_cast<uint64_t>(pthread_self()));
@@ -154,6 +195,51 @@ TEST(ThreadedTest, EnclaveThread) {
   if (cc11_count != 1) {
     printf("cc11_count == %i, wanted %i\n", once_count, 1);
   }
+}
+
+// Tests that a mutex guards access to one thread at a time
+TEST(ThreadedTest, PthreadMutexTest) {
+  printf("Initialize: begin\n");
+
+  printf("self: %lu\n", reinterpret_cast<uint64_t>(pthread_self()));
+
+  pthread_t threads[kNumThreads];
+  for (int i = 0; i < kNumThreads; i++) {
+    ASSERT_EQ(
+        pthread_create(&threads[i], nullptr, ensure_exclusive_counter, nullptr),
+        0);
+  }
+
+  for (int i = 0; i < kNumThreads; i++) {
+    EXPECT_EQ(pthread_join(threads[i], nullptr), 0);
+  }
+}
+
+// Tests that multiple mutexes work together. Also uses dynamic mutex
+// initialization.
+TEST(ThreadedTest, MultipleMutexTest) {
+  pthread_mutexattr_t attr;
+  ASSERT_EQ(pthread_mutexattr_init(&attr), 0);
+
+  for (int i = 0; i < kNumLocks; i++) {
+    ASSERT_EQ(pthread_mutex_init(&many_locks[i], &attr), 0);
+  }
+
+  pthread_t threads[kNumThreads];
+  for (int i = 0; i < kNumThreads; i++) {
+    ASSERT_EQ(pthread_create(&threads[i], nullptr, cycle_all_locks, nullptr),
+              0);
+  }
+
+  for (int i = 0; i < kNumThreads; i++) {
+    EXPECT_EQ(pthread_join(threads[i], nullptr), 0);
+  }
+
+  for (int i = 0; i < kNumLocks; i++) {
+    EXPECT_EQ(pthread_mutex_destroy(&many_locks[i]), 0);
+  }
+
+  ASSERT_EQ(pthread_mutexattr_destroy(&attr), 0);
 }
 
 // Tests that pthread_create works for detached threads and pthread_join fails.
