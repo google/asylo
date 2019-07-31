@@ -67,31 +67,6 @@ static Status restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
   return Status::OkStatus();
 }
 
-// Enters the enclave and invokes the secure snapshot key transfer entry-point.
-// If the ecall fails, return a non-OK status.
-static Status transfer_secure_snapshot_key(sgx_enclave_id_t eid,
-                                           const char *input, size_t input_len,
-                                           char **output, size_t *output_len) {
-  int result;
-  bridge_size_t bridge_output_len;
-  sgx_status_t sgx_status = ecall_transfer_secure_snapshot_key(
-      eid, &result, input, static_cast<bridge_size_t>(input_len), output,
-      &bridge_output_len);
-  if (output_len) {
-    *output_len = static_cast<size_t>(bridge_output_len);
-  }
-  if (sgx_status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(sgx_status, "Call to ecall_do_handshake failed");
-  } else if (result || *output_len == 0) {
-    // Ecall succeeded but did not return a value. This indicates that the
-    // trusted code failed to propagate error information over the enclave
-    // boundary.
-    return Status(error::GoogleError::INTERNAL, "No output from enclave");
-  }
-  return Status::OkStatus();
-}
-
 StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
     const std::string &name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
@@ -169,31 +144,8 @@ Status SgxClient::EnterAndRestore(const SnapshotLayout &snapshot_layout) {
 
 Status SgxClient::EnterAndTransferSecureSnapshotKey(
     const ForkHandshakeConfig &fork_handshake_config) {
-  std::string buf;
-  if (!fork_handshake_config.SerializeToString(&buf)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize ForkHandshakeConfig");
-  }
-
-  char *output = nullptr;
-  size_t output_len = 0;
-
-  ASYLO_RETURN_IF_ERROR(transfer_secure_snapshot_key(
-      GetPrimitiveClient()->GetEnclaveId(), buf.data(), buf.size(),
-      &output, &output_len));
-
-  // Enclave entry-point was successfully invoked. |output| is guaranteed to
-  // have a value.
-  StatusProto status_proto;
-  status_proto.ParseFromArray(output, output_len);
-  Status status;
-  status.RestoreFrom(status_proto);
-
-  // |output| points to an untrusted memory buffer allocated by the enclave. It
-  // is the untrusted caller's responsibility to free this buffer.
-  free(output);
-
-  return status;
+  return GetPrimitiveClient()->EnterAndTransferSecureSnapshotKey(
+      fork_handshake_config);
 }
 
 bool SgxClient::IsTcsActive() {

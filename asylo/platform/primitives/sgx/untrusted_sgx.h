@@ -84,6 +84,9 @@ class SgxEnclaveClient : public Client {
   // Enters the enclave and invokes the snapshotting entry-point.
   Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout);
 
+  Status EnterAndTransferSecureSnapshotKey(
+      const ForkHandshakeConfig &fork_handshake_config);
+
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                              MessageReader *output) override;

@@ -81,6 +81,43 @@ struct ms_ecall_deliver_signal_t {
   void *ms_buffer;
 };
 
+// Edger8r-generated primitives ms_ecall_transfer_secure_snapshot_key_t
+// marshalling struct.
+struct ms_ecall_transfer_secure_snapshot_key_t {
+  int ms_retval;
+  const char* ms_input;
+  bridge_size_t ms_input_len;
+  char** ms_output;
+  bridge_size_t* ms_output_len;
+};
+
+// Enters the enclave and invokes the secure snapshot key transfer entry-point.
+// If the ecall fails, return a non-OK status.
+static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid,
+                                        const char *input, size_t input_len,
+                                        char **output, size_t *output_len) {
+  bridge_size_t bridge_output_len;
+  ms_ecall_transfer_secure_snapshot_key_t ms;
+  ms.ms_input = input;
+  ms.ms_input_len = input_len;
+  ms.ms_output = output;
+  ms.ms_output_len = &bridge_output_len;
+  sgx_status_t sgx_status = sgx_ecall(eid, 4, &ocall_table_bridge, &ms, true);
+  if (output_len) {
+    *output_len = static_cast<size_t>(bridge_output_len);
+  }
+  if (sgx_status != SGX_SUCCESS) {
+    // Return a Status object in the SGX error space.
+    return Status(sgx_status, "Call to ecall_do_handshake failed");
+  } else if (ms.ms_retval || *output_len == 0) {
+    // Ecall succeeded but did not return a value. This indicates that the
+    // trusted code failed to propagate error information over the enclave
+    // boundary.
+    return Status(error::GoogleError::INTERNAL, "No output from enclave");
+  }
+  return Status::OkStatus();
+}
+
 
 // Edger8r-generated primitives ecall_take_snapshot marshalling struct.
 struct ms_ecall_take_snapshot_t {
@@ -375,5 +412,32 @@ Status SgxEnclaveClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
   return status;
 }
 
+Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
+    const ForkHandshakeConfig &fork_handshake_config) {
+  std::string buf;
+  if (!fork_handshake_config.SerializeToString(&buf)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize ForkHandshakeConfig");
+  }
+
+  char *output = nullptr;
+  size_t output_len = 0;
+
+  ASYLO_RETURN_IF_ERROR(TransferSecureSnapshotKey(
+      id_, buf.data(), buf.size(), &output, &output_len));
+
+  // Enclave entry-point was successfully invoked. |output| is guaranteed to
+  // have a value.
+  StatusProto status_proto;
+  status_proto.ParseFromArray(output, output_len);
+  Status status;
+  status.RestoreFrom(status_proto);
+
+  // |output| points to an untrusted memory buffer allocated by the enclave. It
+  // is the untrusted caller's responsibility to free this buffer.
+  free(output);
+
+  return status;
+}
 }  // namespace primitives
 }  // namespace asylo
