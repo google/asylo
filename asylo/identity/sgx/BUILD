@@ -229,7 +229,7 @@ cc_proto_library(
 )
 
 cc_grpc_library(
-    name = "sgx_remote_assertion_generator",
+    name = "sgx_remote_assertion_generator_service",
     srcs = [":sgx_remote_assertion_generator_proto"],
     generate_mocks = True,
     grpc_only = True,
@@ -242,7 +242,7 @@ cc_library(
     hdrs = ["sgx_remote_assertion_generator_client.h"],
     deps = [
         ":remote_assertion_cc_proto",
-        ":sgx_remote_assertion_generator",
+        ":sgx_remote_assertion_generator_service",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
@@ -255,8 +255,8 @@ cc_test(
     enclave_test_name = "sgx_remote_assertion_generator_client_enclave_test",
     deps = [
         ":remote_assertion_cc_proto",
-        ":sgx_remote_assertion_generator",
         ":sgx_remote_assertion_generator_client",
+        ":sgx_remote_assertion_generator_service",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/test/util:proto_matchers",
@@ -278,7 +278,7 @@ cc_library(
         ":code_identity_util",
         ":remote_assertion_cc_proto",
         ":remote_assertion_util",
-        ":sgx_remote_assertion_generator",
+        ":sgx_remote_assertion_generator_service",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/grpc/auth:peer_identity_util",
