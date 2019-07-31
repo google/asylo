@@ -88,12 +88,6 @@ cc_test(
     ],
 )
 
-cc_library(
-    name = "kernel_type_definitions",
-    hdrs = ["kernel_type.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-)
-
 # Serialized system call message reader and writer.
 cc_library(
     name = "message",

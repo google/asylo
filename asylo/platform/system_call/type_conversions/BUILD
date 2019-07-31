@@ -68,7 +68,6 @@ cc_binary(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/system_call:kernel_type_definitions",
         "//asylo/util:logging",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/flags:flag",
@@ -95,7 +94,10 @@ genrule(
 # Library containing type definitions (generated or manually written).
 cc_library(
     name = "types_definitions",
-    hdrs = ["generated_types.h"],
+    hdrs = [
+        "generated_types.h",
+        "kernel_types.h",
+    ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = ["@com_google_absl//absl/base:core_headers"],
 )
@@ -115,7 +117,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":types_definitions",
-        "//asylo/platform/system_call:kernel_type_definitions",
     ],
 )
 

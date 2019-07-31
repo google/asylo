@@ -23,7 +23,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
-#include "asylo/platform/system_call/kernel_type.h"
+#include "asylo/platform/system_call/type_conversions/types.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/status_macros.h"
 

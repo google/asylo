@@ -27,7 +27,6 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_replace.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/system_call/kernel_type.h"
 #include "asylo/platform/system_call/type_conversions/types_macros.inc"
 
 // A struct describing properties and values of a enum desired to be generated

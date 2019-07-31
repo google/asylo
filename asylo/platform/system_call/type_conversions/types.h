@@ -23,5 +23,6 @@
 // or otherwise.
 
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
+#include "asylo/platform/system_call/type_conversions/kernel_types.h"
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_TYPES_H_

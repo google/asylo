@@ -23,7 +23,7 @@
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
-#include "asylo/platform/system_call/kernel_type.h"
+#include "asylo/platform/system_call/type_conversions/types.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 extern "C" {
