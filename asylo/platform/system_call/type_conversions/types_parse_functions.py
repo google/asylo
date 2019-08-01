@@ -108,7 +108,8 @@ def define_enum(name,
                 default_value_host=0,
                 default_value_newlib=0,
                 multi_valued=False,
-                skip_conversions=False):
+                skip_conversions=False,
+                or_input_to_default_value=False):
   """Defines a collection of related enumeration values and their properties.
 
   Args:
@@ -120,11 +121,17 @@ def define_enum(name,
       int value or the enum value provided as a string.
     multi_valued: Boolean indicating if the enum values can be combined using
       bitwise OR operations.
-    skip_conversions: Boolean indicating if generation of types
-      conversion functions be skipped, and only enum definitions be generated.
-      Useful when conversion functions are complex and need to be written
-      manually, but the enum definitions can be generated automatically by
-      resolving the enum values from the target host implementation.
+    skip_conversions: Boolean indicating if generation of types conversion
+      functions be skipped, and only enum definitions be generated. Useful when
+      conversion functions are complex and need to be written manually, but the
+      enum definitions can be generated automatically by resolving the enum
+      values from the target host implementation.
+    or_input_to_default_value: Boolean indicating if the input be bitwise OR'ed
+      with default_value_host (or default_value_newlib) in the generated
+      conversion function, if no match for the input enum value is found. This
+      is useful for cases when we wish to preserve the input for debugging,
+      while providing a default output in case no matching enum value for the
+      input is found.
   """
 
   # The enum values here are written twice, once as a string literal, then as an
@@ -142,6 +149,7 @@ def define_enum(name,
   _enum_map[name]['default_value_newlib'] = default_value_newlib
   _enum_map[name]['multi_valued'] = multi_valued
   _enum_map[name]['skip_conversions'] = skip_conversions
+  _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
 
 
 def define_struct(name, values, pack_attributes=True, skip_conversions=False):
@@ -205,23 +213,24 @@ def get_enums():
   typical output of get_enums looks like the following -
 
   #define ENUMS_INIT \
-  {"FcntlCmd", {-1, -1, false, false, {{"F_GETFD", F_GETFD}, {"F_SETFD",
+  {"FcntlCmd", {-1, -1, false, false, false, {{"F_GETFD", F_GETFD}, {"F_SETFD",
   F_SETFD}}}}, \
-  {"FileFlags", {0, 0, true, false, {{"O_RDONLY", O_RDONLY}, {"O_WRONLY",
+  {"FileFlags", {0, 0, true, false, false, {{"O_RDONLY", O_RDONLY}, {"O_WRONLY",
   O_WRONLY}}}}
 
   Each line contains an enum, and has the following pattern -
   {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
-  skip_conversions, {{"enum_val1", enum_val1}, {"enum_val2",
-  enum_val2}}}}, \
+  skip_conversions, or_input_to_default_value, {{"enum_val1", enum_val1},
+  {"enum_val2", enum_val2}}}}, \
   """
   enum_rows = []
   for enum_name, enum_properties in _enum_map.items():
-    enum_rows.append('{{{}, {{{}, {}, {}, {}, {{{}}}}}}}'.format(
+    enum_rows.append('{{{}, {{{}, {}, {}, {}, {}, {{{}}}}}}}'.format(
         '"{}"'.format(enum_name), enum_properties['default_value_host'],
         enum_properties['default_value_newlib'],
         'true' if enum_properties['multi_valued'] else 'false',
         'true' if enum_properties['skip_conversions'] else 'false',
+        'true' if enum_properties['or_input_to_default_value'] else 'false',
         enum_properties['values']))
 
   return '#define ENUMS_INIT \\\n{}\n'.format(', \\\n'.join(enum_rows))

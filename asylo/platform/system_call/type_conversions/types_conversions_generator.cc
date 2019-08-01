@@ -36,6 +36,7 @@ struct EnumProperties {
   int default_value_newlib;
   bool multi_valued;
   bool skip_conversions;
+  bool or_input_to_default_value;
 
   // A vector of enum values in the format std::pair{Enum name, Enum value}.
   // Enum name is simply a literal describing the enum value as a string. This
@@ -110,6 +111,9 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
        << ";\n";
   }
 
+  if (enum_properties.or_input_to_default_value) {
+    os << "  *output |= *input;\n";
+  }
   return os.str();
 }
 
@@ -141,6 +145,9 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
      << (to_prefix ? enum_properties.default_value_host
                    : enum_properties.default_value_newlib)
      << ";\n";
+  if (enum_properties.or_input_to_default_value) {
+    os << "  *output |= *input;\n";
+  }
 
   return os.str();
 }

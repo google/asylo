@@ -38,14 +38,14 @@ class TypesParseFunctionsTest(TestCase):
     define_enum('TestEnum', ['a', 'b'])
     self.assertEqual(
         get_enums(), '#define ENUMS_INIT \\\n'
-        '{"TestEnum", {0, 0, false, false, {{"a", a}, {"b", b}}}}\n')
+        '{"TestEnum", {0, 0, false, false, false, {{"a", a}, {"b", b}}}}\n')
 
   def test_get_enums_with_all_vals(self):
-    define_enum('TestEnum', ['a'], 1, 2, True)
+    define_enum('TestEnum', ['a'], 1, 2, True, True, True)
     self.assertEqual(
         get_enums(),
-        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, false, {{"a", a}}}}\n'
-    )
+        '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, true, true, '
+        '{{"a", a}}}}\n')
 
   def test_get_structs_with_only_default_vals(self):
     define_struct('TestStruct', [('a', 'b')])

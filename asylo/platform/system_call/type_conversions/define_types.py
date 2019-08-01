@@ -35,6 +35,7 @@ include("netinet/tcp.h")
 include("stdint.h")
 include("sys/inotify.h")
 include("sys/socket.h")
+include("errno.h")
 
 set_klinux_prefix("kLinux")
 set_bridge_prefix("bridge")
@@ -133,6 +134,41 @@ define_enum(
         "IN_UNMOUNT", "IN_Q_OVERFLOW", "IN_IGNORED"
     ],
     multi_valued=True)
+
+# List of errnos to be translated from the host native values to the enclave
+# native values. This list was chosen as an intersection of errnos between the
+# libc implementations empirically seen in and out of the enclave. Any errno
+# values not listed here will not be translated to an enclave native value, but
+# will instead be propagated into the enclave as the host native value OR'ed
+# with 0x8000.
+define_enum(
+    name="ErrorNumber",
+    values=[
+        "E2BIG", "EACCES", "EADDRINUSE", "EADDRNOTAVAIL", "EADV",
+        "EAFNOSUPPORT", "EAGAIN", "EALREADY", "EBADE", "EBADF", "EBADFD",
+        "EBADMSG", "EBADR", "EBADRQC", "EBADSLT", "EBFONT", "EBUSY",
+        "ECANCELED", "ECHILD", "ECHRNG", "ECOMM", "ECONNABORTED",
+        "ECONNREFUSED", "ECONNRESET", "EDEADLOCK", "EDESTADDRREQ", "EDOM",
+        "EDOTDOT", "EDQUOT", "EEXIST", "EFAULT", "EFBIG", "EHOSTDOWN",
+        "EHOSTUNREACH", "EIDRM", "EILSEQ", "EINPROGRESS", "EINTR", "EINVAL",
+        "EIO", "EISCONN", "EISDIR", "EL2HLT", "EL2NSYNC", "EL3HLT", "EL3RST",
+        "ELIBACC", "ELIBBAD", "ELIBEXEC", "ELIBMAX", "ELIBSCN", "ELNRNG",
+        "ELOOP", "EMFILE", "EMLINK", "EMSGSIZE", "EMULTIHOP", "ENAMETOOLONG",
+        "ENETDOWN", "ENETRESET", "ENETUNREACH", "ENFILE", "ENOANO", "ENOBUFS",
+        "ENOCSI", "ENODATA", "ENODEV", "ENOENT", "ENOEXEC", "ENOLCK", "ENOLINK",
+        "ENOMEDIUM", "ENOMEM", "ENOMSG", "ENONET", "ENOPKG", "ENOPROTOOPT",
+        "ENOSPC", "ENOSR", "ENOSTR", "ENOSYS", "ENOTBLK", "ENOTCONN", "ENOTDIR",
+        "ENOTEMPTY", "ENOTRECOVERABLE", "ENOTSOCK", "ENOTTY", "ENOTUNIQ",
+        "ENXIO", "EOPNOTSUPP", "EOVERFLOW", "EOWNERDEAD", "EPERM",
+        "EPFNOSUPPORT", "EPIPE", "EPROTO", "EPROTONOSUPPORT", "EPROTOTYPE",
+        "ERANGE", "EREMCHG", "EREMOTE", "EROFS", "ESHUTDOWN", "ESOCKTNOSUPPORT",
+        "ESPIPE", "ESRCH", "ESRMNT", "ESTALE", "ESTRPIPE", "ETIME", "ETIMEDOUT",
+        "ETOOMANYREFS", "ETXTBSY", "EUNATCH", "EUSERS", "EXDEV", "EXFULL"
+    ],
+    multi_valued=False,
+    default_value_host=0x8000,
+    default_value_newlib=0x8000,
+    or_input_to_default_value=True)
 
 define_struct(
     name="stat",
