@@ -81,22 +81,13 @@ int enc_untrusted_get_errno();
 //          Input / Output          //
 //////////////////////////////////////
 
-int enc_untrusted_open(const char *path_name, int flags, ...);
 int enc_untrusted_close(int fd);
-ssize_t enc_untrusted_read(int fd, void *buf, size_t len);
-ssize_t enc_untrusted_write(int fd, const void *buf, size_t len);
 int enc_untrusted_puts(const char *str);
-off_t enc_untrusted_lseek(int fd, off_t offset, int whence);
-int enc_untrusted_unlink(const char *path_name);
 int enc_untrusted_fcntl(int fd, int cmd, ...);
 int enc_untrusted_fsync(int fd);
 int enc_untrusted_chown(const char *path, uid_t owner, gid_t group);
-int enc_untrusted_link(const char *from, const char *to);
-int enc_untrusted_rename(const char *oldpath, const char *newpath);
-ssize_t enc_untrusted_readlink(const char *path, char *buf, size_t bufsize);
 int enc_untrusted_stat(const char *pathname, struct stat *stat_buffer);
 int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer);
-int enc_untrusted_symlink(const char *from, const char *to);
 int enc_untrusted_fstat(int fd, struct stat *stat_buffer);
 int enc_untrusted_isatty(int file);
 ssize_t enc_untrusted_writev(int fd, char *buf, int size);
@@ -241,7 +232,6 @@ int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
 //          sys/stat.h              //
 //////////////////////////////////////
 
-int enc_untrusted_mkdir(const char *path, int mode);
 mode_t enc_untrusted_umask(mode_t mask);
 int enc_untrusted_chmod(const char *pathname, mode_t mode);
 int enc_untrusted_fchmod(int fd, mode_t mode);
@@ -276,13 +266,9 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 //////////////////////////////////////
 
 int enc_untrusted_fchown(int fd, uid_t owner, gid_t group);
-int enc_untrusted_pipe2(int pipefd[2], int flags);
 int64_t enc_untrusted_sysconf(int name);
 uint32_t enc_untrusted_sleep(uint32_t seconds);
 int enc_untrusted_usleep(useconds_t usec);
-int enc_untrusted_rmdir(const char *pathname);
-int enc_untrusted_truncate(const char *path, off_t length);
-int enc_untrusted_ftruncate(int fd, off_t length);
 void enc_untrusted__exit(int rc);
 pid_t enc_untrusted_fork(const char *enclave_name, const char *config,
                          size_t config_len, bool restore_snapshot);

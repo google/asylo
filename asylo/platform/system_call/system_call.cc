@@ -18,6 +18,8 @@
 
 #include "asylo/platform/system_call/system_call.h"
 
+#include <errno.h>
+
 #include <array>
 #include <cstdarg>
 #include <cstdint>
@@ -25,6 +27,7 @@
 
 #include "asylo/platform/system_call/metadata.h"
 #include "asylo/platform/system_call/serialize.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 namespace {
 
@@ -109,5 +112,18 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   }
 
   uint64_t result = response_reader.header()->result;
+  if (static_cast<int64_t>(result) == -1) {
+    int klinux_errno = response_reader.header()->error_number;
+
+    // Simply having a return value of -1 from a syscall is not a necessary
+    // condition that the syscall failed. Some syscalls can return -1 when
+    // successful (eg., lseek). The reliable way to check for syscall failure is
+    // to therefore check both return value and presence of a non-zero errno.
+    if (klinux_errno != 0) {
+      int enclave_errno;
+      FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+      errno = enclave_errno;
+    }
+  }
   return result;
 }

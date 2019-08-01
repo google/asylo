@@ -133,6 +133,7 @@ cc_library(
         ":message",
         ":metadata",
         "//asylo/platform/primitives",
+        "//asylo/platform/system_call/type_conversions:types",
         "@com_google_absl//absl/strings",
     ],
 )

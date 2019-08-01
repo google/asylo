@@ -50,6 +50,21 @@ uid_t enc_untrusted_getuid();
 gid_t enc_untrusted_getgid();
 uid_t enc_untrusted_geteuid();
 gid_t enc_untrusted_getegid();
+int enc_untrusted_kill(pid_t pid, int sig);
+int enc_untrusted_link(const char *oldpath, const char *newpath);
+off_t enc_untrusted_lseek(int fd, off_t offset, int whence);
+int enc_untrusted_mkdir(const char *pathname, mode_t mode);
+int enc_untrusted_open(const char *pathname, int flags, ...);
+int enc_untrusted_unlink(const char *pathname);
+int enc_untrusted_rename(const char *oldpath, const char *newpath);
+ssize_t enc_untrusted_read(int fd, void *buf, size_t count);
+ssize_t enc_untrusted_write(int fd, const void *buf, size_t count);
+int enc_untrusted_symlink(const char *target, const char *linkpath);
+ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz);
+int enc_untrusted_truncate(const char *path, off_t length);
+int enc_untrusted_ftruncate(int fd, off_t length);
+int enc_untrusted_rmdir(const char *path);
+int enc_untrusted_pipe2(int pipefd[2], int flags);
 
 #ifdef __cplusplus
 }  // extern "C"

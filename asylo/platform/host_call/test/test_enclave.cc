@@ -112,6 +112,189 @@ PrimitiveStatus TestGetegid(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  pid_t pid = in->next<pid_t>();
+  int sig = in->next<int>();
+
+  out->Push<int>(enc_untrusted_kill(pid, sig));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestLink(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  const auto old_path = in->next();
+  const auto new_path = in->next();
+
+  out->Push<int>(enc_untrusted_link(old_path.As<char>(), new_path.As<char>()));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestLseek(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+
+  int fd = in->next<int>();
+  off_t offset = in->next<off_t>();
+  int whence = in->next<int>();
+
+  out->Push<off_t>(enc_untrusted_lseek(fd, offset, whence));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestMkdir(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  const auto pathname = in->next();
+  mode_t mode = in->next<mode_t>();
+
+  out->Push<int>(enc_untrusted_mkdir(pathname.As<char>(), mode));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
+  // open() can assume 2 or 3 arguments.
+  if (in->size() == 3) {
+    const auto pathname = in->next();
+    int linux_flags = in->next<int>();
+    int linux_mode = in->next<mode_t>();
+    int flags;
+    FromkLinuxFileStatusFlag(&linux_flags, &flags);
+    int mode;
+    FromkLinuxFileModeFlag(&linux_mode, &mode);
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags, mode));
+  } else if (in->size() == 2) {
+    const auto pathname = in->next();
+    int kLinux_flags = in->next<int>();
+    int flags;
+    FromkLinuxFileStatusFlag(&kLinux_flags, &flags);
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags));
+  } else {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "Unexpected number of arguments. open() expects 2 or 3 arguments."};
+  }
+
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestUnlink(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  const auto pathname = in->next();
+
+  out->Push<int>(enc_untrusted_unlink(pathname.As<char>()));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestRename(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  const auto oldpath = in->next();
+  const auto newpath = in->next();
+
+  out->Push<int>(enc_untrusted_rename(oldpath.As<char>(), newpath.As<char>()));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestRead(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  int fd = in->next<int>();
+  size_t count = in->next<size_t>();
+  char read_buf[20];
+
+  out->Push<ssize_t>(enc_untrusted_read(fd, read_buf, count));
+  out->PushByCopy(Extent{read_buf, strlen(read_buf) + 1});
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestWrite(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+  int fd = in->next<int>();
+  const auto write_buf = in->next();
+  size_t count = in->next<size_t>();
+
+  out->Push<ssize_t>(enc_untrusted_write(fd, write_buf.As<char>(), count));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestSymlink(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  const auto target = in->next();
+  const auto linkpath = in->next();
+
+  out->Push<ssize_t>(
+      enc_untrusted_symlink(target.As<char>(), linkpath.As<char>()));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestReadlink(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  const auto pathname = in->next();
+
+  char buf[PATH_MAX];
+  ssize_t len =
+      enc_untrusted_readlink(pathname.As<char>(), buf, sizeof(buf) - 1);
+  out->Push<ssize_t>(len);
+
+  buf[len] = '\0';
+  out->PushByCopy(Extent{buf, strlen(buf) + 1});
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestTruncate(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  const auto path = in->next();
+  off_t length = in->next<off_t>();
+
+  out->Push<int>(enc_untrusted_truncate(path.As<char>(), length));
+
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestFTruncate(void *context, MessageReader *in,
+                              MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  int fd = in->next<int>();
+  auto length = in->next<off_t>();
+
+  out->Push<int>(enc_untrusted_ftruncate(fd, length));
+
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestRmdir(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  const auto path = in->next();
+
+  out->Push<int>(enc_untrusted_rmdir(path.As<char>()));
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestPipe2(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  auto msg_to_pipe = in->next();
+  int p[2];
+  char inbuf[msg_to_pipe.size()];
+
+  out->Push<int>(enc_untrusted_pipe2(p, O_NONBLOCK));
+  enc_untrusted_write(p[1], msg_to_pipe.data(), msg_to_pipe.size());
+  enc_untrusted_read(p[0], inbuf, msg_to_pipe.size());
+  out->Push(std::string(inbuf, msg_to_pipe.size()));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -147,6 +330,42 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestGetEgid,
       EntryHandler{asylo::host_call::TestGetegid}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestKill, EntryHandler{asylo::host_call::TestKill}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestLink, EntryHandler{asylo::host_call::TestLink}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestLseek, EntryHandler{asylo::host_call::TestLseek}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestMkdir, EntryHandler{asylo::host_call::TestMkdir}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestOpen, EntryHandler{asylo::host_call::TestOpen}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestUnlink,
+      EntryHandler{asylo::host_call::TestUnlink}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestRename,
+      EntryHandler{asylo::host_call::TestRename}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestRead, EntryHandler{asylo::host_call::TestRead}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestWrite, EntryHandler{asylo::host_call::TestWrite}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSymlink,
+      EntryHandler{asylo::host_call::TestSymlink}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestReadLink,
+      EntryHandler{asylo::host_call::TestReadlink}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestTruncate,
+      EntryHandler{asylo::host_call::TestTruncate}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestFTruncate,
+      EntryHandler{asylo::host_call::TestFTruncate}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestRmdir, EntryHandler{asylo::host_call::TestRmdir}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestPipe2, EntryHandler{asylo::host_call::TestPipe2}));
 
   return PrimitiveStatus::OkStatus();
 }

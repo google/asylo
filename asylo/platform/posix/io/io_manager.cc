@@ -20,6 +20,7 @@
 
 #include <fcntl.h>
 #include <poll.h>
+
 #include <cerrno>
 #include <cstdint>
 #include <memory>
@@ -29,6 +30,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_context_epoll.h"
 #include "asylo/platform/posix/io/io_context_eventfd.h"
 #include "asylo/platform/posix/io/io_context_inotify.h"

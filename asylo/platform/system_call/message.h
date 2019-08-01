@@ -46,8 +46,9 @@ struct MessageHeader {
   /* byte:  8 ..  11 */ uint32_t flags;                  // Flags bitmap.
   /* byte: 12 ..  15 */ uint32_t sysno;                  // System call number.
   /* byte: 16 ..  23 */ uint64_t result;                 // System call result.
-  /* byte: 24 ..  71 */ uint64_t offset[kParameterMax];  // Parameter offset.
-  /* byte: 72 .. 119 */ uint64_t size[kParameterMax];    // Parameter size.
+  /* byte: 24 ..  31 */ uint64_t error_number;           // System call errno.
+  /* byte: 32 ..  79 */ uint64_t offset[kParameterMax];  // Parameter offset.
+  /* byte: 80 .. 127 */ uint64_t size[kParameterMax];    // Parameter size.
 } ABSL_ATTRIBUTE_PACKED;
 
 static_assert(offsetof(MessageHeader, magic) == 0,
@@ -58,9 +59,11 @@ static_assert(offsetof(MessageHeader, sysno) == 12,
               "Unexpected layout for MessageHeader::sysno.");
 static_assert(offsetof(MessageHeader, result) == 16,
               "Unexpected layout for MessageHeader::result.");
-static_assert(offsetof(MessageHeader, offset) == 24,
+static_assert(offsetof(MessageHeader, error_number) == 24,
+              "Unexpected layout for MessageHeader::error_number");
+static_assert(offsetof(MessageHeader, offset) == 32,
               "Unexpected layout for MessageHeader::offset.");
-static_assert(offsetof(MessageHeader, size) == 72,
+static_assert(offsetof(MessageHeader, size) == 80,
               "Unexpected layout for MessageHeader::size.");
 static_assert(sizeof(MessageHeader) % 8 == 0,
               "sizeof(MessageHeader) must be a multiple of 8 to ensure correct "
@@ -69,7 +72,7 @@ static_assert(sizeof(MessageHeader) % 8 == 0,
 // Read operations on a system call request or response message.
 class MessageReader {
  public:
-  // Constructs a MessageReader from a extent.
+  // Constructs a MessageReader from an extent.
   explicit MessageReader(primitives::Extent extent) : extent_(extent) {}
 
   // Returns a pointer to the message header.
@@ -88,6 +91,10 @@ class MessageReader {
 
   // Returns the result of the system call encoded by the message.
   uint64_t result() const { return header()->result; }
+
+  // Returns the errno encoded by the message. The errno value is valid only if
+  // result is -1.
+  uint64_t error_number() const { return header()->error_number; }
 
   // Checks the validity of this message, returning an OK status on success.
   primitives::PrimitiveStatus Validate() const;
@@ -150,7 +157,7 @@ class MessageWriter {
 
   // Construct a response writer for a system call with a parameter list.
   static MessageWriter ResponseWriter(
-      int sysno, uint64_t result,
+      int sysno, uint64_t result, uint64_t error_number,
       const std::array<uint64_t, kParameterMax> &parameters);
 
   // Returns the size of the configured message.
@@ -161,7 +168,8 @@ class MessageWriter {
   bool Write(primitives::Extent *message) const;
 
  private:
-  MessageWriter(int sysno, uint64_t result, bool is_request,
+  MessageWriter(int sysno, uint64_t result, uint64_t error_number,
+                bool is_request,
                 const std::array<uint64_t, kParameterMax> &parameters);
 
   // Returns true if the parameter into the parameters list is used by this
@@ -181,6 +189,7 @@ class MessageWriter {
 
   int sysno_;
   uint64_t result_;
+  uint64_t error_number_;
   bool is_request_;
   const std::array<uint64_t, kParameterMax> parameters_;
   std::array<size_t, kParameterMax> parameter_size_;

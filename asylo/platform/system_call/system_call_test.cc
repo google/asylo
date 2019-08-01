@@ -215,6 +215,14 @@ TEST(SystemCallTest, AbortOnResponseMessageFailure) {
               ::testing::KilledBySignal(SIGABRT), ".*");
 }
 
+// Ensure that errno is correctly set if system call fails.
+TEST(SystemCallTest, Errnotest) {
+  enc_set_dispatch_syscall(SystemCallDispatcher);
+  int result = enc_untrusted_syscall(SYS_getcwd, nullptr, 1);
+  EXPECT_THAT(result, Eq(-1));
+  EXPECT_THAT(errno, Eq(ERANGE));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

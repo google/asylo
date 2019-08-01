@@ -31,6 +31,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/status_matchers.h"
@@ -90,7 +91,7 @@ class EnclaveStorageSecureTest : public ::testing::Test,
 const size_t buffer_length_vals[] = {128, 160, 512, 544};
 
 INSTANTIATE_TEST_SUITE_P(Instance1, EnclaveStorageSecureTest,
-                        ::testing::ValuesIn(buffer_length_vals));
+                         ::testing::ValuesIn(buffer_length_vals));
 
 void EnclaveStorageSecureTest::PrepareTest() {
   path_ = absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir),

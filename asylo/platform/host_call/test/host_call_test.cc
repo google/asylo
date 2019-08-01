@@ -191,6 +191,476 @@ TEST_F(HostCallTest, TestGetuid) {
   EXPECT_THAT(out.next<uid_t>(), Eq(getuid()));
 }
 
+bool sigabrt_received = false;
+void sigabrt_handler(int sig) {
+  if (sig == SIGABRT) sigabrt_received = true;
+}
+
+// Tests enc_untrusted_kill() by calling the method on the current process from
+// inside the enclave with a SIGABRT. We substitute the handler for SIGABRT
+// temporarily so that the current process doesn't actually get killed.
+TEST_F(HostCallTest, TestKill) {
+  // Change the default signal handler for SIGABRT.
+  struct sigaction old_handler, new_handler;
+  new_handler.sa_handler = &sigabrt_handler;
+  sigemptyset(&(new_handler.sa_mask));
+  new_handler.sa_flags = 0;
+  ASSERT_THAT(sigaction(SIGABRT, &new_handler, &old_handler), Not(Eq(-1)));
+
+  primitives::MessageWriter in;
+  in.Push<pid_t>(/*value=pid=*/getpid());
+  in.Push<int>(/*value=sig=*/SIGABRT);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &in, &out));
+  EXPECT_THAT(sigabrt_received, Eq(true));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  // Restore the default handler for SIGABRT.
+  ASSERT_THAT(sigaction(SIGABRT, nullptr, &old_handler), Not(Eq(-1)));
+  sigabrt_received = false;
+}
+
+// Tests enc_untrusted_link() by creating a file (|oldpath|) and calling
+// enc_untrusted_link() from inside the enclave to link it to |newpath|, then
+// verifying that |newpath| is indeed accessible.
+TEST_F(HostCallTest, TestLink) {
+  std::string oldpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/old_name.tmp");
+  std::string newpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/new_name.tmp");
+
+  int fd = open(oldpath.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
+
+  primitives::MessageWriter in;
+  in.Push(oldpath);
+  in.Push(newpath);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+
+  EXPECT_NE(access(newpath.c_str(), F_OK), -1);
+  EXPECT_NE(access(oldpath.c_str(), F_OK), -1);
+}
+
+// Tests enc_untrusted_lseek() by creating a file and calling
+// enc_untrusted_leek() from inside the enclave and verify the return value for
+// the provided offset.
+TEST_F(HostCallTest, TestLseek) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  EXPECT_THAT(write(fd, "hello", 5), Eq(5));
+
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<off_t>(/*value=offset=*/2);
+  in.Push<int>(/*value=whence=*/SEEK_SET);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLseek, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<off_t>(), Eq(2));
+}
+
+TEST_F(HostCallTest, TestLseekBadReturn) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  EXPECT_THAT(write(fd, "hello", 5), Eq(5));
+
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<off_t>(/*value=offset=*/0);
+  in.Push<int>(/*value=whence=*/1000);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLseek, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<off_t>(), Eq(-1));
+}
+
+// Tests enc_untrusted_mkdir() by calling it from inside the enclave and
+// verifying that the directory created indeed exists.
+TEST_F(HostCallTest, TestMkdir) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_make");
+
+  primitives::MessageWriter in;
+  in.Push(path);
+  in.Push<mode_t>(/*value=mode=*/0777);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  struct stat sb;
+  EXPECT_TRUE(stat(path.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode));
+}
+
+TEST_F(HostCallTest, TestMkdirNonExistentPath) {
+  std::string path = absl::StrCat("/non-existent-path/dir_to_make");
+
+  primitives::MessageWriter in;
+  in.Push(path);
+  in.Push<mode_t>(/*value=mode=*/0777);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestMkdir, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
+}
+
+// Tests enc_untrusted_open() by using it to create a new file from inside the
+// enclave and verifying that it exists.
+TEST_F(HostCallTest, TestOpen) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  primitives::MessageWriter in;
+  in.Push(path);
+  in.Push<int>(/*value=flags=*/O_RDWR | O_CREAT | O_TRUNC);
+  in.Push<mode_t>(/*value=mode=*/S_IRUSR | S_IWUSR);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Gt(0));
+  EXPECT_NE(access(path.c_str(), F_OK), -1);
+}
+
+// Test enc_untrusted_open() by opening an existing file (omit passing mode when
+// opening the file).
+TEST_F(HostCallTest, TestOpenExistingFile) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  ASSERT_THAT(write(fd, path.c_str(), path.length() + 1),
+              Eq(path.length() + 1));
+  ASSERT_THAT(access(path.c_str(), F_OK), Eq(0));
+
+  primitives::MessageWriter in;
+  in.Push(path);
+  in.Push<int>(/*value=flags*/ O_RDWR | O_CREAT | O_TRUNC);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestOpen, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Gt(0));
+  EXPECT_THAT(access(path.c_str(), F_OK), Eq(0));
+
+  // Make sure file is truncated as specified by O_TRUNC.
+  struct stat sb;
+  EXPECT_THAT(stat(path.c_str(), &sb), Eq(0));
+  EXPECT_THAT(sb.st_size, Eq(0));
+}
+
+// Tests enc_untrusted_unlink() by deleting an existing file on the untrusted
+// side from inside the enclave using the host call.
+TEST_F(HostCallTest, TestUnlink) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+
+  primitives::MessageWriter in;
+  in.Push(path);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+  EXPECT_THAT(access(path.c_str(), F_OK), Eq(-1));
+}
+
+TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
+  std::string path("obviously-illegal-file.tmp");
+  ASSERT_THAT(access(path.c_str(), F_OK), Eq(-1));
+
+  primitives::MessageWriter in;
+  in.Push(path);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
+}
+
+// Tests enc_untrusted_rename() by making a host call from inside the enclave
+// and verifying that the file is indeed renamed on the untrusted side.
+TEST_F(HostCallTest, TestRename) {
+  std::string oldpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/oldname.tmp");
+  std::string newpath =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/newname.tmp");
+
+  creat(oldpath.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
+
+  primitives::MessageWriter in;
+  in.Push(oldpath);
+  in.Push(newpath);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRename, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  EXPECT_THAT(access(oldpath.c_str(), F_OK), Eq(-1));
+  EXPECT_NE(access(newpath.c_str(), F_OK), -1);
+}
+
+// Tests enc_untrusted_read() by making a host call from inside the enclave and
+// verifying that what is read on untrusted side is identical to what is read
+// from inside the enclave for a provided file.
+TEST_F(HostCallTest, TestRead) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  std::string expected_content = "this is what's being read!";
+  ASSERT_THAT(
+      write(fd, expected_content.c_str(), expected_content.length() + 1),
+      Eq(expected_content.length() + 1));
+  ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
+
+  // We do not push the empty read buffer on the stack since a read buffer would
+  // need to be created inside the enclave anyway.
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.Push<size_t>(/*value=count=*/expected_content.length() + 1);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRead, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Contains return value and buffer.
+  EXPECT_THAT(out.next<ssize_t>(), Eq(expected_content.length() + 1));
+  EXPECT_THAT(out.next().As<char>(), StrEq(expected_content));
+}
+
+// Tests enc_untrusted_write() by making a host call from inside the enclave to
+// write to a file, and verifying that the content read from the file on the
+// host matches it.
+TEST_F(HostCallTest, TestWrite) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  std::string write_buf = "text to be written";
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/fd);
+  in.PushByCopy(primitives::Extent{write_buf.c_str(), write_buf.length() + 1});
+  in.Push<size_t>(/*value=count=*/write_buf.length() + 1);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestWrite, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<ssize_t>(), Eq(write_buf.length() + 1));
+
+  ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
+  char read_buf[20];
+  EXPECT_THAT(read(fd, read_buf, write_buf.length() + 1),
+              Eq(write_buf.length() + 1));
+  EXPECT_THAT(read_buf, StrEq(write_buf));
+}
+
+// Tests enc_untrusted_symlink() by attempting to create a symlink from inside
+// the enclave and verifying that the created symlink is accessible.
+TEST_F(HostCallTest, TestSymlink) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string target =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/target.tmp");
+
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  primitives::MessageWriter in;
+  in.Push(test_file);
+  in.Push(target);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSymlink, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+  EXPECT_NE(access(target.c_str(), F_OK), -1);
+}
+
+// Tests enc_untrusted_readlink() by making a call from inside the enclave and
+// verifying that the returned target path is same as that obtained from calling
+// readlink() natively on the untrusted side.
+TEST_F(HostCallTest, TestReadlink) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  std::string sym_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_sym_file.tmp");
+
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Create a symlink to be read by readlink.
+  ASSERT_THAT(symlink(test_file.c_str(), sym_file.c_str()), Eq(0));
+
+  primitives::MessageWriter in;
+  in.Push(sym_file);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadLink, &in, &out));
+
+  char buf_expected[PATH_MAX];
+  ssize_t len_expected =
+      readlink(sym_file.c_str(), buf_expected, sizeof(buf_expected) - 1);
+  buf_expected[len_expected] = '\0';
+
+  ASSERT_THAT(out, SizeIs(2));  // Return value and the buffer.
+  EXPECT_THAT(out.next<ssize_t>(), Eq(len_expected));
+  EXPECT_THAT(out.next().As<char>(), StrEq(buf_expected));
+}
+
+// Tests enc_untrusted_truncate() by making a call from inside the enclave and
+// verifying that the file is indeed truncated on the untrusted side by reading
+// the file.
+TEST_F(HostCallTest, TestTruncate) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Write something to the file.
+  std::string file_content = "some random content.";
+  ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
+              Eq(file_content.length() + 1));
+
+  primitives::MessageWriter in;
+  constexpr int kTruncLen = 5;
+  in.Push(test_file);
+  in.Push<off_t>(/*value=length=*/kTruncLen);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestTruncate, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), 0);
+
+  // Verify contents of the file by reading it.
+  char read_buf[10];
+  ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
+  EXPECT_THAT(read(fd, read_buf, 10), Eq(kTruncLen));
+  read_buf[kTruncLen] = '\0';
+  EXPECT_THAT(read_buf, StrEq(file_content.substr(0, kTruncLen)));
+}
+
+// Tests enc_untrusted_ftruncate() by making a call from inside the enclave and
+// verifying that the file is indeed truncated on the untrusted side by reading
+// the file.
+TEST_F(HostCallTest, TestFTruncate) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Write something to the file.
+  std::string file_content = "some random content.";
+  ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
+              Eq(file_content.length() + 1));
+
+  primitives::MessageWriter in2;
+  constexpr int kTruncLen = 5;
+  in2.Push<int>(/*value=fd=*/fd);
+  in2.Push<off_t>(/*value=length=*/kTruncLen);
+
+  primitives::MessageReader out2;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out2.next<int>(), 0);
+
+  // Verify contents of the file by reading it.
+  char read_buf[10];
+  ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
+  EXPECT_THAT(read(fd, read_buf, 10), Eq(kTruncLen));
+  read_buf[kTruncLen] = '\0';
+  EXPECT_THAT(read_buf, StrEq(file_content.substr(0, kTruncLen)));
+
+  // Force an error and verify that the return value is non-zero.
+  primitives::MessageWriter in3;
+  in3.Push<int>(/*value=fd=*/-1);
+  in3.Push<off_t>(/*value=length=*/kTruncLen);
+
+  primitives::MessageReader out3;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFTruncate, &in3, &out3));
+  ASSERT_THAT(out3, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out3.next<int>(), -1);
+}
+
+// Tests enc_untrusted_rmdir() by making a call from inside the enclave and
+// verifying that the directory is indeed deleted.
+TEST_F(HostCallTest, TestRmdir) {
+  std::string dir_to_del =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_del");
+  ASSERT_THAT(mkdir(dir_to_del.c_str(), O_CREAT | O_RDWR), Eq(0));
+
+  primitives::MessageWriter in;
+  in.Push(dir_to_del);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRmdir, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  // Verify that the directory does not exist.
+  struct stat sb;
+  EXPECT_FALSE(stat(dir_to_del.c_str(), &sb) == 0 && S_ISDIR(sb.st_mode));
+}
+
+// Tests enc_untrusted_pipe2() by passing a message to be pipe'd, calling the
+// method from inside the enclave, then writing and reading the message from the
+// pipe and verifying the message contents.
+TEST_F(HostCallTest, TestPipe2) {
+  std::string msg_to_pipe = "hello, world";
+
+  primitives::MessageWriter in;
+  in.Push(msg_to_pipe);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestPipe2, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));
+  EXPECT_THAT(out.next<int>(), Eq(0));  // Check return value.
+  EXPECT_THAT(out.next().As<char>(), msg_to_pipe);
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

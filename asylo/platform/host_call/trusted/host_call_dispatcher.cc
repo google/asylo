@@ -47,11 +47,7 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::UntrustedCall(
       kSystemCallHandler, &input, &output));
 
-  // The following is merely a sanity check since the UntrustedCall to
-  // |SystemCallHandler| returns a non-ok status should no response be received.
-  // This check is useful if the response somehow gets lost when crossing the
-  // enclave boundary, or for other host call handlers in the future if
-  // they miss the check.
+  // The output should only contain the serialized response.
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(output, 1);
 
   auto response = output.next();
@@ -60,7 +56,7 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
   // Copy |response| to *response_buffer before it goes out of scope.
   // *response_buffer is expected to be owned by the caller, so we wouldn't
   // worry about freeing the memory we allocate here.
-  *response_buffer = reinterpret_cast<uint8_t *>(malloc(*response_size));
+  *response_buffer = reinterpret_cast<uint8_t*>(malloc(*response_size));
   memcpy(*response_buffer, response.As<uint8_t>(), *response_size);
 
   return primitives::PrimitiveStatus::OkStatus();
@@ -86,6 +82,9 @@ primitives::PrimitiveStatus NonSystemCallDispatcher(
         "No response received for the host call, or response lost while "
         "crossing the enclave boundary."};
   }
+
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(
+      *output, 2);  // output should contain the return value and the errno.
 
   return primitives::PrimitiveStatus::OkStatus();
 }

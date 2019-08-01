@@ -150,11 +150,12 @@ TEST(HostCallHandlersTest, IsAttyValidRequestTest) {
   FillInput([](MessageWriter *params) { params->Push(0); }, &input);
   MessageWriter output;
   ASSERT_THAT(IsAttyHandler(nullptr, nullptr, &input, &output), IsOk());
-  ASSERT_THAT(output, SizeIs(1));
+  ASSERT_THAT(output, SizeIs(2));
   VerifyOutput(
       [](MessageReader *results) {
-        ASSERT_THAT(*results, SizeIs(1));
-        EXPECT_EQ(results->next<int>(), 0);
+        ASSERT_THAT(*results, SizeIs(2));
+        EXPECT_EQ(results->next<int>(), 0);       // Check return value.
+        EXPECT_EQ(results->next<int>(), ENOTTY);  // Check errno.
       },
       &output);
 }
@@ -186,10 +187,10 @@ TEST(HostCallHandlersTest, USleepValidRequestTest) {
   MessageWriter output;
   ASSERT_THAT(USleepHandler(nullptr, nullptr, &input, &output),
               StatusIs(error::GoogleError::OK));
-  ASSERT_THAT(output, SizeIs(1));
+  ASSERT_THAT(output, SizeIs(2));
   VerifyOutput(
       [](MessageReader *results) {
-        ASSERT_THAT(*results, SizeIs(1));
+        ASSERT_THAT(*results, SizeIs(2));
         EXPECT_EQ(results->next<int>(), 0);
       },
       &output);

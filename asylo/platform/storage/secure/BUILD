@@ -66,6 +66,7 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
+        "//asylo/platform/host_call",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/storage/utils:offset_translator",
         "@com_google_absl//absl/base:core_headers",
@@ -97,6 +98,7 @@ cc_enclave_test(
     srcs = ["enclave_storage_secure_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/host_call",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "//asylo/util:cleansing_types",

@@ -89,101 +89,6 @@ host_calls {
 }
 
 host_calls {
-  name: "link"
-  return_type: "int"
-  parameters {
-    name: "target"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "link_name"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-}
-
-host_calls {
-  name: "lseek"
-  return_type: "off_t"
-  parameters {
-    name: "fd"
-    type: "int"
-  }
-  parameters {
-    name: "offset"
-    type: "off_t"
-  }
-  parameters {
-    name: "whence"
-    type: "int"
-  }
-}
-
-host_calls {
-  name: "read"
-  return_type: "int32_t"
-  parameters {
-    name: "fd"
-    type: "int"
-  }
-  parameters {
-    name: "buf"
-    type: "void *"
-    pointer_attributes {
-      attribute: OUT
-    }
-    pointer_attributes {
-      attribute: SIZE
-      attribute_expression: "len"
-    }
-  }
-  parameters {
-    name: "len"
-    type: "size_t"
-  }
-}
-
-host_calls {
-  name: "readlink"
-  return_type: "int32_t"
-  parameters {
-    name: "path"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "buf"
-    type: "char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "bufsize"
-    type: "size_t"
-  }
-}
-
-host_calls {
   name: "realloc"
   return_type: "void *"
   failure_return_expression: "nullptr"
@@ -197,95 +102,6 @@ host_calls {
   parameters {
     name: "size"
     type: "size_t"
-  }
-}
-
-host_calls {
-  name: "symlink"
-  return_type: "int"
-  parameters {
-    name: "target"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "link_name"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-}
-
-host_calls {
-  name: "write"
-  return_type: "int32_t"
-  parameters {
-    name: "fd"
-    type: "int"
-  }
-  parameters {
-    name: "buf"
-    type: "const void *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: SIZE
-      attribute_expression: "len"
-    }
-  }
-  parameters {
-    name: "len"
-    type: "size_t"
-  }
-}
-
-host_calls {
-  name: "unlink"
-  return_type: "int"
-  parameters {
-    name: "path_name"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-}
-
-host_calls {
-  name: "rename"
-  return_type: "int"
-  parameters {
-    name: "oldpath"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "newpath"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
   }
 }
 
@@ -421,25 +237,6 @@ host_calls {
 ######################################
 
 host_calls {
-  name: "mkdir"
-  return_type: "int"
-  parameters {
-    name: "path"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "mode"
-    type: "int"
-  }
-}
-
-host_calls {
   name: "umask"
   return_type: "mode_t"
   parameters {
@@ -507,53 +304,6 @@ host_calls {
   parameters {
     name: "usec"
     type: "uint32_t"
-  }
-}
-
-host_calls {
-  name: "rmdir"
-  return_type: "int"
-  parameters {
-    name: "pathname"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-}
-
-host_calls {
-  name: "truncate"
-  return_type: "int"
-  parameters {
-    name: "path"
-    type: "const char *"
-    pointer_attributes {
-      attribute: IN
-    }
-    pointer_attributes {
-      attribute: STRING
-    }
-  }
-  parameters {
-    name: "length"
-    type: "off_t"
-  }
-}
-
-host_calls {
-  name: "ftruncate"
-  return_type: "int"
-  parameters {
-    name: "fd"
-    type: "int"
-  }
-  parameters {
-    name: "length"
-    type: "off_t"
   }
 }
 

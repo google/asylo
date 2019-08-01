@@ -18,6 +18,7 @@
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 
+#include <errno.h>
 #include <unistd.h>
 
 #include "asylo/platform/primitives/util/message.h"
@@ -42,6 +43,7 @@ Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
   }
   output->PushByCopy(response);
   free(response.data());
+
   return Status::OkStatus();
 }
 
@@ -50,7 +52,12 @@ Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
                      primitives::MessageWriter *output) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
   int fd = input->next<int>();
-  output->Push<int>(isatty(fd));
+  output->Push<int>(isatty(fd));  // Push return value first.
+  output->Push<int>(
+      errno);  // Push errno next. We always push the errno on the MessageWriter
+               // regardless of the return value of the host call. The caller is
+               // responsible for evaluating the return value and setting the
+               // errno appropriately in its local environment.
   return Status::OkStatus();
 }
 
@@ -59,7 +66,8 @@ Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
                      primitives::MessageWriter *output) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
   auto usec = input->next<useconds_t>();
-  output->Push<int>(usleep(usec));
+  output->Push<int>(usleep(usec));  // Push return value first.
+  output->Push<int>(errno);         // Push errno next.
   return Status::OkStatus();
 }
 

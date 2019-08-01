@@ -21,7 +21,7 @@ load(
     cc_test = "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -170,10 +170,19 @@ cc_test(
     ],
 )
 
+# For testing large pipe sizes, we increase the size of heap, since the
+# primitives implementation of enc_untrusted_pipe2() duplicates the data
+# during serialization.
+sgx_enclave_configuration(
+    name = "pipe_test_config",
+    heap_max_size = "0x200000",
+)
+
 cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_config = ":pipe_test_config",
     deps = [
         "//asylo/test/util:test_main",
         "//asylo/util:cleanup",

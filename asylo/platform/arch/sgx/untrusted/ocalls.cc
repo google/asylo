@@ -205,12 +205,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
   }
 }
 
-int ocall_enc_untrusted_open(const char *path_name, int flags, uint32_t mode) {
-  int host_flags = asylo::FromBridgeFileFlags(flags);
-  int ret = open(path_name, host_flags, mode);
-  return ret;
-}
-
 int ocall_enc_untrusted_fcntl(int fd, int bridge_cmd, int64_t arg) {
   int cmd = asylo::FromBridgeFcntlCmd(bridge_cmd);
   if (cmd == -1) {
@@ -965,11 +959,6 @@ int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
 //////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
-
-int ocall_enc_untrusted_pipe2(int pipefd[2], int flags) {
-  int ret = pipe2(pipefd, asylo::FromBridgeFileFlags(flags));
-  return ret;
-}
 
 int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
   int name = asylo::FromBridgeSysconfConstants(bridge_name);

@@ -284,10 +284,21 @@ int enc_untrusted_isatty(int fd) {
   ::asylo::primitives::MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kIsAttyHandler, &input, &output);
-  if (!status.ok() || output.size() != 1) {
+  if (!status.ok()) {
     abort();
   }
-  return output.next<int>();
+
+  int result = output.next<int>();
+
+  // isatty() returns 1 if fd is an open file descriptor referring to a
+  // terminal; otherwise 0 is returned, and errno is set to indicate the error.
+  if (result == 0) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+  return result;
 }
 
 int enc_untrusted_usleep(useconds_t usec) {
@@ -297,10 +308,22 @@ int enc_untrusted_usleep(useconds_t usec) {
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kUSleepHandler, &input, &output);
-  if (!status.ok() || output.size() != 1) {
+  if (!status.ok()) {
     abort();
   }
-  return output.next<int>();
+
+  int result = output.next<int>();
+
+  // usleep() returns 0 on success. On error, -1 is returned, with errno set to
+  // indicate the cause of the error.
+  if (result == -1) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+
+  return result;
 }
 
 int enc_untrusted_fstat(int fd, struct stat *statbuf) {

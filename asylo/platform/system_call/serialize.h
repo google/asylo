@@ -42,6 +42,7 @@ primitives::PrimitiveStatus SerializeRequest(int sysno,
 // code, and a list of parameters into a buffer. On success, `response` is
 // populated with a buffer allocated by malloc and owned by the caller.
 primitives::PrimitiveStatus SerializeResponse(int sysno, uint64_t result,
+                                              uint64_t error_number,
                                               const ParameterList &parameters,
                                               primitives::Extent *response);
 

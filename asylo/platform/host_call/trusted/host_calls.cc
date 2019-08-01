@@ -64,4 +64,91 @@ gid_t enc_untrusted_getegid() {
   return enc_untrusted_syscall(asylo::system_call::kSYS_getegid);
 }
 
+int enc_untrusted_kill(pid_t pid, int sig) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_kill, pid, sig);
+}
+
+int enc_untrusted_link(const char *oldpath, const char *newpath) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_link, oldpath, newpath);
+}
+
+off_t enc_untrusted_lseek(int fd, off_t offset, int whence) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_lseek, fd, offset,
+                               whence);
+}
+
+int enc_untrusted_mkdir(const char *pathname, mode_t mode) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_mkdir, pathname, mode);
+}
+
+int enc_untrusted_open(const char *pathname, int flags, ...) {
+  int mode = 0;
+  if (flags & O_CREAT) {
+    va_list ap;
+    va_start(ap, flags);
+    mode = va_arg(ap, mode_t);
+    va_end(ap);
+    int klinux_mode;
+    TokLinuxFileModeFlag(&mode, &klinux_mode);
+  }
+
+  int klinux_flags;
+  TokLinuxFileStatusFlag(&flags, &klinux_flags);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_open, pathname,
+                               klinux_flags, mode);
+}
+
+int enc_untrusted_unlink(const char *pathname) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_unlink, pathname);
+}
+
+int enc_untrusted_rename(const char *oldpath, const char *newpath) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_rename, oldpath,
+                               newpath);
+}
+
+ssize_t enc_untrusted_read(int fd, void *buf, size_t count) {
+  return static_cast<ssize_t>(
+      enc_untrusted_syscall(asylo::system_call::kSYS_read, fd, buf, count));
+}
+
+ssize_t enc_untrusted_write(int fd, const void *buf, size_t count) {
+  return static_cast<ssize_t>(
+      enc_untrusted_syscall(asylo::system_call::kSYS_write, fd, buf, count));
+}
+
+int enc_untrusted_symlink(const char *target, const char *linkpath) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_symlink, target,
+                               linkpath);
+}
+
+ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz) {
+  return static_cast<ssize_t>(enc_untrusted_syscall(
+      asylo::system_call::kSYS_readlink, pathname, buf, bufsiz));
+}
+
+int enc_untrusted_truncate(const char *path, off_t length) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_truncate, path, length);
+}
+
+int enc_untrusted_ftruncate(int fd, off_t length) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_ftruncate, fd, length);
+}
+
+int enc_untrusted_rmdir(const char *path) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_rmdir, path);
+}
+
+int enc_untrusted_pipe2(int pipefd[2], int flags) {
+  if (flags & ~(O_CLOEXEC | O_DIRECT | O_NONBLOCK)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  int kLinux_flags;
+  TokLinuxFileStatusFlag(&flags, &kLinux_flags);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_pipe2, pipefd,
+                               kLinux_flags);
+}
+
 }  // extern "C"

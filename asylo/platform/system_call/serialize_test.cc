@@ -45,7 +45,7 @@ TEST(SerializeTest, SerializeResponseInvalidSysnoTest) {
   const std::array<uint64_t, kParameterMax> parameters =
       std::array<uint64_t, 6>();
   primitives::PrimitiveStatus status =
-      SerializeResponse(10000, 0, parameters, nullptr);
+      SerializeResponse(10000, 0, 0, parameters, nullptr);
 
   EXPECT_THAT(status.error_code(), Eq(error::GoogleError::INVALID_ARGUMENT));
   EXPECT_THAT(status.error_message(),

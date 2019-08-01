@@ -18,6 +18,7 @@
 
 #include "asylo/platform/system_call/untrusted_invoke.h"
 
+#include <errno.h>
 #include <unistd.h>
 
 #include <array>
@@ -71,7 +72,7 @@ primitives::PrimitiveStatus UntrustedInvoke(primitives::Extent request,
                             params[3], params[4], params[5]);
 
   // Build the response message.
-  return SerializeResponse(reader.sysno(), result, params, response);
+  return SerializeResponse(reader.sysno(), result, errno, params, response);
 }
 
 }  // namespace system_call

@@ -197,6 +197,7 @@ sgx_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":block_enclave_entries_test_cc_proto",
+        "//asylo/platform/host_call",
         "//asylo/test/util:enclave_test_application",
     ],
 )

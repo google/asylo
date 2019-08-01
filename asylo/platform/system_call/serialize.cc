@@ -59,7 +59,7 @@ primitives::PrimitiveStatus SerializeRequest(
 }
 
 primitives::PrimitiveStatus SerializeResponse(
-    int sysno, uint64_t result,
+    int sysno, uint64_t result, uint64_t error_number,
     const std::array<uint64_t, kParameterMax> &parameters,
     primitives::Extent *response) {
   SystemCallDescriptor descriptor{sysno};
@@ -71,7 +71,8 @@ primitives::PrimitiveStatus SerializeResponse(
                      sysno, ") provided.")};
   }
 
-  auto writer = MessageWriter::ResponseWriter(sysno, result, parameters);
+  auto writer =
+      MessageWriter::ResponseWriter(sysno, result, error_number, parameters);
   size_t size = writer.MessageSize();
 
   *response = {reinterpret_cast<uint8_t *>(malloc(size)), size};

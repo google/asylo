@@ -115,21 +115,6 @@ void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
       free_list, static_cast<bridge_size_t>(count)));
 }
 
-int enc_untrusted_open(const char *path_name, int flags, ...) {
-  uint32_t mode = 0;
-  if (flags & O_CREAT) {
-    va_list ap;
-    va_start(ap, flags);
-    mode = va_arg(ap, mode_t);
-    va_end(ap);
-  }
-
-  int bridge_flags = asylo::ToBridgeFileFlags(flags);
-  int result;
-  CHECK_OCALL(ocall_enc_untrusted_open(&result, path_name, bridge_flags, mode));
-  return result;
-}
-
 int enc_untrusted_puts(const char *str) {
   int result;
   CHECK_OCALL(ocall_enc_untrusted_puts(&result, str));
@@ -992,18 +977,6 @@ int enc_untrusted_uname(struct utsname *utsname_val) {
 //////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
-
-int enc_untrusted_pipe2(int pipefd[2], int flags) {
-  if (flags & ~(O_CLOEXEC | O_DIRECT | O_NONBLOCK)) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  int ret;
-  CHECK_OCALL(
-      ocall_enc_untrusted_pipe2(&ret, pipefd, asylo::ToBridgeFileFlags(flags)));
-  return ret;
-}
 
 int64_t enc_untrusted_sysconf(int name) {
   int64_t ret;

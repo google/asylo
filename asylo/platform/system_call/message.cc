@@ -40,9 +40,7 @@ uint64_t RoundUpToMultipleOf8(uint64_t value) {
 }
 
 // Returns the largest multiple of 8 less than or equal to |value|.
-uint64_t RoundDownToMultipleOf8(uint64_t value) {
-  return (value / 8) * 8;
-}
+uint64_t RoundDownToMultipleOf8(uint64_t value) { return (value / 8) * 8; }
 
 // Returns true if the sum of two input values overflow, after round up to
 // multiple of 8.
@@ -63,6 +61,7 @@ std::string FormatMessage(primitives::Extent extent) {
   absl::StrAppend(&result, descriptor.name());
   if (reader.is_response()) {
     absl::StrAppend(&result, " [returns: ", reader.result(), "] ");
+    absl::StrAppend(&result, " [errno: ", reader.error_number(), "] ");
   }
 
   std::vector<std::string> formatted;
@@ -111,8 +110,8 @@ bool MessageReader::IsValidParameterSize(int index) const {
   }
 
   if (parameter.is_string()) {
-    const char *value = this->parameter_address<const char *>(
-        parameter.index());
+    const char *value =
+        this->parameter_address<const char *>(parameter.index());
 
     if (value[header()->size[index] - 1] != '\0') {
       return false;
@@ -134,8 +133,8 @@ bool MessageReader::IsValidParameterSize(int index) const {
 
 primitives::PrimitiveStatus MessageReader::invalid_argument_status(
     const std::string &reason) const {
-  return primitives::PrimitiveStatus{
-      error::GoogleError::INVALID_ARGUMENT, reason};
+  return primitives::PrimitiveStatus{error::GoogleError::INVALID_ARGUMENT,
+                                     reason};
 }
 
 primitives::PrimitiveStatus MessageReader::ValidateMessageHeader() const {
@@ -197,9 +196,8 @@ primitives::PrimitiveStatus MessageReader::Validate() const {
     }
 
     if (!IsValidParameterSize(i)) {
-      return invalid_argument_status(
-          absl::StrCat("Message malformed: parameter under index ", i,
-                       " size mismatched"));
+      return invalid_argument_status(absl::StrCat(
+          "Message malformed: parameter under index ", i, " size mismatched"));
     }
   }
 
@@ -231,10 +229,11 @@ bool MessageReader::parameter_is_used(int index) const {
 }
 
 MessageWriter::MessageWriter(
-    int sysno, uint64_t result, bool is_request,
+    int sysno, uint64_t result, uint64_t error_number, bool is_request,
     const std::array<uint64_t, kParameterMax> &parameters)
     : sysno_(sysno),
       result_(result),
+      error_number_(error_number),
       is_request_(is_request),
       parameters_(parameters) {
   SystemCallDescriptor syscall{sysno};
@@ -245,13 +244,13 @@ MessageWriter::MessageWriter(
 
 MessageWriter MessageWriter::RequestWriter(
     int sysno, const std::array<uint64_t, kParameterMax> &parameters) {
-  return MessageWriter(sysno, 0, true, parameters);
+  return MessageWriter(sysno, 0, 0, true, parameters);
 }
 
 MessageWriter MessageWriter::ResponseWriter(
-    int sysno, uint64_t result,
+    int sysno, uint64_t result, uint64_t error_number,
     const std::array<uint64_t, kParameterMax> &parameters) {
-  return MessageWriter(sysno, result, false, parameters);
+  return MessageWriter(sysno, result, error_number, false, parameters);
 }
 
 size_t MessageWriter::MessageSize() const {
@@ -331,6 +330,7 @@ bool MessageWriter::Write(primitives::Extent *message) const {
   // If this is a response message, add the result value to the message header.
   if (is_response()) {
     header->result = result_;
+    header->error_number = error_number_;
   }
 
   // Write each parameter value into the buffer.
