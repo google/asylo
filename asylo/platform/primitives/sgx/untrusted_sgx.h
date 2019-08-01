@@ -87,6 +87,14 @@ class SgxEnclaveClient : public Client {
   Status EnterAndTransferSecureSnapshotKey(
       const ForkHandshakeConfig &fork_handshake_config);
 
+  // Returns true when a TCS is active in simulation mode. Always returns false
+  // in hardware mode, since TCS active/inactive state is only set and used in
+  // simulation mode.
+  bool IsTcsActive();
+
+  // Sets a new expected process ID for an existing SGX enclave.
+  void SetProcessId();
+
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                              MessageReader *output) override;

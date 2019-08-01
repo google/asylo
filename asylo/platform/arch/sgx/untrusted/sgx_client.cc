@@ -149,11 +149,11 @@ Status SgxClient::EnterAndTransferSecureSnapshotKey(
 }
 
 bool SgxClient::IsTcsActive() {
-  return (sgx_is_tcs_active(GetPrimitiveClient()->GetEnclaveId()) != 0);
+  return (GetPrimitiveClient()->IsTcsActive());
 }
 
 void SgxClient::SetProcessId() {
-  sgx_set_process_id(GetPrimitiveClient()->GetEnclaveId());
+  GetPrimitiveClient()->SetProcessId();
 }
 
 }  //  namespace asylo
