@@ -83,7 +83,7 @@ proto_library(
     srcs = ["attestation_key_certificate.proto"],
     deps = [
         ":platform_provisioning_proto",
-        "//asylo/crypto:algorithms_proto",
+        "//asylo/crypto:keys_proto",
     ],
 )
 

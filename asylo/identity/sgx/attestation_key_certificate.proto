@@ -18,7 +18,7 @@ syntax = "proto2";
 
 package asylo.sgx;
 
-import "asylo/crypto/algorithms.proto";
+import "asylo/crypto/keys.proto";
 import "asylo/identity/sgx/platform_provisioning.proto";
 
 // A PCE-issued certificate for an attestation key. The certificate is signed
@@ -42,13 +42,11 @@ message AttestationKeyCertificate {
   optional bytes pce_sign_report_payload = 2;
 
   // A PCK signature over |report|.value.
-  optional bytes signature = 3;
-
-  // The signature scheme used to produce |signature|.
   //
-  // Note that this value is not part of the signed payload and, as a result, is
-  // not considered trusted. A verifier should check that this value is
-  // consistent with the key type of the PCK and with the current PCE
+  // Note that |signature|.signature_scheme is not part of the signed payload
+  // and, as a result, is not considered trusted. A verifier should check that
+  // this value is consistent with the PCK key type in the associated PCK
+  // certificate used to verify |signature|, and with the current PCE
   // implementation.
-  optional SignatureScheme signature_scheme = 4;
+  optional Signature signature = 3;
 }

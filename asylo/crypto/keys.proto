@@ -61,3 +61,22 @@ message AsymmetricSigningKeyProto {
   // An encoded asymmetric key. Required.
   optional bytes key = 4;
 }
+
+// A signature produced by an asymmetric signing key.
+message Signature {
+  // Indicates the signature scheme used to produce the signature value.
+  optional SignatureScheme signature_scheme = 1;
+
+  oneof value {
+    EcdsaSignature ecdsa_signature = 2;
+  }
+}
+
+// A signature produced using the Elliptic Curve Digital Signature Algorithm.
+message EcdsaSignature {
+  // The r parameter of the signature in big-endian encoding.
+  optional bytes r = 1;
+
+  // The s parameter of the signature in big-endian encoding.
+  optional bytes s = 2;
+}
