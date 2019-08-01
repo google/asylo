@@ -31,6 +31,51 @@
 // Once new functions are defined and generated, user-friendly wrappers need to
 // be added to untrusted/enclave_calls.* and trusted/host_calls.* respectively.
 enclave {
+  trusted {
+    // Invokes the trusted entry point designated by `selector`.
+    // WARNING: Do not add calls before ecall_displatch_trusted_call, as callers
+    // may assume this to be the first entry in the generated ecall table.
+    public int ecall_dispatch_trusted_call(uint64_t selector,
+                                          [user_check] void *buffer);
+
+    // Intended for use by primitives enclave signal implementaion.
+    // Invokes signal handling entry point.
+    // WARNING: Do not add calls before ecall_deliver_signal, as callers
+    // may assume this to be the second entry in the generated ecall table.
+    exception_handler public int ecall_deliver_signal(
+        [user_check] void *buffer);
+
+    // Invokes a utility ecall that enters the enclave to take a snapshot.
+    // This is a private ecall because it should only be invoked by an
+    // ocall(fork).
+    // WARNING: Do not add calls before ecall_take_snapshot, as callers
+    // may assume this to be the third entry in the generated ecall table.
+    utility_tcs public int ecall_take_snapshot(
+	      [out] char **output,
+	      [out] bridge_size_t *output_len);
+
+    // Invokes a utility ecall that enters the enclave to restore it from a
+    // snapshot.
+    // WARNING: Do not add calls before ecall_restore, as callers may assume
+    // this to be the fourth entry in the generated ecall table.
+    utility_tcs public int ecall_restore(
+        [user_check] const char *input,
+        bridge_size_t input_len,
+        [user_check] char **output,
+        [user_check] bridge_size_t *output_len);
+
+    // Invokes a utility ecall that enters the enclave to encrypt and transfer
+    // the snapshot key.
+    // WARNING: Do not add calls before ecall_transfer_secure_snapshot_key, as
+    // callers may assume this to be the fifth entry in the generated ecall
+    // table.
+    utility_tcs public int ecall_transfer_secure_snapshot_key(
+        [in, size=input_len] const char *input,
+        bridge_size_t input_len,
+        [out] char **output,
+        [out] bridge_size_t *output_len);
+  };
+
   untrusted {
     // Invokes the untrusted entry point designated by `selector`.
     int ocall_dispatch_untrusted_call(uint64_t selector,
