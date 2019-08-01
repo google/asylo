@@ -22,7 +22,6 @@
 
 #include <cstdint>
 #include <memory>
-#include <string>
 #include <utility>
 
 #include "absl/base/macros.h"
@@ -67,6 +66,10 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072Ppidek(
 
 const size_t kRsa3072SerializedExponentSize = 4;
 
+// The size of an ECDSA-P256 signature. The r parameter is 32 bytes and the s
+// parameter is 32 bytes, totaling 64 bytes.
+const size_t kEcdsaP256SignatureSize = 64;
+
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme) {
   switch (asymmetric_encryption_scheme) {
@@ -107,6 +110,26 @@ SignatureScheme PceSignatureSchemeToSignatureScheme(
     default:
       return UNKNOWN_SIGNATURE_SCHEME;
   }
+}
+
+StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
+    const std::string &pck_signature) {
+  if (pck_signature.size() != kEcdsaP256SignatureSize) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Signature is the wrong size for ECDSA-P256-SHA256: ",
+                     pck_signature.size(), " (expected ",
+                     kEcdsaP256SignatureSize, ")"));
+  }
+
+  Signature signature;
+  signature.set_signature_scheme(SignatureScheme::ECDSA_P256_SHA256);
+
+  EcdsaSignature *ecdsa_signature = signature.mutable_ecdsa_signature();
+  ecdsa_signature->set_r(pck_signature.substr(0, 32));
+  ecdsa_signature->set_s(pck_signature.substr(32, kEcdsaP256SignatureSize));
+
+  return signature;
 }
 
 StatusOr<bssl::UniquePtr<RSA>> ParseRsa3072PublicKey(

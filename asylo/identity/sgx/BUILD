@@ -975,6 +975,7 @@ cc_test(
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status_macros",

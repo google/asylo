@@ -23,6 +23,7 @@
 #include <openssl/rsa.h>
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
@@ -37,6 +38,7 @@ namespace asylo {
 namespace sgx {
 
 ABSL_CONST_INIT extern const size_t kRsa3072SerializedExponentSize;
+ABSL_CONST_INIT extern const size_t kEcdsaP256SignatureSize;
 
 // This file contains utility functions related to Intel-defined protocols used
 // by the Provisioning Certification Enclave (PCE).
@@ -59,6 +61,16 @@ absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
 // Converts a PCE signature scheme to an equivalent SignatureScheme value.
 SignatureScheme PceSignatureSchemeToSignatureScheme(
     uint8_t pce_signature_scheme);
+
+// Creates a Signature proto from a PCK-generated ECDSA-P256-SHA256 signature
+// |pck_signature|. The input |pck_signature| is expected to be a 64-byte buffer
+// with the following format:
+//
+//   r [32] || s [32]
+//
+// where the r and s parameters are in big-endian format.
+StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
+    const std::string &pck_signature);
 
 // Parses an RSA-3072 public key from |public_key|. The input |public_key| is
 // expected to be a 388-byte buffer that contains a serialized key in the

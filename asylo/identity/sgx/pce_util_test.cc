@@ -23,6 +23,7 @@
 #include <openssl/rsa.h>
 
 #include <cstdint>
+#include <string>
 #include <utility>
 #include <vector>
 
@@ -31,6 +32,7 @@
 #include "absl/base/macros.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -38,6 +40,7 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
@@ -95,6 +98,11 @@ constexpr char kSerializedRsa3072PublicKeyHex[] =
     "d19203dce4e4e4f4a77ba36d25eedb37ef56789b2940e0b9c5836ef78e007d4df3d2b9d84"
     "71d1f12489fb414e2ba7ac08a8380e6331014700010001";
 
+constexpr char kEcdsaP256SignatureR[] =
+    "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+constexpr char kEcdsaP256SignatureS[] =
+    "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
+
 constexpr int kBadPceCryptoSuite = 42;
 constexpr int kBadPceSignatureScheme = 42;
 
@@ -128,6 +136,23 @@ AsymmetricEncryptionKeyProto Rsa3072PublicKeyProto() {
   key.set_encryption_scheme(AsymmetricEncryptionScheme::RSA3072_OAEP);
   key.set_key(kRsa3072PublicKeyPem);
   return key;
+}
+
+Signature EcdsaP256Signature() {
+  Signature signature;
+  signature.mutable_ecdsa_signature()->set_r(
+      absl::HexStringToBytes(kEcdsaP256SignatureR));
+  signature.mutable_ecdsa_signature()->set_s(
+      absl::HexStringToBytes(kEcdsaP256SignatureS));
+  signature.set_signature_scheme(SignatureScheme::ECDSA_P256_SHA256);
+  return signature;
+}
+
+std::string PckEcdsaP256Signature() {
+  std::string signature_hex;
+  signature_hex += kEcdsaP256SignatureR;
+  signature_hex += kEcdsaP256SignatureS;
+  return absl::HexStringToBytes(signature_hex);
 }
 
 class PceUtilTest : public ::testing::Test {
@@ -246,6 +271,25 @@ TEST_F(PceUtilTest, PceSignatureSchemeToSignatureSchemeSupported) {
 TEST_F(PceUtilTest, PceSignatureSchemeToSignatureSchemeUnsupported) {
   EXPECT_EQ(PceSignatureSchemeToSignatureScheme(kBadPceSignatureScheme),
             UNKNOWN_SIGNATURE_SCHEME);
+}
+
+TEST_F(PceUtilTest, CreateSignatureFromPckEcdasP256Sha256SignatureSuccess) {
+  EXPECT_THAT(
+      CreateSignatureFromPckEcdsaP256Sha256Signature(PckEcdsaP256Signature()),
+      IsOkAndHolds(EqualsProto(EcdsaP256Signature())));
+}
+
+TEST_F(
+    PceUtilTest,
+    CreateSignatureFromPckEcdasP256Sha256SignatureFailsWithInvalidSignature) {
+  const std::string kBadSignature = "signature";
+  EXPECT_THAT(
+      CreateSignatureFromPckEcdsaP256Sha256Signature(kBadSignature).status(),
+      StatusIs(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("Signature is the wrong size for ECDSA-P256-SHA256: ",
+                       kBadSignature.size(), " (expected ",
+                       kEcdsaP256SignatureSize, ")")));
 }
 
 TEST_F(PceUtilTest, ParseRsa3072PublicKeyInvalidSize) {
