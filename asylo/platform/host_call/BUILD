@@ -76,6 +76,7 @@ cc_test(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/platform/system_call",
+        "//asylo/platform/system_call:message",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/memory",

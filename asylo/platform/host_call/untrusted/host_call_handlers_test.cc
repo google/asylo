@@ -27,6 +27,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
+#include "asylo/platform/system_call/message.h"
 #include "asylo/platform/system_call/serialize.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -109,12 +110,21 @@ TEST(HostCallHandlersTest, SyscallHandlerValidRequestTest) {
 // interpreted from the request is illegal. Check if the syscall was made
 // and it returned appropriate google error code for the illegal sysno.
 TEST(HostCallHandlersTest, SyscallHandlerInvalidRequestTest) {
-  char request_str[] = "illegal_request";
   MessageReader input;
   FillInput(
-      [&request_str](MessageWriter *params) {
-        params->PushByCopy(
-            primitives::Extent{request_str, strlen(request_str)});
+      [](MessageWriter *params) {
+        std::array<uint64_t, system_call::kParameterMax> request_params;
+        primitives::Extent request;
+
+        // Instead of calling system_call::SerializeRequest we build the writer
+        // manually in order to pass an invalid syscall.
+        auto writer =
+            system_call::MessageWriter::RequestWriter(-1, request_params);
+        size_t size = writer.MessageSize();
+        request = {reinterpret_cast<uint8_t *>(malloc(size)), size};
+        writer.Write(&request);
+        params->PushByCopy(request);
+        free(request.data());
       },
       &input);
   MessageWriter output;
