@@ -19,11 +19,13 @@
 #include "asylo/platform/posix/io/secure_paths.h"
 
 #include <sys/ioctl.h>
+
 #include <cerrno>
 #include <cstdint>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
 #include "asylo/platform/storage/secure/enclave_storage_secure.h"

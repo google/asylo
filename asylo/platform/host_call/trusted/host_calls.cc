@@ -151,4 +151,284 @@ int enc_untrusted_pipe2(int pipefd[2], int flags) {
                                kLinux_flags);
 }
 
+int enc_untrusted_socket(int domain, int type, int protocol) {
+  int klinux_domain;
+  int klinux_type;
+  TokLinuxAfFamily(&domain, &klinux_domain);
+  TokLinuxSocketType(&type, &klinux_type);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_socket, klinux_domain,
+                               klinux_type, protocol);
+}
+
+int enc_untrusted_listen(int sockfd, int backlog) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_listen, sockfd,
+                               backlog);
+}
+
+int enc_untrusted_shutdown(int sockfd, int how) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_shutdown, sockfd, how);
+}
+
+ssize_t enc_untrusted_send(int sockfd, const void *buf, size_t len, int flags) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_sendto, sockfd, buf,
+                               len, flags, /*dest_addr=*/nullptr,
+                               /*addrlen=*/0);
+}
+
+int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
+  // We do not currently support file locks in Asylo, so arg is not expected to
+  // be a pointer to struct flock.
+  int64_t arg = 0;
+  va_list ap;
+  va_start(ap, cmd);
+  arg = va_arg(ap, int64_t);
+  va_end(ap);
+
+  int klinux_cmd;
+  TokLinuxFcntlCommand(&cmd, &klinux_cmd);
+  if (klinux_cmd == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  int intarg = arg;
+  switch (cmd) {
+    case F_SETFL: {
+      int klinux_arg;
+      TokLinuxFileStatusFlag(&intarg, &klinux_arg);
+      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                   klinux_cmd, klinux_arg);
+    }
+    case F_SETFD: {
+      int klinux_arg;
+      TokLinuxFDFlag(&intarg, &klinux_arg);
+      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                   klinux_cmd, klinux_arg);
+    }
+    case F_GETFL: {
+      int retval = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                         klinux_cmd, arg);
+      if (retval != -1) {
+        int result;
+        FromkLinuxFileStatusFlag(&retval, &result);
+        retval = result;
+      }
+
+      return retval;
+    }
+    case F_GETFD: {
+      int retval = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                         klinux_cmd, arg);
+      if (retval != -1) {
+        int result;
+        FromkLinuxFDFlag(&retval, &result);
+        retval = result;
+      }
+      return retval;
+    }
+    case F_GETPIPE_SZ:
+    case F_SETPIPE_SZ: {
+      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
+                                   klinux_cmd, arg);
+    }
+    // We do not handle the case for F_DUPFD. It is expected to be handled at
+    // a higher abstraction, as we need not exit the enclave for duplicating
+    // the file descriptor.
+    default: {
+      errno = EINVAL;
+      return -1;
+    }
+  }
+}
+
+int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_chown, pathname, owner,
+                               group);
+}
+
+int enc_untrusted_fchown(int fd, uid_t owner, gid_t group) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_fchown, fd, owner,
+                               group);
+}
+
+int enc_untrusted_setsockopt(int sockfd, int level, int optname,
+                             const void *optval, socklen_t optlen) {
+  int klinux_option_name;
+  TokLinuxOptionName(&level, &optname, &klinux_option_name);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_setsockopt, sockfd,
+                               level, klinux_option_name, optval, optlen);
+}
+
+int enc_untrusted_flock(int fd, int operation) {
+  int klinux_operation;
+  TokLinuxFLockOperation(&operation, &klinux_operation);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_flock, fd,
+                               klinux_operation);
+}
+
+int enc_untrusted_wait(int *wstatus) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_wait4, /*wpid=*/-1,
+                               wstatus, /*options=*/0, /*rusage=*/nullptr);
+}
+
+int enc_untrusted_inotify_init1(int flags) {
+  int klinux_flags;
+  TokLinuxInotifyFlag(&flags, &klinux_flags);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_init1,
+                               klinux_flags);
+}
+
+int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
+                                    uint32_t mask) {
+  int klinux_mask, input_mask = mask;
+  TokLinuxInotifyEventMask(&input_mask, &klinux_mask);
+  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_add_watch, fd,
+                               pathname, klinux_mask);
+}
+
+int enc_untrusted_inotify_rm_watch(int fd, int wd) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_rm_watch, fd,
+                               wd);
+}
+
+mode_t enc_untrusted_umask(mode_t mask) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_umask, mask);
+}
+
+int enc_untrusted_chmod(const char *path_name, mode_t mode) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_chmod, path_name, mode);
+}
+
+int enc_untrusted_fchmod(int fd, mode_t mode) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_fchmod, fd, mode);
+}
+
+int enc_untrusted_sched_yield() {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_sched_yield);
+}
+
+int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_pread64, fd, buf, count,
+                               offset);
+}
+
+int enc_untrusted_pwrite64(int fd, const void *buf, size_t count,
+                           off_t offset) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_pwrite64, fd, buf,
+                               count, offset);
+}
+
+int enc_untrusted_isatty(int fd) {
+  ::asylo::primitives::MessageWriter input;
+  input.Push(fd);
+  ::asylo::primitives::MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kIsAttyHandler, &input, &output);
+  if (!status.ok()) {
+    abort();
+  }
+
+  int result = output.next<int>();
+
+  // isatty() returns 1 if fd is an open file descriptor referring to a
+  // terminal; otherwise 0 is returned, and errno is set to indicate the error.
+  if (result == 0) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+  return result;
+}
+
+int enc_untrusted_usleep(useconds_t usec) {
+  ::asylo::primitives::MessageWriter input;
+  input.Push(usec);
+  ::asylo::primitives::MessageReader output;
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(
+          asylo::host_call::kUSleepHandler, &input, &output);
+  if (!status.ok()) {
+    abort();
+  }
+
+  int result = output.next<int>();
+
+  // usleep() returns 0 on success. On error, -1 is returned, with errno set to
+  // indicate the cause of the error.
+  if (result == -1) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+
+  return result;
+}
+
+int enc_untrusted_fstat(int fd, struct stat *statbuf) {
+  struct kernel_stat stat_kernel;
+  int result =
+      enc_untrusted_syscall(asylo::system_call::kSYS_fstat, fd, &stat_kernel);
+  FromKernelStat(&stat_kernel, statbuf);
+  int kLinux_mode = stat_kernel.kernel_st_mode;
+  int mode;
+  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
+  statbuf->st_mode = mode;
+  return result;
+}
+
+int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
+  struct kernel_stat stat_kernel;
+  int result = enc_untrusted_syscall(asylo::system_call::kSYS_lstat, pathname,
+                                     &stat_kernel);
+  FromKernelStat(&stat_kernel, statbuf);
+  int kLinux_mode = stat_kernel.kernel_st_mode;
+  int mode;
+  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
+  statbuf->st_mode = mode;
+  return result;
+}
+
+int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
+  struct kernel_stat stat_kernel;
+  int result = enc_untrusted_syscall(asylo::system_call::kSYS_stat, pathname,
+                                     &stat_kernel);
+  FromKernelStat(&stat_kernel, statbuf);
+  int kLinux_mode = stat_kernel.kernel_st_mode;
+  int mode;
+  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
+  statbuf->st_mode = mode;
+  return result;
+}
+
+int64_t enc_untrusted_sysconf(int name) {
+  int kLinux_name;
+  TokLinuxSysconfConstant(&name, &kLinux_name);
+  if (kLinux_name == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  ::asylo::primitives::MessageWriter input;
+  input.Push(kLinux_name);
+  ::asylo::primitives::MessageReader output;
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(
+          asylo::host_call::kSysconfHandler, &input, &output);
+  if (!status.ok()) {
+    abort();
+  }
+
+  int64_t result = output.next<int>();
+  if (result == -1) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+
+  return result;
+}
+
 }  // extern "C"

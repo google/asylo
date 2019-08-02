@@ -40,36 +40,7 @@ extern "C" {
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
 int enc_untrusted_close(int fd);
-int enc_untrusted_socket(int domain, int type, int protocol);
-int enc_untrusted_listen(int sockfd, int backlog);
-int enc_untrusted_shutdown(int sockfd, int how);
-ssize_t enc_untrusted_send(int sockfd, const void *buf, size_t len, int flags);
-int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */);
-int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group);
-int enc_untrusted_fchown(int fd, uid_t owner, gid_t group);
-int enc_untrusted_setsockopt(int sockfd, int level, int optname,
-                             const void *optval, socklen_t optlen);
-int enc_untrusted_flock(int fd, int operation);
 int enc_untrusted_fsync(int fd);
-int enc_untrusted_inotify_init1(int flags);
-int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
-                                    uint32_t mask);
-int enc_untrusted_inotify_rm_watch(int fd, int wd);
-mode_t enc_untrusted_umask(mode_t mask);
-int enc_untrusted_chmod(const char *path, mode_t mode);
-int enc_untrusted_fchmod(int fd, mode_t mode);
-int enc_untrusted_sched_yield();
-int enc_untrusted_fstat(int fd, struct stat *statbuf);
-int enc_untrusted_lstat(const char *pathname, struct stat *statbuf);
-int enc_untrusted_stat(const char *pathname, struct stat *statbuf);
-int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset);
-int enc_untrusted_pwrite64(int fd, const void *buf, size_t count, off_t offset);
-int enc_untrusted_wait(int *wstatus);
-
-// Calls to library functions delegated to the host are defined below.
-int enc_untrusted_isatty(int fd);
-int enc_untrusted_usleep(useconds_t usec);
-int64_t enc_untrusted_sysconf(int name);
 
 #ifdef __cplusplus
 }  // extern "C"

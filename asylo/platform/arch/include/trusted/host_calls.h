@@ -83,13 +83,7 @@ int enc_untrusted_get_errno();
 
 int enc_untrusted_close(int fd);
 int enc_untrusted_puts(const char *str);
-int enc_untrusted_fcntl(int fd, int cmd, ...);
 int enc_untrusted_fsync(int fd);
-int enc_untrusted_chown(const char *path, uid_t owner, gid_t group);
-int enc_untrusted_stat(const char *pathname, struct stat *stat_buffer);
-int enc_untrusted_lstat(const char *pathname, struct stat *stat_buffer);
-int enc_untrusted_fstat(int fd, struct stat *stat_buffer);
-int enc_untrusted_isatty(int file);
 ssize_t enc_untrusted_writev(int fd, char *buf, int size);
 ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt,
                             char *buf, int size);
@@ -104,15 +98,9 @@ int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
                        socklen_t addrlen);
 int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen);
-int enc_untrusted_listen(int sockfd, int backlog);
-int enc_untrusted_setsockopt(int socket, int level, int option_name,
-                             const void *option_value, socklen_t option_len);
-int enc_untrusted_shutdown(int sockfd, int how);
-int enc_untrusted_socket(int domain, int type, int protocol);
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size);
 int enc_untrusted_inet_pton(int af, const char *src, void *dst);
-ssize_t enc_untrusted_send(int sockfd, const void *buf, size_t len, int flags);
 ssize_t enc_untrusted_sendmsg(
     int sockfd, const struct bridge_msghdr *bridge_msg, int flags);
 ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg,
@@ -166,10 +154,6 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
 //            inotify.h             //
 //////////////////////////////////////
 
-int enc_untrusted_inotify_init1(int non_block);
-int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
-                                    uint32_t mask);
-int enc_untrusted_inotify_rm_watch(int fd, int wd);
 int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
                                size_t *serialized_events_len);
 
@@ -194,7 +178,6 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid);
 // |sizeof(/*enclave-native*/ cpu_set_t)|.
 int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
                                     cpu_set_t *mask);
-int enc_untrusted_sched_yield();
 
 //////////////////////////////////////
 //            signal.h              //
@@ -216,25 +199,11 @@ int enc_untrusted_raise(int sig);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
 
 //////////////////////////////////////
-//          sys/file.h              //
-//////////////////////////////////////
-
-int enc_untrusted_flock(int fd, int operation);
-
-//////////////////////////////////////
 //         sys/select.h             //
 //////////////////////////////////////
 
 int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
                          fd_set *exceptfds, struct timeval *timeout);
-
-//////////////////////////////////////
-//          sys/stat.h              //
-//////////////////////////////////////
-
-mode_t enc_untrusted_umask(mode_t mask);
-int enc_untrusted_chmod(const char *pathname, mode_t mode);
-int enc_untrusted_fchmod(int fd, mode_t mode);
 
 //////////////////////////////////////
 //         sys/syslog.h             //
@@ -265,10 +234,7 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 //            unistd.h              //
 //////////////////////////////////////
 
-int enc_untrusted_fchown(int fd, uid_t owner, gid_t group);
-int64_t enc_untrusted_sysconf(int name);
 uint32_t enc_untrusted_sleep(uint32_t seconds);
-int enc_untrusted_usleep(useconds_t usec);
 void enc_untrusted__exit(int rc);
 pid_t enc_untrusted_fork(const char *enclave_name, const char *config,
                          size_t config_len, bool restore_snapshot);
@@ -284,7 +250,6 @@ int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 //           wait.h                 //
 //////////////////////////////////////
 
-int enc_untrusted_wait(int *wstatus);
 pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *usage);
 pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options);
 

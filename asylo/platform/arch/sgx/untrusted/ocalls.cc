@@ -205,69 +205,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
   }
 }
 
-int ocall_enc_untrusted_fcntl(int fd, int bridge_cmd, int64_t arg) {
-  int cmd = asylo::FromBridgeFcntlCmd(bridge_cmd);
-  if (cmd == -1) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  int ret;
-  switch (cmd) {
-    case F_SETFL:
-      ret = fcntl(fd, cmd, asylo::FromBridgeFileFlags(arg));
-      break;
-    case F_SETFD:
-      ret = fcntl(fd, cmd, asylo::FromBridgeFDFlags(arg));
-      break;
-    case F_GETFL:
-      ret = fcntl(fd, cmd, arg);
-      if (ret != -1) {
-        ret = asylo::ToBridgeFileFlags(ret);
-      }
-      break;
-    case F_GETFD:
-      ret = fcntl(fd, cmd, arg);
-      if (ret != -1) {
-        ret = asylo::ToBridgeFDFlags(ret);
-      }
-      break;
-    case F_GETPIPE_SZ:
-      ret = fcntl(fd, cmd, arg);
-      break;
-    case F_SETPIPE_SZ:
-      ret = fcntl(fd, cmd, arg);
-      break;
-    default:
-      errno = EINVAL;
-      return -1;
-  }
-  return ret;
-}
-
-int ocall_enc_untrusted_stat(const char *pathname,
-                             struct bridge_stat *stat_buffer) {
-  struct stat host_stat_buffer;
-  int ret = stat(pathname, &host_stat_buffer);
-  asylo::ToBridgeStat(&host_stat_buffer, stat_buffer);
-  return ret;
-}
-
-int ocall_enc_untrusted_fstat(int fd, struct bridge_stat *stat_buffer) {
-  struct stat host_stat_buffer;
-  int ret = fstat(fd, &host_stat_buffer);
-  asylo::ToBridgeStat(&host_stat_buffer, stat_buffer);
-  return ret;
-}
-
-int ocall_enc_untrusted_lstat(const char *pathname,
-                              struct bridge_stat *stat_buffer) {
-  struct stat host_stat_buffer;
-  int ret = lstat(pathname, &host_stat_buffer);
-  asylo::ToBridgeStat(&host_stat_buffer, stat_buffer);
-  return ret;
-}
-
 bridge_ssize_t ocall_enc_untrusted_write_with_untrusted_ptr(int fd,
                                                             const void *buf,
                                                             int size) {
@@ -282,11 +219,6 @@ bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(int fd, void *buf,
 //////////////////////////////////////
 //             Sockets              //
 //////////////////////////////////////
-
-int ocall_enc_untrusted_socket(int domain, int type, int protocol) {
-  return socket(asylo::FromBridgeAfFamily(domain),
-                asylo::FromBridgeSocketType(type), protocol);
-}
 
 int ocall_enc_untrusted_connect(int sockfd,
                                 const struct bridge_sockaddr *bridge_addr) {
@@ -441,12 +373,6 @@ int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
   return ret;
 }
 
-int ocall_enc_untrusted_setsockopt(int sockfd, int level, int optname,
-                                   const void *optval, bridge_size_t optlen) {
-  return setsockopt(sockfd, level, asylo::FromBridgeOptionName(level, optname),
-                    optval, static_cast<socklen_t>(optlen));
-}
-
 int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr) {
   struct sockaddr_storage tmp;
   socklen_t tmp_len = sizeof(tmp);
@@ -595,38 +521,6 @@ int ocall_enc_untrusted_epoll_wait(const char *serialized_args,
 //////////////////////////////////////
 //           inotify.h              //
 //////////////////////////////////////
-
-int ocall_enc_untrusted_inotify_init1(int non_block) {
-  int flags = non_block ? IN_NONBLOCK : 0;
-  return inotify_init1(flags);
-}
-
-int ocall_enc_untrusted_inotify_add_watch(const char *serialized_args,
-                                          bridge_size_t serialized_args_len) {
-  std::string serialized_args_str(serialized_args, serialized_args_len);
-  int fd = 0;
-  char *pathname = nullptr;
-  asylo::MallocUniquePtr<char> pathname_ptr(pathname);
-  uint32_t mask = 0;
-  if (!asylo::DeserializeInotifyAddWatchArgs(serialized_args_str, &fd,
-                                             &pathname, &mask)) {
-    errno = EINVAL;
-    return -1;
-  }
-  return inotify_add_watch(fd, pathname, mask);
-}
-
-int ocall_enc_untrusted_inotify_rm_watch(const char *serialized_args,
-                                         bridge_size_t serialized_args_len) {
-  std::string serialized_args_str(serialized_args, serialized_args_len);
-  int fd = 0;
-  int wd = 0;
-  if (!asylo::DeserializeInotifyRmWatchArgs(serialized_args_str, &fd, &wd)) {
-    errno = EINVAL;
-    return -1;
-  }
-  return inotify_rm_watch(fd, wd);
-}
 
 int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
                                      char **serialized_events,
@@ -800,14 +694,6 @@ int ocall_enc_untrusted_getrusage(enum RUsageTarget who,
 }
 
 //////////////////////////////////////
-//           sys/file.h             //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_flock(int fd, int operation) {
-  return flock(fd, asylo::FromBridgeFLockOperation(operation));
-}
-
-//////////////////////////////////////
 //          sys/select.h            //
 //////////////////////////////////////
 
@@ -959,15 +845,6 @@ int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
 //////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
-
-int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants bridge_name) {
-  int name = asylo::FromBridgeSysconfConstants(bridge_name);
-  int64_t ret = -1;
-  if (name != -1) {
-    ret = sysconf(name);
-  }
-  return ret;
-}
 
 uint32_t ocall_enc_untrusted_sleep(uint32_t seconds) { return sleep(seconds); }
 

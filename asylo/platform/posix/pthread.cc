@@ -17,19 +17,20 @@
  */
 
 #include <pthread.h>
-
 #include <signal.h>
+
+#include <array>
+#include <bitset>
 #include <cerrno>
 #include <cstdio>
 #include <cstdlib>
 #include <functional>
 #include <type_traits>
-#include <array>
-#include <bitset>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/include/semaphore.h"
 #include "asylo/platform/posix/pthread_impl.h"
 #include "asylo/platform/posix/threading/thread_manager.h"

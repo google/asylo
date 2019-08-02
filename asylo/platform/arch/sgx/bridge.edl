@@ -57,15 +57,6 @@ enclave {
         bridge_size_t size) propagate_errno;
     void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,
         bridge_size_t count) propagate_errno;
-    int ocall_enc_untrusted_fcntl(int fd, int cmd, int64_t arg) propagate_errno;
-    int ocall_enc_untrusted_stat([in, string] const char *pathname,
-                                 [out] struct bridge_stat *stat_buffer)
-                                 propagate_errno;
-    int ocall_enc_untrusted_fstat(int fd, [out] struct bridge_stat *stat_buffer)
-                                  propagate_errno;
-    int ocall_enc_untrusted_lstat([in, string] const char *pathname,
-                                  [out] struct bridge_stat *stat_buffer)
-                                  propagate_errno;
     bridge_ssize_t ocall_enc_untrusted_write_with_untrusted_ptr(
         int fd, [user_check] const void *buf, int size) propagate_errno;
     bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(
@@ -75,8 +66,6 @@ enclave {
     //           Sockets                //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_socket(int domain, int type, int protocol)
-                                   propagate_errno;
     int ocall_enc_untrusted_connect(int sockfd,
                                     [in] const struct bridge_sockaddr *addr)
                                     propagate_errno;
@@ -114,11 +103,6 @@ enclave {
                                        unsigned int optlen_in,
                                        [out] unsigned int *optlen_out)
                                        propagate_errno;
-
-    int ocall_enc_untrusted_setsockopt(
-        int sockfd, int level, int optname,
-        [in, size=optlen] const void *optval, bridge_size_t optlen)
-        propagate_errno;
 
     int ocall_enc_untrusted_getsockname(int sockfd,
                                         [out] struct bridge_sockaddr *addr)
@@ -169,16 +153,6 @@ enclave {
     //////////////////////////////////////
     //           inotify.h              //
     //////////////////////////////////////
-
-    int ocall_enc_untrusted_inotify_init1(int non_block);
-
-    int ocall_enc_untrusted_inotify_add_watch(
-        [in, size=serialized_args_len] const char *serialized_args,
-        bridge_size_t serialized_args_len) propagate_errno;
-
-    int ocall_enc_untrusted_inotify_rm_watch(
-        [in, size=serialized_args_len] const char *serialized_args,
-        bridge_size_t serialized_args_len) propagate_errno;
 
     int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
         [out] char **serialized_events,
@@ -256,12 +230,6 @@ enclave {
         propagate_errno;
 
     //////////////////////////////////////
-    //           sys/file.h             //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_flock(int fd, int operation) propagate_errno;
-
-    //////////////////////////////////////
     //          sys/select.h            //
     //////////////////////////////////////
 
@@ -300,8 +268,6 @@ enclave {
     //            unistd.h              //
     //////////////////////////////////////
 
-    int64_t ocall_enc_untrusted_sysconf(enum SysconfConstants name)
-        propagate_errno;
     uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);
     void ocall_enc_untrusted__exit(int rc);
     pid_t ocall_enc_untrusted_fork(

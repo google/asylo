@@ -17,11 +17,12 @@
  */
 
 #include <sched.h>
-
 #include <string.h>  // memset
+
 #include <bitset>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 
 inline size_t WordNum(int cpu) { return cpu / (8 * sizeof(CpuSetWord)); }
 

@@ -114,6 +114,7 @@ cc_library(
         ":pthread_impl",
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
+        "//asylo/platform/host_call",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/common:bridge_types",
