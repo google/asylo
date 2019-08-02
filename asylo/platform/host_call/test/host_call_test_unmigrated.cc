@@ -1032,6 +1032,19 @@ TEST_F(HostCallTest, TestWait) {
   }
 }
 
+// Tests enc_untrusted_sysconf() by querying for a named value from inside the
+// enclave using enc_untrusted_sysconf() and comparing the value obtained for
+// the same name value on the host using a native sysconf() call.
+TEST_F(HostCallTest, TestSysconf) {
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=name=*/_SC_NPROCESSORS_ONLN);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSysconf, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  ASSERT_THAT(out.next<int64_t>(), Eq(sysconf(_SC_NPROCESSORS_ONLN)));
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

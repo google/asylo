@@ -66,9 +66,10 @@ int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset);
 int enc_untrusted_pwrite64(int fd, const void *buf, size_t count, off_t offset);
 int enc_untrusted_wait(int *wstatus);
 
-// Non-syscall hostcalls (libc library based hostcalls) are defined below.
+// Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);
 int enc_untrusted_usleep(useconds_t usec);
+int64_t enc_untrusted_sysconf(int name);
 
 #ifdef __cplusplus
 }  // extern "C"

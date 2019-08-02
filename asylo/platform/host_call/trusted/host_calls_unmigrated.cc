@@ -362,16 +362,33 @@ int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   return result;
 }
 
-int enc_untrusted_pipe2(int pipefd[2], int flags) {
-  if (flags & ~(O_CLOEXEC | O_DIRECT | O_NONBLOCK)) {
+int64_t enc_untrusted_sysconf(int name) {
+  int kLinux_name;
+  TokLinuxSysconfConstant(&name, &kLinux_name);
+  if (kLinux_name == -1) {
     errno = EINVAL;
     return -1;
   }
 
-  int kLinux_flags;
-  TokLinuxFileStatusFlag(&flags, &kLinux_flags);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_pipe2, pipefd,
-                               kLinux_flags);
+  ::asylo::primitives::MessageWriter input;
+  input.Push(kLinux_name);
+  ::asylo::primitives::MessageReader output;
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(
+          asylo::host_call::kSysconfHandler, &input, &output);
+  if (!status.ok()) {
+    abort();
+  }
+
+  int64_t result = output.next<int>();
+  if (result == -1) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+
+  return result;
 }
 
 }  // extern "C"

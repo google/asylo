@@ -28,7 +28,7 @@ namespace host_call {
 
 // This file declares the exit points registered by the untrusted code for host
 // call handlers. Host call handlers are registered with constants starting from
-// |kSelectorHostCall|, in increments of 1. The largest handler constant should
+// |kSelectorHostCall| in increments of 1. The largest handler constant should
 // be less than |kSelectorRemote|.
 
 // Exit handler constant for |SystemCallHandler|.
@@ -39,6 +39,9 @@ static constexpr uint64_t kIsAttyHandler = primitives::kSelectorHostCall + 1;
 
 // Exit handler constant for |USleepHandler|.
 static constexpr uint64_t kUSleepHandler = primitives::kSelectorHostCall + 2;
+
+// Exit handler constant for |SysconfHandler|.
+static constexpr uint64_t kSysconfHandler = primitives::kSelectorHostCall + 3;
 
 }  // namespace host_call
 }  // namespace asylo

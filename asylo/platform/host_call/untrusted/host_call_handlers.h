@@ -26,31 +26,33 @@
 namespace asylo {
 namespace host_call {
 
-// This is a general purpose system call exit handler capable of servicing most
-// kinds of system calls. It receives a MessageReader containing a serialized
-// |request| (containing a system call number and the corresponding arguments)
-// and writes back the serialized |response| containing the response message on
-// the output MessageWriter. Returns ok status on success, otherwise an error
-// message if a serialization error has occurred.
+// This is a host call handler capable of servicing host calls which are true
+// system calls, i.e., have an associated syscall number. It receives a
+// MessageReader containing a serialized |request| (containing a system call
+// number and the corresponding arguments) and writes back the serialized
+// |response| containing the response message on the output MessageWriter.
+// Returns ok status on success, otherwise an error message if a serialization
+// error has occurred.
 Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context, primitives::MessageReader *input,
                          primitives::MessageWriter *output);
 
-// This handler performs the IsAtty host call. IsAtty takes in a single
-// parameter from the stack (int fd), and calls the libc function isatty,
-// which returns an int. The int is passed on the output MessageWriter to be
-// returned. Returns ok status on success, otherwise an error message.
+// isatty library call handler on the host; expects [int fd] and returns [int].
 Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context, primitives::MessageReader *input,
                      primitives::MessageWriter *output);
 
-// This handler performs the USleep host call. USleep takes in a single
-// parameter from the stack (useconds_t usec), and calls the libc function
-// usleep, which returns an int. The int is passed on the output MessageWriter
-// to be returned. Returns ok status on success, otherwise an error message.
+// sleep library call handler on the host; expects [useconds_t usec] and returns
+// [int].
 Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context, primitives::MessageReader *input,
                      primitives::MessageWriter *output);
+
+// sysconf library call handler on the host; expects [int name] and returns
+// [int].
+Status SysconfHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output);
 
 }  // namespace host_call
 }  // namespace asylo

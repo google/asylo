@@ -71,5 +71,15 @@ Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status SysconfHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  int kLinux_name = input->next<int>();
+  output->Push<int64_t>(sysconf(kLinux_name));  // Push return value first.
+  output->Push<int>(errno);                     // Push errno next.
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

@@ -510,6 +510,54 @@ TEST_F(GeneratedTypesFunctionsTest, ErrorNumberUnknownInputTest) {
   EXPECT_THAT(output, Eq(input | 0x8000));
 }
 
+TEST_F(GeneratedTypesFunctionsTest, SysconfConstantTest) {
+  std::vector<int> from_consts = {
+      kLinux__SC_ARG_MAX,          kLinux__SC_CHILD_MAX,
+      kLinux__SC_HOST_NAME_MAX,    kLinux__SC_LOGIN_NAME_MAX,
+      kLinux__SC_NGROUPS_MAX,      kLinux__SC_CLK_TCK,
+      kLinux__SC_OPEN_MAX,         kLinux__SC_PAGESIZE,
+      kLinux__SC_PAGE_SIZE,        kLinux__SC_RE_DUP_MAX,
+      kLinux__SC_STREAM_MAX,       kLinux__SC_SYMLOOP_MAX,
+      kLinux__SC_TTY_NAME_MAX,     kLinux__SC_TZNAME_MAX,
+      kLinux__SC_VERSION,          kLinux__SC_NPROCESSORS_CONF,
+      kLinux__SC_NPROCESSORS_ONLN, kLinux__SC_PHYS_PAGES,
+      kLinux__SC_AVPHYS_PAGES,     kLinux__SC_BC_BASE_MAX,
+      kLinux__SC_BC_DIM_MAX,       kLinux__SC_BC_SCALE_MAX,
+      kLinux__SC_BC_STRING_MAX,    kLinux__SC_COLL_WEIGHTS_MAX,
+      kLinux__SC_EXPR_NEST_MAX,    kLinux__SC_LINE_MAX,
+      kLinux__SC_2_VERSION,        kLinux__SC_2_C_DEV,
+      kLinux__SC_2_FORT_DEV,       kLinux__SC_2_FORT_RUN,
+      kLinux__SC_2_LOCALEDEF,      kLinux__SC_2_SW_DEV};
+  std::vector<int> to_consts = {
+      _SC_ARG_MAX,          _SC_CHILD_MAX,        _SC_HOST_NAME_MAX,
+      _SC_LOGIN_NAME_MAX,   _SC_NGROUPS_MAX,      _SC_CLK_TCK,
+      _SC_OPEN_MAX,         _SC_PAGESIZE,         _SC_PAGE_SIZE,
+      _SC_RE_DUP_MAX,       _SC_STREAM_MAX,       _SC_SYMLOOP_MAX,
+      _SC_TTY_NAME_MAX,     _SC_TZNAME_MAX,       _SC_VERSION,
+      _SC_NPROCESSORS_CONF, _SC_NPROCESSORS_ONLN, _SC_PHYS_PAGES,
+      _SC_AVPHYS_PAGES,     _SC_BC_BASE_MAX,      _SC_BC_DIM_MAX,
+      _SC_BC_SCALE_MAX,     _SC_BC_STRING_MAX,    _SC_COLL_WEIGHTS_MAX,
+      _SC_EXPR_NEST_MAX,    _SC_LINE_MAX,         _SC_2_VERSION,
+      _SC_2_C_DEV,          _SC_2_FORT_DEV,       _SC_2_FORT_RUN,
+      _SC_2_LOCALEDEF,      _SC_2_SW_DEV};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
+    int output;
+    FromkLinuxSysconfConstant(&input, &output);
+    return output;
+  });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
+    int output;
+    TokLinuxSysconfConstant(&input, &output);
+    return output;
+  });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

@@ -371,6 +371,17 @@ PrimitiveStatus TestWait(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestSysconf(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  int kLinux_name = in->next<int>();
+  int name;
+  FromkLinuxSysconfConstant(&kLinux_name, &name);
+  out->Push<int64_t>(enc_untrusted_sysconf(name));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -449,7 +460,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestPwrite64}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestWait, EntryHandler{asylo::host_call::TestWait}));
-
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSysconf,
+      EntryHandler{asylo::host_call::TestSysconf}));
   return PrimitiveStatus::OkStatus();
 }
 

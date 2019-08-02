@@ -34,14 +34,16 @@ constexpr uint64_t kAbortEnclaveSelector = primitives::kSelectorUser;
 // |kSelectorUser|.
 constexpr uint64_t kFirstSelector = primitives::kSelectorUser + 1;
 
-// Offset to be used when starting non-syscall host call entry handler
+// Offset to be used when starting host libc host call entry handler
 // constants relative to |kSelectorUser|.
-constexpr uint64_t kNonSyscallFirstSelector = primitives::kSelectorUser + 1024;
+constexpr uint64_t kHostLibCSelector = primitives::kSelectorUser + 1024;
 
-// Each entry handler constant below corresponds to an unit test on the
-// untrusted side, and its corresponding trusted handler is responsible for
-// triggering a host call to test it, and sending the results back to the
+// Each entry handler constant below corresponds to a host call
+// (enc_untrusted_foo()), and its corresponding trusted handler is responsible
+// for triggering a host call to test it, and sending the results back to the
 // untrusted side for validation.
+
+// Host calls with their own syscall numbers.
 constexpr uint64_t kTestAccess =
     kFirstSelector + asylo::system_call::kSYS_access;
 constexpr uint64_t kTestChmod = kFirstSelector + asylo::system_call::kSYS_chmod;
@@ -61,8 +63,7 @@ constexpr uint64_t kTestMkdir = kFirstSelector + asylo::system_call::kSYS_mkdir;
 constexpr uint64_t kTestOpen = kFirstSelector + asylo::system_call::kSYS_open;
 constexpr uint64_t kTestUnlink =
     kFirstSelector + asylo::system_call::kSYS_unlink;
-constexpr uint64_t kTestUmask =
-    kFirstSelector + asylo::system_call::kSYS_umask;
+constexpr uint64_t kTestUmask = kFirstSelector + asylo::system_call::kSYS_umask;
 constexpr uint64_t kTestGetUid =
     kFirstSelector + asylo::system_call::kSYS_getuid;
 constexpr uint64_t kTestGetGid =
@@ -96,8 +97,7 @@ constexpr uint64_t kTestFChown =
     kFirstSelector + asylo::system_call::kSYS_fchown;
 constexpr uint64_t kTestSetSockOpt =
     kFirstSelector + asylo::system_call::kSYS_setsockopt;
-constexpr uint64_t kTestFlock =
-    kFirstSelector + asylo::system_call::kSYS_flock;
+constexpr uint64_t kTestFlock = kFirstSelector + asylo::system_call::kSYS_flock;
 constexpr uint64_t kTestFsync = kFirstSelector + asylo::system_call::kSYS_fsync;
 constexpr uint64_t kTestInotifyInit1 =
     kFirstSelector + asylo::system_call::kSYS_inotify_init1;
@@ -107,22 +107,21 @@ constexpr uint64_t kTestInotifyRmWatch =
     kFirstSelector + asylo::system_call::kSYS_inotify_rm_watch;
 constexpr uint64_t kTestSchedYield =
     kFirstSelector + asylo::system_call::kSYS_sched_yield;
-constexpr uint64_t kTestFstat =
-    kFirstSelector + asylo::system_call::kSYS_fstat;
-constexpr uint64_t kTestLstat =
-    kFirstSelector + asylo::system_call::kSYS_lstat;
-constexpr uint64_t kTestStat =
-    kFirstSelector + asylo::system_call::kSYS_stat;
+constexpr uint64_t kTestFstat = kFirstSelector + asylo::system_call::kSYS_fstat;
+constexpr uint64_t kTestLstat = kFirstSelector + asylo::system_call::kSYS_lstat;
+constexpr uint64_t kTestStat = kFirstSelector + asylo::system_call::kSYS_stat;
 constexpr uint64_t kTestPread64 =
     kFirstSelector + asylo::system_call::kSYS_pread64;
 constexpr uint64_t kTestPwrite64 =
     kFirstSelector + asylo::system_call::kSYS_pwrite64;
 constexpr uint64_t kTestPipe2 = kFirstSelector + asylo::system_call::kSYS_pipe2;
 
-constexpr uint64_t kTestIsAtty = kNonSyscallFirstSelector;
-constexpr uint64_t kTestUSleep = kNonSyscallFirstSelector + 1;
-constexpr uint64_t kTestWait = kNonSyscallFirstSelector + 2;
-constexpr uint64_t kTestSend = kNonSyscallFirstSelector + 3;
+// Host calls implemented via other syscalls or as libc library functions.
+constexpr uint64_t kTestIsAtty = kHostLibCSelector;
+constexpr uint64_t kTestUSleep = kHostLibCSelector + 1;
+constexpr uint64_t kTestSysconf = kHostLibCSelector + 2;
+constexpr uint64_t kTestWait = kHostLibCSelector + 3;
+constexpr uint64_t kTestSend = kHostLibCSelector + 4;
 
 }  // namespace host_call
 }  // namespace asylo
