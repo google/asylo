@@ -84,20 +84,6 @@ extern "C" {
 //              IO                   //
 ///////////////////////////////////////
 
-void *enc_untrusted_malloc(size_t size) {
-  void *result;
-  CHECK_OCALL(
-      ocall_enc_untrusted_malloc(&result, static_cast<bridge_size_t>(size)));
-  if (result &&
-      !sgx_is_outside_enclave(result, static_cast<bridge_size_t>(size))) {
-    abort();
-  }
-  if (!result) {
-    abort();
-  }
-  return result;
-}
-
 void **enc_untrusted_allocate_buffers(size_t count, size_t size) {
   void **buffers;
   CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
@@ -290,7 +276,7 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   std::string serialized_res(tmp_serialized_res_start,
                              tmp_serialized_res_start +
                              static_cast<size_t>(tmp_serialized_res_len));
-  enc_untrusted_free(tmp_serialized_res_start);
+  CHECK_OCALL(ocall_untrusted_local_free(tmp_serialized_res_start));
   if (!asylo::DeserializeAddrinfo(&serialized_res, res)) {
     LOG(ERROR) << "Invalid addrinfo in getaddrinfo response";
     return -1;

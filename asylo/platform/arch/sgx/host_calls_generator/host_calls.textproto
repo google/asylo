@@ -32,43 +32,12 @@ host_calls {
     type: "int"
   }
 }
-
-host_calls {
-  name: "free"
-  return_type: "void"
-  failure_sets_errno: false
-  parameters {
-    name: "ptr"
-    type: "void *"
-    pointer_attributes {
-      attribute: USER_CHECK
-    }
-  }
-}
-
 host_calls {
   name: "fsync"
   return_type: "int"
   parameters {
     name: "fd"
     type: "int"
-  }
-}
-
-host_calls {
-  name: "realloc"
-  return_type: "void *"
-  failure_return_expression: "nullptr"
-  parameters {
-    name: "ptr"
-    type: "void *"
-    pointer_attributes {
-      attribute: USER_CHECK
-    }
-  }
-  parameters {
-    name: "size"
-    type: "size_t"
   }
 }
 

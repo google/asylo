@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 
 extern "C" {
@@ -57,8 +58,9 @@ UntrustedCacheMalloc::UntrustedCacheMalloc() {
   // Initialize a free list object in the trusted heap. The free list object
   // stores an array of buffers stored in the untrusted heap.
   free_list_ = absl::make_unique<FreeList>();
-  free_list_->buffers.reset(reinterpret_cast<void**>(enc_untrusted_malloc(
-      sizeof(void*) * kFreeListCapacity)));
+  free_list_->buffers.reset(reinterpret_cast<void **>(
+      primitives::TrustedPrimitives::UntrustedLocalAlloc(sizeof(void *) *
+                                                         kFreeListCapacity)));
   free_list_->count = 0;
 }
 
@@ -111,7 +113,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
 
 void *UntrustedCacheMalloc::Malloc(size_t size) {
   if (is_destroyed || (size > kPoolEntrySize)) {
-    return enc_untrusted_malloc(size);
+    return primitives::TrustedPrimitives::UntrustedLocalAlloc(size);
   }
   return GetBuffer();
 }
@@ -129,13 +131,13 @@ void UntrustedCacheMalloc::PushToFreeList(void *buffer) {
 
 void UntrustedCacheMalloc::Free(void *buffer) {
   if (is_destroyed) {
-    enc_untrusted_free(buffer);
+    primitives::TrustedPrimitives::UntrustedLocalFree(buffer);
     return;
   }
   ScopedSpinLock spin_lock(&lock_);
 
   // Add the buffer to the free list if it was not allocated from the buffer
-  // pool and was allocated via the enc_untrusted_malloc host call. If the
+  // pool and was allocated via UntrustedLocalAlloc. If the
   // buffer was allocated from the buffer pool push it back to the pool.
   if (busy_buffers_.find(buffer) == busy_buffers_.end()) {
     PushToFreeList(buffer);

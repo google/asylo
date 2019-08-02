@@ -40,6 +40,7 @@
 #include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/posix/memory/memory.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
@@ -146,14 +147,16 @@ Status EncryptToUntrustedMemory(AeadCryptor *cryptor, const void *source_base,
                                 SnapshotLayoutEntry *snapshot_entry) {
   ByteContainerView plaintext(source_base, source_size);
   int maximum_ciphertext_size = source_size + cryptor->MaxSealOverhead();
-  void *destination_base = enc_untrusted_malloc(maximum_ciphertext_size);
+  void *destination_base = primitives::TrustedPrimitives::UntrustedLocalAlloc(
+      maximum_ciphertext_size);
   size_t destination_size;
   if (!destination_base) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to allocate untrusted memory for snapshot");
   }
   size_t nonce_size = cryptor->NonceSize();
-  void *nonce_base = enc_untrusted_malloc(nonce_size);
+  void *nonce_base =
+      primitives::TrustedPrimitives::UntrustedLocalAlloc(nonce_size);
   if (!nonce_base) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to allocate untrusted memory for snapshot nonce");

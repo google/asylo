@@ -39,8 +39,6 @@
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
 
-extern "C" void *enc_untrusted_malloc(size_t size);
-extern "C" void enc_untrusted_free(void *ptr);
 extern "C" int enc_untrusted_puts(const char *message);
 
 namespace asylo {
@@ -150,11 +148,22 @@ int asylo_enclave_call(uint64_t selector, void *buffer) {
 }
 
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
-  return enc_untrusted_malloc(size);
+  void *result;
+  CHECK_OCALL(
+      ocall_untrusted_local_alloc(&result, static_cast<bridge_size_t>(size)));
+  if (result &&
+      !sgx_is_outside_enclave(result, static_cast<bridge_size_t>(size))) {
+    abort();
+  }
+
+  if (!result) {
+    abort();
+  }
+  return result;
 }
 
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
-  enc_untrusted_free(ptr);
+  CHECK_OCALL(ocall_untrusted_local_free(ptr));
 }
 
 bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {

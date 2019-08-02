@@ -199,7 +199,7 @@ PrimitiveStatus Initialize(void *context, MessageReader *in,
   if (!result) {
     out->PushByCopy(Extent{output, output_len});
   }
-  enc_untrusted_free(output);
+  TrustedPrimitives::UntrustedLocalFree(output);
   return PrimitiveStatus(result);
 }
 
@@ -219,7 +219,7 @@ PrimitiveStatus Run(void *context, MessageReader *in, MessageWriter *out) {
   if (!result) {
     out->PushByCopy(Extent{output, output_len});
   }
-  enc_untrusted_free(output);
+  TrustedPrimitives::UntrustedLocalFree(output);
   return PrimitiveStatus(result);
 }
 
@@ -240,7 +240,7 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
   if (!result) {
     out->PushByCopy(Extent{output, output_len});
   }
-  enc_untrusted_free(output);
+  TrustedPrimitives::UntrustedLocalFree(output);
   return PrimitiveStatus(result);
 }
 
@@ -587,11 +587,11 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
   }
   EnclaveOutput enclave_output;
   // Take snapshot should not change any enclave states. Call
-  // enc_untrusted_malloc directly to create the StatusSerializer to avoid
+  // UntrustedLocalAlloc directly to create the StatusSerializer to avoid
   // change the state of UntrustedCacheMalloc instance after snapshotting.
   StatusSerializer<EnclaveOutput> status_serializer(
       &enclave_output, enclave_output.mutable_status(), output, output_len,
-      &enc_untrusted_malloc);
+      &TrustedPrimitives::UntrustedLocalAlloc);
 
   asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
       asylo::GetEnclaveConfig();

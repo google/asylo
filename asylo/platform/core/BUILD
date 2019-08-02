@@ -286,6 +286,7 @@ cc_library(
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:spin_lock",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",
     ],

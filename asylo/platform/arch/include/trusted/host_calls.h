@@ -49,18 +49,6 @@ extern "C" {
 //          Untrusted Heap Allocations          //
 //////////////////////////////////////////////////
 
-// Allocates memory on the untrusted heap. This function never returns nullptr.
-// Instead of returning nullptr, it will abort in the following cases:
-//   * If the memory allocation fails
-//   * If the host call fails for any reason (this may be backend-specific)
-void *enc_untrusted_malloc(size_t size);
-
-// Reallocates memory on the untrusted heap.
-void *enc_untrusted_realloc(void *ptr, size_t size);
-
-// Releases memory on the untrusted heap.
-void enc_untrusted_free(void *ptr);
-
 // Allocates |count| buffers of size |size| on the untrusted heap, returning a
 // pointer to an array of buffer pointers.
 void **enc_untrusted_allocate_buffers(

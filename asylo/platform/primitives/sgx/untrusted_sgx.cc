@@ -67,7 +67,7 @@ struct ms_ecall_dispatch_trusted_call_t {
   // Pointer to the flat buffer passed to primitives::EnclaveCall. The
   // pointer is interpreted as a void pointer as edger8r only allows trivial
   // data types to be passed across the bridge.
-  void* ms_buffer;
+  void *ms_buffer;
 };
 
 // Edger8r-generated primitives ecall_deliver_signal marshalling struct.
@@ -85,17 +85,17 @@ struct ms_ecall_deliver_signal_t {
 // marshalling struct.
 struct ms_ecall_transfer_secure_snapshot_key_t {
   int ms_retval;
-  const char* ms_input;
+  const char *ms_input;
   bridge_size_t ms_input_len;
-  char** ms_output;
-  bridge_size_t* ms_output_len;
+  char **ms_output;
+  bridge_size_t *ms_output_len;
 };
 
 // Enters the enclave and invokes the secure snapshot key transfer entry-point.
 // If the ecall fails, return a non-OK status.
-static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid,
-                                        const char *input, size_t input_len,
-                                        char **output, size_t *output_len) {
+static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid, const char *input,
+                                        size_t input_len, char **output,
+                                        size_t *output_len) {
   bridge_size_t bridge_output_len;
   ms_ecall_transfer_secure_snapshot_key_t ms;
   ms.ms_input = input;
@@ -118,12 +118,11 @@ static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid,
   return Status::OkStatus();
 }
 
-
 // Edger8r-generated primitives ecall_take_snapshot marshalling struct.
 struct ms_ecall_take_snapshot_t {
   int ms_retval;
-  char** ms_output;
-  bridge_size_t* ms_output_len;
+  char **ms_output;
+  bridge_size_t *ms_output_len;
 };
 
 // Enters the enclave and invokes the snapshotting entry-point. If the ecall
@@ -359,7 +358,7 @@ Status SgxEnclaveClient::DeliverSignalInternal(MessageWriter *input,
       input->Serialize(const_cast<void *>(params.input));
     }
   }
-  const ocall_table_t* table = &ocall_table_bridge;
+  const ocall_table_t *table = &ocall_table_bridge;
   sgx_status_t status =
       sgx_ecall(id_, /*index=*/1, table, &ms, /*is_utility=*/false);
 
@@ -400,8 +399,9 @@ Status SgxEnclaveClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
   status.RestoreFrom(local_output.status());
 
   // If |output| is not null, then |output_buf| points to a memory buffer
-  // allocated inside the enclave using enc_untrusted_malloc(). It is the
-  // caller's responsibility to free this buffer.
+  // allocated inside the enclave using
+  // TrustedPrimitives::UntrustedLocalAlloc(). It is the caller's responsibility
+  // to free this buffer.
   free(output_buf);
 
   // Set the output parameter if necessary.
@@ -423,8 +423,8 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
   char *output = nullptr;
   size_t output_len = 0;
 
-  ASYLO_RETURN_IF_ERROR(TransferSecureSnapshotKey(
-      id_, buf.data(), buf.size(), &output, &output_len));
+  ASYLO_RETURN_IF_ERROR(TransferSecureSnapshotKey(id_, buf.data(), buf.size(),
+                                                  &output, &output_len));
 
   // Enclave entry-point was successfully invoked. |output| is guaranteed to
   // have a value.
@@ -440,13 +440,9 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
   return status;
 }
 
-bool SgxEnclaveClient::IsTcsActive() {
-  return (sgx_is_tcs_active(id_) != 0);
-}
+bool SgxEnclaveClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
 
-void SgxEnclaveClient::SetProcessId() {
-  sgx_set_process_id(id_);
-}
+void SgxEnclaveClient::SetProcessId() { sgx_set_process_id(id_); }
 
 }  // namespace primitives
 }  // namespace asylo

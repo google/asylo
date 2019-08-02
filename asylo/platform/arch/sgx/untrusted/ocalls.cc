@@ -183,7 +183,7 @@ int ocall_enc_untrusted_puts(const char *str) {
   return rc;
 }
 
-void *ocall_enc_untrusted_malloc(bridge_size_t size) {
+void *ocall_untrusted_local_alloc(bridge_size_t size) {
   void *ret = malloc(static_cast<size_t>(size));
   return ret;
 }
@@ -1219,3 +1219,5 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
   }
   return status.error_code();
 }
+
+void ocall_untrusted_local_free(void *buffer) { free(buffer); }
