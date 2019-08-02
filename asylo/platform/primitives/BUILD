@@ -26,6 +26,7 @@ package(
 cc_library(
     name = "primitives",
     hdrs = [
+        "enclave_type.h",
         "extent.h",
         "primitive_status.h",
         "primitives.h",

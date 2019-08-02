@@ -45,6 +45,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/arch:fork_cc_proto",
         "//asylo/platform/common:time_util",
+        "//asylo/platform/primitives",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",

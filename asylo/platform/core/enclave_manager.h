@@ -36,6 +36,7 @@
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"
+#include "asylo/platform/primitives/enclave_type.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 #include "asylo/util/statusor.h"
 
@@ -354,12 +355,6 @@ class AbstractEnclaveLoader {
  public:
   virtual ~AbstractEnclaveLoader() = default;
 
-  enum EnclaveType {
-    UNKNOWN = 0,
-    SGX_HARDWARE = 1,
-    SGX_SIM = 2,
-  };
-
  protected:
   // Only allow the enclave loading via the manager object.
   friend class EnclaveManager;
@@ -372,7 +367,7 @@ class AbstractEnclaveLoader {
   // by fork to load a child enclave with the same loader as the parent.
   virtual StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const = 0;
 
-  virtual EnclaveType GetEnclaveType() const = 0;
+  virtual primitives::EnclaveType GetEnclaveType() const = 0;
 };
 
 /// An abstract enclave loader.
