@@ -40,21 +40,7 @@ class SgxClient : public GenericEnclaveClient {
 
   explicit SgxClient(const std::string &name) : GenericEnclaveClient(name) {}
 
-  // Returns true when a TCS is active in simulation mode. Always returns false
-  // in hardware mode, since TCS active/inactive state is only set and used in
-  // simulation mode.
-  bool IsTcsActive();
-
-  void *base_address() { return GetPrimitiveClient()->GetBaseAddress(); }
-
-  const void *base_address() const {
-    return GetPrimitiveClient()->GetBaseAddress();
-  }
-
   size_t size() { return GetPrimitiveClient()->GetEnclaveSize(); }
-
-  // Sets a new expected process ID for an existing SGX enclave.
-  void SetProcessId();
 
   Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout);
   Status EnterAndRestore(const SnapshotLayout &snapshot_layout);

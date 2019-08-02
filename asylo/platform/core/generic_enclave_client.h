@@ -31,6 +31,10 @@ class GenericEnclaveClient : public EnclaveClient {
  public:
   Status EnterAndRun(const EnclaveInput &input, EnclaveOutput *output) override;
 
+  std::shared_ptr<primitives::Client> GetPrimitiveClient() const {
+    return primitive_client_;
+  }
+
  protected:
   explicit GenericEnclaveClient(const std::string &name)
       : EnclaveClient(name) {}

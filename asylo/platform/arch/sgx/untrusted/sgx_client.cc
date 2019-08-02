@@ -147,13 +147,4 @@ Status SgxClient::EnterAndTransferSecureSnapshotKey(
   return GetPrimitiveClient()->EnterAndTransferSecureSnapshotKey(
       fork_handshake_config);
 }
-
-bool SgxClient::IsTcsActive() {
-  return (GetPrimitiveClient()->IsTcsActive());
-}
-
-void SgxClient::SetProcessId() {
-  GetPrimitiveClient()->SetProcessId();
-}
-
 }  //  namespace asylo
