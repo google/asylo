@@ -23,7 +23,6 @@ present in newlib as well as the target host library.
 """
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
-from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
 from asylo.platform.system_call.type_conversions.types_parse_functions import include
 from asylo.platform.system_call.type_conversions.types_parse_functions import set_bridge_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
@@ -186,15 +185,5 @@ define_enum(
     ],
     default_value_host=-1,
     default_value_newlib=-1)
-
-define_struct(
-    name="stat",
-    values=[("int64_t", "st_dev"), ("int64_t", "st_ino"),
-            ("int64_t", "st_mode"), ("int64_t", "st_nlink"),
-            ("int64_t", "st_uid"), ("int64_t", "st_gid"),
-            ("int64_t", "st_rdev"), ("int64_t", "st_size"),
-            ("int64_t", "st_atime"), ("int64_t", "st_mtime"),
-            ("int64_t", "st_ctime"), ("int64_t", "st_blksize"),
-            ("int64_t", "st_blocks")])
 
 write_output()
