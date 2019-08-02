@@ -1310,8 +1310,9 @@ TEST_F(HostCallTest, TestIsAtty) {
 
   primitives::MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestIsAtty, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
-  EXPECT_THAT(out.next<int>(), Eq(0));
+  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and errno.
+  EXPECT_THAT(out.next<int>(), Eq(0));   // Check return value.
+  EXPECT_THAT(out.next<int>(), ENOTTY);  // Check errno.
 }
 
 // Tests enc_untrusted_usleep() by sleeping for 1s, then ensuring that the

@@ -16,6 +16,8 @@
  *
  */
 
+#include <errno.h>
+
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
@@ -498,7 +500,12 @@ PrimitiveStatus TestIsAtty(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   int fd = in->next<int>();
-  out->Push<int>(enc_untrusted_isatty(fd));
+  out->Push<int>(enc_untrusted_isatty(fd));  // Push return value.
+
+  int enclave_errno = errno;
+  int klinux_errno;
+  TokLinuxErrorNumber(&enclave_errno, &klinux_errno);
+  out->Push<int>(klinux_errno);
   return PrimitiveStatus::OkStatus();
 }
 
