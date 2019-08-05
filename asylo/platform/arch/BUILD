@@ -148,6 +148,9 @@ cc_library(
     ],
     hdrs = ["sgx/untrusted/sgx_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    # This option prevents the linker from discarding the definition of
+    # ocall_table_bridge before it encounters a reference to it.
+    linkopts = ["-Wl,--undefined=ocall_table_bridge"],
     visibility = ["//visibility:private"],
     deps = [
         ":fork_cc_proto",

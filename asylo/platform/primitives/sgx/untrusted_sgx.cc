@@ -151,6 +151,43 @@ static Status TakeSnapshot(sgx_enclave_id_t eid, char **output,
 
   return Status::OkStatus();
 }
+
+// Edger8r-generated primitives ecall_restore marshalling struct.
+struct ms_ecall_restore_t {
+  int ms_retval;
+  const char* ms_input;
+  bridge_size_t ms_input_len;
+  char** ms_output;
+  bridge_size_t* ms_output_len;
+};
+
+// Enters the enclave and invokes the restoring entry-point. If the ecall fails,
+// return a non-OK status.
+static Status Restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
+                      char **output, size_t *output_len) {
+  bridge_size_t bridge_output_len;
+  ms_ecall_restore_t ms;
+  ms.ms_input = input;
+  ms.ms_input_len = input_len;
+  ms.ms_output = output;
+  ms.ms_output_len = &bridge_output_len;
+  sgx_status_t sgx_status = sgx_ecall(eid, 3, &ocall_table_bridge, &ms, true);
+  if (output_len) {
+    *output_len = static_cast<size_t>(bridge_output_len);
+  }
+  if (sgx_status != SGX_SUCCESS) {
+    // Return a Status object in the SGX error space.
+    return Status(sgx_status, "Call to ecall_restore failed");
+  } else if (ms.ms_retval || *output_len == 0) {
+    // Ecall succeeded but did not return a value. This indicates that the
+    // trusted code failed to propagate error information over the enclave
+    // boundary.
+    return Status(asylo::error::GoogleError::INTERNAL,
+                  "No output from enclave");
+  }
+  return Status::OkStatus();
+}
+
 }  // namespace
 
 SgxEnclaveClient::~SgxEnclaveClient() = default;
@@ -408,6 +445,34 @@ Status SgxEnclaveClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
   if (snapshot_layout) {
     *snapshot_layout = local_output.GetExtension(snapshot);
   }
+
+  return status;
+}
+
+Status SgxEnclaveClient::EnterAndRestore(
+    const SnapshotLayout &snapshot_layout) {
+  std::string buf;
+  if (!snapshot_layout.SerializeToString(&buf)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize SnapshotLayout");
+  }
+
+  char *output = nullptr;
+  size_t output_len = 0;
+
+  ASYLO_RETURN_IF_ERROR(
+      Restore(id_, buf.data(), buf.size(), &output, &output_len));
+
+  // Enclave entry-point was successfully invoked. |output| is guaranteed to
+  // have a value.
+  StatusProto status_proto;
+  status_proto.ParseFromArray(output, output_len);
+  Status status;
+  status.RestoreFrom(status_proto);
+
+  // |output| points to an untrusted memory buffer allocated by the enclave. It
+  // is the untrusted caller's responsibility to free this buffer.
+  free(output);
 
   return status;
 }
