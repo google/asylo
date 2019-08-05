@@ -41,8 +41,6 @@ size_t bridge_type_size(const std::string &type_name) {
     return 16;
   } else if (type_name == "bridge_timespec") {
     return 16;
-  } else if (type_name == "bridge_stat") {
-    return 104;
   } else if (type_name == "bridge_pollfd") {
     return 8;
   } else {

@@ -75,10 +75,6 @@ TEST_F(BridgeTypesTest, TestPackedSize_bridge_timespec) {
   RunTest<bridge_timespec>("bridge_timespec");
 }
 
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_stat) {
-  RunTest<bridge_stat>("bridge_stat");
-}
-
 TEST_F(BridgeTypesTest, TestPackedSize_bridge_pollfd) {
   RunTest<bridge_pollfd>("bridge_pollfd");
 }

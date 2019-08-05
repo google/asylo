@@ -41,34 +41,6 @@ class BridgeTest : public ::testing::Test {
 
 using intvec = std::vector<int>;
 
-TEST_F(BridgeTest, BridgeFLockOperationTest) {
-  intvec from_bits = {BRIDGE_LOCK_SH, BRIDGE_LOCK_EX, BRIDGE_LOCK_NB,
-                      BRIDGE_LOCK_UN};
-  intvec to_bits = {LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
-  EXPECT_EQ(from_bits.size(), to_bits.size());
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFLockOperation);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(from_bits, to_bits, ITER_BOUND),
-              from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeFLockOperation);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(to_bits, from_bits, ITER_BOUND),
-              to_matcher);
-}
-
-TEST_F(BridgeTest, BridgeSysconfConstantsTest) {
-  std::vector<enum SysconfConstants> from_consts = {BRIDGE_SC_NPROCESSORS_CONF,
-                                                    BRIDGE_SC_NPROCESSORS_ONLN,
-                                                    BRIDGE_SC_UNKNOWN};
-  intvec to_consts = {_SC_NPROCESSORS_CONF, _SC_NPROCESSORS_ONLN, -1};
-  auto to_matcher = IsFiniteRestrictionOf<int, enum SysconfConstants>(
-      ToBridgeSysconfConstants);
-  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts,
-                                             BRIDGE_SC_UNKNOWN, ITER_BOUND),
-              to_matcher);
-  auto from_matcher = IsFiniteRestrictionOf<enum SysconfConstants, int>(
-      FromBridgeSysconfConstants);
-  EXPECT_THAT(zip(from_consts, to_consts), from_matcher);
-}
-
 TEST_F(BridgeTest, BridgeTimerTypeTest) {
   std::vector<enum TimerType> from_consts = {
       BRIDGE_ITIMER_REAL,
@@ -228,48 +200,6 @@ TEST_F(BridgeTest, BridgeSysLogPriorityTest) {
       EXPECT_EQ(ToBridgeSysLogPriority(to), from);
     }
   }
-}
-
-TEST_F(BridgeTest, BridgeFcntlCommandsTest) {
-  intvec from_consts = {BRIDGE_F_GETFD,      BRIDGE_F_SETFD,
-                        BRIDGE_F_GETFL,      BRIDGE_F_SETFL,
-                        BRIDGE_F_GETPIPE_SZ, BRIDGE_F_SETPIPE_SZ};
-  intvec to_consts = {F_GETFD, F_SETFD,      F_GETFL,
-                      F_SETFL, F_GETPIPE_SZ, F_SETPIPE_SZ};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFcntlCmd);
-  EXPECT_THAT(
-      FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1, ITER_BOUND),
-      from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeFcntlCmd);
-  EXPECT_THAT(
-      FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1, ITER_BOUND),
-      to_matcher);
-}
-
-TEST_F(BridgeTest, BridgeFileFlagsTest) {
-  intvec from_bits = {BRIDGE_RDONLY,   BRIDGE_WRONLY,   BRIDGE_RDWR,
-                      BRIDGE_CREAT,    BRIDGE_APPEND,   BRIDGE_EXCL,
-                      BRIDGE_TRUNC,    BRIDGE_NONBLOCK, BRIDGE_DIRECT,
-                      BRIDGE_O_CLOEXEC};
-  intvec to_bits = {O_RDONLY, O_WRONLY, O_RDWR,     O_CREAT,  O_APPEND,
-                    O_EXCL,   O_TRUNC,  O_NONBLOCK, O_DIRECT, O_CLOEXEC};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFileFlags);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(from_bits, to_bits, ITER_BOUND),
-              from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeFileFlags);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(to_bits, from_bits, ITER_BOUND),
-              to_matcher);
-}
-
-TEST_F(BridgeTest, BridgeFDFlagsTest) {
-  intvec from_consts = {BRIDGE_CLOEXEC};
-  intvec to_consts = {FD_CLOEXEC};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeFDFlags);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(from_consts, to_consts, ITER_BOUND),
-              from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeFDFlags);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(to_consts, from_consts, ITER_BOUND),
-              to_matcher);
 }
 
 TEST_F(BridgeTest, BridgeOptionNameTest) {

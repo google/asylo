@@ -44,14 +44,6 @@ typedef uint64_t bridge_size_t;
 typedef int64_t bridge_ssize_t;
 typedef int64_t bridge_sigset_t;
 
-// The operations for flock that are supported inside the enclave.
-enum FLockOperations {
-  BRIDGE_LOCK_SH = 0x01,
-  BRIDGE_LOCK_EX = 0x02,
-  BRIDGE_LOCK_NB = 0x04,
-  BRIDGE_LOCK_UN = 0x08,
-};
-
 // This enum contains all of the sysconf name values supported inside the
 // enclave.
 enum SysconfConstants {
@@ -204,24 +196,6 @@ enum BridgeSocketType {
   BRIDGE_SOCK_TYPE_FLAGS = BRIDGE_SOCK_O_NONBLOCK | BRIDGE_SOCK_O_CLOEXEC,
 };
 
-// All of the file operation flags supported inside the enclave.
-enum FileStatusFlags {
-  BRIDGE_RDONLY = 0x00,
-  BRIDGE_WRONLY = 0x01,
-  BRIDGE_RDWR = 0x02,
-  BRIDGE_CREAT = 0x40,
-  BRIDGE_EXCL = 0x80,
-  BRIDGE_TRUNC = 0x200,
-  BRIDGE_APPEND = 0x400,
-  BRIDGE_NONBLOCK = 0x800,
-  BRIDGE_DIRECT = 0x1000,
-  BRIDGE_O_CLOEXEC = 0x2000,
-};
-
-enum FileDescriptorFlags {
-  BRIDGE_CLOEXEC = 0x01,
-};
-
 // All the syslog options supported inside the enclave.
 enum SysLogOptions {
   BRIDGE_LOG_PID = 0x01,
@@ -256,16 +230,6 @@ enum SysLogLevel {
   BRIDGE_LOG_NOTICE = 5,
   BRIDGE_LOG_INFO = 6,
   BRIDGE_LOG_DEBUG = 7,
-};
-
-// All fcntl cmd arguments supported inside the enclave.
-enum FcntlCommands {
-  BRIDGE_F_GETFD = 1,
-  BRIDGE_F_SETFD = 2,
-  BRIDGE_F_GETFL = 3,
-  BRIDGE_F_SETFL = 4,
-  BRIDGE_F_GETPIPE_SZ = 5,
-  BRIDGE_F_SETPIPE_SZ = 6,
 };
 
 // All tcp option names supported inside the enclave.
@@ -402,22 +366,6 @@ struct bridge_timespec {
 struct bridge_utimbuf {
   int64_t actime;
   int64_t modtime;
-} ABSL_ATTRIBUTE_PACKED;
-
-struct bridge_stat {
-  int64_t st_dev;
-  int64_t st_ino;
-  int64_t st_mode;
-  int64_t st_nlink;
-  int64_t st_uid;
-  int64_t st_gid;
-  int64_t st_rdev;
-  int64_t st_size;
-  int64_t st_atime_enc;
-  int64_t st_mtime_enc;
-  int64_t st_ctime_enc;
-  int64_t st_blksize;
-  int64_t st_blocks;
 } ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_pollfd {

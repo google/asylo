@@ -43,7 +43,6 @@ class EnclaveBridgeTypes : public EnclaveTestCase {
         {"bridge_sockaddr", sizeof(bridge_sockaddr)},
         {"bridge_timeval", sizeof(bridge_timeval)},
         {"bridge_timespec", sizeof(bridge_timespec)},
-        {"bridge_stat", sizeof(bridge_stat)},
         {"bridge_pollfd", sizeof(bridge_pollfd)},
     };
     absl::flat_hash_map<std::string, size_t> sizes(sizes_list.begin(),

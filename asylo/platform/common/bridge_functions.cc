@@ -263,46 +263,6 @@ int ToBridgePollEvents(int bridge_events) {
 
 }  // namespace
 
-int FromBridgeFLockOperation(int bridge_flock_operation) {
-  int flock_operation = 0;
-  if (bridge_flock_operation & BRIDGE_LOCK_SH) flock_operation |= LOCK_SH;
-  if (bridge_flock_operation & BRIDGE_LOCK_EX) flock_operation |= LOCK_EX;
-  if (bridge_flock_operation & BRIDGE_LOCK_NB) flock_operation |= LOCK_NB;
-  if (bridge_flock_operation & BRIDGE_LOCK_UN) flock_operation |= LOCK_UN;
-  return flock_operation;
-}
-
-int ToBridgeFLockOperation(int flock_operation) {
-  int bridge_flock_operation = 0;
-  if (flock_operation & LOCK_SH) bridge_flock_operation |= BRIDGE_LOCK_SH;
-  if (flock_operation & LOCK_EX) bridge_flock_operation |= BRIDGE_LOCK_EX;
-  if (flock_operation & LOCK_NB) bridge_flock_operation |= BRIDGE_LOCK_NB;
-  if (flock_operation & LOCK_UN) bridge_flock_operation |= BRIDGE_LOCK_UN;
-  return bridge_flock_operation;
-}
-
-int FromBridgeSysconfConstants(enum SysconfConstants bridge_sysconf_constant) {
-  switch (bridge_sysconf_constant) {
-    case BRIDGE_SC_NPROCESSORS_CONF:
-      return _SC_NPROCESSORS_CONF;
-    case BRIDGE_SC_NPROCESSORS_ONLN:
-      return _SC_NPROCESSORS_ONLN;
-    default:
-      return -1;
-  }
-}
-
-enum SysconfConstants ToBridgeSysconfConstants(int sysconf_constant) {
-  switch (sysconf_constant) {
-    case _SC_NPROCESSORS_CONF:
-      return BRIDGE_SC_NPROCESSORS_CONF;
-    case _SC_NPROCESSORS_ONLN:
-      return BRIDGE_SC_NPROCESSORS_ONLN;
-    default:
-      return BRIDGE_SC_UNKNOWN;
-  }
-}
-
 int FromBridgeTimerType(enum TimerType bridge_timer_type) {
   if (bridge_timer_type == BRIDGE_ITIMER_REAL) return ITIMER_REAL;
   if (bridge_timer_type == BRIDGE_ITIMER_VIRTUAL) return ITIMER_VIRTUAL;
@@ -535,86 +495,6 @@ int ToBridgeSysLogPriority(int syslog_priority) {
          ToBridgeSysLogFacility(syslog_facility);
 }
 
-int FromBridgeFcntlCmd(int bridge_fcntl_cmd) {
-  switch (bridge_fcntl_cmd) {
-    case BRIDGE_F_GETFD:
-      return F_GETFD;
-    case BRIDGE_F_SETFD:
-      return F_SETFD;
-    case BRIDGE_F_GETFL:
-      return F_GETFL;
-    case BRIDGE_F_SETFL:
-      return F_SETFL;
-    case BRIDGE_F_GETPIPE_SZ:
-      return F_GETPIPE_SZ;
-    case BRIDGE_F_SETPIPE_SZ:
-      return F_SETPIPE_SZ;
-    default:
-      return -1;
-  }
-}
-
-int ToBridgeFcntlCmd(int fcntl_cmd) {
-  switch (fcntl_cmd) {
-    case F_GETFD:
-      return BRIDGE_F_GETFD;
-    case F_SETFD:
-      return BRIDGE_F_SETFD;
-    case F_GETFL:
-      return BRIDGE_F_GETFL;
-    case F_SETFL:
-      return BRIDGE_F_SETFL;
-    case F_GETPIPE_SZ:
-      return BRIDGE_F_GETPIPE_SZ;
-    case F_SETPIPE_SZ:
-      return BRIDGE_F_SETPIPE_SZ;
-    default:
-      return -1;
-  }
-}
-
-int FromBridgeFileFlags(int bridge_file_flag) {
-  int file_flag = 0;
-  if (bridge_file_flag & BRIDGE_RDONLY) file_flag |= O_RDONLY;
-  if (bridge_file_flag & BRIDGE_WRONLY) file_flag |= O_WRONLY;
-  if (bridge_file_flag & BRIDGE_RDWR) file_flag |= O_RDWR;
-  if (bridge_file_flag & BRIDGE_CREAT) file_flag |= O_CREAT;
-  if (bridge_file_flag & BRIDGE_APPEND) file_flag |= O_APPEND;
-  if (bridge_file_flag & BRIDGE_EXCL) file_flag |= O_EXCL;
-  if (bridge_file_flag & BRIDGE_TRUNC) file_flag |= O_TRUNC;
-  if (bridge_file_flag & BRIDGE_NONBLOCK) file_flag |= O_NONBLOCK;
-  if (bridge_file_flag & BRIDGE_DIRECT) file_flag |= O_DIRECT;
-  if (bridge_file_flag & BRIDGE_O_CLOEXEC) file_flag |= O_CLOEXEC;
-  return file_flag;
-}
-
-int ToBridgeFileFlags(int file_flag) {
-  int bridge_file_flag = 0;
-  if (file_flag & O_RDONLY) bridge_file_flag |= BRIDGE_RDONLY;
-  if (file_flag & O_WRONLY) bridge_file_flag |= BRIDGE_WRONLY;
-  if (file_flag & O_RDWR) bridge_file_flag |= BRIDGE_RDWR;
-  if (file_flag & O_CREAT) bridge_file_flag |= BRIDGE_CREAT;
-  if (file_flag & O_APPEND) bridge_file_flag |= BRIDGE_APPEND;
-  if (file_flag & O_EXCL) bridge_file_flag |= BRIDGE_EXCL;
-  if (file_flag & O_TRUNC) bridge_file_flag |= BRIDGE_TRUNC;
-  if (file_flag & O_NONBLOCK) bridge_file_flag |= BRIDGE_NONBLOCK;
-  if (file_flag & O_DIRECT) bridge_file_flag |= BRIDGE_DIRECT;
-  if (file_flag & O_CLOEXEC) bridge_file_flag |= BRIDGE_O_CLOEXEC;
-  return bridge_file_flag;
-}
-
-int FromBridgeFDFlags(int bridge_fd_flag) {
-  int fd_flag = 0;
-  if (bridge_fd_flag & BRIDGE_CLOEXEC) fd_flag |= FD_CLOEXEC;
-  return fd_flag;
-}
-
-int ToBridgeFDFlags(int fd_flag) {
-  int bridge_fd_flag = 0;
-  if (fd_flag & FD_CLOEXEC) bridge_fd_flag |= BRIDGE_CLOEXEC;
-  return bridge_fd_flag;
-}
-
 int FromBridgeOptionName(int level, int bridge_option_name) {
   if (level == IPPROTO_TCP) {
     return FromBridgeTcpOptionName(bridge_option_name);
@@ -639,44 +519,6 @@ int ToBridgeOptionName(int level, int option_name) {
     return ToBridgeSocketOptionName(option_name);
   }
   return -1;
-}
-
-struct stat *FromBridgeStat(const struct bridge_stat *bridge_statbuf,
-                            struct stat *statbuf) {
-  if (!bridge_statbuf || !statbuf) return nullptr;
-  statbuf->st_dev = bridge_statbuf->st_dev;
-  statbuf->st_ino = bridge_statbuf->st_ino;
-  statbuf->st_mode = bridge_statbuf->st_mode;
-  statbuf->st_nlink = bridge_statbuf->st_nlink;
-  statbuf->st_uid = bridge_statbuf->st_uid;
-  statbuf->st_gid = bridge_statbuf->st_gid;
-  statbuf->st_rdev = bridge_statbuf->st_rdev;
-  statbuf->st_size = bridge_statbuf->st_size;
-  statbuf->st_atime = bridge_statbuf->st_atime_enc;
-  statbuf->st_mtime = bridge_statbuf->st_mtime_enc;
-  statbuf->st_ctime = bridge_statbuf->st_ctime_enc;
-  statbuf->st_blksize = bridge_statbuf->st_blksize;
-  statbuf->st_blocks = bridge_statbuf->st_blocks;
-  return statbuf;
-}
-
-struct bridge_stat *ToBridgeStat(const struct stat *statbuf,
-                                 struct bridge_stat *bridge_statbuf) {
-  if (!statbuf || !bridge_statbuf) return nullptr;
-  bridge_statbuf->st_dev = statbuf->st_dev;
-  bridge_statbuf->st_ino = statbuf->st_ino;
-  bridge_statbuf->st_mode = statbuf->st_mode;
-  bridge_statbuf->st_nlink = statbuf->st_nlink;
-  bridge_statbuf->st_uid = statbuf->st_uid;
-  bridge_statbuf->st_gid = statbuf->st_gid;
-  bridge_statbuf->st_rdev = statbuf->st_rdev;
-  bridge_statbuf->st_size = statbuf->st_size;
-  bridge_statbuf->st_atime_enc = statbuf->st_atime;
-  bridge_statbuf->st_mtime_enc = statbuf->st_mtime;
-  bridge_statbuf->st_ctime_enc = statbuf->st_ctime;
-  bridge_statbuf->st_blksize = statbuf->st_blksize;
-  bridge_statbuf->st_blocks = statbuf->st_blocks;
-  return bridge_statbuf;
 }
 
 template <typename T, typename U>
@@ -1125,20 +967,6 @@ struct BridgeTms *ToBridgeTms(const struct tms *times,
   bridge_times->tms_cutime = times->tms_cutime;
   bridge_times->tms_cstime = times->tms_cstime;
   return bridge_times;
-}
-
-struct timespec *FromBridgeTimespec(const struct bridge_timespec *bridge_tp,
-                                    struct timespec *tp) {
-  tp->tv_sec = bridge_tp->tv_sec;
-  tp->tv_nsec = bridge_tp->tv_nsec;
-  return tp;
-}
-
-struct bridge_timespec *ToBridgeTimespec(const struct timespec *tp,
-                                         struct bridge_timespec *bridge_tp) {
-  bridge_tp->tv_sec = tp->tv_sec;
-  bridge_tp->tv_nsec = tp->tv_nsec;
-  return bridge_tp;
 }
 
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,

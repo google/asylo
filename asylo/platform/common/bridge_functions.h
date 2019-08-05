@@ -40,22 +40,6 @@
 
 namespace asylo {
 
-// Converts |bridge_flock_operation| to a runtime flock operation. Returns 0 if
-// unsuccessful.
-int FromBridgeFLockOperation(int bridge_flock_operation);
-
-// Converts |flock_operation| to bridge flock operation. Returns 0 if no
-// supported options are provided.
-int ToBridgeFLockOperation(int flock_operation);
-
-// Converts |bridge_sysconf_constant| to a runtime sysconf constant. Returns -1
-// if unsuccessful.
-int FromBridgeSysconfConstants(enum SysconfConstants bridge_sysconf_constant);
-
-// Converts |sysconf_constant| to a bridge constant. Returns BRIDGE_SC_UNKNOWN
-// if unsuccessful.
-enum SysconfConstants ToBridgeSysconfConstants(int sysconf_constant);
-
 // Converts |bridge_timer_type| to a runtime timer type. Returns -1 if
 // unsuccessful.
 int FromBridgeTimerType(enum TimerType bridge_timer_type);
@@ -143,14 +127,6 @@ int ToBridgeAddressInfoErrors(int eai_code);
 // if |bridge_eai_code| is not recognized.
 int FromBridgeAddressInfoErrors(int bridge_eai_code);
 
-// Converts |bridge_sock_type| from a bridge socket type value. Returns -1 if
-// |bridge_sock_type| is not recognized.
-int FromBridgeSocketType(int bridge_sock_type);
-
-// Converts |sock_type| to a bridge socket type value. Returns -1 if |sock_type|
-// is not recognized.
-int ToBridgeSocketType(int sock_type);
-
 // Converts |bridge_syslog_option| to a runtime syslog option. Returns 0 if
 // |bridge_syslog_option| does not contain any supported options.
 int FromBridgeSysLogOption(int bridge_syslog_option);
@@ -175,37 +151,11 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
 
-// Converts |bridge_fcntl_cmd| to a runtime fcntl command.
-int FromBridgeFcntlCmd(int bridge_fcntl_cmd);
-
-// Converts |fcntl_cmd| to a bridge fcntl command.
-int ToBridgeFcntlCmd(int fcntl_cmd);
-
-// Converts |bridge_file_flag| to a runtime file flag.
-int FromBridgeFileFlags(int bridge_file_flag);
-
-// Converts |file_flag| to a bridge file flag.
-int ToBridgeFileFlags(int file_flag);
-
-// Converts |bridge_fd_flag| to a runtime file flag.
-int FromBridgeFDFlags(int bridge_fd_flag);
-
-// Converts |fd_flag| to a bridge FD flag.
-int ToBridgeFDFlags(int fd_flag);
-
 // Converts |bridge_option_name| to a runtime option name.
 int FromBridgeOptionName(int level, int bridge_option_name);
 
 // Converts |option_name| to a bridge option name.
 int ToBridgeOptionName(int level, int option_name);
-
-// Converts |bridge_st| to a runtime stat. Returns nullptr if unsuccessful.
-struct stat *FromBridgeStat(const struct bridge_stat *bridge_statbuf,
-                            struct stat *statbuf);
-
-// Converts |st| to a bridge stat. Returns nullptr if unsuccessful.
-struct bridge_stat *ToBridgeStat(const struct stat *statbuf,
-                                 struct bridge_stat *bridge_statbuf);
 
 // Converts |af_family| to a bridge af family. Returns BRIDGE_AF_UNSUPPORTED if
 // |af_family| is not supported.
@@ -247,14 +197,6 @@ struct tms *FromBridgeTms(const struct BridgeTms *bridge_times,
 // Converts |times| to a bridge tms.
 struct BridgeTms *ToBridgeTms(const struct tms *times,
                               struct BridgeTms *bridge_times);
-
-// Converts |bridge_tp| to a runtime timespec.
-struct timespec *FromBridgeTimespec(const struct bridge_timespec *bridge_tp,
-                                    struct timespec *tp);
-
-// Converts |tp| to a bridge timespec.
-struct bridge_timespec *ToBridgeTimespec(const struct timespec *tp,
-                                         struct bridge_timespec *bridge_tp);
 
 // Converts |ut| to a runtime timespec.
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
