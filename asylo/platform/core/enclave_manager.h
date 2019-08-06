@@ -37,6 +37,7 @@
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"
 #include "asylo/platform/primitives/enclave_type.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 #include "asylo/util/statusor.h"
 
@@ -354,6 +355,14 @@ class EnclaveManager {
 class AbstractEnclaveLoader {
  public:
   virtual ~AbstractEnclaveLoader() = default;
+
+  // EnclaveLoaders can be populated into MessageWriters and read by
+  // MessageReaders.
+  virtual ::asylo::primitives::MessageWriter PopulateIntoMessageWriter()
+      const = 0;
+
+  // Name of the enclave to be loaded.
+  virtual std::string name() const = 0;
 
  protected:
   // Only allow the enclave loading via the manager object.
