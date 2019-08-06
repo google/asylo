@@ -27,6 +27,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
@@ -73,7 +74,7 @@ Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
           enclave_input.start_server_request_input());
     case RemoteAssertionGeneratorEnclaveInput::
         kGeneratePceInfoSgxHardwareReportInput:
-      return GeneratePceInfoHardwareReport(
+      return GeneratePceInfoSgxHardwareReport(
           enclave_input.generate_pce_info_sgx_hardware_report_input(),
           enclave_output
               ->mutable_generate_pce_info_sgx_hardware_report_output());
@@ -140,10 +141,31 @@ Status RemoteAssertionGeneratorEnclave::StartRemoteAssertionGeneratorGrpcServer(
   return Status::OkStatus();
 }
 
-Status RemoteAssertionGeneratorEnclave::GeneratePceInfoHardwareReport(
+Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
     const GeneratePceInfoSgxHardwareReportInput &input,
     GeneratePceInfoSgxHardwareReportOutput *output) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  if (!input.has_pce_target_info()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Input is missing pce_target_info");
+  }
+  if (!input.has_ppid_encryption_key()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Input is missing ppid_encryption_key");
+  }
+  AlignedReportdataPtr reportdata;
+  ASYLO_ASSIGN_OR_RETURN(
+      *reportdata, CreateReportdataForGetPceInfo(input.ppid_encryption_key()));
+  AlignedTargetinfoPtr targetinfo;
+  ASYLO_ASSIGN_OR_RETURN(
+      *targetinfo, ConvertTargetInfoProtoToTargetinfo(input.pce_target_info()));
+
+  AlignedReportPtr report;
+  ASYLO_RETURN_IF_ERROR(
+      GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  output->mutable_report()->set_value(
+      ConvertTrivialObjectToBinaryString(*report));
+
+  return Status::OkStatus();
 }
 
 Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(

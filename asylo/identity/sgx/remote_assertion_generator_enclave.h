@@ -72,7 +72,7 @@ class RemoteAssertionGeneratorEnclave final : public TrustedApplication {
 
   // Generates an SGX hardware REPORT that is suitable for use in the PCE's
   // GetPceInfo protocol.
-  Status GeneratePceInfoHardwareReport(
+  Status GeneratePceInfoSgxHardwareReport(
       const GeneratePceInfoSgxHardwareReportInput &input,
       GeneratePceInfoSgxHardwareReportOutput *output);
 

@@ -413,6 +413,7 @@ sgx_enclave(
     config = ":remote_assertion_generator_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":pce_util",
         ":platform_provisioning",
         ":remote_assertion_generator_enclave_cc_proto",
         ":remote_assertion_generator_enclave_util",
@@ -441,6 +442,7 @@ sgx_enclave_test(
     ],
     deps = [
         ":attestation_key_cc_proto",
+        ":pce_util",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
         ":remote_assertion_cc_proto",
