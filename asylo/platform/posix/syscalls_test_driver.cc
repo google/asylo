@@ -108,7 +108,7 @@ void ExtractCpuSetFromTestOutput(const SyscallsTestOutput &test_output,
                                  cpu_set_t *mask) {
   CPU_ZERO(mask);
   int cpu = 0;
-  for (const uint64_t &word : test_output.bit_mask_syscall_outptr()) {
+  for (const auto &word : test_output.bit_mask_syscall_outptr()) {
     for (uint64_t bit_field = 1; bit_field != 0; bit_field <<= 1) {
       if (word & bit_field) {
         CPU_SET(cpu, mask);
