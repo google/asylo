@@ -25,16 +25,28 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
+#include "asylo/identity/sgx/self_identity.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace sgx {
+namespace {
+
+void SetEnclaveIdentity(GetEnclaveIdentityOutput *output) {
+  const SelfIdentity *self_identity = GetSelfIdentity();
+  output->mutable_cpu_svn()->set_value(self_identity->cpusvn.data(),
+                                       self_identity->cpusvn.size());
+  SetSelfCodeIdentity(output->mutable_code_identity());
+}
+
+}  // namespace
 
 RemoteAssertionGeneratorEnclave::RemoteAssertionGeneratorEnclave()
     : attestation_key_certs_pair_(AttestationKeyCertsPair()),
@@ -85,6 +97,9 @@ Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
     case RemoteAssertionGeneratorEnclaveInput::kUpdateCertsInput:
       return UpdateCerts(enclave_input.update_certs_input(),
                          enclave_output->mutable_update_certs_output());
+    case RemoteAssertionGeneratorEnclaveInput::kGetEnclaveIdentityInput:
+      SetEnclaveIdentity(enclave_output->mutable_get_enclave_identity_output());
+      return Status::OkStatus();
     default:
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     "EnclaveInput invalid: did not contain a valid input");

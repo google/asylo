@@ -35,6 +35,8 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
+#include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
@@ -732,6 +734,28 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsSuccess) {
       enclave_input, &enclave_output));
   CheckServerRunningAndProducesValidRemoteAssertion(
       /*assertion_has_certificate_chains=*/true);
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest, GetEnclaveIdentitySuccess) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+       ->mutable_get_enclave_identity_input() =
+      GetEnclaveIdentityInput::default_instance();
+  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
+      enclave_input, &enclave_output));
+
+  const GetEnclaveIdentityOutput &output =
+      enclave_output.GetExtension(remote_assertion_generator_enclave_output)
+          .get_enclave_identity_output();
+
+  // Since the code identity are unique to enclave itself, and CPUSVN is a
+  // machine specific value, only the existence of those values is tested here.
+  ASYLO_ASSERT_OK(ValidateCpuSvn(output.cpu_svn()));
+  EXPECT_TRUE(IsValidCodeIdentity(output.code_identity()));
 }
 
 

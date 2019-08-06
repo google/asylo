@@ -198,6 +198,7 @@ proto_library(
     name = "remote_assertion_generator_enclave_proto",
     srcs = ["remote_assertion_generator_enclave.proto"],
     deps = [
+        ":code_identity_proto",
         ":platform_provisioning_proto",
         ":remote_assertion_proto",
         "//asylo:enclave_proto",
@@ -413,6 +414,8 @@ sgx_enclave(
     config = ":remote_assertion_generator_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":code_identity_cc_proto",
+        ":code_identity_util",
         ":pce_util",
         ":platform_provisioning",
         ":remote_assertion_generator_enclave_cc_proto",
@@ -442,6 +445,8 @@ sgx_enclave_test(
     ],
     deps = [
         ":attestation_key_cc_proto",
+        ":code_identity_cc_proto",
+        ":code_identity_util",
         ":pce_util",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",

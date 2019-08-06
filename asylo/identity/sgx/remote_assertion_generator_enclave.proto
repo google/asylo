@@ -22,6 +22,7 @@ import "asylo/crypto/certificate.proto";
 import "asylo/crypto/keys.proto";
 import "asylo/enclave.proto";
 import "asylo/identity/sealed_secret.proto";
+import "asylo/identity/sgx/code_identity.proto";
 import "asylo/identity/sgx/platform_provisioning.proto";
 
 extend EnclaveConfig {
@@ -149,6 +150,25 @@ message RemoteAssertionGeneratorEnclaveSecretAad {
   repeated CertificateChain certificate_chains = 1;
 }
 
+// An input message that is used to retrieve the code identity of the
+// RemoteAssertionGenerator enclave and the CPUSVN of the machine on which it is
+// running
+message GetEnclaveIdentityInput {}
+
+// An output message that contains the CPUSVN and the code identity of the
+// RemoteAssertionGenerator enclave.
+//
+// Note that the output is not authenticated and cannot be verified by the
+// untrusted code. Hence, no value should be used for making security-sensitive
+// decisions.
+message GetEnclaveIdentityOutput {
+  // Required.
+  optional CodeIdentity code_identity = 1;
+
+  // Required.
+  optional CpuSvn cpu_svn = 2;
+}
+
 // An input message of the RemoteAssertionGenerator enclave.
 //
 // A extension of [asylo.EnclaveInput].
@@ -159,6 +179,7 @@ message RemoteAssertionGeneratorEnclaveInput {
         generate_pce_info_sgx_hardware_report_input = 2;
     GenerateKeyAndCsrRequestInput generate_key_and_csr_request_input = 3;
     UpdateCertsInput update_certs_input = 4;
+    GetEnclaveIdentityInput get_enclave_identity_input = 5;
   }
 }
 
@@ -172,5 +193,6 @@ message RemoteAssertionGeneratorEnclaveOutput {
         generate_pce_info_sgx_hardware_report_output = 2;
     GenerateKeyAndCsrRequestOutput generate_key_and_csr_request_output = 3;
     UpdateCertsOutput update_certs_output = 4;
+    GetEnclaveIdentityOutput get_enclave_identity_output = 5;
   }
 }
