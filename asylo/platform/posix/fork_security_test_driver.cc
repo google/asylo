@@ -28,6 +28,7 @@
 #include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
+#include "asylo/platform/core/generic_enclave_client.h"
 #include "asylo/platform/posix/fork_security_test.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -124,7 +125,11 @@ class ForkSecurityTest : public ::testing::Test {
     config.set_enable_fork(true);
     ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(enclave_name, loader, config));
 
-    client_ = reinterpret_cast<SgxClient *>(manager_->GetClient(enclave_name));
+    client_ = reinterpret_cast<GenericEnclaveClient *>(
+        manager_->GetClient(enclave_name));
+    primitive_client_ =
+        std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
+            client_->GetPrimitiveClient());
     // Enter the enclave and saves the thread and stack address for
     // snapshotting.
     EnclaveInput input;
@@ -134,7 +139,7 @@ class ForkSecurityTest : public ::testing::Test {
 
     // Enter the enclave and take a snapshot of enclave memory.
     ASYLO_RETURN_IF_ERROR(
-        client_->EnterAndTakeSnapshot(&snapshot_layout_));
+        primitive_client_->EnterAndTakeSnapshot(&snapshot_layout_));
     snapshot_deleter_.Reset(snapshot_layout_);
     return Status::OkStatus();
   }
@@ -160,7 +165,8 @@ class ForkSecurityTest : public ::testing::Test {
   }
 
   static EnclaveManager *manager_;
-  SgxClient *client_;
+  GenericEnclaveClient *client_;
+  std::shared_ptr<primitives::SgxEnclaveClient> primitive_client_;
   SnapshotLayout snapshot_layout_;
   SnapshotDeleter snapshot_deleter_;
   bool enclave_finalized_;
@@ -184,7 +190,7 @@ TEST_F(ForkSecurityTest, SnapshotFailsWithourForkRequest) {
     asylo::ForkHandshakeConfig fork_handshake_config;
     fork_handshake_config.set_is_parent(true);
     fork_handshake_config.set_socket(0);
-    EXPECT_THAT(client_->EnterAndTransferSecureSnapshotKey(
+    EXPECT_THAT(primitive_client_->EnterAndTransferSecureSnapshotKey(
         fork_handshake_config),
                 StatusIs(error::GoogleError::PERMISSION_DENIED,
                          "Snapshot key transfer is not allowed unless "
@@ -198,7 +204,7 @@ TEST_F(ForkSecurityTest, RestoreSucceed) {
       LoadEnclaveAndTakeSnapshot("Restore succeed", /*request_fork=*/true);
   if (status.ok()) {
     // SGX hardware mode. Enter the enclave and restore it.
-    ASSERT_THAT(client_->EnterAndRestore(snapshot_layout_), IsOk());
+    ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_), IsOk());
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
@@ -218,7 +224,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyData) {
     FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.data());
     // Restoring from modified data section should cause the enclave to return
     // an error.
-    ASSERT_THAT(client_->EnterAndRestore(snapshot_layout_), Not(IsOk()));
+    ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
+                Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -239,7 +246,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
     FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.bss());
     // Restoring from modified bss section should cause the enclave to return an
     // error.
-    ASSERT_THAT(client_->EnterAndRestore(snapshot_layout_), Not(IsOk()));
+    ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
+                Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -261,7 +269,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
     FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.thread());
     // Restoring from modified thread information should cause the enclave to
     // return an error.
-    ASSERT_THAT(client_->EnterAndRestore(snapshot_layout_), Not(IsOk()));
+    ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
+                Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -282,7 +291,8 @@ TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
     FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.stack());
     // Restoring from modified stack should cause the enclave to return an
     // error.
-    ASSERT_THAT(client_->EnterAndRestore(snapshot_layout_), Not(IsOk()));
+    ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
+                Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -303,7 +313,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyHeap) {
     // snapshot.
     FlipRandomSnapshotLayoutEntryBit(snapshot_layout_.heap());
     // Restoring from modified heap should kill the enclave.
-    EXPECT_EXIT(client_->EnterAndRestore(snapshot_layout_),
+    EXPECT_EXIT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 ::testing::KilledBySignal(SIGSEGV), ".*");
     enclave_finalized_ = true;
   } else {

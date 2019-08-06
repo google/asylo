@@ -270,6 +270,7 @@ sgx_enclave_test(
         "//asylo:enclave_client",
         "//asylo/platform/arch:fork_cc_proto",
         "//asylo/platform/common:memory",
+        "//asylo/platform/core:generic_enclave_client",
         "//asylo/platform/core:untrusted_core",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

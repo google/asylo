@@ -40,22 +40,9 @@ class SgxClient : public GenericEnclaveClient {
 
   explicit SgxClient(const std::string &name) : GenericEnclaveClient(name) {}
 
-  size_t size() { return GetPrimitiveClient()->GetEnclaveSize(); }
-
-  Status EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout);
-  Status EnterAndRestore(const SnapshotLayout &snapshot_layout);
-  Status EnterAndTransferSecureSnapshotKey(
-      const ForkHandshakeConfig &fork_handshake_config);
-
  private:
   friend class SgxLoader;
   friend class SgxEmbeddedLoader;
-
-  // Returns the primitive SGX client.
-  std::shared_ptr<primitives::SgxEnclaveClient> GetPrimitiveClient() const {
-    return std::static_pointer_cast<primitives::SgxEnclaveClient>(
-        primitive_client_);
-  }
 };
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves

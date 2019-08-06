@@ -84,18 +84,4 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
   }
   return std::unique_ptr<EnclaveLoader>(loader.release());
 }
-
-Status SgxClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
-  return GetPrimitiveClient()->EnterAndTakeSnapshot(snapshot_layout);
-}
-
-Status SgxClient::EnterAndRestore(const SnapshotLayout &snapshot_layout) {
-  return GetPrimitiveClient()->EnterAndRestore(snapshot_layout);
-}
-
-Status SgxClient::EnterAndTransferSecureSnapshotKey(
-    const ForkHandshakeConfig &fork_handshake_config) {
-  return GetPrimitiveClient()->EnterAndTransferSecureSnapshotKey(
-      fork_handshake_config);
-}
 }  //  namespace asylo

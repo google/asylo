@@ -147,9 +147,13 @@ asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
   asylo::ForkHandshakeConfig fork_handshake_config;
   fork_handshake_config.set_is_parent(is_parent);
   fork_handshake_config.set_socket(self_socket);
-  asylo::SgxClient *sgx_client = dynamic_cast<asylo::SgxClient *>(client);
-  ASYLO_RETURN_IF_ERROR(
-      sgx_client->EnterAndTransferSecureSnapshotKey(fork_handshake_config));
+  asylo::GenericEnclaveClient *generic_client =
+      dynamic_cast<asylo::GenericEnclaveClient *>(client);
+  std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
+      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
+          generic_client->GetPrimitiveClient());
+  ASYLO_RETURN_IF_ERROR(primitive_client->EnterAndTransferSecureSnapshotKey(
+      fork_handshake_config));
 
   return asylo::Status::OkStatus();
 }
@@ -862,14 +866,12 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     return -1;
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SgxClient *client =
-      dynamic_cast<asylo::SgxClient *>(manager->GetClient(enclave_name));
-
-  asylo::GenericEnclaveClient *generic_client =
-      dynamic_cast<asylo::GenericEnclaveClient *>(client);
+  asylo::GenericEnclaveClient *client =
+      dynamic_cast<asylo::GenericEnclaveClient *>(
+          manager->GetClient(enclave_name));
   std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
       std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-          generic_client->GetPrimitiveClient());
+          client->GetPrimitiveClient());
 
   if (!restore_snapshot) {
     // No need to take and restore a snapshot, just set indication that the new
@@ -887,7 +889,8 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
   // current enclave memory.
   void *enclave_base_address = primitive_client->GetBaseAddress();
   asylo::SnapshotLayout snapshot_layout;
-  asylo::Status status = client->EnterAndTakeSnapshot(&snapshot_layout);
+  asylo::Status status =
+      primitive_client->EnterAndTakeSnapshot(&snapshot_layout);
   if (!status.ok()) {
     LOG(ERROR) << "EnterAndTakeSnapshot failed: " << status;
     errno = ENOMEM;
@@ -970,7 +973,7 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     return pid;
   }
 
-  size_t enclave_size = client->size();
+  size_t enclave_size = primitive_client->GetEnclaveSize();
 
   // Parse the config from the enclave to load the child enclave with exactly
   // the same config as the parent enclave.
@@ -998,13 +1001,11 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
 
     // Verifies that the new enclave is loaded at the same virtual address space
     // as the parent enclave.
-    client = dynamic_cast<asylo::SgxClient *>(manager->GetClient(enclave_name));
-
-    asylo::GenericEnclaveClient *generic_client =
-      dynamic_cast<asylo::GenericEnclaveClient *>(client);
+    client = dynamic_cast<asylo::GenericEnclaveClient *>(
+        manager->GetClient(enclave_name));
     std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
-      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-          generic_client->GetPrimitiveClient());
+        std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
+            client->GetPrimitiveClient());
 
     void *child_enclave_base_address = primitive_client->GetBaseAddress();
     if (child_enclave_base_address != enclave_base_address) {
@@ -1032,7 +1033,7 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
     }
 
     // Enters the child enclave and restore the enclave memory.
-    status = client->EnterAndRestore(snapshot_layout);
+    status = primitive_client->EnterAndRestore(snapshot_layout);
     if (!status.ok()) {
       // Inform the parent process about the failure.
       child_result = "Child EnterAndRestore failed";
