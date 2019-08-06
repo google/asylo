@@ -25,14 +25,6 @@
 ######################################
 
 host_calls {
-  name: "close"
-  return_type: "int"
-  parameters {
-    name: "fd"
-    type: "int"
-  }
-}
-host_calls {
   name: "fsync"
   return_type: "int"
   parameters {

@@ -46,15 +46,6 @@ PrimitiveStatus Abort(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestClose(void *context, MessageReader *in,
-                          MessageWriter *out) {
-  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
-
-  int fd = in->next<int>();
-  out->Push<int>(enc_untrusted_close(fd));
-  return PrimitiveStatus::OkStatus();
-}
-
 PrimitiveStatus TestFsync(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
@@ -77,8 +68,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kAbortEnclaveSelector,
       EntryHandler{asylo::host_call::Abort}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestClose, EntryHandler{asylo::host_call::TestClose}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFsync, EntryHandler{asylo::host_call::TestFsync}));
   return PrimitiveStatus::OkStatus();

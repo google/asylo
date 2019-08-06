@@ -28,10 +28,6 @@
 
 extern "C" {
 
-int enc_untrusted_close(int fd) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_close, fd);
-}
-
 int enc_untrusted_fsync(int fd) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_fsync, fd);
 }

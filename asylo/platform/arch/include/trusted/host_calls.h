@@ -69,7 +69,6 @@ int enc_untrusted_get_errno();
 //          Input / Output          //
 //////////////////////////////////////
 
-int enc_untrusted_close(int fd);
 int enc_untrusted_puts(const char *str);
 int enc_untrusted_fsync(int fd);
 ssize_t enc_untrusted_writev(int fd, char *buf, int size);

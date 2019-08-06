@@ -39,7 +39,6 @@ extern "C" {
 
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
-int enc_untrusted_close(int fd);
 int enc_untrusted_fsync(int fd);
 
 #ifdef __cplusplus

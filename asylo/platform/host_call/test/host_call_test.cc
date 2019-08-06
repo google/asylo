@@ -1563,6 +1563,37 @@ TEST_F(HostCallTest, TestSysconf) {
   ASSERT_THAT(out.next<int64_t>(), Eq(sysconf(_SC_NPROCESSORS_ONLN)));
 }
 
+// Tests enc_untrusted_close() by creating a file to be closed and calling
+// enc_untrusted_close() from inside the enclave to close the file handle.
+TEST_F(HostCallTest, TestClose) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  int fd = open(path.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(fcntl(fd, F_GETFD), -1);  // check fd is an open file descriptor.
+
+  primitives::MessageWriter in;
+  in.Push<int>(fd);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+}
+
+// Tries closing a non-existent file handle by calling enc_untrusted_close()
+// from inside the enclave.
+TEST_F(HostCallTest, TestCloseNonExistentFile) {
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=fd=*/123456);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClose, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(-1));
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

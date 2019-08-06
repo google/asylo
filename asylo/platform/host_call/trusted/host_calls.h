@@ -89,6 +89,7 @@ int enc_untrusted_stat(const char *pathname, struct stat *statbuf);
 int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset);
 int enc_untrusted_pwrite64(int fd, const void *buf, size_t count, off_t offset);
 int enc_untrusted_wait(int *wstatus);
+int enc_untrusted_close(int fd);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);

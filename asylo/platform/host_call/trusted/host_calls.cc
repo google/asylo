@@ -431,4 +431,8 @@ int64_t enc_untrusted_sysconf(int name) {
   return result;
 }
 
+int enc_untrusted_close(int fd) {
+  return enc_untrusted_syscall(asylo::system_call::kSYS_close, fd);
+}
+
 }  // extern "C"

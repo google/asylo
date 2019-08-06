@@ -23,6 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 
 namespace asylo {
 namespace io {
