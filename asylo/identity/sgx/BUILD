@@ -1135,6 +1135,49 @@ cc_library(
 )
 
 cc_library(
+    name = "sgx_infrastructural_enclave_manager",
+    srcs = ["sgx_infrastructural_enclave_manager.cc"],
+    hdrs = ["sgx_infrastructural_enclave_manager.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":intel_architectural_enclave_interface",
+        ":pce_util",
+        ":platform_provisioning",
+        ":platform_provisioning_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "sgx_infrastructural_enclave_manager_test",
+    srcs = ["sgx_infrastructural_enclave_manager_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_types",
+        ":mock_intel_architectural_enclave_interface",
+        ":pce_util",
+        ":platform_provisioning_cc_proto",
+        ":sgx_infrastructural_enclave_manager",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/test/util:mock_enclave_client",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "local_secret_sealer_helpers",
     srcs = ["local_secret_sealer_helpers.cc"],
     hdrs = ["local_secret_sealer_helpers.h"],
