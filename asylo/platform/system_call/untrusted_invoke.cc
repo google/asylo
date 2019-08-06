@@ -62,7 +62,7 @@ primitives::PrimitiveStatus UntrustedInvoke(primitives::Extent request,
       } else {
         size = parameter.size();
       }
-      output_buffers.emplace_back(new char[size]);
+      output_buffers.emplace_back(new char[size]());
       params[i] = reinterpret_cast<uint64_t>(output_buffers.back().get());
     }
   }
