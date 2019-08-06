@@ -25,8 +25,17 @@ namespace primitives {
 // Architectures supported by the asylo primitive lib.
 enum EnclaveType {
   UNKNOWN = 0,
+
+  // SGX_HARDWARE describes an SGX enclave that is expected to run on an Intel
+  // CPU with SGX capabilities.
   SGX_HARDWARE = 1,
-  SGX_SIM = 2,
+
+  // SGX_SIMULATION describes an SGX Enclave that is expected to run in
+  // simulation mode.
+  SGX_SIMULATION = 2,
+
+  // ASYLO_SIMULATION describes an Asylo simulation enclave.
+  ASYLO_SIMULATION = 3,
 };
 }  // namespace primitives
 }  // namespace asylo
