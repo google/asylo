@@ -18,7 +18,9 @@ syntax = "proto2";
 
 package asylo.sgx;
 
+import "asylo/crypto/certificate.proto";
 import "asylo/enclave.proto";
+import "asylo/identity/sealed_secret.proto";
 import "asylo/identity/sgx/platform_provisioning.proto";
 import "asylo/identity/sgx/remote_assertion.proto";
 
@@ -51,11 +53,20 @@ message VerifyReportInput {
 
 message VerifyReportOutput {}
 
+message GetSealedSecretInput {
+  repeated CertificateChain certificate_chains = 1;
+}
+
+message GetSealedSecretOutput {
+  optional SealedSecret sealed_secret = 1;
+}
+
 message RemoteAssertionGeneratorTestUtilEnclaveInput {
   oneof input {
     GetRemoteAssertionInput get_remote_assertion_input = 1;
     GetTargetInfoInput get_target_info_input = 2;
     VerifyReportInput verify_report_input = 3;
+    GetSealedSecretInput get_sealed_secret_input = 4;
   }
 }
 
@@ -64,5 +75,6 @@ message RemoteAssertionGeneratorTestUtilEnclaveOutput {
     GetRemoteAssertionOutput get_remote_assertion_output = 1;
     GetTargetInfoOutput get_target_info_output = 2;
     VerifyReportOutput verify_report_output = 3;
+    GetSealedSecretOutput get_sealed_secret_output = 4;
   }
 }

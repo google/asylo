@@ -18,13 +18,15 @@
 
 #include <memory>
 
-#include "asylo/enclave.pb.h"
+#include <google/protobuf/repeated_field.h>
+#include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
+#include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
 #include "asylo/identity/sgx/remote_assertion_generator_test_util_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_client.h"
 #include "asylo/trusted_application.h"
@@ -34,6 +36,8 @@
 namespace asylo {
 namespace sgx {
 namespace {
+
+constexpr char kCertificate[] = "TestUtilEnclaveCertificate";
 
 Status GetRemoteAssertion(const GetRemoteAssertionInput &input,
                           GetRemoteAssertionOutput *output) {
@@ -72,6 +76,17 @@ Status VerifyReport(const VerifyReportInput &input) {
   return VerifyHardwareReport(*report);
 }
 
+Status GetSealedSecret(const GetSealedSecretInput &input,
+                       GetSealedSecretOutput *output) {
+  SealedSecretHeader header = GetRemoteAssertionGeneratorEnclaveSecretHeader();
+  std::unique_ptr<EcdsaP256Sha256SigningKey> attestation_key;
+  ASYLO_ASSIGN_OR_RETURN(attestation_key, EcdsaP256Sha256SigningKey::Create());
+  ASYLO_ASSIGN_OR_RETURN(*output->mutable_sealed_secret(),
+                         CreateSealedSecret(header, input.certificate_chains(),
+                                            *attestation_key.get()));
+  return Status::OkStatus();
+}
+
 }  // namespace
 
 class RemoteAssertionGeneratorTestUtilEnclave final
@@ -101,6 +116,10 @@ class RemoteAssertionGeneratorTestUtilEnclave final
         return GetTargetInfo(enclave_output->mutable_get_target_info_output());
       case RemoteAssertionGeneratorTestUtilEnclaveInput::kVerifyReportInput:
         return VerifyReport(enclave_input.verify_report_input());
+      case RemoteAssertionGeneratorTestUtilEnclaveInput::kGetSealedSecretInput:
+        return GetSealedSecret(
+            enclave_input.get_sealed_secret_input(),
+            enclave_output->mutable_get_sealed_secret_output());
       default:
         return Status(error::GoogleError::INVALID_ARGUMENT,
                       "RemoteAssertionGeneratorTestUtilEnclaveInput not set");

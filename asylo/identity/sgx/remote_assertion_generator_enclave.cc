@@ -109,7 +109,7 @@ Status RemoteAssertionGeneratorEnclave::StartRemoteAssertionGeneratorGrpcServer(
   if (server_service_pair_locked->server) {
     return Status(error::GoogleError::ALREADY_EXISTS,
                   "Cannot start remote assertion generator gRPC server: server "
-                  "already exits");
+                  "already exists");
   }
 
   if (input.has_sealed_secret()) {
@@ -183,13 +183,17 @@ Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
 
 Status RemoteAssertionGeneratorEnclave::UpdateCerts(
     const UpdateCertsInput &input, UpdateCertsOutput *output) {
+  auto server_service_pair_locked = server_service_pair_.Lock();
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();
-
   if (!attestation_key_certs_pair_locked->attestation_key) {
     return Status(error::GoogleError::FAILED_PRECONDITION,
                   "Cannot update certificates: no attestation key available");
   }
-
+  if (!server_service_pair_locked->server) {
+    return Status(error::GoogleError::FAILED_PRECONDITION,
+                  "Cannot update certificates: remote assertion generator "
+                  "server does not exist");
+  }
   if (input.output_sealed_secret()) {
     SealedSecretHeader header =
         GetRemoteAssertionGeneratorEnclaveSecretHeader();
@@ -199,6 +203,12 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
             header, input.certificate_chains(),
             *attestation_key_certs_pair_locked->attestation_key));
   }
+
+  attestation_key_certs_pair_locked->certificate_chains = {
+      input.certificate_chains().cbegin(), input.certificate_chains().cend()};
+  server_service_pair_locked->service->UpdateSigningKeyAndCertificateChains(
+      std::move(attestation_key_certs_pair_locked->attestation_key),
+      attestation_key_certs_pair_locked->certificate_chains);
   return Status::OkStatus();
 }
 

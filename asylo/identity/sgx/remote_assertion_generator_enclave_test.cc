@@ -68,8 +68,10 @@ constexpr char kCertificate[] = "Certificate";
 constexpr char kTestName[] = "RemoteAssertionGeneratorEnclaveTest";
 constexpr int kNumThreads = 5;
 
+enum class StartServerOption { NONE, WITH_KEY, WITH_SECRET };
+
 // This test expects the enclave paths to be passed in through the
-// --remote_assertion_generator_client_enclave_path and
+// --remote_assertion_generator_test_util_enclave_path and
 // --remote_assertion_generator_enclave_path flags.
 class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
  protected:
@@ -173,7 +175,6 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     ASYLO_ASSERT_OK(
         remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
             enclave_input, &enclave_output));
-
     RemoteAssertion assertion =
         enclave_output
             .GetExtension(remote_assertion_generator_test_util_enclave_output)
@@ -195,47 +196,95 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     }
   }
 
-  Status CreateAndSetSealedSecret(
-      StartServerRequestInput *start_server_request_input) {
+  StatusOr<SealedSecret> GetSealedSecretFromTestUtilEnclave() {
+    if (!remote_assertion_generator_test_util_enclave_client_) {
+      ASYLO_RETURN_IF_ERROR(StartTestUtilEnclave(
+          remote_assertion_generator_test_util_enclave_config_));
+    }
+
+    EnclaveInput test_util_enclave_input;
+    Certificate *certificate =
+        test_util_enclave_input
+            .MutableExtension(
+                remote_assertion_generator_test_util_enclave_input)
+            ->mutable_get_sealed_secret_input()
+            ->add_certificate_chains()
+            ->add_certificates();
+    certificate->set_format(Certificate::X509_DER);
+    certificate->set_data(kCertificate);
+
+    EnclaveOutput test_util_enclave_output;
+    ASYLO_RETURN_IF_ERROR(
+        remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
+            test_util_enclave_input, &test_util_enclave_output));
+
+    return test_util_enclave_output
+        .MutableExtension(remote_assertion_generator_test_util_enclave_output)
+        ->get_sealed_secret_output()
+        .sealed_secret();
+  }
+
+  StatusOr<TargetInfoProto> GetTargetInfoProtoFromClientEnclave() {
+    if (!remote_assertion_generator_test_util_enclave_client_) {
+      ASYLO_RETURN_IF_ERROR(StartTestUtilEnclave(
+          remote_assertion_generator_test_util_enclave_config_));
+    }
+    EnclaveInput client_enclave_input;
+    EnclaveOutput client_enclave_output;
+
+    *client_enclave_input
+         .MutableExtension(remote_assertion_generator_test_util_enclave_input)
+         ->mutable_get_target_info_input() =
+        GetTargetInfoInput::default_instance();
+    ASYLO_RETURN_IF_ERROR(
+        remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
+            client_enclave_input, &client_enclave_output));
+    return client_enclave_output
+        .MutableExtension(remote_assertion_generator_test_util_enclave_output)
+        ->get_target_info_output()
+        .target_info_proto();
+  }
+
+  // Generates an attestation key inside remote assertion generator enclave.
+  // The output is not used since the method is only used for setting up test
+  // environment.
+  Status GenerateAttestationKeyForRemoteAssertionGeneratorEnclave() {
     EnclaveInput enclave_input;
     EnclaveOutput enclave_output;
-
-    // Generate a fresh signing key inside the AGE.
     ASYLO_ASSIGN_OR_RETURN(
         *enclave_input
              .MutableExtension(remote_assertion_generator_enclave_input)
              ->mutable_generate_key_and_csr_request_input()
              ->mutable_pce_target_info(),
         GetTargetInfoProtoFromTestUtilEnclave());
-    ASYLO_RETURN_IF_ERROR(
-        remote_assertion_generator_enclave_client_->EnterAndRun(
-            enclave_input, &enclave_output));
+    return remote_assertion_generator_enclave_client_->EnterAndRun(
+        enclave_input, &enclave_output);
+  }
 
-    // Update the AGE with certificates for its signing key.
-    *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-         ->mutable_update_certs_input() = UpdateCertsInput::default_instance();
-    Certificate *certificate =
+  Status StartSgxRemoteAssertionGeneratorServer(StartServerOption option) {
+    EnclaveInput enclave_input;
+    EnclaveOutput enclave_output;
+    StartServerRequestInput *start_server_request_input =
         enclave_input
             .MutableExtension(remote_assertion_generator_enclave_input)
-            ->mutable_update_certs_input()
-            ->add_certificate_chains()
-            ->add_certificates();
-    certificate->set_format(Certificate::X509_DER);
-    certificate->set_data(kCertificate);
-    enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-        ->mutable_update_certs_input()
-        ->set_output_sealed_secret(true);
-    ASYLO_RETURN_IF_ERROR(
-        remote_assertion_generator_enclave_client_->EnterAndRun(
-            enclave_input, &enclave_output));
-
-    *start_server_request_input->mutable_sealed_secret() =
-        enclave_output
-            .MutableExtension(remote_assertion_generator_enclave_output)
-            ->update_certs_output()
-            .sealed_secret();
-
-    return Status::OkStatus();
+            ->mutable_start_server_request_input();
+    switch (option) {
+      case StartServerOption::NONE:
+        break;
+      case StartServerOption::WITH_KEY: {
+        ASYLO_RETURN_IF_ERROR(
+            GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
+        break;
+      }
+      case StartServerOption::WITH_SECRET: {
+        ASYLO_ASSIGN_OR_RETURN(
+            *start_server_request_input->mutable_sealed_secret(),
+            GetSealedSecretFromTestUtilEnclave());
+        break;
+      }
+    }
+    return remote_assertion_generator_enclave_client_->EnterAndRun(
+        enclave_input, &enclave_output);
   }
 
   StatusOr<TargetInfoProto> GetTargetInfoProtoFromTestUtilEnclave() {
@@ -292,16 +341,22 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
 
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_start_server_request_input() =
-      StartServerRequestInput::default_instance();
-  EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
-                  enclave_input, &enclave_output),
+  EXPECT_THAT(StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE),
               StatusIs(error::GoogleError::FAILED_PRECONDITION,
                        "Cannot start remote assertion generator gRPC server: "
                        "no attestation key available"));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSigningKeySuccess) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
+  CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/false);
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
@@ -312,69 +367,18 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
       remote_assertion_generator_test_util_enclave_config_));
 
   // Start SgxRemoteAssertionGenerator gRPC server.
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-           ->mutable_generate_key_and_csr_request_input()
-           ->mutable_pce_target_info(),
-      GetTargetInfoProtoFromTestUtilEnclave());
-  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
-      enclave_input, &enclave_output));
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_start_server_request_input() =
-      StartServerRequestInput::default_instance();
-  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
-      enclave_input, &enclave_output));
-
-  CheckServerRunningAndProducesValidRemoteAssertion(
-      /*assertion_has_certificate_chains=*/false);
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
+  ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/false));
 
   // Try to start another SgxRemoteAssertionGenerator gRPC server while the
   // first is running.
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-           ->mutable_generate_key_and_csr_request_input()
-           ->mutable_pce_target_info(),
-      GetTargetInfoProtoFromTestUtilEnclave());
-  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
-      enclave_input, &enclave_output));
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_start_server_request_input() =
-      StartServerRequestInput::default_instance();
-
   EXPECT_THAT(
-      remote_assertion_generator_enclave_client_->EnterAndRun(enclave_input,
-                                                              &enclave_output),
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY),
       StatusIs(error::GoogleError::ALREADY_EXISTS,
                "Cannot start remote assertion generator gRPC server: server "
-               "already exits"));
-}
-
-TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSigningKeySuccess) {
-  ASYLO_ASSERT_OK(
-      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
-
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-           ->mutable_generate_key_and_csr_request_input()
-           ->mutable_pce_target_info(),
-      GetTargetInfoProtoFromTestUtilEnclave());
-  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
-      enclave_input, &enclave_output));
-
-  StartServerRequestInput start_server_request_input;
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_start_server_request_input() = start_server_request_input;
-  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
-      enclave_input, &enclave_output));
-
-  CheckServerRunningAndProducesValidRemoteAssertion(
-      /*assertion_has_certificate_chains=*/false);
+               "already exists"));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSecretSuccess) {
@@ -383,25 +387,14 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSecretSuccess) {
   ASYLO_ASSERT_OK(StartTestUtilEnclave(
       remote_assertion_generator_test_util_enclave_config_));
 
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  // Start SgxRemoteAssertionGenerator gRPC server with sealed secret obtained
-  // from previous UpdateCerts call.
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_start_server_request_input() =
-      StartServerRequestInput::default_instance();
-  ASYLO_ASSERT_OK(CreateAndSetSealedSecret(
-      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-          ->mutable_start_server_request_input()));
-  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
-      enclave_input, &enclave_output));
-
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_SECRET));
   CheckServerRunningAndProducesValidRemoteAssertion(
       /*assertion_has_certificate_chains=*/true);
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
-       StartServerWithSecretConcurrentlySuccess) {
+       StartServerWithSecretMultiThreadedSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
   ASYLO_ASSERT_OK(StartTestUtilEnclave(
@@ -413,10 +406,12 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   enclave_outputs.reserve(kNumThreads);
   for (int i = 0; i < kNumThreads; ++i) {
     enclave_inputs.emplace_back(EnclaveInput::default_instance());
-    ASYLO_ASSERT_OK(CreateAndSetSealedSecret(
-        enclave_inputs[i]
-            .MutableExtension(remote_assertion_generator_enclave_input)
-            ->mutable_start_server_request_input()));
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        *enclave_inputs[i]
+             .MutableExtension(remote_assertion_generator_enclave_input)
+             ->mutable_start_server_request_input()
+             ->mutable_sealed_secret(),
+        GetSealedSecretFromTestUtilEnclave());
     enclave_outputs.emplace_back(EnclaveOutput::default_instance());
   }
 
@@ -443,7 +438,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
     thread.Join();
   }
   // Verify the SgxRemoteAssertionGenerator gRPC server only started once and
-  // all other starting server attempts received a server already exits error.
+  // all other starting server attempts received a server already exists error.
   ASSERT_THAT(success_count, Eq(1));
   ASSERT_THAT(failure_count, Eq(kNumThreads - 1));
 
@@ -541,6 +536,71 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
                   enclave_input, &enclave_output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Input is missing pce_target_info"));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoServerFails) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
+
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+       ->mutable_update_certs_input() = UpdateCertsInput::default_instance();
+  EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
+                  enclave_input, &enclave_output),
+              StatusIs(error::GoogleError::FAILED_PRECONDITION,
+                       "Cannot update certificates: remote assertion generator "
+                       "server does not exist"));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoAttestationKeyFails) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
+  ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/false));
+
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+       ->mutable_update_certs_input() = UpdateCertsInput::default_instance();
+  EXPECT_THAT(
+      remote_assertion_generator_enclave_client_->EnterAndRun(enclave_input,
+                                                              &enclave_output),
+      StatusIs(error::GoogleError::FAILED_PRECONDITION,
+               "Cannot update certificates: no attestation key available"));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsSuccess) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
+  ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/false));
+
+  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  Certificate *certificate =
+      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input()
+          ->add_certificate_chains()
+          ->add_certificates();
+  certificate->set_format(Certificate::X509_DER);
+  certificate->set_data(kCertificate);
+  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
+      enclave_input, &enclave_output));
+  CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/true);
 }
 
 

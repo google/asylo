@@ -220,6 +220,9 @@ proto_library(
         ":platform_provisioning_proto",
         ":remote_assertion_proto",
         "//asylo:enclave_proto",
+        "//asylo/crypto:certificate_proto",
+        "//asylo/crypto:keys_proto",
+        "//asylo/identity:sealed_secret_proto",
     ],
 )
 
@@ -383,10 +386,12 @@ sgx_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":platform_provisioning",
+        ":remote_assertion_generator_enclave_util",
         ":remote_assertion_generator_test_util_enclave_cc_proto",
         ":sgx_remote_assertion_generator_client",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc_secure",

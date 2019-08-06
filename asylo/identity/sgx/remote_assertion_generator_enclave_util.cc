@@ -18,6 +18,8 @@
 
 #include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
 
+#include <utility>
+
 #include <google/protobuf/repeated_field.h>
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/algorithms.pb.h"
