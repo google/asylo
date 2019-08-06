@@ -95,8 +95,8 @@ void heap_switch(void *base, size_t size) {
   } else {
     switched_heap_next = nullptr;
     switched_heap_remaining = 0;
-    set_malloc_hook(/*malloc_hook=*/nullptr, /*pool=*/nullptr);
-    set_realloc_hook(/*realloc_hook=*/nullptr, /*pool=*/nullptr);
-    set_free_hook(/*free_hook=*/nullptr, /*pool=*/nullptr);
+    set_malloc_hook(/*hook=*/nullptr, /*pool=*/nullptr);
+    set_realloc_hook(/*hook=*/nullptr, /*pool=*/nullptr);
+    set_free_hook(/*hook=*/nullptr, /*pool=*/nullptr);
   }
 }
