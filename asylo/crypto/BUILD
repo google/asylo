@@ -150,6 +150,49 @@ cc_test(
     ],
 )
 
+# Library to use with ASN.1 data structures.
+cc_library(
+    name = "asn1",
+    srcs = ["asn1.cc"],
+    hdrs = ["asn1.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":bignum_util",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+    ],
+)
+
+# Test for ASN.1 library.
+cc_test(
+    name = "asn1_test",
+    srcs = ["asn1_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":asn1",
+        ":bignum_util",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Utility library for OpenSSL BIGNUMs.
 cc_library(
     name = "bignum_util",
