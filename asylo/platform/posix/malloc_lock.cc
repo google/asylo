@@ -45,24 +45,23 @@ void __malloc_lock(struct reent *) {
   const uint64_t self = enc_thread_self();
 
   while (lock_owner != self) {
-    uint64_t prev = 0;
+    uint64_t unlocked_value = kInvalidThread;
 
     // Attempt to acquire the mutex by swapping the lock with the current thread
     // id, specifying strong memory ordering to avoid unexpected memory
     // ordering. Try to obtain the lock by atomically testing that it is
     // unlocked and exchanging it with our thread id.
     if (__atomic_compare_exchange_n(&lock_owner,
-                                    /*expected=*/&prev,
+                                    /*expected=*/&unlocked_value,
                                     /*desired=*/self,
                                     /*weak=*/false,
                                     /*success_memorder=*/__ATOMIC_SEQ_CST,
-                                    /*failure_memorder=*/__ATOMIC_SEQ_CST) !=
-        kInvalidThread) {
+                                    /*failure_memorder=*/__ATOMIC_SEQ_CST)) {
       break;
     }
 
     // If the lock is not free, avoid doing a synchronized read and busy wait
-    // until it's release then try to obtain it again.
+    // until it's released then try to obtain it again.
     while (lock_owner != kInvalidThread) {
       // Issue a busy-wait hint to the CPU if possible.
       enc_pause();
