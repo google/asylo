@@ -43,6 +43,10 @@ static constexpr uint64_t kUSleepHandler = primitives::kSelectorHostCall + 2;
 // Exit handler constant for |SysconfHandler|.
 static constexpr uint64_t kSysconfHandler = primitives::kSelectorHostCall + 3;
 
+// Exit handler constant for |ReadWithUntrustedPtrHandler|.
+static constexpr uint64_t kReadWithUntrustedPtr =
+    primitives::kSelectorHostCall + 4;
+
 }  // namespace host_call
 }  // namespace asylo
 

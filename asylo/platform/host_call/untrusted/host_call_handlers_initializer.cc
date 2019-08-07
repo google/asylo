@@ -51,6 +51,10 @@ Status AddHostCallHandlersToExitCallProvider(
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kSysconfHandler, primitives::ExitHandler{SysconfHandler}));
 
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kReadWithUntrustedPtr,
+      primitives::ExitHandler{ReadWithUntrustedPtrHandler}));
+
   return Status::OkStatus();
 }
 
