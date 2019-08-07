@@ -267,7 +267,6 @@ enclave {
     //            unistd.h              //
     //////////////////////////////////////
 
-    uint32_t ocall_enc_untrusted_sleep(uint32_t seconds);
     void ocall_enc_untrusted__exit(int rc);
     pid_t ocall_enc_untrusted_fork(
         [in, string]const char *enclave_name,

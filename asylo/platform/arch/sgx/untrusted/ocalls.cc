@@ -854,8 +854,6 @@ int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
 //            unistd.h              //
 //////////////////////////////////////
 
-uint32_t ocall_enc_untrusted_sleep(uint32_t seconds) { return sleep(seconds); }
-
 void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
 
 pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,

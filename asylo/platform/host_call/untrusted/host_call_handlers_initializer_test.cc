@@ -120,6 +120,18 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
                   kSysconfHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
+  // Verify that |kReadWithUntrustedPtr| is in use by attempting to re-register
+  // the handler.
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                  kReadWithUntrustedPtr, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+
+  // Verify that |kReadWithUntrustedPtr| points to |ReallocHandler| by making a
+  // call with an empty request.
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                  kReadWithUntrustedPtr, &input, &output, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
   // Verify that |kReallocHandler| is in use by attempting to re-register the
   // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
@@ -130,6 +142,18 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kReallocHandler, &input, &output, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  // Verify that |kSleepHandler| is in use by attempting to re-register the
+  // handler.
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                  kSleepHandler, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+
+  // Verify that |kSleepHandler| points to |SleepHandler| by making a
+  // call with an empty request.
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                  kSleepHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

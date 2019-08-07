@@ -50,6 +50,9 @@ static constexpr uint64_t kReadWithUntrustedPtr =
 // Exit handler constant for |ReallocHandler|.
 static constexpr uint64_t kReallocHandler = primitives::kSelectorHostCall + 5;
 
+// Exit handler constant for |SleepHandler|.
+static constexpr uint64_t kSleepHandler = primitives::kSelectorHostCall + 6;
+
 }  // namespace host_call
 }  // namespace asylo
 

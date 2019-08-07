@@ -42,8 +42,8 @@ Status IsAttyHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context, primitives::MessageReader *input,
                      primitives::MessageWriter *output);
 
-// sleep library call handler on the host; expects [useconds_t usec] and returns
-// [int].
+// usleep library call handler on the host; expects [useconds_t usec] and
+// returns [int].
 Status USleepHandler(const std::shared_ptr<primitives::Client> &client,
                      void *context, primitives::MessageReader *input,
                      primitives::MessageWriter *output);
@@ -67,6 +67,12 @@ Status ReadWithUntrustedPtrHandler(
 Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
                       void *context, primitives::MessageReader *input,
                       primitives::MessageWriter *output);
+
+// sleep library call handler on the host; expects [uint32_t seconds] and
+// returns [uint32_t].
+Status SleepHandler(const std::shared_ptr<primitives::Client> &client,
+                    void *context, primitives::MessageReader *input,
+                    primitives::MessageWriter *output);
 
 }  // namespace host_call
 }  // namespace asylo

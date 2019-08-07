@@ -487,4 +487,19 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
   return result;
 }
 
+uint32_t enc_untrusted_sleep(uint32_t seconds) {
+  ::asylo::primitives::MessageWriter input;
+  input.Push<uint32_t>(seconds);
+  ::asylo::primitives::MessageReader output;
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(asylo::host_call::kSleepHandler,
+                                                &input, &output);
+  if (!status.ok()) {
+    abort();
+  }
+
+  // Returns sleep's return value directly since it doesn't set errno.
+  return output.next<uint32_t>();
+}
+
 }  // extern "C"

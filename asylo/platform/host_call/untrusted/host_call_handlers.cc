@@ -107,5 +107,15 @@ Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status SleepHandler(const std::shared_ptr<primitives::Client> &client,
+                    void *context, primitives::MessageReader *input,
+                    primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  auto seconds = input->next<uint32_t>();
+  output->Push<uint32_t>(sleep(seconds));  // Push return value first.
+  output->Push<int>(errno);                // Push errno next.
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

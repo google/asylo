@@ -651,6 +651,15 @@ PrimitiveStatus TestRealloc(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestSleep(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  auto seconds = in->next<uint32_t>();
+  out->Push<uint32_t>(enc_untrusted_sleep(seconds));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -795,6 +804,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestRealloc,
       EntryHandler{asylo::host_call::TestRealloc}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSleep, EntryHandler{asylo::host_call::TestSleep}));
 
   return PrimitiveStatus::OkStatus();
 }

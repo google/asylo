@@ -815,12 +815,6 @@ int enc_untrusted_uname(struct utsname *utsname_val) {
 //            unistd.h              //
 //////////////////////////////////////
 
-uint32_t enc_untrusted_sleep(uint32_t seconds) {
-  uint32_t ret;
-  CHECK_OCALL(ocall_enc_untrusted_sleep(&ret, seconds));
-  return ret;
-}
-
 void enc_untrusted__exit(int rc) { ocall_enc_untrusted__exit(rc); }
 
 pid_t enc_untrusted_fork(const char *enclave_name, const char *config,

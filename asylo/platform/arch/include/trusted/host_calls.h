@@ -221,7 +221,6 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 //            unistd.h              //
 //////////////////////////////////////
 
-uint32_t enc_untrusted_sleep(uint32_t seconds);
 void enc_untrusted__exit(int rc);
 pid_t enc_untrusted_fork(const char *enclave_name, const char *config,
                          size_t config_len, bool restore_snapshot);

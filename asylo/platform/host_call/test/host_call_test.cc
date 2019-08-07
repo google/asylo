@@ -1652,6 +1652,29 @@ TEST_F(HostCallTest, TestRealloc) {
   free(ptr2);
 }
 
+// Tests enc_untrusted_sleep() by sleeping for 1s, then ensuring that the
+// return value is 0, and that at least 1 second passed during the sleep
+// enclave call.
+TEST_F(HostCallTest, TestSleep) {
+  primitives::MessageWriter in;
+
+  in.Push<uint32_t>(/*value=seconds=*/1);
+  primitives::MessageReader out;
+
+  absl::Time start = absl::Now();
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSleep, &in, &out));
+  absl::Time end = absl::Now();
+
+  auto duration = absl::ToInt64Milliseconds(end - start);
+
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+  EXPECT_GE(duration, 1000);
+  EXPECT_LE(duration,
+            1300);  // Allow sufficient time padding for EnclaveCall to perform
+                    // enc_untrusted_sleep() and return from the enclave.
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
