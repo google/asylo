@@ -1626,6 +1626,32 @@ TEST_F(HostCallTest, TestReadWithUntrustedPtr) {
   EXPECT_THAT(expected_content, StrEq(untrusted_buf.get()));
 }
 
+// Tests enc_untrusted_realloc() by doing the following -
+// - Allocating and populating a location using malloc on the untrusted side
+// with the sttring "hello".
+// - Expanding malloc'd space by calling enc_untrusted_realloc().
+// - Appending the first string with "world" on the untrusted side.
+// - Verifying the combined string for correctness.
+TEST_F(HostCallTest, TestRealloc) {
+  const std::string hello = "hello";
+  const std::string world = "world";
+  void *ptr1 = malloc(hello.size());
+  memcpy(ptr1, hello.c_str(), hello.size());
+
+  primitives::MessageWriter in;
+  in.Push(reinterpret_cast<uint64_t>(ptr1));
+  in.Push(static_cast<uint64_t>(hello.size() + world.size() + 1));
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRealloc, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  void *ptr2 = out.next<void *>();
+  memcpy(reinterpret_cast<char *>(ptr2) + hello.size(), world.c_str(),
+         world.size() + 1);
+  ASSERT_THAT(reinterpret_cast<char *>(ptr2), StrEq(hello + world));
+  free(ptr2);
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo

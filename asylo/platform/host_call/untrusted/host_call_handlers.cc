@@ -95,5 +95,17 @@ Status ReadWithUntrustedPtrHandler(
   return Status::OkStatus();
 }
 
+Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 2);
+  void *in_ptr = input->next<void *>();
+  size_t size = input->next<size_t>();
+  void *out_ptr = realloc(in_ptr, size);
+  output->Push(reinterpret_cast<uint64_t>(out_ptr));
+  output->Push<int>(errno);
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

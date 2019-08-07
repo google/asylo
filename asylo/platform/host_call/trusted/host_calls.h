@@ -97,6 +97,7 @@ int enc_untrusted_usleep(useconds_t usec);
 int64_t enc_untrusted_sysconf(int name);
 ssize_t enc_untrusted_read_with_untrusted_ptr(int fd, void *untrusted_buf,
                                               size_t size);
+void *enc_untrusted_realloc(void *ptr, size_t size);
 
 #ifdef __cplusplus
 }  // extern "C"

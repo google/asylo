@@ -51,8 +51,8 @@ class MockedEnclaveClient : public primitives::Client {
     LOG(FATAL);
     return Status::OkStatus();
   }
-  Status DeliverSignalInternal(
-      primitives::MessageWriter *in, primitives::MessageReader *out) override {
+  Status DeliverSignalInternal(primitives::MessageWriter *in,
+                               primitives::MessageReader *out) override {
     LOG(FATAL) << "Unexpected enclave call";
     return Status::OkStatus();
   }
@@ -118,6 +118,18 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSysconfHandler, &input, &output, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  // Verify that |kReallocHandler| is in use by attempting to re-register the
+  // handler.
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                  kReallocHandler, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+
+  // Verify that |kReallocHandler| points to |ReallocHandler| by making a
+  // call with an empty request.
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                  kReallocHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

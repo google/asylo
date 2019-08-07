@@ -641,6 +641,16 @@ PrimitiveStatus TestReadWithUntrustedPtr(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestRealloc(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  auto ptr1 = in->next<void *>();
+  auto size = static_cast<size_t>(in->next<uint64_t>());
+
+  out->Push(reinterpret_cast<uint64_t>(enc_untrusted_realloc(ptr1, size)));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -782,6 +792,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestReadWithUntrustedPtr,
       EntryHandler{asylo::host_call::TestReadWithUntrustedPtr}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestRealloc,
+      EntryHandler{asylo::host_call::TestRealloc}));
 
   return PrimitiveStatus::OkStatus();
 }

@@ -117,7 +117,7 @@ class MessageWriter {
   }
 
   // Pushes a string by copy (since the string could go out of scope after it is
-  // pushed, before Write() is called.)
+  // pushed, before Serialize() is called.)
   void Push(const std::string &s) {
     PushByCopy(Extent{s.c_str(), s.size() + 1});  // Add 1 for null character.
   }

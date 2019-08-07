@@ -62,6 +62,12 @@ Status ReadWithUntrustedPtrHandler(
     const std::shared_ptr<primitives::Client> &client, void *context,
     primitives::MessageReader *input, primitives::MessageWriter *output);
 
+// realloc library call handler on the host; expects [void *ptr, size_t size]
+// and returns [void *output_ptr].
+Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

@@ -461,4 +461,30 @@ ssize_t enc_untrusted_read_with_untrusted_ptr(int fd, void *untrusted_buf,
   return result;
 }
 
+void *enc_untrusted_realloc(void *ptr, size_t size) {
+  ::asylo::primitives::MessageWriter input;
+  input.Push(reinterpret_cast<uint64_t>(ptr));
+  input.Push(static_cast<uint64_t>(size));
+
+  ::asylo::primitives::MessageReader output;
+  asylo::primitives::PrimitiveStatus status =
+      asylo::host_call::NonSystemCallDispatcher(
+          asylo::host_call::kReallocHandler, &input, &output);
+
+  if (!status.ok()) {
+    abort();
+  }
+  void *result = output.next<void *>();
+
+  // realloc only sets the errno (ENOMEM) when output pointer is null and a
+  // non-zero |size| is provided.
+  if (result == nullptr && size != 0) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+  return result;
+}
+
 }  // extern "C"
