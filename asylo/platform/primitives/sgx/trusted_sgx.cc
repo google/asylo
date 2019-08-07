@@ -18,6 +18,8 @@
 
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 
+#include <errno.h>
+
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -147,6 +149,8 @@ int asylo_enclave_call(uint64_t selector, void *buffer) {
   return status.error_code();
 }
 
+// For SGX, UntrustedLocalAlloc uses malloc() on the untrusted host to
+// allocate memory.
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
   void *result;
   CHECK_OCALL(
@@ -156,12 +160,16 @@ void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
     abort();
   }
 
+  // On error, malloc returns nullptr and sets errno to ENOMEM.
   if (!result) {
-    abort();
+    errno = ENOMEM;
+    TrustedPrimitives::DebugPuts("UntrustedLocalAlloc on SGX failed.");
   }
   return result;
 }
 
+// For SGX, UntrustedLocalFree uses free() on the untrusted host to free the
+// memory allocated by UntrustedLocalAlloc.
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   CHECK_OCALL(ocall_untrusted_local_free(ptr));
 }
