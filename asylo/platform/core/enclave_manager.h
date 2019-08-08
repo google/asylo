@@ -364,6 +364,12 @@ class AbstractEnclaveLoader {
   // Name of the enclave to be loaded.
   virtual std::string name() const = 0;
 
+  virtual primitives::EnclaveType GetEnclaveType() const = 0;
+
+  // Gets a copy of the loader that loaded a previous enclave. This is only used
+  // by fork to load a child enclave with the same loader as the parent.
+  virtual StatusOr<std::unique_ptr<AbstractEnclaveLoader>> Copy() const = 0;
+
  protected:
   // Only allow the enclave loading via the manager object.
   friend class EnclaveManager;
@@ -371,12 +377,6 @@ class AbstractEnclaveLoader {
   // Loads an enclave, returning a pointer to a client on success and a non-ok
   // status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave() const = 0;
-
-  // Gets a copy of the loader that loaded a previous enclave. This is only used
-  // by fork to load a child enclave with the same loader as the parent.
-  virtual StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const = 0;
-
-  virtual primitives::EnclaveType GetEnclaveType() const = 0;
 };
 
 /// An abstract enclave loader.
