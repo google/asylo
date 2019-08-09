@@ -1594,38 +1594,6 @@ TEST_F(HostCallTest, TestCloseNonExistentFile) {
   EXPECT_THAT(out.next<int>(), Eq(-1));
 }
 
-// Tests enc_untrusted_read_with_untrusted_ptr() by making a host call from
-// inside the enclave and verifying what is read to the untrusted pointer
-// matches.
-TEST_F(HostCallTest, TestReadWithUntrustedPtr) {
-  std::string test_file =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
-
-  int fd =
-      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
-  platform::storage::FdCloser fd_closer(fd);
-  ASSERT_GE(fd, 0);
-  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
-
-  const std::string expected_content = "this is what's being read!";
-  int buf_len = expected_content.length() + 1;
-  ASSERT_THAT(write(fd, expected_content.c_str(), buf_len), Eq(buf_len));
-  ASSERT_THAT(lseek(fd, 0, SEEK_SET), Eq(0));
-
-  const auto untrusted_buf = absl::make_unique<char[]>(buf_len);
-  primitives::MessageWriter in;
-  in.Push<int>(/*value=fd=*/fd);
-  in.Push<uint64_t>(
-      /*value=untrusted_buf=*/reinterpret_cast<uint64_t>(untrusted_buf.get()));
-  in.Push<size_t>(/*value=size=*/buf_len);
-
-  primitives::MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadWithUntrustedPtr, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // Contains only the return value.
-  EXPECT_THAT(out.next<ssize_t>(), Eq(buf_len));
-  EXPECT_THAT(expected_content, StrEq(untrusted_buf.get()));
-}
-
 // Tests enc_untrusted_realloc() by doing the following -
 // - Allocating and populating a location using malloc on the untrusted side
 // with the sttring "hello".

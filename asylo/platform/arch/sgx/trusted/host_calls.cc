@@ -107,37 +107,6 @@ int enc_untrusted_puts(const char *str) {
   return result;
 }
 
-void fill_iov(const char *buf, int size, const struct iovec *iov, int iovcnt) {
-  size_t bytes_left = size;
-  for (int i = 0; i < iovcnt; ++i) {
-    if (bytes_left == 0) {
-      break;
-    }
-    int bytes_to_copy = std::min(bytes_left, iov[i].iov_len);
-    memcpy(iov[i].iov_base, buf, bytes_to_copy);
-    buf += bytes_to_copy;
-    bytes_left -= bytes_to_copy;
-  }
-}
-
-ssize_t enc_untrusted_writev(int fd, char *buf, int size) {
-  asylo::UntrustedUniquePtr<char> tmp(buf);
-  bridge_ssize_t ret;
-
-  CHECK_OCALL(
-      ocall_enc_untrusted_write_with_untrusted_ptr(&ret, fd, buf, size));
-  return static_cast<ssize_t>(ret);
-}
-
-ssize_t enc_untrusted_readv(int fd, const struct iovec *iov, int iovcnt,
-                            char *buf, int size) {
-  asylo::UntrustedUniquePtr<char> tmp(buf);
-  bridge_ssize_t ret;
-  CHECK_OCALL(ocall_enc_untrusted_read_with_untrusted_ptr(&ret, fd, buf, size));
-  fill_iov(buf, ret, iov, iovcnt);
-  return static_cast<ssize_t>(ret);
-}
-
 //////////////////////////////////////
 //             Sockets              //
 //////////////////////////////////////

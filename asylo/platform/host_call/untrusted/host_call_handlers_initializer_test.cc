@@ -120,18 +120,6 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
                   kSysconfHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  // Verify that |kReadWithUntrustedPtr| is in use by attempting to re-register
-  // the handler.
-  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
-                  kReadWithUntrustedPtr, primitives::ExitHandler{nullptr}),
-              StatusIs(error::GoogleError::ALREADY_EXISTS));
-
-  // Verify that |kReadWithUntrustedPtr| points to |ReallocHandler| by making a
-  // call with an empty request.
-  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
-                  kReadWithUntrustedPtr, &input, &output, client.get()),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
   // Verify that |kReallocHandler| is in use by attempting to re-register the
   // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(

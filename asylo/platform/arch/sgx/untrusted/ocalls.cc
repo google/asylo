@@ -213,17 +213,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
   }
 }
 
-bridge_ssize_t ocall_enc_untrusted_write_with_untrusted_ptr(int fd,
-                                                            const void *buf,
-                                                            int size) {
-  return static_cast<bridge_ssize_t>(write(fd, buf, size));
-}
-
-bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(int fd, void *buf,
-                                                           int size) {
-  return static_cast<bridge_ssize_t>(read(fd, buf, size));
-}
-
 //////////////////////////////////////
 //             Sockets              //
 //////////////////////////////////////

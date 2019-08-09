@@ -25,7 +25,6 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/bridge_msghdr_wrapper.h"
-#include "asylo/platform/core/untrusted_cache_malloc.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/secure_paths.h"
 
@@ -74,40 +73,18 @@ int IOContextNative::FLock(int operation) {
   return enc_untrusted_flock(host_fd_, operation);
 }
 
-bool IOContextNative::CreateUntrustedBuffer(const struct iovec *iov, int iovcnt,
-                                            char **buf, int *size) {
-  size_t total_size = 0;
+void IOContextNative::FillIov(const char *buf, int size,
+                              const struct iovec *iov, int iovcnt) {
+  size_t bytes_left = size;
   for (int i = 0; i < iovcnt; ++i) {
-    total_size += iov[i].iov_len;
+    if (bytes_left == 0) {
+      break;
+    }
+    int bytes_to_copy = std::min(bytes_left, iov[i].iov_len);
+    memcpy(iov[i].iov_base, buf, bytes_to_copy);
+    buf += bytes_to_copy;
+    bytes_left -= bytes_to_copy;
   }
-
-  // Instance of the global memory pool singleton.
-  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
-      asylo::UntrustedCacheMalloc::Instance();
-  char *tmp = reinterpret_cast<char *>(
-      untrusted_cache_malloc->Malloc(total_size * sizeof(char)));
-  if (!tmp) {
-    return false;
-  }
-  *size = total_size;
-  *buf = tmp;
-  return true;
-}
-
-bool IOContextNative::SerializeIov(const struct iovec *iov, int iovcnt,
-                                   char **buf, int *size) {
-  char *tmp;
-  if (!CreateUntrustedBuffer(iov, iovcnt, &tmp, size)) {
-    return false;
-  }
-  size_t copied_bytes = 0;
-  for (int i = 0; i < iovcnt; ++i) {
-    size_t len =  iov[i].iov_len;
-    memcpy(tmp + copied_bytes, iov[i].iov_base, len);
-    copied_bytes += len;
-  }
-  *buf = tmp;
-  return true;
 }
 
 ssize_t IOContextNative::Writev(const struct iovec *iov, int iovcnt) {
@@ -116,12 +93,18 @@ ssize_t IOContextNative::Writev(const struct iovec *iov, int iovcnt) {
     return -1;
   }
 
-  char *buf;
-  int size;
-  if (!SerializeIov(iov, iovcnt, &buf, &size)) {
-    return -1;
+  size_t total_size = 0;
+  for (int i = 0; i < iovcnt; ++i) {
+    total_size += iov[i].iov_len;
   }
-  return enc_untrusted_writev(host_fd_, buf, size);
+  std::unique_ptr<char[]> trusted_buf(new char[total_size]);
+  size_t copied_bytes = 0;
+  for (int i = 0; i < iovcnt; ++i) {
+    memcpy(trusted_buf.get() + copied_bytes, iov[i].iov_base, iov[i].iov_len);
+    copied_bytes += iov[i].iov_len;
+  }
+
+  return enc_untrusted_write(host_fd_, trusted_buf.get(), total_size);
 }
 
 ssize_t IOContextNative::Readv(const struct iovec *iov, int iovcnt) {
@@ -129,12 +112,17 @@ ssize_t IOContextNative::Readv(const struct iovec *iov, int iovcnt) {
     errno = EINVAL;
     return -1;
   }
-  char *buf;
-  int size;
-  if (!CreateUntrustedBuffer(iov, iovcnt, &buf, &size)) {
-    return -1;
+
+  size_t total_size = 0;
+  for (int i = 0; i < iovcnt; ++i) {
+    total_size += iov[i].iov_len;
   }
-  return enc_untrusted_readv(host_fd_, iov, iovcnt, buf, size);
+  std::unique_ptr<char[]> trusted_buf(new char[total_size]);
+
+  ssize_t ret = enc_untrusted_read(host_fd_, trusted_buf.get(), total_size);
+  FillIov(trusted_buf.get(), ret, iov, iovcnt);
+
+  return ret;
 }
 
 ssize_t IOContextNative::PRead(void *buf, size_t count, off_t offset) {

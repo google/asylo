@@ -435,32 +435,6 @@ int enc_untrusted_close(int fd) {
   return enc_untrusted_syscall(asylo::system_call::kSYS_close, fd);
 }
 
-ssize_t enc_untrusted_read_with_untrusted_ptr(int fd, void *untrusted_buf,
-                                              size_t size) {
-  ::asylo::primitives::MessageWriter input;
-  input.Push<int>(fd);
-  input.Push<uint64_t>(reinterpret_cast<uint64_t>(untrusted_buf));
-  input.Push<uint64_t>(static_cast<uint64_t>(size));
-
-  ::asylo::primitives::MessageReader output;
-  asylo::primitives::PrimitiveStatus status =
-      asylo::host_call::NonSystemCallDispatcher(
-          asylo::host_call::kReadWithUntrustedPtr, &input, &output);
-  if (!status.ok()) {
-    abort();
-  }
-
-  auto result = output.next<ssize_t>();
-  if (result == -1) {
-    int klinux_errno = output.next<int>();
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
-  }
-
-  return result;
-}
-
 void *enc_untrusted_realloc(void *ptr, size_t size) {
   ::asylo::primitives::MessageWriter input;
   input.Push(reinterpret_cast<uint64_t>(ptr));

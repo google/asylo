@@ -68,10 +68,7 @@ class IOContextNative : public IOManager::IOContext {
  private:
   // Host file descriptor implementing this stream.
   int host_fd_;
-  bool CreateUntrustedBuffer(const struct iovec *iov,
-      int iovcnt, char **buf, int *size);
-  bool SerializeIov(const struct iovec *iov, int iovcnt,
-      char **buf, int *size);
+  void FillIov(const char *buf, int size, const struct iovec *iov, int iovcnt);
 };
 
 // VirtualPathHandler implementation handling paths to be forwarded to the host.

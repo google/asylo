@@ -122,9 +122,8 @@ constexpr uint64_t kTestUSleep = kHostLibCSelector + 1;
 constexpr uint64_t kTestSysconf = kHostLibCSelector + 2;
 constexpr uint64_t kTestWait = kHostLibCSelector + 3;
 constexpr uint64_t kTestSend = kHostLibCSelector + 4;
-constexpr uint64_t kTestReadWithUntrustedPtr = kHostLibCSelector + 5;
-constexpr uint64_t kTestRealloc = kHostLibCSelector + 6;
-constexpr uint64_t kTestSleep = kHostLibCSelector + 7;
+constexpr uint64_t kTestRealloc = kHostLibCSelector + 5;
+constexpr uint64_t kTestSleep = kHostLibCSelector + 6;
 
 }  // namespace host_call
 }  // namespace asylo

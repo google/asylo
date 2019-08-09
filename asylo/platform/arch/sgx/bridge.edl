@@ -56,10 +56,6 @@ enclave {
         bridge_size_t size) propagate_errno;
     void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,
         bridge_size_t count) propagate_errno;
-    bridge_ssize_t ocall_enc_untrusted_write_with_untrusted_ptr(
-        int fd, [user_check] const void *buf, int size) propagate_errno;
-    bridge_ssize_t ocall_enc_untrusted_read_with_untrusted_ptr(
-        int fd, [user_check] void *buf, int size) propagate_errno;
 
     //////////////////////////////////////
     //           Sockets                //

@@ -81,20 +81,6 @@ Status SysconfHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
-Status ReadWithUntrustedPtrHandler(
-    const std::shared_ptr<primitives::Client> &client, void *context,
-    primitives::MessageReader *input, primitives::MessageWriter *output) {
-  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 3);
-  int fd = input->next<int>();
-  void *untrusted_buf = input->next<void *>();
-  auto size = input->next<size_t>();
-
-  output->Push<int64_t>(
-      read(fd, untrusted_buf, size));  // Push return value first.
-  output->Push<int>(errno);            // Push errno next.
-  return Status::OkStatus();
-}
-
 Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,
                       void *context, primitives::MessageReader *input,
                       primitives::MessageWriter *output) {

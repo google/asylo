@@ -54,14 +54,6 @@ Status SysconfHandler(const std::shared_ptr<primitives::Client> &client,
                       void *context, primitives::MessageReader *input,
                       primitives::MessageWriter *output);
 
-// Untrusted handler for enc_untrusted_read_with_untrusted_ptr(); this handler
-// calls the read syscall and reads data into an untrusted buffer, but does not
-// copy the buffer to trusted memory. Expects [int fd, void *untrusted_buf,
-// size_t size] and returns the number of bytes read.
-Status ReadWithUntrustedPtrHandler(
-    const std::shared_ptr<primitives::Client> &client, void *context,
-    primitives::MessageReader *input, primitives::MessageWriter *output);
-
 // realloc library call handler on the host; expects [void *ptr, size_t size]
 // and returns [void *output_ptr].
 Status ReallocHandler(const std::shared_ptr<primitives::Client> &client,

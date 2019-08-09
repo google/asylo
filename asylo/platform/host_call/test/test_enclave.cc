@@ -628,19 +628,6 @@ PrimitiveStatus TestClose(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus TestReadWithUntrustedPtr(void *context, MessageReader *in,
-                                         MessageWriter *out) {
-  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
-
-  int fd = in->next<int>();
-  void *untrusted_buf = in->next<void *>();
-  size_t size = in->next<size_t>();
-
-  out->Push<int64_t>(
-      enc_untrusted_read_with_untrusted_ptr(fd, untrusted_buf, size));
-  return PrimitiveStatus::OkStatus();
-}
-
 PrimitiveStatus TestRealloc(void *context, MessageReader *in,
                             MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
@@ -798,9 +785,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestSysconf}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestClose, EntryHandler{asylo::host_call::TestClose}));
-  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
-      asylo::host_call::kTestReadWithUntrustedPtr,
-      EntryHandler{asylo::host_call::TestReadWithUntrustedPtr}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestRealloc,
       EntryHandler{asylo::host_call::TestRealloc}));
