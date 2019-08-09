@@ -485,7 +485,7 @@ TEST(StatusOrTest, ValueOrDieMovedValue) {
   EXPECT_EQ(*moved_value, kStringElement);
 
   // Verify that the StatusOr object was invalidated after the value was moved.
-  EXPECT_FALSE(statusor.ok());
+  EXPECT_FALSE(statusor.status().ok());
   EXPECT_THAT(statusor.status(),
               StatusIs(error::StatusError::MOVED, kValueOrDieMovedMsg));
 }
