@@ -91,6 +91,7 @@ cc_library(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/strings",
     ],
 )
 

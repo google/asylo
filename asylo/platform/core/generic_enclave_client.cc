@@ -21,6 +21,7 @@
 #include <cstddef>
 #include <memory>
 
+#include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/entry_selectors.h"
@@ -33,6 +34,15 @@
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
+
+std::unique_ptr<GenericEnclaveClient> GenericEnclaveClient::Create(
+    const absl::string_view name,
+    const std::shared_ptr<primitives::Client> primitive_client) {
+  auto client = std::unique_ptr<GenericEnclaveClient>(
+      new GenericEnclaveClient(std::string(name)));
+  client->primitive_client_ = primitive_client;
+  return client;
+}
 
 Status GenericEnclaveClient::Initialize(const char *name, size_t name_len,
                                         const char *input, size_t input_len,

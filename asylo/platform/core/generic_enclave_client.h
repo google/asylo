@@ -29,6 +29,10 @@ namespace asylo {
 // Default implementation of EnclaveClient.
 class GenericEnclaveClient : public EnclaveClient {
  public:
+  static std::unique_ptr<GenericEnclaveClient> Create(
+      const absl::string_view name,
+      const std::shared_ptr<primitives::Client> primitive_client);
+
   Status EnterAndRun(const EnclaveInput &input, EnclaveOutput *output) override;
 
   std::shared_ptr<primitives::Client> GetPrimitiveClient() const {
