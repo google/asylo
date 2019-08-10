@@ -23,8 +23,8 @@ present in newlib as well as the target host library.
 """
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
 from asylo.platform.system_call.type_conversions.types_parse_functions import include
-from asylo.platform.system_call.type_conversions.types_parse_functions import set_bridge_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import write_output
 
@@ -35,10 +35,10 @@ include("stdint.h")
 include("sys/inotify.h")
 include("sys/socket.h")
 include("errno.h")
+include("time.h")
 include("unistd.h")
 
 set_klinux_prefix("kLinux")
-set_bridge_prefix("bridge")
 
 define_enum(
     name="FileStatusFlag",
@@ -185,5 +185,14 @@ define_enum(
     ],
     default_value_host=-1,
     default_value_newlib=-1)
+
+define_struct(
+    name="timespec",
+    values=[
+        ("time_t", "tv_sec"),
+        ("long", "tv_nsec"),
+    ],
+    pack_attributes=False,
+)
 
 write_output()

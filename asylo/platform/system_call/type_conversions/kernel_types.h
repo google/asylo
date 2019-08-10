@@ -21,27 +21,27 @@
 
 #include <stdint.h>
 
-struct kernel_stat {
-  uint64_t  kernel_st_dev;
-  uint64_t  kernel_st_ino;
-  uint64_t  kernel_st_nlink;
+struct klinux_stat {
+  uint64_t klinux_st_dev;
+  uint64_t klinux_st_ino;
+  uint64_t klinux_st_nlink;
 
-  uint32_t  kernel_st_mode;
-  uint32_t  kernel_st_uid;
-  uint32_t  kernel_st_gid;
-  uint32_t  kernel_unsed_pad0;
-  uint64_t  kernel_st_rdev;
-  int64_t   kernel_st_size;
-  int64_t   kernel_st_blksize;
-  int64_t   kernel_st_blocks;
+  uint32_t klinux_st_mode;
+  uint32_t klinux_st_uid;
+  uint32_t klinux_st_gid;
+  uint32_t klinux_unsed_pad0;
+  uint64_t klinux_st_rdev;
+  int64_t klinux_st_size;
+  int64_t klinux_st_blksize;
+  int64_t klinux_st_blocks;
 
-  uint64_t  kernel_st_atime;
-  uint64_t  kernel_st_atime_nsec;
-  uint64_t  kernel_st_mtime;
-  uint64_t  kernel_st_mtime_nsec;
-  uint64_t  kernel_st_ctime;
-  uint64_t  kernel_st_ctime_nsec;
-  int64_t   kernel_unused[3];
+  uint64_t klinux_st_atime;
+  uint64_t klinux_st_atime_nsec;
+  uint64_t klinux_st_mtime;
+  uint64_t klinux_st_mtime_nsec;
+  uint64_t klinux_st_ctime;
+  uint64_t klinux_st_ctime_nsec;
+  int64_t klinux_unused[3];
 };
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

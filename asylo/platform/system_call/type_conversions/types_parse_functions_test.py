@@ -20,14 +20,12 @@ from unittest import TestCase
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
-from asylo.platform.system_call.type_conversions.types_parse_functions import get_bridge_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_enums
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_as_include_macros
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_in_define_macro
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_klinux_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_structs
 from asylo.platform.system_call.type_conversions.types_parse_functions import include
-from asylo.platform.system_call.type_conversions.types_parse_functions import set_bridge_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
 
 
@@ -65,13 +63,6 @@ class TypesParseFunctionsTest(TestCase):
     self.assertEqual(
         get_klinux_prefix(),
         'const char klinux_prefix[] = "{}";\n'.format(prefix_string))
-
-  def test_bridge_prefix(self):
-    prefix_string = 'test_prefix'
-    set_bridge_prefix(prefix_string)
-    self.assertEqual(
-        get_bridge_prefix(),
-        'const char bridge_prefix[] = "{}";\n'.format(prefix_string))
 
   def test_include_exceptions(self):
     with self.assertRaises(ValueError):

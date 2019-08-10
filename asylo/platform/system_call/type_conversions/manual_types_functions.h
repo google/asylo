@@ -41,6 +41,6 @@ void TokLinuxOptionName(const int *level, const int *option_name, int *output);
 // socket option. Returns -1 if socket type is not recognized.
 void FromkLinuxOptionName(const int *level, const int *klinux_option_name,
                           int *output);
-void FromKernelStat(const struct kernel_stat *from, struct stat *to);
-void ToKernelStat(const struct stat *from, struct kernel_stat *to);
+void FromkLinuxStat(const struct klinux_stat *from, struct stat *to);
+void TokLinuxStat(const struct stat *from, struct klinux_stat *to);
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

@@ -57,22 +57,11 @@ _struct_map = collections.defaultdict(dict)
 # and host library, ones which do not involve an intermediate bridge.
 _klinux_prefix = 'kLinux'
 
-# Declare the prefix to be used for bridge types and conversions. This prefix
-# should be used when conversions between newlib and host library involve the
-# use of an intermediate bridge type like in a struct.
-_bridge_prefix = 'bridge'
-
 
 def set_klinux_prefix(pref):
   """Sets the prefix used for enum definitions and conversion functions."""
   global _klinux_prefix
   _klinux_prefix = pref
-
-
-def set_bridge_prefix(pref):
-  """Sets the prefix used for struct definitions and conversion functions."""
-  global _bridge_prefix
-  _bridge_prefix = pref
 
 
 def include(filename):
@@ -163,10 +152,10 @@ def define_struct(name, values, pack_attributes=True, skip_conversions=False):
       member names in the struct from newlib/libc. Eg. [("int64_t", "st_dev"),
       ("int64_t", "st_ino")].
     pack_attributes: Boolean indicating if the compiler should be prevented from
-      padding the generated bridge struct members from their natural alignment.
+      padding the generated kernel struct members from their natural alignment.
     skip_conversions: Boolean indicating if generation of types conversion
-      functions be skipped, and only bridge struct definitions be generated.
-      Useful when bridge conversion functions are complex and need to be written
+      functions be skipped, and only kernel struct definitions be generated.
+      Useful when kernel conversion functions are complex and need to be written
       manually, but the struct definitions can be generated automatically.
   """
   _struct_map[name]['values'] = ', '.join(
@@ -179,11 +168,6 @@ def define_struct(name, values, pack_attributes=True, skip_conversions=False):
 def get_klinux_prefix():
   """Gets the prefix for generated C enums and conversion functions."""
   return 'const char klinux_prefix[] = "{}";\n'.format(_klinux_prefix)
-
-
-def get_bridge_prefix():
-  """Gets the prefix for generated C structs and conversion functions."""
-  return 'const char bridge_prefix[] = "{}";\n'.format(_bridge_prefix)
 
 
 def get_includes_as_include_macros():
@@ -268,6 +252,5 @@ def write_output(stream=sys.stdout):
   print(get_includes_as_include_macros(), file=stream)
   print(get_includes_in_define_macro(), file=stream)
   print(get_klinux_prefix(), file=stream)
-  print(get_bridge_prefix(), file=stream)
   print(get_enums(), file=stream)
   print(get_structs(), file=stream)

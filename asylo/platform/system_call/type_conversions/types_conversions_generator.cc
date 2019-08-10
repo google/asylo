@@ -153,21 +153,21 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
 }
 
 // Generate the function definition for struct type conversions. Depending on
-// the value provided for |to_bridge|, this function generates the function
-// definition for conversions to and from bridge struct types respectively.
+// the value provided for |to_klinux|, this function generates the function
+// definition for conversions to and from kernel struct types respectively.
 std::string GetStructConversionsFuncBody(
-    bool to_bridge, const std::string &input_struct,
+    bool to_klinux, const std::string &input_struct,
     const std::string &output_struct,
     const StructProperties &struct_properties) {
   std::ostringstream os;
   os << "  if (!" << input_struct << " || !" << output_struct << ") return;\n";
 
   for (const auto &member_decl : struct_properties.values) {
-    std::string bridge_member =
-        absl::StrCat(bridge_prefix, "_", member_decl.first);
+    std::string klinux_member =
+        absl::StrCat(klinux_prefix, "_", member_decl.first);
 
-    std::string output_member = to_bridge ? bridge_member : member_decl.first;
-    std::string input_member = to_bridge ? member_decl.first : bridge_member;
+    std::string output_member = to_klinux ? klinux_member : member_decl.first;
+    std::string input_member = to_klinux ? member_decl.first : klinux_member;
     os << "  " << output_struct << "->" << output_member << " = "
        << input_struct << "->" << input_member << ";\n";
   }
@@ -232,39 +232,39 @@ void WriteStructConversions(
     }
 
     std::string struct_var = absl::StrCat("_", it.first);
-    std::string bridge_struct_var =
-        absl::StrCat("_", bridge_prefix, struct_var);
+    std::string klinux_struct_var =
+        absl::StrCat("_", klinux_prefix, struct_var);
 
-    std::string to_bridge_declaration = absl::StrReplaceAll(
-        "void To$bridge_prefix$name"
+    std::string to_klinux_declaration = absl::StrReplaceAll(
+        "void To$klinux_prefix$name"
         "(const struct $name *$struct_var, "
-        "struct $bridge_prefix_$name *$bridge_struct_var)",
-        {{"$bridge_prefix", bridge_prefix},
+        "struct $klinux_prefix_$name *$klinux_struct_var)",
+        {{"$klinux_prefix", klinux_prefix},
          {"$name", it.first},
          {"$struct_var", struct_var},
-         {"$bridge_struct_var", bridge_struct_var}});
+         {"$klinux_struct_var", klinux_struct_var}});
 
-    std::string from_bridge_declaration = absl::StrReplaceAll(
-        "void From$bridge_prefix$name(const struct "
-        "$bridge_prefix_$name *$bridge_struct_var, struct $name *$struct_var)",
-        {{"$bridge_prefix", bridge_prefix},
+    std::string from_klinux_declaration = absl::StrReplaceAll(
+        "void From$klinux_prefix$name(const struct "
+        "$klinux_prefix_$name *$klinux_struct_var, struct $name *$struct_var)",
+        {{"$klinux_prefix", klinux_prefix},
          {"$name", it.first},
          {"$struct_var", struct_var},
-         {"$bridge_struct_var", bridge_struct_var}});
+         {"$klinux_struct_var", klinux_struct_var}});
 
     // Write the function declarations to the header file.
-    *os_h << "\n" << to_bridge_declaration << "; \n";
-    *os_h << "\n" << from_bridge_declaration << "; \n";
+    *os_h << "\n" << to_klinux_declaration << "; \n";
+    *os_h << "\n" << from_klinux_declaration << "; \n";
 
     // Write the function body to the cc file.
     *os_cc << "\n"
-           << to_bridge_declaration << " {\n"
-           << GetStructConversionsFuncBody(true, struct_var, bridge_struct_var,
+           << to_klinux_declaration << " {\n"
+           << GetStructConversionsFuncBody(true, struct_var, klinux_struct_var,
                                            it.second)
            << "}\n";
     *os_cc << "\n"
-           << from_bridge_declaration << " {\n"
-           << GetStructConversionsFuncBody(false, bridge_struct_var, struct_var,
+           << from_klinux_declaration << " {\n"
+           << GetStructConversionsFuncBody(false, klinux_struct_var, struct_var,
                                            it.second)
            << "}\n";
   }
@@ -295,12 +295,12 @@ void WriteStructDefinitions(
         *struct_properties_table,
     std::ostream *os) {
   for (const auto &it : *struct_properties_table) {
-    *os << absl::StreamFormat("\nstruct %s_%s {\n", bridge_prefix, it.first);
+    *os << absl::StreamFormat("\nstruct %s_%s {\n", klinux_prefix, it.first);
 
     for (const auto &current : it.second.values) {
-      // Prefix |bridge_prefix| to each member name to avoid possible
+      // Prefix |klinux_prefix| to each member name to avoid possible
       // collisions with macro names in newlib/libc.
-      *os << absl::StreamFormat("  %s %s_%s;\n", current.second, bridge_prefix,
+      *os << absl::StreamFormat("  %s %s_%s;\n", current.second, klinux_prefix,
                                 current.first);
     }
     *os << "}" << (it.second.pack_attributes ? " ABSL_ATTRIBUTE_PACKED" : "")
@@ -309,7 +309,7 @@ void WriteStructDefinitions(
 }
 
 // Gets the mappings from type names to type properties and emits the C
-// definitions for the types. Prefixes the appropriate klinux or bridge prefix
+// definitions for the types. Prefixes the appropriate klinux or klinux prefix
 // to the type definitions generated. Currently supports enums and structs.
 void WriteTypeDefinitions(
     const absl::flat_hash_map<std::string, EnumProperties>
