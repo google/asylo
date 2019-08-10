@@ -49,10 +49,10 @@ class VerifyingKey {
 
   // Verifies that |signature| is a valid signature over a hash of |message|
   // produced by the underlying hash function. Returns true if verification
-  // succeeds, and false if verification failed or an error occurred during
-  // verification.
-  virtual Status Verify(ByteContainerView message,
-                        ByteContainerView signature) const = 0;
+  // succeeds, and false if verification failed. Returns a non-OK Status if an
+  // error occurred during verification.
+  virtual StatusOr<bool> Verify(ByteContainerView message,
+                                ByteContainerView signature) const = 0;
 };
 
 // SigningKey abstracts a signing key from an asymmetric key-pair.

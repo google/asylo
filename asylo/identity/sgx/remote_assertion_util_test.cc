@@ -74,7 +74,7 @@ TEST(RemoteAssertionUtilTest, MakeRemoteAssertionSucceeds) {
   std::unique_ptr<VerifyingKey> verifying_key =
       std::move(verifying_key_result).ValueOrDie();
   EXPECT_THAT(verifying_key->Verify(assertion.payload(), assertion.signature()),
-              IsOk());
+              IsOkAndHolds(true));
 }
 
 }  // namespace

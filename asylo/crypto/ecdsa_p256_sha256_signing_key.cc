@@ -139,19 +139,21 @@ StatusOr<std::string> EcdsaP256Sha256VerifyingKey::SerializeToDer() const {
   return std::string(reinterpret_cast<char *>(key), length);
 }
 
-Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,
-                                           ByteContainerView signature) const {
+StatusOr<bool> EcdsaP256Sha256VerifyingKey::Verify(
+    ByteContainerView message, ByteContainerView signature) const {
   Sha256Hash hasher;
   hasher.Init();
   hasher.Update(message);
   std::vector<uint8_t> digest;
   ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&digest));
 
-  if (!ECDSA_verify(/*type=*/0, digest.data(), digest.size(), signature.data(),
-                    signature.size(), public_key_.get())) {
+  int result =
+      ECDSA_verify(/*type=*/0, digest.data(), digest.size(), signature.data(),
+                   signature.size(), public_key_.get());
+  if (result == -1) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
-  return Status::OkStatus();
+  return result == 1;
 }
 
 EcdsaP256Sha256VerifyingKey::EcdsaP256Sha256VerifyingKey(

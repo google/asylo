@@ -70,15 +70,17 @@ TEST(FakeSigningKeyTest, VerifyingKeyConstructedWithStatusVerify) {
       UNKNOWN_SIGNATURE_SCHEME,
       Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
 
-  EXPECT_THAT(verifying_key.Verify(kTestMessage, kTestMessageSignature),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
+  EXPECT_THAT(
+      verifying_key.Verify(kTestMessage, kTestMessageSignature).status(),
+      StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
 }
 
 // Verify that a FakeVerifyingKey verifies a valid signature.
 TEST(FakeSigningKeyTest, VerifySuccess) {
   FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
 
-  ASYLO_EXPECT_OK(verifying_key.Verify(kTestMessage, kTestMessageSignature));
+  EXPECT_THAT(verifying_key.Verify(kTestMessage, kTestMessageSignature),
+              IsOkAndHolds(true));
 }
 
 // Verify that a FakeVerifyingKey does not verify a signature signed by a
@@ -87,7 +89,7 @@ TEST(FakeSigningKeyTest, VerifyWithOtherKeySignatureFails) {
   FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
 
   EXPECT_THAT(verifying_key.Verify(kTestMessage, kOtherKeySignature),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              IsOkAndHolds(false));
 }
 
 // Verify that a FakeVerifyingKey does not verify a signature for a different
@@ -96,7 +98,7 @@ TEST(FakeSigningKeyTest, VerifyOtherMessageSignatureFails) {
   FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
 
   EXPECT_THAT(verifying_key.Verify(kTestMessage, kOtherMessageSignature),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              IsOkAndHolds(false));
 }
 
 // Verify that operator== passes when given keys with the same non-OK Status

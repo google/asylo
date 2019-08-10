@@ -146,7 +146,8 @@ TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifySuccess) {
   std::string valid_signature(absl::HexStringToBytes(kTestSignatureHex));
   std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
 
-  ASYLO_EXPECT_OK(verifying_key_->Verify(valid_message, valid_signature));
+  EXPECT_THAT(verifying_key_->Verify(valid_message, valid_signature),
+              IsOkAndHolds(true));
 }
 
 // Verify that an EcdsaP256Sha256VerifyingKey does not verify an invalid
@@ -156,7 +157,7 @@ TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithIncorrectSignatureFails) {
   std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
 
   EXPECT_THAT(verifying_key_->Verify(valid_message, invalid_signature),
-              Not(IsOk()));
+              IsOkAndHolds(false));
 }
 
 // Verify that operator== fails with a different VerifyingKey implementation.
@@ -299,11 +300,11 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerify) {
 
   std::unique_ptr<VerifyingKey> verifying_key =
       std::move(verifying_key_result).ValueOrDie();
-  ASYLO_EXPECT_OK(verifying_key->Verify(message, signature));
+  EXPECT_THAT(verifying_key->Verify(message, signature), IsOkAndHolds(true));
 
   // Ensure that the signature is not verifiable if one bit is flipped.
   signature.back() ^= 1;
-  EXPECT_THAT(verifying_key->Verify(message, signature), Not(IsOk()));
+  EXPECT_THAT(verifying_key->Verify(message, signature), IsOkAndHolds(false));
 }
 
 // Verify that SerializeToDer() and CreateFromDer() from a serialized key are
@@ -334,7 +335,7 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToDerAndRestoreSigningKey) {
   std::unique_ptr<VerifyingKey> verifying_key =
       std::move(verifying_key_result).ValueOrDie();
 
-  ASYLO_EXPECT_OK(verifying_key->Verify(message, signature));
+  EXPECT_THAT(verifying_key->Verify(message, signature), IsOkAndHolds(true));
 }
 
 // Verify that an EcdsaP256Sha256SigningKey created from a serialized key

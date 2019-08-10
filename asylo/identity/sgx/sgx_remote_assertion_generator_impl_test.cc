@@ -197,8 +197,9 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
     EXPECT_EQ(payload.user_data(), kUserData);
     EXPECT_EQ(payload.signature_scheme(), signature_scheme_);
 
-    ASYLO_EXPECT_OK(verifying_key.Verify(payload.SerializeAsString(),
-                                         assertion.signature()));
+    EXPECT_THAT(verifying_key.Verify(payload.SerializeAsString(),
+                                     assertion.signature()),
+                IsOkAndHolds(true));
   }
 
   SignatureScheme signature_scheme_;

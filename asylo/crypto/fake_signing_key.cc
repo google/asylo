@@ -59,28 +59,25 @@ StatusOr<std::string> FakeVerifyingKey::SerializeToDer() const {
   return serialize_to_der_result_;
 }
 
-Status FakeVerifyingKey::Verify(ByteContainerView message,
-                                ByteContainerView signature) const {
+StatusOr<bool> FakeVerifyingKey::Verify(ByteContainerView message,
+                                        ByteContainerView signature) const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
   const std::string &key_der = serialize_to_der_result_.ValueOrDie();
 
   if (signature.size() != key_der.size() + message.size()) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "Signature does not match the expected value");
+    return false;
   }
 
   if (!std::equal(key_der.cbegin(), key_der.cend(), signature.cbegin())) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "Signature does not match the expected value");
+    return false;
   }
 
   if (!std::equal(message.cbegin(), message.cend(),
                   signature.cbegin() + key_der.size())) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "Signature does not match the expected value");
+    return false;
   }
 
-  return Status::OkStatus();
+  return true;
 }
 
 FakeSigningKey::FakeSigningKey(SignatureScheme scheme,

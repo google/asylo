@@ -56,8 +56,8 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
 
   StatusOr<std::string> SerializeToDer() const override;
 
-  Status Verify(ByteContainerView message,
-                ByteContainerView signature) const override;
+  StatusOr<bool> Verify(ByteContainerView message,
+                        ByteContainerView signature) const override;
 
  private:
   EcdsaP256Sha256VerifyingKey(bssl::UniquePtr<EC_KEY> public_key);

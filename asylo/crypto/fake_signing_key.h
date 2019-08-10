@@ -56,8 +56,8 @@ class FakeVerifyingKey : public VerifyingKey {
   // Verifies that the signature is |message| appended to the value of
   // SerializeToDer(). If SerializeToDer() returns a non-OK Status, return that
   // status.
-  Status Verify(ByteContainerView message,
-                ByteContainerView signature) const override;
+  StatusOr<bool> Verify(ByteContainerView message,
+                        ByteContainerView signature) const override;
 
  private:
   const SignatureScheme scheme_;
