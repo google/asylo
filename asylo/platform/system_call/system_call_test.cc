@@ -35,6 +35,8 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/system_call/sysno.h"
+#include "asylo/platform/system_call/type_conversions/types.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/platform/system_call/untrusted_invoke.h"
 #include "asylo/test/util/test_flags.h"
 #include "asylo/util/status_macros.h"
@@ -221,6 +223,32 @@ TEST(SystemCallTest, Errnotest) {
   int result = enc_untrusted_syscall(SYS_getcwd, nullptr, 1);
   EXPECT_THAT(result, Eq(-1));
   EXPECT_THAT(errno, Eq(ERANGE));
+}
+
+// Tests nanosleep return value and verifies conversions between klinux_timespec
+// and timespec.
+TEST(SystemCallTest, Nanosleeptest) {
+  enc_set_dispatch_syscall(SystemCallDispatcher);
+
+  struct timespec req, rem;
+  struct kLinux_timespec klinux_req, klinux_rem;
+  req.tv_sec = 1;
+  req.tv_nsec = 500000000L;  // 0.5 sec
+
+  // Deliberately set incorrect values for output.
+  klinux_rem.kLinux_tv_sec = 100;
+  klinux_rem.kLinux_tv_nsec = 1000L;
+
+  TokLinuxtimespec(&req, &klinux_req);
+
+  // If klinux_req interprets order of members incorrectly from req, test will
+  // suspend for 15 years!
+  int result = enc_untrusted_syscall(SYS_nanosleep, &klinux_req, &klinux_rem);
+  EXPECT_THAT(result, Eq(0));
+
+  FromkLinuxtimespec(&klinux_rem, &rem);
+  EXPECT_THAT(klinux_rem.kLinux_tv_sec, Eq(0));
+  EXPECT_THAT(klinux_rem.kLinux_tv_nsec, Eq(0));
 }
 
 }  // namespace

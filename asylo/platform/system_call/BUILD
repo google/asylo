@@ -180,6 +180,7 @@ cc_test(
         ":system_call",
         ":untrusted_invoke",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/system_call/type_conversions:types",
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "//asylo/util:status_macros",

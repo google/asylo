@@ -53,7 +53,7 @@ struct StructProperties {
 
   // A vector of struct members in the format std::pair{member name, member
   // type}.
-  std::map<std::string, std::string> values;
+  std::vector<std::pair<std::string, std::string>> values;
 };
 
 ABSL_FLAG(std::string, output_dir, "",
@@ -162,12 +162,12 @@ std::string GetStructConversionsFuncBody(
   std::ostringstream os;
   os << "  if (!" << input_struct << " || !" << output_struct << ") return;\n";
 
-  for (const auto &member_decl : struct_properties.values) {
+  for (const auto &member_pair : struct_properties.values) {
     std::string klinux_member =
-        absl::StrCat(klinux_prefix, "_", member_decl.first);
+        absl::StrCat(klinux_prefix, "_", member_pair.first);
 
-    std::string output_member = to_klinux ? klinux_member : member_decl.first;
-    std::string input_member = to_klinux ? member_decl.first : klinux_member;
+    std::string output_member = to_klinux ? klinux_member : member_pair.first;
+    std::string input_member = to_klinux ? member_pair.first : klinux_member;
     os << "  " << output_struct << "->" << output_member << " = "
        << input_struct << "->" << input_member << ";\n";
   }
