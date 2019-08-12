@@ -60,6 +60,14 @@ message LoggingConfig {
   optional string log_directory = 2;
 }
 
+// The configuration required to load an enclave. This message is extended for
+// each backend supported by the Asylo primitive library. asylo::EnclaveLoader
+// is passed an instance of this message for loading enclaves in Asylo.
+message EnclaveLoaderConfig {
+  // Allow user extensions.
+  extensions 1000 to max;
+}
+
 // Configuration passed to an enclave during initialization. An enclave's
 // configuration (an instance of this message) is part of its identity. The base
 // configuration included in `EnclaveConfig` is used to support platform
