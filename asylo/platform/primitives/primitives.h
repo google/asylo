@@ -37,13 +37,13 @@ static constexpr uint64_t kSelectorAsyloDeliverSignal = 1;
 // Enclave finalization entry point selector.
 static constexpr uint64_t kSelectorAsyloFini = 2;
 
+// Selector values in [kSelectorHostCall, kSelectorUser) range are reserved for
+// untrusted host call handlers and cannot be used by any other component.
+static constexpr uint64_t kSelectorHostCall = 112;
+
 // Selector values less than `kSelectorUser` are reserved by the runtime and may
 // not be registered by the applications.
 static constexpr uint64_t kSelectorUser = 128;
-
-// Selector values in [kSelectorHostCall, kSelectorRemote) range are reserved
-// for untrusted host call handlers and cannot be used by any other component.
-static constexpr uint64_t kSelectorHostCall = 112;
 
 }  // namespace primitives
 }  // namespace asylo
