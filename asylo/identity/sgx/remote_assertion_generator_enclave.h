@@ -79,8 +79,8 @@ class RemoteAssertionGeneratorEnclave final : public TrustedApplication {
   // Generates a new value for |attestation_key_|, an SGX hardware REPORT that
   // is suitable for use in the PCE's SignReport protocol, and certificate
   // signing requests for certificate authorities specified in |input|.
-  Status GenerateKeyAndCsr(const GenerateKeyAndCsrRequestInput &input,
-                           GenerateKeyAndCsrRequestOutput *output);
+  Status GenerateKeyAndCsr(const GenerateKeyAndCsrInput &input,
+                           GenerateKeyAndCsrOutput *output);
 
   // Updates |certificate_chains_|. If the SgxRemoteAssertionGenerator gRPC
   // server is running, updates certificates and the attestation key used by

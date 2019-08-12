@@ -281,7 +281,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     ASYLO_ASSIGN_OR_RETURN(
         *enclave_input
              .MutableExtension(remote_assertion_generator_enclave_input)
-             ->mutable_generate_key_and_csr_request_input()
+             ->mutable_generate_key_and_csr_input()
              ->mutable_pce_target_info(),
         GetTargetInfoProtoFromTestUtilEnclave());
     return remote_assertion_generator_enclave_client_->EnterAndRun(
@@ -593,7 +593,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   EnclaveOutput enclave_output;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-           ->mutable_generate_key_and_csr_request_input()
+           ->mutable_generate_key_and_csr_input()
            ->mutable_pce_target_info(),
       GetTargetInfoProtoFromTestUtilEnclave());
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
@@ -602,7 +602,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   std::string serialized_pce_sign_report_payload =
       enclave_output
           .MutableExtension(remote_assertion_generator_enclave_output)
-          ->generate_key_and_csr_request_output()
+          ->generate_key_and_csr_output()
           .pce_sign_report_payload();
 
   PceSignReportPayload pce_sign_report_payload;
@@ -636,7 +636,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   ReportProto report_proto =
       enclave_output
           .MutableExtension(remote_assertion_generator_enclave_output)
-          ->generate_key_and_csr_request_output()
+          ->generate_key_and_csr_output()
           .report();
   Report report;
   ASYLO_ASSERT_OK_AND_ASSIGN(report,
@@ -663,8 +663,8 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   EnclaveInput enclave_input;
   EnclaveOutput enclave_output;
   *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_generate_key_and_csr_request_input() =
-      GenerateKeyAndCsrRequestInput::default_instance();
+       ->mutable_generate_key_and_csr_input() =
+      GenerateKeyAndCsrInput::default_instance();
   EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
                   enclave_input, &enclave_output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,

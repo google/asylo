@@ -84,7 +84,7 @@ message GeneratePceInfoSgxHardwareReportOutput {
 // generate an attestation key, an SGX hardware REPORT that is suitable for
 // PCE's SignReport protocol, and any number of certificate signing requests
 // for certificate authorities that should certify the attestation public key.
-message GenerateKeyAndCsrRequestInput {
+message GenerateKeyAndCsrInput {
   // An SGX TARGETINFO structure from the PCE running on the same platform.
   // Required.
   optional TargetInfoProto pce_target_info = 1;
@@ -99,7 +99,7 @@ message GenerateKeyAndCsrRequestInput {
 // for generating the REPORTDATA for a report that is signed by the PCE, and any
 // number of certificate signing requests that should certify the attestation
 // public key.
-message GenerateKeyAndCsrRequestOutput {
+message GenerateKeyAndCsrOutput {
   // A SGX hardware REPORT that is generated against TARGETINFO from
   // |pce_target_info| in the corresponding input message. Required.
   optional ReportProto report = 1;
@@ -177,7 +177,7 @@ message RemoteAssertionGeneratorEnclaveInput {
     StartServerRequestInput start_server_request_input = 1;
     GeneratePceInfoSgxHardwareReportInput
         generate_pce_info_sgx_hardware_report_input = 2;
-    GenerateKeyAndCsrRequestInput generate_key_and_csr_request_input = 3;
+    GenerateKeyAndCsrInput generate_key_and_csr_input = 3;
     UpdateCertsInput update_certs_input = 4;
     GetEnclaveIdentityInput get_enclave_identity_input = 5;
   }
@@ -191,7 +191,7 @@ message RemoteAssertionGeneratorEnclaveOutput {
     StartServerRequestOutput start_server_request_output = 1;
     GeneratePceInfoSgxHardwareReportOutput
         generate_pce_info_sgx_hardware_report_output = 2;
-    GenerateKeyAndCsrRequestOutput generate_key_and_csr_request_output = 3;
+    GenerateKeyAndCsrOutput generate_key_and_csr_output = 3;
     UpdateCertsOutput update_certs_output = 4;
     GetEnclaveIdentityOutput get_enclave_identity_output = 5;
   }

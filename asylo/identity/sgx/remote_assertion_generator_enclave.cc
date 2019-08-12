@@ -90,10 +90,10 @@ Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
           enclave_input.generate_pce_info_sgx_hardware_report_input(),
           enclave_output
               ->mutable_generate_pce_info_sgx_hardware_report_output());
-    case RemoteAssertionGeneratorEnclaveInput::kGenerateKeyAndCsrRequestInput:
+    case RemoteAssertionGeneratorEnclaveInput::kGenerateKeyAndCsrInput:
       return GenerateKeyAndCsr(
-          enclave_input.generate_key_and_csr_request_input(),
-          enclave_output->mutable_generate_key_and_csr_request_output());
+          enclave_input.generate_key_and_csr_input(),
+          enclave_output->mutable_generate_key_and_csr_output());
     case RemoteAssertionGeneratorEnclaveInput::kUpdateCertsInput:
       return UpdateCerts(enclave_input.update_certs_input(),
                          enclave_output->mutable_update_certs_output());
@@ -184,8 +184,7 @@ Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
 }
 
 Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
-    const GenerateKeyAndCsrRequestInput &input,
-    GenerateKeyAndCsrRequestOutput *output) {
+    const GenerateKeyAndCsrInput &input, GenerateKeyAndCsrOutput *output) {
   if (!input.has_pce_target_info()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Input is missing pce_target_info");
