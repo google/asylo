@@ -333,6 +333,9 @@ if [[ -z "${newlib}" ]]; then
   fi
   if [[ -f "${newlib_default}" ]]; then
     verify_sha "${newlib_default}" "${newlib_default_sha}"
+    # Remove the existing directory if it exists in order for the patch to apply
+    # correctly.
+    rm -rf "${newlib_default%.tar.gz}"
     set_directory newlib "${newlib_default}"
     patch -d "${newlib_default%.tar.gz}" -p0 < \
         "${toolchain_root}/${newlib_default%.tar.gz}.patch"
