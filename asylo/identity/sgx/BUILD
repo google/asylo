@@ -1002,6 +1002,48 @@ cc_test(
 )
 
 cc_library(
+    name = "pck_certificates",
+    srcs = ["pck_certificates.cc"],
+    hdrs = ["pck_certificates.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":pck_certificates_cc_proto",
+        ":platform_provisioning_cc_proto",
+        ":tcb",
+        ":tcb_cc_proto",
+        ":tcb_container_util",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_util",
+        "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "pck_certificates_test",
+    srcs = ["pck_certificates_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "pck_certificates_enclave_test",
+    deps = [
+        ":pck_certificates",
+        ":pck_certificates_cc_proto",
+        ":platform_provisioning",
+        ":platform_provisioning_cc_proto",
+        ":tcb_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "tcb",
     srcs = ["tcb.cc"],
     hdrs = ["tcb.h"],
