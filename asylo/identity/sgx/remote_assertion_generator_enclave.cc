@@ -225,11 +225,6 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
     return Status(error::GoogleError::FAILED_PRECONDITION,
                   "Cannot update certificates: no attestation key available");
   }
-  if (!server_service_pair_locked->server) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot update certificates: remote assertion generator "
-                  "server does not exist");
-  }
   if (input.output_sealed_secret()) {
     SealedSecretHeader header =
         GetRemoteAssertionGeneratorEnclaveSecretHeader();
@@ -242,9 +237,11 @@ Status RemoteAssertionGeneratorEnclave::UpdateCerts(
 
   attestation_key_certs_pair_locked->certificate_chains = {
       input.certificate_chains().cbegin(), input.certificate_chains().cend()};
-  server_service_pair_locked->service->UpdateSigningKeyAndCertificateChains(
-      std::move(attestation_key_certs_pair_locked->attestation_key),
-      attestation_key_certs_pair_locked->certificate_chains);
+  if (server_service_pair_locked->service) {
+    server_service_pair_locked->service->UpdateSigningKeyAndCertificateChains(
+        std::move(attestation_key_certs_pair_locked->attestation_key),
+        attestation_key_certs_pair_locked->certificate_chains);
+  }
   return Status::OkStatus();
 }
 

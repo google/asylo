@@ -671,46 +671,8 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
                        "Input is missing pce_target_info"));
 }
 
-TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoServerFails) {
-  ASYLO_ASSERT_OK(
-      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
-  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
-
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_update_certs_input() = UpdateCertsInput::default_instance();
-  EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
-                  enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION,
-                       "Cannot update certificates: remote assertion generator "
-                       "server does not exist"));
-}
-
-TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoAttestationKeyFails) {
-  ASYLO_ASSERT_OK(
-      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-  ASYLO_ASSERT_OK(StartTestUtilEnclave(
-      remote_assertion_generator_test_util_enclave_config_));
-  ASYLO_ASSERT_OK(
-      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
-  ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
-      /*assertion_has_certificate_chains=*/false));
-
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_update_certs_input() = UpdateCertsInput::default_instance();
-  EXPECT_THAT(
-      remote_assertion_generator_enclave_client_->EnterAndRun(enclave_input,
-                                                              &enclave_output),
-      StatusIs(error::GoogleError::FAILED_PRECONDITION,
-               "Cannot update certificates: no attestation key available"));
-}
-
-TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsSuccess) {
+TEST_F(RemoteAssertionGeneratorEnclaveTest,
+       UpdateCertsWithServerRunningSuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
   ASYLO_ASSERT_OK(StartTestUtilEnclave(
@@ -734,6 +696,56 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsSuccess) {
       enclave_input, &enclave_output));
   CheckServerRunningAndProducesValidRemoteAssertion(
       /*assertion_has_certificate_chains=*/true);
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest,
+       UpdateCertsWithoutServerRunningSuccess) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+
+  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  UpdateCertsInput *update_certs_input =
+      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input();
+  Certificate *certificate =
+      update_certs_input->add_certificate_chains()->add_certificates();
+  certificate->set_format(Certificate::X509_DER);
+  certificate->set_data(kCertificate);
+  update_certs_input->set_output_sealed_secret(true);
+  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
+      enclave_input, &enclave_output));
+
+  // Start server to verify that the UpdateCerts call is made when the gRPC
+  // server is not running.
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE));
+  ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/true));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest, UpdateCertsNoAttestationKeyFails) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::WITH_KEY));
+  ASSERT_NO_FATAL_FAILURE(CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/false));
+
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+       ->mutable_update_certs_input() = UpdateCertsInput::default_instance();
+  EXPECT_THAT(
+      remote_assertion_generator_enclave_client_->EnterAndRun(enclave_input,
+                                                              &enclave_output),
+      StatusIs(error::GoogleError::FAILED_PRECONDITION,
+               "Cannot update certificates: no attestation key available"));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, GetEnclaveIdentitySuccess) {
