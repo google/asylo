@@ -2303,7 +2303,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
  #include <stdio.h>
  #include <stdlib.h>
  
-@@ -71,6 +78,118 @@
+@@ -71,6 +78,119 @@
  
  #define mcp_same_size(dst_ptr, src_ptr, size) memcpy_s(dst_ptr, size, src_ptr, size)
  
@@ -2347,9 +2347,10 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 +    // Invoke the registered signal handler.
 +    {
 +        std::lock_guard<std::mutex> lock(registered_signal_handlers_lock);
-+        if (registered_signal_handlers.find(signum) != registered_signal_handlers.end())
++        const auto it = registered_signal_handlers.find(signum);
++        if (it != registered_signal_handlers.end())
 +        {
-+            struct sigaction *act = registered_signal_handlers[signum].get();
++            struct sigaction *act = it->second.get();
 +            if ((!(act->sa_flags & SA_SIGINFO)) && act->sa_handler)
 +            {
 +                act->sa_handler(signum);
@@ -2422,7 +2423,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
  uintptr_t _EINIT(secs_t* secs, enclave_css_t *css, token_t *launch)
  {
      CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
-@@ -129,6 +248,8 @@
+@@ -129,6 +249,8 @@
          }
      }
  
@@ -2431,7 +2432,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      // Mark it initialized
      this_secs->attributes.flags |= SGX_FLAGS_INITTED;
  
-@@ -154,7 +275,7 @@
+@@ -154,7 +276,7 @@
  
      // `ce' is not checked against NULL, since it is not
      // allocated with new(std::no_throw).
@@ -2440,7 +2441,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      if (addr == NULL) {
          delete ce;
          return 0;
-@@ -195,6 +316,11 @@
+@@ -195,6 +317,11 @@
  
  uintptr_t _EREMOVE(const void *epc_lin_addr)
  {
@@ -2452,7 +2453,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
      CEnclaveSim *ce = mngr->get_enclave(epc_lin_addr);
  
-@@ -232,6 +358,11 @@
+@@ -232,6 +359,11 @@
          // xbx contains the address of a TCS
          tcs = reinterpret_cast<tcs_t*>(xbx);
  
