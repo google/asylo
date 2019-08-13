@@ -58,7 +58,7 @@ TranslatorServerImpl::TranslatorServerImpl(
 }
 
 ::grpc::Status TranslatorServerImpl::Shutdown(::grpc::ServerContext *context,
-                                              const ShutdownRequest *query,
+                                              const ShutdownRequest *request,
                                               ShutdownResponse *response)
     LOCKS_EXCLUDED(shutdown_requested_mutex_) {
   // Lock shutdown_requested_mutex_ and request a shutdown.

@@ -38,11 +38,11 @@ class TranslatorServerImpl final : public Translator::Service {
 
  private:
   ::grpc::Status GetTranslation(::grpc::ServerContext *context,
-                                const GetTranslationRequest *query,
+                                const GetTranslationRequest *request,
                                 GetTranslationResponse *response) override;
 
   ::grpc::Status Shutdown(::grpc::ServerContext *context,
-                          const ShutdownRequest *query,
+                          const ShutdownRequest *request,
                           ShutdownResponse *response)
       LOCKS_EXCLUDED(shutdown_requested_mutex_) override;
 
