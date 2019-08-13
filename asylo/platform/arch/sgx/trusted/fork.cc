@@ -39,6 +39,7 @@
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/memory/memory.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
