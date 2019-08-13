@@ -4833,6 +4833,134 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/malloc.h ./newlib/libc/i
  extern _PTR realloc _PARAMS ((_PTR, size_t));
  #ifdef __CYGWIN__
  #undef _realloc_r
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/math.h ./newlib/libc/include/math.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/math.h
++++ ./newlib/libc/include/math.h
+@@ -2,6 +2,9 @@
+ 
+ #define  _MATH_H_
+ 
++#ifdef _USE_MUSL_LIBM
++#include <features.h>  // IWYU pragma: export
++#endif
+ #include <sys/reent.h>
+ #include <sys/cdefs.h>
+ #include <machine/ieeefp.h>
+@@ -97,8 +100,7 @@
+ 
+ /* Non reentrant ANSI C functions.  */
+ 
+-#ifndef _REENT_ONLY
+-#ifndef __math_68881
++#if (!defined(_REENT_ONLY) && !defined(__math_68881)) || defined(_USE_MUSL_LIBM)
+ extern double acos _PARAMS((double));
+ extern double asin _PARAMS((double));
+ extern double atan2 _PARAMS((double, double));
+@@ -111,8 +113,7 @@
+ extern double pow _PARAMS((double, double));
+ extern double sqrt _PARAMS((double));
+ extern double fmod _PARAMS((double, double));
+-#endif /* ! defined (__math_68881) */
+-#endif /* ! defined (_REENT_ONLY) */
++#endif /* (!__math_68881 && !_REENT_ONLY) || _USE_MUSL_LIBM */
+ 
+ #if __MISC_VISIBLE
+ extern int finite _PARAMS((double));
+@@ -329,7 +330,7 @@
+ extern double erf _PARAMS((double));
+ extern double erfc _PARAMS((double));
+ extern double log2 _PARAMS((double));
+-#if !defined(__cplusplus)
++#if !defined(__cplusplus) && !defined(_USE_MUSL_LIBM)
+ #define log2(x) (log (x) / _M_LN2)
+ #endif
+ 
+@@ -416,9 +417,9 @@
+    simply call the double functions.  On Cygwin the long double functions
+    are implemented independently from newlib to be able to use optimized
+    assembler functions despite using the Microsoft x86_64 ABI. */
+-#if defined (_LDBL_EQ_DBL) || defined (__CYGWIN__)
++#if defined (_LDBL_EQ_DBL) || defined (__CYGWIN__) || defined(_USE_MUSL_LIBM)
+ /* Reentrant ANSI C functions.  */
+-#ifndef __math_68881
++#if !defined(__math_68881) || defined(_USE_MUSL_LIBM)
+ extern long double atanl _PARAMS((long double));
+ extern long double cosl _PARAMS((long double));
+ extern long double sinl _PARAMS((long double));
+@@ -431,10 +432,9 @@
+ extern long double floorl _PARAMS((long double));
+ extern long double log1pl _PARAMS((long double));
+ extern long double expm1l _PARAMS((long double));
+-#endif /* ! defined (__math_68881) */
++#endif /* ! defined (__math_68881) || defined(_USE_MUSL_LIBM) */
+ /* Non reentrant ANSI C functions.  */
+-#ifndef _REENT_ONLY
+-#ifndef __math_68881
++#if (!defined(_REENT_ONLY) && !defined(__math_68881)) || defined(_USE_MUSL_LIBM)
+ extern long double acosl _PARAMS((long double));
+ extern long double asinl _PARAMS((long double));
+ extern long double atan2l _PARAMS((long double, long double));
+@@ -448,8 +448,7 @@
+ extern long double sqrtl _PARAMS((long double));
+ extern long double fmodl _PARAMS((long double, long double));
+ extern long double hypotl _PARAMS((long double, long double));
+-#endif /* ! defined (__math_68881) */
+-#endif /* ! defined (_REENT_ONLY) */
++#endif /* !defined (__math_68881) && !defined (_REENT_ONLY) */
+ extern long double copysignl _PARAMS((long double, long double));
+ extern long double nanl _PARAMS((const char *));
+ extern int ilogbl _PARAMS((long double));
+@@ -478,15 +477,15 @@
+ extern long double fmaxl _PARAMS((long double, long double));
+ extern long double fminl _PARAMS((long double, long double));
+ extern long double fmal _PARAMS((long double, long double, long double));
+-#ifndef _REENT_ONLY
++#if !defined(_REENT_ONLY) || defined(_USE_MUSL_LIBM)
+ extern long double acoshl _PARAMS((long double));
+ extern long double atanhl _PARAMS((long double));
+ extern long double remainderl _PARAMS((long double, long double));
+ extern long double lgammal _PARAMS((long double));
+ extern long double erfl _PARAMS((long double));
+ extern long double erfcl _PARAMS((long double));
+-#endif /* ! defined (_REENT_ONLY) */
+-#else /* !_LDBL_EQ_DBL && !__CYGWIN__ */
++#endif /* ! defined (_REENT_ONLY) || defined(_USE_MUSL_LIBM) */
++#else /* !_LDBL_EQ_DBL && !__CYGWIN__ && !defined(_USE_MUSL_LIBM) */
+ extern long double hypotl _PARAMS((long double, long double));
+ extern long double sqrtl _PARAMS((long double));
+ #ifdef __i386__
+@@ -533,9 +532,9 @@
+ #if __GNU_VISIBLE
+ extern void sincos _PARAMS((double, double *, double *));
+ extern void sincosf _PARAMS((float, float *, float *));
+-#ifdef __CYGWIN__
++#if defined(__CYGWIN__) || defined(_USE_MUSL_LIBM)
+ extern void sincosl _PARAMS((long double, long double *, long double *));
+-#endif /* __CYGWIN__ */
++#endif /* __CYGWIN__ || defined(_USE_MUSL_LIBM) */
+ # ifndef exp10
+ extern double exp10 _PARAMS((double));
+ # endif
+@@ -555,15 +554,16 @@
+ # ifndef pow10l
+ extern float pow10l _PARAMS((float));
+ # endif
+-#endif /* __CYGWIN__ */
++#endif /* defined(__CYGWIN__) || defined(_USE_MUSL_LIBM) */
+ #endif /* __GNU_VISIBLE */
+ 
+ #if __MISC_VISIBLE || __XSI_VISIBLE
+ /* The gamma functions use a global variable, signgam.  */
+-#ifndef _REENT_ONLY
++/* musl's libm.h declares __signgam and signgam differently. */
++#if !defined(_USE_MUSL_LIBM) && !defined(_REENT_ONLY)
+ #define signgam (*__signgam())
+ extern int *__signgam _PARAMS((void));
+-#endif /* ! defined (_REENT_ONLY) */
++#endif /* ! defined (_REENT_ONLY) &&  ! defined (_USE_MUSL_LIBM) */
+ 
+ #define __signgam_r(ptr) _REENT_SIGNGAM(ptr)
+ #endif /* __MISC_VISIBLE || __XSI_VISIBLE */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/pthread.h ./newlib/libc/include/pthread.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/pthread.h
 +++ ./newlib/libc/include/pthread.h
@@ -10030,13 +10158,54 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/endian.h ./n
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/features.h ./newlib/libc/sys/enclave/include/features.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/features.h
 +++ ./newlib/libc/sys/enclave/include/features.h
-@@ -0,0 +1,6 @@
+@@ -0,0 +1,11 @@
 +#ifndef _FEATURES_H
 +#define _FEATURES_H
 +
 +# include <sys/features.h>
 +
++#define hidden __attribute__((__visibility__("hidden")))
++#define weak_alias(old, new) \
++  extern __typeof(old) new __attribute__((__weak__, __alias__(#old)))
++
++
 +#endif  // _FEATURES_H
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/fenv.h ./newlib/libc/sys/enclave/include/fenv.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/fenv.h
++++ ./newlib/libc/sys/enclave/include/fenv.h
+@@ -0,0 +1,32 @@
++#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_FENV_H_
++#define THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_FENV_H_
++
++typedef void *fenv_t;
++typedef int fexcept_t;
++
++#define FE_DIVBYZERO 1
++#define FE_INEXACT 2
++#define FE_INVALID 4
++#define FE_OVERFLOW 8
++#define FE_UNDERFLOW 16
++#define FE_ALL_EXCEPT \
++  (FE_DIVBYZERO | FE_INEXACT | FE_INVALID | FE_OVERFLOW | FE_UNDERFLOW)
++
++#define FE_DOWNWARD 1
++#define FE_TONEAREST 2
++#define FE_TOWARDZERO 3
++#define FE_UPWARD 4
++
++int feclearexcept(int);
++int fegetexceptflag(fexcept_t *, int);
++int feraiseexcept(int);
++int fesetexceptflag(const fexcept_t *, int);
++int fetestexcept(int);
++int fegetround(void);
++int fesetround(int);
++int fegetenv(fenv_t *);
++int feholdexcept(fenv_t *);
++int fesetenv(const fenv_t *);
++int feupdateenv(const fenv_t *);
++
++#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_FENV_H_
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/limits.h ./newlib/libc/sys/enclave/include/limits.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/limits.h
 +++ ./newlib/libc/sys/enclave/include/limits.h
