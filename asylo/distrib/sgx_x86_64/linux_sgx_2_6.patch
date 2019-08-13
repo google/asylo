@@ -4371,7 +4371,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,256 @@
+@@ -0,0 +1,317 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -4421,25 +4421,71 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        **kwargs
 +    )
 +
++def _validate_kss_attribute(attribute, attribute_name, kss):
++    "Validates a 16-byte hex-encoded KSS attribute."
++    if attribute == "":
++        return
++
++    if not attribute.startswith("0x"):
++        fail("Value must start with 0x", attribute_name)
++
++    ascii_hex = "0123456789abcdefABCDEF"
++    for i in range(2, len(attribute)):
++        if attribute[i] not in ascii_hex:
++            fail("Value must be a hex-encoded value", attribute_name)
++
++    # Max length of 32 hex characters with '0x' prefix.
++    if len(attribute) > 34:
++        fail("Hex-encoded value cannot exceed 16 bytes", attribute_name)
++
++    if attribute != "" and not kss:
++        fail("Must enable KSS to set {} attribute".format(attribute_name.upper()), attribute_name)
++
++def _kss_attribute_xml_tag(attribute, attribute_name_upper):
++    "Creates a valid or empty XML tag for a valid or empty KSS attribute."
++    if attribute == "":
++        return attribute
++
++    padding_size = 34 - len(attribute)
++    attribute = "0" * padding_size + attribute[2:]
++
++    return "\n".join([
++        "  <{}_L>0x{}</{}_L>".format(attribute_name_upper, attribute[16:], attribute_name_upper),
++        "  <{}_H>0x{}</{}_H>".format(attribute_name_upper, attribute[0:16], attribute_name_upper),
++    ])
++
 +def _sgx_enclave_configuration(ctx):
 +    """Implementation of enclave signing configuration file formatting."""
 +    xml_file = ctx.actions.declare_file(ctx.label.name + ".xml")
++
++    _validate_kss_attribute(ctx.attr.isvfamilyid, "isvfamilyid", ctx.attr.kss)
++    _validate_kss_attribute(ctx.attr.isvextprodid, "isvextprodid", ctx.attr.kss)
++
++    content = "\n".join([
++        "<EnclaveConfiguration>",
++        "  <ProdID>%s</ProdID>" % ctx.attr.prodid,
++        "  <ISVSVN>%s</ISVSVN>" % ctx.attr.isvsvn,
++        "  <StackMaxSize>%s</StackMaxSize>" % ctx.attr.stack_max_size,
++        "  <HeapMaxSize>%s</HeapMaxSize>" % ctx.attr.heap_max_size,
++        "  <TCSNum>%s</TCSNum>" % ctx.attr.tcs_num,
++        "  <TCSPolicy>%s</TCSPolicy>" % ctx.attr.tcs_policy,
++        "  <DisableDebug>%s</DisableDebug>" % ctx.attr.disable_debug,
++        "  <ProvisionKey>%s</ProvisionKey>" % ctx.attr.provision_key,
++        "  <EnableKSS>%s</EnableKSS>" % ("1" if ctx.attr.kss else "0"),
++        _kss_attribute_xml_tag(ctx.attr.isvfamilyid, "ISVFAMILYID"),
++        _kss_attribute_xml_tag(ctx.attr.isvextprodid, "ISVEXTPRODID"),
++        "  <MiscSelect>%s</MiscSelect>" % ctx.attr.misc_select,
++        "  <MiscMask>%s</MiscMask>" % ctx.attr.misc_mask,
++        "</EnclaveConfiguration>\n\n",
++    ])
++
++    # Strip any empty lines created by optional attributes that do not have
++    # default values.
++    content = [line for line in content.split("\n") if line.strip() != ""]
++
 +    ctx.actions.write(
 +        output = xml_file,
-+        content = "\n".join([
-+            "<EnclaveConfiguration>",
-+            "  <ProdID>%s</ProdID>" % ctx.attr.prodid,
-+            "  <ISVSVN>%s</ISVSVN>" % ctx.attr.isvsvn,
-+            "  <StackMaxSize>%s</StackMaxSize>" % ctx.attr.stack_max_size,
-+            "  <HeapMaxSize>%s</HeapMaxSize>" % ctx.attr.heap_max_size,
-+            "  <TCSNum>%s</TCSNum>" % ctx.attr.tcs_num,
-+            "  <TCSPolicy>%s</TCSPolicy>" % ctx.attr.tcs_policy,
-+            "  <DisableDebug>%s</DisableDebug>" % ctx.attr.disable_debug,
-+            "  <ProvisionKey>%s</ProvisionKey>" % ctx.attr.provision_key,
-+            "  <MiscSelect>%s</MiscSelect>" % ctx.attr.misc_select,
-+            "  <MiscMask>%s</MiscMask>" % ctx.attr.misc_mask,
-+            "</EnclaveConfiguration>\n\n",
-+        ]),
++        content = "\n".join(content),
 +    )
 +    return [DefaultInfo(files = depset([xml_file])), SGXEnclaveConfigInfo()]
 +
@@ -4479,6 +4525,21 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +            default = "0",
 +            doc = ("Indicates whether the enclave has access to the " +
 +                   "Provisioning Key and the Provisioning Seal Key"),
++        ),
++        "kss": attr.bool(
++            default = False,
++            doc = ("Indicates whether the enclave can use Key Sharing and " +
++                   "Separation (KSS)"),
++        ),
++        "isvextprodid": attr.string(
++            default = "",
++            doc = ("The enclave's 16-byte extended ISVPRODID value. It is an " +
++                   "error to set this attribute if 'kss' is set to False"),
++        ),
++        "isvfamilyid": attr.string(
++            default = "",
++            doc = ("The enclave's 16-byte extended ISV Family ID. It is an " +
++                   "error to set this attribute if 'kss' is set to False"),
 +        ),
 +        "stack_max_size": attr.string(
 +            default = "0x40000",
