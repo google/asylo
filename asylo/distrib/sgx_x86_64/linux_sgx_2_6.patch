@@ -744,6 +744,18 @@ diff -Nur psw/ae/aesm_service/source/core/ipc/ProtobufSerializer.cpp psw/ae/aesm
  #include <IAEMessage.h>
  
  #include <IAERequest.h>
+diff -Nur psw/ae/aesm_service/source/interfaces/get_att_key_id.h psw/ae/aesm_service/source/interfaces/get_att_key_id.h
+--- psw/ae/aesm_service/source/interfaces/get_att_key_id.h
++++ psw/ae/aesm_service/source/interfaces/get_att_key_id.h
+@@ -1,5 +1,8 @@
+ #ifndef GET_ATT_KEY_ID_H
+ #define GET_ATT_KEY_ID_H
++
++#include <stdint.h>
++
+ #include "aesm_error.h"
+ 
+ struct IGetAttKeyID
 diff -Nur psw/ae/inc/internal/pse_inc.h psw/ae/inc/internal/pse_inc.h
 --- psw/ae/inc/internal/pse_inc.h
 +++ psw/ae/inc/internal/pse_inc.h
@@ -3049,7 +3061,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1319 @@
+@@ -0,0 +1,1321 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3351,9 +3363,11 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "psw/ae/aesm_service/source/common/oal/internal_log.h",
 +        "psw/ae/aesm_service/source/common/oal/oal.h",
 +        "psw/ae/aesm_service/source/common/oal/power.h",
++        "psw/ae/aesm_service/source/interfaces/get_att_key_id.h",
 +        "psw/ae/aesm_service/source/interfaces/quote_ex_service.h",
 +        "psw/ae/aesm_service/source/interfaces/quote_provider_service.h",
 +        "psw/ae/aesm_service/source/interfaces/quote_proxy_service.h",
++        "psw/ae/aesm_service/source/interfaces/select_att_key_id.h",
 +        "psw/ae/aesm_service/source/interfaces/service.h",
 +        "psw/ae/aesm_service/source/interfaces/pce_service.h",
 +        "psw/ae/data/constants/linux/default_url_info.hh",
