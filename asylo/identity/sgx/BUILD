@@ -1040,6 +1040,46 @@ cc_test(
 )
 
 cc_library(
+    name = "tcb_container_util",
+    srcs = ["tcb_container_util.cc"],
+    hdrs = ["tcb_container_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":platform_provisioning_cc_proto",
+        ":tcb_cc_proto",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:status",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+sgx_enclave_configuration(
+    name = "tcb_container_util_enclave_test_config",
+    heap_max_size = "0x1000000",
+)
+
+cc_test(
+    name = "tcb_container_util_test",
+    srcs = ["tcb_container_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_config = ":tcb_container_util_enclave_test_config",
+    enclave_test_name = "tcb_container_util_enclave_test",
+    deps = [
+        ":hardware_types",
+        ":platform_provisioning",
+        ":platform_provisioning_cc_proto",
+        ":tcb",
+        ":tcb_cc_proto",
+        ":tcb_container_util",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/random",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "tcb_info_from_json",
     srcs = ["tcb_info_from_json.cc"],
     hdrs = ["tcb_info_from_json.h"],
