@@ -64,6 +64,11 @@ message EnclaveIdentity {
   // Bytes containing the identity. The interpretation of these bytes is up to
   // the authorization authority that handles identities matching `description`.
   optional bytes identity = 2;
+
+  // The version of the `EnclaveIdentity`. This field can be used as a means of
+  // distinguishing between different `identity` serializations, even when the
+  // underlying identity `description` is identical.
+  optional string version = 3;
 }
 
 // A collection of enclave identities held by an entity.
