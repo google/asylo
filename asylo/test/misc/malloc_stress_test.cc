@@ -24,6 +24,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/binary_search.h"
 
 namespace asylo {
@@ -31,7 +32,7 @@ namespace {
 
 constexpr size_t kNumThreads = 5;
 constexpr size_t kAllocations = 100;
-constexpr size_t kAllocationSize = 10000;
+constexpr size_t kAllocationSize = 100;
 
 // Return the largest malloc which succeeds, using binary search
 size_t LargestSuccessfulMalloc() {
@@ -47,14 +48,16 @@ size_t LargestSuccessfulMalloc() {
 }
 
 void *MallocStress(void *) {
-  void *mem[kAllocations];
+  void **mem = (void **)malloc(sizeof(void *) * kAllocations);
+  EXPECT_NE(mem, nullptr);
   for (int i = 0; i < kAllocations; ++i) {
     mem[i] = malloc(kAllocationSize);
+    EXPECT_NE(mem[i], nullptr);
   }
   for (int i = 0; i < kAllocations; ++i) {
     free(mem[i]);
   }
-
+  free(mem);
   return nullptr;
 }
 
@@ -66,11 +69,27 @@ void LogBadAlloc(const std::bad_alloc &e, void *brk_start) {
              << LargestSuccessfulMalloc() << " bytes";
 }
 
+ssize_t GetMaxHeapSize() {
+  struct EnclaveMemoryLayout memory_layout;
+  enc_get_memory_layout(&memory_layout);
+  return memory_layout.heap_size;
+}
+
 // Creates kNumThreads that run |MallocStress| and waits for all threads to
 // join.
 TEST(MallocTest, EnclaveMalloc) {
+  ssize_t ask = kNumThreads * kAllocations * kAllocationSize;
+  ssize_t max_heap = GetMaxHeapSize();
+  ssize_t largest_malloc = LargestSuccessfulMalloc();
   LOG(INFO) << "Largest malloc that succeeds at test start is: "
-            << LargestSuccessfulMalloc() << " bytes";
+            << largest_malloc << " bytes\n"
+            << "Total memory ask of this test is: " << ask << " bytes\n"
+            << "Max heap size for this enclave is: " << max_heap << " bytes\n";
+  ASSERT_LE(ask, max_heap)
+      << "This test will use more memory than is available.\n"
+      << "Asked for: " << ask << " bytes, has max heap size of: " << max_heap
+      << " bytes.";
+
   pthread_t threads[kNumThreads];
   // Keep track of the break pointer at the start of the malloc stress test.
   // This can be used to calculate total allocated heap memory.
