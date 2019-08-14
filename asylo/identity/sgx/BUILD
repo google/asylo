@@ -55,6 +55,22 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "sgx_identity_proto",
+    srcs = ["sgx_identity.proto"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":code_identity_proto",
+        ":platform_provisioning_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "sgx_identity_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":sgx_identity_proto"],
+)
+
+proto_library(
     name = "platform_provisioning_proto",
     srcs = ["platform_provisioning.proto"],
     visibility = ["//asylo:implementation"],
