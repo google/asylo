@@ -67,6 +67,18 @@ message Fmspc {
   optional bytes value = 1;
 }
 
+// The possible values for an SGXType extension in a PCK certificate.
+//
+// WARNING: The tag numbers do NOT correspond to the ASN.1 ENUMERATED integer
+// values in PCK certificates.
+enum SgxType {
+  // SGX_TYPE_UNKNOWN does not represent a value possible in a PCK certificate.
+  // It exists so that the default value for an SgxType cannot be confused for a
+  // real SGXType.
+  SGX_TYPE_UNKNOWN = 0;
+  STANDARD = 1001;
+}
+
 // An SGX REPORT structure. REPORT is a CPU-generated attestation of an
 // enclave's code identity. It is an output of the ENCLU[EREPORT] instruction.
 message ReportProto {
