@@ -10318,7 +10318,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
-@@ -0,0 +1,86 @@
+@@ -0,0 +1,89 @@
 +#ifndef _SYS__PTHREADTYPES_H
 +#define _SYS__PTHREADTYPES_H
 +
@@ -10352,6 +10352,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +  pthread_spinlock_t _lock;
 +  pthread_t _owner;
 +  __pthread_list_t _queue;
++  uint32_t* _untrusted_futex;
 +} pthread_mutex_t;
 +
 +#define PTHREAD_T_NULL ((pthread_t)(NULL))
@@ -10360,15 +10361,17 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 +#define PTHREAD_SPINLOCK_INITIALIZER 0x00
 +#define PTHREAD_MUTEX_NONRECURSIVE 0x01
 +#define PTHREAD_MUTEX_RECURSIVE 0x02
++#define PTHREAD_FUTEX_INITIALIZER ((uint32_t *)(NULL))
 +#define PTHREAD_MUTEX_NONRECURSIVE_INITIALIZER                   \
 +  {                                                              \
 +    0, PTHREAD_MUTEX_NONRECURSIVE, PTHREAD_SPINLOCK_INITIALIZER, \
-+        PTHREAD_T_NULL, PTHREAD_LIST_INITIALIZER                 \
++        PTHREAD_T_NULL, PTHREAD_LIST_INITIALIZER, \
++        PTHREAD_FUTEX_INITIALIZER                 \
 +  }
 +#define PTHREAD_MUTEX_RECURSIVE_INITIALIZER                                \
 +  {                                                                           \
 +    0, PTHREAD_MUTEX_RECURSIVE, PTHREAD_SPINLOCK_INITIALIZER, PTHREAD_T_NULL, \
-+        PTHREAD_LIST_INITIALIZER                                              \
++        PTHREAD_LIST_INITIALIZER, PTHREAD_FUTEX_INITIALIZER                   \
 +  }
 +#define PTHREAD_MUTEX_INITIALIZER PTHREAD_MUTEX_NONRECURSIVE_INITIALIZER
 +
