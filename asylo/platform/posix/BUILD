@@ -80,6 +80,7 @@ cc_library(
         "ioctl.cc",
         "malloc_lock.cc",
         "mman.cc",
+        "nl_types.cc",
         "poll.cc",
         "pthread.cc",
         "pwd.cc",
