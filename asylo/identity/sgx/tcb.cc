@@ -27,6 +27,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
+#include "asylo/identity/sgx/tcb_container_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -216,12 +217,11 @@ Status ValidateTcbInfoImplV1(const TcbInfoImpl &tcb_info_impl) {
   ASYLO_RETURN_IF_ERROR(ValidateFmspc(tcb_info_impl.fmspc()));
   ASYLO_RETURN_IF_ERROR(ValidatePceId(tcb_info_impl.pce_id()));
 
-  absl::flat_hash_map<std::string, TcbStatus> tcb_to_status_map;
+  absl::flat_hash_map<Tcb, TcbStatus, TcbHash, TcbEqual> tcb_to_status_map;
   for (const TcbLevel &tcb_level : tcb_info_impl.tcb_levels()) {
     ASYLO_RETURN_IF_ERROR(ValidateTcbLevel(tcb_level));
-    std::string map_key = absl::StrCat(tcb_level.tcb().components(),
-                                       tcb_level.tcb().pce_svn().value());
-    auto insert_pair = tcb_to_status_map.insert({map_key, tcb_level.status()});
+    auto insert_pair =
+        tcb_to_status_map.insert({tcb_level.tcb(), tcb_level.status()});
     if (!insert_pair.second &&
         !google::protobuf::util::MessageDifferencer::Equals(tcb_level.status(),
                                                   insert_pair.first->second)) {

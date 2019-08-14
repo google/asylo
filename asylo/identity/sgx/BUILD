@@ -1052,6 +1052,7 @@ cc_library(
     deps = [
         ":platform_provisioning",
         ":tcb_cc_proto",
+        ":tcb_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
@@ -1132,6 +1133,7 @@ cc_library(
         ":platform_provisioning_cc_proto",
         ":tcb",
         ":tcb_cc_proto",
+        ":tcb_container_util",
         "//asylo/util:logging",
         "//asylo/util:proto_struct_util",
         "//asylo/util:status",

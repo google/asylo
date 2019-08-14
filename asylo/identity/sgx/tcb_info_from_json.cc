@@ -45,6 +45,7 @@
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/tcb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
+#include "asylo/identity/sgx/tcb_container_util.h"
 #include "asylo/util/proto_struct_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -302,14 +303,13 @@ StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
   const google::protobuf::ListValue *tcb_levels_array;
   ASYLO_ASSIGN_OR_RETURN(tcb_levels_array, JsonGetArray(tcb_levels_json));
 
-  absl::flat_hash_map<std::string, TcbStatus> tcb_to_status_map;
+  absl::flat_hash_map<Tcb, TcbStatus, TcbHash, TcbEqual> tcb_to_status_map;
   google::protobuf::RepeatedPtrField<TcbLevel> tcb_levels;
   for (const auto &tcb_level_json : tcb_levels_array->values()) {
     TcbLevel tcb_level;
     ASYLO_ASSIGN_OR_RETURN(tcb_level, TcbLevelFromJson(tcb_level_json));
-    std::string map_key = absl::StrCat(tcb_level.tcb().components(),
-                                       tcb_level.tcb().pce_svn().value());
-    auto insert_pair = tcb_to_status_map.insert({map_key, tcb_level.status()});
+    auto insert_pair =
+        tcb_to_status_map.insert({tcb_level.tcb(), tcb_level.status()});
     if (!insert_pair.second) {
       if (!google::protobuf::util::MessageDifferencer::Equals(insert_pair.first->second,
                                                     tcb_level.status())) {
