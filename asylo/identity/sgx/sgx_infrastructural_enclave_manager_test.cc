@@ -20,18 +20,23 @@
 
 #include <memory>
 #include <utility>
+#include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/enclave.pb.h"
+#include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/mock_intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/test/util/mock_enclave_client.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -53,6 +58,8 @@ constexpr uint16_t kPceSvn = 7;
 constexpr SignatureScheme kPckSignatureScheme = ECDSA_P256_SHA256;
 constexpr char kCpuSvn[] = "deadbeefdeadbeef";
 constexpr char kEncryptedPpid[] = "encrypted ppid";
+constexpr char kSecretCiphertext[] = "ciphertext";
+constexpr char kCertificate[] = "Certificate";
 constexpr char kEcdsaP256SignatureR[] =
     "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef";
 constexpr char kEcdsaP256SignatureS[] =
@@ -69,6 +76,8 @@ Glrb332S4+gfHYOTv5PJxLteIrWfyRstWxzuegpUcmrGSjgrMdjcuUOJjCnDJ2bW
 0r0UE9um8JQodJKpILtTpq1rV+QlseUPu90ZID3OTk5PSne6NtJe7bN+9WeJspQO
 C5xYNu944AfU3z0rnYRx0fEkiftBTiunrAioOA5jMQFHAgMBAAE=
 -----END PUBLIC KEY-----)";
+constexpr char kPceSignReportPayload[] = "pce sign report payload";
+constexpr char kCertificateSignRequestData[] = "csr data";
 
 sgx::Targetinfo PceTargetinfo() {
   return TrivialRandomObject<sgx::Targetinfo>();
@@ -93,6 +102,12 @@ sgx::CpuSvn CpuSvn() {
   return cpu_svn;
 }
 
+SealedSecret GetSealedSecret() {
+  SealedSecret sealed_secret;
+  sealed_secret.set_secret_ciphertext(kSecretCiphertext);
+  return sealed_secret;
+}
+
 std::string PckSignature() {
   std::string signature_hex;
   signature_hex += kEcdsaP256SignatureR;
@@ -108,6 +123,20 @@ Signature EcdsaSignature() {
   signature.mutable_ecdsa_signature()->set_s(
       absl::HexStringToBytes(kEcdsaP256SignatureS));
   return signature;
+}
+
+void SetCertificateSigningRequests(
+    google::protobuf::RepeatedPtrField<CertificateSigningRequest> *csrs) {
+  CertificateSigningRequest *csr = csrs->Add();
+  csr->set_format(CertificateSigningRequest::PKCS10_DER);
+  csr->set_data(kCertificateSignRequestData);
+}
+
+void SetCertificateChain(std::vector<CertificateChain> *certificate_chains) {
+  certificate_chains->emplace_back(CertificateChain::default_instance());
+  Certificate *certificate = certificate_chains->back().add_certificates();
+  certificate->set_format(Certificate::X509_DER);
+  certificate->set_data(kCertificate);
 }
 
 asylo::AsymmetricEncryptionKeyProto Ppidek() {
@@ -142,6 +171,165 @@ class SgxInfrastructuralEnclaveManagerTest : public ::testing::Test {
   std::unique_ptr<SgxInfrastructuralEnclaveManager>
       sgx_infrastructural_enclave_manager_;
 };
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGenerateKeyAndCsrSuccess) {
+  EnclaveOutput expected_enclave_output;
+  sgx::GenerateKeyAndCsrOutput *output =
+      expected_enclave_output
+          .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->mutable_generate_key_and_csr_output();
+  *output->mutable_report() = Report();
+  *output->mutable_pce_sign_report_payload() = kPceSignReportPayload;
+  google::protobuf::RepeatedPtrField<CertificateSigningRequest> *expected_csrs =
+      output->mutable_certificate_signing_requests();
+  SetCertificateSigningRequests(expected_csrs);
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
+                      Return(Status::OkStatus())));
+
+  sgx::TargetInfoProto pce_target_info;
+  std::vector<std::string> target_certificate_authorities;
+  sgx::ReportProto report;
+  std::string pce_sign_report_payload;
+  std::vector<CertificateSigningRequest> csrs;
+  ASYLO_ASSERT_OK(sgx_infrastructural_enclave_manager_->AgeGenerateKeyAndCsr(
+      pce_target_info, target_certificate_authorities, &report,
+      &pce_sign_report_payload, &csrs));
+  EXPECT_THAT(report, EqualsProto(output->report()));
+  EXPECT_THAT(pce_sign_report_payload, Eq(kPceSignReportPayload));
+  EXPECT_THAT(csrs[0], EqualsProto(expected_csrs->at(0)));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGenerateKeyAndCsrFailure) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(Status(error::GoogleError::INVALID_ARGUMENT,
+                              "Input is missing pce_target_info")));
+
+  sgx::TargetInfoProto pce_target_info;
+  std::vector<std::string> target_certificate_authorities;
+  sgx::ReportProto report;
+  std::string pce_sign_report_payload;
+  std::vector<CertificateSigningRequest> csrs;
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->AgeGenerateKeyAndCsr(
+                  pce_target_info, target_certificate_authorities, &report,
+                  &pce_sign_report_payload, &csrs),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "Input is missing pce_target_info"));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest,
+       AgeGeneratePceInfoSgxHardwareReportSuccess) {
+  EnclaveOutput expected_enclave_output;
+  sgx::ReportProto expected_report = Report();
+  *expected_enclave_output
+       .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+       ->mutable_generate_pce_info_sgx_hardware_report_output()
+       ->mutable_report() = expected_report;
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
+                      Return(Status::OkStatus())));
+
+  asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
+  sgx::TargetInfoProto pce_target_info;
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeGeneratePceInfoSgxHardwareReport(
+          pce_target_info, ppidek),
+      IsOkAndHolds(EqualsProto(expected_report)));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest,
+       AgeGeneratePceInfoSgxHardwareReportFailure) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(Status(error::GoogleError::INVALID_ARGUMENT,
+                              "Input is missing ppid_encryption_key")));
+
+  asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
+  sgx::TargetInfoProto pce_target_info;
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_
+                  ->AgeGeneratePceInfoSgxHardwareReport(pce_target_info, ppidek)
+                  .status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT,
+                       "Input is missing ppid_encryption_key"));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsSuccess) {
+  EnclaveOutput expected_enclave_output;
+  SealedSecret expected_sealed_secret = GetSealedSecret();
+  *expected_enclave_output
+       .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+       ->mutable_update_certs_output()
+       ->mutable_sealed_secret() = expected_sealed_secret;
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
+                      Return(Status::OkStatus())));
+
+  std::vector<CertificateChain> certificate_chains;
+  SetCertificateChain(&certificate_chains);
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeUpdateCerts(certificate_chains),
+      IsOkAndHolds(EqualsProto(expected_sealed_secret)));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsFailure) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(
+          Status(error::GoogleError::FAILED_PRECONDITION,
+                 "Cannot update certificates: no attestation key available")));
+
+  std::vector<CertificateChain> certificate_chains;
+  SetCertificateChain(&certificate_chains);
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeUpdateCerts(certificate_chains)
+          .status(),
+      StatusIs(error::GoogleError::FAILED_PRECONDITION,
+               "Cannot update certificates: no attestation key available"));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest,
+       AgeStartServerWithoutSecretSuccess) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(Status::OkStatus()));
+  ASYLO_ASSERT_OK(sgx_infrastructural_enclave_manager_->AgeStartServer());
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest,
+       AgeStartServerWithoutSecretFailure) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(
+          Status(error::GoogleError::ALREADY_EXISTS,
+                 "Cannot start remote assertion generator gRPC server: server "
+                 "already exists")));
+
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeStartServer(),
+      StatusIs(error::GoogleError::ALREADY_EXISTS,
+               "Cannot start remote assertion generator gRPC server: server "
+               "already exists"));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeStartServerWithSecretSuccess) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(Status::OkStatus()));
+
+  SealedSecret sealed_secret = GetSealedSecret();
+  ASYLO_ASSERT_OK(
+      sgx_infrastructural_enclave_manager_->AgeStartServer(sealed_secret));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeStartServerWithSecretFailure) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(
+          Status(error::GoogleError::ALREADY_EXISTS,
+                 "Cannot start remote assertion generator gRPC server: server "
+                 "already exists")));
+
+  SealedSecret sealed_secret = GetSealedSecret();
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeStartServer(),
+      StatusIs(error::GoogleError::ALREADY_EXISTS,
+               "Cannot start remote assertion generator gRPC server: server "
+               "already exists"));
+}
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoSuccess) {
   sgx::Targetinfo expected_targetinfo = PceTargetinfo();

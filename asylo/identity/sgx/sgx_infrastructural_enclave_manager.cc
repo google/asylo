@@ -22,14 +22,30 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/enclave.pb.h"
+#include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
+#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
+namespace {
+
+Status CheckEnclaveOutputExtension(EnclaveOutput output) {
+  if (!output.HasExtension(sgx::remote_assertion_generator_enclave_output)) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Enclave output invalid: did not contain remote assertion "
+                  "generator enclave output");
+  }
+  return Status::OkStatus();
+}
+
+}  // namespace
 
 SgxInfrastructuralEnclaveManager::SgxInfrastructuralEnclaveManager(
     std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface> intel_ae_interface,
-    const EnclaveClient *assertion_generator_enclave)
+    EnclaveClient *assertion_generator_enclave)
     : intel_ae_interface_(std::move(intel_ae_interface)),
       assertion_generator_enclave_(assertion_generator_enclave) {}
 
@@ -37,29 +53,92 @@ Status SgxInfrastructuralEnclaveManager::AgeGenerateKeyAndCsr(
     const sgx::TargetInfoProto &pce_target_info,
     const std::vector<std::string> &target_certificate_authorities,
     sgx::ReportProto *report, std::string *pce_sign_report_payload,
-    std::vector<asylo::CertificateSigningRequest> *csrs) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+    std::vector<CertificateSigningRequest> *csrs) {
+  EnclaveInput input;
+  sgx::GenerateKeyAndCsrInput *generate_key_and_csr_request_input =
+      input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
+          ->mutable_generate_key_and_csr_input();
+  *generate_key_and_csr_request_input->mutable_pce_target_info() =
+      pce_target_info;
+  *generate_key_and_csr_request_input
+       ->mutable_target_certificate_authorities() = {
+      target_certificate_authorities.begin(),
+      target_certificate_authorities.end()};
+
+  EnclaveOutput output;
+  ASYLO_RETURN_IF_ERROR(
+      assertion_generator_enclave_->EnterAndRun(input, &output));
+  ASYLO_RETURN_IF_ERROR(CheckEnclaveOutputExtension(output));
+  const sgx::GenerateKeyAndCsrOutput &generate_key_and_csr_output =
+      output.MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->generate_key_and_csr_output();
+  *report = generate_key_and_csr_output.report();
+  *pce_sign_report_payload =
+      generate_key_and_csr_output.pce_sign_report_payload();
+  *csrs = {generate_key_and_csr_output.certificate_signing_requests().begin(),
+           generate_key_and_csr_output.certificate_signing_requests().end()};
+  return Status::OkStatus();
 }
 
 StatusOr<sgx::ReportProto>
-SgxInfrastructuralEnclaveManager::AgeGeneratePceInfoHardwareReport(
+SgxInfrastructuralEnclaveManager::AgeGeneratePceInfoSgxHardwareReport(
     const sgx::TargetInfoProto &pce_target_info,
     const asylo::AsymmetricEncryptionKeyProto &ppid_encryption_key) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  EnclaveInput input;
+  sgx::GeneratePceInfoSgxHardwareReportInput
+      *generate_pce_info_sgx_hardware_report_input =
+          input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
+              ->mutable_generate_pce_info_sgx_hardware_report_input();
+  *generate_pce_info_sgx_hardware_report_input->mutable_pce_target_info() =
+      pce_target_info;
+  *generate_pce_info_sgx_hardware_report_input->mutable_ppid_encryption_key() =
+      ppid_encryption_key;
+
+  EnclaveOutput output;
+  ASYLO_RETURN_IF_ERROR(
+      assertion_generator_enclave_->EnterAndRun(input, &output));
+  ASYLO_RETURN_IF_ERROR(CheckEnclaveOutputExtension(output));
+  return output.GetExtension(sgx::remote_assertion_generator_enclave_output)
+      .generate_pce_info_sgx_hardware_report_output()
+      .report();
 }
 
 StatusOr<SealedSecret> SgxInfrastructuralEnclaveManager::AgeUpdateCerts(
     const std::vector<asylo::CertificateChain> &cert_chains) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  EnclaveInput input;
+  sgx::UpdateCertsInput *update_certs_input =
+      input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input();
+  *update_certs_input->mutable_certificate_chains() = {cert_chains.begin(),
+                                                       cert_chains.end()};
+  update_certs_input->set_output_sealed_secret(true);
+
+  EnclaveOutput output;
+  ASYLO_RETURN_IF_ERROR(
+      assertion_generator_enclave_->EnterAndRun(input, &output));
+  return output
+      .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+      ->update_certs_output()
+      .sealed_secret();
 }
 
 Status SgxInfrastructuralEnclaveManager::AgeStartServer() {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  EnclaveInput input;
+  *input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
+       ->mutable_start_server_request_input() =
+      sgx::StartServerRequestInput::default_instance();
+  EnclaveOutput output;
+  return assertion_generator_enclave_->EnterAndRun(input, &output);
 }
 
 Status SgxInfrastructuralEnclaveManager::AgeStartServer(
     const asylo::SealedSecret &secret) {
-  return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
+  EnclaveInput input;
+  *input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
+       ->mutable_start_server_request_input()
+       ->mutable_sealed_secret() = secret;
+  EnclaveOutput output;
+  return assertion_generator_enclave_->EnterAndRun(input, &output);
 }
 
 Status SgxInfrastructuralEnclaveManager::PceGetTargetInfo(

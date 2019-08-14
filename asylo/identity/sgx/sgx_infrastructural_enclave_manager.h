@@ -50,7 +50,7 @@ class SgxInfrastructuralEnclaveManager {
   SgxInfrastructuralEnclaveManager(
       std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface>
           intel_ae_interface,
-      const EnclaveClient *assertion_generator_enclave);
+      EnclaveClient *assertion_generator_enclave);
 
   /////////////////////////////////////////////
   //    Assertion Generator Enclave (AGE)    //
@@ -67,7 +67,7 @@ class SgxInfrastructuralEnclaveManager {
   // Requests the AGE to generate a hardware REPORT for the PCE's GetPceInfo
   // protocol. The REPORT is targeted at |pce_target_info| and is bound to
   // |ppid_encryption_key|.
-  StatusOr<sgx::ReportProto> AgeGeneratePceInfoHardwareReport(
+  StatusOr<sgx::ReportProto> AgeGeneratePceInfoSgxHardwareReport(
       const sgx::TargetInfoProto &pce_target_info,
       const asylo::AsymmetricEncryptionKeyProto &ppid_encryption_key);
 
@@ -118,7 +118,7 @@ class SgxInfrastructuralEnclaveManager {
   std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface> intel_ae_interface_;
 
   // Used to invoke operations on the Assertion Generator Enclave.
-  const EnclaveClient *assertion_generator_enclave_;
+  EnclaveClient *const assertion_generator_enclave_;
 };
 
 }  // namespace asylo
