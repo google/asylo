@@ -64,6 +64,9 @@ message LoggingConfig {
 // each backend supported by the Asylo primitive library. asylo::EnclaveLoader
 // is passed an instance of this message for loading enclaves in Asylo.
 message EnclaveLoaderConfig {
+  // Name of the enclave to be loaded.
+  optional string name = 1;
+
   // Allow user extensions.
   extensions 1000 to max;
 }

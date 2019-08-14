@@ -106,3 +106,17 @@ cc_library(
         "@linux_sgx//:public",
     ],
 )
+
+# Message definitions for SGX enclave loader.
+proto_library(
+    name = "loader_proto",
+    srcs = ["loader.proto"],
+    deps = [
+        "//asylo:enclave_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "loader_cc_proto",
+    deps = [":loader_proto"],
+)
