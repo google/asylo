@@ -1239,6 +1239,7 @@ cc_library(
     srcs = ["sgx_infrastructural_enclave_manager.cc"],
     hdrs = ["sgx_infrastructural_enclave_manager.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":intel_architectural_enclave_interface",
         ":pce_util",
@@ -1292,6 +1293,7 @@ cc_library(
         "sgx_infrastructural_enclave_manager.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":intel_architectural_enclave_interface",
         ":platform_provisioning_cc_proto",
