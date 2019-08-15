@@ -19,10 +19,32 @@
 #ifndef ASYLO_CRYPTO_CERTIFICATE_UTIL_H_
 #define ASYLO_CRYPTO_CERTIFICATE_UTIL_H_
 
+#include <functional>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "absl/container/flat_hash_map.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/certificate_interface.h"
 #include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
+
+// A map from a CertificateFormat to the factory function to use when creating
+// CertificateInterface objects.
+using CertificateFactoryMap = absl::flat_hash_map<
+    Certificate::CertificateFormat,
+    std::function<StatusOr<std::unique_ptr<CertificateInterface>>(
+        Certificate)>>;
+
+using CertificateInterfaceVector =
+    std::vector<std::unique_ptr<CertificateInterface>>;
+
+using CertificateInterfaceSpan =
+    absl::Span<const std::unique_ptr<CertificateInterface>>;
 
 // Validates a CertificateSigningRequest message. Returns an OK status if and
 // only if the message is valid.
@@ -53,6 +75,21 @@ Status ValidateCertificateChain(const CertificateChain &certificate_chain);
 // This function does NOT verify the contained CRL. It only checks that |crl|'s
 // |format| and |data| fields are set and its |format| is not UNKNOWN.
 Status ValidateCertificateRevocationList(const CertificateRevocationList &crl);
+
+// Parses |chain| and returns a CertificateInterfaceVector. Uses |factory_map|
+// to determine which CertificateInterface factory to use for each format.
+// Returns a non-OK Status if there were errors while parsing or if any format
+// was unknown.
+StatusOr<CertificateInterfaceVector> CreateCertificateChain(
+    const CertificateFactoryMap &factory_map, const CertificateChain &chain);
+
+// Checks if |certificate_chain| is a valid chain of certificates. The last
+// certificate must be self-signed. Checks signatures and, depending on whether
+// they are applicable for the format, checks the additional constraints set in
+// |verification_config|. Returns a non-OK Status if the certificate chain is
+// invalid, or if there were errors while verifying.
+Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
+                              const VerificationConfig &verification_config);
 
 }  // namespace asylo
 

@@ -236,7 +236,11 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":certificate_cc_proto",
+        ":certificate_interface",
         "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
     ],
 )
 
@@ -247,88 +251,60 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":certificate_cc_proto",
+        ":certificate_interface",
         ":certificate_util",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:status",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-# Library of utilities for certificate chains.
-cc_library(
-    name = "certificate_chain_util",
-    srcs = ["certificate_chain_util.cc"],
-    hdrs = ["certificate_chain_util.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":certificate_cc_proto",
-        ":certificate_util_interface",
-        "//asylo/util:status",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-# Test for certificate chain util.
-cc_test(
-    name = "certificate_chain_util_test",
-    srcs = ["certificate_chain_util_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":certificate_cc_proto",
-        ":certificate_chain_util",
-        ":certificate_util_interface",
-        "//asylo/crypto/util:byte_container_view",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
     ],
 )
 
 # Interface for performing operations on certificates.
 cc_library(
-    name = "certificate_util_interface",
-    hdrs = ["certificate_util_interface.h"],
+    name = "certificate_interface",
+    hdrs = ["certificate_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":certificate_cc_proto",
-        "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 
-# X.509 certificate util.
+# X.509 certificate wrapper.
 cc_library(
-    name = "x509_certificate_util",
-    srcs = ["x509_certificate_util.cc"],
-    hdrs = ["x509_certificate_util.h"],
+    name = "x509_certificate",
+    srcs = ["x509_certificate.cc"],
+    hdrs = ["x509_certificate.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":certificate_cc_proto",
-        ":certificate_util_interface",
+        ":certificate_interface",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 
-# Tests for X.509 certificate util.
+# Tests for X.509 certificate wrapper.
 cc_test(
-    name = "x509_certificate_util_test",
-    srcs = ["x509_certificate_util_test.cc"],
+    name = "x509_certificate_test",
+    srcs = ["x509_certificate_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":certificate_cc_proto",
-        ":x509_certificate_util",
+        ":certificate_interface",
+        ":x509_certificate",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "asylo/crypto/x509_certificate_util.h"
+#include "asylo/crypto/x509_certificate.h"
 
 #include <openssl/base.h>
 #include <openssl/bio.h>
@@ -25,19 +25,26 @@
 #include <openssl/obj.h>
 #include <openssl/pem.h>
 #include <openssl/x509.h>
+#include <openssl/x509v3.h>
 
 #include <cstdint>
+#include <limits>
+#include <string>
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/logging.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace {
+
+constexpr int kX509Version3 = 2;
 
 // Creates a public key object using the signature algorithm in |certificate|
 // and the public key data in |public_key_der|. Returns a non-OK Status if the
@@ -102,7 +109,9 @@ StatusOr<std::string> EvpPkeyToDer(const EVP_PKEY &evp_key) {
 
 }  // namespace
 
-StatusOr<bssl::UniquePtr<X509>> X509CertificateUtil::CertificateToX509(
+X509Certificate::X509Certificate() : x509_(CHECK_NOTNULL(X509_new())) {}
+
+StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(
     const Certificate &certificate) {
   bssl::UniquePtr<BIO> cert_bio(
       BIO_new_mem_buf(certificate.data().data(), certificate.data().size()));
@@ -126,13 +135,13 @@ StatusOr<bssl::UniquePtr<X509>> X509CertificateUtil::CertificateToX509(
   if (x509 == nullptr) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
-  return std::move(x509);
+  return absl::WrapUnique<X509Certificate>(
+      new X509Certificate(std::move(x509)));
 }
 
-StatusOr<Certificate> X509CertificateUtil::X509ToPemCertificate(
-    const X509 &x509) {
+StatusOr<Certificate> X509Certificate::ToPemCertificate() const {
   bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
-  if (!PEM_write_bio_X509(bio.get(), const_cast<X509 *>(&x509))) {
+  if (!PEM_write_bio_X509(bio.get(), x509_.get())) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   char *data;
@@ -147,8 +156,7 @@ StatusOr<Certificate> X509CertificateUtil::X509ToPemCertificate(
   return cert;
 }
 
-StatusOr<bssl::UniquePtr<X509_REQ>>
-X509CertificateUtil::CertificateSigningRequestToX509Req(
+StatusOr<bssl::UniquePtr<X509_REQ>> CertificateSigningRequestToX509Req(
     const CertificateSigningRequest &csr) {
   bssl::UniquePtr<BIO> csr_bio(
       BIO_new_mem_buf(csr.data().data(), csr.data().size()));
@@ -176,8 +184,7 @@ X509CertificateUtil::CertificateSigningRequestToX509Req(
   return std::move(req);
 }
 
-StatusOr<CertificateSigningRequest>
-X509CertificateUtil::X509ReqToDerCertificateSigningRequest(
+StatusOr<CertificateSigningRequest> X509ReqToDerCertificateSigningRequest(
     const X509_REQ &x509_req) {
   bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
   if (i2d_X509_REQ_bio(x509_bio.get(), const_cast<X509_REQ *>(&x509_req)) !=
@@ -197,7 +204,7 @@ X509CertificateUtil::X509ReqToDerCertificateSigningRequest(
   return csr;
 }
 
-StatusOr<std::string> X509CertificateUtil::ExtractSubjectKeyDer(
+StatusOr<std::string> ExtractPkcs10SubjectKeyDer(
     const CertificateSigningRequest &csr) {
   bssl::UniquePtr<X509_REQ> x509_req;
   ASYLO_ASSIGN_OR_RETURN(x509_req, CertificateSigningRequestToX509Req(csr));
@@ -210,33 +217,102 @@ StatusOr<std::string> X509CertificateUtil::ExtractSubjectKeyDer(
   return EvpPkeyToDer(*public_key);
 }
 
-Status X509CertificateUtil::VerifyCertificate(
-    const Certificate &certificate, ByteContainerView public_key_der) const {
-  bssl::UniquePtr<X509> x509;
-  ASYLO_ASSIGN_OR_RETURN(x509, CertificateToX509(certificate));
-
+Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
+                               const VerificationConfig &config) const {
+  std::string issuer_public_key_der;
+  ASYLO_ASSIGN_OR_RETURN(issuer_public_key_der,
+                         issuer_certificate.SubjectKeyDer());
   bssl::UniquePtr<EVP_PKEY> public_key;
   ASYLO_ASSIGN_OR_RETURN(public_key,
-                         CreatePublicKey(x509.get(), public_key_der));
+                         CreatePublicKey(x509_.get(), issuer_public_key_der));
 
-  if (X509_verify(x509.get(), public_key.get()) != 1) {
+  int verify_result = X509_verify(x509_.get(), public_key.get());
+  if (verify_result == -1) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  } else if (verify_result == 0) {
+    return Status(error::GoogleError::UNAUTHENTICATED,
+                  "Signature check failed");
+  }
+
+  if (config.issuer_ca) {
+    absl::optional<bool> issuer_is_ca = issuer_certificate.IsCa();
+    if (issuer_is_ca.has_value() && !issuer_is_ca.value()) {
+      return Status(error::GoogleError::UNAUTHENTICATED,
+                    "Issuer had a CA extension value of false");
+    }
+  }
+
+  if (config.issuer_key_usage) {
+    absl::optional<KeyUsageInformation> key_usage =
+        issuer_certificate.KeyUsage();
+    if (key_usage.has_value() && !key_usage.value().certificate_signing) {
+      return Status(
+          error::GoogleError::UNAUTHENTICATED,
+          "Issuer's key usage extension did not include certificate signing");
+    }
   }
 
   return Status::OkStatus();
 }
 
-StatusOr<std::string> X509CertificateUtil::ExtractSubjectKeyDer(
-    const Certificate &certificate) const {
-  bssl::UniquePtr<X509> x509;
-  ASYLO_ASSIGN_OR_RETURN(x509, CertificateToX509(certificate));
-
-  bssl::UniquePtr<EVP_PKEY> evp_key(X509_get_pubkey(x509.get()));
+StatusOr<std::string> X509Certificate::SubjectKeyDer() const {
+  bssl::UniquePtr<EVP_PKEY> evp_key(X509_get_pubkey(x509_.get()));
   if (evp_key == nullptr) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
 
   return EvpPkeyToDer(*evp_key);
 }
+
+absl::optional<bool> X509Certificate::IsCa() const {
+  // Version 3 of X.509 introduces standard extensions.
+  if (X509_get_version(x509_.get()) != kX509Version3) {
+    return absl::nullopt;
+  }
+  return X509_check_ca(x509_.get()) != 0;
+}
+
+absl::optional<int64_t> X509Certificate::CertPathLength() const {
+  // Code is copied from implementation of X509_get_pathlen. X509_check_purpose
+  // is used to recalculate and populate the extension flags. EXFLAG_BCONS
+  // is set in the extension flags if the certificate contains a basic
+  // constraints extension, which includes the maximum allowed pathlength.
+  if (X509_check_purpose(x509_.get(), /*id=*/-1, /*ca=*/-1) != 1 ||
+      (x509_->ex_flags & EXFLAG_BCONS) == 0) {
+    return absl::nullopt;
+  }
+
+  long pathlength = x509_->ex_pathlen;
+
+  if (pathlength > std::numeric_limits<int64_t>::max() ||
+      pathlength < std::numeric_limits<int64_t>::min()) {
+    LOG(ERROR) << "Pathlength is outside of the return value's limits: "
+               << pathlength;
+    return absl::nullopt;
+  }
+
+  // If pathlength is -1, the extension value is not present
+  // (https://www.openssl.org/docs/man1.1.0/man3/X509_get_pathlen.html)
+  if (pathlength == -1) {
+    return absl::nullopt;
+  }
+
+  return pathlength;
+}
+
+absl::optional<KeyUsageInformation> X509Certificate::KeyUsage() const {
+  uint32_t key_usage_values = X509_get_key_usage(x509_.get());
+  if (key_usage_values == std::numeric_limits<uint32_t>::max()) {
+    return absl::nullopt;
+  }
+  KeyUsageInformation key_usage;
+  key_usage.certificate_signing = key_usage_values & KU_KEY_CERT_SIGN;
+  key_usage.crl_signing = key_usage_values & KU_CRL_SIGN;
+  key_usage.digital_signature = key_usage_values & KU_DIGITAL_SIGNATURE;
+  return key_usage;
+}
+
+X509Certificate::X509Certificate(bssl::UniquePtr<X509> x509)
+    : x509_(std::move(x509)) {}
 
 }  // namespace asylo

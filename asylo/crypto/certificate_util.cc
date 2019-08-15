@@ -18,6 +18,10 @@
 
 #include "asylo/crypto/certificate_util.h"
 
+#include <cstdint>
+#include <utility>
+
+#include "absl/types/optional.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -78,6 +82,81 @@ Status ValidateCertificateRevocationList(const CertificateRevocationList &crl) {
   if (crl.format() == asylo::CertificateRevocationList::UNKNOWN) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "CertificateRevocationList has an unknown format");
+  }
+
+  return Status::OkStatus();
+}
+
+StatusOr<CertificateInterfaceVector> CreateCertificateChain(
+    const CertificateFactoryMap &factory_map, const CertificateChain &chain) {
+  CertificateInterfaceVector certificate_interface_chain;
+  certificate_interface_chain.reserve(chain.certificates_size());
+  for (int i = 0; i < chain.certificates_size(); i++) {
+    const Certificate &cert = chain.certificates(i);
+    auto factory_iter = factory_map.find(cert.format());
+    if (factory_iter == factory_map.end()) {
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("At index ", i,
+                       " no mapping from format to factory for format ",
+                       Certificate_CertificateFormat_Name(cert.format())));
+    }
+    auto certificate_result = (factory_iter->second)(cert);
+    if (!certificate_result.ok()) {
+      return certificate_result.status().WithPrependedContext(
+          absl::StrCat("Failed to create certificate at index ", i));
+    }
+
+    certificate_interface_chain.push_back(
+        std::move(certificate_result).ValueOrDie());
+  }
+  return std::move(certificate_interface_chain);
+}
+
+Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
+                              const VerificationConfig &verification_config) {
+  if (certificate_chain.empty()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Certificate chain must include at least one certificate");
+  }
+
+  // For each certificate in the chain (except the root), verifies the
+  // certificate with the issuer certificate. In the certificate list, the
+  // issuer is the certificate next in the list after the certificate being
+  // verified.
+  int64_t ca_count = 0;
+  for (int i = 0; i < certificate_chain.size() - 1; i++) {
+    const CertificateInterface *subject = certificate_chain[i].get();
+    const CertificateInterface *issuer = certificate_chain[i + 1].get();
+    if (verification_config.max_pathlen) {
+      absl::optional<int64_t> max_pathlength = issuer->CertPathLength();
+      if (max_pathlength.has_value() && max_pathlength.value() < ca_count) {
+        return asylo::Status(
+            error::GoogleError::UNAUTHENTICATED,
+            absl::StrCat(
+                "Maximum pathlength of certificate at index ", i,
+                " exceeded. Maximum pathlength: ", max_pathlength.value(),
+                ", current pathlength: ", ca_count));
+      }
+    }
+    absl::optional<bool> issuer_is_ca = issuer->IsCa();
+    if (issuer_is_ca.value_or(true)) {
+      ca_count++;
+    }
+
+    Status status = subject->Verify(*issuer, verification_config);
+    if (!status.ok()) {
+      return status.WithPrependedContext(
+          absl::StrCat("Failed to verify certificate at index ", i));
+    }
+  }
+
+  const CertificateInterface *root = certificate_chain.rbegin()->get();
+
+  // Root certificate should be self-signed.
+  Status status = root->Verify(*root, verification_config);
+  if (!status.ok()) {
+    return status.WithPrependedContext("Failed to verify root certificate");
   }
 
   return Status::OkStatus();
