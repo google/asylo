@@ -138,6 +138,11 @@ void Status::RestoreFrom(const StatusProto &status_proto) {
   }
 }
 
+Status Status::WithPrependedContext(absl::string_view context) {
+  message_ = absl::StrCat(context, ": ", message_);
+  return *this;
+}
+
 bool Status::IsCanonical() const {
   return error_space_->SpaceName() == error::kCanonicalErrorSpaceName;
 }

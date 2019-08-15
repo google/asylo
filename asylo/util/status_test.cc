@@ -36,6 +36,10 @@ constexpr char kErrorMessage2[] = "Internal foobar error";
 
 constexpr char kBadErrorSpace[] = "Foo bar error space";
 
+constexpr char kContext[] = "At index 1";
+constexpr char kErrorMessage1WithPrependedContext[] =
+    "At index 1: Bad foo argument";
+
 TEST(StatusTest, OkSuccess) { EXPECT_TRUE(::asylo::Status::OkStatus().ok()); }
 
 TEST(StatusTest, OkFailure) {
@@ -348,6 +352,15 @@ TEST(StatusTest, IsNegativeTest) {
   // Verify correctness of Is() across error spaces.
   Status einval_status(error::PosixError::P_EINVAL, kErrorMessage1);
   EXPECT_FALSE(einval_status.Is(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(StatusTest, WithPrependedContextCorrect) {
+  Status status(error::GoogleError::INVALID_ARGUMENT, kErrorMessage1);
+  Status expected_status_with_context(error::GoogleError::INVALID_ARGUMENT,
+                                      kErrorMessage1WithPrependedContext);
+
+  EXPECT_EQ(status.WithPrependedContext(kContext),
+            expected_status_with_context);
 }
 
 TEST(StatusTest, StatusIsMatcher) {
