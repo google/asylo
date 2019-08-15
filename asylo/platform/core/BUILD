@@ -33,22 +33,31 @@ cc_library(
         "enclave_config_util.cc",
         "enclave_config_util.h",
         "enclave_manager.cc",
+        "generic_enclave_client.cc",
     ],
     hdrs = [
         "enclave_client.h",
         "enclave_manager.h",
+        "generic_enclave_client.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":entry_selectors",
         ":shared_name",
         ":shared_resource_manager",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/arch:fork_cc_proto",
+        "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:time_util",
+        "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "//asylo/util:status_macros",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
@@ -58,7 +67,7 @@ cc_library(
     ],
 )
 
-# Default implementation of EnclaveClient.
+# Enclave entry selectors.
 cc_library(
     name = "entry_selectors",
     hdrs = [
@@ -67,31 +76,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/primitives",
-    ],
-)
-
-# Default implementation of EnclaveClient.
-cc_library(
-    name = "generic_enclave_client",
-    srcs = [
-        "generic_enclave_client.cc",
-    ],
-    hdrs = [
-        "generic_enclave_client.h",
-    ],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":entry_selectors",
-        ":untrusted_core",
-        "//asylo:enclave_cc_proto",
-        "//asylo/platform/common:bridge_types",
-        "//asylo/platform/host_call:host_call_handlers_initializer",
-        "//asylo/platform/primitives",
-        "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/util:message_reader_writer",
-        "//asylo/util:status",
-        "//asylo/util:status_macros",
-        "@com_google_absl//absl/strings",
     ],
 )
 

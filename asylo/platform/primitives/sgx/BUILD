@@ -111,6 +111,7 @@ cc_library(
 proto_library(
     name = "loader_proto",
     srcs = ["loader.proto"],
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo:enclave_proto",
     ],
@@ -118,5 +119,6 @@ proto_library(
 
 cc_proto_library(
     name = "loader_cc_proto",
+    visibility = ["//visibility:public"],
     deps = [":loader_proto"],
 )
