@@ -54,7 +54,7 @@ sim_enclave(
         ":enclave_test_selectors",
         "//asylo/platform/host_call",
         "//asylo/platform/host_call:host_call_dispatcher",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/util:status_macros",
     ],
 )
@@ -71,7 +71,7 @@ sim_enclave(
         "//asylo/platform/host_call:host_call_dispatcher",
         "//asylo/platform/host_call:host_call_unmigrated",
         "//asylo/platform/system_call",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/util:status_macros",
     ],
 )
@@ -117,7 +117,7 @@ cc_library(
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/storage/utils:fd_closer",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "@com_google_absl//absl/flags:flag",

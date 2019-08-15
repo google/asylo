@@ -33,7 +33,7 @@ cc_library(
         ":host_call_dispatcher",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/system_call",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
     ],
 )
 
@@ -47,7 +47,7 @@ cc_library(
         ":host_call_dispatcher",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/system_call",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
     ],
 )
 

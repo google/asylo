@@ -141,7 +141,7 @@ cc_test(
 # both the auto-generated as well as manually written type definitions and
 # type conversion functions.
 cc_library(
-    name = "types",
+    name = "type_conversions",
     hdrs = [
         "types.h",
         "types_functions.h",

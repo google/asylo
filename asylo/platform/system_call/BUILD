@@ -133,7 +133,7 @@ cc_library(
         ":message",
         ":metadata",
         "//asylo/platform/primitives",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -180,7 +180,7 @@ cc_test(
         ":system_call",
         ":untrusted_invoke",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/system_call/type_conversions:types",
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/test/util:test_flags",
         "//asylo/test/util:test_main",
         "//asylo/util:status_macros",
