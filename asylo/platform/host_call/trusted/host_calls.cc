@@ -25,62 +25,67 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
-extern "C" {
-
-void init_host_calls() {
+template <class... Ts>
+int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
   if (!enc_is_syscall_dispatcher_set()) {
     enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
   }
+  return enc_untrusted_syscall(sysno, args...);
 }
 
+extern "C" {
+
 int enc_untrusted_access(const char *path_name, int mode) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_access, path_name,
-                               mode);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_access,
+                                             path_name, mode);
 }
 
 pid_t enc_untrusted_getpid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getpid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_getpid);
 }
 
 pid_t enc_untrusted_getppid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getppid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_getppid);
 }
 
 pid_t enc_untrusted_setsid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_setsid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_setsid);
 }
 
 uid_t enc_untrusted_getuid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getuid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_getuid);
 }
 
 gid_t enc_untrusted_getgid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getgid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_getgid);
 }
 
 uid_t enc_untrusted_geteuid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_geteuid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_geteuid);
 }
 
 gid_t enc_untrusted_getegid() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_getegid);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_getegid);
 }
 
 int enc_untrusted_kill(pid_t pid, int sig) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_kill, pid, sig);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_kill, pid,
+                                             sig);
 }
 
 int enc_untrusted_link(const char *oldpath, const char *newpath) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_link, oldpath, newpath);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_link,
+                                             oldpath, newpath);
 }
 
 off_t enc_untrusted_lseek(int fd, off_t offset, int whence) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_lseek, fd, offset,
-                               whence);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_lseek, fd,
+                                             offset, whence);
 }
 
 int enc_untrusted_mkdir(const char *pathname, mode_t mode) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_mkdir, pathname, mode);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_mkdir,
+                                             pathname, mode);
 }
 
 int enc_untrusted_open(const char *pathname, int flags, ...) {
@@ -96,49 +101,53 @@ int enc_untrusted_open(const char *pathname, int flags, ...) {
 
   int klinux_flags;
   TokLinuxFileStatusFlag(&flags, &klinux_flags);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_open, pathname,
-                               klinux_flags, mode);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_open,
+                                             pathname, klinux_flags, mode);
 }
 
 int enc_untrusted_unlink(const char *pathname) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_unlink, pathname);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_unlink,
+                                             pathname);
 }
 
 int enc_untrusted_rename(const char *oldpath, const char *newpath) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_rename, oldpath,
-                               newpath);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_rename,
+                                             oldpath, newpath);
 }
 
 ssize_t enc_untrusted_read(int fd, void *buf, size_t count) {
-  return static_cast<ssize_t>(
-      enc_untrusted_syscall(asylo::system_call::kSYS_read, fd, buf, count));
+  return static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_read, fd, buf, count));
 }
 
 ssize_t enc_untrusted_write(int fd, const void *buf, size_t count) {
-  return static_cast<ssize_t>(
-      enc_untrusted_syscall(asylo::system_call::kSYS_write, fd, buf, count));
+  return static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_write, fd, buf, count));
 }
 
 int enc_untrusted_symlink(const char *target, const char *linkpath) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_symlink, target,
-                               linkpath);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_symlink,
+                                             target, linkpath);
 }
 
 ssize_t enc_untrusted_readlink(const char *pathname, char *buf, size_t bufsiz) {
-  return static_cast<ssize_t>(enc_untrusted_syscall(
+  return static_cast<ssize_t>(EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_readlink, pathname, buf, bufsiz));
 }
 
 int enc_untrusted_truncate(const char *path, off_t length) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_truncate, path, length);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_truncate,
+                                             path, length);
 }
 
 int enc_untrusted_ftruncate(int fd, off_t length) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_ftruncate, fd, length);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_ftruncate,
+                                             fd, length);
 }
 
 int enc_untrusted_rmdir(const char *path) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_rmdir, path);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_rmdir,
+                                             path);
 }
 
 int enc_untrusted_pipe2(int pipefd[2], int flags) {
@@ -149,8 +158,8 @@ int enc_untrusted_pipe2(int pipefd[2], int flags) {
 
   int kLinux_flags;
   TokLinuxFileStatusFlag(&flags, &kLinux_flags);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_pipe2, pipefd,
-                               kLinux_flags);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pipe2,
+                                             pipefd, kLinux_flags);
 }
 
 int enc_untrusted_socket(int domain, int type, int protocol) {
@@ -158,23 +167,25 @@ int enc_untrusted_socket(int domain, int type, int protocol) {
   int klinux_type;
   TokLinuxAfFamily(&domain, &klinux_domain);
   TokLinuxSocketType(&type, &klinux_type);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_socket, klinux_domain,
-                               klinux_type, protocol);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_socket, klinux_domain, klinux_type, protocol);
 }
 
 int enc_untrusted_listen(int sockfd, int backlog) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_listen, sockfd,
-                               backlog);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_listen,
+                                             sockfd, backlog);
 }
 
 int enc_untrusted_shutdown(int sockfd, int how) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_shutdown, sockfd, how);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_shutdown,
+                                             sockfd, how);
 }
 
 ssize_t enc_untrusted_send(int sockfd, const void *buf, size_t len, int flags) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_sendto, sockfd, buf,
-                               len, flags, /*dest_addr=*/nullptr,
-                               /*addrlen=*/0);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_sendto,
+                                             sockfd, buf, len, flags,
+                                             /*dest_addr=*/nullptr,
+                                             /*addrlen=*/0);
 }
 
 int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
@@ -198,18 +209,18 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
     case F_SETFL: {
       int klinux_arg;
       TokLinuxFileStatusFlag(&intarg, &klinux_arg);
-      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                   klinux_cmd, klinux_arg);
+      return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
+                                                 fd, klinux_cmd, klinux_arg);
     }
     case F_SETFD: {
       int klinux_arg;
       TokLinuxFDFlag(&intarg, &klinux_arg);
-      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                   klinux_cmd, klinux_arg);
+      return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
+                                                 fd, klinux_cmd, klinux_arg);
     }
     case F_GETFL: {
-      int retval = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                         klinux_cmd, arg);
+      int retval = EnsureInitializedAndDispatchSyscall(
+          asylo::system_call::kSYS_fcntl, fd, klinux_cmd, arg);
       if (retval != -1) {
         int result;
         FromkLinuxFileStatusFlag(&retval, &result);
@@ -219,8 +230,8 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
       return retval;
     }
     case F_GETFD: {
-      int retval = enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                         klinux_cmd, arg);
+      int retval = EnsureInitializedAndDispatchSyscall(
+          asylo::system_call::kSYS_fcntl, fd, klinux_cmd, arg);
       if (retval != -1) {
         int result;
         FromkLinuxFDFlag(&retval, &result);
@@ -230,8 +241,8 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
     }
     case F_GETPIPE_SZ:
     case F_SETPIPE_SZ: {
-      return enc_untrusted_syscall(asylo::system_call::kSYS_fcntl, fd,
-                                   klinux_cmd, arg);
+      return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
+                                                 fd, klinux_cmd, arg);
     }
     // We do not handle the case for F_DUPFD. It is expected to be handled at
     // a higher abstraction, as we need not exit the enclave for duplicating
@@ -244,80 +255,86 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
 }
 
 int enc_untrusted_chown(const char *pathname, uid_t owner, gid_t group) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_chown, pathname, owner,
-                               group);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_chown,
+                                             pathname, owner, group);
 }
 
 int enc_untrusted_fchown(int fd, uid_t owner, gid_t group) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_fchown, fd, owner,
-                               group);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fchown,
+                                             fd, owner, group);
 }
 
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
   int klinux_option_name;
   TokLinuxOptionName(&level, &optname, &klinux_option_name);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_setsockopt, sockfd,
-                               level, klinux_option_name, optval, optlen);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_setsockopt, sockfd, level, klinux_option_name,
+      optval, optlen);
 }
 
 int enc_untrusted_flock(int fd, int operation) {
   int klinux_operation;
   TokLinuxFLockOperation(&operation, &klinux_operation);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_flock, fd,
-                               klinux_operation);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_flock, fd,
+                                             klinux_operation);
 }
 
 int enc_untrusted_wait(int *wstatus) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_wait4, /*wpid=*/-1,
-                               wstatus, /*options=*/0, /*rusage=*/nullptr);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_wait4, /*wpid=*/-1, wstatus, /*options=*/0,
+      /*rusage=*/nullptr);
 }
 
 int enc_untrusted_inotify_init1(int flags) {
   int klinux_flags;
   TokLinuxInotifyFlag(&flags, &klinux_flags);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_init1,
-                               klinux_flags);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_inotify_init1, klinux_flags);
 }
 
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask) {
   int klinux_mask, input_mask = mask;
   TokLinuxInotifyEventMask(&input_mask, &klinux_mask);
-  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_add_watch, fd,
-                               pathname, klinux_mask);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_inotify_add_watch, fd, pathname, klinux_mask);
 }
 
 int enc_untrusted_inotify_rm_watch(int fd, int wd) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_inotify_rm_watch, fd,
-                               wd);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_inotify_rm_watch, fd, wd);
 }
 
 mode_t enc_untrusted_umask(mode_t mask) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_umask, mask);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_umask,
+                                             mask);
 }
 
 int enc_untrusted_chmod(const char *path_name, mode_t mode) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_chmod, path_name, mode);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_chmod,
+                                             path_name, mode);
 }
 
 int enc_untrusted_fchmod(int fd, mode_t mode) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_fchmod, fd, mode);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fchmod,
+                                             fd, mode);
 }
 
 int enc_untrusted_sched_yield() {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_sched_yield);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_sched_yield);
 }
 
 int enc_untrusted_pread64(int fd, void *buf, size_t count, off_t offset) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_pread64, fd, buf, count,
-                               offset);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pread64,
+                                             fd, buf, count, offset);
 }
 
 int enc_untrusted_pwrite64(int fd, const void *buf, size_t count,
                            off_t offset) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_pwrite64, fd, buf,
-                               count, offset);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pwrite64,
+                                             fd, buf, count, offset);
 }
 
 int enc_untrusted_isatty(int fd) {
@@ -370,8 +387,8 @@ int enc_untrusted_usleep(useconds_t usec) {
 
 int enc_untrusted_fstat(int fd, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
-  int result =
-      enc_untrusted_syscall(asylo::system_call::kSYS_fstat, fd, &stat_kernel);
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_fstat, fd, &stat_kernel);
   FromkLinuxStat(&stat_kernel, statbuf);
   int kLinux_mode = stat_kernel.klinux_st_mode;
   int mode;
@@ -382,8 +399,8 @@ int enc_untrusted_fstat(int fd, struct stat *statbuf) {
 
 int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
-  int result = enc_untrusted_syscall(asylo::system_call::kSYS_lstat, pathname,
-                                     &stat_kernel);
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_lstat, pathname, &stat_kernel);
   FromkLinuxStat(&stat_kernel, statbuf);
   int kLinux_mode = stat_kernel.klinux_st_mode;
   int mode;
@@ -394,8 +411,8 @@ int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
 
 int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
-  int result = enc_untrusted_syscall(asylo::system_call::kSYS_stat, pathname,
-                                     &stat_kernel);
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_stat, pathname, &stat_kernel);
   FromkLinuxStat(&stat_kernel, statbuf);
   int kLinux_mode = stat_kernel.klinux_st_mode;
   int mode;
@@ -434,7 +451,8 @@ int64_t enc_untrusted_sysconf(int name) {
 }
 
 int enc_untrusted_close(int fd) {
-  return enc_untrusted_syscall(asylo::system_call::kSYS_close, fd);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_close,
+                                             fd);
 }
 
 void *enc_untrusted_realloc(void *ptr, size_t size) {
@@ -479,26 +497,21 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
 }
 
 int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
-  // Asylo's posix nanosleep() (which calls this function) is used when making
-  // an ecall by the SGX SDK to acquire a mutex. However, host call library is
-  // only initialized inside the enclave during the first ecall. We therefore
-  // make an explicit call here to initialize host calls before proceeding.
-
-  init_host_calls();
   struct kLinux_timespec klinux_req;
   TokLinuxtimespec(req, &klinux_req);
   struct kLinux_timespec klinux_rem;
 
-  int result = enc_untrusted_syscall(asylo::system_call::kSYS_nanosleep,
-                                     &klinux_req, &klinux_rem);
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_nanosleep, &klinux_req, &klinux_rem);
   FromkLinuxtimespec(&klinux_rem, rem);
   return result;
 }
 
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   struct kLinux_timespec klinux_tp;
-  int result = enc_untrusted_syscall(asylo::system_call::kSYS_clock_gettime,
-                                     static_cast<int64_t>(clk_id), &klinux_tp);
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_clock_gettime, static_cast<int64_t>(clk_id),
+      &klinux_tp);
   FromkLinuxtimespec(&klinux_tp, tp);
   return result;
 }

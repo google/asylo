@@ -138,7 +138,6 @@ cc_library(
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/common:bridge_types",
-        "//asylo/platform/host_call",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",

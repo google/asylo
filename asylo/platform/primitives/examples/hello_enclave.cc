@@ -20,7 +20,6 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
-#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
@@ -67,8 +66,6 @@ PrimitiveStatus Hello(void *context, MessageReader *in, MessageWriter *out) {
 
 // Implements the required enclave initialization function.
 extern "C" PrimitiveStatus asylo_enclave_init() {
-  init_host_calls();
-
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::primitives::kAbortEnclaveSelector,
       EntryHandler{asylo::primitives::Abort}));

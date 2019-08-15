@@ -33,12 +33,14 @@
 #include "asylo/platform/system_call/sysno.h"
 #include "asylo/platform/system_call/system_call.h"
 
+// Ensures that the host call library is initialized, then dispatches the
+// syscall to enc_untrusted_syscall.
+template <class... Ts>
+int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args);
+
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-// Perform initialization tasks for the host call library.
-void init_host_calls();
 
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.

@@ -681,8 +681,6 @@ PrimitiveStatus TestClockGettime(void *context, MessageReader *in,
 
 // Implements the required enclave initialization function.
 extern "C" PrimitiveStatus asylo_enclave_init() {
-  init_host_calls();
-
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kAbortEnclaveSelector,
       EntryHandler{asylo::host_call::Abort}));
