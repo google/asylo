@@ -763,13 +763,6 @@ int ocall_enc_untrusted_times(struct BridgeTms *bridge_buf) {
   return ret;
 }
 
-int ocall_enc_untrusted_clock_gettime(bridge_clockid_t clk_id,
-                                      struct bridge_timespec *tp) {
-  int ret = clock_gettime(static_cast<clockid_t>(clk_id),
-                          reinterpret_cast<struct timespec *>(tp));
-  return ret;
-}
-
 int ocall_enc_untrusted_getitimer(enum TimerType which,
                                   struct BridgeITimerVal *bridge_curr_value) {
   itimerval curr_value;

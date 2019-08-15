@@ -696,14 +696,6 @@ int enc_untrusted_times(struct tms *buf) {
   return ret;
 }
 
-int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_clock_gettime(
-      &ret, static_cast<bridge_clockid_t>(clk_id),
-      reinterpret_cast<bridge_timespec *>(tp)));
-  return ret;
-}
-
 int enc_untrusted_getitimer(int which, struct itimerval *curr_value) {
   int ret;
   struct BridgeITimerVal bridge_curr_value;

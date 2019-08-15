@@ -195,3 +195,4 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char *, pathname,
 
 SYSCALL_DEFINE2(nanosleep, \in const struct timespec *, req,
                 \out struct timespec *, rem)
+SYSCALL_DEFINE2(clock_gettime, clockid_t, clk_id, \out struct timespec *, tp)

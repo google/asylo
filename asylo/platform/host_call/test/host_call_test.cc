@@ -53,6 +53,8 @@ using ::testing::StrEq;
 using asylo::primitives::MessageReader;
 using asylo::primitives::MessageWriter;
 
+constexpr int64_t kNanosecondsPerSecond = 1000000000L;
+
 namespace asylo {
 namespace host_call {
 namespace {
@@ -1652,7 +1654,7 @@ TEST_F(HostCallTest, TestNanosleep) {
   MessageWriter in;
   struct timespec klinux_req;
   klinux_req.tv_sec = 0;
-  klinux_req.tv_nsec = 500000000L;  // 0.5 seconds.
+  klinux_req.tv_nsec = 0.5 * kNanosecondsPerSecond;  // 0.5 seconds.
 
   in.Push<struct timespec>(klinux_req);
 
@@ -1674,6 +1676,35 @@ TEST_F(HostCallTest, TestNanosleep) {
   struct timespec klinux_rem = out.next<struct timespec>();
   EXPECT_THAT(klinux_rem.tv_sec, Eq(0));
   EXPECT_THAT(klinux_rem.tv_nsec, Eq(0));
+}
+
+// Tests enc_untrusted_clock_gettime() by calling the function from inside the
+// enclave, doing some work (sleep 1 second), then calling the function
+// again and verifying the time elapsed.
+TEST_F(HostCallTest, TestClockGettime) {
+  MessageWriter in1, in2;
+  MessageReader out1, out2;
+  struct timespec start, end;
+
+  in1.Push<int64_t>(/*value=clk_id=*/CLOCK_MONOTONIC);
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClockGettime, &in1, &out1));
+  ASSERT_THAT(out1, SizeIs(2));  // Should contain return value and start.
+  EXPECT_THAT(out1.next<int>(), Eq(0));
+
+  start = out1.next<struct timespec>();
+  sleep(1);
+
+  in2.Push<int64_t>(/*value=clk_id=*/CLOCK_MONOTONIC);
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClockGettime, &in2, &out2));
+  ASSERT_THAT(out2, SizeIs(2));  // Should contain return value and end.
+  EXPECT_THAT(out2.next<int>(), Eq(0));
+
+  end = out2.next<struct timespec>();
+
+  uint64_t diff = kNanosecondsPerSecond * (end.tv_sec - start.tv_sec) +
+                  end.tv_nsec - start.tv_nsec;
+  EXPECT_GE(diff, kNanosecondsPerSecond);
+  EXPECT_LE(diff, kNanosecondsPerSecond * 1.5);
 }
 
 }  // namespace

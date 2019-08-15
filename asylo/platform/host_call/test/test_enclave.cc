@@ -662,6 +662,19 @@ PrimitiveStatus TestNanosleep(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestClockGettime(void *context, MessageReader *in,
+                                 MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto clk_id = in->next<clockid_t>();
+
+  struct timespec tp;
+  struct kLinux_timespec klinux_tp;
+  out->Push<int>(enc_untrusted_clock_gettime(clk_id, &tp));
+  TokLinuxtimespec(&tp, &klinux_tp);
+  out->Push<struct kLinux_timespec>(klinux_tp);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -808,6 +821,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestNanosleep,
       EntryHandler{asylo::host_call::TestNanosleep}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestClockGettime,
+      EntryHandler{asylo::host_call::TestClockGettime}));
 
   return PrimitiveStatus::OkStatus();
 }

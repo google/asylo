@@ -495,4 +495,12 @@ int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
   return result;
 }
 
+int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
+  struct kLinux_timespec klinux_tp;
+  int result = enc_untrusted_syscall(asylo::system_call::kSYS_clock_gettime,
+                                     static_cast<int64_t>(clk_id), &klinux_tp);
+  FromkLinuxtimespec(&klinux_tp, tp);
+  return result;
+}
+
 }  // extern "C"

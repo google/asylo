@@ -208,7 +208,6 @@ int enc_untrusted_uname(struct utsname *utsname_buf);
 
 int enc_untrusted_gettimeofday(struct timeval *tv, void *tz);
 int enc_untrusted_times(struct tms *buf);
-int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp);
 int enc_untrusted_getitimer(int which, struct itimerval *curr_value);
 int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
                             struct itimerval *old_value);
