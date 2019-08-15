@@ -52,6 +52,8 @@ filegroup(
     cc_toolchain(
         name = "cc-compiler-" + x[0] + "-" + x[1],
         all_files = ":everything",
+	ar_files = ":everything",
+	as_files = ":everything",
         compiler_files = ":everything",
         dwp_files = ":everything",
         linker_files = ":everything",
