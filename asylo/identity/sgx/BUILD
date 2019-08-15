@@ -1285,6 +1285,26 @@ cc_test(
 )
 
 cc_library(
+    name = "mock_sgx_infrastructural_enclave_manager",
+    testonly = 1,
+    hdrs = [
+        "mock_sgx_infrastructural_enclave_manager.h",
+        "sgx_infrastructural_enclave_manager.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":intel_architectural_enclave_interface",
+        ":platform_provisioning_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "local_secret_sealer_helpers",
     srcs = ["local_secret_sealer_helpers.cc"],
     hdrs = ["local_secret_sealer_helpers.h"],

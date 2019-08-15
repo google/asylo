@@ -52,13 +52,15 @@ class SgxInfrastructuralEnclaveManager {
           intel_ae_interface,
       EnclaveClient *assertion_generator_enclave);
 
+  virtual ~SgxInfrastructuralEnclaveManager() = default;
+
   /////////////////////////////////////////////
   //    Assertion Generator Enclave (AGE)    //
   /////////////////////////////////////////////
 
   // Requests the AGE to generate a new attestation key, and a CSR for each CA
   // listed in |target_certificate_authorities|.
-  Status AgeGenerateKeyAndCsr(
+  virtual Status AgeGenerateKeyAndCsr(
       const sgx::TargetInfoProto &pce_target_info,
       const std::vector<std::string> &target_certificate_authorities,
       sgx::ReportProto *report, std::string *pce_sign_report_payload,
@@ -67,23 +69,23 @@ class SgxInfrastructuralEnclaveManager {
   // Requests the AGE to generate a hardware REPORT for the PCE's GetPceInfo
   // protocol. The REPORT is targeted at |pce_target_info| and is bound to
   // |ppid_encryption_key|.
-  StatusOr<sgx::ReportProto> AgeGeneratePceInfoSgxHardwareReport(
+  virtual StatusOr<sgx::ReportProto> AgeGeneratePceInfoSgxHardwareReport(
       const sgx::TargetInfoProto &pce_target_info,
       const asylo::AsymmetricEncryptionKeyProto &ppid_encryption_key);
 
   // Updates the AGE's attestation key certificates to the provided
   // |cert_chains|. On success, returns a sealed secret containing the AGE's
   // attestation key and associated certificates.
-  StatusOr<SealedSecret> AgeUpdateCerts(
+  virtual StatusOr<SealedSecret> AgeUpdateCerts(
       const std::vector<asylo::CertificateChain> &cert_chains);
 
   // Starts the AGE's remote assertion generator server with the enclave's
   // current state.
-  Status AgeStartServer();
+  virtual Status AgeStartServer();
 
   // Starts the AGE's remote assertion generator server using the provided
   // |secret|.
-  Status AgeStartServer(const asylo::SealedSecret &secret);
+  virtual Status AgeStartServer(const asylo::SealedSecret &secret);
 
   ////////////////////////////////////////////////////
   //    Provisioning Certification Enclave (PCE)    //
@@ -91,8 +93,8 @@ class SgxInfrastructuralEnclaveManager {
 
   // Sets |pce_target_info| to a TargetInfoProto describing the PCE and
   // |pce_svn| to a PceSvn containing the PCE's ISV SVN value.
-  Status PceGetTargetInfo(sgx::TargetInfoProto *pce_target_info,
-                          sgx::PceSvn *pce_svn);
+  virtual Status PceGetTargetInfo(sgx::TargetInfoProto *pce_target_info,
+                                  sgx::PceSvn *pce_svn);
 
   // Retrieves information about the PCE, including its ISV SVN, PCE ID, the PCK
   // signature scheme, and the PPID encrypted with |ppidek|.
@@ -100,25 +102,26 @@ class SgxInfrastructuralEnclaveManager {
   // The given |report_proto| must contain a REPORT that is bound to |ppidek|.
   // See IntelArchitecturalEnclaveInterface::GetPceInfo for more information on
   // the requirements around the REPORT.
-  Status PceGetInfo(const sgx::ReportProto &report_proto,
-                    const asylo::AsymmetricEncryptionKeyProto &ppidek,
-                    sgx::PceSvn *pce_svn, sgx::PceId *pce_id,
-                    asylo::SignatureScheme *pck_signature_scheme,
-                    std::string *encrypted_ppid);
+  virtual Status PceGetInfo(const sgx::ReportProto &report_proto,
+                            const asylo::AsymmetricEncryptionKeyProto &ppidek,
+                            sgx::PceSvn *pce_svn, sgx::PceId *pce_id,
+                            asylo::SignatureScheme *pck_signature_scheme,
+                            std::string *encrypted_ppid);
 
   // Requests the PCE to sign the given REPORT contained in |report_proto| using
   // the Provisioning Certification Key (PCK) derived from |pck_target_pce_svn|
   // and |pck_target_cpu_svn|. On success, returns the PCK signature.
-  StatusOr<Signature> PceSignReport(const sgx::PceSvn &pck_target_pce_svn,
-                                    const sgx::CpuSvn &pck_target_cpu_svn,
-                                    const sgx::ReportProto &report_proto);
+  virtual StatusOr<Signature> PceSignReport(
+      const sgx::PceSvn &pck_target_pce_svn,
+      const sgx::CpuSvn &pck_target_cpu_svn,
+      const sgx::ReportProto &report_proto);
 
  private:
   // Used to invoke operations on Intel architectural enclaves.
   std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface> intel_ae_interface_;
 
   // Used to invoke operations on the Assertion Generator Enclave.
-  EnclaveClient *const assertion_generator_enclave_;
+  EnclaveClient *assertion_generator_enclave_;
 };
 
 }  // namespace asylo
