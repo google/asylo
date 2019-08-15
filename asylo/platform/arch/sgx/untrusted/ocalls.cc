@@ -753,13 +753,6 @@ void ocall_enc_untrusted_syslog(int priority, const char *message) {
 //           time.h                 //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_nanosleep(const struct bridge_timespec *req,
-                                  struct bridge_timespec *rem) {
-  int ret = nanosleep(reinterpret_cast<const struct timespec *>(req),
-                      reinterpret_cast<struct timespec *>(rem));
-  return ret;
-}
-
 int ocall_enc_untrusted_times(struct BridgeTms *bridge_buf) {
   struct tms buf;
   int ret = times(&buf);

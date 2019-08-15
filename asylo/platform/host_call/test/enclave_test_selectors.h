@@ -115,6 +115,8 @@ constexpr uint64_t kTestPread64 =
 constexpr uint64_t kTestPwrite64 =
     kFirstSelector + asylo::system_call::kSYS_pwrite64;
 constexpr uint64_t kTestPipe2 = kFirstSelector + asylo::system_call::kSYS_pipe2;
+constexpr uint64_t kTestNanosleep =
+    kFirstSelector + asylo::system_call::kSYS_nanosleep;
 
 // Host calls implemented via other syscalls or as libc library functions.
 constexpr uint64_t kTestIsAtty = kHostLibCSelector;

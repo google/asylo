@@ -41,6 +41,7 @@ sim_enclave(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/host_call",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status_macros",
@@ -81,12 +82,12 @@ sim_enclave_test(
     ],
     deps = [
         "//asylo:enclave_client",
+        "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/test:sim_test_backend",
         "//asylo/platform/primitives/test:test_backend",
-        "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

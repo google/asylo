@@ -197,6 +197,13 @@ TEST(SystemCallTest, SysCallNumbers) {
   EXPECT_EQ(kSYS_getcwd, 79);
 }
 
+TEST(SystemCallTest, AbortIfNoCallbackFunctionSet) {
+  enc_set_dispatch_syscall(nullptr);
+  EXPECT_THAT(enc_is_syscall_dispatcher_set(), Eq(false));
+  EXPECT_EXIT(enc_untrusted_syscall(SYS_getpid),
+              ::testing::KilledBySignal(SIGABRT), ".*");
+}
+
 // Ensure that syscall aborts if callback function fails for any reason.
 TEST(SystemCallTest, AbortOnCallbackFailure) {
   enc_set_dispatch_syscall(AlwaysFailingDispatcher);

@@ -206,7 +206,6 @@ int enc_untrusted_uname(struct utsname *utsname_buf);
 //            time.h                //
 //////////////////////////////////////
 
-int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem);
 int enc_untrusted_gettimeofday(struct timeval *tv, void *tz);
 int enc_untrusted_times(struct tms *buf);
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp);

@@ -16,15 +16,18 @@
  *
  */
 
+#include "asylo/platform/arch/include/trusted/time.h"
+
 #include <sys/time.h>
 #include <time.h>
+
 #include <atomic>
 #include <cstring>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
-#include "asylo/platform/arch/include/trusted/time.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "include/sgx_trts.h"
 

@@ -647,6 +647,21 @@ PrimitiveStatus TestSleep(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestNanosleep(void *context, MessageReader *in,
+                              MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto klinux_req = in->next<struct kLinux_timespec>();
+
+  struct timespec req, rem;
+  FromkLinuxtimespec(&klinux_req, &req);
+  out->Push<int>(enc_untrusted_nanosleep(&req, &rem));
+
+  struct kLinux_timespec klinux_rem;
+  TokLinuxtimespec(&rem, &klinux_rem);
+  out->Push<struct kLinux_timespec>(klinux_rem);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -790,6 +805,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestRealloc}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestSleep, EntryHandler{asylo::host_call::TestSleep}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestNanosleep,
+      EntryHandler{asylo::host_call::TestNanosleep}));
 
   return PrimitiveStatus::OkStatus();
 }

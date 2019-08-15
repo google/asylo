@@ -21,6 +21,7 @@
 
 #include <cstddef>
 #include <cstdint>
+
 #include "asylo/platform/primitives/primitive_status.h"
 
 #ifdef __cplusplus
@@ -38,6 +39,10 @@ typedef asylo::primitives::PrimitiveStatus (*syscall_dispatch_callback)(
 
 // Installs a callback as dispatch function for serialized system calls.
 void enc_set_dispatch_syscall(syscall_dispatch_callback callback);
+
+// Returns whether a dispatch function has been registered for making system
+// calls.
+bool enc_is_syscall_dispatcher_set();
 
 // Invokes a system call on the host via the installed system call dispatch
 // callback.

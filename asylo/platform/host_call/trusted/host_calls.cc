@@ -28,7 +28,9 @@
 extern "C" {
 
 void init_host_calls() {
-  enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
+  if (!enc_is_syscall_dispatcher_set()) {
+    enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
+  }
 }
 
 int enc_untrusted_access(const char *path_name, int mode) {
@@ -474,6 +476,23 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
 
   // Returns sleep's return value directly since it doesn't set errno.
   return output.next<uint32_t>();
+}
+
+int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
+  // Asylo's posix nanosleep() (which calls this function) is used when making
+  // an ecall by the SGX SDK to acquire a mutex. However, host call library is
+  // only initialized inside the enclave during the first ecall. We therefore
+  // make an explicit call here to initialize host calls before proceeding.
+
+  init_host_calls();
+  struct kLinux_timespec klinux_req;
+  TokLinuxtimespec(req, &klinux_req);
+  struct kLinux_timespec klinux_rem;
+
+  int result = enc_untrusted_syscall(asylo::system_call::kSYS_nanosleep,
+                                     &klinux_req, &klinux_rem);
+  FromkLinuxtimespec(&klinux_rem, rem);
+  return result;
 }
 
 }  // extern "C"

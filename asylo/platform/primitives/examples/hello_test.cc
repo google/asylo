@@ -23,11 +23,11 @@
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
-#include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status_macros.h"
@@ -45,8 +45,12 @@ class HelloTest : public ::testing::Test {
   // Loads an instance of a test enclave, aborting on failure.
   void SetUp() override {
     EnclaveManager::Configure(EnclaveManagerOptions());
+    auto exit_call_provider = host_call::GetHostCallHandlersMapping();
+    ASYLO_EXPECT_OK(exit_call_provider);
+
     client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
-        /*enclave_name=*/"hello_test", absl::make_unique<DispatchTable>());
+        /*enclave_name=*/"hello_test",
+        /*exit_call_provider=*/std::move(exit_call_provider.ValueOrDie()));
 
     ASSERT_FALSE(client_->IsClosed());
     ASYLO_EXPECT_OK(client_->exit_call_provider()->RegisterExitHandler(

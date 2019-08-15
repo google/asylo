@@ -40,6 +40,10 @@ syscall_dispatch_callback global_syscall_callback = nullptr;
 
 }  // namespace
 
+extern "C" bool enc_is_syscall_dispatcher_set() {
+  return global_syscall_callback != nullptr;
+}
+
 extern "C" void enc_set_dispatch_syscall(syscall_dispatch_callback callback) {
   global_syscall_callback = callback;
 }
@@ -73,6 +77,9 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   uint8_t *response_buffer;
   size_t response_size;
 
+  if (!enc_is_syscall_dispatcher_set()) {
+    abort();
+  }
   status = global_syscall_callback(request.As<uint8_t>(), request.size(),
                                    &response_buffer, &response_size);
   if (!status.ok()) {

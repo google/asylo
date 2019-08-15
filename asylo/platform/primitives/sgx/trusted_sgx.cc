@@ -70,8 +70,7 @@ PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
   if (in) {
     ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   }
-  PrimitiveStatus status = asylo_enclave_fini();
-  return status;
+  return asylo_enclave_fini();
 }
 
 // Registers internal handlers, including entry handlers.

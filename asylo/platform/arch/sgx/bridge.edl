@@ -181,12 +181,6 @@ enclave {
     //           time.h                 //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_nanosleep(
-        [in, size=16/*sizeof(struct timespec)*/]
-        const struct bridge_timespec *req,
-        [out, size=16/*sizeof(struct timespec)*/] struct bridge_timespec *rem)
-        propagate_errno;
-
     int ocall_enc_untrusted_times([out] struct BridgeTms *bridge_buf)
         propagate_errno;
 

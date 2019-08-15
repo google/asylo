@@ -189,8 +189,8 @@ define_enum(
 define_struct(
     name="timespec",
     values=[
-        ("time_t", "tv_sec"),
-        ("long", "tv_nsec"),
+        ("int64_t", "tv_sec"),
+        ("int64_t", "tv_nsec"),
     ],
     pack_attributes=False,
 )
