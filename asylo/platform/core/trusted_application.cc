@@ -618,8 +618,8 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
   return status_serializer.Serialize(status);
 }
 
-int __asylo_restore(const char *input, size_t input_len, char **output,
-                    size_t *output_len) {
+int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
+                    char **output, size_t *output_len) {
   Status status = VerifyOutputArguments(output, output_len);
   if (!status.ok()) {
     return 1;
@@ -648,13 +648,13 @@ int __asylo_restore(const char *input, size_t input_len, char **output,
     return status_serializer.Serialize(status);
   }
 
-  // |input| contains a serialized SnapshotLayout. We pass it to
+  // |snapshot_layout| contains a serialized SnapshotLayout. We pass it to
   // RestoreForFork() without deserializing it because this proto requires
   // heap-allocated memory. Since restoring for fork() requires use of
   // a separate heap, we must take care to invoke this protos's allocators and
   // deallocators using the same heap. Consequently, we wait to deserialize this
   // message until after switching heaps in RestoreForFork().
-  status = RestoreForFork(input, input_len);
+  status = RestoreForFork(snapshot_layout, snapshot_layout_len);
 
   if (!status.ok()) {
     // Finalize the enclave as this enclave shouldn't be entered again.
