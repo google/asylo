@@ -10464,10 +10464,11 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_statfs.
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/statfs.h ./newlib/libc/sys/enclave/include/sys/statfs.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/statfs.h
 +++ ./newlib/libc/sys/enclave/include/sys/statfs.h
-@@ -0,0 +1,77 @@
+@@ -0,0 +1,78 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS_STATFS_H_
 +#define THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS_STATFS_H_
 +
++#include <stdint.h>
 +#include <sys/_statfs.h>
 +
 +struct statfs {
