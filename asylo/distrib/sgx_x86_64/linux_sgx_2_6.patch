@@ -4514,7 +4514,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +                   "disabled"),
 +        ),
 +        "heap_max_size": attr.string(
-+            default = "0x100000",
++            default = "0x2000000",
 +            doc = "The enclave's maximum heap size in bytes (4KB aligned)",
 +        ),
 +        "isvsvn": attr.string(
