@@ -59,6 +59,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/grpc/auth:enclave_auth_context",
+        "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",

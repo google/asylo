@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include "asylo/grpc/auth/enclave_auth_context.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -34,6 +35,13 @@ class MockEnclaveAuthContext : public EnclaveAuthContext {
   MOCK_CONST_METHOD1(FindEnclaveIdentity,
                      StatusOr<const EnclaveIdentity *>(
                          const EnclaveIdentityDescription &description));
+
+  MOCK_CONST_METHOD1(EvaluateAcl,
+                     StatusOr<bool>(const IdentityAclPredicate &acl));
+
+  MOCK_CONST_METHOD1(
+      EvaluateAcl,
+      StatusOr<bool>(const EnclaveIdentityExpectation &expectation));
 };
 
 }  // namespace asylo
