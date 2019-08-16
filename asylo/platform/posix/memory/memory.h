@@ -38,7 +38,7 @@ size_t GetSwitchedHeapRemaining();
 // This function is not thread-safe. This should only be called by fork during
 // snapshotting/restoring while other threads are not allowed to enter the
 // enclave.
-void heap_switch(void *address, size_t size);
+void heap_switch(void *base, size_t size);
 
 #ifdef __cplusplus
 }  // extern "C"
