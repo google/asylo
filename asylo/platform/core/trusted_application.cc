@@ -100,8 +100,8 @@ class StatusSerializer {
   // StatusSerializer does not take ownership of any of the input pointers.
   // Input pointers must remain valid for the lifetime of the StatusSerializer.
   StatusSerializer(char **output, size_t *output_len)
-      : output_proto_{&proto},
-        status_proto_{&proto},
+      : output_proto_{&proto_},
+        status_proto_{&proto_},
         output_{output},
         output_len_{output_len},
         custom_allocator_{nullptr} {}
@@ -151,7 +151,7 @@ class StatusSerializer {
   }
 
  private:
-  OutputProto proto;
+  OutputProto proto_;
   const OutputProto *output_proto_;
   StatusProto *status_proto_;
   char **output_;
