@@ -144,7 +144,8 @@ class grpc_enclave_channel_security_connector final
                                           on_peer_checked);
   }
 
-  bool check_call_host(const char *host, grpc_auth_context *auth_context,
+  bool check_call_host(grpc_core::StringView host,
+                       grpc_auth_context *auth_context,
                        grpc_closure *on_call_host_checked,
                        grpc_error **error) override {
     return true;

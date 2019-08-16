@@ -30,7 +30,7 @@
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
-#include "src/core/lib/gpr/host_port.h"
+#include "src/core/lib/gprpp/host_port.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "test/core/end2end/end2end_tests.h"
 #include "test/core/util/test_config.h"
@@ -61,7 +61,9 @@ grpc_end2end_test_fixture CreateFixtureSecureFullstack(
 
   // A port of indicates that gRPC should auto-select a port for use. This
   // address is updated with the final port after server initialization.
-  gpr_join_host_port(&fixture_data->local_address, kAddress, 0);
+  grpc_core::UniquePtr<char> addr;
+  grpc_core::JoinHostPort(&addr, kAddress, 0);
+  fixture_data->local_address = addr.release();
   f.fixture_data = fixture_data;
 
   // Create a completion queue for the server.
@@ -182,7 +184,9 @@ void InitServer(EnclaveCredentialsOptions options, grpc_end2end_test_fixture *f,
       f->server, fixture_data->local_address, creds.get());
   GPR_ASSERT(port != 0);
   gpr_free(fixture_data->local_address);
-  gpr_join_host_port(&fixture_data->local_address, kAddress, port);
+  grpc_core::UniquePtr<char> addr;
+  grpc_core::JoinHostPort(&addr, kAddress, port);
+  fixture_data->local_address = addr.release();
   fixture_data->port_set = true;
   grpc_server_start(f->server);
 }

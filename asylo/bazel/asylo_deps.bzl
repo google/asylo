@@ -48,6 +48,12 @@ def asylo_backend_deps():
     if not native.existing_rule("com_google_asylo_backend_provider"):
         _asylo_backend_deps(name = "com_google_asylo_backend_provider")
 
+# Makes Bazel version available in BUILD files as bazel_version.
+def _bazel_version_repository_impl(repository_ctx):
+    s = "bazel_version = \"" + native.bazel_version + "\""
+    repository_ctx.file("bazel_version.bzl", s)
+    repository_ctx.file("BUILD", "")
+
 def asylo_testonly_deps():
     """Macro to include Asylo's testing-only dependencies in a WORKSPACE."""
 
@@ -166,11 +172,37 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_github_grpc_grpc"):
         http_archive(
             name = "com_github_grpc_grpc",
-            urls = ["https://github.com/grpc/grpc/archive/v1.22.0.tar.gz"],
-            sha256 = "11ac793c562143d52fd440f6549588712badc79211cdc8c509b183cb69bddad8",
-            patches = ["@com_google_asylo//asylo/distrib:grpc_1_22_0.patch"],
-            strip_prefix = "grpc-1.22.0",
+            urls = ["https://github.com/grpc/grpc/archive/v1.23.0.tar.gz"],
+            sha256 = "f56ced18740895b943418fa29575a65cc2396ccfa3159fa40d318ef5f59471f9",
+            patches = ["@com_google_asylo//asylo/distrib:grpc_1_23_0.patch"],
+            strip_prefix = "grpc-1.23.0",
         )
+
+    # Required by gRPC
+    if not native.existing_rule("build_bazel_rules_apple"):
+        http_archive(
+            name = "build_bazel_rules_apple",
+            urls = ["https://github.com/bazelbuild/rules_apple/archive/0.18.0.tar.gz"],
+            sha256 = "53a8f9590b4026fbcfefd02c868e48683b44a314338d03debfb8e8f6c50d1239",
+            strip_prefix = "rules_apple-0.18.0",
+        )
+
+    # Required by gRPC
+    if not native.existing_rule("build_bazel_apple_support"):
+        http_archive(
+            name = "build_bazel_apple_support",
+            urls = ["https://github.com/bazelbuild/apple_support/archive/0.7.1.tar.gz"],
+            sha256 = "140fa73e1c712900097aabdb846172ffa0a5e9523b87d6c564c13116a6180a62",
+            strip_prefix = "apple_support-0.7.1",
+        )
+
+    # Required by gRPC
+    if not native.existing_rule("bazel_version"):
+        _bazel_version_repository = repository_rule(
+            implementation = _bazel_version_repository_impl,
+            local = True,
+        )
+        _bazel_version_repository(name = "bazel_version")
 
     # Google certificate transparency has a merkletree implementation.
     if not native.existing_rule("com_google_certificate_transparency"):
