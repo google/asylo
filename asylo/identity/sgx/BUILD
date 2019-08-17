@@ -97,6 +97,7 @@ cc_proto_library(
 proto_library(
     name = "attestation_key_certificate_proto",
     srcs = ["attestation_key_certificate.proto"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":platform_provisioning_proto",
         "//asylo/crypto:keys_proto",
@@ -105,6 +106,7 @@ proto_library(
 
 cc_proto_library(
     name = "attestation_key_certificate_cc_proto",
+    visibility = ["//asylo:implementation"],
     deps = [":attestation_key_certificate_proto"],
 )
 
