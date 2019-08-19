@@ -322,11 +322,6 @@ bool SgxEnclaveClient::IsClosed() const { return is_destroyed_; }
 Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
                                              MessageWriter *input,
                                              MessageReader *output) {
-  if (is_destroyed_) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot make an enclave call to a closed enclave."};
-  }
-
   ms_ecall_dispatch_trusted_call_t ms;
   ms.ms_selector = selector;
   SgxParams params;

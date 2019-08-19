@@ -37,6 +37,10 @@ thread_local Client *Client::current_client_ = nullptr;
 
 Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
                            MessageReader *output) {
+  if (IsClosed()) {
+    return Status{error::GoogleError::FAILED_PRECONDITION,
+                  "Cannot make an enclave call to a closed enclave."};
+  }
   ScopedCurrentClient scoped_client(this);
   return EnclaveCallInternal(selector, input, output);
 }

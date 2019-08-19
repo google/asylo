@@ -242,14 +242,14 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus(result);
 }
 
-// Handler installed by the runtime to invoke the enclave donate thread entry
-// point.
+// Handler installed by the runtime to start the created thread.
 PrimitiveStatus DonateThread(void *context, MessageReader *in,
                              MessageWriter *out) {
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   int result = 0;
   try {
-    result = asylo::__asylo_threading_donate();
+    ThreadManager *thread_manager = ThreadManager::GetInstance();
+    result = thread_manager->StartThread();
   } catch (...) {
     TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
   }
@@ -258,8 +258,8 @@ PrimitiveStatus DonateThread(void *context, MessageReader *in,
 
 // Handler installed by the runtime to invoke the enclave signal handling entry
 // point.
-PrimitiveStatus DeliverSignal(
-    void *context, MessageReader *in, MessageWriter *out) {
+PrimitiveStatus DeliverSignal(void *context, MessageReader *in,
+                              MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
   auto input_extent = in->next();
   int result = 0;
@@ -526,21 +526,6 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
   return status_serializer.Serialize(status);
 }
 
-int __asylo_threading_donate() {
-  TrustedApplication *trusted_application = GetApplicationInstance();
-  EnclaveState current_state = trusted_application->GetState();
-  if (current_state < EnclaveState::kUserInitializing ||
-      current_state > EnclaveState::kFinalizing) {
-    Status status = Status(error::GoogleError::FAILED_PRECONDITION,
-                           "Enclave ThreadManager has not been initialized");
-    LOG(ERROR) << status;
-    return EPERM;
-  }
-
-  ThreadManager *thread_manager = ThreadManager::GetInstance();
-  return thread_manager->StartThread();
-}
-
 int __asylo_handle_signal(const char *input, size_t input_len) {
   asylo::EnclaveSignal signal;
   if (!signal.ParseFromArray(input, input_len)) {
@@ -738,8 +723,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   // Register the enclave signal handling entry handler.
   EntryHandler deliver_signal_handler{asylo::DeliverSignal};
   if (!TrustedPrimitives::RegisterEntryHandler(
-          asylo::primitives::kSelectorAsyloDeliverSignal,
-          deliver_signal_handler).ok()) {
+           asylo::primitives::kSelectorAsyloDeliverSignal,
+           deliver_signal_handler)
+           .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
 

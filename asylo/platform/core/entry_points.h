@@ -62,9 +62,6 @@ int __asylo_user_run(const char *input, size_t input_len, char **output,
 int __asylo_user_fini(const char *final_input, size_t len, char **output,
                       size_t *output_len);
 
-// Threading-implementation defined enclave thread donate routine.
-int __asylo_threading_donate();
-
 // Enclave signal handler routine.
 //
 // The input type is asylo::EnclaveSignal.

@@ -150,7 +150,6 @@ class TrustedApplication {
                               char **output, size_t *output_len);
   friend int __asylo_user_fini(const char *input, size_t input_len,
                                char **output, size_t *output_len);
-  friend int __asylo_threading_donate();
   friend int __asylo_handle_signal(const char *input, size_t input_len);
   friend int __asylo_take_snapshot(char **output, size_t *output_len);
   friend int __asylo_restore(const char *snapshot_layout,
