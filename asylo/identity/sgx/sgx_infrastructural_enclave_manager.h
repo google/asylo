@@ -116,6 +116,10 @@ class SgxInfrastructuralEnclaveManager {
       const sgx::CpuSvn &pck_target_cpu_svn,
       const sgx::ReportProto &report_proto);
 
+ protected:
+  // This constructor is required for a mock object.
+  SgxInfrastructuralEnclaveManager() = default;
+
  private:
   // Used to invoke operations on Intel architectural enclaves.
   std::unique_ptr<sgx::IntelArchitecturalEnclaveInterface> intel_ae_interface_;
