@@ -335,7 +335,8 @@ Status InitializeEnvironmentVariables(
                     "Environment variables should set both name and value "
                     "fields");
     }
-    setenv(variable.name().c_str(), variable.value().c_str(), /*overwrite=*/0);
+    int overwrite = 0;
+    setenv(variable.name().c_str(), variable.value().c_str(), overwrite);
   }
   return Status::OkStatus();
 }
