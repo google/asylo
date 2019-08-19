@@ -73,7 +73,7 @@ PrimitiveStatus ReservedEntry(void *context, MessageReader *in,
   return {error::GoogleError::INTERNAL, "Invalid call to reserved selector."};
 }
 
-// Initialized the enclave if it has not been initialized already.
+// Initializes the enclave if it has not been initialized already.
 void EnsureInitialized() {
   SpinLockGuard lock(&enclave_state.initialization_lock);
   if (!(enclave_state.flags & Flag::kInitialized)) {

@@ -79,6 +79,7 @@ cc_library(
     hdrs = ["untrusted_sgx.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":exit_handlers",
         ":sgx_error_space",
         ":sgx_params",
         "//asylo:enclave_cc_proto",
@@ -121,4 +122,17 @@ cc_proto_library(
     name = "loader_cc_proto",
     visibility = ["//visibility:public"],
     deps = [":loader_proto"],
+)
+
+cc_library(
+    name = "exit_handlers",
+    srcs = ["exit_handlers.cc"],
+    hdrs = ["exit_handlers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+    ],
 )

@@ -68,6 +68,10 @@ class SgxEnclaveClient : public Client {
   // finalization function fails.
   Status Destroy() override;
 
+  // Registers exit handlers that are specific to SGX, for example, handler for
+  // thread creation.
+  Status RegisterExitHandlers() override;
+
   // Returns the sgx_enclave_id_t value of the underlying Intel SGX SDK enclave
   // resource.
   sgx_enclave_id_t GetEnclaveId() const;
@@ -101,8 +105,8 @@ class SgxEnclaveClient : public Client {
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                              MessageReader *output) override;
-  Status DeliverSignalInternal(
-      MessageWriter *input, MessageReader *output) override;
+  Status DeliverSignalInternal(MessageWriter *input,
+                               MessageReader *output) override;
   bool IsClosed() const override;
 
  private:
@@ -110,9 +114,8 @@ class SgxEnclaveClient : public Client {
   friend SgxEmbeddedBackend;
 
   // Constructor.
-  SgxEnclaveClient(
-      const absl::string_view name,
-      std::unique_ptr<ExitCallProvider> exit_call_provider)
+  SgxEnclaveClient(const absl::string_view name,
+                   std::unique_ptr<ExitCallProvider> exit_call_provider)
       : Client(name, std::move(exit_call_provider)) {}
 
   sgx_launch_token_t token_ = {0};  // SGX SDK launch token.

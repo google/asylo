@@ -123,12 +123,16 @@ class Client : public std::enable_shared_from_this<Client> {
 
   virtual ~Client() = default;
 
+  // Allows registering exit handlers that might be specific for a particular
+  // backend.
+  virtual Status RegisterExitHandlers() ASYLO_MUST_USE_RESULT;
+
   // Returns true if the enclave has been destroyed, or if it is marked for
   // destruction pending the completion of an operation by another thread. A
   // closed enclave may not be entered and will not accept messages.
   virtual bool IsClosed() const = 0;
 
-  // Marks the enclave for destruction, possibily pending the completion of
+  // Marks the enclave for destruction, possibly pending the completion of
   // operations by concurrent client threads.
   virtual Status Destroy() = 0;
 
@@ -150,8 +154,8 @@ class Client : public std::enable_shared_from_this<Client> {
   // Input `params` is copied into the enclave, which occurs locally inside the
   // same address space.
   // Conversely, results are copied and returned in 'params'.
-  Status DeliverSignal(
-      MessageWriter *input, MessageReader *output) ASYLO_MUST_USE_RESULT;
+  Status DeliverSignal(MessageWriter *input,
+                       MessageReader *output) ASYLO_MUST_USE_RESULT;
 
   // Enclave exit callback function shared with the enclave.
   static PrimitiveStatus ExitCallback(uint64_t untrusted_selector,

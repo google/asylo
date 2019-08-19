@@ -125,6 +125,7 @@ StatusOr<std::shared_ptr<Client>> SimBackend::Load(
 
   std::shared_ptr<SimEnclaveClient> client(
       new SimEnclaveClient(enclave_name, std::move(exit_call_provider)));
+  ASYLO_RETURN_IF_ERROR(client->RegisterExitHandlers());
 
   // Open the enclave shared object file.
   {

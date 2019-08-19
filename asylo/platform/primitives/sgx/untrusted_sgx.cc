@@ -24,6 +24,7 @@
 #include <cstdlib>
 
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/primitives/sgx/exit_handlers.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -155,10 +156,10 @@ static Status TakeSnapshot(sgx_enclave_id_t eid, char **output,
 // Edger8r-generated primitives ecall_restore marshalling struct.
 struct ms_ecall_restore_t {
   int ms_retval;
-  const char* ms_input;
+  const char *ms_input;
   bridge_size_t ms_input_len;
-  char** ms_output;
-  bridge_size_t* ms_output_len;
+  char **ms_output;
+  bridge_size_t *ms_output_len;
 };
 
 // Enters the enclave and invokes the restoring entry-point. If the ecall fails,
@@ -199,6 +200,7 @@ StatusOr<std::shared_ptr<Client>> SgxBackend::Load(
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   std::shared_ptr<SgxEnclaveClient> client(
       new SgxEnclaveClient(enclave_name, std::move(exit_call_provider)));
+  client->RegisterExitHandlers();
   client->base_address_ = base_address;
 
   int updated;
@@ -239,6 +241,7 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   std::shared_ptr<SgxEnclaveClient> client(
       new SgxEnclaveClient(enclave_name, std::move(exit_call_provider)));
+  client->RegisterExitHandlers();
   client->base_address_ = base_address;
 
   // If an address is specified to load the enclave, temporarily reserve it to
@@ -304,6 +307,12 @@ Status SgxEnclaveClient::Destroy() {
     return Status(status, "Failed to destroy enclave");
   }
   is_destroyed_ = true;
+  return Status::OkStatus();
+}
+
+Status SgxEnclaveClient::RegisterExitHandlers() {
+  ASYLO_RETURN_IF_ERROR(exit_call_provider()->RegisterExitHandler(
+      kSelectorCreateThread, ExitHandler{CreateThreadHandler}));
   return Status::OkStatus();
 }
 
