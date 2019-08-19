@@ -22,6 +22,7 @@
 #include <memory>
 
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -41,7 +42,8 @@ class TestBackend {
   // Loads an instance of an enclave, aborting on failure.
   std::shared_ptr<Client> LoadTestEnclaveOrDie(
       const absl::string_view enclave_name,
-      std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
+      std::unique_ptr<Client::ExitCallProvider> exit_call_provider =
+          absl::make_unique<primitives::DispatchTable>()) {
     auto result = LoadTestEnclave(enclave_name, std::move(exit_call_provider));
     EXPECT_THAT(result.status(), IsOk());
     return result.ValueOrDie();

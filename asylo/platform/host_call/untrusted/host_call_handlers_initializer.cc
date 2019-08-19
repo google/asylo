@@ -26,17 +26,6 @@
 namespace asylo {
 namespace host_call {
 
-StatusOr<std::unique_ptr<primitives::Client::ExitCallProvider>>
-GetHostCallHandlersMapping() {
-  std::unique_ptr<primitives::Client::ExitCallProvider> dispatch_table =
-      absl::make_unique<primitives::DispatchTable>();
-
-  ASYLO_RETURN_IF_ERROR(
-      AddHostCallHandlersToExitCallProvider(dispatch_table.get()));
-
-  return std::move(dispatch_table);
-}
-
 Status AddHostCallHandlersToExitCallProvider(
     primitives::Client::ExitCallProvider *exit_call_provider) {
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(

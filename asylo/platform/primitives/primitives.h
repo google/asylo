@@ -28,6 +28,10 @@ namespace primitives {
 // This file declares types and constants used by both trusted and untrusted
 // code, but which are not passed across the enclave boundary.
 
+//////////////////////////////////////
+//      Entry handler selectors     //
+//////////////////////////////////////
+
 // Invalid entry point selector.
 static constexpr uint64_t kSelectorAsyloInvalid = 0;
 
@@ -36,6 +40,13 @@ static constexpr uint64_t kSelectorAsyloDeliverSignal = 1;
 
 // Enclave finalization entry point selector.
 static constexpr uint64_t kSelectorAsyloFini = 2;
+
+//////////////////////////////////////
+//      Exit handler selectors      //
+//////////////////////////////////////
+
+// Selector for thread creation handler.
+static constexpr uint64_t kSelectorCreateThread = 111;
 
 // Selector values in [kSelectorHostCall, kSelectorUser) range are reserved for
 // untrusted host call handlers and cannot be used by any other component.

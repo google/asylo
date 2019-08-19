@@ -58,17 +58,13 @@ class MockedEnclaveClient : public primitives::Client {
   }
 };
 
-// Verify that the result of GetHostCallHandlersMapping() can be used to
-// initialize an enclave client, and |SystemCallHandler| is correctly registered
-// as an exit handler.
+// Verify that host call handlers are correctly registered as exit handlers.
 TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
-  StatusOr<std::unique_ptr<primitives::Client::ExitCallProvider>>
-      dispatch_table = GetHostCallHandlersMapping();
-
-  ASSERT_THAT(dispatch_table.status(), IsOk());
-
   const auto client = std::make_shared<MockedEnclaveClient>(
-      /*name=*/"mock_enclave", std::move(dispatch_table.ValueOrDie()));
+      /*name=*/"mock_enclave",
+      /*dispatch_table=*/absl::make_unique<primitives::DispatchTable>());
+  ASYLO_EXPECT_OK(
+      AddHostCallHandlersToExitCallProvider(client->exit_call_provider()));
 
   // Verify that |kSystemCallHandler| is in use by attempting to re-register the
   // handler.

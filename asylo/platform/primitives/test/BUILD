@@ -42,6 +42,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/test/util:status_matchers",
     ],
 )

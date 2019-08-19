@@ -45,14 +45,11 @@ class HelloTest : public ::testing::Test {
   // Loads an instance of a test enclave, aborting on failure.
   void SetUp() override {
     EnclaveManager::Configure(EnclaveManagerOptions());
-    auto exit_call_provider = host_call::GetHostCallHandlersMapping();
-    ASYLO_EXPECT_OK(exit_call_provider);
-
-    client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie(
-        /*enclave_name=*/"hello_test",
-        /*exit_call_provider=*/std::move(exit_call_provider.ValueOrDie()));
-
+    client_ = test::TestBackend::Get()->LoadTestEnclaveOrDie("hello_test");
     ASSERT_FALSE(client_->IsClosed());
+
+    ASYLO_EXPECT_OK(host_call::AddHostCallHandlersToExitCallProvider(
+        client_->exit_call_provider()));
     ASYLO_EXPECT_OK(client_->exit_call_provider()->RegisterExitHandler(
         kExternalHelloHandler, ExitHandler{HelloHandler}));
   }

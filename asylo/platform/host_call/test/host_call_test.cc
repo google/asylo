@@ -61,26 +61,19 @@ namespace {
 
 class HostCallTest : public ::testing::Test {
  protected:
-  // Loads the enclave. The function uses the factory method
-  // |primitives::test::TestBackend::Get()| for loading the enclave, and the
-  // type of backend (sim, remote, sgx etc.) loaded depends upon the type of
-  // library included with the build that implements the abstract factory class
-  // |TestBackend|.
-  std::shared_ptr<primitives::Client> LoadTestEnclaveOrDie(
-      StatusOr<std::unique_ptr<primitives::Client::ExitCallProvider>>
-          exit_call_provider = GetHostCallHandlersMapping()) {
-    ASYLO_EXPECT_OK(exit_call_provider);
-    const auto client =
-        primitives::test::TestBackend::Get()->LoadTestEnclaveOrDie(
-            /*enclave_name=*/"host_call_test_enclave",
-            std::move(exit_call_provider.ValueOrDie()));
-
-    return client;
-  }
-
   void SetUp() override {
     EnclaveManager::Configure(EnclaveManagerOptions());
-    client_ = LoadTestEnclaveOrDie();
+
+    // Loads the enclave. The function uses the factory method
+    // |primitives::test::TestBackend::Get()| for loading the enclave, and the
+    // type of backend (sim, remote, sgx etc.) loaded depends upon the type of
+    // library linked against the build that implements the abstract factory
+    // class |TestBackend|.
+    client_ = primitives::test::TestBackend::Get()->LoadTestEnclaveOrDie(
+        /*enclave_name=*/"host_call_test_enclave");
+
+    ASYLO_EXPECT_OK(
+        AddHostCallHandlersToExitCallProvider(client_->exit_call_provider()));
     ASSERT_FALSE(client_->IsClosed());
   }
 
