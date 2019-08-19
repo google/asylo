@@ -260,27 +260,6 @@ int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr) {
   return ret;
 }
 
-bridge_ssize_t ocall_enc_untrusted_sendmsg(int sockfd,
-                                           const struct bridge_msghdr *msg,
-                                           int flags) {
-  struct msghdr tmp;
-  if (!asylo::FromBridgeMsgHdr(msg, &tmp)) {
-    errno = EFAULT;
-    return -1;
-  }
-  auto buf = absl::make_unique<struct iovec[]>(msg->msg_iovlen);
-  for (int i = 0; i < msg->msg_iovlen; ++i) {
-    if (!asylo::FromBridgeIovec(&msg->msg_iov[i], &buf[i])) {
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  tmp.msg_iov = buf.get();
-  bridge_ssize_t ret =
-      static_cast<bridge_ssize_t>(sendmsg(sockfd, &tmp, flags));
-  return ret;
-}
-
 bridge_ssize_t ocall_enc_untrusted_recvmsg(int sockfd,
                                            struct bridge_msghdr *msg,
                                            int flags) {

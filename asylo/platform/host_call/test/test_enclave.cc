@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <sys/socket.h>
 
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
@@ -209,7 +210,7 @@ PrimitiveStatus TestRead(void *context, MessageReader *in, MessageWriter *out) {
   size_t count = in->next<size_t>();
   char read_buf[20];
 
-  out->Push<ssize_t>(enc_untrusted_read(fd, read_buf, count));
+  out->Push<int64_t>(enc_untrusted_read(fd, read_buf, count));
   out->PushByCopy(Extent{read_buf, strlen(read_buf) + 1});
   return PrimitiveStatus::OkStatus();
 }
@@ -221,7 +222,7 @@ PrimitiveStatus TestWrite(void *context, MessageReader *in,
   const auto write_buf = in->next();
   size_t count = in->next<size_t>();
 
-  out->Push<ssize_t>(enc_untrusted_write(fd, write_buf.As<char>(), count));
+  out->Push<int64_t>(enc_untrusted_write(fd, write_buf.As<char>(), count));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -231,7 +232,7 @@ PrimitiveStatus TestSymlink(void *context, MessageReader *in,
   const auto target = in->next();
   const auto linkpath = in->next();
 
-  out->Push<ssize_t>(
+  out->Push<int64_t>(
       enc_untrusted_symlink(target.As<char>(), linkpath.As<char>()));
   return PrimitiveStatus::OkStatus();
 }
@@ -244,7 +245,7 @@ PrimitiveStatus TestReadlink(void *context, MessageReader *in,
   char buf[PATH_MAX];
   ssize_t len =
       enc_untrusted_readlink(pathname.As<char>(), buf, sizeof(buf) - 1);
-  out->Push<ssize_t>(len);
+  out->Push<int64_t>(len);
 
   buf[len] = '\0';
   out->PushByCopy(Extent{buf, strlen(buf) + 1});
@@ -338,7 +339,37 @@ PrimitiveStatus TestSend(void *context, MessageReader *in, MessageWriter *out) {
   const auto buf = in->next();
   auto len = in->next<size_t>();
   int flags = in->next<int>();
-  out->Push<ssize_t>(enc_untrusted_send(sockfd, buf.As<char>(), len, flags));
+  out->Push<int64_t>(enc_untrusted_send(sockfd, buf.As<char>(), len, flags));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestSendMsg(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
+
+  int sockfd = in->next<int>();
+  const auto msg1 = in->next();
+  const auto msg2 = in->next();
+  int flags = in->next<int>();
+
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+
+  constexpr size_t kNumMsgs = 2;
+  struct iovec msg_iov[kNumMsgs];
+  memset(msg_iov, 0, sizeof(*msg_iov));
+  msg_iov[0].iov_base =
+      reinterpret_cast<void *>(const_cast<char *>(msg1.As<char>()));
+  msg_iov[0].iov_len = msg1.size();
+  msg_iov[1].iov_base =
+      reinterpret_cast<void *>(const_cast<char *>(msg2.As<char>()));
+  msg_iov[1].iov_len = msg2.size();
+
+  msg.msg_iov = msg_iov;
+  msg.msg_iovlen = kNumMsgs;
+
+  out->Push<int64_t>(enc_untrusted_sendmsg(sockfd, &msg, flags));
 
   return primitives::PrimitiveStatus::OkStatus();
 }
@@ -755,6 +786,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestShutdown}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestSend, EntryHandler{asylo::host_call::TestSend}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSendMsg,
+      EntryHandler{asylo::host_call::TestSendMsg}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFcntl, EntryHandler{asylo::host_call::TestFcntl}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(

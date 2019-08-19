@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 
 #include <errno.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include "asylo/platform/primitives/util/message.h"
@@ -100,6 +101,38 @@ Status SleepHandler(const std::shared_ptr<primitives::Client> &client,
   auto seconds = input->next<uint32_t>();
   output->Push<uint32_t>(sleep(seconds));  // Push return value first.
   output->Push<int>(errno);                // Push errno next.
+  return Status::OkStatus();
+}
+
+Status SendMsgHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 6);
+  struct msghdr msg;
+  int sockfd = input->next<int>();
+
+  auto msg_name_extent = input->next();
+  msg.msg_name = msg_name_extent.As<char>();
+  msg.msg_namelen = msg_name_extent.size();
+
+  auto msg_iov_extent = input->next();
+  // The message is serialized into a single buffer on the trusted side.
+  struct iovec msg_iov[1];
+  memset(msg_iov, 0, sizeof(*msg_iov));
+  msg_iov[0].iov_base = msg_iov_extent.As<char>();
+  msg_iov[0].iov_len = msg_iov_extent.size();
+  msg.msg_iov = msg_iov;
+  msg.msg_iovlen = 1;
+
+  auto msg_control_extent = input->next();
+  msg.msg_control = msg_control_extent.As<char>();
+  msg.msg_controllen = msg_control_extent.size();
+
+  msg.msg_flags = input->next<int>();
+
+  int flags = input->next<int>();
+  output->Push<int64_t>(sendmsg(sockfd, &msg, flags));  // Push return value.
+  output->Push<int>(errno);                             // Push errno.
   return Status::OkStatus();
 }
 

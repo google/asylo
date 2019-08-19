@@ -143,15 +143,6 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
   return ret;
 }
 
-ssize_t enc_untrusted_sendmsg(int sockfd,
-                              const struct bridge_msghdr *bridge_msg,
-                              int flags) {
-  bridge_ssize_t ret;
-  CHECK_OCALL(
-      ocall_enc_untrusted_sendmsg(&ret, sockfd, bridge_msg, flags));
-  return static_cast<ssize_t>(ret);
-}
-
 ssize_t enc_untrusted_recvmsg(int sockfd,
                               struct msghdr *msg,
                               struct bridge_msghdr *bridge_msg,

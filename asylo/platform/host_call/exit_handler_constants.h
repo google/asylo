@@ -53,6 +53,9 @@ static constexpr uint64_t kReallocHandler = primitives::kSelectorHostCall + 5;
 // Exit handler constant for |SleepHandler|.
 static constexpr uint64_t kSleepHandler = primitives::kSelectorHostCall + 6;
 
+// Exit handler constant for |SendMsgHandler|.
+static constexpr uint64_t kSendMsgHandler = primitives::kSelectorHostCall + 7;
+
 }  // namespace host_call
 }  // namespace asylo
 

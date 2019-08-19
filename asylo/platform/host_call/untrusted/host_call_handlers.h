@@ -66,6 +66,12 @@ Status SleepHandler(const std::shared_ptr<primitives::Client> &client,
                     void *context, primitives::MessageReader *input,
                     primitives::MessageWriter *output);
 
+// sendmsg syscall handler on the host; expects [int sockfd, const struct msghdr
+// *msg, int flags] and returns [ssize_t].
+Status SendMsgHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

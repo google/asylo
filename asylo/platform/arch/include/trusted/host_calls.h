@@ -85,8 +85,6 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size);
 int enc_untrusted_inet_pton(int af, const char *src, void *dst);
-ssize_t enc_untrusted_sendmsg(
-    int sockfd, const struct bridge_msghdr *bridge_msg, int flags);
 ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg,
                               struct bridge_msghdr *bridge_msg, int flags);
 int enc_untrusted_getaddrinfo(const char *node, const char *service,

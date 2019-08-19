@@ -166,14 +166,7 @@ int IOContextNative::Listen(int backlog) {
 }
 
 ssize_t IOContextNative::SendMsg(const struct msghdr *msg, int flags) {
-  asylo::BridgeMsghdrWrapper tmp_wrapper(msg);
-  if (!tmp_wrapper.CopyAllBuffers()) {
-    // CopyAllBuffers sets the ocall status on failure.
-    errno = EFAULT;
-    return -1;
-  }
-
-  return enc_untrusted_sendmsg(host_fd_, tmp_wrapper.get_msg(), flags);
+  return enc_untrusted_sendmsg(host_fd_, msg, flags);
 }
 
 ssize_t IOContextNative::RecvMsg(struct msghdr *msg, int flags) {

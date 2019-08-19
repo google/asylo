@@ -516,4 +516,50 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   return result;
 }
 
+ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
+  size_t total_message_size = 0;
+  for (int i = 0; i < msg->msg_iovlen; ++i) {
+    total_message_size += msg->msg_iov[i].iov_len;
+  }
+
+  std::unique_ptr<char[]> msg_iov_buffer(new char[total_message_size]);
+  size_t copied_bytes = 0;
+  for (int i = 0; i < msg->msg_iovlen; ++i) {
+    memcpy(msg_iov_buffer.get() + copied_bytes, msg->msg_iov[i].iov_base,
+           msg->msg_iov[i].iov_len);
+    copied_bytes += msg->msg_iov[i].iov_len;
+  }
+
+  ::asylo::primitives::MessageWriter input;
+  input.Push(sockfd);
+  input.PushByReference(
+      ::asylo::primitives::Extent{msg->msg_name, msg->msg_namelen});
+  input.PushByReference(
+      ::asylo::primitives::Extent{msg_iov_buffer.get(), total_message_size});
+  input.PushByReference(
+      ::asylo::primitives::Extent{msg->msg_control, msg->msg_controllen});
+  input.Push(msg->msg_flags);
+  input.Push(flags);
+  ::asylo::primitives::MessageReader output;
+
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kSendMsgHandler, &input, &output);
+  if (!status.ok()) {
+    abort();
+  }
+
+  ssize_t result = output.next<ssize_t>();
+
+  // sendmsg() returns the number of characters sent. On error, -1 is returned,
+  // with errno set to indicate the cause of the error.
+  if (result == -1) {
+    int klinux_errno = output.next<int>();
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+
+  return result;
+}
+
 }  // extern "C"

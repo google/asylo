@@ -79,9 +79,6 @@ enclave {
                                       [in, string] const char *src,
                                       [out, size=dst_size] void *dst,
                                       bridge_size_t dst_size) propagate_errno;
-    bridge_ssize_t ocall_enc_untrusted_sendmsg(
-        int sockfd, [user_check] const struct bridge_msghdr *msg, int flags)
-        propagate_errno;
 
     bridge_ssize_t ocall_enc_untrusted_recvmsg(
         int sockfd, [user_check] struct bridge_msghdr *msg, int flags)

@@ -177,6 +177,57 @@ TEST_F(HostCallTest, TestSend) {
   close(connection_socket);
 }
 
+// Test enc_untrusted_sendmsg() by calling enc_untrusted_sendmsg() from inside
+// the enclave with an array of 2 strings, and verifies the output size makes
+// sense.
+TEST_F(HostCallTest, TestSendMsg) {
+  // Create a local socket and ensure that it is valid (fd > 0).
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath =
+      absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  strncpy(&sa.sun_path[0], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  ASSERT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+
+  ASSERT_THAT(listen(socket_fd, 8), Not(Eq(-1)));
+
+  // Create another local socket and ensure that it is valid (fd > 0).
+  int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(client_sock, Gt(0));
+
+  // Attempt to connect the new socket to the local address. This call
+  // will only succeed if the listen is successful.
+  ASSERT_THAT(connect(client_sock, reinterpret_cast<struct sockaddr *>(&sa),
+                      sizeof(sa)),
+              Not(Eq(-1)));
+
+  int connection_socket = accept(socket_fd, nullptr, nullptr);
+
+  constexpr char kMsg1[] = "First sendmsg message.";
+  constexpr char kMsg2[] = "Second sendmsg message.";
+
+  primitives::MessageWriter in;
+  in.Push<int>(/*value=sockfd=*/connection_socket);
+  in.PushByReference(::asylo::primitives::Extent{kMsg1, sizeof(kMsg1)});
+  in.PushByReference(::asylo::primitives::Extent{kMsg2, sizeof(kMsg2)});
+  in.Push<int>(/*value=flags*/ 0);
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSendMsg, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));
+  EXPECT_THAT(out.next<int>(), Eq(sizeof(kMsg1) + sizeof(kMsg2)));
+
+  close(socket_fd);
+  close(client_sock);
+  close(connection_socket);
+}
+
 // Tests enc_untrusted_access() by creating a file and calling
 // enc_untrusted_access() from inside the enclave and verifying its return
 // value.
