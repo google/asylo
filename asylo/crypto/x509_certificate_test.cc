@@ -199,7 +199,6 @@ constexpr char kCsrDerHex[] =
     "cff61cd5ab7c48afa493253dd534a5ff8b1436a13e390faeeba8543142987df7";
 
 using ::testing::Eq;
-using ::testing::Not;
 using ::testing::Optional;
 using ::testing::Test;
 
