@@ -70,13 +70,6 @@ bool EnclaveManager::configured_ = false;
 EnclaveManagerOptions *EnclaveManager::options_ = nullptr;
 EnclaveManager *EnclaveManager::instance_ = nullptr;
 
-void donate(asylo::EnclaveClient *client) {
-  Status status = client->EnterAndDonateThread();
-  if (!status.ok()) {
-    LOG(ERROR) << "EnterAndDonateThread() failed: " << status;
-  }
-}
-
 // By default, the options object holds an empty HostConfig proto.
 EnclaveManagerOptions::EnclaveManagerOptions()
     : host_config_info_(absl::in_place_type_t<HostConfig>()) {}
@@ -457,24 +450,3 @@ Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
 }
 
 };  // namespace asylo
-
-extern "C" {
-
-int __asylo_donate_thread(const char *name) {
-  auto manager_result = ::asylo::EnclaveManager::Instance();
-  if (!manager_result.ok()) {
-    LOG(ERROR) << manager_result.status();
-    return -1;
-  }
-  asylo::EnclaveClient *client = manager_result.ValueOrDie()->GetClient(name);
-  if (!client) {
-    return -1;
-  }
-
-  std::thread thread(asylo::donate, client);
-  thread.detach();
-
-  return 0;
-}
-
-}  // extern "C"

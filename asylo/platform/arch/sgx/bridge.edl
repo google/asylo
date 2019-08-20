@@ -112,13 +112,6 @@ enclave {
         [out] bridge_ssize_t *serialized_output_len) propagate_errno;
 
     //////////////////////////////////////
-    //           Threading              //
-    //////////////////////////////////////
-
-    // Creates a thread to call ecall_donate_thread() then returns.
-    int ocall_enc_untrusted_thread_create([in, string] const char *name);
-
-    //////////////////////////////////////
     //             poll.h               //
     //////////////////////////////////////
 

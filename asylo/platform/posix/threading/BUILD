@@ -32,9 +32,8 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/arch:trusted_arch",
-        "//asylo/platform/core:trusted_core",
         "//asylo/platform/posix:pthread_impl",
+        "//asylo/platform/primitives:trusted_primitives",
         "@com_google_absl//absl/container:flat_hash_map",
     ],
 )

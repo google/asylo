@@ -17,15 +17,15 @@
  */
 
 #include "asylo/platform/posix/threading/thread_manager.h"
+
 #include <pthread.h>
 
 #include <algorithm>
 #include <cstdlib>
 #include <memory>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
-#include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/pthread_impl.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 
 namespace asylo {
 namespace {
@@ -181,8 +181,8 @@ int ThreadManager::CreateThread(const std::function<void *()> &start_routine,
                                 pthread_t *const thread_id_out) {
   std::shared_ptr<Thread> thread = EnqueueThread(options, start_routine);
 
-  // Exit and create a thread to enter with EnterAndDonateThread().
-  if (enc_untrusted_create_thread(GetEnclaveName().c_str())) {
+  // Exit and create a thread to enter with EnclaveCall DonateThread.
+  if (asylo::primitives::TrustedPrimitives::CreateThread()) {
     return ECHILD;
   }
 

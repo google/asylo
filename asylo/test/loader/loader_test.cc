@@ -48,8 +48,6 @@ class TestClient : public EnclaveClient {
     return Status::OkStatus();
   }
 
-  Status EnterAndDonateThread() override { return Status::OkStatus(); }
-
   Status EnterAndHandleSignal(const EnclaveSignal &signum) override {
     return Status::OkStatus();
   }

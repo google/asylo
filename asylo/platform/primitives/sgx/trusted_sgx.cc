@@ -25,6 +25,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
+#include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
@@ -52,19 +53,18 @@ namespace {
   do {                                                                       \
     sgx_status_t status##__COUNTER__ = status_;                              \
     if (status##__COUNTER__ != SGX_SUCCESS) {                                \
-      TrustedPrimitives::DebugPuts(                                          \
+      TrustedPrimitives::BestEffortAbort(                                    \
           absl::StrCat(                                                      \
               __FILE__, ":", __LINE__, ": ",                                 \
               asylo::Status(status##__COUNTER__, "ocall failed").ToString()) \
               .c_str());                                                     \
-      abort();                                                               \
     }                                                                        \
   } while (0)
 
 }  // namespace
 
-// Handler installed by the runtime to finalize the enclave at the time it is
-// destroyed.
+// Entry handler installed by the runtime to finalize the enclave at the time it
+// is destroyed.
 PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
                                 MessageWriter *out) {
   if (in) {
@@ -73,17 +73,45 @@ PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
   return asylo_enclave_fini();
 }
 
+// Entry handler installed by the runtime to start the created thread.
+PrimitiveStatus DonateThread(void *context, MessageReader *in,
+                             MessageWriter *out) {
+  if (in) {
+    ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
+  }
+  int result = 0;
+  try {
+    ThreadManager *thread_manager = ThreadManager::GetInstance();
+    result = thread_manager->StartThread();
+  } catch (...) {
+    TrustedPrimitives::BestEffortAbort(
+        "Uncaught exception in enclave entry handler: DonateThread. Failed to "
+        "get ThreadManager instance or start the thread.");
+  }
+  return PrimitiveStatus(result);
+}
+
 // Registers internal handlers, including entry handlers.
 void RegisterInternalHandlers() {
-  // Register the enclave finalization entry handler.
-  EntryHandler handler{FinalizeEnclave};
-  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini, handler)
+  // Register the enclave donate thread entry handler.
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloDonateThread,
+                                               EntryHandler{DonateThread})
            .ok()) {
-    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
+    TrustedPrimitives::BestEffortAbort(
+        "Could not register entry handler: DonateThread.");
+  }
+
+  // Register the enclave finalization entry handler.
+  if (!TrustedPrimitives::RegisterEntryHandler(kSelectorAsyloFini,
+                                               EntryHandler{FinalizeEnclave})
+           .ok()) {
+    TrustedPrimitives::BestEffortAbort(
+        "Could not register entry handler: FinalizeEnclave");
   }
 }
 
 void TrustedPrimitives::BestEffortAbort(const char *message) {
+  DebugPuts(message);
   enc_block_ecalls();
   MarkEnclaveAborted();
   abort();
@@ -212,6 +240,26 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
     TrustedPrimitives::UntrustedLocalFree(sgx_params->output);
   }
   return PrimitiveStatus::OkStatus();
+}
+
+// For SGX, CreateThread() needs to exit the enclave by making an UntrustedCall
+// to CreateThreadHandler, which makes an EnclaveCall to enter the enclave with
+// the new thread and register it with the thread manager and execute the
+// intended callback.
+int TrustedPrimitives::CreateThread() {
+  MessageWriter input;
+  MessageReader output;
+  PrimitiveStatus status =
+      UntrustedCall(kSelectorCreateThread, &input, &output);
+  if (!status.ok()) {
+    DebugPuts("CreateThread failed.");
+    return -1;
+  }
+  if (output.size() != 1) {
+    DebugPuts("CreateThread error: unexpected output size received.");
+    abort();
+  }
+  return output.next<int>();
 }
 
 }  // namespace primitives

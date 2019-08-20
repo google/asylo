@@ -81,6 +81,7 @@ void RegisterInternalHandlers() {
 }
 
 void TrustedPrimitives::BestEffortAbort(const char *message) {
+  DebugPuts(message);
   MarkEnclaveAborted();
 }
 
@@ -194,6 +195,10 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
     TrustedPrimitives::UntrustedLocalFree(output_buffer);
   }
   return status;
+}
+
+int TrustedPrimitives::CreateThread() {
+  return 0;
 }
 
 }  // namespace primitives

@@ -49,7 +49,6 @@ class GenericEnclaveClient : public EnclaveClient {
  private:
   Status EnterAndInitialize(const EnclaveConfig &config) override;
   Status EnterAndFinalize(const EnclaveFinal &final_input) override;
-  Status EnterAndDonateThread() override;
   Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
   Status DestroyEnclave() override;
 

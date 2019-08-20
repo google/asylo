@@ -104,10 +104,6 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
 //            Threading             //
 //////////////////////////////////////
 
-// Exits and creates a new thread to invoke the EnterAndDonateThread entry point
-// of the named enclave.
-int enc_untrusted_create_thread(const char *name);
-
 // Exits the enclave and, if the value stored at |futex| equals |expected|,
 // suspends the calling thread until it is resumed by a call to
 // enc_untrusted_sys_futex_wake. Otherwise returns immediately.

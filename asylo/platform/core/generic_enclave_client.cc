@@ -180,16 +180,6 @@ Status GenericEnclaveClient::EnterAndFinalize(const EnclaveFinal &final_input) {
   return status;
 }
 
-Status GenericEnclaveClient::EnterAndDonateThread() {
-  primitives::MessageReader out;
-  Status status =
-      primitive_client_->EnclaveCall(kSelectorAsyloDonateThread, nullptr, &out);
-  if (!status.ok()) {
-    LOG(ERROR) << "EnterAndDonateThread failed " << status;
-  }
-  return status;
-}
-
 Status GenericEnclaveClient::EnterAndHandleSignal(const EnclaveSignal &signal) {
   EnclaveSignal enclave_signal;
   int bridge_signum = ToBridgeSignal(signal.signum());

@@ -362,17 +362,6 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
 }
 
 //////////////////////////////////////
-//           Threading              //
-//////////////////////////////////////
-
-int enc_untrusted_create_thread(const char *name) {
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_thread_create(&ret, name));
-
-  return 0;
-}
-
-//////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////
 

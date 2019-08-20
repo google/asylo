@@ -38,8 +38,11 @@ static constexpr uint64_t kSelectorAsyloInvalid = 0;
 // Enclave signal handling entry point selector.
 static constexpr uint64_t kSelectorAsyloDeliverSignal = 1;
 
+// Enclave enter and donate thread entry point selector.
+static constexpr uint64_t kSelectorAsyloDonateThread = 2;
+
 // Enclave finalization entry point selector.
-static constexpr uint64_t kSelectorAsyloFini = 2;
+static constexpr uint64_t kSelectorAsyloFini = 3;
 
 //////////////////////////////////////
 //      Exit handler selectors      //

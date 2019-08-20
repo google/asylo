@@ -88,6 +88,13 @@ class TrustedPrimitives {
   static PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
                                               const EntryHandler &handler)
       ASYLO_MUST_USE_RESULT;
+
+  // Creates a new thread. Depending on the backend, the implementation might or
+  // might not need to exit the enclave for thread creation. The created thread
+  // is responsible for making a callback for querying the thread manager to
+  // register itself and then execute the callback function provided by the
+  // thread manager. Returns 0 on success.
+  static int CreateThread();
 };
 
 // Callback structure for dispatching messages passed to the enclave.

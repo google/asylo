@@ -62,6 +62,7 @@ cc_library(
                 "//asylo/platform/primitives/sgx:sgx_error_space",
                 "@linux_sgx//:public",
                 "@linux_sgx//:trts",
+                "//asylo/platform/posix/threading:thread_manager",
             ],
         },
         no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",
@@ -132,7 +133,9 @@ cc_library(
     deps = [
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "//asylo/util:status_macros",
+        "//asylo/util:thread",
     ],
 )

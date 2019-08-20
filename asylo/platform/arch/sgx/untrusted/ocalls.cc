@@ -172,9 +172,6 @@ class SnapshotDataDeleter {
 
 }  // namespace
 
-// Threading implementation-defined untrusted thread donate routine.
-extern "C" int __asylo_donate_thread(const char *name);
-
 //////////////////////////////////////
 //              IO                  //
 //////////////////////////////////////
@@ -1139,15 +1136,6 @@ int ocall_enc_untrusted_release_shared_resource(SharedNameKind kind,
 
 void ocall_enc_untrusted_hex_dump(const void *buf, int nbytes) {
   fprintf(stderr, "%s\n", asylo::buffer_to_hex_string(buf, nbytes).c_str());
-}
-
-//////////////////////////////////////
-//           Threading              //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_thread_create(const char *name) {
-  __asylo_donate_thread(name);
-  return 0;
 }
 
 int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {

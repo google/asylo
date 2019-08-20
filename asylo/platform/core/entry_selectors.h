@@ -35,10 +35,6 @@ static constexpr uint64_t kSelectorAsyloRun = primitives::kSelectorUser + 1;
 // Enclave finalization entry point selector.
 static constexpr uint64_t kSelectorAsyloFini = primitives::kSelectorUser + 2;
 
-// Enclave enter and donate thread entry point selector.
-static constexpr uint64_t kSelectorAsyloDonateThread =
-    primitives::kSelectorUser + 3;
-
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_CORE_ENTRY_SELECTORS_H_

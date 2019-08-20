@@ -64,16 +64,12 @@ class EnclaveClient {
  private:
   friend class EnclaveManager;
   friend class EnclaveSignalDispatcher;
-  friend void donate(EnclaveClient *client);
 
   // Enters the enclave and invokes its initialization entry point.
   virtual Status EnterAndInitialize(const EnclaveConfig &config) = 0;
 
   // Enters the enclave and invokes its finalization entry point.
   virtual Status EnterAndFinalize(const EnclaveFinal &final_input) = 0;
-
-  // Donates the invoking thread to the enclave runtime.
-  virtual Status EnterAndDonateThread() = 0;
 
   // Enters the enclave and invokes its signal handling entry point.
   virtual Status EnterAndHandleSignal(const EnclaveSignal &signal) = 0;

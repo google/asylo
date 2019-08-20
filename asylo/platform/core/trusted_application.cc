@@ -242,20 +242,6 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus(result);
 }
 
-// Handler installed by the runtime to start the created thread.
-PrimitiveStatus DonateThread(void *context, MessageReader *in,
-                             MessageWriter *out) {
-  ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
-  int result = 0;
-  try {
-    ThreadManager *thread_manager = ThreadManager::GetInstance();
-    result = thread_manager->StartThread();
-  } catch (...) {
-    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
-  }
-  return PrimitiveStatus(result);
-}
-
 // Handler installed by the runtime to invoke the enclave signal handling entry
 // point.
 PrimitiveStatus DeliverSignal(void *context, MessageReader *in,
@@ -708,14 +694,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   EntryHandler finalize_handler{asylo::Finalize};
   if (!TrustedPrimitives::RegisterEntryHandler(asylo::kSelectorAsyloFini,
                                                finalize_handler)
-           .ok()) {
-    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
-  }
-
-  // Register the enclave donate thread entry handler.
-  EntryHandler donate_thread_handler{asylo::DonateThread};
-  if (!TrustedPrimitives::RegisterEntryHandler(
-           asylo::kSelectorAsyloDonateThread, donate_thread_handler)
            .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }
