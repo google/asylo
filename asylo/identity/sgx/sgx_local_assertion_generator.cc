@@ -20,7 +20,6 @@
 
 #include <string>
 
-#include "absl/synchronization/mutex.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -33,14 +32,15 @@
 
 namespace asylo {
 
-const char *const SgxLocalAssertionGenerator::authority_type_ =
+const char *const SgxLocalAssertionGenerator::kAuthorityType =
     sgx::kSgxLocalAssertionAuthority;
 
 SgxLocalAssertionGenerator::SgxLocalAssertionGenerator()
-    : initialized_(false) {}
+    : members_(Members()) {}
 
 Status SgxLocalAssertionGenerator::Initialize(const std::string &config) {
-  if (IsInitialized()) {
+  auto members_view = members_.Lock();
+  if (members_view->initialized) {
     return Status(error::GoogleError::FAILED_PRECONDITION,
                   "Already initialized");
   }
@@ -56,25 +56,22 @@ Status SgxLocalAssertionGenerator::Initialize(const std::string &config) {
                   "Config is missing attestation domain");
   }
 
-  attestation_domain_ = authority_config.attestation_domain();
-
-  absl::MutexLock lock(&initialized_mu_);
-  initialized_ = true;
+  members_view->attestation_domain = authority_config.attestation_domain();
+  members_view->initialized = true;
 
   return Status::OkStatus();
 }
 
 bool SgxLocalAssertionGenerator::IsInitialized() const {
-  absl::MutexLock lock(&initialized_mu_);
-  return initialized_;
+  return members_.ReaderLock()->initialized;
 }
 
 EnclaveIdentityType SgxLocalAssertionGenerator::IdentityType() const {
-  return identity_type_;
+  return kIdentityType;
 }
 
 std::string SgxLocalAssertionGenerator::AuthorityType() const {
-  return authority_type_;
+  return kAuthorityType;
 }
 
 Status SgxLocalAssertionGenerator::CreateAssertionOffer(
@@ -87,7 +84,8 @@ Status SgxLocalAssertionGenerator::CreateAssertionOffer(
   offer->mutable_description()->set_authority_type(AuthorityType());
 
   sgx::LocalAssertionOfferAdditionalInfo additional_info;
-  additional_info.set_local_attestation_domain(attestation_domain_);
+  additional_info.set_local_attestation_domain(
+      members_.ReaderLock()->attestation_domain);
   if (!additional_info.SerializeToString(
           offer->mutable_additional_information())) {
     return Status(error::GoogleError::INTERNAL,
@@ -113,7 +111,8 @@ StatusOr<bool> SgxLocalAssertionGenerator::CanGenerate(
   sgx::LocalAssertionRequestAdditionalInfo additional_info =
       additional_info_result.ValueOrDie();
 
-  return additional_info.local_attestation_domain() == attestation_domain_;
+  return additional_info.local_attestation_domain() ==
+         members_.ReaderLock()->attestation_domain;
 }
 
 Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
@@ -132,7 +131,8 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   sgx::LocalAssertionRequestAdditionalInfo additional_info =
       additional_info_result.ValueOrDie();
 
-  if (additional_info.local_attestation_domain() != attestation_domain_) {
+  if (additional_info.local_attestation_domain() !=
+      members_.ReaderLock()->attestation_domain) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "AssertionRequest specifies non-local attestation domain");
   }

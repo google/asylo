@@ -20,9 +20,8 @@
 #define ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_GENERATOR_H_
 
 #include "asylo/identity/enclave_assertion_generator.h"
-
-#include "absl/synchronization/mutex.h"
 #include "asylo/identity/sgx/local_assertion.pb.h"
+#include "asylo/util/mutex_guarded.h"
 
 namespace asylo {
 
@@ -70,19 +69,24 @@ class SgxLocalAssertionGenerator final : public EnclaveAssertionGenerator {
       const AssertionRequest &request) const;
 
   // The identity type handled by this generator.
-  static constexpr EnclaveIdentityType identity_type_ = CODE_IDENTITY;
+  static constexpr EnclaveIdentityType kIdentityType = CODE_IDENTITY;
 
   // The authority type handled by this generator.
-  static const char *const authority_type_;
+  static const char *const kAuthorityType;
 
-  // The attestation domain to which the enclave belongs.
-  std::string attestation_domain_;
+  // A struct to hold the members so that they can be clearly guarded by the
+  // same mutex.
+  struct Members {
+    // The attestation domain to which the enclave belongs.
+    std::string attestation_domain;
 
-  // Indicates whether this generator has been initialized.
-  bool initialized_ GUARDED_BY(initialized_mu_);
+    // Indicates whether this generator has been initialized.
+    bool initialized;
 
-  // A mutex that guards the initialized_ member.
-  mutable absl::Mutex initialized_mu_;
+    Members() : initialized(false) {}
+  };
+
+  MutexGuarded<Members> members_;
 };
 
 }  // namespace asylo

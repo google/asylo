@@ -18,6 +18,7 @@
 
 #include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 
+#include <atomic>
 #include <cstdint>
 #include <string>
 #include <vector>
@@ -40,10 +41,12 @@
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/thread.h"
 
 namespace asylo {
 namespace {
 
+using ::testing::Eq;
 using ::testing::Not;
 
 constexpr char kBadConfig[] = "Not a real config";
@@ -138,6 +141,27 @@ TEST_F(SgxLocalAssertionGeneratorTest, InitializeSucceedsOnce) {
   SgxLocalAssertionGenerator generator;
   EXPECT_THAT(generator.Initialize(config_), IsOk());
   EXPECT_THAT(generator.Initialize(config_), Not(IsOk()));
+}
+
+// Verify that Initialize() succeeds only once, even when called from multiple
+// threads.
+TEST_F(SgxLocalAssertionGeneratorTest,
+       InitializeSucceedsOnceFromMultipleThreads) {
+  constexpr int kNumThreads = 10;
+
+  SgxLocalAssertionGenerator generator;
+  std::atomic<int> num_initialize_successes(0);
+  std::vector<Thread> threads;
+  threads.reserve(kNumThreads);
+  for (int i = 0; i < kNumThreads; ++i) {
+    threads.emplace_back([this, &generator, &num_initialize_successes] {
+      num_initialize_successes += generator.Initialize(config_).ok() ? 1 : 0;
+    });
+  }
+  for (auto &thread : threads) {
+    thread.Join();
+  }
+  EXPECT_THAT(num_initialize_successes.load(), Eq(1));
 }
 
 // Verify that Initialize() fails if the authority config cannot be parsed.
