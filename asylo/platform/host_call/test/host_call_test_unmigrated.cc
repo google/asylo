@@ -46,10 +46,7 @@
 #include "asylo/test/util/test_flags.h"
 
 using ::testing::Eq;
-using ::testing::Gt;
-using ::testing::Not;
 using ::testing::SizeIs;
-using ::testing::StrEq;
 
 namespace asylo {
 namespace host_call {
