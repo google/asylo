@@ -153,39 +153,3 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
-
-cc_library(
-    name = "peer_identity_util",
-    srcs = ["peer_identity_util.cc"],
-    hdrs = ["peer_identity_util.h"],
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":enclave_auth_context",
-        "//asylo/identity:descriptions",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity:identity_expectation_matcher",
-        "//asylo/identity/sgx:code_identity_cc_proto",
-        "//asylo/identity/sgx:code_identity_util",
-        "//asylo/util:status",
-        "@com_github_grpc_grpc//:grpc++_codegen_base",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test(
-    name = "peer_identity_util_test",
-    srcs = ["peer_identity_util_test.cc"],
-    enclave_test_name = "peer_identity_util_enclave_test",
-    deps = [
-        ":peer_identity_util",
-        "//asylo/grpc/auth/test:mock_enclave_auth_context",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity/sgx:code_identity_cc_proto",
-        "//asylo/identity/sgx:code_identity_util",
-        "//asylo/identity/test:mock_identity_expectation_matcher",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)

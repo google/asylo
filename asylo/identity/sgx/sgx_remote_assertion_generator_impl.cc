@@ -21,7 +21,8 @@
 #include <memory>
 #include <vector>
 
-#include "asylo/grpc/auth/peer_identity_util.h"
+#include "asylo/grpc/auth/enclave_auth_context.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/remote_assertion_util.h"
 #include "asylo/util/mutex_guarded.h"
@@ -29,6 +30,23 @@
 #include "include/grpcpp/support/status.h"
 
 namespace asylo {
+namespace {
+
+Status ExtractCodeIdentity(const EnclaveAuthContext &auth_context,
+                           sgx::CodeIdentity *code_identity) {
+  EnclaveIdentityDescription code_identity_description;
+  SetSgxIdentityDescription(&code_identity_description);
+  StatusOr<const EnclaveIdentity *> identity_result =
+      auth_context.FindEnclaveIdentity(code_identity_description);
+  if (!identity_result.ok()) {
+    LOG(ERROR) << "FindEnclaveIdentity failed: " << identity_result.status();
+    return Status(error::GoogleError::PERMISSION_DENIED,
+                  "Peer does not have SGX code identity");
+  }
+  return sgx::ParseSgxIdentity(*identity_result.ValueOrDie(), code_identity);
+}
+
+}  // namespace
 
 SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
     std::unique_ptr<SigningKey> signing_key,
@@ -40,9 +58,19 @@ SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
     ::grpc::ServerContext *context,
     const GenerateSgxRemoteAssertionRequest *request,
     GenerateSgxRemoteAssertionResponse *response) {
+  StatusOr<EnclaveAuthContext> auth_context_result =
+      EnclaveAuthContext::CreateFromAuthContext(*context->auth_context());
+  if (!auth_context_result.ok()) {
+    LOG(ERROR) << "CreateFromServerContext failed: "
+               << auth_context_result.status();
+    return ::grpc::Status(
+        ::grpc::StatusCode::INTERNAL,
+        "Failed to retrieve enclave authentication information");
+  }
+  EnclaveAuthContext auth_context = auth_context_result.ValueOrDie();
+
   sgx::CodeIdentity code_identity;
-  Status status = ExtractAndCheckPeerSgxCodeIdentity(*context->auth_context(),
-                                                     &code_identity);
+  Status status = ExtractCodeIdentity(auth_context, &code_identity);
   if (!status.ok()) {
     return status.ToOtherStatus<::grpc::Status>();
   }
