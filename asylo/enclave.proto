@@ -67,6 +67,9 @@ message EnclaveLoaderConfig {
   // Name of the enclave to be loaded.
   optional string name = 1;
 
+  // Configuration passed to an enclave during initialization.
+  optional EnclaveConfig config = 2;
+
   // Allow user extensions.
   extensions 1000 to max;
 }

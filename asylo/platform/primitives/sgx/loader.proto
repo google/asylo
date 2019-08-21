@@ -32,9 +32,6 @@ message SgxLoadConfig {
   // True, if the enclave is to be loaded in debug mode.
   optional bool debug = 2;
 
-  // Configuration passed to an enclave during initialization.
-  optional EnclaveConfig config = 3;
-
   message ForkConfig {
     // Start address to load enclave.
     optional uint64 base_address = 1 [default = 0];
@@ -45,7 +42,7 @@ message SgxLoadConfig {
 
   // Configuration passed by the implementation of fork to load a child enclave
   // in the same virtual space as the parent.
-  optional ForkConfig fork_config = 4;
+  optional ForkConfig fork_config = 3;
 
   message EmbeddedConfig {
     // Name of the ELF section containing the enclave.
@@ -54,5 +51,5 @@ message SgxLoadConfig {
 
   // Set if loading an SGX based enclaves embedded in the binary of the
   // calling process.
-  optional EmbeddedConfig embedded_config = 5;
+  optional EmbeddedConfig embedded_config = 4;
 }
