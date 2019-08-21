@@ -72,6 +72,12 @@ Status SendMsgHandler(const std::shared_ptr<primitives::Client> &client,
                       void *context, primitives::MessageReader *input,
                       primitives::MessageWriter *output);
 
+// recvmsg syscall handler on the host; expects [int sockfd, struct msghdr *msg,
+// int flags] and returns [ssize_t].
+Status RecvMsgHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

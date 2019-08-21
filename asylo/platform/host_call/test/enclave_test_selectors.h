@@ -129,6 +129,7 @@ constexpr uint64_t kTestSend = kHostLibCSelector + 4;
 constexpr uint64_t kTestRealloc = kHostLibCSelector + 5;
 constexpr uint64_t kTestSleep = kHostLibCSelector + 6;
 constexpr uint64_t kTestSendMsg = kHostLibCSelector + 7;
+constexpr uint64_t kTestRecvMsg = kHostLibCSelector + 8;
 
 }  // namespace host_call
 }  // namespace asylo

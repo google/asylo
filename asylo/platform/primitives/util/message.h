@@ -213,6 +213,15 @@ class MessageReader {
     }                                                                     \
   } while (false)
 
+#define ASYLO_RETURN_IF_TOO_FEW_READER_ARGUMENTS(reader, expected_args) \
+  do {                                                                  \
+    if ((reader).size() < expected_args) {                              \
+      return {::asylo::error::GoogleError::INVALID_ARGUMENT,            \
+              absl::StrCat("At least", expected_args,                   \
+                           " item(s) expected on the MessageReader.")}; \
+    }                                                                   \
+  } while (false)
+
 #define ASYLO_RETURN_IF_READER_NOT_EMPTY(reader)             \
   do {                                                       \
     if (!(reader).empty()) {                                 \

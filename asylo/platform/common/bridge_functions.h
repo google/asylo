@@ -230,38 +230,6 @@ struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,
 struct bridge_pollfd *ToBridgePollfd(const struct pollfd *fd,
                                      struct bridge_pollfd *bridge_fd);
 
-// Converts |bridge_msg| to a runtime msghdr. This only does a shallow copy of
-// the pointers. A deep copy of the |iovec| array is done in a helper class
-// |BridgeMsghdrWrapper| in host_calls. Returns nullptr if unsuccessful.
-struct msghdr *FromBridgeMsgHdr(const struct bridge_msghdr *bridge_msg,
-                                struct msghdr *msg);
-
-// Converts |msg| to a bridge msghdr. This only does a shallow copy of the
-// pointers. A deep copy of the |iovec| array is done in a helper class
-// |BridgeMsghdrWrapper| in host_calls. Returns nullptr if unsuccessful.
-struct bridge_msghdr *ToBridgeMsgHdr(const struct msghdr *msg,
-                                     struct bridge_msghdr *bridge_msg);
-
-// Copies all the iovec buffers from |bridge_msg| to |msg|. This conversion does
-// not allocate memory, just copies data to already allocated memory. Returns
-// nullptr if unsuccessful.
-struct msghdr *FromBridgeIovecArray(const struct bridge_msghdr *bridge_msg,
-                                    struct msghdr *msg);
-
-// Copies all the iovec buffers from |msg| to |bridge_msg|. This conversion does
-// not allocate memory, just copies data to already allocated memory. Returns
-// nullptr is unsuccessful.
-struct bridge_msghdr *ToBridgeIovecArray(const struct msghdr *msg,
-                                         struct bridge_msghdr *bridge_msg);
-
-// Converts |bridge_iov| to a runtime iovec. Returns nullptr if unsuccessful.
-struct iovec *FromBridgeIovec(const struct bridge_iovec *bridge_iov,
-                              struct iovec *iov);
-
-// Converts |iov| to a bridge iovec. Returns nullptr if unsuccessful.
-struct bridge_iovec *ToBridgeIovec(const struct iovec *iov,
-                                   struct bridge_iovec *bridge_iov);
-
 // Converts |host_wstatus| to a runtime wstatus.
 // This only works when converting into an enclave runtime wstatus, not on host.
 int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus);

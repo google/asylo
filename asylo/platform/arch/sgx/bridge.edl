@@ -80,10 +80,6 @@ enclave {
                                       [out, size=dst_size] void *dst,
                                       bridge_size_t dst_size) propagate_errno;
 
-    bridge_ssize_t ocall_enc_untrusted_recvmsg(
-        int sockfd, [user_check] struct bridge_msghdr *msg, int flags)
-        propagate_errno;
-
     int ocall_enc_untrusted_getaddrinfo(
         [in, string] const char *node, [in, string] const char *service,
         [in, size=serialized_hints_len] const char *serialized_hints,

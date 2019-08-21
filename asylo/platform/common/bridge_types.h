@@ -374,16 +374,6 @@ struct bridge_pollfd {
   int16_t revents;
 };
 
-struct bridge_msghdr {
-  void *msg_name;
-  uint64_t msg_namelen;
-  struct bridge_iovec *msg_iov;
-  uint64_t msg_iovlen;
-  void *msg_control;
-  uint64_t msg_controllen;
-  int32_t msg_flags;
-};
-
 struct bridge_iovec {
   void *iov_base;
   uint64_t iov_len;

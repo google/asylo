@@ -136,5 +136,62 @@ Status SendMsgHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status RecvMsgHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 6);
+  int sockfd = input->next<int>();
+
+  // An upper bound of buffer size for name/control to avoid allocating memory
+  // for a non-initialized random size.
+  constexpr size_t kMaxBufferSize = 1024;
+
+  struct msghdr msg;
+  msg.msg_namelen = input->next<uint64_t>();
+  std::unique_ptr<char[]> msg_name_buffer(nullptr);
+  if (msg.msg_namelen > 0 && msg.msg_namelen < kMaxBufferSize) {
+    msg_name_buffer.reset(new char[msg.msg_namelen]);
+  } else {
+    msg.msg_namelen = 0;
+  }
+  msg.msg_name = msg_name_buffer.get();
+
+  // Receive message in a single buffer, which will be copied into the scattered
+  // buffers once back inside the enclave.
+  msg.msg_iovlen = 1;
+  struct iovec msg_iov[1];
+  memset(msg_iov, 0, sizeof(*msg_iov));
+  msg_iov[0].iov_len = input->next<uint64_t>();
+  std::unique_ptr<char[]> msg_iov_buffer(nullptr);
+  if (msg_iov[0].iov_len > 0) {
+    msg_iov_buffer.reset(new char[msg_iov[0].iov_len]);
+  }
+  msg_iov[0].iov_base = msg_iov_buffer.get();
+  msg.msg_iov = msg_iov;
+
+  msg.msg_controllen = input->next<uint64_t>();
+  std::unique_ptr<char[]> msg_control_buffer(nullptr);
+  if (msg.msg_controllen > 0 && msg.msg_controllen < kMaxBufferSize) {
+    msg_control_buffer.reset(new char[msg.msg_controllen]);
+  } else {
+    msg.msg_controllen = 0;
+  }
+  msg.msg_control = msg_control_buffer.get();
+
+  msg.msg_flags = input->next<int>();
+  int flags = input->next<int>();
+
+  output->Push<int64_t>(recvmsg(sockfd, &msg, flags));  // Push return value.
+  output->Push<int>(errno);                             // Push errno.
+  output->PushByCopy(::asylo::primitives::Extent{
+      msg.msg_name, msg.msg_namelen});  // Push msg name.
+  output->PushByCopy(::asylo::primitives::Extent{
+      msg.msg_iov[0].iov_base, msg.msg_iov[0].iov_len});  // Push received msg.
+  output->PushByCopy(::asylo::primitives::Extent{
+      msg.msg_control, msg.msg_controllen});  // Push control msg.
+
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

@@ -887,68 +887,6 @@ struct bridge_pollfd *ToBridgePollfd(const struct pollfd *fd,
   return bridge_fd;
 }
 
-struct msghdr *FromBridgeMsgHdr(const struct bridge_msghdr *bridge_msg,
-                                struct msghdr *msg) {
-  if (!bridge_msg || !msg) return nullptr;
-  msg->msg_name = bridge_msg->msg_name;
-  msg->msg_namelen = bridge_msg->msg_namelen;
-  msg->msg_iov = reinterpret_cast<struct iovec *>(bridge_msg->msg_iov);
-  msg->msg_iovlen = bridge_msg->msg_iovlen;
-  msg->msg_control = bridge_msg->msg_control;
-  msg->msg_controllen = bridge_msg->msg_controllen;
-  msg->msg_flags = bridge_msg->msg_flags;
-  return msg;
-}
-
-struct bridge_msghdr *ToBridgeMsgHdr(const struct msghdr *msg,
-                                     struct bridge_msghdr *bridge_msg) {
-  if (!msg || !bridge_msg) return nullptr;
-  bridge_msg->msg_name = msg->msg_name;
-  bridge_msg->msg_namelen = msg->msg_namelen;
-  bridge_msg->msg_iov = reinterpret_cast<struct bridge_iovec *>(msg->msg_iov);
-  bridge_msg->msg_iovlen = msg->msg_iovlen;
-  bridge_msg->msg_control = msg->msg_control;
-  bridge_msg->msg_controllen = msg->msg_controllen;
-  bridge_msg->msg_flags = msg->msg_flags;
-  return bridge_msg;
-}
-
-struct msghdr *FromBridgeIovecArray(const struct bridge_msghdr *bridge_msg,
-                                    struct msghdr *msg) {
-  if (!bridge_msg || !msg) return nullptr;
-  for (uint64_t i = 0; i < bridge_msg->msg_iovlen; ++i) {
-    memcpy(msg->msg_iov[i].iov_base, bridge_msg->msg_iov[i].iov_base,
-           bridge_msg->msg_iov[i].iov_len);
-  }
-  return msg;
-}
-
-struct bridge_msghdr *ToBridgeIovecArray(const struct msghdr *msg,
-                                         struct bridge_msghdr *bridge_msg) {
-  if (!msg || !bridge_msg) return nullptr;
-  for (uint64_t i = 0; i < msg->msg_iovlen; ++i) {
-    memcpy(bridge_msg->msg_iov[i].iov_base, msg->msg_iov[i].iov_base,
-           msg->msg_iov[i].iov_len);
-  }
-  return bridge_msg;
-}
-
-struct iovec *FromBridgeIovec(const struct bridge_iovec *bridge_iov,
-                              struct iovec *iov) {
-  if (!bridge_iov || !iov) return nullptr;
-  iov->iov_base = bridge_iov->iov_base;
-  iov->iov_len = bridge_iov->iov_len;
-  return iov;
-}
-
-struct bridge_iovec *ToBridgeIovec(const struct iovec *iov,
-                                   struct bridge_iovec *bridge_iov) {
-  if (!iov || !bridge_iov) return nullptr;
-  bridge_iov->iov_base = iov->iov_base;
-  bridge_iov->iov_len = iov->iov_len;
-  return bridge_iov;
-}
-
 struct tms *FromBridgeTms(const struct BridgeTms *bridge_times,
                           struct tms *times) {
   if (!bridge_times || !times) return nullptr;

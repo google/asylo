@@ -292,16 +292,3 @@ cc_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
-
-cc_library(
-    name = "bridge_msghdr_wrapper",
-    srcs = ["bridge_msghdr_wrapper.cc"],
-    hdrs = ["bridge_msghdr_wrapper.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":untrusted_cache_malloc",
-        "//asylo/platform/common:bridge_types",
-        "//asylo/platform/primitives:trusted_backend",
-        "//asylo/util:logging",
-    ],
-)

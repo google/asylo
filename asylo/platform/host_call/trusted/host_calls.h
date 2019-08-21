@@ -102,6 +102,7 @@ int64_t enc_untrusted_sysconf(int name);
 void *enc_untrusted_realloc(void *ptr, size_t size);
 uint32_t enc_untrusted_sleep(uint32_t seconds);
 ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags);
+ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags);
 
 #ifdef __cplusplus
 }  // extern "C"

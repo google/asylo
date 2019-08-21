@@ -83,8 +83,8 @@ primitives::PrimitiveStatus NonSystemCallDispatcher(
         "crossing the enclave boundary."};
   }
 
-  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(
-      *output, 2);  // output should contain the return value and the errno.
+  // output should contain at least the return value and the errno.
+  ASYLO_RETURN_IF_TOO_FEW_READER_ARGUMENTS(*output, 2);
 
   return primitives::PrimitiveStatus::OkStatus();
 }

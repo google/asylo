@@ -374,6 +374,32 @@ PrimitiveStatus TestSendMsg(void *context, MessageReader *in,
   return primitives::PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestRecvMsg(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 4);
+
+  int sockfd = in->next<int>();
+  int msg1_size = in->next<int>();
+  int msg2_size = in->next<int>();
+  int flags = in->next<int>();
+
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+  struct iovec msg_iov[2];
+  std::unique_ptr<char[]> msg1_buffer(new char[msg1_size]);
+  std::unique_ptr<char[]> msg2_buffer(new char[msg2_size]);
+  msg_iov[0].iov_base = msg1_buffer.get();
+  msg_iov[0].iov_len = msg1_size;
+  msg_iov[1].iov_base = msg2_buffer.get();
+  msg_iov[1].iov_len = msg2_size;
+
+  msg.msg_iov = msg_iov;
+  msg.msg_iovlen = 2;
+  out->Push<int64_t>(enc_untrusted_recvmsg(sockfd, &msg, flags));
+
+  return primitives::PrimitiveStatus::OkStatus();
+}
+
 PrimitiveStatus TestFcntl(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
@@ -789,6 +815,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestSendMsg,
       EntryHandler{asylo::host_call::TestSendMsg}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestRecvMsg,
+      EntryHandler{asylo::host_call::TestRecvMsg}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFcntl, EntryHandler{asylo::host_call::TestFcntl}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(

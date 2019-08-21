@@ -143,18 +143,6 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
   return ret;
 }
 
-ssize_t enc_untrusted_recvmsg(int sockfd,
-                              struct msghdr *msg,
-                              struct bridge_msghdr *bridge_msg,
-                              int flags) {
-  bridge_ssize_t ret;
-  CHECK_OCALL(
-      ocall_enc_untrusted_recvmsg(&ret, sockfd, bridge_msg, flags));
-
-  asylo::FromBridgeIovecArray(bridge_msg, msg);
-  return static_cast<ssize_t>(ret);
-}
-
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size) {
   char *ret;
