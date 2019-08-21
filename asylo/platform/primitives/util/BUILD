@@ -132,6 +132,7 @@ cc_test(
     deps = [
         ":message_reader_writer",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
 )

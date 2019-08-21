@@ -122,6 +122,13 @@ class MessageWriter {
     PushByCopy(Extent{s.c_str(), s.size() + 1});  // Add 1 for null character.
   }
 
+  // Copies the extents of |other| to this MessageWriter.
+  void Extend(const MessageWriter &other) {
+    for (const auto extent : other.extents_) {
+      PushByCopy(extent);
+    }
+  }
+
  private:
   std::vector<Extent> extents_;
   std::vector<std::unique_ptr<char[]>> copied_data_owner_;

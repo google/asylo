@@ -18,10 +18,12 @@
 
 #include "asylo/platform/primitives/util/message.h"
 
+#include <cstddef>
 #include <memory>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/memory/memory.h"
 
 using ::testing::Eq;
 using ::testing::IsEmpty;
@@ -33,7 +35,18 @@ namespace asylo {
 namespace primitives {
 namespace {
 
-constexpr size_t kNumbuffer = 10;
+constexpr size_t kNumBuffer = 10;
+
+// Builds a MessageReader from |writer|.
+MessageReader BuildMessageReader(const MessageWriter &writer) {
+  const size_t size = writer.MessageSize();
+  const auto buffer = absl::make_unique<char[]>(size);
+  writer.Serialize(buffer.get());
+
+  MessageReader reader;
+  reader.Deserialize(buffer.get(), size);
+  return reader;
+}
 
 TEST(MessageTest, NullReaderTest) {
   MessageReader reader;
@@ -82,13 +95,32 @@ TEST(MessageTest, PushPopDataByValue) {
   EXPECT_THAT(reader.hasNext(), Eq(false));
 }
 
+TEST(MessageTest, ExtendMessageWriterFromOther) {
+  MessageWriter writer, other;
+  for (int i = 0; i < kNumBuffer / 2; ++i) {
+    writer.Push(i);                  // 0, 1, 2, 3, 4
+    other.Push(kNumBuffer / 2 + i);  // 5, 6, 7, 8, 9
+  }
+
+  writer.Extend(other);
+
+  MessageReader reader = BuildMessageReader(writer);
+
+  ASSERT_THAT(reader, Not(IsEmpty()));
+  ASSERT_THAT(reader, SizeIs(kNumBuffer));
+  for (int i = 0; i < kNumBuffer; ++i) {
+    ASSERT_TRUE(reader.hasNext());
+    EXPECT_THAT(reader.next<int>(), Eq(i));
+  }
+}
+
 TEST(MessageTest, PushPopNums) {
   MessageWriter writer;
-  for (int i = 0; i < kNumbuffer; ++i) {
+  for (int i = 0; i < kNumBuffer; ++i) {
     writer.Push(i);
   }
   EXPECT_THAT(writer, Not(IsEmpty()));
-  EXPECT_THAT(writer, SizeIs(kNumbuffer));
+  EXPECT_THAT(writer, SizeIs(kNumBuffer));
 
   const size_t size = writer.MessageSize();
   const auto buffer = absl::make_unique<char[]>(size);
@@ -98,8 +130,8 @@ TEST(MessageTest, PushPopNums) {
   reader.Deserialize(buffer.get(), size);
 
   ASSERT_THAT(reader, Not(IsEmpty()));
-  ASSERT_THAT(reader, SizeIs(kNumbuffer));
-  for (int i = 0; i < kNumbuffer; ++i) {
+  ASSERT_THAT(reader, SizeIs(kNumBuffer));
+  for (int i = 0; i < kNumBuffer; ++i) {
     ASSERT_TRUE(reader.hasNext());
     EXPECT_THAT(*(reader.next().As<int>()), Eq(i));
   }
