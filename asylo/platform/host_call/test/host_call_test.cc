@@ -1509,13 +1509,13 @@ TEST_F(HostCallTest, TestLstat) {
   in.Push(sym_path);
   MessageReader out;
 
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStat, &in, &out));
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLstat, &in, &out));
   ASSERT_THAT(out, SizeIs(14));  // Contains return value and 13 result stat
                                  // attributes.
-  ASSERT_THAT(out.next<int>(), Eq(0));
+  ASSERT_THAT(out.next<int>(), Eq(0));  // Check return value.
 
   struct stat st, result_st;
-  stat(path.c_str(), &st);
+  lstat(sym_path.c_str(), &st);
   LoadStatFromMessageReader(&out, &result_st);
   ASSERT_THAT(EqualsStat(&result_st, &st), Eq(true));
   EXPECT_NE(unlink(path.c_str()), -1);
