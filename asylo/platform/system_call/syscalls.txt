@@ -136,7 +136,8 @@ SYSCALL_DEFINE3(accept, int, fd, struct sockaddr *, upeer_sockaddr, int *,
 SYSCALL_DEFINE3(bind, int, fd, \in void * [bound:addrlen], umyaddr,
                 int, addrlen)
 
-SYSCALL_DEFINE3(connect, int, fd, struct sockaddr *, uservaddr, int, addrlen)
+SYSCALL_DEFINE3(connect, int, fd, \in void * [bound:addrlen], uservaddr,
+                int, addrlen)
 
 SYSCALL_DEFINE3(getsockname, int, fd, struct sockaddr *, usockaddr, int *,
                 usockaddr_len)

@@ -747,6 +747,21 @@ PrimitiveStatus TestBind(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestConnect(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  int sockfd = in->next<int>();
+  struct klinux_sockaddr_un klinux_sock_un =
+      in->next<struct klinux_sockaddr_un>();
+
+  sockaddr_un sock_un = {};
+  FromkLinuxSockAddrUn(&klinux_sock_un, &sock_un);
+  out->Push<int>(enc_untrusted_connect(sockfd, (struct sockaddr *)&sock_un,
+                                       sizeof(struct sockaddr_un)));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -902,6 +917,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestClockGettime}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestBind, EntryHandler{asylo::host_call::TestBind}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestConnect,
+      EntryHandler{asylo::host_call::TestConnect}));
 
   return PrimitiveStatus::OkStatus();
 }

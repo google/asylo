@@ -214,20 +214,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 //             Sockets              //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_connect(int sockfd,
-                                const struct bridge_sockaddr *bridge_addr) {
-  struct sockaddr_storage tmp;
-  socklen_t len = sizeof(tmp);
-  struct sockaddr *addr = asylo::FromBridgeSockaddr(
-      bridge_addr, reinterpret_cast<struct sockaddr *>(&tmp), &len);
-
-  LOG_IF(FATAL, addr == nullptr) << "Unexpected bridge failure";
-  LOG_IF(FATAL, len > sizeof(tmp)) << "Insufficient sockaddr buf space";
-
-  int ret = connect(sockfd, addr, len);
-  return ret;
-}
-
 int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr) {
   struct sockaddr_storage tmp;
   socklen_t tmp_len = sizeof(tmp);

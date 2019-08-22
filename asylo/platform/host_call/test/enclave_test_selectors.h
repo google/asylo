@@ -120,6 +120,8 @@ constexpr uint64_t kTestNanosleep =
 constexpr uint64_t kTestClockGettime =
     kFirstSelector + asylo::system_call::kSYS_clock_gettime;
 constexpr uint64_t kTestBind = kFirstSelector + asylo::system_call::kSYS_bind;
+constexpr uint64_t kTestConnect =
+    kFirstSelector + asylo::system_call::kSYS_connect;
 
 // Host calls implemented via other syscalls or as libc library functions.
 constexpr uint64_t kTestIsAtty = kHostLibCSelector;

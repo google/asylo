@@ -170,7 +170,7 @@ TEST_F(HostCallTest, TestSend) {
   close(connection_socket);
 }
 
-// Test enc_untrusted_sendmsg() by calling enc_untrusted_sendmsg() from inside
+// Tests enc_untrusted_sendmsg() by calling enc_untrusted_sendmsg() from inside
 // the enclave with an array of 2 strings, and verifies the output size makes
 // sense.
 TEST_F(HostCallTest, TestSendMsg) {
@@ -1841,6 +1841,63 @@ TEST_F(HostCallTest, TestBind) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestBind, &in, &out));
   ASSERT_THAT(out, SizeIs(1));  // Should only contain the return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
+}
+
+// Tests enc_untrusted_connect() by calling the function from inside the
+// enclave and verifying the return value, then using sendmsg to send a message
+// to the connected socket and verifying its return value.
+TEST_F(HostCallTest, TestConnect) {
+  // Create a local socket and ensure that it is valid (fd > 0).
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath =
+      absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  strncpy(&sa.sun_path[0], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  ASSERT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+
+  ASSERT_THAT(listen(socket_fd, 8), Not(Eq(-1)));
+
+  // Create another local socket and ensure that it is valid (fd > 0).
+  int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(client_sock, Gt(0));
+
+  // Attempt to connect the new socket to the local address using
+  // enc_untrusted_connect(). This call will only succeed if the listen is
+  // successful.
+  MessageWriter in;
+  in.Push<int>(client_sock);
+  in.Push<struct sockaddr_un>(sa);
+
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestConnect, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Not(Eq(-1)));
+
+  int connection_socket = accept(socket_fd, nullptr, nullptr);
+
+  constexpr char kMsg[] = "sendmsg message.";
+  struct msghdr msg;
+  memset(&msg, 0, sizeof(msg));
+
+  struct iovec msg_iov[1];
+  memset(msg_iov, 0, sizeof(*msg_iov));
+  msg_iov[0].iov_base = reinterpret_cast<void *>(const_cast<char *>(kMsg));
+  msg_iov[0].iov_len = sizeof(kMsg);
+  msg.msg_iov = msg_iov;
+  msg.msg_iovlen = 1;
+
+  EXPECT_THAT(sendmsg(connection_socket, &msg, 0), Eq(sizeof(kMsg)));
+
+  close(socket_fd);
+  close(client_sock);
+  close(connection_socket);
 }
 
 }  // namespace
