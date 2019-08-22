@@ -120,9 +120,144 @@ class HostCallTest : public ::testing::Test {
   std::shared_ptr<primitives::Client> client_;
 };
 
-// Keep this test always the first.
-// Moving it to the later position in the file causes the tests to hang up
-// in some backends.
+// Tests enc_untrusted_access() by creating a file and calling
+// enc_untrusted_access() from inside the enclave and verifying its return
+// value.
+TEST_F(HostCallTest, TestAccess) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
+  ASSERT_GE(fd, 0);
+
+  MessageWriter in;
+  in.Push(path);
+  in.Push<int>(/*value=mode=*/R_OK | W_OK);
+
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), access(path.c_str(), R_OK | W_OK));
+}
+
+// Tests enc_untrusted_access() against a non-existent path.
+TEST_F(HostCallTest, TestAccessNonExistentPath) {
+  const char *path = "illegal_path";
+
+  MessageWriter in;
+  in.Push(primitives::Extent{path, strlen(path) + 1});
+  in.Push<int>(/*value=mode=*/F_OK);
+
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), access(path, F_OK));
+}
+
+// Tests enc_untrusted_getpid() by calling it from inside the enclave and
+// verifying its return value against pid obtained from native system call.
+TEST_F(HostCallTest, TestGetpid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getpid()));
+}
+
+// Tests enc_untrusted_getppid() by calling it from inside the enclave and
+// verifying its return value against ppid obtained from native system call.
+TEST_F(HostCallTest, TestGetPpid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPpid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getppid()));
+}
+
+// Tests enc_untrusted_setsid() by calling it from inside the enclave and
+// verifying its return value against sid obtained from getsid(0), which
+// gets the sid of the current process.
+TEST_F(HostCallTest, TestSetSid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0)));
+}
+
+// Tests enc_untrusted_getgid() by making the host call from inside the enclave
+// and comparing the result with the value obtained from native getgid().
+TEST_F(HostCallTest, TestGetgid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetGid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<gid_t>(), Eq(getgid()));
+}
+
+// Tests enc_untrusted_geteuid() by making the host call from inside the enclave
+// and comparing the result with the value obtained from native geteuid().
+TEST_F(HostCallTest, TestGetEuid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEuid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<uid_t>(), Eq(geteuid()));
+}
+
+// Tests enc_untrusted_getegid() by making the host call from inside the enclave
+// and comparing the result with the value obtained from native getegid().
+TEST_F(HostCallTest, TestGetEgid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEgid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<gid_t>(), Eq(getegid()));
+}
+
+// Tests enc_untrusted_getuid() by making the host call from inside the enclave
+// and comparing the result with the value obtained from native getuid().
+TEST_F(HostCallTest, TestGetuid) {
+  MessageWriter in;
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
+  EXPECT_THAT(out.next<uid_t>(), Eq(getuid()));
+}
+
+bool sigabrt_received = false;
+void sigabrt_handler(int sig) {
+  if (sig == SIGABRT) sigabrt_received = true;
+}
+
+// Tests enc_untrusted_kill() by calling the method on the current process from
+// inside the enclave with a SIGABRT. We substitute the handler for SIGABRT
+// temporarily so that the current process doesn't actually get killed.
+TEST_F(HostCallTest, TestKill) {
+  // Change the default signal handler for SIGABRT.
+  struct sigaction old_handler, new_handler;
+  new_handler.sa_handler = &sigabrt_handler;
+  sigemptyset(&(new_handler.sa_mask));
+  new_handler.sa_flags = 0;
+  ASSERT_THAT(sigaction(SIGABRT, &new_handler, &old_handler), Not(Eq(-1)));
+
+  MessageWriter in;
+  in.Push<pid_t>(/*value=pid=*/getpid());
+  in.Push<int>(/*value=sig=*/SIGABRT);
+
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &in, &out));
+  EXPECT_THAT(sigabrt_received, Eq(true));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  // Restore the default handler for SIGABRT.
+  ASSERT_THAT(sigaction(SIGABRT, nullptr, &old_handler), Not(Eq(-1)));
+  sigabrt_received = false;
+}
+
+// Tests enc_untrusted_send() by creating two sockets and sending a message
+// across using enc_untrusted_send() and verifying the length of message
+// received by the other socket.
 TEST_F(HostCallTest, TestSend) {
   // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
@@ -285,141 +420,6 @@ TEST_F(HostCallTest, TestRecvMsg) {
   close(socket_fd);
   close(client_sock);
   close(connection_socket);
-}
-
-// Tests enc_untrusted_access() by creating a file and calling
-// enc_untrusted_access() from inside the enclave and verifying its return
-// value.
-TEST_F(HostCallTest, TestAccess) {
-  std::string path =
-      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
-  int fd = creat(path.c_str(), S_IRUSR | S_IWUSR | S_IRGRP | S_IROTH);
-  ASSERT_GE(fd, 0);
-
-  MessageWriter in;
-  in.Push(path);
-  in.Push<int>(/*value=mode=*/R_OK | W_OK);
-
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<int>(), access(path.c_str(), R_OK | W_OK));
-}
-
-// Tests enc_untrusted_access() against a non-existent path.
-TEST_F(HostCallTest, TestAccessNonExistentPath) {
-  const char *path = "illegal_path";
-
-  MessageWriter in;
-  in.Push(primitives::Extent{path, strlen(path) + 1});
-  in.Push<int>(/*value=mode=*/F_OK);
-
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccess, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<int>(), access(path, F_OK));
-}
-
-// Tests enc_untrusted_getpid() by calling it from inside the enclave and
-// verifying its return value against pid obtained from native system call.
-TEST_F(HostCallTest, TestGetpid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getpid()));
-}
-
-// Tests enc_untrusted_getppid() by calling it from inside the enclave and
-// verifying its return value against ppid obtained from native system call.
-TEST_F(HostCallTest, TestGetPpid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetPpid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getppid()));
-}
-
-// Tests enc_untrusted_setsid() by calling it from inside the enclave and
-// verifying its return value against sid obtained from getsid(0), which
-// gets the sid of the current process.
-TEST_F(HostCallTest, TestSetSid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSetSid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<pid_t>(), Eq(getsid(0)));
-}
-
-// Tests enc_untrusted_getgid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native getgid().
-TEST_F(HostCallTest, TestGetgid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetGid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<gid_t>(), Eq(getgid()));
-}
-
-// Tests enc_untrusted_geteuid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native geteuid().
-TEST_F(HostCallTest, TestGetEuid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEuid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<uid_t>(), Eq(geteuid()));
-}
-
-// Tests enc_untrusted_getegid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native getegid().
-TEST_F(HostCallTest, TestGetEgid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetEgid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<gid_t>(), Eq(getegid()));
-}
-
-// Tests enc_untrusted_getuid() by making the host call from inside the enclave
-// and comparing the result with the value obtained from native getuid().
-TEST_F(HostCallTest, TestGetuid) {
-  MessageWriter in;
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetUid, &in, &out));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain the return value.
-  EXPECT_THAT(out.next<uid_t>(), Eq(getuid()));
-}
-
-bool sigabrt_received = false;
-void sigabrt_handler(int sig) {
-  if (sig == SIGABRT) sigabrt_received = true;
-}
-
-// Tests enc_untrusted_kill() by calling the method on the current process from
-// inside the enclave with a SIGABRT. We substitute the handler for SIGABRT
-// temporarily so that the current process doesn't actually get killed.
-TEST_F(HostCallTest, TestKill) {
-  // Change the default signal handler for SIGABRT.
-  struct sigaction old_handler, new_handler;
-  new_handler.sa_handler = &sigabrt_handler;
-  sigemptyset(&(new_handler.sa_mask));
-  new_handler.sa_flags = 0;
-  ASSERT_THAT(sigaction(SIGABRT, &new_handler, &old_handler), Not(Eq(-1)));
-
-  MessageWriter in;
-  in.Push<pid_t>(/*value=pid=*/getpid());
-  in.Push<int>(/*value=sig=*/SIGABRT);
-
-  MessageReader out;
-  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &in, &out));
-  EXPECT_THAT(sigabrt_received, Eq(true));
-  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
-  EXPECT_THAT(out.next<int>(), Eq(0));
-
-  // Restore the default handler for SIGABRT.
-  ASSERT_THAT(sigaction(SIGABRT, nullptr, &old_handler), Not(Eq(-1)));
-  sigabrt_received = false;
 }
 
 // Tests enc_untrusted_link() by creating a file (|oldpath|) and calling
