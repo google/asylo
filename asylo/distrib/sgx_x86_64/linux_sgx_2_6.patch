@@ -3061,12 +3061,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1321 @@
+@@ -0,0 +1,1336 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
 +    ":sgx_sdk.bzl",
 +    "sgx_enclave",
++    "sgx_full_enclave_configuration",
 +    "sgx_enclave_configuration",
 +)
 +
@@ -3108,8 +3109,22 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    visibility = ["//visibility:public"],
 +)
 +
-+sgx_enclave_configuration(
++sgx_full_enclave_configuration(
 +    name = "enclave_debug_config",
++    disable_debug = "0",
++    heap_max_size = "0x2000000",
++    isvextprodid = "",
++    isvfamilyid = "",
++    isvsvn = "0",
++    kss = False,
++    misc_mask = "0xffffffff",
++    misc_select = "0",
++    prodid = "0",
++    provision_key = "0",
++    stack_max_size = "0x40000",
++    # 2 tcs are reserved by the framework, 10 are left for users.
++    tcs_num = "12",
++    tcs_policy = "0",
 +    visibility = ["//visibility:public"],
 +)
 +
@@ -4385,13 +4400,27 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,317 @@
+@@ -0,0 +1,384 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 +
 +SGXEnclaveInfo = provider()
-+SGXEnclaveConfigInfo = provider()
++SGXEnclaveConfigInfo = provider(fields = [
++    "disable_debug",
++    "heap_max_size",
++    "isvsvn",
++    "misc_mask",
++    "misc_select",
++    "prodid",
++    "provision_key",
++    "kss",
++    "isvextprodid",
++    "isvfamilyid",
++    "stack_max_size",
++    "tcs_num",
++    "tcs_policy",
++])
 +
 +
 +def _sgx_unsigned_enclave(
@@ -4468,29 +4497,74 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        "  <{}_H>0x{}</{}_H>".format(attribute_name_upper, attribute[0:16], attribute_name_upper),
 +    ])
 +
-+def _sgx_enclave_configuration(ctx):
++def _sgx_full_enclave_configuration_impl(ctx):
 +    """Implementation of enclave signing configuration file formatting."""
 +    xml_file = ctx.actions.declare_file(ctx.label.name + ".xml")
 +
-+    _validate_kss_attribute(ctx.attr.isvfamilyid, "isvfamilyid", ctx.attr.kss)
-+    _validate_kss_attribute(ctx.attr.isvextprodid, "isvextprodid", ctx.attr.kss)
++    # Let base be None if there is no base.
++    base = ctx.attr.base and ctx.attr.base[SGXEnclaveConfigInfo]
++    config = SGXEnclaveConfigInfo(
++        prodid = ctx.attr.prodid or (base and base.prodid),
++        isvsvn = ctx.attr.isvsvn or (base and base.isvsvn),
++        stack_max_size = ctx.attr.stack_max_size or (base and base.stack_max_size),
++        heap_max_size = ctx.attr.heap_max_size or (base and base.heap_max_size),
++        tcs_num = ctx.attr.tcs_num or (base and base.tcs_num),
++        tcs_policy = ctx.attr.tcs_policy or (base and base.tcs_policy),
++        disable_debug = ctx.attr.disable_debug or (base and base.disable_debug),
++        provision_key = ctx.attr.provision_key or (base and base.provision_key),
++        # False is falsy yet also what we want to use instead of None.
++        kss = ctx.attr.kss if ctx.attr.kss != None else (base and base.kss),
++        # The "" default value is Falsy, so None must be explicitly tested.
++        isvfamilyid = ctx.attr.isvfamilyid if ctx.attr.isvfamilyid != None else (base and base.isvfamilyid),
++        isvextprodid = ctx.attr.isvextprodid if ctx.attr.isvextprodid != None else (base and base.isvextprodid),
++        misc_select = ctx.attr.misc_select or (base and base.misc_select),
++        misc_mask = ctx.attr.misc_mask or (base and base.misc_mask),
++    )
++
++    if config.prodid == None:
++        fail("prodid must be specified")
++    if config.isvsvn == None:
++        fail("isvsvn must be specified")
++    if config.stack_max_size == None:
++        fail("stack_max_size must be specified")
++    if config.heap_max_size == None:
++        fail("heap_max_size must be specified")
++    if config.tcs_num == None:
++        fail("tcs_num must be specified")
++    if config.tcs_policy == None:
++        fail("tcs_poly must be specified")
++    if config.disable_debug == None:
++        fail("disable_debug must be specified")
++    if config.kss == None:
++        fail("kss must be specified")
++    if config.isvfamilyid == None:
++        fail("isvfamilyid must be specified")
++    if config.isvextprodid == None:
++        fail("isvextprodid must be specified")
++    if config.misc_select == None:
++        fail("misc_select must be specified")
++    if config.misc_mask == None:
++        fail("misc_mask must be specified")
++
++    _validate_kss_attribute(config.isvfamilyid, "isvfamilyid", config.kss)
++    _validate_kss_attribute(config.isvextprodid, "isvextprodid", config.kss)
 +
 +    content = "\n".join([
 +        "<EnclaveConfiguration>",
-+        "  <ProdID>%s</ProdID>" % ctx.attr.prodid,
-+        "  <ISVSVN>%s</ISVSVN>" % ctx.attr.isvsvn,
-+        "  <StackMaxSize>%s</StackMaxSize>" % ctx.attr.stack_max_size,
-+        "  <HeapMaxSize>%s</HeapMaxSize>" % ctx.attr.heap_max_size,
-+        "  <TCSNum>%s</TCSNum>" % ctx.attr.tcs_num,
-+        "  <TCSPolicy>%s</TCSPolicy>" % ctx.attr.tcs_policy,
-+        "  <DisableDebug>%s</DisableDebug>" % ctx.attr.disable_debug,
-+        "  <ProvisionKey>%s</ProvisionKey>" % ctx.attr.provision_key,
-+        "  <EnableKSS>%s</EnableKSS>" % ("1" if ctx.attr.kss else "0"),
-+        _kss_attribute_xml_tag(ctx.attr.isvfamilyid, "ISVFAMILYID"),
-+        _kss_attribute_xml_tag(ctx.attr.isvextprodid, "ISVEXTPRODID"),
-+        "  <MiscSelect>%s</MiscSelect>" % ctx.attr.misc_select,
-+        "  <MiscMask>%s</MiscMask>" % ctx.attr.misc_mask,
-+        "</EnclaveConfiguration>\n\n",
++        "  <ProdID>%s</ProdID>" % config.prodid,
++        "  <ISVSVN>%s</ISVSVN>" % config.isvsvn,
++        "  <StackMaxSize>%s</StackMaxSize>" % config.stack_max_size,
++        "  <HeapMaxSize>%s</HeapMaxSize>" % config.heap_max_size,
++        "  <TCSNum>%s</TCSNum>" % config.tcs_num,
++        "  <TCSPolicy>%s</TCSPolicy>" % config.tcs_policy,
++        "  <DisableDebug>%s</DisableDebug>" % config.disable_debug,
++        "  <ProvisionKey>%s</ProvisionKey>" % config.provision_key,
++        "  <EnableKSS>%s</EnableKSS>" % ("1" if config.kss else "0"),
++        _kss_attribute_xml_tag(config.isvfamilyid, "ISVFAMILYID"),
++        _kss_attribute_xml_tag(config.isvextprodid, "ISVEXTPRODID"),
++        "  <MiscSelect>%s</MiscSelect>" % config.misc_select,
++        "  <MiscMask>%s</MiscMask>" % config.misc_mask,
++        "</EnclaveConfiguration>",
 +    ])
 +
 +    # Strip any empty lines created by optional attributes that do not have
@@ -4499,80 +4573,87 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +    ctx.actions.write(
 +        output = xml_file,
-+        content = "\n".join(content),
++        content = "\n".join(content) + "\n",  # Ensure \n at file end.
 +    )
-+    return [DefaultInfo(files = depset([xml_file])), SGXEnclaveConfigInfo()]
++    return [DefaultInfo(files = depset([xml_file]), data_runfiles = ctx.runfiles([xml_file])), config]
 +
-+sgx_enclave_configuration = rule(
-+    implementation = _sgx_enclave_configuration,
-+    output_to_genfiles = True,
++sgx_full_enclave_configuration = rule(
++    implementation = _sgx_full_enclave_configuration_impl,
++    doc = ("Defines an enclave configuration that is meant to be used as " +
++           "base configuration. Use sgx_enclave_configuration to get a " +
++           "sensible default base."),
 +    attrs = {
++        "base": attr.label(
++            doc = ("An initial configuration from which to derive. Base " +
++                   "configuration fields may be overwritten by setting " +
++                   "fields in this configuration."),
++            providers = [SGXEnclaveConfigInfo],
++        ),
 +        # "1" for release enclaves.
 +        "disable_debug": attr.string(
-+            default = "0",
 +            doc = ("Indicates whether launching the enclave in debug mode is " +
 +                   "disabled"),
 +        ),
 +        "heap_max_size": attr.string(
-+            default = "0x2000000",
 +            doc = "The enclave's maximum heap size in bytes (4KB aligned)",
 +        ),
 +        "isvsvn": attr.string(
-+            default = "0",
 +            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
 +                   "Security Version Number"),
 +        ),
 +        "misc_mask": attr.string(
-+            default = "0xffffffff",
 +            doc = "A mask indicating which bits in misc_select are enforced",
 +        ),
 +        "misc_select": attr.string(
-+            default = "0",
 +            doc = "The desired Extended SSA frame feature (must be 0)",
 +        ),
 +        "prodid": attr.string(
-+            default = "0",
 +            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
 +                   "Product ID"),
 +        ),
 +        "provision_key": attr.string(
-+            default = "0",
 +            doc = ("Indicates whether the enclave has access to the " +
 +                   "Provisioning Key and the Provisioning Seal Key"),
 +        ),
 +        "kss": attr.bool(
-+            default = False,
 +            doc = ("Indicates whether the enclave can use Key Sharing and " +
 +                   "Separation (KSS)"),
 +        ),
 +        "isvextprodid": attr.string(
-+            default = "",
 +            doc = ("The enclave's 16-byte extended ISVPRODID value. It is an " +
 +                   "error to set this attribute if 'kss' is set to False"),
 +        ),
 +        "isvfamilyid": attr.string(
-+            default = "",
 +            doc = ("The enclave's 16-byte extended ISV Family ID. It is an " +
 +                   "error to set this attribute if 'kss' is set to False"),
 +        ),
 +        "stack_max_size": attr.string(
-+            default = "0x40000",
 +            doc = "The enclave's maximum stack size in bytes (4KB aligned)",
 +        ),
-+        # 2 tcs are reserved by the framework, 10 are left for users.
 +        "tcs_num": attr.string(
-+            default = "12",
 +            doc = ("The number of Thread Control Structures allocated for " +
 +                   "the enclave"),
 +        ),
 +        "tcs_policy": attr.string(
-+            default = "0",
 +            doc = ("The TCS management policy (" +
 +                   "0 - The TCS is bound to the untrusted thread, " +
 +                   "1 - The TCS is unbound to the untrusted thread)"),
 +        ),
 +    },
 +)
++
++def sgx_enclave_configuration(base = "@linux_sgx//:enclave_debug_config", **kwargs):
++    """Wraps sgx_full_enclave_configuration with a default base target.
++
++    Args:
++      base: An optional base config
++        [default @linux_sgx//:enclave_debug_config].
++      **kwargs: The rest of the sgx_full_enclave_configuration arguments.
++
++    Returns:
++      The result of invoking sgx_full_enclave_configuration rule.
++    """
++    sgx_full_enclave_configuration(base = base, **kwargs)
 +
 +def _sgx_debug_sign_enclave_impl(ctx):
 +    """Implementation of an automated signing process of an unsigned enclave."""
@@ -4667,11 +4748,12 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    )
 +
 +    kwargs = {k: v for k, v in kwargs.items() if k in ["visibility"]}
++    if config:
++        kwargs["config"] = config
 +    _sgx_debug_sign_enclave(
 +        name = name,
 +        unsigned = unsigned_name,
 +        tags = sgx_tags(),
-+        config = config,
 +        testonly = testonly,
 +        **kwargs
 +    )
