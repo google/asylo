@@ -78,8 +78,6 @@ ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
 //////////////////////////////////////
 
 int enc_untrusted_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
-int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
-                       socklen_t addrlen);
 int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen);
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,

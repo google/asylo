@@ -528,6 +528,49 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   return result;
 }
 
+int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
+                       socklen_t addrlen) {
+  if (sockfd == -1) {
+    errno = EBADF;
+    return -1;
+  }
+  if (addr->sa_family == AF_UNSPEC) {
+    asylo::primitives::TrustedPrimitives::DebugPuts(
+        "AF_UNSPEC provided for sa_family.");
+    return 0;
+  }
+
+  struct klinux_sockaddr *arg_sockaddr = nullptr;
+  socklen_t arg_addrlen = 0;
+  struct klinux_sockaddr_un klinux_sock_un;
+  struct klinux_sockaddr_in klinux_sock_in;
+  struct klinux_sockaddr_in6 klinux_sock_in6;
+
+  if (addr->sa_family == AF_UNIX) {
+    SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un);
+    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un);
+    arg_addrlen = sizeof(struct klinux_sockaddr_un);
+  } else if (addr->sa_family == AF_INET) {
+    SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in);
+    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in);
+    arg_addrlen = sizeof(struct klinux_sockaddr_in);
+  } else if (addr->sa_family == AF_INET6) {
+    SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6);
+    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in6);
+    arg_addrlen = sizeof(struct klinux_sockaddr_in6);
+  } else {
+    asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "sockaddr family not supported.");
+  }
+
+  if (!arg_sockaddr) {
+    errno = EINVAL;
+    return -1;
+  }
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_bind,
+                                             sockfd, arg_sockaddr, arg_addrlen);
+}
+
 ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   size_t total_message_size = CalculateTotalSize(msg);
   std::unique_ptr<char[]> msg_iov_buffer(new char[total_message_size]);

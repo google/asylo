@@ -24,9 +24,12 @@
 //       * \in: Value copied "in" to the kernel.
 //       * \out: Value copied "out" of the kernel.
 //       * \in_out: Value copied "in" to and "out" of the kernel.
+//       * [bound:PARAM]: Pointer to buffer of PARAM length, where "param"
+//          names the parameter containing length of buffer of the type
+//          defined.
 //       * [count:N]:  Pointer to an array of N items.
 //       * [bounded:PARAM]: Pointer to a buffer of PARAM bytes, where "param"
-//          names the parameter the containing the number of bytes to serialize.
+//          names the parameter containing the number of bytes to serialize.
 //
 //   * Consider adding tests in metadata_test.cc and system_call_test.cc.
 //
@@ -116,7 +119,8 @@ SYSCALL_DEFINE0(getpid)
 SYSCALL_DEFINE0(getppid)
 SYSCALL_DEFINE0(setsid)
 SYSCALL_DEFINE1(exit, int, error_code)
-SYSCALL_DEFINE4(wait4, pid_t, upid, \out int *, stat_addr, int, options, \out struct rusage *, ru)
+SYSCALL_DEFINE4(wait4, pid_t, upid, \out int *, stat_addr, int, options,
+                \out struct rusage *, ru)
 
 // Signals
 // =======
@@ -129,7 +133,8 @@ SYSCALL_DEFINE2(kill, pid_t, pid, int, sig)
 SYSCALL_DEFINE3(accept, int, fd, struct sockaddr *, upeer_sockaddr, int *,
                 upeer_addrlen)
 
-SYSCALL_DEFINE3(bind, int, fd, struct sockaddr *, umyaddr, int, addrlen)
+SYSCALL_DEFINE3(bind, int, fd, \in void * [bound:addrlen], umyaddr,
+                int, addrlen)
 
 SYSCALL_DEFINE3(connect, int, fd, struct sockaddr *, uservaddr, int, addrlen)
 
@@ -144,7 +149,8 @@ SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname, const void *,
 SYSCALL_DEFINE2(listen, int, fd, int, backlog)
 
 SYSCALL_DEFINE6(sendto, int, fd, void * [bounded:len], buff, size_t, len,
-                unsigned int, flags, \in struct sockaddr *, addr, int, addr_len)
+                unsigned int, flags, \in struct sockaddr *, addr,
+                int, addr_len)
 
 SYSCALL_DEFINE2(shutdown, int, fd, int, how)
 

@@ -17,10 +17,15 @@
  */
 
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
+
+#include <netinet/in.h>
+#include <sys/un.h>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 using ::testing::Eq;
+using ::testing::StrEq;
 
 namespace asylo {
 namespace system_call {
@@ -64,6 +69,60 @@ TEST(ManualTypesFunctionsTest, SocketTypeTest) {
     FromkLinuxSocketType(&from, &output);
     EXPECT_THAT(output, Eq(to));
   }
+}
+
+TEST(ManualTypesFunctionsTest, SockaddrTokLinuxSockaddrUnTest) {
+  std::string sockpath = "/some/path";
+
+  struct sockaddr_un sock_un;
+  memset(&sock_un, 0, sizeof(struct sockaddr_un));
+  sock_un.sun_family = AF_UNIX;
+  strncpy(sock_un.sun_path, sockpath.c_str(), sizeof(sock_un.sun_path) - 1);
+
+  struct klinux_sockaddr_un klinux_sock_un;
+  SockaddrTokLinuxSockaddrUn(reinterpret_cast<sockaddr *>(&sock_un),
+                             sizeof(struct sockaddr_un), &klinux_sock_un);
+  EXPECT_THAT(klinux_sock_un.klinux_sun_family, Eq(kLinux_AF_UNIX));
+  EXPECT_THAT(klinux_sock_un.klinux_sun_path, StrEq(sockpath));
+}
+
+TEST(ManualTypesFunctionsTest, SockaddrTokLinuxSockaddrInTest) {
+  struct in_addr in_addr_in;
+  in_addr_in.s_addr = 123;
+
+  struct sockaddr_in sock_in;
+  memset(&sock_in, 0, sizeof(struct sockaddr_in));
+  sock_in.sin_family = AF_INET;
+  sock_in.sin_port = 12;
+  sock_in.sin_addr = in_addr_in;
+
+  struct klinux_sockaddr_in klinux_sock_in;
+  SockaddrTokLinuxSockaddrIn(reinterpret_cast<sockaddr *>(&sock_in),
+                             sizeof(struct sockaddr_in), &klinux_sock_in);
+  EXPECT_THAT(klinux_sock_in.klinux_sin_family, Eq(kLinux_AF_INET));
+  EXPECT_THAT(klinux_sock_in.klinux_sin_port, Eq(12));
+  EXPECT_THAT(klinux_sock_in.klinux_sin_addr.klinux_s_addr, Eq(123));
+}
+
+TEST(ManualTypesFunctionsTest, SockaddrTokLinuxSockaddrIn6Test) {
+  struct sockaddr_in6 sock_in6;
+  memset(&sock_in6, 0, sizeof(struct sockaddr_in6));
+  sock_in6.sin6_family = AF_INET6;
+  sock_in6.sin6_port = 1;
+  sock_in6.sin6_scope_id = 12;
+  sock_in6.sin6_flowinfo = 123;
+  sock_in6.sin6_addr = in6addr_loopback;
+
+  struct klinux_sockaddr_in6 klinux_sock_in6;
+  SockaddrTokLinuxSockaddrIn6(reinterpret_cast<sockaddr *>(&sock_in6),
+                              sizeof(struct sockaddr_in6), &klinux_sock_in6);
+  EXPECT_THAT(klinux_sock_in6.klinux_sin6_family, Eq(kLinux_AF_INET6));
+  EXPECT_THAT(klinux_sock_in6.klinux_sin6_port, Eq(1));
+  EXPECT_THAT(klinux_sock_in6.klinux_sin6_scope_id, Eq(12));
+  EXPECT_THAT(klinux_sock_in6.klinux_sin6_flowinfo, Eq(123));
+  EXPECT_THAT(
+      reinterpret_cast<char *>(klinux_sock_in6.klinux_sin6_addr.klinux_s6_addr),
+      StrEq(reinterpret_cast<const char *>(in6addr_loopback.s6_addr)));
 }
 
 }  // namespace

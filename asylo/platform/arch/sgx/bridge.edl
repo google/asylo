@@ -64,9 +64,6 @@ enclave {
     int ocall_enc_untrusted_connect(int sockfd,
                                     [in] const struct bridge_sockaddr *addr)
                                     propagate_errno;
-    int ocall_enc_untrusted_bind(int sockfd,
-                                 [in] const struct bridge_sockaddr *addr)
-                                 propagate_errno;
     int ocall_enc_untrusted_accept(int sockfd,
                                    [out] struct bridge_sockaddr *addr)
                                    propagate_errno;

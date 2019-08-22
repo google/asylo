@@ -94,6 +94,8 @@ int enc_untrusted_wait(int *wstatus);
 int enc_untrusted_close(int fd);
 int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem);
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp);
+int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
+                       socklen_t addrlen);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);

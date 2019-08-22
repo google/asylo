@@ -18,6 +18,7 @@
 
 #include <errno.h>
 #include <sys/socket.h>
+#include <sys/un.h>
 
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
@@ -732,6 +733,20 @@ PrimitiveStatus TestClockGettime(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestBind(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  int sockfd = in->next<int>();
+  struct klinux_sockaddr_un klinux_sock_un =
+      in->next<struct klinux_sockaddr_un>();
+
+  struct sockaddr_un sock_un;
+  FromkLinuxSockAddrUn(&klinux_sock_un, &sock_un);
+  out->Push<int>(enc_untrusted_bind(sockfd, (struct sockaddr *)&sock_un,
+                                    sizeof(struct sockaddr_un)));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -885,6 +900,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestClockGettime,
       EntryHandler{asylo::host_call::TestClockGettime}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestBind, EntryHandler{asylo::host_call::TestBind}));
 
   return PrimitiveStatus::OkStatus();
 }

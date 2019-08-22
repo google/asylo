@@ -44,4 +44,42 @@ struct klinux_stat {
   int64_t klinux_unused[3];
 };
 
+struct klinux_sockaddr {
+  int16_t klinux_sa_family;
+  char klinux_sa_data[14];
+};
+
+struct klinux_sockaddr_un {
+  int16_t klinux_sun_family;
+  char klinux_sun_path[108];
+};
+
+struct klinux_in_addr {
+  uint32_t klinux_s_addr;
+};
+
+struct klinux_sockaddr_in {
+  int16_t klinux_sin_family;              // Address family (AF_INET)
+  uint16_t klinux_sin_port;               // Port number
+  struct klinux_in_addr klinux_sin_addr;  // IPv4 address
+
+  // Pad to size of klinux_sockaddr (16 bytes).
+  unsigned char klinux_sin_zero[sizeof(struct klinux_sockaddr) -
+                                sizeof(int16_t) /* klinux_sa_family */ -
+                                sizeof(uint16_t) /* klinux_sin_port */ -
+                                sizeof(struct klinux_in_addr)];
+};
+
+struct klinux_in6_addr {
+  uint8_t klinux_s6_addr[16];
+};
+
+struct klinux_sockaddr_in6 {
+  int16_t klinux_sin6_family;               // Address family (AF_INET6)
+  uint16_t klinux_sin6_port;                // Port number
+  uint32_t klinux_sin6_flowinfo;            // IPv6 flow information
+  struct klinux_in6_addr klinux_sin6_addr;  // IPv6 address
+  uint32_t klinux_sin6_scope_id;            // Scope ID
+};
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

@@ -125,15 +125,6 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   return ret;
 }
 
-int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
-                       socklen_t addrlen) {
-  int ret;
-  struct bridge_sockaddr tmp;
-  CHECK_OCALL(ocall_enc_untrusted_bind(
-      &ret, sockfd, asylo::ToBridgeSockaddr(addr, addrlen, &tmp)));
-  return ret;
-}
-
 int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen) {
   int ret;

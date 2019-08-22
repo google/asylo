@@ -1817,6 +1817,32 @@ TEST_F(HostCallTest, TestClockGettime) {
   EXPECT_LE(diff, kNanosecondsPerSecond * 1.5);
 }
 
+// Tests enc_untrusted_bind() by calling the function from inside the enclave
+// and verifying the return value.
+TEST_F(HostCallTest, TestBind) {
+  // Create a local socket and ensure that it is valid (fd > 0).
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath =
+      absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
+
+  struct sockaddr_un klinux_sock_un;
+  memset(&klinux_sock_un, 0, sizeof(struct sockaddr_un));
+  klinux_sock_un.sun_family = AF_UNIX;
+  strncpy(klinux_sock_un.sun_path, sockpath.c_str(),
+          sizeof(klinux_sock_un.sun_path) - 1);
+
+  MessageWriter in;
+  in.Push<int>(socket_fd);
+  in.Push<struct sockaddr_un>(klinux_sock_un);
+
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestBind, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
