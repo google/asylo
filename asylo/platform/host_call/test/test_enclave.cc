@@ -18,8 +18,11 @@
 
 #include <errno.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
+#include <sys/statfs.h>
 #include <sys/un.h>
 
+#include "absl/base/macros.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
@@ -597,6 +600,27 @@ void PushStatAttributes(MessageWriter *out, struct stat *st) {
   out->Push<uint32_t>(st->st_uid);
 }
 
+// Push meaningful stat attributes to MessageWriter.
+void PushStatFsAttributes(MessageWriter *out, struct statfs *st) {
+  int64_t kLinux_flags;
+  TokLinuxStatFsFlags(st->f_flags, &kLinux_flags);
+  out->Push<int64_t>(st->f_type);
+  out->Push<int64_t>(st->f_bsize);
+  out->Push<uint64_t>(st->f_blocks);
+  out->Push<uint64_t>(st->f_bfree);
+  out->Push<uint64_t>(st->f_bavail);
+  out->Push<uint64_t>(st->f_files);
+  out->Push<uint64_t>(st->f_ffree);
+  out->Push<int32_t>(st->f_fsid.__val[0]);
+  out->Push<int32_t>(st->f_fsid.__val[1]);
+  out->Push<int64_t>(st->f_namelen);
+  out->Push<int64_t>(st->f_frsize);
+  out->Push<int64_t>(kLinux_flags);
+  for (int i = 0; i < ABSL_ARRAYSIZE(st->f_spare); ++i) {
+    out->Push<int64_t>(st->f_spare[i]);
+  }
+}
+
 PrimitiveStatus TestFstat(void *context, MessageReader *in,
                           MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
@@ -605,6 +629,17 @@ PrimitiveStatus TestFstat(void *context, MessageReader *in,
   int fd = in->next<int>();
   out->Push<int>(enc_untrusted_fstat(fd, &st));
   PushStatAttributes(out, &st);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestFstatFs(void *context, MessageReader *in,
+                            MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  struct statfs st;
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_fstatfs(fd, &st));
+  PushStatFsAttributes(out, &st);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -626,6 +661,17 @@ PrimitiveStatus TestStat(void *context, MessageReader *in, MessageWriter *out) {
   const auto path_name = in->next();
   out->Push<int>(enc_untrusted_stat(path_name.As<char>(), &st));
   PushStatAttributes(out, &st);
+  return PrimitiveStatus::OkStatus();
+}
+
+PrimitiveStatus TestStatFs(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  struct statfs st;
+  const auto path_name = in->next();
+  out->Push<int>(enc_untrusted_statfs(path_name.As<char>(), &st));
+  PushStatFsAttributes(out, &st);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -888,9 +934,15 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFstat, EntryHandler{asylo::host_call::TestFstat}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestFstatFs,
+      EntryHandler{asylo::host_call::TestFstatFs}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestLstat, EntryHandler{asylo::host_call::TestLstat}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestStat, EntryHandler{asylo::host_call::TestStat}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestStatFs,
+      EntryHandler{asylo::host_call::TestStatFs}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestPread64,
       EntryHandler{asylo::host_call::TestPread64}));

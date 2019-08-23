@@ -89,6 +89,7 @@ cc_library(
         "select.cc",
         "signal.cc",
         "stat.cc",
+        "statfs.cc",
         "stdlib.cc",
         "syslog.cc",
         "termios.cc",
@@ -129,10 +130,13 @@ cc_library(
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/system",
         "//asylo/util:status",
-    ] + select({
-        "//asylo/platform/primitives:sgx": ["@linux_sgx//:trts"],
-        "//conditions:default": [],
-    }),
+    ] + select(
+        {
+            "//asylo/platform/primitives:sgx": ["@linux_sgx//:trts"],
+            "//asylo": [],  # Only trusted architectures should build.
+        },
+        no_match_error = "Must be built within the Asylo toolchain.",
+    ),
 )
 
 # Test byteswap.h posix extension inside an enclave.

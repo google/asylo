@@ -24,6 +24,7 @@
 #include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
 #include <sys/time.h>
 #include <sys/types.h>
 #include <utime.h>
@@ -103,6 +104,12 @@ class IOManager {
 
     // Implements IOManager::FStat.
     virtual int FStat(struct stat *st) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    // Implements IOManager::FStatFs.
+    virtual int FStatFs(struct statfs *statfs_buffer) {
       errno = ENOSYS;
       return -1;
     }
@@ -301,6 +308,11 @@ class IOManager {
     }
 
     virtual int LStat(const char *pathname, struct stat *stat_buffer) {
+      errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int StatFs(const char *pathname, struct statfs *statfs_buffer) {
       errno = ENOSYS;
       return -1;
     }
@@ -555,6 +567,12 @@ class IOManager {
 
   // Implements fstat(2).
   int FStat(int fd, struct stat *stat_buffer);
+
+  // Implements statfs(2).
+  int StatFs(const char *pathname, struct statfs *statfs_buffer);
+
+  // Implements fstatfs(2).
+  int FStatFs(int fd, struct statfs *statfs_buffer);
 
   // Implements isatty(3).
   int Isatty(int fd);

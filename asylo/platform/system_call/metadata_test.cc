@@ -254,6 +254,10 @@ TEST(MetaDataTest, Summarize) {
   // int fstat(int fd, struct stat *statbuf);
   EXPECT_THAT(Summarize(SYS_fstat),
               StrEq("fstat/2(fd: u32, statbuf: out fixed[144])"));
+
+  // int fstatfs(int fd, struct statfs *statbuf);
+  EXPECT_THAT(Summarize(SYS_fstatfs),
+              StrEq("fstatfs/2(fd: s32, statbuf: out fixed[120])"));
 }
 
 }  // namespace

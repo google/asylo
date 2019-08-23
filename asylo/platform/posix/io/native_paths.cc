@@ -58,6 +58,10 @@ int IOContextNative::FStat(struct stat *stat_buffer) {
   return enc_untrusted_fstat(host_fd_, stat_buffer);
 }
 
+int IOContextNative::FStatFs(struct statfs *statfs_buffer) {
+  return enc_untrusted_fstatfs(host_fd_, statfs_buffer);
+}
+
 int IOContextNative::FTruncate(off_t length) {
   return enc_untrusted_ftruncate(host_fd_, length);
 }
@@ -234,6 +238,11 @@ int NativePathHandler::Stat(const char *pathname, struct stat *stat_buffer) {
 
 int NativePathHandler::LStat(const char *pathname, struct stat *stat_buffer) {
   return enc_untrusted_lstat(pathname, stat_buffer);
+}
+
+int NativePathHandler::StatFs(const char *pathname,
+                              struct statfs *statfs_buffer) {
+  return enc_untrusted_statfs(pathname, statfs_buffer);
 }
 
 int NativePathHandler::Mkdir(const char *path, mode_t mode) {

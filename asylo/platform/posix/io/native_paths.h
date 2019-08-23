@@ -39,6 +39,7 @@ class IOContextNative : public IOManager::IOContext {
   int FCntl(int cmd, int64_t arg) override;
   int FSync() override;
   int FStat(struct stat *stat_buffer) override;
+  int FStatFs(struct statfs *statfs_buffer) override;
   int Isatty() override;
   int FLock(int operation) override;
   int Close() override;
@@ -84,6 +85,7 @@ class NativePathHandler : public io::IOManager::VirtualPathHandler {
   int SymLink(const char *path1, const char *path2) override;
   int Truncate(const char *path, off_t length) override;
   int Stat(const char *pathname, struct stat *stat_buffer) override;
+  int StatFs(const char *pathname, struct statfs *statfs_buffer) override;
   int LStat(const char *pathname, struct stat *stat_buffer) override;
   int Mkdir(const char *path, mode_t mode) override;
   int RmDir(const char *pathname) override;

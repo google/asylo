@@ -18,6 +18,10 @@
 
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 
+#include <sys/stat.h>
+#include <sys/statfs.h>
+#include <sys/statvfs.h>
+
 #include <algorithm>
 #include <cstring>
 
@@ -290,4 +294,75 @@ void FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
   output->sin6_flowinfo = input->klinux_sin6_flowinfo;
   InitializeToZeroSingle(&output->sin6_addr);
   ReinterpretCopySingle(&output->sin6_addr, &input->klinux_sin6_port);
+}
+
+void FromkLinuxStatFs(const struct klinux_statfs *input,
+                      struct statfs *output) {
+  if (!input || !output) return;
+  output->f_type = input->klinux_f_type;
+  output->f_bsize = input->klinux_f_bsize;
+  output->f_blocks = input->klinux_f_blocks;
+  output->f_bfree = input->klinux_f_bfree;
+  output->f_bavail = input->klinux_f_bavail;
+  output->f_files = input->klinux_f_files;
+  output->f_ffree = input->klinux_f_ffree;
+  output->f_fsid.__val[0] = input->klinux_f_fsid.__val[0];
+  output->f_fsid.__val[1] = input->klinux_f_fsid.__val[1];
+  output->f_namelen = input->klinux_f_namelen;
+  output->f_frsize = input->klinux_f_frsize;
+  output->f_flags = input->klinux_f_flags;
+  memset(output->f_spare, 0, sizeof(output->f_spare));
+}
+
+void TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output) {
+  if (!input || !output) return;
+  output->klinux_f_bsize = input->f_bsize;
+  output->klinux_f_frsize = input->f_frsize;
+  output->klinux_f_blocks = input->f_blocks;
+  output->klinux_f_bfree = input->f_bfree;
+  output->klinux_f_bavail = input->f_bavail;
+  output->klinux_f_files = input->f_files;
+  output->klinux_f_ffree = input->f_ffree;
+  output->klinux_f_fsid.__val[0] = input->f_fsid.__val[0];
+  output->klinux_f_fsid.__val[1] = input->f_fsid.__val[1];
+  output->klinux_f_namelen = input->f_namelen;
+  output->klinux_f_frsize = input->f_frsize;
+  output->klinux_f_flags = input->f_flags;
+  memset(output->klinux_f_spare, 0, sizeof(output->klinux_f_spare));
+}
+
+void FromkLinuxStatFsFlags(int64_t input, int64_t *output) {
+  int64_t result = 0;
+
+  if (input & kLinux_ST_NOSUID) result |= ST_NOSUID;
+  if (input & kLinux_ST_RDONLY) result |= ST_RDONLY;
+#if (defined(__USE_GNU) && __USE_GNU) || \
+    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
+  if (input & kLinux_ST_MANDLOCK) result |= ST_MANDLOCK;
+  if (input & kLinux_ST_NOATIME) result |= ST_NOATIME;
+  if (input & kLinux_ST_NODEV) result |= ST_NODEV;
+  if (input & kLinux_ST_NODIRATIME) result |= ST_NODIRATIME;
+  if (input & kLinux_ST_NOEXEC) result |= ST_NOEXEC;
+  if (input & kLinux_ST_RELATIME) result |= ST_RELATIME;
+  if (input & kLinux_ST_SYNCHRONOUS) result |= ST_SYNCHRONOUS;
+#endif
+  *output = result;
+}
+
+void TokLinuxStatFsFlags(int64_t input, int64_t *output) {
+  int64_t result = 0;
+
+  if (input & ST_NOSUID) result |= kLinux_ST_NOSUID;
+  if (input & ST_RDONLY) result |= kLinux_ST_RDONLY;
+#if (defined(__USE_GNU) && __USE_GNU) || \
+    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
+  if (input & ST_MANDLOCK) result |= kLinux_ST_MANDLOCK;
+  if (input & ST_NOATIME) result |= kLinux_ST_NOATIME;
+  if (input & ST_NODEV) result |= kLinux_ST_NODEV;
+  if (input & ST_NODIRATIME) result |= kLinux_ST_NODIRATIME;
+  if (input & ST_NOEXEC) result |= kLinux_ST_NOEXEC;
+  if (input & ST_RELATIME) result |= kLinux_ST_RELATIME;
+  if (input & ST_SYNCHRONOUS) result |= kLinux_ST_SYNCHRONOUS;
+#endif
+  *output = result;
 }

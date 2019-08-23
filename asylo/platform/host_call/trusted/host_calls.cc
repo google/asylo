@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/trusted/host_calls.h"
 
 #include <errno.h>
+#include <sys/statfs.h>
 
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
@@ -409,6 +410,15 @@ int enc_untrusted_fstat(int fd, struct stat *statbuf) {
   return result;
 }
 
+int enc_untrusted_fstatfs(int fd, struct statfs *statbuf) {
+  struct klinux_statfs statfs_kernel;
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_fstatfs, fd, &statfs_kernel);
+  FromkLinuxStatFs(&statfs_kernel, statbuf);
+  FromkLinuxStatFsFlags(statfs_kernel.klinux_f_flags, &statbuf->f_flags);
+  return result;
+}
+
 int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
@@ -430,6 +440,15 @@ int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   int mode;
   FromkLinuxFileModeFlag(&kLinux_mode, &mode);
   statbuf->st_mode = mode;
+  return result;
+}
+
+int enc_untrusted_statfs(const char *pathname, struct statfs *statbuf) {
+  struct klinux_statfs statfs_kernel;
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_statfs, pathname, &statfs_kernel);
+  FromkLinuxStatFs(&statfs_kernel, statbuf);
+  FromkLinuxStatFsFlags(statfs_kernel.klinux_f_flags, &statbuf->f_flags);
   return result;
 }
 

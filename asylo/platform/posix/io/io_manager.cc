@@ -746,6 +746,13 @@ int IOManager::LStat(const char *pathname, struct stat *stat_buffer) {
   });
 }
 
+int IOManager::StatFs(const char *pathname, struct statfs *statfs_buffer) {
+  return CallWithHandler(pathname, [statfs_buffer](VirtualPathHandler *handler,
+                                                   const char *canonical_path) {
+    return handler->StatFs(canonical_path, statfs_buffer);
+  });
+}
+
 int IOManager::ChMod(const char *pathname, mode_t mode) {
   return CallWithHandler(pathname, [mode](VirtualPathHandler *handler,
                                           const char *canonical_path) {
@@ -806,6 +813,13 @@ int IOManager::FStat(int fd, struct stat *stat_buffer) {
   return CallWithContext(fd, [stat_buffer](std::shared_ptr<IOContext> context) {
     return context->FStat(stat_buffer);
   });
+}
+
+int IOManager::FStatFs(int fd, struct statfs *statfs_buffer) {
+  return CallWithContext(fd,
+                         [statfs_buffer](std::shared_ptr<IOContext> context) {
+                           return context->FStatFs(statfs_buffer);
+                         });
 }
 
 int IOManager::Isatty(int fd) {

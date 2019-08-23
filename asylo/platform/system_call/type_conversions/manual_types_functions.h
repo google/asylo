@@ -65,7 +65,7 @@ void SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
                                 klinux_sockaddr_in *output);
 
-// Converts an enclave based sockaddr, |*from| to a host based kernel
+// Converts an enclave based sockaddr, |*input| to a host based kernel
 // sockaddr_in6 struct. Requires the input sockaddr to have the domain AF_INET6.
 void SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
                                  socklen_t input_addrlen,
@@ -82,5 +82,17 @@ void FromkLinuxSockAddrIn(const struct klinux_sockaddr_in *input,
 // Converts a Linux based sockaddr_in6 to an enclave based sockaddr_in6.
 void FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
                            struct sockaddr_in6 *output);
+
+// Converts a Linux based statfs to an enclave based statfs.
+void FromkLinuxStatFs(const struct klinux_statfs *input, struct statfs *output);
+
+// Converts an enclave based statfs to a Linux based statfs.
+void TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output);
+
+// Converts a Linux based statfs flag set to an enclave based statfs flag set.
+void FromkLinuxStatFsFlags(int64_t input, int64_t *output);
+
+// Converts a enclave based statfs flag set to a Linux based flag set.
+void TokLinuxStatFsFlags(int64_t input, int64_t *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

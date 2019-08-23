@@ -110,6 +110,10 @@ constexpr uint64_t kTestSchedYield =
 constexpr uint64_t kTestFstat = kFirstSelector + asylo::system_call::kSYS_fstat;
 constexpr uint64_t kTestLstat = kFirstSelector + asylo::system_call::kSYS_lstat;
 constexpr uint64_t kTestStat = kFirstSelector + asylo::system_call::kSYS_stat;
+constexpr uint64_t kTestStatFs =
+    kFirstSelector + asylo::system_call::kSYS_statfs;
+constexpr uint64_t kTestFstatFs =
+    kFirstSelector + asylo::system_call::kSYS_fstatfs;
 constexpr uint64_t kTestPread64 =
     kFirstSelector + asylo::system_call::kSYS_pread64;
 constexpr uint64_t kTestPwrite64 =

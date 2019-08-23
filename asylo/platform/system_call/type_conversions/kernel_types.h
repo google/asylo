@@ -82,4 +82,37 @@ struct klinux_sockaddr_in6 {
   uint32_t klinux_sin6_scope_id;            // Scope ID
 };
 
+struct klinux_statfs {
+  int64_t klinux_f_type;
+  int64_t klinux_f_bsize;
+  uint64_t klinux_f_blocks;
+  uint64_t klinux_f_bfree;
+  uint64_t klinux_f_bavail;
+  uint64_t klinux_f_files;
+  uint64_t klinux_f_ffree;
+  struct {
+    int32_t __val[2];
+  } klinux_f_fsid;
+  int64_t klinux_f_namelen;
+  int64_t klinux_f_frsize;
+  int64_t klinux_f_flags;  // Linux uses a signed long word for the flags.
+  int64_t klinux_f_spare[4];
+};
+
+enum StatFsFlag {
+  kLinux_ST_RDONLY = (1 << 0),
+  kLinux_ST_NOSUID = (1 << 1),
+  kLinux_ST_NODEV = (1 << 2),
+  kLinux_ST_NOEXEC = (1 << 3),
+  kLinux_ST_SYNCHRONOUS = (1 << 4),
+  kLinux_ST_VALID = (1 << 5),
+  kLinux_ST_MANDLOCK = (1 << 6),
+  kLinux_ST_WRITE = (1 << 7),
+  kLinux_ST_APPEND = (1 << 8),
+  kLinux_ST_IMMUTABLE = (1 << 9),
+  kLinux_ST_NOATIME = (1 << 10),
+  kLinux_ST_NODIRATIME = (1 << 11),
+  kLinux_ST_RELATIME = (1 << 12),
+};
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

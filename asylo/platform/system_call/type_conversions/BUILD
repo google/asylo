@@ -114,7 +114,7 @@ cc_library(
         "generated_types_functions.h",
         "manual_types_functions.h",
     ],
-    copts = ASYLO_DEFAULT_COPTS,
+    copts = ASYLO_DEFAULT_COPTS + ["-D_GNU_SOURCE"],
     deps = [
         ":types_definitions",
     ],

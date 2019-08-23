@@ -56,6 +56,7 @@ sim_enclave(
         "//asylo/platform/host_call:host_call_dispatcher",
         "//asylo/platform/system_call/type_conversions",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/base:core_headers",
     ],
 )
 
@@ -94,6 +95,7 @@ cc_library(
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",

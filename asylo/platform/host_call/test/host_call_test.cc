@@ -22,6 +22,8 @@
 #include <sys/inotify.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/statfs.h>
+#include <sys/statvfs.h>
 #include <sys/types.h>
 #include <sys/un.h>
 
@@ -29,6 +31,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/base/macros.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
@@ -115,6 +118,74 @@ class HostCallTest : public ::testing::Test {
     st->st_rdev = out->next<uint64_t>();
     st->st_size = out->next<int64_t>();
     st->st_uid = out->next<uint32_t>();
+  }
+
+  asylo::Status CheckStatFs(const struct statfs *st,
+                             const struct statfs *st_expected) {
+    if (st->f_type != st_expected->f_type) {
+      return Status(error::GoogleError::INTERNAL, "type");
+    }
+    if (st->f_bsize != st_expected->f_bsize) {
+      return Status(error::GoogleError::INTERNAL, "bsize");
+    }
+    if (st->f_blocks != st_expected->f_blocks) {
+      return Status(error::GoogleError::INTERNAL, "blocks");
+    }
+    // bavail, files, ffree are too volatile to check between enclave and host.
+    if (st->f_fsid.__val[0] != st_expected->f_fsid.__val[0]) {
+      return Status(error::GoogleError::INTERNAL, "val0");
+    }
+    if (st->f_fsid.__val[1] != st_expected->f_fsid.__val[1]) {
+      return Status(error::GoogleError::INTERNAL, "val1");
+    }
+    if (st->f_namelen != st_expected->f_namelen) {
+      return Status(error::GoogleError::INTERNAL, "namelen");
+    }
+    if (st->f_frsize != st_expected->f_frsize) {
+      return Status(error::GoogleError::INTERNAL, "frsize");
+    }
+    int64_t supported_flag_mask =
+          ST_NOSUID
+#if (defined(__GNU_VISIBLE) && __GNU_VISIBLE) || \
+    (defined(__USE_GNU) && __USE_GNU)
+        | ST_MANDLOCK
+        | ST_NOATIME
+        | ST_NODEV
+        | ST_NODIRATIME
+        | ST_NOEXEC
+        | ST_RELATIME
+        | ST_SYNCHRONOUS
+#endif
+        | ST_RDONLY;
+    if ((st->f_flags & supported_flag_mask) !=
+        (st_expected->f_flags & supported_flag_mask)) {
+      return Status(error::GoogleError::INTERNAL, "flags");
+    }
+    for (int i = 0; i < ABSL_ARRAYSIZE(st->f_spare); ++i) {
+      if (st->f_spare[i] != st_expected->f_spare[i]) {
+        return Status(error::GoogleError::INTERNAL, absl::StrCat("spare", i));
+      }
+    }
+    return Status::OkStatus();
+  }
+
+  // Fills the struct statfs with the information from MessageReader.
+  void LoadStatFsFromMessageReader(MessageReader *out, struct statfs *st) {
+    st->f_type = out->next<int64_t>();
+    st->f_bsize = out->next<int64_t>();
+    st->f_blocks = out->next<uint64_t>();
+    st->f_bfree = out->next<uint64_t>();
+    st->f_bavail = out->next<uint64_t>();
+    st->f_files = out->next<uint64_t>();
+    st->f_ffree = out->next<uint64_t>();
+    st->f_fsid.__val[0] = out->next<int32_t>();
+    st->f_fsid.__val[1] = out->next<int32_t>();
+    st->f_namelen = out->next<int64_t>();
+    st->f_frsize = out->next<int64_t>();
+    st->f_flags = out->next<int64_t>();
+    for (int i = 0; i < ABSL_ARRAYSIZE(st->f_spare); ++i) {
+      st->f_spare[i] = out->next<int64_t>();
+    }
   }
 
   std::shared_ptr<primitives::Client> client_;
@@ -1550,6 +1621,38 @@ TEST_F(HostCallTest, TestStat) {
   stat(path.c_str(), &st);
   LoadStatFromMessageReader(&out, &result_st);
   ASSERT_THAT(EqualsStat(&result_st, &st), Eq(true));
+  EXPECT_NE(unlink(path.c_str()), -1);
+}
+
+// Tests enc_untrusted_statfs() by creating a file and confirming the file
+// system it's on is not read-only.
+TEST_F(HostCallTest, TestStatFs) {
+  std::string path =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  // Make sure the file does not exist.
+  if (access(path.c_str(), F_OK) == 0) {
+    ASSERT_NE(unlink(path.c_str()), -1);
+  }
+
+  int fd = creat(path.c_str(), DEFFILEMODE);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(path.c_str(), F_OK), -1);
+  MessageWriter in;
+
+  in.Push(path);
+  MessageReader out;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStatFs, &in, &out));
+  ASSERT_THAT(out, SizeIs(17));  // Contains return value and 16 result statfs
+                                 // attributes.
+  ASSERT_THAT(out.next<int>(), Eq(0));  // Success return value.
+
+  struct statfs st, result_st;
+  statfs(path.c_str(), &st);
+  LoadStatFsFromMessageReader(&out, &result_st);
+  ASYLO_ASSERT_OK(CheckStatFs(&result_st, &st));
   EXPECT_NE(unlink(path.c_str()), -1);
 }
 
