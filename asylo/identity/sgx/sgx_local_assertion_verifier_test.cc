@@ -384,7 +384,8 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   sgx::CodeIdentity code_identity;
   ASSERT_TRUE(code_identity.ParseFromString(identity.identity()));
 
-  sgx::CodeIdentity expected_identity = sgx::GetSelfIdentity()->identity;
+  sgx::CodeIdentity expected_identity =
+      sgx::GetSelfIdentity()->sgx_identity.code_identity();
   EXPECT_THAT(code_identity, EqualsProto(expected_identity))
       << "Extracted identity:\n"
       << code_identity.DebugString() << "\nExpected identity:\n"

@@ -149,10 +149,11 @@ TEST_P(SgxLocalAssertionAuthorityTest, VerifyAssertionSameEnclave) {
   sgx::FakeEnclave::EnterEnclave(generator_enclave_);
 
   // Verify that the extracted code identity matches the generator's identity.
-  EXPECT_THAT(code_identity, EqualsProto(sgx::GetSelfIdentity()->identity))
+  EXPECT_THAT(code_identity,
+              EqualsProto(sgx::GetSelfIdentity()->sgx_identity.code_identity()))
       << "Extracted identity:\n"
       << code_identity.DebugString() << "\nExpected identity:\n"
-      << sgx::GetSelfIdentity()->identity.DebugString();
+      << sgx::GetSelfIdentity()->sgx_identity.code_identity().DebugString();
 }
 
 }  // namespace

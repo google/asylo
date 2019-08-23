@@ -51,7 +51,8 @@ SgxLocalSecretSealer::CreateMrenclaveSecretSealer() {
   spec.set_is_mrenclave_match_required(true);
   spec.set_is_mrsigner_match_required(false);
   sgx::CodeIdentityExpectation expectation;
-  sgx::SetExpectation(spec, sgx::GetSelfIdentity()->identity, &expectation);
+  sgx::SetExpectation(
+      spec, sgx::GetSelfIdentity()->sgx_identity.code_identity(), &expectation);
   return absl::WrapUnique<SgxLocalSecretSealer>(
       new SgxLocalSecretSealer(expectation));
 }
@@ -61,7 +62,8 @@ SgxLocalSecretSealer::CreateMrsignerSecretSealer() {
   sgx::CodeIdentityMatchSpec spec;
   sgx::SetDefaultMatchSpec(&spec);
   sgx::CodeIdentityExpectation expectation;
-  sgx::SetExpectation(spec, sgx::GetSelfIdentity()->identity, &expectation);
+  sgx::SetExpectation(
+      spec, sgx::GetSelfIdentity()->sgx_identity.code_identity(), &expectation);
   return absl::WrapUnique<SgxLocalSecretSealer>(
       new SgxLocalSecretSealer(expectation));
 }
@@ -98,7 +100,8 @@ Status SgxLocalSecretSealer::SetDefaultHeader(
                   "Could not serialize additional info");
   }
   ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(
-      sgx::GetSelfIdentity()->identity, header->add_author()));
+      sgx::GetSelfIdentity()->sgx_identity.code_identity(),
+      header->add_author()));
   return sgx::SerializeSgxExpectation(
       default_client_acl_, header->mutable_client_acl()->mutable_expectation());
 }

@@ -157,14 +157,14 @@ TEST_F(FakeEnclaveTest, SetIdentity) {
   enclave_.remove_valid_attribute(SecsAttributeBit::KSS);
   enclave_.SetRandomIdentity();
   FakeEnclave::EnterEnclave(enclave_);
-  CodeIdentity identity = GetSelfIdentity()->identity;
+  CodeIdentity identity = GetSelfIdentity()->sgx_identity.code_identity();
   FakeEnclave::ExitEnclave();
 
   FakeEnclave enclave2;
   enclave2.SetIdentity(identity);
 
   FakeEnclave::EnterEnclave(enclave2);
-  CodeIdentity identity2 = GetSelfIdentity()->identity;
+  CodeIdentity identity2 = GetSelfIdentity()->sgx_identity.code_identity();
 
   EXPECT_THAT(identity, EqualsProto(identity2));
   FakeEnclave::ExitEnclave();
@@ -180,7 +180,8 @@ TEST_F(FakeEnclaveTest, GetIdentity) {
   CodeIdentity identity = identity_result.ValueOrDie();
 
   FakeEnclave::EnterEnclave(enclave1);
-  EXPECT_THAT(identity, EqualsProto(GetSelfIdentity()->identity));
+  EXPECT_THAT(identity,
+              EqualsProto(GetSelfIdentity()->sgx_identity.code_identity()));
   FakeEnclave::ExitEnclave();
 
   FakeEnclave enclave2;

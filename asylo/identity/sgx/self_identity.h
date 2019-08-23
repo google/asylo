@@ -20,8 +20,8 @@
 #define ASYLO_IDENTITY_SGX_SELF_IDENTITY_H_
 
 #include "asylo/crypto/util/bytes.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 
 namespace asylo {
 namespace sgx {
@@ -40,7 +40,7 @@ struct SelfIdentity {
   uint16_t isvsvn;
 
   // Protobuf represenation of the enclave identity.
-  CodeIdentity identity;
+  SgxIdentity sgx_identity;
 };
 
 // Returns a pointer to a SelfIdentity object that holds identity of the current

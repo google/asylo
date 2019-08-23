@@ -411,7 +411,8 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
   ASSERT_THAT(sgx::ParseIdentityFromHardwareReport(*report, &code_identity),
               IsOk());
 
-  sgx::CodeIdentity expected_identity = sgx::GetSelfIdentity()->identity;
+  sgx::CodeIdentity expected_identity =
+      sgx::GetSelfIdentity()->sgx_identity.code_identity();
   EXPECT_THAT(code_identity, EqualsProto(expected_identity))
       << "Extracted identity:\n"
       << code_identity.DebugString() << "\nExpected identity:\n"

@@ -390,13 +390,11 @@ void SetStrictMatchSpec(SgxIdentityMatchSpec *spec) {
 }
 
 void SetSelfCodeIdentity(CodeIdentity *identity) {
-  *identity = GetSelfIdentity()->identity;
+  *identity = GetSelfIdentity()->sgx_identity.code_identity();
 }
 
 void SetSelfSgxIdentity(SgxIdentity *identity) {
-  identity->mutable_machine_configuration()->mutable_cpu_svn()->set_value(
-      GetSelfIdentity()->cpusvn.data(), GetSelfIdentity()->cpusvn.size());
-  *identity->mutable_code_identity() = GetSelfIdentity()->identity;
+  *identity = GetSelfIdentity()->sgx_identity;
 }
 
 Status SetDefaultSelfCodeIdentityExpectation(

@@ -1010,9 +1010,9 @@ TEST_F(CodeIdentityUtilTest, SetStrictSelfCodeIdentityExpectation) {
   SetStrictMatchSpec(&match_spec);
 
   EXPECT_THAT(expectation.reference_identity(),
-              EquivalentProto(GetSelfIdentity()->identity))
+              EquivalentProto(GetSelfIdentity()->sgx_identity.code_identity()))
       << FormatProto(expectation.reference_identity())
-      << FormatProto(GetSelfIdentity()->identity);
+      << FormatProto(GetSelfIdentity()->sgx_identity.code_identity());
   EXPECT_THAT(expectation.match_spec(), EquivalentProto(match_spec))
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
@@ -1024,10 +1024,10 @@ TEST_F(CodeIdentityUtilTest, SetStrictSelfSgxIdentityExpectation) {
   SgxIdentityMatchSpec match_spec;
   SetStrictMatchSpec(&match_spec);
 
-  EXPECT_THAT(expectation.reference_identity().code_identity(),
-              EquivalentProto(GetSelfIdentity()->identity))
-      << FormatProto(expectation.reference_identity().code_identity())
-      << FormatProto(GetSelfIdentity()->identity);
+  EXPECT_THAT(expectation.reference_identity(),
+              EquivalentProto(GetSelfIdentity()->sgx_identity))
+      << FormatProto(expectation.reference_identity())
+      << FormatProto(GetSelfIdentity()->sgx_identity);
   EXPECT_THAT(expectation.match_spec(), EquivalentProto(match_spec))
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }

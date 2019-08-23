@@ -317,6 +317,7 @@ cc_test(
     srcs = ["sgx_remote_assertion_generator_impl_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":code_identity_cc_proto",
         ":code_identity_util",
         ":remote_assertion_cc_proto",
         ":sgx_remote_assertion_generator_client",

@@ -236,9 +236,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadClientAcl) {
   sgx::CodeIdentityMatchSpec spec;
   ASSERT_THAT(sgx::SetDefaultMatchSpec(&spec), IsOk());
   sgx::CodeIdentityExpectation expectation;
-  ASSERT_TRUE(
-      sgx::SetExpectation(spec, sgx::GetSelfIdentity()->identity, &expectation)
-          .ok());
+  ASSERT_TRUE(sgx::SetExpectation(
+                  spec, sgx::GetSelfIdentity()->sgx_identity.code_identity(),
+                  &expectation)
+                  .ok());
   ASSERT_TRUE(
       sgx::SerializeSgxExpectation(expectation, header.mutable_client_acl()
                                                     ->mutable_acl_group()

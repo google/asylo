@@ -78,9 +78,10 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
   ASYLO_RETURN_IF_ERROR(
       ParseSgxExpectation(generic_expectation, sgx_expectation));
   bool result;
-  ASYLO_ASSIGN_OR_RETURN(result,
-                         MatchIdentityToExpectation(GetSelfIdentity()->identity,
-                                                    *sgx_expectation));
+  ASYLO_ASSIGN_OR_RETURN(
+      result,
+      MatchIdentityToExpectation(
+          GetSelfIdentity()->sgx_identity.code_identity(), *sgx_expectation));
   if (!result) {
     return Status(error::GoogleError::PERMISSION_DENIED,
                   "Identity of the current enclave does not match the ACL");
