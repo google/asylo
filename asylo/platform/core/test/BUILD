@@ -141,6 +141,7 @@ cc_test(
     srcs = ["shared_resource_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
         "//asylo/platform/core:untrusted_core",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

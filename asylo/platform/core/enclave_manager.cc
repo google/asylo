@@ -26,12 +26,65 @@
 
 #include "absl/strings/str_cat.h"
 
+#include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
+#include "asylo/platform/core/generic_enclave_client.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
+#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
+#include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
+
+/// Internal enclave loader. Redirects enclave load requests to the primitive
+/// backend indicated by the extension set in the EnclaveLoaderConfig protobuf.
+class EnclaveLoaderInternal {
+ protected:
+  // Only allow the enclave loading via the manager object.
+  friend class EnclaveManager;
+
+  StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
+      const EnclaveLoaderConfig &loader_config) const;
+};
+
+StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
+    absl::string_view enclave_name, const EnclaveConfig &enclave_config,
+    const SgxLoadConfig &sgx_config) {
+  std::shared_ptr<primitives::Client> primitive_client;
+  void *base_address = nullptr;
+  uint64_t enclave_size = 0;
+  if (sgx_config.has_fork_config()) {
+    SgxLoadConfig::ForkConfig fork_config = sgx_config.fork_config();
+    base_address = reinterpret_cast<void *>(fork_config.base_address());
+    enclave_size = fork_config.enclave_size();
+  }
+  std::string enclave_path = sgx_config.enclave_path();
+  bool debug = sgx_config.debug();
+  ASYLO_ASSIGN_OR_RETURN(
+      primitive_client,
+      primitives::LoadEnclave<primitives::SgxBackend>(
+          enclave_name, base_address, enclave_path, enclave_size,
+          enclave_config, debug,
+          absl::make_unique<primitives::DispatchTable>()));
+  auto client = GenericEnclaveClient::Create(enclave_name, primitive_client);
+  return std::unique_ptr<EnclaveClient>(std::move(client));
+}
+
+StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadEnclave(
+    const EnclaveLoaderConfig &loader_config) const {
+  std::string enclave_name = loader_config.name();
+  EnclaveConfig config = loader_config.config();
+
+  if (loader_config.HasExtension(sgx_load_config)) {
+    SgxLoadConfig sgx_config = loader_config.GetExtension(sgx_load_config);
+    return LoadSgxEnclave(enclave_name, config, sgx_config);
+  } else {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Enclave backend not supported in asylo");
+  }
+}
 
 // Returns the value of a monotonic clock as a number of nanoseconds.
 int64_t MonotonicClock() {

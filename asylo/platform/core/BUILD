@@ -53,6 +53,7 @@ cc_library(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:logging",
@@ -252,6 +253,7 @@ cc_test(
     deps = [
         ":shared_resource_manager",
         ":untrusted_core",
+        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
         "//asylo/platform/common:time_util",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

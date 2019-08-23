@@ -22,10 +22,6 @@ import "asylo/enclave.proto";
 
 // Configuration for an SGX enclave loader.
 message SgxLoadConfig {
-  extend EnclaveLoaderConfig {
-    optional SgxLoadConfig sgx_load_config = 263000381;
-  }
-
   // Path to the enclave binary (.so) file to load.
   optional string enclave_path = 1;
 
@@ -52,4 +48,8 @@ message SgxLoadConfig {
   // Set if loading an SGX based enclaves embedded in the binary of the
   // calling process.
   optional EmbeddedConfig embedded_config = 4;
+}
+
+extend EnclaveLoaderConfig {
+  optional SgxLoadConfig sgx_load_config = 263000381;
 }
