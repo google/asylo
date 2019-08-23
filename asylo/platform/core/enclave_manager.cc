@@ -60,14 +60,25 @@ StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
     base_address = reinterpret_cast<void *>(fork_config.base_address());
     enclave_size = fork_config.enclave_size();
   }
-  std::string enclave_path = sgx_config.enclave_path();
   bool debug = sgx_config.debug();
-  ASYLO_ASSIGN_OR_RETURN(
-      primitive_client,
-      primitives::LoadEnclave<primitives::SgxBackend>(
-          enclave_name, base_address, enclave_path, enclave_size,
-          enclave_config, debug,
-          absl::make_unique<primitives::DispatchTable>()));
+  bool is_embedded = sgx_config.has_embedded_config();
+  if (is_embedded) {
+    std::string section_name = sgx_config.embedded_config().section_name();
+    ASYLO_ASSIGN_OR_RETURN(
+        primitive_client,
+        primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
+            enclave_name, base_address, section_name, enclave_size,
+            enclave_config, debug,
+            absl::make_unique<primitives::DispatchTable>()));
+  } else {
+    std::string enclave_path = sgx_config.enclave_path();
+    ASYLO_ASSIGN_OR_RETURN(
+        primitive_client,
+        primitives::LoadEnclave<primitives::SgxBackend>(
+            enclave_name, base_address, enclave_path, enclave_size,
+            enclave_config, debug,
+            absl::make_unique<primitives::DispatchTable>()));
+  }
   auto client = GenericEnclaveClient::Create(enclave_name, primitive_client);
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
