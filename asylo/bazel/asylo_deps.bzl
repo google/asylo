@@ -175,6 +175,7 @@ def asylo_deps(toolchain_path = None):
             urls = ["https://github.com/grpc/grpc/archive/v1.23.0.tar.gz"],
             sha256 = "f56ced18740895b943418fa29575a65cc2396ccfa3159fa40d318ef5f59471f9",
             patches = ["@com_google_asylo//asylo/distrib:grpc_1_23_0.patch"],
+            patch_tool = "patch",
             strip_prefix = "grpc-1.23.0",
         )
 

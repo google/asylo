@@ -27,6 +27,7 @@ def sgx_deps():
             name = "linux_sgx",
             urls = ["https://github.com/intel/linux-sgx/archive/sgx_2.6.tar.gz"],
             sha256 = "9d66602c0437d3fa5eb099cbe76815ebd5cca60bc25b4e4af60d2b81bb742d90",
+            patch_tool = "patch",
             patches = [
                 "@com_google_asylo//asylo/distrib/sgx_x86_64:linux_sgx_2_6.patch",
                 "@com_google_asylo//asylo/distrib/sgx_x86_64:enclave_test_pem.patch",
@@ -41,6 +42,7 @@ def sgx_deps():
             name = "sgx_dcap",
             urls = ["https://github.com/intel/SGXDataCenterAttestationPrimitives/archive/DCAP_1.2.tar.gz"],
             sha256 = "36ae4227056f16d2e3e45b1a9601993ac26a3aaf27762219cbcfa98312a988ce",
+            patch_tool = "patch",
             patches = ["@com_google_asylo//asylo/distrib:sgx_dcap_1_2.patch"],
             strip_prefix = "SGXDataCenterAttestationPrimitives-DCAP_1.2",
         )
