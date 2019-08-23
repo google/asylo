@@ -1450,7 +1450,7 @@ TEST_F(HostCallTest, TestUSleep) {
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_GE(duration, 1000);
-  EXPECT_LE(duration, 1300);
+  EXPECT_LE(duration, 1600);
 }
 
 // Tests enc_untrusted_fstat() by creating a file and get stat of it, ensuring
@@ -1753,7 +1753,7 @@ TEST_F(HostCallTest, TestSleep) {
   EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_GE(duration, 1000);
   EXPECT_LE(duration,
-            1300);  // Allow sufficient time padding for EnclaveCall to perform
+            1600);  // Allow sufficient time padding for EnclaveCall to perform
                     // enc_untrusted_sleep() and return from the enclave.
 }
 
@@ -1780,7 +1780,7 @@ TEST_F(HostCallTest, TestNanosleep) {
   EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_GE(duration, 500);
   EXPECT_LE(duration,
-            800);  // Allow sufficient time padding for EnclaveCall to perform
+            1100);  // Allow sufficient time padding for EnclaveCall to perform
                    // enc_untrusted_nanosleep() and return from the enclave.
 
   struct timespec klinux_rem = out.next<struct timespec>();
@@ -1814,7 +1814,7 @@ TEST_F(HostCallTest, TestClockGettime) {
   uint64_t diff = kNanosecondsPerSecond * (end.tv_sec - start.tv_sec) +
                   end.tv_nsec - start.tv_nsec;
   EXPECT_GE(diff, kNanosecondsPerSecond);
-  EXPECT_LE(diff, kNanosecondsPerSecond * 1.5);
+  EXPECT_LE(diff, kNanosecondsPerSecond * 1.6);
 }
 
 // Tests enc_untrusted_bind() by calling the function from inside the enclave
