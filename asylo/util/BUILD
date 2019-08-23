@@ -278,6 +278,7 @@ cc_library(
         "status_error_space.cc",
         "status_error_space.h",
         "status_internal.h",
+        "statusor.cc",
     ],
     hdrs = [
         "posix_error_space.h",

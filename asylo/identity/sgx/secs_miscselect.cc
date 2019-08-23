@@ -28,12 +28,14 @@ namespace {
 constexpr SecsMiscselectBit kAllSecsMiscselectBits[] = {
     SecsMiscselectBit::EXINFO};
 
-std::string GetMiscselectBitName(SecsMiscselectBit miscselect_bit) {
+absl::string_view GetMiscselectBitName(SecsMiscselectBit miscselect_bit) {
+  static constexpr absl::string_view kExinfo = "EXINFO";
+  static constexpr absl::string_view kUnknown = "UNKNOWN";
   switch (miscselect_bit) {
     case SecsMiscselectBit::EXINFO:
-      return "EXINFO";
+      return kExinfo;
     default:
-      return "UNKNOWN";
+      return kUnknown;
   }
 }
 
@@ -56,19 +58,19 @@ StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
   return TestMiscselectBit(miscselect_bit, miscselect.value());
 }
 
-std::vector<std::string> GetPrintableMiscselectList(uint32_t miscselect) {
-  std::vector<std::string> printable_miscselect_list;
+std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect) {
+  std::vector<absl::string_view> printable_miscselect_list;
   for (SecsMiscselectBit miscselect_bit : kAllSecsMiscselectBits) {
     size_t bit_position = static_cast<size_t>(miscselect_bit);
     if ((miscselect & (UINT32_C(1) << bit_position)) != 0) {
-      printable_miscselect_list.emplace_back(
+      printable_miscselect_list.push_back(
           GetMiscselectBitName(miscselect_bit));
     }
   }
   return printable_miscselect_list;
 }
 
-std::vector<std::string> GetPrintableMiscselectList(
+std::vector<absl::string_view> GetPrintableMiscselectList(
     const Miscselect &miscselect) {
   return GetPrintableMiscselectList(miscselect.value());
 }

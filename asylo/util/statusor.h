@@ -21,6 +21,7 @@
 
 #include <type_traits>
 
+#include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/status.h"
@@ -29,21 +30,17 @@
 namespace asylo {
 
 #ifdef NDEBUG
-constexpr char kValueMoveConstructorMsg[] = "";
-constexpr char kValueMoveAssignmentMsg[] = "";
-constexpr char kValueOrDieMovedMsg[] = "";
-constexpr char kStatusMoveConstructorMsg[] = "";
-constexpr char kStatusMoveAssignmentMsg[] = "";
+ABSL_CONST_INIT extern const char kValueMoveConstructorMsg[];
+ABSL_CONST_INIT extern const char kValueMoveAssignmentMsg[];
+ABSL_CONST_INIT extern const char kValueOrDieMovedMsg[];
+ABSL_CONST_INIT extern const char kStatusMoveConstructorMsg[];
+ABSL_CONST_INIT extern const char kStatusMoveAssignmentMsg[];
 #else
-constexpr char kValueMoveConstructorMsg[] =
-    "Value moved by StatusOr move constructor";
-constexpr char kValueMoveAssignmentMsg[] =
-    "Value moved by StatusOr move assignment";
-constexpr char kStatusMoveConstructorMsg[] =
-    "Status moved by StatusOr move constructor";
-constexpr char kValueOrDieMovedMsg[] = "Value moved by StatusOr::ValueOrDie";
-constexpr char kStatusMoveAssignmentMsg[] =
-    "Status moved by StatusOr move assignment";
+ABSL_CONST_INIT extern const char kValueMoveConstructorMsg[];
+ABSL_CONST_INIT extern const char kValueMoveAssignmentMsg[];
+ABSL_CONST_INIT extern const char kStatusMoveConstructorMsg[];
+ABSL_CONST_INIT extern const char kValueOrDieMovedMsg[];
+ABSL_CONST_INIT extern const char kStatusMoveAssignmentMsg[];
 #endif
 
 /// A class for representing either a usable value, or an error.

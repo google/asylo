@@ -116,14 +116,15 @@ std::pair<SecsAttributeBit, const char *> kPrintableSecsAttributeBitNames[] = {
     {SecsAttributeBit::HI16_ZMM, "HI16_ZMM"},
     {SecsAttributeBit::PKRU, "PKRU"}};
 
-const char *GetAttributeName(SecsAttributeBit attribute) {
+absl::string_view GetAttributeName(SecsAttributeBit attribute) {
+  static constexpr absl::string_view kUnknown = "UNKNOWN";
   for (const std::pair<SecsAttributeBit, const char *> &attribute_name_pair :
        kPrintableSecsAttributeBitNames) {
     if (attribute_name_pair.first == attribute) {
       return attribute_name_pair.second;
     }
   }
-  return "UNKNOWN";
+  return kUnknown;
 }
 
 }  // namespace
@@ -396,22 +397,22 @@ void SetStrictSecsAttributesMask(Attributes *attributes_match_mask) {
 
 void GetPrintableAttributeList(
     const std::vector<SecsAttributeBit> &attribute_list,
-    std::vector<std::string> *printable_list) {
+    std::vector<absl::string_view> *printable_list) {
   printable_list->clear();
   for (SecsAttributeBit attribute : attribute_list) {
-    printable_list->push_back(std::string(GetAttributeName(attribute)));
+    printable_list->push_back(GetAttributeName(attribute));
   }
 }
 
 void GetPrintableAttributeList(const SecsAttributeSet &attributes,
-                               std::vector<std::string> *printable_list) {
+                               std::vector<absl::string_view> *printable_list) {
   std::vector<SecsAttributeBit> attribute_list;
   ConvertSecsAttributeRepresentation(attributes, &attribute_list);
   GetPrintableAttributeList(attribute_list, printable_list);
 }
 
 void GetPrintableAttributeList(const Attributes &attributes,
-                               std::vector<std::string> *printable_list) {
+                               std::vector<absl::string_view> *printable_list) {
   std::vector<SecsAttributeBit> attribute_list;
   ConvertSecsAttributeRepresentation(attributes, &attribute_list);
   GetPrintableAttributeList(attribute_list, printable_list);

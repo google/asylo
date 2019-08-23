@@ -53,6 +53,8 @@ void AssembleMsgHdr(struct msghdr *msg, struct iovec *iov, const char *msg1,
 
 }  // namespace
 
+const char kLocalIpv6AddrStr[] = "::1";
+
 Status ServerTransmit(SocketServer *socket_server) {
   Status status;
   if (!(status = socket_server->Write(kServerWriteSuccessStr,

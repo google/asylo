@@ -19,13 +19,14 @@
 #ifndef ASYLO_PLATFORM_POSIX_SOCKETS_SOCKET_TEST_TRANSMIT_H_
 #define ASYLO_PLATFORM_POSIX_SOCKETS_SOCKET_TEST_TRANSMIT_H_
 
+#include "absl/base/attributes.h"
 #include "asylo/platform/posix/sockets/socket_client.h"
 #include "asylo/platform/posix/sockets/socket_server.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
 
-constexpr char kLocalIpv6AddrStr[] = "::1";
+ABSL_CONST_INIT extern const char kLocalIpv6AddrStr[];
 
 // Sends and receives a string in a socket server for domain-socket and
 // INET6-socket tests.

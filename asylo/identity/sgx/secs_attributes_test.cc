@@ -463,7 +463,7 @@ TEST_F(SecsAttributesTest, SetStrictSecsAttributesMask) {
 
 // Verify the correctness of GetPrintableAttributeList on an attribute list.
 TEST_F(SecsAttributesTest, GetPrintableAttributeListFromList) {
-  std::vector<std::string> printable_list;
+  std::vector<absl::string_view> printable_list;
 
   for (int i = 0; i < attribute_sets_.size(); i++) {
     std::vector<SecsAttributeBit> attribute_bit_list = {attributes_[i]};
@@ -481,7 +481,7 @@ TEST_F(SecsAttributesTest, GetPrintableAttributeListFromList) {
 
 // Verify the correctness of GetPrintableAttributeList on an attribute set.
 TEST_F(SecsAttributesTest, GetPrintableAttributeListFromSet) {
-  std::vector<std::string> printable_list;
+  std::vector<absl::string_view> printable_list;
 
   for (int i = 0; i < attribute_sets_.size(); i++) {
     GetPrintableAttributeList(attribute_sets_[i], &printable_list);
@@ -498,7 +498,7 @@ TEST_F(SecsAttributesTest, GetPrintableAttributeListFromSet) {
 
 // Verify the correctness of GetPrintableAttributeList on Attributes.
 TEST_F(SecsAttributesTest, GetPrintableAttributeListFromAttributes) {
-  std::vector<std::string> printable_list;
+  std::vector<absl::string_view> printable_list;
   Attributes attributes;
 
   for (int i = 0; i < attribute_sets_.size(); i++) {

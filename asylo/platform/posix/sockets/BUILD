@@ -120,6 +120,7 @@ cc_library(
         ":socket_client",
         ":socket_server",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
     ],
 )
 

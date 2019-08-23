@@ -26,6 +26,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_join.h"
+#include "absl/strings/string_view.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -59,7 +60,7 @@ class AttributesFlagsPrinter : public TextFormat::FastFieldValuePrinter {
 
     generator->PrintLiteral("[");
 
-    std::vector<std::string> printable_attributes;
+    std::vector<absl::string_view> printable_attributes;
     GetPrintableAttributeList(attributes, &printable_attributes);
     generator->PrintString(absl::StrJoin(printable_attributes, ", "));
 
@@ -79,7 +80,7 @@ class AttributesXfrmPrinter : public TextFormat::FastFieldValuePrinter {
 
     generator->PrintLiteral("[");
 
-    std::vector<std::string> printable_attributes;
+    std::vector<absl::string_view> printable_attributes;
     GetPrintableAttributeList(attributes, &printable_attributes);
     generator->PrintString(absl::StrJoin(printable_attributes, ", "));
 
@@ -95,7 +96,7 @@ class MiscSelectPrinter : public TextFormat::FastFieldValuePrinter {
                    TextFormat::BaseTextGenerator *generator) const override {
     generator->PrintLiteral("[");
 
-    std::vector<std::string> printable_misc_select =
+    std::vector<absl::string_view> printable_misc_select =
         GetPrintableMiscselectList(value);
     generator->PrintString(absl::StrJoin(printable_misc_select, ", "));
 

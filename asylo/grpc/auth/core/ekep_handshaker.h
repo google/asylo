@@ -36,8 +36,8 @@
 namespace asylo {
 
 // The size of an EKEP frame header.
-const uint32_t kEkepFrameHeaderSize = 8;
-const uint32_t kEkepChallengeSize = 32;
+constexpr uint32_t kEkepFrameHeaderSize = 8;
+constexpr uint32_t kEkepChallengeSize = 32;
 
 // EkepHandshaker is an abstract class that implements the Enclave Key Exchange
 // Protocol (EKEP) handshake. EkepHandshaker provides a single entry point,

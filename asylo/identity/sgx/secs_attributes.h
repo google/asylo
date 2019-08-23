@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "absl/base/attributes.h"
+#include "absl/strings/string_view.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -192,16 +193,16 @@ void SetStrictSecsAttributesMask(Attributes *attributes_match_mask);
 // Gets printable list of attributes from a list of SecsAttributeBit values.
 void GetPrintableAttributeList(
     const std::vector<SecsAttributeBit> &attribute_list,
-    std::vector<std::string> *printable_list);
+    std::vector<absl::string_view> *printable_list);
 
 // Gets printable list of attributes from an SecsAttributeSet.
 void GetPrintableAttributeList(const SecsAttributeSet &attributes,
-                               std::vector<std::string> *printable_list);
+                               std::vector<absl::string_view> *printable_list);
 
 // Gets printable list of attributes from a Attributes
 // proto.
 void GetPrintableAttributeList(const Attributes &attributes,
-                               std::vector<std::string> *printable_list);
+                               std::vector<absl::string_view> *printable_list);
 
 }  // namespace sgx
 }  // namespace asylo

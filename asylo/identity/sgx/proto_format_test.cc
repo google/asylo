@@ -43,10 +43,10 @@ TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
   SetSelfCodeIdentity(&identity);
   std::string text = FormatProto(identity);
 
-  std::vector<std::string> named_attributes;
+  std::vector<absl::string_view> named_attributes;
   GetPrintableAttributeList(identity.attributes(), &named_attributes);
-  for (const std::string &attribute : named_attributes) {
-    EXPECT_THAT(text, HasSubstr(attribute));
+  for (const auto attribute : named_attributes) {
+    EXPECT_THAT(text, HasSubstr(std::string(attribute)));
   }
 }
 
@@ -56,10 +56,10 @@ TEST(ProtoFormatTest, MiscselectBitsByName) {
                        << static_cast<size_t>(SecsMiscselectBit::EXINFO));
   std::string text = FormatProto(miscselect);
 
-  std::vector<std::string> named_miscselect_bits =
+  std::vector<absl::string_view> named_miscselect_bits =
       GetPrintableMiscselectList(miscselect);
-  for (const std::string &miscselect_bit : named_miscselect_bits) {
-    EXPECT_THAT(text, HasSubstr(miscselect_bit));
+  for (const auto miscselect_bit : named_miscselect_bits) {
+    EXPECT_THAT(text, HasSubstr(std::string(miscselect_bit)));
   }
 }
 
@@ -68,10 +68,10 @@ TEST(ProtoFormatTest, CodeIdentityHasMiscselectBitsByName) {
   SetSelfCodeIdentity(&identity);
   std::string text = FormatProto(identity);
 
-  std::vector<std::string> named_miscselect_bits =
+  std::vector<absl::string_view> named_miscselect_bits =
       GetPrintableMiscselectList(identity.miscselect());
-  for (const std::string &miscselect_bit : named_miscselect_bits) {
-    EXPECT_THAT(text, HasSubstr(miscselect_bit));
+  for (const auto miscselect_bit : named_miscselect_bits) {
+    EXPECT_THAT(text, HasSubstr(std::string(miscselect_bit)));
   }
 }
 
@@ -92,11 +92,11 @@ TEST(ProtoFormatTest, CodeIdentityMatchSpecHasAttributesByName) {
   SetDefaultMatchSpec(&match_spec);
   std::string text = FormatProto(match_spec);
 
-  std::vector<std::string> named_attributes;
+  std::vector<absl::string_view> named_attributes;
   GetPrintableAttributeList(match_spec.attributes_match_mask(),
                             &named_attributes);
-  for (const std::string &attribute : named_attributes) {
-    EXPECT_THAT(text, HasSubstr(attribute));
+  for (const auto attribute : named_attributes) {
+    EXPECT_THAT(text, HasSubstr(std::string(attribute)));
   }
 }
 
@@ -105,10 +105,10 @@ TEST(ProtoFormatTest, CodeIdentityMatchSpecHasMiscselectBitsByName) {
   SetDefaultMatchSpec(&match_spec);
   std::string text = FormatProto(match_spec);
 
-  std::vector<std::string> named_miscselect_bits =
+  std::vector<absl::string_view> named_miscselect_bits =
       GetPrintableMiscselectList(match_spec.miscselect_match_mask());
-  for (const std::string &miscselect_bit : named_miscselect_bits) {
-    EXPECT_THAT(text, HasSubstr(miscselect_bit));
+  for (const auto miscselect_bit : named_miscselect_bits) {
+    EXPECT_THAT(text, HasSubstr(std::string(miscselect_bit)));
   }
 }
 

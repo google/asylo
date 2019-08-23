@@ -23,6 +23,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/util/statusor.h"
 
@@ -59,11 +60,11 @@ StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
 
 // Returns a printable list of MISCSELECT bits from the given |miscselect| bit
 // vector representation of MISCSELECT.
-std::vector<std::string> GetPrintableMiscselectList(uint32_t miscselect);
+std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect);
 
 // Returns a printable list of MISCSELECT bits from the given |miscselect| proto
 // representation of MISCSELECT.
-std::vector<std::string> GetPrintableMiscselectList(
+std::vector<absl::string_view> GetPrintableMiscselectList(
     const Miscselect &miscselect);
 
 }  // namespace sgx
