@@ -21,6 +21,7 @@
 
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -47,19 +48,51 @@ CodeIdentityMatchSpec GetRandomValidMatchSpec();
 // Generates a valid CodeIdentityExpectation.
 CodeIdentityExpectation GetRandomValidExpectation();
 
+// Generates a valid SgxIdentity according to the constraints defined by the
+// inputs, in a similar vein as GetRandomValidCodeIdentityWithConstraints.
+SgxIdentity GetRandomValidSgxIdentityWithConstraints(
+    const std::vector<bool> &mrenclave_constraint,
+    const std::vector<bool> &mrsigner_constraint,
+    const std::vector<bool> &cpu_svn_constraint);
+
+SgxIdentity GetRandomValidSgxIdentity();
+
+SgxIdentityMatchSpec GetRandomValidSgxMatchSpec();
+
+SgxIdentityExpectation GetRandomValidSgxExpectation();
+
 // Sets |generic_identity| to a randomly-initialized valid EnclaveIdentity.
 // Also writes the underlying SGX code identity to |corresponding_sgx_identity|
 void SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
                                    CodeIdentity *corresponding_sgx_identity);
 
+// Sets |generic_identity| to a randomly-initialized valid EnclaveIdentity,
+// where the |identity| is a serialized CodeIdentity. Also writes the underlying
+// SGX identity to |corresponding_sgx_identity|->code_identity.
+Status SetRandomValidLegacyGenericIdentity(
+    EnclaveIdentity *generic_identity, SgxIdentity *corresponding_sgx_identity);
+
+// Sets |generic_identity| to a randomly-initialized valid EnclaveIdentity,
+// where the |identity| is a serialized SgxIdentity.
+// Also writes the underlying SGX identity to |corresponding_sgx_identity|.
+Status SetRandomValidSgxGenericIdentity(
+    EnclaveIdentity *generic_identity, SgxIdentity *corresponding_sgx_identity);
+
 // Sets |generic_identity| to a randomly-initialized invalid EnclaveIdentity.
+// where the serialized identity is a CodeIdentity.
 void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity);
+
+// Sets |generic_identity| to a randomly-initialized invalid EnclaveIdentity,
+// where the serialized identity is an SgxIdentity.
+Status SetRandomInvalidGenericSgxIdentity(EnclaveIdentity *generic_identity);
 
 // Sets |generic_spec| to a randomly-initialized string that corresponds to a
 // valid SGX match spec. Also writes the underlying SGX match spec to
 // |corresponding_sgx_spec|.
-void SetRandomValidGenericMatchSpec(
+Status SetRandomValidGenericMatchSpec(
     std::string *generic_spec, CodeIdentityMatchSpec *corresponding_sgx_spec);
+Status SetRandomValidGenericMatchSpec(
+    std::string *generic_spec, SgxIdentityMatchSpec *corresponding_sgx_spec);
 
 // Sets |generic_spec| to a randomly-initialized string that corresponds to an
 // invalid SGX match spec.
@@ -71,6 +104,9 @@ Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec);
 Status SetRandomValidGenericExpectation(
     EnclaveIdentityExpectation *generic_expectation,
     CodeIdentityExpectation *corresponding_sgx_expectation);
+Status SetRandomValidGenericExpectation(
+    EnclaveIdentityExpectation *generic_expectation,
+    SgxIdentityExpectation *corresponding_sgx_expectation);
 
 // Sets |generic_expectation| to a randomly-initialized invalid
 // EnclaveIdentityExpectation.

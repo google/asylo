@@ -20,9 +20,14 @@
 
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/descriptions.h"
+#include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/util/status_macros.h"
 
@@ -41,6 +46,11 @@ const T RandomSelect(const std::vector<T> &choices) {
     LOG(FATAL) << "Choices must have a non-zero size";
   }
   return choices[rand_val % choices.size()];
+}
+
+template <typename T>
+const T RandomSelect(std::initializer_list<T> initializer) {
+  return RandomSelect(std::vector<T>(initializer));
 }
 
 // Returns true with a |percent| / 100 probability.
@@ -102,6 +112,17 @@ CodeIdentityMatchSpec GetRandomMatchSpec(int percent = 100) {
   return spec;
 }
 
+// Generates and returns a random SgxMachineConfigurationMatchSpec, where each
+// field is randomly set with a |percent|% chance.
+SgxMachineConfigurationMatchSpec GetRandomSgxMachineConfigurationMatchSpec(
+    int percent = 100) {
+  SgxMachineConfigurationMatchSpec spec;
+  FuzzField(percent,
+            &SgxMachineConfigurationMatchSpec::set_is_cpu_svn_match_required,
+            &spec);
+  return spec;
+}
+
 }  // namespace
 
 CodeIdentity GetRandomValidCodeIdentityWithConstraints(
@@ -151,16 +172,95 @@ CodeIdentityExpectation GetRandomValidExpectation() {
   return expectation;
 }
 
+SgxIdentity GetRandomValidSgxIdentityWithConstraints(
+    const std::vector<bool> &mrenclave_constraint,
+    const std::vector<bool> &mrsigner_constraint,
+    const std::vector<bool> &cpu_svn_constraint) {
+  SgxIdentity sgx_id;
+  *sgx_id.mutable_code_identity() = GetRandomValidCodeIdentityWithConstraints(
+      mrenclave_constraint, mrsigner_constraint);
+  if (RandomSelect(cpu_svn_constraint)) {
+    auto cpusvn = TrivialRandomObject<UnsafeBytes<16>>();
+    sgx_id.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
+        cpusvn.data(), cpusvn.size());
+  }
+
+  return sgx_id;
+}
+
+SgxIdentity GetRandomValidSgxIdentity() {
+  std::vector<bool> selection_choices{true, false};
+  return GetRandomValidSgxIdentityWithConstraints(
+      selection_choices, selection_choices, selection_choices);
+}
+
+SgxIdentityMatchSpec GetRandomValidSgxMatchSpec() {
+  SgxIdentityMatchSpec spec;
+  *spec.mutable_code_identity_match_spec() = GetRandomMatchSpec();
+  *spec.mutable_machine_configuration_match_spec() =
+      GetRandomSgxMachineConfigurationMatchSpec();
+  return spec;
+}
+
+SgxIdentityExpectation GetRandomValidSgxExpectation() {
+  SgxIdentityExpectation expectation;
+  *expectation.mutable_match_spec() = GetRandomValidSgxMatchSpec();
+  std::vector<bool> mrenclave_constraint{expectation.match_spec()
+                                             .code_identity_match_spec()
+                                             .is_mrenclave_match_required()};
+  std::vector<bool> mrsigner_constraint{expectation.match_spec()
+                                            .code_identity_match_spec()
+                                            .is_mrsigner_match_required()};
+  std::vector<bool> cpu_svn_constraint{expectation.match_spec()
+                                           .machine_configuration_match_spec()
+                                           .is_cpu_svn_match_required()};
+  *expectation.mutable_reference_identity() =
+      GetRandomValidSgxIdentityWithConstraints(
+          mrenclave_constraint, mrsigner_constraint, cpu_svn_constraint);
+  return expectation;
+}
+
 void SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
                                    CodeIdentity *corresponding_sgx_identity) {
-  generic_identity->mutable_description()->set_identity_type(CODE_IDENTITY);
-
-  generic_identity->mutable_description()->set_authority_type(
-      kSgxAuthorizationAuthority);
-
+  SetSgxIdentityDescription(generic_identity->mutable_description());
   CodeIdentity sgx_identity = GetRandomValidCodeIdentity();
   sgx_identity.SerializeToString(generic_identity->mutable_identity());
   *corresponding_sgx_identity = sgx_identity;
+}
+
+Status SetRandomValidLegacyGenericIdentity(
+    EnclaveIdentity *generic_identity,
+    SgxIdentity *corresponding_sgx_identity) {
+  SetSgxIdentityDescription(generic_identity->mutable_description());
+
+  SgxMachineConfiguration machine_config;
+  *corresponding_sgx_identity->mutable_machine_configuration() = machine_config;
+
+  CodeIdentity sgx_identity = GetRandomValidCodeIdentity();
+  if (!sgx_identity.SerializeToString(generic_identity->mutable_identity())) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize CodeIdentity");
+  }
+  *corresponding_sgx_identity->mutable_code_identity() = sgx_identity;
+  return Status::OkStatus();
+}
+
+Status SetRandomValidSgxGenericIdentity(
+    EnclaveIdentity *generic_identity,
+    SgxIdentity *corresponding_sgx_identity) {
+  SetSgxIdentityDescription(generic_identity->mutable_description());
+  *generic_identity->mutable_version() = kSgxIdentityVersionString;
+
+  *corresponding_sgx_identity->mutable_machine_configuration() =
+      SgxMachineConfiguration::default_instance();
+
+  SgxIdentity sgx_identity = GetRandomValidSgxIdentity();
+  if (!sgx_identity.SerializeToString(generic_identity->mutable_identity())) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize SgxIdentity");
+  }
+  *corresponding_sgx_identity = sgx_identity;
+  return Status::OkStatus();
 }
 
 void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
@@ -199,11 +299,67 @@ void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
   } while (is_valid);
 }
 
-void SetRandomValidGenericMatchSpec(
+Status SetRandomInvalidGenericSgxIdentity(EnclaveIdentity *generic_identity) {
+  bool is_valid = true;
+  while (is_valid) {
+    EnclaveIdentityType identity_type = RandomSelect(
+        {UNKNOWN_IDENTITY, NULL_IDENTITY, CODE_IDENTITY, CERT_IDENTITY});
+    generic_identity->mutable_description()->set_identity_type(identity_type);
+    is_valid &= (identity_type == CODE_IDENTITY);
+
+    std::string authority_type =
+        RandomSelect({kSgxAuthorizationAuthority, kInvalidAuthorityType});
+    generic_identity->mutable_description()->set_authority_type(authority_type);
+    is_valid &= (authority_type == kSgxAuthorizationAuthority);
+
+    std::string version_string =
+        RandomSelect({kSgxIdentityVersionString, kInvalidString});
+    generic_identity->set_version(version_string);
+    is_valid &= (version_string == kSgxIdentityVersionString);
+
+    std::string empty_sgx_code_identity_string;
+    if (!SgxIdentity::default_instance().SerializeToString(
+            &empty_sgx_code_identity_string)) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Failed to serialize empty SgxIdentity");
+    }
+
+    std::string valid_identity_string;
+    if (!GetRandomValidSgxIdentity().SerializeToString(
+            &valid_identity_string)) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Failed to serialize valid SgxIdentity");
+    }
+
+    std::string identity_string = RandomSelect(std::vector<std::string>{
+        kInvalidString, empty_sgx_code_identity_string, valid_identity_string});
+
+    generic_identity->set_identity(identity_string);
+    is_valid &= (identity_string == valid_identity_string);
+  }
+  return Status::OkStatus();
+}
+
+Status SetRandomValidGenericMatchSpec(
     std::string *generic_spec, CodeIdentityMatchSpec *corresponding_sgx_spec) {
   CodeIdentityMatchSpec spec = GetRandomValidMatchSpec();
-  spec.SerializeToString(generic_spec);
+  if (!spec.SerializeToString(generic_spec)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize CodeIdentityMatchSpec");
+  }
   *corresponding_sgx_spec = spec;
+  return Status::OkStatus();
+}
+
+Status SetRandomValidGenericMatchSpec(
+    std::string *generic_spec, SgxIdentityMatchSpec *corresponding_sgx_spec) {
+  SgxIdentityMatchSpec spec = GetRandomValidSgxMatchSpec();
+  if (!spec.SerializeToString(generic_spec)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize CodeIdentityMatchSpec");
+  }
+  *corresponding_sgx_spec = spec;
+  return Status::OkStatus();
 }
 
 Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec) {
@@ -248,6 +404,27 @@ Status SetRandomValidGenericExpectation(
 
   SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation);
   return Status::OkStatus();
+}
+
+Status SetRandomValidGenericExpectation(
+    EnclaveIdentityExpectation *generic_expectation,
+    SgxIdentityExpectation *corresponding_sgx_expectation) {
+  SgxIdentity sgx_identity;
+  SgxIdentityMatchSpec sgx_spec;
+
+  for (int count = 0; count < 100; count++) {
+    ASYLO_RETURN_IF_ERROR(SetRandomValidSgxGenericIdentity(
+        generic_expectation->mutable_reference_identity(), &sgx_identity));
+    ASYLO_RETURN_IF_ERROR(SetRandomValidGenericMatchSpec(
+        generic_expectation->mutable_match_spec(), &sgx_spec));
+
+    if (internal::IsIdentityCompatibleWithMatchSpec(sgx_identity, sgx_spec)) {
+      SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation);
+      return Status::OkStatus();
+    }
+  }
+
+  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
 }
 
 Status SetRandomInvalidGenericExpectation(

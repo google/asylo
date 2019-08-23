@@ -23,6 +23,7 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -33,76 +34,106 @@ namespace sgx {
 // encountered, and if the match is successful. Else returns false.
 StatusOr<bool> MatchIdentityToExpectation(
     const CodeIdentity &identity, const CodeIdentityExpectation &expectation);
+StatusOr<bool> MatchIdentityToExpectation(
+    const SgxIdentity &identity, const SgxIdentityExpectation &expectation);
 
 // Sets |expectation| based on |identity| and |match_spec|. Returns true on
 // success (no error), else returns false.
 Status SetExpectation(const CodeIdentityMatchSpec &match_spec,
                       const CodeIdentity &identity,
                       CodeIdentityExpectation *expectation);
+Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
+                      const SgxIdentity &identity,
+                      SgxIdentityExpectation *expectation);
 
 // Checks if a signer-assigned identity is valid.
 bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity);
 
 // Checks if an enclave identity is valid.
 bool IsValidCodeIdentity(const CodeIdentity &identity);
+bool IsValidSgxIdentity(const SgxIdentity &identity);
 
 // Checks if a match specification is valid.
 bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec);
+bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec);
 
 // Checks if an identity expectation is valid.
 bool IsValidExpectation(const CodeIdentityExpectation &expectation);
+bool IsValidExpectation(const SgxIdentityExpectation &expectation);
 
 // Parses CodeIdentity from |report| and places the result in |identity|. Does
 // not verify |report|.
 Status ParseIdentityFromHardwareReport(const Report &report,
                                        CodeIdentity *identity);
 
+// Parses SgxIdentity from |report| and places the result in |identity|.
+// Does not verify |report|.
+Status ParseIdentityFromHardwareReport(const Report &report,
+                                       SgxIdentity *identity);
+
 // Sets |spec| to the default SGX match spec, which requires a match on
 // MRSIGNER, MISCSELECT, and all ATTRIBUTES that do not fall into the default
 // "do not care" set.
 Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec);
+Status SetDefaultMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |spec| to the strictest SGX match spec, which requires a match on
 // MRENCLAVE, MRSIGNER, MISCSELECT, and all ATTRIBUTES bits.
 void SetStrictMatchSpec(CodeIdentityMatchSpec *spec);
+void SetStrictMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |identity| to the current enclave's identity.
 void SetSelfCodeIdentity(CodeIdentity *identity);
+void SetSelfSgxIdentity(SgxIdentity *identity);
 
 // Sets |expectation| to default expectation, which is defined as the pair
 // <self identity, default match spec>.
 Status SetDefaultSelfCodeIdentityExpectation(
     CodeIdentityExpectation *expectation);
+Status SetDefaultSelfSgxIdentityExpectation(
+    SgxIdentityExpectation *expectation);
 
 // Sets |expectation| to the strictest self identity expectation, which is
 // defined as the pair <self identity, strict match spec>.
 Status SetStrictSelfCodeIdentityExpectation(
     CodeIdentityExpectation *expectation);
+Status SetStrictSelfSgxIdentityExpectation(SgxIdentityExpectation *expectation);
 
 // Parses SGX code identity from a EnclaveIdentity proto.
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
                         CodeIdentity *sgx_identity);
+Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
+                        SgxIdentity *sgx_identity);
 
 // Parses SGX match spec |sgx_match_spec| from a string (which is how it is
 // stored in the EnclaveIdentityExpectation proto).
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
                          CodeIdentityMatchSpec *sgx_match_spec);
+Status ParseSgxMatchSpec(const std::string &generic_match_spec,
+                         SgxIdentityMatchSpec *sgx_match_spec);
 
 // Parses SGX code identity expectation |sgx_expectation| from
 // |generic_expectation|.
 Status ParseSgxExpectation(
     const EnclaveIdentityExpectation &generic_expectation,
     CodeIdentityExpectation *sgx_expectation);
+Status ParseSgxExpectation(
+    const EnclaveIdentityExpectation &generic_expectation,
+    SgxIdentityExpectation *sgx_expectation);
 
 // Serializes SGX code identity |sgx_identity| into the identity field of
 // |generic_identity|. Sets the description field of |generic_identity| to
 // indicate the identity type CODE_IDENTITY and the authority type "SGX".
 Status SerializeSgxIdentity(const CodeIdentity &sgx_identity,
                             EnclaveIdentity *generic_identity);
+Status SerializeSgxIdentity(const SgxIdentity &sgx_identity,
+                            EnclaveIdentity *generic_identity);
 
 // Serializes SGX match spec to a string that is suitable for use in a
 // EnclaveIdentityExpectation proto.
 Status SerializeSgxMatchSpec(const CodeIdentityMatchSpec &sgx_match_spec,
+                             std::string *generic_match_spec);
+Status SerializeSgxMatchSpec(const SgxIdentityMatchSpec &sgx_match_spec,
                              std::string *generic_match_spec);
 
 // Serializes reference_identity and match_spec portions of |sgx_expectation|
@@ -110,6 +141,8 @@ Status SerializeSgxMatchSpec(const CodeIdentityMatchSpec &sgx_match_spec,
 // field of |generic_expectation| to indicate the identity type CODE_IDENTITY
 // and the authority type "SGX".
 Status SerializeSgxExpectation(const CodeIdentityExpectation &sgx_expectation,
+                               EnclaveIdentityExpectation *generic_expectation);
+Status SerializeSgxExpectation(const SgxIdentityExpectation &sgx_expectation,
                                EnclaveIdentityExpectation *generic_expectation);
 
 // Sets |tinfo| to match this enclave's identity. Any reports generated using
@@ -125,7 +158,8 @@ namespace internal {
 // exposed through this header for testing purposes only.
 bool IsIdentityCompatibleWithMatchSpec(const CodeIdentity &identity,
                                        const CodeIdentityMatchSpec &spec);
-
+bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
+                                       const SgxIdentityMatchSpec &spec);
 }  // namespace internal
 }  // namespace sgx
 }  // namespace asylo

@@ -27,5 +27,7 @@ const char *const kSgxRemoteAssertionAuthority = "SGX Remote";
 
 const char *const kSgxAuthorizationAuthority = "SGX";
 
+const char *const kSgxIdentityVersionString = "SgxIdentity v0.1";
+
 }  // namespace sgx
 }  // namespace asylo

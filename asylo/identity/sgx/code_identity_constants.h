@@ -31,6 +31,10 @@ extern const char *const kSgxRemoteAssertionAuthority;
 // Constant representing SGX authorization authority type.
 extern const char *const kSgxAuthorizationAuthority;
 
+// Constant representing the version string of a serialized SGX identity
+// in the |identity| field of an EnclaveIdentity.
+extern const char *const kSgxIdentityVersionString;
+
 }  // namespace sgx
 }  // namespace asylo
 
