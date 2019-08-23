@@ -10479,7 +10479,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthread
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_statfs.h ./newlib/libc/sys/enclave/include/sys/_statfs.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_statfs.h
 +++ ./newlib/libc/sys/enclave/include/sys/_statfs.h
-@@ -0,0 +1,20 @@
+@@ -0,0 +1,23 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS__STATFS_H_
 +#define THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS__STATFS_H_
 +
@@ -10497,6 +10497,9 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_statfs.
 +#define ST_NOEXEC      (1 << 4)
 +#define ST_RELATIME    (1 << 7)
 +#define ST_SYNCHRONOUS (1 << 8)
++#define ST_WRITE       (1 << 9)
++#define ST_APPEND      (1 << 10)
++#define ST_IMMUTABLE   (1 << 11)
 +#endif
 +
 +#endif  // THIRD_PARTY_NEWLIB_SRC_NEWLIB_LIBC_SYS_ENCLAVE_INCLUDE_SYS__STATFS_H_
