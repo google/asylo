@@ -49,6 +49,7 @@ sim_enclave(
         "//asylo/crypto:aes_gcm_siv",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
     ],
 )

@@ -26,16 +26,12 @@
 #include <utility>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 
-#ifndef arraysize
-#define arraysize(arr) (sizeof(arr) / sizeof(arr[0]))
-#endif
-
 namespace asylo {
 namespace sgx {
-
 namespace {
 
 constexpr size_t kByteBits = 8;
@@ -325,27 +321,29 @@ bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes) {
 
 bool GetAllSecsAttributes(SecsAttributeSet *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
-      kAllSecsAttributes, kAllSecsAttributes + arraysize(kAllSecsAttributes));
+      kAllSecsAttributes,
+      kAllSecsAttributes + ABSL_ARRAYSIZE(kAllSecsAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
 bool GetAllSecsAttributes(Attributes *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
-      kAllSecsAttributes, kAllSecsAttributes + arraysize(kAllSecsAttributes));
+      kAllSecsAttributes,
+      kAllSecsAttributes + ABSL_ARRAYSIZE(kAllSecsAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
 bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kMustBeSetAttributes,
-      kMustBeSetAttributes + arraysize(kMustBeSetAttributes));
+      kMustBeSetAttributes + ABSL_ARRAYSIZE(kMustBeSetAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
 bool GetMustBeSetSecsAttributes(Attributes *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kMustBeSetAttributes,
-      kMustBeSetAttributes + arraysize(kMustBeSetAttributes));
+      kMustBeSetAttributes + ABSL_ARRAYSIZE(kMustBeSetAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
@@ -354,7 +352,7 @@ bool GetDefaultDoNotCareSecsAttributes(
   *attribute_list = std::vector<SecsAttributeBit>(
       kDefaultDoNotCareSecsAttributes,
       kDefaultDoNotCareSecsAttributes +
-          arraysize(kDefaultDoNotCareSecsAttributes));
+          ABSL_ARRAYSIZE(kDefaultDoNotCareSecsAttributes));
   return true;
 }
 
@@ -362,7 +360,7 @@ bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kDefaultDoNotCareSecsAttributes,
       kDefaultDoNotCareSecsAttributes +
-          arraysize(kDefaultDoNotCareSecsAttributes));
+          ABSL_ARRAYSIZE(kDefaultDoNotCareSecsAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 
@@ -370,7 +368,7 @@ bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes) {
   std::vector<SecsAttributeBit> attribute_list(
       kDefaultDoNotCareSecsAttributes,
       kDefaultDoNotCareSecsAttributes +
-          arraysize(kDefaultDoNotCareSecsAttributes));
+          ABSL_ARRAYSIZE(kDefaultDoNotCareSecsAttributes));
   return ConvertSecsAttributeRepresentation(attribute_list, attributes);
 }
 

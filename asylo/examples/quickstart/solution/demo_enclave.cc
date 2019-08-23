@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "absl/base/macros.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/aes_gcm_siv.h"
@@ -26,10 +27,6 @@
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
-
-#ifndef arraysize
-#define arraysize(arr) (sizeof(arr) / sizeof(arr[0]))
-#endif
 
 namespace asylo {
 namespace {
@@ -54,7 +51,8 @@ constexpr uint8_t kAesKey128[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
 const StatusOr<std::string> EncryptMessage(const std::string &message) {
   AesGcmSivCryptor cryptor(kMaxMessageSize, new AesGcmSivNonceGenerator());
 
-  CleansingVector<uint8_t> key(kAesKey128, kAesKey128 + arraysize(kAesKey128));
+  CleansingVector<uint8_t> key(kAesKey128,
+                               kAesKey128 + ABSL_ARRAYSIZE(kAesKey128));
   CleansingString additional_authenticated_data;
   CleansingString nonce;
   CleansingString ciphertext;
@@ -85,7 +83,8 @@ const StatusOr<std::string> DecryptMessage(
   CleansingString ciphertext = clean_input.substr(kAesGcmSivNonceSize);
   CleansingString plaintext;
 
-  CleansingVector<uint8_t> key(kAesKey128, kAesKey128 + arraysize(kAesKey128));
+  CleansingVector<uint8_t> key(kAesKey128,
+                               kAesKey128 + ABSL_ARRAYSIZE(kAesKey128));
 
   AesGcmSivCryptor cryptor(kMaxMessageSize, new AesGcmSivNonceGenerator());
   ASYLO_RETURN_IF_ERROR(cryptor.Open(key, additional_authenticated_data,

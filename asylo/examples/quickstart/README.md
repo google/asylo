@@ -286,7 +286,8 @@ constexpr uint8_t kAesKey128[] = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05,
 const StatusOr<std::string> EncryptMessage(const std::string &message) {
   AesGcmSivCryptor cryptor(kMaxMessageSize, new AesGcmSivNonceGenerator());
 
-  CleansingVector<uint8_t> key(kAesKey128, kAesKey128 + arraysize(kAesKey128));
+  CleansingVector<uint8_t> key(kAesKey128,
+                               kAesKey128 + ABSL_ARRAYSIZE(kAesKey128));
   CleansingString additional_authenticated_data;
   CleansingString nonce;
   CleansingString ciphertext;
@@ -354,7 +355,12 @@ sim_enclave(
     srcs = ["demo_enclave.cc"],
     deps = [
         ":demo_cc_proto",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
         "//asylo:enclave_runtime",
+        "//asylo/crypto:aes_gcm_siv",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
     ],
 )
 
@@ -365,8 +371,9 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_cc_proto",
-        "//asylo:enclave_client",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "//asylo:enclave_client",
         "//asylo/util:logging",
     ],
 )
