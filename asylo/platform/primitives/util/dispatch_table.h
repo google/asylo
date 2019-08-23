@@ -19,7 +19,6 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_DISPATCH_TABLE_H_
 #define ASYLO_PLATFORM_PRIMITIVES_UTIL_DISPATCH_TABLE_H_
 
-#include "absl/base/thread_annotations.h"
 #include "absl/container/flat_hash_map.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
