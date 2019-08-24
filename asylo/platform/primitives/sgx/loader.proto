@@ -22,9 +22,6 @@ import "asylo/enclave.proto";
 
 // Configuration for an SGX enclave loader.
 message SgxLoadConfig {
-  // Path to the enclave binary (.so) file to load.
-  optional string enclave_path = 1;
-
   // True, if the enclave is to be loaded in debug mode.
   optional bool debug = 2;
 
@@ -40,14 +37,25 @@ message SgxLoadConfig {
   // in the same virtual space as the parent.
   optional ForkConfig fork_config = 3;
 
-  message EmbeddedConfig {
+  message FileEnclaveConfig {
+    // Path to the enclave binary (.so) file to load.
+    optional string enclave_path = 1;
+  }
+
+  message EmbeddedEnclaveConfig {
     // Name of the ELF section containing the enclave.
     optional string section_name = 1;
   }
 
-  // Set if loading an SGX based enclaves embedded in the binary of the
-  // calling process.
-  optional EmbeddedConfig embedded_config = 4;
+  oneof source {
+    // Set if loading an SGX based enclave located in shared object files read
+    // from the file system.
+    FileEnclaveConfig file_enclave_config = 1;
+
+    // Set if loading an SGX based enclaves embedded in the binary of the
+    // calling process.
+    EmbeddedEnclaveConfig embedded_enclave_config = 4;
+  }
 }
 
 extend EnclaveLoaderConfig {

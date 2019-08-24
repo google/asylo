@@ -61,23 +61,29 @@ StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
     enclave_size = fork_config.enclave_size();
   }
   bool debug = sgx_config.debug();
-  bool is_embedded = sgx_config.has_embedded_config();
-  if (is_embedded) {
-    std::string section_name = sgx_config.embedded_config().section_name();
+  bool is_embedded_enclave = sgx_config.has_embedded_enclave_config();
+  bool is_file_enclave = sgx_config.has_file_enclave_config();
+
+  if (is_embedded_enclave) {
+    std::string section_name =
+        sgx_config.embedded_enclave_config().section_name();
     ASYLO_ASSIGN_OR_RETURN(
         primitive_client,
         primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
             enclave_name, base_address, section_name, enclave_size,
             enclave_config, debug,
             absl::make_unique<primitives::DispatchTable>()));
-  } else {
-    std::string enclave_path = sgx_config.enclave_path();
+  } else if (is_file_enclave) {
+    std::string enclave_path = sgx_config.file_enclave_config().enclave_path();
     ASYLO_ASSIGN_OR_RETURN(
         primitive_client,
         primitives::LoadEnclave<primitives::SgxBackend>(
             enclave_name, base_address, enclave_path, enclave_size,
             enclave_config, debug,
             absl::make_unique<primitives::DispatchTable>()));
+  } else {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "SGX enclave source not set");
   }
   auto client = GenericEnclaveClient::Create(enclave_name, primitive_client);
   return std::unique_ptr<EnclaveClient>(std::move(client));
