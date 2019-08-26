@@ -53,7 +53,8 @@ CodeIdentityExpectation GetRandomValidExpectation();
 SgxIdentity GetRandomValidSgxIdentityWithConstraints(
     const std::vector<bool> &mrenclave_constraint,
     const std::vector<bool> &mrsigner_constraint,
-    const std::vector<bool> &cpu_svn_constraint);
+    const std::vector<bool> &cpu_svn_constraint,
+    const std::vector<bool> &sgx_type_constraint);
 
 SgxIdentity GetRandomValidSgxIdentity();
 

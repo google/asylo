@@ -129,6 +129,7 @@ class CodeIdentityUtilTest : public ::testing::Test {
     *ci_spec->mutable_attributes_match_mask() = attributes_all_f_;
 
     mc_spec->set_is_cpu_svn_match_required(false);
+    mc_spec->set_is_sgx_type_match_required(false);
     return spec;
   }
 
@@ -358,6 +359,13 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative5) {
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative6) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_machine_configuration_match_spec()
+      ->clear_is_sgx_type_match_required();
+  EXPECT_FALSE(IsValidMatchSpec(spec));
+}
+
 // Tests to verify the correctness of IsValidExpectation()
 
 TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive1) {
@@ -469,10 +477,25 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositive) {
   EXPECT_TRUE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative) {
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative1) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->set_is_cpu_svn_match_required(true);
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
+  *id.mutable_code_identity()->mutable_signer_assigned_identity() =
+      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+  EXPECT_FALSE(IsValidExpectation(expectation));
+}
+
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative2) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_machine_configuration_match_spec()
+      ->set_is_sgx_type_match_required(true);
 
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
@@ -524,6 +547,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
   SgxMachineConfigurationMatchSpec *machine_config_match_spec =
       spec.mutable_machine_configuration_match_spec();
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
+  machine_config_match_spec->set_is_sgx_type_match_required(false);
 
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
 
@@ -975,6 +999,8 @@ TEST_F(CodeIdentityUtilTest, SetStrictSgxIdentityMatchSpec) {
 
   EXPECT_TRUE(
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
+  EXPECT_TRUE(
+      spec.machine_configuration_match_spec().is_sgx_type_match_required());
 }
 
 TEST_F(CodeIdentityUtilTest, SetSelfCodeIdentity) {

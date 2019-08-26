@@ -120,6 +120,9 @@ SgxMachineConfigurationMatchSpec GetRandomSgxMachineConfigurationMatchSpec(
   FuzzField(percent,
             &SgxMachineConfigurationMatchSpec::set_is_cpu_svn_match_required,
             &spec);
+  FuzzField(percent,
+            &SgxMachineConfigurationMatchSpec::set_is_sgx_type_match_required,
+            &spec);
   return spec;
 }
 
@@ -175,7 +178,8 @@ CodeIdentityExpectation GetRandomValidExpectation() {
 SgxIdentity GetRandomValidSgxIdentityWithConstraints(
     const std::vector<bool> &mrenclave_constraint,
     const std::vector<bool> &mrsigner_constraint,
-    const std::vector<bool> &cpu_svn_constraint) {
+    const std::vector<bool> &cpu_svn_constraint,
+    const std::vector<bool> &sgx_type_constraint) {
   SgxIdentity sgx_id;
   *sgx_id.mutable_code_identity() = GetRandomValidCodeIdentityWithConstraints(
       mrenclave_constraint, mrsigner_constraint);
@@ -185,13 +189,18 @@ SgxIdentity GetRandomValidSgxIdentityWithConstraints(
         cpusvn.data(), cpusvn.size());
   }
 
+  if (RandomSelect(sgx_type_constraint)) {
+    sgx_id.mutable_machine_configuration()->set_sgx_type(
+        RandomSelect({SgxType::STANDARD}));
+  }
+
   return sgx_id;
 }
 
 SgxIdentity GetRandomValidSgxIdentity() {
-  std::vector<bool> selection_choices{true, false};
-  return GetRandomValidSgxIdentityWithConstraints(
-      selection_choices, selection_choices, selection_choices);
+  std::vector<bool> constraint{true, false};
+  return GetRandomValidSgxIdentityWithConstraints(constraint, constraint,
+                                                  constraint, constraint);
 }
 
 SgxIdentityMatchSpec GetRandomValidSgxMatchSpec() {
@@ -214,9 +223,13 @@ SgxIdentityExpectation GetRandomValidSgxExpectation() {
   std::vector<bool> cpu_svn_constraint{expectation.match_spec()
                                            .machine_configuration_match_spec()
                                            .is_cpu_svn_match_required()};
+  std::vector<bool> sgx_type_constraint{expectation.match_spec()
+                                            .machine_configuration_match_spec()
+                                            .is_sgx_type_match_required()};
   *expectation.mutable_reference_identity() =
       GetRandomValidSgxIdentityWithConstraints(
-          mrenclave_constraint, mrsigner_constraint, cpu_svn_constraint);
+          mrenclave_constraint, mrsigner_constraint, cpu_svn_constraint,
+          sgx_type_constraint);
   return expectation;
 }
 

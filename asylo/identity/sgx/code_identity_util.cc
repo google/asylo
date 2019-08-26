@@ -144,6 +144,10 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
       !machine_config.has_cpu_svn()) {
     return false;
   }
+  if (machine_config_match_spec.is_sgx_type_match_required() &&
+      !machine_config.has_sgx_type()) {
+    return false;
+  }
   return IsIdentityCompatibleWithMatchSpec(identity.code_identity(),
                                            spec.code_identity_match_spec());
 }
@@ -194,6 +198,10 @@ StatusOr<bool> MatchIdentityToExpectation(
 
   if (machine_config_match_spec.has_is_cpu_svn_match_required() &&
       actual_config.cpu_svn().value() != expected_config.cpu_svn().value()) {
+    return false;
+  }
+  if (machine_config_match_spec.has_is_sgx_type_match_required() &&
+      actual_config.sgx_type() != expected_config.sgx_type()) {
     return false;
   }
 
@@ -279,7 +287,8 @@ bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec) {
   const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
       match_spec.machine_configuration_match_spec();
 
-  if (!machine_config_match_spec.has_is_cpu_svn_match_required()) {
+  if (!machine_config_match_spec.has_is_cpu_svn_match_required() ||
+      !machine_config_match_spec.has_is_sgx_type_match_required()) {
     return false;
   }
 
@@ -362,6 +371,7 @@ Status SetDefaultMatchSpec(SgxIdentityMatchSpec *spec) {
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
+  machine_config_match_spec->set_is_sgx_type_match_required(false);
 
   return SetDefaultMatchSpec(spec->mutable_code_identity_match_spec());
 }
@@ -385,6 +395,7 @@ void SetStrictMatchSpec(SgxIdentityMatchSpec *spec) {
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(true);
+  machine_config_match_spec->set_is_sgx_type_match_required(true);
 
   SetStrictMatchSpec(spec->mutable_code_identity_match_spec());
 }

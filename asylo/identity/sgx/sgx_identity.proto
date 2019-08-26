@@ -24,12 +24,16 @@ import "asylo/identity/sgx/platform_provisioning.proto";
 // Security-relevant machine configuration properties.
 message SgxMachineConfiguration {
   optional sgx.CpuSvn cpu_svn = 1;
+  optional sgx.SgxType sgx_type = 2;
 }
 
 // Specification of which fields from SgxMachineConfiguration to match.
 message SgxMachineConfigurationMatchSpec {
   // Flag indicating whether to perform a match on |cpu_svn|.
   optional bool is_cpu_svn_match_required = 1;
+
+  // Flag indicating whether to perform a match on |sgx_type|.
+  optional bool is_sgx_type_match_required = 2;
 }
 
 // A high-level representation of the identity of an SGX enclave, which includes
