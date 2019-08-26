@@ -30,6 +30,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/generic_enclave_client.h"
+#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
@@ -47,11 +48,16 @@ class EnclaveLoaderInternal {
 
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       const EnclaveLoaderConfig &loader_config) const;
+
+ private:
+  StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
+      absl::string_view enclave_name, const EnclaveConfig &enclave_config,
+      const SgxLoadConfig &sgx_config) const;
 };
 
-StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
+StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadSgxEnclave(
     absl::string_view enclave_name, const EnclaveConfig &enclave_config,
-    const SgxLoadConfig &sgx_config) {
+    const SgxLoadConfig &sgx_config) const {
   std::shared_ptr<primitives::Client> primitive_client;
   void *base_address = nullptr;
   uint64_t enclave_size = 0;
@@ -97,10 +103,9 @@ StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadEnclave(
   if (loader_config.HasExtension(sgx_load_config)) {
     SgxLoadConfig sgx_config = loader_config.GetExtension(sgx_load_config);
     return LoadSgxEnclave(enclave_name, config, sgx_config);
-  } else {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Enclave backend not supported in asylo");
   }
+  return Status(error::GoogleError::INVALID_ARGUMENT,
+                "Enclave backend not supported in asylo");
 }
 
 // Returns the value of a monotonic clock as a number of nanoseconds.
