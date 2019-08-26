@@ -304,6 +304,7 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/host_call",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/util:status",
     ] + select({
         "@linux_sgx//:sgx_hw": [
             "@com_google_absl//absl/base:core_headers",
