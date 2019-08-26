@@ -165,3 +165,61 @@ sim_enclave_test(
         "//asylo/test/util:test_main",
     ],
 )
+
+sgx_enclave(
+    name = "sgx_test_enclave.so",
+    testonly = 1,
+    srcs = [
+        "test_enclave.cc",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":enclave_test_selectors",
+        "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
+        "//asylo/platform/host_call",
+        "//asylo/platform/host_call:host_call_dispatcher",
+        "//asylo/platform/posix:trusted_posix",
+        "//asylo/platform/primitives/examples:entry_points",
+        "//asylo/platform/primitives/sgx:trusted_sgx",
+        "//asylo/platform/storage/secure:trusted_secure",
+        "//asylo/platform/storage/utils:trusted_utils",
+        "//asylo/platform/system",
+        "//asylo/platform/system_call",
+        "//asylo/platform/system_call/type_conversions",
+        "//asylo/util:status_macros",
+    ],
+)
+
+sgx_enclave_test(
+    name = "sgx_host_call_test",
+    size = "medium",
+    srcs = ["host_call_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS + ["-D_GNU_SOURCE"],
+    enclaves = {"sgx": "sgx_test_enclave.so"},
+    test_args = [
+        "--enclave_binary='{sgx}'",
+    ],
+    deps = [
+        ":enclave_test_selectors",
+        "//asylo:enclave_client",
+        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
+        "//asylo/platform/host_call:host_call_handlers_initializer",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sgx:untrusted_sgx",
+        "//asylo/platform/primitives/test:sgx_test_backend",
+        "//asylo/platform/primitives/test:test_backend",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/platform/system_call/type_conversions",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_flags",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
