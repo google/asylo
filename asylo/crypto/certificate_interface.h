@@ -71,8 +71,8 @@ class CertificateInterface {
 
   // Checks if this object can be verified by |issuer_certificate|, with the
   // additional requirements set by |config| and used as relevant by the
-  // different certificate interface implementations. Returns an UNAUTHENTICATED
-  // error if a required check failed.
+  // different certificate interface implementations. Returns an error if a
+  // required check failed.
   virtual Status Verify(const CertificateInterface &issuer_certificate,
                         const VerificationConfig &config) const = 0;
 

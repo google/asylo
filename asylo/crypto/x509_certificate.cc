@@ -226,12 +226,8 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
   ASYLO_ASSIGN_OR_RETURN(public_key,
                          CreatePublicKey(x509_.get(), issuer_public_key_der));
 
-  int verify_result = X509_verify(x509_.get(), public_key.get());
-  if (verify_result == -1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  } else if (verify_result == 0) {
-    return Status(error::GoogleError::UNAUTHENTICATED,
-                  "Signature check failed");
+  if (X509_verify(x509_.get(), public_key.get()) != 1) {
+    return Status(error::GoogleError::UNKNOWN, BsslLastErrorString());
   }
 
   if (config.issuer_ca) {

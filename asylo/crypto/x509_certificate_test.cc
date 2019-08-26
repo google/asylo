@@ -380,7 +380,7 @@ TEST_F(X509CertificateTest, VerifyCertificateFailsWithDifferentIssuer) {
 
   VerificationConfig config = VerificationConfig();
   EXPECT_THAT(x509_intermediate->Verify(*x509_root, config),
-              StatusIs(error::GoogleError::UNAUTHENTICATED));
+              StatusIs(error::GoogleError::UNKNOWN));
 }
 
 // Verifies that Verify returns an UNAUTHENTICATED error when the issuer_ca
