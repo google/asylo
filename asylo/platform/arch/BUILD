@@ -302,6 +302,7 @@ cc_library(
         "//asylo/platform/primitives:trusted_backend",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/host_call",
         "//asylo/platform/primitives:trusted_primitives",
     ] + select({
         "@linux_sgx//:sgx_hw": [
