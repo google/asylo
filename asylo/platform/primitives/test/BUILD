@@ -22,7 +22,6 @@ package(
 
 load(
     "//asylo/bazel:asylo.bzl",
-    "sim_enclave_loader",
     "sim_enclave_test",
 )
 load("//asylo/bazel:sim_enclave.bzl", "sim_enclave")
