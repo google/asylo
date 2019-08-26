@@ -74,6 +74,7 @@ sgx_enclave(
     srcs = ["hello_world.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/arch:trusted_arch",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -96,7 +97,9 @@ sgx_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_entry_count_test_cc_proto",
+        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
         "@com_google_absl//absl/synchronization",
     ],
 )
@@ -109,6 +112,7 @@ sgx_enclave(
     deps = [
         ":signal_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
     ],
 )
 
@@ -120,6 +124,7 @@ sgx_enclave(
     deps = [
         ":signal_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
     ],
 )
 
@@ -139,6 +144,9 @@ sgx_enclave(
     name = "exception.so",
     srcs = ["exception_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = [
+        "manual",
+    ],
     deps = [
         ":exception",
         "//asylo:enclave_runtime",
@@ -174,6 +182,7 @@ sgx_enclave(
     srcs = ["hello_world.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/arch:trusted_arch",
         "//asylo/test/util:enclave_test_application",
     ],
 )
@@ -198,7 +207,9 @@ sgx_enclave(
     deps = [
         ":block_enclave_entries_test_cc_proto",
         "//asylo/platform/host_call",
+        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:status",
     ],
 )
 
@@ -256,6 +267,8 @@ sgx_enclave(
     deps = [
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/synchronization",
     ],
 )
 

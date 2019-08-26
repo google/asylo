@@ -20,7 +20,6 @@
 
 #include <string>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/test/misc/block_enclave_entries_test.pb.h"
