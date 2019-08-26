@@ -19,7 +19,6 @@
 #include <sys/mman.h>
 
 #include <errno.h>
-#include <malloc.h>
 #include <stdlib.h>
 #include <string.h>
 
@@ -35,8 +34,8 @@ void *mmap(void *addr, size_t length, int prot, int flags, int fd,
     errno = ENOSYS;
     return MAP_FAILED;
   }
-  void *ptr = memalign(kPageSize, length);
-  if (ptr == nullptr) {
+  void *ptr = nullptr;
+  if (posix_memalign(&ptr, kPageSize, length)) {
     return MAP_FAILED;
   }
 
@@ -48,6 +47,9 @@ int munmap(void *addr, size_t length) {
   free(addr);
   return 0;
 }
+
+// Declared here instead of from #include <malloc.h> due to clang errors.
+extern "C" void *memalign(size_t alignment, size_t size);
 
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
   // The spec says passing a size of 0 should either return a null pointer or
