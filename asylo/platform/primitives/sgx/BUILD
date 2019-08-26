@@ -39,8 +39,8 @@ cc_library(
     srcs = [
         "trusted_runtime.cc",
         "trusted_sgx.cc",
-        "trusted_sgx.h",
     ],
+    hdrs = ["trusted_sgx.h"],
     copts = ASYLO_DEFAULT_COPTS,
     tags = [
         "asylo-sgx",
