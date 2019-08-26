@@ -790,10 +790,8 @@ cc_test(
 
 cc_library(
     name = "sgx_code_identity_expectation_matcher",
-    srcs = [
-        "sgx_code_identity_expectation_matcher.cc",
-        "sgx_code_identity_expectation_matcher.h",
-    ],
+    srcs = ["sgx_code_identity_expectation_matcher.cc"],
+    hdrs = ["sgx_code_identity_expectation_matcher.h"],
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_util",
