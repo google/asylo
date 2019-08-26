@@ -100,6 +100,7 @@ StatusOr<std::shared_ptr<Client>> RemoteTestBackend::LoadTestEnclave(
   // This message would normally be created by the RemoteEnclaveLoader by
   // calling the loader_->SerializeLoader().
   MessageWriter load_in;
+  load_in.Push(enclave_name);
   load_in.Push(enclave_binary);
 
   // Connect the client to the remote Enclave server running remotely.
