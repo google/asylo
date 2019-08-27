@@ -77,7 +77,6 @@ ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
 //            Sockets               //
 //////////////////////////////////////
 
-int enc_untrusted_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size);
 int enc_untrusted_inet_pton(int af, const char *src, void *dst);

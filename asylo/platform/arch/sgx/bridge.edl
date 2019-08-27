@@ -61,9 +61,6 @@ enclave {
     //           Sockets                //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_accept(int sockfd,
-                                   [out] struct bridge_sockaddr *addr)
-                                   propagate_errno;
     char *ocall_enc_untrusted_inet_ntop(int af,
                                         [in, size=src_size] const void *src,
                                         bridge_size_t src_size,

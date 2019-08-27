@@ -768,4 +768,41 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   return result;
 }
 
+int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
+                         socklen_t *addrlen) {
+  ::asylo::primitives::MessageWriter input;
+  input.Push<int>(sockfd);
+  ::asylo::primitives::MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kAcceptHandler, &input, &output);
+
+  if (!status.ok()) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "accept host call failed. Aborting");
+  }
+  if (output.size() != 3) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "Expected 3 arguments in output for accept host call. Aborting");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+
+  // accept() returns -1 on failure, with errno set to indicate the cause
+  // of the error.
+  if (result == -1) {
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+    return result;
+  }
+
+  auto klinux_sockaddr_ext = output.next();
+  const struct klinux_sockaddr *klinux_addr =
+      klinux_sockaddr_ext.As<struct klinux_sockaddr>();
+  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
+                     asylo::primitives::TrustedPrimitives::BestEffortAbort);
+  return result;
+}
+
 }  // extern "C"

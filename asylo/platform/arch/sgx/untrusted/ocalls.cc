@@ -214,21 +214,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 //             Sockets              //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_accept(int sockfd, struct bridge_sockaddr *addr) {
-  struct sockaddr_storage tmp;
-  socklen_t tmp_len = sizeof(tmp);
-  int ret = accept(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  if (ret == -1) {
-    return ret;
-  }
-  if (!asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp),
-                               sizeof(tmp), addr)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
 char *ocall_enc_untrusted_inet_ntop(int af, const void *src,
                                     bridge_size_t src_size, char *dst,
                                     bridge_size_t buf_size) {

@@ -79,10 +79,16 @@ Status RecvMsgHandler(const std::shared_ptr<primitives::Client> &client,
                       primitives::MessageWriter *output);
 
 // getsockname syscall handler on the host; expects [int sockfd] and returns
-// [int (result), int (errno), sockaddr] on the MessageWriter.
+// [int /*result*/, int /*errno*/, sockaddr] on the MessageWriter.
 Status GetSocknameHandler(const std::shared_ptr<primitives::Client> &client,
                           void *context, primitives::MessageReader *input,
                           primitives::MessageWriter *output);
+
+// accept syscall handler on the host; expects [int sockfd] and returns
+// [int /*result*/, int /*errno*/, sockaddr] on the MessageWriter.
+Status AcceptHandler(const std::shared_ptr<primitives::Client> &client,
+                     void *context, primitives::MessageReader *input,
+                     primitives::MessageWriter *output);
 
 }  // namespace host_call
 }  // namespace asylo

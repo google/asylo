@@ -325,9 +325,8 @@ TEST_F(HostCallTest, TestKill) {
 // across using enc_untrusted_send() and verifying the length of message
 // received by the other socket.
 TEST_F(HostCallTest, TestSend) {
-  // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -344,7 +343,7 @@ TEST_F(HostCallTest, TestSend) {
 
   // Create another local socket and ensures that it is valid (fd > 0).
   int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(client_sock, Gt(0));
+  ASSERT_THAT(client_sock, Gt(0));
 
   // Attempt to connect the new socket to the local address. This call
   // will only succeed if the listen is successful.
@@ -377,7 +376,7 @@ TEST_F(HostCallTest, TestSend) {
 TEST_F(HostCallTest, TestSendMsg) {
   // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -394,7 +393,7 @@ TEST_F(HostCallTest, TestSendMsg) {
 
   // Create another local socket and ensure that it is valid (fd > 0).
   int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(client_sock, Gt(0));
+  ASSERT_THAT(client_sock, Gt(0));
 
   // Attempt to connect the new socket to the local address. This call
   // will only succeed if the listen is successful.
@@ -426,9 +425,8 @@ TEST_F(HostCallTest, TestSendMsg) {
 // the enclave with an array of 2 strings, and verifies the output size makes
 // sense.
 TEST_F(HostCallTest, TestRecvMsg) {
-  // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -962,7 +960,7 @@ TEST_F(HostCallTest, TestSocket) {
 TEST_F(HostCallTest, TestListen) {
   // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -1002,7 +1000,7 @@ TEST_F(HostCallTest, TestListen) {
 TEST_F(HostCallTest, TestShutdown) {
   // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -1148,7 +1146,7 @@ TEST_F(HostCallTest, TestFChown) {
 TEST_F(HostCallTest, TestSetSockOpt) {
   // Create an TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
   int socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   // Bind the TCP socket to port 0 for any IP address. Once bind is successful
   // for UDP sockets application can operate on the socket descriptor for
@@ -1918,9 +1916,8 @@ TEST_F(HostCallTest, TestClockGettime) {
 // Tests enc_untrusted_bind() by calling the function from inside the enclave
 // and verifying the return value.
 TEST_F(HostCallTest, TestBind) {
-  // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -1945,9 +1942,8 @@ TEST_F(HostCallTest, TestBind) {
 // enclave and verifying the return value, then using sendmsg to send a message
 // to the connected socket and verifying its return value.
 TEST_F(HostCallTest, TestConnect) {
-  // Create a local socket and ensure that it is valid (fd > 0).
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -2002,7 +1998,7 @@ TEST_F(HostCallTest, TestConnect) {
 // path, then calling the function and verifying the path value.
 TEST_F(HostCallTest, TestGetSockname) {
   int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
-  EXPECT_THAT(socket_fd, Gt(0));
+  ASSERT_THAT(socket_fd, Gt(0));
 
   std::string sockpath =
       absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
@@ -2025,6 +2021,50 @@ TEST_F(HostCallTest, TestGetSockname) {
   auto sock_un = out.next<struct sockaddr_un>();
   EXPECT_THAT(sock_un.sun_family, Eq(AF_UNIX));
   EXPECT_THAT(sock_un.sun_path, StrEq(sockpath));
+}
+
+// Tests enc_untrusted_accept() by creating two sockets, calling
+// enc_untrusted_accept() and sending a message across using send() and
+// verifying the length of message received by the other socket.
+TEST_F(HostCallTest, TestAccept) {
+  int server_sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  ASSERT_THAT(server_sock, Gt(0));
+  int client_sock = socket(AF_UNIX, SOCK_STREAM, 0);
+  ASSERT_THAT(client_sock, Gt(0));
+
+  std::string sockpath =
+      absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  strncpy(&sa.sun_path[0], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  ASSERT_THAT(
+      bind(server_sock, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+  ASSERT_THAT(listen(server_sock, 8), Not(Eq(-1)));
+
+  // Attempt to connect the new socket to the local address. This call
+  // will only succeed if the listen is successful.
+  ASSERT_THAT(connect(client_sock, reinterpret_cast<struct sockaddr *>(&sa),
+                      sizeof(sa)),
+              Not(Eq(-1)));
+
+  MessageWriter in;
+  in.Push<int>(server_sock);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestAccept, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  int connection_socket = out.next<int>();
+  EXPECT_THAT(connection_socket, Gt(0));
+
+  std::string msg = "Hello world!";
+  EXPECT_THAT(send(connection_socket, msg.c_str(), msg.length(), 0),
+              Eq(msg.length()));
+
+  close(server_sock);
+  close(client_sock);
+  close(connection_socket);
 }
 
 }  // namespace

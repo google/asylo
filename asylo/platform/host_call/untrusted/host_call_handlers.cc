@@ -205,7 +205,29 @@ Status GetSocknameHandler(const std::shared_ptr<primitives::Client> &client,
                         &sock_len);
 
   LOG_IF(FATAL, sock_len > sizeof(sock_addr))
-      << "Insufficient sockaddr buf space";
+      << "Insufficient sockaddr buf space encountered for getsockname host "
+         "call";
+
+  output->Push<int>(ret);
+  output->Push<int>(errno);
+  output->Push<struct sockaddr_storage>(sock_addr);
+
+  return Status::OkStatus();
+}
+
+Status AcceptHandler(const std::shared_ptr<primitives::Client> &client,
+                     void *context, primitives::MessageReader *input,
+                     primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  int sockfd = input->next<int>();
+  struct sockaddr_storage sock_addr;
+  socklen_t sock_len = sizeof(sock_addr);
+
+  int ret = accept(sockfd, reinterpret_cast<struct sockaddr *>(&sock_addr),
+                   &sock_len);
+
+  LOG_IF(FATAL, sock_len > sizeof(sock_addr))
+      << "Insufficient sockaddr buf space encountered for accept host call.";
 
   output->Push<int>(ret);
   output->Push<int>(errno);
