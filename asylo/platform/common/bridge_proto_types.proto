@@ -151,11 +151,6 @@ message InotifyAddWatchArgs {
   repeated InotifyFlag mask = 3;
 }
 
-message InotifyRmWatchArgs {
-  optional int32 fd = 1;
-  optional int32 wd = 2;
-}
-
 message InotifyEvent {
   optional int32 wd = 1;
   repeated InotifyFlag mask = 2;

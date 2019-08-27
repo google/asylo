@@ -492,24 +492,6 @@ uint32_t ConvertFromInotifyMaskProto(
   return flags;
 }
 
-bool ConvertToInotifyAddWatchArgsProtobuf(int fd, absl::string_view pathname,
-                                          uint32_t mask,
-                                          InotifyAddWatchArgs *args) {
-  if (!args) return false;
-  args->set_fd(fd);
-  args->set_pathname(pathname.data(), pathname.size());
-  ConvertToInotifyMaskProto(mask, args->mutable_mask());
-  return true;
-}
-
-bool ConvertToInotifyRmWatchArgsProtobuf(int fd, int wd,
-                                         InotifyRmWatchArgs *args) {
-  if (!args) return false;
-  args->set_fd(fd);
-  args->set_wd(wd);
-  return true;
-}
-
 bool ConvertToInotifyEventProtobuf(const struct inotify_event *event,
                                    InotifyEvent *event_proto) {
   if (!event || !event_proto) return false;
@@ -701,51 +683,6 @@ bool IfAddrSupported(const struct ifaddrs *entry) {
   if (entry->ifa_ifu.ifu_dstaddr && !IpCompliant(entry->ifa_ifu.ifu_dstaddr)) {
     return false;
   }
-  return true;
-}
-
-bool SerializeInotifyAddWatchArgs(int fd, absl::string_view pathname,
-                                  uint32_t mask, char **out, size_t *len) {
-  if (!out || !len) return false;
-  InotifyAddWatchArgs args_proto;
-  if (ConvertToInotifyAddWatchArgsProtobuf(fd, pathname, mask, &args_proto)) {
-    *len = args_proto.ByteSizeLong();
-    // The caller is responsible for freeing the memory allocated below.
-    *out = static_cast<char *>(malloc(*len));
-    return args_proto.SerializeToArray(*out, *len);
-  }
-  return false;
-}
-
-bool SerializeInotifyRmWatchArgs(int fd, int wd, char **out, size_t *len) {
-  if (!out || !len) return false;
-  InotifyRmWatchArgs args_proto;
-  if (ConvertToInotifyRmWatchArgsProtobuf(fd, wd, &args_proto)) {
-    *len = args_proto.ByteSizeLong();
-    *out = static_cast<char *>(malloc(*len));
-    return args_proto.SerializeToArray(*out, *len);
-  }
-  return false;
-}
-
-bool DeserializeInotifyAddWatchArgs(absl::string_view in, int *fd,
-                                    char **pathname, uint32_t *mask) {
-  if (!fd || !pathname || !mask) return false;
-  InotifyAddWatchArgs args_proto;
-  if (!args_proto.ParseFromArray(in.data(), in.length())) return false;
-  *fd = args_proto.fd();
-  // The caller is responsible for deallocating the memory allocated below.
-  *pathname = strdup(args_proto.pathname().c_str());
-  *mask = ConvertFromInotifyMaskProto(args_proto.mask());
-  return true;
-}
-
-bool DeserializeInotifyRmWatchArgs(absl::string_view in, int *fd, int *wd) {
-  if (!fd || !wd) return false;
-  InotifyRmWatchArgs args_proto;
-  if (!args_proto.ParseFromArray(in.data(), in.length())) return false;
-  *fd = args_proto.fd();
-  *wd = args_proto.wd();
   return true;
 }
 

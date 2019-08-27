@@ -67,16 +67,6 @@ bool SerializeEvents(const struct epoll_event *events, int numevents,
 bool DeserializeEvents(absl::string_view in, struct epoll_event *events,
                        int *numevents);
 
-bool SerializeInotifyAddWatchArgs(int fd, absl::string_view pathname,
-                                  uint32_t mask, char **out, size_t *len);
-
-bool SerializeInotifyRmWatchArgs(int fd, int wd, char **out, size_t *len);
-
-bool DeserializeInotifyAddWatchArgs(absl::string_view in, int *fd,
-                                    char **pathname, uint32_t *mask);
-
-bool DeserializeInotifyRmWatchArgs(absl::string_view in, int *fd, int *wd);
-
 bool SerializeInotifyEvents(char *buf, size_t buf_len, char **out, size_t *len);
 
 bool DeserializeInotifyEvents(absl::string_view in,
