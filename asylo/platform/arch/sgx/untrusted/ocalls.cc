@@ -278,21 +278,6 @@ int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
   return ret;
 }
 
-int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr) {
-  struct sockaddr_storage tmp;
-  socklen_t tmp_len = sizeof(tmp);
-  int ret =
-      getpeername(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-  if (ret == 0) {
-    if (!asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp),
-                                 tmp_len, addr)) {
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  return ret;
-}
-
 ssize_t ocall_enc_untrusted_recvfrom(const char *serialized_args,
                                      bridge_ssize_t serialized_args_len,
                                      char **buf_ptr, char **serialized_output,

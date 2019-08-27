@@ -112,6 +112,8 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags);
 int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
                               socklen_t *addrlen);
 int enc_untrusted_accept(int sockfd, struct sockaddr *addr, socklen_t *addrlen);
+int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
+                              socklen_t *addrlen);
 
 #ifdef __cplusplus
 }  // extern "C"
