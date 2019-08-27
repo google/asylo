@@ -32,11 +32,13 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/mock_intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/mock_enclave_client.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -328,6 +330,38 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeStartServerWithSecretFailure) {
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->AgeStartServer(),
               StatusIs(error::GoogleError::ALREADY_EXISTS,
                        kServerAlreadyExistErrorMessage));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentitySuccess) {
+  EnclaveOutput expected_enclave_output;
+  sgx::GetEnclaveIdentityOutput *expected_get_enclave_identity_output =
+      expected_enclave_output
+          .MutableExtension(sgx::remote_assertion_generator_enclave_output)
+          ->mutable_get_enclave_identity_output();
+  *expected_get_enclave_identity_output->mutable_cpu_svn() = CpuSvn();
+  *expected_get_enclave_identity_output->mutable_code_identity() =
+      sgx::GetRandomValidCodeIdentity();
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
+                      Return(Status::OkStatus())));
+
+  SgxIdentity sgx_identity;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      sgx_identity, sgx_infrastructural_enclave_manager_->AgeGetSgxIdentity());
+  EXPECT_THAT(sgx_identity.machine_configuration().cpu_svn(),
+              EqualsProto(expected_get_enclave_identity_output->cpu_svn()));
+  EXPECT_THAT(
+      sgx_identity.code_identity(),
+      EqualsProto(expected_get_enclave_identity_output->code_identity()));
+}
+
+TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentityFails) {
+  EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
+      .WillOnce(Return(Status(error::GoogleError::UNKNOWN, "UNKNOWN")));
+
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeGetSgxIdentity().status(),
+      StatusIs(error::GoogleError::UNKNOWN, "UNKNOWN"));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoSuccess) {

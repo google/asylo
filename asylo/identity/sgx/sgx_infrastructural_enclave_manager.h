@@ -30,6 +30,7 @@
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -86,6 +87,9 @@ class SgxInfrastructuralEnclaveManager {
   // Starts the AGE's remote assertion generator server using the provided
   // |secret|.
   virtual Status AgeStartServer(const asylo::SealedSecret &secret);
+
+  // Retrieves the AGE's SgxIdentity.
+  virtual StatusOr<SgxIdentity> AgeGetSgxIdentity();
 
   ////////////////////////////////////////////////////
   //    Provisioning Certification Enclave (PCE)    //
