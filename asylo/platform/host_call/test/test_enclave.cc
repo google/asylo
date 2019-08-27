@@ -808,6 +808,24 @@ PrimitiveStatus TestConnect(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestGetSockname(void *context, MessageReader *in,
+                                MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  int sockfd = in->next<int>();
+
+  sockaddr_un sock_un = {};
+  socklen_t sock_un_len = sizeof(sock_un);
+
+  out->Push<int>(enc_untrusted_getsockname(
+      sockfd, reinterpret_cast<struct sockaddr *>(&sock_un), &sock_un_len));
+
+  klinux_sockaddr_un klinux_sock_un = {};
+  SockaddrTokLinuxSockaddrUn(reinterpret_cast<struct sockaddr *>(&sock_un),
+                             sizeof(sock_un), &klinux_sock_un);
+  out->Push<struct klinux_sockaddr_un>(klinux_sock_un);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -972,6 +990,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestConnect,
       EntryHandler{asylo::host_call::TestConnect}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetSockname,
+      EntryHandler{asylo::host_call::TestGetSockname}));
 
   return PrimitiveStatus::OkStatus();
 }

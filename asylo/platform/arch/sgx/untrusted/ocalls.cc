@@ -293,25 +293,6 @@ int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
   return ret;
 }
 
-int ocall_enc_untrusted_getsockname(int sockfd, struct bridge_sockaddr *addr) {
-  struct sockaddr_storage tmp;
-  socklen_t tmp_len = sizeof(tmp);
-  int ret =
-      getsockname(sockfd, reinterpret_cast<struct sockaddr *>(&tmp), &tmp_len);
-
-  LOG_IF(FATAL, tmp_len > sizeof(tmp)) << "Insufficient sockaddr buf space";
-
-  // Only marshal the sockaddr if a valid one was returned.
-  if (ret == 0) {
-    if (!asylo::ToBridgeSockaddr(reinterpret_cast<struct sockaddr *>(&tmp),
-                                 sizeof(tmp), addr)) {
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  return ret;
-}
-
 int ocall_enc_untrusted_getpeername(int sockfd, struct bridge_sockaddr *addr) {
   struct sockaddr_storage tmp;
   socklen_t tmp_len = sizeof(tmp);

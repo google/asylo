@@ -125,6 +125,46 @@ TEST(ManualTypesFunctionsTest, SockaddrTokLinuxSockaddrIn6Test) {
       StrEq(reinterpret_cast<const char *>(in6addr_loopback.s6_addr)));
 }
 
+TEST(ManualTypesFunctionsTest, FromkLinuxSockAddrToSockAddrUnTest) {
+  std::string sockpath = "/some/path";
+
+  struct klinux_sockaddr_un klinux_sock_un;
+  memset(&klinux_sock_un, 0, sizeof(struct klinux_sockaddr_un));
+  klinux_sock_un.klinux_sun_family = kLinux_AF_UNIX;
+  strncpy(klinux_sock_un.klinux_sun_path, sockpath.c_str(),
+          sizeof(klinux_sock_un.klinux_sun_path) - 1);
+
+  struct sockaddr_un sock_un;
+  socklen_t sock_un_len = sizeof(sock_un);
+  FromkLinuxSockAddr(reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un),
+                     sizeof(klinux_sock_un),
+                     reinterpret_cast<sockaddr *>(&sock_un), &sock_un_len,
+                     nullptr);
+  EXPECT_THAT(sock_un.sun_family, Eq(AF_UNIX));
+  EXPECT_THAT(sock_un.sun_path, StrEq(sockpath));
+  EXPECT_THAT(sock_un_len, Eq(sizeof(struct sockaddr_un)));
+}
+
+TEST(ManualTypesFunctionsTest, FromkLinuxSockAddrToSockAddrUnTruncateTest) {
+  std::string sockpath = "/some/path";
+  std::string truncated_path = "/some";
+
+  klinux_sockaddr_un klinux_sock_un = {};
+  memset(&klinux_sock_un, 0, sizeof(struct klinux_sockaddr_un));
+  klinux_sock_un.klinux_sun_family = kLinux_AF_UNIX;
+  strncpy(klinux_sock_un.klinux_sun_path, sockpath.c_str(),
+          sizeof(klinux_sock_un.klinux_sun_path) - 1);
+
+  sockaddr sock = {};
+  socklen_t sock_len = sizeof(sa_family_t) + truncated_path.length();
+  FromkLinuxSockAddr(reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un),
+                     sizeof(klinux_sock_un),
+                     reinterpret_cast<sockaddr *>(&sock), &sock_len, nullptr);
+  auto sock_un = reinterpret_cast<sockaddr_un *>(&sock);
+  EXPECT_THAT(sock_un->sun_family, Eq(AF_UNIX));
+  EXPECT_THAT(sock_un->sun_path, StrEq(truncated_path));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

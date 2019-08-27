@@ -121,7 +121,7 @@ class HostCallTest : public ::testing::Test {
   }
 
   asylo::Status CheckStatFs(const struct statfs *st,
-                             const struct statfs *st_expected) {
+                            const struct statfs *st_expected) {
     if (st->f_type != st_expected->f_type) {
       return Status(error::GoogleError::INTERNAL, "type");
     }
@@ -144,19 +144,14 @@ class HostCallTest : public ::testing::Test {
     if (st->f_frsize != st_expected->f_frsize) {
       return Status(error::GoogleError::INTERNAL, "frsize");
     }
-    int64_t supported_flag_mask =
-          ST_NOSUID
+    int64_t supported_flag_mask = ST_NOSUID
 #if (defined(__GNU_VISIBLE) && __GNU_VISIBLE) || \
     (defined(__USE_GNU) && __USE_GNU)
-        | ST_MANDLOCK
-        | ST_NOATIME
-        | ST_NODEV
-        | ST_NODIRATIME
-        | ST_NOEXEC
-        | ST_RELATIME
-        | ST_SYNCHRONOUS
+                                  | ST_MANDLOCK | ST_NOATIME | ST_NODEV |
+                                  ST_NODIRATIME | ST_NOEXEC | ST_RELATIME |
+                                  ST_SYNCHRONOUS
 #endif
-        | ST_RDONLY;
+                                  | ST_RDONLY;
     if ((st->f_flags & supported_flag_mask) !=
         (st_expected->f_flags & supported_flag_mask)) {
       return Status(error::GoogleError::INTERNAL, "flags");
@@ -1884,7 +1879,7 @@ TEST_F(HostCallTest, TestNanosleep) {
   EXPECT_GE(duration, 500);
   EXPECT_LE(duration,
             1100);  // Allow sufficient time padding for EnclaveCall to perform
-                   // enc_untrusted_nanosleep() and return from the enclave.
+                    // enc_untrusted_nanosleep() and return from the enclave.
 
   struct timespec klinux_rem = out.next<struct timespec>();
   EXPECT_THAT(klinux_rem.tv_sec, Eq(0));
@@ -2001,6 +1996,35 @@ TEST_F(HostCallTest, TestConnect) {
   close(socket_fd);
   close(client_sock);
   close(connection_socket);
+}
+
+// Tests enc_untrusted_getsockname() by creating and binding a socket with a
+// path, then calling the function and verifying the path value.
+TEST_F(HostCallTest, TestGetSockname) {
+  int socket_fd = socket(AF_UNIX, SOCK_STREAM, 0);
+  EXPECT_THAT(socket_fd, Gt(0));
+
+  std::string sockpath =
+      absl::StrCat("/tmp/", absl::ToUnixNanos(absl::Now()), ".sock");
+
+  // Create a local socket address and bind the socket to it.
+  sockaddr_un sa = {};
+  sa.sun_family = AF_UNIX;
+  strncpy(&sa.sun_path[0], sockpath.c_str(), sizeof(sa.sun_path) - 1);
+  ASSERT_THAT(
+      bind(socket_fd, reinterpret_cast<struct sockaddr *>(&sa), sizeof(sa)),
+      Not(Eq(-1)));
+
+  MessageWriter in;
+  in.Push<int>(socket_fd);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetSockname, &in, &out));
+  ASSERT_THAT(out,
+              SizeIs(2));  // Should contain the return value and sockaddr.
+  EXPECT_THAT(out.next<int>(), Eq(0));  // Check return value.
+  auto sock_un = out.next<struct sockaddr_un>();
+  EXPECT_THAT(sock_un.sun_family, Eq(AF_UNIX));
+  EXPECT_THAT(sock_un.sun_path, StrEq(sockpath));
 }
 
 }  // namespace

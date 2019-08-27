@@ -95,4 +95,17 @@ void FromkLinuxStatFsFlags(int64_t input, int64_t *output);
 // Converts a enclave based statfs flag set to a Linux based flag set.
 void TokLinuxStatFsFlags(int64_t input, int64_t *output);
 
+// Converts a Linux based sockaddr to an enclave based sockaddr. Aborts if an
+// unrecognized AF family is encountered. Since this function can be called both
+// from the trusted as well as untrusted side, it uses an external handler to
+// perform an appropriate abort based on the context.
+// |output_len| is used as an input-output argument. As an input, it indicates
+// the size of |output| provided by the caller. The returned |*output| is
+// truncated if the buffer provided is too small; in this case, |*output_len|
+// will return a value greater than was supplied to the call.
+void FromkLinuxSockAddr(const struct klinux_sockaddr *input,
+                        socklen_t input_len, struct sockaddr *output,
+                        socklen_t *output_len,
+                        void (*abort_handler)(const char *message));
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

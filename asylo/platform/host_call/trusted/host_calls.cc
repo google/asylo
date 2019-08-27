@@ -549,10 +549,6 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
 
 int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
                        socklen_t addrlen) {
-  if (sockfd == -1) {
-    errno = EBADF;
-    return -1;
-  }
   if (addr->sa_family == AF_UNSPEC) {
     asylo::primitives::TrustedPrimitives::DebugPuts(
         "AF_UNSPEC provided for sa_family.");
@@ -592,11 +588,6 @@ int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
 
 int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen) {
-  if (sockfd == -1) {
-    errno = EBADF;
-    return -1;
-  }
-
   struct klinux_sockaddr *arg_sockaddr = nullptr;
   socklen_t arg_addrlen = 0;
   struct klinux_sockaddr_un klinux_sock_un;
@@ -723,6 +714,57 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   msg->msg_controllen = msg_control_extent.size();
   memcpy(msg->msg_control, msg_control_extent.As<char>(), msg->msg_controllen);
 
+  return result;
+}
+
+int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
+                              socklen_t *addrlen) {
+  if (!addr || !addrlen) {
+    errno = EFAULT;
+    return -1;
+  }
+  // Guard against -1 being passed as addrlen even though it's unsigned.
+  if (*addrlen == 0 || *addrlen > INT32_MAX) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  ::asylo::primitives::MessageWriter input;
+  input.Push<int>(sockfd);
+  ::asylo::primitives::MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kGetSocknameHandler, &input, &output);
+
+  if (!status.ok()) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "getsockname host call failed. Aborting");
+  }
+  if (output.size() != 3) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "Expected 3 arguments in output for getsockname host call. Aborting");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+
+  // getsockname() returns 0 on success. On error, -1 is returned, with errno
+  // set to indicate the cause of the error.
+  if (result == -1) {
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+    return result;
+  }
+
+  auto klinux_sockaddr_ext = output.next();
+  const struct klinux_sockaddr *klinux_addr =
+      klinux_sockaddr_ext.As<struct klinux_sockaddr>();
+  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
+                     asylo::primitives::TrustedPrimitives::BestEffortAbort);
+  if (!addr) {
+    errno = EFAULT;
+    return -1;
+  }
   return result;
 }
 

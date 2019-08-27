@@ -117,6 +117,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS + ["-D_GNU_SOURCE"],
     deps = [
         ":types_definitions",
+        "@com_google_absl//absl/strings",
     ],
 )
 

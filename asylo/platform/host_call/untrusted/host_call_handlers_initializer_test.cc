@@ -80,64 +80,41 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
                   kSystemCallHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  // Verify that |kIsAttyHandler| is in use by attempting to re-register the
-  // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kIsAttyHandler, primitives::ExitHandler{nullptr}),
               StatusIs(error::GoogleError::ALREADY_EXISTS));
-
-  // Verify that |kIsAttyHandler| points to |IsAttyHandler| by making a
-  // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kIsAttyHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
-  // Verify that |kUSleepHandler| is in use by attempting to re-register the
-  // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kUSleepHandler, primitives::ExitHandler{nullptr}),
               StatusIs(error::GoogleError::ALREADY_EXISTS));
-
-  // Verify that |kUSleepHandler| points to |USleepHandler| by making a
-  // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kUSleepHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
-  // Verify that |kSysconfHandler| is in use by attempting to re-register the
-  // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kSysconfHandler, primitives::ExitHandler{nullptr}),
               StatusIs(error::GoogleError::ALREADY_EXISTS));
-
-  // Verify that |kSysconfHandler| points to |SysconfHandler| by making a
-  // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSysconfHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
-  // Verify that |kReallocHandler| is in use by attempting to re-register the
-  // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kReallocHandler, primitives::ExitHandler{nullptr}),
               StatusIs(error::GoogleError::ALREADY_EXISTS));
-
-  // Verify that |kReallocHandler| points to |ReallocHandler| by making a
-  // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kReallocHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-
-  // Verify that |kSleepHandler| is in use by attempting to re-register the
-  // handler.
   EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
                   kSleepHandler, primitives::ExitHandler{nullptr}),
               StatusIs(error::GoogleError::ALREADY_EXISTS));
-
-  // Verify that |kSleepHandler| points to |SleepHandler| by making a
-  // call with an empty request.
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kSleepHandler, &input, &output, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                  kGetSocknameHandler, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                  kGetSocknameHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
