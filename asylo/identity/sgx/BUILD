@@ -215,6 +215,7 @@ cc_proto_library(
 proto_library(
     name = "remote_assertion_generator_enclave_proto",
     srcs = ["remote_assertion_generator_enclave.proto"],
+    visibility = ["//asylo:implementation"],
     deps = [
         ":code_identity_proto",
         ":platform_provisioning_proto",
@@ -229,6 +230,7 @@ proto_library(
 
 cc_proto_library(
     name = "remote_assertion_generator_enclave_cc_proto",
+    visibility = ["//asylo:implementation"],
     deps = ["remote_assertion_generator_enclave_proto"],
 )
 
