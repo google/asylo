@@ -151,7 +151,7 @@ EnclaveManagerOptions::EnclaveManagerOptions()
 
 EnclaveManagerOptions &
 EnclaveManagerOptions::set_config_server_connection_attributes(
-    std::string address, absl::Duration timeout) {
+    absl::string_view address, absl::Duration timeout) {
   host_config_info_.emplace<ConfigServerConnectionAttributes>(
       std::move(address), timeout);
   return *this;
@@ -163,7 +163,8 @@ EnclaveManagerOptions &EnclaveManagerOptions::set_host_config(
   return *this;
 }
 
-StatusOr<std::string> EnclaveManagerOptions::get_config_server_address() const {
+StatusOr<absl::string_view> EnclaveManagerOptions::get_config_server_address()
+    const {
   const ConfigServerConnectionAttributes *attributes =
       absl::get_if<ConfigServerConnectionAttributes>(&host_config_info_);
   if (!attributes) {
@@ -258,7 +259,7 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
   return finalize_status;
 }
 
-EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
+EnclaveClient *EnclaveManager::GetClient(absl::string_view name) const {
   absl::ReaderMutexLock lock(&client_table_lock_);
   auto it = client_by_name_.find(name);
   if (it == client_by_name_.end()) {
@@ -268,11 +269,12 @@ EnclaveClient *EnclaveManager::GetClient(const std::string &name) const {
   }
 }
 
-const std::string EnclaveManager::GetName(const EnclaveClient *client) const {
+const absl::string_view EnclaveManager::GetName(
+    const EnclaveClient *client) const {
   absl::ReaderMutexLock lock(&client_table_lock_);
   auto it = name_by_client_.find(client);
   if (it == name_by_client_.end()) {
-    return "";
+    return absl::string_view();
   } else {
     return it->second;
   }
@@ -323,7 +325,7 @@ StatusOr<EnclaveManager *> EnclaveManager::Instance() {
   return instance_;
 }
 
-Status EnclaveManager::LoadEnclave(const std::string &name,
+Status EnclaveManager::LoadEnclave(absl::string_view name,
                                    const EnclaveLoader &loader,
                                    void *base_address,
                                    const size_t enclave_size) {
@@ -332,7 +334,7 @@ Status EnclaveManager::LoadEnclave(const std::string &name,
       enclave_size);
 }
 
-Status EnclaveManager::LoadEnclave(const std::string &name,
+Status EnclaveManager::LoadEnclave(absl::string_view name,
                                    const EnclaveLoader &loader,
                                    EnclaveConfig config, void *base_address,
                                    const size_t enclave_size) {
@@ -342,7 +344,7 @@ Status EnclaveManager::LoadEnclave(const std::string &name,
                              enclave_size);
 }
 
-Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
+Status EnclaveManager::LoadEnclaveInternal(absl::string_view name,
                                            const EnclaveLoader &loader,
                                            const EnclaveConfig &config,
                                            void *base_address,
@@ -358,7 +360,7 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
     absl::ReaderMutexLock lock(&client_table_lock_);
     if (client_by_name_.find(name) != client_by_name_.end()) {
       Status status(error::GoogleError::ALREADY_EXISTS,
-                    "Name already exists: " + name);
+                    absl::StrCat("Name already exists: ", name));
       LOG(ERROR) << "LoadEnclave failed: " << status;
       return status;
     }
@@ -407,7 +409,7 @@ Status EnclaveManager::LoadEnclaveInternal(const std::string &name,
   return status;
 }
 
-void EnclaveManager::RemoveEnclaveReference(const std::string &name) {
+void EnclaveManager::RemoveEnclaveReference(absl::string_view name) {
   absl::WriterMutexLock lock(&client_table_lock_);
   EnclaveClient *client = client_by_name_[name].get();
   client_by_name_.erase(name);

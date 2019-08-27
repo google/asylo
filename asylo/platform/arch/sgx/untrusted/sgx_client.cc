@@ -42,7 +42,7 @@ namespace asylo {
 
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
-    const std::string &name, void *base_address, const size_t enclave_size,
+    absl::string_view name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
   auto client = absl::make_unique<SgxClient>(name);
 
@@ -64,7 +64,7 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxLoader::Copy() const {
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
-    const std::string &name, void *base_address, const size_t enclave_size,
+    absl::string_view name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
   auto client = absl::make_unique<SgxClient>(name);
 

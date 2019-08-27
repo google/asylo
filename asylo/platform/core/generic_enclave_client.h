@@ -40,7 +40,7 @@ class GenericEnclaveClient : public EnclaveClient {
   }
 
  protected:
-  explicit GenericEnclaveClient(const std::string &name)
+  explicit GenericEnclaveClient(absl::string_view name)
       : EnclaveClient(name) {}
 
   // Primitive enclave client. Populated by the implementation of EnclaveLoader.

@@ -20,6 +20,7 @@
 #define ASYLO_TEST_UTIL_MOCK_ENCLAVE_CLIENT_H_
 
 #include <gmock/gmock.h>
+#include "absl/strings/string_view.h"
 #include "asylo/client.h"
 #include "asylo/util/status.h"
 
@@ -32,7 +33,7 @@ class MockEnclaveClient : public EnclaveClient {
   MockEnclaveClient() : EnclaveClient("mock") {}
 
   MOCK_METHOD2(EnterAndRun, Status(const EnclaveInput &, EnclaveOutput *));
-  MOCK_CONST_METHOD0(get_name, const std::string &());
+  MOCK_CONST_METHOD0(get_name, absl::string_view());
   MOCK_METHOD1(EnterAndInitialize, Status(const EnclaveConfig &));
   MOCK_METHOD1(EnterAndFinalize, Status(const EnclaveFinal &));
   MOCK_METHOD1(EnterAndHandleSignal, Status(const EnclaveSignal &));

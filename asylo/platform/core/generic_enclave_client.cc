@@ -115,7 +115,7 @@ Status GenericEnclaveClient::EnterAndInitialize(const EnclaveConfig &config) {
 
   std::unique_ptr<char[]> output;
   size_t output_len = 0;
-  std::string enclave_name = get_name();
+  std::string enclave_name(get_name());
   ASYLO_RETURN_IF_ERROR(Initialize(enclave_name.c_str(),
                                    enclave_name.size() + 1, buf.data(),
                                    buf.size(), &output, &output_len));

@@ -64,10 +64,9 @@ class EnclaveManagerOptions {
   /// The ConfigServerConnectionAttributes struct holds information necessary
   /// for contacting the config server running inside the Asylo daemon.
   struct ConfigServerConnectionAttributes {
-    ConfigServerConnectionAttributes(std::string address,
+    ConfigServerConnectionAttributes(absl::string_view address,
                                      absl::Duration timeout)
-        : server_address(std::move(address)),
-          connection_timeout(std::move(timeout)) {}
+        : server_address(address), connection_timeout(std::move(timeout)) {}
 
     std::string server_address;
     absl::Duration connection_timeout;
@@ -83,7 +82,7 @@ class EnclaveManagerOptions {
   ///
   /// \return A reference to this EnclaveManagerOptions object.
   EnclaveManagerOptions &set_config_server_connection_attributes(
-      std::string address, absl::Duration timeout);
+      absl::string_view address, absl::Duration timeout);
 
   /// Sets the HostConfig proto within this object.
   ///
@@ -95,7 +94,7 @@ class EnclaveManagerOptions {
   /// \return The address of the server from which the HostConfig information
   ///         can be obtained. Returns an error if
   ///         ConfigServerConnectionAttributes are not set.
-  StatusOr<std::string> get_config_server_address() const;
+  StatusOr<absl::string_view> get_config_server_address() const;
 
   /// Returns the configuration server connection timeout.
   ///
@@ -185,7 +184,7 @@ class EnclaveManager {
   /// \param base_address Start address to load enclave(optional).
   /// \param enclave_size The size of the enclave in memory(only needed if
   /// |base_address| is specified).
-  Status LoadEnclave(const std::string &name, const EnclaveLoader &loader,
+  Status LoadEnclave(absl::string_view name, const EnclaveLoader &loader,
                      void *base_address = nullptr,
                      const size_t enclave_size = 0);
 
@@ -211,7 +210,7 @@ class EnclaveManager {
   /// \param base_address Start address to load enclave(optional).
   /// \param enclave_size The size of the enclave in memory(only needed if
   /// |base_address| is specified).
-  Status LoadEnclave(const std::string &name, const EnclaveLoader &loader,
+  Status LoadEnclave(absl::string_view name, const EnclaveLoader &loader,
                      EnclaveConfig config, void *base_address = nullptr,
                      const size_t enclave_size = 0);
 
@@ -221,7 +220,7 @@ class EnclaveManager {
   ///             EnclaveManager.
   /// \return A mutable pointer to the EnclaveClient if the name is
   ///         registered. Otherwise returns nullptr.
-  EnclaveClient *GetClient(const std::string &name) const
+  EnclaveClient *GetClient(absl::string_view name) const
       LOCKS_EXCLUDED(client_table_lock_);
 
   /// Returns the name of an enclave client.
@@ -230,7 +229,7 @@ class EnclaveManager {
   ///               EnclaveManager.
   /// \return The name of an enclave client. If no enclave matches `client` the
   ///         empty string will be returned.
-  const std::string GetName(const EnclaveClient *client) const
+  const absl::string_view GetName(const EnclaveClient *client) const
       LOCKS_EXCLUDED(client_table_lock_);
 
   /// Destroys an enclave.
@@ -285,7 +284,7 @@ class EnclaveManager {
   // Loads a new enclave with custom enclave config settings and binds it to a
   // name. The actual work of opening the enclave is delegated to the passed
   // loader object.
-  Status LoadEnclaveInternal(const std::string &name,
+  Status LoadEnclaveInternal(absl::string_view name,
                              const EnclaveLoader &loader,
                              const EnclaveConfig &config,
                              void *base_address = nullptr,
@@ -294,7 +293,7 @@ class EnclaveManager {
 
   // Deletes an enclave client reference that points to an enclave that no
   // longer exists. This should only happen during fork.
-  void RemoveEnclaveReference(const std::string &name)
+  void RemoveEnclaveReference(absl::string_view name)
       LOCKS_EXCLUDED(client_table_lock_);
 
   // Create a thread to periodically update logic.
@@ -360,7 +359,7 @@ class EnclaveLoader {
   // Loads an enclave, returning a pointer to a client on success and a non-ok
   // status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name) const {
+      absl::string_view name) const {
     EnclaveConfig config;
     return LoadEnclave(name, /*base_address=*/nullptr, /*enclave_size=*/0,
                        config);
@@ -369,7 +368,7 @@ class EnclaveLoader {
   // Loads an enclave at the specified address, returning a pointer to a client
   // on success and a non-ok status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address, const size_t enclave_size,
+      absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const = 0;
 
   // Gets a copy of the loader that loaded a previous enclave. This is only used

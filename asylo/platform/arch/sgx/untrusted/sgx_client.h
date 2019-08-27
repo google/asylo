@@ -38,7 +38,7 @@ class SgxClient : public GenericEnclaveClient {
  public:
   SgxClient() = delete;
 
-  explicit SgxClient(const std::string &name) : GenericEnclaveClient(name) {}
+  explicit SgxClient(absl::string_view name) : GenericEnclaveClient(name) {}
 
  private:
   friend class SgxLoader;
@@ -54,12 +54,12 @@ class SgxLoader : public EnclaveLoader {
   ///
   /// \param path The path to the enclave binary (.so) file to load.
   /// \param debug Whether to load the enclave in debug mode.
-  SgxLoader(const std::string &path, bool debug)
+  SgxLoader(absl::string_view path, bool debug)
       : enclave_path_(path), debug_(debug) {}
 
  private:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address, const size_t enclave_size,
+      absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
 
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
@@ -78,12 +78,12 @@ class SgxEmbeddedLoader : public EnclaveLoader {
   /// \param elf_section_name The name of the ELF section containing the
   ///                         enclave.
   /// \param debug Whether to load the enclave in debug mode.
-  SgxEmbeddedLoader(const std::string &elf_section_name, bool debug)
+  SgxEmbeddedLoader(absl::string_view elf_section_name, bool debug)
       : section_name_(elf_section_name), debug_(debug) {}
 
  private:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const std::string &name, void *base_address, const size_t enclave_size,
+      absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
 
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;

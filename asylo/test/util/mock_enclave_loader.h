@@ -20,6 +20,7 @@
 #define ASYLO_TEST_UTIL_MOCK_ENCLAVE_LOADER_H_
 
 #include <gmock/gmock.h>
+#include "absl/strings/string_view.h"
 #include "asylo/client.h"
 #include "asylo/util/status.h"
 
@@ -30,7 +31,7 @@ class MockEnclaveLoader : public EnclaveLoader {
  public:
   MOCK_CONST_METHOD4(LoadEnclave,
                      StatusOr<std::unique_ptr<EnclaveClient>>(
-                         const std::string &name, void *base_address,
+                         absl::string_view name, void *base_address,
                          const size_t enclave_size,
                          const EnclaveConfig &config));
 

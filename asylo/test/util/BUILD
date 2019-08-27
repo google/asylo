@@ -278,6 +278,7 @@ cc_library(
     deps = [
         "//asylo:enclave_client",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -291,6 +292,7 @@ cc_library(
     deps = [
         "//asylo:enclave_client",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -306,6 +308,7 @@ cc_library(
     deps = [
         "//asylo:enclave_client",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )
 
