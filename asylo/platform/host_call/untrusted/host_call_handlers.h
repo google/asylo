@@ -96,6 +96,13 @@ Status GetPeernameHandler(const std::shared_ptr<primitives::Client> &client,
                           void *context, primitives::MessageReader *input,
                           primitives::MessageWriter *output);
 
+// recvfrom syscall handler on the host; expects [int sockfd, size_t len, int
+// flags] and returns [int /*result*/, int /*errno*/, void * /*buf*/, sockaddr]
+// on the MessageWriter.
+Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

@@ -215,64 +215,6 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   return ret;
 }
 
-ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
-                               struct sockaddr *src_addr, socklen_t *addrlen) {
-  ssize_t ret = 0;
-  char *serialized_args = nullptr;
-  size_t serialized_len = 0;
-  if (!asylo::SerializeRecvFromArgs(sockfd, len, flags, &serialized_args,
-                                    &serialized_len)) {
-    errno = EINVAL;
-    return -1;
-  }
-  asylo::MallocUniquePtr<char[]> args_ptr(serialized_args);
-  char *serialized_output = nullptr;
-  char **serialized_output_ptr = src_addr ? &serialized_output : nullptr;
-  char *output_buf = nullptr;
-  bridge_ssize_t output_len = 0;
-  CHECK_OCALL(ocall_enc_untrusted_recvfrom(&ret, serialized_args,
-                                           serialized_len, &output_buf,
-                                           serialized_output_ptr, &output_len));
-  asylo::UntrustedUniquePtr<char[]> output_buf_ptr(output_buf);
-  if (ret < 0) {
-    // errno is propagated.
-    return -1;
-  }
-  if (!sgx_is_outside_enclave(output_buf, ret)) {
-    abort();
-  }
-  memcpy(buf, output_buf, ret);
-  if (src_addr) {
-    struct sockaddr *src_addr_copy = nullptr;
-    asylo::UntrustedUniquePtr<char[]> output_unique_ptr(serialized_output);
-    if (!sgx_is_outside_enclave(serialized_output, output_len)) {
-      abort();
-    }
-    std::string serialized_output_str(serialized_output, output_len);
-    if (!addrlen || !asylo::DeserializeRecvFromSrcAddr(serialized_output_str,
-                                                       &src_addr_copy)) {
-      errno = EINVAL;
-      return -1;
-    }
-    asylo::MallocUniquePtr<struct sockaddr> src_addr_ptr(src_addr_copy);
-    if (src_addr_copy->sa_family == AF_INET) {
-      memcpy(
-          src_addr, src_addr_copy,
-          std::min(static_cast<size_t>(*addrlen), sizeof(struct sockaddr_in)));
-      *addrlen = sizeof(struct sockaddr_in);
-    } else if (src_addr_copy->sa_family == AF_INET6) {
-      memcpy(
-          src_addr, src_addr_copy,
-          std::min(static_cast<size_t>(*addrlen), sizeof(struct sockaddr_in6)));
-      *addrlen = sizeof(struct sockaddr_in6);
-    } else {
-      errno = EINVAL;
-      return -1;
-    }
-  }
-  return ret;
-}
-
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////

@@ -258,5 +258,31 @@ Status GetPeernameHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 3);
+  int sockfd = input->next<int>();
+  size_t len = input->next<size_t>();
+  int klinux_flags = input->next<int>();
+  struct sockaddr_storage sock_addr;
+  socklen_t sock_len = sizeof(sock_addr);
+
+  auto buffer = absl::make_unique<char[]>(len);
+  ssize_t ret = recvfrom(
+      sockfd, reinterpret_cast<void *>(buffer.get()), len, klinux_flags,
+      reinterpret_cast<struct sockaddr *>(&sock_addr), &sock_len);
+
+  LOG_IF(FATAL, sock_len > sizeof(sock_addr))
+      << "Insufficient sockaddr buf space encountered for recvfrom host call.";
+
+  output->Push<int>(ret);
+  output->Push<int>(errno);
+  output->PushByCopy(primitives::Extent{buffer.get(), len});
+  output->Push<struct sockaddr_storage>(sock_addr);
+
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

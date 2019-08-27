@@ -559,73 +559,6 @@ void AddToInotifyEventQueue(const InotifyEventList &event_list,
   }
 }
 
-
-bool ConvertToRecvFromArgs(int sockfd, size_t len, int flags,
-                           RecvFromArgs *args) {
-  if (!args) {
-    return false;
-  }
-  args->set_sockfd(sockfd);
-  args->set_len(len);
-  if (flags & MSG_OOB) args->add_flags(RecvSendFlags::PROTO_OOB);
-  if (flags & MSG_PEEK) args->add_flags(RecvSendFlags::PROTO_PEEK);
-  if (flags & MSG_DONTROUTE) args->add_flags(RecvSendFlags::PROTO_DONTROUTE);
-  if (flags & MSG_CTRUNC) args->add_flags(RecvSendFlags::PROTO_CTRUNC);
-  if (flags & MSG_PROXY) args->add_flags(RecvSendFlags::PROTO_PROXY);
-  if (flags & MSG_TRUNC) args->add_flags(RecvSendFlags::PROTO_TRUNC);
-  if (flags & MSG_DONTWAIT) args->add_flags(RecvSendFlags::PROTO_DONTWAIT);
-  if (flags & MSG_EOR) args->add_flags(RecvSendFlags::PROTO_EOR);
-  if (flags & MSG_WAITALL) args->add_flags(RecvSendFlags::PROTO_WAITALL);
-  if (flags & MSG_FIN) args->add_flags(RecvSendFlags::PROTO_FIN);
-  if (flags & MSG_SYN) args->add_flags(RecvSendFlags::PROTO_SYN);
-  if (flags & MSG_CONFIRM) args->add_flags(RecvSendFlags::PROTO_CONFIRM);
-  if (flags & MSG_RST) args->add_flags(RecvSendFlags::PROTO_RST);
-  if (flags & MSG_ERRQUEUE) args->add_flags(RecvSendFlags::PROTO_ERRQUEUE);
-  if (flags & MSG_NOSIGNAL) args->add_flags(RecvSendFlags::PROTO_NOSIGNAL);
-  if (flags & MSG_MORE) args->add_flags(RecvSendFlags::PROTO_MORE);
-  if (flags & MSG_WAITFORONE) args->add_flags(RecvSendFlags::PROTO_WAITFORONE);
-  if (flags & MSG_FASTOPEN) args->add_flags(RecvSendFlags::PROTO_FASTOPEN);
-  if (flags & MSG_CMSG_CLOEXEC) {
-    args->add_flags(RecvSendFlags::PROTO_CMSG_CLOEXEC);
-  }
-  return true;
-}
-
-bool ConvertFromRecvFromArgsProto(const RecvFromArgs &args, int *sockfd,
-                                  size_t *len, int *flags) {
-  if (!sockfd || !len || !flags) {
-    return false;
-  }
-  *flags = 0;
-  *sockfd = args.sockfd();
-  *len = args.len();
-  for (int i = 0; i < args.flags().size(); ++i) {
-    int curr_flag = args.flags(i);
-    if (curr_flag == RecvSendFlags::PROTO_OOB) *flags |= MSG_OOB;
-    if (curr_flag == RecvSendFlags::PROTO_PEEK) *flags |= MSG_PEEK;
-    if (curr_flag == RecvSendFlags::PROTO_DONTROUTE) *flags |= MSG_DONTROUTE;
-    if (curr_flag == RecvSendFlags::PROTO_CTRUNC) *flags |= MSG_CTRUNC;
-    if (curr_flag == RecvSendFlags::PROTO_PROXY) *flags |= MSG_PROXY;
-    if (curr_flag == RecvSendFlags::PROTO_TRUNC) *flags |= MSG_TRUNC;
-    if (curr_flag == RecvSendFlags::PROTO_DONTWAIT) *flags |= MSG_DONTWAIT;
-    if (curr_flag == RecvSendFlags::PROTO_EOR) *flags |= MSG_EOR;
-    if (curr_flag == RecvSendFlags::PROTO_WAITALL) *flags |= MSG_WAITALL;
-    if (curr_flag == RecvSendFlags::PROTO_FIN) *flags |= MSG_FIN;
-    if (curr_flag == RecvSendFlags::PROTO_SYN) *flags |= MSG_SYN;
-    if (curr_flag == RecvSendFlags::PROTO_CONFIRM) *flags |= MSG_CONFIRM;
-    if (curr_flag == RecvSendFlags::PROTO_RST) *flags |= MSG_RST;
-    if (curr_flag == RecvSendFlags::PROTO_ERRQUEUE) *flags |= MSG_ERRQUEUE;
-    if (curr_flag == RecvSendFlags::PROTO_NOSIGNAL) *flags |= MSG_NOSIGNAL;
-    if (curr_flag == RecvSendFlags::PROTO_MORE) *flags |= MSG_MORE;
-    if (curr_flag == RecvSendFlags::PROTO_WAITFORONE) *flags |= MSG_WAITFORONE;
-    if (curr_flag == RecvSendFlags::PROTO_FASTOPEN) *flags |= MSG_FASTOPEN;
-    if (curr_flag == RecvSendFlags::PROTO_CMSG_CLOEXEC) {
-      *flags |= MSG_CMSG_CLOEXEC;
-    }
-  }
-  return true;
-}
-
 }  // namespace
 
 bool SerializeAddrinfo(const struct addrinfo *in, std::string *out,
@@ -835,56 +768,6 @@ bool DeserializeInotifyEvents(absl::string_view in,
   if (!event_list_proto.ParseFromArray(in.data(), in.length())) return false;
   AddToInotifyEventQueue(event_list_proto, events);
   return true;
-}
-
-bool SerializeRecvFromArgs(int sockfd, size_t len, int flags, char **out,
-                           size_t *out_len) {
-  if (!out || !out_len) {
-    return false;
-  }
-  RecvFromArgs args_proto;
-  if (ConvertToRecvFromArgs(sockfd, len, flags, &args_proto)) {
-    *out_len = args_proto.ByteSizeLong();
-    // The caller is responsible for freeing the memory allocated below.
-    *out = static_cast<char *>(malloc(*out_len));
-    return args_proto.SerializeToArray(*out, *out_len);
-  }
-  return false;
-}
-
-bool DeserializeRecvFromArgs(absl::string_view in, int *sockfd, size_t *len,
-                             int *flags) {
-  RecvFromArgs args;
-  if (!args.ParseFromArray(in.data(), in.length())) {
-    return false;
-  }
-  return ConvertFromRecvFromArgsProto(args, sockfd, len, flags);
-}
-
-bool SerializeRecvFromSrcAddr(struct sockaddr *src_addr, char **out,
-                              size_t *out_len, int *bridge_error_code) {
-  RecvFromSrcAddr addr_proto;
-  if (!src_addr || !out || !out_len ||
-      !ConvertToSockaddrProtobuf(src_addr, addr_proto.mutable_src_addr(),
-                                 bridge_error_code)) {
-    return false;
-  }
-  *out_len = addr_proto.ByteSizeLong();
-  // The caller is responsible for freeing the memory allocated below.
-  *out = static_cast<char *>(malloc(*out_len));
-  return addr_proto.SerializeToArray(*out, *out_len);
-}
-
-bool DeserializeRecvFromSrcAddr(absl::string_view in,
-                                struct sockaddr **src_addr) {
-  RecvFromSrcAddr addr_proto;
-  if (!src_addr || !addr_proto.ParseFromArray(in.data(), in.length())) {
-    return false;
-  }
-  // The caller is responsible for freeing the memory allocated by
-  // ConvertToSockaddr.
-  return ConvertToSockaddr(addr_proto.src_addr(), src_addr,
-                           /*addrlen=*/nullptr);
 }
 
 }  // namespace asylo

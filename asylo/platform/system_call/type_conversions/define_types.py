@@ -186,6 +186,17 @@ define_enum(
     default_value_host=-1,
     default_value_newlib=-1)
 
+define_enum(
+    name="RecvSendFlag",
+    values=[
+        "MSG_OOB", "MSG_PEEK", "MSG_DONTROUTE", "MSG_CTRUNC", "MSG_PROXY",
+        "MSG_TRUNC", "MSG_DONTWAIT", "MSG_EOR", "MSG_WAITALL", "MSG_FIN",
+        "MSG_SYN", "MSG_CONFIRM", "MSG_RST", "MSG_ERRQUEUE", "MSG_NOSIGNAL",
+        "MSG_MORE", "MSG_WAITFORONE", "MSG_FASTOPEN", "MSG_CMSG_CLOEXEC"
+    ],
+    multi_valued=True,
+)
+
 define_struct(
     name="timespec",
     values=[

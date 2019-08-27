@@ -128,6 +128,12 @@ TEST(HostCallHandlersInitializerTest, RegisterHostCallHandlersTest) {
   EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
                   kGetPeernameHandler, &input, &output, client.get()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(client->exit_call_provider()->RegisterExitHandler(
+                  kRecvFromHandler, primitives::ExitHandler{nullptr}),
+              StatusIs(error::GoogleError::ALREADY_EXISTS));
+  EXPECT_THAT(client->exit_call_provider()->InvokeExitHandler(
+                  kRecvFromHandler, &input, &output, client.get()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 }  // namespace host_call

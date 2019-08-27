@@ -851,4 +851,59 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
   return result;
 }
 
+ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
+                               struct sockaddr *src_addr, socklen_t *addrlen) {
+  int klinux_flags = 0;
+  TokLinuxRecvSendFlag(&flags, &klinux_flags);
+  if (flags != 0 && klinux_flags == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  ::asylo::primitives::MessageWriter input;
+  input.Push<int>(sockfd);
+  input.Push<uint64_t>(len);
+  input.Push<int>(klinux_flags);
+  ::asylo::primitives::MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kRecvFromHandler, &input, &output);
+
+  if (!status.ok()) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "recvfrom host call failed. Aborting");
+  }
+  if (output.size() != 4) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "Expected 4 arguments in output for recvfrom host call. Aborting");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+  // recvfrom() returns -1 on failure, with errno set to indicate the cause
+  // of the error.
+  if (result == -1) {
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+    return result;
+  }
+
+  auto buffer_received = output.next();
+  memcpy(buf, buffer_received.data(), len);
+
+  // If |src_addr| is not NULL, and the underlying protocol provides the source
+  // address, this source address is filled in. When |src_addr| is NULL, nothing
+  // is filled in; in this case, |addrlen| is not used, and should also be NULL.
+  if (src_addr != nullptr && addrlen != nullptr) {
+    auto klinux_sockaddr_ext = output.next();
+    const struct klinux_sockaddr *klinux_addr =
+        klinux_sockaddr_ext.As<struct klinux_sockaddr>();
+    FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), src_addr,
+                       addrlen,
+                       asylo::primitives::TrustedPrimitives::BestEffortAbort);
+  }
+
+  return result;
+}
+
 }  // extern "C"

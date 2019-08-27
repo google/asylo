@@ -70,6 +70,9 @@ static constexpr uint64_t kAcceptHandler = primitives::kSelectorHostCall + 10;
 static constexpr uint64_t kGetPeernameHandler =
     primitives::kSelectorHostCall + 11;
 
+// Exit handler constant for |Recvfrom|.
+static constexpr uint64_t kRecvFromHandler = primitives::kSelectorHostCall + 12;
+
 }  // namespace host_call
 }  // namespace asylo
 

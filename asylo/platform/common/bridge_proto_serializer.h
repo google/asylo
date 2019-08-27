@@ -44,18 +44,6 @@ bool DeserializeIfAddrs(absl::string_view in, struct ifaddrs **out);
 
 void FreeDeserializedIfAddrs(struct ifaddrs *ifa);
 
-bool SerializeRecvFromArgs(int sockfd, size_t len, int flags, char **out,
-                           size_t *out_len);
-
-bool DeserializeRecvFromArgs(absl::string_view in, int *sockfd, size_t *len,
-                             int *flags);
-
-bool SerializeRecvFromSrcAddr(struct sockaddr *src_addr, char **out,
-                              size_t *out_len, int *bridge_error_code);
-
-bool DeserializeRecvFromSrcAddr(absl::string_view in,
-                                struct sockaddr **src_addr);
-
 // Returns true if all sockaddr fields are compatible with IPv4 or IPv6, false
 // otherwise. The sockaddr fields in the ifaddrs struct may also be null.
 // IfAddrSupported is exposed here since it is used in tests.
