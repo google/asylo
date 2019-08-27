@@ -82,23 +82,18 @@ message GeneratePceInfoSgxHardwareReportOutput {
 
 // An input message that instructs the RemoteAssertionGenerator enclave to
 // generate an attestation key, an SGX hardware REPORT that is suitable for
-// PCE's SignReport protocol, and any number of certificate signing requests
-// for certificate authorities that should certify the attestation public key.
+// PCE's SignReport protocol, and optionally a certificate signing request for a
+// certificate authority that should certify the attestation public key.
 message GenerateKeyAndCsrInput {
   // An SGX TARGETINFO structure from the PCE running on the same platform.
   // Required.
   optional TargetInfoProto pce_target_info = 1;
-
-  // Certificate authorities for which a certificate signing request should be
-  // generated.
-  repeated string target_certificate_authorities = 2;
 }
 
 // An output message containing an SGX hardware REPORT that is suitable for
 // PCE's SignReport protocol, a serialized PceSignReportPayload that is an input
-// for generating the REPORTDATA for a report that is signed by the PCE, and any
-// number of certificate signing requests that should certify the attestation
-// public key.
+// for generating the REPORTDATA for a report that is signed by the PCE, and a
+// certificate signing requests that should certify the attestation public key.
 message GenerateKeyAndCsrOutput {
   // A SGX hardware REPORT that is generated against TARGETINFO from
   // |pce_target_info| in the corresponding input message. Required.
@@ -108,9 +103,16 @@ message GenerateKeyAndCsrOutput {
   // produce the REPORTDATA in |report|. Required.
   optional bytes pce_sign_report_payload = 2;
 
-  // Certificate signing requests for certificate authorities that should
-  // certify |public_key|. Optional.
-  repeated CertificateSigningRequest certificate_signing_requests = 3;
+  // A certificate signing request wrapper that contains a certificate signing
+  // request that should certify |public_key|. Optional.
+  optional TargetedCertificateSigningRequest targeted_csr = 3;
+}
+
+// An message containing a certificate signing request for a target certificate
+// authority.
+message TargetedCertificateSigningRequest {
+  // Required.
+  optional CertificateSigningRequest certificate_signing_request = 1;
 }
 
 // An input message that instructs the RemoteAssertionGenerator enclave to

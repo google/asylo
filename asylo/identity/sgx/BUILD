@@ -1344,6 +1344,7 @@ cc_library(
     deps = [
         ":intel_architectural_enclave_interface",
         ":platform_provisioning_cc_proto",
+        ":remote_assertion_generator_enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",

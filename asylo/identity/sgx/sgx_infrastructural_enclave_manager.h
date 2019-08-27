@@ -29,6 +29,7 @@
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -61,10 +62,9 @@ class SgxInfrastructuralEnclaveManager {
   // Requests the AGE to generate a new attestation key, and a CSR for each CA
   // listed in |target_certificate_authorities|.
   virtual Status AgeGenerateKeyAndCsr(
-      const sgx::TargetInfoProto &pce_target_info,
-      const std::vector<std::string> &target_certificate_authorities,
-      sgx::ReportProto *report, std::string *pce_sign_report_payload,
-      std::vector<asylo::CertificateSigningRequest> *csrs);
+      const sgx::TargetInfoProto &pce_target_info, sgx::ReportProto *report,
+      std::string *pce_sign_report_payload,
+      sgx::TargetedCertificateSigningRequest *targeted_csr);
 
   // Requests the AGE to generate a hardware REPORT for the PCE's GetPceInfo
   // protocol. The REPORT is targeted at |pce_target_info| and is bound to

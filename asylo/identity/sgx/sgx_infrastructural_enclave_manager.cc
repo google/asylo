@@ -50,20 +50,15 @@ SgxInfrastructuralEnclaveManager::SgxInfrastructuralEnclaveManager(
       assertion_generator_enclave_(assertion_generator_enclave) {}
 
 Status SgxInfrastructuralEnclaveManager::AgeGenerateKeyAndCsr(
-    const sgx::TargetInfoProto &pce_target_info,
-    const std::vector<std::string> &target_certificate_authorities,
-    sgx::ReportProto *report, std::string *pce_sign_report_payload,
-    std::vector<CertificateSigningRequest> *csrs) {
+    const sgx::TargetInfoProto &pce_target_info, sgx::ReportProto *report,
+    std::string *pce_sign_report_payload,
+    sgx::TargetedCertificateSigningRequest *targeted_csr) {
   EnclaveInput input;
   sgx::GenerateKeyAndCsrInput *generate_key_and_csr_request_input =
       input.MutableExtension(sgx::remote_assertion_generator_enclave_input)
           ->mutable_generate_key_and_csr_input();
   *generate_key_and_csr_request_input->mutable_pce_target_info() =
       pce_target_info;
-  *generate_key_and_csr_request_input
-       ->mutable_target_certificate_authorities() = {
-      target_certificate_authorities.begin(),
-      target_certificate_authorities.end()};
 
   EnclaveOutput output;
   ASYLO_RETURN_IF_ERROR(
@@ -72,11 +67,11 @@ Status SgxInfrastructuralEnclaveManager::AgeGenerateKeyAndCsr(
   const sgx::GenerateKeyAndCsrOutput &generate_key_and_csr_output =
       output.MutableExtension(sgx::remote_assertion_generator_enclave_output)
           ->generate_key_and_csr_output();
+
+  *targeted_csr = generate_key_and_csr_output.targeted_csr();
   *report = generate_key_and_csr_output.report();
   *pce_sign_report_payload =
       generate_key_and_csr_output.pce_sign_report_payload();
-  *csrs = {generate_key_and_csr_output.certificate_signing_requests().begin(),
-           generate_key_and_csr_output.certificate_signing_requests().end()};
   return Status::OkStatus();
 }
 
