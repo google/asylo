@@ -221,7 +221,7 @@ class EnclaveManager {
   /// \return A mutable pointer to the EnclaveClient if the name is
   ///         registered. Otherwise returns nullptr.
   EnclaveClient *GetClient(absl::string_view name) const
-      LOCKS_EXCLUDED(client_table_lock_);
+      ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
   /// Returns the name of an enclave client.
   ///
@@ -230,7 +230,7 @@ class EnclaveManager {
   /// \return The name of an enclave client. If no enclave matches `client` the
   ///         empty string will be returned.
   const absl::string_view GetName(const EnclaveClient *client) const
-      LOCKS_EXCLUDED(client_table_lock_);
+      ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
   /// Destroys an enclave.
   ///
@@ -250,7 +250,7 @@ class EnclaveManager {
   ///         OK Status if that was skipped.
   Status DestroyEnclave(EnclaveClient *client, const EnclaveFinal &final_input,
                         bool skip_finalize = false)
-      LOCKS_EXCLUDED(client_table_lock_);
+      ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
   /// Fetches the shared resource manager object.
   ///
@@ -269,17 +269,17 @@ class EnclaveManager {
   /// Get the loader of an enclave. This should only be used during fork in
   /// order to load an enclave with the same loader as the parent.
   EnclaveLoader *GetLoaderFromClient(EnclaveClient *client)
-      LOCKS_EXCLUDED(client_table_lock_);
+      ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
  private:
-  EnclaveManager() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  EnclaveManager() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
   EnclaveManager(EnclaveManager const &) = delete;
   EnclaveManager &operator=(EnclaveManager const &) = delete;
 
   // Retrieves and returns a HostConfig proto as specified by the
   // EnclaveManagerOptions which the EnclaveManager was configured when its
   // sngleton instance was created.
-  HostConfig GetHostConfig() EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  HostConfig GetHostConfig() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Loads a new enclave with custom enclave config settings and binds it to a
   // name. The actual work of opening the enclave is delegated to the passed
@@ -289,12 +289,12 @@ class EnclaveManager {
                              const EnclaveConfig &config,
                              void *base_address = nullptr,
                              const size_t enclave_size = 0)
-      LOCKS_EXCLUDED(client_table_lock_);
+      ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
   // Deletes an enclave client reference that points to an enclave that no
   // longer exists. This should only happen during fork.
   void RemoveEnclaveReference(absl::string_view name)
-      LOCKS_EXCLUDED(client_table_lock_);
+      ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
   // Create a thread to periodically update logic.
   void SpawnWorkerThread();
@@ -319,12 +319,12 @@ class EnclaveManager {
   mutable absl::Mutex client_table_lock_;
 
   absl::flat_hash_map<std::string, std::unique_ptr<EnclaveClient>>
-      client_by_name_ GUARDED_BY(client_table_lock_);
+      client_by_name_ ABSL_GUARDED_BY(client_table_lock_);
   absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_
-      GUARDED_BY(client_table_lock_);
+      ABSL_GUARDED_BY(client_table_lock_);
 
   absl::flat_hash_map<const EnclaveClient *, std::unique_ptr<EnclaveLoader>>
-      loader_by_client_ GUARDED_BY(client_table_lock_);
+      loader_by_client_ ABSL_GUARDED_BY(client_table_lock_);
 
   // A part of the configuration for enclaves launched by the enclave manager
   // comes from the Asylo daemon. This member caches such configuration.
@@ -335,13 +335,13 @@ class EnclaveManager {
 
   // Indication whether the class has been configured so that an instance could
   // be created.
-  static bool configured_ GUARDED_BY(mu_);
+  static bool configured_ ABSL_GUARDED_BY(mu_);
 
   // Configuration options for this class.
-  static EnclaveManagerOptions *options_ GUARDED_BY(mu_);
+  static EnclaveManagerOptions *options_ ABSL_GUARDED_BY(mu_);
 
   // Singleton instance of this class.
-  static EnclaveManager *instance_ GUARDED_BY(mu_);
+  static EnclaveManager *instance_ ABSL_GUARDED_BY(mu_);
 };
 
 /// An abstract enclave loader.
@@ -389,15 +389,15 @@ class EnclaveSignalDispatcher {
   // Returns the enclave client that previous registered |signum|, or nullptr if
   // no enclave has registered |signum| yet.
   const EnclaveClient *RegisterSignal(int signum, EnclaveClient *client)
-      LOCKS_EXCLUDED(signal_enclave_map_lock_);
+      ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
 
   // Gets the enclave that registered a handler for |signum|.
   StatusOr<EnclaveClient *> GetClientForSignal(int signum) const
-      LOCKS_EXCLUDED(signal_enclave_map_lock_);
+      ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
 
   // Deregisters all the signals registered by |client|.
   Status DeregisterAllSignalsForClient(EnclaveClient *client)
-      LOCKS_EXCLUDED(signal_enclave_map_lock_);
+      ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
 
   // Looks for the enclave client that registered |signum|, and calls
   // EnterAndHandleSignal() with that enclave client. |signum|, |info| and
@@ -412,7 +412,7 @@ class EnclaveSignalDispatcher {
 
   // Mapping of signal number to the enclave client that registered it.
   absl::flat_hash_map<int, EnclaveClient *> signal_to_client_map_
-      GUARDED_BY(signal_enclave_map_lock_);
+      ABSL_GUARDED_BY(signal_enclave_map_lock_);
 
   // A mutex that guards signal_to_client_map_ and client_to_signal_map_.
   mutable absl::Mutex signal_enclave_map_lock_;

@@ -44,7 +44,7 @@ class TranslatorServerImpl final : public Translator::Service {
   ::grpc::Status Shutdown(::grpc::ServerContext *context,
                           const ShutdownRequest *request,
                           ShutdownResponse *response)
-      LOCKS_EXCLUDED(shutdown_requested_mutex_) override;
+      ABSL_LOCKS_EXCLUDED(shutdown_requested_mutex_) override;
 
   // A map from words to their translations.
   absl::flat_hash_map<std::string, std::string> translation_map_;
@@ -54,7 +54,8 @@ class TranslatorServerImpl final : public Translator::Service {
   absl::Mutex shutdown_requested_mutex_;
 
   // A flag to set to trigger the shutdown of the enclave.
-  absl::Notification *shutdown_requested_ GUARDED_BY(shutdown_requested_mutex_);
+  absl::Notification *shutdown_requested_
+      ABSL_GUARDED_BY(shutdown_requested_mutex_);
 };
 
 }  // namespace grpc_server

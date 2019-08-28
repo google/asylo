@@ -127,21 +127,21 @@ class TrustedApplication {
   virtual ~TrustedApplication() = default;
 
   /// Returns the enclave state in a thread-safe manner.
-  State GetState() LOCKS_EXCLUDED(mutex_);
+  State GetState() ABSL_LOCKS_EXCLUDED(mutex_);
 
  private:
   // Tracks the current enclave state.
-  State enclave_state_ GUARDED_BY(mutex_) = State::kUninitialized;
+  State enclave_state_ ABSL_GUARDED_BY(mutex_) = State::kUninitialized;
   absl::Mutex mutex_;
 
   // Verifies the expected enclave state and sets a new one in thread-safe
   // manner. Returns error if the verification fails.
   asylo::Status VerifyAndSetState(const State &expected_state,
                                   const State &new_state)
-      LOCKS_EXCLUDED(mutex_);
+      ABSL_LOCKS_EXCLUDED(mutex_);
 
   // Sets the enclave state in thread-safe manner.
-  void SetState(const State &state) LOCKS_EXCLUDED(mutex_);
+  void SetState(const State &state) ABSL_LOCKS_EXCLUDED(mutex_);
 
   friend int __asylo_user_init(const char *name, const char *config,
                                size_t config_len, char **output,

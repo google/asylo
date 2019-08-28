@@ -164,7 +164,7 @@ class StaticMap {
   // instance of T into the static map.
   class ValueInserter {
    public:
-    explicit ValueInserter(T *value) LOCKS_EXCLUDED(StaticMap::mu_) {
+    explicit ValueInserter(T *value) ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
 #ifndef __ASYLO__
       static_assert(
           std::is_trivially_default_constructible<N>::value,
@@ -194,34 +194,34 @@ class StaticMap {
     using iterator = StaticMap::value_iterator;
     using const_iterator = StaticMap::const_value_iterator;
 
-    ValueCollection() LOCKS_EXCLUDED(StaticMap::mu_) {
+    ValueCollection() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
 
       // First-time map initialization.
       StaticMap::Initialize();
     }
 
-    iterator begin() LOCKS_EXCLUDED(StaticMap::mu_) {
+    iterator begin() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
       return iterator(StaticMap::map_->begin());
     }
-    const_iterator begin() const LOCKS_EXCLUDED(StaticMap::mu_) {
+    const_iterator begin() const ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
       return const_iterator(StaticMap::map_->cbegin());
     }
-    const_iterator cbegin() const LOCKS_EXCLUDED(StaticMap::mu_) {
+    const_iterator cbegin() const ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
       return const_iterator(StaticMap::map_->cbegin());
     }
-    iterator end() LOCKS_EXCLUDED(StaticMap::mu_) {
+    iterator end() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
       return iterator(StaticMap::map_->end());
     }
-    const_iterator end() const LOCKS_EXCLUDED(StaticMap::mu_) {
+    const_iterator end() const ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
       return const_iterator(StaticMap::map_->cend());
     }
-    const_iterator cend() const LOCKS_EXCLUDED(StaticMap::mu_) {
+    const_iterator cend() const ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
       absl::MutexLock lock(&StaticMap::mu_);
       return const_iterator(StaticMap::map_->cend());
     }
@@ -229,20 +229,21 @@ class StaticMap {
 
   // Returns a ValueCollection object representing the values stored in the
   // static map.
-  static ValueCollection Values() LOCKS_EXCLUDED(StaticMap::mu_) {
+  static ValueCollection Values() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
     return ValueCollection();
   }
 
-  static value_iterator value_begin() LOCKS_EXCLUDED(StaticMap::mu_) {
+  static value_iterator value_begin() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
     return Values().begin();
   }
-  static value_iterator value_end() LOCKS_EXCLUDED(StaticMap::mu_) {
+  static value_iterator value_end() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
     return Values().end();
   }
-  static const_value_iterator value_cbegin() LOCKS_EXCLUDED(StaticMap::mu_) {
+  static const_value_iterator value_cbegin()
+      ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
     return Values().cbegin();
   }
-  static const_value_iterator value_cend() LOCKS_EXCLUDED(StaticMap::mu_) {
+  static const_value_iterator value_cend() ABSL_LOCKS_EXCLUDED(StaticMap::mu_) {
     return Values().cend();
   }
 
@@ -267,13 +268,13 @@ class StaticMap {
   }
 
  private:
-  static void Initialize() EXCLUSIVE_LOCKS_REQUIRED(mu_) {
+  static void Initialize() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (map_ == nullptr) {
       map_ = new absl::flat_hash_map<std::string, T *>();
     }
   }
-  static absl::flat_hash_map<std::string, T *> *map_ GUARDED_BY(mu_)
-      PT_GUARDED_BY(mu_);
+  static absl::flat_hash_map<std::string, T *> *map_ ABSL_GUARDED_BY(mu_)
+      ABSL_PT_GUARDED_BY(mu_);
   static absl::Mutex mu_;
   static N namer_;
 };

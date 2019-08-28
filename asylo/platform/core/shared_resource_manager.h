@@ -140,7 +140,8 @@ class SharedResourceManager {
 
   // Installs a entry into shared_resources_. Returns failure and deletes the
   // passed resource handle if the provided name is already in use.
-  Status InstallResource(ResourceHandle *handle) EXCLUSIVE_LOCKS_REQUIRED(mu_);
+  Status InstallResource(ResourceHandle *handle)
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   absl::Mutex mu_;
   absl::flat_hash_map<SharedName, std::unique_ptr<ResourceHandle>,

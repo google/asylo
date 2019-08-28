@@ -90,9 +90,9 @@ class GcmCryptor {
   const size_t kBlockLength;
   const GcmCryptorKey kGcmKey;
   const GcmCryptorKey kCmacKey;
-  Token next_token_ GUARDED_BY(mu_);
+  Token next_token_ ABSL_GUARDED_BY(mu_);
   uint64_t key_id_counter_;
-  GcmCryptorKey next_derived_key_ GUARDED_BY(mu_);
+  GcmCryptorKey next_derived_key_ ABSL_GUARDED_BY(mu_);
   absl::Mutex mu_;
 
   GcmCryptor(const GcmCryptor &) = delete;
@@ -110,7 +110,7 @@ class GcmCryptorRegistry {
 
   // Accessor to the instance of GCM cryptor associated with a given key.
   GcmCryptor *GetGcmCryptor(size_t block_length, const GcmCryptorKey &key)
-      LOCKS_EXCLUDED(mu_);
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   class SafeBytesHasher {
    public:
@@ -136,7 +136,7 @@ class GcmCryptorRegistry {
   void operator=(GcmCryptorRegistry const &) = delete;
   absl::flat_hash_map<GcmCryptorKey, std::unique_ptr<GcmCryptor>,
                       SafeBytesHasher>
-      cryptor_registry_ GUARDED_BY(mu_);
+      cryptor_registry_ ABSL_GUARDED_BY(mu_);
   absl::Mutex mu_;
 };
 

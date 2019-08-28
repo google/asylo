@@ -68,7 +68,7 @@ class NullAssertionGenerator final : public EnclaveAssertionGenerator {
   bool IsValidAssertionRequest(const AssertionRequest &request) const;
 
   // Indicates whether this generator has been initialized.
-  bool initialized_ GUARDED_BY(initialized_mu_);
+  bool initialized_ ABSL_GUARDED_BY(initialized_mu_);
 
   // A mutex that guards the initialized_ member.
   mutable absl::Mutex initialized_mu_;

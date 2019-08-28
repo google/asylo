@@ -40,14 +40,15 @@ class SignalManager {
 
   // Sets a signal handler pointer for a specific signal |signum|.
   void SetSigAction(int signum, const struct sigaction &act)
-      LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+      ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Gets a signal handler for a specific signal |signum|.
   const struct sigaction *GetSigAction(int signum) const
-      LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+      ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Remove a signal handler for a specific signal |signum|.
-  void ClearSigAction(int signum) LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+  void ClearSigAction(int signum)
+      ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Blocks all the signals in |set|.
   void BlockSignals(const sigset_t &set);
@@ -65,10 +66,10 @@ class SignalManager {
   sigset_t GetUnblockedSet(const sigset_t &set);
 
   // Add a signal to the reset list.
-  void SetResetOnHandle(int signum) LOCKS_EXCLUDED(signal_to_reset_lock_);
+  void SetResetOnHandle(int signum) ABSL_LOCKS_EXCLUDED(signal_to_reset_lock_);
 
   // Check if a signal needs to reset handler.
-  bool IsResetOnHandle(int signum) LOCKS_EXCLUDED(signal_to_reset_lock_);
+  bool IsResetOnHandle(int signum) ABSL_LOCKS_EXCLUDED(signal_to_reset_lock_);
 
  private:
   SignalManager() = default;  // Private to enforce singleton.
@@ -77,10 +78,11 @@ class SignalManager {
 
   mutable absl::Mutex signal_to_sigaction_lock_;
   absl::flat_hash_map<int, std::unique_ptr<struct sigaction>>
-      signal_to_sigaction_ GUARDED_BY(signal_to_sigaction_lock_);
+      signal_to_sigaction_ ABSL_GUARDED_BY(signal_to_sigaction_lock_);
 
   mutable absl::Mutex signal_to_reset_lock_;
-  absl::flat_hash_set<int> signal_to_reset_ GUARDED_BY(signal_to_reset_lock_);
+  absl::flat_hash_set<int> signal_to_reset_
+      ABSL_GUARDED_BY(signal_to_reset_lock_);
 
   thread_local static sigset_t signal_mask_;
 };

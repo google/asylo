@@ -519,12 +519,12 @@ class IOManager {
 
   // Creates a copy of the file descriptor |oldfd| using the next available file
   // descriptor. Returns the new file descriptors on success, and -1 on error.
-  int Dup(int oldfd) LOCKS_EXCLUDED(fd_table_lock_);
+  int Dup(int oldfd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Creates a copy of the file descriptor |oldfd| using the file descriptor
   // specified by |newfd|. Returns the new file descriptor on success, and -1 on
   // error.
-  int Dup2(int oldfd, int newfd) LOCKS_EXCLUDED(fd_table_lock_);
+  int Dup2(int oldfd, int newfd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Creates a pipe with the given |flags|, which must be a bitwise-or of any
   // combination of O_CLOEXEC, O_DIRECT, and O_NONBLOCK. The array |pipefd| is
@@ -542,7 +542,7 @@ class IOManager {
   int Write(int fd, const char *buf, size_t count);
 
   // Closes and finalizes the stream, returning 0 on success or -1 on error.
-  int Close(int fd) LOCKS_EXCLUDED(fd_table_lock_);
+  int Close(int fd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements fchown(2).
   int FChOwn(int fd, uid_t owner, gid_t group);
@@ -595,10 +595,10 @@ class IOManager {
 
   // Implements poll(2).
   int Poll(struct pollfd *fds, nfds_t nfds, int timeout)
-      LOCKS_EXCLUDED(fd_table_lock_);
+      ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements epoll_create(2).
-  int EpollCreate(int size) LOCKS_EXCLUDED(fd_table_lock_);
+  int EpollCreate(int size) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements epoll_ctl(2);
   int EpollCtl(int epfd, int op, int fd, struct epoll_event *event);
@@ -639,11 +639,11 @@ class IOManager {
 
   // Implements getrlimit(2).
   int GetRLimit(int resource, struct rlimit *rlim)
-      LOCKS_EXCLUDED(fd_table_lock_);
+      ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements setrlimit(2).
   int SetRLimit(int resource, const struct rlimit *rlim)
-      LOCKS_EXCLUDED(fd_table_lock_);
+      ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements setsockopt(2).
   int SetSockOpt(int sockfd, int level, int option_name,
@@ -687,10 +687,11 @@ class IOManager {
   int Socket(int domain, int type, int protocol);
 
   // Implements eventfd(2).
-  int EventFd(unsigned int initval, int flags) LOCKS_EXCLUDED(fd_table_lock_);
+  int EventFd(unsigned int initval, int flags)
+      ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
-    // Implements inotify_init(2).
-  int InotifyInit(bool non_block) LOCKS_EXCLUDED(fd_table_lock_);
+  // Implements inotify_init(2).
+  int InotifyInit(bool non_block) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements inotify_add_watch(2).
   int InotifyAddWatch(int fd, const char *pathname, uint32_t mask);
@@ -704,7 +705,8 @@ class IOManager {
   // Binds an enclave file descriptor to a host file descriptor, returning an
   // enclave file descriptor which will delegate all I/O operations to the host
   // operating system.
-  int RegisterHostFileDescriptor(int host_fd) LOCKS_EXCLUDED(fd_table_lock_);
+  int RegisterHostFileDescriptor(int host_fd)
+      ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Registers the handler responsible for a given path prefix.
   // When processing a path, the handler with the longest prefix shared with the
@@ -736,7 +738,7 @@ class IOManager {
   // corresponding host file descriptor if this is the last reference to it.
   // This method does not obtain a locker. Caller of this method is responsible
   // for obtaining |fd_table_lock_|.
-  int CloseFileDescriptor(int fd) EXCLUSIVE_LOCKS_REQUIRED(fd_table_lock_);
+  int CloseFileDescriptor(int fd) ABSL_EXCLUSIVE_LOCKS_REQUIRED(fd_table_lock_);
 
   // Fetches the VirtualFileHandler associated with a given path, or
   // nullptr if no entry is found.
@@ -746,7 +748,7 @@ class IOManager {
   template <typename IOAction, typename ReturnType = typename std::result_of<
                                    IOAction(std::shared_ptr<IOContext>)>::type>
   ReturnType CallWithContext(int fd, IOAction action)
-      LOCKS_EXCLUDED(fd_table_lock_);
+      ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Looks up the appropriate VirtualPathHandler and calls the given function on
   // it.  Errors related to path resolution and handler lookups are handled.

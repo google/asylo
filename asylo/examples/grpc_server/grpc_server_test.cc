@@ -73,7 +73,7 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
 
  protected:
   bool CheckLine(const std::string &line) override
-      LOCKS_EXCLUDED(*server_thread_state_mutex_) {
+      ABSL_LOCKS_EXCLUDED(*server_thread_state_mutex_) {
     const std::regex port_message_regex(kPortMessageRegex);
     const std::regex port_regex("[0-9]+");
 
@@ -103,20 +103,20 @@ class ServerEnclaveExecTester : public asylo::experimental::ExecTester {
   }
 
   bool FinalCheck(bool accumulated) override
-      LOCKS_EXCLUDED(*server_thread_state_mutex_) {
+      ABSL_LOCKS_EXCLUDED(*server_thread_state_mutex_) {
     return accumulated && server_port_found_;
   }
 
   bool server_port_found_;
   absl::Mutex *server_thread_state_mutex_;
-  int *server_port_ PT_GUARDED_BY(*server_thread_state_mutex_);
+  int *server_port_ ABSL_PT_GUARDED_BY(*server_thread_state_mutex_);
 };
 
 class GrpcServerTest : public ::testing::Test {
  public:
   // Spawns the enclave loader subprocess and waits for it to log the port
   // number. Fails if the log message is never seen.
-  void SetUp() override LOCKS_EXCLUDED(server_thread_state_mutex_) {
+  void SetUp() override ABSL_LOCKS_EXCLUDED(server_thread_state_mutex_) {
     ASSERT_NE(absl::GetFlag(FLAGS_enclave_path), "");
 
     const std::vector<std::string> argv({
@@ -204,7 +204,7 @@ class GrpcServerTest : public ::testing::Test {
  private:
   // Waits for server_thread_ to either set server_port_ or terminate, then
   // returns the value of server_port_.
-  int GetServerPort() LOCKS_EXCLUDED(server_thread_state_mutex_) {
+  int GetServerPort() ABSL_LOCKS_EXCLUDED(server_thread_state_mutex_) {
     std::tuple<int *, bool *> args =
         std::make_tuple(&server_port_, &server_thread_finished_);
     server_thread_state_mutex_.LockWhen(absl::Condition(
@@ -227,8 +227,8 @@ class GrpcServerTest : public ::testing::Test {
   int server_exit_status_;
 
   absl::Mutex server_thread_state_mutex_;
-  bool server_thread_finished_ GUARDED_BY(server_thread_state_mutex_);
-  int server_port_ GUARDED_BY(server_thread_state_mutex_);
+  bool server_thread_finished_ ABSL_GUARDED_BY(server_thread_state_mutex_);
+  int server_port_ ABSL_GUARDED_BY(server_thread_state_mutex_);
 
   std::unique_ptr<Translator::Stub> stub_;
 };

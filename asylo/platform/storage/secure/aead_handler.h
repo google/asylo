@@ -81,28 +81,29 @@ class AeadHandler {
   // file descriptor. By contract, absolute (canonical) |path_name| is expected.
   // The function performs a weak validation that the path is canonical.
   bool InitializeFile(int fd, const char *path_name, bool is_new_file)
-      LOCKS_EXCLUDED(mu_);
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Decrypts read data in-place, verifies data has not been tampered with,
   // returns the size of data verified, or -1 on failure.
-  ssize_t DecryptAndVerify(int fd, void *buf, size_t count) LOCKS_EXCLUDED(mu_);
+  ssize_t DecryptAndVerify(int fd, void *buf, size_t count)
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Encrypts data and generates integrity metadata for it in memory, writes
   // encrypted data to disk, returns the size of data written, or -1 on failure.
   ssize_t EncryptAndPersist(int fd, const void *buf, size_t count)
-      LOCKS_EXCLUDED(mu_);
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Frees resources used to assure integrity of an opened file, persists
   // integrity metadata to a designated location on disk, returns false on
   // failure. Does not modify the state of the file descriptor.
-  bool FinalizeFile(int fd) LOCKS_EXCLUDED(mu_);
+  bool FinalizeFile(int fd) ABSL_LOCKS_EXCLUDED(mu_);
 
   // Sets the master key for a newly opened file.
   int SetMasterKey(int fd, const uint8_t *key_data, uint32_t key_length)
-      LOCKS_EXCLUDED(mu_);
+      ABSL_LOCKS_EXCLUDED(mu_);
 
   // Returns the logical file size, or -1 on failure.
-  off_t GetLogicalFileSize(int fd) LOCKS_EXCLUDED(mu_);
+  off_t GetLogicalFileSize(int fd) ABSL_LOCKS_EXCLUDED(mu_);
 
   const OffsetTranslator &GetOffsetTranslator() const;
 
@@ -172,7 +173,7 @@ class AeadHandler {
 
   // Loads and validates integrity metadata, returns false on failure.
   bool Deserialize(FileControl *file_ctrl)
-      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
 
   // Retrieves logical cursor offset associated with a file descriptor |fd|.
   // Returns false on failure.
@@ -180,12 +181,12 @@ class AeadHandler {
 
   // Updates digest of the file data in the secure file header.
   bool UpdateDigest(FileControl *file_ctrl, const GcmCryptor &cryptor) const
-      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(file_ctrl->mu);
 
   // Returns an instance of GcmCryptor associated with a file, or nullptr if was
   // not able to retrieve. The caller does not own the instance.
   GcmCryptor *GetGcmCryptor(const FileControl &file_ctrl) const
-      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Similar to DecryptAndVerify, but is called by internal implementation, and
   // as such does not take a file lock. The cursor associated with the file
@@ -193,21 +194,23 @@ class AeadHandler {
   ssize_t DecryptAndVerifyInternal(int fd, void *buf, size_t count,
                                    const FileControl &file_ctrl,
                                    off_t logical_offset) const
-      EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Reads a single full block of a file at a specified logical offset. Returns
   // false on failure.
   bool ReadFullBlock(const FileControl &file_ctrl, off_t logical_offset,
-                     Block *block) const EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
+                     Block *block) const
+      ABSL_EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Map of file (data set) controls for opened files keyed on int identity of
   // files.
-  absl::flat_hash_map<int, std::shared_ptr<FileControl>> fmap_ GUARDED_BY(mu_);
+  absl::flat_hash_map<int, std::shared_ptr<FileControl>> fmap_
+      ABSL_GUARDED_BY(mu_);
 
   // Map of file (data set) controls for opened files keyed on string paths of
   // files.
   absl::flat_hash_map<std::string, std::shared_ptr<FileControl>> opened_files_
-      GUARDED_BY(mu_);
+      ABSL_GUARDED_BY(mu_);
 
   // An instance that performs operations on untrusted file offset.
   std::unique_ptr<OffsetTranslator> offset_translator_;
