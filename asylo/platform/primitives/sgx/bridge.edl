@@ -80,7 +80,7 @@ enclave {
     // Invokes the untrusted entry point designated by `selector`.
     int ocall_dispatch_untrusted_call(uint64_t selector,
         [user_check] void *buffer);
-    void *ocall_untrusted_local_alloc(bridge_size_t size);
+    void *ocall_untrusted_local_alloc(uint64_t size);
     void ocall_untrusted_local_free([user_check] void *ptr);
   };
 };

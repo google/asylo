@@ -184,7 +184,7 @@ int ocall_enc_untrusted_puts(const char *str) {
   return rc;
 }
 
-void *ocall_untrusted_local_alloc(bridge_size_t size) {
+void *ocall_untrusted_local_alloc(uint64_t size) {
   void *ret = malloc(static_cast<size_t>(size));
   return ret;
 }
