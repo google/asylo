@@ -583,14 +583,6 @@ int ocall_enc_untrusted_setitimer(enum TimerType which,
 }
 
 //////////////////////////////////////
-//           sys/time.h             //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_gettimeofday(struct bridge_timeval *tv, void *tz) {
-  return gettimeofday(reinterpret_cast<struct timeval *>(tv), nullptr);
-}
-
-//////////////////////////////////////
 //         sys/utsname.h            //
 //////////////////////////////////////
 

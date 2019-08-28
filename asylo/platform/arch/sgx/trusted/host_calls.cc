@@ -520,17 +520,6 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 }
 
 //////////////////////////////////////
-//           sys/time.h             //
-//////////////////////////////////////
-
-int enc_untrusted_gettimeofday(struct timeval *tv, void *tz) {
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_gettimeofday(
-      &ret, reinterpret_cast<bridge_timeval *>(tv), nullptr));
-  return ret;
-}
-
-//////////////////////////////////////
 //         sys/utsname.h            //
 //////////////////////////////////////
 
