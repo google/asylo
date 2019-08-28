@@ -206,4 +206,13 @@ define_struct(
     pack_attributes=False,
 )
 
+define_struct(
+    name="timeval",
+    values=[
+        ("int64_t", "tv_sec"),
+        ("int64_t", "tv_usec"),
+    ],
+    pack_attributes=False,
+)
+
 write_output()

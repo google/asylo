@@ -164,13 +164,6 @@ int enc_untrusted_raise(int sig);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
 
 //////////////////////////////////////
-//         sys/select.h             //
-//////////////////////////////////////
-
-int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
-                         fd_set *exceptfds, struct timeval *timeout);
-
-//////////////////////////////////////
 //         sys/syslog.h             //
 //////////////////////////////////////
 

@@ -176,16 +176,6 @@ enclave {
         propagate_errno;
 
     //////////////////////////////////////
-    //          sys/select.h            //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_select(
-        int nfds, [in, out] struct BridgeFDSet *bridge_readfds,
-	[in, out] struct BridgeFDSet *bridge_writefds,
-	[in, out] struct BridgeFDSet *bridge_exceptfds,
-	[in] struct bridge_timeval *bridge_timeout) propagate_errno;
-
-    //////////////////////////////////////
     //          sys/syslog.h            //
     //////////////////////////////////////
 

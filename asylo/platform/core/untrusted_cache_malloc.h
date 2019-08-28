@@ -46,7 +46,7 @@ class UntrustedCacheMalloc {
   UntrustedCacheMalloc(UntrustedCacheMalloc const &) = delete;
   UntrustedCacheMalloc &operator=(UntrustedCacheMalloc const &) = delete;
 
-  /// The destructor frees all buffers in the buffer pool and the free list.
+  // The destructor frees all buffers in the buffer pool and the free list.
   ~UntrustedCacheMalloc();
 
   // Returns the UntrustedCacheMalloc singleton instance.

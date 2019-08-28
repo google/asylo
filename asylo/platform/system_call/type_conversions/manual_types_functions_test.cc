@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 using ::testing::Eq;
+using ::testing::Gt;
 using ::testing::StrEq;
 
 namespace asylo {
@@ -163,6 +164,88 @@ TEST(ManualTypesFunctionsTest, FromkLinuxSockAddrToSockAddrUnTruncateTest) {
   auto sock_un = reinterpret_cast<sockaddr_un *>(&sock);
   EXPECT_THAT(sock_un->sun_family, Eq(AF_UNIX));
   EXPECT_THAT(sock_un->sun_path, StrEq(truncated_path));
+}
+
+// Since klinux_fd_set is expected to be a drop-in replacement for fd_set from a
+// native Linux environment, this test checks if klinux_fd_set can be
+// interchangeably used with the native Linux macros - FD_ZERO, FD_SET, FD_CLR
+// and FD_ISSET.
+TEST(ManualTypesFunctionsTest, KlinuxFdSetStructTest) {
+  klinux_fd_set kfs = {};
+  FD_ZERO(&kfs);
+  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
+    EXPECT_THAT(klinux_fds_bit, Eq(0));
+  }
+
+  int fd = 21;
+  EXPECT_THAT(FD_ISSET(fd, &kfs), Eq(0));
+  FD_SET(fd, &kfs);
+  EXPECT_THAT(FD_ISSET(fd, &kfs), Gt(0));
+  FD_CLR(fd, &kfs);
+  EXPECT_THAT(FD_ISSET(fd, &kfs), Eq(0));
+  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
+    EXPECT_THAT(klinux_fds_bit, Eq(0));
+  }
+}
+
+TEST(ManualTypesFunctionsTest, KlinuxFdSetMacroTest) {
+  klinux_fd_set kfs = {};
+  KLINUX_FD_ZERO(&kfs);
+  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
+    EXPECT_THAT(klinux_fds_bit, Eq(0));
+  }
+
+  int fd = 21;
+  EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Eq(0));
+  KLINUX_FD_SET(fd, &kfs);
+  EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Gt(0));
+  KLINUX_FD_CLR(fd, &kfs);
+  EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Eq(0));
+  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
+    EXPECT_THAT(klinux_fds_bit, Eq(0));
+  }
+}
+
+TEST(ManualTypesFunctionsTest, FromkLinuxFdSetTest) {
+  klinux_fd_set kfs = {};
+  KLINUX_FD_ZERO(&kfs);
+  for (int fd = 0; fd < KLINUX_FD_SETSIZE; ++fd) {
+    if (fd % 2) {
+      KLINUX_FD_SET(fd, &kfs);
+    }
+  }
+
+  fd_set fs = {};
+  FD_ZERO(&fs);
+  FromkLinuxFdSet(&kfs, &fs);
+  for (int fd = 0; fd < std::min(KLINUX_FD_SETSIZE, FD_SETSIZE); ++fd) {
+    if (fd % 2) {
+      EXPECT_THAT(FD_ISSET(fd, &fs), Gt(0));
+    } else {
+      EXPECT_THAT(FD_ISSET(fd, &fs), Eq(0));
+    }
+  }
+}
+
+TEST(ManualTypesFunctionsTest, TokLinuxFdSetTest) {
+  fd_set fs = {};
+  FD_ZERO(&fs);
+  for (int fd = 0; fd < FD_SETSIZE; ++fd) {
+    if (fd % 2) {
+      FD_SET(fd, &fs);
+    }
+  }
+
+  klinux_fd_set kfs = {};
+  KLINUX_FD_ZERO(&kfs);
+  TokLinuxFdSet(&fs, &kfs);
+  for (int fd = 0; fd < std::min(KLINUX_FD_SETSIZE, FD_SETSIZE); ++fd) {
+    if (fd % 2) {
+      EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Gt(0));
+    } else {
+      EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Eq(0));
+    }
+  }
 }
 
 }  // namespace

@@ -246,13 +246,6 @@ struct rusage *FromBridgeRUsage(const struct BridgeRUsage *bridge_rusage,
 struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
                                     struct BridgeRUsage *bridge_rusage);
 
-// Converts |bridge_fds| to a runtime fd_set. Returns nullptr if unsuccessful.
-fd_set *FromBridgeFDSet(const struct BridgeFDSet *bridge_fds, fd_set *fds);
-
-// Converts |fds| to a bridge fd_set. Returns nullptr if unsuccessful.
-struct BridgeFDSet *ToBridgeFDSet(const fd_set *fds,
-                                  struct BridgeFDSet *bridge_fds);
-
 // Converts |bridge_password| to a runtime passwd. Returns nullptr if
 // unsuccessful. This method does not copy and data, just sets the pointers in
 // |passwd| to point to the buffers in |bridge_password|.

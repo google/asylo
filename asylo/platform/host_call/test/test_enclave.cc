@@ -834,6 +834,26 @@ PrimitiveStatus TestAccept(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestSelect(void *context, MessageReader *in,
+                           MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  int nfds = in->next<int>();
+  auto klinux_rfds = in->next<struct klinux_fd_set>();
+  fd_set rfds;
+  FromkLinuxFdSet(&klinux_rfds, &rfds);
+
+  struct timeval timeout;
+  timeout.tv_sec = 10;
+  timeout.tv_usec = 0;
+
+  out->Push<int>(enc_untrusted_select(nfds, &rfds, nullptr, nullptr, &timeout));
+  TokLinuxFdSet(&rfds, &klinux_rfds);
+  out->Push<struct klinux_fd_set>(klinux_rfds);
+
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1004,6 +1024,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestAccept,
       EntryHandler{asylo::host_call::TestAccept}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSelect,
+      EntryHandler{asylo::host_call::TestSelect}));
 
   return PrimitiveStatus::OkStatus();
 }

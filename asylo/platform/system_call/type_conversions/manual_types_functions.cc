@@ -447,3 +447,29 @@ void FromkLinuxSockAddr(const struct klinux_sockaddr *input,
     }
   }
 }
+
+void FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output) {
+  if (!input || !output) {
+    output = nullptr;
+    return;
+  }
+  FD_ZERO(output);
+  for (int fd = 0; fd < std::min(KLINUX_FD_SETSIZE, FD_SETSIZE); ++fd) {
+    if (KLINUX_FD_ISSET(fd, input)) {
+      FD_SET(fd, output);
+    }
+  }
+}
+
+void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output) {
+  if (!input || !output) {
+    output = nullptr;
+    return;
+  }
+  KLINUX_FD_ZERO(output);
+  for (int fd = 0; fd < std::min(FD_SETSIZE, KLINUX_FD_SETSIZE); ++fd) {
+    if (FD_ISSET(fd, input)) {
+      KLINUX_FD_SET(fd, output);
+    }
+  }
+}

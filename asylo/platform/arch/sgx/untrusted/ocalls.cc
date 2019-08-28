@@ -526,52 +526,6 @@ int ocall_enc_untrusted_getrusage(enum RUsageTarget who,
 }
 
 //////////////////////////////////////
-//          sys/select.h            //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_select(int nfds, BridgeFDSet *bridge_readfds,
-                               BridgeFDSet *bridge_writefds,
-                               BridgeFDSet *bridge_exceptfds,
-                               bridge_timeval *bridge_timeout) {
-  fd_set readfds, writefds, exceptfds;
-  if (bridge_readfds && !asylo::FromBridgeFDSet(bridge_readfds, &readfds)) {
-    errno = EBADE;
-    return -1;
-  }
-  if (bridge_writefds && !asylo::FromBridgeFDSet(bridge_writefds, &writefds)) {
-    errno = EBADE;
-    return -1;
-  }
-  if (bridge_exceptfds &&
-      !asylo::FromBridgeFDSet(bridge_exceptfds, &exceptfds)) {
-    errno = EBADE;
-    return -1;
-  }
-
-  struct timeval timeout;
-  if (!asylo::FromBridgeTimeVal(bridge_timeout, &timeout)) {
-    errno = EBADE;
-    return -1;
-  }
-  int ret = select(nfds, &readfds, &writefds, &exceptfds, &timeout);
-
-  if (bridge_readfds && !asylo::ToBridgeFDSet(&readfds, bridge_readfds)) {
-    errno = EBADE;
-    return -1;
-  }
-  if (bridge_writefds && !asylo::ToBridgeFDSet(&writefds, bridge_writefds)) {
-    errno = EBADE;
-    return -1;
-  }
-  if (bridge_exceptfds && !asylo::ToBridgeFDSet(&exceptfds, bridge_exceptfds)) {
-    errno = EBADE;
-    return -1;
-  }
-
-  return ret;
-}
-
-//////////////////////////////////////
 //          sys/syslog.h            //
 //////////////////////////////////////
 

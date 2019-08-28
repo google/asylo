@@ -28,6 +28,7 @@
 #include <sys/un.h>
 
 #include <string>
+#include <thread>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -2065,6 +2066,51 @@ TEST_F(HostCallTest, TestAccept) {
   close(server_sock);
   close(client_sock);
   close(connection_socket);
+}
+
+// Tests enc_untrusted_select() by performing the following -
+// 1. Creating a file, registering the file descriptor for read operation with
+// the host call (adding to readfds).
+// 2. Creating a new thread that sleeps for certain time (to let the main thread
+// enter the enclave), then writes to the file.
+// 3. Calling the host call from the main thread with a large enough timeout and
+// expecting the write to occur so that data is available in the file to read,
+// and the activity is captured by select.
+// 4. Verifying the return value and FD_ISSET for the file descriptor.
+TEST_F(HostCallTest, TestSelect) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  fd_set rfds;
+  FD_ZERO(&rfds);
+  FD_SET(fd, &rfds);
+
+  MessageWriter in;
+  in.Push<int>(/*value=nfds=*/fd + 1);
+  in.Push<fd_set>(/*value=readfds=*/rfds);
+  MessageReader out;
+
+  std::thread write_thread([fd]() {
+    sleep(2);  // Allow enough time for other thread to enter the enclave and
+               // call select.
+    std::string writebuf = "stuff being written";
+    write(fd, writebuf.c_str(), writebuf.length() + 1);
+  });
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSelect, &in, &out));
+  write_thread.join();
+
+  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and readfds.
+  EXPECT_THAT(out.next<int>(), Gt(0));  // Check return value.
+  rfds = out.next<fd_set>();
+  EXPECT_THAT(FD_ISSET(fd, &rfds), Gt(0));
+
+  EXPECT_NE(unlink(test_file.c_str()), -1);
 }
 
 }  // namespace

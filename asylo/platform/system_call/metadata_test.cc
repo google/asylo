@@ -16,6 +16,8 @@
  *
  */
 
+#include "asylo/platform/system_call/metadata.h"
+
 #include <sys/syscall.h>
 
 #include <string>
@@ -25,7 +27,6 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_join.h"
-#include "asylo/platform/system_call/metadata.h"
 
 namespace asylo {
 namespace system_call {
@@ -218,8 +219,9 @@ TEST(MetaDataTest, Summarize) {
   //            fd_set *exceptfds, struct timeval *timeout);
   EXPECT_THAT(
       Summarize(SYS_select),
-      StrEq("select/5(n: s32, inp: in/out fixed[128], outp: in/out fixed[128], "
-            "exp: in/out fixed[128], tvp: in/out fixed[16])"));
+      StrEq(
+          "select/5(nfds: s32, readfds: in/out fixed[128], writefds: in/out "
+          "fixed[128], exceptfds: in/out fixed[128], timeout: in fixed[16])"));
 
   // int access(const char *pathname, int mode);
   EXPECT_THAT(Summarize(SYS_access),

@@ -81,8 +81,9 @@ SYSCALL_DEFINE2(flock, int, fd, int, operation)
 SYSCALL_DEFINE3(poll, struct pollfd *, ufds, unsigned int, nfds, int,
                 timeout_msecs)
 
-SYSCALL_DEFINE5(select, int, n, fd_set *, inp, fd_set *, outp, fd_set *, exp,
-                struct timeval *, tvp)
+SYSCALL_DEFINE5(select, int, nfds, \in_out fd_set *, readfds,
+                \in_out fd_set *, writefds, \in_out fd_set *, exceptfds,
+                \in struct timeval *, timeout)
 
 // Input / Output
 // ==============

@@ -21,6 +21,21 @@
 
 #include <stdint.h>
 
+#define KLINUX_FD_SETSIZE 1024
+#define KLINUX_NFDBITS (sizeof(int64_t) * 8)
+#define KLINUX_FD_SET(n, p) \
+  ((p)->fds_bits[(n) / KLINUX_NFDBITS] |= (1L << ((n) % KLINUX_NFDBITS)))
+#define KLINUX_FD_CLR(n, p) \
+  ((p)->fds_bits[(n) / KLINUX_NFDBITS] &= ~(1L << ((n) % KLINUX_NFDBITS)))
+#define KLINUX_FD_ISSET(n, p) \
+  ((p)->fds_bits[(n) / KLINUX_NFDBITS] & (1L << ((n) % KLINUX_NFDBITS)))
+#define KLINUX_FD_ZERO(p)                                  \
+  (__extension__(void)({                                   \
+    size_t __i;                                            \
+    char *__tmp = (char *)p;                               \
+    for (__i = 0; __i < sizeof(*(p)); ++__i) *__tmp++ = 0; \
+  }))
+
 struct klinux_stat {
   uint64_t klinux_st_dev;
   uint64_t klinux_st_ino;
@@ -113,6 +128,10 @@ enum StatFsFlag {
   kLinux_ST_NOATIME = (1 << 10),
   kLinux_ST_NODIRATIME = (1 << 11),
   kLinux_ST_RELATIME = (1 << 12),
+};
+
+struct klinux_fd_set {
+  uint64_t fds_bits[(KLINUX_FD_SETSIZE / (8 * sizeof(uint64_t)))];
 };
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

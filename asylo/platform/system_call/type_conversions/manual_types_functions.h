@@ -108,4 +108,10 @@ void FromkLinuxSockAddr(const struct klinux_sockaddr *input,
                         socklen_t *output_len,
                         void (*abort_handler)(const char *message));
 
+// Converts a Linux based file descriptor set to a native file descriptor set.
+void FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output);
+
+// Converts a native file descriptor set to a Linux based file descriptor set.
+void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

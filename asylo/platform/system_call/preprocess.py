@@ -137,7 +137,7 @@ class SystemCallTable(object):
         parameter_type = re.sub('u64', 'uint64_t', parameter_type)
 
         # Match and remove parameter conventions.
-        pattern = r'(\\in)|(\\out)|(\\in_out)'
+        pattern = r'(\\in_out)|(\\in)|(\\out)'
         conventions = re.findall(pattern, parameter_type)
         parameter_type = re.sub(pattern, '', parameter_type)
         for convention in conventions:

@@ -126,6 +126,8 @@ constexpr uint64_t kTestClockGettime =
 constexpr uint64_t kTestBind = kFirstSelector + asylo::system_call::kSYS_bind;
 constexpr uint64_t kTestConnect =
     kFirstSelector + asylo::system_call::kSYS_connect;
+constexpr uint64_t kTestSelect =
+    kFirstSelector + asylo::system_call::kSYS_select;
 
 // Host calls implemented via other syscalls or as libc library functions.
 constexpr uint64_t kTestIsAtty = kHostLibCSelector;

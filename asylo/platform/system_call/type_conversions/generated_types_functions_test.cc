@@ -558,6 +558,25 @@ TEST_F(GeneratedTypesFunctionsTest, SysconfConstantTest) {
               to_matcher);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, RecvSendFlagTest) {
+  std::vector<int> from_bits = {
+      kLinux_MSG_OOB,         kLinux_MSG_PEEK,       kLinux_MSG_DONTROUTE,
+      kLinux_MSG_CTRUNC,      kLinux_MSG_PROXY,      kLinux_MSG_TRUNC,
+      kLinux_MSG_DONTWAIT,    kLinux_MSG_EOR,        kLinux_MSG_WAITALL,
+      kLinux_MSG_FIN,         kLinux_MSG_SYN,        kLinux_MSG_CONFIRM,
+      kLinux_MSG_RST,         kLinux_MSG_ERRQUEUE,   kLinux_MSG_NOSIGNAL,
+      kLinux_MSG_MORE,        kLinux_MSG_WAITFORONE, kLinux_MSG_FASTOPEN,
+      kLinux_MSG_CMSG_CLOEXEC};
+  std::vector<int> to_bits = {
+      MSG_OOB,   MSG_PEEK,       MSG_DONTROUTE, MSG_CTRUNC,      MSG_PROXY,
+      MSG_TRUNC, MSG_DONTWAIT,   MSG_EOR,       MSG_WAITALL,     MSG_FIN,
+      MSG_SYN,   MSG_CONFIRM,    MSG_RST,       MSG_ERRQUEUE,    MSG_NOSIGNAL,
+      MSG_MORE,  MSG_WAITFORONE, MSG_FASTOPEN,  MSG_CMSG_CLOEXEC};
+
+  TestMultiValuedEnums(from_bits, to_bits, FromkLinuxRecvSendFlag,
+                       TokLinuxRecvSendFlag);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

@@ -208,27 +208,6 @@ int ToBridgeSocketOptionName(int socket_option_name) {
   return -1;
 }
 
-uint8_t BridgeFDIsSet(int fd, const struct BridgeFDSet *bridge_fds) {
-  if (bridge_fds && fd < BRIDGE_FD_SETSIZE) {
-    return bridge_fds->file_descriptor_set[fd];
-  }
-  return 0;
-}
-
-void BridgeFDSet(int fd, struct BridgeFDSet *bridge_fds) {
-  if (bridge_fds && fd < BRIDGE_FD_SETSIZE) {
-    bridge_fds->file_descriptor_set[fd] = 1;
-  }
-}
-
-void BridgeFDZero(struct BridgeFDSet *bridge_fds) {
-  if (bridge_fds) {
-    for (int fd = 0; fd < BRIDGE_FD_SETSIZE; ++fd) {
-      bridge_fds->file_descriptor_set[fd] = 0;
-    }
-  }
-}
-
 int FromBridgePollEvents(int events) {
   int result = 0;
   if (events & POLLIN) result |= BRIDGE_POLLIN;
@@ -995,29 +974,6 @@ struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
   ToBridgeTimeVal(&rusage->ru_utime, &bridge_rusage->ru_utime);
   ToBridgeTimeVal(&rusage->ru_stime, &bridge_rusage->ru_stime);
   return bridge_rusage;
-}
-
-fd_set *FromBridgeFDSet(const struct BridgeFDSet *bridge_fds, fd_set *fds) {
-  if (!bridge_fds || !fds) return nullptr;
-  FD_ZERO(fds);
-  for (int fd = 0; fd < std::min(FD_SETSIZE, BRIDGE_FD_SETSIZE); ++fd) {
-    if (BridgeFDIsSet(fd, bridge_fds)) {
-      FD_SET(fd, fds);
-    }
-  }
-  return fds;
-}
-
-struct BridgeFDSet *ToBridgeFDSet(const fd_set *fds,
-                                  struct BridgeFDSet *bridge_fds) {
-  if (!fds || !bridge_fds) return nullptr;
-  BridgeFDZero(bridge_fds);
-  for (int fd = 0; fd < std::min(FD_SETSIZE, BRIDGE_FD_SETSIZE); ++fd) {
-    if (FD_ISSET(fd, fds)) {
-      BridgeFDSet(fd, bridge_fds);
-    }
-  }
-  return bridge_fds;
 }
 
 inline uint64_t BridgeWordNum(int cpu) {
