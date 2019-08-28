@@ -30,7 +30,7 @@ constexpr char kRemoteAssertionVersion[] = "Asylo SGX Remote Assertion v1";
 }  // namespace
 
 Status MakeRemoteAssertion(const std::string &user_data,
-                           const CodeIdentity &identity,
+                           const SgxIdentity &identity,
                            const SigningKey &signing_key,
                            const std::vector<CertificateChain> &cert_chains,
                            RemoteAssertion *assertion) {
@@ -62,7 +62,7 @@ Status VerifyRemoteAssertion(const std::string &user_data,
                              const VerifyingKey &verifying_key,
                              const std::vector<Certificate> &root_certificates,
                              const RemoteAssertion &assertion,
-                             CodeIdentity *identity) {
+                             SgxIdentity *identity) {
   return Status(error::GoogleError::UNIMPLEMENTED, "Not implemented");
 }
 

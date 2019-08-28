@@ -42,6 +42,7 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_client.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -194,7 +195,7 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
     }
     RemoteAssertionPayload payload;
     EXPECT_TRUE(payload.ParseFromString(assertion.payload()));
-    EXPECT_THAT(payload.identity(),
+    EXPECT_THAT(payload.identity().code_identity(),
                 EqualsProto(self_identity_->sgx_identity.code_identity()));
     EXPECT_EQ(payload.user_data(), kUserData);
     EXPECT_EQ(payload.signature_scheme(), signature_scheme_);

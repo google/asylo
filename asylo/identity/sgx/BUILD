@@ -152,7 +152,7 @@ proto_library(
     name = "remote_assertion_proto",
     srcs = ["remote_assertion.proto"],
     deps = [
-        ":code_identity_proto",
+        ":sgx_identity_proto",
         "//asylo/crypto:algorithms_proto",
         "//asylo/crypto:certificate_proto",
     ],
@@ -322,6 +322,7 @@ cc_test(
         ":code_identity_cc_proto",
         ":code_identity_util",
         ":remote_assertion_cc_proto",
+        ":sgx_identity_cc_proto",
         ":sgx_remote_assertion_generator_client",
         ":sgx_remote_assertion_generator_impl",
         "//asylo:enclave_cc_proto",
@@ -502,6 +503,7 @@ cc_library(
     deps = [
         ":code_identity_cc_proto",
         ":remote_assertion_cc_proto",
+        ":sgx_identity_cc_proto",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:signing_key",
@@ -515,10 +517,10 @@ cc_test(
     srcs = ["remote_assertion_util_test.cc"],
     enclave_test_name = "remote_assertion_util_enclave_test",
     deps = [
-        ":code_identity_cc_proto",
         ":code_identity_util",
         ":remote_assertion_cc_proto",
         ":remote_assertion_util",
+        ":sgx_identity_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/test/util:proto_matchers",

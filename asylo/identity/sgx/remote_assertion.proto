@@ -20,7 +20,7 @@ package asylo.sgx;
 
 import "asylo/crypto/algorithms.proto";
 import "asylo/crypto/certificate.proto";
-import "asylo/identity/sgx/code_identity.proto";
+import "asylo/identity/sgx/sgx_identity.proto";
 
 // A payload that is serialized and signed to produce an SGX remote assertion.
 message RemoteAssertionPayload {
@@ -30,17 +30,17 @@ message RemoteAssertionPayload {
   // Indicates the signature scheme used to sign this payload.
   optional SignatureScheme signature_scheme = 2;
 
-  // The asserted SGX code identity.
-  optional CodeIdentity identity = 3;
+  // The asserted SGX identity.
+  optional SgxIdentity identity = 3;
 
   // Additional binding data associated with the assertion.
   optional bytes user_data = 4;
 }
 
 // Defines an SGX remote assertion; a cryptographically-verifiable statement of
-// SGX code identity that can be verified by a remote verifier.
+// an SGX identity that can be verified by a remote verifier.
 message RemoteAssertion {
-  // A serialized RemoteAssertionPayload, which contains a code identity as well
+  // A serialized RemoteAssertionPayload, which contains an SGX identity as well
   // as any additional binding data associated with an assertion of that
   // identity.
   //

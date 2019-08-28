@@ -32,18 +32,18 @@
 namespace asylo {
 namespace {
 
-Status ExtractCodeIdentity(const EnclaveAuthContext &auth_context,
-                           sgx::CodeIdentity *code_identity) {
-  EnclaveIdentityDescription code_identity_description;
-  SetSgxIdentityDescription(&code_identity_description);
+Status ExtractSgxIdentity(const EnclaveAuthContext &auth_context,
+                          SgxIdentity *sgx_identity) {
+  EnclaveIdentityDescription enclave_identity_description;
+  SetSgxIdentityDescription(&enclave_identity_description);
   StatusOr<const EnclaveIdentity *> identity_result =
-      auth_context.FindEnclaveIdentity(code_identity_description);
+      auth_context.FindEnclaveIdentity(enclave_identity_description);
   if (!identity_result.ok()) {
     LOG(ERROR) << "FindEnclaveIdentity failed: " << identity_result.status();
     return Status(error::GoogleError::PERMISSION_DENIED,
-                  "Peer does not have SGX code identity");
+                  "Peer does not have SGX identity");
   }
-  return sgx::ParseSgxIdentity(*identity_result.ValueOrDie(), code_identity);
+  return sgx::ParseSgxIdentity(*identity_result.ValueOrDie(), sgx_identity);
 }
 
 }  // namespace
@@ -69,14 +69,14 @@ SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
   }
   EnclaveAuthContext auth_context = auth_context_result.ValueOrDie();
 
-  sgx::CodeIdentity code_identity;
-  Status status = ExtractCodeIdentity(auth_context, &code_identity);
+  SgxIdentity sgx_identity;
+  Status status = ExtractSgxIdentity(auth_context, &sgx_identity);
   if (!status.ok()) {
     return status.ToOtherStatus<::grpc::Status>();
   }
   auto signing_key_locked = signing_key_.ReaderLock();
   auto certificate_chains_locked = certificate_chains_.ReaderLock();
-  status = MakeRemoteAssertion(request->user_data(), code_identity,
+  status = MakeRemoteAssertion(request->user_data(), sgx_identity,
                                **signing_key_locked, *certificate_chains_locked,
                                response->mutable_assertion());
   if (!status.ok()) {

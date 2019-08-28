@@ -24,8 +24,8 @@
 
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -36,7 +36,7 @@ namespace sgx {
 // chains in |cert_chains| to the assertion. Places the resulting assertion in
 // |assertion|.
 Status MakeRemoteAssertion(const std::string &user_data,
-                           const CodeIdentity &identity,
+                           const SgxIdentity &identity,
                            const SigningKey &signing_key,
                            const std::vector<CertificateChain> &cert_chains,
                            RemoteAssertion *assertion);
@@ -52,7 +52,7 @@ Status VerifyRemoteAssertion(const std::string &user_data,
                              const VerifyingKey &verifying_key,
                              const std::vector<Certificate> &root_certificates,
                              const RemoteAssertion &assertion,
-                             CodeIdentity *identity);
+                             SgxIdentity *identity);
 
 }  // namespace sgx
 }  // namespace asylo
