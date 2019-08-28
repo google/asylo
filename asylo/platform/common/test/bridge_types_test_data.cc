@@ -25,21 +25,7 @@ namespace asylo {
 
 // Map a type name to its expected packed size. Used across enclave boundaries.
 size_t bridge_type_size(const std::string &type_name) {
-  if (type_name == "bridge_in_addr") {
-    return 4;
-  } else if (type_name == "bridge_in6_addr") {
-    return 16;
-  } else if (type_name == "bridge_sockaddr_in6") {
-    return 26;
-  } else if (type_name == "bridge_sockaddr_in") {
-    return 14;
-  } else if (type_name == "bridge_sockaddr_un") {
-    return 112;
-  } else if (type_name == "bridge_sockaddr") {
-    return 114;
-  } else if (type_name == "bridge_timeval") {
-    return 16;
-  } else if (type_name == "bridge_timespec") {
+  if (type_name == "bridge_timeval") {
     return 16;
   } else if (type_name == "bridge_pollfd") {
     return 8;

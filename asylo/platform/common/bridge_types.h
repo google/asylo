@@ -44,14 +44,6 @@ typedef uint64_t bridge_size_t;
 typedef int64_t bridge_ssize_t;
 typedef int64_t bridge_sigset_t;
 
-// This enum contains all of the sysconf name values supported inside the
-// enclave.
-enum SysconfConstants {
-  BRIDGE_SC_UNKNOWN = 0,
-  BRIDGE_SC_NPROCESSORS_ONLN = 1,
-  BRIDGE_SC_NPROCESSORS_CONF = 2,
-};
-
 // The timer type for getitimer/setitimer that are supported inside an enclave.
 enum TimerType {
   BRIDGE_ITIMER_UNKNOWN = 0,
@@ -299,48 +291,6 @@ enum BridgePollEvents {
   BRIDGE_POLLWRBAND = 0x400,
 };
 
-struct bridge_in_addr {
-  uint32_t inet_addr;
-} ABSL_ATTRIBUTE_PACKED;
-
-struct bridge_in6_addr {
-  uint8_t inet6_addr[16];
-} ABSL_ATTRIBUTE_PACKED;
-
-struct bridge_sockaddr_in6 {
-  uint16_t sin6_port;
-  uint32_t sin6_flowinfo;
-  struct bridge_in6_addr sin6_addr;
-  uint32_t sin6_scope_id;
-} ABSL_ATTRIBUTE_PACKED;
-
-struct bridge_sockaddr_in {
-  uint16_t sin_port;
-  struct bridge_in_addr sin_addr;
-  char sin_zero[8];
-} ABSL_ATTRIBUTE_PACKED;
-
-struct bridge_sockaddr_un {
-  uint32_t len;
-  char sun_path[108];
-} ABSL_ATTRIBUTE_PACKED;
-
-// This is max(sizeof(struct sockaddr_in), sizeof(struct sockaddr_un)). Struct
-// bridge_sockaddr can be converted from/to struct sockaddr in ocalls. Since
-// struct sockaddr can be the address of UNIX domain socket (sockaddr_un) in
-// socket-related syscalls, struct bridge_sockaddr needs enough space to
-// represent it.
-struct bridge_sockaddr {
-  uint16_t sa_family;
-  union {
-    struct bridge_sockaddr_in addr_in;
-    struct bridge_sockaddr_in6 addr_in6;
-    struct bridge_sockaddr_un addr_un;
-  } ABSL_ATTRIBUTE_PACKED;
-} ABSL_ATTRIBUTE_PACKED;
-
-typedef int64_t bridge_clockid_t;
-
 struct BridgeTms {
   clock_t tms_utime;
   clock_t tms_stime;
@@ -358,11 +308,6 @@ struct BridgeITimerVal {
   struct bridge_timeval it_value;
 } ABSL_ATTRIBUTE_PACKED;
 
-struct bridge_timespec {
-  int64_t tv_sec;
-  int64_t tv_nsec;
-} ABSL_ATTRIBUTE_PACKED;
-
 struct bridge_utimbuf {
   int64_t actime;
   int64_t modtime;
@@ -372,11 +317,6 @@ struct bridge_pollfd {
   int32_t fd;
   int16_t events;
   int16_t revents;
-};
-
-struct bridge_iovec {
-  void *iov_base;
-  uint64_t iov_len;
 };
 
 struct bridge_siginfo_t {
@@ -432,10 +372,6 @@ struct BridgeUtsName {
 #ifndef BRIDGE_FD_SETSIZE
 #define BRIDGE_FD_SETSIZE 1024
 #endif
-
-struct BridgeFDSet {
-  uint8_t file_descriptor_set[BRIDGE_FD_SETSIZE];
-};
 
 // The maximum size of the passwd struct strings we support, including name,
 // passwd, gecos, user information, home directory, and shell program.

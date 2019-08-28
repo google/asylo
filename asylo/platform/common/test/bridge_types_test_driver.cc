@@ -43,36 +43,8 @@ class BridgeTypesTest : public EnclaveTest {
   std::map<std::string, size_t> data_;
 };
 
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_in_addr) {
-  RunTest<bridge_in_addr>("bridge_in_addr");
-}
-
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_in6_addr) {
-  RunTest<bridge_in6_addr>("bridge_in6_addr");
-}
-
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_sockaddr_in6) {
-  RunTest<bridge_sockaddr_in6>("bridge_sockaddr_in6");
-}
-
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_sockaddr_in) {
-  RunTest<bridge_sockaddr_in>("bridge_sockaddr_in");
-}
-
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_sockaddr_un) {
-  RunTest<bridge_sockaddr_un>("bridge_sockaddr_un");
-}
-
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_sockaddr) {
-  RunTest<bridge_sockaddr>("bridge_sockaddr");
-}
-
 TEST_F(BridgeTypesTest, TestPackedSize_bridge_timeval) {
   RunTest<bridge_timeval>("bridge_timeval");
-}
-
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_timespec) {
-  RunTest<bridge_timespec>("bridge_timespec");
 }
 
 TEST_F(BridgeTypesTest, TestPackedSize_bridge_pollfd) {
