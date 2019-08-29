@@ -152,8 +152,7 @@ EnclaveManagerOptions::EnclaveManagerOptions()
 EnclaveManagerOptions &
 EnclaveManagerOptions::set_config_server_connection_attributes(
     absl::string_view address, absl::Duration timeout) {
-  host_config_info_.emplace<ConfigServerConnectionAttributes>(
-      std::move(address), timeout);
+  host_config_info_.emplace<ConfigServerConnectionAttributes>(address, timeout);
   return *this;
 }
 
