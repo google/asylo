@@ -483,9 +483,6 @@ def sim_enclave_loader(
         each of which will be replaced with the path to the named enclave.
       **kwargs: cc_binary arguments.
     """
-    linkopts = kwargs.pop("linkopts", [])
-    if "-ldl" not in linkopts:
-        linkopts += ["-ldl"]
 
     if "manual" not in kwargs.get("tags", []):
         kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
@@ -495,7 +492,6 @@ def sim_enclave_loader(
         enclaves = enclaves,
         embedded_enclaves = embedded_enclaves,
         loader_args = loader_args,
-        linkopts = linkopts,
         testonly = 1,
         **kwargs
     )
