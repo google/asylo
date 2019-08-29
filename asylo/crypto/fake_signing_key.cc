@@ -83,6 +83,12 @@ Status FakeVerifyingKey::Verify(ByteContainerView message,
   return Status::OkStatus();
 }
 
+Status FakeVerifyingKey::Verify(ByteContainerView message,
+                                const Signature &signature) const {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "Verify overload unimplemented");
+}
+
 FakeSigningKey::FakeSigningKey(SignatureScheme scheme,
                                StatusOr<std::string> serialize_to_der_result)
     : scheme_(scheme), serialize_to_der_result_(serialize_to_der_result) {}
@@ -114,6 +120,12 @@ Status FakeSigningKey::Sign(ByteContainerView message,
   std::copy(key_der.cbegin(), key_der.cend(), std::back_inserter(*signature));
   std::copy(message.cbegin(), message.cend(), std::back_inserter(*signature));
   return Status::OkStatus();
+}
+
+Status FakeSigningKey::Sign(ByteContainerView message,
+                            Signature *signature) const {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "Sign overload unimplemented");
 }
 
 }  // namespace asylo

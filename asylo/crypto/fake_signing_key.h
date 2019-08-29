@@ -25,6 +25,7 @@
 #include <vector>
 
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/cleansing_types.h"
@@ -59,6 +60,10 @@ class FakeVerifyingKey : public VerifyingKey {
   Status Verify(ByteContainerView message,
                 ByteContainerView signature) const override;
 
+  // Unimplemented.
+  Status Verify(ByteContainerView message,
+                const Signature &signature) const override;
+
  private:
   const SignatureScheme scheme_;
   const StatusOr<std::string> serialize_to_der_result_;
@@ -90,6 +95,9 @@ class FakeSigningKey : public SigningKey {
   // that status.
   Status Sign(ByteContainerView message,
               std::vector<uint8_t> *signature) const override;
+
+  // Unimplemented.
+  Status Sign(ByteContainerView message, Signature *signature) const override;
 
  private:
   const SignatureScheme scheme_;

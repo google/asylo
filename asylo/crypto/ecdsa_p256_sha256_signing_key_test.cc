@@ -76,6 +76,12 @@ constexpr char kTestSignatureHex[] =
     "304502207f504d6040ded5ddd1bd2b87b5ae2febe09b579f19c094b7fae24d8f47137eda02"
     "2100b45795608442ed963abac8850d93d37e028ce187d53dc2b7577e2d2190b9ea47";
 
+constexpr char kTestSignatureRHex[] =
+    "c62a9ffec314b021e6c29daf2c1c7b314931d455761cf93a141080b60fde49ae";
+
+constexpr char kTestSignatureSHex[] =
+    "25d86365742835d4f39fbed6637dd5ef1d4846ba56bab55de45d65880e64bf03";
+
 constexpr char kInvalidSignatureHex[] =
     "3046022100b5071aa5a029409df562d8b71a5f48"
     "dc03d4f1864762bc14d1c5d849ac8fd5660221008e0879f733c326f7855e4d681d809c9374"
@@ -123,6 +129,17 @@ class EcdsaP256Sha256VerifyingKeyTest
     ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key_,
                                GetParam().factory(GetParam().key_data));
   }
+
+  Signature CreateValidSignatureForTestMessage() {
+    Signature signature;
+    signature.set_signature_scheme(ECDSA_P256_SHA256);
+    signature.mutable_ecdsa_signature()->set_r(
+        absl::HexStringToBytes(kTestSignatureRHex));
+    signature.mutable_ecdsa_signature()->set_s(
+        absl::HexStringToBytes(kTestSignatureSHex));
+    return signature;
+  }
+
   std::unique_ptr<VerifyingKey> verifying_key_;
 };
 
@@ -157,6 +174,104 @@ TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithIncorrectSignatureFails) {
 
   EXPECT_THAT(verifying_key_->Verify(valid_message, invalid_signature),
               Not(IsOk()));
+}
+
+// Verify that Verify() with Signature overload does not verify a signature with
+// an incorrect signature scheme.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest,
+       VerifyWithIncorrectSignatureSchemeFails) {
+  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
+
+  Signature signature = CreateValidSignatureForTestMessage();
+  signature.set_signature_scheme(UNKNOWN_SIGNATURE_SCHEME);
+
+  EXPECT_THAT(verifying_key_->Verify(valid_message, signature),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that Verify() with Signature overload does not verify a signature
+// without an ECDSA signature value.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithMissingEcdsaSignatureFails) {
+  std::string valid_message(absl::HexStringToBytes(kTestMessageHex));
+
+  Signature signature = CreateValidSignatureForTestMessage();
+  signature.clear_ecdsa_signature();
+
+  EXPECT_THAT(verifying_key_->Verify(valid_message, signature),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that Verify() with Signature overload fails without an R field.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithMissingRFieldFails) {
+  Signature signature = CreateValidSignatureForTestMessage();
+  signature.mutable_ecdsa_signature()->clear_r();
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kTestVerifyingKeyPem));
+
+  EXPECT_THAT(
+      verifying_key->Verify(absl::HexStringToBytes(kTestMessageHex), signature),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that Verify() with Signature overload fails without an S field.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithMissingSFieldFails) {
+  Signature signature = CreateValidSignatureForTestMessage();
+  signature.mutable_ecdsa_signature()->clear_s();
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kTestVerifyingKeyPem));
+
+  EXPECT_THAT(
+      verifying_key->Verify(absl::HexStringToBytes(kTestMessageHex), signature),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+// Verify that Verify() with Signature overload fails a short R field.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithShortRFieldFails) {
+  Signature signature = CreateValidSignatureForTestMessage();
+  signature.mutable_ecdsa_signature()->set_r("too short");
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kTestVerifyingKeyPem));
+
+  EXPECT_THAT(
+      verifying_key->Verify(absl::HexStringToBytes(kTestMessageHex), signature),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that Verify() with Signature overload fails with a long S field.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyWithLongSFieldFails) {
+  Signature signature = CreateValidSignatureForTestMessage();
+  signature.mutable_ecdsa_signature()->set_s(
+      "this is an s field that is way too long");
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kTestVerifyingKeyPem));
+
+  EXPECT_THAT(
+      verifying_key->Verify(absl::HexStringToBytes(kTestMessageHex), signature),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that Verify() with Signature overload passes with valid signature.
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifySignatureOverloadSuccess) {
+  Signature signature = CreateValidSignatureForTestMessage();
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kTestVerifyingKeyPem));
+
+  ASYLO_EXPECT_OK(verifying_key->Verify(absl::HexStringToBytes(kTestMessageHex),
+                                        signature));
 }
 
 // Verify that operator== fails with a different VerifyingKey implementation.
@@ -303,6 +418,22 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerify) {
 
   // Ensure that the signature is not verifiable if one bit is flipped.
   signature.back() ^= 1;
+  EXPECT_THAT(verifying_key->Verify(message, signature), Not(IsOk()));
+}
+
+// Verifies that Sign and Verify work with the Signature overloads.
+TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerifySignatureOverloads) {
+  std::string message(absl::HexStringToBytes(kTestMessageHex));
+  Signature signature;
+  ASYLO_ASSERT_OK(signing_key_->Sign(message, &signature));
+
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key, signing_key_->GetVerifyingKey());
+
+  ASYLO_EXPECT_OK(verifying_key->Verify(message, signature));
+
+  // Ensure that signature is not verifiable if one bit is flipped.
+  signature.mutable_ecdsa_signature()->mutable_r()->back() ^= 1;
   EXPECT_THAT(verifying_key->Verify(message, signature), Not(IsOk()));
 }
 

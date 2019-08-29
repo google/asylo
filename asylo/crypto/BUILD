@@ -447,6 +447,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_cc_proto",
+        ":keys_cc_proto",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
@@ -460,6 +461,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":bignum_util",
+        ":keys_cc_proto",
         ":sha256_hash",
         ":signing_key",
         "//asylo/crypto/util:bssl_util",
@@ -467,6 +470,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 
@@ -500,6 +504,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_cc_proto",
+        ":keys_cc_proto",
         ":signing_key",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",

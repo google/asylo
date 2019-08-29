@@ -32,14 +32,19 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_format.h"
+#include "asylo/crypto/bignum_util.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
+
+constexpr int32_t kSignatureParamSize = 32;
 
 // Returns an EC_KEY containing the public key corresponding to |private_key|.
 StatusOr<bssl::UniquePtr<EC_KEY>> CreatePublicKeyFromPrivateKey(
@@ -55,6 +60,13 @@ StatusOr<bssl::UniquePtr<EC_KEY>> CreatePublicKeyFromPrivateKey(
   }
 
   return std::move(public_key);
+}
+
+Status DoSha256Hash(ByteContainerView message, std::vector<uint8_t> *digest) {
+  Sha256Hash hasher;
+  hasher.Init();
+  hasher.Update(message);
+  return hasher.CumulativeHash(digest);
 }
 
 }  // namespace
@@ -141,16 +153,65 @@ StatusOr<std::string> EcdsaP256Sha256VerifyingKey::SerializeToDer() const {
 
 Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,
                                            ByteContainerView signature) const {
-  Sha256Hash hasher;
-  hasher.Init();
-  hasher.Update(message);
   std::vector<uint8_t> digest;
-  ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&digest));
+  ASYLO_RETURN_IF_ERROR(DoSha256Hash(message, &digest));
 
-  if (!ECDSA_verify(/*type=*/0, digest.data(), digest.size(), signature.data(),
-                    signature.size(), public_key_.get())) {
+  if (ECDSA_verify(/*type=*/0, digest.data(), digest.size(), signature.data(),
+                   signature.size(), public_key_.get()) != 1) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
+
+  return Status::OkStatus();
+}
+
+Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,
+                                           const Signature &signature) const {
+  if (signature.signature_scheme() != GetSignatureScheme()) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrFormat("Signature scheme should be %s, instead is %s",
+                        SignatureScheme_Name(GetSignatureScheme()),
+                        SignatureScheme_Name(signature.signature_scheme())));
+  }
+
+  if (!signature.has_ecdsa_signature()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Signature does not have an ECDSA signature");
+  }
+
+  if (!signature.ecdsa_signature().has_r() ||
+      !signature.ecdsa_signature().has_s()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Signature must include an R and an S value");
+  }
+
+  if (signature.ecdsa_signature().r().size() != kSignatureParamSize ||
+      signature.ecdsa_signature().s().size() != kSignatureParamSize) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("The R and S values must each be ",
+                               kSignatureParamSize, " bytes"));
+  }
+
+  std::vector<uint8_t> digest;
+  ASYLO_RETURN_IF_ERROR(DoSha256Hash(message, &digest));
+
+  bssl::UniquePtr<BIGNUM> r;
+  ASYLO_ASSIGN_OR_RETURN(
+      r, BignumFromBigEndianBytes(signature.ecdsa_signature().r()));
+  bssl::UniquePtr<BIGNUM> s;
+  ASYLO_ASSIGN_OR_RETURN(
+      s, BignumFromBigEndianBytes(signature.ecdsa_signature().s()));
+
+  bssl::UniquePtr<ECDSA_SIG> sig(ECDSA_SIG_new());
+  if (ECDSA_SIG_set0(sig.get(), r.release(), s.release()) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  if (ECDSA_do_verify(digest.data(), digest.size(), sig.get(),
+                      public_key_.get()) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
   return Status::OkStatus();
 }
 
@@ -272,11 +333,8 @@ EcdsaP256Sha256SigningKey::GetVerifyingKey() const {
 
 Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,
                                        std::vector<uint8_t> *signature) const {
-  Sha256Hash hasher;
-  hasher.Init();
-  hasher.Update(message);
   std::vector<uint8_t> digest;
-  ASYLO_RETURN_IF_ERROR(hasher.CumulativeHash(&digest));
+  ASYLO_RETURN_IF_ERROR(DoSha256Hash(message, &digest));
 
   signature->resize(ECDSA_size(private_key_.get()));
   uint32_t signature_size = 0;
@@ -285,6 +343,41 @@ Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   signature->resize(signature_size);
+  return Status::OkStatus();
+}
+
+Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,
+                                       Signature *signature) const {
+  std::vector<uint8_t> digest;
+  ASYLO_RETURN_IF_ERROR(DoSha256Hash(message, &digest));
+
+  bssl::UniquePtr<ECDSA_SIG> ecdsa_sig(
+      ECDSA_do_sign(digest.data(), digest.size(), private_key_.get()));
+  if (ecdsa_sig == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  const BIGNUM *r_bignum;
+  const BIGNUM *s_bignum;
+  ECDSA_SIG_get0(ecdsa_sig.get(), &r_bignum, &s_bignum);
+  if (r_bignum == nullptr || s_bignum == nullptr) {
+    return Status(error::GoogleError::INTERNAL, "Could not parse signature");
+  }
+
+  std::pair<asylo::Sign, std::vector<uint8_t>> r;
+  std::pair<asylo::Sign, std::vector<uint8_t>> s;
+  ASYLO_ASSIGN_OR_RETURN(r, BigEndianBytesFromBignum(*r_bignum));
+  ASYLO_ASSIGN_OR_RETURN(s, BigEndianBytesFromBignum(*s_bignum));
+  if (r.first == asylo::Sign::kNegative || s.first == asylo::Sign::kNegative) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Neither R nor S should be negative");
+  }
+
+  EcdsaSignature ecdsa_signature;
+  ecdsa_signature.set_r(r.second.data(), r.second.size());
+  ecdsa_signature.set_s(s.second.data(), s.second.size());
+
+  signature->set_signature_scheme(GetSignatureScheme());
+  *signature->mutable_ecdsa_signature() = std::move(ecdsa_signature);
   return Status::OkStatus();
 }
 

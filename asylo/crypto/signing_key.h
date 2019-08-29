@@ -22,6 +22,7 @@
 #include <cstdint>
 
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
@@ -48,11 +49,12 @@ class VerifyingKey {
   virtual StatusOr<std::string> SerializeToDer() const = 0;
 
   // Verifies that |signature| is a valid signature over a hash of |message|
-  // produced by the underlying hash function. Returns true if verification
-  // succeeds, and false if verification failed or an error occurred during
-  // verification.
+  // produced by the underlying hash function. Returns a non-OK Status if
+  // verification failed or an error occurred during verification.
   virtual Status Verify(ByteContainerView message,
                         ByteContainerView signature) const = 0;
+  virtual Status Verify(ByteContainerView message,
+                        const Signature &signature) const = 0;
 };
 
 // SigningKey abstracts a signing key from an asymmetric key-pair.
@@ -77,6 +79,8 @@ class SigningKey {
   // non-OK Status if the signing operation failed.
   virtual Status Sign(ByteContainerView message,
                       std::vector<uint8_t> *signature) const = 0;
+  virtual Status Sign(ByteContainerView message,
+                      Signature *signature) const = 0;
 };
 
 }  // namespace asylo

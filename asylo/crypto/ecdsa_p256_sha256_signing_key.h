@@ -24,6 +24,7 @@
 
 #include <memory>
 
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/statusor.h"
@@ -59,6 +60,9 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
   Status Verify(ByteContainerView message,
                 ByteContainerView signature) const override;
 
+  Status Verify(ByteContainerView message,
+                const Signature &signature) const override;
+
  private:
   EcdsaP256Sha256VerifyingKey(bssl::UniquePtr<EC_KEY> public_key);
 
@@ -88,18 +92,18 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
       bssl::UniquePtr<EC_KEY> private_key);
 
   // From SigningKey.
+
   SignatureScheme GetSignatureScheme() const override;
 
-  // From SigningKey.
   Status SerializeToDer(
       CleansingVector<uint8_t> *serialized_key) const override;
 
-  // From SigningKey.
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override;
 
-  // From SigningKey.
   Status Sign(ByteContainerView message,
               std::vector<uint8_t> *signature) const override;
+
+  Status Sign(ByteContainerView message, Signature *signature) const override;
 
  private:
   EcdsaP256Sha256SigningKey(bssl::UniquePtr<EC_KEY> private_key,
