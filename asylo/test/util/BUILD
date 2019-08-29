@@ -290,6 +290,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
@@ -306,6 +307,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",

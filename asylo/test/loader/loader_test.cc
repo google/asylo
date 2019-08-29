@@ -68,6 +68,11 @@ class FailingLoader : public EnclaveLoader {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Could not get self loader.");
   }
+
+  EnclaveLoadConfig GetEnclaveLoadConfig() const override {
+    EnclaveLoadConfig loader_config;
+    return loader_config;
+  }
 };
 
 // Loads clients by default constructing T.
@@ -88,6 +93,11 @@ class FakeLoader : public EnclaveLoader {
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Could not get self loader.");
+  }
+
+  EnclaveLoadConfig GetEnclaveLoadConfig() const override {
+    EnclaveLoadConfig loader_config;
+    return loader_config;
   }
 };
 

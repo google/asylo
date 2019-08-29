@@ -23,6 +23,7 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/util/statusor.h"
 
@@ -44,6 +45,11 @@ class FakeEnclaveLoader : public EnclaveLoader {
 
   // From EnclaveLoader.
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
+
+  EnclaveLoadConfig GetEnclaveLoadConfig() const override {
+    EnclaveLoadConfig loader_config;
+    return loader_config;
+  }
 
   // The client to be loaded.
   mutable std::unique_ptr<EnclaveClient> client_;

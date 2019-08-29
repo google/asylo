@@ -63,6 +63,16 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxLoader::Copy() const {
   return std::unique_ptr<EnclaveLoader>(loader.release());
 }
 
+EnclaveLoadConfig SgxLoader::GetEnclaveLoadConfig() const {
+    EnclaveLoadConfig load_config;
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(enclave_path_);
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(debug_);
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+    return load_config;
+  }
 StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
     absl::string_view name, void *base_address, const size_t enclave_size,
     const EnclaveConfig &config) const {
@@ -83,5 +93,16 @@ StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
     return Status(error::GoogleError::INTERNAL, "Failed to create self loader");
   }
   return std::unique_ptr<EnclaveLoader>(loader.release());
+}
+
+EnclaveLoadConfig SgxEmbeddedLoader::GetEnclaveLoadConfig() const {
+  EnclaveLoadConfig load_config;
+  SgxLoadConfig sgx_config;
+  SgxLoadConfig::EmbeddedEnclaveConfig embedded_enclave_config;
+  embedded_enclave_config.set_section_name(section_name_);
+  *sgx_config.mutable_embedded_enclave_config() = embedded_enclave_config;
+  sgx_config.set_debug(debug_);
+  *load_config.MutableExtension(sgx_load_config) = sgx_config;
+  return load_config;
 }
 }  //  namespace asylo

@@ -65,6 +65,7 @@
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
 #include "asylo/platform/core/shared_name.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -691,12 +692,12 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
                    return SnapshotDataDeleter(entry);
                  });
 
-  asylo::EnclaveLoader *loader = manager->GetLoaderFromClient(client);
+  asylo::EnclaveLoadConfig load_config =
+      manager->GetLoadConfigFromClient(client);
 
   // The child enclave should use the same loader as the parent. It loads by an
   // SGX loader or SGX embedded loader depending on the parent enclave.
-  if (!dynamic_cast<asylo::SgxLoader *>(loader) &&
-      !dynamic_cast<asylo::SgxEmbeddedLoader *>(loader)) {
+  if (!load_config.HasExtension(asylo::sgx_load_config)) {
     LOG(ERROR) << "Failed to get the loader for the enclave to fork";
     errno = EFAULT;
     return -1;
@@ -745,8 +746,16 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
       return -1;
     }
     // Load an enclave at the same virtual space as the parent.
-    status = manager->LoadEnclave(enclave_name, *loader, enclave_config,
-                                  enclave_base_address, enclave_size);
+    load_config.set_name(enclave_name);
+    asylo::SgxLoadConfig sgx_config =
+        load_config.GetExtension(asylo::sgx_load_config);
+    asylo::SgxLoadConfig::ForkConfig fork_config;
+    fork_config.set_base_address(
+        reinterpret_cast<uint64_t>(enclave_base_address));
+    fork_config.set_enclave_size(enclave_size);
+    *sgx_config.mutable_fork_config() = fork_config;
+    *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
+    status = manager->LoadEnclave(load_config);
     if (!status.ok()) {
       LOG(ERROR) << "Load new enclave failed:" << status;
       errno = ENOMEM;

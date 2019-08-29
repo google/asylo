@@ -26,6 +26,7 @@
 #include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -64,6 +65,8 @@ class SgxLoader : public EnclaveLoader {
 
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
 
+  EnclaveLoadConfig GetEnclaveLoadConfig() const override;
+
   const std::string enclave_path_;
   const bool debug_;
 };
@@ -87,6 +90,8 @@ class SgxEmbeddedLoader : public EnclaveLoader {
       const EnclaveConfig &config) const override;
 
   StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
+
+  EnclaveLoadConfig GetEnclaveLoadConfig() const override;
 
   const std::string section_name_;
   const bool debug_;

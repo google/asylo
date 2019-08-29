@@ -22,6 +22,7 @@
 #include <gmock/gmock.h>
 #include "absl/strings/string_view.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -36,6 +37,7 @@ class MockEnclaveLoader : public EnclaveLoader {
                          const EnclaveConfig &config));
 
   MOCK_CONST_METHOD0(Copy, StatusOr<std::unique_ptr<EnclaveLoader>>());
+  MOCK_CONST_METHOD0(GetEnclaveLoadConfig, EnclaveLoadConfig());
 };
 
 }  // namespace asylo

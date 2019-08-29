@@ -168,6 +168,44 @@ class EnclaveManager {
 
   /// Loads an enclave.
   ///
+  /// Loads a new enclave utilizing the passed enclave backend loader
+  /// configuration settings. The loaded enclave is bound to the value of field
+  /// `name` set in |load_config|.
+  /// The enclave is initialized with custom enclave config settings if the
+  /// `config` field is set in |load_config|. Else, the enclave is initialized
+  /// with default Asylo enclave config settings.
+  ///
+  /// It is an error to specify a name which is already bound to an enclave.
+  ///
+  /// Example:
+  /// 1) Load an enclave with custom enclave config settings
+  ///
+  /// ```
+  ///  EnclaveConfig config;
+  ///  ... // populate config proto.
+  ///
+  ///  EnclaveLoadConfig load_config;
+  ///  load_config.set_name("example");
+  ///  load_config.set_config(config);
+  ///
+  ///  load_config.SetExtension(example_backend_extension);
+  ///  ... // populate Asylo backend extension proto.
+  ///  LoadEnclave(load_config);
+  /// ```
+  /// 2) Load an enclave with default enclave config settings
+  ///
+  /// ```
+  ///  EnclaveLoadConfig load_config;
+  ///  load_config.set_name("example");
+  ///  load_config.SetExtension(example_backend_extension);
+  ///  ... // populate Asylo backend extension proto.
+  ///  LoadEnclave(load_config);
+  /// ```
+  /// \param load_config Backend configuration options to load an enclave
+  Status LoadEnclave(const EnclaveLoadConfig &load_config);
+
+  /// Loads an enclave.
+  ///
   /// Loads a new enclave with default enclave config settings and binds it to a
   /// name. The actual work of opening the enclave is delegated to the passed
   /// loader object.
@@ -266,9 +304,9 @@ class EnclaveManager {
     return &shared_resource_manager_;
   }
 
-  /// Get the loader of an enclave. This should only be used during fork in
-  /// order to load an enclave with the same loader as the parent.
-  EnclaveLoader *GetLoaderFromClient(EnclaveClient *client)
+  /// Get the load config of an enclave. This should only be used during fork
+  /// in order to load an enclave with the same load config as the parent.
+  EnclaveLoadConfig GetLoadConfigFromClient(EnclaveClient *client)
       ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
  private:
@@ -281,14 +319,16 @@ class EnclaveManager {
   // sngleton instance was created.
   HostConfig GetHostConfig() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
-  // Loads a new enclave with custom enclave config settings and binds it to a
-  // name. The actual work of opening the enclave is delegated to the passed
-  // loader object.
-  Status LoadEnclaveInternal(absl::string_view name,
-                             const EnclaveLoader &loader,
-                             const EnclaveConfig &config,
-                             void *base_address = nullptr,
-                             const size_t enclave_size = 0)
+  // Loads a fake enclave with custom enclave config settings and binds it to a
+  // name. An enclave loaded using this interface doesn't build on any Asylo
+  // backend technology and is strictly meant to be used for testing only. The
+  // actual work of opening the enclave is delegated to the passed loader
+  // object.
+  Status LoadFakeEnclave(absl::string_view name,
+                         const EnclaveLoader &loader,
+                         const EnclaveConfig &config,
+                         void *base_address = nullptr,
+                         const size_t enclave_size = 0)
       ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
   // Deletes an enclave client reference that points to an enclave that no
@@ -323,8 +363,8 @@ class EnclaveManager {
   absl::flat_hash_map<const EnclaveClient *, std::string> name_by_client_
       ABSL_GUARDED_BY(client_table_lock_);
 
-  absl::flat_hash_map<const EnclaveClient *, std::unique_ptr<EnclaveLoader>>
-      loader_by_client_ ABSL_GUARDED_BY(client_table_lock_);
+  absl::flat_hash_map<const EnclaveClient *, EnclaveLoadConfig>
+      load_config_by_client_ ABSL_GUARDED_BY(client_table_lock_);
 
   // A part of the configuration for enclaves launched by the enclave manager
   // comes from the Asylo daemon. This member caches such configuration.
@@ -374,6 +414,8 @@ class EnclaveLoader {
   // Gets a copy of the loader that loaded a previous enclave. This is only used
   // by fork to load a child enclave with the same loader as the parent.
   virtual StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const = 0;
+
+  virtual EnclaveLoadConfig GetEnclaveLoadConfig() const = 0;
 };
 
 // Stores the mapping between signals and the enclave with a handler installed

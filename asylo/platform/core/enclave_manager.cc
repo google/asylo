@@ -39,25 +39,9 @@
 namespace asylo {
 namespace {
 
-/// Internal enclave loader. Redirects enclave load requests to the primitive
-/// backend indicated by the extension set in the EnclaveLoadConfig protobuf.
-class EnclaveLoaderInternal {
- protected:
-  // Only allow the enclave loading via the manager object.
-  friend class EnclaveManager;
-
-  StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const EnclaveLoadConfig &loader_config) const;
-
- private:
-  StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
-      absl::string_view enclave_name, const EnclaveConfig &enclave_config,
-      const SgxLoadConfig &sgx_config) const;
-};
-
-StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadSgxEnclave(
+StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
     absl::string_view enclave_name, const EnclaveConfig &enclave_config,
-    const SgxLoadConfig &sgx_config) const {
+    const SgxLoadConfig &sgx_config) {
   std::shared_ptr<primitives::Client> primitive_client;
   void *base_address = nullptr;
   uint64_t enclave_size = 0;
@@ -95,13 +79,15 @@ StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadSgxEnclave(
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
 
-StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadEnclave(
-    const EnclaveLoadConfig &loader_config) const {
-  std::string enclave_name = loader_config.name();
-  EnclaveConfig config = loader_config.config();
+// Loads an enclave by redirecting enclave load requests to the primitive
+// backend indicated by the extension set in the EnclaveLoadConfig protobuf.
+StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
+    const EnclaveLoadConfig &load_config) {
+  std::string enclave_name = load_config.name();
+  EnclaveConfig config = load_config.config();
 
-  if (loader_config.HasExtension(sgx_load_config)) {
-    SgxLoadConfig sgx_config = loader_config.GetExtension(sgx_load_config);
+  if (load_config.HasExtension(sgx_load_config)) {
+    SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
     return LoadSgxEnclave(enclave_name, config, sgx_config);
   }
   return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -253,7 +239,7 @@ Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
   const auto &name = name_by_client_[client];
   client_by_name_.erase(name);
   name_by_client_.erase(client);
-  loader_by_client_.erase(client);
+  load_config_by_client_.erase(client);
 
   return finalize_status;
 }
@@ -279,12 +265,15 @@ const absl::string_view EnclaveManager::GetName(
   }
 }
 
-EnclaveLoader *EnclaveManager::GetLoaderFromClient(EnclaveClient *client) {
+EnclaveLoadConfig EnclaveManager::GetLoadConfigFromClient(
+    EnclaveClient *client) {
   absl::ReaderMutexLock lock(&client_table_lock_);
-  if (!client || loader_by_client_.find(client) == loader_by_client_.end()) {
-    return nullptr;
+  if (!client ||
+      load_config_by_client_.find(client) == load_config_by_client_.end()) {
+    EnclaveLoadConfig config;
+    return config;
   }
-  return loader_by_client_[client].get();
+  return load_config_by_client_[client];
 }
 
 Status EnclaveManager::Configure(const EnclaveManagerOptions &options) {
@@ -328,32 +317,59 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
                                    const EnclaveLoader &loader,
                                    void *base_address,
                                    const size_t enclave_size) {
-  return LoadEnclaveInternal(
-      name, loader, CreateDefaultEnclaveConfig(host_config_), base_address,
-      enclave_size);
+  EnclaveLoadConfig load_config = loader.GetEnclaveLoadConfig();
+  if (load_config.HasExtension(sgx_load_config)) {
+    load_config.set_name(name.data(), name.size());
+    if (!base_address && enclave_size != 0) {
+      if (load_config.HasExtension(sgx_load_config)) {
+        SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
+        // Enclave load initiated by implementation of fork.
+        SgxLoadConfig::ForkConfig fork_config;
+        fork_config.set_base_address(reinterpret_cast<uint64_t>(base_address));
+        fork_config.set_enclave_size(enclave_size);
+        *sgx_config.mutable_fork_config() = fork_config;
+      }
+    }
+    return LoadEnclave(load_config);
+  } else {
+    return LoadFakeEnclave(
+        name, loader, CreateDefaultEnclaveConfig(host_config_), base_address,
+        enclave_size);
+  }
 }
 
 Status EnclaveManager::LoadEnclave(absl::string_view name,
                                    const EnclaveLoader &loader,
                                    EnclaveConfig config, void *base_address,
                                    const size_t enclave_size) {
-  EnclaveConfig sanitized_config = std::move(config);
-  SetEnclaveConfigDefaults(host_config_, &sanitized_config);
-  return LoadEnclaveInternal(name, loader, sanitized_config, base_address,
-                             enclave_size);
+  EnclaveLoadConfig load_config = loader.GetEnclaveLoadConfig();
+  if (load_config.HasExtension(sgx_load_config)) {
+    load_config.set_name(name.data(), name.size());
+    *load_config.mutable_config() = config;
+    if (!base_address && enclave_size != 0) {
+      if (load_config.HasExtension(sgx_load_config)) {
+        SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
+        // Enclave load initiated by implementation of fork.
+        SgxLoadConfig::ForkConfig fork_config;
+        fork_config.set_base_address(reinterpret_cast<uint64_t>(base_address));
+        fork_config.set_enclave_size(enclave_size);
+        *sgx_config.mutable_fork_config() = fork_config;
+      }
+    }
+    return LoadEnclave(load_config);
+  } else {
+    EnclaveConfig sanitized_config = std::move(config);
+    SetEnclaveConfigDefaults(host_config_, &sanitized_config);
+    return LoadFakeEnclave(name, loader, sanitized_config, base_address,
+                           enclave_size);
+  }
 }
 
-Status EnclaveManager::LoadEnclaveInternal(absl::string_view name,
-                                           const EnclaveLoader &loader,
-                                           const EnclaveConfig &config,
-                                           void *base_address,
-                                           const size_t enclave_size) {
-  if (config.enable_fork() && base_address) {
-    // If fork is enabled and a base address is provided, it is now loading an
-    // enclave in the child process. Remove the reference in the enclave table
-    // that points to the enclave in the parent process.
-    RemoveEnclaveReference(name);
-  }
+Status EnclaveManager::LoadFakeEnclave(absl::string_view name,
+                                       const EnclaveLoader &loader,
+                                       const EnclaveConfig &config,
+                                       void *base_address,
+                                       const size_t enclave_size) {
   // Check whether a client with this name already exists.
   {
     absl::ReaderMutexLock lock(&client_table_lock_);
@@ -379,13 +395,79 @@ Status EnclaveManager::LoadEnclaveInternal(absl::string_view name,
     absl::WriterMutexLock lock(&client_table_lock_);
     client_by_name_.emplace(name, std::move(result).ValueOrDie());
     name_by_client_.emplace(client, name);
+  }
+
+  Status status = client->EnterAndInitialize(config);
+  // If initialization fails, don't keep the enclave registered. GetClient will
+  // return a nullptr rather than an enclave in a bad state.
+  if (!status.ok()) {
+    Status destroy_status = client->DestroyEnclave();
+    if (!destroy_status.ok()) {
+      LOG(ERROR) << "DestroyEnclave failed after EnterAndInitialize failure: "
+                 << destroy_status;
+    }
+    {
+      absl::WriterMutexLock lock(&client_table_lock_);
+      client_by_name_.erase(name);
+      name_by_client_.erase(client);
+    }
+  }
+  return status;
+}
+
+Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
+  EnclaveConfig config;
+  if (load_config.has_config()) {
+    config = load_config.config();
+    SetEnclaveConfigDefaults(host_config_, &config);
+  } else {
+    config = CreateDefaultEnclaveConfig(host_config_);
+  }
+
+  void *base_address = nullptr;
+  if (load_config.HasExtension(sgx_load_config)) {
+    SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
+    if (sgx_config.has_fork_config()) {
+      SgxLoadConfig::ForkConfig fork_config = sgx_config.fork_config();
+      base_address = reinterpret_cast<void *>(fork_config.base_address());
+    }
+  }
+
+  std::string name = load_config.name();
+  if (config.enable_fork() && base_address) {
+    // If fork is enabled and a base address is provided, it is now loading an
+    // enclave in the child process. Remove the reference in the enclave table
+    // that points to the enclave in the parent process.
+    RemoveEnclaveReference(name);
+  }
+  // Check whether a client with this name already exists.
+  {
+    absl::ReaderMutexLock lock(&client_table_lock_);
+    if (client_by_name_.find(name) != client_by_name_.end()) {
+      Status status(error::GoogleError::ALREADY_EXISTS,
+                    absl::StrCat("Name already exists: ", name));
+      LOG(ERROR) << "LoadEnclave failed: " << status;
+      return status;
+    }
+  }
+
+  // Attempt to load the enclave.
+  StatusOr<std::unique_ptr<EnclaveClient>> result =
+      asylo::LoadEnclave(load_config);
+  if (!result.ok()) {
+    LOG(ERROR) << "LoadEnclave failed: " << result.status();
+    return result.status();
+  }
+
+  // Add the client to the lookup tables.
+  EnclaveClient *client = result.ValueOrDie().get();
+  {
+    absl::WriterMutexLock lock(&client_table_lock_);
+    client_by_name_.emplace(name, std::move(result).ValueOrDie());
+    name_by_client_.emplace(client, name);
 
     if (config.enable_fork()) {
-      StatusOr<std::unique_ptr<EnclaveLoader>> loader_result = loader.Copy();
-      if (!loader_result.ok()) {
-        return loader_result.status();
-      }
-      loader_by_client_.emplace(client, std::move(loader_result.ValueOrDie()));
+      load_config_by_client_.emplace(client, load_config);
     }
   }
 
@@ -402,7 +484,7 @@ Status EnclaveManager::LoadEnclaveInternal(absl::string_view name,
       absl::WriterMutexLock lock(&client_table_lock_);
       client_by_name_.erase(name);
       name_by_client_.erase(client);
-      loader_by_client_.erase(client);
+      load_config_by_client_.erase(client);
     }
   }
   return status;
