@@ -53,6 +53,24 @@ namespace {
 
 using ::testing::Not;
 
+// Several of the tests in this file generate random identities / match specs /
+// expectations in order to verify their whether they can be parsed. Of these,
+// the number of identity variations are the upper bound, since the generation
+// process of expectations guarantees that match specs match their respective
+// identities. The helper methods in `code_identity_test_util` generate 2^4 = 16
+// valid and 4*2*2*3 = 48 invalid SgxIdentity variants.
+//
+// According to the "coupon collector's problem", the expected number of trials
+// to "collect 48 identities" is 214 (n*log(n) + n*gamma + 0.5) with a standard
+// deviation of 59.6 (sqrt((pi^2 / 6) * n^2)). Central limit theorem suggests
+// that we have >99.7% confidence of seeing every match spec after 214 + 60*3 =
+// 394 trials, but simulation shows that this value is closer to 460, suggesting
+// that the distribution isn't close enough to normal to approximate with CLT.
+// Therefore, 500 seems like a reasonable constant to choose.
+//
+// See more: https://en.wikipedia.org/wiki/Coupon_collector%27s_problem
+constexpr uint32_t kNumRandomParseTrials = 500;
+
 constexpr uint32_t kLongAll0 = 0x0;
 constexpr uint32_t kLongAllF = 0xFFFFFFFF;
 constexpr uint32_t kLongAll5 = 0x55555555;
@@ -1091,7 +1109,7 @@ TEST_F(CodeIdentityUtilTest, SetDefaultSelfSgxIdentityExpectation) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess1) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     CodeIdentity generated_sgx_identity;
     SetRandomValidGenericIdentity(&generic_identity, &generated_sgx_identity);
@@ -1104,7 +1122,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess1) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess2) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SgxIdentity generated_sgx_identity;
     ASYLO_ASSERT_OK(SetRandomValidLegacyGenericIdentity(
@@ -1118,7 +1136,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess2) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess3) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SgxIdentity generated_sgx_identity;
     ASYLO_ASSERT_OK(SetRandomValidSgxGenericIdentity(&generic_identity,
@@ -1132,7 +1150,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess3) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure1) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SetRandomInvalidGenericIdentity(&generic_identity);
     CodeIdentity parsed_sgx_identity;
@@ -1143,7 +1161,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure1) {
 
 // Parse legacy CodeIdentity-based EnclaveIdentity messages into SgxIdentity.
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure2) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SetRandomInvalidGenericIdentity(&generic_identity);
     SgxIdentity parsed_sgx_identity;
@@ -1154,7 +1172,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure2) {
 
 // Parse SgxIdentity-based EnclaveIdentity messages into SgxIdentity.
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure3) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     ASYLO_ASSERT_OK(SetRandomInvalidGenericSgxIdentity(&generic_identity));
     SgxIdentity parsed_sgx_identity;
@@ -1168,7 +1186,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxMatchSpecSuccess) {
   CodeIdentityMatchSpec generated_sgx_spec;
   CodeIdentityMatchSpec parsed_sgx_spec;
 
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     ASYLO_ASSERT_OK(SetRandomValidGenericMatchSpec(&generic_match_spec,
                                                    &generated_sgx_spec));
     ASYLO_ASSERT_OK(ParseSgxMatchSpec(generic_match_spec, &parsed_sgx_spec));
@@ -1182,7 +1200,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxMatchSpecFailure) {
   std::string generic_match_spec;
   CodeIdentityMatchSpec parsed_sgx_spec;
 
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     ASYLO_ASSERT_OK(SetRandomInvalidGenericMatchSpec(&generic_match_spec));
     ASSERT_THAT(ParseSgxMatchSpec(generic_match_spec, &parsed_sgx_spec),
                 Not(IsOk()));
@@ -1193,7 +1211,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxMatchSpecFailure) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxExpectationSuccess) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentityExpectation generic_expectation;
     CodeIdentityExpectation generated_sgx_expectation;
 
@@ -1210,7 +1228,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxExpectationSuccess) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationSuccess) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentityExpectation generic_expectation;
     SgxIdentityExpectation generated_sgx_expectation;
 
@@ -1227,7 +1245,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationSuccess) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxExpectationFailure) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentityExpectation generic_expectation;
 
     ASYLO_ASSERT_OK(SetRandomInvalidGenericExpectation(&generic_expectation));
@@ -1239,7 +1257,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxExpectationFailure) {
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationFailure) {
-  for (int i = 0; i < 10000; i++) {
+  for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentityExpectation generic_expectation;
 
     ASYLO_ASSERT_OK(SetRandomInvalidGenericExpectation(&generic_expectation));
