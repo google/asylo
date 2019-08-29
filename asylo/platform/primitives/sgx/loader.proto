@@ -58,6 +58,6 @@ message SgxLoadConfig {
   }
 }
 
-extend EnclaveLoaderConfig {
+extend EnclaveLoadConfig {
   optional SgxLoadConfig sgx_load_config = 263000381;
 }

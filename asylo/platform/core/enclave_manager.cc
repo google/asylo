@@ -40,14 +40,14 @@ namespace asylo {
 namespace {
 
 /// Internal enclave loader. Redirects enclave load requests to the primitive
-/// backend indicated by the extension set in the EnclaveLoaderConfig protobuf.
+/// backend indicated by the extension set in the EnclaveLoadConfig protobuf.
 class EnclaveLoaderInternal {
  protected:
   // Only allow the enclave loading via the manager object.
   friend class EnclaveManager;
 
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-      const EnclaveLoaderConfig &loader_config) const;
+      const EnclaveLoadConfig &loader_config) const;
 
  private:
   StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
@@ -96,7 +96,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadSgxEnclave(
 }
 
 StatusOr<std::unique_ptr<EnclaveClient>> EnclaveLoaderInternal::LoadEnclave(
-    const EnclaveLoaderConfig &loader_config) const {
+    const EnclaveLoadConfig &loader_config) const {
   std::string enclave_name = loader_config.name();
   EnclaveConfig config = loader_config.config();
 

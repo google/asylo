@@ -61,9 +61,10 @@ message LoggingConfig {
 }
 
 // The configuration required to load an enclave. This message is extended for
-// each backend supported by the Asylo primitive library. asylo::EnclaveLoader
-// is passed an instance of this message for loading enclaves in Asylo.
-message EnclaveLoaderConfig {
+// each backend supported by the Asylo primitive library.
+// asylo::EnclaveManager::LoadEnclave is passed an instance of this message for
+// loading enclaves in Asylo.
+message EnclaveLoadConfig {
   // Name of the enclave to be loaded.
   optional string name = 1;
 
