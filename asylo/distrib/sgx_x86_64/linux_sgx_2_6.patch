@@ -3061,12 +3061,16 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1336 @@
+@@ -0,0 +1,1340 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
 +    ":sgx_sdk.bzl",
-+    "sgx_enclave",
++    "boringssl_sign_sigstruct",
++    "sgx_unsigned_enclave",
++    "sgx_generate_sigstruct",
++    "sgx_debug_enclave",
++    "sgx_signed_enclave",
 +    "sgx_full_enclave_configuration",
 +    "sgx_enclave_configuration",
 +)
@@ -4400,7 +4404,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,384 @@
+@@ -0,0 +1,583 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -4421,9 +4425,10 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    "tcs_num",
 +    "tcs_policy",
 +])
++SGXSigstructInfo = provider(fields = ["config", "unsigned"])
 +
 +
-+def _sgx_unsigned_enclave(
++def sgx_unsigned_enclave(
 +        name,
 +        **kwargs):
 +    """Build rule for creating an unsigned SGX enclave shared object file.
@@ -4655,23 +4660,20 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    """
 +    sgx_full_enclave_configuration(base = base, **kwargs)
 +
-+def _sgx_debug_sign_enclave_impl(ctx):
++def _sgx_debug_enclave_impl(ctx):
 +    """Implementation of an automated signing process of an unsigned enclave."""
-+    ctx.actions.run_shell(
++    ctx.actions.run(
 +        inputs = [
 +            ctx.file.unsigned,
 +            ctx.file._key,
 +            ctx.file.config,
 +        ],
-+        tools = [ctx.executable._sign_tool],
++        executable = ctx.executable._sign_tool,
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Signing for debug: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
 +            name = ctx.attr.unsigned.label.name,
 +        ),
-+        # Suppresses tool output on success.
-+        command = "output=`%s $@ 2>&1` || echo $output" %
-+                  ctx.executable._sign_tool.path,
 +        arguments = [
 +            "sign",
 +            "-enclave",
@@ -4690,23 +4692,214 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        SGXEnclaveInfo(),
 +    ]
 +
++# The description for a config field, as shared by different rules.
++config_docstring = ("A path to a configuration XML file, or a label of " +
++                    "an sgx_enclave_config target. A configuration specifies " +
++                    "identity attributes, runtime behaviors that are " +
++                    "security-critical, and other components of the enclave " +
++                    "SIGSTRUCT.")
++
 +# Skylark rule for the above implementation. Gives default debug arguments for
 +# private attributes for signing tool, signing key, and signing configuration.
-+_sgx_debug_sign_enclave = rule(
-+    implementation = _sgx_debug_sign_enclave_impl,
++sgx_debug_enclave = rule(
++    implementation = _sgx_debug_enclave_impl,
 +    executable = True,
++    doc = "Creates a signed enclave binary by using a debug key.",
 +    attrs = {
 +        "config": attr.label(
-+            mandatory = True,
++            default = Label("@linux_sgx//:enclave_debug_config"),
++            doc = config_docstring,
 +            allow_single_file = True,
 +            providers = [SGXEnclaveConfigInfo],
 +        ),
-+        "unsigned": attr.label(allow_single_file = True),
++        "unsigned": attr.label(
++            allow_single_file = True,
++            doc = "The label of the unsigned enclave to sign.",
++        ),
 +        "_key": attr.label(
 +            default = Label(
 +                "@linux_sgx//:enclave_test_private.pem",
 +            ),
 +            allow_single_file = True,
++        ),
++        "_sign_tool": attr.label(
++            default = Label("@linux_sgx//:sgx_sign_tool"),
++            allow_single_file = True,
++            executable = True,
++            cfg = "host",
++        ),
++    },
++)
++
++def _sgx_generate_sigstruct_impl(ctx):
++    """Implementation of the sign_tool's gendata command for sigstructs."""
++    sigstruct = ctx.outputs.sigstruct
++    if not sigstruct:
++        sigstruct = ctx.actions.declare_file(ctx.label.name + ".dat")
++    ctx.actions.run(
++        inputs = [
++            ctx.file.unsigned,
++            ctx.file.config,
++        ],
++        executable = ctx.executable._sign_tool,
++        outputs = [sigstruct],
++        progress_message = "Generating SIGSTRUCT material for: //{pkg}:{name}".format(
++            pkg = ctx.attr.unsigned.label.package,
++            name = ctx.attr.unsigned.label.name,
++        ),
++        arguments = [
++            "gendata",
++            "-enclave",
++            ctx.file.unsigned.path,
++            "-config",
++            ctx.file.config.path,
++            "-out",
++            sigstruct.path,
++        ],
++    )
++    return [
++        DefaultInfo(files = depset([sigstruct])),
++        SGXSigstructInfo(
++            config = ctx.file.config,
++            unsigned = ctx.attr.unsigned,
++        ),
++    ]
++
++sgx_generate_sigstruct = rule(
++    implementation = _sgx_generate_sigstruct_impl,
++    attrs = {
++        "config": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            providers = [SGXEnclaveConfigInfo],
++            doc = config_docstring,
++        ),
++        "unsigned": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            doc = ("The label of the unsigned enclave binary to be measured " +
++                   "and hashed as a SIGSTRUCT field"),
++        ),
++        "sigstruct": attr.output(
++            doc = "The name of the output file. Default is \"<name>.dat\".",
++        ),
++        "_sign_tool": attr.label(
++            default = Label("@linux_sgx//:sgx_sign_tool"),
++            allow_single_file = True,
++            executable = True,
++            cfg = "host",
++        ),
++    },
++)
++
++def _sign_sigstruct_impl(ctx):
++    signature = ctx.attr.signature or ctx.actions.declare_file(ctx.label.name + ".sig")
++    ctx.actions.run_shell(
++        outputs = [signature],
++        inputs = [ctx.file.private_key, ctx.file.sigstruct],
++        tools = [ctx.executable._bssl],
++        command = "{bssl} {args} < {sigstruct} > {signature}".format(
++            bssl = ctx.file._bssl.path,
++            args = " ".join(["sign", "-digest", "sha256", "-key", ctx.file.private_key.path]),
++            sigstruct = ctx.file.sigstruct.path,
++            signature = signature.path,
++        ),
++    )
++    return [DefaultInfo(files = depset([signature]))]
++
++boringssl_sign_sigstruct = rule(
++    implementation = _sign_sigstruct_impl,
++    doc = ("Signs a sigstruct file with a given private key for use in " +
++           "sgx_signed_enclave."),
++    attrs = {
++        "sigstruct": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            providers = [SGXSigstructInfo],
++            doc = "A target defined by sgx_generate_sigstruct.",
++        ),
++        "private_key": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            doc = ("The RSA-3072 private key with public exponent 3 in PEM " +
++                   "format used to sign the input sigstruct."),
++        ),
++        "signature": attr.output(
++            doc = "The output signature file name [default: <name>.sig].",
++        ),
++        "_bssl": attr.label(
++            default = "//third_party/openssl:bssl",
++            allow_single_file = True,
++            executable = True,
++            cfg = "host",
++        ),
++    },
++)
++
++def _sgx_signed_enclave_impl(ctx):
++    """Implementation of incorporating a signature into an enclave binary."""
++    config = ctx.attr.sigstruct[SGXSigstructInfo].config
++    unsigned = ctx.attr.sigstruct[SGXSigstructInfo].unsigned
++    unsigned_file = unsigned.files.to_list()[0]
++    ctx.actions.run(
++        inputs = [
++            config,
++            ctx.file.public_key,
++            ctx.file.signature,
++            ctx.file.sigstruct,
++            unsigned_file,
++        ],
++        executable = ctx.executable._sign_tool,
++        outputs = [ctx.outputs.executable],
++        progress_message = "Integrating signature into: //{pkg}:{name}".format(
++            pkg = unsigned.label.package,
++            name = unsigned.label.name,
++        ),
++        arguments = [
++            "catsig",
++            "-enclave",
++            unsigned_file.path,
++            "-key",
++            ctx.file.public_key.path,
++            "-sig",
++            ctx.file.signature.path,
++            "-config",
++            config.path,
++            "-unsigned",
++            ctx.file.sigstruct.path,
++            "-out",
++            ctx.outputs.executable.path,
++        ],
++    )
++    return [
++        DefaultInfo(files = depset([ctx.outputs.executable])),
++        EnclaveInfo(),
++        SGXEnclaveInfo(),
++    ]
++
++# Skylark rule for the above implementation.
++sgx_signed_enclave = rule(
++    implementation = _sgx_signed_enclave_impl,
++    executable = True,
++    doc = "Creates a signed enclave binary using a signature file.",
++    attrs = {
++        "public_key": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            doc = "The public key to verify the provided signature.",
++        ),
++        "signature": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            doc = "The sha256 digest of the sigstruct signed by the " +
++                  "RSA-3072 private key with public exponent 3.",
++        ),
++        "sigstruct": attr.label(
++            mandatory = True,
++            allow_single_file = True,
++            providers = [SGXSigstructInfo],
++            doc = ("The label of a sgx_generate_sigstruct target that " +
++                   "includes both the unsigned enclave and its config."),
 +        ),
 +        "_sign_tool": attr.label(
 +            default = Label("@linux_sgx//:sgx_sign_tool"),
@@ -4736,12 +4929,20 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +      config: An sgx_enclave_configuration rule.
 +      testonly: 0 or 1, set to 1 if the target is only used in tests.
 +      **kwargs: cc_binary arguments.
++
 +    Returns:
 +      string: The name of the signed enclave.
++
++    Deprecated:
++      Use sgx_unsigned_enclave and sgx_debug_enclave/sgx_signed_enclave.
 +    """
 +    unsigned_name = _unsigned_enclave_name(name)
 +
-+    _sgx_unsigned_enclave(
++    has_deprecation = "deprecation" in kwargs
++    if not has_deprecation:
++        kwargs["deprecation"] = "Use sgx_unsigned_enclave."
++
++    sgx_unsigned_enclave(
 +        name = unsigned_name,
 +        testonly = testonly,
 +        **kwargs
@@ -4750,7 +4951,9 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    kwargs = {k: v for k, v in kwargs.items() if k in ["visibility"]}
 +    if config:
 +        kwargs["config"] = config
-+    _sgx_debug_sign_enclave(
++    if not has_deprecation:
++        kwargs["deprecation"] = "Use sgx_debug_enclave."
++    sgx_debug_enclave(
 +        name = name,
 +        unsigned = unsigned_name,
 +        tags = sgx_tags(),
