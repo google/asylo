@@ -19,12 +19,19 @@
 #ifndef ASYLO_IDENTITY_SGX_TCB_H_
 #define ASYLO_IDENTITY_SGX_TCB_H_
 
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
+
+// Size of Provisioning Certification Enclave Security Version Number (PCE SVN).
+ABSL_CONST_INIT extern const size_t kPcesvnSize;
+
+// Size of the serialized RawTcb.
+ABSL_CONST_INIT extern const size_t kRawTcbSize;
 
 // The possible orders between two objects in a partial ordering.
 //
@@ -106,6 +113,14 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info);
 // neither less than or equal to nor greater than or equal to |rhs|, then |lhs|
 // and |rhs| are incomparable.
 PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs);
+
+// Parses a hex-encoded string |raw_tcb_hex| into the RawTcb protobuf.
+// |raw_tcb_hex| can come from the "SGB-TCBm" JSON field in the response of
+// Intel PCS's GetPckCertificate API
+// (https://api.portal.trustedservices.intel.com/documentation#pcs-certificate).
+// Returns a non-OK Status if |raw_tcb_hex| is not a hex string encoding an
+// 18-byte raw TCB.
+StatusOr<RawTcb> ParseRawTcbHex(absl::string_view raw_tcb_hex);
 
 // Converts a TcbStatus to a TCB level status string. Succeeds if and only if
 // |status| either has an |unknown_status| value or is one of UP_TO_DATE,

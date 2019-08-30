@@ -18,11 +18,14 @@
 
 #include "asylo/identity/sgx/tcb.h"
 
+#include <endian.h>
+
 #include <cstdint>
 
 #include "google/protobuf/timestamp.pb.h"
 #include <google/protobuf/util/message_differencer.h>
 #include <google/protobuf/util/time_util.h>
+#include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -32,6 +35,10 @@
 
 namespace asylo {
 namespace sgx {
+
+const size_t kPcesvnSize = 2;
+const size_t kRawTcbSize = kCpusvnSize + kPcesvnSize;
+
 namespace {
 
 // Compares two objects of type T, which must have <, ==, and > operators.
@@ -259,6 +266,17 @@ Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
   }
 }
 
+// Checks whether |str| is hex-encoded. Returns true if |str| is hex-encoded,
+// false otherwise.
+bool IsHexEncoded(absl::string_view str) {
+  for (char c : str) {
+    if (!absl::ascii_isxdigit(c)) {
+      return false;
+    }
+  }
+  return str.size() % 2 == 0;
+}
+
 }  // namespace
 
 Status ValidateTcb(const Tcb &tcb) {
@@ -323,6 +341,25 @@ PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs) {
   }
   return OrderCombine(
       current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
+}
+
+StatusOr<asylo::sgx::RawTcb> ParseRawTcbHex(absl::string_view raw_tcb_hex) {
+  if (!IsHexEncoded(raw_tcb_hex)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Value is not a valid hex-encoded string");
+  }
+  std::string raw_tcb = absl::HexStringToBytes(raw_tcb_hex);
+  if (raw_tcb.size() != kRawTcbSize) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Value has invalid size: ", raw_tcb.size(),
+                               " bytes (expected ", kRawTcbSize, " bytes)"));
+  }
+  RawTcb raw_tcb_proto;
+  raw_tcb_proto.mutable_cpu_svn()->set_value(raw_tcb.data(), kCpusvnSize);
+  const uint16_t pce_svn = le16toh(
+      *reinterpret_cast<const uint16_t *>(&raw_tcb.data()[kCpusvnSize]));
+  raw_tcb_proto.mutable_pce_svn()->set_value(pce_svn);
+  return raw_tcb_proto;
 }
 
 StatusOr<std::string> TcbStatusToString(const TcbStatus &status) {

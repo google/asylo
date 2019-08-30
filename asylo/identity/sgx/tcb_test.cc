@@ -28,6 +28,7 @@
 #include "absl/time/time.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 
@@ -35,6 +36,7 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+using ::asylo::EqualsProto;
 using ::testing::Eq;
 
 // Returns a valid Tcb message.
@@ -328,6 +330,26 @@ TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
     lhs.mutable_pce_svn()->set_value(std::get<1>(test_cases[i]));
     EXPECT_THAT(CompareTcbs(lhs, rhs), Eq(std::get<2>(test_cases[i])));
   }
+}
+
+TEST(TcbTest, ParseRawTcbHex_ValidRawTcbHexParseSuccessfully) {
+  RawTcb expected_raw_tcb;
+  expected_raw_tcb.mutable_cpu_svn()->set_value(
+      "\x01\x01\x02\x03\x04\x05\x06\x07"
+      "\x08\x09\x0a\x0b\x0c\x0d\x0e\x0f");
+  expected_raw_tcb.mutable_pce_svn()->set_value(7);
+  EXPECT_THAT(ParseRawTcbHex("010102030405060708090a0b0c0d0e0f0700"),
+              asylo::IsOkAndHolds(EqualsProto(expected_raw_tcb)));
+}
+
+TEST(TcbTest, ParseRawTcbHex_NonHexStringFailsToParse) {
+  EXPECT_THAT(ParseRawTcbHex("not a hex string").status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbTest, ParseRawTcbHex_WrongSizedStringFailsToParse) {
+  EXPECT_THAT(ParseRawTcbHex("1234567890").status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(TcbTest, TcbStatusToStringSucceedsOnUnknownStatuses) {
