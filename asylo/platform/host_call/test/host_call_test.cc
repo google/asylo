@@ -2100,7 +2100,7 @@ TEST_F(HostCallTest, TestSelect) {
     sleep(2);  // Allow enough time for other thread to enter the enclave and
                // call select.
     std::string writebuf = "stuff being written";
-    write(fd, writebuf.c_str(), writebuf.length() + 1);
+    EXPECT_THAT(write(fd, writebuf.c_str(), writebuf.length() + 1), Gt(0));
   });
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSelect, &in, &out));
   write_thread.join();
