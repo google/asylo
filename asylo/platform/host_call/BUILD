@@ -39,20 +39,6 @@ cc_library(
     ],
 )
 
-cc_library(
-    name = "host_call_unmigrated",
-    srcs = ["trusted/host_calls_unmigrated.cc"],
-    hdrs = ["trusted/host_calls_unmigrated.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":exit_handler_constants",
-        ":host_call_dispatcher",
-        "//asylo/platform/primitives:trusted_primitives",
-        "//asylo/platform/system_call",
-        "//asylo/platform/system_call/type_conversions",
-    ],
-)
-
 # Library containing untrusted handlers for serialized host call requests.
 cc_library(
     name = "untrusted_host_calls",

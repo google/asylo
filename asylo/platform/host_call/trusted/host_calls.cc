@@ -940,4 +940,9 @@ int enc_untrusted_gettimeofday(struct timeval *tv, struct timezone *tz) {
   return result;
 }
 
+int enc_untrusted_fsync(int fd) {
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fsync,
+                                             fd);
+}
+
 }  // extern "C"

@@ -824,7 +824,7 @@ TEST_F(HostCallTest, TestTruncate) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   // Write something to the file.
-  std::string file_content = "some random content.";
+  std::string file_content = "test contents";
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
@@ -859,7 +859,7 @@ TEST_F(HostCallTest, TestFTruncate) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   // Write something to the file.
-  std::string file_content = "some random content.";
+  std::string file_content = "test contents";
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
@@ -2110,6 +2110,32 @@ TEST_F(HostCallTest, TestSelect) {
   rfds = out.next<fd_set>();
   EXPECT_THAT(FD_ISSET(fd, &rfds), Gt(0));
 
+  EXPECT_NE(unlink(test_file.c_str()), -1);
+}
+
+// Tests enc_untrusted_fsync by writing to a valid file, and then running fsync
+// on it. Ensures that a successful code of 0 is returned.
+TEST_F(HostCallTest, TestFsync) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  // Write something to the file.
+  std::string file_content = "test contents";
+  ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
+              Eq(file_content.length() + 1));
+
+  primitives::MessageWriter in;
+  in.Push<int>(fd);
+
+  primitives::MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFsync, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_NE(unlink(test_file.c_str()), -1);
 }
 

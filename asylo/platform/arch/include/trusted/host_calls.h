@@ -70,7 +70,6 @@ int enc_untrusted_get_errno();
 //////////////////////////////////////
 
 int enc_untrusted_puts(const char *str);
-int enc_untrusted_fsync(int fd);
 ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
 
 //////////////////////////////////////

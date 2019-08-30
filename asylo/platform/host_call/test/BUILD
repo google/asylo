@@ -60,23 +60,6 @@ sim_enclave(
     ],
 )
 
-sim_enclave(
-    name = "sim_test_enclave_unmigrated.so",
-    testonly = 1,
-    srcs = [
-        "test_enclave_unmigrated.cc",
-    ],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":enclave_test_selectors",
-        "//asylo/platform/host_call:host_call_dispatcher",
-        "//asylo/platform/host_call:host_call_unmigrated",
-        "//asylo/platform/system_call",
-        "//asylo/platform/system_call/type_conversions",
-        "//asylo/util:status_macros",
-    ],
-)
-
 # Unit tests for the host calls. Use this library to run the same set of tests
 # on different enclave backends.
 cc_library(
@@ -105,32 +88,6 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_library(
-    name = "host_call_test_lib_unmigrated",
-    testonly = 1,
-    srcs = ["host_call_test_unmigrated.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":enclave_test_selectors",
-        "//asylo:enclave_client",
-        "//asylo/platform/host_call:host_call_handlers_initializer",
-        "//asylo/platform/primitives",
-        "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/test:test_backend",
-        "//asylo/platform/primitives/util:message_reader_writer",
-        "//asylo/platform/storage/utils:fd_closer",
-        "//asylo/platform/system_call/type_conversions",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_flags",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/time",
-        "@com_google_googletest//:gtest",
-    ],
-    # Required to prevent the linker from dropping the flag symbol.
-    alwayslink = 1,
-)
-
 # Tests host calls against sim backend.
 sim_enclave_test(
     name = "sim_host_call_test",
@@ -142,23 +99,6 @@ sim_enclave_test(
     ],
     deps = [
         ":host_call_test_lib",
-        "//asylo/platform/primitives",
-        "//asylo/platform/primitives:trusted_runtime",
-        "//asylo/platform/primitives/test:sim_test_backend",
-        "//asylo/test/util:test_main",
-    ],
-)
-
-sim_enclave_test(
-    name = "sim_host_call_test_unmigrated",
-    copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"sim": ":sim_test_enclave_unmigrated.so"},
-    linkstatic = True,
-    test_args = [
-        "--enclave_binary='{sim}'",
-    ],
-    deps = [
-        ":host_call_test_lib_unmigrated",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/test:sim_test_backend",

@@ -854,6 +854,16 @@ PrimitiveStatus TestSelect(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestFsync(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  int fd = in->next<int>();
+  out->Push<int>(enc_untrusted_fsync(fd));
+
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1027,6 +1037,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestSelect,
       EntryHandler{asylo::host_call::TestSelect}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestFsync, EntryHandler{asylo::host_call::TestFsync}));
 
   return PrimitiveStatus::OkStatus();
 }

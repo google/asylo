@@ -101,6 +101,7 @@ int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
 int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen);
 int enc_untrusted_gettimeofday(struct timeval *tv, struct timezone *tz);
+int enc_untrusted_fsync(int fd);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);
