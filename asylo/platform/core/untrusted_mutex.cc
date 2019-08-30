@@ -23,7 +23,7 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/atomic.h"
-#include "asylo/platform/core/untrusted_cache_malloc.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
@@ -54,33 +54,26 @@ UntrustedMutex::UntrustedMutex(bool is_recursive)
     : is_recursive_(is_recursive),
       owner_(kInvalidThread),
       recursive_lock_count_(0) {
-
-  // Instance of the global memory pool singleton.
-  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
-      asylo::UntrustedCacheMalloc::Instance();
-
   // Allocate and initialize a 32-bit futex object in shared memory, accessible
   // by the untrusted host kernel. Allocates a full cache line to avoid false
   // sharing with another object.
   //
-  untrusted_futex_ =
-      static_cast<int32_t *>(untrusted_cache_malloc->Malloc(kCacheLineSize));
+  untrusted_futex_ = static_cast<int32_t *>(
+      primitives::TrustedPrimitives::UntrustedLocalAlloc(kCacheLineSize));
 
   // Initialize the futex as unlocked;
   *untrusted_futex_ = kUnlocked;
 }
 
 UntrustedMutex::~UntrustedMutex() {
-  // Instance of the global memory pool singleton.
-  asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
-      asylo::UntrustedCacheMalloc::Instance();
-  untrusted_cache_malloc->Free(untrusted_futex_);
+  primitives::TrustedPrimitives::UntrustedLocalFree(untrusted_futex_);
 }
 
 void UntrustedMutex::Lock() {
   // Ensure the value of the shared futex word is valid.
   if (*untrusted_futex_ < kUnlocked || *untrusted_futex_ > kQueued) {
-    enc_untrusted_puts("Invalid futex value in UntrustedMutex::Lock.");
+    primitives::TrustedPrimitives::DebugPuts(
+        "Invalid futex value in UntrustedMutex::Lock.");
     abort();
   }
 
@@ -149,14 +142,14 @@ void UntrustedMutex::Unlock() {
     snprintf(buf, sizeof(buf),
              "Invalid futex value in UntrustedMuted::Unlock: %i\n",
              *untrusted_futex_);
-    enc_untrusted_puts(buf);
+    primitives::TrustedPrimitives::DebugPuts(buf);
     return;
   }
 
   // It is a fatal error to attempt to unlock a mutex the calling thread
   // does not own.
   if (owner_ != enc_thread_self()) {
-    enc_untrusted_puts(
+    primitives::TrustedPrimitives::DebugPuts(
         "UntrustedMutex::Unlock called by thread that does not own it.");
     abort();
   }

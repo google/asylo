@@ -60,7 +60,10 @@ cc_library(
         "//asylo/platform/primitives/util:trusted_memory.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = [":primitives"] + select({
+    deps = [
+        ":primitives",
+        ":trusted_primitives",
+    ] + select({
         "//asylo/platform/primitives:sgx": [
             "//asylo/platform/primitives/sgx:trusted_sgx",
         ],

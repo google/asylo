@@ -26,6 +26,7 @@
 #include <cstdlib>
 #include <functional>
 #include <string>
+#include <utility>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
@@ -38,7 +39,6 @@
 #include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/core/shared_name_kind.h"
 #include "asylo/platform/core/trusted_global_state.h"
-#include "asylo/platform/core/untrusted_cache_malloc.h"
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/random_devices.h"
@@ -71,7 +71,7 @@ void LogError(const Status &status) {
   if (state < EnclaveState::kUserInitializing) {
     // LOG() is unavailable here because the I/O subsystem has not yet been
     // initialized.
-    enc_untrusted_puts(status.ToString().c_str());
+    TrustedPrimitives::DebugPuts(status.ToString().c_str());
   } else {
     LOG(ERROR) << status;
   }
@@ -89,39 +89,31 @@ class StatusSerializer {
   // take ownership of any of the input pointers. Input pointers must remain
   // valid for the lifetime of the StatusSerializer.
   StatusSerializer(const OutputProto *output_proto, StatusProto *status_proto,
-                   char **output, size_t *output_len)
+                   char **output, size_t *output_len,
+                   std::function<void *(size_t)> allocator = &malloc)
       : output_proto_{output_proto},
         status_proto_{status_proto},
         output_{output},
         output_len_{output_len},
-        custom_allocator_{nullptr} {}
+        allocator_{std::move(allocator)} {}
 
   // Creates a new StatusSerializer that saves Status objects to |status_proto|.
   // StatusSerializer does not take ownership of any of the input pointers.
   // Input pointers must remain valid for the lifetime of the StatusSerializer.
-  StatusSerializer(char **output, size_t *output_len)
+  StatusSerializer(char **output, size_t *output_len,
+                   std::function<void *(size_t)> allocator = &malloc)
       : output_proto_{&proto_},
         status_proto_{&proto_},
         output_{output},
         output_len_{output_len},
-        custom_allocator_{nullptr} {}
-
-  // Creates a new StatusSerializer that saves Status objects to |status_proto|.
-  // The output buffer is created by |custom_allocator_| allocator.
-  // StatusSerializer does not take ownership of any of the input pointers.
-  // Input pointers must remain valid for the lifetime of the StatusSerializer.
-  StatusSerializer(const OutputProto *output_proto, StatusProto *status_proto,
-                   char **output, size_t *output_len,
-                   std::function<void *(size_t)> allocator)
-      : output_proto_{output_proto},
-        status_proto_{status_proto},
-        output_{output},
-        output_len_{output_len},
-        custom_allocator_{allocator} {}
+        allocator_{std::move(allocator)} {}
 
   // Saves the given |status| into the StatusSerializer's status_proto_. Then
   // serializes its output_proto_ into a buffer. On success 0 is returned, else
-  // 1 is returned and the StatusSerializer logs the error.
+  // 1 is returned and the StatusSerializer logs the error. Since this method
+  // can potentially perform a copy to untrusted memory depending on the value
+  // of allocator_, it should not be used for backends that cannot access
+  // untrusted memory directly.
   int Serialize(const Status &status) {
     status.SaveTo(status_proto_);
 
@@ -136,16 +128,7 @@ class StatusSerializer {
       return 1;
     }
 
-    // Use the custom allocator if specified.
-    if (custom_allocator_) {
-      *output_ = reinterpret_cast<char *>(custom_allocator_(*output_len_));
-    } else {
-      // Instance of the global memory pool singleton.
-      asylo::UntrustedCacheMalloc *untrusted_cache_malloc =
-          asylo::UntrustedCacheMalloc::Instance();
-      *output_ = reinterpret_cast<char *>(
-          untrusted_cache_malloc->Malloc(*output_len_));
-    }
+    *output_ = reinterpret_cast<char *>(allocator_(*output_len_));
     memcpy(*output_, trusted_output.get(), *output_len_);
     return 0;
   }
@@ -156,7 +139,7 @@ class StatusSerializer {
   StatusProto *status_proto_;
   char **output_;
   size_t *output_len_;
-  std::function<void *(size_t)> custom_allocator_;
+  std::function<void *(size_t)> allocator_;
 };
 
 // Validates that the address-range [|address|, |address| + |size|) is fully
@@ -197,7 +180,7 @@ PrimitiveStatus Initialize(void *context, MessageReader *in,
   if (!result) {
     out->PushByCopy(Extent{output, output_len});
   }
-  TrustedPrimitives::UntrustedLocalFree(output);
+  free(output);
   return PrimitiveStatus(result);
 }
 
@@ -217,7 +200,7 @@ PrimitiveStatus Run(void *context, MessageReader *in, MessageWriter *out) {
   if (!result) {
     out->PushByCopy(Extent{output, output_len});
   }
-  TrustedPrimitives::UntrustedLocalFree(output);
+  free(output);
   return PrimitiveStatus(result);
 }
 
@@ -238,7 +221,7 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
   if (!result) {
     out->PushByCopy(Extent{output, output_len});
   }
-  TrustedPrimitives::UntrustedLocalFree(output);
+  free(output);
   return PrimitiveStatus(result);
 }
 
@@ -397,20 +380,6 @@ extern "C" {
 
 int __asylo_user_init(const char *name, const char *config, size_t config_len,
                       char **output, size_t *output_len) {
-  // Destroys the global memory pool singleton if enclave initialization was
-  // unsuccessful.
-  struct InitCleaner {
-    bool enclave_was_initialized = false;
-
-    ~InitCleaner() {
-      if (!enclave_was_initialized) {
-        // Delete instance of the global memory pool singleton freeing all
-        // memory held by the pool.
-        delete asylo::UntrustedCacheMalloc::Instance();
-      }
-    }
-  } init_cleaner;
-
   Status status = VerifyOutputArguments(output, output_len);
   if (!status.ok()) {
     return 1;
@@ -440,7 +409,6 @@ int __asylo_user_init(const char *name, const char *config, size_t config_len,
     return status_serializer.Serialize(status);
   }
 
-  init_cleaner.enclave_was_initialized = true;
   trusted_application->SetState(EnclaveState::kRunning);
   return status_serializer.Serialize(status);
 }
@@ -504,10 +472,6 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
   ThreadManager *thread_manager = ThreadManager::GetInstance();
   thread_manager->Finalize();
 
-  // Delete instance of the global memory pool singleton freeing all memory held
-  // by the pool.
-  delete asylo::UntrustedCacheMalloc::Instance();
-
   trusted_application->SetState(EnclaveState::kFinalized);
   return status_serializer.Serialize(status);
 }
@@ -557,8 +521,7 @@ int __asylo_take_snapshot(char **output, size_t *output_len) {
   }
   EnclaveOutput enclave_output;
   // Take snapshot should not change any enclave states. Call
-  // UntrustedLocalAlloc directly to create the StatusSerializer to avoid
-  // change the state of UntrustedCacheMalloc instance after snapshotting.
+  // UntrustedLocalAlloc directly to create the StatusSerializer.
   StatusSerializer<EnclaveOutput> status_serializer(
       &enclave_output, enclave_output.mutable_status(), output, output_len,
       &TrustedPrimitives::UntrustedLocalAlloc);
@@ -597,7 +560,8 @@ int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
     return 1;
   }
 
-  StatusSerializer<StatusProto> status_serializer(output, output_len);
+  StatusSerializer<StatusProto> status_serializer(
+      output, output_len, &TrustedPrimitives::UntrustedLocalAlloc);
 
   asylo::StatusOr<const asylo::EnclaveConfig *> config_result =
       asylo::GetEnclaveConfig();
@@ -633,9 +597,6 @@ int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
     ThreadManager *thread_manager = ThreadManager::GetInstance();
     thread_manager->Finalize();
 
-    // Delete instance of the global memory pool singleton freeing all memory
-    // held by the pool.
-    delete asylo::UntrustedCacheMalloc::Instance();
     trusted_application->SetState(EnclaveState::kFinalized);
   }
 
@@ -649,7 +610,8 @@ int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
     return 1;
   }
 
-  StatusSerializer<StatusProto> status_serializer(output, output_len);
+  StatusSerializer<StatusProto> status_serializer(
+      output, output_len, &TrustedPrimitives::UntrustedLocalAlloc);
 
   asylo::ForkHandshakeConfig fork_handshake_config;
   if (!fork_handshake_config.ParseFromArray(input, input_len)) {

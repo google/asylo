@@ -132,7 +132,6 @@ cc_library(
         ":entry_selectors",
         ":shared_name",
         ":trusted_core",
-        ":untrusted_cache_malloc",
         "//asylo:enclave_cc_proto",
         "//asylo/identity:init",
         "//asylo/platform/arch:fork_cc_proto",
@@ -181,9 +180,9 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":atomic",
-        ":untrusted_cache_malloc",
         "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
     ],
 )
 

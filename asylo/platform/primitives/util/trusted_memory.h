@@ -21,20 +21,17 @@
 
 #include <memory>
 
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
-
-// Forward declaration of the API exposed by UntrustedCacheMalloc which allows
-// C code to depend on the global memory pool singleton. This forward
-// declaration is required here to break the cyclic dependencies between
-// platform/arch and platform/core.
-extern "C" void untrusted_cache_free(void *buffer);
 
 namespace asylo {
 
 // Deleter for untrusted memory for use with std::unique_ptr. Calls
-// untrusted_cache_free() internally.
+// UntrustedLocalFree() internally.
 struct UntrustedDeleter {
-  inline void operator()(void *ptr) const { untrusted_cache_free(ptr); }
+  inline void operator()(void *ptr) const {
+    asylo::primitives::TrustedPrimitives::UntrustedLocalFree(ptr);
+  }
 };
 
 template <typename T>
