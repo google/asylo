@@ -56,7 +56,7 @@ pid_t ForkEnclave() {
     return -1;
   }
 
-  return asylo::enc_fork(asylo::GetEnclaveName().c_str(), *config);
+  return asylo::enc_fork(asylo::GetEnclaveName().c_str());
 }
 
 }  // namespace

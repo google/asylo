@@ -27,7 +27,7 @@
 
 namespace asylo {
 
-pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config);
+pid_t enc_fork(const char *enclave_name);
 
 // Returns whether secure fork is supported in the current backend.
 bool IsSecureForkSupported();

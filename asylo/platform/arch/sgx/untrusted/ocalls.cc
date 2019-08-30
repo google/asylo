@@ -613,8 +613,7 @@ int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
 
 void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
 
-pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
-                               bridge_size_t config_len,
+pid_t ocall_enc_untrusted_fork(const char *enclave_name,
                                bool restore_snapshot) {
   auto manager_result = asylo::EnclaveManager::Instance();
   if (!manager_result.ok()) {
@@ -729,15 +728,6 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name, const char *config,
   }
 
   size_t enclave_size = primitive_client->GetEnclaveSize();
-
-  // Parse the config from the enclave to load the child enclave with exactly
-  // the same config as the parent enclave.
-  asylo::EnclaveConfig enclave_config;
-  if (!enclave_config.ParseFromArray(config, static_cast<size_t>(config_len))) {
-    LOG(ERROR) << "Failed to parse EnclaveConfig";
-    errno = EFAULT;
-    return -1;
-  }
 
   if (pid == 0) {
     if (close(pipefd[0]) < 0) {

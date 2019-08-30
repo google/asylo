@@ -933,20 +933,14 @@ Status TransferSecureSnapshotKey(
   }
 }
 
-pid_t enc_fork(const char *enclave_name, const EnclaveConfig &config) {
+pid_t enc_fork(const char *enclave_name) {
   // Saves the current stack/thread address info for snapshot.
   asylo::SaveThreadLayoutForSnapshot();
 
   // Set the fork requested bit.
   SetForkRequested();
-  std::string buf;
-  if (!config.SerializeToString(&buf)) {
-    errno = EFAULT;
-    return -1;
-  }
 
-  return enc_untrusted_fork(enclave_name, buf.data(), buf.size(),
-                            /*restore_snapshot=*/true);
+  return enc_untrusted_fork(enclave_name, /*restore_snapshot=*/true);
 }
 
 }  // namespace asylo

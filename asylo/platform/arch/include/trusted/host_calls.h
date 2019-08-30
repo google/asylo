@@ -190,8 +190,7 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
 //////////////////////////////////////
 
 void enc_untrusted__exit(int rc);
-pid_t enc_untrusted_fork(const char *enclave_name, const char *config,
-                         size_t config_len, bool restore_snapshot);
+pid_t enc_untrusted_fork(const char *enclave_name, bool restore_snapshot);
 
 //////////////////////////////////////
 //            utime.h               //
