@@ -54,10 +54,8 @@ extern "C" void *memalign(size_t alignment, size_t size);
 int posix_memalign(void **memptr, size_t alignment, size_t size) {
   // The spec says passing a size of 0 should either return a null pointer or
   // a valid freeable pointer.
-  if (size == 0) {
-    *memptr = nullptr;
-    return 0;
-  }
+  // The latter behavior is used by some applications to check that
+  // allocations can succeed.
 
   void *ptr = memalign(alignment, size);
 
