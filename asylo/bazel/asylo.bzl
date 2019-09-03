@@ -287,6 +287,7 @@ exec "./{loader}" {args} "$@"
 """
 
     args = _interpolate_enclave_paths(ctx.attr.enclaves, ctx.attr.loader_args)
+    files = [ctx.executable.loader] + ctx.files.enclaves + ctx.files.data
 
     script_src = script_tmpl.format(
         loader = ctx.executable.loader.short_path,
@@ -303,9 +304,7 @@ exec "./{loader}" {args} "$@"
 
     return [DefaultInfo(
         executable = script_file,
-        runfiles = ctx.runfiles(files = [ctx.executable.loader] +
-                                        ctx.files.enclaves +
-                                        ctx.files.data),
+        runfiles = ctx.runfiles(files = files),
     )]
 
 def _make_enclave_runner_rule(test = False):
@@ -433,6 +432,7 @@ def enclave_loader(
         each of which will be replaced with the path to the named enclave.
       **kwargs: cc_binary arguments.
     """
+
     loader_plain_name = name + "_loader"
     loader_name = name + "_host_loader"
 
@@ -481,7 +481,6 @@ def sim_enclave_loader(
       loader_args: List of arguments to be passed to `loader`. Arguments may
         contain {enclave_name}-style references to keys from the `enclaves` dict,
         each of which will be replaced with the path to the named enclave.
-      **kwargs: cc_binary arguments.
     """
 
     if "manual" not in kwargs.get("tags", []):
@@ -675,8 +674,7 @@ def enclave_test(
     test_name = name + "_driver"
     loader_name = name + "_host_driver"
 
-    data = kwargs.get("data", [])
-    kwargs.pop("data", None)
+    data = kwargs.pop("data", [])
 
     flaky = kwargs.pop("flaky", None)
     size = kwargs.pop("size", None)
