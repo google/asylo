@@ -346,6 +346,15 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositive) {
   EXPECT_TRUE(IsValidMatchSpec(spec));
 }
 
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositiveLegacyMatchSpec) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+
+  // Clear SgxMachineConfiguration to create a valid legacy match spec.
+  spec.clear_machine_configuration_match_spec();
+  EXPECT_FALSE(IsValidMatchSpec(spec, /*is_legacy=*/false));
+  EXPECT_TRUE(IsValidMatchSpec(spec, /*is_legacy=*/true));
+}
+
 TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative1) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_is_mrenclave_match_required();
@@ -495,6 +504,23 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositive) {
   EXPECT_TRUE(IsValidExpectation(expectation));
 }
 
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveLegacyMatchSpec) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
+  *id.mutable_code_identity()->mutable_signer_assigned_identity() =
+      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+
+  // Clear SgxMachineConfiguration to create a valid legacy match spec.
+  expectation.mutable_match_spec()->clear_machine_configuration_match_spec();
+  EXPECT_FALSE(IsValidExpectation(expectation, /*is_legacy=*/false));
+  EXPECT_TRUE(IsValidExpectation(expectation, /*is_legacy=*/true));
+}
+
 TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative1) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
@@ -580,8 +606,14 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
   SgxIdentityExpectation expectation;
   ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
 
-  EXPECT_THAT(MatchIdentityToExpectation(id, expectation),
-              IsOkAndHolds(testing::IsTrue));
+  EXPECT_THAT(MatchIdentityToExpectation(id, expectation), IsOkAndHolds(true));
+
+  // Clear SgxMachineConfiguration to create a valid legacy match spec.
+  expectation.mutable_match_spec()->clear_machine_configuration_match_spec();
+  EXPECT_THAT(MatchIdentityToExpectation(id, expectation, /*is_legacy=*/false),
+              Not(IsOk()));
+  EXPECT_THAT(MatchIdentityToExpectation(id, expectation, /*is_legacy=*/true),
+              IsOkAndHolds(true));
 }
 
 // Make sure that an CodeIdentity matches an expectation when it differs from
@@ -1345,6 +1377,27 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityMatchSpecEndToEnd) {
       << FormatProto(generated_sgx_spec) << FormatProto(parsed_sgx_spec);
 }
 
+TEST_F(CodeIdentityUtilTest,
+       SerializeAndParseLegacySgxIdentityMatchSpecEndToEnd) {
+  SgxIdentityMatchSpec generated_sgx_spec;
+  std::string generic_spec;
+  generated_sgx_spec = GetRandomValidSgxMatchSpec();
+
+  // Clear SgxMachineConfiguration to create a valid legacy match spec.
+  generated_sgx_spec.clear_machine_configuration_match_spec();
+
+  ASYLO_ASSERT_OK(SerializeSgxMatchSpec(
+      generated_sgx_spec.code_identity_match_spec(), &generic_spec));
+  SgxIdentityMatchSpec parsed_sgx_spec;
+  EXPECT_THAT(
+      ParseSgxMatchSpec(generic_spec, &parsed_sgx_spec, /*is_legacy=*/false),
+      Not(IsOk()));
+  ASYLO_ASSERT_OK(
+      ParseSgxMatchSpec(generic_spec, &parsed_sgx_spec, /*is_legacy=*/true));
+  ASSERT_THAT(parsed_sgx_spec, EquivalentProto(generated_sgx_spec))
+      << FormatProto(parsed_sgx_spec) << FormatProto(generated_sgx_spec);
+}
+
 TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxExpectationEndToEnd) {
   CodeIdentityExpectation generated_sgx_expectation;
   EnclaveIdentityExpectation generic_expectation;
@@ -1381,6 +1434,39 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityExpectationEndToEnd) {
               EquivalentProto(parsed_sgx_expectation))
       << FormatProto(generated_sgx_expectation)
       << FormatProto(parsed_sgx_expectation);
+}
+
+TEST_F(CodeIdentityUtilTest,
+       SerializeAndParseLegacySgxIdentityExpectationEndToEnd) {
+  SgxIdentityExpectation generated_sgx_expectation =
+      GetRandomValidSgxExpectation();
+  EnclaveIdentityExpectation generic_expectation;
+
+  // Clear SgxMachineConfiguration to create a valid legacy expectation.
+  generated_sgx_expectation.mutable_reference_identity()
+      ->clear_machine_configuration();
+  generated_sgx_expectation.mutable_match_spec()
+      ->clear_machine_configuration_match_spec();
+
+  CodeIdentityExpectation generated_code_expectation;
+  *generated_code_expectation.mutable_reference_identity() =
+      generated_sgx_expectation.reference_identity().code_identity();
+  *generated_code_expectation.mutable_match_spec() =
+      generated_sgx_expectation.match_spec().code_identity_match_spec();
+
+  ASYLO_ASSERT_OK(SerializeSgxExpectation(generated_code_expectation,
+                                          &generic_expectation));
+
+  SgxIdentityExpectation parsed_sgx_expectation;
+  EXPECT_THAT(ParseSgxExpectation(generic_expectation, &parsed_sgx_expectation,
+                                  /*is_legacy=*/false),
+              Not(IsOk()));
+  ASYLO_ASSERT_OK(ParseSgxExpectation(
+      generic_expectation, &parsed_sgx_expectation, /*is_legacy=*/true));
+  ASSERT_THAT(parsed_sgx_expectation,
+              EquivalentProto(generated_sgx_expectation))
+      << FormatProto(parsed_sgx_expectation)
+      << FormatProto(generated_sgx_expectation);
 }
 
 TEST_F(CodeIdentityUtilTest, SetTargetinfoFromSelfIdentity) {

@@ -30,12 +30,21 @@
 namespace asylo {
 namespace sgx {
 
+// A "legacy" identity, match spec, or expectation is one that does not contain
+// any SgxMachineConfiguration-related fields. When the |is_legacy| parameter on
+// any of these methods is set to true, all checks on SgxMachineConfiguration-
+// related fields are skipped. The rationale behind introducing an explicit
+// parameter to control this rather than simply checking for the presence of
+// the |machine_configuration| field within a match spec is that it *should* be
+// invalid for this field to be missing on non-legacy match specs.
+
 // Matches |identity| to given |expectation|. Returns true if there is no error
 // encountered, and if the match is successful. Else returns false.
 StatusOr<bool> MatchIdentityToExpectation(
     const CodeIdentity &identity, const CodeIdentityExpectation &expectation);
 StatusOr<bool> MatchIdentityToExpectation(
-    const SgxIdentity &identity, const SgxIdentityExpectation &expectation);
+    const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
+    bool is_legacy = false);
 
 // Sets |expectation| based on |identity| and |match_spec|. Returns true on
 // success (no error), else returns false.
@@ -55,11 +64,13 @@ bool IsValidSgxIdentity(const SgxIdentity &identity);
 
 // Checks if a match specification is valid.
 bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec);
-bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec);
+bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec,
+                      bool is_legacy = false);
 
 // Checks if an identity expectation is valid.
 bool IsValidExpectation(const CodeIdentityExpectation &expectation);
-bool IsValidExpectation(const SgxIdentityExpectation &expectation);
+bool IsValidExpectation(const SgxIdentityExpectation &expectation,
+                        bool is_legacy = false);
 
 // Parses CodeIdentity from |report| and places the result in |identity|. Does
 // not verify |report|.
@@ -110,7 +121,8 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
                          CodeIdentityMatchSpec *sgx_match_spec);
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
-                         SgxIdentityMatchSpec *sgx_match_spec);
+                         SgxIdentityMatchSpec *sgx_match_spec,
+                         bool is_legacy = false);
 
 // Parses SGX code identity expectation |sgx_expectation| from
 // |generic_expectation|.
@@ -119,7 +131,7 @@ Status ParseSgxExpectation(
     CodeIdentityExpectation *sgx_expectation);
 Status ParseSgxExpectation(
     const EnclaveIdentityExpectation &generic_expectation,
-    SgxIdentityExpectation *sgx_expectation);
+    SgxIdentityExpectation *sgx_expectation, bool is_legacy = false);
 
 // Serializes SGX code identity |sgx_identity| into the identity field of
 // |generic_identity|. Sets the description field of |generic_identity| to

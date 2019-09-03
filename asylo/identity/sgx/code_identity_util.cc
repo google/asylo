@@ -151,6 +151,7 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
   return IsIdentityCompatibleWithMatchSpec(identity.code_identity(),
                                            spec.code_identity_match_spec());
 }
+
 }  // namespace internal
 
 StatusOr<bool> MatchIdentityToExpectation(
@@ -173,8 +174,9 @@ StatusOr<bool> MatchIdentityToExpectation(
 }
 
 StatusOr<bool> MatchIdentityToExpectation(
-    const SgxIdentity &identity, const SgxIdentityExpectation &expectation) {
-  if (!IsValidExpectation(expectation)) {
+    const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
+    bool is_legacy) {
+  if (!IsValidExpectation(expectation, is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Expectation parameter is invalid");
   }
@@ -278,20 +280,15 @@ bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec) {
          match_spec.has_attributes_match_mask();
 }
 
-bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec) {
-  if (!match_spec.has_code_identity_match_spec() ||
-      !match_spec.has_machine_configuration_match_spec()) {
-    return false;
+bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec, bool is_legacy) {
+  if (!is_legacy) {
+    const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
+        match_spec.machine_configuration_match_spec();
+    if (!machine_config_match_spec.has_is_cpu_svn_match_required() ||
+        !machine_config_match_spec.has_is_sgx_type_match_required()) {
+      return false;
+    }
   }
-
-  const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
-      match_spec.machine_configuration_match_spec();
-
-  if (!machine_config_match_spec.has_is_cpu_svn_match_required() ||
-      !machine_config_match_spec.has_is_sgx_type_match_required()) {
-    return false;
-  }
-
   return IsValidMatchSpec(match_spec.code_identity_match_spec());
 }
 
@@ -307,9 +304,10 @@ bool IsValidExpectation(const CodeIdentityExpectation &expectation) {
   return internal::IsIdentityCompatibleWithMatchSpec(identity, spec);
 }
 
-bool IsValidExpectation(const SgxIdentityExpectation &expectation) {
+bool IsValidExpectation(const SgxIdentityExpectation &expectation,
+                        bool is_legacy) {
   const SgxIdentityMatchSpec &spec = expectation.match_spec();
-  if (!IsValidMatchSpec(spec)) {
+  if (!IsValidMatchSpec(spec, is_legacy)) {
     return false;
   }
 
@@ -524,12 +522,16 @@ Status ParseSgxMatchSpec(const std::string &generic_match_spec,
 }
 
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
-                         SgxIdentityMatchSpec *sgx_match_spec) {
+                         SgxIdentityMatchSpec *sgx_match_spec, bool is_legacy) {
+  if (is_legacy) {
+    return ParseSgxMatchSpec(
+        generic_match_spec, sgx_match_spec->mutable_code_identity_match_spec());
+  }
   if (!sgx_match_spec->ParseFromString(generic_match_spec)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Could not parse SGX match spec from the match-spec string");
   }
-  if (!IsValidMatchSpec(*sgx_match_spec)) {
+  if (!IsValidMatchSpec(*sgx_match_spec, is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Parsed SGX match spec is invalid");
   }
@@ -557,14 +559,15 @@ Status ParseSgxExpectation(
 
 Status ParseSgxExpectation(
     const EnclaveIdentityExpectation &generic_expectation,
-    SgxIdentityExpectation *sgx_expectation) {
+    SgxIdentityExpectation *sgx_expectation, bool is_legacy) {
   // First, parse the identity portion of the expectation, as that also
   // verifies whether the expectation is of correct type.
   ASYLO_RETURN_IF_ERROR(
       ParseSgxIdentity(generic_expectation.reference_identity(),
                        sgx_expectation->mutable_reference_identity()));
-  ASYLO_RETURN_IF_ERROR(ParseSgxMatchSpec(
-      generic_expectation.match_spec(), sgx_expectation->mutable_match_spec()));
+  ASYLO_RETURN_IF_ERROR(ParseSgxMatchSpec(generic_expectation.match_spec(),
+                                          sgx_expectation->mutable_match_spec(),
+                                          is_legacy));
   if (!internal::IsIdentityCompatibleWithMatchSpec(
           sgx_expectation->reference_identity(),
           sgx_expectation->match_spec())) {
