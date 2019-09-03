@@ -4404,7 +4404,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,583 @@
+@@ -0,0 +1,590 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -4662,18 +4662,21 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +def _sgx_debug_enclave_impl(ctx):
 +    """Implementation of an automated signing process of an unsigned enclave."""
-+    ctx.actions.run(
++    ctx.actions.run_shell(
 +        inputs = [
 +            ctx.file.unsigned,
 +            ctx.file._key,
 +            ctx.file.config,
 +        ],
-+        executable = ctx.executable._sign_tool,
++        tools = [ctx.executable._sign_tool],
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Signing for debug: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
 +            name = ctx.attr.unsigned.label.name,
 +        ),
++        # Suppresses tool output on success.
++        command = "output=`%s $@ 2>&1` || echo $output" %
++                  ctx.executable._sign_tool.path,
 +        arguments = [
 +            "sign",
 +            "-enclave",
@@ -4736,17 +4739,19 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    sigstruct = ctx.outputs.sigstruct
 +    if not sigstruct:
 +        sigstruct = ctx.actions.declare_file(ctx.label.name + ".dat")
-+    ctx.actions.run(
++    ctx.actions.run_shell(
 +        inputs = [
 +            ctx.file.unsigned,
 +            ctx.file.config,
 +        ],
-+        executable = ctx.executable._sign_tool,
++        tools = [ctx.executable._sign_tool],
 +        outputs = [sigstruct],
 +        progress_message = "Generating SIGSTRUCT material for: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
 +            name = ctx.attr.unsigned.label.name,
 +        ),
++        command = "output=`%s $@ 2>&1` || echo $output" %
++                  ctx.executable._sign_tool.path,
 +        arguments = [
 +            "gendata",
 +            "-enclave",
@@ -4841,7 +4846,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    config = ctx.attr.sigstruct[SGXSigstructInfo].config
 +    unsigned = ctx.attr.sigstruct[SGXSigstructInfo].unsigned
 +    unsigned_file = unsigned.files.to_list()[0]
-+    ctx.actions.run(
++    ctx.actions.run_shell(
 +        inputs = [
 +            config,
 +            ctx.file.public_key,
@@ -4849,12 +4854,14 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +            ctx.file.sigstruct,
 +            unsigned_file,
 +        ],
-+        executable = ctx.executable._sign_tool,
++        tools = [ctx.executable._sign_tool],
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Integrating signature into: //{pkg}:{name}".format(
 +            pkg = unsigned.label.package,
 +            name = unsigned.label.name,
 +        ),
++        command = "output=`%s $@ 2>&1` || echo $output" %
++                  ctx.executable._sign_tool.path,
 +        arguments = [
 +            "catsig",
 +            "-enclave",
