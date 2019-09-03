@@ -87,6 +87,7 @@ cc_library(
 cc_test(
     name = "aead_cryptor_test",
     srcs = ["aead_cryptor_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":aead_cryptor",
         ":aead_test_vector",

@@ -18,6 +18,8 @@
 
 licenses(["notice"])
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 package(
     default_testonly = 1,
     default_visibility = ["//asylo:implementation"],
@@ -26,6 +28,7 @@ package(
 cc_library(
     name = "mock_identity_expectation_matcher",
     hdrs = ["mock_identity_expectation_matcher.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",

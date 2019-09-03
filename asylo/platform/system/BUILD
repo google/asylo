@@ -45,6 +45,7 @@ cc_library(
 cc_enclave_test(
     name = "cmath_enclave_test",
     srcs = ["cmath_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "@com_google_absl//absl/base:core_headers",
         "@com_google_googletest//:gtest",

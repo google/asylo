@@ -264,6 +264,7 @@ cc_library(
     name = "sgx_remote_assertion_generator_client",
     srcs = ["sgx_remote_assertion_generator_client.cc"],
     hdrs = ["sgx_remote_assertion_generator_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":remote_assertion_cc_proto",
         ":sgx_remote_assertion_generator_service",
@@ -276,6 +277,7 @@ cc_library(
 cc_test(
     name = "sgx_remote_assertion_generator_client_test",
     srcs = ["sgx_remote_assertion_generator_client_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "sgx_remote_assertion_generator_client_enclave_test",
     deps = [
         ":remote_assertion_cc_proto",
@@ -500,6 +502,7 @@ cc_library(
     name = "remote_assertion_util",
     srcs = ["remote_assertion_util.cc"],
     hdrs = ["remote_assertion_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_cc_proto",
         ":remote_assertion_cc_proto",
@@ -515,6 +518,7 @@ cc_library(
 cc_test(
     name = "remote_assertion_util_test",
     srcs = ["remote_assertion_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "remote_assertion_util_enclave_test",
     deps = [
         ":code_identity_util",
@@ -534,6 +538,7 @@ cc_library(
     name = "code_identity_constants",
     srcs = ["code_identity_constants.cc"],
     hdrs = ["code_identity_constants.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo/identity:__subpackages__"],
 )
 
@@ -543,6 +548,7 @@ cc_library(
         "sgx_local_assertion_generator.cc",
         "sgx_local_assertion_generator.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_constants",
@@ -566,6 +572,7 @@ cc_test(
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_generator_test.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "sgx_local_assertion_generator_enclave_test",
     deps = [
         ":code_identity_constants",
@@ -598,6 +605,7 @@ cc_library(
         "sgx_local_assertion_verifier.cc",
         "sgx_local_assertion_verifier.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_constants",
@@ -622,6 +630,7 @@ cc_test(
         "sgx_local_assertion_verifier.h",
         "sgx_local_assertion_verifier_test.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "sgx_local_assertion_verifier_enclave_test",
     deps = [
         ":code_identity_constants",
@@ -656,6 +665,7 @@ cc_test(
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_verifier.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_util",
@@ -711,6 +721,7 @@ cc_library(
         "code_identity_util.h",
         "self_identity.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_cc_proto",
@@ -742,6 +753,7 @@ cc_library(
 cc_test(
     name = "code_identity_util_test",
     srcs = ["code_identity_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attributes_cc_proto",
         ":attributes_util",
@@ -774,6 +786,7 @@ cc_library(
     name = "attributes_util",
     srcs = ["attributes_util.cc"],
     hdrs = ["attributes_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attributes_cc_proto",
         "@com_google_protobuf//:protobuf",
@@ -783,6 +796,7 @@ cc_library(
 cc_test(
     name = "attributes_util_test",
     srcs = ["attributes_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "attributes_util_enclave_test",
     deps = [
         ":attributes_cc_proto",
@@ -796,6 +810,7 @@ cc_library(
     name = "sgx_code_identity_expectation_matcher",
     srcs = ["sgx_code_identity_expectation_matcher.cc"],
     hdrs = ["sgx_code_identity_expectation_matcher.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_util",
@@ -812,6 +827,7 @@ cc_test(
         "sgx_code_identity_expectation_matcher.h",
         "sgx_code_identity_expectation_matcher_test.cc",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "sgx_code_identity_expectation_matcher_enclave_test",
     deps = [
         ":code_identity_cc_proto",
@@ -837,6 +853,7 @@ cc_library(
         "secs_attributes.h",
         "secs_miscselect.h",
     ],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_cc_proto",
@@ -893,6 +910,7 @@ cc_library(
         "@com_google_asylo//asylo": [],
         "//conditions:default": ["fake_enclave.h"],
     }),
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
         "@com_google_absl//absl/base:core_headers",
@@ -920,6 +938,7 @@ cc_library(
 cc_test(
     name = "fake_hardware_interface_test",
     srcs = ["fake_hardware_interface_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_util",
         ":hardware_interface",
@@ -940,6 +959,7 @@ cc_test(
 cc_test(
     name = "verify_hardware_report_test",
     srcs = ["verify_hardware_report_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "verify_hardware_report_enclave_test",
     deps = [
         ":code_identity_util",
@@ -1370,6 +1390,7 @@ cc_library(
     name = "local_secret_sealer_helpers",
     srcs = ["local_secret_sealer_helpers.cc"],
     hdrs = ["local_secret_sealer_helpers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
     deps = [
         ":code_identity_cc_proto",
@@ -1399,6 +1420,7 @@ cc_library(
     name = "sgx_local_secret_sealer",
     srcs = ["sgx_local_secret_sealer.cc"],
     hdrs = ["sgx_local_secret_sealer.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_cc_proto",
@@ -1425,6 +1447,7 @@ cc_library(
 cc_test(
     name = "sgx_local_secret_sealer_test",
     srcs = ["sgx_local_secret_sealer_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_util",
@@ -1450,6 +1473,7 @@ cc_library(
     name = "proto_format",
     srcs = ["proto_format.cc"],
     hdrs = ["proto_format.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_cc_proto",
@@ -1466,6 +1490,7 @@ cc_library(
 cc_test(
     name = "proto_format_test",
     srcs = ["proto_format_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "proto_format_enclave_test",
     deps = [
         ":code_identity_cc_proto",

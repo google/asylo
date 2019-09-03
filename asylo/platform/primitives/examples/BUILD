@@ -99,6 +99,7 @@ sim_enclave_test(
 cc_library(
     name = "entry_points",
     srcs = ["entry_points.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
 )
 
 sgx_enclave(

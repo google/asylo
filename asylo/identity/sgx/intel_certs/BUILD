@@ -18,9 +18,12 @@ licenses(["notice"])
 
 # This package contains constants for Intel SGX ECDSA PKI certificates.
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 cc_library(
     name = "intel_sgx_root_ca_cert",
     srcs = ["intel_sgx_root_ca_cert.cc"],
     hdrs = ["intel_sgx_root_ca_cert.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
 )

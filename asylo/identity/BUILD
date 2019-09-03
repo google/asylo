@@ -109,6 +109,7 @@ cc_test(
 cc_library(
     name = "descriptions",
     hdrs = ["descriptions.h"],
+    copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":identity_cc_proto",
@@ -211,6 +212,7 @@ cc_library(
 cc_test(
     name = "additional_authenticated_data_generator_test",
     srcs = ["additional_authenticated_data_generator_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":additional_authenticated_data_generator",
         "//asylo/test/util:status_matchers",
