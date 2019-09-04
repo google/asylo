@@ -924,17 +924,6 @@ void *ocall_enc_untrusted_acquire_shared_resource(SharedNameKind kind,
   }
 }
 
-int ocall_enc_untrusted_release_shared_resource(SharedNameKind kind,
-                                                const char *name) {
-  asylo::SharedName shared_name(kind, std::string(name));
-  auto manager_result = asylo::EnclaveManager::Instance();
-  if (manager_result.ok()) {
-    return manager_result.ValueOrDie()->shared_resources()->ReleaseResource(
-        shared_name);
-  }
-  return false;
-}
-
 //////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////

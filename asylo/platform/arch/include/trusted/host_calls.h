@@ -216,12 +216,6 @@ pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options);
 void *enc_untrusted_acquire_shared_resource(enum SharedNameKind kind,
                                             const char *name);
 
-// Releases a shared resource by decrementing its reference count and, if this
-// is a managed resource, deleting it once its count reaches zero (0). Returns 0
-// on success.
-int enc_untrusted_release_shared_resource(enum SharedNameKind kind,
-                                          const char *name);
-
 //////////////////////////////////////
 //            Debugging             //
 //////////////////////////////////////

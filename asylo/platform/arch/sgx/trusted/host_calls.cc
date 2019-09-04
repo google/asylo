@@ -626,13 +626,6 @@ void *enc_untrusted_acquire_shared_resource(enum SharedNameKind kind,
   return ret;
 }
 
-int enc_untrusted_release_shared_resource(enum SharedNameKind kind,
-                                          const char *name) {
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_release_shared_resource(&ret, kind, name));
-  return ret ? 0 : -1;
-}
-
 //////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////
