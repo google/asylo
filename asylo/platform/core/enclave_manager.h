@@ -409,7 +409,11 @@ class EnclaveLoader {
   // on success and a non-ok status on failure.
   virtual StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       absl::string_view name, void *base_address, const size_t enclave_size,
-      const EnclaveConfig &config) const = 0;
+      const EnclaveConfig &config) const {
+    return Status(
+        error::GoogleError::INTERNAL,
+        "EnclaveLoader::LoadEnclave not implemented for test enclave");
+  }
 
   virtual EnclaveLoadConfig GetEnclaveLoadConfig() const = 0;
 };

@@ -41,42 +41,15 @@
 namespace asylo {
 
 
-StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
-    absl::string_view name, void *base_address, const size_t enclave_size,
-    const EnclaveConfig &config) const {
-  auto client = absl::make_unique<SgxClient>(name);
-
-  ASYLO_ASSIGN_OR_RETURN(
-      client->primitive_client_,
-      primitives::LoadEnclave<primitives::SgxBackend>(
-          name, base_address, enclave_path_, enclave_size, config, debug_,
-          absl::make_unique<primitives::DispatchTable>()));
-
-  return std::unique_ptr<EnclaveClient>(std::move(client));
-}
-
 EnclaveLoadConfig SgxLoader::GetEnclaveLoadConfig() const {
-    EnclaveLoadConfig load_config;
-    SgxLoadConfig sgx_config;
-    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
-    file_enclave_config.set_enclave_path(enclave_path_);
-    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
-    sgx_config.set_debug(debug_);
-    *load_config.MutableExtension(sgx_load_config) = sgx_config;
-    return load_config;
-  }
-StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
-    absl::string_view name, void *base_address, const size_t enclave_size,
-    const EnclaveConfig &config) const {
-  auto client = absl::make_unique<SgxClient>(name);
-
-  ASYLO_ASSIGN_OR_RETURN(
-      client->primitive_client_,
-      primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
-          name, base_address, section_name_, enclave_size, config, debug_,
-          absl::make_unique<primitives::DispatchTable>()));
-
-  return std::unique_ptr<EnclaveClient>(std::move(client));
+  EnclaveLoadConfig load_config;
+  SgxLoadConfig sgx_config;
+  SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+  file_enclave_config.set_enclave_path(enclave_path_);
+  *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+  sgx_config.set_debug(debug_);
+  *load_config.MutableExtension(sgx_load_config) = sgx_config;
+  return load_config;
 }
 
 EnclaveLoadConfig SgxEmbeddedLoader::GetEnclaveLoadConfig() const {
