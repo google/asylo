@@ -21,7 +21,7 @@ load(
     "sgx_enclave_test",
     "sim_enclave_test",
 )
-load("//asylo/bazel:sim_enclave.bzl", "sim_enclave")
+load("//asylo/bazel:sim_enclave.bzl", "primitives_sim_enclave")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -43,7 +43,7 @@ cc_library(
 )
 
 # Test enclave for invoking host calls for the tests.
-sim_enclave(
+primitives_sim_enclave(
     name = "sim_test_enclave.so",
     testonly = 1,
     srcs = [

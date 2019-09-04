@@ -30,10 +30,10 @@ load(
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
 load(
     "//asylo/bazel:sim_enclave.bzl",
-    "sim_enclave",
+    "primitives_sim_enclave",
 )
 
-sim_enclave(
+primitives_sim_enclave(
     name = "hello_sim_enclave.so",
     srcs = [
         "hello_enclave.cc",

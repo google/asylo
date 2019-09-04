@@ -38,11 +38,14 @@ _reprovide_binary_with_enclave_info = rule(
     },
 )
 
-def sim_enclave(
+def primitives_sim_enclave(
         name,
         deps = [],
         **kwargs):
     """Build rule for creating a simulated enclave shared object file.
+
+    This build rule is intended for use by the primitives layer, for building
+    enclaves not relying on TrustedApplication.
 
     A rule like cc_binary, but builds name_simulated.so and provides
     name as a target that may be consumed as an enclave in Asylo.
@@ -59,9 +62,9 @@ def sim_enclave(
       **kwargs: cc_binary arguments.
     """
     if not kwargs.pop("linkshared", True):
-        fail("A sim_enclave must be build with linkshared = True")
+        fail("A primitives_sim_enclave must be build with linkshared = True")
     if not kwargs.pop("linkstatic", True):
-        fail("A sim_enclave must be build with linkstatic = True")
+        fail("A primitives_sim_enclave must be build with linkstatic = True")
 
     binary_name = name + "_simulated.so"
     if ".so" in name:
