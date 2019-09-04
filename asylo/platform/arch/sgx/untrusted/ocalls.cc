@@ -67,6 +67,7 @@
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
+#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"

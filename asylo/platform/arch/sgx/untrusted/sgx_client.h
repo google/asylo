@@ -23,28 +23,9 @@
 
 #include "absl/base/macros.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/platform/arch/fork.pb.h"
 #include "asylo/platform/core/enclave_manager.h"
-#include "asylo/platform/core/generic_enclave_client.h"
-#include "asylo/platform/primitives/sgx/loader.pb.h"
-#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
-#include "asylo/util/status.h"
-#include "asylo/util/statusor.h"
-#include "include/sgx_urts.h"
 
 namespace asylo {
-
-/// Enclave client for Intel Software Guard Extensions (SGX) based enclaves.
-class SgxClient : public GenericEnclaveClient {
- public:
-  SgxClient() = delete;
-
-  explicit SgxClient(absl::string_view name) : GenericEnclaveClient(name) {}
-
- private:
-  friend class SgxLoader;
-  friend class SgxEmbeddedLoader;
-};
 
 /// Enclave loader for Intel Software Guard Extensions (SGX) based enclaves
 /// located in shared object files read from the file system.
@@ -84,9 +65,6 @@ class SgxEmbeddedLoader : public EnclaveLoader {
   const std::string section_name_;
   const bool debug_;
 };
-
-/// SgxClient alias for backwards compatibility.
-using SGXClient ABSL_DEPRECATED("Use SgxClient instead") = SgxClient;
 
 /// SgxLoader alias for backwards compatibility.
 using SGXLoader ABSL_DEPRECATED("Use SgxLoader instead") = SgxLoader;

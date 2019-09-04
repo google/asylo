@@ -18,25 +18,8 @@
 
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
 
-#include <cstdint>
-#include <string>
-
-#include "absl/memory/memory.h"
-#include "absl/strings/str_cat.h"
-#include "absl/strings/string_view.h"
-#include "absl/types/span.h"
-#include "asylo/util/logging.h"
-#include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
-#include "asylo/platform/common/bridge_functions.h"
-#include "asylo/platform/common/bridge_types.h"
-#include "asylo/platform/primitives/sgx/sgx_error_space.h"
-#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
-#include "asylo/platform/primitives/untrusted_primitives.h"
-#include "asylo/platform/primitives/util/dispatch_table.h"
-#include "asylo/util/elf_reader.h"
-#include "asylo/util/file_mapping.h"
-#include "asylo/util/posix_error_space.h"
-#include "asylo/util/status_macros.h"
+#include "asylo/enclave.pb.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 
 namespace asylo {
 

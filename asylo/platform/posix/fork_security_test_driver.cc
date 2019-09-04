@@ -30,6 +30,7 @@
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
 #include "asylo/platform/posix/fork_security_test.pb.h"
+#include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
