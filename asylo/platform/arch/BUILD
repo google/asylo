@@ -26,20 +26,6 @@ package(
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-# Protobuf used by fork.
-proto_library(
-    name = "fork_proto",
-    srcs = ["fork.proto"],
-    visibility = ["//visibility:public"],
-    deps = ["//asylo:enclave_proto"],
-)
-
-cc_proto_library(
-    name = "fork_cc_proto",
-    visibility = ["//visibility:public"],
-    deps = [":fork_proto"],
-)
-
 # Target exposing trusted architecture-dependent components for the build
 # configuration.
 cc_library(
@@ -70,10 +56,10 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":fork_cc_proto",
         ":untrusted_sgx",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/core:untrusted_core",
+        "//asylo/platform/primitives/sgx:fork_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/util:status",
@@ -153,7 +139,6 @@ cc_library(
     linkopts = ["-Wl,--undefined=ocall_table_bridge"],
     visibility = ["//visibility:private"],
     deps = [
-        ":fork_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
@@ -163,6 +148,7 @@ cc_library(
         "//asylo/platform/core:shared_name",
         "//asylo/platform/core:untrusted_core",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sgx:fork_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:sgx_params",
@@ -299,13 +285,13 @@ cc_library(
     linkstatic = 1,
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
-        ":fork_cc_proto",
         ":trusted_arch",
-        "//asylo/platform/primitives:trusted_backend",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/host_call",
+        "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives/sgx:fork_cc_proto",
         "//asylo/util:status",
     ] + select({
         "@linux_sgx//:sgx_hw": [

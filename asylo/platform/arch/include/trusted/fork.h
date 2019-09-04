@@ -22,7 +22,7 @@
 #include <sys/types.h>
 
 #include "asylo/enclave.pb.h"
-#include "asylo/platform/arch/fork.pb.h"
+#include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

@@ -22,7 +22,7 @@
 #include <string>
 
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
-#include "asylo/platform/arch/fork.pb.h"
+#include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/statusor.h"

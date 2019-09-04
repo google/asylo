@@ -25,7 +25,7 @@
 #include "absl/flags/flag.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/platform/arch/fork.pb.h"
+#include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
