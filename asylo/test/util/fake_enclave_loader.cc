@@ -30,8 +30,4 @@ StatusOr<std::unique_ptr<EnclaveClient>> FakeEnclaveLoader::LoadEnclave(
   return std::move(client_);
 }
 
-StatusOr<std::unique_ptr<EnclaveLoader>> FakeEnclaveLoader::Copy() const {
-  return nullptr;
-}
-
 }  // namespace asylo

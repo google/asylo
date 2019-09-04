@@ -36,7 +36,6 @@ class MockEnclaveLoader : public EnclaveLoader {
                          const size_t enclave_size,
                          const EnclaveConfig &config));
 
-  MOCK_CONST_METHOD0(Copy, StatusOr<std::unique_ptr<EnclaveLoader>>());
   MOCK_CONST_METHOD0(GetEnclaveLoadConfig, EnclaveLoadConfig());
 };
 

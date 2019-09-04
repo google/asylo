@@ -411,10 +411,6 @@ class EnclaveLoader {
       absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const = 0;
 
-  // Gets a copy of the loader that loaded a previous enclave. This is only used
-  // by fork to load a child enclave with the same loader as the parent.
-  virtual StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const = 0;
-
   virtual EnclaveLoadConfig GetEnclaveLoadConfig() const = 0;
 };
 

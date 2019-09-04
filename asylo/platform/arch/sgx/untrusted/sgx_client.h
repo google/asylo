@@ -63,8 +63,6 @@ class SgxLoader : public EnclaveLoader {
       absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
 
-  StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
-
   EnclaveLoadConfig GetEnclaveLoadConfig() const override;
 
   const std::string enclave_path_;
@@ -88,8 +86,6 @@ class SgxEmbeddedLoader : public EnclaveLoader {
   StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
       absl::string_view name, void *base_address, const size_t enclave_size,
       const EnclaveConfig &config) const override;
-
-  StatusOr<std::unique_ptr<EnclaveLoader>> Copy() const override;
 
   EnclaveLoadConfig GetEnclaveLoadConfig() const override;
 

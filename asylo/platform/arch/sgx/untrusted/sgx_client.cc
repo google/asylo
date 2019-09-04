@@ -55,14 +55,6 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxLoader::LoadEnclave(
   return std::unique_ptr<EnclaveClient>(std::move(client));
 }
 
-StatusOr<std::unique_ptr<EnclaveLoader>> SgxLoader::Copy() const {
-  std::unique_ptr<SgxLoader> loader(new SgxLoader(*this));
-  if (!loader) {
-    return Status(error::GoogleError::INTERNAL, "Failed to create self loader");
-  }
-  return std::unique_ptr<EnclaveLoader>(loader.release());
-}
-
 EnclaveLoadConfig SgxLoader::GetEnclaveLoadConfig() const {
     EnclaveLoadConfig load_config;
     SgxLoadConfig sgx_config;
@@ -85,14 +77,6 @@ StatusOr<std::unique_ptr<EnclaveClient>> SgxEmbeddedLoader::LoadEnclave(
           absl::make_unique<primitives::DispatchTable>()));
 
   return std::unique_ptr<EnclaveClient>(std::move(client));
-}
-
-StatusOr<std::unique_ptr<EnclaveLoader>> SgxEmbeddedLoader::Copy() const {
-  std::unique_ptr<SgxEmbeddedLoader> loader(new SgxEmbeddedLoader(*this));
-  if (!loader) {
-    return Status(error::GoogleError::INTERNAL, "Failed to create self loader");
-  }
-  return std::unique_ptr<EnclaveLoader>(loader.release());
 }
 
 EnclaveLoadConfig SgxEmbeddedLoader::GetEnclaveLoadConfig() const {
