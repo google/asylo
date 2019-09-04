@@ -26,6 +26,7 @@
 #include <memory>
 #include <string>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
@@ -46,6 +47,16 @@ class X509Certificate : public CertificateInterface {
   // into a X509Certificate.
   static StatusOr<std::unique_ptr<X509Certificate>> Create(
       const Certificate &certificate);
+
+  // Creates and returns an X509Certificate parsed from |pem_encoded_cert|.
+  // Returns a non-OK Status if the data could not be parsed into X.509.
+  static StatusOr<std::unique_ptr<X509Certificate>> CreateFromPem(
+      absl::string_view pem_encoded_cert);
+
+  // Creates and returns an X509Certificate parsed from |der_encoded_cert|.
+  // Returns a non-OK Status if the data could not be parsed into X.509.
+  static StatusOr<std::unique_ptr<X509Certificate>> CreateFromDer(
+      absl::string_view der_encoded_cert);
 
   // Creates and returns a PEM-formatted certificate equivalent to the data in
   // this object. Returns a non-OK Status if the object could not be

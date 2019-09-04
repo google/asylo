@@ -261,6 +261,32 @@ TEST_F(X509CertificateTest, CreateFromMalformedX509CertificateFails) {
               StatusIs(error::GoogleError::INTERNAL));
 }
 
+// Verifies that X509Certificate::CreateFromPem returns an OK Status with a
+// valid PEM-encoded X.509 string.
+TEST_F(X509CertificateTest, CreateFromPemSuccess) {
+  ASYLO_EXPECT_OK(X509Certificate::CreateFromPem(kTestRootCertPem));
+}
+
+// Verifies that X509Certificate::CreateFromPem returns an error with an invalid
+// PEM-encoding.
+TEST_F(X509CertificateTest, CreateFromPemFailure) {
+  EXPECT_THAT(X509Certificate::CreateFromPem(
+                  absl::HexStringToBytes(kTestIntermediateCertDerHex))
+                  .status(),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+// Verifies that X509Certificate::CreateFromDer returns an OK Status with a
+// valid DER-encoded X.509 string.
+TEST_F(X509CertificateTest, CreateFromDerSuccess) {
+  ASYLO_EXPECT_OK(X509Certificate::CreateFromDer(
+      absl::HexStringToBytes(kTestIntermediateCertDerHex)));
+}
+// Verifies that X509Certificate::CreateFromDer returns an error with an invalid
+// DER-encoding.
+TEST_F(X509CertificateTest, CreateFromDerFailure) {
+  EXPECT_THAT(X509Certificate::CreateFromDer(kTestRootCertPem).status(),
+              StatusIs(error::GoogleError::INTERNAL));
+}
 // Verifies that Create followed by ToPemCertificate returns the
 // original PEM-encoded certificate.
 TEST_F(X509CertificateTest, CreateAndToPemCertificateSuccess) {
@@ -380,7 +406,7 @@ TEST_F(X509CertificateTest, VerifyCertificateFailsWithDifferentIssuer) {
 
   VerificationConfig config = VerificationConfig();
   EXPECT_THAT(x509_intermediate->Verify(*x509_root, config),
-              StatusIs(error::GoogleError::UNKNOWN));
+              StatusIs(error::GoogleError::INTERNAL));
 }
 
 // Verifies that Verify returns an UNAUTHENTICATED error when the issuer_ca

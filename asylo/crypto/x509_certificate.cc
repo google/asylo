@@ -113,18 +113,11 @@ X509Certificate::X509Certificate() : x509_(CHECK_NOTNULL(X509_new())) {}
 
 StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(
     const Certificate &certificate) {
-  bssl::UniquePtr<BIO> cert_bio(
-      BIO_new_mem_buf(certificate.data().data(), certificate.data().size()));
-  bssl::UniquePtr<X509> x509;
   switch (certificate.format()) {
     case Certificate::X509_PEM:
-      x509.reset(PEM_read_bio_X509(cert_bio.get(), /*x=*/nullptr,
-                                   /*cb=*/nullptr,
-                                   /*u=*/nullptr));
-      break;
+      return CreateFromPem(certificate.data());
     case Certificate::X509_DER:
-      x509.reset(d2i_X509_bio(cert_bio.get(), /*x509=*/nullptr));
-      break;
+      return CreateFromDer(certificate.data());
     default:
       return Status(
           error::GoogleError::INVALID_ARGUMENT,
@@ -132,6 +125,27 @@ StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(
               "Transformation to X509 is not supported for: ",
               Certificate_CertificateFormat_Name(certificate.format())));
   }
+}
+
+StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::CreateFromPem(
+    absl::string_view pem_encoded_cert) {
+  bssl::UniquePtr<BIO> cert_bio(
+      BIO_new_mem_buf(pem_encoded_cert.data(), pem_encoded_cert.size()));
+  bssl::UniquePtr<X509> x509(PEM_read_bio_X509(cert_bio.get(), /*x=*/nullptr,
+                                               /*cb=*/nullptr,
+                                               /*u=*/nullptr));
+  if (x509 == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return absl::WrapUnique<X509Certificate>(
+      new X509Certificate(std::move(x509)));
+}
+
+StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::CreateFromDer(
+    absl::string_view der_encoded_cert) {
+  bssl::UniquePtr<BIO> cert_bio(
+      BIO_new_mem_buf(der_encoded_cert.data(), der_encoded_cert.size()));
+  bssl::UniquePtr<X509> x509(d2i_X509_bio(cert_bio.get(), /*x509=*/nullptr));
   if (x509 == nullptr) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
@@ -227,7 +241,7 @@ Status X509Certificate::Verify(const CertificateInterface &issuer_certificate,
                          CreatePublicKey(x509_.get(), issuer_public_key_der));
 
   if (X509_verify(x509_.get(), public_key.get()) != 1) {
-    return Status(error::GoogleError::UNKNOWN, BsslLastErrorString());
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
 
   if (config.issuer_ca) {
