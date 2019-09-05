@@ -47,6 +47,7 @@ cc_library(
         "//asylo/platform/common:memory",
         "//asylo/platform/posix/io:io_manager",
     ],
+    alwayslink = 1,
 )
 
 # Contains socket communication class for data transmission.

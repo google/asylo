@@ -74,6 +74,7 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],
+    alwayslink = 1,
 )
 
 # The core logic of the whole-application wrapper's driver.

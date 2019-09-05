@@ -137,6 +137,7 @@ cc_library(
         },
         no_match_error = "Must be built within the Asylo toolchain.",
     ),
+    alwayslink = 1,
 )
 
 # Test byteswap.h posix extension inside an enclave.

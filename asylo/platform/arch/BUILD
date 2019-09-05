@@ -233,6 +233,7 @@ cc_library(
         "@linux_sgx//:public",
         "@linux_sgx//:trts",
     ],
+    alwayslink = 1,
 )
 
 # This target supports building trusted targets with the system native compiler,

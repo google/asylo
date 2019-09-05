@@ -584,6 +584,7 @@ def cc_enclave_binary(
     native.cc_library(
         name = application_library_name,
         linkstatic = application_library_linkstatic,
+        alwayslink = application_library_linkstatic,
         **kwargs
     )
 

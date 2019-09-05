@@ -73,6 +73,7 @@ cc_library(
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],
+    alwayslink = 1,
 )
 
 # Used by the cc_enclave_test rule to execute gtest test suites inside enclaves.

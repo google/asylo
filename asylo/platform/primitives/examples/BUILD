@@ -100,6 +100,7 @@ cc_library(
     name = "entry_points",
     srcs = ["entry_points.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    alwayslink = 1,
 )
 
 sgx_enclave(

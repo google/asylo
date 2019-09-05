@@ -73,6 +73,7 @@ cc_library(
         "//asylo/platform/storage/utils:trusted_utils",
         "//asylo/platform/system",
     ],
+    alwayslink = 1,
 )
 
 # Message definitions for enclave entry and exit points.
