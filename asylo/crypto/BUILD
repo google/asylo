@@ -207,6 +207,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 

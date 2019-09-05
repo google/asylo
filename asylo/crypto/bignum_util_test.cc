@@ -79,6 +79,27 @@ TEST(BignumUtilTest, BigEndianLeadingZeroesAreStripped) {
               IsOkAndHolds(Pair(Sign::kPositive, ElementsAreArray(kBytes))));
 }
 
+TEST(BignumUtilTest, BigEndianZeroPadded) {
+  bssl::UniquePtr<BIGNUM> bignum;
+  ASYLO_ASSERT_OK_AND_ASSIGN(bignum,
+                             BignumFromBigEndianBytes(absl::MakeSpan(kBytes)));
+  EXPECT_THAT(
+      PaddedBigEndianBytesFromBignum(*bignum, sizeof(kBytesWithZerosPrepended)),
+      IsOkAndHolds(
+          Pair(Sign::kPositive, ElementsAreArray(kBytesWithZerosPrepended))));
+}
+
+TEST(BignumUtilTest, BigEndianNegativeZeroPadded) {
+  bssl::UniquePtr<BIGNUM> bignum;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      bignum,
+      BignumFromBigEndianBytes(absl::MakeSpan(kBytes), Sign::kNegative));
+  EXPECT_THAT(
+      PaddedBigEndianBytesFromBignum(*bignum, sizeof(kBytesWithZerosPrepended)),
+      IsOkAndHolds(
+          Pair(Sign::kNegative, ElementsAreArray(kBytesWithZerosPrepended))));
+}
+
 TEST(BignumUtilTest, LittleEndianRoundtrip) {
   bssl::UniquePtr<BIGNUM> bignum;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -103,6 +124,27 @@ TEST(BignumUtilTest, LittleEndianLeadingZeroesAreStripped) {
       BignumFromLittleEndianBytes(absl::MakeSpan(kBytesWithZerosAppended)));
   EXPECT_THAT(LittleEndianBytesFromBignum(*bignum),
               IsOkAndHolds(Pair(Sign::kPositive, ElementsAreArray(kBytes))));
+}
+
+TEST(BignumUtilTest, LittleEndianZeroPadded) {
+  bssl::UniquePtr<BIGNUM> bignum;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      bignum, BignumFromLittleEndianBytes(absl::MakeSpan(kBytes)));
+  EXPECT_THAT(PaddedLittleEndianBytesFromBignum(
+                  *bignum, sizeof(kBytesWithZerosAppended)),
+              IsOkAndHolds(Pair(Sign::kPositive,
+                                ElementsAreArray(kBytesWithZerosAppended))));
+}
+
+TEST(BignumUtilTest, LittleEndianNegativeZeroPadded) {
+  bssl::UniquePtr<BIGNUM> bignum;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      bignum,
+      BignumFromLittleEndianBytes(absl::MakeSpan(kBytes), Sign::kNegative));
+  EXPECT_THAT(PaddedLittleEndianBytesFromBignum(
+                  *bignum, sizeof(kBytesWithZerosAppended)),
+              IsOkAndHolds(Pair(Sign::kNegative,
+                                ElementsAreArray(kBytesWithZerosAppended))));
 }
 
 TEST(BignumUtilTest, IntegerRoundtrip) {

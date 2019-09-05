@@ -49,6 +49,14 @@ StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromBigEndianBytes(
 StatusOr<std::pair<Sign, std::vector<uint8_t>>> BigEndianBytesFromBignum(
     const BIGNUM &bignum);
 
+// Returns a pair consisting of 1) the sign of |bignum| and 2) the bytes of the
+// absolute value of |bignum| in big-endian form with zero-padding to meet
+// |padded_size|.
+//
+// This function leaks the value of |bignum| to non-cleansing memory.
+StatusOr<std::pair<Sign, std::vector<uint8_t>>> PaddedBigEndianBytesFromBignum(
+    const BIGNUM &bignum, size_t padded_size);
+
 // Returns a BIGNUM for the number represented by |bytes|. The |bytes| are
 // interpreted as a little-endian integer. If |sign| is kNegative, then the
 // value in |bytes| is negated before being returned.
@@ -57,10 +65,14 @@ StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromLittleEndianBytes(
 
 // Returns a pair consisting of 1) the sign of |bignum| and 2) the bytes of the
 // absolute value of |bignum| in little-endian form without any leading zeros.
-//
-// This function leaks the value of |bignum| to non-cleansing memory.
 StatusOr<std::pair<Sign, std::vector<uint8_t>>> LittleEndianBytesFromBignum(
     const BIGNUM &bignum);
+
+// Returns a pair consisting of 1) the sign of |bignum| and 2) the bytes of the
+// absolute value of |bignum| in little-endian form with zero-padding to meet
+// |padded_size|.
+StatusOr<std::pair<Sign, std::vector<uint8_t>>>
+PaddedLittleEndianBytesFromBignum(const BIGNUM &bignum, size_t padded_size);
 
 // Returns a BIGNUM representing |number|.
 StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromInteger(int64_t number);

@@ -25,6 +25,7 @@
 #include <limits>
 
 #include "absl/base/call_once.h"
+#include "absl/strings/str_format.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -43,6 +44,24 @@ StatusOr<std::vector<uint8_t>> AbsoluteValueBigEndianBytesFromBignum(
   if (BN_bn2bin(&bignum, bytes.data()) != bytes.size()) {
     return Status(error::GoogleError::INTERNAL,
                   "Size of BIGNUM changed unexpectedly");
+  }
+  return bytes;
+}
+
+// Returns the big-endian bytes of the absolute value of |bignum|, zero-padded
+// to be as large as |padded_size|.
+StatusOr<std::vector<uint8_t>> PaddedAbsoluteValueBigEndianBytesFromBignum(
+    const BIGNUM &bignum, size_t padded_size) {
+  size_t bignum_bytes_size = BN_num_bytes(&bignum);
+  if (bignum_bytes_size > padded_size) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrFormat("Number of bytes in BIGNUM (%d) is larger "
+                                  "than the buffer size (%d)",
+                                  bignum_bytes_size, padded_size));
+  }
+  std::vector<uint8_t> bytes(padded_size);
+  if (BN_bn2bin_padded(bytes.data(), padded_size, &bignum) != 1) {
+    return Status(error::GoogleError::INTERNAL, "Serialization failed");
   }
   return bytes;
 }
@@ -72,6 +91,16 @@ StatusOr<std::pair<Sign, std::vector<uint8_t>>> BigEndianBytesFromBignum(
   return result;
 }
 
+StatusOr<std::pair<Sign, std::vector<uint8_t>>> PaddedBigEndianBytesFromBignum(
+    const BIGNUM &bignum, size_t padded_size) {
+  std::pair<Sign, std::vector<uint8_t>> result;
+  result.first = BN_is_negative(&bignum) ? Sign::kNegative : Sign::kPositive;
+  ASYLO_ASSIGN_OR_RETURN(
+      result.second,
+      PaddedAbsoluteValueBigEndianBytesFromBignum(bignum, padded_size));
+  return result;
+}
+
 StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromLittleEndianBytes(
     ByteContainerView bytes, Sign sign) {
   std::vector<uint8_t> big_endian_bytes(bytes.rbegin(), bytes.rend());
@@ -82,6 +111,15 @@ StatusOr<std::pair<Sign, std::vector<uint8_t>>> LittleEndianBytesFromBignum(
     const BIGNUM &bignum) {
   std::pair<Sign, std::vector<uint8_t>> result;
   ASYLO_ASSIGN_OR_RETURN(result, BigEndianBytesFromBignum(bignum));
+  std::reverse(result.second.begin(), result.second.end());
+  return result;
+}
+
+StatusOr<std::pair<Sign, std::vector<uint8_t>>>
+PaddedLittleEndianBytesFromBignum(const BIGNUM &bignum, size_t padded_size) {
+  std::pair<Sign, std::vector<uint8_t>> result;
+  ASYLO_ASSIGN_OR_RETURN(result,
+                         PaddedBigEndianBytesFromBignum(bignum, padded_size));
   std::reverse(result.second.begin(), result.second.end());
   return result;
 }

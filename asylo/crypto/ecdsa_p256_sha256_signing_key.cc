@@ -365,8 +365,10 @@ Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,
 
   std::pair<asylo::Sign, std::vector<uint8_t>> r;
   std::pair<asylo::Sign, std::vector<uint8_t>> s;
-  ASYLO_ASSIGN_OR_RETURN(r, BigEndianBytesFromBignum(*r_bignum));
-  ASYLO_ASSIGN_OR_RETURN(s, BigEndianBytesFromBignum(*s_bignum));
+  ASYLO_ASSIGN_OR_RETURN(
+      r, PaddedBigEndianBytesFromBignum(*r_bignum, kSignatureParamSize));
+  ASYLO_ASSIGN_OR_RETURN(
+      s, PaddedBigEndianBytesFromBignum(*s_bignum, kSignatureParamSize));
   if (r.first == asylo::Sign::kNegative || s.first == asylo::Sign::kNegative) {
     return Status(error::GoogleError::INTERNAL,
                   "Neither R nor S should be negative");
