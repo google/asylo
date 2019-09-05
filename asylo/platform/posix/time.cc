@@ -29,7 +29,6 @@
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
-#include "include/sgx_trts.h"
 
 using asylo::NanosecondsToTimeSpec;
 using asylo::NanosecondsToTimeVal;
