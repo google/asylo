@@ -193,7 +193,7 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeyBadCiphersuite) {
   CleansingVector<uint8_t> key;
 
   Status status =
-      DeriveRecordProtocolKey(UNKNOWN_HANDSHAKE_CIPHER, SEAL_AES128_GCM,
+      DeriveRecordProtocolKey(UNKNOWN_HANDSHAKE_CIPHER, ALTSRP_AES128_GCM,
                               transcript_hash, master_secret, &key);
   EXPECT_THAT(status, Not(IsOk()));
   EXPECT_THAT(status, StatusIs(Abort::BAD_HANDSHAKE_CIPHER));
@@ -224,19 +224,19 @@ TEST(EkepCryptoTest, DeriveRecordProtocolKeySealAes128Gcm) {
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kTestMasterSecret, &master_secret));
 
-  SafeBytes<kSealAes128GcmKeySize> expected_key;
+  SafeBytes<kAltsRecordProtocolAes128GcmKeySize> expected_key;
   ASYLO_ASSERT_OK(
       SetTrivialObjectFromHexString(kTestRecordProtocolKey, &expected_key));
 
   CleansingVector<uint8_t> key;
 
-  ASSERT_TRUE(DeriveRecordProtocolKey(CURVE25519_SHA256, SEAL_AES128_GCM,
+  ASSERT_TRUE(DeriveRecordProtocolKey(CURVE25519_SHA256, ALTSRP_AES128_GCM,
                                       transcript_hash, master_secret, &key)
                   .ok());
 
   // Verify that the record protocol key is as expected.
-  SafeBytes<kSealAes128GcmKeySize> *actual_key =
-      SafeBytes<kSealAes128GcmKeySize>::Place(&key, /*offset=*/0);
+  SafeBytes<kAltsRecordProtocolAes128GcmKeySize> *actual_key =
+      SafeBytes<kAltsRecordProtocolAes128GcmKeySize>::Place(&key, /*offset=*/0);
   EXPECT_EQ(*actual_key, expected_key);
 }
 

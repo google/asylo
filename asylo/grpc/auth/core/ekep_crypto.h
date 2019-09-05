@@ -32,7 +32,7 @@ namespace asylo {
 
 constexpr size_t kEkepMasterSecretSize = 64;
 constexpr size_t kEkepAuthenticatorSecretSize = 64;
-constexpr size_t kSealAes128GcmKeySize = 16;
+constexpr size_t kAltsRecordProtocolAes128GcmKeySize = 16;
 
 // Derives EKEP secrets based on the selected |ciphersuite| and the input
 // |transcript_hash|, |peer_dh_public_key|, and |self_dh_private_key|. On

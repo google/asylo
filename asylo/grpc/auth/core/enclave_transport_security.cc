@@ -89,7 +89,7 @@ class TsiEnclaveHandshakerResult {
   tsi_result CreateFrameProtector(size_t *max_output_protected_frame_size,
                                   tsi_frame_protector **protector) {
     switch (record_protocol_) {
-      case SEAL_AES128_GCM:
+      case ALTSRP_AES128_GCM:
         return alts_create_frame_protector(
             record_protocol_key_.data(), record_protocol_key_.size(),
             is_client_, /*is_rekey=*/false, max_output_protected_frame_size,

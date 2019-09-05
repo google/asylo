@@ -59,7 +59,7 @@ ServerEkepHandshaker::ServerEkepHandshaker(const EkepHandshakerOptions &options)
       self_assertions_(options.self_assertions),
       accepted_peer_assertions_(options.accepted_peer_assertions),
       available_cipher_suites_({CURVE25519_SHA256}),
-      available_record_protocols_({SEAL_AES128_GCM}),
+      available_record_protocols_({ALTSRP_AES128_GCM}),
       available_ekep_versions_({"EKEP v1"}),
       additional_authenticated_data_(options.additional_authenticated_data),
       selected_cipher_suite_(UNKNOWN_HANDSHAKE_CIPHER),

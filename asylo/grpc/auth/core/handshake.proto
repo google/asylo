@@ -56,8 +56,10 @@ enum HandshakeCipher {
 enum RecordProtocol {
   UNKNOWN_RECORD_PROTOCOL = 0;
 
-  // The SEAL protocol. This protocol uses 128-bit AES keys in GCM mode.
-  SEAL_AES128_GCM = 1;
+  // The ALTS record protocol. This protocol uses 128-bit AES keys in GCM mode.
+  // For more details on the protocol, see
+  // https://cloud.google.com/security/encryption-in-transit/application-layer-transport-security/#record_protocol
+  ALTSRP_AES128_GCM = 1;
 }
 
 // Additional data that is authenticated during the handshake. These bytes are

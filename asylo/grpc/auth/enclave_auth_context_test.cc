@@ -60,7 +60,7 @@ class EnclaveAuthContextTest : public ::testing::Test {
 
     // Set default properties for a valid secure auth context.
     AddEnclaveIdentitiesProperty(identities_, secure_auth_context_.get());
-    AddRecordProtocolProperty(RecordProtocol::SEAL_AES128_GCM,
+    AddRecordProtocolProperty(RecordProtocol::ALTSRP_AES128_GCM,
                               secure_auth_context_.get());
     AddTransportSecurityTypeProperty(secure_auth_context_.get());
   }
@@ -120,7 +120,7 @@ TEST_F(EnclaveAuthContextTest, CreateSuccess) {
 TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
   ::grpc::SecureAuthContext secure_auth_context(
       grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
-  AddRecordProtocolProperty(RecordProtocol::SEAL_AES128_GCM,
+  AddRecordProtocolProperty(RecordProtocol::ALTSRP_AES128_GCM,
                             &secure_auth_context);
   AddTransportSecurityTypeProperty(&secure_auth_context);
 
@@ -139,7 +139,7 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
 TEST_F(EnclaveAuthContextTest, CreateFailsBadTransportSecurityType) {
   ::grpc::SecureAuthContext secure_auth_context(
       grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
-  AddRecordProtocolProperty(RecordProtocol::SEAL_AES128_GCM,
+  AddRecordProtocolProperty(RecordProtocol::ALTSRP_AES128_GCM,
                             &secure_auth_context);
   AddEnclaveIdentitiesProperty(identities_, &secure_auth_context);
 
@@ -232,7 +232,8 @@ TEST_F(EnclaveAuthContextTest, GetRecordProtocol) {
   ASSERT_THAT(auth_context_result, IsOk());
   EnclaveAuthContext auth_context = auth_context_result.ValueOrDie();
 
-  EXPECT_EQ(auth_context.GetRecordProtocol(), RecordProtocol::SEAL_AES128_GCM);
+  EXPECT_EQ(auth_context.GetRecordProtocol(),
+            RecordProtocol::ALTSRP_AES128_GCM);
 }
 
 }  // namespace

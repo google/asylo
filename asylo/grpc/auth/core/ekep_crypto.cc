@@ -164,8 +164,8 @@ Status DeriveRecordProtocolKey(const HandshakeCipher &ciphersuite,
   // Resize the output vector to an appropriate size for the selected record
   // protocol.
   switch (record_protocol) {
-    case SEAL_AES128_GCM:
-      record_protocol_key->resize(kSealAes128GcmKeySize);
+    case ALTSRP_AES128_GCM:
+      record_protocol_key->resize(kAltsRecordProtocolAes128GcmKeySize);
       // Randomize the key bytes just in case the key is mistakenly used even
       // when the key derivation fails. The byte-sequence in uninitialized
       // memory could be predictable and, as a result, an attacker may be able

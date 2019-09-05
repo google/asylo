@@ -76,7 +76,7 @@ func deriveSecrets() ([]byte, []byte) {
 	return masterSecret, authSecret
 }
 
-// DeriveRecordProtocolKey generates a SEAL AES128 GCM record protocol key
+// DeriveRecordProtocolKey generates an ALTSRP AES128 GCM record protocol key
 // using the given master secret.
 func deriveRecordProtocolKey(masterSecret []byte) []byte {
 	hash := sha256.New
