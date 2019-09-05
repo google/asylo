@@ -55,6 +55,7 @@ cc_library(
         "//asylo/grpc/auth/util:safe_string",
         "//asylo/identity:identity_cc_proto",
         "//asylo/util:cleansing_types",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:alts_frame_protector",
         "@com_github_grpc_grpc//:gpr_base",

@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/core/enclave_grpc_security_constants.h"
@@ -165,8 +166,8 @@ class grpc_enclave_channel_security_connector final
       grpc_handshake_manager *handshake_mgr) override {
     tsi_handshaker *tsi_handshaker = nullptr;
     grpc_enclave_channel_credentials *channel_creds =
-        static_cast<grpc_enclave_channel_credentials *>(
-            this->mutable_channel_creds());
+        CHECK_NOTNULL(dynamic_cast<grpc_enclave_channel_credentials *>(
+            this->mutable_channel_creds()));
     tsi_result result = tsi_enclave_handshaker_create(
         /*is_client=*/true, channel_creds->mutable_self_assertions(),
         channel_creds->mutable_accepted_peer_assertions(),
@@ -212,8 +213,8 @@ class grpc_enclave_server_security_connector final
       grpc_handshake_manager *handshake_mgr) override {
     tsi_handshaker *tsi_handshaker = nullptr;
     grpc_enclave_server_credentials *server_creds =
-        static_cast<grpc_enclave_server_credentials *>(
-            this->mutable_server_creds());
+        CHECK_NOTNULL(dynamic_cast<grpc_enclave_server_credentials *>(
+            this->mutable_server_creds()));
     tsi_result result = tsi_enclave_handshaker_create(
         /*is_client=*/false, server_creds->mutable_self_assertions(),
         server_creds->mutable_accepted_peer_assertions(),
