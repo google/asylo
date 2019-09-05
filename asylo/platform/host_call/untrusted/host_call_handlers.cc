@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 
 #include <errno.h>
+#include <signal.h>
 #include <sys/socket.h>
 #include <unistd.h>
 
@@ -281,6 +282,16 @@ Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushByCopy(primitives::Extent{buffer.get(), len});
   output->Push<struct sockaddr_storage>(sock_addr);
 
+  return Status::OkStatus();
+}
+
+Status RaiseHandler(const std::shared_ptr<primitives::Client> &client,
+                    void *context, primitives::MessageReader *input,
+                    primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  int klinux_sig = input->next<int>();
+  output->Push<int>(raise(klinux_sig));
+  output->Push<int>(errno);
   return Status::OkStatus();
 }
 

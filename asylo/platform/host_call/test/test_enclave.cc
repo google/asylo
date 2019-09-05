@@ -123,7 +123,9 @@ PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
 
   pid_t pid = in->next<pid_t>();
-  int sig = in->next<int>();
+  int klinux_sig = in->next<int>();
+  int sig = -1;
+  FromkLinuxSignalNumber(&klinux_sig, &sig);
 
   out->Push<int>(enc_untrusted_kill(pid, sig));
   return PrimitiveStatus::OkStatus();
@@ -864,6 +866,17 @@ PrimitiveStatus TestFsync(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestRaise(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  int klinux_sig = in->next<int>();
+  int sig = -1;
+  FromkLinuxSignalNumber(&klinux_sig, &sig);
+  out->Push<int>(enc_untrusted_raise(sig));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1039,6 +1052,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestSelect}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestFsync, EntryHandler{asylo::host_call::TestFsync}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestRaise, EntryHandler{asylo::host_call::TestRaise}));
 
   return PrimitiveStatus::OkStatus();
 }

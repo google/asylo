@@ -577,6 +577,40 @@ TEST_F(GeneratedTypesFunctionsTest, RecvSendFlagTest) {
                        TokLinuxRecvSendFlag);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
+  std::vector<int> from_consts = {
+      kLinux_SIGHUP,    kLinux_SIGINT,  kLinux_SIGQUIT,  kLinux_SIGILL,
+      kLinux_SIGTRAP,   kLinux_SIGABRT, kLinux_SIGBUS,   kLinux_SIGFPE,
+      kLinux_SIGKILL,   kLinux_SIGUSR1, kLinux_SIGSEGV,  kLinux_SIGUSR2,
+      kLinux_SIGPIPE,   kLinux_SIGALRM, kLinux_SIGTERM,  kLinux_SIGCHLD,
+      kLinux_SIGCONT,   kLinux_SIGSTOP, kLinux_SIGTSTP,  kLinux_SIGTTIN,
+      kLinux_SIGTTOU,   kLinux_SIGURG,  kLinux_SIGXCPU,  kLinux_SIGXFSZ,
+      kLinux_SIGVTALRM, kLinux_SIGPROF, kLinux_SIGWINCH, kLinux_SIGSYS,
+      kLinux_SIGIO,     kLinux_SIGPWR,  kLinux_SIGRTMIN, kLinux_SIGRTMAX};
+  std::vector<int> to_consts = {
+      SIGHUP,  SIGINT,  SIGQUIT,  SIGILL,    SIGTRAP, SIGABRT,  SIGBUS,
+      SIGFPE,  SIGKILL, SIGUSR1,  SIGSEGV,   SIGUSR2, SIGPIPE,  SIGALRM,
+      SIGTERM, SIGCHLD, SIGCONT,  SIGSTOP,   SIGTSTP, SIGTTIN,  SIGTTOU,
+      SIGURG,  SIGXCPU, SIGXFSZ,  SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,
+      SIGIO,   SIGPWR,  SIGRTMIN, SIGRTMAX};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
+    int output;
+    FromkLinuxBaseSignalNumber(&input, &output);
+    return output;
+  });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
+    int output;
+    TokLinuxBaseSignalNumber(&input, &output);
+    return output;
+  });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

@@ -300,6 +300,8 @@ void sigabrt_handler(int sig) {
 // inside the enclave with a SIGABRT. We substitute the handler for SIGABRT
 // temporarily so that the current process doesn't actually get killed.
 TEST_F(HostCallTest, TestKill) {
+  sigabrt_received = false;
+
   // Change the default signal handler for SIGABRT.
   struct sigaction old_handler, new_handler;
   new_handler.sa_handler = &sigabrt_handler;
@@ -313,6 +315,33 @@ TEST_F(HostCallTest, TestKill) {
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestKill, &in, &out));
+  EXPECT_THAT(sigabrt_received, Eq(true));
+  ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  // Restore the default handler for SIGABRT.
+  ASSERT_THAT(sigaction(SIGABRT, nullptr, &old_handler), Not(Eq(-1)));
+  sigabrt_received = false;
+}
+
+// Tests enc_untrusted_raise() by calling the method on the current process from
+// inside the enclave with a SIGABRT. We substitute the handler for SIGABRT
+// temporarily so that the current process doesn't actually get aborted.
+TEST_F(HostCallTest, TestRaise) {
+  sigabrt_received = false;
+
+  // Change the default signal handler for SIGABRT.
+  struct sigaction old_handler, new_handler;
+  new_handler.sa_handler = &sigabrt_handler;
+  sigemptyset(&(new_handler.sa_mask));
+  new_handler.sa_flags = 0;
+  ASSERT_THAT(sigaction(SIGABRT, &new_handler, &old_handler), Not(Eq(-1)));
+
+  MessageWriter in;
+  in.Push<int>(/*value=sig=*/SIGABRT);
+
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRaise, &in, &out));
   EXPECT_THAT(sigabrt_received, Eq(true));
   ASSERT_THAT(out, SizeIs(1));  // should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));

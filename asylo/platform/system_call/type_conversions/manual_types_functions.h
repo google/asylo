@@ -114,4 +114,12 @@ void FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output);
 // Converts a native file descriptor set to a Linux based file descriptor set.
 void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output);
 
+// Converts a kernel based signal number (including realtime signals) to an
+// enclave based signal.
+void FromkLinuxSignalNumber(const int *input, int *output);
+
+// Converts an enclave based signal number (including realtime signals) to a
+// kernel based signal.
+void TokLinuxSignalNumber(const int *input, int *output);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

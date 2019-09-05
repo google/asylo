@@ -19,6 +19,7 @@
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 
 #include <netinet/in.h>
+#include <signal.h>
 #include <sys/un.h>
 
 #include <gmock/gmock.h>
@@ -246,6 +247,24 @@ TEST(ManualTypesFunctionsTest, TokLinuxFdSetTest) {
       EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Eq(0));
     }
   }
+}
+
+TEST(ManualTypesFunctionsTest, SignalNumberTest) {
+  int sig = SIGRTMIN + 2;
+  int klinux_sig = -1;
+  TokLinuxSignalNumber(&sig, &klinux_sig);
+  EXPECT_THAT(klinux_sig, Eq(kLinux_SIGRTMIN + 2));
+
+  FromkLinuxSignalNumber(&klinux_sig, &sig);
+  EXPECT_THAT(sig, Eq(SIGRTMIN + 2));
+
+  sig = SIGABRT;
+  TokLinuxSignalNumber(&sig, &klinux_sig);
+  EXPECT_THAT(klinux_sig, Eq(kLinux_SIGABRT));
+
+  sig = -1;
+  FromkLinuxSignalNumber(&klinux_sig, &sig);
+  EXPECT_THAT(sig, Eq(SIGABRT));
 }
 
 }  // namespace

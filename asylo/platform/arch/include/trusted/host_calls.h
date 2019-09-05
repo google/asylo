@@ -154,8 +154,6 @@ int enc_untrusted_register_signal_handler(
 
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 
-int enc_untrusted_raise(int sig);
-
 //////////////////////////////////////
 //        sys/resource.h            //
 //////////////////////////////////////

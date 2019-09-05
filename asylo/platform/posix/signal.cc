@@ -21,13 +21,13 @@
 #endif
 #include <signal.h>
 
-#include <pthread.h>
 #include <cstdlib>
 
 #include "absl/synchronization/mutex.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/include/trusted/register_signal.h"
 #include "asylo/platform/core/trusted_global_state.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
 
 extern "C" {

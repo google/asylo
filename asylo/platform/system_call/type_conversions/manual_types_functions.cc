@@ -18,6 +18,7 @@
 
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 
+#include <signal.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
 #include <sys/statvfs.h>
@@ -472,4 +473,24 @@ void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output) {
       KLINUX_FD_SET(fd, output);
     }
   }
+}
+
+void FromkLinuxSignalNumber(const int *input, int *output) {
+#if defined(SIGRTMIN) && defined(SIGRTMAX)
+  if (*input >= kLinux_SIGRTMIN && *input <= kLinux_SIGRTMAX) {
+    *output = SIGRTMIN + *input - kLinux_SIGRTMIN;
+    return;
+  }
+#endif
+  FromkLinuxBaseSignalNumber(input, output);
+}
+
+void TokLinuxSignalNumber(const int *input, int *output) {
+#if defined(SIGRTMIN) && defined(SIGRTMAX)
+  if (*input >= SIGRTMIN && *input <= SIGRTMAX) {
+    *output = kLinux_SIGRTMIN + *input - SIGRTMIN;
+    return;
+  }
+#endif
+  TokLinuxBaseSignalNumber(input, output);
 }

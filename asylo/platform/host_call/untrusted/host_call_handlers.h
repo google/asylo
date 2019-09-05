@@ -103,6 +103,12 @@ Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
                        void *context, primitives::MessageReader *input,
                        primitives::MessageWriter *output);
 
+// raise library call handler on the host; expects [int sig] and returns [int
+// /*result*/, int /*errno*/] on the MessageWriter.
+Status RaiseHandler(const std::shared_ptr<primitives::Client> &client,
+                    void *context, primitives::MessageReader *input,
+                    primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

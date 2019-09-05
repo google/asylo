@@ -432,17 +432,6 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   return ret;
 }
 
-int enc_untrusted_raise(int sig) {
-  int bridge_sig = asylo::ToBridgeSignal(sig);
-  if (bridge_sig < 0) {
-    errno = EINVAL;
-    return -1;
-  }
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_raise(&ret, bridge_sig));
-  return ret;
-}
-
 //////////////////////////////////////
 //         sys/resource.h           //
 //////////////////////////////////////

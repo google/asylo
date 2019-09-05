@@ -37,6 +37,7 @@ include("sys/socket.h")
 include("errno.h")
 include("time.h")
 include("unistd.h")
+include("signal.h")
 
 set_klinux_prefix("kLinux")
 
@@ -196,6 +197,20 @@ define_enum(
     ],
     multi_valued=True,
 )
+
+define_enum(
+    name="BaseSignalNumber",
+    values=[
+        "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP", "SIGABRT", "SIGBUS",
+        "SIGFPE", "SIGKILL", "SIGUSR1", "SIGSEGV", "SIGUSR2", "SIGPIPE",
+        "SIGALRM", "SIGTERM", "SIGCHLD", "SIGCONT", "SIGSTOP", "SIGTSTP",
+        "SIGTTIN", "SIGTTOU", "SIGURG", "SIGXCPU", "SIGXFSZ", "SIGVTALRM",
+        "SIGPROF", "SIGWINCH", "SIGSYS", "SIGIO", "SIGPWR", "SIGRTMIN",
+        "SIGRTMAX"
+    ],
+    default_value_newlib=-1,
+    default_value_host=-1,
+    wrap_vals_with_if_defined=True)
 
 define_struct(
     name="timespec",

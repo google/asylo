@@ -506,15 +506,6 @@ int ocall_enc_untrusted_sigprocmask(int how, const bridge_sigset_t *set,
   return ret;
 }
 
-int ocall_enc_untrusted_raise(int bridge_sig) {
-  int sig = asylo::FromBridgeSignal(bridge_sig);
-  if (sig < 0) {
-    errno = EINVAL;
-    return -1;
-  }
-  return raise(sig);
-}
-
 //////////////////////////////////////
 //         sys/resource.h           //
 //////////////////////////////////////

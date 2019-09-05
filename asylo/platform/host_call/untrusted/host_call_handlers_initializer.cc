@@ -64,6 +64,9 @@ Status AddHostCallHandlersToExitCallProvider(
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kRecvFromHandler, primitives::ExitHandler{RecvFromHandler}));
 
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kRaiseHandler, primitives::ExitHandler{RaiseHandler}));
+
   return Status::OkStatus();
 }
 

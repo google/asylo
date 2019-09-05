@@ -141,6 +141,7 @@ constexpr uint64_t kTestSendMsg = kHostLibCSelector + 7;
 constexpr uint64_t kTestRecvMsg = kHostLibCSelector + 8;
 constexpr uint64_t kTestGetSockname = kHostLibCSelector + 9;
 constexpr uint64_t kTestAccept = kHostLibCSelector + 10;
+constexpr uint64_t kTestRaise = kHostLibCSelector + 11;
 
 }  // namespace host_call
 }  // namespace asylo

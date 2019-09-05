@@ -82,8 +82,15 @@ gid_t enc_untrusted_getegid() {
 }
 
 int enc_untrusted_kill(pid_t pid, int sig) {
+  int klinux_sig = -1;
+  TokLinuxSignalNumber(&sig, &klinux_sig);
+  if (klinux_sig < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_kill, pid,
-                                             sig);
+                                             klinux_sig);
 }
 
 int enc_untrusted_link(const char *oldpath, const char *newpath) {
@@ -943,6 +950,35 @@ int enc_untrusted_gettimeofday(struct timeval *tv, struct timezone *tz) {
 int enc_untrusted_fsync(int fd) {
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fsync,
                                              fd);
+}
+
+int enc_untrusted_raise(int sig) {
+  int klinux_sig = -1;
+  TokLinuxSignalNumber(&sig, &klinux_sig);
+  if (klinux_sig < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  ::asylo::primitives::MessageWriter input;
+  input.Push<int>(klinux_sig);
+  ::asylo::primitives::MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kRaiseHandler, &input, &output);
+
+  if (!status.ok()) {
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "raise host call failed. Aborting");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+  if (result != 0) {
+    int enclave_errno;
+    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
+    errno = enclave_errno;
+  }
+  return result;
 }
 
 }  // extern "C"

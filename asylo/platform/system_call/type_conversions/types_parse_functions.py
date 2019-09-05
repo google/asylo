@@ -98,7 +98,8 @@ def define_enum(name,
                 default_value_newlib=0,
                 multi_valued=False,
                 skip_conversions=False,
-                or_input_to_default_value=False):
+                or_input_to_default_value=False,
+                wrap_vals_with_if_defined=False):
   """Defines a collection of related enumeration values and their properties.
 
   Args:
@@ -121,6 +122,10 @@ def define_enum(name,
       is useful for cases when we wish to preserve the input for debugging,
       while providing a default output in case no matching enum value for the
       input is found.
+    wrap_vals_with_if_defined: Boolean indicating if all values in the enum are
+      to be wrapped inside a #if defined(value) ...#endif while generating the
+      conversion functions. This allows define_enum() to safely accept enum
+      values that might not exist on a particular platform or architecture.
   """
 
   # The enum values here are written twice, once as a string literal, then as an
@@ -139,6 +144,7 @@ def define_enum(name,
   _enum_map[name]['multi_valued'] = multi_valued
   _enum_map[name]['skip_conversions'] = skip_conversions
   _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
+  _enum_map[name]['wrap_vals_with_if_defined'] = wrap_vals_with_if_defined
 
 
 def define_struct(name, values, pack_attributes=True, skip_conversions=False):
@@ -197,25 +203,33 @@ def get_enums():
   typical output of get_enums looks like the following -
 
   #define ENUMS_INIT \
-  {"FcntlCmd", {-1, -1, false, false, false, {{"F_GETFD", F_GETFD}, {"F_SETFD",
-  F_SETFD}}}}, \
-  {"FileFlags", {0, 0, true, false, false, {{"O_RDONLY", O_RDONLY}, {"O_WRONLY",
-  O_WRONLY}}}}
+  {"FcntlCmd", {-1, -1, false, false, false, false, {{"F_GETFD", F_GETFD},
+  {"F_SETFD", F_SETFD}}}}, \
+  {"FileFlags", {0, 0, true, false, false, false, {{"O_RDONLY", O_RDONLY},
+  {"O_WRONLY", O_WRONLY}}}}
 
   Each line contains an enum, and has the following pattern -
   {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
-  skip_conversions, or_input_to_default_value, {{"enum_val1", enum_val1},
-  {"enum_val2", enum_val2}}}}, \
+  skip_conversions, or_input_to_default_value, wrap_vals_with_if_defined,
+  {{"enum_val1", enum_val1}, {"enum_val2", enum_val2}}}}, \
   """
   enum_rows = []
   for enum_name, enum_properties in _enum_map.items():
-    enum_rows.append('{{{}, {{{}, {}, {}, {}, {}, {{{}}}}}}}'.format(
-        '"{}"'.format(enum_name), enum_properties['default_value_host'],
-        enum_properties['default_value_newlib'],
-        'true' if enum_properties['multi_valued'] else 'false',
-        'true' if enum_properties['skip_conversions'] else 'false',
-        'true' if enum_properties['or_input_to_default_value'] else 'false',
-        enum_properties['values']))
+    enum_rows.append(
+        '{{{name}, {{{default_value_host}, {default_value_newlib}, '
+        '{multi_valued}, {skip_conversions}, {or_input_to_default_value}, '
+        '{wrap_vals_with_if_defined}, {{{values}}}}}}}'.format(
+            name='"{}"'.format(enum_name),
+            default_value_host=enum_properties['default_value_host'],
+            default_value_newlib=enum_properties['default_value_newlib'],
+            multi_valued='true' if enum_properties['multi_valued'] else 'false',
+            skip_conversions='true'
+            if enum_properties['skip_conversions'] else 'false',
+            or_input_to_default_value='true'
+            if enum_properties['or_input_to_default_value'] else 'false',
+            wrap_vals_with_if_defined='true'
+            if enum_properties['wrap_vals_with_if_defined'] else 'false',
+            values=enum_properties['values']))
 
   return '#define ENUMS_INIT \\\n{}\n'.format(', \\\n'.join(enum_rows))
 
@@ -238,11 +252,15 @@ def get_structs():
   """
   struct_rows = []
   for struct_name, struct_properties in _struct_map.items():
-    struct_rows.append('{{{}, {{{}, {}, {{{}}}}}}}'.format(
-        '"{}"'.format(struct_name),
-        'true' if struct_properties['pack_attributes'] else 'false',
-        'true' if struct_properties['skip_conversions'] else 'false',
-        struct_properties['values']))
+    struct_rows.append(
+        '{{{struct}, {{{pack_attributes}, {skip_conversions}, {{{values}}}}}}}'
+        .format(
+            struct='"{}"'.format(struct_name),
+            pack_attributes='true'
+            if struct_properties['pack_attributes'] else 'false',
+            skip_conversions='true'
+            if struct_properties['skip_conversions'] else 'false',
+            values=struct_properties['values']))
 
   return '#define STRUCTS_INIT \\\n{}\n'.format(', \\\n'.join(struct_rows))
 
