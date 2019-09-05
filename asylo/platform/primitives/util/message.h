@@ -247,7 +247,7 @@ class MessageReader {
 
  private:
   std::vector<std::pair<std::unique_ptr<char[]>, size_t>> extents_;
-  int pos_ = 0;
+  size_t pos_ = 0;
 };
 
 }  // namespace primitives
