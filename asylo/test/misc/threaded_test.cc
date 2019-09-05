@@ -131,6 +131,7 @@ void *thread_specific_function(void *arg) {
   int used_for_address;
   pthread_setspecific(tls_key, &used_for_address);
   EXPECT_EQ(pthread_getspecific(tls_key), &used_for_address);
+  return nullptr;
 }
 
 static volatile int cc11_count = 0;

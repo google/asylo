@@ -57,11 +57,12 @@ class EventFdTest : public ::testing::Test {
 
   // A wrapper for the read operation on an eventfd.
   uint64_t Read() {
-    char buf[sizeof(uint64_t)];
-    ssize_t num_bytes = read(event_fd_, buf, sizeof(uint64_t));
+    uint64_t result;
+    ssize_t num_bytes = read(event_fd_, reinterpret_cast<char *>(&result),
+                             sizeof(uint64_t));
     if (num_bytes == -1) return -1;
     EXPECT_EQ(num_bytes, sizeof(uint64_t));
-    return *reinterpret_cast<uint64_t *>(buf);
+    return result;
   }
 
   // A wrapper for the write operation on an eventfd.
