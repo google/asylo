@@ -40,8 +40,12 @@ namespace asylo {
 namespace {
 
 StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
-    absl::string_view enclave_name, const EnclaveConfig &enclave_config,
-    const SgxLoadConfig &sgx_config) {
+    const EnclaveLoadConfig &load_config) {
+  const std::string enclave_name = load_config.name();
+  const auto &enclave_config = load_config.config();
+
+  const auto &sgx_config = load_config.GetExtension(sgx_load_config);
+
   std::shared_ptr<primitives::Client> primitive_client;
   void *base_address = nullptr;
   uint64_t enclave_size = 0;
@@ -50,6 +54,7 @@ StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
     base_address = reinterpret_cast<void *>(fork_config.base_address());
     enclave_size = fork_config.enclave_size();
   }
+
   bool debug = sgx_config.debug();
   bool is_embedded_enclave = sgx_config.has_embedded_enclave_config();
   bool is_file_enclave = sgx_config.has_file_enclave_config();
@@ -83,12 +88,8 @@ StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
 // backend indicated by the extension set in the EnclaveLoadConfig protobuf.
 StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
     const EnclaveLoadConfig &load_config) {
-  std::string enclave_name = load_config.name();
-  EnclaveConfig config = load_config.config();
-
   if (load_config.HasExtension(sgx_load_config)) {
-    SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
-    return LoadSgxEnclave(enclave_name, config, sgx_config);
+    return LoadSgxEnclave(load_config);
   }
   return Status(error::GoogleError::INVALID_ARGUMENT,
                 "Enclave backend not supported in asylo");
