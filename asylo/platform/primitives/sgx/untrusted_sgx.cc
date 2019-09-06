@@ -22,6 +22,7 @@
 #include <unistd.h>
 
 #include <cstdlib>
+#include <string>
 
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/primitives/sgx/exit_handlers.h"

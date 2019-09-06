@@ -92,6 +92,7 @@ cc_library(
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
     ],

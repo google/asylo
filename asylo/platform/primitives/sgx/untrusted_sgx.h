@@ -19,12 +19,15 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_SGX_UNTRUSTED_SGX_H_
 #define ASYLO_PLATFORM_PRIMITIVES_SGX_UNTRUSTED_SGX_H_
 
-#include <string>
+#include <cstddef>
+#include <memory>
 
+#include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
 #include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 #include "include/sgx_urts.h"
 
