@@ -27,7 +27,7 @@ load(
     "sim_enclave_loader",
     "sim_enclave_test",
 )
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:sim_enclave.bzl",
     "primitives_sim_enclave",
@@ -103,8 +103,8 @@ cc_library(
     alwayslink = 1,
 )
 
-sgx_enclave(
-    name = "hello_sgx_enclave.so",
+sgx.unsigned_enclave(
+    name = "hello_sgx_enclave_unsigned.so",
     srcs = [
         "hello_enclave.cc",
         "hello_enclave.h",
@@ -123,6 +123,11 @@ sgx_enclave(
         "//asylo/platform/system",
         "//asylo/util:status_macros",
     ],
+)
+
+sgx.debug_enclave(
+    name = "hello_sgx_enclave.so",
+    unsigned = "hello_sgx_enclave_unsigned.so",
 )
 
 sgx_enclave_test(

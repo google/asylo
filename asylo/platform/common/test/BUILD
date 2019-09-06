@@ -20,19 +20,24 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:asylo.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Enclave used to test bridge_types's packed struct size inside an enclave.
-sgx_enclave(
-    name = "bridge_types_enclave.so",
+sgx.unsigned_enclave(
+    name = "bridge_types_enclave_unsigned.so",
     srcs = ["bridge_types_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":bridge_types_test_data",
         "//asylo/test/util:enclave_test_application",
     ],
+)
+
+sgx.debug_enclave(
+    name = "bridge_types_enclave.so",
+    unsigned = "bridge_types_enclave_unsigned.so",
 )
 
 # Tests for the packed struct size for bridge_types.

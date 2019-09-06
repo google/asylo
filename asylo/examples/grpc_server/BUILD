@@ -19,8 +19,8 @@ load(
     "ASYLO_ALL_BACKEND_TAGS",
     "enclave_loader",
     "sgx_enclave_test",
-    "sim_enclave",
 )
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
@@ -83,10 +83,9 @@ cc_proto_library(
 )
 
 # The enclave hosting the translation server.
-sim_enclave(
-    name = "grpc_server_enclave.so",
+sgx.unsigned_enclave(
+    name = "grpc_server_enclave_unsigned.so",
     srcs = ["grpc_server_enclave.cc"],
-    config = "//asylo/grpc/util:grpc_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":grpc_server_config_cc_proto",
@@ -101,6 +100,12 @@ sim_enclave(
         "@com_google_absl//absl/synchronization",
         "@com_google_absl//absl/time",
     ],
+)
+
+sgx.debug_enclave(
+    name = "grpc_server_enclave.so",
+    unsigned = "grpc_server_enclave_unsigned.so",
+    config = "//asylo/grpc/util:grpc_enclave_config",
 )
 
 # The driver for the gRPC server enclave.

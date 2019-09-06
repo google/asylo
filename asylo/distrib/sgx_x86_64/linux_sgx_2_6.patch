@@ -3061,18 +3061,12 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1341 @@
+@@ -0,0 +1,1335 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
 +    ":sgx_sdk.bzl",
-+    "boringssl_sign_sigstruct",
-+    "sgx_unsigned_enclave",
-+    "sgx_generate_sigstruct",
-+    "sgx_debug_enclave",
-+    "sgx_signed_enclave",
-+    "sgx_full_enclave_configuration",
-+    "sgx_enclave_configuration",
++    "sgx",
 +)
 +
 +# "notice" licenses present:
@@ -3113,7 +3107,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    visibility = ["//visibility:public"],
 +)
 +
-+sgx_full_enclave_configuration(
++sgx.full_enclave_configuration(
 +    name = "enclave_debug_config",
 +    disable_debug = "0",
 +    heap_max_size = "0x2000000",
@@ -4405,7 +4399,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,590 @@
+@@ -0,0 +1,629 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -4705,7 +4699,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +# Skylark rule for the above implementation. Gives default debug arguments for
 +# private attributes for signing tool, signing key, and signing configuration.
-+sgx_debug_enclave = rule(
++_sgx_debug_enclave = rule(
 +    implementation = _sgx_debug_enclave_impl,
 +    executable = True,
 +    doc = "Creates a signed enclave binary by using a debug key.",
@@ -4734,6 +4728,33 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +        ),
 +    },
 +)
++
++def sgx_debug_enclave(
++        name,
++        unsigned,
++        config = None,
++        tags = [],
++        deprecation = None,
++        testonly = False):
++    """Creates a signed enclave binary by using a debug key.
++
++    Args:
++        name: The target name
++        unsigned: The label of the unsigned enclave binary.
++        config: The enclave configuration label to use.
++        tags: Bazel tags to add to name.
++        deprecation: An optional deprecation message that issues a warning.
++        testonly: True if the target should only be used in tests.
++    """
++
++    _sgx_debug_enclave(
++        name = name,
++        config = config,
++        unsigned = unsigned,
++        tags = tags + sgx_tags(),
++        deprecation = deprecation,
++        testonly = testonly,
++    )
 +
 +def _sgx_generate_sigstruct_impl(ctx):
 +    """Implementation of the sign_tool's gendata command for sigstructs."""
@@ -4996,6 +5017,18 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +def _unsigned_enclave_name(enclave):
 +    return _extend_enclave_name(enclave, "_unsigned")
++
++# Export all rules and macros in one identifier to load.
++sgx = struct(
++    boringssl_sign_sigstruct = boringssl_sign_sigstruct,
++    debug_enclave = sgx_debug_enclave,
++    enclave_configuration = sgx_enclave_configuration,
++    full_enclave_configuration = sgx_full_enclave_configuration,
++    generate_sigstruct = sgx_generate_sigstruct,
++    tags = sgx_tags,
++    unsigned_enclave = sgx_unsigned_enclave,
++    signed_enclave = sgx_signed_enclave,
++)
 --- /dev/null
 +++ enclave_sim.lds
 @@ -0,0 +1,9 @@

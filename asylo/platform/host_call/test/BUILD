@@ -22,7 +22,7 @@ load(
     "sim_enclave_test",
 )
 load("//asylo/bazel:sim_enclave.bzl", "primitives_sim_enclave")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
@@ -106,8 +106,8 @@ sim_enclave_test(
     ],
 )
 
-sgx_enclave(
-    name = "sgx_test_enclave.so",
+sgx.unsigned_enclave(
+    name = "sgx_test_enclave_unsigned.so",
     testonly = 1,
     srcs = [
         "test_enclave.cc",
@@ -128,6 +128,12 @@ sgx_enclave(
         "//asylo/platform/system_call/type_conversions",
         "//asylo/util:status_macros",
     ],
+)
+
+sgx.debug_enclave(
+    name = "sgx_test_enclave.so",
+    unsigned = "sgx_test_enclave_unsigned.so",
+    testonly = 1,
 )
 
 sgx_enclave_test(

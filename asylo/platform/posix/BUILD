@@ -21,7 +21,7 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -180,7 +180,7 @@ cc_test(
 # For testing large pipe sizes, we increase the size of heap, since the
 # primitives implementation of enc_untrusted_pipe2() duplicates the data
 # during serialization.
-sgx_enclave_configuration(
+sgx.enclave_configuration(
     name = "pipe_test_config",
     heap_max_size = "0x200000",
 )
@@ -214,13 +214,18 @@ cc_test(
     ],
 )
 
-sgx_enclave(
-    name = "fork_test.so",
+sgx.unsigned_enclave(
+    name = "fork_test_unsigned.so",
     srcs = ["fork_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
     ],
+)
+
+sgx.debug_enclave(
+    name = "fork_test.so",
+    unsigned = "fork_test_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -252,8 +257,8 @@ cc_proto_library(
     deps = [":fork_security_test_proto"],
 )
 
-sgx_enclave(
-    name = "fork_security_test.so",
+sgx.unsigned_enclave(
+    name = "fork_security_test_unsigned.so",
     srcs = ["fork_security_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -262,6 +267,11 @@ sgx_enclave(
         "//asylo/platform/primitives:trusted_backend",
         "//asylo/test/util:enclave_test_application",
     ],
+)
+
+sgx.debug_enclave(
+    name = "fork_security_test.so",
+    unsigned = "fork_security_test_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -301,8 +311,8 @@ cc_proto_library(
 )
 
 # SGX enclave used to test different syscalls.
-sgx_enclave(
-    name = "syscalls_test.so",
+sgx.unsigned_enclave(
+    name = "syscalls_test_unsigned.so",
     srcs = ["syscalls_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -313,6 +323,11 @@ sgx_enclave(
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_set",
     ],
+)
+
+sgx.debug_enclave(
+    name = "syscalls_test.so",
+    unsigned = "syscalls_test_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -368,8 +383,8 @@ cc_proto_library(
     deps = ["in6_macro_test_proto"],
 )
 
-sgx_enclave(
-    name = "in6_macro_test.so",
+sgx.unsigned_enclave(
+    name = "in6_macro_test_unsigned.so",
     srcs = ["in6_macro_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -377,6 +392,11 @@ sgx_enclave(
         "//asylo:enclave_runtime",
         "//asylo/util:status",
     ],
+)
+
+sgx.debug_enclave(
+    name = "in6_macro_test.so",
+    unsigned = "in6_macro_test_unsigned.so",
 )
 
 sgx_enclave_test(

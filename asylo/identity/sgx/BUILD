@@ -24,7 +24,7 @@ load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 # Used to enable gtest tests to run inside an enclave.
 load("//asylo/bazel:asylo.bzl", "cc_test", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 proto_library(
     name = "attributes_proto",
@@ -403,11 +403,10 @@ cc_test(
     ],
 )
 
-sgx_enclave(
-    name = "remote_assertion_generator_test_util_enclave.so",
+sgx.unsigned_enclave(
+    name = "remote_assertion_generator_test_util_enclave_unsigned.so",
     testonly = 1,
     srcs = ["remote_assertion_generator_test_util_enclave.cc"],
-    config = "//asylo/grpc/util:grpc_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":platform_provisioning",
@@ -423,19 +422,25 @@ sgx_enclave(
     ],
 )
 
-sgx_enclave_configuration(
+sgx.debug_enclave(
+    name = "remote_assertion_generator_test_util_enclave.so",
+    unsigned = "remote_assertion_generator_test_util_enclave_unsigned.so",
+    config = "//asylo/grpc/util:grpc_enclave_config",
+    testonly = 1,
+)
+
+sgx.enclave_configuration(
     name = "remote_assertion_generator_enclave_config",
     heap_max_size = "0x6400000",  # ~100 MB
     tcs_num = "50",
 )
 
-sgx_enclave(
-    name = "remote_assertion_generator_enclave.so",
+sgx.unsigned_enclave(
+    name = "remote_assertion_generator_enclave_unsigned.so",
     srcs = [
         "remote_assertion_generator_enclave.cc",
         "remote_assertion_generator_enclave.h",
     ],
-    config = ":remote_assertion_generator_enclave_config",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_cc_proto",
@@ -453,6 +458,12 @@ sgx_enclave(
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
     ],
+)
+
+sgx.debug_enclave(
+    name = "remote_assertion_generator_enclave.so",
+    unsigned = "remote_assertion_generator_enclave_unsigned.so",
+    config = ":remote_assertion_generator_enclave_config",
 )
 
 sgx_enclave_test(
@@ -1154,7 +1165,7 @@ cc_library(
     ],
 )
 
-sgx_enclave_configuration(
+sgx.enclave_configuration(
     name = "tcb_container_util_enclave_test_config",
     heap_max_size = "0x1000000",
 )

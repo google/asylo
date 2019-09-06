@@ -22,7 +22,7 @@ package(
 
 exports_files(["LICENSE"])
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -279,7 +279,7 @@ cc_library(
     ],
 )
 
-sgx_enclave_configuration(
+sgx.enclave_configuration(
     name = "many_threads_enclave_config",
     tcs_num = "1000",
 )

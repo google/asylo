@@ -18,7 +18,7 @@
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_tags")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave")
 
 # Backend tags are used by testing infrastructure to determine which platform
 # flags to provide when running tests or building targets.
@@ -65,7 +65,7 @@ def asylo_tags(backend_tag = None):
     if backend_tag:
         result += [backend_tag]
         if backend_tag == "asylo-sgx":
-            return result + sgx_tags()
+            return result + sgx.tags()
     result += ["manual"]
     return result
 
@@ -523,7 +523,7 @@ def cc_enclave_binary(
       application_enclave_config: A target that defines a function called
           ApplicationConfig() returning and EnclaveConfig. The returned config
           is passed to the application enclave. Optional.
-      enclave_build_config: An sgx_enclave_configuration target to be passed to
+      enclave_build_config: An sgx.enclave_configuration target to be passed to
           the enclave. Optional.
       application_library_linkstatic: When building the application as a
           library, whether to allow that library to be statically linked. See
@@ -531,6 +531,7 @@ def cc_enclave_binary(
       **kwargs: cc_binary arguments.
     """
     application_library_name = name + "_application_library"
+    unsigned_enclave_name = name + "_application_enclave_unsigned.so"
     enclave_name = name + "_application_enclave.so"
 
     enclave_kwargs = {}
@@ -594,8 +595,8 @@ def cc_enclave_binary(
     if enclave_build_config:
         enclave_kwargs["config"] = enclave_build_config
 
-    sgx_enclave(
-        name = enclave_name,
+    sgx.unsigned_enclave(
+        name = unsigned_enclave_name,
         copts = ASYLO_DEFAULT_COPTS,
         tags = ["asylo-sgx"],
         deps = [
@@ -603,6 +604,11 @@ def cc_enclave_binary(
             _workspace_name + "/bazel/application_wrapper:application_wrapper_enclave_core",
         ],
         **enclave_kwargs
+    )
+    sgx.debug_enclave(
+        name = enclave_name,
+        unsigned = unsigned_enclave_name,
+        tags = ["asylo-sgx"],
     )
 
     enclave_loader(
@@ -744,7 +750,7 @@ def cc_test(
     Args:
       name: Same as native cc_test name.
       enclave_test_name: Name for the generated cc_enclave_test. Optional.
-      enclave_test_config: An sgx_enclave_configuration target to be passed to
+      enclave_test_config: An sgx.enclave_configuration target to be passed to
           the enclave. Optional.
       srcs: Same as native cc_test srcs.
       deps: Same as native cc_test deps.
@@ -795,7 +801,7 @@ def cc_test_and_cc_enclave_test(
           If not provided and name ends with "_test", then defaults to name with
           "_test" replaced with "_enclave_test". If not provided and name does
           not end with "_test", then defaults to name appended with "_enclave".
-      enclave_test_config: An sgx_enclave_configuration target to be passed to
+      enclave_test_config: An sgx.enclave_configuration target to be passed to
           the enclave. Optional.
       srcs: See documentation for srcs in native cc_test rule.
       deps: See documentation for deps in native cc_test rule.
@@ -831,7 +837,7 @@ def cc_enclave_test(
     Args:
       name: Target name for will be <name>_enclave.
       srcs: Same as cc_test srcs.
-      enclave_config: An sgx_enclave_configuration target to be passed to the
+      enclave_config: An sgx.enclave_configuration target to be passed to the
           enclave. Optional.
       tags: Same as cc_test tags.
       deps: Same as cc_test deps.
@@ -861,20 +867,30 @@ def cc_enclave_test(
 
     # Build the gtest enclave using the test file and gtest "main" enclave shim
     enclave_name = name + ".so"
+    unsigned_enclave_name = name + "_unsigned.so"
     enclave_target = ":" + enclave_name
 
-    # Collect any arguments to sgx_enclave that override the defaults
-    enclave_kwargs = {}
-    if enclave_config:
-        enclave_kwargs["config"] = enclave_config
-
-    sgx_enclave(
-        name = enclave_name,
+    # Collect any arguments to sgx.unsigned_enclave that override the defaults
+    tags = ["asylo-sgx"] + tags
+    size = kwargs.pop("size", None)  # Meant for the test.
+    sgx.unsigned_enclave(
+        name = unsigned_enclave_name,
         srcs = srcs,
         deps = deps + [_workspace_name + "/bazel:test_shim_enclave"],
         testonly = 1,
-        tags = ["asylo-sgx"] + enclave_kwargs.pop("tags", []),
-        **enclave_kwargs
+        tags = tags,
+        **kwargs
+    )
+    debug_kwargs = {}
+    if enclave_config:
+        debug_kwargs["config"] = enclave_config
+
+    sgx.debug_enclave(
+        name = enclave_name,
+        unsigned = unsigned_enclave_name,
+        tags = tags,
+        testonly = 1,
+        **debug_kwargs
     )
 
     # //asylo/bazel:test_shim_loader expects the path to
@@ -899,11 +915,12 @@ def cc_enclave_test(
         enclaves = _invert_enclave_name_mapping(enclaves),
         data = kwargs.get("data", []),
         testonly = 1,
+        size = size,
         tags = ["enclave_test"] + tags,
     )
 
 def sgx_enclave_test(name, srcs, **kwargs):
-    """Build target for testing one or more instances of 'sgx_enclave'.
+    """Build target for testing one or more instances of 'sgx.debug_enclave'.
 
     This macro invokes enclave_test with the "asylo-sgx" tag added.
 

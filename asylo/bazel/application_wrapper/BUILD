@@ -24,11 +24,7 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load(
-    "@linux_sgx//:sgx_sdk.bzl",
-    "sgx_enclave",
-    "sgx_enclave_configuration",
-)
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -147,21 +143,27 @@ cc_library(
 
 # An SGX enclave configuration with a TCS number high enough for the
 # multi-threaded entry test.
-sgx_enclave_configuration(
+sgx.enclave_configuration(
     name = "application_wrapper_enclave_test_configuration",
     tcs_num = "300",
 )
 
 # An application enclave wrapping :test_application.
-sgx_enclave(
-    name = "application_wrapper_enclave_test_enclave.so",
+sgx.unsigned_enclave(
+    name = "application_wrapper_enclave_test_enclave_unsigned.so",
     testonly = 1,
-    config = ":application_wrapper_enclave_test_configuration",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":application_wrapper_enclave_core",
         ":test_application_library",
     ],
+)
+
+sgx.debug_enclave(
+    name = "application_wrapper_enclave_test_enclave.so",
+    unsigned = "application_wrapper_enclave_test_enclave_unsigned.so",
+    config = ":application_wrapper_enclave_test_configuration",
+    testonly = 1,
 )
 
 # A test of ApplicationWrapperEnclave.

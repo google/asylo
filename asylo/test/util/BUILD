@@ -16,7 +16,7 @@
 
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -350,11 +350,16 @@ sh_library(
 
 # An enclave for testing purposes. All entry points use the default
 # implementations.
-sgx_enclave(
-    name = "do_nothing_enclave.so",
+sgx.unsigned_enclave(
+    name = "do_nothing_enclave_unsigned.so",
     srcs = ["do_nothing_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo:enclave_runtime"],
+)
+
+sgx.debug_enclave(
+    name = "do_nothing_enclave.so",
+    unsigned = "do_nothing_enclave_unsigned.so",
 )
 
 # Sample text for testing purposes.

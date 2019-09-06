@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # Enclave test cases.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
@@ -50,8 +50,8 @@ cc_enclave_test(
     ],
 )
 
-sgx_enclave(
-    name = "test_proto.so",
+sgx.unsigned_enclave(
+    name = "test_proto_unsigned.so",
     srcs = ["proto_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -60,6 +60,11 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/memory",
     ],
+)
+
+sgx.debug_enclave(
+    name = "test_proto.so",
+    unsigned = "test_proto_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -78,8 +83,8 @@ sgx_enclave_test(
     ],
 )
 
-sgx_enclave(
-    name = "getenv_test_enclave.so",
+sgx.unsigned_enclave(
+    name = "getenv_test_enclave_unsigned.so",
     srcs = ["getenv_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -88,6 +93,11 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/strings",
     ],
+)
+
+sgx.debug_enclave(
+    name = "getenv_test_enclave.so",
+    unsigned = "getenv_test_enclave_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -107,8 +117,8 @@ sgx_enclave_test(
     ],
 )
 
-sgx_enclave(
-    name = "enclave_api_test_proto.so",
+sgx.unsigned_enclave(
+    name = "enclave_api_test_proto_unsigned.so",
     srcs = ["enclave_api_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -117,6 +127,11 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "@com_google_absl//absl/memory",
     ],
+)
+
+sgx.debug_enclave(
+    name = "enclave_api_test_proto.so",
+    unsigned = "enclave_api_test_proto_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -148,7 +163,7 @@ cc_test(
     ],
 )
 
-sgx_enclave_configuration(
+sgx.enclave_configuration(
     name = "many_threads_enclave_config",
     tcs_num = "1000",
 )

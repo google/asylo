@@ -22,7 +22,7 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -194,14 +194,19 @@ cc_test(
 )
 
 # Test enclave for routing standard streams to host file descriptors.
-sgx_enclave(
-    name = "test_pipe.so",
+sgx.unsigned_enclave(
+    name = "test_pipe_unsigned.so",
     srcs = ["pipe_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":io_manager",
         "//asylo/test/util:enclave_test_application",
     ],
+)
+
+sgx.debug_enclave(
+    name = "test_pipe.so",
+    unsigned = "test_pipe_unsigned.so",
 )
 
 sgx_enclave_test(

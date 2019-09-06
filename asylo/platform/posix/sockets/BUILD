@@ -18,7 +18,7 @@ licenses(["notice"])  # Apache v2.0
 
 # Socket implementation, tests, and perf measurement tools.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
@@ -138,8 +138,8 @@ cc_proto_library(
 )
 
 # Enclave for UNIX domain-socket test.
-sgx_enclave(
-    name = "domain_socket_test_enclave.so",
+sgx.unsigned_enclave(
+    name = "domain_socket_test_enclave_unsigned.so",
     srcs = ["domain_socket_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -150,6 +150,11 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
     ],
+)
+
+sgx.debug_enclave(
+    name = "domain_socket_test_enclave.so",
+    unsigned = "domain_socket_test_enclave_unsigned.so",
 )
 
 # Driver for UNIX domain-socket test.
@@ -179,8 +184,8 @@ sgx_enclave_test(
 )
 
 # Enclave for INET6 socket test.
-sgx_enclave(
-    name = "inet6_socket_test_enclave.so",
+sgx.unsigned_enclave(
+    name = "inet6_socket_test_enclave_unsigned.so",
     srcs = ["inet6_socket_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -191,6 +196,11 @@ sgx_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
     ],
+)
+
+sgx.debug_enclave(
+    name = "inet6_socket_test_enclave.so",
+    unsigned = "inet6_socket_test_enclave_unsigned.so",
 )
 
 # Driver for INET6 socket test.
@@ -215,14 +225,19 @@ sgx_enclave_test(
 )
 
 # Enclave for getaddrinfo and freeaddrinfo tests.
-sgx_enclave(
-    name = "addrinfo_test_enclave.so",
+sgx.unsigned_enclave(
+    name = "addrinfo_test_enclave_unsigned.so",
     srcs = ["addrinfo_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":socket_test_cc_proto",
         "//asylo/test/util:enclave_test_application",
     ],
+)
+
+sgx.debug_enclave(
+    name = "addrinfo_test_enclave.so",
+    unsigned = "addrinfo_test_enclave_unsigned.so",
 )
 
 # Driver for getaddrinfo and freeaddrinfo tests.
