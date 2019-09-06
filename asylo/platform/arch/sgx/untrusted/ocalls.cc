@@ -919,7 +919,7 @@ void *ocall_enc_untrusted_acquire_shared_resource(SharedNameKind kind,
 //           Debugging              //
 //////////////////////////////////////
 
-void ocall_enc_untrusted_hex_dump(const void *buf, int nbytes) {
+void ocall_enc_untrusted_hex_dump(const void *buf, bridge_size_t nbytes) {
   fprintf(stderr, "%s\n", asylo::buffer_to_hex_string(buf, nbytes).c_str());
 }
 
