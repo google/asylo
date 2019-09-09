@@ -64,7 +64,7 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
                 const Signature &signature) const override;
 
  private:
-  EcdsaP256Sha256VerifyingKey(bssl::UniquePtr<EC_KEY> public_key);
+  explicit EcdsaP256Sha256VerifyingKey(bssl::UniquePtr<EC_KEY> public_key);
 
   // An ECDSA P256 public key.
   bssl::UniquePtr<EC_KEY> public_key_;
