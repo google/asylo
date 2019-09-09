@@ -64,6 +64,16 @@ cc_proto_library(
     deps = [":certificate_proto"],
 )
 
+proto_library(
+    name = "fake_certificate_proto",
+    srcs = ["fake_certificate.proto"],
+)
+
+cc_proto_library(
+    name = "fake_certificate_cc_proto",
+    deps = [":fake_certificate_proto"],
+)
+
 # A generic cryptor wrapping an AEAD key and a NonceGeneratorInterface.
 cc_library(
     name = "aead_cryptor",
@@ -255,12 +265,13 @@ cc_test(
         ":certificate_cc_proto",
         ":certificate_interface",
         ":certificate_util",
+        ":fake_certificate",
+        ":fake_certificate_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
-        "//asylo/util:status",
         "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -493,6 +504,40 @@ cc_test(
         "@boringssl//:crypto",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "fake_certificate",
+    testonly = 1,
+    srcs = ["fake_certificate.cc"],
+    hdrs = ["fake_certificate.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":certificate_cc_proto",
+        ":certificate_interface",
+        ":fake_certificate_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+    ],
+)
+
+cc_test(
+    name = "fake_certificate_test",
+    srcs = ["fake_certificate_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":certificate_cc_proto",
+        ":certificate_interface",
+        ":fake_certificate",
+        ":fake_certificate_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -18,21 +18,18 @@
 
 #include "asylo/crypto/certificate_util.h"
 
-#include <memory>
-#include <string>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
-#include "absl/strings/numbers.h"
-#include "absl/strings/str_split.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/fake_certificate.h"
+#include "asylo/crypto/fake_certificate.pb.h"
 #include "asylo/test/util/status_matchers.h"
-#include "asylo/util/status.h"
-#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
@@ -41,11 +38,6 @@ constexpr char kRootKey[] = "f00d";
 constexpr char kIntermediateKey[] = "c0ff33";
 constexpr char kExtraIntermediateKey[] = "c0c0a";
 constexpr char kEndUserKey[] = "fun";
-
-// Test data for a valid FakeCertificate chain with explicit pathlengths.
-constexpr char kRootCertData[] = "f00d f00d 1-t";
-constexpr char kIntermediateCertData[] = "c0ff33 f00d 0-t";
-constexpr char kEndCertData[] = "fun c0ff33 -";
 
 // Data for a malformed FakeCertificate;
 constexpr char kMalformedCertData[] = "food food food food";
@@ -195,137 +187,38 @@ TEST(CertificateUtilTest,
       CreateValidCertificateRevocationList()));
 }
 
-// A fake certificate. It expects certificate protos with the given data
-// encoding:
-//
-//   message Certificate {
-//     format: <any>,
-//     data: subject_key + " " + issuer_key + " " + [pathlength] + "-" + [ca],
-//   }
-//
-// Verify() returns an OK Status if |issuer_certificate|.SubjectKeyDer() =
-// issuer_key. SubjectKeyDer() returns subject_key. CertPathLength() returns
-// pathlength, if a value is included. Key values cannot include spaces.
-// Pathlength must be a valid integer. The ca value must be empty, t, or f.
-class FakeCertificate : public CertificateInterface {
- public:
-  FakeCertificate(absl::string_view subject_key, absl::string_view issuer_key,
-                  absl::optional<int> pathlength, absl::optional<bool> is_ca)
-      : subject_key_(subject_key),
-        issuer_key_(issuer_key),
-        pathlength_(pathlength),
-        is_ca_(is_ca) {}
-  static StatusOr<std::unique_ptr<FakeCertificate>> Create(
-      const Certificate &certificate) {
-    std::vector<std::string> split_data =
-        absl::StrSplit(certificate.data(), ' ');
-
-    if (split_data.size() != 3) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "Data split failed");
-    }
-
-    std::vector<std::string> split_basic_constraints =
-        absl::StrSplit(split_data[2], '-');
-    if (split_basic_constraints.size() != 2) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
-          "Third value must be in the format [int] + \" - \" + [|t|f]");
-    }
-
-    absl::optional<bool> is_ca;
-    if (split_basic_constraints[1] == "t") {
-      is_ca = true;
-    } else if (split_basic_constraints[1] == "f") {
-      is_ca = false;
-    } else if (split_basic_constraints[1].empty()) {
-      is_ca = absl::nullopt;
-    } else {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
-          "Third value must be in the format [int] + \" - \" + [|t|f]");
-    }
-
-    if (split_basic_constraints[0].empty()) {
-      return absl::make_unique<FakeCertificate>(split_data[0], split_data[1],
-                                                absl::nullopt, is_ca);
-    }
-
-    int pathlen;
-    if (!absl::SimpleAtoi(split_basic_constraints[0], &pathlen)) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
-          "Third value must be in the format [int] + \" - \" + [|t|f]");
-    }
-    return absl::make_unique<FakeCertificate>(split_data[0], split_data[1],
-                                              pathlen, is_ca);
-  }
-
-  // From CertificateInterface.
-
-  Status Verify(const CertificateInterface &issuer_certificate,
-                const VerificationConfig &config) const override {
-    std::string issuer_subject_key;
-    ASYLO_ASSIGN_OR_RETURN(issuer_subject_key,
-                           issuer_certificate.SubjectKeyDer());
-    if (issuer_key_ != issuer_subject_key) {
-      return Status(error::GoogleError::UNAUTHENTICATED, "Verification failed");
-    }
-
-    return Status::OkStatus();
-  }
-
-  StatusOr<std::string> SubjectKeyDer() const override { return subject_key_; }
-
-  absl::optional<bool> IsCa() const override { return is_ca_; }
-
-  absl::optional<int64_t> CertPathLength() const override {
-    return pathlength_;
-  }
-
-  absl::optional<KeyUsageInformation> KeyUsage() const override {
-    return absl::nullopt;
-  }
-
- private:
-  std::string subject_key_;
-  std::string issuer_key_;
-  absl::optional<int> pathlength_;
-  absl::optional<bool> is_ca_;
-};
-
-// Returned chain:
-// {
-//   certificates: [
-//     {
-//       format: X509_PEM,
-//       data: kEndCertData,
-//     },
-//     {
-//       format: X509_DER,
-//       data: kIntermediateCertData,
-//     },
-//     {
-//       format: X509_PEM,
-//       data: kRootCertData,
-//     },
-//   ]
-// }
 CertificateChain TestCertificateChain() {
   CertificateChain chain;
 
+  FakeCertificateProto end_cert_proto;
+  end_cert_proto.set_subject_key(kEndUserKey);
+  end_cert_proto.set_issuer_key(kIntermediateKey);
+
   Certificate end_cert;
   end_cert.set_format(Certificate::X509_PEM);
-  end_cert.set_data(kEndCertData);
+  end_cert_proto.SerializeToString(end_cert.mutable_data());
   *chain.add_certificates() = end_cert;
+
+  FakeCertificateProto intermediate_cert_proto;
+  intermediate_cert_proto.set_subject_key(kIntermediateKey);
+  intermediate_cert_proto.set_issuer_key(kRootKey);
+  intermediate_cert_proto.set_is_ca(true);
+  intermediate_cert_proto.set_pathlength(0);
 
   Certificate intermediate_cert;
   intermediate_cert.set_format(Certificate::X509_DER);
-  intermediate_cert.set_data(kIntermediateCertData);
+  intermediate_cert_proto.SerializeToString(intermediate_cert.mutable_data());
   *chain.add_certificates() = intermediate_cert;
+
+  FakeCertificateProto root_cert_proto;
+  root_cert_proto.set_subject_key(kRootKey);
+  root_cert_proto.set_issuer_key(kRootKey);
+  root_cert_proto.set_is_ca(true);
+  root_cert_proto.set_pathlength(1);
 
   Certificate root_cert;
   root_cert.set_format(Certificate::X509_PEM);
-  root_cert.set_data(kRootCertData);
+  root_cert_proto.SerializeToString(root_cert.mutable_data());
   *chain.add_certificates() = root_cert;
 
   return chain;
@@ -343,11 +236,12 @@ CertificateFactoryMap CreateFactoryMap(
 TEST(CertificateUtilTest, VerifyCertificateChainSuccessWithPathLengths) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kIntermediateKey, absl::nullopt, absl::nullopt));
+      kEndUserKey, kIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kIntermediateKey, kRootKey, 0, absl::nullopt));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kRootKey, kRootKey, 1, absl::nullopt));
+      kIntermediateKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/1));
 
   VerificationConfig config(/*all_fields=*/true);
   ASYLO_EXPECT_OK(VerifyCertificateChain(absl::MakeConstSpan(chain), config));
@@ -356,11 +250,14 @@ TEST(CertificateUtilTest, VerifyCertificateChainSuccessWithPathLengths) {
 TEST(CertificateUtilTest, VerifyCertificateChainSuccessWithoutPathLengths) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kIntermediateKey, absl::nullopt, absl::nullopt));
+      kEndUserKey, kIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kIntermediateKey, kRootKey, absl::nullopt, true));
-  chain.emplace_back(absl::make_unique<FakeCertificate>(kRootKey, kRootKey,
-                                                        absl::nullopt, false));
+      kIntermediateKey, kRootKey, /*is_ca=*/true,
+      /*pathlength=*/absl::nullopt));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey,
+      /*is_ca=*/false, /*pathlength=*/absl::nullopt));
 
   VerificationConfig config(/*all_fields=*/true);
   ASYLO_EXPECT_OK(VerifyCertificateChain(absl::MakeConstSpan(chain), config));
@@ -369,11 +266,12 @@ TEST(CertificateUtilTest, VerifyCertificateChainSuccessWithoutPathLengths) {
 TEST(CertificateUtilTest, VerifyCertificateChainVerificationErrorForwarded) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kExtraIntermediateKey, absl::nullopt, absl::nullopt));
+      kEndUserKey, kExtraIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kIntermediateKey, kRootKey, 0, absl::nullopt));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kRootKey, kRootKey, 1, absl::nullopt));
+      kIntermediateKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/1));
 
   VerificationConfig config(/*all_fields=*/false);
   EXPECT_THAT(VerifyCertificateChain(absl::MakeConstSpan(chain), config),
@@ -383,11 +281,12 @@ TEST(CertificateUtilTest, VerifyCertificateChainVerificationErrorForwarded) {
 TEST(CertificateUtilTest, VerifyCertificateChainBadRootPathlen) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kIntermediateKey, absl::nullopt, absl::nullopt));
+      kEndUserKey, kIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kIntermediateKey, kRootKey, 0, absl::nullopt));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kRootKey, kRootKey, 0, absl::nullopt));
+      kIntermediateKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
 
   VerificationConfig config(/*all_fields=*/true);
   EXPECT_THAT(VerifyCertificateChain(absl::MakeConstSpan(chain), config),
@@ -397,13 +296,15 @@ TEST(CertificateUtilTest, VerifyCertificateChainBadRootPathlen) {
 TEST(CertificateUtilTest, VerifyCertificateChainBadIntermediatePathlen) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kExtraIntermediateKey, absl::nullopt, absl::nullopt));
+      kEndUserKey, kExtraIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kExtraIntermediateKey, kIntermediateKey, 0, absl::nullopt));
+      kExtraIntermediateKey, kIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/0));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kIntermediateKey, kRootKey, 0, absl::nullopt));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kRootKey, kRootKey, 2, absl::nullopt));
+      kIntermediateKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/2));
 
   VerificationConfig config(/*all_fields=*/true);
   EXPECT_THAT(VerifyCertificateChain(absl::MakeConstSpan(chain), config),
@@ -413,11 +314,12 @@ TEST(CertificateUtilTest, VerifyCertificateChainBadIntermediatePathlen) {
 TEST(CertificateUtilTest, VerifyCertificateChainBadPathlenNoCheck) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kIntermediateKey, absl::nullopt, absl::nullopt));
+      kEndUserKey, kIntermediateKey, /*is_ca=*/absl::nullopt,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kIntermediateKey, kRootKey, 0, absl::nullopt));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kRootKey, kRootKey, 0, absl::nullopt));
+      kIntermediateKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey, /*is_ca=*/absl::nullopt, /*pathlength=*/0));
 
   VerificationConfig config(/*all_fields=*/false);
   ASYLO_EXPECT_OK(VerifyCertificateChain(absl::MakeConstSpan(chain), config));
@@ -426,13 +328,15 @@ TEST(CertificateUtilTest, VerifyCertificateChainBadPathlenNoCheck) {
 TEST(CertificateUtilTest, VerifyCertificateChainCaValuesSet) {
   CertificateInterfaceVector chain;
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kEndUserKey, kExtraIntermediateKey, absl::nullopt, false));
+      kEndUserKey, kExtraIntermediateKey, /*is_ca=*/false,
+      /*pathlength=*/absl::nullopt));
   chain.emplace_back(absl::make_unique<FakeCertificate>(
-      kExtraIntermediateKey, kIntermediateKey, absl::nullopt, false));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kIntermediateKey, kRootKey, 0, true));
-  chain.emplace_back(
-      absl::make_unique<FakeCertificate>(kRootKey, kRootKey, 1, true));
+      kExtraIntermediateKey, kIntermediateKey, /*is_ca=*/false,
+      /*pathlength=*/absl::nullopt));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kIntermediateKey, kRootKey, /*is_ca=*/true, /*pathlength=*/0));
+  chain.emplace_back(absl::make_unique<FakeCertificate>(
+      kRootKey, kRootKey, /*is_ca=*/true, /*pathlength=*/1));
 
   VerificationConfig config(/*all_fields=*/true);
   ASYLO_EXPECT_OK(VerifyCertificateChain(absl::MakeConstSpan(chain), config));
