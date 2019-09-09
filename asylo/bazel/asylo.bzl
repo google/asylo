@@ -20,6 +20,24 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave")
 
+# website-docs-metadata
+# ---
+#
+# title:  Asylo C++ build rules
+#
+# overview: Build rules for defining enclaves and tests.
+#
+# location: /_docs/reference/api/bazel/asylo_bzl.md
+#
+# layout: docs
+#
+# type: markdown
+#
+# toc: true
+#
+# ---
+# {% include home.html %}
+
 # Backend tags are used by testing infrastructure to determine which platform
 # flags to provide when running tests or building targets.
 #
@@ -69,7 +87,7 @@ def asylo_tags(backend_tag = None):
     result += ["manual"]
     return result
 
-def extract_asylo_tags(tags):
+def _extract_asylo_tags(tags):
     """Returns all appropriate tags for each backend tag in tags.
 
     Args:
@@ -635,6 +653,9 @@ def sim_enclave(name, **kwargs):
     Args:
       name: The name of the signed enclave object file.
       **kwargs: cc_binary arguments.
+
+    Deprecated:
+      For identical behavior, use sgx_enclave.
     """
     sgx_enclave(
         name,
@@ -654,28 +675,28 @@ def enclave_test(
     Creates a cc_test for a given enclave. Passes flags according to
     `test_args`, which can contain references to targets from `enclaves`.
 
-    Args:
-      name: Name for build target.
-      enclaves: Dictionary from enclave names to target dependencies. The
-        dictionary must be injective. This dictionary is used to format each
-        string in `test_args` after each enclave target is interpreted as the
-        path to its output binary.
-     embedded_enclaves: Dictionary from ELF section names (that do not start
-       with '.') to target dependencies. Each target in the dictionary is
-       embedded in the test binary under the corresponding ELF section.
-     test_args: List of arguments to be passed to the test binary. Arguments may
-       contain {enclave_name}-style references to keys from the `enclaves` dict,
-       each of which will be replaced with the path to the named enclave. This
-       replacement only occurs for non-embedded enclaves.
-     tags: Label attached to this test to allow for querying.
-     **kwargs: cc_test arguments.
-
     This macro creates three build targets:
      1) name: sh_test that runs the enclave_test.
      2) name_driver: cc_test used as test loader in `name`. This is a normal
                      native cc_test. It cannot be directly run because there is
                      an undeclared dependency on enclave.
      3) name_host_driver: genrule that builds name_driver with host crosstool.
+
+    Args:
+      name: Name for build target.
+      enclaves: Dictionary from enclave names to target dependencies. The
+        dictionary must be injective. This dictionary is used to format each
+        string in `test_args` after each enclave target is interpreted as the
+        path to its output binary.
+      embedded_enclaves: Dictionary from ELF section names (that do not start
+       with '.') to target dependencies. Each target in the dictionary is
+       embedded in the test binary under the corresponding ELF section.
+      test_args: List of arguments to be passed to the test binary. Arguments may
+       contain {enclave_name}-style references to keys from the `enclaves` dict,
+       each of which will be replaced with the path to the named enclave. This
+       replacement only occurs for non-embedded enclaves.
+      tags: Label attached to this test to allow for querying.
+      **kwargs: cc_test arguments.
     """
 
     test_name = name + "_driver"
@@ -691,7 +712,7 @@ def enclave_test(
         **_ensure_static_manual(kwargs)
     )
 
-    tags = extract_asylo_tags(tags) + tags
+    tags = _extract_asylo_tags(tags) + tags
 
     # embed_enclaves ensures that the test loader's ELF file is built with the
     # host toolchain, even when its enclaves argument is empty.
@@ -905,7 +926,7 @@ def cc_enclave_test(
     if "asylo-sgx" not in tags:
         tags = tags + ["asylo-sgx"]
 
-    tags = extract_asylo_tags(tags) + tags
+    tags = _extract_asylo_tags(tags) + tags
 
     # Execute the gtest enclave using the gtest enclave runner
     _enclave_runner_test(

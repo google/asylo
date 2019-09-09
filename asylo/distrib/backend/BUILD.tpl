@@ -21,3 +21,10 @@ licenses(["notice"])  # Apache v2.0
 exports_files([
     "enclave_info.bzl",
 ])
+
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+bzl_library(
+    name = "enclave_info_bzl",
+    srcs = ["enclave_info.bzl"],
+    visibility = ["//visibility:public"],
+)

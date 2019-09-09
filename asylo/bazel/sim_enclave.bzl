@@ -18,6 +18,24 @@
 
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 
+# website-docs-metadata
+# ---
+#
+# title:  Asylo simulation backend build rules
+#
+# overview: Build rules for the process-separated simulation enclave backend.
+#
+# location: /_docs/reference/api/bazel/sim_enclave_bzl.md
+#
+# layout: docs
+#
+# type: markdown
+#
+# toc: true
+#
+# ---
+# {% include home.html %}
+
 SimEnclaveInfo = provider()
 
 def _reprovide_binary_with_enclave_info_impl(ctx):

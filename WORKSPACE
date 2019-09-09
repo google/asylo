@@ -46,3 +46,25 @@ load("@io_bazel_rules_go//go:deps.bzl", "go_rules_dependencies",
 # Load go bazel rules and toolchain.
 go_rules_dependencies()
 go_register_toolchains()
+
+# The following 5 dependencies are for documentation generation.
+load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+http_archive(
+    name = "io_bazel_skydoc",
+    urls = ["https://github.com/bazelbuild/skydoc/archive/c7bbde2950769aac9a99364b0926230060a3ce04.tar.gz"],
+    sha256 = "e6a76586b264f30679688f65f7e71ac112d1446681010a13bf22d9ca071f34b7",
+    strip_prefix = "skydoc-c7bbde2950769aac9a99364b0926230060a3ce04",
+)
+
+load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
+skydoc_repositories()
+
+load("@io_bazel_rules_sass//:package.bzl", "rules_sass_dependencies")
+rules_sass_dependencies()
+
+load("@build_bazel_rules_nodejs//:defs.bzl", "node_repositories")
+node_repositories()
+
+load("@io_bazel_rules_sass//:defs.bzl", "sass_repositories")
+sass_repositories()
+

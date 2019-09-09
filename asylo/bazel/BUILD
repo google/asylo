@@ -124,3 +124,36 @@ sh_test(
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
     deps = ["//asylo/test/util:shell_testing"],
 )
+
+load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
+
+bzl_library(
+    name = "asylo_bzl_internal_dependendency",
+    srcs = ["copts.bzl"],
+)
+
+stardoc(
+    name = "asylo_bzl-docs",
+    out = "asylo_bzl.md",
+    func_template = "bzl_function.vm",
+    input = "asylo.bzl",
+    deps = [
+        ":asylo_bzl_internal_dependendency",
+        "@com_google_asylo_backend_provider//:enclave_info_bzl",
+        "@linux_sgx//:sgx_sdk_bzl",
+    ],
+)
+
+stardoc(
+    name = "sim_enclave_bzl-docs",
+    out = "sim_enclave_bzl.md",
+    func_template = "bzl_function.vm",
+    input = "sim_enclave.bzl",
+    deps = ["@com_google_asylo_backend_provider//:enclave_info_bzl"],
+)
+
+bzl_library(
+    name = "asylo_deps_internal_dependency",
+    srcs = ["installation_path.bzl"],
+)

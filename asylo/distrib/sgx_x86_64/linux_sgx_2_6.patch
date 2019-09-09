@@ -3061,7 +3061,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  bool is_valid_sp(uintptr_t sp);
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1335 @@
+@@ -0,0 +1,1351 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -4397,12 +4397,46 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    },
 +    visibility = ["//visibility:public"],
 +)
++
++load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
++load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
++
++stardoc(
++    name = "sgx_sdk_bzl-docs",
++    out = "sgx_sdk_bzl.md",
++    input = "sgx_sdk.bzl",
++    deps = ["@com_google_asylo_backend_provider//:enclave_info_bzl"],
++)
++
++bzl_library(
++    name = "sgx_sdk_bzl",
++    srcs = ["sgx_sdk.bzl"],
++    visibility = ["//visibility:public"],
++)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,629 @@
+@@ -0,0 +1,647 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
++
++# website-docs-metadata
++# ---
++#
++# title: Asylo SGX backend build rules
++#
++# overview: Build rules for defining SGX enclaves.
++#
++# location: /_docs/reference/api/bazel/sgx_sdk_bzl.md
++#
++# layout: docs
++#
++# type: markdown
++#
++# toc: true
++#
++# ---
++# {% include home.html %}
 +
 +SGXEnclaveInfo = provider()
 +SGXEnclaveConfigInfo = provider(fields = [
