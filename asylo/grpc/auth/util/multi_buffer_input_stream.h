@@ -61,8 +61,7 @@ class MultiBufferInputStream : public ZeroCopyInputStream {
   bool Next(const void **data, int *size) override;
   void BackUp(int count) override;
   bool Skip(int count) override;
-  auto ByteCount() const -> decltype(
-      static_cast<ZeroCopyInputStream *>(nullptr)->ByteCount()) override;
+  int64_t ByteCount() const override;
 
   // Adds a new buffer containing |size| bytes from |data| to the stream.
   void AddBuffer(const char *data, size_t size);

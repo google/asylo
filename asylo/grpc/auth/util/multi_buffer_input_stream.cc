@@ -110,10 +110,7 @@ bool MultiBufferInputStream::Skip(int count) {
   return true;
 }
 
-auto MultiBufferInputStream::ByteCount() const
-    -> decltype(static_cast<ZeroCopyInputStream *>(nullptr)->ByteCount()) {
-  return bytes_read_;
-}
+int64_t MultiBufferInputStream::ByteCount() const { return bytes_read_; }
 
 void MultiBufferInputStream::AddBuffer(const char *data, size_t size) {
   std::vector<char> *buffer = new std::vector<char>(data, data + size);
