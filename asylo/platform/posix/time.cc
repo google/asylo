@@ -55,9 +55,6 @@ std::atomic<int64_t> *GetClockAddressOrDie(const char *name) {
 inline int64_t MonotonicClock() {
   static std::atomic<int64_t> *clock_monotonic =
       GetClockAddressOrDie("clock_monotonic");
-  thread_local static int64_t last_tick = *clock_monotonic;
-  if (*clock_monotonic < last_tick) abort();
-  last_tick = *clock_monotonic;
   return *clock_monotonic;
 }
 
@@ -111,16 +108,15 @@ int enclave_gettimeofday(struct timeval *__restrict time, void *timezone) {
 int enclave_times(struct tms *buf) { return enc_untrusted_times(buf); }
 
 int clock_gettime(clockid_t clock_id, struct timespec *time) {
-  switch (clock_id) {
-    case CLOCK_MONOTONIC:
-      NanosecondsToTimeSpec(time, MonotonicClock());
-      return 0;
-    case CLOCK_REALTIME:
-      NanosecondsToTimeSpec(time, RealtimeClock());
-      return 0;
-    default:
-      return -1;
+  int result = enc_untrusted_clock_gettime(clock_id, time);
+  if (clock_id == CLOCK_MONOTONIC) {
+    int64_t clock_monotonic = TimeSpecToNanoseconds(time);
+    thread_local static int64_t last_tick = clock_monotonic;
+    // CLOCK_MONOTONIC should never go backwards.
+    if (clock_monotonic < last_tick) abort();
+    last_tick = clock_monotonic;
   }
+  return result;
 }
 
 int getitimer(int which, struct itimerval *curr_value) {
