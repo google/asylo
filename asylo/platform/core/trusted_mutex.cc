@@ -21,7 +21,6 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 

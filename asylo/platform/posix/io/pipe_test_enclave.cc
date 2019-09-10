@@ -19,7 +19,6 @@
 #include <stdio.h>
 #include <unistd.h>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/test/util/enclave_test_application.h"
 
 namespace asylo {

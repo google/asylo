@@ -27,7 +27,6 @@
 #include <functional>
 #include <type_traits>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"

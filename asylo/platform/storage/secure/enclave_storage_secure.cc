@@ -26,7 +26,6 @@
 #include <stdarg.h>
 
 #include "asylo/util/logging.h"
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/storage/secure/aead_handler.h"
 #include "asylo/platform/storage/utils/fd_closer.h"

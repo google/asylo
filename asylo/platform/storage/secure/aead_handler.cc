@@ -30,7 +30,6 @@
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 

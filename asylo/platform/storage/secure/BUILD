@@ -64,7 +64,6 @@ cc_library(
         ":authenticated_dictionary",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/host_call",
         "//asylo/platform/storage/utils:fd_closer",
@@ -84,7 +83,6 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":aead_handler",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/host_call",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/platform/storage/utils:offset_translator",
