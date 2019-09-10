@@ -20,6 +20,7 @@
 
 #include <vector>
 
+#include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
@@ -29,6 +30,7 @@
 #include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/fake_certificate.h"
 #include "asylo/crypto/fake_certificate.pb.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -41,6 +43,236 @@ constexpr char kEndUserKey[] = "fun";
 
 // Data for a malformed FakeCertificate;
 constexpr char kMalformedCertData[] = "food food food food";
+
+// Test data of a valid X.509 PEM-encoded certificate.
+constexpr char kPemCert[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIEgTCCBCegAwIBAgIVAJ1mxDIzAXa+ixcUKKaUmyYxoyJlMAoGCCqGSM49BAMC\n"
+    "MHExIzAhBgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQK\n"
+    "DBFJbnRlbCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNV\n"
+    "BAgMAkNBMQswCQYDVQQGEwJVUzAeFw0xOTA0MDMyMTE2MzFaFw0yNjA0MDMyMTE2\n"
+    "MzFaMHAxIjAgBgNVBAMMGUludGVsIFNHWCBQQ0sgQ2VydGlmaWNhdGUxGjAYBgNV\n"
+    "BAoMEUludGVsIENvcnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkG\n"
+    "A1UECAwCQ0ExCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\n"
+    "F7aCJQzGR7R/oeDkuyiFhknVXV4mKl72QUCD+02CS+a0AUnJtKz37EmAyd5afJ38\n"
+    "dFswPFL1upLY7yrEco993qOCApswggKXMB8GA1UdIwQYMBaAFNDoqtp11/kuSReY\n"
+    "PHsUZdDV8llNMF8GA1UdHwRYMFYwVKBSoFCGTmh0dHBzOi8vYXBpLnRydXN0ZWRz\n"
+    "ZXJ2aWNlcy5pbnRlbC5jb20vc2d4L2NlcnRpZmljYXRpb24vdjEvcGNrY3JsP2Nh\n"
+    "PXByb2Nlc3NvcjAdBgNVHQ4EFgQUFBTkM8dooH85tY3YGlV1MtZs1zEwDgYDVR0P\n"
+    "AQH/BAQDAgbAMAwGA1UdEwEB/wQCMAAwggHUBgkqhkiG+E0BDQEEggHFMIIBwTAe\n"
+    "BgoqhkiG+E0BDQEBBBB7l753xi1CRsYD0PTxGzG7MIIBZAYKKoZIhvhNAQ0BAjCC\n"
+    "AVQwEAYLKoZIhvhNAQ0BAgECAQUwEAYLKoZIhvhNAQ0BAgICAQUwEAYLKoZIhvhN\n"
+    "AQ0BAgMCAQIwEAYLKoZIhvhNAQ0BAgQCAQQwEAYLKoZIhvhNAQ0BAgUCAQEwEQYL\n"
+    "KoZIhvhNAQ0BAgYCAgCAMBAGCyqGSIb4TQENAQIHAgEAMBAGCyqGSIb4TQENAQII\n"
+    "AgEAMBAGCyqGSIb4TQENAQIJAgEAMBAGCyqGSIb4TQENAQIKAgEAMBAGCyqGSIb4\n"
+    "TQENAQILAgEAMBAGCyqGSIb4TQENAQIMAgEAMBAGCyqGSIb4TQENAQINAgEAMBAG\n"
+    "CyqGSIb4TQENAQIOAgEAMBAGCyqGSIb4TQENAQIPAgEAMBAGCyqGSIb4TQENAQIQ\n"
+    "AgEAMBAGCyqGSIb4TQENAQIRAgEHMB8GCyqGSIb4TQENAQISBBAFBQIEAYAAAAAA\n"
+    "AAAAAAAAMBAGCiqGSIb4TQENAQMEAgAAMBQGCiqGSIb4TQENAQQEBgCQbqEAADAP\n"
+    "BgoqhkiG+E0BDQEFCgEAMAoGCCqGSM49BAMCA0gAMEUCIQCumiqM0xbNkSovgoDP\n"
+    "ZlMLpLOGlQZKIiYdOCqJhD4vYgIged7Ldm1CUVBPEfBElbn9QMS2aSNsElIAtDlT\n"
+    "Z0FeT5U=\n"
+    "-----END CERTIFICATE-----\n";
+
+// Test data of a Certificate proto parsed from an X.509 PEM-encoded cert
+// string.
+constexpr char kProtoPemCert[] = R"proto(
+  format: X509_PEM
+  data: "-----BEGIN CERTIFICATE-----\n"
+        "MIIEgTCCBCegAwIBAgIVAJ1mxDIzAXa+ixcUKKaUmyYxoyJlMAoGCCqGSM49BAMC\n"
+        "MHExIzAhBgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQK\n"
+        "DBFJbnRlbCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNV\n"
+        "BAgMAkNBMQswCQYDVQQGEwJVUzAeFw0xOTA0MDMyMTE2MzFaFw0yNjA0MDMyMTE2\n"
+        "MzFaMHAxIjAgBgNVBAMMGUludGVsIFNHWCBQQ0sgQ2VydGlmaWNhdGUxGjAYBgNV\n"
+        "BAoMEUludGVsIENvcnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkG\n"
+        "A1UECAwCQ0ExCzAJBgNVBAYTAlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE\n"
+        "F7aCJQzGR7R/oeDkuyiFhknVXV4mKl72QUCD+02CS+a0AUnJtKz37EmAyd5afJ38\n"
+        "dFswPFL1upLY7yrEco993qOCApswggKXMB8GA1UdIwQYMBaAFNDoqtp11/kuSReY\n"
+        "PHsUZdDV8llNMF8GA1UdHwRYMFYwVKBSoFCGTmh0dHBzOi8vYXBpLnRydXN0ZWRz\n"
+        "ZXJ2aWNlcy5pbnRlbC5jb20vc2d4L2NlcnRpZmljYXRpb24vdjEvcGNrY3JsP2Nh\n"
+        "PXByb2Nlc3NvcjAdBgNVHQ4EFgQUFBTkM8dooH85tY3YGlV1MtZs1zEwDgYDVR0P\n"
+        "AQH/BAQDAgbAMAwGA1UdEwEB/wQCMAAwggHUBgkqhkiG+E0BDQEEggHFMIIBwTAe\n"
+        "BgoqhkiG+E0BDQEBBBB7l753xi1CRsYD0PTxGzG7MIIBZAYKKoZIhvhNAQ0BAjCC\n"
+        "AVQwEAYLKoZIhvhNAQ0BAgECAQUwEAYLKoZIhvhNAQ0BAgICAQUwEAYLKoZIhvhN\n"
+        "AQ0BAgMCAQIwEAYLKoZIhvhNAQ0BAgQCAQQwEAYLKoZIhvhNAQ0BAgUCAQEwEQYL\n"
+        "KoZIhvhNAQ0BAgYCAgCAMBAGCyqGSIb4TQENAQIHAgEAMBAGCyqGSIb4TQENAQII\n"
+        "AgEAMBAGCyqGSIb4TQENAQIJAgEAMBAGCyqGSIb4TQENAQIKAgEAMBAGCyqGSIb4\n"
+        "TQENAQILAgEAMBAGCyqGSIb4TQENAQIMAgEAMBAGCyqGSIb4TQENAQINAgEAMBAG\n"
+        "CyqGSIb4TQENAQIOAgEAMBAGCyqGSIb4TQENAQIPAgEAMBAGCyqGSIb4TQENAQIQ\n"
+        "AgEAMBAGCyqGSIb4TQENAQIRAgEHMB8GCyqGSIb4TQENAQISBBAFBQIEAYAAAAAA\n"
+        "AAAAAAAAMBAGCiqGSIb4TQENAQMEAgAAMBQGCiqGSIb4TQENAQQEBgCQbqEAADAP\n"
+        "BgoqhkiG+E0BDQEFCgEAMAoGCCqGSM49BAMCA0gAMEUCIQCumiqM0xbNkSovgoDP\n"
+        "ZlMLpLOGlQZKIiYdOCqJhD4vYgIged7Ldm1CUVBPEfBElbn9QMS2aSNsElIAtDlT\n"
+        "Z0FeT5U=\n"
+        "-----END CERTIFICATE-----\n"
+)proto";
+
+// Test data of a certificate chain composed of concatenation of X.509
+// PEM-encoded certificates.
+constexpr char kPemCertChain[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIClzCCAj6gAwIBAgIVANDoqtp11/kuSReYPHsUZdDV8llNMAoGCCqGSM49BAMC\n"
+    "MGgxGjAYBgNVBAMMEUludGVsIFNHWCBSb290IENBMRowGAYDVQQKDBFJbnRlbCBD\n"
+    "b3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNBMQsw\n"
+    "CQYDVQQGEwJVUzAeFw0xODA1MjExMDQ1MDhaFw0zMzA1MjExMDQ1MDhaMHExIzAh\n"
+    "BgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQKDBFJbnRl\n"
+    "bCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNB\n"
+    "MQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABL9q+NMp2IOg\n"
+    "tdl1bk/uWZ5+TGQm8aCi8z78fs+fKCQ3d+uDzXnVTAT2ZhDCifyIuJwvN3wNBp9i\n"
+    "HBSSMJMJrBOjgbswgbgwHwYDVR0jBBgwFoAUImUM1lqdNInzg7SVUr9QGzknBqww\n"
+    "UgYDVR0fBEswSTBHoEWgQ4ZBaHR0cHM6Ly9jZXJ0aWZpY2F0ZXMudHJ1c3RlZHNl\n"
+    "cnZpY2VzLmludGVsLmNvbS9JbnRlbFNHWFJvb3RDQS5jcmwwHQYDVR0OBBYEFNDo\n"
+    "qtp11/kuSReYPHsUZdDV8llNMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\n"
+    "AQH/AgEAMAoGCCqGSM49BAMCA0cAMEQCIC/9j+84T+HztVO/sOQBWJbSd+/2uexK\n"
+    "4+aA0jcFBLcpAiA3dhMrF5cD52t6FqMvAIpj8XdGmy2beeljLJK+pzpcRA==\n"
+    "-----END CERTIFICATE-----\n"
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIICjjCCAjSgAwIBAgIUImUM1lqdNInzg7SVUr9QGzknBqwwCgYIKoZIzj0EAwIw\n"
+    "aDEaMBgGA1UEAwwRSW50ZWwgU0dYIFJvb3QgQ0ExGjAYBgNVBAoMEUludGVsIENv\n"
+    "cnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkGA1UECAwCQ0ExCzAJ\n"
+    "BgNVBAYTAlVTMB4XDTE4MDUyMTEwNDExMVoXDTMzMDUyMTEwNDExMFowaDEaMBgG\n"
+    "A1UEAwwRSW50ZWwgU0dYIFJvb3QgQ0ExGjAYBgNVBAoMEUludGVsIENvcnBvcmF0\n"
+    "aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkGA1UECAwCQ0ExCzAJBgNVBAYT\n"
+    "AlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEC6nEwMDIYZOj/iPWsCzaEKi7\n"
+    "1OiOSLRFhWGjbnBVJfVnkY4u3IjkDYYL0MxO4mqsyYjlBalTVYxFP2sJBK5zlKOB\n"
+    "uzCBuDAfBgNVHSMEGDAWgBQiZQzWWp00ifODtJVSv1AbOScGrDBSBgNVHR8ESzBJ\n"
+    "MEegRaBDhkFodHRwczovL2NlcnRpZmljYXRlcy50cnVzdGVkc2VydmljZXMuaW50\n"
+    "ZWwuY29tL0ludGVsU0dYUm9vdENBLmNybDAdBgNVHQ4EFgQUImUM1lqdNInzg7SV\n"
+    "Ur9QGzknBqwwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwCgYI\n"
+    "KoZIzj0EAwIDSAAwRQIgQQs/08rycdPauCFk8UPQXCMAlsloBe7NwaQGTcdpa0EC\n"
+    "IQCUt8SGvxKmjpcM/z0WP9Dvo8h2k5du1iWDdBkAn+0iiA==\n"
+    "-----END CERTIFICATE-----\n";
+
+// Test data of a CertificateChain proto parsed from a string of concatenated
+// X.509 PEM-encoded certificates.
+constexpr char kProtoPemCertChain[] = R"proto(
+  certificates {
+    format: X509_PEM
+    data: "-----BEGIN CERTIFICATE-----\n"
+          "MIIClzCCAj6gAwIBAgIVANDoqtp11/kuSReYPHsUZdDV8llNMAoGCCqGSM49BAMC\n"
+          "MGgxGjAYBgNVBAMMEUludGVsIFNHWCBSb290IENBMRowGAYDVQQKDBFJbnRlbCBD\n"
+          "b3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNBMQsw\n"
+          "CQYDVQQGEwJVUzAeFw0xODA1MjExMDQ1MDhaFw0zMzA1MjExMDQ1MDhaMHExIzAh\n"
+          "BgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQKDBFJbnRl\n"
+          "bCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNB\n"
+          "MQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABL9q+NMp2IOg\n"
+          "tdl1bk/uWZ5+TGQm8aCi8z78fs+fKCQ3d+uDzXnVTAT2ZhDCifyIuJwvN3wNBp9i\n"
+          "HBSSMJMJrBOjgbswgbgwHwYDVR0jBBgwFoAUImUM1lqdNInzg7SVUr9QGzknBqww\n"
+          "UgYDVR0fBEswSTBHoEWgQ4ZBaHR0cHM6Ly9jZXJ0aWZpY2F0ZXMudHJ1c3RlZHNl\n"
+          "cnZpY2VzLmludGVsLmNvbS9JbnRlbFNHWFJvb3RDQS5jcmwwHQYDVR0OBBYEFNDo\n"
+          "qtp11/kuSReYPHsUZdDV8llNMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\n"
+          "AQH/AgEAMAoGCCqGSM49BAMCA0cAMEQCIC/9j+84T+HztVO/sOQBWJbSd+/2uexK\n"
+          "4+aA0jcFBLcpAiA3dhMrF5cD52t6FqMvAIpj8XdGmy2beeljLJK+pzpcRA==\n"
+          "-----END CERTIFICATE-----\n"
+  }
+  certificates {
+    format: X509_PEM
+    data: "-----BEGIN CERTIFICATE-----\n"
+          "MIICjjCCAjSgAwIBAgIUImUM1lqdNInzg7SVUr9QGzknBqwwCgYIKoZIzj0EAwIw\n"
+          "aDEaMBgGA1UEAwwRSW50ZWwgU0dYIFJvb3QgQ0ExGjAYBgNVBAoMEUludGVsIENv\n"
+          "cnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkGA1UECAwCQ0ExCzAJ\n"
+          "BgNVBAYTAlVTMB4XDTE4MDUyMTEwNDExMVoXDTMzMDUyMTEwNDExMFowaDEaMBgG\n"
+          "A1UEAwwRSW50ZWwgU0dYIFJvb3QgQ0ExGjAYBgNVBAoMEUludGVsIENvcnBvcmF0\n"
+          "aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkGA1UECAwCQ0ExCzAJBgNVBAYT\n"
+          "AlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEC6nEwMDIYZOj/iPWsCzaEKi7\n"
+          "1OiOSLRFhWGjbnBVJfVnkY4u3IjkDYYL0MxO4mqsyYjlBalTVYxFP2sJBK5zlKOB\n"
+          "uzCBuDAfBgNVHSMEGDAWgBQiZQzWWp00ifODtJVSv1AbOScGrDBSBgNVHR8ESzBJ\n"
+          "MEegRaBDhkFodHRwczovL2NlcnRpZmljYXRlcy50cnVzdGVkc2VydmljZXMuaW50\n"
+          "ZWwuY29tL0ludGVsU0dYUm9vdENBLmNybDAdBgNVHQ4EFgQUImUM1lqdNInzg7SV\n"
+          "Ur9QGzknBqwwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwCgYI\n"
+          "KoZIzj0EAwIDSAAwRQIgQQs/08rycdPauCFk8UPQXCMAlsloBe7NwaQGTcdpa0EC\n"
+          "IQCUt8SGvxKmjpcM/z0WP9Dvo8h2k5du1iWDdBkAn+0iiA==\n"
+          "-----END CERTIFICATE-----\n"
+  }
+)proto";
+
+// Test data of a certificate chain composed of X.509 PEM-encoded certificates
+// and extra padding.
+constexpr char kPemCertChainWithExtraPadding[] =
+    "Heading bytes"
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIClzCCAj6gAwIBAgIVANDoqtp11/kuSReYPHsUZdDV8llNMAoGCCqGSM49BAMC\n"
+    "MGgxGjAYBgNVBAMMEUludGVsIFNHWCBSb290IENBMRowGAYDVQQKDBFJbnRlbCBD\n"
+    "b3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNBMQsw\n"
+    "CQYDVQQGEwJVUzAeFw0xODA1MjExMDQ1MDhaFw0zMzA1MjExMDQ1MDhaMHExIzAh\n"
+    "BgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQKDBFJbnRl\n"
+    "bCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNB\n"
+    "MQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABL9q+NMp2IOg\n"
+    "tdl1bk/uWZ5+TGQm8aCi8z78fs+fKCQ3d+uDzXnVTAT2ZhDCifyIuJwvN3wNBp9i\n"
+    "HBSSMJMJrBOjgbswgbgwHwYDVR0jBBgwFoAUImUM1lqdNInzg7SVUr9QGzknBqww\n"
+    "UgYDVR0fBEswSTBHoEWgQ4ZBaHR0cHM6Ly9jZXJ0aWZpY2F0ZXMudHJ1c3RlZHNl\n"
+    "cnZpY2VzLmludGVsLmNvbS9JbnRlbFNHWFJvb3RDQS5jcmwwHQYDVR0OBBYEFNDo\n"
+    "qtp11/kuSReYPHsUZdDV8llNMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\n"
+    "AQH/AgEAMAoGCCqGSM49BAMCA0cAMEQCIC/9j+84T+HztVO/sOQBWJbSd+/2uexK\n"
+    "4+aA0jcFBLcpAiA3dhMrF5cD52t6FqMvAIpj8XdGmy2beeljLJK+pzpcRA==\n"
+    "-----END CERTIFICATE-----\n"
+    "Padding bytes"
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIICjjCCAjSgAwIBAgIUImUM1lqdNInzg7SVUr9QGzknBqwwCgYIKoZIzj0EAwIw\n"
+    "aDEaMBgGA1UEAwwRSW50ZWwgU0dYIFJvb3QgQ0ExGjAYBgNVBAoMEUludGVsIENv\n"
+    "cnBvcmF0aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkGA1UECAwCQ0ExCzAJ\n"
+    "BgNVBAYTAlVTMB4XDTE4MDUyMTEwNDExMVoXDTMzMDUyMTEwNDExMFowaDEaMBgG\n"
+    "A1UEAwwRSW50ZWwgU0dYIFJvb3QgQ0ExGjAYBgNVBAoMEUludGVsIENvcnBvcmF0\n"
+    "aW9uMRQwEgYDVQQHDAtTYW50YSBDbGFyYTELMAkGA1UECAwCQ0ExCzAJBgNVBAYT\n"
+    "AlVTMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEC6nEwMDIYZOj/iPWsCzaEKi7\n"
+    "1OiOSLRFhWGjbnBVJfVnkY4u3IjkDYYL0MxO4mqsyYjlBalTVYxFP2sJBK5zlKOB\n"
+    "uzCBuDAfBgNVHSMEGDAWgBQiZQzWWp00ifODtJVSv1AbOScGrDBSBgNVHR8ESzBJ\n"
+    "MEegRaBDhkFodHRwczovL2NlcnRpZmljYXRlcy50cnVzdGVkc2VydmljZXMuaW50\n"
+    "ZWwuY29tL0ludGVsU0dYUm9vdENBLmNybDAdBgNVHQ4EFgQUImUM1lqdNInzg7SV\n"
+    "Ur9QGzknBqwwDgYDVR0PAQH/BAQDAgEGMBIGA1UdEwEB/wQIMAYBAf8CAQEwCgYI\n"
+    "KoZIzj0EAwIDSAAwRQIgQQs/08rycdPauCFk8UPQXCMAlsloBe7NwaQGTcdpa0EC\n"
+    "IQCUt8SGvxKmjpcM/z0WP9Dvo8h2k5du1iWDdBkAn+0iiA==\n"
+    "-----END CERTIFICATE-----\n"
+    "trailing bytes";
+
+// Test data of a certificate chain composed of one valid and one invalid X.509
+// PEM-encoded certificates.
+constexpr char kPemCertChainWithOneInvalidCert[] =
+    "-----BEGIN CERTIFICATE-----\n"
+    "MIIClzCCAj6gAwIBAgIVANDoqtp11/kuSReYPHsUZdDV8llNMAoGCCqGSM49BAMC\n"
+    "MGgxGjAYBgNVBAMMEUludGVsIFNHWCBSb290IENBMRowGAYDVQQKDBFJbnRlbCBD\n"
+    "b3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNBMQsw\n"
+    "CQYDVQQGEwJVUzAeFw0xODA1MjExMDQ1MDhaFw0zMzA1MjExMDQ1MDhaMHExIzAh\n"
+    "BgNVBAMMGkludGVsIFNHWCBQQ0sgUHJvY2Vzc29yIENBMRowGAYDVQQKDBFJbnRl\n"
+    "bCBDb3Jwb3JhdGlvbjEUMBIGA1UEBwwLU2FudGEgQ2xhcmExCzAJBgNVBAgMAkNB\n"
+    "MQswCQYDVQQGEwJVUzBZMBMGByqGSM49AgEGCCqGSM49AwEHA0IABL9q+NMp2IOg\n"
+    "tdl1bk/uWZ5+TGQm8aCi8z78fs+fKCQ3d+uDzXnVTAT2ZhDCifyIuJwvN3wNBp9i\n"
+    "HBSSMJMJrBOjgbswgbgwHwYDVR0jBBgwFoAUImUM1lqdNInzg7SVUr9QGzknBqww\n"
+    "UgYDVR0fBEswSTBHoEWgQ4ZBaHR0cHM6Ly9jZXJ0aWZpY2F0ZXMudHJ1c3RlZHNl\n"
+    "cnZpY2VzLmludGVsLmNvbS9JbnRlbFNHWFJvb3RDQS5jcmwwHQYDVR0OBBYEFNDo\n"
+    "qtp11/kuSReYPHsUZdDV8llNMA4GA1UdDwEB/wQEAwIBBjASBgNVHRMBAf8ECDAG\n"
+    "AQH/AgEAMAoGCCqGSM49BAMCA0cAMEQCIC/9j+84T+HztVO/sOQBWJbSd+/2uexK\n"
+    "4+aA0jcFBLcpAiA3dhMrF5cD52t6FqMvAIpj8XdGmy2beeljLJK+pzpcRA==\n"
+    "-----END CERTIFICATE-----\n"
+    "-----BEGIN CERTIFICATE-----\n"
+    "Not a valid cert"
+    "-----END CERTIFICATE-----\n";
+
+// Test data of a valid Certificate Revocation List (CRL) that is X.509 PEM
+// encoded.
+constexpr char kPemCrl[] =
+    "-----BEGIN X509 CRL-----\n"
+    "MIIBKTCB0QIBATAKBggqhkjOPQQDAjBxMSMwIQYDVQQDDBpJbnRlbCBTR1ggUENLIFByb2\n"
+    "Nlc3NvciBDQTEaMBgGA1UECgwRSW50ZWwgQ29ycG9yYXRpb24xFDASBgNVBAcMC1NhbnRh\n"
+    "IENsYXJhMQswCQYDVQQIDAJDQTELMAkGA1UEBhMCVVMXDTE5MDYxMjE0MjM0N1oXDTE5MD\n"
+    "cxMjE0MjM0N1qgLzAtMAoGA1UdFAQDAgEBMB8GA1UdIwQYMBaAFNDoqtp11/kuSReYPHsU\n"
+    "ZdDV8llNMAoGCCqGSM49BAMCA0cAMEQCIF+xkFb6+0dhH7KaUVWyLWGsvVCu9ikcYa46Ue\n"
+    "nA7pdmAiAiGfZm4dRz7CzIPGXxigN/zrvaggra8k3q2C3QMjH5ig==\n"
+    "-----END X509 CRL-----\n";
+
+// Test data of a CertificateRevocationList proto that is parsed from a X.509
+// PEM-encoded string.
+constexpr char kProtoPemCrl[] = R"proto(
+  format: X509_PEM
+  data: "-----BEGIN X509 CRL-----\n"
+        "MIIBKTCB0QIBATAKBggqhkjOPQQDAjBxMSMwIQYDVQQDDBpJbnRlbCBTR1ggUENLIFByb2"
+        "\nNlc3NvciBDQTEaMBgGA1UECgwRSW50ZWwgQ29ycG9yYXRpb24xFDASBgNVBAcMC1Nhbn"
+        "Rh\nIENsYXJhMQswCQYDVQQIDAJDQTELMAkGA1UEBhMCVVMXDTE5MDYxMjE0MjM0N1oXDT"
+        "E5MD\ncxMjE0MjM0N1qgLzAtMAoGA1UdFAQDAgEBMB8GA1UdIwQYMBaAFNDoqtp11/kuSR"
+        "eYPHsU\nZdDV8llNMAoGCCqGSM49BAMCA0cAMEQCIF+xkFb6+0dhH7KaUVWyLWGsvVCu9i"
+        "kcYa46Ue\nnA7pdmAiAiGfZm4dRz7CzIPGXxigN/zrvaggra8k3q2C3QMjH5ig==\n"
+        "-----END X509 CRL-----\n"
+)proto";
 
 using ::testing::Eq;
 using ::testing::Optional;
@@ -378,6 +610,62 @@ TEST(CertificateUtilTest, CreateCertificateChainSuccess) {
   EXPECT_THAT(chain[0]->SubjectKeyDer(), IsOkAndHolds(kEndUserKey));
   EXPECT_THAT(chain[0]->CertPathLength(), Eq(absl::nullopt));
   EXPECT_THAT(chain[0]->IsCa(), Eq(absl::nullopt));
+}
+
+TEST(CertificateUtilTest, GetCertificateFromPem_Success) {
+  Certificate cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(cert, GetCertificateFromPem(kPemCert));
+  Certificate expected_cert;
+  ASSERT_TRUE(
+      google::protobuf::TextFormat::ParseFromString(kProtoPemCert, &expected_cert));
+  EXPECT_THAT(cert, EqualsProto(expected_cert));
+}
+
+TEST(GetCertFromPemTest, GetCertificateFromPem_NonPemCertFailsToParse) {
+  EXPECT_THAT(GetCertificateFromPem("Not a PEM cert").status(),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST(CertificateUtilTest, GetCertificateChain_Success) {
+  CertificateChain cert_chain;
+  ASYLO_ASSERT_OK_AND_ASSIGN(cert_chain,
+                             GetCertificateChainFromPem(kPemCertChain));
+  CertificateChain expected_cert_chain;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kProtoPemCertChain,
+                                                  &expected_cert_chain));
+  EXPECT_THAT(cert_chain, EqualsProto(expected_cert_chain));
+}
+
+TEST(CertificateUtilTest,
+     GetCertificateChain_CertChainWithExtraPaddingParsesSuccessfully) {
+  CertificateChain cert_chain;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      cert_chain, GetCertificateChainFromPem(kPemCertChainWithExtraPadding));
+  CertificateChain expected_cert_chain;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kProtoPemCertChain,
+                                                  &expected_cert_chain));
+  EXPECT_THAT(cert_chain, EqualsProto(expected_cert_chain));
+}
+
+TEST(CertificateUtilTest,
+     GetCertificateChainFromPem_NonPemCertChainFailsToParse) {
+  EXPECT_THAT(GetCertificateChainFromPem("Not a PEM cert chain").status(),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(CertificateUtilTest,
+     GetCertificateChainFromPem_CertChainWithOneInvalidCertFailsToParse) {
+  EXPECT_THAT(
+      GetCertificateChainFromPem(kPemCertChainWithOneInvalidCert).status(),
+      StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST(CertificateUtilTest, GetCrlFromPemTest_Success) {
+  asylo::CertificateRevocationList crl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(crl, GetCrlFromPem(kPemCrl));
+  asylo::CertificateRevocationList expected_crl;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kProtoPemCrl, &expected_crl));
+  EXPECT_THAT(crl, EqualsProto(expected_crl));
 }
 
 }  // namespace

@@ -249,8 +249,10 @@ cc_library(
     deps = [
         ":certificate_cc_proto",
         ":certificate_interface",
+        ":x509_certificate",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/types:span",
     ],
@@ -267,12 +269,14 @@ cc_test(
         ":certificate_util",
         ":fake_certificate",
         ":fake_certificate_cc_proto",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/types:optional",
         "@com_google_absl//absl/types:span",
         "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

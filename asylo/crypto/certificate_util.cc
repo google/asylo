@@ -21,7 +21,9 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "asylo/crypto/x509_certificate.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -160,6 +162,49 @@ Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
   }
 
   return Status::OkStatus();
+}
+
+StatusOr<Certificate> GetCertificateFromPem(absl::string_view pem_cert) {
+  std::unique_ptr<X509Certificate> cert;
+  ASYLO_ASSIGN_OR_RETURN(cert, X509Certificate::CreateFromPem(pem_cert));
+  return cert->ToPemCertificate();
+}
+
+StatusOr<CertificateChain> GetCertificateChainFromPem(
+    absl::string_view pem_cert_chain) {
+  constexpr absl::string_view kBeginCertLabel("-----BEGIN CERTIFICATE-----");
+  constexpr absl::string_view kEndCertLabel("-----END CERTIFICATE-----");
+  constexpr size_t kEndCertLen = kEndCertLabel.size();
+
+  CertificateChain cert_chain;
+  size_t cert_start = pem_cert_chain.find(kBeginCertLabel);
+  size_t cert_end = pem_cert_chain.find(kEndCertLabel, cert_start);
+  while ((cert_start != absl::string_view::npos) &&
+         (cert_end != absl::string_view::npos)) {
+    absl::string_view pem_cert =
+        pem_cert_chain.substr(cert_start, cert_end + kEndCertLen - cert_start);
+    ASYLO_ASSIGN_OR_RETURN(*cert_chain.add_certificates(),
+                           GetCertificateFromPem(pem_cert));
+
+    cert_start = pem_cert_chain.find(kBeginCertLabel, cert_end);
+    cert_end = pem_cert_chain.find(kEndCertLabel, cert_start);
+  }
+
+  if (cert_chain.certificates_size() == 0) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat(
+            "The certificate chain string does not contain any pair of '",
+            kBeginCertLabel, "' and '", kEndCertLabel, "'"));
+  }
+  return cert_chain;
+}
+
+StatusOr<CertificateRevocationList> GetCrlFromPem(absl::string_view pem_crl) {
+  asylo::CertificateRevocationList crl_proto;
+  crl_proto.set_format(asylo::CertificateRevocationList::X509_PEM);
+  crl_proto.set_data(pem_crl.data(), pem_crl.length());
+  return crl_proto;
 }
 
 }  // namespace asylo

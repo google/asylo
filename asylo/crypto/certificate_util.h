@@ -91,6 +91,24 @@ StatusOr<CertificateInterfaceVector> CreateCertificateChain(
 Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
                               const VerificationConfig &verification_config);
 
+// Parses PEM-encoded certificate |pem_cert| into Certificate protobuf.
+// Returns a non-OK Status if |pem_cert| is not X.509 PEM encoded.
+StatusOr<Certificate> GetCertificateFromPem(absl::string_view pem_cert);
+
+// Parses PEM-encoded certificate chain |pem_cert_chain| into CertificateChain
+// protobuf. |pem_cert_chain| should be a series of X509 PEM-encoded
+// certificates starting with "-----BEGIN CERTIFICATE-----" and ending with
+// "-----END CERTIFICATE-----". Returns a non-OK Status if |pem_cert_chain|
+// does not contain at least one pair of "-----BEGIN CERTIFICATE-----" to
+// "-----END CERTIFICATE-----" or if any of the PEM certificates cannot be
+// parsed as a PEM string.
+StatusOr<CertificateChain> GetCertificateChainFromPem(
+    absl::string_view pem_cert_chain);
+
+// Parses PEM-encoded Certificate Revocation List (CRL) |pem_crl| into
+// CertificateRevocationList protobuf. Returns a non-OK Status if
+// |pem_crl| is not X.509 PEM encoded.
+StatusOr<CertificateRevocationList> GetCrlFromPem(absl::string_view pem_crl);
 }  // namespace asylo
 
 #endif  // ASYLO_CRYPTO_CERTIFICATE_UTIL_H_
