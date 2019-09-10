@@ -21,10 +21,16 @@
 #include <errno.h>
 #include <sys/statfs.h>
 
+#include <algorithm>
+
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
+
+using ::asylo::primitives::MessageReader;
+using ::asylo::primitives::MessageWriter;
+using ::asylo::primitives::TrustedPrimitives;
 
 template <class... Ts>
 int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
@@ -335,9 +341,9 @@ int enc_untrusted_pwrite64(int fd, const void *buf, size_t count,
 }
 
 int enc_untrusted_isatty(int fd) {
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push(fd);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kIsAttyHandler, &input, &output);
   if (!status.ok()) {
@@ -356,9 +362,9 @@ int enc_untrusted_isatty(int fd) {
 }
 
 int enc_untrusted_usleep(useconds_t usec) {
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push(usec);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kUSleepHandler, &input, &output);
@@ -439,15 +445,14 @@ int64_t enc_untrusted_sysconf(int name) {
     return -1;
   }
 
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push(kLinux_name);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kSysconfHandler, &input, &output);
   if (!status.ok()) {
-    asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sysconf failed.");
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_sysconf failed.");
   }
 
   int64_t result = output.next<int>();
@@ -465,18 +470,17 @@ int enc_untrusted_close(int fd) {
 }
 
 void *enc_untrusted_realloc(void *ptr, size_t size) {
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push(reinterpret_cast<uint64_t>(ptr));
   input.Push(static_cast<uint64_t>(size));
 
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kReallocHandler, &input, &output);
 
   if (!status.ok()) {
-    asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_realloc failed.");
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_realloc failed.");
   }
   void *result = output.next<void *>();
 
@@ -490,15 +494,14 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
 }
 
 uint32_t enc_untrusted_sleep(uint32_t seconds) {
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push<uint32_t>(seconds);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(asylo::host_call::kSleepHandler,
                                                 &input, &output);
   if (!status.ok()) {
-    asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sleep failed");
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_sleep failed");
   }
 
   // Returns sleep's return value directly since it doesn't set errno.
@@ -521,6 +524,11 @@ int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
 
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
   clockid_t klinux_clk_id = TokLinuxClockId(clk_id);
+  if (klinux_clk_id == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
   struct kLinux_timespec klinux_tp;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_clock_gettime,
@@ -531,91 +539,39 @@ int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
 
 int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
                        socklen_t addrlen) {
-  if (addr->sa_family == AF_UNSPEC) {
-    asylo::primitives::TrustedPrimitives::DebugPuts(
-        "AF_UNSPEC provided for sa_family.");
-    return 0;
-  }
+  socklen_t klinux_sock_len =
+      std::max(std::max(sizeof(klinux_sockaddr_un), sizeof(klinux_sockaddr_in)),
+               sizeof(klinux_sockaddr_in6));
+  auto klinux_sock = absl::make_unique<char[]>(klinux_sock_len);
 
-  struct klinux_sockaddr *arg_sockaddr = nullptr;
-  socklen_t arg_addrlen = 0;
-  struct klinux_sockaddr_un klinux_sock_un;
-  struct klinux_sockaddr_in klinux_sock_in;
-  struct klinux_sockaddr_in6 klinux_sock_in6;
-
-  if (addr->sa_family == AF_UNIX) {
-    if (!SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un)) {
-      errno = EINVAL;
-      return -1;
-    }
-    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un);
-    arg_addrlen = sizeof(struct klinux_sockaddr_un);
-  } else if (addr->sa_family == AF_INET) {
-    if (!SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in)) {
-      errno = EINVAL;
-      return -1;
-    }
-    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in);
-    arg_addrlen = sizeof(struct klinux_sockaddr_in);
-  } else if (addr->sa_family == AF_INET6) {
-    if (!SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6)) {
-      errno = EINVAL;
-      return -1;
-    }
-    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in6);
-    arg_addrlen = sizeof(struct klinux_sockaddr_in6);
-  } else {
-    asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "sockaddr family not supported.");
-  }
-
-  if (!arg_sockaddr) {
+  if (!TokLinuxSockAddr(addr, addrlen,
+                        reinterpret_cast<klinux_sockaddr *>(klinux_sock.get()),
+                        &klinux_sock_len, TrustedPrimitives::BestEffortAbort)) {
     errno = EINVAL;
     return -1;
   }
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_bind,
-                                             sockfd, arg_sockaddr, arg_addrlen);
+                                             sockfd, klinux_sock.get(),
+                                             klinux_sock_len);
 }
 
 int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen) {
-  struct klinux_sockaddr *arg_sockaddr = nullptr;
-  socklen_t arg_addrlen = 0;
-  struct klinux_sockaddr_un klinux_sock_un;
-  struct klinux_sockaddr_in klinux_sock_in;
-  struct klinux_sockaddr_in6 klinux_sock_in6;
+  socklen_t klinux_sock_len =
+      std::max(std::max(sizeof(klinux_sockaddr_un), sizeof(klinux_sockaddr_in)),
+               sizeof(klinux_sockaddr_in6));
+  auto klinux_sock = absl::make_unique<char[]>(klinux_sock_len);
 
-  if (addr->sa_family == AF_UNIX) {
-    if (!SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un)) {
-      errno = EINVAL;
-      return -1;
-    }
-    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un);
-    arg_addrlen = sizeof(struct klinux_sockaddr_un);
-  } else if (addr->sa_family == AF_INET) {
-    if (!SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in)) {
-      errno = EINVAL;
-      return -1;
-    }
-    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in);
-    arg_addrlen = sizeof(struct klinux_sockaddr_in);
-  } else if (addr->sa_family == AF_INET6) {
-    if (!SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6)) {
-      errno = EINVAL;
-      return -1;
-    }
-    arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in6);
-    arg_addrlen = sizeof(struct klinux_sockaddr_in6);
-  } else {
-    asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "sockaddr family not supported.");
-  }
-  if (!arg_sockaddr) {
+  if (!TokLinuxSockAddr(addr, addrlen,
+                        reinterpret_cast<klinux_sockaddr *>(klinux_sock.get()),
+                        &klinux_sock_len, TrustedPrimitives::BestEffortAbort)) {
     errno = EINVAL;
     return -1;
   }
+
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_connect,
-                                             sockfd, arg_sockaddr, arg_addrlen);
+                                             sockfd, klinux_sock.get(),
+                                             klinux_sock_len);
 }
 
 ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
@@ -628,7 +584,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
     copied_bytes += msg->msg_iov[i].iov_len;
   }
 
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push(sockfd);
   input.PushByReference(
       ::asylo::primitives::Extent{msg->msg_name, msg->msg_namelen});
@@ -638,7 +594,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
       ::asylo::primitives::Extent{msg->msg_control, msg->msg_controllen});
   input.Push(msg->msg_flags);
   input.Push(flags);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kSendMsgHandler, &input, &output);
@@ -661,7 +617,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
 ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   size_t total_buffer_size = CalculateTotalSize(msg);
 
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push(sockfd);
   input.Push<uint64_t>(msg->msg_namelen);
   input.Push<uint64_t>(total_buffer_size);
@@ -669,13 +625,13 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   input.Push(msg->msg_flags);
   input.Push(flags);
 
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kRecvMsgHandler, &input, &output);
 
   if (!status.ok()) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "enc_untrusted_recvmsg host call failed. Aborting");
   }
 
@@ -725,18 +681,18 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
     return -1;
   }
 
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push<int>(sockfd);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetSocknameHandler, &input, &output);
 
   if (!status.ok()) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "enc_untrusted_getsockname failed. Aborting");
   }
   if (output.size() != 3) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "Expected 3 arguments in output for enc_untrusted_getsockname. "
         "Aborting");
   }
@@ -754,9 +710,8 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   auto klinux_sockaddr_ext = output.next();
   const struct klinux_sockaddr *klinux_addr =
       klinux_sockaddr_ext.As<struct klinux_sockaddr>();
-  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
-                     asylo::primitives::TrustedPrimitives::BestEffortAbort);
-  if (!addr) {
+  if (!FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr,
+                          addrlen, TrustedPrimitives::BestEffortAbort)) {
     errno = EFAULT;
     return -1;
   }
@@ -765,18 +720,17 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
 
 int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
                          socklen_t *addrlen) {
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push<int>(sockfd);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kAcceptHandler, &input, &output);
 
   if (!status.ok()) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_accept failed. Aborting");
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_accept failed. Aborting");
   }
   if (output.size() != 3) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "Expected 3 arguments in output for enc_untrusted_accept. Aborting");
   }
 
@@ -794,7 +748,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   const struct klinux_sockaddr *klinux_addr =
       klinux_sockaddr_ext.As<struct klinux_sockaddr>();
   FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
-                     asylo::primitives::TrustedPrimitives::BestEffortAbort);
+                     TrustedPrimitives::BestEffortAbort);
   return result;
 }
 
@@ -809,18 +763,18 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
     errno = EINVAL;
     return -1;
   }
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push<int>(sockfd);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetPeernameHandler, &input, &output);
 
   if (!status.ok()) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "enc_untrusted_getpeername host call failed. Aborting");
   }
   if (output.size() != 3) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "Expected 3 arguments in output for enc_untrusted_getpeername. "
         "Aborting");
   }
@@ -839,7 +793,7 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
   const struct klinux_sockaddr *klinux_addr =
       klinux_sockaddr_ext.As<struct klinux_sockaddr>();
   FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
-                     asylo::primitives::TrustedPrimitives::BestEffortAbort);
+                     TrustedPrimitives::BestEffortAbort);
   return result;
 }
 
@@ -851,20 +805,20 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
     return -1;
   }
 
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push<int>(sockfd);
   input.Push<uint64_t>(len);
   input.Push<int>(klinux_flags);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kRecvFromHandler, &input, &output);
 
   if (!status.ok()) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "enc_untrusted_recvfrom failed. Aborting");
   }
   if (output.size() != 4) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+    TrustedPrimitives::BestEffortAbort(
         "Expected 4 arguments in output for enc_untrusted_recvfrom. Aborting");
   }
 
@@ -888,8 +842,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
     const struct klinux_sockaddr *klinux_addr =
         klinux_sockaddr_ext.As<struct klinux_sockaddr>();
     FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), src_addr,
-                       addrlen,
-                       asylo::primitives::TrustedPrimitives::BestEffortAbort);
+                       addrlen, TrustedPrimitives::BestEffortAbort);
   }
 
   return result;
@@ -941,15 +894,14 @@ int enc_untrusted_raise(int sig) {
     return -1;
   }
 
-  ::asylo::primitives::MessageWriter input;
+  MessageWriter input;
   input.Push<int>(klinux_sig);
-  ::asylo::primitives::MessageReader output;
+  MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kRaiseHandler, &input, &output);
 
   if (!status.ok()) {
-    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "raise host call failed. Aborting");
+    TrustedPrimitives::BestEffortAbort("raise host call failed. Aborting");
   }
 
   int result = output.next<int>();

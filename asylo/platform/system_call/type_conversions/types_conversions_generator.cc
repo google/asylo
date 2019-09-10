@@ -32,8 +32,8 @@
 // A struct describing properties and values of a enum desired to be generated
 // by the types conversions generator.
 struct EnumProperties {
-  int default_value_host;
-  int default_value_newlib;
+  int64_t default_value_host;
+  int64_t default_value_newlib;
   bool multi_valued;
   bool skip_conversions;
   bool or_input_to_default_value;
@@ -93,7 +93,7 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   std::ostringstream os;
 
   // Generate result initialization.
-  os << "  int output = "
+  os << "  " << enum_properties.data_type << " output = "
      << (to_prefix ? enum_properties.default_value_host
                    : enum_properties.default_value_newlib)
      << ";\n";
@@ -153,8 +153,8 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
   }
 
   // Generate code for handling default case.
-  int default_output = (to_prefix ? enum_properties.default_value_host
-                                  : enum_properties.default_value_newlib);
+  int64_t default_output = to_prefix ? enum_properties.default_value_host
+                                     : enum_properties.default_value_newlib;
   if (enum_properties.or_input_to_default_value) {
     os << "  return " << default_output << " | input;\n";
   } else {

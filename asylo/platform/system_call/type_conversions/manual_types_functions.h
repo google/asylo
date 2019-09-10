@@ -107,6 +107,18 @@ bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
                         socklen_t *output_len,
                         void (*abort_handler)(const char *message));
 
+// Converts an enclave based sockaddr to kernel based sockaddr. Aborts if an
+// unrecognized AF family is encountered. Since this function can be called both
+// from the trusted as well as untrusted side, it uses an external handler to
+// perform an appropriate abort based on the context.
+// |output_len| is used as an input-output argument. As an input, it indicates
+// the size of |output| provided by the caller. The returned |*output| is
+// truncated if the buffer provided is too small; in this case, |*output_len|
+// will return a value greater than was supplied to the call.
+bool TokLinuxSockAddr(const struct sockaddr *input, socklen_t input_len,
+                      struct klinux_sockaddr *output, socklen_t *output_len,
+                      void (*abort_handler)(const char *message));
+
 // Converts a Linux based file descriptor set to a native file descriptor set.
 bool FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output);
 
