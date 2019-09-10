@@ -178,7 +178,7 @@ class SnapshotDataDeleter {
 //              IO                  //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_puts(const char *str) {
+int ocall_untrusted_debug_puts(const char *str) {
   int rc = puts(str);
   // This routine is intended for debugging, so flush immediately to ensure
   // output is written in the event the enclave aborts with buffered output.

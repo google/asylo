@@ -22,6 +22,7 @@
 #include <cstdlib>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
@@ -44,10 +45,9 @@ bool TrustedMutex::TryLock() {
   }
 
   if (!trusted_spin_lock_.TryLock()) {
-    enc_untrusted_puts(
+    primitives::TrustedPrimitives::BestEffortAbort(
         "TrustedMutex::TryLock UntrustedMutex and TrustedSpinLock disagree on "
         "TryLock.");
-    abort();
   }
   return true;
 }

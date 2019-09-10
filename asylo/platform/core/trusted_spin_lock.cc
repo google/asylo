@@ -21,7 +21,7 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 
 namespace asylo {
 namespace {
@@ -33,8 +33,7 @@ void ValidateSpinLock(uint32_t spin_lock) {
     snprintf(buf, sizeof(buf),
              "Invalid spin lock value in TrustedSpinLock operation: %u\n",
              spin_lock);
-    enc_untrusted_puts(buf);
-    abort();
+    primitives::TrustedPrimitives::BestEffortAbort(buf);
   }
 }
 
@@ -77,7 +76,7 @@ void TrustedSpinLock::Unlock() {
   // It is a fatal error to attempt to unlock a spin lock the calling thread
   // does not own.
   if (owner_ != enc_thread_self()) {
-    enc_untrusted_puts(
+    primitives::TrustedPrimitives::DebugPuts(
         "TrustedSpinLock::Unlock called by thread that does not own it.");
     return;
   }

@@ -62,7 +62,9 @@ namespace {
   do {                                                                       \
     sgx_status_t status##__COUNTER__ = status_;                              \
     if (status##__COUNTER__ != SGX_SUCCESS) {                                \
-      enc_untrusted_puts(                                                    \
+      int res;                                                               \
+      ocall_untrusted_debug_puts(                                            \
+          &res,                                                              \
           absl::StrCat(                                                      \
               __FILE__, ":", __LINE__, ": ",                                 \
               asylo::Status(status##__COUNTER__, "ocall failed").ToString()) \
@@ -87,8 +89,7 @@ extern "C" {
 void **enc_untrusted_allocate_buffers(size_t count, size_t size) {
   void **buffers;
   CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
-      &buffers,
-      static_cast<bridge_size_t>(count),
+      &buffers, static_cast<bridge_size_t>(count),
       static_cast<bridge_size_t>(size)));
   if (!buffers || !sgx_is_outside_enclave(buffers, size)) {
     abort();
@@ -99,12 +100,6 @@ void **enc_untrusted_allocate_buffers(size_t count, size_t size) {
 void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
   CHECK_OCALL(ocall_enc_untrusted_deallocate_free_list(
       free_list, static_cast<bridge_size_t>(count)));
-}
-
-int enc_untrusted_puts(const char *str) {
-  int result;
-  CHECK_OCALL(ocall_enc_untrusted_puts(&result, str));
-  return result;
 }
 
 //////////////////////////////////////
@@ -189,9 +184,9 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   }
 
   // Copy then free serialized res from untrusted memory
-  std::string serialized_res(tmp_serialized_res_start,
-                             tmp_serialized_res_start +
-                             static_cast<size_t>(tmp_serialized_res_len));
+  std::string serialized_res(
+      tmp_serialized_res_start,
+      tmp_serialized_res_start + static_cast<size_t>(tmp_serialized_res_len));
   CHECK_OCALL(ocall_untrusted_local_free(tmp_serialized_res_start));
   if (!asylo::DeserializeAddrinfo(&serialized_res, res)) {
     LOG(ERROR) << "Invalid addrinfo in getaddrinfo response";
@@ -288,8 +283,8 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
                               serialized_event_list_len)) {
     abort();
   }
-  asylo::UntrustedUniquePtr<char[]>
-      serialized_events_ptr(serialized_event_list);
+  asylo::UntrustedUniquePtr<char[]> serialized_events_ptr(
+      serialized_event_list);
   // The line below intentially copies |serialized_event_list| into trusted
   // memory.
   std::string event_list_str(serialized_event_list, serialized_event_list_len);
@@ -540,8 +535,8 @@ void enc_untrusted__exit(int rc) { ocall_enc_untrusted__exit(rc); }
 
 pid_t enc_untrusted_fork(const char *enclave_name, bool restore_snapshot) {
   pid_t ret;
-  sgx_status_t status = ocall_enc_untrusted_fork(
-      &ret, enclave_name, restore_snapshot);
+  sgx_status_t status =
+      ocall_enc_untrusted_fork(&ret, enclave_name, restore_snapshot);
   if (status != SGX_SUCCESS) {
     errno = EINTR;
     return -1;

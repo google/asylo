@@ -41,17 +41,17 @@ namespace asylo {
 /// class HelloWorld : public TrustedApplication {
 ///  public:
 ///   Status Initialize(const EnclaveConfig &config) override {
-///     enc_untrusted_puts("Hello!");
+///     primitives::TrustedPrimitives::DebugPuts("Hello!");
 ///     return Status::OkStatus();
 ///   }
 ///
 ///   Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
-///     enc_untrusted_puts("Running!");
+///     primitives::TrustedPrimitives::DebugPuts("Running!");
 ///     return Status::OkStatus();
 ///   }
 ///
 ///   Status Finalize(const EnclaveFinal &fini) override {
-///     enc_untrusted_puts("Goodbye!");
+///     primitives::TrustedPrimitives::DebugPuts("Goodbye!");
 ///     return Status::OkStatus();
 ///   }
 /// };

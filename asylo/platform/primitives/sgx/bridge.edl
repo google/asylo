@@ -82,5 +82,6 @@ enclave {
         [user_check] void *buffer);
     void *ocall_untrusted_local_alloc(uint64_t size);
     void ocall_untrusted_local_free([user_check] void *ptr);
+    int ocall_untrusted_debug_puts([in, string] const char *str);
   };
 };

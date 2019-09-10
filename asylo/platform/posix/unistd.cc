@@ -28,6 +28,7 @@
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/util/statusor.h"
 
 using asylo::io::IOManager;
@@ -261,8 +262,8 @@ ssize_t pread(int fd, void *buf, size_t count, off_t offset) {
 int enclave_getpid() {
   int pid = enc_untrusted_getpid();
   if (pid == 0) {
-    enc_untrusted_puts("FATAL ERROR: Host returned 0 from getpid()");
-    abort();
+    ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "FATAL ERROR: Host returned 0 from getpid()");
   }
   return pid;
 }
@@ -277,9 +278,7 @@ int enclave_unlink(const char *pathname) {
   return IOManager::GetInstance().Unlink(pathname);
 }
 
-void enclave_exit(int rc) {
-  enc_untrusted__exit(rc);
-}
+void enclave_exit(int rc) { enc_untrusted__exit(rc); }
 
 pid_t enclave_fork() { return ForkEnclave(); }
 

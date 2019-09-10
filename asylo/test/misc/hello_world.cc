@@ -17,7 +17,8 @@
  */
 
 #include <string>
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/test/util/enclave_test_application.h"
 
 namespace asylo {
@@ -28,19 +29,19 @@ class HelloWorld : public EnclaveTestCase {
 
   Status Initialize(const EnclaveConfig &config) {
     std::string str_config = GetEnclaveConfigTestString(config);
-    enc_untrusted_puts(str_config.c_str());
+    primitives::TrustedPrimitives::DebugPuts(str_config.c_str());
     return Status::OkStatus();
   }
 
   Status Run(const EnclaveInput &input, EnclaveOutput *output) {
     std::string str_input = GetEnclaveInputTestString(input);
-    enc_untrusted_puts(str_input.c_str());
+    primitives::TrustedPrimitives::DebugPuts(str_input.c_str());
     return Status::OkStatus();
   }
 
   Status Finalize(const EnclaveFinal &final_input) {
     std::string str_final = GetEnclaveFinalTestString(final_input);
-    enc_untrusted_puts(str_final.c_str());
+    primitives::TrustedPrimitives::DebugPuts(str_final.c_str());
     return Status::OkStatus();
   }
 };

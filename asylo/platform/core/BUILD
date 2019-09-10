@@ -199,8 +199,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":atomic",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
     ],
 )
 
@@ -238,8 +238,8 @@ cc_library(
     deps = [
         ":trusted_spin_lock",
         ":untrusted_mutex",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
     ],
 )
 

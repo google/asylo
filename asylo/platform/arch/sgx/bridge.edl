@@ -51,7 +51,6 @@ enclave {
     //              IO                  //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_puts([in, string] const char *str) propagate_errno;
     void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
         bridge_size_t size) propagate_errno;
     void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,

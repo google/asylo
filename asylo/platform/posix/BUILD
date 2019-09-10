@@ -126,6 +126,7 @@ cc_library(
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/sockets",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/system",

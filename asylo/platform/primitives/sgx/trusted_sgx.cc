@@ -42,8 +42,6 @@
 #include "asylo/util/status_macros.h"
 #include "include/sgx_trts.h"
 
-extern "C" int enc_untrusted_puts(const char *message);
-
 namespace asylo {
 namespace primitives {
 
@@ -205,7 +203,11 @@ bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
 }
 
 void TrustedPrimitives::DebugPuts(const char *message) {
-  enc_untrusted_puts(message);
+  int result;
+  CHECK_OCALL(ocall_untrusted_debug_puts(&result, message));
+  if (result < 0) {
+    errno = EOF;
+  }
 }
 
 PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,

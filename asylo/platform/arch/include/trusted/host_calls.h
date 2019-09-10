@@ -69,7 +69,6 @@ int enc_untrusted_get_errno();
 //          Input / Output          //
 //////////////////////////////////////
 
-int enc_untrusted_puts(const char *str);
 ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
 
 //////////////////////////////////////
