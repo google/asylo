@@ -38,6 +38,7 @@ struct EnumProperties {
   bool skip_conversions;
   bool or_input_to_default_value;
   bool wrap_vals_with_if_defined;
+  std::string data_type;
 
   // A vector of enum values in the format std::pair{Enum name, Enum value}.
   // Enum name is simply a literal describing the enum value as a string. This
@@ -204,11 +205,17 @@ void WriteEnumConversions(const absl::flat_hash_map<std::string, EnumProperties>
                    enum_name_lower.begin(), ::tolower);
 
     std::string to_prefix_decl = absl::StrReplaceAll(
-        "void To$klinux_prefix$enum_name(const int *input, int *output)",
-        {{"$klinux_prefix", klinux_prefix}, {"$enum_name", it.first}});
+        "void To$klinux_prefix$enum_name(const $data_type *input, $data_type "
+        "*output)",
+        {{"$klinux_prefix", klinux_prefix},
+         {"$enum_name", it.first},
+         {"$data_type", it.second.data_type}});
     std::string from_prefix_decl = absl::StrReplaceAll(
-        "void From$klinux_prefix$enum_name(const int *input, int *output)",
-        {{"$klinux_prefix", klinux_prefix}, {"$enum_name", it.first}});
+        "void From$klinux_prefix$enum_name(const $data_type *input, $data_type "
+        "*output)",
+        {{"$klinux_prefix", klinux_prefix},
+         {"$enum_name", it.first},
+         {"$data_type", it.second.data_type}});
 
     // Write the function declarations to the header file.
     *os_h << "\n" << to_prefix_decl << "; \n";
@@ -289,7 +296,8 @@ void WriteEnumDefinitions(const absl::flat_hash_map<std::string, EnumProperties>
                               *enum_properties_table,
                           std::ostream *os) {
   for (const auto &it : *enum_properties_table) {
-    *os << absl::StreamFormat("\nenum %s {\n", it.first);
+    *os << absl::StreamFormat("\nenum %s : %s {\n", it.first,
+        it.second.data_type);
 
     // Accumulate comma separated resolved enum pairs (eg. kLinux_F_GETFD = 1,
     // kLinux_F_SETFD = 2,).

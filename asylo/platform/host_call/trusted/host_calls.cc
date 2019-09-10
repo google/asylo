@@ -546,10 +546,12 @@ int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
 }
 
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
+  clockid_t klinux_clk_id;
+  TokLinuxClockId(&clk_id, &klinux_clk_id);
   struct kLinux_timespec klinux_tp;
   int result = EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_clock_gettime, static_cast<int64_t>(clk_id),
-      &klinux_tp);
+      asylo::system_call::kSYS_clock_gettime,
+      static_cast<int64_t>(klinux_clk_id), &klinux_tp);
   FromkLinuxtimespec(&klinux_tp, tp);
   return result;
 }

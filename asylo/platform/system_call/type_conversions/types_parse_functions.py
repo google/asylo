@@ -99,7 +99,8 @@ def define_enum(name,
                 multi_valued=False,
                 skip_conversions=False,
                 or_input_to_default_value=False,
-                wrap_vals_with_if_defined=False):
+                wrap_vals_with_if_defined=False,
+                data_type='int'):
   """Defines a collection of related enumeration values and their properties.
 
   Args:
@@ -126,6 +127,7 @@ def define_enum(name,
       to be wrapped inside a #if defined(value) ...#endif while generating the
       conversion functions. This allows define_enum() to safely accept enum
       values that might not exist on a particular platform or architecture.
+    data_type: String specifying the type of constants, if not int.
   """
 
   # The enum values here are written twice, once as a string literal, then as an
@@ -145,6 +147,7 @@ def define_enum(name,
   _enum_map[name]['skip_conversions'] = skip_conversions
   _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
   _enum_map[name]['wrap_vals_with_if_defined'] = wrap_vals_with_if_defined
+  _enum_map[name]['data_type'] = '"{}"'.format(data_type)
 
 
 def define_struct(name, values, pack_attributes=True, skip_conversions=False):
@@ -203,22 +206,22 @@ def get_enums():
   typical output of get_enums looks like the following -
 
   #define ENUMS_INIT \
-  {"FcntlCmd", {-1, -1, false, false, false, false, {{"F_GETFD", F_GETFD},
-  {"F_SETFD", F_SETFD}}}}, \
-  {"FileFlags", {0, 0, true, false, false, false, {{"O_RDONLY", O_RDONLY},
-  {"O_WRONLY", O_WRONLY}}}}
+  {"FcntlCmd", {-1, -1, false, false, false, false, "int",
+  {{"F_GETFD", F_GETFD}, {"F_SETFD", F_SETFD}}}}, \
+  {"FileFlags", {0, 0, true, false, false, false, "int", {{"O_RDONLY",
+  O_RDONLY}, {"O_WRONLY", O_WRONLY}}}}
 
   Each line contains an enum, and has the following pattern -
   {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
   skip_conversions, or_input_to_default_value, wrap_vals_with_if_defined,
-  {{"enum_val1", enum_val1}, {"enum_val2", enum_val2}}}}, \
+  data_type, {{"enum_val1", enum_val1}, {"enum_val2", enum_val2}}}}, \
   """
   enum_rows = []
   for enum_name, enum_properties in _enum_map.items():
     enum_rows.append(
         '{{{name}, {{{default_value_host}, {default_value_newlib}, '
         '{multi_valued}, {skip_conversions}, {or_input_to_default_value}, '
-        '{wrap_vals_with_if_defined}, {{{values}}}}}}}'.format(
+        '{wrap_vals_with_if_defined}, {data_type}, {{{values}}}}}}}'.format(
             name='"{}"'.format(enum_name),
             default_value_host=enum_properties['default_value_host'],
             default_value_newlib=enum_properties['default_value_newlib'],
@@ -229,6 +232,7 @@ def get_enums():
             if enum_properties['or_input_to_default_value'] else 'false',
             wrap_vals_with_if_defined='true'
             if enum_properties['wrap_vals_with_if_defined'] else 'false',
+            data_type=enum_properties['data_type'],
             values=enum_properties['values']))
 
   return '#define ENUMS_INIT \\\n{}\n'.format(', \\\n'.join(enum_rows))

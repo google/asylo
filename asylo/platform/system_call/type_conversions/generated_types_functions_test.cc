@@ -611,6 +611,20 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
               to_matcher);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, ClockIdTest) {
+  std::vector<clockid_t> from_consts = {kLinux_CLOCK_MONOTONIC,
+                                        kLinux_CLOCK_REALTIME};
+  std::vector<clockid_t> to_consts = {CLOCK_MONOTONIC, CLOCK_REALTIME};
+
+  for (int i = 0; i < from_consts.size(); i++) {
+    clockid_t result;
+    TokLinuxClockId(&to_consts[i], &result);
+    EXPECT_THAT(result, Eq(from_consts[i]));
+    FromkLinuxClockId(&from_consts[i], &result);
+    EXPECT_THAT(result, Eq(to_consts[i]));
+  }
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

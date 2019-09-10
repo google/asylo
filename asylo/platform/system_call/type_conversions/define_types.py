@@ -212,6 +212,14 @@ define_enum(
     default_value_host=-1,
     wrap_vals_with_if_defined=True)
 
+# Clock ID constants defined by standard libc time.h.
+define_enum(
+    name="ClockId",
+    values=["CLOCK_REALTIME", "CLOCK_MONOTONIC"],
+    default_value_newlib=-1,
+    default_value_host=-1,
+    data_type="clockid_t")
+
 define_struct(
     name="timespec",
     values=[
