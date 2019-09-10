@@ -65,118 +65,119 @@ void CopySockaddr(void *source, socklen_t source_len,
 
 }  // namespace
 
-void TokLinuxSocketType(const int *input, int *output) {
-  int sock_type = *input;
-  *output = 0;
+int TokLinuxSocketType(int input) {
+  int sock_type = input;
+  int output = 0;
 
   if (sock_type & SOCK_NONBLOCK) {
-    *output |= kLinux_SOCK_NONBLOCK;
+    output |= kLinux_SOCK_NONBLOCK;
     sock_type &= ~SOCK_NONBLOCK;
   }
 
   if (sock_type & SOCK_CLOEXEC) {
-    *output |= kLinux_SOCK_CLOEXEC;
+    output |= kLinux_SOCK_CLOEXEC;
     sock_type &= ~SOCK_CLOEXEC;
   }
 
   if (!sock_type) {  // Only SOCK_CLOEXEC or SOCK_NONBLOCK are present.
-    return;
+    return output;
   }
 
   switch (sock_type) {
     case SOCK_STREAM:
-      *output |= kLinux_SOCK_STREAM;
+      output |= kLinux_SOCK_STREAM;
       break;
     case SOCK_DGRAM:
-      *output |= kLinux_SOCK_DGRAM;
+      output |= kLinux_SOCK_DGRAM;
       break;
     case SOCK_SEQPACKET:
-      *output |= kLinux_SOCK_SEQPACKET;
+      output |= kLinux_SOCK_SEQPACKET;
       break;
     case SOCK_RAW:
-      *output |= kLinux_SOCK_RAW;
+      output |= kLinux_SOCK_RAW;
       break;
     case SOCK_RDM:
-      *output |= kLinux_SOCK_RDM;
+      output |= kLinux_SOCK_RDM;
       break;
     case SOCK_PACKET:
-      *output |= kLinux_SOCK_PACKET;
+      output |= kLinux_SOCK_PACKET;
       break;
     default:
-      *output = -1;  // Unsupported
+      output = -1;  // Unsupported
   }
+  return output;
 }
 
-void FromkLinuxSocketType(const int *input, int *output) {
-  int kLinux_sock_type = *input;
-  *output = 0;
+int FromkLinuxSocketType(int input) {
+  int kLinux_sock_type = input;
+  int output = 0;
 
   if (kLinux_sock_type & kLinux_SOCK_NONBLOCK) {
-    *output |= SOCK_NONBLOCK;
+    output |= SOCK_NONBLOCK;
     kLinux_sock_type &= ~kLinux_SOCK_NONBLOCK;
   }
 
   if (kLinux_sock_type & kLinux_SOCK_CLOEXEC) {
-    *output |= SOCK_CLOEXEC;
+    output |= SOCK_CLOEXEC;
     kLinux_sock_type &= ~kLinux_SOCK_CLOEXEC;
   }
 
   if (!kLinux_sock_type) {  // Only kLinux_SOCK_CLOEXEC or kLinux_SOCK_NONBLOCK
                             // are present.
-    return;
+    return output;
   }
 
   switch (kLinux_sock_type) {
     case kLinux_SOCK_STREAM:
-      *output |= SOCK_STREAM;
+      output |= SOCK_STREAM;
       break;
     case kLinux_SOCK_DGRAM:
-      *output |= SOCK_DGRAM;
+      output |= SOCK_DGRAM;
       break;
     case kLinux_SOCK_SEQPACKET:
-      *output |= SOCK_SEQPACKET;
+      output |= SOCK_SEQPACKET;
       break;
     case kLinux_SOCK_RAW:
-      *output |= SOCK_RAW;
+      output |= SOCK_RAW;
       break;
     case kLinux_SOCK_RDM:
-      *output |= SOCK_RDM;
+      output |= SOCK_RDM;
       break;
     case kLinux_SOCK_PACKET:
-      *output |= SOCK_PACKET;
+      output |= SOCK_PACKET;
       break;
     default:
-      *output = -1;  // Unsupported
+      output = -1;  // Unsupported
   }
+  return output;
 }
 
-void TokLinuxOptionName(const int *level, const int *option_name, int *output) {
-  if (*level == IPPROTO_TCP) {
-    TokLinuxTcpOptionName(option_name, output);
-  } else if (*level == IPPROTO_IPV6) {
-    TokLinuxIpV6OptionName(option_name, output);
-  } else if (*level == SOL_SOCKET) {
-    TokLinuxSocketOptionName(option_name, output);
-  } else {
-    *output = -1;
+int TokLinuxOptionName(int level, int option_name) {
+  if (level == IPPROTO_TCP) {
+    return TokLinuxTcpOptionName(option_name);
+  } else if (level == IPPROTO_IPV6) {
+    return TokLinuxIpV6OptionName(option_name);
+  } else if (level == SOL_SOCKET) {
+    return TokLinuxSocketOptionName(option_name);
   }
+
+  return -1;
 }
 
-void FromkLinuxOptionName(const int *level, const int *klinux_option_name,
-                          int *output) {
-  if (*level == IPPROTO_TCP) {
-    FromkLinuxTcpOptionName(klinux_option_name, output);
-  } else if (*level == IPPROTO_IPV6) {
-    TokLinuxIpV6OptionName(klinux_option_name, output);
-  } else if (*level == SOL_SOCKET) {
-    FromkLinuxSocketOptionName(klinux_option_name, output);
-  } else {
-    *output = -1;
+int FromkLinuxOptionName(int level, int klinux_option_name) {
+  if (level == IPPROTO_TCP) {
+    return FromkLinuxTcpOptionName(klinux_option_name);
+  } else if (level == IPPROTO_IPV6) {
+    return TokLinuxIpV6OptionName(klinux_option_name);
+  } else if (level == SOL_SOCKET) {
+    return FromkLinuxSocketOptionName(klinux_option_name);
   }
+
+  return -1;
 }
 
-void FromkLinuxStat(const struct klinux_stat *input, struct stat *output) {
-  if (!input || !output) return;
+bool FromkLinuxStat(const struct klinux_stat *input, struct stat *output) {
+  if (!input || !output) return false;
   output->st_atime = input->klinux_st_atime;
   output->st_blksize = input->klinux_st_blksize;
   output->st_blocks = input->klinux_st_blocks;
@@ -190,10 +191,11 @@ void FromkLinuxStat(const struct klinux_stat *input, struct stat *output) {
   output->st_rdev = input->klinux_st_rdev;
   output->st_size = input->klinux_st_size;
   output->st_uid = input->klinux_st_uid;
+  return true;
 }
 
-void TokLinuxStat(const struct stat *input, struct klinux_stat *output) {
-  if (!input || !output) return;
+bool TokLinuxStat(const struct stat *input, struct klinux_stat *output) {
+  if (!input || !output) return false;
   output->klinux_st_atime = input->st_atime;
   output->klinux_st_blksize = input->st_blksize;
   output->klinux_st_blocks = input->st_blocks;
@@ -207,15 +209,16 @@ void TokLinuxStat(const struct stat *input, struct klinux_stat *output) {
   output->klinux_st_rdev = input->st_rdev;
   output->klinux_st_size = input->st_size;
   output->klinux_st_uid = input->st_uid;
+  return true;
 }
 
-void SockaddrTokLinuxSockaddrUn(const struct sockaddr *input,
+bool SockaddrTokLinuxSockaddrUn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
                                 klinux_sockaddr_un *output) {
   if (!input || !output || input_addrlen == 0 || input->sa_family != AF_UNIX ||
       input_addrlen < sizeof(output->klinux_sun_family)) {
     output = nullptr;
-    return;
+    return false;
   }
 
   struct sockaddr_un *sock_un = const_cast<struct sockaddr_un *>(
@@ -224,15 +227,16 @@ void SockaddrTokLinuxSockaddrUn(const struct sockaddr *input,
   InitializeToZeroArray(output->klinux_sun_path);
   ReinterpretCopyArray(output->klinux_sun_path, sock_un->sun_path,
                        input_addrlen - sizeof(input->sa_family));
+  return true;
 }
 
-void SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
+bool SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
                                 klinux_sockaddr_in *output) {
   if (!input || !output || input_addrlen == 0 || input->sa_family != AF_INET ||
       input_addrlen < sizeof(struct sockaddr_in)) {
     output = nullptr;
-    return;
+    return false;
   }
 
   struct sockaddr_in *sockaddr_in_from = const_cast<struct sockaddr_in *>(
@@ -246,15 +250,16 @@ void SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
   ReinterpretCopyArray(output->klinux_sin_zero, sockaddr_in_from->sin_zero,
                        std::min(sizeof(output->klinux_sin_zero),
                                 sizeof(sockaddr_in_from->sin_zero)));
+  return true;
 }
 
-void SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
+bool SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
                                  socklen_t input_addrlen,
                                  klinux_sockaddr_in6 *output) {
   if (!input || !output || input_addrlen == 0 || input->sa_family != AF_INET6 ||
       input_addrlen < sizeof(struct sockaddr_in6)) {
     output = nullptr;
-    return;
+    return false;
   }
 
   struct sockaddr_in6 *sockaddr_in6_from = const_cast<struct sockaddr_in6 *>(
@@ -267,24 +272,26 @@ void SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
   InitializeToZeroSingle(&output->klinux_sin6_addr);
   ReinterpretCopySingle(&output->klinux_sin6_addr,
                         &sockaddr_in6_from->sin6_addr);
+  return true;
 }
 
-void FromkLinuxSockAddrUn(const struct klinux_sockaddr_un *input,
+bool FromkLinuxSockAddrUn(const struct klinux_sockaddr_un *input,
                           struct sockaddr_un *output) {
   if (!input || !output) {
-    return;
+    return false;
   }
   output->sun_family = AF_UNIX;
   InitializeToZeroArray(output->sun_path);
   ReinterpretCopyArray(
       output->sun_path, input->klinux_sun_path,
       sizeof(struct klinux_sockaddr_un) - sizeof(input->klinux_sun_family));
+  return true;
 }
 
-void FromkLinuxSockAddrIn(const struct klinux_sockaddr_in *input,
+bool FromkLinuxSockAddrIn(const struct klinux_sockaddr_in *input,
                           struct sockaddr_in *output) {
   if (!input || !output) {
-    return;
+    return false;
   }
   output->sin_family = AF_INET;
   output->sin_port = input->klinux_sin_port;
@@ -294,12 +301,13 @@ void FromkLinuxSockAddrIn(const struct klinux_sockaddr_in *input,
   ReinterpretCopyArray(
       output->sin_zero, input->klinux_sin_zero,
       std::min(sizeof(output->sin_zero), sizeof(input->klinux_sin_zero)));
+  return true;
 }
 
-void FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
+bool FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
                            struct sockaddr_in6 *output) {
   if (!input || !output) {
-    return;
+    return false;
   }
   output->sin6_family = AF_INET;
   output->sin6_port = input->klinux_sin6_port;
@@ -307,11 +315,12 @@ void FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
   output->sin6_flowinfo = input->klinux_sin6_flowinfo;
   InitializeToZeroSingle(&output->sin6_addr);
   ReinterpretCopySingle(&output->sin6_addr, &input->klinux_sin6_port);
+  return true;
 }
 
-void FromkLinuxStatFs(const struct klinux_statfs *input,
+bool FromkLinuxStatFs(const struct klinux_statfs *input,
                       struct statfs *output) {
-  if (!input || !output) return;
+  if (!input || !output) return false;
   output->f_type = input->klinux_f_type;
   output->f_bsize = input->klinux_f_bsize;
   output->f_blocks = input->klinux_f_blocks;
@@ -325,10 +334,11 @@ void FromkLinuxStatFs(const struct klinux_statfs *input,
   output->f_frsize = input->klinux_f_frsize;
   output->f_flags = input->klinux_f_flags;
   memset(output->f_spare, 0, sizeof(output->f_spare));
+  return true;
 }
 
-void TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output) {
-  if (!input || !output) return;
+bool TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output) {
+  if (!input || !output) return false;
   output->klinux_f_bsize = input->f_bsize;
   output->klinux_f_frsize = input->f_frsize;
   output->klinux_f_blocks = input->f_blocks;
@@ -342,9 +352,10 @@ void TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output) {
   output->klinux_f_frsize = input->f_frsize;
   output->klinux_f_flags = input->f_flags;
   memset(output->klinux_f_spare, 0, sizeof(output->klinux_f_spare));
+  return true;
 }
 
-void FromkLinuxStatFsFlags(int64_t input, int64_t *output) {
+int64_t FromkLinuxStatFsFlags(int64_t input) {
   int64_t result = 0;
 
   if (input & kLinux_ST_NOSUID) result |= ST_NOSUID;
@@ -359,10 +370,10 @@ void FromkLinuxStatFsFlags(int64_t input, int64_t *output) {
   if (input & kLinux_ST_RELATIME) result |= ST_RELATIME;
   if (input & kLinux_ST_SYNCHRONOUS) result |= ST_SYNCHRONOUS;
 #endif
-  *output = result;
+  return result;
 }
 
-void TokLinuxStatFsFlags(int64_t input, int64_t *output) {
+int64_t TokLinuxStatFsFlags(int64_t input) {
   int64_t result = 0;
 
   if (input & ST_NOSUID) result |= kLinux_ST_NOSUID;
@@ -377,16 +388,16 @@ void TokLinuxStatFsFlags(int64_t input, int64_t *output) {
   if (input & ST_RELATIME) result |= kLinux_ST_RELATIME;
   if (input & ST_SYNCHRONOUS) result |= kLinux_ST_SYNCHRONOUS;
 #endif
-  *output = result;
+  return result;
 }
 
-void FromkLinuxSockAddr(const struct klinux_sockaddr *input,
+bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
                         socklen_t input_len, struct sockaddr *output,
                         socklen_t *output_len,
                         void (*abort_handler)(const char *)) {
   if (!input || !output || !output_len || input_len == 0) {
     output = nullptr;
-    return;
+    return false;
   }
 
   int16_t klinux_family = input->klinux_sa_family;
@@ -447,12 +458,13 @@ void FromkLinuxSockAddr(const struct klinux_sockaddr *input,
       abort();
     }
   }
+  return true;
 }
 
-void FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output) {
+bool FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output) {
   if (!input || !output) {
     output = nullptr;
-    return;
+    return false;
   }
   FD_ZERO(output);
   for (int fd = 0; fd < std::min(KLINUX_FD_SETSIZE, FD_SETSIZE); ++fd) {
@@ -460,12 +472,13 @@ void FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output) {
       FD_SET(fd, output);
     }
   }
+  return true;
 }
 
-void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output) {
+bool TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output) {
   if (!input || !output) {
     output = nullptr;
-    return;
+    return false;
   }
   KLINUX_FD_ZERO(output);
   for (int fd = 0; fd < std::min(FD_SETSIZE, KLINUX_FD_SETSIZE); ++fd) {
@@ -473,24 +486,23 @@ void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output) {
       KLINUX_FD_SET(fd, output);
     }
   }
+  return true;
 }
 
-void FromkLinuxSignalNumber(const int *input, int *output) {
+int FromkLinuxSignalNumber(int input) {
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
-  if (*input >= kLinux_SIGRTMIN && *input <= kLinux_SIGRTMAX) {
-    *output = SIGRTMIN + *input - kLinux_SIGRTMIN;
-    return;
+  if (input >= kLinux_SIGRTMIN && input <= kLinux_SIGRTMAX) {
+    return SIGRTMIN + input - kLinux_SIGRTMIN;
   }
 #endif
-  FromkLinuxBaseSignalNumber(input, output);
+  return FromkLinuxBaseSignalNumber(input);
 }
 
-void TokLinuxSignalNumber(const int *input, int *output) {
+int TokLinuxSignalNumber(int input) {
 #if defined(SIGRTMIN) && defined(SIGRTMAX)
-  if (*input >= SIGRTMIN && *input <= SIGRTMAX) {
-    *output = kLinux_SIGRTMIN + *input - SIGRTMIN;
-    return;
+  if (input >= SIGRTMIN && input <= SIGRTMAX) {
+    return kLinux_SIGRTMIN + input - SIGRTMIN;
   }
 #endif
-  TokLinuxBaseSignalNumber(input, output);
+  return TokLinuxBaseSignalNumber(input);
 }

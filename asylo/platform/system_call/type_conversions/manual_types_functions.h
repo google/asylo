@@ -29,71 +29,70 @@
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
 #include "asylo/platform/system_call/type_conversions/kernel_types.h"
 
-// Converts an enclave based socket type, |*input| to a Linux socket type value.
+// Converts an enclave based socket type to a Linux socket type value. Returns
+// -1 if socket type is not recognized.
+int TokLinuxSocketType(int input);
+
+// Converts a Linux based socket type to an enclave based socket type. Returns
+// -1 if socket type is not recognized.
+int FromkLinuxSocketType(int input);
+
+// Converts an enclave based socket option name to a Linux socket option.
 // Returns -1 if socket type is not recognized.
-void TokLinuxSocketType(const int *input, int *output);
+int TokLinuxOptionName(int level, int option_name);
 
-// Converts a Linux based socket type |*input| to an enclave based socket type.
+// Converts a Linux based socket option name to an enclave based socket option.
 // Returns -1 if socket type is not recognized.
-void FromkLinuxSocketType(const int *input, int *output);
-
-// Converts an enclave based socket option name, |*input| to a Linux socket
-// option. Returns -1 if socket type is not recognized.
-void TokLinuxOptionName(const int *level, const int *option_name, int *output);
-
-// Converts a Linux based socket option name, |*input| to an enclave based
-// socket option. Returns -1 if socket type is not recognized.
-void FromkLinuxOptionName(const int *level, const int *klinux_option_name,
-                          int *output);
+int FromkLinuxOptionName(int level, int klinux_option_name);
 
 // Converts a kernel stat to an enclave stat.
-void FromkLinuxStat(const struct klinux_stat *input, struct stat *output);
+bool FromkLinuxStat(const struct klinux_stat *input, struct stat *output);
 
 // Converts an enclave stat to a kernel stat.
-void TokLinuxStat(const struct stat *input, struct klinux_stat *output);
+bool TokLinuxStat(const struct stat *input, struct klinux_stat *output);
 
 // Converts an enclave based sockaddr, |*input| to a host based kernel
 // sockaddr_un struct. Requires the input sockaddr to have the domain AF_UNIX or
 // AF_LOCAL.
-void SockaddrTokLinuxSockaddrUn(const struct sockaddr *input,
+bool SockaddrTokLinuxSockaddrUn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
                                 klinux_sockaddr_un *output);
 
 // Converts an enclave based sockaddr, |*input| to a host based kernel
 // sockaddr_in struct. Requires the input sockaddr to have the domain AF_INET.
-void SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
+bool SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
                                 klinux_sockaddr_in *output);
 
 // Converts an enclave based sockaddr, |*input| to a host based kernel
 // sockaddr_in6 struct. Requires the input sockaddr to have the domain AF_INET6.
-void SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
+bool SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
                                  socklen_t input_addrlen,
                                  klinux_sockaddr_in6 *output);
 
 // Converts a Linux based sockaddr_un to an enclave based sockaddr_un.
-void FromkLinuxSockAddrUn(const struct klinux_sockaddr_un *input,
+bool FromkLinuxSockAddrUn(const struct klinux_sockaddr_un *input,
                           struct sockaddr_un *output);
 
 // Converts a Linux based sockaddr_in to an enclave based sockaddr_in.
-void FromkLinuxSockAddrIn(const struct klinux_sockaddr_in *input,
+bool FromkLinuxSockAddrIn(const struct klinux_sockaddr_in *input,
                           struct sockaddr_in *output);
 
 // Converts a Linux based sockaddr_in6 to an enclave based sockaddr_in6.
-void FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
+bool FromkLinuxSockAddrIn6(const struct klinux_sockaddr_in6 *input,
                            struct sockaddr_in6 *output);
 
 // Converts a Linux based statfs to an enclave based statfs.
-void FromkLinuxStatFs(const struct klinux_statfs *input, struct statfs *output);
+bool FromkLinuxStatFs(const struct klinux_statfs *input, struct statfs *output);
 
 // Converts an enclave based statfs to a Linux based statfs.
-void TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output);
+bool TokLinuxStatFs(const struct statfs *input, struct klinux_statfs *output);
 
 // Converts a Linux based statfs flag set to an enclave based statfs flag set.
-void FromkLinuxStatFsFlags(int64_t input, int64_t *output);
+int64_t FromkLinuxStatFsFlags(int64_t input);
 
 // Converts a enclave based statfs flag set to a Linux based flag set.
-void TokLinuxStatFsFlags(int64_t input, int64_t *output);
+int64_t TokLinuxStatFsFlags(int64_t input);
 
 // Converts a Linux based sockaddr to an enclave based sockaddr. Aborts if an
 // unrecognized AF family is encountered. Since this function can be called both
@@ -103,23 +102,23 @@ void TokLinuxStatFsFlags(int64_t input, int64_t *output);
 // the size of |output| provided by the caller. The returned |*output| is
 // truncated if the buffer provided is too small; in this case, |*output_len|
 // will return a value greater than was supplied to the call.
-void FromkLinuxSockAddr(const struct klinux_sockaddr *input,
+bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
                         socklen_t input_len, struct sockaddr *output,
                         socklen_t *output_len,
                         void (*abort_handler)(const char *message));
 
 // Converts a Linux based file descriptor set to a native file descriptor set.
-void FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output);
+bool FromkLinuxFdSet(const struct klinux_fd_set *input, fd_set *output);
 
 // Converts a native file descriptor set to a Linux based file descriptor set.
-void TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output);
+bool TokLinuxFdSet(const fd_set *input, struct klinux_fd_set *output);
 
 // Converts a kernel based signal number (including realtime signals) to an
 // enclave based signal.
-void FromkLinuxSignalNumber(const int *input, int *output);
+int FromkLinuxSignalNumber(int input);
 
 // Converts an enclave based signal number (including realtime signals) to a
 // kernel based signal.
-void TokLinuxSignalNumber(const int *input, int *output);
+int TokLinuxSignalNumber(int input);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

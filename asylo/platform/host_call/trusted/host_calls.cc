@@ -82,8 +82,7 @@ gid_t enc_untrusted_getegid() {
 }
 
 int enc_untrusted_kill(pid_t pid, int sig) {
-  int klinux_sig = -1;
-  TokLinuxSignalNumber(&sig, &klinux_sig);
+  int klinux_sig = TokLinuxSignalNumber(sig);
   if (klinux_sig < 0) {
     errno = EINVAL;
     return -1;
@@ -115,14 +114,11 @@ int enc_untrusted_open(const char *pathname, int flags, ...) {
     va_start(ap, flags);
     mode = va_arg(ap, mode_t);
     va_end(ap);
-    int klinux_mode;
-    TokLinuxFileModeFlag(&mode, &klinux_mode);
   }
 
-  int klinux_flags;
-  TokLinuxFileStatusFlag(&flags, &klinux_flags);
-  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_open,
-                                             pathname, klinux_flags, mode);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_open, pathname, TokLinuxFileStatusFlag(flags),
+      TokLinuxFileModeFlag(mode));
 }
 
 int enc_untrusted_unlink(const char *pathname) {
@@ -176,19 +172,14 @@ int enc_untrusted_pipe2(int pipefd[2], int flags) {
     return -1;
   }
 
-  int kLinux_flags;
-  TokLinuxFileStatusFlag(&flags, &kLinux_flags);
-  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_pipe2,
-                                             pipefd, kLinux_flags);
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_pipe2, pipefd, TokLinuxFileStatusFlag(flags));
 }
 
 int enc_untrusted_socket(int domain, int type, int protocol) {
-  int klinux_domain;
-  int klinux_type;
-  TokLinuxAfFamily(&domain, &klinux_domain);
-  TokLinuxSocketType(&type, &klinux_type);
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_socket, klinux_domain, klinux_type, protocol);
+      asylo::system_call::kSYS_socket, TokLinuxAfFamily(domain),
+      TokLinuxSocketType(type), protocol);
 }
 
 int enc_untrusted_listen(int sockfd, int backlog) {
@@ -217,8 +208,7 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   arg = va_arg(ap, int64_t);
   va_end(ap);
 
-  int klinux_cmd;
-  TokLinuxFcntlCommand(&cmd, &klinux_cmd);
+  int klinux_cmd = TokLinuxFcntlCommand(cmd);
   if (klinux_cmd == -1) {
     errno = EINVAL;
     return -1;
@@ -227,24 +217,20 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
   int intarg = arg;
   switch (cmd) {
     case F_SETFL: {
-      int klinux_arg;
-      TokLinuxFileStatusFlag(&intarg, &klinux_arg);
-      return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
-                                                 fd, klinux_cmd, klinux_arg);
+      return EnsureInitializedAndDispatchSyscall(
+          asylo::system_call::kSYS_fcntl, fd, klinux_cmd,
+          TokLinuxFileStatusFlag(intarg));
     }
     case F_SETFD: {
-      int klinux_arg;
-      TokLinuxFDFlag(&intarg, &klinux_arg);
       return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_fcntl,
-                                                 fd, klinux_cmd, klinux_arg);
+                                                 fd, klinux_cmd,
+                                                 TokLinuxFDFlag(intarg));
     }
     case F_GETFL: {
       int retval = EnsureInitializedAndDispatchSyscall(
           asylo::system_call::kSYS_fcntl, fd, klinux_cmd, arg);
       if (retval != -1) {
-        int result;
-        FromkLinuxFileStatusFlag(&retval, &result);
-        retval = result;
+        retval = FromkLinuxFileStatusFlag(retval);
       }
 
       return retval;
@@ -253,9 +239,7 @@ int enc_untrusted_fcntl(int fd, int cmd, ... /* arg */) {
       int retval = EnsureInitializedAndDispatchSyscall(
           asylo::system_call::kSYS_fcntl, fd, klinux_cmd, arg);
       if (retval != -1) {
-        int result;
-        FromkLinuxFDFlag(&retval, &result);
-        retval = result;
+        retval = FromkLinuxFDFlag(retval);
       }
       return retval;
     }
@@ -286,18 +270,14 @@ int enc_untrusted_fchown(int fd, uid_t owner, gid_t group) {
 
 int enc_untrusted_setsockopt(int sockfd, int level, int optname,
                              const void *optval, socklen_t optlen) {
-  int klinux_option_name;
-  TokLinuxOptionName(&level, &optname, &klinux_option_name);
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_setsockopt, sockfd, level, klinux_option_name,
-      optval, optlen);
+      asylo::system_call::kSYS_setsockopt, sockfd, level,
+      TokLinuxOptionName(level, optname), optval, optlen);
 }
 
 int enc_untrusted_flock(int fd, int operation) {
-  int klinux_operation;
-  TokLinuxFLockOperation(&operation, &klinux_operation);
   return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_flock, fd,
-                                             klinux_operation);
+                                             TokLinuxFLockOperation(operation));
 }
 
 int enc_untrusted_wait(int *wstatus) {
@@ -307,18 +287,15 @@ int enc_untrusted_wait(int *wstatus) {
 }
 
 int enc_untrusted_inotify_init1(int flags) {
-  int klinux_flags;
-  TokLinuxInotifyFlag(&flags, &klinux_flags);
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_inotify_init1, klinux_flags);
+      asylo::system_call::kSYS_inotify_init1, TokLinuxInotifyFlag(flags));
 }
 
 int enc_untrusted_inotify_add_watch(int fd, const char *pathname,
                                     uint32_t mask) {
-  int klinux_mask, input_mask = mask;
-  TokLinuxInotifyEventMask(&input_mask, &klinux_mask);
   return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_inotify_add_watch, fd, pathname, klinux_mask);
+      asylo::system_call::kSYS_inotify_add_watch, fd, pathname,
+      TokLinuxInotifyEventMask(mask));
 }
 
 int enc_untrusted_inotify_rm_watch(int fd, int wd) {
@@ -373,9 +350,7 @@ int enc_untrusted_isatty(int fd) {
   // terminal; otherwise 0 is returned, and errno is set to indicate the error.
   if (result == 0) {
     int klinux_errno = output.next<int>();
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
   return result;
 }
@@ -397,9 +372,7 @@ int enc_untrusted_usleep(useconds_t usec) {
   // indicate the cause of the error.
   if (result == -1) {
     int klinux_errno = output.next<int>();
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
 
   return result;
@@ -409,11 +382,10 @@ int enc_untrusted_fstat(int fd, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_fstat, fd, &stat_kernel);
-  FromkLinuxStat(&stat_kernel, statbuf);
-  int kLinux_mode = stat_kernel.klinux_st_mode;
-  int mode;
-  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
-  statbuf->st_mode = mode;
+
+  if (FromkLinuxStat(&stat_kernel, statbuf)) {
+    statbuf->st_mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  }
   return result;
 }
 
@@ -421,8 +393,10 @@ int enc_untrusted_fstatfs(int fd, struct statfs *statbuf) {
   struct klinux_statfs statfs_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_fstatfs, fd, &statfs_kernel);
-  FromkLinuxStatFs(&statfs_kernel, statbuf);
-  FromkLinuxStatFsFlags(statfs_kernel.klinux_f_flags, &statbuf->f_flags);
+
+  if (FromkLinuxStatFs(&statfs_kernel, statbuf)) {
+    statbuf->f_flags = FromkLinuxStatFsFlags(statfs_kernel.klinux_f_flags);
+  }
   return result;
 }
 
@@ -430,11 +404,10 @@ int enc_untrusted_lstat(const char *pathname, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_lstat, pathname, &stat_kernel);
-  FromkLinuxStat(&stat_kernel, statbuf);
-  int kLinux_mode = stat_kernel.klinux_st_mode;
-  int mode;
-  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
-  statbuf->st_mode = mode;
+
+  if (FromkLinuxStat(&stat_kernel, statbuf)) {
+    statbuf->st_mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  }
   return result;
 }
 
@@ -442,11 +415,9 @@ int enc_untrusted_stat(const char *pathname, struct stat *statbuf) {
   struct klinux_stat stat_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_stat, pathname, &stat_kernel);
-  FromkLinuxStat(&stat_kernel, statbuf);
-  int kLinux_mode = stat_kernel.klinux_st_mode;
-  int mode;
-  FromkLinuxFileModeFlag(&kLinux_mode, &mode);
-  statbuf->st_mode = mode;
+  if (FromkLinuxStat(&stat_kernel, statbuf)) {
+    statbuf->st_mode = FromkLinuxFileModeFlag(stat_kernel.klinux_st_mode);
+  }
   return result;
 }
 
@@ -454,14 +425,15 @@ int enc_untrusted_statfs(const char *pathname, struct statfs *statbuf) {
   struct klinux_statfs statfs_kernel;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_statfs, pathname, &statfs_kernel);
-  FromkLinuxStatFs(&statfs_kernel, statbuf);
-  FromkLinuxStatFsFlags(statfs_kernel.klinux_f_flags, &statbuf->f_flags);
+
+  if (FromkLinuxStatFs(&statfs_kernel, statbuf)) {
+    statbuf->f_flags = FromkLinuxStatFsFlags(statfs_kernel.klinux_f_flags);
+  }
   return result;
 }
 
 int64_t enc_untrusted_sysconf(int name) {
-  int kLinux_name;
-  TokLinuxSysconfConstant(&name, &kLinux_name);
+  int kLinux_name = TokLinuxSysconfConstant(name);
   if (kLinux_name == -1) {
     errno = EINVAL;
     return -1;
@@ -474,15 +446,14 @@ int64_t enc_untrusted_sysconf(int name) {
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kSysconfHandler, &input, &output);
   if (!status.ok()) {
-    abort();
+    asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sysconf failed.");
   }
 
   int64_t result = output.next<int>();
   if (result == -1) {
     int klinux_errno = output.next<int>();
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
 
   return result;
@@ -504,7 +475,8 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
           asylo::host_call::kReallocHandler, &input, &output);
 
   if (!status.ok()) {
-    abort();
+    asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_realloc failed.");
   }
   void *result = output.next<void *>();
 
@@ -512,9 +484,7 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
   // non-zero |size| is provided.
   if (result == nullptr && size != 0) {
     int klinux_errno = output.next<int>();
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
   return result;
 }
@@ -527,7 +497,8 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
       asylo::host_call::NonSystemCallDispatcher(asylo::host_call::kSleepHandler,
                                                 &input, &output);
   if (!status.ok()) {
-    abort();
+    asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sleep failed");
   }
 
   // Returns sleep's return value directly since it doesn't set errno.
@@ -536,7 +507,10 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
 
 int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
   struct kLinux_timespec klinux_req;
-  TokLinuxtimespec(req, &klinux_req);
+  if (!TokLinuxtimespec(req, &klinux_req)) {
+    errno = EINVAL;
+    return -1;
+  }
   struct kLinux_timespec klinux_rem;
 
   int result = EnsureInitializedAndDispatchSyscall(
@@ -546,8 +520,7 @@ int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem) {
 }
 
 int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp) {
-  clockid_t klinux_clk_id;
-  TokLinuxClockId(&clk_id, &klinux_clk_id);
+  clockid_t klinux_clk_id = TokLinuxClockId(clk_id);
   struct kLinux_timespec klinux_tp;
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_clock_gettime,
@@ -571,15 +544,24 @@ int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
   struct klinux_sockaddr_in6 klinux_sock_in6;
 
   if (addr->sa_family == AF_UNIX) {
-    SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un);
+    if (!SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un)) {
+      errno = EINVAL;
+      return -1;
+    }
     arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un);
     arg_addrlen = sizeof(struct klinux_sockaddr_un);
   } else if (addr->sa_family == AF_INET) {
-    SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in);
+    if (!SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in)) {
+      errno = EINVAL;
+      return -1;
+    }
     arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in);
     arg_addrlen = sizeof(struct klinux_sockaddr_in);
   } else if (addr->sa_family == AF_INET6) {
-    SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6);
+    if (!SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6)) {
+      errno = EINVAL;
+      return -1;
+    }
     arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in6);
     arg_addrlen = sizeof(struct klinux_sockaddr_in6);
   } else {
@@ -604,15 +586,24 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
   struct klinux_sockaddr_in6 klinux_sock_in6;
 
   if (addr->sa_family == AF_UNIX) {
-    SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un);
+    if (!SockaddrTokLinuxSockaddrUn(addr, addrlen, &klinux_sock_un)) {
+      errno = EINVAL;
+      return -1;
+    }
     arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un);
     arg_addrlen = sizeof(struct klinux_sockaddr_un);
   } else if (addr->sa_family == AF_INET) {
-    SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in);
+    if (!SockaddrTokLinuxSockaddrIn(addr, addrlen, &klinux_sock_in)) {
+      errno = EINVAL;
+      return -1;
+    }
     arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in);
     arg_addrlen = sizeof(struct klinux_sockaddr_in);
   } else if (addr->sa_family == AF_INET6) {
-    SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6);
+    if (!SockaddrTokLinuxSockaddrIn6(addr, addrlen, &klinux_sock_in6)) {
+      errno = EINVAL;
+      return -1;
+    }
     arg_sockaddr = reinterpret_cast<klinux_sockaddr *>(&klinux_sock_in6);
     arg_addrlen = sizeof(struct klinux_sockaddr_in6);
   } else {
@@ -661,9 +652,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   // with errno set to indicate the cause of the error.
   if (result == -1) {
     int klinux_errno = output.next<int>();
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
 
   return result;
@@ -687,7 +676,7 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
 
   if (!status.ok()) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "recvmsg host call failed. Aborting");
+        "enc_untrusted_recvmsg host call failed. Aborting");
   }
 
   ssize_t result = output.next<ssize_t>();
@@ -696,9 +685,7 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   // recvmsg() returns the number of characters received. On error, -1 is
   // returned, with errno set to indicate the cause of the error.
   if (result == -1) {
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
     return result;
   }
 
@@ -746,11 +733,12 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
 
   if (!status.ok()) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "getsockname host call failed. Aborting");
+        "enc_untrusted_getsockname failed. Aborting");
   }
   if (output.size() != 3) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for getsockname host call. Aborting");
+        "Expected 3 arguments in output for enc_untrusted_getsockname. "
+        "Aborting");
   }
 
   int result = output.next<int>();
@@ -759,9 +747,7 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   // getsockname() returns 0 on success. On error, -1 is returned, with errno
   // set to indicate the cause of the error.
   if (result == -1) {
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
     return result;
   }
 
@@ -787,11 +773,11 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
 
   if (!status.ok()) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "accept host call failed. Aborting");
+        "enc_untrusted_accept failed. Aborting");
   }
   if (output.size() != 3) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for accept host call. Aborting");
+        "Expected 3 arguments in output for enc_untrusted_accept. Aborting");
   }
 
   int result = output.next<int>();
@@ -800,9 +786,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   // accept() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
     return result;
   }
 
@@ -833,11 +817,12 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
 
   if (!status.ok()) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "getpeername host call failed. Aborting");
+        "enc_untrusted_getpeername host call failed. Aborting");
   }
   if (output.size() != 3) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for getpeername host call. Aborting");
+        "Expected 3 arguments in output for enc_untrusted_getpeername. "
+        "Aborting");
   }
 
   int result = output.next<int>();
@@ -846,9 +831,7 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
   // getpeername() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
     return result;
   }
 
@@ -862,9 +845,8 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
 
 ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
                                struct sockaddr *src_addr, socklen_t *addrlen) {
-  int klinux_flags = 0;
-  TokLinuxRecvSendFlag(&flags, &klinux_flags);
-  if (flags != 0 && klinux_flags == 0) {
+  int klinux_flags = TokLinuxRecvSendFlag(flags);
+  if (klinux_flags == 0 && flags != 0) {
     errno = EINVAL;
     return -1;
   }
@@ -879,11 +861,11 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
 
   if (!status.ok()) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "recvfrom host call failed. Aborting");
+        "enc_untrusted_recvfrom failed. Aborting");
   }
   if (output.size() != 4) {
     ::asylo::primitives::TrustedPrimitives::BestEffortAbort(
-        "Expected 4 arguments in output for recvfrom host call. Aborting");
+        "Expected 4 arguments in output for enc_untrusted_recvfrom. Aborting");
   }
 
   int result = output.next<int>();
@@ -891,9 +873,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   // recvfrom() returns -1 on failure, with errno set to indicate the cause
   // of the error.
   if (result == -1) {
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
     return result;
   }
 
@@ -955,8 +935,7 @@ int enc_untrusted_fsync(int fd) {
 }
 
 int enc_untrusted_raise(int sig) {
-  int klinux_sig = -1;
-  TokLinuxSignalNumber(&sig, &klinux_sig);
+  int klinux_sig = TokLinuxSignalNumber(sig);
   if (klinux_sig < 0) {
     errno = EINVAL;
     return -1;
@@ -976,9 +955,7 @@ int enc_untrusted_raise(int sig) {
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
   if (result != 0) {
-    int enclave_errno;
-    FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-    errno = enclave_errno;
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
   return result;
 }

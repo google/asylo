@@ -124,8 +124,7 @@ PrimitiveStatus TestKill(void *context, MessageReader *in, MessageWriter *out) {
 
   pid_t pid = in->next<pid_t>();
   int klinux_sig = in->next<int>();
-  int sig = -1;
-  FromkLinuxSignalNumber(&klinux_sig, &sig);
+  int sig = FromkLinuxSignalNumber(klinux_sig);
 
   out->Push<int>(enc_untrusted_kill(pid, sig));
   return PrimitiveStatus::OkStatus();
@@ -170,17 +169,16 @@ PrimitiveStatus TestOpen(void *context, MessageReader *in, MessageWriter *out) {
     const auto pathname = in->next();
     int linux_flags = in->next<int>();
     int linux_mode = in->next<mode_t>();
-    int flags;
-    FromkLinuxFileStatusFlag(&linux_flags, &flags);
-    int mode;
-    FromkLinuxFileModeFlag(&linux_mode, &mode);
-    out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags, mode));
+
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(),
+                                      FromkLinuxFileStatusFlag(linux_flags),
+                                      FromkLinuxFileModeFlag(linux_mode)));
   } else if (in->size() == 2) {
     const auto pathname = in->next();
     int kLinux_flags = in->next<int>();
-    int flags;
-    FromkLinuxFileStatusFlag(&kLinux_flags, &flags);
-    out->Push<int>(enc_untrusted_open(pathname.As<char>(), flags));
+
+    out->Push<int>(enc_untrusted_open(pathname.As<char>(),
+                                      FromkLinuxFileStatusFlag(kLinux_flags)));
   } else {
     return {error::GoogleError::INVALID_ARGUMENT,
             "Unexpected number of arguments. open() expects 2 or 3 arguments."};
@@ -415,11 +413,9 @@ PrimitiveStatus TestFcntl(void *context, MessageReader *in,
   int arg = in->next<int>();
   int result = enc_untrusted_fcntl(fd, cmd, arg);
   if (cmd == F_GETFL) {
-    int tmp = result;
-    TokLinuxFileStatusFlag(&tmp, &result);
+    result = TokLinuxFileStatusFlag(result);
   } else if (cmd == F_GETFD) {
-    int tmp = result;
-    TokLinuxFDFlag(&tmp, &result);
+    result = TokLinuxFDFlag(result);
   }
 
   out->Push<int>(result);
@@ -458,8 +454,7 @@ PrimitiveStatus TestSetsockopt(void *context, MessageReader *in,
   int klinux_optname = in->next<int>();
   int option = in->next<int>();
 
-  int optname;
-  FromkLinuxOptionName(&level, &klinux_optname, &optname);
+  int optname = FromkLinuxOptionName(level, klinux_optname);
   out->Push<int>(enc_untrusted_setsockopt(sockfd, level, optname,
                                           (void *)&option, sizeof(option)));
 
@@ -473,8 +468,7 @@ PrimitiveStatus TestFlock(void *context, MessageReader *in,
   int fd = in->next<int>();
   int kLinux_operation = in->next<int>();  // The operation is expected to be
                                            // a kLinux_ operation.
-  int operation;
-  FromkLinuxFLockOperation(&kLinux_operation, &operation);
+  int operation = FromkLinuxFLockOperation(kLinux_operation);
   out->Push<int>(enc_untrusted_flock(fd, operation));
 
   return PrimitiveStatus::OkStatus();
@@ -518,8 +512,7 @@ PrimitiveStatus TestInotifyInit1(void *context, MessageReader *in,
 
   int kLinux_flags = in->next<int>();  // The operation is expected to be
                                        // a kLinux_ operation.
-  int flags;
-  FromkLinuxInotifyFlag(&kLinux_flags, &flags);
+  int flags = FromkLinuxInotifyFlag(kLinux_flags);
   out->Push<int>(enc_untrusted_inotify_init1(flags));
   return PrimitiveStatus::OkStatus();
 }
@@ -532,8 +525,7 @@ PrimitiveStatus TestInotifyAddWatch(void *context, MessageReader *in,
   const auto pathname = in->next();
   int kLinux_mask = in->next<uint32_t>();  // The operation is expected to be
                                            // a kLinux_ operation.
-  int mask;
-  FromkLinuxInotifyEventMask(&kLinux_mask, &mask);
+  int mask = FromkLinuxInotifyEventMask(kLinux_mask);
   out->Push<int>(
       enc_untrusted_inotify_add_watch(fd, pathname.As<char>(), mask));
 
@@ -566,9 +558,7 @@ PrimitiveStatus TestIsAtty(void *context, MessageReader *in,
   out->Push<int>(enc_untrusted_isatty(fd));  // Push return value.
 
   int enclave_errno = errno;
-  int klinux_errno;
-  TokLinuxErrorNumber(&enclave_errno, &klinux_errno);
-  out->Push<int>(klinux_errno);
+  out->Push<int>(TokLinuxErrorNumber(enclave_errno));
   return PrimitiveStatus::OkStatus();
 }
 
@@ -584,8 +574,7 @@ PrimitiveStatus TestUSleep(void *context, MessageReader *in,
 // Push meaningful stat attributes to MessageWriter.
 void PushStatAttributes(MessageWriter *out, struct stat *st) {
   int mode = st->st_mode;
-  int kLinux_mode;
-  TokLinuxFileModeFlag(&mode, &kLinux_mode);
+  int kLinux_mode = TokLinuxFileModeFlag(mode);
 
   out->Push<uint64_t>(st->st_atime);
   out->Push<int64_t>(st->st_blksize);
@@ -604,8 +593,7 @@ void PushStatAttributes(MessageWriter *out, struct stat *st) {
 
 // Push meaningful stat attributes to MessageWriter.
 void PushStatFsAttributes(MessageWriter *out, struct statfs *st) {
-  int64_t kLinux_flags;
-  TokLinuxStatFsFlags(st->f_flags, &kLinux_flags);
+  int64_t kLinux_flags = TokLinuxStatFsFlags(st->f_flags);
   out->Push<int64_t>(st->f_type);
   out->Push<int64_t>(st->f_bsize);
   out->Push<uint64_t>(st->f_blocks);
@@ -719,8 +707,7 @@ PrimitiveStatus TestSysconf(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   int kLinux_name = in->next<int>();
-  int name;
-  FromkLinuxSysconfConstant(&kLinux_name, &name);
+  int name = FromkLinuxSysconfConstant(kLinux_name);
   out->Push<int64_t>(enc_untrusted_sysconf(name));
   return PrimitiveStatus::OkStatus();
 }
@@ -871,8 +858,7 @@ PrimitiveStatus TestRaise(void *context, MessageReader *in,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
 
   int klinux_sig = in->next<int>();
-  int sig = -1;
-  FromkLinuxSignalNumber(&klinux_sig, &sig);
+  int sig = FromkLinuxSignalNumber(klinux_sig);
   out->Push<int>(enc_untrusted_raise(sig));
   return PrimitiveStatus::OkStatus();
 }

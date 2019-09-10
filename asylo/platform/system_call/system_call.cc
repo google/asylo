@@ -127,9 +127,7 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
     // successful (eg., lseek). The reliable way to check for syscall failure is
     // to therefore check both return value and presence of a non-zero errno.
     if (klinux_errno != 0) {
-      int enclave_errno;
-      FromkLinuxErrorNumber(&klinux_errno, &enclave_errno);
-      errno = enclave_errno;
+      errno = FromkLinuxErrorNumber(klinux_errno);
     }
   }
   return result;

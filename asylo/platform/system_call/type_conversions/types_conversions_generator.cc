@@ -93,7 +93,7 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   std::ostringstream os;
 
   // Generate result initialization.
-  os << "  *output = "
+  os << "  int output = "
      << (to_prefix ? enum_properties.default_value_host
                    : enum_properties.default_value_newlib)
      << ";\n";
@@ -104,13 +104,13 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
     if (enum_properties.wrap_vals_with_if_defined) {
       os << "#if defined(" << enum_pair.first << ")\n";
     }
-    os << "  if ((*input & "
+    os << "  if ((input & "
        << (to_prefix ? enum_pair.first
                      : absl::StrCat(klinux_prefix, "_", enum_pair.first))
        << ") == "
        << (to_prefix ? enum_pair.first
                      : absl::StrCat(klinux_prefix, "_", enum_pair.first))
-       << ") *output |= "
+       << ") output |= "
        << (to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
                      : enum_pair.first)
        << ";\n";
@@ -120,8 +120,9 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   }
 
   if (enum_properties.or_input_to_default_value) {
-    os << "  *output |= *input;\n";
+    os << "  output |= input;\n";
   }
+  os << "  return output;\n";
   return os.str();
 }
 
@@ -144,10 +145,7 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
       os << "#if defined(" << enum_pair.first << ")\n";
     }
     os << absl::StrReplaceAll(
-        "  if (*input == $input_val) {\n"
-        "    *output = $output_val;\n"
-        "    return;\n"
-        "  }\n",
+        "  if (input == $input_val) return $output_val;\n",
         {{"$input_val", input_val}, {"$output_val", output_val}});
     if (enum_properties.wrap_vals_with_if_defined) {
       os << "#endif\n";
@@ -155,14 +153,13 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
   }
 
   // Generate code for handling default case.
-  os << "  *output = "
-     << (to_prefix ? enum_properties.default_value_host
-                   : enum_properties.default_value_newlib)
-     << ";\n";
+  int default_output = (to_prefix ? enum_properties.default_value_host
+                                  : enum_properties.default_value_newlib);
   if (enum_properties.or_input_to_default_value) {
-    os << "  *output |= *input;\n";
+    os << "  return " << default_output << " | input;\n";
+  } else {
+    os << "  return " << default_output << ";\n";
   }
-
   return os.str();
 }
 
@@ -174,7 +171,8 @@ std::string GetStructConversionsFuncBody(
     const std::string &output_struct,
     const StructProperties &struct_properties) {
   std::ostringstream os;
-  os << "  if (!" << input_struct << " || !" << output_struct << ") return;\n";
+  os << "  if (!" << input_struct << " || !" << output_struct
+     << ") return false;\n";
 
   for (const auto &member_pair : struct_properties.values) {
     std::string klinux_member =
@@ -187,6 +185,7 @@ std::string GetStructConversionsFuncBody(
   }
 
   os << "\n";
+  os << "  return true;\n";
   return os.str();
 }
 
@@ -205,14 +204,12 @@ void WriteEnumConversions(const absl::flat_hash_map<std::string, EnumProperties>
                    enum_name_lower.begin(), ::tolower);
 
     std::string to_prefix_decl = absl::StrReplaceAll(
-        "void To$klinux_prefix$enum_name(const $data_type *input, $data_type "
-        "*output)",
+        "$data_type To$klinux_prefix$enum_name($data_type input)",
         {{"$klinux_prefix", klinux_prefix},
          {"$enum_name", it.first},
          {"$data_type", it.second.data_type}});
     std::string from_prefix_decl = absl::StrReplaceAll(
-        "void From$klinux_prefix$enum_name(const $data_type *input, $data_type "
-        "*output)",
+        "$data_type From$klinux_prefix$enum_name($data_type input)",
         {{"$klinux_prefix", klinux_prefix},
          {"$enum_name", it.first},
          {"$data_type", it.second.data_type}});
@@ -256,7 +253,7 @@ void WriteStructConversions(
         absl::StrCat("_", klinux_prefix, struct_var);
 
     std::string to_klinux_declaration = absl::StrReplaceAll(
-        "void To$klinux_prefix$name"
+        "bool To$klinux_prefix$name"
         "(const struct $name *$struct_var, "
         "struct $klinux_prefix_$name *$klinux_struct_var)",
         {{"$klinux_prefix", klinux_prefix},
@@ -265,7 +262,7 @@ void WriteStructConversions(
          {"$klinux_struct_var", klinux_struct_var}});
 
     std::string from_klinux_declaration = absl::StrReplaceAll(
-        "void From$klinux_prefix$name(const struct "
+        "bool From$klinux_prefix$name(const struct "
         "$klinux_prefix_$name *$klinux_struct_var, struct $name *$struct_var)",
         {{"$klinux_prefix", klinux_prefix},
          {"$name", it.first},
@@ -297,7 +294,7 @@ void WriteEnumDefinitions(const absl::flat_hash_map<std::string, EnumProperties>
                           std::ostream *os) {
   for (const auto &it : *enum_properties_table) {
     *os << absl::StreamFormat("\nenum %s : %s {\n", it.first,
-        it.second.data_type);
+                              it.second.data_type);
 
     // Accumulate comma separated resolved enum pairs (eg. kLinux_F_GETFD = 1,
     // kLinux_F_SETFD = 2,).

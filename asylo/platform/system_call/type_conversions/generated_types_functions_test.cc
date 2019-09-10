@@ -40,23 +40,12 @@ constexpr int kIterationCount = 6000;
 class GeneratedTypesFunctionsTest : public ::testing::Test {
  public:
 
-  void TestMultiValuedEnums(
-      const std::vector<int>& from_bits, const std::vector<int>& to_bits,
-      const std::function<void(const int*, int*)>& from_function,
-      const std::function<void(const int*, int*)>& to_function) {
-    auto from_test_function = [&](int input) {
-      int output;
-      from_function(&input, &output);
-      return output;
-    };
-    auto to_test_function = [&](int input) {
-      int output;
-      to_function(&input, &output);
-      return output;
-    };
-
-    auto from_matcher = IsFiniteRestrictionOf<int, int>(from_test_function);
-    auto to_matcher = IsFiniteRestrictionOf<int, int>(to_test_function);
+  void TestMultiValuedEnums(const std::vector<int>& from_bits,
+                            const std::vector<int>& to_bits,
+                            const std::function<int(int)>& from_function,
+                            const std::function<int(int)>& to_function) {
+    auto from_matcher = IsFiniteRestrictionOf<int, int>(from_function);
+    auto to_matcher = IsFiniteRestrictionOf<int, int>(to_function);
     EXPECT_THAT(
         FuzzBitsetTranslationFunction(from_bits, to_bits, kIterationCount),
         from_matcher);
@@ -86,19 +75,13 @@ TEST_F(GeneratedTypesFunctionsTest, FcntlCommandTest) {
   std::vector<int> to_consts = {F_GETFD, F_SETFD,      F_GETFL,
                                 F_SETFL, F_GETPIPE_SZ, F_SETPIPE_SZ};
 
-  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    FromkLinuxFcntlCommand(&input, &output);
-    return output;
-  });
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxFcntlCommand(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    TokLinuxFcntlCommand(&input, &output);
-    return output;
-  });
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxFcntlCommand(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               to_matcher);
@@ -124,11 +107,8 @@ TEST_F(GeneratedTypesFunctionsTest, AfFamilyTest) {
   // exactly to a predefined range. AF_UNIX and AF_LOCAL here may map to the
   // same value depending on the host platform.
   for (int i = 0; i < from_bits.size(); i++) {
-    int result;
-    TokLinuxAfFamily(&to_bits[i], &result);
-    EXPECT_THAT(result, Eq(from_bits[i]));
-    FromkLinuxAfFamily(&from_bits[i], &result);
-    EXPECT_THAT(result, Eq(to_bits[i]));
+    EXPECT_THAT(TokLinuxAfFamily(to_bits[i]), Eq(from_bits[i]));
+    EXPECT_THAT(FromkLinuxAfFamily(from_bits[i]), Eq(to_bits[i]));
   }
 }
 
@@ -143,19 +123,13 @@ TEST_F(GeneratedTypesFunctionsTest, TcpOptionNameTest) {
                                   kLinux_TCP_KEEPINTVL, kLinux_TCP_KEEPCNT};
   std::vector<int> to_consts = {TCP_NODELAY, TCP_KEEPIDLE, TCP_KEEPINTVL,
                                 TCP_KEEPCNT};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    FromkLinuxTcpOptionName(&input, &output);
-    return output;
-  });
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxTcpOptionName(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    TokLinuxTcpOptionName(&input, &output);
-    return output;
-  });
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxTcpOptionName(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
                                              kIterationCount),
               to_matcher);
@@ -173,19 +147,13 @@ TEST_F(GeneratedTypesFunctionsTest, IpV6OptionNameTest) {
       IPV6_V6ONLY,    IPV6_RECVPKTINFO, IPV6_PKTINFO,     IPV6_RECVHOPLIMIT,
       IPV6_HOPLIMIT,  IPV6_RECVHOPOPTS, IPV6_HOPOPTS,     IPV6_RTHDRDSTOPTS,
       IPV6_RECVRTHDR, IPV6_RTHDR,       IPV6_RECVDSTOPTS, IPV6_DSTOPTS};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    FromkLinuxIpV6OptionName(&input, &output);
-    return output;
-  });
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxIpV6OptionName(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    TokLinuxIpV6OptionName(&input, &output);
-    return output;
-  });
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxIpV6OptionName(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
                                              kIterationCount),
               to_matcher);
@@ -205,19 +173,13 @@ TEST_F(GeneratedTypesFunctionsTest, SocketOptionNameTest) {
       SO_BROADCAST, SO_SNDBUF,    SO_RCVBUF,   SO_SNDBUFFORCE, SO_RCVBUFFORCE,
       SO_KEEPALIVE, SO_OOBINLINE, SO_NO_CHECK, SO_PRIORITY,    SO_LINGER,
       SO_BSDCOMPAT, SO_REUSEPORT, SO_RCVTIMEO, SO_SNDTIMEO};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    FromkLinuxSocketOptionName(&input, &output);
-    return output;
-  });
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxSocketOptionName(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    TokLinuxSocketOptionName(&input, &output);
-    return output;
-  });
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxSocketOptionName(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
                                              kIterationCount),
               to_matcher);
@@ -493,21 +455,15 @@ TEST_F(GeneratedTypesFunctionsTest, ErrorNumberTest) {
                                 EXFULL};
 
   for (int i = 0; i < from_consts.size(); i++) {
-    int result;
-    TokLinuxErrorNumber(&to_consts[i], &result);
-    EXPECT_THAT(result, Eq(from_consts[i]));
-    FromkLinuxErrorNumber(&from_consts[i], &result);
-    EXPECT_THAT(result, Eq(to_consts[i]));
+    EXPECT_THAT(TokLinuxErrorNumber(to_consts[i]), Eq(from_consts[i]));
+    EXPECT_THAT(FromkLinuxErrorNumber(from_consts[i]), Eq(to_consts[i]));
   }
 }
 
 TEST_F(GeneratedTypesFunctionsTest, ErrorNumberUnknownInputTest) {
   int input = 4000;
-  int output;
-  TokLinuxErrorNumber(&input, &output);
-  EXPECT_THAT(output, Eq(input | 0x8000));
-  FromkLinuxErrorNumber(&input, &output);
-  EXPECT_THAT(output, Eq(input | 0x8000));
+  EXPECT_THAT(TokLinuxErrorNumber(input), Eq(input | 0x8000));
+  EXPECT_THAT(FromkLinuxErrorNumber(input), Eq(input | 0x8000));
 }
 
 TEST_F(GeneratedTypesFunctionsTest, SysconfConstantTest) {
@@ -540,19 +496,13 @@ TEST_F(GeneratedTypesFunctionsTest, SysconfConstantTest) {
       _SC_EXPR_NEST_MAX,    _SC_LINE_MAX,         _SC_2_VERSION,
       _SC_2_C_DEV,          _SC_2_FORT_DEV,       _SC_2_FORT_RUN,
       _SC_2_LOCALEDEF,      _SC_2_SW_DEV};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    FromkLinuxSysconfConstant(&input, &output);
-    return output;
-  });
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxSysconfConstant(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    TokLinuxSysconfConstant(&input, &output);
-    return output;
-  });
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxSysconfConstant(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
                                              kIterationCount),
               to_matcher);
@@ -593,19 +543,13 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
       SIGTERM, SIGCHLD, SIGCONT,  SIGSTOP,   SIGTSTP, SIGTTIN,  SIGTTOU,
       SIGURG,  SIGXCPU, SIGXFSZ,  SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,
       SIGIO,   SIGPWR,  SIGRTMIN, SIGRTMAX};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    FromkLinuxBaseSignalNumber(&input, &output);
-    return output;
-  });
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxBaseSignalNumber(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
                                              kIterationCount),
               from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>([&](int input) {
-    int output;
-    TokLinuxBaseSignalNumber(&input, &output);
-    return output;
-  });
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxBaseSignalNumber(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
                                              kIterationCount),
               to_matcher);
@@ -617,11 +561,8 @@ TEST_F(GeneratedTypesFunctionsTest, ClockIdTest) {
   std::vector<clockid_t> to_consts = {CLOCK_MONOTONIC, CLOCK_REALTIME};
 
   for (int i = 0; i < from_consts.size(); i++) {
-    clockid_t result;
-    TokLinuxClockId(&to_consts[i], &result);
-    EXPECT_THAT(result, Eq(from_consts[i]));
-    FromkLinuxClockId(&from_consts[i], &result);
-    EXPECT_THAT(result, Eq(to_consts[i]));
+    EXPECT_THAT(TokLinuxClockId(to_consts[i]), Eq(from_consts[i]));
+    EXPECT_THAT(FromkLinuxClockId(from_consts[i]), Eq(to_consts[i]));
   }
 }
 
