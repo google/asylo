@@ -19,6 +19,7 @@
 #include <atomic>
 #include <cstdlib>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -245,10 +246,12 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
         remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
             test_util_enclave_input, &test_util_enclave_output));
 
-    return test_util_enclave_output
-        .MutableExtension(remote_assertion_generator_test_util_enclave_output)
-        ->get_sealed_secret_output()
-        .sealed_secret();
+    return std::move(
+        *test_util_enclave_output
+             .MutableExtension(
+                 remote_assertion_generator_test_util_enclave_output)
+             ->mutable_get_sealed_secret_output()
+             ->mutable_sealed_secret());
   }
 
   StatusOr<TargetInfoProto> GetTargetInfoProtoFromClientEnclave() {
@@ -266,10 +269,12 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     ASYLO_RETURN_IF_ERROR(
         remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
             client_enclave_input, &client_enclave_output));
-    return client_enclave_output
-        .MutableExtension(remote_assertion_generator_test_util_enclave_output)
-        ->get_target_info_output()
-        .target_info_proto();
+    return std::move(
+        *client_enclave_output
+             .MutableExtension(
+                 remote_assertion_generator_test_util_enclave_output)
+             ->mutable_get_target_info_output()
+             ->mutable_target_info_proto());
   }
 
   // Generates an attestation key inside remote assertion generator enclave.
@@ -324,10 +329,12 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
     ASYLO_RETURN_IF_ERROR(
         remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
             enclave_input, &enclave_output));
-    return enclave_output
-        .MutableExtension(remote_assertion_generator_test_util_enclave_output)
-        ->get_target_info_output()
-        .target_info_proto();
+    return std::move(
+        *enclave_output
+             .MutableExtension(
+                 remote_assertion_generator_test_util_enclave_output)
+             ->mutable_get_target_info_output()
+             ->mutable_target_info_proto());
   }
 
   Status SetInputForGeneratePceInfoHardwareReport(EnclaveInput *enclave_input) {
@@ -507,10 +514,9 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
 
-  ReportProto report_proto =
-      enclave_output
-          .MutableExtension(remote_assertion_generator_enclave_output)
-          ->generate_pce_info_sgx_hardware_report_output()
+  const ReportProto &report_proto =
+      enclave_output.GetExtension(remote_assertion_generator_enclave_output)
+          .generate_pce_info_sgx_hardware_report_output()
           .report();
   Report report;
   ASYLO_ASSERT_OK_AND_ASSIGN(report,
@@ -520,9 +526,8 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expected_reportdata,
       CreateReportdataForGetPceInfo(
-          enclave_input
-              .MutableExtension(remote_assertion_generator_enclave_input)
-              ->generate_pce_info_sgx_hardware_report_input()
+          enclave_input.GetExtension(remote_assertion_generator_enclave_input)
+              .generate_pce_info_sgx_hardware_report_input()
               .ppid_encryption_key()));
   EXPECT_THAT(report.reportdata.data, Eq(expected_reportdata.data));
 
@@ -599,10 +604,9 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
       enclave_input, &enclave_output));
 
-  std::string serialized_pce_sign_report_payload =
-      enclave_output
-          .MutableExtension(remote_assertion_generator_enclave_output)
-          ->generate_key_and_csr_output()
+  const std::string &serialized_pce_sign_report_payload =
+      enclave_output.GetExtension(remote_assertion_generator_enclave_output)
+          .generate_key_and_csr_output()
           .pce_sign_report_payload();
 
   PceSignReportPayload pce_sign_report_payload;
@@ -633,10 +637,9 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   ASYLO_ASSERT_OK_AND_ASSIGN(expected_reportdata,
                              GenerateReportdataForPceSignReportProtocol(
                                  serialized_pce_sign_report_payload));
-  ReportProto report_proto =
-      enclave_output
-          .MutableExtension(remote_assertion_generator_enclave_output)
-          ->generate_key_and_csr_output()
+  const ReportProto &report_proto =
+      enclave_output.GetExtension(remote_assertion_generator_enclave_output)
+          .generate_key_and_csr_output()
           .report();
   Report report;
   ASYLO_ASSERT_OK_AND_ASSIGN(report,
