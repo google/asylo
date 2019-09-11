@@ -224,42 +224,6 @@ enum SysLogLevel {
   BRIDGE_LOG_DEBUG = 7,
 };
 
-// All tcp option names supported inside the enclave.
-enum TcpOptionNames {
-  BRIDGE_TCP_NODELAY = 1,
-  BRIDGE_TCP_KEEPIDLE = 4,
-  BRIDGE_TCP_KEEPINTVL = 5,
-  BRIDGE_TCP_KEEPCNT = 6,
-};
-
-// All IPV6 option names supported inside the enclave.
-enum IpV6OptionNames {
-  BRIDGE_IPV6_V6ONLY = 1,
-};
-
-// All socket option names supported inside the enclave.
-enum SocketOptionNames {
-  BRIDGE_SO_DEBUG = 1,
-  BRIDGE_SO_REUSEADDR = 2,
-  BRIDGE_SO_TYPE = 3,
-  BRIDGE_SO_ERROR = 4,
-  BRIDGE_SO_DONTROUTE = 5,
-  BRIDGE_SO_BROADCAST = 6,
-  BRIDGE_SO_SNDBUF = 7,
-  BRIDGE_SO_RCVBUF = 8,
-  BRIDGE_SO_KEEPALIVE = 9,
-  BRIDGE_SO_OOBINLINE = 10,
-  BRIDGE_SO_NO_CHECK = 11,
-  BRIDGE_SO_PRIORITY = 12,
-  BRIDGE_SO_LINGER = 13,
-  BRIDGE_SO_BSDCOMPAT = 14,
-  BRIDGE_SO_REUSEPORT = 15,
-  BRIDGE_SO_RCVTIMEO = 20,
-  BRIDGE_SO_SNDTIMEO = 21,
-  BRIDGE_SO_SNDBUFFORCE = 32,
-  BRIDGE_SO_RCVBUFFORCE = 33,
-};
-
 enum AfFamily {
   BRIDGE_AF_UNSUPPORTED = 0,
   BRIDGE_AF_INET = 1,

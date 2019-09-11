@@ -270,16 +270,6 @@ int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
   return 0;
 }
 
-int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
-                                   void *optval, unsigned int optlen_in,
-                                   unsigned int *optlen_out) {
-  int ret =
-      getsockopt(sockfd, level, asylo::FromBridgeOptionName(level, optname),
-                 optval, reinterpret_cast<socklen_t *>(&optlen_in));
-  *optlen_out = optlen_in;
-  return ret;
-}
-
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////

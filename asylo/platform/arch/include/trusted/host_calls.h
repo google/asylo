@@ -82,8 +82,6 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
                               const struct addrinfo *hints,
                               struct addrinfo **res);
 void enc_untrusted_freeaddrinfo(struct addrinfo *res);
-int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
-                             socklen_t *optlen);
 
 //////////////////////////////////////
 //            Threading             //

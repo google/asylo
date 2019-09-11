@@ -151,12 +151,6 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
 
-// Converts |bridge_option_name| to a runtime option name.
-int FromBridgeOptionName(int level, int bridge_option_name);
-
-// Converts |option_name| to a bridge option name.
-int ToBridgeOptionName(int level, int option_name);
-
 // Converts |af_family| to a bridge af family. Returns BRIDGE_AF_UNSUPPORTED if
 // |af_family| is not supported.
 AfFamily ToBridgeAfFamily(int af_family);

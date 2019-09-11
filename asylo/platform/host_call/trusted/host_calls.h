@@ -121,6 +121,8 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
 int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
                          fd_set *exceptfds, struct timeval *timeout);
 int enc_untrusted_raise(int sig);
+int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
+                             socklen_t *optlen);
 
 #ifdef __cplusplus
 }  // extern "C"

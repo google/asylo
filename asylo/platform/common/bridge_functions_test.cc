@@ -202,45 +202,6 @@ TEST_F(BridgeTest, BridgeSysLogPriorityTest) {
   }
 }
 
-TEST_F(BridgeTest, BridgeOptionNameTest) {
-  intvec levels = {IPPROTO_TCP, IPPROTO_IPV6, SOL_SOCKET, -1};
-  std::vector<intvec> from_consts = {
-      {BRIDGE_TCP_NODELAY, BRIDGE_TCP_KEEPIDLE, BRIDGE_TCP_KEEPINTVL,
-       BRIDGE_TCP_KEEPCNT},
-      {BRIDGE_IPV6_V6ONLY},
-      {BRIDGE_SO_DEBUG, BRIDGE_SO_REUSEADDR, BRIDGE_SO_TYPE, BRIDGE_SO_ERROR,
-       BRIDGE_SO_DONTROUTE, BRIDGE_SO_BROADCAST, BRIDGE_SO_SNDBUF,
-       BRIDGE_SO_RCVBUF, BRIDGE_SO_SNDTIMEO, BRIDGE_SO_RCVTIMEO,
-       BRIDGE_SO_SNDBUFFORCE, BRIDGE_SO_RCVBUFFORCE, BRIDGE_SO_KEEPALIVE,
-       BRIDGE_SO_OOBINLINE, BRIDGE_SO_NO_CHECK, BRIDGE_SO_PRIORITY,
-       BRIDGE_SO_LINGER, BRIDGE_SO_BSDCOMPAT, BRIDGE_SO_REUSEPORT},
-      {-1}};
-  std::vector<intvec> to_consts = {
-      {TCP_NODELAY, TCP_KEEPIDLE, TCP_KEEPINTVL, TCP_KEEPCNT},
-      {IPV6_V6ONLY},
-      {SO_DEBUG, SO_REUSEADDR, SO_TYPE, SO_ERROR, SO_DONTROUTE, SO_BROADCAST,
-       SO_SNDBUF, SO_RCVBUF, SO_SNDTIMEO, SO_RCVTIMEO, SO_SNDBUFFORCE,
-       SO_RCVBUFFORCE, SO_KEEPALIVE, SO_OOBINLINE, SO_NO_CHECK, SO_PRIORITY,
-       SO_LINGER, SO_BSDCOMPAT, SO_REUSEPORT},
-      {-1}};
-  for (int i = 0; i < levels.size(); i++) {
-    std::function<int(int)> from_close = [levels, i](int option) {
-      return FromBridgeOptionName(levels[i], option);
-    };
-    std::function<int(int)> to_close = [levels, i](int option) {
-      return ToBridgeOptionName(levels[i], option);
-    };
-    auto from_matcher = IsFiniteRestrictionOf<int, int>(from_close);
-    EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts[i], to_consts[i], -1,
-                                               ITER_BOUND),
-                from_matcher);
-    auto to_matcher = IsFiniteRestrictionOf<int, int>(to_close);
-    EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts[i], from_consts[i], -1,
-                                               ITER_BOUND),
-                to_matcher);
-  }
-}
-
 TEST_F(BridgeTest, BridgeAfFamilyTest) {
   std::vector<AfFamily> from_consts = {
       BRIDGE_AF_UNIX,   BRIDGE_AF_INET,      BRIDGE_AF_INET6,  BRIDGE_AF_UNSPEC,

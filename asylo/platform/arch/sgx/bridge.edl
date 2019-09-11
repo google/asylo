@@ -76,12 +76,6 @@ enclave {
         bridge_size_t serialized_hints_len, [out] char **serialized_res_start,
         [out] bridge_size_t *serialized_res_len) propagate_errno;
 
-    int ocall_enc_untrusted_getsockopt(int sockfd, int level, int optname,
-                                       [in, out, size=optlen_in] void *optval,
-                                       unsigned int optlen_in,
-                                       [out] unsigned int *optlen_out)
-                                       propagate_errno;
-
     //////////////////////////////////////
     //             poll.h               //
     //////////////////////////////////////

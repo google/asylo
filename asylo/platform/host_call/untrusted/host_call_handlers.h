@@ -109,6 +109,13 @@ Status RaiseHandler(const std::shared_ptr<primitives::Client> &client,
                     void *context, primitives::MessageReader *input,
                     primitives::MessageWriter *output);
 
+// getsockopt library call handler on the host; expects [int sockfd, int level,
+// int optname, Extent optval] and returns [int /*result*/, int /*errno*/,
+// Extent /*optval*/] on the MessageWriter.
+Status GetSockOptHandler(const std::shared_ptr<primitives::Client> &client,
+                         void *context, primitives::MessageReader *input,
+                         primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

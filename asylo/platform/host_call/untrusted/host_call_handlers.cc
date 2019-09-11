@@ -295,5 +295,25 @@ Status RaiseHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status GetSockOptHandler(const std::shared_ptr<primitives::Client> &client,
+                         void *context, primitives::MessageReader *input,
+                         primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 4);
+
+  int sockfd = input->next<int>();
+  int level = input->next<int>();
+  int klinux_optname = input->next<int>();
+  primitives::Extent optval = input->next();
+  socklen_t optlen = optval.size();
+
+  int ret = getsockopt(sockfd, level, klinux_optname, optval.data(), &optlen);
+
+  output->Push<int>(ret);
+  output->Push<int>(errno);
+  output->PushByCopy(
+      primitives::Extent{reinterpret_cast<char *>(optval.data()), optlen});
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

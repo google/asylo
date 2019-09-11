@@ -863,6 +863,19 @@ PrimitiveStatus TestRaise(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestGetSockOpt(void *context, MessageReader *in,
+                               MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+
+  int socket_fd = in->next<int>();
+  int optval_actual = -1;
+  socklen_t optlen_actual = sizeof(optlen_actual);
+  out->Push<int>(enc_untrusted_getsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE,
+                                          &optval_actual, &optlen_actual));
+  out->Push<int>(optval_actual);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1040,6 +1053,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       asylo::host_call::kTestFsync, EntryHandler{asylo::host_call::TestFsync}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestRaise, EntryHandler{asylo::host_call::TestRaise}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetSockOpt,
+      EntryHandler{asylo::host_call::TestGetSockOpt}));
 
   return PrimitiveStatus::OkStatus();
 }

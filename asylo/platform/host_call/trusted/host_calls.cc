@@ -28,6 +28,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
+using ::asylo::primitives::Extent;
 using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
 using ::asylo::primitives::TrustedPrimitives;
@@ -586,12 +587,9 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
 
   MessageWriter input;
   input.Push(sockfd);
-  input.PushByReference(
-      ::asylo::primitives::Extent{msg->msg_name, msg->msg_namelen});
-  input.PushByReference(
-      ::asylo::primitives::Extent{msg_iov_buffer.get(), total_message_size});
-  input.PushByReference(
-      ::asylo::primitives::Extent{msg->msg_control, msg->msg_controllen});
+  input.PushByReference(Extent{msg->msg_name, msg->msg_namelen});
+  input.PushByReference(Extent{msg_iov_buffer.get(), total_message_size});
+  input.PushByReference(Extent{msg->msg_control, msg->msg_controllen});
   input.Push(msg->msg_flags);
   input.Push(flags);
   MessageReader output;
@@ -909,6 +907,49 @@ int enc_untrusted_raise(int sig) {
   if (result != 0) {
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
+  return result;
+}
+
+int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
+                             socklen_t *optlen) {
+  if (!optval || !optlen || *optlen == 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  if (!TrustedPrimitives::IsTrustedExtent(optval, *optlen)) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getsockopt: Expected buffer optval to be in trusted "
+        "memory, found to be in untrusted memory.");
+  }
+
+  MessageWriter input;
+  input.Push<int>(sockfd);
+  input.Push<int>(level);
+  input.Push<int>(TokLinuxOptionName(level, optname));
+  input.PushByReference(Extent{reinterpret_cast<char *>(optval), *optlen});
+  MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kGetSockOptHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getsockopt failed. Aborting");
+  }
+  if (output.size() != 3) {
+    TrustedPrimitives::BestEffortAbort(
+        "Expected 3 arguments in output for enc_untrusted_getsockopt. "
+        "Aborting");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+  if (result == -1) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
+  }
+
+  Extent opt_received = output.next();
+  *optlen = opt_received.size();
+  memcpy(optval, opt_received.data(), *optlen);
   return result;
 }
 

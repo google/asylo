@@ -436,12 +436,12 @@ TEST_F(HostCallTest, TestSendMsg) {
   constexpr char kMsg1[] = "First sendmsg message.";
   constexpr char kMsg2[] = "Second sendmsg message.";
 
-  primitives::MessageWriter in;
+  MessageWriter in;
   in.Push<int>(/*value=sockfd=*/connection_socket);
   in.PushByReference(::asylo::primitives::Extent{kMsg1, sizeof(kMsg1)});
   in.PushByReference(::asylo::primitives::Extent{kMsg2, sizeof(kMsg2)});
   in.Push<int>(/*value=flags*/ 0);
-  primitives::MessageReader out;
+  MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSendMsg, &in, &out));
   ASSERT_THAT(out, SizeIs(1));
   EXPECT_THAT(out.next<int>(), Eq(sizeof(kMsg1) + sizeof(kMsg2)));
@@ -501,12 +501,12 @@ TEST_F(HostCallTest, TestRecvMsg) {
   ASSERT_THAT(sendmsg(connection_socket, &msg, 0),
               Eq(sizeof(kMsg1) + sizeof(kMsg2)));
 
-  primitives::MessageWriter in;
+  MessageWriter in;
   in.Push<int>(/*value=sockfd=*/client_sock);
   in.Push<int>(sizeof(kMsg1));
   in.Push<int>(sizeof(kMsg2));
   in.Push<int>(/*value=flags*/ 0);
-  primitives::MessageReader out;
+  MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRecvMsg, &in, &out));
   ASSERT_THAT(out, SizeIs(1));
   EXPECT_THAT(out.next<int>(), Eq(sizeof(kMsg1) + sizeof(kMsg2)));
@@ -1174,7 +1174,7 @@ TEST_F(HostCallTest, TestFChown) {
 // value obtained from the host call to confirm that the new options have been
 // set.
 TEST_F(HostCallTest, TestSetSockOpt) {
-  // Create an TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
+  // Create a TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
   int socket_fd = socket(AF_INET6, SOCK_STREAM, 0);
   ASSERT_THAT(socket_fd, Gt(0));
 
@@ -2158,14 +2158,36 @@ TEST_F(HostCallTest, TestFsync) {
   ASSERT_THAT(write(fd, file_content.c_str(), file_content.length() + 1),
               Eq(file_content.length() + 1));
 
-  primitives::MessageWriter in;
+  MessageWriter in;
   in.Push<int>(fd);
 
-  primitives::MessageReader out;
+  MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestFsync, &in, &out));
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_NE(unlink(test_file.c_str()), -1);
+}
+
+// Tests enc_untrusted_getsockopt() by comparing the return and optval values
+// from enc_untrusted_getsockopt() and getsockopt() on the host.
+TEST_F(HostCallTest, TestGetSockOpt) {
+  // Create a TCP socket (SOCK_STREAM) with Internet Protocol Family AF_INET6.
+  int socket_fd = socket(AF_INET6, SOCK_STREAM, IPPROTO_TCP);
+  ASSERT_THAT(socket_fd, Gt(0));
+
+  int optval_expected = -1;
+  socklen_t optlen_expected = sizeof(optval_expected);
+  EXPECT_THAT(getsockopt(socket_fd, SOL_SOCKET, SO_KEEPALIVE, &optval_expected,
+                         &optlen_expected),
+              Eq(0));
+
+  MessageWriter in;
+  in.Push<int>(socket_fd);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetSockOpt, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and optval.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+  EXPECT_THAT(out.next<int>(), Eq(optval_expected));
 }
 
 }  // namespace

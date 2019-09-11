@@ -199,17 +199,6 @@ void enc_untrusted_freeaddrinfo(struct addrinfo *res) {
   asylo::FreeDeserializedAddrinfo(res);
 }
 
-int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
-                             socklen_t *optlen) {
-  int ret;
-  unsigned int host_optlen = *optlen;
-  CHECK_OCALL(ocall_enc_untrusted_getsockopt(
-      &ret, sockfd, level, asylo::ToBridgeOptionName(level, optname), optval,
-      host_optlen, &host_optlen));
-  *optlen = host_optlen;
-  return ret;
-}
-
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////

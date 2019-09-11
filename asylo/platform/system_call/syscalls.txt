@@ -146,8 +146,6 @@ SYSCALL_DEFINE3(connect, int, fd, \in void * [bound:addrlen], uservaddr,
 SYSCALL_DEFINE3(getsockname, int, fd, struct sockaddr *, usockaddr, int *,
                 usockaddr_len)
 
-SYSCALL_DEFINE5(getsockopt, int, fd, int, level, int, optname, char *, optval,
-                int *, optlen)
 SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname, const void *,
                 optval, socklen_t, optlen)
 
