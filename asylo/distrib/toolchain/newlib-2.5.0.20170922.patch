@@ -5241,6 +5241,62 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/posix/opendir.c ./newlib/libc/po
  #ifdef HAVE_FCNTL
  	rc = fcntl(fd, F_SETFD, 1);
  #endif
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/efgcvt.c ./newlib/libc/stdlib/efgcvt.c
+--- ../newlib-2.5.0.20170922/newlib/libc/stdlib/efgcvt.c
++++ ./newlib/libc/stdlib/efgcvt.c
+@@ -139,6 +139,9 @@
+ #include <stdlib.h>
+ #include "local.h"
+ 
++char * ecvtbuf (double, int, int*, int*, char *);
++char * fcvtbuf (double, int, int*, int*, char *);
++
+ char *
+ _DEFUN (fcvt, (d, ndigit, decpt, sign),
+ 	double d _AND
+@@ -161,6 +164,22 @@
+ 
+ 
+ char *
++_DEFUN (gcvt, (d, ndigit, buf),
++	double d _AND
++	int ndigit _AND
++	char *buf)
++{
++  char *tbuf = buf;
++  if (d < 0) {
++    *buf = '-';
++    buf++;
++    ndigit--;
++  }
++  return (_gcvt (_REENT, d, ndigit, buf, 'g', 0) ? tbuf : 0);
++}
++
++
++char *
+ _DEFUN (gcvtf, (d, ndigit, buf),
+ 	float d _AND
+ 	int ndigit _AND
+@@ -190,19 +209,3 @@
+ {
+   return ecvt ((double) d, ndigit, decpt, sign);
+ }
+-
+-
+-char *
+-_DEFUN (gcvt, (d, ndigit, buf),
+-	double d _AND
+-	int ndigit _AND
+-	char *buf)
+-{
+-  char *tbuf = buf;
+-  if (d < 0) {
+-    *buf = '-';
+-    buf++;
+-    ndigit--;
+-  }
+-  return (_gcvt (_REENT, d, ndigit, buf, 'g', 0) ? tbuf : 0);
+-}
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/stdlib/malloc.c ./newlib/libc/stdlib/malloc.c
 --- ../newlib-2.5.0.20170922/newlib/libc/stdlib/malloc.c
 +++ ./newlib/libc/stdlib/malloc.c
