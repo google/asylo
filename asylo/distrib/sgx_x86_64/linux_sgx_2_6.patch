@@ -4415,7 +4415,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +)
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,647 @@
+@@ -0,0 +1,650 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
@@ -4459,11 +4459,13 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +
 +def sgx_unsigned_enclave(
 +        name,
++        stamp = 0,
 +        **kwargs):
 +    """Build rule for creating an unsigned SGX enclave shared object file.
 +
 +    Args:
 +      name: The enclave target name.
++      stamp: The cc_binary stamp argument, but with a default value 0.
 +      **kwargs: cc_binary arguments.
 +    """
 +
@@ -4495,6 +4497,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    # Create rule to build unsigned enclave.
 +    native.cc_binary(
 +        name = name,
++        stamp = stamp,
 +        **kwargs
 +    )
 +
