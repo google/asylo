@@ -24,6 +24,7 @@
 // an adversarial implementation.
 
 #include <fcntl.h>
+#include <sched.h>
 #include <sys/socket.h>
 
 #include <cstdarg>
@@ -85,6 +86,8 @@ mode_t enc_untrusted_umask(mode_t mask);
 int enc_untrusted_chmod(const char *path, mode_t mode);
 int enc_untrusted_fchmod(int fd, mode_t mode);
 int enc_untrusted_sched_yield();
+int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
+                                    cpu_set_t *mask);
 int enc_untrusted_fstat(int fd, struct stat *statbuf);
 int enc_untrusted_fstatfs(int fd, struct statfs *statbuf);
 int enc_untrusted_lstat(const char *pathname, struct stat *statbuf);

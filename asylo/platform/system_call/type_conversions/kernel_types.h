@@ -134,4 +134,17 @@ struct klinux_fd_set {
   uint64_t fds_bits[(KLINUX_FD_SETSIZE / (8 * sizeof(uint64_t)))];
 };
 
+// The maximum number of CPUs we support. Chosen to be large enough to represent
+// as many CPUs as an enclave-native cpu_set_t.
+#define KLINUX_CPU_SET_MAX_CPUS 1024
+
+typedef uint64_t klinux_cpu_set_word;
+
+#define KLINUX_CPU_SET_NUM_WORDS \
+  (KLINUX_CPU_SET_MAX_CPUS / (8 * sizeof(klinux_cpu_set_word)))
+
+struct klinux_cpu_set_t {
+  uint64_t words[KLINUX_CPU_SET_NUM_WORDS];
+};
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

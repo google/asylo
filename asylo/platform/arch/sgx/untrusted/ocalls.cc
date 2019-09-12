@@ -406,35 +406,6 @@ int ocall_enc_untrusted_getpwuid(uid_t uid,
 }
 
 //////////////////////////////////////
-//           sched.h                //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_sched_getaffinity(int64_t pid, BridgeCpuSet *mask) {
-  cpu_set_t host_mask;
-  if (BRIDGE_CPU_SET_MAX_CPUS != CPU_SETSIZE) {
-    LOG(ERROR) << "sched_getaffinity: CPU_SETSIZE (" << CPU_SETSIZE
-               << ") is not equal to " << BRIDGE_CPU_SET_MAX_CPUS;
-    errno = ENOSYS;
-    return -1;
-  }
-
-  int ret =
-      sched_getaffinity(static_cast<pid_t>(pid), sizeof(cpu_set_t), &host_mask);
-
-  // Translate from host cpu_set_t to bridge_cpu_set_t.
-  int total_cpus = CPU_COUNT(&host_mask);
-  asylo::BridgeCpuSetZero(mask);
-  for (int cpu = 0, cpus_so_far = 0; cpus_so_far < total_cpus; ++cpu) {
-    if (CPU_ISSET(cpu, &host_mask)) {
-      asylo::BridgeCpuSetAddBit(cpu, mask);
-      ++cpus_so_far;
-    }
-  }
-
-  return ret;
-}
-
-//////////////////////////////////////
 //          signal.h                //
 //////////////////////////////////////
 

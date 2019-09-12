@@ -107,6 +107,8 @@ constexpr uint64_t kTestInotifyRmWatch =
     kFirstSelector + asylo::system_call::kSYS_inotify_rm_watch;
 constexpr uint64_t kTestSchedYield =
     kFirstSelector + asylo::system_call::kSYS_sched_yield;
+constexpr uint64_t kTestSchedGetAffinity =
+    kFirstSelector + asylo::system_call::kSYS_sched_getaffinity;
 constexpr uint64_t kTestFstat = kFirstSelector + asylo::system_call::kSYS_fstat;
 constexpr uint64_t kTestLstat = kFirstSelector + asylo::system_call::kSYS_lstat;
 constexpr uint64_t kTestStat = kFirstSelector + asylo::system_call::kSYS_stat;

@@ -23,6 +23,7 @@
 // (enums, structs etc.) between enclave and target host implementation.
 
 #include <netinet/in.h>
+#include <sched.h>
 #include <sys/socket.h>
 #include <sys/un.h>
 
@@ -132,5 +133,8 @@ int FromkLinuxSignalNumber(int input);
 // Converts an enclave based signal number (including realtime signals) to a
 // kernel based signal.
 int TokLinuxSignalNumber(int input);
+
+// Converts a Linux based cpu set bitmask to an enclave based cpu set bitmask.
+bool FromkLinuxCpuSet(klinux_cpu_set_t *input, cpu_set_t *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

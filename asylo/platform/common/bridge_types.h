@@ -299,22 +299,6 @@ struct BridgeRUsage {
   struct bridge_timeval ru_stime;
 };
 
-// The maximum number of CPUs we support. Chosen to be large enough to represent
-// as many CPUs as an enclave-native cpu_set_t.
-#define BRIDGE_CPU_SET_MAX_CPUS 1024
-
-typedef uint64_t BridgeCpuSetWord;
-
-#define BRIDGE_CPU_SET_NUM_WORDS                                  \
-  ((BRIDGE_CPU_SET_MAX_CPUS / 8 + sizeof(BridgeCpuSetWord) - 1) / \
-   sizeof(BridgeCpuSetWord))
-
-// Represents a set of (up to) BRIDGE_CPU_SET_MAX_CPUS CPUs as a bitset. The nth
-// bit of words[i] corresponds to CPU no. sizeof(BridgeCpuSetWord) * i + n.
-struct BridgeCpuSet {
-  BridgeCpuSetWord words[BRIDGE_CPU_SET_NUM_WORDS];
-} ABSL_ATTRIBUTE_PACKED;
-
 // According to IETF RFC 1035, fully qualified domain names, such as those held
 // in utsname::nodename, may contain up to 255 characters. Therefore, in Asylo,
 // the fields of BridgeUtsname are defined to have length 256 in order to hold

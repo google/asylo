@@ -241,15 +241,6 @@ struct BridgePassWd *CopyBridgePassWd(
     const struct BridgePassWd *source_bridge_password,
     struct BridgePassWd *destination_bridge_password);
 
-// These functions follow the standard for the analogous functions in
-// http://man7.org/linux/man-pages/man3/CPU_SET.3.html.
-
-void BridgeCpuSetZero(struct BridgeCpuSet *set);
-
-void BridgeCpuSetAddBit(int cpu, struct BridgeCpuSet *set);
-
-int BridgeCpuSetCheckBit(int cpu, struct BridgeCpuSet *set);
-
 // Copies the C string |source_buf| into |dest_buf|. Only copies up to size-1
 // non-null characters. Always terminates the copied string with a null byte on
 // a successful write.

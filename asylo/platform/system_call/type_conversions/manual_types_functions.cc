@@ -18,6 +18,7 @@
 
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"
 
+#include <sched.h>
 #include <signal.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -545,4 +546,32 @@ int TokLinuxSignalNumber(int input) {
   }
 #endif
   return TokLinuxBaseSignalNumber(input);
+}
+
+inline uint64_t kLinuxCpuWordNum(int cpu) {
+  return cpu / (8 * sizeof(klinux_cpu_set_word));
+}
+
+inline klinux_cpu_set_word kLinuxCpuBitNum(int cpu) {
+  return cpu % (8 * sizeof(klinux_cpu_set_word));
+}
+
+int kLinuxCpuSetCheckBit(int cpu, klinux_cpu_set_t *set) {
+  return (set->words[kLinuxCpuWordNum(cpu)] &
+          (static_cast<klinux_cpu_set_word>(1) << kLinuxCpuBitNum(cpu))) != 0;
+}
+
+bool FromkLinuxCpuSet(klinux_cpu_set_t *input, cpu_set_t *output) {
+  if (!input || !output) {
+    return false;
+  }
+
+  CPU_ZERO(output);
+
+  for (int cpu = 0; cpu < KLINUX_CPU_SET_MAX_CPUS; cpu++) {
+    if (kLinuxCpuSetCheckBit(cpu, input)) {
+      CPU_SET(cpu, output);
+    }
+  }
+  return true;
 }

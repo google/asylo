@@ -33,6 +33,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
+#include "absl/container/flat_hash_set.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/time/clock.h"
@@ -1500,6 +1501,37 @@ TEST_F(HostCallTest, TestSchedYield) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSchedYield, &in, &out));
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
+}
+
+// Tests enc_untrusted_sched_getaffinity by calling it inside and outside of the
+// enclave, verifying that the bitmask is the same and verifying that the
+// return value is 0.
+TEST_F(HostCallTest, TestSchedGetAffinity) {
+  cpu_set_t mask;
+  sched_getaffinity(getpid(), sizeof(cpu_set_t), &mask);
+
+  absl::flat_hash_set<int> cpus_set;
+
+  for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+    if (CPU_ISSET(cpu, &mask)) {
+      cpus_set.insert(cpu);
+    }
+  }
+
+  MessageWriter in;
+  in.Push<pid_t>(getpid());
+  in.Push<uint64_t>(static_cast<uint64_t>(sizeof(cpu_set_t)));
+  MessageReader out;
+
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSchedGetAffinity, &in, &out));
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  // Number of cpus set should be the same, we add one since the message reader
+  // also contains the return code.
+  EXPECT_THAT(out.size(), Eq(cpus_set.size() + 1));
+  while (out.hasNext()) {
+    EXPECT_TRUE(cpus_set.contains(out.next<int>()));
+  }
 }
 
 // Tests enc_untrusted_isatty() by testing with a non-terminal file descriptor,

@@ -50,6 +50,7 @@ INCLUDE("sys/inotify.h")
 INCLUDE("sys/wait.h")
 INCLUDE("sys/time.h")
 INCLUDE("sys/resource.h")
+INCLUDE("sched.h")
 
 // File Descriptors
 // ================
@@ -178,6 +179,7 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event *, events, int,
 // ==========
 
 SYSCALL_DEFINE0(sched_yield)
+SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid,  uint64_t, len, \out cpu_set_t *, user_mask_ptr)
 
 // Synchronization
 // ===============

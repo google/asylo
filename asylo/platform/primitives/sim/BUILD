@@ -49,6 +49,7 @@ cc_library(
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
                 "//asylo/util:status_macros",
+                "//asylo/platform/posix:sim_posix",
             ],
         },
         "Trusted simulation components must be built with --define=ASYLO_SIM=1",

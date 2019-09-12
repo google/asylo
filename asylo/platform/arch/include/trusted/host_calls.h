@@ -132,15 +132,6 @@ void enc_untrusted_freeifaddrs(struct ifaddrs *ifa);
 struct passwd *enc_untrusted_getpwuid(uid_t uid);
 
 //////////////////////////////////////
-//            sched.h               //
-//////////////////////////////////////
-
-// Returns -1 and sets |errno| to |EINVAL| if |cpusetsize| is less than
-// |sizeof(/*enclave-native*/ cpu_set_t)|.
-int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
-                                    cpu_set_t *mask);
-
-//////////////////////////////////////
 //            signal.h              //
 //////////////////////////////////////
 

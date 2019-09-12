@@ -57,6 +57,18 @@ cc_library(
 )
 
 cc_library(
+    name = "sim_posix",
+    srcs = ["sched.cc"],
+    hdrs = [":posix_headers"],
+    copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
+    tags = ASYLO_ALL_BACKEND_TAGS,
+    deps = [
+        "//asylo/platform/host_call",
+    ],
+)
+
+cc_library(
     name = "pthread_impl",
     hdrs = ["pthread_impl.h"],
     copts = ASYLO_DEFAULT_COPTS,

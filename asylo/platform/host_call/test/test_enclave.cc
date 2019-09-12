@@ -550,6 +550,26 @@ PrimitiveStatus TestSchedYield(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestSchedGetAffinity(void *context, MessageReader *in,
+                                     MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+
+  auto pid = in->next<pid_t>();
+  auto cpusetsize = in->next<size_t>();
+
+  cpu_set_t mask;
+
+  out->Push<int>(enc_untrusted_sched_getaffinity(pid, cpusetsize, &mask));
+
+  for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
+    if (CPU_ISSET(cpu, &mask)) {
+      out->Push<int>(cpu);
+    }
+  }
+
+  return PrimitiveStatus::OkStatus();
+}
+
 PrimitiveStatus TestIsAtty(void *context, MessageReader *in,
                            MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
@@ -993,6 +1013,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestSchedYield,
       EntryHandler{asylo::host_call::TestSchedYield}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestSchedGetAffinity,
+      EntryHandler{asylo::host_call::TestSchedGetAffinity}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestIsAtty,
       EntryHandler{asylo::host_call::TestIsAtty}));

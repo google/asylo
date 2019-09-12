@@ -738,33 +738,6 @@ struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
   return bridge_rusage;
 }
 
-inline uint64_t BridgeWordNum(int cpu) {
-  return cpu / (8 * sizeof(BridgeCpuSetWord));
-}
-
-inline BridgeCpuSetWord BridgeBitNum(int cpu) {
-  return cpu % (8 * sizeof(BridgeCpuSetWord));
-}
-
-// These functions follow the standard for the analogous functions in
-// http://man7.org/linux/man-pages/man3/CPU_SET.3.html.
-
-void BridgeCpuSetZero(BridgeCpuSet *set) {
-  memset(set->words, 0, BRIDGE_CPU_SET_NUM_WORDS * sizeof(BridgeCpuSetWord));
-}
-
-void BridgeCpuSetAddBit(int cpu, BridgeCpuSet *set) {
-  set->words[BridgeWordNum(cpu)] |= static_cast<BridgeCpuSetWord>(1)
-                                    << BridgeBitNum(cpu);
-}
-
-int BridgeCpuSetCheckBit(int cpu, BridgeCpuSet *set) {
-  return (set->words[BridgeWordNum(cpu)] &
-          (static_cast<BridgeCpuSetWord>(1) << BridgeBitNum(cpu)))
-             ? 1
-             : 0;
-}
-
 bool CStringCopy(const char *source_buf, char *dest_buf, size_t size) {
   int ret = snprintf(dest_buf, size, "%s", source_buf);
   return ret >= 0 && static_cast<size_t>(ret) < size;

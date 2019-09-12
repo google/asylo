@@ -707,7 +707,7 @@ class SyscallsEnclave : public EnclaveTestCase {
     SyscallsTestOutput output_ret;
     pid_t my_pid = getpid();
     cpu_set_t mask;
-    size_t bad_cpu_set_size = sizeof(cpu_set_t) / 2;
+    size_t bad_cpu_set_size = sizeof(uint64_t) - 1;
 
     output_ret.set_int_syscall_return(
         sched_getaffinity(my_pid, bad_cpu_set_size, &mask));

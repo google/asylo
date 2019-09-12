@@ -356,32 +356,6 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
   return &asylo::global_password;
 }
 
-//////////////////////////////////////
-//           sched.h                //
-//////////////////////////////////////
-
-int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
-                                    cpu_set_t *mask) {
-  if (cpusetsize < sizeof(cpu_set_t)) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  int ret;
-  BridgeCpuSet bridge_mask;
-  CHECK_OCALL(ocall_enc_untrusted_sched_getaffinity(
-      &ret, static_cast<int64_t>(pid), &bridge_mask));
-
-  // Translate from bridge_cpu_set_t to enclave cpu_set_t.
-  CPU_ZERO(mask);
-  for (int cpu = 0; cpu < CPU_SETSIZE; ++cpu) {
-    if (asylo::BridgeCpuSetCheckBit(cpu, &bridge_mask)) {
-      CPU_SET(cpu, mask);
-    }
-  }
-
-  return ret;
-}
 
 //////////////////////////////////////
 //           signal.h               //
