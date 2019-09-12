@@ -415,3 +415,49 @@ sgx_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+# Testing the enclave clock vs the posix clock.
+proto_library(
+    name = "clock_time_test_proto",
+    srcs = ["clock_time_test.proto"],
+    deps = ["//asylo:enclave_proto"],
+)
+
+cc_proto_library(
+    name = "clock_time_test_cc_proto",
+    deps = ["clock_time_test_proto"],
+)
+
+sgx.unsigned_enclave(
+    name = "clock_time_test_unsigned.so",
+    srcs = ["clock_time_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":clock_time_test_cc_proto",
+        ":posix",
+        "//asylo:enclave_runtime",
+        "//asylo/util:status",
+    ],
+)
+
+sgx.debug_enclave(
+    name = "clock_time_test.so",
+    unsigned = "clock_time_test_unsigned.so",
+)
+
+sgx_enclave_test(
+    name = "clock_time_test",
+    srcs = ["clock_time_test_loader.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": "clock_time_test.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        ":clock_time_test_cc_proto",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
