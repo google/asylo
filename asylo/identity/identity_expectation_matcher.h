@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_IDENTITY_EXPECTATION_MATCHER_H_
 #define ASYLO_IDENTITY_IDENTITY_EXPECTATION_MATCHER_H_
 
+#include <string>
+
 #include "asylo/identity/identity.pb.h"
 #include "asylo/util/statusor.h"
 
@@ -61,6 +63,27 @@ class IdentityExpectationMatcher {
   virtual StatusOr<bool> Match(
       const EnclaveIdentity &identity,
       const EnclaveIdentityExpectation &expectation) const = 0;
+
+  /// Evaluates whether `identity` matches `expectation`.
+  ///
+  /// The behavior of this method is identical to that of `Match`, except that
+  /// it also takes an `explanation` parameter, which is populated with an
+  /// explanation of why the match failed in the case that this method returns
+  /// false. `explanation` can be nullptr, in which case it is ignored.
+  ///
+  /// The default implementation of this method calls `Match`, ignoring the
+  /// explanation parameter.
+  ///
+  /// \param identity An identity to match.
+  /// \param expectation The identity expectation to match against.
+  /// \param[out] explanation An explanation of why the match failed, if the
+  ///                         return value was false.
+  /// \return A bool indicating whether the match succeeded, or a non-OK Status
+  ///         in the case of invalid arguments.
+  virtual StatusOr<bool> MatchAndExplain(
+      const EnclaveIdentity &identity,
+      const EnclaveIdentityExpectation &expectation,
+      std::string *explanation) const;
 };
 
 }  // namespace asylo

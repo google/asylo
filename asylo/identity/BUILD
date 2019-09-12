@@ -155,6 +155,7 @@ cc_library(
     name = "identity_expectation_matcher",
     srcs = [
         "delegating_identity_expectation_matcher.cc",
+        "identity_expectation_matcher.cc",
         "named_identity_expectation_matcher.cc",
     ],
     hdrs = [
