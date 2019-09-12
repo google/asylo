@@ -20,6 +20,7 @@
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
 #include "asylo/platform/common/static_map.h"
 
@@ -28,6 +29,13 @@ namespace asylo {
 StatusOr<bool> DelegatingIdentityExpectationMatcher::Match(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation) const {
+  return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
+}
+
+StatusOr<bool> DelegatingIdentityExpectationMatcher::MatchAndExplain(
+    const EnclaveIdentity &identity,
+    const EnclaveIdentityExpectation &expectation,
+    std::string *explanation) const {
   // Find the appropriate matcher for |identity|.description() from the
   // IdentityExpectationMatcherMap.
   auto matcher_it = IdentityExpectationMatcherMap::GetValue(
@@ -67,10 +75,17 @@ StatusOr<bool> DelegatingIdentityExpectationMatcher::Match(
     // This matcher may be used to compare an identity against multiple
     // expectations with differing reference-identity descriptions. Returning a
     // non-ok status here would break that comparison logic.
+    if (explanation != nullptr) {
+      *explanation = absl::StrFormat(
+          "Matched identity, which has description %s, is incompatible with "
+          "reference identity, which has description %s",
+          identity.description().ShortDebugString(),
+          expectation.reference_identity().description().ShortDebugString());
+    }
     return false;
   }
 
-  return matcher_it->Match(identity, expectation);
+  return matcher_it->MatchAndExplain(identity, expectation, explanation);
 }
 
 }  // namespace asylo

@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_DELEGATING_IDENTITY_EXPECTATION_MATCHER_H_
 #define ASYLO_IDENTITY_DELEGATING_IDENTITY_EXPECTATION_MATCHER_H_
 
+#include <string>
+
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_expectation_matcher.h"
 #include "asylo/util/statusor.h"
@@ -46,9 +48,14 @@ class DelegatingIdentityExpectationMatcher final
       DelegatingIdentityExpectationMatcher &&other) = default;
 
   // From the IdentityExpectationMatcher interface.
+
   StatusOr<bool> Match(
       const EnclaveIdentity &identity,
       const EnclaveIdentityExpectation &expectation) const override;
+
+  StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
+                                 const EnclaveIdentityExpectation &expectation,
+                                 std::string *explanation) const override;
 };
 
 }  // namespace asylo
