@@ -19,15 +19,15 @@
 
 Implements the functions for describing and parsing the type definitions. Allows
 emitting macros which can be read directly by a C/C++ program, to evaluate the
-unresolved values in such macros and then generate include directives, enum
+unresolved values in such macros and then generate include directives, constant
 definitions and conversion functions that allow system constants to be converted
 from the newlib implementation used by Asylo inside the enclave to target host
 implementation on the untrusted side (typically libc).
 
-For each type definition (eg. include directive, enum), a definition and getter
-methods are provided. The definition methods accept a type definition one at a
-time, while the get methods return all the type definitions under a single
-macro.
+For each type definition (eg. define_constants, define_structs), a definition
+and getter methods are provided. The definition methods accept a type definition
+one at a time, while the get methods return all the type definitions under a
+single macro.
 
 Finally, a write_output() method is provided, which emits all the type
 definitions recorded so far in the definitions file (types.py).
@@ -39,12 +39,12 @@ import collections
 import re
 import sys
 
-# Stores system header includes as a list. Only header file names are expected
+# Stores system header includes as a set. Only header file names are expected
 # with or without the .h extension and without the '#include' directive
 # prefixed.
 # We include stdbool.h by default so that the generated output (as .inc file) is
 # also readable by a C program.
-_includes = ['stdbool.h']
+_includes = {'stdbool.h'}
 
 # Map from enum names to dictionary of enum properties and their values.
 _enum_map = collections.defaultdict(dict)
@@ -58,86 +58,78 @@ _struct_map = collections.defaultdict(dict)
 _klinux_prefix = 'kLinux'
 
 
-def set_klinux_prefix(pref):
-  """Sets the prefix used for enum definitions and conversion functions."""
-  global _klinux_prefix
-  _klinux_prefix = pref
-
-
-def include(filename):
-  """Accumulates the file includes provided.
-
-  The filename here is expected to be a system header file (included as
-  #include <filename>). This system header file is used twice - once for
-  resolving values of constants on the target host implementation at compile
-  time, then by the generated conversion functions for converting the constant
-  values between newlib and the target host implementation at runtime.
+def set_klinux_prefix(prefix):
+  """Sets the prefix used for constants definitions and conversion functions.
 
   Args:
-    filename: The system header file with or without the .h extension, and
-      without the <> or #include directive prefixed. Eg. include("sys/types.h")
-
-  Raises:
-    ValueError: Invalid include file format provided.
+    prefix: Name of the prefix to be applied to a kernel based constant
+      definition or conversion function name.
   """
-  if re.match(r'[<,"].*?[>,"]', filename):
-    raise ValueError(
-        'Invalid include format for filename "%s". Please provide the include '
-        'file without enclosing pointy brackets <> or quotes "".' % filename)
-  if re.match('#include', filename, re.IGNORECASE):
-    raise ValueError(
-        'Invalid include format for filename "%s". Please provide the filename '
-        'without the prefixing #include directive.' % filename)
-
-  _includes.append(filename)
+  global _klinux_prefix
+  _klinux_prefix = prefix
 
 
-def define_enum(name,
-                values,
-                default_value_host=0,
-                default_value_newlib=0,
-                multi_valued=False,
-                skip_conversions=False,
-                or_input_to_default_value=False,
-                wrap_vals_with_if_defined=False,
-                data_type='int'):
-  """Defines a collection of related enumeration values and their properties.
+def define_constants(name,
+                     values,
+                     include_header_file,
+                     default_value_host=0,
+                     default_value_newlib=0,
+                     multi_valued=False,
+                     skip_conversions=False,
+                     or_input_to_default_value=False,
+                     wrap_macros_with_if_defined=False,
+                     data_type='int'):
+  """Defines a collection of related constants/macros and their properties.
 
   Args:
-    name: Name of the collection of enumeration values.
-    values: C Enumeration values provided as a list of strings.
-    default_value_host: Default enum value on the target host implementation.
-      This can be an actual int value or the enum value provided as a string.
-    default_value_newlib: Default enum value in newlib. This can be an actual
-      int value or the enum value provided as a string.
-    multi_valued: Boolean indicating if the enum values can be combined using
-      bitwise OR operations.
+    name: Name of the collection of constants.
+    values: Constant names provided as a list of strings.
+    include_header_file: The system header file used for resolving values to
+      generate the type definition.  The filename here is expected to be a
+      system header file (included as #include <filename>). This system header
+      file is used twice - once for resolving values of constants on the target
+      host implementation at compile time, then by the generated conversion
+      functions for converting the constant values between newlib and the target
+      host implementation at runtime.
+    default_value_host: Default constant value on the target host
+      implementation. This can be an actual numerical (|data_type|) value or the
+      unresolved constant name provided as a string.
+    default_value_newlib: Default constant value in newlib. This can be an
+      actual numerical (|data_type|) value or the unresolved constant name
+      provided as a string.
+    multi_valued: Boolean indicating if the constant values can be combined
+      using bitwise OR operations.
     skip_conversions: Boolean indicating if generation of types conversion
-      functions be skipped, and only enum definitions be generated. Useful when
-      conversion functions are complex and need to be written manually, but the
-      enum definitions can be generated automatically by resolving the enum
-      values from the target host implementation.
+      functions be skipped, and only constants definitions be generated. Useful
+      when conversion functions are complex and need to be written manually, but
+      the constants definitions can be generated automatically by resolving the
+      constants for the target host implementation.
     or_input_to_default_value: Boolean indicating if the input be bitwise OR'ed
       with default_value_host (or default_value_newlib) in the generated
-      conversion function, if no match for the input enum value is found. This
-      is useful for cases when we wish to preserve the input for debugging,
-      while providing a default output in case no matching enum value for the
-      input is found.
-    wrap_vals_with_if_defined: Boolean indicating if all values in the enum are
-      to be wrapped inside a #if defined(value) ...#endif while generating the
-      conversion functions. This allows define_enum() to safely accept enum
-      values that might not exist on a particular platform or architecture.
+      conversion function, if no match for the input constant value is found.
+      This is useful for cases when we wish to preserve the input for debugging,
+      while providing a default output in case no matching constant value for
+      the input is found.
+    wrap_macros_with_if_defined: Boolean indicating if each constant value in
+      the collection is to be wrapped inside a #if defined(value) ...#endif
+      while generating the conversion functions. This allows define_constants()
+      to safely accept constants that might not exist on a particular platform
+      or architecture. This parameter is intended for use only with constants
+      that are C/C++ macros.
     data_type: String specifying the type of constants, if not int.
+
+  Raises:
+    ValueError: Invalid include_header_file format provided.
   """
 
-  # The enum values here are written twice, once as a string literal, then as an
-  # enum value pointing to the actual integer value of the enum. This allows
-  # types conversions generator to directly interpret the latter as a valid
-  # integer corresponding to the enum value, since casting string to enum value
-  # is non-trivial in c++.
-  # An example 'values', like ['ENUM_VAL1', 'ENUM_VAL2'] looks like the
+  # A constant here are written twice, once as a string literal, then as an
+  # numerical value pointing to the actual integer value of the constant. This
+  # allows types conversions generator to directly interpret the latter as a
+  # valid integer corresponding to the constant value, since casting string to
+  # enum value is non-trivial in c++.
+  # An example 'values', like ['CONST_VAL1', 'CONST_VAL2'] looks like the
   # following stored as a dictionary entry -
-  # {"ENUM_VAL1", ENUM_VAL1}, {"ENUM_VAL2", ENUM_VAL2}
+  # {"CONST_VAL1", CONST_VAL1}, {"CONST_VAL2", CONST_VAL2}
   _enum_map[name]['values'] = ', '.join(
       '{{"{}", {}}}'.format(val, val) for val in values)
 
@@ -146,8 +138,20 @@ def define_enum(name,
   _enum_map[name]['multi_valued'] = multi_valued
   _enum_map[name]['skip_conversions'] = skip_conversions
   _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
-  _enum_map[name]['wrap_vals_with_if_defined'] = wrap_vals_with_if_defined
+  _enum_map[name]['wrap_macros_with_if_defined'] = wrap_macros_with_if_defined
   _enum_map[name]['data_type'] = '"{}"'.format(data_type)
+
+  if re.match(r'[<,"].*?[>,"]', include_header_file):
+    raise ValueError(
+        'Invalid include format for filename "%s". Please provide the include '
+        'file without enclosing pointy brackets <> or quotes "".' %
+        include_header_file)
+  if re.match('#include', include_header_file, re.IGNORECASE):
+    raise ValueError(
+        'Invalid include format for filename "%s". Please provide the filename '
+        'without the prefixing #include directive.' % include_header_file)
+
+  _includes.add(include_header_file)
 
 
 def define_struct(name, values, pack_attributes=True, skip_conversions=False):
@@ -183,9 +187,10 @@ def get_includes_as_include_macros():
   """Returns all the includes as line separated #include macros.
 
   These includes are required by the types conversions generator at compile time
-  to infer the values of enums for a given host implementation.
+  to infer the values of constants for a given host implementation.
   """
-  return ''.join('#include <{}>\n'.format(filename) for filename in _includes)
+  return ''.join(
+      '#include <{}>\n'.format(filename) for filename in sorted(_includes))
 
 
 def get_includes_in_define_macro():
@@ -193,17 +198,17 @@ def get_includes_in_define_macro():
 
   The returned list can be used to generate #include directives by a consumer.
   """
-  quoted_includes = ['"{}"'.format(incl) for incl in _includes]
+  quoted_includes = ['"{}"'.format(incl) for incl in sorted(_includes)]
   return '#define INCLUDES {}'.format(', \\\n'.join(quoted_includes))
 
 
-def get_enums():
-  r"""Returns a macro containing all enum descriptions.
+def get_constants():
+  r"""Returns a macro containing all constants' description.
 
   The returned macro is used by types conversions generator to initialize a enum
   description table (enum_properties_table) mapping enum names to a struct
   (EnumProperties) describing the enum properties, including the enum values. A
-  typical output of get_enums looks like the following -
+  typical output of get_constants() looks like the following -
 
   #define ENUMS_INIT \
   {"FcntlCmd", {-1, -1, false, false, false, false, "int",
@@ -213,15 +218,15 @@ def get_enums():
 
   Each line contains an enum, and has the following pattern -
   {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
-  skip_conversions, or_input_to_default_value, wrap_vals_with_if_defined,
-  data_type, {{"enum_val1", enum_val1}, {"enum_val2", enum_val2}}}}, \
+  skip_conversions, or_input_to_default_value, wrap_macros_with_if_defined,
+  data_type, {{"const_val1", const_val1}, {"const_val2", const_val2}}}}, \
   """
   enum_rows = []
   for enum_name, enum_properties in _enum_map.items():
     enum_rows.append(
         '{{{name}, {{{default_value_host}, {default_value_newlib}, '
         '{multi_valued}, {skip_conversions}, {or_input_to_default_value}, '
-        '{wrap_vals_with_if_defined}, {data_type}, {{{values}}}}}}}'.format(
+        '{wrap_macros_with_if_defined}, {data_type}, {{{values}}}}}}}'.format(
             name='"{}"'.format(enum_name),
             default_value_host=enum_properties['default_value_host'],
             default_value_newlib=enum_properties['default_value_newlib'],
@@ -230,8 +235,8 @@ def get_enums():
             if enum_properties['skip_conversions'] else 'false',
             or_input_to_default_value='true'
             if enum_properties['or_input_to_default_value'] else 'false',
-            wrap_vals_with_if_defined='true'
-            if enum_properties['wrap_vals_with_if_defined'] else 'false',
+            wrap_macros_with_if_defined='true'
+            if enum_properties['wrap_macros_with_if_defined'] else 'false',
             data_type=enum_properties['data_type'],
             values=enum_properties['values']))
 
@@ -274,5 +279,5 @@ def write_output(stream=sys.stdout):
   print(get_includes_as_include_macros(), file=stream)
   print(get_includes_in_define_macro(), file=stream)
   print(get_klinux_prefix(), file=stream)
-  print(get_enums(), file=stream)
+  print(get_constants(), file=stream)
   print(get_structs(), file=stream)

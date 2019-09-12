@@ -37,7 +37,7 @@ struct EnumProperties {
   bool multi_valued;
   bool skip_conversions;
   bool or_input_to_default_value;
-  bool wrap_vals_with_if_defined;
+  bool wrap_macros_with_if_defined;
   std::string data_type;
 
   // A vector of enum values in the format std::pair{Enum name, Enum value}.
@@ -101,7 +101,7 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   // Generate or-based enum result accumulation. Since there are cases that enum
   // may contain multiple bits, the value has to be checked explicitly.
   for (const auto &enum_pair : enum_properties.values) {
-    if (enum_properties.wrap_vals_with_if_defined) {
+    if (enum_properties.wrap_macros_with_if_defined) {
       os << "#if defined(" << enum_pair.first << ")\n";
     }
     os << "  if ((input & "
@@ -114,7 +114,7 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
        << (to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
                      : enum_pair.first)
        << ";\n";
-    if (enum_properties.wrap_vals_with_if_defined) {
+    if (enum_properties.wrap_macros_with_if_defined) {
       os << "#endif\n";
     }
   }
@@ -141,13 +141,13 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
         to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
                   : enum_pair.first;
 
-    if (enum_properties.wrap_vals_with_if_defined) {
+    if (enum_properties.wrap_macros_with_if_defined) {
       os << "#if defined(" << enum_pair.first << ")\n";
     }
     os << absl::StrReplaceAll(
         "  if (input == $input_val) return $output_val;\n",
         {{"$input_val", input_val}, {"$output_val", output_val}});
-    if (enum_properties.wrap_vals_with_if_defined) {
+    if (enum_properties.wrap_macros_with_if_defined) {
       os << "#endif\n";
     }
   }

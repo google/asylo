@@ -22,34 +22,23 @@ target implementation. For each type, only include the values/members that are
 present in newlib as well as the target host library.
 """
 
-from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_constants
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
-from asylo.platform.system_call.type_conversions.types_parse_functions import include
 from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import write_output
 
-include("fcntl.h")
-include("netdb.h")
-include("netinet/tcp.h")
-include("stdint.h")
-include("sys/inotify.h")
-include("sys/socket.h")
-include("errno.h")
-include("time.h")
-include("unistd.h")
-include("signal.h")
-
 set_klinux_prefix("kLinux")
 
-define_enum(
+define_constants(
     name="FileStatusFlag",
     values=[
         "O_RDONLY", "O_WRONLY", "O_RDWR", "O_CREAT", "O_APPEND", "O_EXCL",
         "O_TRUNC", "O_NONBLOCK", "O_DIRECT", "O_CLOEXEC"
     ],
+    include_header_file="fcntl.h",
     multi_valued=True)
 
-define_enum(
+define_constants(
     name="FileModeFlag",
     values=[
         "S_IFMT", "S_IFDIR", "S_IFCHR", "S_IFBLK", "S_IFREG", "S_IFIFO",
@@ -57,18 +46,20 @@ define_enum(
         "S_IWUSR", "S_IXUSR", "S_IRGRP", "S_IWGRP", "S_IXGRP", "S_IRWXG",
         "S_IROTH", "S_IWOTH", "S_IXOTH", "S_IRWXO"
     ],
+    include_header_file="fcntl.h",
     multi_valued=True)
 
-define_enum(
+define_constants(
     name="FcntlCommand",
     values=[
         "F_GETFD", "F_SETFD", "F_GETFL", "F_SETFL", "F_GETPIPE_SZ",
         "F_SETPIPE_SZ"
     ],
+    include_header_file="fcntl.h",
     default_value_host=-1,
     default_value_newlib=-1)
 
-define_enum(
+define_constants(
     name="AfFamily",
     values=[
         "AF_UNIX", "AF_LOCAL", "AF_INET", "AF_AX25", "AF_IPX", "AF_APPLETALK",
@@ -76,26 +67,33 @@ define_enum(
         "AF_PACKET", "AF_RDS", "AF_PPPOX", "AF_LLC", "AF_CAN", "AF_TIPC",
         "AF_BLUETOOTH", "AF_ALG", "AF_VSOCK", "AF_UNSPEC"
     ],
+    include_header_file="sys/socket.h",
     default_value_host="AF_UNSPEC",
     default_value_newlib="AF_UNSPEC")
 
-define_enum(
+define_constants(
     name="SocketType",
     values=[
         "SOCK_STREAM", "SOCK_DGRAM", "SOCK_SEQPACKET", "SOCK_RAW", "SOCK_RDM",
         "SOCK_PACKET", "SOCK_NONBLOCK", "SOCK_CLOEXEC"
     ],
+    include_header_file="sys/socket.h",
     skip_conversions=True)
 
-define_enum(name="FDFlag", values=["FD_CLOEXEC"], multi_valued=True)
+define_constants(
+    name="FDFlag",
+    values=["FD_CLOEXEC"],
+    include_header_file="fcntl.h",
+    multi_valued=True)
 
-define_enum(
+define_constants(
     name="TcpOptionName",
     values=["TCP_NODELAY", "TCP_KEEPIDLE", "TCP_KEEPINTVL", "TCP_KEEPCNT"],
+    include_header_file="netinet/tcp.h",
     default_value_host=-1,
     default_value_newlib=-1)
 
-define_enum(
+define_constants(
     name="IpV6OptionName",
     values=[
         "IPV6_V6ONLY", "IPV6_RECVPKTINFO", "IPV6_PKTINFO", "IPV6_RECVHOPLIMIT",
@@ -103,10 +101,11 @@ define_enum(
         "IPV6_RTHDRDSTOPTS", "IPV6_RECVRTHDR", "IPV6_RTHDR", "IPV6_RECVDSTOPTS",
         "IPV6_DSTOPTS"
     ],
+    include_header_file="netinet/in.h",
     default_value_host=-1,
     default_value_newlib=-1)
 
-define_enum(
+define_constants(
     name="SocketOptionName",
     values=[
         "SO_DEBUG", "SO_REUSEADDR", "SO_TYPE", "SO_ERROR", "SO_DONTROUTE",
@@ -115,18 +114,23 @@ define_enum(
         "SO_PRIORITY", "SO_LINGER", "SO_BSDCOMPAT", "SO_REUSEPORT",
         "SO_RCVTIMEO", "SO_SNDTIMEO"
     ],
+    include_header_file="sys/socket.h",
     default_value_host=-1,
     default_value_newlib=-1)
 
-define_enum(
+define_constants(
     name="FLockOperation",
     values=["LOCK_SH", "LOCK_EX", "LOCK_NB", "LOCK_UN"],
+    include_header_file="fcntl.h",
     multi_valued=True)
 
-define_enum(
-    name="InotifyFlag", values=["IN_NONBLOCK", "IN_CLOEXEC"], multi_valued=True)
+define_constants(
+    name="InotifyFlag",
+    values=["IN_NONBLOCK", "IN_CLOEXEC"],
+    include_header_file="sys/inotify.h",
+    multi_valued=True)
 
-define_enum(
+define_constants(
     name="InotifyEventMask",
     values=[
         "IN_ACCESS", "IN_MODIFY", "IN_ATTRIB", "IN_CLOSE_WRITE",
@@ -134,6 +138,7 @@ define_enum(
         "IN_CREATE", "IN_DELETE", "IN_DELETE_SELF", "IN_MOVE_SELF",
         "IN_UNMOUNT", "IN_Q_OVERFLOW", "IN_IGNORED"
     ],
+    include_header_file="sys/inotify.h",
     multi_valued=True)
 
 # List of errnos to be translated from the host native values to the enclave
@@ -142,7 +147,7 @@ define_enum(
 # values not listed here will not be translated to an enclave native value, but
 # will instead be propagated into the enclave as the host native value OR'ed
 # with 0x8000.
-define_enum(
+define_constants(
     name="ErrorNumber",
     values=[
         "E2BIG", "EACCES", "EADDRINUSE", "EADDRNOTAVAIL", "EADV",
@@ -166,12 +171,13 @@ define_enum(
         "ESPIPE", "ESRCH", "ESRMNT", "ESTALE", "ESTRPIPE", "ETIME", "ETIMEDOUT",
         "ETOOMANYREFS", "ETXTBSY", "EUNATCH", "EUSERS", "EXDEV", "EXFULL"
     ],
+    include_header_file="errno.h",
     multi_valued=False,
     default_value_host=0x8000,
     default_value_newlib=0x8000,
     or_input_to_default_value=True)
 
-define_enum(
+define_constants(
     name="SysconfConstant",
     values=[
         "_SC_ARG_MAX", "_SC_CHILD_MAX", "_SC_HOST_NAME_MAX",
@@ -184,10 +190,11 @@ define_enum(
         "_SC_EXPR_NEST_MAX", "_SC_LINE_MAX", "_SC_2_VERSION", "_SC_2_C_DEV",
         "_SC_2_FORT_DEV", "_SC_2_FORT_RUN", "_SC_2_LOCALEDEF", "_SC_2_SW_DEV"
     ],
+    include_header_file="unistd.h",
     default_value_host=-1,
     default_value_newlib=-1)
 
-define_enum(
+define_constants(
     name="RecvSendFlag",
     values=[
         "MSG_OOB", "MSG_PEEK", "MSG_DONTROUTE", "MSG_CTRUNC", "MSG_PROXY",
@@ -195,10 +202,11 @@ define_enum(
         "MSG_SYN", "MSG_CONFIRM", "MSG_RST", "MSG_ERRQUEUE", "MSG_NOSIGNAL",
         "MSG_MORE", "MSG_WAITFORONE", "MSG_FASTOPEN", "MSG_CMSG_CLOEXEC"
     ],
+    include_header_file="sys/socket.h",
     multi_valued=True,
 )
 
-define_enum(
+define_constants(
     name="BaseSignalNumber",
     values=[
         "SIGHUP", "SIGINT", "SIGQUIT", "SIGILL", "SIGTRAP", "SIGABRT", "SIGBUS",
@@ -208,18 +216,21 @@ define_enum(
         "SIGPROF", "SIGWINCH", "SIGSYS", "SIGIO", "SIGPWR", "SIGRTMIN",
         "SIGRTMAX"
     ],
+    include_header_file="signal.h",
     default_value_newlib=-1,
     default_value_host=-1,
-    wrap_vals_with_if_defined=True)
+    wrap_macros_with_if_defined=True)
 
 # Clock ID constants defined by standard libc time.h.
-define_enum(
+define_constants(
     name="ClockId",
     values=["CLOCK_REALTIME", "CLOCK_MONOTONIC"],
+    include_header_file="time.h",
     default_value_newlib=-1,
     default_value_host=-1,
     data_type="clockid_t")
 
+# timespec struct defined by standard libc time.h.
 define_struct(
     name="timespec",
     values=[
@@ -229,6 +240,7 @@ define_struct(
     pack_attributes=False,
 )
 
+# timeval struct defined by standard libc time.h.
 define_struct(
     name="timeval",
     values=[

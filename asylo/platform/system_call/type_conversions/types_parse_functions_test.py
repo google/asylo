@@ -18,14 +18,13 @@
 from unittest import main
 from unittest import TestCase
 
-from asylo.platform.system_call.type_conversions.types_parse_functions import define_enum
+from asylo.platform.system_call.type_conversions.types_parse_functions import define_constants
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_struct
-from asylo.platform.system_call.type_conversions.types_parse_functions import get_enums
+from asylo.platform.system_call.type_conversions.types_parse_functions import get_constants
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_as_include_macros
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_includes_in_define_macro
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_klinux_prefix
 from asylo.platform.system_call.type_conversions.types_parse_functions import get_structs
-from asylo.platform.system_call.type_conversions.types_parse_functions import include
 from asylo.platform.system_call.type_conversions.types_parse_functions import set_klinux_prefix
 
 
@@ -33,25 +32,26 @@ class TypesParseFunctionsTest(TestCase):
   """Tests for types functions."""
 
   def test_get_enums_with_only_default_vals(self):
-    define_enum('TestEnum', ['a', 'b'])
+    define_constants('TestEnum', ['a', 'b'], 'iostream')
     self.assertEqual(
-        get_enums(), '#define ENUMS_INIT \\\n'
+        get_constants(), '#define ENUMS_INIT \\\n'
         '{"TestEnum", {0, 0, false, false, false, false, "int", '
         '{{"a", a}, {"b", b}}}}\n')
 
   def test_get_enums_with_all_vals(self):
-    define_enum(
+    define_constants(
         name='TestEnum',
         values=['a'],
+        include_header_file='stdio',
         default_value_host=1,
         default_value_newlib=2,
         multi_valued=True,
         skip_conversions=True,
         or_input_to_default_value=True,
-        wrap_vals_with_if_defined=True,
+        wrap_macros_with_if_defined=True,
         data_type='int64_t')
     self.assertEqual(
-        get_enums(),
+        get_constants(),
         '#define ENUMS_INIT \\\n{"TestEnum", {1, 2, true, true, true, true, '
         '"int64_t", {{"a", a}}}}\n')
 
@@ -74,23 +74,23 @@ class TypesParseFunctionsTest(TestCase):
         get_klinux_prefix(),
         'const char klinux_prefix[] = "{}";\n'.format(prefix_string))
 
-  def test_include_exceptions(self):
+  def test_include_header_file_exceptions(self):
     with self.assertRaises(ValueError):
-      include('<my_header_file>')
+      define_constants('TestEnum1', ['a', 'b'], '<my_header_file>')
     with self.assertRaises(ValueError):
-      include('"my_header_file"')
+      define_constants('TestEnum2', ['a', 'b'], '"my_header_file"')
     with self.assertRaises(ValueError):
-      include('#include "myheaderfile.h"')
+      define_constants('TestEnum', ['a', 'b'], '#include "myheaderfile.h"')
 
   def test_get_includes(self):
-    include('iostream')
-    include('stdio')
+    define_constants('TestEnum1', ['a', 'b'], 'iostream')
+    define_constants('TestEnum2', ['a', 'b'], 'stdio')
     self.assertEqual(
         get_includes_as_include_macros(),
-        '#include <stdbool.h>\n#include <iostream>\n#include <stdio>\n')
+        '#include <iostream>\n#include <stdbool.h>\n#include <stdio>\n')
     self.assertEqual(
         get_includes_in_define_macro(),
-        '#define INCLUDES "stdbool.h", \\\n"iostream", \\\n"stdio"')
+        '#define INCLUDES "iostream", \\\n"stdbool.h", \\\n"stdio"')
 
 
 if __name__ == '__main__':
