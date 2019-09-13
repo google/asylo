@@ -40,9 +40,16 @@ typedef asylo::primitives::PrimitiveStatus (*syscall_dispatch_callback)(
 // Installs a callback as dispatch function for serialized system calls.
 void enc_set_dispatch_syscall(syscall_dispatch_callback callback);
 
+// Installs an error handler function that aborts with a message in case of a
+// failure.
+void enc_set_error_handler(void (*abort_handler)(const char *message));
+
 // Returns whether a dispatch function has been registered for making system
 // calls.
 bool enc_is_syscall_dispatcher_set();
+
+// Returns whether an error handler function has been registered.
+bool enc_is_error_handler_set();
 
 // Invokes a system call on the host via the installed system call dispatch
 // callback.

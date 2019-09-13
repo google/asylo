@@ -215,13 +215,6 @@ enclave {
 	propagate_errno;
 
     //////////////////////////////////////
-    //           Runtime support        //
-    //////////////////////////////////////
-
-    void *ocall_enc_untrusted_acquire_shared_resource(
-        enum SharedNameKind kind, [in, string] const char *name);
-
-    //////////////////////////////////////
     //           Debugging              //
     //////////////////////////////////////
     // Temporary calls to help with debugging, or other workarounds go here.

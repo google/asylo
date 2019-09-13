@@ -38,6 +38,9 @@ int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
   if (!enc_is_syscall_dispatcher_set()) {
     enc_set_dispatch_syscall(asylo::host_call::SystemCallDispatcher);
   }
+  if (!enc_is_error_handler_set()) {
+    enc_set_error_handler(TrustedPrimitives::BestEffortAbort);
+  }
   return enc_untrusted_syscall(sysno, args...);
 }
 

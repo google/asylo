@@ -563,17 +563,6 @@ int enc_untrusted_utimes(const char *filename, const struct timeval times[2]) {
 }
 
 //////////////////////////////////////
-//           Runtime support        //
-//////////////////////////////////////
-
-void *enc_untrusted_acquire_shared_resource(enum SharedNameKind kind,
-                                            const char *name) {
-  void *ret;
-  CHECK_OCALL(ocall_enc_untrusted_acquire_shared_resource(&ret, kind, name));
-  return ret;
-}
-
-//////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////
 

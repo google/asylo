@@ -36,7 +36,11 @@ struct MallocDeleter {
   void operator()(uint8_t *buffer) { free(buffer); }
 };
 
+// Default abort handler if none provided.
+void default_error_handler(const char *message) { abort(); }
+
 syscall_dispatch_callback global_syscall_callback = nullptr;
+void (*error_handler)(const char *message) = nullptr;
 
 }  // namespace
 
@@ -44,14 +48,25 @@ extern "C" bool enc_is_syscall_dispatcher_set() {
   return global_syscall_callback != nullptr;
 }
 
+extern "C" bool enc_is_error_handler_set() { return error_handler != nullptr; }
+
 extern "C" void enc_set_dispatch_syscall(syscall_dispatch_callback callback) {
   global_syscall_callback = callback;
 }
 
+extern "C" void enc_set_error_handler(
+    void (*abort_handler)(const char *message)) {
+  error_handler = abort_handler;
+}
+
 extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
+  if (!enc_is_error_handler_set()) {
+    enc_set_error_handler(default_error_handler);
+  }
+
   asylo::system_call::SystemCallDescriptor descriptor{sysno};
   if (!descriptor.is_valid()) {
-    abort();
+    error_handler("system_call.cc: Invalid SystemCallDescriptor encountered.");
   }
 
   // Collect the passed parameter list into an array.
@@ -68,7 +83,9 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   asylo::primitives::PrimitiveStatus status;
   status = asylo::system_call::SerializeRequest(sysno, parameters, &request);
   if (!status.ok()) {
-    abort();
+    error_handler(
+        "system_call.cc: Encountered serialization error when serializing "
+        "syscall parameters.");
   }
 
   std::unique_ptr<uint8_t, MallocDeleter> request_owner(request.As<uint8_t>());
@@ -78,18 +95,20 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   size_t response_size;
 
   if (!enc_is_syscall_dispatcher_set()) {
-    abort();
+    error_handler("system_.cc: system call dispatcher not set.");
   }
   status = global_syscall_callback(request.As<uint8_t>(), request.size(),
                                    &response_buffer, &response_size);
   if (!status.ok()) {
-    abort();
+    error_handler(
+        "system_call.cc: Callback from syscall dispatcher was unsuccessful.");
   }
 
   std::unique_ptr<uint8_t, MallocDeleter> response_owner(response_buffer);
 
   if (!response_buffer) {
-    abort();
+    error_handler(
+        "system_call.cc: null response buffer received for the syscall.");
   }
 
   // Copy outputs back into pointer parameters.
@@ -98,7 +117,9 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
   const asylo::primitives::PrimitiveStatus response_status =
       response_reader.Validate();
   if (!response_status.ok()) {
-    abort();
+    error_handler(
+        "system_call.cc: Error deserializing response buffer into response "
+        "reader.");
   }
 
   for (int i = 0; i < asylo::system_call::kParameterMax; i++) {

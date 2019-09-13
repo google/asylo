@@ -192,17 +192,6 @@ pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *usage);
 pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options);
 
 //////////////////////////////////////
-//            Runtime support       //
-//////////////////////////////////////
-
-// Acquires a shared resource for non-exclusive use by incrementing its
-// reference count and returning a pointer to untrusted memory. Returns nullptr
-// if the named resource does not exist. The caller is responsible for releasing
-// the resource once it is no longer needed.
-void *enc_untrusted_acquire_shared_resource(enum SharedNameKind kind,
-                                            const char *name);
-
-//////////////////////////////////////
 //            Debugging             //
 //////////////////////////////////////
 

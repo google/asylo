@@ -208,4 +208,4 @@ SYSCALL_DEFINE2(nanosleep, \in const struct timespec *, req,
                 \out struct timespec *, rem)
 SYSCALL_DEFINE2(clock_gettime, clockid_t, clk_id, \out struct timespec *, tp)
 SYSCALL_DEFINE2(gettimeofday, \out struct timeval *, tv,
-                \in_out struct timezone *, tz);
+                \in struct timezone *, tz);

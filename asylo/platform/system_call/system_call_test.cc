@@ -63,6 +63,8 @@ asylo::primitives::PrimitiveStatus SystemCallDispatcher(
   return asylo::primitives::PrimitiveStatus::OkStatus();
 }
 
+void error_handler(const char *message) { abort(); }
+
 // A system call dispatch function that return invalid response.
 asylo::primitives::PrimitiveStatus InvalidResponseDispatcher(
     const uint8_t *request_buffer, size_t request_size,
@@ -207,18 +209,21 @@ TEST(SystemCallTest, AbortIfNoCallbackFunctionSet) {
 // Ensure that syscall aborts if callback function fails for any reason.
 TEST(SystemCallTest, AbortOnCallbackFailure) {
   enc_set_dispatch_syscall(AlwaysFailingDispatcher);
+  enc_set_error_handler(error_handler);
   EXPECT_EXIT(enc_untrusted_syscall(SYS_getpid),
               ::testing::KilledBySignal(SIGABRT), ".*");
 }
 
 // Ensure that syscall aborts if incorrect sysno provided.
 TEST(SystemCallTest, AbortOnSerializationFailure) {
+  enc_set_error_handler(error_handler);
   EXPECT_EXIT(enc_untrusted_syscall(1000000),
               ::testing::KilledBySignal(SIGABRT), ".*");
 }
 
 // Ensure that syscall aborts if incorrect response received.
 TEST(SystemCallTest, AbortOnResponseMessageFailure) {
+  enc_set_error_handler(error_handler);
   enc_set_dispatch_syscall(InvalidResponseDispatcher);
   EXPECT_EXIT(enc_untrusted_syscall(SYS_getpid),
               ::testing::KilledBySignal(SIGABRT), ".*");
