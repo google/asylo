@@ -22,6 +22,8 @@
 #include <sys/statfs.h>
 #include <sys/un.h>
 
+#include <vector>
+
 #include "absl/base/macros.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
@@ -293,12 +295,12 @@ PrimitiveStatus TestPipe2(void *context, MessageReader *in,
 
   auto msg_to_pipe = in->next();
   int p[2];
-  char inbuf[msg_to_pipe.size()];
+  std::vector<char> inbuf(msg_to_pipe.size());
 
   out->Push<int>(enc_untrusted_pipe2(p, O_NONBLOCK));
   enc_untrusted_write(p[1], msg_to_pipe.data(), msg_to_pipe.size());
-  enc_untrusted_read(p[0], inbuf, msg_to_pipe.size());
-  out->Push(std::string(inbuf, msg_to_pipe.size()));
+  enc_untrusted_read(p[0], inbuf.data(), msg_to_pipe.size());
+  out->Push(std::string(inbuf.data(), msg_to_pipe.size()));
   return PrimitiveStatus::OkStatus();
 }
 
