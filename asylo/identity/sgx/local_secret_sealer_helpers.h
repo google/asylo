@@ -27,6 +27,7 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 
@@ -39,23 +40,22 @@ extern const char *const kSgxLocalSecretSealerRootName;
 // Performs validity checks on the sealed secret header, and extracts parameters
 // necessary for generating the cryptor key.
 Status ParseKeyGenerationParamsFromSealedSecretHeader(
-    const SealedSecretHeader &header, UnsafeBytes<kCpusvnSize> *cpusvn,
-    CipherSuite *cipher_suite, CodeIdentityExpectation *sgx_expectation);
+    const SealedSecretHeader &header, AeadScheme *aead_scheme,
+    SgxIdentityExpectation *sgx_expectation);
 
 // Converts |spec| to the KEYPOLICY bit vector defined in the Intel SDM.
-uint16_t ConvertMatchSpecToKeypolicy(const CodeIdentityMatchSpec &spec);
+uint16_t ConvertMatchSpecToKeypolicy(const SgxIdentityMatchSpec &spec);
 
 // Generates the key used by the AEAD Cryptor to perform the Seal or the Open
 // operation.
-Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
-                          const UnsafeBytes<kCpusvnSize> &cpusvn,
-                          const CodeIdentityExpectation &sgx_expectation,
+Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
+                          const SgxIdentityExpectation &sgx_expectation,
                           size_t key_size, CleansingVector<uint8_t> *key);
 
 // Creates a cryptor that uses |key| and the algorithm denoted by
-// |cipher_suite|. Returns a non-OK status if a cryptor cannot be generated.
+// |aead_scheme|. Returns a non-OK status if a cryptor cannot be generated.
 StatusOr<std::unique_ptr<experimental::AeadCryptor>> MakeCryptor(
-    CipherSuite cipher_suite, ByteContainerView key);
+    AeadScheme aead_scheme, ByteContainerView key);
 
 // Seals |secret| and |additional_data| into |sealed_secret|, using |cryptor|.
 Status Seal(experimental::AeadCryptor *cryptor, ByteContainerView secret,
@@ -67,13 +67,10 @@ Status Open(experimental::AeadCryptor *cryptor,
             ByteContainerView additional_data,
             CleansingVector<uint8_t> *secret);
 
-// Parses and returns the cipher-suite associated with |header|. Returns a
-// non-OK status if |header| cannot be parsed.
-StatusOr<CipherSuite> ParseCipherSuiteFromSealedSecretHeader(
+// Parses and returns the AEAD scheme associated with |header|. Returns a non-OK
+// status if |header| cannot be parsed.
+StatusOr<AeadScheme> ParseAeadSchemeFromSealedSecretHeader(
     const SealedSecretHeader &header);
-
-// Translates |cipher_suite| to the AeadScheme equivalent.
-AeadScheme CipherSuiteToAeadScheme(CipherSuite cipher_suite);
 
 }  // namespace internal
 }  // namespace sgx

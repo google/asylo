@@ -65,6 +65,7 @@ proto_library(
     deps = [
         ":identity_acl_proto",
         ":identity_proto",
+        "//asylo/crypto:algorithms_proto",
     ],
 )
 

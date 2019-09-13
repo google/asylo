@@ -23,6 +23,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/crypto/aead_cryptor.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
@@ -32,6 +33,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -42,34 +44,34 @@ constexpr size_t kAes256GcmSivKeySize = 32;
 
 std::unique_ptr<SgxLocalSecretSealer>
 SgxLocalSecretSealer::CreateMrenclaveSecretSealer() {
-  sgx::CodeIdentityMatchSpec spec;
+  SgxIdentityMatchSpec spec;
   sgx::SetDefaultMatchSpec(&spec);
 
   // SetDefaultMatchSpec() sets the expectation to match MRSIGNER. The match bit
   // needs to be flipped so that the LocalSecretSealer sets the ACL to match on
   // MRENCLAVE.
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(false);
-  sgx::CodeIdentityExpectation expectation;
-  sgx::SetExpectation(
-      spec, sgx::GetSelfIdentity()->sgx_identity.code_identity(), &expectation);
+  spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
+      true);
+  spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(
+      false);
+  SgxIdentityExpectation expectation;
+  sgx::SetExpectation(spec, sgx::GetSelfIdentity()->sgx_identity, &expectation);
   return absl::WrapUnique<SgxLocalSecretSealer>(
       new SgxLocalSecretSealer(expectation));
 }
 
 std::unique_ptr<SgxLocalSecretSealer>
 SgxLocalSecretSealer::CreateMrsignerSecretSealer() {
-  sgx::CodeIdentityMatchSpec spec;
+  SgxIdentityMatchSpec spec;
   sgx::SetDefaultMatchSpec(&spec);
-  sgx::CodeIdentityExpectation expectation;
-  sgx::SetExpectation(
-      spec, sgx::GetSelfIdentity()->sgx_identity.code_identity(), &expectation);
+  SgxIdentityExpectation expectation;
+  sgx::SetExpectation(spec, sgx::GetSelfIdentity()->sgx_identity, &expectation);
   return absl::WrapUnique<SgxLocalSecretSealer>(
       new SgxLocalSecretSealer(expectation));
 }
 
 SgxLocalSecretSealer::SgxLocalSecretSealer(
-    const sgx::CodeIdentityExpectation &default_client_acl)
+    const SgxIdentityExpectation &default_client_acl)
     : default_client_acl_{default_client_acl} {}
 
 SealingRootType SgxLocalSecretSealer::RootType() const { return LOCAL; }
@@ -88,54 +90,41 @@ Status SgxLocalSecretSealer::SetDefaultHeader(
   SealingRootInformation *info = header->mutable_root_info();
   info->set_sealing_root_type(RootType());
   info->set_sealing_root_name(RootName());
-  sgx::SealedSecretAdditionalInfo additional_info;
+  info->set_aead_scheme(AeadScheme::AES256_GCM_SIV);
 
-  // Default cipher suite is AES256_GCM_SIV.
-  additional_info.set_cipher_suite(sgx::AES256_GCM_SIV);
-  const UnsafeBytes<sgx::kCpusvnSize> &cpusvn = sgx::GetSelfIdentity()->cpusvn;
-  additional_info.set_cpusvn(reinterpret_cast<const char *>(cpusvn.data()),
-                             cpusvn.size());
-  if (!additional_info.SerializeToString(info->mutable_additional_info())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Could not serialize additional info");
-  }
   ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(
-      sgx::GetSelfIdentity()->sgx_identity.code_identity(),
-      header->add_author()));
+      sgx::GetSelfIdentity()->sgx_identity, header->add_author()));
   return sgx::SerializeSgxExpectation(
       default_client_acl_, header->mutable_client_acl()->mutable_expectation());
 }
 
 StatusOr<size_t> SgxLocalSecretSealer::MaxMessageSize(
     const SealedSecretHeader &header) const {
-  sgx::CipherSuite cipher_suite;
+  AeadScheme aead_scheme;
   ASYLO_ASSIGN_OR_RETURN(
-      cipher_suite,
-      sgx::internal::ParseCipherSuiteFromSealedSecretHeader(header));
-  return AeadCryptor::MaxMessageSize(
-      sgx::internal::CipherSuiteToAeadScheme(cipher_suite));
+      aead_scheme,
+      sgx::internal::ParseAeadSchemeFromSealedSecretHeader(header));
+  return AeadCryptor::MaxMessageSize(aead_scheme);
 }
 
 StatusOr<uint64_t> SgxLocalSecretSealer::MaxSealedMessages(
     const SealedSecretHeader &header) const {
-  sgx::CipherSuite cipher_suite;
+  AeadScheme aead_scheme;
   ASYLO_ASSIGN_OR_RETURN(
-      cipher_suite,
-      sgx::internal::ParseCipherSuiteFromSealedSecretHeader(header));
-  return AeadCryptor::MaxSealedMessages(
-      sgx::internal::CipherSuiteToAeadScheme(cipher_suite));
+      aead_scheme,
+      sgx::internal::ParseAeadSchemeFromSealedSecretHeader(header));
+  return AeadCryptor::MaxSealedMessages(aead_scheme);
 }
 
 Status SgxLocalSecretSealer::Seal(
     const SealedSecretHeader &header,
     ByteContainerView additional_authenticated_data, ByteContainerView secret,
     SealedSecret *sealed_secret) {
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   ASYLO_RETURN_IF_ERROR(
       sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-          header, &cpusvn, &cipher_suite, &sgx_expectation));
+          header, &aead_scheme, &sgx_expectation));
 
   if (!header.SerializeToString(
           sealed_secret->mutable_sealed_secret_header())) {
@@ -153,12 +142,11 @@ Status SgxLocalSecretSealer::Seal(
 
   CleansingVector<uint8_t> key;
   ASYLO_RETURN_IF_ERROR(sgx::internal::GenerateCryptorKey(
-      cipher_suite, "default_key_id", cpusvn, sgx_expectation,
-      kAes256GcmSivKeySize, &key));
+      aead_scheme, "default_key_id", sgx_expectation, kAes256GcmSivKeySize,
+      &key));
 
   std::unique_ptr<AeadCryptor> cryptor;
-  ASYLO_ASSIGN_OR_RETURN(cryptor,
-                         sgx::internal::MakeCryptor(cipher_suite, key));
+  ASYLO_ASSIGN_OR_RETURN(cryptor, sgx::internal::MakeCryptor(aead_scheme, key));
   return sgx::internal::Seal(cryptor.get(), secret, final_additional_data,
                              sealed_secret);
 }
@@ -171,12 +159,11 @@ Status SgxLocalSecretSealer::Unseal(const SealedSecret &sealed_secret,
                   "Could not parse the sealed secret header");
   }
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   ASYLO_RETURN_IF_ERROR(
       sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-          header, &cpusvn, &cipher_suite, &sgx_expectation));
+          header, &aead_scheme, &sgx_expectation));
 
   std::string final_additional_data;
   SerializeByteContainers(&final_additional_data,
@@ -185,12 +172,11 @@ Status SgxLocalSecretSealer::Unseal(const SealedSecret &sealed_secret,
 
   CleansingVector<uint8_t> key;
   ASYLO_RETURN_IF_ERROR(sgx::internal::GenerateCryptorKey(
-      cipher_suite, "default_key_id", cpusvn, sgx_expectation,
-      kAes256GcmSivKeySize, &key));
+      aead_scheme, "default_key_id", sgx_expectation, kAes256GcmSivKeySize,
+      &key));
 
   std::unique_ptr<AeadCryptor> cryptor;
-  ASYLO_ASSIGN_OR_RETURN(cryptor,
-                         sgx::internal::MakeCryptor(cipher_suite, key));
+  ASYLO_ASSIGN_OR_RETURN(cryptor, sgx::internal::MakeCryptor(aead_scheme, key));
   return sgx::internal::Open(cryptor.get(), sealed_secret,
                              final_additional_data, secret);
 }

@@ -23,6 +23,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
@@ -33,6 +34,7 @@
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/test/util/status_matchers.h"
@@ -46,6 +48,7 @@ using ::testing::Not;
 
 constexpr char kBadRootName[] = "BAD";
 constexpr char kBadAdditionalInfo[] = "BAD";
+constexpr char kBadExpectation[] = "BAD";
 constexpr char kBadCpusvn[] = "BAD";
 constexpr char kTestString[] = "test";
 constexpr sgx::CipherSuite kBadCipherSuite = sgx::UNKNOWN_CIPHER_SUITE;
@@ -143,11 +146,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootType) {
   sealer->SetDefaultHeader(&header);
   header.mutable_root_info()->set_sealing_root_type(REMOTE);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -160,11 +162,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadSealingRootName) {
   sealer->SetDefaultHeader(&header);
   header.mutable_root_info()->set_sealing_root_name(kBadRootName);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -177,11 +178,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadAdditionalInfo) {
   sealer->SetDefaultHeader(&header);
   header.mutable_root_info()->set_additional_info(kBadAdditionalInfo);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -197,11 +197,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadCpusvn) {
   ASSERT_TRUE(info.SerializeToString(
       header.mutable_root_info()->mutable_additional_info()));
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -217,11 +216,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadCipherSuite) {
   ASSERT_TRUE(info.SerializeToString(
       header.mutable_root_info()->mutable_additional_info()));
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -232,25 +230,15 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsBadClientAcl) {
       SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
   SealedSecretHeader header;
   sealer->SetDefaultHeader(&header);
+  header.mutable_client_acl()
+      ->mutable_expectation()
+      ->mutable_reference_identity()
+      ->set_identity(kBadExpectation);
 
-  sgx::CodeIdentityMatchSpec spec;
-  ASSERT_THAT(sgx::SetDefaultMatchSpec(&spec), IsOk());
-  sgx::CodeIdentityExpectation expectation;
-  ASSERT_TRUE(sgx::SetExpectation(
-                  spec, sgx::GetSelfIdentity()->sgx_identity.code_identity(),
-                  &expectation)
-                  .ok());
-  ASSERT_TRUE(
-      sgx::SerializeSgxExpectation(expectation, header.mutable_client_acl()
-                                                    ->mutable_acl_group()
-                                                    ->add_predicates()
-                                                    ->mutable_expectation())
-          .ok());
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -263,14 +251,18 @@ TEST_F(SgxLocalSecretSealerTest,
   SealedSecretHeader header;
   sealer->SetDefaultHeader(&header);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_TRUE(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation)
-                  .ok());
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &aead_scheme, &sgx_expectation),
+              IsOk());
+
+  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
+                                           .machine_configuration()
+                                           .cpu_svn()
+                                           .value());
   EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
-  EXPECT_EQ(cipher_suite, sgx::AES256_GCM_SIV);
+  EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRENCLAVE
@@ -287,14 +279,18 @@ TEST_F(SgxLocalSecretSealerTest,
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(*enclave_copy_different_mrsigner_);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_TRUE(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation)
-                  .ok());
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &aead_scheme, &sgx_expectation),
+              IsOk());
+
+  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
+                                           .machine_configuration()
+                                           .cpu_svn()
+                                           .value());
   EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
-  EXPECT_EQ(cipher_suite, sgx::AES256_GCM_SIV);
+  EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRENCLAVE
@@ -309,11 +305,10 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsMrenclaveFailure) {
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(*enclave_copy_different_mrenclave_);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::PERMISSION_DENIED));
 }
 
@@ -326,14 +321,18 @@ TEST_F(SgxLocalSecretSealerTest,
   SealedSecretHeader header;
   sealer->SetDefaultHeader(&header);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_TRUE(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation)
-                  .ok());
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &aead_scheme, &sgx_expectation),
+              IsOk());
+
+  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
+                                           .machine_configuration()
+                                           .cpu_svn()
+                                           .value());
   EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
-  EXPECT_EQ(cipher_suite, sgx::AES256_GCM_SIV);
+  EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRSIGNER
@@ -350,14 +349,18 @@ TEST_F(SgxLocalSecretSealerTest,
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(*enclave_copy_different_mrenclave_);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_TRUE(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation)
-                  .ok());
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &aead_scheme, &sgx_expectation),
+              IsOk());
+
+  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
+                                           .machine_configuration()
+                                           .cpu_svn()
+                                           .value());
   EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
-  EXPECT_EQ(cipher_suite, sgx::AES256_GCM_SIV);
+  EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRSIGNER
@@ -373,14 +376,18 @@ TEST_F(SgxLocalSecretSealerTest,
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(*enclave_copy_higher_isvsvn_);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
-  EXPECT_TRUE(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation)
-                  .ok());
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
+  EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
+                  header, &aead_scheme, &sgx_expectation),
+              IsOk());
+
+  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
+                                           .machine_configuration()
+                                           .cpu_svn()
+                                           .value());
   EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
-  EXPECT_EQ(cipher_suite, sgx::AES256_GCM_SIV);
+  EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
 // Verify that the default SealedSecretHeader that binds a secret to MRSIGNER
@@ -395,12 +402,28 @@ TEST_F(SgxLocalSecretSealerTest, ParseKeyGenerationParamsMrsignerFailure) {
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(*enclave_copy_different_mrsigner_);
 
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn;
-  sgx::CipherSuite cipher_suite;
-  sgx::CodeIdentityExpectation sgx_expectation;
+  AeadScheme aead_scheme;
+  SgxIdentityExpectation sgx_expectation;
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
-                  header, &cpusvn, &cipher_suite, &sgx_expectation),
+                  header, &aead_scheme, &sgx_expectation),
               StatusIs(error::GoogleError::PERMISSION_DENIED));
+}
+
+// Verify that a secret fails to be sealed with an unsupported AEAD scheme.
+TEST_F(SgxLocalSecretSealerTest, SealFailureUnsupportedAeadScheme) {
+  CleansingVector<uint8_t> input_secret(kTestSecret,
+                                        kTestSecret + kTestSecretSize);
+  std::string input_aad(kTestAad);
+
+  std::unique_ptr<SgxLocalSecretSealer> sealer =
+      SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
+  SealedSecretHeader header;
+  PrepareSealedSecretHeader(*sealer, &header);
+  header.mutable_root_info()->set_aead_scheme(AeadScheme::UNKNOWN_AEAD_SCHEME);
+
+  SealedSecret sealed_secret;
+  EXPECT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that a secret sealed to MRENCLAVE can be unsealed from the same
@@ -416,8 +439,8 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealMrenclaveSuccessSameEnclave) {
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   std::unique_ptr<SgxLocalSecretSealer> sealer2 =
       SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
@@ -440,8 +463,8 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealMrenclaveFailureDifferentMrenclave) {
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   // Change the current enclave to an enclave with a different MRENCLAVE value.
   sgx::FakeEnclave::ExitEnclave();
@@ -466,8 +489,8 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealMrsignerSuccessSameEnclave) {
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   std::unique_ptr<SgxLocalSecretSealer> sealer2 =
       SgxLocalSecretSealer::CreateMrsignerSecretSealer();
@@ -490,8 +513,8 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealMrsignerSuccessSameMrsigner) {
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   // Change the current enclave to an enclave with a different MRENCLAVE value
   // but the same MRSIGNER value.
@@ -520,8 +543,8 @@ TEST_F(SgxLocalSecretSealerTest,
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   // Change the current enclave to an enclave with a higher ISVSVN value
   // but the same MRSIGNER value.
@@ -549,8 +572,8 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealMrsignerFailureDifferentMrsigner) {
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   // Change the current enclave to an enclave with a different MRSIGNER value.
   sgx::FakeEnclave::ExitEnclave();
@@ -579,8 +602,8 @@ TEST_F(SgxLocalSecretSealerTest,
   PrepareSealedSecretHeader(*sealer, &header);
 
   SealedSecret sealed_secret;
-  ASSERT_TRUE(
-      sealer->Seal(header, input_aad, input_secret, &sealed_secret).ok());
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
 
   // Change the current enclave to an enclave with a lower ISVSVN value
   // but the same MRSIGNER value.

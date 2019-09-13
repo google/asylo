@@ -23,6 +23,7 @@
 
 #include "absl/strings/str_cat.h"
 #include "absl/types/span.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
@@ -32,7 +33,9 @@
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/util/cleansing_types.h"
@@ -40,6 +43,27 @@
 
 namespace asylo {
 namespace sgx {
+namespace {
+
+// Translates |cipher_suite| to the AeadScheme equivalent.
+AeadScheme CipherSuiteToAeadScheme(CipherSuite cipher_suite) {
+  switch (cipher_suite) {
+    case sgx::AES256_GCM_SIV:
+      return AeadScheme::AES256_GCM_SIV;
+    default:
+      return AeadScheme::UNKNOWN_AEAD_SCHEME;
+  }
+}
+
+// Use the presence of the |version| field in the reference identity contained
+// in the header ACL to determine whether the secret was created before/after
+// the migration from CodeIdentity to SgxIdentity.
+bool IsLegacySealedSecret(const SealedSecretHeader &header) {
+  return !header.client_acl().expectation().reference_identity().has_version();
+}
+
+}  // namespace
+
 namespace internal {
 
 using experimental::AeadCryptor;
@@ -47,8 +71,8 @@ using experimental::AeadCryptor;
 const char *const kSgxLocalSecretSealerRootName = "SGX";
 
 Status ParseKeyGenerationParamsFromSealedSecretHeader(
-    const SealedSecretHeader &header, UnsafeBytes<kCpusvnSize> *cpusvn,
-    CipherSuite *cipher_suite, CodeIdentityExpectation *sgx_expectation) {
+    const SealedSecretHeader &header, AeadScheme *aead_scheme,
+    SgxIdentityExpectation *sgx_expectation) {
   const SealingRootInformation &root_info = header.root_info();
   if (root_info.sealing_root_type() != LOCAL) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -58,30 +82,46 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Incorrect sealing_root_name");
   }
-  SealedSecretAdditionalInfo info;
-  if (!info.ParseFromString(root_info.additional_info())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse additional_info");
-  }
-  if (info.cpusvn().size() != cpusvn->size()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Incorrect cpusvn size");
-  }
-  cpusvn->assign(info.cpusvn().data(), info.cpusvn().size());
-  ASYLO_ASSIGN_OR_RETURN(*cipher_suite,
-                         ParseCipherSuiteFromSealedSecretHeader(header));
   if (header.client_acl().item_case() != IdentityAclPredicate::kExpectation) {
     return Status(error::GoogleError::INVALID_ARGUMENT, "Malformed client_acl");
   }
+
   const EnclaveIdentityExpectation &generic_expectation =
       header.client_acl().expectation();
+
+  bool is_legacy = IsLegacySealedSecret(header);
+
+  // Call ParseSgxExpectation before attempting to populate legacy fields to
+  // avoid causing the parsing step to "undo" any of the fields manually set
+  // by the legacy flow.
   ASYLO_RETURN_IF_ERROR(
-      ParseSgxExpectation(generic_expectation, sgx_expectation));
+      ParseSgxExpectation(generic_expectation, sgx_expectation, is_legacy));
+
+  // Set CPUSVN from SealedSecretAdditionalInfo if present (ie. legacy secret);
+  // otherwise, it was populated when parsing the SgxIdentityExpectation above.
+  if (root_info.has_additional_info()) {
+    SealedSecretAdditionalInfo info;
+    if (!info.ParseFromString(root_info.additional_info())) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Could not parse additional_info");
+    }
+    if (info.cpusvn().size() != kCpusvnSize) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Incorrect cpusvn size");
+    }
+    sgx_expectation->mutable_reference_identity()
+        ->mutable_machine_configuration()
+        ->mutable_cpu_svn()
+        ->set_value(info.cpusvn());
+  }
+
+  ASYLO_ASSIGN_OR_RETURN(*aead_scheme,
+                         ParseAeadSchemeFromSealedSecretHeader(header));
+
   bool result;
   ASYLO_ASSIGN_OR_RETURN(
-      result,
-      MatchIdentityToExpectation(
-          GetSelfIdentity()->sgx_identity.code_identity(), *sgx_expectation));
+      result, MatchIdentityToExpectation(GetSelfIdentity()->sgx_identity,
+                                         *sgx_expectation, is_legacy));
   if (!result) {
     return Status(error::GoogleError::PERMISSION_DENIED,
                   "Identity of the current enclave does not match the ACL");
@@ -89,20 +129,19 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
   return Status::OkStatus();
 }
 
-uint16_t ConvertMatchSpecToKeypolicy(const CodeIdentityMatchSpec &spec) {
+uint16_t ConvertMatchSpecToKeypolicy(const SgxIdentityMatchSpec &spec) {
   uint16_t policy = 0;
-  if (spec.is_mrenclave_match_required()) {
+  if (spec.code_identity_match_spec().is_mrenclave_match_required()) {
     policy |= kKeypolicyMrenclaveBitMask;
   }
-  if (spec.is_mrsigner_match_required()) {
+  if (spec.code_identity_match_spec().is_mrsigner_match_required()) {
     policy |= kKeypolicyMrsignerBitMask;
   }
   return policy;
 }
 
-Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
-                          const UnsafeBytes<kCpusvnSize> &cpusvn,
-                          const CodeIdentityExpectation &sgx_expectation,
+Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
+                          const SgxIdentityExpectation &sgx_expectation,
                           size_t key_size, CleansingVector<uint8_t> *key) {
   // The function generates the |key_size| number of bytes by concatenating
   // bytes from one or more hardware-generated "subkeys." Each of the subkeys
@@ -121,14 +160,23 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
 
   req->keyname = KeyrequestKeyname::SEAL_KEY;
   req->keypolicy = ConvertMatchSpecToKeypolicy(sgx_expectation.match_spec());
-  req->isvsvn =
-      sgx_expectation.reference_identity().signer_assigned_identity().isvsvn();
-  req->cpusvn = cpusvn;
-  ConvertSecsAttributeRepresentation(
-      sgx_expectation.match_spec().attributes_match_mask(),
-      &req->attributemask);
+  req->isvsvn = sgx_expectation.reference_identity()
+                    .code_identity()
+                    .signer_assigned_identity()
+                    .isvsvn();
+  req->cpusvn = UnsafeBytes<kCpusvnSize>(sgx_expectation.reference_identity()
+                                             .machine_configuration()
+                                             .cpu_svn()
+                                             .value());
+
+  ConvertSecsAttributeRepresentation(sgx_expectation.match_spec()
+                                         .code_identity_match_spec()
+                                         .attributes_match_mask(),
+                                     &req->attributemask);
   // req->keyid is populated uniquely on each call to GetHardwareKey().
-  req->miscmask = sgx_expectation.match_spec().miscselect_match_mask();
+  req->miscmask = sgx_expectation.match_spec()
+                      .code_identity_match_spec()
+                      .miscselect_match_mask();
 
   key->resize(0);
   key->reserve(key_size);
@@ -143,7 +191,7 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
     // key identifier, key size, and key subscript.
     ASYLO_RETURN_IF_ERROR(SerializeByteContainers(
         &key_info, SealingRootType_Name(LOCAL), kSgxLocalSecretSealerRootName,
-        CipherSuite_Name(cipher_suite), key_id, absl::StrCat(key_size),
+        AeadScheme_Name(aead_scheme), key_id, absl::StrCat(key_size),
         absl::StrCat(key_subscript)));
 
     static_assert(decltype(req->keyid)::size() == SHA256_DIGEST_LENGTH,
@@ -166,12 +214,11 @@ Status GenerateCryptorKey(CipherSuite cipher_suite, const std::string &key_id,
   return Status::OkStatus();
 }
 
-StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(CipherSuite cipher_suite,
+StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(AeadScheme aead_scheme,
                                                    ByteContainerView key) {
-  switch (cipher_suite) {
-    case sgx::AES256_GCM_SIV:
+  switch (aead_scheme) {
+    case AeadScheme::AES256_GCM_SIV:
       return AeadCryptor::CreateAesGcmSivCryptor(key);
-    case sgx::UNKNOWN_CIPHER_SUITE:
     default:
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     "Unsupported cipher suite");
@@ -206,27 +253,29 @@ Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
   return Status::OkStatus();
 }
 
-StatusOr<CipherSuite> ParseCipherSuiteFromSealedSecretHeader(
+StatusOr<AeadScheme> ParseAeadSchemeFromSealedSecretHeader(
     const SealedSecretHeader &header) {
-  SealedSecretAdditionalInfo info;
-  if (!info.ParseFromString(header.root_info().additional_info())) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse additional_info");
+  AeadScheme aead_scheme;
+  if (IsLegacySealedSecret(header)) {
+    // This is a legacy secret, so we need to parse the sgx::CipherSuite from
+    // the |additional_info| field, and then convert it to asylo::AeadScheme.
+    SealedSecretAdditionalInfo info;
+    if (!info.ParseFromString(header.root_info().additional_info())) {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Could not parse additional_info");
+    }
+    aead_scheme = CipherSuiteToAeadScheme(info.cipher_suite());
+  } else {
+    aead_scheme = header.root_info().aead_scheme();
   }
-  if (info.cipher_suite() == UNKNOWN_CIPHER_SUITE) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Unsupported cipher suite");
-  }
-  return info.cipher_suite();
-}
 
-AeadScheme CipherSuiteToAeadScheme(CipherSuite cipher_suite) {
-  switch (cipher_suite) {
-    case sgx::AES256_GCM_SIV:
-      return AeadScheme::AES256_GCM_SIV;
-    default:
-      return AeadScheme::UNKNOWN_AEAD_SCHEME;
+  if (aead_scheme != AeadScheme::AES256_GCM_SIV) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Unsupported AeadScheme ", AeadScheme_Name(aead_scheme)));
   }
+
+  return aead_scheme;
 }
 
 }  // namespace internal

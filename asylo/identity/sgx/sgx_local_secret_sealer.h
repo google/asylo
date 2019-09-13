@@ -26,6 +26,7 @@
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/secret_sealer.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 
@@ -141,10 +142,10 @@ class SgxLocalSecretSealer : public SecretSealer {
  private:
   // Instantiates LocalSecretSealer that sets client_acl in the default sealed
   // secret header per |default_client_acl|.
-  SgxLocalSecretSealer(const sgx::CodeIdentityExpectation &default_client_acl);
+  SgxLocalSecretSealer(const SgxIdentityExpectation &default_client_acl);
 
   // The default client ACL for this SecretSealer.
-  sgx::CodeIdentityExpectation default_client_acl_;
+  SgxIdentityExpectation default_client_acl_;
 };
 
 }  // namespace asylo
