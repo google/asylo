@@ -33,6 +33,7 @@
 #include <utime.h>
 
 #include <algorithm>
+#include <vector>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
@@ -974,10 +975,10 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
     struct iovec iov[num_messages];
     memset(iov, 0, sizeof(iov));
-    char buf1[message1.size()];
-    char buf2[message2.size()];
-    iov[0].iov_base = reinterpret_cast<void *>(buf1);
-    iov[1].iov_base = reinterpret_cast<void *>(buf2);
+    std::vector<char> buf1(message1.size());
+    std::vector<char> buf2(message2.size());
+    iov[0].iov_base = reinterpret_cast<void *>(buf1.data());
+    iov[1].iov_base = reinterpret_cast<void *>(buf2.data());
     iov[0].iov_len = message1.size();
     iov[1].iov_len = message2.size();
     rc = readv(fd, iov, num_messages);
@@ -1010,18 +1011,19 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "Bytes written to file does not match message size");
     }
 
-    char buf[message2.size()];
-    ssize_t bytes_read = pread(fd, buf, message2.size(), message1.size());
+    std::vector<char> buf(message2.size());
+    ssize_t bytes_read =
+        pread(fd, buf.data(), message2.size(), message1.size());
     if (bytes_read != message2.size()) {
       return Status(
           error::GoogleError::INTERNAL,
           absl::StrCat("pread returns: ", bytes_read,
                        " does not match message size: ", message2.size()));
     }
-    if (memcmp(buf, message2.data(), message2.size())) {
+    if (!std::equal(buf.begin(), buf.end(), message2.begin())) {
       return Status(
           error::GoogleError::INTERNAL,
-          absl::StrCat("Message from pread: ", buf,
+          absl::StrCat("Message from pread: ", buf.data(),
                        " does not match expected: ", message2.data()));
     }
 
