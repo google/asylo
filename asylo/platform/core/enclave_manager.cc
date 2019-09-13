@@ -22,6 +22,7 @@
 #include <stdint.h>
 #include <sys/ucontext.h>
 #include <time.h>
+
 #include <thread>
 
 #include "absl/strings/str_cat.h"
@@ -70,12 +71,11 @@ StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
             absl::make_unique<primitives::DispatchTable>()));
   } else if (is_file_enclave) {
     std::string enclave_path = sgx_config.file_enclave_config().enclave_path();
-    ASYLO_ASSIGN_OR_RETURN(
-        primitive_client,
-        primitives::LoadEnclave<primitives::SgxBackend>(
-            enclave_name, base_address, enclave_path, enclave_size,
-            enclave_config, debug,
-            absl::make_unique<primitives::DispatchTable>()));
+    ASYLO_ASSIGN_OR_RETURN(primitive_client,
+                           primitives::LoadEnclave<primitives::SgxBackend>(
+                               enclave_name, base_address, enclave_path,
+                               enclave_size, enclave_config, debug,
+                               absl::make_unique<primitives::DispatchTable>()));
   } else {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "SGX enclave source not set");
@@ -333,9 +333,9 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
     }
     return LoadEnclave(load_config);
   } else {
-    return LoadFakeEnclave(
-        name, loader, CreateDefaultEnclaveConfig(host_config_), base_address,
-        enclave_size);
+    return LoadFakeEnclave(name, loader,
+                           CreateDefaultEnclaveConfig(host_config_),
+                           base_address, enclave_size);
   }
 }
 
