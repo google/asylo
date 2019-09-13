@@ -17,7 +17,7 @@
 licenses(["notice"])  # Apache v2.0
 
 package(
-    default_visibility = ["//visibility:public"],
+    default_visibility = ["//asylo:implementation"],
 )
 
 load(
@@ -63,6 +63,7 @@ enclave_loader(
     deps = [
         ":demo_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:logging",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
