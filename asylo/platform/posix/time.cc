@@ -82,17 +82,7 @@ extern "C" {
 // nanosleep if the requested sleep time is longer than we expect an enclave
 // round-trip to take. Otherwise, busy wait.
 int nanosleep(const struct timespec *requested, struct timespec *remainder) {
-  // If we want to sleep more than 3ms, then exit the enclave to sleep.
-  constexpr int64_t kExitThreshold = INT64_C(3000000);
-  int64_t delay = TimeSpecToNanoseconds(requested);
-  if (delay > kExitThreshold) {
-    return enc_untrusted_nanosleep(requested, remainder);
-  }
-  // Otherwise, wait on the shared clock.
-  if (remainder) {
-    NanosecondsToTimeSpec(remainder, 0);
-  }
-  return busy_sleep(requested);
+  return enc_untrusted_nanosleep(requested, remainder);
 }
 
 int enclave_gettimeofday(struct timeval *__restrict time, void *timezone) {
