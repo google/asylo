@@ -780,7 +780,8 @@ PrimitiveStatus TestNanosleep(void *context, MessageReader *in,
 PrimitiveStatus TestClockGettime(void *context, MessageReader *in,
                                  MessageWriter *out) {
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
-  auto clk_id = in->next<clockid_t>();
+  auto klinux_clk_id = in->next<clockid_t>();
+  clockid_t clk_id = FromkLinuxClockId(klinux_clk_id);
 
   struct timespec tp;
   struct kLinux_timespec klinux_tp;
