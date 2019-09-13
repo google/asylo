@@ -1949,7 +1949,7 @@ TEST_F(HostCallTest, TestNanosleep) {
 // Tests enc_untrusted_clock_gettime() by calling the function from inside the
 // enclave, doing some work (sleep 1 second), then calling the function
 // again and verifying the time elapsed.
-TEST_F(HostCallTest, TestClockGettime) {
+TEST_F(HostCallTest, TestClockGettimeMonotonicDifference) {
   MessageWriter in1, in2;
   MessageReader out1, out2;
   struct timespec start, end;
@@ -1973,6 +1973,31 @@ TEST_F(HostCallTest, TestClockGettime) {
                   end.tv_nsec - start.tv_nsec;
   EXPECT_GE(diff, kNanosecondsPerSecond);
   EXPECT_LE(diff, kNanosecondsPerSecond * 1.6);
+}
+
+// Tests the host clock against the enclave's idea of real time.
+TEST_F(HostCallTest, TestClockGettimeRealTimeVsHost) {
+  MessageWriter in;
+  MessageReader out;
+  struct timespec ts;
+
+  uint64_t host_time_ns = absl::GetCurrentTimeNanos();
+  EXPECT_LT(kNanosecondsPerSecond, host_time_ns);
+
+  in.Push<int64_t>(/*value=clk_id=*/CLOCK_REALTIME);
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestClockGettime, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and time.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  ts = out.next<struct timespec>();
+  uint64_t enc_time_ns = ts.tv_sec*kNanosecondsPerSecond + ts.tv_nsec;
+  EXPECT_LT(kNanosecondsPerSecond, enc_time_ns);
+
+  int64_t delta = enc_time_ns - host_time_ns;
+  if (delta < 0) delta = -delta;
+  // Verify the clock time got inside the enclave is within two seconds from
+  // the host time, to compensate for the time to exit the enclave.
+  EXPECT_LE(delta, kNanosecondsPerSecond * 2);
 }
 
 // Tests enc_untrusted_bind() by calling the function from inside the enclave
