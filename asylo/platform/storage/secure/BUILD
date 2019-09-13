@@ -30,8 +30,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({
         "@com_google_asylo//asylo": [
-            "aead_handler",
-            "enclave_storage_secure",
+            ":aead_handler",
+            ":enclave_storage_secure",
         ],
         "//conditions:default": [],
     }),
@@ -96,10 +96,16 @@ cc_enclave_test(
     srcs = ["enclave_storage_secure_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":aead_handler",
+        ":enclave_storage_secure",
         "//asylo/platform/host_call",
+        "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "//asylo/util:cleansing_types",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",

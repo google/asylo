@@ -118,10 +118,12 @@ sgx.unsigned_enclave(
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/sgx:trusted_sgx",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/storage/secure:trusted_secure",
         "//asylo/platform/storage/utils:trusted_utils",
         "//asylo/platform/system",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/strings",
     ],
 )
 

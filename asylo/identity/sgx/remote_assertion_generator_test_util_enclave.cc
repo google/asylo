@@ -37,8 +37,6 @@ namespace asylo {
 namespace sgx {
 namespace {
 
-constexpr char kCertificate[] = "TestUtilEnclaveCertificate";
-
 Status GetRemoteAssertion(const GetRemoteAssertionInput &input,
                           GetRemoteAssertionOutput *output) {
   if (!input.has_server_address()) {

@@ -354,7 +354,10 @@ cc_enclave_test(
     enclave_config = ":threaded_test_config",
     test_in_initialize = True,
     deps = [
+        "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_absl//absl/time",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -395,6 +398,7 @@ cc_enclave_test(
     srcs = ["pthread_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/posix:pthread_impl",
         "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
         "//asylo/util:status",
@@ -423,6 +427,7 @@ cc_enclave_test(
     srcs = ["condvar_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/common:time_util",
         "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
@@ -437,6 +442,7 @@ cc_enclave_test(
     srcs = ["sem_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/common:time_util",
         "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
         "//asylo/util:logging",
@@ -451,6 +457,7 @@ cc_enclave_test(
     srcs = ["rwlock_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/common:time_util",
         "//asylo/test/util:pthread_test_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -642,6 +649,7 @@ sgx.unsigned_enclave(
     srcs = ["threaded_finalize.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",

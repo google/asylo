@@ -29,7 +29,7 @@ cc_library(
     name = "trusted_gcmlib",
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({
-        "@com_google_asylo//asylo": ["gcm_cryptor"],
+        "@com_google_asylo//asylo": [":gcm_cryptor"],
         "//conditions:default": [],
     }),
 )
@@ -58,6 +58,10 @@ cc_enclave_test(
     srcs = ["gcm_cryptor_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":gcm_cryptor",
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:logging",
+        "@boringssl//:crypto",
         "@com_google_googletest//:gtest",
     ],
 )

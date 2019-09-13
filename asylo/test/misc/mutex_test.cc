@@ -36,9 +36,6 @@ const int kNumThreads = 8;
 // Controls the number of loops in StartRoutine.
 const int kNumLoops = 50000;
 
-// Controls the size of the buffer that is cleansed in StartRoutine.
-const int kBufferSize = 4096;
-
 // The expected final value of a counter.
 const int kExpectedResult = kNumThreads * kNumLoops;
 

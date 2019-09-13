@@ -100,9 +100,13 @@ cc_enclave_test(
     srcs = ["read_write_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/common:memory",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "//asylo/util:cleansing_types",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -129,12 +133,15 @@ cc_enclave_test(
     srcs = ["read_write_multithread_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/common:memory",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
         "//asylo/util:cleanup",
         "//asylo/util:logging",
+        "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -147,6 +154,8 @@ cc_enclave_test(
     deps = [
         ":io_manager",
         "//asylo/test/util:status_matchers",
+        "//asylo/util:logging",
+        "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
@@ -160,7 +169,9 @@ cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":io_manager",
+        "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:test_flags",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

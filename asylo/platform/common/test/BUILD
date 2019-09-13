@@ -31,7 +31,10 @@ sgx.unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":bridge_types_test_data",
+        "//asylo/platform/common:bridge_types",
         "//asylo/test/util:enclave_test_application",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
     ],
 )
 

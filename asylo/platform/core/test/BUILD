@@ -43,6 +43,9 @@ cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/posix/io:io_manager",
+        "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/util:logging",
+        "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
@@ -58,6 +61,7 @@ sgx.unsigned_enclave(
         ":proto_test_cc_proto",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
         "@com_google_absl//absl/memory",
     ],
 )
@@ -89,8 +93,9 @@ sgx.unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":proto_test_cc_proto",
-        "//asylo:enclave_cc_proto",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
+        "//asylo/util:status_macros",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -125,6 +130,7 @@ sgx.unsigned_enclave(
         ":proto_test_cc_proto",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
         "@com_google_absl//absl/memory",
     ],
 )

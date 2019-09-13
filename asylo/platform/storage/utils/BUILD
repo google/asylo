@@ -72,6 +72,8 @@ cc_enclave_test(
     srcs = ["offset_translator_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":offset_translator",
+        "//asylo/util:logging",
         "@com_google_googletest//:gtest",
     ],
 )

@@ -55,6 +55,8 @@ primitives_sim_enclave(
         ":test_selectors",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:status_macros",
     ],
 )
 

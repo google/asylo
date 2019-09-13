@@ -97,6 +97,7 @@ sgx.unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/grpc/util:enclave_server",
         "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
     ],
 )
@@ -121,6 +122,7 @@ sgx.unsigned_enclave(
         "//asylo/grpc/util:enclave_server",
         "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
     ],
 )
@@ -143,6 +145,7 @@ sgx.unsigned_enclave(
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/grpc/util:enclave_server",
         "//asylo/identity:identity_cc_proto",
+        "@com_google_absl//absl/memory",
     ],
 )
 
@@ -165,12 +168,15 @@ sgx.unsigned_enclave(
     deps = [
         ":client_enclave_cc_proto",
         ":messenger_client_impl",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:identity_cc_proto",
         "//asylo/util:status",
+        "@com_github_grpc_grpc//:gpr",
+        "@com_github_grpc_grpc//:gpr_codegen",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/time",
     ],

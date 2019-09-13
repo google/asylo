@@ -232,7 +232,11 @@ sgx.unsigned_enclave(
     srcs = ["fork_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
+        "//asylo/util:status",
     ],
 )
 
@@ -331,10 +335,13 @@ sgx.unsigned_enclave(
     deps = [
         ":syscalls_test_cc_proto",
         "//asylo/platform/common:bridge_proto_serializer",
+        "//asylo/platform/storage/utils:fd_closer",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@boringssl//:crypto",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/strings",
     ],
 )
 

@@ -37,6 +37,7 @@ cc_enclave_test(
     deps = [
         ":memory",
         "//asylo/platform/primitives:trusted_backend",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],
