@@ -321,18 +321,19 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
 
 Status ParseIdentityFromHardwareReport(const Report &report,
                                        CodeIdentity *identity) {
-  identity->mutable_mrenclave()->set_hash(report.mrenclave.data(),
-                                          report.mrenclave.size());
+  identity->mutable_mrenclave()->set_hash(report.body.mrenclave.data(),
+                                          report.body.mrenclave.size());
   identity->mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
-      report.mrsigner.data(), report.mrsigner.size());
-  identity->mutable_signer_assigned_identity()->set_isvprodid(report.isvprodid);
-  identity->mutable_signer_assigned_identity()->set_isvsvn(report.isvsvn);
-  if (!ConvertSecsAttributeRepresentation(report.attributes,
+      report.body.mrsigner.data(), report.body.mrsigner.size());
+  identity->mutable_signer_assigned_identity()->set_isvprodid(
+      report.body.isvprodid);
+  identity->mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
+  if (!ConvertSecsAttributeRepresentation(report.body.attributes,
                                           identity->mutable_attributes())) {
     return Status(::asylo::error::GoogleError::INTERNAL,
                   "Cound not convert hardware attributes to Attributes proto");
   }
-  identity->set_miscselect(report.miscselect);
+  identity->set_miscselect(report.body.miscselect);
   return Status::OkStatus();
 }
 
@@ -340,7 +341,7 @@ Status ParseIdentityFromHardwareReport(const Report &report,
                                        SgxIdentity *identity) {
   identity->Clear();
   identity->mutable_machine_configuration()->mutable_cpu_svn()->set_value(
-      report.cpusvn.data(), report.cpusvn.size());
+      report.body.cpusvn.data(), report.body.cpusvn.size());
   return ParseIdentityFromHardwareReport(report,
                                          identity->mutable_code_identity());
 }
@@ -680,8 +681,8 @@ Status VerifyHardwareReport(const Report &report) {
   SafeBytes<kReportMacSize> actual_mac;
   if (AES_CMAC(/*out=*/actual_mac.data(), /*key=*/report_key->data(),
                /*key_len=*/report_key->size(),
-               /*in=*/reinterpret_cast<const uint8_t *>(&report),
-               /*in_len=*/offsetof(Report, keyid)) != 1) {
+               /*in=*/reinterpret_cast<const uint8_t *>(&report.body),
+               /*in_len=*/sizeof(report.body)) != 1) {
     return Status(
         error::GoogleError::INTERNAL,
         absl::StrCat("CMAC computation failed: ", BsslLastErrorString()));

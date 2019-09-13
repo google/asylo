@@ -302,10 +302,10 @@ constexpr int kReportKeyidSize = 32;
 static_assert(kReportKeyidSize == kKeyrequestKeyidSize,
               "KEYID size for REPORT and KEYREQUEST structs is not the same");
 
-// Defines the REPORT architectural structure, which acts as a
-// locally-verifiable assertion of an enclave's identity. REPORT is an output
-// from the ENCLU[EREPORT] instruction.
-struct Report {
+// Defines the portion of a REPORT architectural structure which will be MACed.
+// The ReportBody describes various attestable attributes and measurements of a
+// running enclave.
+struct ReportBody {
   UnsafeBytes<kCpusvnSize> cpusvn;
   uint32_t miscselect;
   UnsafeBytes<12> reserved1;  // Field size taken from the Intel SDM.
@@ -322,6 +322,16 @@ struct Report {
   UnsafeBytes<42> reserved4;  // Field size taken from the Intel SDM.
   UnsafeBytes<kIsvfamilyidSize> isvfamilyid;
   Reportdata reportdata;
+} ABSL_ATTRIBUTE_PACKED;
+
+static_assert(sizeof(ReportBody) == 384,
+              "Size of struct ReportBody is incorrect");
+
+// Defines the REPORT architectural structure, which acts as a
+// locally-verifiable assertion of an enclave's identity. REPORT is an output
+// from the ENCLU[EREPORT] instruction.
+struct Report {
+  ReportBody body;
   UnsafeBytes<kReportKeyidSize> keyid;
   UnsafeBytes<kSgxMacSize> mac;
 } ABSL_ATTRIBUTE_PACKED;
@@ -349,6 +359,8 @@ static_assert(std::is_trivial<Targetinfo>::value,
               "Targetinfo is not a trivial type");
 static_assert(std::is_trivial<Reportdata>::value,
               "Reportdata is not a trivial type");
+static_assert(std::is_trivial<ReportBody>::value,
+              "ReportBody is not a trivial type");
 static_assert(std::is_trivial<Report>::value, "Report is not a trivial type");
 
 }  // namespace sgx

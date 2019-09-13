@@ -176,7 +176,7 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
   ASYLO_RETURN_IF_ERROR(hash.CumulativeHash(&digest));
   expected_reportdata.data.replace(/*pos=*/0, digest);
 
-  if (expected_reportdata.data != report.reportdata.data) {
+  if (expected_reportdata.data != report.body.reportdata.data) {
     return Status(error::GoogleError::INTERNAL,
                   "Assertion is not bound to the provided user-data");
   }

@@ -663,26 +663,26 @@ TEST_F(FakeEnclaveTest, Report) {
     ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *reportdata, report.get()));
 
     // Check that the various fields from the report match the expectation.
-    EXPECT_EQ(report->cpusvn, enclave1.get_cpusvn());
-    EXPECT_EQ(report->miscselect, enclave1.get_miscselect());
-    EXPECT_EQ(report->reserved1,
-              TrivialZeroObject<decltype(report->reserved1)>());
-    EXPECT_EQ(report->isvextprodid, enclave1.get_isvextprodid());
-    EXPECT_EQ(report->attributes, enclave1.get_attributes());
-    EXPECT_EQ(report->mrenclave, enclave1.get_mrenclave());
-    EXPECT_EQ(report->reserved2,
-              TrivialZeroObject<decltype(report->reserved2)>());
-    EXPECT_EQ(report->mrsigner, enclave1.get_mrsigner());
-    EXPECT_EQ(report->reserved3,
-              TrivialZeroObject<decltype(report->reserved3)>());
-    EXPECT_EQ(report->configid, enclave1.get_configid());
-    EXPECT_EQ(report->isvprodid, enclave1.get_isvprodid());
-    EXPECT_EQ(report->isvsvn, enclave1.get_isvsvn());
-    EXPECT_EQ(report->configsvn, enclave1.get_configsvn());
-    EXPECT_EQ(report->reserved4,
-              TrivialZeroObject<decltype(report->reserved4)>());
-    EXPECT_EQ(report->isvfamilyid, enclave1.get_isvfamilyid());
-    EXPECT_EQ(report->reportdata.data, reportdata->data);
+    EXPECT_EQ(report->body.cpusvn, enclave1.get_cpusvn());
+    EXPECT_EQ(report->body.miscselect, enclave1.get_miscselect());
+    EXPECT_EQ(report->body.reserved1,
+              TrivialZeroObject<decltype(report->body.reserved1)>());
+    EXPECT_EQ(report->body.isvextprodid, enclave1.get_isvextprodid());
+    EXPECT_EQ(report->body.attributes, enclave1.get_attributes());
+    EXPECT_EQ(report->body.mrenclave, enclave1.get_mrenclave());
+    EXPECT_EQ(report->body.reserved2,
+              TrivialZeroObject<decltype(report->body.reserved2)>());
+    EXPECT_EQ(report->body.mrsigner, enclave1.get_mrsigner());
+    EXPECT_EQ(report->body.reserved3,
+              TrivialZeroObject<decltype(report->body.reserved3)>());
+    EXPECT_EQ(report->body.configid, enclave1.get_configid());
+    EXPECT_EQ(report->body.isvprodid, enclave1.get_isvprodid());
+    EXPECT_EQ(report->body.isvsvn, enclave1.get_isvsvn());
+    EXPECT_EQ(report->body.configsvn, enclave1.get_configsvn());
+    EXPECT_EQ(report->body.reserved4,
+              TrivialZeroObject<decltype(report->body.reserved4)>());
+    EXPECT_EQ(report->body.isvfamilyid, enclave1.get_isvfamilyid());
+    EXPECT_EQ(report->body.reportdata.data, reportdata->data);
     EXPECT_EQ(report->keyid, enclave1.get_report_keyid());
 
     // Exit enclave1.

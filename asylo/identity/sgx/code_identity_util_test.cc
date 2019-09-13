@@ -933,23 +933,24 @@ TEST_F(CodeIdentityUtilTest, ParseIdentityFromHardwareReport) {
   CodeIdentity identity;
   ASYLO_EXPECT_OK(ParseIdentityFromHardwareReport(*report, &identity));
   EXPECT_TRUE(std::equal(
-      report->mrenclave.cbegin(), report->mrenclave.cend(),
+      report->body.mrenclave.cbegin(), report->body.mrenclave.cend(),
       identity.mrenclave().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_TRUE(std::equal(
-      report->mrsigner.cbegin(), report->mrsigner.cend(),
+      report->body.mrsigner.cbegin(), report->body.mrsigner.cend(),
       identity.signer_assigned_identity().mrsigner().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
-  EXPECT_EQ(report->isvprodid, identity.signer_assigned_identity().isvprodid());
-  EXPECT_EQ(report->isvsvn, identity.signer_assigned_identity().isvsvn());
+  EXPECT_EQ(report->body.isvprodid,
+            identity.signer_assigned_identity().isvprodid());
+  EXPECT_EQ(report->body.isvsvn, identity.signer_assigned_identity().isvsvn());
 
   SecsAttributeSet attributes;
   EXPECT_TRUE(
       ConvertSecsAttributeRepresentation(identity.attributes(), &attributes));
-  EXPECT_EQ(report->attributes, attributes);
-  EXPECT_EQ(report->miscselect, identity.miscselect());
+  EXPECT_EQ(report->body.attributes, attributes);
+  EXPECT_EQ(report->body.miscselect, identity.miscselect());
 }
 
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFromHardwareReport) {
@@ -966,27 +967,29 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFromHardwareReport) {
   ASYLO_ASSERT_OK(ParseIdentityFromHardwareReport(*report, &identity));
   CodeIdentity code_identity = identity.code_identity();
   EXPECT_TRUE(std::equal(
-      report->mrenclave.cbegin(), report->mrenclave.cend(),
+      report->body.mrenclave.cbegin(), report->body.mrenclave.cend(),
       code_identity.mrenclave().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_TRUE(std::equal(
-      report->mrsigner.cbegin(), report->mrsigner.cend(),
+      report->body.mrsigner.cbegin(), report->body.mrsigner.cend(),
       code_identity.signer_assigned_identity().mrsigner().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
-  EXPECT_EQ(report->isvprodid,
+  EXPECT_EQ(report->body.isvprodid,
             code_identity.signer_assigned_identity().isvprodid());
-  EXPECT_EQ(report->isvsvn, code_identity.signer_assigned_identity().isvsvn());
+  EXPECT_EQ(report->body.isvsvn,
+            code_identity.signer_assigned_identity().isvsvn());
 
   SecsAttributeSet attributes;
   EXPECT_TRUE(ConvertSecsAttributeRepresentation(code_identity.attributes(),
                                                  &attributes));
-  EXPECT_EQ(report->attributes, attributes);
-  EXPECT_EQ(report->miscselect, code_identity.miscselect());
+  EXPECT_EQ(report->body.attributes, attributes);
+  EXPECT_EQ(report->body.miscselect, code_identity.miscselect());
 
   CpuSvn report_cpusvn;
-  report_cpusvn.set_value(report->cpusvn.data(), report->cpusvn.size());
+  report_cpusvn.set_value(report->body.cpusvn.data(),
+                          report->body.cpusvn.size());
   EXPECT_THAT(identity.machine_configuration().cpu_svn(),
               EqualsProto(report_cpusvn));
 }
@@ -1516,7 +1519,7 @@ TEST_F(CodeIdentityUtilTest, VerifyHardwareReportBadReport) {
   *data = TrivialRandomObject<Reportdata>();
   ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *data, report.get()));
   // Corrupt the REPORT by flipping the first byte of MRENCLAVE.
-  report->mrenclave[0] ^= 0xFFFF;
+  report->body.mrenclave[0] ^= 0xFFFF;
   EXPECT_THAT(VerifyHardwareReport(*report), Not(IsOk()));
 }
 

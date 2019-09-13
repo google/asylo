@@ -374,22 +374,22 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
     LOG(FATAL) << "Reserved fields/bits in input parameters are not zeroed.";
   }
 
-  report->cpusvn = cpusvn_;
-  report->miscselect = miscselect_;
-  report->reserved1.fill(0);
-  report->isvextprodid = isvextprodid_;
-  report->attributes = attributes_;
-  report->mrenclave = mrenclave_;
-  report->reserved2.fill(0);
-  report->mrsigner = mrsigner_;
-  report->reserved3.fill(0);
-  report->configid = configid_;
-  report->isvprodid = isvprodid_;
-  report->isvsvn = isvsvn_;
-  report->configsvn = configsvn_;
-  report->reserved4.fill(0);
-  report->isvfamilyid = isvfamilyid_;
-  report->reportdata = reportdata;
+  report->body.cpusvn = cpusvn_;
+  report->body.miscselect = miscselect_;
+  report->body.reserved1.fill(0);
+  report->body.isvextprodid = isvextprodid_;
+  report->body.attributes = attributes_;
+  report->body.mrenclave = mrenclave_;
+  report->body.reserved2.fill(0);
+  report->body.mrsigner = mrsigner_;
+  report->body.reserved3.fill(0);
+  report->body.configid = configid_;
+  report->body.isvprodid = isvprodid_;
+  report->body.isvsvn = isvsvn_;
+  report->body.configsvn = configsvn_;
+  report->body.reserved4.fill(0);
+  report->body.isvfamilyid = isvfamilyid_;
+  report->body.reportdata = reportdata;
   report->keyid = report_keyid_;
 
   // Prepare a KeyDependencies struct to generate the appropriate report key.
@@ -432,8 +432,8 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   }
 
   if (AES_CMAC(report->mac.data(), report_key.data(), report_key.size(),
-               reinterpret_cast<uint8_t *>(report),
-               offsetof(Report, keyid)) != 1) {
+               reinterpret_cast<uint8_t *>(&report->body),
+               sizeof(report->body)) != 1) {
     // Clear-out any leftover state from the output.
     report->mac.Cleanse();
     return Status(SGX_ERROR_UNEXPECTED, BsslLastErrorString());

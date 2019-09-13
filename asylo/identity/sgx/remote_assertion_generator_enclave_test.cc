@@ -529,7 +529,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
           enclave_input.GetExtension(remote_assertion_generator_enclave_input)
               .generate_pce_info_sgx_hardware_report_input()
               .ppid_encryption_key()));
-  EXPECT_THAT(report.reportdata.data, Eq(expected_reportdata.data));
+  EXPECT_THAT(report.body.reportdata.data, Eq(expected_reportdata.data));
 
   // Check that the test util enclave can verify the report produced by the
   EnclaveInput client_enclave_input;
@@ -644,7 +644,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
   Report report;
   ASYLO_ASSERT_OK_AND_ASSIGN(report,
                              ConvertReportProtoToHardwareReport(report_proto));
-  EXPECT_THAT(report.reportdata.data, Eq(expected_reportdata.data));
+  EXPECT_THAT(report.body.reportdata.data, Eq(expected_reportdata.data));
 
   // Check that the test util enclave can verify the report produced by the AGE.
   EnclaveInput client_enclave_input;

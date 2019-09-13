@@ -47,13 +47,13 @@ SelfIdentity::SelfIdentity() {
     LOG(FATAL) << "GetHardwareReport() failed: " << status;
   }
 
-  cpusvn = report->cpusvn;
-  miscselect = report->miscselect;
-  attributes = report->attributes;
-  mrenclave = report->mrenclave;
-  mrsigner = report->mrsigner;
-  isvprodid = report->isvprodid;
-  isvsvn = report->isvsvn;
+  cpusvn = report->body.cpusvn;
+  miscselect = report->body.miscselect;
+  attributes = report->body.attributes;
+  mrenclave = report->body.mrenclave;
+  mrsigner = report->body.mrsigner;
+  isvprodid = report->body.isvprodid;
+  isvsvn = report->body.isvsvn;
 
   status = ParseIdentityFromHardwareReport(*report, &sgx_identity);
   if (!status.ok()) {

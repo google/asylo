@@ -404,7 +404,7 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
   std::vector<uint8_t> digest;
   ASSERT_THAT(hash.CumulativeHash(&digest), IsOk());
   expected_reportdata.replace(/*pos=*/0, digest);
-  EXPECT_EQ(report->reportdata.data, expected_reportdata);
+  EXPECT_EQ(report->body.reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.
   sgx::CodeIdentity code_identity;
