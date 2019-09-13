@@ -47,7 +47,7 @@ const std::string GetEnclaveOutputMessage(const asylo::EnclaveOutput &output) {
 int main(int argc, char *argv[]) {
   absl::ParseCommandLine(argc, argv);
 
-  constexpr absl::string_view enclave_name = "demo_enclave";
+  constexpr char kEnclaveName[] = "demo_enclave";
 
   const std::string message = absl::GetFlag(FLAGS_message);
   LOG_IF(QFATAL, message.empty()) << "Empty --message flag.";
@@ -64,7 +64,7 @@ int main(int argc, char *argv[]) {
 
   // Prepare |load_config| message.
   asylo::EnclaveLoadConfig load_config;
-  load_config.set_name(enclave_name);
+  load_config.set_name(kEnclaveName);
 
   // Prepare |sgx_config| message.
   auto sgx_config = load_config.MutableExtension(asylo::sgx_load_config);
@@ -86,7 +86,7 @@ int main(int argc, char *argv[]) {
   asylo::EnclaveOutput output;
 
   // Get |EnclaveClient| for loaded enclave and execute |EnterAndRun|.
-  asylo::EnclaveClient *const client = manager->GetClient(enclave_name);
+  asylo::EnclaveClient *const client = manager->GetClient(kEnclaveName);
   status = client->EnterAndRun(input, &output);
   LOG_IF(QFATAL, !status.ok()) << "EnterAndRun failed with: " << status;
 
