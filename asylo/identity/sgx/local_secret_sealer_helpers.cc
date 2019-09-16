@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 
 #include <cstdint>
+#include <string>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -119,12 +120,16 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
                          ParseAeadSchemeFromSealedSecretHeader(header));
 
   bool result;
+  std::string explanation;
   ASYLO_ASSIGN_OR_RETURN(
-      result, MatchIdentityToExpectation(GetSelfIdentity()->sgx_identity,
-                                         *sgx_expectation, is_legacy));
+      result,
+      MatchIdentityToExpectation(GetSelfIdentity()->sgx_identity,
+                                 *sgx_expectation, &explanation, is_legacy));
   if (!result) {
-    return Status(error::GoogleError::PERMISSION_DENIED,
-                  "Identity of the current enclave does not match the ACL");
+    return Status(
+        error::GoogleError::PERMISSION_DENIED,
+        absl::StrCat("Identity of the current enclave does not match the ACL: ",
+                     explanation));
   }
   return Status::OkStatus();
 }

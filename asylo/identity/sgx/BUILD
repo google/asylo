@@ -754,8 +754,10 @@ cc_library(
         ":hardware_types",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
+        ":proto_format",
         ":sgx_identity_cc_proto",
         "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
@@ -766,6 +768,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 

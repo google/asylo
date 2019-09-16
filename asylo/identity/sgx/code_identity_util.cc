@@ -22,9 +22,15 @@
 
 #include <limits>
 #include <string>
+#include <vector>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/str_join.h"
+#include "absl/strings/str_replace.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/descriptions.h"
@@ -37,6 +43,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
@@ -48,6 +55,19 @@
 namespace asylo {
 namespace sgx {
 namespace {
+
+std::string FormatProtoWithoutNewlines(const google::protobuf::Message &message) {
+  return absl::StrReplaceAll(FormatProto(message), {{"\n", " "}});
+}
+
+// Returns a new string containing |explanations| appended to |current|.
+std::string WithAppendedExplanations(
+    absl::string_view current, const std::vector<std::string> &explanations) {
+  if (explanations.empty()) {
+    return std::string(current);
+  }
+  return absl::StrCat(current, " and ", absl::StrJoin(explanations, " and "));
+}
 
 // Retrieves the report key associated with |keyid| for the current enclave and
 // writes it to |key|.
@@ -82,10 +102,18 @@ Status GetReportKey(const UnsafeBytes<kKeyrequestKeyidSize> &keyid,
 
 StatusOr<bool> MatchIdentityToExpectation(const CodeIdentity &identity,
                                           const CodeIdentity &expected,
-                                          const CodeIdentityMatchSpec &spec) {
+                                          const CodeIdentityMatchSpec &spec,
+                                          std::string *explanation) {
+  std::vector<std::string> explanations;
+
   if (spec.is_mrenclave_match_required() &&
       identity.mrenclave() != expected.mrenclave()) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "MRENCLAVE value %s does not match expected MRENCLAVE value %s",
+        absl::BytesToHexString(
+            MakeView<absl::string_view>(identity.mrenclave().hash())),
+        absl::BytesToHexString(
+            MakeView<absl::string_view>(expected.mrenclave().hash()))));
   }
 
   const SignerAssignedIdentity &given_id = identity.signer_assigned_identity();
@@ -94,27 +122,51 @@ StatusOr<bool> MatchIdentityToExpectation(const CodeIdentity &identity,
 
   if (spec.is_mrsigner_match_required() &&
       given_id.mrsigner() != expected_id.mrsigner()) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "MRSIGNER value %s does not match expected MRSIGNER value %s",
+        absl::BytesToHexString(
+            MakeView<absl::string_view>(given_id.mrsigner().hash())),
+        absl::BytesToHexString(
+            MakeView<absl::string_view>(expected_id.mrsigner().hash()))));
   }
 
   if (given_id.isvprodid() != expected_id.isvprodid()) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "ISVPRODID value %d does not match expected ISVPRODID value %d",
+        given_id.isvprodid(), expected_id.isvprodid()));
   }
   if (given_id.isvsvn() < expected_id.isvsvn()) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "ISVSVN value %d is lower than expected ISVSVN value %d",
+        given_id.isvsvn(), expected_id.isvsvn()));
   }
 
   if ((spec.miscselect_match_mask() & identity.miscselect()) !=
       (spec.miscselect_match_mask() & expected.miscselect())) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "MISCSELECT value %#08x does not match expected MISCSELECT value %#08x "
+        "masked with %#08x",
+        identity.miscselect(), expected.miscselect(),
+        spec.miscselect_match_mask()));
   }
 
   if ((spec.attributes_match_mask() & identity.attributes()) !=
       (spec.attributes_match_mask() & expected.attributes())) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "ATTRIBUTES value {%s} does not match expected ATTRIBUTES value {%s} "
+        "masked with {%s}",
+        FormatProtoWithoutNewlines(identity.attributes()),
+        FormatProtoWithoutNewlines(expected.attributes()),
+        FormatProtoWithoutNewlines(spec.attributes_match_mask())));
   }
 
-  return true;
+  if (explanation != nullptr) {
+    *explanation = absl::StrJoin(explanations, " and ");
+  }
+
+  // If |explanations| is non-empty, it means that one or more properties of the
+  // CodeIdentity did not match the expectation.
+  return explanations.empty();
 }
 
 }  // namespace
@@ -155,7 +207,8 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
 }  // namespace internal
 
 StatusOr<bool> MatchIdentityToExpectation(
-    const CodeIdentity &identity, const CodeIdentityExpectation &expectation) {
+    const CodeIdentity &identity, const CodeIdentityExpectation &expectation,
+    std::string *explanation) {
   if (!IsValidExpectation(expectation)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Expectation parameter is invalid");
@@ -170,12 +223,12 @@ StatusOr<bool> MatchIdentityToExpectation(
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Identity is not compatible with specified match spec");
   }
-  return MatchIdentityToExpectation(identity, expected, spec);
+  return MatchIdentityToExpectation(identity, expected, spec, explanation);
 }
 
 StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
-    bool is_legacy) {
+    std::string *explanation, bool is_legacy) {
   if (!IsValidExpectation(expectation, is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Expectation parameter is invalid");
@@ -198,20 +251,41 @@ StatusOr<bool> MatchIdentityToExpectation(
   const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
       expectation.match_spec().machine_configuration_match_spec();
 
+  std::vector<std::string> explanations;
+
   if (machine_config_match_spec.has_is_cpu_svn_match_required() &&
       actual_config.cpu_svn().value() != expected_config.cpu_svn().value()) {
-    return false;
+    explanations.emplace_back(absl::StrFormat(
+        "CPUSVN value %s does not match expected CPUSVN value %s",
+        absl::BytesToHexString(actual_config.cpu_svn().value()),
+        absl::BytesToHexString(expected_config.cpu_svn().value())));
   }
   if (machine_config_match_spec.has_is_sgx_type_match_required() &&
       actual_config.sgx_type() != expected_config.sgx_type()) {
-    return false;
+    explanations.emplace_back(
+        absl::StrFormat("SGX Type %s does not match expected SGX Type %s",
+                        SgxType_Name(actual_config.sgx_type()),
+                        SgxType_Name(expected_config.sgx_type())));
   }
 
   // Perform checks for the CodeIdentity component of SgxIdentity.
-  return MatchIdentityToExpectation(
-      identity.code_identity(),
-      expectation.reference_identity().code_identity(),
-      expectation.match_spec().code_identity_match_spec());
+  bool code_identity_match_result;
+  ASYLO_ASSIGN_OR_RETURN(
+      code_identity_match_result,
+      MatchIdentityToExpectation(
+          identity.code_identity(),
+          expectation.reference_identity().code_identity(),
+          expectation.match_spec().code_identity_match_spec(), explanation));
+
+  if (explanation != nullptr) {
+    *explanation = WithAppendedExplanations(*explanation, explanations);
+  }
+
+  // If |explanations| is non-empty, it means that one or more properties of the
+  // SgxMachineConfiguration did not match the expectation. This value is
+  // logically AND'd with the result of matching the CodeIdentity component of
+  // the identity to get the final match result.
+  return explanations.empty() && code_identity_match_result;
 }
 
 Status SetExpectation(const CodeIdentityMatchSpec &match_spec,

@@ -42,7 +42,8 @@ StatusOr<bool> SgxCodeIdentityExpectationMatcher::Match(
   }
 
   return sgx::MatchIdentityToExpectation(code_identity,
-                                         code_identity_expectation);
+                                         code_identity_expectation,
+                                         /*explanation=*/nullptr);
 }
 
 EnclaveIdentityDescription SgxCodeIdentityExpectationMatcher::Description()

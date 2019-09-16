@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_SGX_CODE_IDENTITY_UTIL_H_
 #define ASYLO_IDENTITY_SGX_CODE_IDENTITY_UTIL_H_
 
+#include <string>
+
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
@@ -39,12 +41,14 @@ namespace sgx {
 // invalid for this field to be missing on non-legacy match specs.
 
 // Matches |identity| to given |expectation|. Returns true if there is no error
-// encountered, and if the match is successful. Else returns false.
+// encountered, and if the match is successful. Else returns false and populates
+// |explanation| with an explanation of why the match failed.
 StatusOr<bool> MatchIdentityToExpectation(
-    const CodeIdentity &identity, const CodeIdentityExpectation &expectation);
+    const CodeIdentity &identity, const CodeIdentityExpectation &expectation,
+    std::string *explanation);
 StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
-    bool is_legacy = false);
+    std::string *explanation, bool is_legacy = false);
 
 // Sets |expectation| based on |identity| and |match_spec|. Returns true on
 // success (no error), else returns false.
