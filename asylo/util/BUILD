@@ -57,7 +57,7 @@ cc_library(
     name = "cleanup",
     hdrs = ["cleanup.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
 )
 
 cc_test(
@@ -226,7 +226,7 @@ cc_library(
     name = "mutex_guarded",
     hdrs = ["mutex_guarded.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/synchronization",
@@ -261,7 +261,7 @@ cc_library(
     name = "status_macros",
     hdrs = ["status_macros.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         "@com_google_absl//absl/base:core_headers",
     ],
@@ -481,7 +481,7 @@ cc_library(
     srcs = ["std_thread.h"],
     hdrs = ["thread.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps =
         [
             "//asylo/util:logging",
