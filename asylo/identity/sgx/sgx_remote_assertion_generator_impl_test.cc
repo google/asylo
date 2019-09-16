@@ -91,24 +91,29 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
   }
 
   void SetUp() override {
+    // Avoid calling GetSelfIdentity() multiple times within one test case
+    // because each call generates a new random identity.
+    self_identity_ = GetSelfIdentity();
+  }
+
+  asylo::StatusOr<std::unique_ptr<SgxRemoteAssertionGeneratorImpl>>
+  CreateServiceWithKeyAndCertificate() {
     CertificateChain certificate_chain;
-    ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kCertificateChain1,
-                                                    &certificate_chain));
+    if (!google::protobuf::TextFormat::ParseFromString(kCertificateChain1,
+                                             &certificate_chain)) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Failed to parse text certificate chain proto");
+    }
     certificate_chains_.push_back(certificate_chain);
 
     // Use a randomly-generated signing key.
     std::unique_ptr<SigningKey> signing_key;
-    ASYLO_ASSERT_OK_AND_ASSIGN(signing_key,
-                               EcdsaP256Sha256SigningKey::Create());
-    ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key_, signing_key->GetVerifyingKey());
+    ASYLO_ASSIGN_OR_RETURN(signing_key, EcdsaP256Sha256SigningKey::Create());
+    ASYLO_ASSIGN_OR_RETURN(verifying_key_, signing_key->GetVerifyingKey());
     signature_scheme_ = signing_key->GetSignatureScheme();
-    service_ = absl::make_unique<SgxRemoteAssertionGeneratorImpl>(
-        std::unique_ptr<SigningKey>(std::move(signing_key)),
-        certificate_chains_);
 
-    // Avoid calling GetSelfIdentity() multiple times within one test case
-    // because each call generates a new random identity.
-    self_identity_ = GetSelfIdentity();
+    return std::move(absl::make_unique<SgxRemoteAssertionGeneratorImpl>(
+        std::move(signing_key), certificate_chains_));
   }
 
   void TearDown() override {
@@ -117,13 +122,14 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
     }
   }
 
-  // Starts a gRPC server that hosts the SgxRemoteAssertionGenerator service.
-  // The server is hosted on a randomly-selected port with |server_credentials|.
-  // This method saves the final server address in server_address_.
+  // Starts a gRPC server that hosts |service|. The server is hosted on a
+  // randomly-selected port with |server_credentials|. This method saves the
+  // final server address in server_address_.
   void SetUpServer(
+      SgxRemoteAssertionGeneratorImpl *service,
       const std::shared_ptr<::grpc::ServerCredentials> &server_credentials) {
     ::grpc::ServerBuilder builder;
-    builder.RegisterService(service_.get());
+    builder.RegisterService(service);
 
     int port = 0;
     builder.AddListeningPort(absl::StrCat(kAddress, ":", port),
@@ -207,11 +213,26 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
   SignatureScheme signature_scheme_;
   std::unique_ptr<VerifyingKey> verifying_key_;
   std::vector<CertificateChain> certificate_chains_;
-  std::unique_ptr<SgxRemoteAssertionGeneratorImpl> service_;
   std::unique_ptr<::grpc::Server> server_;
   std::string server_address_;
   const SelfIdentity *self_identity_;
 };
+
+TEST_F(SgxRemoteAssertionGeneratorImplTest,
+       ServerWithoutAttestationKeyGenerateSgxRemoteAssertionFails) {
+  // Configure the server and the peer to use bidirectional authentication based
+  // on SGX local attestation. SGX-remote-assertion generation is authorized in
+  // this case.
+  std::shared_ptr<::grpc::ServerCredentials> server_credentials =
+      EnclaveServerCredentials(BidirectionalSgxLocalCredentialsOptions());
+  auto service = absl::make_unique<SgxRemoteAssertionGeneratorImpl>();
+  SetUpServer(service.get(), server_credentials);
+
+  std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
+      EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
+  EXPECT_THAT(GenerateSgxRemoteAssertion(channel_credentials).status(),
+              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+}
 
 TEST_F(SgxRemoteAssertionGeneratorImplTest,
        GenerateSgxRemoteAssertionSucceeds) {
@@ -220,7 +241,9 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
   // this case, and should produce a valid remote assertion.
   std::shared_ptr<::grpc::ServerCredentials> server_credentials =
       EnclaveServerCredentials(BidirectionalSgxLocalCredentialsOptions());
-  SetUpServer(server_credentials);
+  std::unique_ptr<SgxRemoteAssertionGeneratorImpl> service;
+  ASYLO_ASSERT_OK_AND_ASSIGN(service, CreateServiceWithKeyAndCertificate());
+  SetUpServer(service.get(), server_credentials);
 
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
       EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
@@ -232,13 +255,51 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
 }
 
 TEST_F(SgxRemoteAssertionGeneratorImplTest,
+       UpdateSigningKeyAndCertificateChainsOnNoKeyServerSucceeds) {
+  // Configure the server and the peer to use bidirectional authentication based
+  // on SGX local attestation. SGX-remote-assertion generation is authorized in
+  // this case.
+  std::shared_ptr<::grpc::ServerCredentials> server_credentials =
+      EnclaveServerCredentials(BidirectionalSgxLocalCredentialsOptions());
+  auto service = absl::make_unique<SgxRemoteAssertionGeneratorImpl>();
+  SetUpServer(service.get(), server_credentials);
+
+  std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
+      EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
+
+  // Update the server to use new signing key and certificate chains.
+  std::unique_ptr<SigningKey> signing_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(signing_key, EcdsaP256Sha256SigningKey::Create());
+  signature_scheme_ = signing_key->GetSignatureScheme();
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key, signing_key->GetVerifyingKey());
+  std::vector<CertificateChain> certificate_chains;
+  CertificateChain certificate_chain;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kCertificateChain1,
+                                                  &certificate_chain));
+  certificate_chains.push_back(certificate_chain);
+  service->UpdateSigningKeyAndCertificateChains(std::move(signing_key),
+                                                certificate_chains);
+
+  // Get assertion generated using new signing key and certificate chains and
+  // verify the result.
+  RemoteAssertion assertion;
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion,
+                             GenerateSgxRemoteAssertion(channel_credentials));
+  EXPECT_NO_FATAL_FAILURE(
+      VerifyRemoteAssertion(assertion, certificate_chains, *verifying_key));
+}
+
+TEST_F(SgxRemoteAssertionGeneratorImplTest,
        UpdateSigningKeyAndCertificateChainsSucceeds) {
   // Configure the server and the peer to use bidirectional authentication based
   // on SGX local attestation. SGX-remote-assertion generation is authorized in
   // this case, and should produce a valid remote assertion.
   std::shared_ptr<::grpc::ServerCredentials> server_credentials =
       EnclaveServerCredentials(BidirectionalSgxLocalCredentialsOptions());
-  SetUpServer(server_credentials);
+  std::unique_ptr<SgxRemoteAssertionGeneratorImpl> service;
+  ASYLO_ASSERT_OK_AND_ASSIGN(service, CreateServiceWithKeyAndCertificate());
+  SetUpServer(service.get(), server_credentials);
 
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
       EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
@@ -248,34 +309,34 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
   VerifyRemoteAssertion(assertion, certificate_chains_, *verifying_key_);
 
   // Update the server to use new signing key and certificate chains.
-  std::unique_ptr<SigningKey> new_signing_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(new_signing_key,
-                             EcdsaP256Sha256SigningKey::Create());
-  std::unique_ptr<VerifyingKey> new_verifying_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(new_verifying_key,
-                             new_signing_key->GetVerifyingKey());
-  std::vector<CertificateChain> new_certificate_chains;
+  std::unique_ptr<SigningKey> signing_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(signing_key, EcdsaP256Sha256SigningKey::Create());
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(verifying_key, signing_key->GetVerifyingKey());
+  std::vector<CertificateChain> certificate_chains;
   CertificateChain certificate_chain;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kCertificateChain2,
                                                   &certificate_chain));
-  new_certificate_chains.push_back(certificate_chain);
-  service_->UpdateSigningKeyAndCertificateChains(std::move(new_signing_key),
-                                                 new_certificate_chains);
+  certificate_chains.push_back(certificate_chain);
+  service->UpdateSigningKeyAndCertificateChains(std::move(signing_key),
+                                                certificate_chains);
 
   // Get assertion generated using new signing key and certificate chains and
   // verify the result.
   assertion.Clear();
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion,
                              GenerateSgxRemoteAssertion(channel_credentials));
-  EXPECT_NO_FATAL_FAILURE(VerifyRemoteAssertion(
-      assertion, new_certificate_chains, *new_verifying_key));
+  EXPECT_NO_FATAL_FAILURE(
+      VerifyRemoteAssertion(assertion, certificate_chains, *verifying_key));
 }
 
 TEST_F(SgxRemoteAssertionGeneratorImplTest,
        UpdateSigningKeyAndCertificateChainsMultiThreadedSucceeds) {
   std::shared_ptr<::grpc::ServerCredentials> server_credentials =
       EnclaveServerCredentials(BidirectionalSgxLocalCredentialsOptions());
-  SetUpServer(server_credentials);
+  std::unique_ptr<SgxRemoteAssertionGeneratorImpl> service;
+  ASYLO_ASSERT_OK_AND_ASSIGN(service, CreateServiceWithKeyAndCertificate());
+  SetUpServer(service.get(), server_credentials);
 
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
       EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
@@ -315,10 +376,10 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
 
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back([&certs_signing_key_pairs, &certs_verifying_key_pairs,
-                          &channel, this, i] {
+                          &channel, service_ptr = service.get(), this, i] {
       SgxRemoteAssertionGeneratorClient client(channel);
 
-      service_->UpdateSigningKeyAndCertificateChains(
+      service_ptr->UpdateSigningKeyAndCertificateChains(
           std::move(certs_signing_key_pairs[i].second),
           certs_signing_key_pairs[i].first);
 
@@ -354,7 +415,9 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
   // will be unauthorized to obtain an SGX remote assertion.
   std::shared_ptr<::grpc::ServerCredentials> server_credentials =
       EnclaveServerCredentials(BidirectionalNullCredentialsOptions());
-  SetUpServer(server_credentials);
+  std::unique_ptr<SgxRemoteAssertionGeneratorImpl> service;
+  ASYLO_ASSERT_OK_AND_ASSIGN(service, CreateServiceWithKeyAndCertificate());
+  SetUpServer(service.get(), server_credentials);
 
   std::shared_ptr<::grpc::ChannelCredentials> credentials =
       EnclaveChannelCredentials(BidirectionalNullCredentialsOptions());
@@ -370,7 +433,9 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
   // have any enclave authentication information.
   std::shared_ptr<::grpc::ServerCredentials> server_credentials =
       ::grpc::InsecureServerCredentials();
-  SetUpServer(server_credentials);
+  std::unique_ptr<SgxRemoteAssertionGeneratorImpl> service;
+  ASYLO_ASSERT_OK_AND_ASSIGN(service, CreateServiceWithKeyAndCertificate());
+  SetUpServer(service.get(), server_credentials);
 
   std::shared_ptr<::grpc::ChannelCredentials> credentials =
       ::grpc::InsecureChannelCredentials();

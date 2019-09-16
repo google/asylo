@@ -48,6 +48,10 @@ Status ExtractSgxIdentity(const EnclaveAuthContext &auth_context,
 
 }  // namespace
 
+SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl()
+    : signing_key_(nullptr),
+      certificate_chains_(std::vector<CertificateChain>()) {}
+
 SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
     std::unique_ptr<SigningKey> signing_key,
     const std::vector<CertificateChain> &certificate_chains)
@@ -75,6 +79,12 @@ SgxRemoteAssertionGeneratorImpl::SgxRemoteAssertionGeneratorImpl(
     return status.ToOtherStatus<::grpc::Status>();
   }
   auto signing_key_locked = signing_key_.ReaderLock();
+
+  if (*signing_key_locked == nullptr) {
+    return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION,
+                          "No attestation key available");
+  }
+
   auto certificate_chains_locked = certificate_chains_.ReaderLock();
   status = MakeRemoteAssertion(request->user_data(), sgx_identity,
                                **signing_key_locked, *certificate_chains_locked,

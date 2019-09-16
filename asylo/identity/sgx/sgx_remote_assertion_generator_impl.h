@@ -40,6 +40,8 @@ namespace asylo {
 class SgxRemoteAssertionGeneratorImpl
     : public SgxRemoteAssertionGenerator::Service {
  public:
+  SgxRemoteAssertionGeneratorImpl();
+
   // Creates a service that signs assertions with |signing_key| and uses
   // |certificate_chains| to prove the authenticity of assertions.
   SgxRemoteAssertionGeneratorImpl(

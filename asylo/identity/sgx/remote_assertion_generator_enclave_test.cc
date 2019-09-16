@@ -388,14 +388,24 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, ConfigMissingServerAddressFails) {
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
-       StartServerWithoutSealedSecretOrSigningKeyFails) {
+       StartServerWithoutKeyReturnsFailedPrecondition) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
 
-  EXPECT_THAT(StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION,
-                       "Cannot start remote assertion generator gRPC server: "
-                       "no attestation key available"));
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE));
+
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  enclave_input
+      .MutableExtension(remote_assertion_generator_test_util_enclave_input)
+      ->mutable_get_remote_assertion_input()
+      ->set_server_address(server_address_);
+  EXPECT_THAT(remote_assertion_generator_test_util_enclave_client_->EnterAndRun(
+                  enclave_input, &enclave_output),
+              StatusIs(error::GoogleError::FAILED_PRECONDITION));
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest, StartServerWithSigningKeySuccess) {
@@ -672,6 +682,31 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest,
                   enclave_input, &enclave_output),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Input is missing pce_target_info"));
+}
+
+TEST_F(RemoteAssertionGeneratorEnclaveTest,
+       UpdateCertsForServerRunningWithoutKeySuccess) {
+  ASYLO_ASSERT_OK(
+      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
+  ASYLO_ASSERT_OK(StartTestUtilEnclave(
+      remote_assertion_generator_test_util_enclave_config_));
+  ASYLO_ASSERT_OK(
+      StartSgxRemoteAssertionGeneratorServer(StartServerOption::NONE));
+
+  ASYLO_ASSERT_OK(GenerateAttestationKeyForRemoteAssertionGeneratorEnclave());
+  EnclaveInput enclave_input;
+  EnclaveOutput enclave_output;
+  Certificate *certificate =
+      enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
+          ->mutable_update_certs_input()
+          ->add_certificate_chains()
+          ->add_certificates();
+  certificate->set_format(Certificate::X509_DER);
+  certificate->set_data(kCertificate);
+  ASYLO_ASSERT_OK(remote_assertion_generator_enclave_client_->EnterAndRun(
+      enclave_input, &enclave_output));
+  CheckServerRunningAndProducesValidRemoteAssertion(
+      /*assertion_has_certificate_chains=*/true);
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,

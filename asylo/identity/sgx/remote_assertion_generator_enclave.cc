@@ -18,7 +18,6 @@
 
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.h"
 
-#include <memory>
 #include <utility>
 
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
@@ -135,18 +134,15 @@ Status RemoteAssertionGeneratorEnclave::StartRemoteAssertionGeneratorGrpcServer(
             input.sealed_secret(),
             &attestation_key_certs_pair_locked->certificate_chains));
     server_service_pair_locked->service = nullptr;
-  } else if (!server_service_pair_locked->service &&
-             !attestation_key_certs_pair_locked->attestation_key) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot start remote assertion generator gRPC server: no "
-                  "attestation key available");
   }
 
   if (!server_service_pair_locked->service) {
     server_service_pair_locked->service =
-        absl::make_unique<SgxRemoteAssertionGeneratorImpl>(
-            std::move(attestation_key_certs_pair_locked->attestation_key),
-            attestation_key_certs_pair_locked->certificate_chains);
+        attestation_key_certs_pair_locked->attestation_key == nullptr
+            ? absl::make_unique<SgxRemoteAssertionGeneratorImpl>()
+            : absl::make_unique<SgxRemoteAssertionGeneratorImpl>(
+                  std::move(attestation_key_certs_pair_locked->attestation_key),
+                  attestation_key_certs_pair_locked->certificate_chains);
   }
 
   ASYLO_ASSIGN_OR_RETURN(
