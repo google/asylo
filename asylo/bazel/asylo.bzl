@@ -150,8 +150,19 @@ def _ensure_static_manual(args):
     args["copts"] = ["-g0"] + args.get("copts", [])
     return args
 
-def copy_from_host(target, output, name = ""):
-    """Genrule that builds target with host CROSSTOOL."""
+def copy_from_host(target, output, name = "", visibility = None):
+    """Genrule that builds target with host CROSSTOOL.
+
+    Args:
+      target: The host target to be copied.
+      output: Location of the target copy made by the rule.
+      name: Optional name of the rule; if missing, generated automatically
+            from the target.
+      visibility: Optional visibility of the rule by other packages;
+            default is '//visibility:private' unless default_visibility
+            is specified in the package.
+
+    """
     _, local_name = _parse_label(target)
     name = name if name else local_name + "_as_host"
     native.genrule(
@@ -164,6 +175,7 @@ def copy_from_host(target, output, name = ""):
         tools = [target],
         testonly = 1,
         tags = asylo_tags(),
+        visibility = visibility,
     )
 
 def _invert_enclave_name_mapping(names_to_targets):
