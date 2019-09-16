@@ -858,6 +858,7 @@ cc_test(
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":code_identity_test_util",
+        ":proto_format",
         ":sgx_code_identity_expectation_matcher",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
