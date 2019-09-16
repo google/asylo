@@ -37,6 +37,7 @@ cc_library(
 cc_library(
     name = "trusted_sgx",
     srcs = [
+        "exceptions.cc",
         "trusted_runtime.cc",
         "trusted_sgx.cc",
     ] + select(

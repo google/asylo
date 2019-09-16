@@ -174,7 +174,6 @@ cc_library(
     srcs = [
         "sgx/trusted/ecalls.cc",
         "sgx/trusted/enclave_syscalls.cc",
-        "sgx/trusted/exceptions.cc",
         "sgx/trusted/host_calls.cc",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
     ] + select(
