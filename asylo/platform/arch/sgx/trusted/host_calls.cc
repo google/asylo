@@ -144,61 +144,6 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
   return ret;
 }
 
-int enc_untrusted_getaddrinfo(const char *node, const char *service,
-                              const struct addrinfo *hints,
-                              struct addrinfo **res) {
-  std::string serialized_hints;
-  struct addrinfo bridge_hints;
-  if (hints) {
-    bridge_hints = *hints;
-    bridge_hints.ai_flags =
-        asylo::ToBridgeAddressInfoFlags(bridge_hints.ai_flags);
-  }
-  // Some serialization failures may lead to specified behavior. If a value is
-  // invalid, some EAI_* error code may need to be returned.
-  int bridge_error_code = BRIDGE_EAI_UNKNOWN;
-  // Serialize an empty addrinfo if |hints| is nullptr.
-  if (!asylo::SerializeAddrinfo(hints ? &bridge_hints : nullptr,
-                                &serialized_hints, &bridge_error_code)) {
-    if (bridge_error_code == BRIDGE_EAI_UNKNOWN) {
-      LOG(ERROR) << "Bad addrinfo";
-    }
-    return asylo::FromBridgeAddressInfoErrors(bridge_error_code);
-  }
-
-  int ret;
-  char *tmp_serialized_res_start;
-  bridge_size_t tmp_serialized_res_len;
-  CHECK_OCALL(ocall_enc_untrusted_getaddrinfo(
-      &ret, node, service, serialized_hints.c_str(),
-      static_cast<bridge_size_t>(serialized_hints.length()),
-      &tmp_serialized_res_start, &tmp_serialized_res_len));
-  ret = asylo::FromBridgeAddressInfoErrors(ret);
-  if (ret != 0) {
-    return ret;
-  }
-  if (!sgx_is_outside_enclave(tmp_serialized_res_start,
-                              static_cast<size_t>(tmp_serialized_res_len))) {
-    LOG(ERROR) << "getaddrinfo response pointer not from host address space";
-    return -1;
-  }
-
-  // Copy then free serialized res from untrusted memory
-  std::string serialized_res(
-      tmp_serialized_res_start,
-      tmp_serialized_res_start + static_cast<size_t>(tmp_serialized_res_len));
-  CHECK_OCALL(ocall_untrusted_local_free(tmp_serialized_res_start));
-  if (!asylo::DeserializeAddrinfo(&serialized_res, res)) {
-    LOG(ERROR) << "Invalid addrinfo in getaddrinfo response";
-    return -1;
-  }
-  return ret;
-}
-
-void enc_untrusted_freeaddrinfo(struct addrinfo *res) {
-  asylo::FreeDeserializedAddrinfo(res);
-}
-
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////

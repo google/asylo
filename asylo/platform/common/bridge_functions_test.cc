@@ -99,34 +99,6 @@ TEST_F(BridgeTest, BridgeSignalCodeTest) {
 TEST_F(BridgeTest, BridgeSigInfoTest) {
 }
 
-TEST_F(BridgeTest, BridgeAddressInfoFlagsTest) {
-  intvec from_bits = {BRIDGE_AI_CANONNAME,
-                      BRIDGE_AI_NUMERICHOST,
-                      BRIDGE_AI_V4MAPPED,
-                      BRIDGE_AI_ADDRCONFIG,
-                      BRIDGE_AI_ALL,
-                      BRIDGE_AI_PASSIVE,
-                      BRIDGE_AI_NUMERICSERV,
-                      BRIDGE_AI_IDN,
-                      BRIDGE_AI_CANONIDN};
-  intvec to_bits = {AI_CANONNAME,
-                    AI_NUMERICHOST,
-                    AI_V4MAPPED,
-                    AI_ADDRCONFIG,
-                    AI_ALL,
-                    AI_PASSIVE,
-                    AI_NUMERICSERV,
-                    AI_IDN,
-                    AI_CANONIDN};
-  auto from_matcher =
-      IsFiniteRestrictionOf<int, int>(FromBridgeAddressInfoFlags);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(from_bits, to_bits, ITER_BOUND),
-              from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeAddressInfoFlags);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(to_bits, from_bits, ITER_BOUND),
-              to_matcher);
-}
-
 TEST_F(BridgeTest, BridgeSysLogOptionTest) {
   intvec from_bits = {BRIDGE_LOG_PID,    BRIDGE_LOG_CONS,   BRIDGE_LOG_ODELAY,
                       BRIDGE_LOG_NDELAY, BRIDGE_LOG_NOWAIT, BRIDGE_LOG_PERROR};

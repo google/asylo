@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 
 #include <errno.h>
+#include <netdb.h>
 #include <signal.h>
 #include <sys/socket.h>
 #include <unistd.h>
@@ -30,6 +31,19 @@
 
 namespace asylo {
 namespace host_call {
+namespace {
+
+using primitives::Extent;
+
+size_t GetNumAddrinfos(struct addrinfo *addrs) {
+  size_t ret = 0;
+  for (struct addrinfo *addr = addrs; addr != nullptr; addr = addr->ai_next) {
+    ret++;
+  }
+  return ret;
+}
+
+}  // namespace
 
 Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context, primitives::MessageReader *input,
@@ -37,7 +51,7 @@ Status SystemCallHandler(const std::shared_ptr<primitives::Client> &client,
   ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
   auto request = input->next();
 
-  primitives::Extent response;  // To be owned by untrusted call parameters.
+  Extent response;  // To be owned by untrusted call parameters.
   primitives::PrimitiveStatus status =
       system_call::UntrustedInvoke(request, &response);
   if (!status.ok()) {
@@ -184,12 +198,11 @@ Status RecvMsgHandler(const std::shared_ptr<primitives::Client> &client,
 
   output->Push<int64_t>(recvmsg(sockfd, &msg, flags));  // Push return value.
   output->Push<int>(errno);                             // Push errno.
-  output->PushByCopy(::asylo::primitives::Extent{
-      msg.msg_name, msg.msg_namelen});  // Push msg name.
-  output->PushByCopy(::asylo::primitives::Extent{
-      msg.msg_iov[0].iov_base, msg.msg_iov[0].iov_len});  // Push received msg.
-  output->PushByCopy(::asylo::primitives::Extent{
-      msg.msg_control, msg.msg_controllen});  // Push control msg.
+  output->PushByCopy(Extent{msg.msg_name, msg.msg_namelen});  // Push msg name.
+  output->PushByCopy(Extent{msg.msg_iov[0].iov_base,
+                            msg.msg_iov[0].iov_len});  // Push received msg.
+  output->PushByCopy(
+      Extent{msg.msg_control, msg.msg_controllen});  // Push control msg.
 
   return Status::OkStatus();
 }
@@ -279,7 +292,7 @@ Status RecvFromHandler(const std::shared_ptr<primitives::Client> &client,
 
   output->Push<int>(ret);
   output->Push<int>(errno);
-  output->PushByCopy(primitives::Extent{buffer.get(), len});
+  output->PushByCopy(Extent{buffer.get(), len});
   output->Push<struct sockaddr_storage>(sock_addr);
 
   return Status::OkStatus();
@@ -303,15 +316,63 @@ Status GetSockOptHandler(const std::shared_ptr<primitives::Client> &client,
   int sockfd = input->next<int>();
   int level = input->next<int>();
   int klinux_optname = input->next<int>();
-  primitives::Extent optval = input->next();
+  Extent optval = input->next();
   socklen_t optlen = optval.size();
 
   int ret = getsockopt(sockfd, level, klinux_optname, optval.data(), &optlen);
 
   output->Push<int>(ret);
   output->Push<int>(errno);
-  output->PushByCopy(
-      primitives::Extent{reinterpret_cast<char *>(optval.data()), optlen});
+  output->PushByCopy(Extent{reinterpret_cast<char *>(optval.data()), optlen});
+  return Status::OkStatus();
+}
+
+Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
+                          void *context, primitives::MessageReader *input,
+                          primitives::MessageWriter *output) {
+  bool hints_provided = input->size() == 6;
+  if (!hints_provided) {
+    ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 2);
+  }
+
+  Extent node_buffer = input->next();
+  Extent service_buffer = input->next();
+  const char *node = node_buffer.empty() ? nullptr : node_buffer.As<char>();
+  const char *service =
+      service_buffer.empty() ? nullptr : service_buffer.As<char>();
+
+  struct addrinfo hints {};
+  if (hints_provided) {
+    memset(&hints, 0, sizeof(struct addrinfo));
+    hints.ai_flags = input->next<int>();
+    hints.ai_family = input->next<int>();
+    hints.ai_socktype = input->next<int>();
+    hints.ai_protocol = input->next<int>();
+    hints.ai_canonname = nullptr;
+    hints.ai_addr = nullptr;
+    hints.ai_next = nullptr;
+  }
+  struct addrinfo *result;
+  output->Push<int>(
+      getaddrinfo(node, service, hints_provided ? &hints : nullptr, &result));
+  output->Push<int>(errno);
+  output->Push<uint64_t>(GetNumAddrinfos(result));
+
+  for (struct addrinfo *addr = result; addr != nullptr; addr = addr->ai_next) {
+    // We push 6 entries per addrinfo to output.
+    output->Push<int>(addr->ai_flags);
+    output->Push<int>(addr->ai_family);
+    output->Push<int>(addr->ai_socktype);
+    output->Push<int>(addr->ai_protocol);
+    output->PushByCopy(
+        Extent{reinterpret_cast<char *>(addr->ai_addr), addr->ai_addrlen});
+    output->PushByCopy(Extent{
+        addr->ai_canonname,
+        addr->ai_canonname == nullptr ? 0 : strlen(addr->ai_canonname) + 1});
+  }
+
+  // result has been copied to MessageWriter, so free it up.
+  freeaddrinfo(result);
   return Status::OkStatus();
 }
 

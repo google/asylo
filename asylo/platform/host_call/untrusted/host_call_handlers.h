@@ -116,6 +116,23 @@ Status GetSockOptHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context, primitives::MessageReader *input,
                          primitives::MessageWriter *output);
 
+// getaddrinfo library call handler on the host. Expects one of the following on
+// the input MessageReader, depending on whether hints to be provided to
+// getaddrinfo is null -
+// 1. [char *node, char *service]
+// 2. [char *node, char *service, int ai_flags, int ai_family, int ai_socktype,
+// ai_protocol].
+// It returns the following on the MessageWriter -
+// [int return_value, int errno, uint64_t number_of_addrinfos, (int ai_flags,
+// int ai_family, int ai_socktype, int ai_protocol, struct sockaddr ai_addr,
+// char *ai_canonname)...]
+// The parameters in '()' above are repeated in multiples of
+// number_of_addrinfos, which is the number of addrinfo structs in the linked
+// list of the output addrinfo.
+Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
+                          void *context, primitives::MessageReader *input,
+                          primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

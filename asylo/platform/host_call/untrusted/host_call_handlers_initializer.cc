@@ -70,6 +70,9 @@ Status AddHostCallHandlersToExitCallProvider(
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kGetSockOptHandler, primitives::ExitHandler{GetSockOptHandler}));
 
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kGetAddrInfoHandler, primitives::ExitHandler{GetAddrInfoHandler}));
+
   return Status::OkStatus();
 }
 

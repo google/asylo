@@ -17,6 +17,7 @@
  */
 
 #include <fcntl.h>
+#include <netdb.h>
 #include <netinet/in.h>
 #include <sys/file.h>
 #include <sys/inotify.h>
@@ -27,6 +28,7 @@
 #include <sys/types.h>
 #include <sys/un.h>
 
+#include <algorithm>
 #include <string>
 #include <thread>
 
@@ -1990,7 +1992,7 @@ TEST_F(HostCallTest, TestClockGettimeRealTimeVsHost) {
   EXPECT_THAT(out.next<int>(), Eq(0));
 
   ts = out.next<struct timespec>();
-  uint64_t enc_time_ns = ts.tv_sec*kNanosecondsPerSecond + ts.tv_nsec;
+  uint64_t enc_time_ns = ts.tv_sec * kNanosecondsPerSecond + ts.tv_nsec;
   EXPECT_LT(kNanosecondsPerSecond, enc_time_ns);
 
   int64_t delta = enc_time_ns - host_time_ns;
@@ -2245,6 +2247,61 @@ TEST_F(HostCallTest, TestGetSockOpt) {
   ASSERT_THAT(out, SizeIs(2));  // Should contain return value and optval.
   EXPECT_THAT(out.next<int>(), Eq(0));
   EXPECT_THAT(out.next<int>(), Eq(optval_expected));
+}
+
+// Tests enc_untrusted_getaddrinfo() by calling the method inside the enclave
+// and getaddrinfo() on the host and comparing the values of hostnames obtained.
+TEST_F(HostCallTest, TestGetAddrInfo) {
+  std::string node("127.0.0.1");  // We can't have something like www.google.com
+                                  // here as that could resolve to different
+                                  // lookups in addrinfo each time.
+  std::vector<std::string> expected_hostnames, actual_hostnames;
+
+  // Call getaddrinfo() on the host.
+  struct addrinfo *host_result;
+  EXPECT_THAT(getaddrinfo(node.c_str(), nullptr, nullptr, &host_result), Eq(0));
+
+  // Loop over all returned results and do inverse lookup.
+  for (struct addrinfo *res = host_result; res != nullptr; res = res->ai_next) {
+    char hostname[NI_MAXHOST];
+    EXPECT_THAT(getnameinfo(res->ai_addr, res->ai_addrlen, hostname, NI_MAXHOST,
+                            nullptr, 0, 0),
+                Eq(0));
+    if (*hostname != '\0')
+      expected_hostnames.emplace_back(std::string(hostname));
+  }
+  freeaddrinfo(host_result);
+
+  // Call enc_untrusted_getaddrinfo().
+  MessageWriter in;
+  in.Push(node);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetAddrInfo, &in, &out));
+  ASSERT_THAT(
+      out,
+      SizeIs(1 + expected_hostnames
+                     .size()));  // Should contain return value and sockaddrs
+                                 // (converted to klinux_sockaddr) from addrinfo
+                                 // linked list inside the enclave.
+  EXPECT_THAT(out.next<int>(), Eq(0));  // Check return value.
+
+  while (out.hasNext()) {
+    auto klinux_sockaddr_buffer = out.next();
+    char hostname[NI_MAXHOST];
+    EXPECT_THAT(
+        getnameinfo(reinterpret_cast<sockaddr *>(klinux_sockaddr_buffer.data()),
+                    klinux_sockaddr_buffer.size(), hostname, NI_MAXHOST,
+                    nullptr, 0, 0),
+        Eq(0));
+    if (*hostname != '\0') actual_hostnames.emplace_back(std::string(hostname));
+  }
+
+  EXPECT_THAT(actual_hostnames, SizeIs(expected_hostnames.size()));
+  for (const auto &actual_hostname : actual_hostnames) {
+    EXPECT_THAT(std::find(expected_hostnames.begin(), expected_hostnames.end(),
+                          actual_hostname),
+                Not(Eq(expected_hostnames.end())));
+  }
 }
 
 }  // namespace

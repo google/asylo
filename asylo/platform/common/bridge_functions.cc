@@ -296,34 +296,6 @@ int ToBridgeSignalFlags(int sa_flags) {
   return bridge_sa_flags;
 }
 
-int FromBridgeAddressInfoFlags(int bridge_ai_flag) {
-  int ai_flag = 0;
-  if (bridge_ai_flag & BRIDGE_AI_CANONNAME) ai_flag |= AI_CANONNAME;
-  if (bridge_ai_flag & BRIDGE_AI_NUMERICHOST) ai_flag |= AI_NUMERICHOST;
-  if (bridge_ai_flag & BRIDGE_AI_V4MAPPED) ai_flag |= AI_V4MAPPED;
-  if (bridge_ai_flag & BRIDGE_AI_ADDRCONFIG) ai_flag |= AI_ADDRCONFIG;
-  if (bridge_ai_flag & BRIDGE_AI_ALL) ai_flag |= AI_ALL;
-  if (bridge_ai_flag & BRIDGE_AI_PASSIVE) ai_flag |= AI_PASSIVE;
-  if (bridge_ai_flag & BRIDGE_AI_NUMERICSERV) ai_flag |= AI_NUMERICSERV;
-  if (bridge_ai_flag & BRIDGE_AI_IDN) ai_flag |= AI_IDN;
-  if (bridge_ai_flag & BRIDGE_AI_CANONIDN) ai_flag |= AI_CANONIDN;
-  return ai_flag;
-}
-
-int ToBridgeAddressInfoFlags(int ai_flag) {
-  int bridge_ai_flag = 0;
-  if (ai_flag & AI_CANONNAME) bridge_ai_flag |= BRIDGE_AI_CANONNAME;
-  if (ai_flag & AI_NUMERICHOST) bridge_ai_flag |= BRIDGE_AI_NUMERICHOST;
-  if (ai_flag & AI_V4MAPPED) bridge_ai_flag |= BRIDGE_AI_V4MAPPED;
-  if (ai_flag & AI_ADDRCONFIG) bridge_ai_flag |= BRIDGE_AI_ADDRCONFIG;
-  if (ai_flag & AI_ALL) bridge_ai_flag |= BRIDGE_AI_ALL;
-  if (ai_flag & AI_PASSIVE) bridge_ai_flag |= BRIDGE_AI_PASSIVE;
-  if (ai_flag & AI_NUMERICSERV) bridge_ai_flag |= BRIDGE_AI_NUMERICSERV;
-  if (ai_flag & AI_IDN) bridge_ai_flag |= BRIDGE_AI_IDN;
-  if (ai_flag & AI_CANONIDN) bridge_ai_flag |= BRIDGE_AI_CANONIDN;
-  return bridge_ai_flag;
-}
-
 int FromBridgeSysLogOption(int bridge_syslog_option) {
   int syslog_option = 0;
   if (bridge_syslog_option & BRIDGE_LOG_PID) syslog_option |= LOG_PID;
@@ -386,86 +358,6 @@ int ToBridgeSysLogPriority(int syslog_priority) {
   int syslog_facility = syslog_priority & ~0x07;
   return ToBridgeSysLogLevel(syslog_level) |
          ToBridgeSysLogFacility(syslog_facility);
-}
-
-int FromBridgeAddressInfoErrors(int bridge_eai_code) {
-  switch (bridge_eai_code) {
-    case BRIDGE_EAI_SUCCESS:
-      return 0;
-    case BRIDGE_EAI_ADDRFAMILY:
-      return EAI_ADDRFAMILY;
-    case BRIDGE_EAI_BADFLAGS:
-      return EAI_BADFLAGS;
-    case BRIDGE_EAI_NONAME:
-      return EAI_NONAME;
-    case BRIDGE_EAI_AGAIN:
-      return EAI_AGAIN;
-    case BRIDGE_EAI_FAIL:
-      return EAI_FAIL;
-    case BRIDGE_EAI_FAMILY:
-      return EAI_FAMILY;
-    case BRIDGE_EAI_MEMORY:
-      return EAI_MEMORY;
-    case BRIDGE_EAI_NODATA:
-      return EAI_NODATA;
-    case BRIDGE_EAI_SERVICE:
-      return EAI_SERVICE;
-    case BRIDGE_EAI_SOCKTYPE:
-      return EAI_SOCKTYPE;
-    case BRIDGE_EAI_OVERFLOW:
-      return EAI_OVERFLOW;
-    case BRIDGE_EAI_INPROGRESS:
-      return EAI_INPROGRESS;
-    case BRIDGE_EAI_CANCELED:
-      return EAI_CANCELED;
-    case BRIDGE_EAI_ALLDONE:
-      return EAI_ALLDONE;
-    case BRIDGE_EAI_SYSTEM:
-      return EAI_SYSTEM;
-    default:
-      return 1;
-  }
-}
-
-int ToBridgeAddressInfoErrors(int eai_code) {
-  switch (eai_code) {
-    case 0:
-      return BRIDGE_EAI_SUCCESS;
-    case EAI_BADFLAGS:
-      return BRIDGE_EAI_BADFLAGS;
-    case EAI_NONAME:
-      return BRIDGE_EAI_NONAME;
-    case EAI_AGAIN:
-      return BRIDGE_EAI_AGAIN;
-    case EAI_FAIL:
-      return BRIDGE_EAI_FAIL;
-    case EAI_FAMILY:
-      return BRIDGE_EAI_FAMILY;
-    case EAI_SOCKTYPE:
-      return BRIDGE_EAI_SOCKTYPE;
-    case EAI_SERVICE:
-      return BRIDGE_EAI_SERVICE;
-    case EAI_MEMORY:
-      return BRIDGE_EAI_MEMORY;
-    case EAI_SYSTEM:
-      return BRIDGE_EAI_SYSTEM;
-    case EAI_OVERFLOW:
-      return BRIDGE_EAI_OVERFLOW;
-    case EAI_NODATA:
-      return BRIDGE_EAI_NODATA;
-    case EAI_ADDRFAMILY:
-      return BRIDGE_EAI_ADDRFAMILY;
-    case EAI_INPROGRESS:
-      return BRIDGE_EAI_INPROGRESS;
-    case EAI_CANCELED:
-      return BRIDGE_EAI_CANCELED;
-    case EAI_ALLDONE:
-      return BRIDGE_EAI_ALLDONE;
-    case EAI_INTR:
-      return BRIDGE_EAI_IDN_ENCODE;
-    default:
-      return BRIDGE_EAI_UNKNOWN;
-  }
 }
 
 AfFamily ToBridgeAfFamily(int af_family) {
@@ -533,67 +425,6 @@ int FromBridgeAfFamily(int bridge_af_family) {
     default:
       return AF_UNSPEC;
   }
-}
-
-int FromBridgeSocketType(int bridge_sock_type) {
-  int sock_type = 0;
-  int enum_bits = bridge_sock_type & (~BRIDGE_SOCK_TYPE_FLAGS);
-  switch (enum_bits) {
-    case BRIDGE_SOCK_STREAM:
-      sock_type = SOCK_STREAM;
-      break;
-    case BRIDGE_SOCK_DGRAM:
-      sock_type = SOCK_DGRAM;
-      break;
-    case BRIDGE_SOCK_SEQPACKET:
-      sock_type = SOCK_SEQPACKET;
-      break;
-    case BRIDGE_SOCK_RAW:
-      sock_type = SOCK_RAW;
-      break;
-    case BRIDGE_SOCK_RDM:
-      sock_type = SOCK_RDM;
-      break;
-    case BRIDGE_SOCK_PACKET:
-      sock_type = SOCK_PACKET;
-      break;
-    default:
-      return -1;  // Unsupported
-  }
-  if (bridge_sock_type & BRIDGE_SOCK_O_NONBLOCK) sock_type |= SOCK_NONBLOCK;
-  if (bridge_sock_type & BRIDGE_SOCK_O_CLOEXEC) sock_type |= SOCK_CLOEXEC;
-  return sock_type;
-}
-
-int ToBridgeSocketType(int sock_type) {
-  constexpr int kSockTypeFlagMask = ~(SOCK_CLOEXEC | SOCK_NONBLOCK);
-  int bridge_sock_type = 0;
-  int enum_bits = sock_type & kSockTypeFlagMask;
-  switch (enum_bits) {
-    case SOCK_STREAM:
-      bridge_sock_type = BRIDGE_SOCK_STREAM;
-      break;
-    case SOCK_DGRAM:
-      bridge_sock_type = BRIDGE_SOCK_DGRAM;
-      break;
-    case SOCK_SEQPACKET:
-      bridge_sock_type = BRIDGE_SOCK_SEQPACKET;
-      break;
-    case SOCK_RAW:
-      bridge_sock_type = BRIDGE_SOCK_RAW;
-      break;
-    case SOCK_RDM:
-      bridge_sock_type = BRIDGE_SOCK_RDM;
-      break;
-    case SOCK_PACKET:
-      bridge_sock_type = BRIDGE_SOCK_PACKET;
-      break;
-    default:
-      return BRIDGE_SOCK_UNSUPPORTED;
-  }
-  if (sock_type & SOCK_NONBLOCK) bridge_sock_type |= BRIDGE_SOCK_O_NONBLOCK;
-  if (sock_type & SOCK_CLOEXEC) bridge_sock_type |= BRIDGE_SOCK_O_CLOEXEC;
-  return bridge_sock_type;
 }
 
 struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,

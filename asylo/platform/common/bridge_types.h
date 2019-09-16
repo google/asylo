@@ -127,20 +127,6 @@ enum SignalFlags {
   BRIDGE_SA_RESETHAND = 0x02,
 };
 
-// The address info ai_flags bitset constituent values that specify options of
-// an addrinfo struct.
-enum AddrInfoFlags {
-  BRIDGE_AI_CANONNAME = 0x0002,
-  BRIDGE_AI_NUMERICHOST = 0x0004,
-  BRIDGE_AI_V4MAPPED = 0x0008,
-  BRIDGE_AI_ADDRCONFIG = 0x0010,
-  BRIDGE_AI_ALL = 0x0020,
-  BRIDGE_AI_PASSIVE = 0x0040,
-  BRIDGE_AI_NUMERICSERV = 0x0080,
-  BRIDGE_AI_IDN = 0x0100,
-  BRIDGE_AI_CANONIDN = 0x0200,
-};
-
 // The possible return error codes for getaddrinfo.
 enum AddrInfoErrorCode {
   BRIDGE_EAI_SUCCESS = 0,
@@ -162,22 +148,6 @@ enum AddrInfoErrorCode {
   BRIDGE_EAI_INTR = 16,
   BRIDGE_EAI_IDN_ENCODE = 17,
   BRIDGE_EAI_UNKNOWN = 20,  // The result of a bad translation.
-};
-
-// Possible values for socket(2)'s type argument, and ai_socktype in the
-// AddressInfo struct.
-enum BridgeSocketType {
-  BRIDGE_SOCK_UNSUPPORTED = 0,
-  BRIDGE_SOCK_STREAM = 1,
-  BRIDGE_SOCK_DGRAM = 2,
-  BRIDGE_SOCK_SEQPACKET = 3,
-  BRIDGE_SOCK_RAW = 4,
-  BRIDGE_SOCK_RDM = 5,
-  BRIDGE_SOCK_PACKET = 6,
-  // The following two values may be bitwise-ORd with any of the above values.
-  BRIDGE_SOCK_O_NONBLOCK = 0x0100,
-  BRIDGE_SOCK_O_CLOEXEC = 0x0200,
-  BRIDGE_SOCK_TYPE_FLAGS = BRIDGE_SOCK_O_NONBLOCK | BRIDGE_SOCK_O_CLOEXEC,
 };
 
 // All the syslog options supported inside the enclave.

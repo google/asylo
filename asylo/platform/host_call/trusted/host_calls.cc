@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/trusted/host_calls.h"
 
 #include <errno.h>
+#include <netdb.h>
 #include <sys/statfs.h>
 
 #include <algorithm>
@@ -52,6 +53,75 @@ size_t CalculateTotalSize(const struct msghdr *msg) {
     total_message_size += msg->msg_iov[i].iov_len;
   }
   return total_message_size;
+}
+
+bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
+                         struct addrinfo **out) {
+  if (!in || !out) return false;
+  if (num_addrs == 0) {
+    *out = nullptr;
+    return true;
+  }
+  // 6 entries per addrinfo expected on |in| for deserialization.
+  if (in->size() < num_addrs * 6) return false;
+
+  struct addrinfo *prev_info = nullptr;
+  for (int i = 0; i < num_addrs; i++) {
+    auto info = static_cast<struct addrinfo *>(malloc(sizeof(struct addrinfo)));
+    if (info == nullptr) return false;
+    memset(info, 0, sizeof(struct addrinfo));
+
+    info->ai_flags = FromkLinuxAddressInfoFlag(in->next<int>());
+    info->ai_family = FromkLinuxAfFamily(in->next<int>());
+    info->ai_socktype = FromkLinuxSocketType(in->next<int>());
+    info->ai_protocol = in->next<int>();
+    Extent klinux_sockaddr_buf = in->next();
+    Extent ai_canonname = in->next();
+
+    if (info->ai_socktype == -1) {
+      // Roll back info and linked list constructed until now.
+      freeaddrinfo(info);
+      freeaddrinfo(*out);
+      return false;
+    }
+
+    // Optionally set ai_addr and ai_addrlen.
+    if (!klinux_sockaddr_buf.empty()) {
+      const struct klinux_sockaddr *klinux_sock =
+          klinux_sockaddr_buf.As<struct klinux_sockaddr>();
+      struct sockaddr_storage sock {};
+      socklen_t socklen = sizeof(struct sockaddr_storage);
+      if (!FromkLinuxSockAddr(klinux_sock, klinux_sockaddr_buf.size(),
+                              reinterpret_cast<sockaddr *>(&sock), &socklen,
+                              TrustedPrimitives::BestEffortAbort)) {
+        // Roll back info and linked list constructed until now.
+        freeaddrinfo(info);
+        freeaddrinfo(*out);
+        return false;
+      }
+      info->ai_addrlen = socklen;
+      info->ai_addr = reinterpret_cast<sockaddr *>(malloc(socklen));
+      memcpy(info->ai_addr, &sock, socklen);
+    } else {
+      info->ai_addr = nullptr;
+      info->ai_addrlen = 0;
+    }
+
+    // Optionally set ai_canonname.
+    info->ai_canonname =
+        ai_canonname.empty() ? nullptr : strdup(ai_canonname.As<char>());
+
+    // Construct addrinfo linked list.
+    info->ai_next = nullptr;
+    if (!prev_info) {
+      *out = info;
+    } else {
+      prev_info->ai_next = info;
+    }
+    prev_info = info;
+  }
+
+  return true;
 }
 
 }  // namespace
@@ -727,10 +797,10 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
     return result;
   }
 
-  auto klinux_sockaddr_ext = output.next();
+  auto klinux_sockaddr_buf = output.next();
   const struct klinux_sockaddr *klinux_addr =
-      klinux_sockaddr_ext.As<struct klinux_sockaddr>();
-  if (!FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr,
+      klinux_sockaddr_buf.As<struct klinux_sockaddr>();
+  if (!FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_buf.size(), addr,
                           addrlen, TrustedPrimitives::BestEffortAbort)) {
     errno = EFAULT;
     return -1;
@@ -764,10 +834,10 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
     return result;
   }
 
-  auto klinux_sockaddr_ext = output.next();
+  auto klinux_sockaddr_buf = output.next();
   const struct klinux_sockaddr *klinux_addr =
-      klinux_sockaddr_ext.As<struct klinux_sockaddr>();
-  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
+      klinux_sockaddr_buf.As<struct klinux_sockaddr>();
+  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_buf.size(), addr, addrlen,
                      TrustedPrimitives::BestEffortAbort);
   return result;
 }
@@ -809,10 +879,10 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
     return result;
   }
 
-  auto klinux_sockaddr_ext = output.next();
+  auto klinux_sockaddr_buf = output.next();
   const struct klinux_sockaddr *klinux_addr =
-      klinux_sockaddr_ext.As<struct klinux_sockaddr>();
-  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), addr, addrlen,
+      klinux_sockaddr_buf.As<struct klinux_sockaddr>();
+  FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_buf.size(), addr, addrlen,
                      TrustedPrimitives::BestEffortAbort);
   return result;
 }
@@ -858,10 +928,10 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   // address, this source address is filled in. When |src_addr| is NULL, nothing
   // is filled in; in this case, |addrlen| is not used, and should also be NULL.
   if (src_addr != nullptr && addrlen != nullptr) {
-    auto klinux_sockaddr_ext = output.next();
+    auto klinux_sockaddr_buf = output.next();
     const struct klinux_sockaddr *klinux_addr =
-        klinux_sockaddr_ext.As<struct klinux_sockaddr>();
-    FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_ext.size(), src_addr,
+        klinux_sockaddr_buf.As<struct klinux_sockaddr>();
+    FromkLinuxSockAddr(klinux_addr, klinux_sockaddr_buf.size(), src_addr,
                        addrlen, TrustedPrimitives::BestEffortAbort);
   }
 
@@ -937,11 +1007,6 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   if (!optval || !optlen || *optlen == 0) {
     errno = EINVAL;
     return -1;
-  }
-  if (!TrustedPrimitives::IsTrustedExtent(optval, *optlen)) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getsockopt: Expected buffer optval to be in trusted "
-        "memory, found to be in untrusted memory.");
   }
 
   MessageWriter input;
@@ -1019,6 +1084,59 @@ clock_t enc_untrusted_times(struct tms *buf) {
     return -1;
   }
   return static_cast<clock_t>(result);
+}
+
+int enc_untrusted_getaddrinfo(const char *node, const char *service,
+                              const struct addrinfo *hints,
+                              struct addrinfo **res) {
+  MessageWriter input;
+  input.PushByReference(Extent{node, (node != nullptr) ? strlen(node) + 1 : 0});
+  input.PushByReference(
+      Extent{service, (service != nullptr) ? strlen(service) + 1 : 0});
+  if (hints != nullptr) {
+    input.Push<int>(TokLinuxAddressInfoFlag(hints->ai_flags));
+    input.Push<int>(TokLinuxAfFamily(hints->ai_family));
+    input.Push<int>(TokLinuxSocketType(hints->ai_socktype));
+    input.Push<int>(hints->ai_protocol);
+  }
+
+  MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kGetAddrInfoHandler, &input, &output);
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_getaddrinfo failed.");
+  }
+  if (output.size() < 3) {
+    TrustedPrimitives::BestEffortAbort(
+        "Expected at least 3 arguments in output for enc_untrusted_getaddrinfo."
+        "Aborting");
+  }
+
+  int klinux_ret = output.next<int>();
+  int klinux_errno = output.next<int>();
+  size_t num_addrinfos = output.next<int>();
+
+  int ret = FromkLinuxAddressInfoError(klinux_ret);
+  if (ret != 0) {
+    if (ret == EAI_SYSTEM) {
+      errno = FromkLinuxErrorNumber(klinux_errno);
+    }
+    return ret;
+  }
+
+  // We are to pop 6 entries per addrinfo from output.
+  if (output.size() != 3 + (num_addrinfos * 6)) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getaddrinfo: addrinfo deserialization error. Unexpected "
+        "number of arguments on the MessageReader.");
+  }
+
+  if (!DeserializeAddrinfo(&output, num_addrinfos, res)) {
+    TrustedPrimitives::DebugPuts(
+        "enc_untrusted_getaddrinfo: Invalid addrinfo in response.");
+    return -1;
+  }
+  return 0;
 }
 
 }  // extern "C"

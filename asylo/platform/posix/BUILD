@@ -56,15 +56,24 @@ cc_library(
     ),
 )
 
+# A backend agnostic POSIX runtime implementation.
+# This can be used by backends requiring posix calls that are platform
+# independent, or as a dependency by higher level library like posix, to
+# separate backend dependent and backend independent posix calls provided by
+# posix library. Expected to be removed if/when all posix calls in posix library
+# become backend independent.
 cc_library(
-    name = "sim_posix",
-    srcs = ["sched.cc"],
+    name = "backend_agnostic_posix",
+    srcs = [
+        "sched.cc",
+    ],
     hdrs = [":posix_headers"],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         "//asylo/platform/host_call",
+        "//asylo/platform/posix/sockets:backend_agnostic_sockets",
     ],
 )
 
@@ -97,7 +106,6 @@ cc_library(
         "pthread.cc",
         "pwd.cc",
         "resource.cc",
-        "sched.cc",
         "select.cc",
         "signal.cc",
         "stat.cc",
@@ -126,6 +134,7 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         ":pthread_impl",
+        ":backend_agnostic_posix",
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
         "//asylo/platform/host_call",

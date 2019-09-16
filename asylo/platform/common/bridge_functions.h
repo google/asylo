@@ -103,22 +103,6 @@ int FromBridgeSignalFlags(int bridge_sa_flags);
 // provided.
 int ToBridgeSignalFlags(int sa_flags);
 
-// Converts |bridge_ai_flag| to a runtime file flag. Returns 0 if no supported
-// flags are provided.
-int FromBridgeAddressInfoFlags(int bridge_ai_flag);
-
-// Converts |ai_flag| to a bridge address info flag. Returns 0 if no supported
-// flags are provided.
-int ToBridgeAddressInfoFlags(int ai_flag);
-
-// Converts |eai_code| to a bridge address info error code. Returns 1 if
-// |eai_code| is not recognized, since error codes are conventionally negative.
-int ToBridgeAddressInfoErrors(int eai_code);
-
-// Converts |bridge_eai_code| from a bridge address info error code. Returns -1
-// if |bridge_eai_code| is not recognized.
-int FromBridgeAddressInfoErrors(int bridge_eai_code);
-
 // Converts |bridge_syslog_option| to a runtime syslog option. Returns 0 if
 // |bridge_syslog_option| does not contain any supported options.
 int FromBridgeSysLogOption(int bridge_syslog_option);
@@ -150,14 +134,6 @@ AfFamily ToBridgeAfFamily(int af_family);
 // Converts |bridge_af_family| to a host af family. Returns -1 if
 // |bridge_af_family| is not supported.
 int FromBridgeAfFamily(int bridge_af_family);
-
-// Converts |sock_type| to a bridge socket type. Returns BRIDGE_SOCK_UNSUPPORTED
-// if |sock_type| is not supported.
-int ToBridgeSocketType(int sock_type);
-
-// Converts |bridge_sock_type| to a socket type. Returns -1 if
-// |bridge_sock_type| is not supported.
-int FromBridgeSocketType(int bridge_sock_type);
 
 // Converts |ut| to a runtime timespec.
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,

@@ -236,6 +236,26 @@ define_constants(
     default_value_host=-1,
     default_value_newlib=-1)
 
+define_constants(
+    name="AddressInfoFlag",
+    values=[
+        "AI_CANONNAME", "AI_NUMERICHOST", "AI_V4MAPPED", "AI_ADDRCONFIG",
+        "AI_ALL", "AI_PASSIVE", "AI_NUMERICSERV", "AI_IDN", "AI_CANONIDN"
+    ],
+    include_header_file="netdb.h",
+    multi_valued=True)
+
+define_constants(
+    name="AddressInfoError",
+    values=[
+        "EAI_ADDRFAMILY", "EAI_AGAIN", "EAI_BADFLAGS", "EAI_FAIL", "EAI_FAMILY",
+        "EAI_MEMORY", "EAI_NODATA", "EAI_NONAME", "EAI_SERVICE", "EAI_SOCKTYPE",
+        "EAI_SYSTEM", "EAI_OVERFLOW", "EAI_INPROGRESS", "EAI_CANCELED",
+        "EAI_ALLDONE", "EAI_INTR", "EAI_IDN_ENCODE"
+    ],
+    include_header_file="netdb.h",
+    or_input_to_default_value=True)
+
 define_struct(
     name="timespec",
     values=[

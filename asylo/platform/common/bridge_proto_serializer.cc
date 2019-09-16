@@ -94,100 +94,6 @@ bool ConvertToSockaddrProtobuf(const struct sockaddr *in, SockaddrProto *out,
   return true;
 }
 
-// Addrinfo Conversion Functions
-bool SetAddrinfoCanonname(const std::string *canonname, struct addrinfo *info) {
-  info->ai_canonname = strdup(canonname->c_str());
-  if (info->ai_canonname == nullptr) {
-    return false;
-  }
-  return true;
-}
-
-bool ConvertToAddrinfo(const AddrinfosProto *in, struct addrinfo **out) {
-  if (!in || !out) return false;
-
-  struct addrinfo *prev_info = nullptr;
-  for (int i = 0; i < in->addrinfos().size(); i++) {
-    const AddrinfoProto info_proto = in->addrinfos(i);
-    struct addrinfo *info =
-        static_cast<struct addrinfo *>(malloc(sizeof(struct addrinfo)));
-    if (info == nullptr) return false;
-
-    memset(info, 0, sizeof(struct addrinfo));
-    info->ai_flags = FromBridgeAddressInfoFlags(info_proto.ai_flags());
-    info->ai_family = FromBridgeAfFamily(info_proto.ai_family());
-    if (info->ai_family == -1) {  // Invalid address family.
-      return false;
-    }
-    info->ai_socktype = FromBridgeSocketType(info_proto.ai_socktype());
-    if (info->ai_socktype == -1) {  // Invalid socket type.
-      return false;
-    }
-    info->ai_protocol = info_proto.ai_protocol();
-    if (info_proto.has_ai_addr() &&
-        !ConvertToSockaddr(info_proto.ai_addr(), &info->ai_addr,
-                           &info->ai_addrlen)) {
-      return false;
-    }
-    if (info_proto.has_ai_canonname() &&
-        !SetAddrinfoCanonname(&info_proto.ai_canonname(), info)) {
-      return false;
-    }
-
-    // Construct addrinfo linked list
-    if (!prev_info) {
-      *out = info;
-    } else {
-      prev_info->ai_next = info;
-    }
-    prev_info = info;
-  }
-
-  return true;
-}
-
-// Arbitrary max length of ai_canonname. This maximum is above anything we would
-// expect for a non-malicous input. POSIX does not specify any maximum length.
-constexpr int kMaxCannonnameLen = 4096;
-bool ConvertToAddrinfoProtobuf(const struct addrinfo *in, AddrinfosProto *out,
-                               int *bridge_error_code) {
-  if (!in || !out) return false;
-
-  for (const struct addrinfo *info = in; info != nullptr;
-       info = info->ai_next) {
-    AddrinfoProto *info_proto = out->add_addrinfos();
-    info_proto->set_ai_flags(ToBridgeAddressInfoFlags(info->ai_flags));
-    int af_family = ToBridgeAfFamily(info->ai_family);
-    if (af_family == BRIDGE_AF_UNSUPPORTED) {
-      *bridge_error_code = BRIDGE_EAI_ADDRFAMILY;
-      return false;
-    }
-    info_proto->set_ai_family(af_family);
-    int ai_socktype = ToBridgeSocketType(info->ai_socktype);
-    if (ai_socktype == BRIDGE_SOCK_UNSUPPORTED) {
-      *bridge_error_code = BRIDGE_EAI_SOCKTYPE;
-      return false;
-    }
-    info_proto->set_ai_socktype(ai_socktype);
-    // A protocol number is from a standard set of numbers:
-    // https://www.iana.org/assignments/protocol-numbers/protocol-numbers.xhtml
-    info_proto->set_ai_protocol(info->ai_protocol);
-    if (info->ai_addr) {
-      SockaddrProto *sock_proto = info_proto->mutable_ai_addr();
-      if (!ConvertToSockaddrProtobuf(info->ai_addr, sock_proto,
-                                     bridge_error_code)) {
-        return false;
-      }
-    }
-    if (info->ai_canonname) {
-      int canonname_len = strnlen(info->ai_canonname, kMaxCannonnameLen);
-      info_proto->set_ai_canonname(info->ai_canonname, canonname_len);
-    }
-  }
-
-  return true;
-}
-
 // Epoll conversion functions.
 void ConvertToEpollEventProtobuf(const struct epoll_event *event,
                                  EpollEvent *event_proto) {
@@ -542,35 +448,6 @@ void AddToInotifyEventQueue(const InotifyEventList &event_list,
 }
 
 }  // namespace
-
-bool SerializeAddrinfo(const struct addrinfo *in, std::string *out,
-                       int *bridge_error_code) {
-  AddrinfosProto addrinfo_protobuf;
-  if (!in) return addrinfo_protobuf.SerializeToString(out);  // empty addrinfo
-  return ConvertToAddrinfoProtobuf(in, &addrinfo_protobuf, bridge_error_code) &&
-         addrinfo_protobuf.SerializeToString(out);
-}
-
-bool DeserializeAddrinfo(const std::string *in, struct addrinfo **out) {
-  AddrinfosProto addrinfo_protobuf;
-  if (!addrinfo_protobuf.ParseFromString(*in)) return false;
-  if (addrinfo_protobuf.addrinfos_size() == 0) {
-    *out = nullptr;  // empty addrinfo
-    return true;
-  }
-  return ConvertToAddrinfo(&addrinfo_protobuf, out);
-}
-
-void FreeDeserializedAddrinfo(struct addrinfo *in) {
-  struct addrinfo *prev_info = nullptr;
-  for (struct addrinfo *info = in; info != nullptr; info = info->ai_next) {
-    if (prev_info) free(prev_info);
-    if (info->ai_addr) free(info->ai_addr);
-    if (info->ai_canonname) free(info->ai_canonname);
-    prev_info = info;
-  }
-  if (prev_info) free(prev_info);
-}
 
 bool SerializeEpollCtlArgs(int epfd, int op, int fd, struct epoll_event *event,
                            char **out, size_t *len) {

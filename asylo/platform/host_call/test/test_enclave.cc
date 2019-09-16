@@ -17,6 +17,7 @@
  */
 
 #include <errno.h>
+#include <netdb.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -899,6 +900,37 @@ PrimitiveStatus TestGetSockOpt(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestGetAddrInfo(void *context, MessageReader *in,
+                                MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  auto node_buffer = in->next();
+
+  struct addrinfo *result;
+  out->Push<int>(enc_untrusted_getaddrinfo(node_buffer.As<char>(), nullptr,
+                                           nullptr, &result));
+
+  // Convert sockaddrs from addrinfo to linux_sockaddrs and push to |out|.
+  for (struct addrinfo *res = result; res != nullptr; res = res->ai_next) {
+    socklen_t klinux_sock_len = std::max(
+        std::max(sizeof(klinux_sockaddr_un), sizeof(klinux_sockaddr_in)),
+        sizeof(klinux_sockaddr_in6));
+    auto klinux_sock = absl::make_unique<char[]>(klinux_sock_len);
+
+    if (!TokLinuxSockAddr(
+            res->ai_addr, res->ai_addrlen,
+            reinterpret_cast<klinux_sockaddr *>(klinux_sock.get()),
+            &klinux_sock_len, TrustedPrimitives::BestEffortAbort)) {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "TestGetAddrInfo: Couldn't convert sockaddr to klinux_sockaddr"};
+    }
+
+    out->PushByCopy(Extent{klinux_sock.get(), klinux_sock_len});
+  }
+
+  freeaddrinfo(result);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1082,6 +1114,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestGetSockOpt,
       EntryHandler{asylo::host_call::TestGetSockOpt}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetAddrInfo,
+      EntryHandler{asylo::host_call::TestGetAddrInfo}));
 
   return PrimitiveStatus::OkStatus();
 }

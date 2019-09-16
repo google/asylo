@@ -582,6 +582,38 @@ TEST_F(GeneratedTypesFunctionsTest, ItimerTypeTest) {
               to_matcher);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, AddressInfoFlagTest) {
+  std::vector<int> from_bits = {
+      kLinux_AI_CANONNAME,   kLinux_AI_NUMERICHOST, kLinux_AI_V4MAPPED,
+      kLinux_AI_ADDRCONFIG,  kLinux_AI_ALL,         kLinux_AI_PASSIVE,
+      kLinux_AI_NUMERICSERV, kLinux_AI_IDN,         kLinux_AI_CANONIDN};
+  std::vector<int> to_bits = {AI_CANONNAME,   AI_NUMERICHOST, AI_V4MAPPED,
+                              AI_ADDRCONFIG,  AI_ALL,         AI_PASSIVE,
+                              AI_NUMERICSERV, AI_IDN,         AI_CANONIDN};
+
+  TestMultiValuedEnums(from_bits, to_bits, FromkLinuxAddressInfoFlag,
+                       TokLinuxAddressInfoFlag);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, AddressInfoErrorTest) {
+  std::vector<int> from_consts = {
+      kLinux_EAI_ADDRFAMILY, kLinux_EAI_AGAIN,     kLinux_EAI_BADFLAGS,
+      kLinux_EAI_FAIL,       kLinux_EAI_FAMILY,    kLinux_EAI_MEMORY,
+      kLinux_EAI_NODATA,     kLinux_EAI_NONAME,    kLinux_EAI_SERVICE,
+      kLinux_EAI_SOCKTYPE,   kLinux_EAI_SYSTEM,    kLinux_EAI_OVERFLOW,
+      kLinux_EAI_INPROGRESS, kLinux_EAI_CANCELED,  kLinux_EAI_ALLDONE,
+      kLinux_EAI_INTR,       kLinux_EAI_IDN_ENCODE};
+  std::vector<int> to_consts = {
+      EAI_ADDRFAMILY, EAI_AGAIN,     EAI_BADFLAGS,   EAI_FAIL,     EAI_FAMILY,
+      EAI_MEMORY,     EAI_NODATA,    EAI_NONAME,     EAI_SERVICE,  EAI_SOCKTYPE,
+      EAI_SYSTEM,     EAI_OVERFLOW,  EAI_INPROGRESS, EAI_CANCELED, EAI_ALLDONE,
+      EAI_INTR,       EAI_IDN_ENCODE};
+  for (int i = 0; i < from_consts.size(); i++) {
+    EXPECT_THAT(TokLinuxAddressInfoError(to_consts[i]), Eq(from_consts[i]));
+    EXPECT_THAT(FromkLinuxAddressInfoError(from_consts[i]), Eq(to_consts[i]));
+  }
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

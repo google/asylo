@@ -130,6 +130,9 @@ int enc_untrusted_select(int nfds, fd_set *readfds, fd_set *writefds,
 int enc_untrusted_raise(int sig);
 int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
                              socklen_t *optlen);
+int enc_untrusted_getaddrinfo(const char *node, const char *service,
+                              const struct addrinfo *hints,
+                              struct addrinfo **res);
 
 #ifdef __cplusplus
 }  // extern "C"

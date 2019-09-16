@@ -78,10 +78,6 @@ ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size);
 int enc_untrusted_inet_pton(int af, const char *src, void *dst);
-int enc_untrusted_getaddrinfo(const char *node, const char *service,
-                              const struct addrinfo *hints,
-                              struct addrinfo **res);
-void enc_untrusted_freeaddrinfo(struct addrinfo *res);
 
 //////////////////////////////////////
 //            Threading             //

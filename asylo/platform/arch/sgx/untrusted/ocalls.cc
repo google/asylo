@@ -235,41 +235,6 @@ int ocall_enc_untrusted_inet_pton(AfFamily af, const char *src, void *dst,
   return inet_pton(asylo::FromBridgeAfFamily(af), src, dst);
 }
 
-int ocall_enc_untrusted_getaddrinfo(const char *node, const char *service,
-                                    const char *serialized_hints,
-                                    bridge_size_t serialized_hints_len,
-                                    char **serialized_res_start,
-                                    bridge_size_t *serialized_res_len) {
-  struct addrinfo *hints;
-  std::string tmp_serialized_hints(serialized_hints,
-                                   static_cast<size_t>(serialized_hints_len));
-  if (!asylo::DeserializeAddrinfo(&tmp_serialized_hints, &hints)) {
-    return -1;
-  }
-
-  struct addrinfo *res;
-  int ret = getaddrinfo(node, service, hints, &res);
-  if (ret != 0) {
-    return asylo::ToBridgeAddressInfoErrors(ret);
-  }
-  asylo::FreeDeserializedAddrinfo(hints);
-
-  std::string tmp_serialized_res;
-  int bridge_error_code = -1;
-  if (!asylo::SerializeAddrinfo(res, &tmp_serialized_res, &bridge_error_code)) {
-    return bridge_error_code;
-  }
-  freeaddrinfo(res);
-
-  // Allocate memory for the enclave to copy the result; enclave will free this.
-  size_t tmp_serialized_res_len = tmp_serialized_res.length();
-  char *serialized_res = static_cast<char *>(malloc(tmp_serialized_res_len));
-  memcpy(serialized_res, tmp_serialized_res.c_str(), tmp_serialized_res_len);
-  *serialized_res_start = serialized_res;
-  *serialized_res_len = static_cast<bridge_size_t>(tmp_serialized_res_len);
-  return 0;
-}
-
 //////////////////////////////////////
 //           poll.h                 //
 //////////////////////////////////////
