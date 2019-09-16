@@ -25,12 +25,14 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_test_util.h"
+#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace {
 
+using ::testing::IsEmpty;
 using ::testing::Not;
 
 // Tests that the SgxCodeIdentityExpectationMatcher exists in the
@@ -67,6 +69,35 @@ TEST(SgxCodeIdentityExpectationMatcherTest, MatchPositive) {
       matcher.Match(expectation.reference_identity(), expectation);
   ASSERT_THAT(matcher_result, IsOkAndHolds(true))
       << sgx::FormatProto(code_identity_expectation);
+}
+
+// Tests that when a SgxCodeIdentityExpectationMatcher returns false it
+// populates the explanation, and does not populate the explanation when it
+// returns true.
+TEST(SgxCodeIdentityExpectationMatcherTest, MatchAndExplain) {
+  EnclaveIdentityExpectation expectation;
+  sgx::CodeIdentityExpectation code_identity_expectation;
+  ASYLO_ASSERT_OK(sgx::SetRandomValidGenericExpectation(
+      &expectation, &code_identity_expectation));
+
+  sgx::CodeIdentity code_identity =
+      sgx::GetRandomValidCodeIdentityWithConstraints(
+          /*mrenclave_constraint=*/{true}, /*mrsigner_constraint=*/{true});
+
+  EnclaveIdentity identity;
+  ASYLO_ASSERT_OK(SerializeSgxIdentity(code_identity, &identity));
+
+  SgxCodeIdentityExpectationMatcher matcher;
+  std::string explanation;
+
+  auto result = matcher.MatchAndExplain(identity, expectation, &explanation);
+  ASYLO_ASSERT_OK(result.status());
+
+  if (result.ValueOrDie()) {
+    EXPECT_THAT(explanation, IsEmpty());
+  } else {
+    EXPECT_THAT(explanation, Not(IsEmpty()));
+  }
 }
 
 // Tests that SgxCodeIdentityExpectationMatcher returns a non-OK status when

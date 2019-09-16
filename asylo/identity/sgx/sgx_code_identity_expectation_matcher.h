@@ -19,8 +19,11 @@
 #ifndef ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
 #define ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
 
+#include <string>
+
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 
@@ -33,9 +36,14 @@ class SgxCodeIdentityExpectationMatcher final
   ~SgxCodeIdentityExpectationMatcher() override = default;
 
   // From the IdentityExpectationMatcher interface.
+
   StatusOr<bool> Match(
       const EnclaveIdentity &identity,
       const EnclaveIdentityExpectation &expectation) const override;
+
+  StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
+                                 const EnclaveIdentityExpectation &expectation,
+                                 std::string *explanation) const override;
 
   // From the NamedIdentityExpectationMatcher interface.
   EnclaveIdentityDescription Description() const override;

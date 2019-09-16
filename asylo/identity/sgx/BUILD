@@ -842,6 +842,7 @@ cc_library(
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
+        "//asylo/util:status",
     ],
     alwayslink = 1,
 )
@@ -858,12 +859,14 @@ cc_test(
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":code_identity_test_util",
+        ":code_identity_util",
         ":proto_format",
         ":sgx_code_identity_expectation_matcher",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],
 )

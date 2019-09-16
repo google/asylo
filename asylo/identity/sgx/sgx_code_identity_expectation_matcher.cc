@@ -20,30 +20,33 @@
 
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
 StatusOr<bool> SgxCodeIdentityExpectationMatcher::Match(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation) const {
+  return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
+}
+
+StatusOr<bool> SgxCodeIdentityExpectationMatcher::MatchAndExplain(
+    const EnclaveIdentity &identity,
+    const EnclaveIdentityExpectation &expectation,
+    std::string *explanation) const {
+  // If this call fails, then |identity| either does not have the correct
+  // description, or is malformed.
   sgx::CodeIdentity code_identity;
-  Status status = sgx::ParseSgxIdentity(identity, &code_identity);
-  if (!status.ok()) {
-    // |identity| either does not have the correct description, or is malformed.
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(sgx::ParseSgxIdentity(identity, &code_identity));
 
+  // If this call fails, then |expectation|.reference_identity() either does not
+  // have the correct description, or is malformed.
   sgx::CodeIdentityExpectation code_identity_expectation;
-  status = sgx::ParseSgxExpectation(expectation, &code_identity_expectation);
-  if (!status.ok()) {
-    // |expectation|.reference_identity() either does not have the correct
-    // description, or is malformed.
-    return status;
-  }
+  ASYLO_RETURN_IF_ERROR(
+      sgx::ParseSgxExpectation(expectation, &code_identity_expectation));
 
-  return sgx::MatchIdentityToExpectation(code_identity,
-                                         code_identity_expectation,
-                                         /*explanation=*/nullptr);
+  return sgx::MatchIdentityToExpectation(
+      code_identity, code_identity_expectation, explanation);
 }
 
 EnclaveIdentityDescription SgxCodeIdentityExpectationMatcher::Description()
