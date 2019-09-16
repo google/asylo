@@ -16,48 +16,49 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
+#include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 
-StatusOr<bool> SgxCodeIdentityExpectationMatcher::Match(
+StatusOr<bool> SgxIdentityExpectationMatcher::Match(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation) const {
   return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
 }
 
-StatusOr<bool> SgxCodeIdentityExpectationMatcher::MatchAndExplain(
+StatusOr<bool> SgxIdentityExpectationMatcher::MatchAndExplain(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation,
     std::string *explanation) const {
   // If this call fails, then |identity| either does not have the correct
   // description, or is malformed.
-  sgx::CodeIdentity code_identity;
-  ASYLO_RETURN_IF_ERROR(sgx::ParseSgxIdentity(identity, &code_identity));
+  SgxIdentity sgx_identity;
+  ASYLO_RETURN_IF_ERROR(sgx::ParseSgxIdentity(identity, &sgx_identity));
 
   // If this call fails, then |expectation|.reference_identity() either does not
   // have the correct description, or is malformed.
-  sgx::CodeIdentityExpectation code_identity_expectation;
-  ASYLO_RETURN_IF_ERROR(
-      sgx::ParseSgxExpectation(expectation, &code_identity_expectation));
+  SgxIdentityExpectation sgx_identity_expectation;
+  bool is_legacy = !identity.has_version();
+  ASYLO_RETURN_IF_ERROR(sgx::ParseSgxExpectation(
+      expectation, &sgx_identity_expectation, is_legacy));
 
   return sgx::MatchIdentityToExpectation(
-      code_identity, code_identity_expectation, explanation);
+      sgx_identity, sgx_identity_expectation, explanation, is_legacy);
 }
 
-EnclaveIdentityDescription SgxCodeIdentityExpectationMatcher::Description()
-    const {
+EnclaveIdentityDescription SgxIdentityExpectationMatcher::Description() const {
   EnclaveIdentityDescription description;
   SetSgxIdentityDescription(&description);
   return description;
 }
 
-// Static registration of the CodeIdentityExpectationMatcher library.
+// Static registration of the SgxIdentityExpectationMatcher library.
 SET_STATIC_MAP_VALUE_OF_DERIVED_TYPE(IdentityExpectationMatcherMap,
-                                     SgxCodeIdentityExpectationMatcher);
+                                     SgxIdentityExpectationMatcher);
 
 }  // namespace asylo

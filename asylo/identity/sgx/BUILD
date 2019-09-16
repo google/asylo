@@ -790,8 +790,8 @@ cc_test(
         ":hardware_types",
         ":platform_provisioning_cc_proto",
         ":proto_format",
-        ":sgx_code_identity_expectation_matcher",
         ":sgx_identity_cc_proto",
+        ":sgx_identity_expectation_matcher",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
@@ -833,12 +833,23 @@ cc_test(
 
 cc_library(
     name = "sgx_code_identity_expectation_matcher",
-    srcs = ["sgx_code_identity_expectation_matcher.cc"],
     hdrs = ["sgx_code_identity_expectation_matcher.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use sgx_identity_expectation_matcher instead",
+    visibility = ["//visibility:public"],
+    deps = [":sgx_identity_expectation_matcher"],
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "sgx_identity_expectation_matcher",
+    srcs = ["sgx_identity_expectation_matcher.cc"],
+    hdrs = ["sgx_identity_expectation_matcher.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
         ":code_identity_util",
+        ":sgx_identity_cc_proto",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
@@ -848,20 +859,21 @@ cc_library(
 )
 
 cc_test(
-    name = "sgx_code_identity_expectation_matcher_test",
+    name = "sgx_identity_expectation_matcher_test",
     srcs = [
-        "sgx_code_identity_expectation_matcher.h",
-        "sgx_code_identity_expectation_matcher_test.cc",
+        "sgx_identity_expectation_matcher.h",
+        "sgx_identity_expectation_matcher_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "sgx_code_identity_expectation_matcher_enclave_test",
+    enclave_test_name = "sgx_identity_expectation_matcher_enclave_test",
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":code_identity_test_util",
         ":code_identity_util",
         ":proto_format",
-        ":sgx_code_identity_expectation_matcher",
+        ":sgx_identity_expectation_matcher",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
         "//asylo/test/util:status_matchers",

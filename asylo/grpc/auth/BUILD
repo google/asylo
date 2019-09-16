@@ -91,7 +91,7 @@ cc_library(
     deps = [
         ":grpc++_security_enclave",
         "//asylo/identity:descriptions",
-        "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",  # alwayslink = 1
+        "//asylo/identity/sgx:sgx_identity_expectation_matcher",  # alwayslink = 1
         "//asylo/identity/sgx:sgx_local_assertion_generator",  # alwayslink = 1
         "//asylo/identity/sgx:sgx_local_assertion_verifier",  # alwayslink = 1
     ],

@@ -309,7 +309,7 @@ cc_library(
             "//asylo/identity:descriptions",
             "//asylo/identity:identity_acl_evaluator",
             "//asylo/identity/sgx:code_identity_util",
-            "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",
+            "//asylo/identity/sgx:sgx_identity_expectation_matcher",
             "//asylo/identity/sgx:sgx_local_assertion_generator",
             "//asylo/identity/sgx:sgx_local_assertion_verifier",
             "//asylo/util:cleansing_types",

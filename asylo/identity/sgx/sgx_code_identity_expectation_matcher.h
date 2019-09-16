@@ -19,35 +19,14 @@
 #ifndef ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
 #define ASYLO_IDENTITY_SGX_SGX_CODE_IDENTITY_EXPECTATION_MATCHER_H_
 
-#include <string>
-
-#include "asylo/identity/identity.pb.h"
-#include "asylo/identity/named_identity_expectation_matcher.h"
-#include "asylo/util/statusor.h"
+#include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 
 namespace asylo {
 
-// SgxCodeIdentityExpectationMatcher is capable of matching SGX code identities
-// with SGX code-identity expectations.
-class SgxCodeIdentityExpectationMatcher final
-    : public NamedIdentityExpectationMatcher {
- public:
-  SgxCodeIdentityExpectationMatcher() = default;
-  ~SgxCodeIdentityExpectationMatcher() override = default;
-
-  // From the IdentityExpectationMatcher interface.
-
-  StatusOr<bool> Match(
-      const EnclaveIdentity &identity,
-      const EnclaveIdentityExpectation &expectation) const override;
-
-  StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
-                                 const EnclaveIdentityExpectation &expectation,
-                                 std::string *explanation) const override;
-
-  // From the NamedIdentityExpectationMatcher interface.
-  EnclaveIdentityDescription Description() const override;
-};
+// Newer code should directly use SgxIdentityExpectationMatcher from the
+// `sgx_identity_expectation_matcher` BUILD target instead; this type alias
+// exists to prevent older code from breaking due to this class being renamed.
+using SgxCodeIdentityExpectationMatcher = SgxIdentityExpectationMatcher;
 
 }  // namespace asylo
 

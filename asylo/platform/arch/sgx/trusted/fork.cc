@@ -37,7 +37,7 @@
 #include "asylo/identity/identity_acl_evaluator.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/self_identity.h"
-#include "asylo/identity/sgx/sgx_code_identity_expectation_matcher.h"
+#include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/memory/memory.h"
@@ -758,7 +758,7 @@ Status ComparePeerAndSelfIdentity(const EnclaveIdentity &peer_identity) {
       code_identity_expectation, &enclave_identity_expectation));
   IdentityAclPredicate predicate;
   *predicate.mutable_expectation() = enclave_identity_expectation;
-  SgxCodeIdentityExpectationMatcher sgx_matcher;
+  SgxIdentityExpectationMatcher sgx_matcher;
 
   auto acl_result =
       EvaluateIdentityAcl({peer_identity}, predicate, sgx_matcher);
