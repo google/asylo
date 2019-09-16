@@ -39,9 +39,27 @@ cc_library(
     srcs = [
         "trusted_runtime.cc",
         "trusted_sgx.cc",
-    ],
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": [
+                "hardware_random_sgx_hw.cc",
+            ],
+            "@linux_sgx//:sgx_sim": [
+                "hardware_random_sgx_sim.cc",
+            ],
+        },
+        no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
+    ),
     hdrs = ["trusted_sgx.h"],
-    copts = ASYLO_DEFAULT_COPTS,
+    copts = select(
+        {
+            "@linux_sgx//:sgx_hw": [
+                "-mrdrnd",  # All SGX chips also support RDRAND
+            ],
+            "@linux_sgx//:sgx_sim": [],
+        },
+        "Must be built for SGX hardware or simulation backend",
+    ) + ASYLO_DEFAULT_COPTS,
     tags = [
         "asylo-sgx",
         "manual",

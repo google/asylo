@@ -19,13 +19,18 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_TRUSTED_RUNTIME_H_
 #define ASYLO_PLATFORM_PRIMITIVES_TRUSTED_RUNTIME_H_
 
+#include <sys/types.h>
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
 
 #include "asylo/platform/primitives/primitive_status.h"
 
+#ifdef __cplusplus
 extern "C" {
+#endif
+
+ssize_t enc_hardware_random(uint8_t *buf, size_t count);
 
 // Prototype of the user-defined enclave initialization function.
 asylo::primitives::PrimitiveStatus asylo_enclave_init();
@@ -111,6 +116,8 @@ int get_active_enclave_entries();
   } while (0)
 #endif
 
-}
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif  // ASYLO_PLATFORM_PRIMITIVES_TRUSTED_RUNTIME_H_

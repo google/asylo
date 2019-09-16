@@ -24,7 +24,7 @@
 #include <sys/sysmacros.h>
 
 #include "absl/memory/memory.h"
-#include "asylo/platform/arch/include/trusted/hardware_random.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
 namespace {

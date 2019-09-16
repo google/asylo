@@ -16,14 +16,13 @@
  *
  */
 
-#include "asylo/platform/arch/include/trusted/hardware_random.h"
-
 #include <immintrin.h>
 #include <stdlib.h>
 #include <string.h>
 #include <algorithm>
 
-namespace asylo {
+#include "asylo/platform/primitives/trusted_runtime.h"
+
 namespace {
 
 static void rdrand64(void *out) {
@@ -90,5 +89,3 @@ extern "C" ssize_t enc_hardware_random(uint8_t *buf, size_t count) {
 
   return count;
 }
-
-}  // namespace asylo

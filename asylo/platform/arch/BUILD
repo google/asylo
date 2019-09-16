@@ -31,7 +31,6 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 cc_library(
     name = "trusted_arch",
     hdrs = [
-        "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/register_signal.h",
         "include/trusted/time.h",
@@ -181,18 +180,15 @@ cc_library(
     ] + select(
         {
             "@linux_sgx//:sgx_hw": [
-                "sgx/trusted/hardware_random.cc",
                 "sgx/trusted/register_signal.cc",
             ],
             "@linux_sgx//:sgx_sim": [
-                "sgx_sim/trusted/hardware_random.cc",
                 "sgx_sim/trusted/register_signal.cc",
             ],
         },
         no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
     ),
     hdrs = [
-        "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
         "include/trusted/register_signal.h",
     ],
@@ -244,7 +240,6 @@ cc_library(
 cc_library(
     name = "trusted_build_only",
     hdrs = [
-        "include/trusted/hardware_random.h",
         "include/trusted/host_calls.h",
     ],
     visibility = ["//visibility:private"],
