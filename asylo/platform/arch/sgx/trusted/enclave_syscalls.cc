@@ -38,7 +38,13 @@
 
 extern "C" {
 
-int enclave_execve(char *name, char **argv, char **env) { abort(); }
+#ifdef ASYLO_ENCLAVE_SYSCALL_TRANSITION
+int enclave_execve(const char *name, char *const argv[], char *const env[]) {
+#else
+int enclave_execve(char *name, char **argv, char **env) {
+#endif
+  abort();
+}
 
 int enclave_kill(int pid, int sig) { abort(); }
 
