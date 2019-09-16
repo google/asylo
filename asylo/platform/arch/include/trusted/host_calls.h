@@ -162,15 +162,6 @@ void enc_untrusted_syslog(int priority, const char *message);
 int enc_untrusted_uname(struct utsname *utsname_buf);
 
 //////////////////////////////////////
-//            time.h                //
-//////////////////////////////////////
-
-int enc_untrusted_times(struct tms *buf);
-int enc_untrusted_getitimer(int which, struct itimerval *curr_value);
-int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
-                            struct itimerval *old_value);
-
-//////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
 

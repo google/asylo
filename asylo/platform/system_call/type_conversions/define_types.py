@@ -221,7 +221,6 @@ define_constants(
     default_value_host=-1,
     wrap_macros_with_if_defined=True)
 
-# Clock ID constants defined by standard libc time.h.
 define_constants(
     name="ClockId",
     values=["CLOCK_REALTIME", "CLOCK_MONOTONIC"],
@@ -230,24 +229,40 @@ define_constants(
     default_value_host=-1,
     data_type="clockid_t")
 
-# timespec struct defined by standard libc time.h.
+define_constants(
+    name="ItimerType",
+    values=["ITIMER_REAL", "ITIMER_VIRTUAL", "ITIMER_PROF"],
+    include_header_file="sys/time.h",
+    default_value_host=-1,
+    default_value_newlib=-1)
+
 define_struct(
     name="timespec",
     values=[
         ("int64_t", "tv_sec"),
         ("int64_t", "tv_nsec"),
     ],
-    pack_attributes=False,
-)
+    include_header_file="time.h",
+    pack_attributes=False)
 
-# timeval struct defined by standard libc time.h.
 define_struct(
     name="timeval",
     values=[
         ("int64_t", "tv_sec"),
         ("int64_t", "tv_usec"),
     ],
-    pack_attributes=False,
-)
+    include_header_file="time.h",
+    pack_attributes=False)
+
+define_struct(
+    name="tms",
+    values=[
+        ("int64_t", "tms_utime"),
+        ("int64_t", "tms_stime"),
+        ("int64_t", "tms_cutime"),
+        ("int64_t", "tms_cstime"),
+    ],
+    include_header_file="sys/times.h",
+    pack_attributes=False)
 
 write_output()

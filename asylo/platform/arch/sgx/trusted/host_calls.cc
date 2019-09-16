@@ -419,54 +419,6 @@ void enc_untrusted_syslog(int priority, const char *message) {
 }
 
 //////////////////////////////////////
-//           time.h                 //
-//////////////////////////////////////
-
-int enc_untrusted_times(struct tms *buf) {
-  int ret;
-  BridgeTms bridge_buf;
-  CHECK_OCALL(ocall_enc_untrusted_times(&ret, &bridge_buf));
-  if (!asylo::FromBridgeTms(&bridge_buf, buf)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
-int enc_untrusted_getitimer(int which, struct itimerval *curr_value) {
-  int ret;
-  struct BridgeITimerVal bridge_curr_value;
-  CHECK_OCALL(ocall_enc_untrusted_getitimer(
-      &ret, asylo::ToBridgeTimerType(which), &bridge_curr_value));
-  if (curr_value == nullptr ||
-      !asylo::FromBridgeITimerVal(&bridge_curr_value, curr_value)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
-int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
-                            struct itimerval *old_value) {
-  int ret;
-  struct BridgeITimerVal bridge_new_value, bridge_old_value;
-  if (!asylo::ToBridgeITimerVal(new_value, &bridge_new_value)) {
-    errno = EFAULT;
-    return -1;
-  }
-  CHECK_OCALL(
-      ocall_enc_untrusted_setitimer(&ret, asylo::ToBridgeTimerType(which),
-                                    &bridge_new_value, &bridge_old_value));
-  // Set |old_value| if it's not a nullptr.
-  if (old_value != nullptr &&
-      !asylo::FromBridgeITimerVal(&bridge_old_value, old_value)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //         sys/utsname.h            //
 //////////////////////////////////////
 

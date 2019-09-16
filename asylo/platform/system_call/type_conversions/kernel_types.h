@@ -21,6 +21,8 @@
 
 #include <stdint.h>
 
+#include "asylo/platform/system_call/type_conversions/generated_types.h"
+
 #define KLINUX_FD_SETSIZE 1024
 #define KLINUX_NFDBITS (sizeof(int64_t) * 8)
 #define KLINUX_FD_SET(n, p) \
@@ -114,7 +116,7 @@ struct klinux_statfs {
   int64_t klinux_f_spare[4];
 };
 
-enum StatFsFlag {
+enum klinux_statfs_flag {
   kLinux_ST_RDONLY = (1 << 0),
   kLinux_ST_NOSUID = (1 << 1),
   kLinux_ST_NODEV = (1 << 2),
@@ -145,6 +147,11 @@ typedef uint64_t klinux_cpu_set_word;
 
 struct klinux_cpu_set_t {
   uint64_t words[KLINUX_CPU_SET_NUM_WORDS];
+};
+
+struct klinux_itimerval {
+  struct kLinux_timeval klinux_it_interval;
+  struct kLinux_timeval klinux_it_value;
 };
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

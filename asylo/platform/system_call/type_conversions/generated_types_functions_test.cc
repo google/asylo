@@ -566,6 +566,22 @@ TEST_F(GeneratedTypesFunctionsTest, ClockIdTest) {
   }
 }
 
+TEST_F(GeneratedTypesFunctionsTest, ItimerTypeTest) {
+  std::vector<int> from_consts = {kLinux_ITIMER_REAL, kLinux_ITIMER_VIRTUAL,
+                                  kLinux_ITIMER_PROF};
+  std::vector<int> to_consts = {ITIMER_REAL, ITIMER_VIRTUAL, ITIMER_PROF};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxItimerType(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxItimerType(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

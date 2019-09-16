@@ -41,24 +41,6 @@ class BridgeTest : public ::testing::Test {
 
 using intvec = std::vector<int>;
 
-TEST_F(BridgeTest, BridgeTimerTypeTest) {
-  std::vector<enum TimerType> from_consts = {
-      BRIDGE_ITIMER_REAL,
-      BRIDGE_ITIMER_VIRTUAL,
-      BRIDGE_ITIMER_PROF,
-      BRIDGE_ITIMER_UNKNOWN,
-  };
-  intvec to_consts = {ITIMER_REAL, ITIMER_VIRTUAL, ITIMER_PROF, -1};
-  auto from_matcher =
-      IsFiniteRestrictionOf<enum TimerType, int>(FromBridgeTimerType);
-  EXPECT_THAT(zip(from_consts, to_consts), from_matcher);
-  auto to_matcher =
-      IsFiniteRestrictionOf<int, enum TimerType>(ToBridgeTimerType);
-  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts,
-                                             BRIDGE_ITIMER_UNKNOWN, ITER_BOUND),
-              to_matcher);
-}
-
 TEST_F(BridgeTest, BridgeWaitOptionsTest) {
   intvec from_consts = {BRIDGE_WNOHANG};
   intvec to_consts = {WNOHANG};

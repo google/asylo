@@ -63,7 +63,11 @@ asylo::primitives::PrimitiveStatus SystemCallDispatcher(
   return asylo::primitives::PrimitiveStatus::OkStatus();
 }
 
-void error_handler(const char *message) { abort(); }
+void error_handler(const char *message) {
+  fprintf(stderr, "%s\n", message);
+  fflush(stderr);
+  abort();
+}
 
 // A system call dispatch function that return invalid response.
 asylo::primitives::PrimitiveStatus InvalidResponseDispatcher(

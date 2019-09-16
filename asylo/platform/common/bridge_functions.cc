@@ -170,20 +170,6 @@ int ToBridgePollEvents(int bridge_events) {
 
 }  // namespace
 
-int FromBridgeTimerType(enum TimerType bridge_timer_type) {
-  if (bridge_timer_type == BRIDGE_ITIMER_REAL) return ITIMER_REAL;
-  if (bridge_timer_type == BRIDGE_ITIMER_VIRTUAL) return ITIMER_VIRTUAL;
-  if (bridge_timer_type == BRIDGE_ITIMER_PROF) return ITIMER_PROF;
-  return -1;
-}
-
-enum TimerType ToBridgeTimerType(int timer_type) {
-  if (timer_type == ITIMER_REAL) return BRIDGE_ITIMER_REAL;
-  if (timer_type == ITIMER_VIRTUAL) return BRIDGE_ITIMER_VIRTUAL;
-  if (timer_type == ITIMER_PROF) return BRIDGE_ITIMER_PROF;
-  return BRIDGE_ITIMER_UNKNOWN;
-}
-
 int FromBridgeWaitOptions(int bridge_wait_options) {
   int wait_options = 0;
   if (bridge_wait_options & BRIDGE_WNOHANG) wait_options |= WNOHANG;
@@ -628,26 +614,6 @@ struct bridge_pollfd *ToBridgePollfd(const struct pollfd *fd,
   return bridge_fd;
 }
 
-struct tms *FromBridgeTms(const struct BridgeTms *bridge_times,
-                          struct tms *times) {
-  if (!bridge_times || !times) return nullptr;
-  times->tms_utime = bridge_times->tms_utime;
-  times->tms_stime = bridge_times->tms_stime;
-  times->tms_cutime = bridge_times->tms_cutime;
-  times->tms_cstime = bridge_times->tms_cstime;
-  return times;
-}
-
-struct BridgeTms *ToBridgeTms(const struct tms *times,
-                              struct BridgeTms *bridge_times) {
-  if (!times || !bridge_times) return nullptr;
-  bridge_times->tms_utime = times->tms_utime;
-  bridge_times->tms_stime = times->tms_stime;
-  bridge_times->tms_cutime = times->tms_cutime;
-  bridge_times->tms_cstime = times->tms_cstime;
-  return bridge_times;
-}
-
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
                                   struct utimbuf *ut) {
   if (!ut || !bridge_ut) return nullptr;
@@ -678,22 +644,6 @@ struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
   bridge_tv->tv_sec = tv->tv_sec;
   bridge_tv->tv_usec = tv->tv_usec;
   return bridge_tv;
-}
-
-struct itimerval *FromBridgeITimerVal(
-    const struct BridgeITimerVal *bridge_timerval, struct itimerval *timerval) {
-  if (!bridge_timerval || !timerval) return nullptr;
-  FromBridgeTimeVal(&bridge_timerval->it_interval, &timerval->it_interval);
-  FromBridgeTimeVal(&bridge_timerval->it_value, &timerval->it_value);
-  return timerval;
-}
-
-struct BridgeITimerVal *ToBridgeITimerVal(
-    const struct itimerval *timerval, struct BridgeITimerVal *bridge_timerval) {
-  if (!timerval || !bridge_timerval) return nullptr;
-  ToBridgeTimeVal(&timerval->it_interval, &bridge_timerval->it_interval);
-  ToBridgeTimeVal(&timerval->it_value, &bridge_timerval->it_value);
-  return bridge_timerval;
 }
 
 int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus) {

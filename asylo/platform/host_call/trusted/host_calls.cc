@@ -975,4 +975,50 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   return result;
 }
 
+int enc_untrusted_getitimer(int which, struct itimerval *curr_value) {
+  struct klinux_itimerval klinux_curr_value {};
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_getitimer, TokLinuxItimerType(which),
+      &klinux_curr_value);
+
+  if (!curr_value || !FromkLinuxItimerval(&klinux_curr_value, curr_value)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return result;
+}
+
+int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
+                            struct itimerval *old_value) {
+  struct klinux_itimerval klinux_new_value {};
+  struct klinux_itimerval klinux_old_value {};
+  if (!TokLinuxItimerval(new_value, &klinux_new_value)) {
+    errno = EFAULT;
+    return -1;
+  }
+
+  int result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_setitimer, TokLinuxItimerType(which),
+      &klinux_new_value, &klinux_old_value);
+
+  if (old_value != nullptr &&
+      !FromkLinuxItimerval(&klinux_old_value, old_value)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return result;
+}
+
+clock_t enc_untrusted_times(struct tms *buf) {
+  struct kLinux_tms klinux_buf {};
+  int64_t result = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_times, &klinux_buf);
+
+  if (!FromkLinuxtms(&klinux_buf, buf)) {
+    errno = EFAULT;
+    return -1;
+  }
+  return static_cast<clock_t>(result);
+}
+
 }  // extern "C"

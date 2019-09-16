@@ -56,13 +56,13 @@ class TypesParseFunctionsTest(TestCase):
         '"int64_t", {{"a", a}}}}\n')
 
   def test_get_structs_with_only_default_vals(self):
-    define_struct('TestStruct', [('a', 'b')])
+    define_struct('TestStruct', [('a', 'b')], 'stdio')
     self.assertEqual(
         get_structs(), '#define STRUCTS_INIT \\\n'
         '{"TestStruct", {true, false, {{"b", "a"}}}}\n')
 
   def test_get_structs_with_all_vals(self):
-    define_struct('TestStruct', [('a', 'b')], False, True)
+    define_struct('TestStruct', [('a', 'b')], 'stdio', False, True)
     self.assertEqual(
         get_structs(), '#define STRUCTS_INIT \\\n'
         '{"TestStruct", {false, true, {{"b", "a"}}}}\n')

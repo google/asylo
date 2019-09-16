@@ -493,50 +493,6 @@ void ocall_enc_untrusted_syslog(int priority, const char *message) {
 }
 
 //////////////////////////////////////
-//           time.h                 //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_times(struct BridgeTms *bridge_buf) {
-  struct tms buf;
-  int ret = times(&buf);
-  if (!asylo::ToBridgeTms(&buf, bridge_buf)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
-int ocall_enc_untrusted_getitimer(enum TimerType which,
-                                  struct BridgeITimerVal *bridge_curr_value) {
-  itimerval curr_value;
-  int ret = getitimer(asylo::FromBridgeTimerType(which), &curr_value);
-  if (bridge_curr_value == nullptr ||
-      !asylo::ToBridgeITimerVal(&curr_value, bridge_curr_value)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
-int ocall_enc_untrusted_setitimer(enum TimerType which,
-                                  struct BridgeITimerVal *bridge_new_value,
-                                  struct BridgeITimerVal *bridge_old_value) {
-  itimerval new_value, old_value;
-  if (!asylo::FromBridgeITimerVal(bridge_new_value, &new_value)) {
-    errno = EFAULT;
-    return -1;
-  }
-  int ret =
-      setitimer(asylo::FromBridgeTimerType(which), &new_value, &old_value);
-  if (bridge_old_value != nullptr &&
-      !asylo::ToBridgeITimerVal(&old_value, bridge_old_value)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //         sys/utsname.h            //
 //////////////////////////////////////
 

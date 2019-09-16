@@ -140,7 +140,16 @@ def define_constants(name,
   _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
   _enum_map[name]['wrap_macros_with_if_defined'] = wrap_macros_with_if_defined
   _enum_map[name]['data_type'] = '"{}"'.format(data_type)
+  add_include_header_file(include_header_file)
 
+
+def add_include_header_file(include_header_file):
+  """Adds a system header file to the list of includes to be generated.
+
+  Args:
+    include_header_file: Name of the system header file, in the format
+      'filename.h'. Do not use <> or "" to wrap the filename.
+  """
   if re.match(r'[<,"].*?[>,"]', include_header_file):
     raise ValueError(
         'Invalid include format for filename "%s". Please provide the include '
@@ -154,7 +163,11 @@ def define_constants(name,
   _includes.add(include_header_file)
 
 
-def define_struct(name, values, pack_attributes=True, skip_conversions=False):
+def define_struct(name,
+                  values,
+                  include_header_file,
+                  pack_attributes=True,
+                  skip_conversions=False):
   """Defines a collection of structs and their properties.
 
   Args:
@@ -164,6 +177,9 @@ def define_struct(name, values, pack_attributes=True, skip_conversions=False):
       names. The struct members names should match the corresponding struct
       member names in the struct from newlib/libc. Eg. [("int64_t", "st_dev"),
       ("int64_t", "st_ino")].
+    include_header_file: Kernel header file to include to identify |name| as a
+      valid kernel struct when generating conversion functions between kernel
+      structs and enclave structs.
     pack_attributes: Boolean indicating if the compiler should be prevented from
       padding the generated kernel struct members from their natural alignment.
     skip_conversions: Boolean indicating if generation of types conversion
@@ -176,6 +192,8 @@ def define_struct(name, values, pack_attributes=True, skip_conversions=False):
       for member_type, member_name in values)
   _struct_map[name]['pack_attributes'] = pack_attributes
   _struct_map[name]['skip_conversions'] = skip_conversions
+
+  add_include_header_file(include_header_file)
 
 
 def get_klinux_prefix():

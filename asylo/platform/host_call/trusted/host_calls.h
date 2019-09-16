@@ -105,6 +105,10 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
                           socklen_t addrlen);
 int enc_untrusted_gettimeofday(struct timeval *tv, struct timezone *tz);
 int enc_untrusted_fsync(int fd);
+int enc_untrusted_getitimer(int which, struct itimerval *curr_value);
+int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
+                            struct itimerval *old_value);
+clock_t enc_untrusted_times(struct tms *buf);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);

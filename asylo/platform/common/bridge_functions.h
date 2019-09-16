@@ -40,14 +40,6 @@
 
 namespace asylo {
 
-// Converts |bridge_timer_type| to a runtime timer type. Returns -1 if
-// unsuccessful.
-int FromBridgeTimerType(enum TimerType bridge_timer_type);
-
-// Converts |timer_type| to a bridge constant. Returns BRIDGE_ITIMER_UNKNOWN if
-// unsuccessful.
-enum TimerType ToBridgeTimerType(int timer_type);
-
 // Converts |bridge_wait_options| to runtime wait options. Returns 0 if no
 // supported wait options are provided.
 int FromBridgeWaitOptions(int bridge_wait_options);
@@ -167,14 +159,6 @@ int ToBridgeSocketType(int sock_type);
 // |bridge_sock_type| is not supported.
 int FromBridgeSocketType(int bridge_sock_type);
 
-// Converts |bridge_times| to a runtime tms.
-struct tms *FromBridgeTms(const struct BridgeTms *bridge_times,
-                          struct tms *times);
-
-// Converts |times| to a bridge tms.
-struct BridgeTms *ToBridgeTms(const struct tms *times,
-                              struct BridgeTms *bridge_times);
-
 // Converts |ut| to a runtime timespec.
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
                                   struct utimbuf *ut);
@@ -190,14 +174,6 @@ struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
 // Converts |tv| to a bridge timeval.
 struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
                                        struct bridge_timeval *bridge_tv);
-
-// Converts |bridge_timerval| to a runtime itimerval.
-struct itimerval *FromBridgeITimerVal(
-    const struct BridgeITimerVal *bridge_timerval, struct itimerval *timerval);
-
-// Converts |timerval| to a bridge itimerval.
-struct BridgeITimerVal *ToBridgeITimerVal(
-    const struct itimerval *timerval, struct BridgeITimerVal *bridge_timerval);
 
 // Converts |fd| to a bridge pollfd. Returns nullptr if unsuccessful.
 struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,

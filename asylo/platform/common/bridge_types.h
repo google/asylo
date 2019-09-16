@@ -44,14 +44,6 @@ typedef uint64_t bridge_size_t;
 typedef int64_t bridge_ssize_t;
 typedef int64_t bridge_sigset_t;
 
-// The timer type for getitimer/setitimer that are supported inside an enclave.
-enum TimerType {
-  BRIDGE_ITIMER_UNKNOWN = 0,
-  BRIDGE_ITIMER_REAL = 1,
-  BRIDGE_ITIMER_VIRTUAL = 2,
-  BRIDGE_ITIMER_PROF = 3,
-};
-
 // The target for getrusage(2) that are supported inside the enclave.
 enum RUsageTarget {
   BRIDGE_RUSAGE_UNKNOWN = 0,
@@ -255,21 +247,9 @@ enum BridgePollEvents {
   BRIDGE_POLLWRBAND = 0x400,
 };
 
-struct BridgeTms {
-  clock_t tms_utime;
-  clock_t tms_stime;
-  clock_t tms_cutime;
-  clock_t tms_cstime;
-} ABSL_ATTRIBUTE_PACKED;
-
 struct bridge_timeval {
   int64_t tv_sec;
   int64_t tv_usec;
-} ABSL_ATTRIBUTE_PACKED;
-
-struct BridgeITimerVal {
-  struct bridge_timeval it_interval;
-  struct bridge_timeval it_value;
 } ABSL_ATTRIBUTE_PACKED;
 
 struct bridge_utimbuf {

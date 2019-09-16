@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <sched.h>
 #include <sys/socket.h>
+#include <sys/time.h>
 #include <sys/un.h>
 
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
@@ -136,5 +137,15 @@ int TokLinuxSignalNumber(int input);
 
 // Converts a Linux based cpu set bitmask to an enclave based cpu set bitmask.
 bool FromkLinuxCpuSet(klinux_cpu_set_t *input, cpu_set_t *output);
+
+// Converts an enclave based itimerval struct to a kernel based itimerval
+// struct.
+bool TokLinuxItimerval(const struct itimerval *input,
+                       struct klinux_itimerval *output);
+
+// Converts a kernel based itimerval struct to an enclave based itimerval
+// struct.
+bool FromkLinuxItimerval(const struct klinux_itimerval *input,
+                         struct itimerval *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

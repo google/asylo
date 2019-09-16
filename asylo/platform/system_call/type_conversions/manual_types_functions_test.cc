@@ -256,6 +256,38 @@ TEST(ManualTypesFunctionsTest, SignalNumberTest) {
   EXPECT_THAT(sig, Eq(SIGABRT));
 }
 
+TEST(ManualTypesFunctionsTest, ToItimervalTest) {
+  EXPECT_THAT(sizeof(struct itimerval), Eq(sizeof(struct klinux_itimerval)));
+
+  struct itimerval tval {};
+  struct klinux_itimerval k_tval {};
+  tval.it_interval.tv_usec = 1;
+  tval.it_interval.tv_sec = 2;
+  tval.it_value.tv_usec = 3;
+  tval.it_value.tv_sec = 4;
+
+  EXPECT_THAT(TokLinuxItimerval(&tval, &k_tval), Eq(true));
+  EXPECT_THAT(k_tval.klinux_it_interval.kLinux_tv_usec, Eq(1));
+  EXPECT_THAT(k_tval.klinux_it_interval.kLinux_tv_sec, Eq(2));
+  EXPECT_THAT(k_tval.klinux_it_value.kLinux_tv_usec, Eq(3));
+  EXPECT_THAT(k_tval.klinux_it_value.kLinux_tv_sec, Eq(4));
+}
+
+TEST(ManualTypesFunctionsTest, FromItimervalTest) {
+  struct itimerval tval {};
+  struct klinux_itimerval k_tval {};
+  k_tval.klinux_it_interval.kLinux_tv_usec = 1;
+  k_tval.klinux_it_interval.kLinux_tv_sec = 2;
+  k_tval.klinux_it_value.kLinux_tv_usec = 3;
+  k_tval.klinux_it_value.kLinux_tv_sec = 4;
+
+  EXPECT_THAT(FromkLinuxItimerval(&k_tval, &tval), Eq(true));
+  EXPECT_THAT(tval.it_interval.tv_usec, Eq(1));
+  EXPECT_THAT(tval.it_interval.tv_sec, Eq(2));
+  EXPECT_THAT(tval.it_value.tv_usec, Eq(3));
+  EXPECT_THAT(tval.it_value.tv_sec, Eq(4));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

@@ -125,20 +125,6 @@ enclave {
 
 
     //////////////////////////////////////
-    //           time.h                 //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_times([out] struct BridgeTms *bridge_buf)
-        propagate_errno;
-
-    int ocall_enc_untrusted_getitimer(
-        enum TimerType which, [out] struct BridgeITimerVal *bridge_curr_value) propagate_errno;
-
-    int ocall_enc_untrusted_setitimer(
-        enum TimerType which, [in] struct BridgeITimerVal *bridge_new_value,
-        [out] struct BridgeITimerVal *bridge_old_value) propagate_errno;
-
-    //////////////////////////////////////
     //            signal.h              //
     //////////////////////////////////////
 
