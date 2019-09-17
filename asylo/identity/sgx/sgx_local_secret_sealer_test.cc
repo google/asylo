@@ -18,12 +18,19 @@
 
 #include "asylo/identity/sgx/sgx_local_secret_sealer.h"
 
+#include <fcntl.h>
+#include <sys/stat.h>
+#include <sys/types.h>
+
 #include <memory>
 
+#include <google/protobuf/io/zero_copy_stream_impl.h>
+#include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
@@ -32,12 +39,15 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
+#include "asylo/identity/sgx/local_secret_sealer_test_data.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/path.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -614,6 +624,63 @@ TEST_F(SgxLocalSecretSealerTest,
       SgxLocalSecretSealer::CreateMrsignerSecretSealer();
   CleansingVector<uint8_t> output_secret;
   EXPECT_THAT(sealer2->Unseal(sealed_secret, &output_secret), Not(IsOk()));
+}
+
+// Verifies that sealed secrets contained in local-secret-sealer-generated
+// golden data can be unsealed correctly.
+TEST_F(SgxLocalSecretSealerTest, BackwardCompatibility) {
+  std::string data_path =
+      "asylo/identity/sgx/testdata/local_secret_sealer_test_data";
+
+  int fd = open(data_path.c_str(), O_RDONLY);
+  ASSERT_GT(fd, 0);
+  google::protobuf::io::FileInputStream stream(fd);
+  stream.SetCloseOnDelete(true);
+
+  sgx::LocalSecretSealerTestData test_data;
+  ASSERT_TRUE(google::protobuf::TextFormat::Parse(&stream, &test_data));
+
+  for (const auto &record : test_data.records()) {
+    ASSERT_EQ(record.header().enclave_type(),
+              sgx::TestDataRecordHeader::FAKE_ENCLAVE);
+
+    sgx::FakeEnclave enclave;
+    if (record.header().has_enclave_identity()) {
+      // Pull out the CPUSVN used to seal the legacy secret.
+      SealedSecretHeader header;
+      ASSERT_TRUE(header.ParseFromString(
+          record.sealed_secret().sealed_secret_header()));
+
+      sgx::SealedSecretAdditionalInfo info;
+      ASSERT_TRUE(info.ParseFromString(header.root_info().additional_info()));
+      enclave.set_cpusvn(UnsafeBytes<sgx::kCpusvnSize>(info.cpusvn()));
+
+      enclave.SetIdentity(record.header().enclave_identity());
+    } else if (record.header().has_sgx_identity()) {
+      enclave.set_cpusvn(record.header()
+                             .sgx_identity()
+                             .machine_configuration()
+                             .cpu_svn()
+                             .value());
+      enclave.SetIdentity(record.header().sgx_identity().code_identity());
+    } else {
+      FAIL() << "Test data contains neither CodeIdentity nor SgxIdentity.";
+    }
+    sgx::FakeEnclave::ExitEnclave();
+    sgx::FakeEnclave::EnterEnclave(enclave);
+
+    // Any SgxLocalSecretSealer, irrespective of the factory with which it was
+    // created, is capable of unsealing secrets sealed by other sealers. As
+    // such, it is sufficient to test the compatibility of the Unseal()
+    // operation using a single configuration of the secret sealer (i.e.,
+    // an MRENCLAVE secret sealer).
+    std::unique_ptr<SgxLocalSecretSealer> sealer =
+        SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
+    CleansingVector<uint8_t> plaintext;
+    ASSERT_THAT(sealer->Unseal(record.sealed_secret(), &plaintext), IsOk());
+    EXPECT_EQ(ByteContainerView(plaintext),
+              ByteContainerView(record.plaintext()));
+  }
 }
 
 }  // namespace

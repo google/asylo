@@ -1486,6 +1486,46 @@ cc_library(
     ],
 )
 
+proto_library(
+    name = "local_secret_sealer_test_data_proto",
+    testonly = 1,
+    srcs = ["local_secret_sealer_test_data.proto"],
+    deps = [
+        ":code_identity_proto",
+        ":sgx_identity_proto",
+        "//asylo/identity:sealed_secret_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "local_secret_sealer_test_data_cc_proto",
+    testonly = 1,
+    deps = ["local_secret_sealer_test_data_proto"],
+)
+
+cc_binary(
+    name = "generate_local_secret_sealer_test_data",
+    testonly = 1,
+    srcs = ["generate_local_secret_sealer_test_data.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":code_identity_cc_proto",
+        ":code_identity_util",
+        ":hardware_interface",
+        ":hardware_types",
+        ":local_secret_sealer_test_data_cc_proto",
+        ":sgx_local_secret_sealer",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
 # This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
 # should not be used inside a real enclave, this test does not have an
 # "enclave_test_name" attribute.
@@ -1493,15 +1533,19 @@ cc_test(
     name = "sgx_local_secret_sealer_test",
     srcs = ["sgx_local_secret_sealer_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    data = [":testdata/local_secret_sealer_test_data"],
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_interface",
+        ":hardware_types",
         ":local_sealed_secret_cc_proto",
         ":local_secret_sealer_helpers",
+        ":local_secret_sealer_test_data_cc_proto",
         ":platform_provisioning_cc_proto",
         ":sgx_local_secret_sealer",
         "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:identity_acl_cc_proto",
@@ -1510,9 +1554,11 @@ cc_test(
         "//asylo/platform/common:singleton",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:path",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
