@@ -138,6 +138,16 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "re2-2019-07-01",
         )
 
+    # Required for Absl, Googletest.
+    if not native.existing_rule("rules_cc"):
+        http_archive(
+            name = "rules_cc",
+            # Commit from 2019 September 3
+            urls = ["https://github.com/bazelbuild/rules_cc/archive/cb2dfba6746bfa3c3705185981f3109f0ae1b893.tar.gz"],
+            sha256 = "13ec82e03a878f429a12b618c78412053b559d25351375cbf1bf91c883717b5b",
+            strip_prefix = "rules_cc-cb2dfba6746bfa3c3705185981f3109f0ae1b893",
+        )
+
     # Absl for C++
     if not native.existing_rule("com_google_absl"):
         http_archive(
