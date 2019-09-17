@@ -143,6 +143,17 @@ std::string OpensslTypeName(int openssl_type) {
   }
 }
 
+// Returns a copy of |object|. This function uses CHECK()s instead of returning
+// a StatusOr<> because it is only used in the copy constructor and
+// copy-assignment operator of ObjectId, which cannot return Statuses. In
+// addition, the only possible failure mode is an out-of-memory failure.
+bssl::UniquePtr<ASN1_OBJECT> Asn1ObjectCopy(const ASN1_OBJECT *object) {
+  if (object == nullptr) {
+    return nullptr;
+  }
+  return bssl::UniquePtr<ASN1_OBJECT>(CHECK_NOTNULL(OBJ_dup(object)));
+}
+
 // Returns a copy of |asn1|. This function uses CHECK()s instead of returning a
 // StatusOr<> because it is only used in the copy constructor and
 // copy-assignment operator of Asn1Value, which cannot return Statuses.
@@ -157,6 +168,139 @@ bssl::UniquePtr<ASN1_TYPE> Asn1TypeCopy(const ASN1_TYPE *asn1) {
 }
 
 }  // namespace
+
+ObjectId::ObjectId(const ObjectId &other)
+    : object_(Asn1ObjectCopy(other.object_.get())) {}
+
+ObjectId &ObjectId::operator=(const ObjectId &other) {
+  object_ = Asn1ObjectCopy(other.object_.get());
+  return *this;
+}
+
+StatusOr<ObjectId> ObjectId::CreateFromShortName(
+    const std::string &short_name) {
+  int nid = OBJ_sn2nid(short_name.c_str());
+  if (nid == NID_undef) {
+    return Status(error::GoogleError::NOT_FOUND,
+                  absl::StrFormat("No OBJECT IDENTIFIER with short name \"%s\"",
+                                  short_name));
+  }
+  return CreateFromNumericId(nid);
+}
+
+StatusOr<ObjectId> ObjectId::CreateFromLongName(const std::string &long_name) {
+  int nid = OBJ_ln2nid(long_name.c_str());
+  if (nid == NID_undef) {
+    return Status(error::GoogleError::NOT_FOUND,
+                  absl::StrFormat("No OBJECT IDENTIFIER with long name \"%s\"",
+                                  long_name));
+  }
+  return CreateFromNumericId(nid);
+}
+
+StatusOr<ObjectId> ObjectId::CreateFromNumericId(int nid) {
+  const ASN1_OBJECT *object_original = OBJ_nid2obj(nid);
+  if (object_original == nullptr) {
+    return Status(error::GoogleError::NOT_FOUND,
+                  absl::StrCat("No OBJECT IDENTIFIER with NID ", nid));
+  }
+  bssl::UniquePtr<ASN1_OBJECT> object(OBJ_dup(object_original));
+  if (object == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return ObjectId(std::move(object));
+}
+
+StatusOr<ObjectId> ObjectId::CreateFromOidString(
+    const std::string &oid_string) {
+  bssl::UniquePtr<ASN1_OBJECT> oid(
+      OBJ_txt2obj(oid_string.c_str(), /*dont_search_names=*/1));
+  if (oid == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return ObjectId(std::move(oid));
+}
+
+StatusOr<ObjectId> ObjectId::CreateFromBsslObject(const ASN1_OBJECT &bssl) {
+  bssl::UniquePtr<ASN1_OBJECT> object(OBJ_dup(&bssl));
+  if (object == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return ObjectId(std::move(object));
+}
+
+StatusOr<std::string> ObjectId::GetShortName() const {
+  int nid;
+  ASYLO_ASSIGN_OR_RETURN(nid, GetNumericId());
+  const char *short_name = OBJ_nid2sn(nid);
+  if (short_name == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return short_name;
+}
+
+StatusOr<std::string> ObjectId::GetLongName() const {
+  int nid;
+  ASYLO_ASSIGN_OR_RETURN(nid, GetNumericId());
+  const char *long_name = OBJ_nid2ln(nid);
+  if (long_name == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return long_name;
+}
+
+StatusOr<int> ObjectId::GetNumericId() const {
+  int nid = OBJ_obj2nid(object_.get());
+  if (nid == NID_undef) {
+    return Status(error::GoogleError::NOT_FOUND,
+                  "OBJECT_IDENTIFIER does not have an NID");
+  }
+  return nid;
+}
+
+StatusOr<std::string> ObjectId::GetOidString() const {
+  char buf;
+  int length = OBJ_obj2txt(&buf, /*out_len=*/0, object_.get(),
+                           /*always_return_oid=*/1);
+  if (length < 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  std::vector<char> oid_string(length + 1);
+  int length2 = OBJ_obj2txt(oid_string.data(), oid_string.size(), object_.get(),
+                            /*always_return_oid=*/1);
+  if (length2 != length) {
+    if (length2 >= 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    "OBJECT IDENTIFIER length changed unexpectedly");
+    } else {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+  }
+  return std::string(oid_string.data());
+}
+
+const ASN1_OBJECT &ObjectId::GetBsslObject() const { return *object_; }
+
+StatusOr<bssl::UniquePtr<ASN1_OBJECT>> ObjectId::GetBsslObjectCopy() const {
+  bssl::UniquePtr<ASN1_OBJECT> copy(OBJ_dup(object_.get()));
+  if (copy == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  // GCC 4.9 requires this std::move() invocation.
+  return std::move(copy);
+}
+
+ObjectId::ObjectId(bssl::UniquePtr<ASN1_OBJECT> object)
+    : object_(std::move(object)) {}
+
+bool operator==(const ObjectId &lhs, const ObjectId &rhs) {
+  return OBJ_cmp(lhs.object_.get(), rhs.object_.get()) == 0;
+}
+
+bool operator!=(const ObjectId &lhs, const ObjectId &rhs) {
+  return !(lhs == rhs);
+}
 
 Asn1Value::Asn1Value() : value_(ASN1_TYPE_new()) {}
 
@@ -214,9 +358,9 @@ StatusOr<Asn1Value> Asn1Value::CreateOctetString(ByteContainerView value) {
   return result;
 }
 
-StatusOr<Asn1Value> Asn1Value::CreateObjectId(const std::string &oid_string) {
+StatusOr<Asn1Value> Asn1Value::CreateObjectId(const ObjectId &value) {
   Asn1Value result;
-  ASYLO_RETURN_IF_ERROR(result.SetObjectId(oid_string));
+  ASYLO_RETURN_IF_ERROR(result.SetObjectId(value));
   return result;
 }
 
@@ -290,26 +434,9 @@ StatusOr<std::vector<uint8_t>> Asn1Value::GetOctetString() const {
   return std::vector<uint8_t>(string_data_view.begin(), string_data_view.end());
 }
 
-StatusOr<std::string> Asn1Value::GetObjectId() const {
+StatusOr<ObjectId> Asn1Value::GetObjectId() const {
   ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kObjectId));
-  const ASN1_OBJECT *oid = value_->value.object;
-  char buf;
-  int length = OBJ_obj2txt(&buf, 0, oid, /*always_return_oid=*/1);
-  if (length < 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-  std::vector<char> oid_string(length + 1);
-  int length2 = OBJ_obj2txt(oid_string.data(), oid_string.size(), oid,
-                            /*always_return_oid=*/1);
-  if (length2 != length) {
-    if (length2 >= 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    "OBJECT IDENTIFIER length changed unexpectedly");
-    } else {
-      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-    }
-  }
-  return std::string(oid_string.data());
+  return ObjectId::CreateFromBsslObject(*value_->value.object);
 }
 
 StatusOr<std::vector<Asn1Value>> Asn1Value::GetSequence() const {
@@ -391,14 +518,10 @@ Status Asn1Value::SetOctetString(ByteContainerView value) {
   return Status::OkStatus();
 }
 
-Status Asn1Value::SetObjectId(const std::string &oid_string) {
-  bssl::UniquePtr<ASN1_OBJECT> oid(
-      OBJ_txt2obj(oid_string.c_str(), /*dont_search_names=*/1));
-  if (oid == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, BsslLastErrorString());
-  }
-
-  ASN1_TYPE_set(value_.get(), V_ASN1_OBJECT, oid.release());
+Status Asn1Value::SetObjectId(const ObjectId &value) {
+  bssl::UniquePtr<ASN1_OBJECT> object;
+  ASYLO_ASSIGN_OR_RETURN(object, value.GetBsslObjectCopy());
+  ASN1_TYPE_set(value_.get(), V_ASN1_OBJECT, object.release());
   return Status::OkStatus();
 }
 

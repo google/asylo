@@ -26,6 +26,7 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -49,12 +50,59 @@ enum class Asn1Type {
   // OCTET STRING values are represented by arrays of uint8_ts.
   kOctetString,
 
-  // OBJECT IDENTIFIER values are represented by OID strings like "1.2.3.4".
+  // OBJECT IDENTIFIER values are represented by instances of the ObjectId class
+  // defined below.
   kObjectId,
 
   // SEQUENCE values are represented by arrays of Asn1Values.
   kSequence,
 };
+
+// Represents an ASN.1 OBJECT IDENTIFIER. Each object identifier can be
+// represented in its "dot" form string (e.g. "1.2.3.4"). OpenSSL also defines
+// "short" names, "long" names, and numerical identifiers (NIDs) for many common
+// OIDs.
+//
+// The short names, long names, and NIDs can be found in <openssl/nid.h>.
+class ObjectId {
+ public:
+  ObjectId() = default;
+
+  ObjectId(const ObjectId &other);
+  ObjectId &operator=(const ObjectId &other);
+  ObjectId(ObjectId &&other) = default;
+  ObjectId &operator=(ObjectId &&other) = default;
+
+  // Returns an ObjectId from a short name, a long name, a numerical ID, an OID
+  // string like "1.2.3.4", or an ASN1_OBJECT.
+  static StatusOr<ObjectId> CreateFromShortName(const std::string &short_name);
+  static StatusOr<ObjectId> CreateFromLongName(const std::string &long_name);
+  static StatusOr<ObjectId> CreateFromNumericId(int nid);
+  static StatusOr<ObjectId> CreateFromOidString(const std::string &oid_string);
+  static StatusOr<ObjectId> CreateFromBsslObject(const ASN1_OBJECT &bssl);
+
+  // Returns the short name, long name, numerical ID, or OID string for this
+  // OBJECT IDENTIFIER.
+  StatusOr<std::string> GetShortName() const;
+  StatusOr<std::string> GetLongName() const;
+  StatusOr<int> GetNumericId() const;
+  StatusOr<std::string> GetOidString() const;
+
+  // Returns a reference to or a copy of the underlying ASN1_OBJECT.
+  const ASN1_OBJECT &GetBsslObject() const;
+  StatusOr<bssl::UniquePtr<ASN1_OBJECT>> GetBsslObjectCopy() const;
+
+ private:
+  friend bool operator==(const ObjectId &lhs, const ObjectId &rhs);
+
+  explicit ObjectId(bssl::UniquePtr<ASN1_OBJECT> object);
+
+  bssl::UniquePtr<ASN1_OBJECT> object_;
+};
+
+// Equality/inequality operators for ObjectId.
+bool operator==(const ObjectId &lhs, const ObjectId &rhs);
+bool operator!=(const ObjectId &lhs, const ObjectId &rhs);
 
 // Represents a general ASN.1 value. Only some ASN.1 types are supported; see
 // the Asn1Type enum for a list of supported types.
@@ -83,7 +131,7 @@ class Asn1Value {
   static StatusOr<Asn1Value> CreateEnumerated(const BIGNUM &value);
   static StatusOr<Asn1Value> CreateEnumeratedFromInt64(int64_t value);
   static StatusOr<Asn1Value> CreateOctetString(ByteContainerView value);
-  static StatusOr<Asn1Value> CreateObjectId(const std::string &oid_string);
+  static StatusOr<Asn1Value> CreateObjectId(const ObjectId &value);
   static StatusOr<Asn1Value> CreateSequence(
       absl::Span<const Asn1Value> elements);
 
@@ -106,7 +154,7 @@ class Asn1Value {
   StatusOr<bssl::UniquePtr<BIGNUM>> GetEnumerated() const;
   StatusOr<int64_t> GetEnumeratedAsInt64() const;
   StatusOr<std::vector<uint8_t>> GetOctetString() const;
-  StatusOr<std::string> GetObjectId() const;
+  StatusOr<ObjectId> GetObjectId() const;
   StatusOr<std::vector<Asn1Value>> GetSequence() const;
 
   // Each setter sets the Asn1Value to have the appropriate type and the given
@@ -117,7 +165,7 @@ class Asn1Value {
   Status SetEnumerated(const BIGNUM &value);
   Status SetEnumeratedFromInt64(int64_t value);
   Status SetOctetString(ByteContainerView value);
-  Status SetObjectId(const std::string &oid_string);
+  Status SetObjectId(const ObjectId &value);
   Status SetSequence(absl::Span<const Asn1Value> elements);
 
   // Serializes this Asn1Value to a DER-encoded string. This function works even

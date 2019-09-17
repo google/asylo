@@ -20,6 +20,7 @@
 
 #include <openssl/base.h>
 #include <openssl/bn.h>
+#include <openssl/nid.h>
 
 #include <cstdint>
 #include <iterator>
@@ -30,6 +31,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/base/macros.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -72,6 +74,190 @@ std::string PrintBignum(const BIGNUM &bignum) {
 // A type to represent an Asn1Type in a Types<> invocation.
 template <Asn1Type kType>
 using Asn1TypeTag = std::integral_constant<Asn1Type, kType>;
+
+// Contains a short name, long name, NID, and OID string for a given OID. All
+// pointers should point to data with static storage duration or be nullptr.
+struct ShortLongNidOid {
+  const char *short_name;
+  const char *long_name;
+  int nid;
+  const char *oid_string;
+
+  constexpr ShortLongNidOid(const char *sn, const char *ln, int nid_num,
+                            const char *oid)
+      : short_name(sn), long_name(ln), nid(nid_num), oid_string(oid) {}
+};
+
+// Short names, long names, NIDs, and OID strings for some common OIDs.
+constexpr ShortLongNidOid kShortLongNidOids[] = {
+    {SN_md5, LN_md5, NID_md5, "1.2.840.113549.2.5"},
+    {SN_commonName, LN_commonName, NID_commonName, "2.5.4.3"},
+    {SN_crl_number, LN_crl_number, NID_crl_number, "2.5.29.20"}};
+
+// EXPECTs that |oid| has all the IDs in |ids|.
+void ExpectHasIds(const ObjectId &oid, const ShortLongNidOid &ids) {
+  EXPECT_THAT(oid.GetShortName(), IsOkAndHolds(ids.short_name));
+  EXPECT_THAT(oid.GetLongName(), IsOkAndHolds(ids.long_name));
+  EXPECT_THAT(oid.GetNumericId(), IsOkAndHolds(ids.nid));
+  EXPECT_THAT(oid.GetOidString(), IsOkAndHolds(ids.oid_string));
+}
+
+TEST(Asn1Test, ObjectIdCreateFromShortNameReturnsCorrectObject) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid,
+                               ObjectId::CreateFromShortName(ids.short_name));
+    ExpectHasIds(oid, ids);
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromShortNameFailsIfNoSuchName) {
+  constexpr const char *kBadShortNames[] = {"xkcd", "Jean-Luc Picard"};
+
+  for (const char *bad_name : kBadShortNames) {
+    EXPECT_THAT(ObjectId::CreateFromShortName(bad_name).status(),
+                StatusIs(error::GoogleError::NOT_FOUND));
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromLongNameReturnsCorrectObject) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid,
+                               ObjectId::CreateFromLongName(ids.long_name));
+    ExpectHasIds(oid, ids);
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromLongNameFailsIfNoSuchName) {
+  constexpr const char *kBadLongNames[] = {"Oliver Cromwell", "Oscar Wilde"};
+
+  for (const char *bad_name : kBadLongNames) {
+    EXPECT_THAT(ObjectId::CreateFromLongName(bad_name).status(),
+                StatusIs(error::GoogleError::NOT_FOUND));
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromNidReturnsCorrectObject) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromNumericId(ids.nid));
+    ExpectHasIds(oid, ids);
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromNidFailsIfNoSuchNid) {
+  constexpr int kBadNids[] = {-1, 8675309};
+
+  for (int bad_nid : kBadNids) {
+    EXPECT_THAT(ObjectId::CreateFromNumericId(bad_nid).status(),
+                StatusIs(error::GoogleError::NOT_FOUND));
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromOidStringReturnsCorrectObject) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid,
+                               ObjectId::CreateFromOidString(ids.oid_string));
+    ExpectHasIds(oid, ids);
+  }
+}
+
+TEST(Asn1Test, ObjectIdCreateFromOidStringFailsIfInvalidOid) {
+  constexpr const char *kBadOids[] = {"1.2.cranberry", "9..9"};
+
+  for (const char *bad_oid : kBadOids) {
+    EXPECT_THAT(ObjectId::CreateFromOidString(bad_oid).status(),
+                StatusIs(error::GoogleError::INTERNAL));
+  }
+}
+
+TEST(Asn1Test, ObjectIdGettersFailIfIdNotInBoringssl) {
+  constexpr const char *kNoNameOids[] = {"1.2.840.113741.1.13.1",
+                                         "1.3.6.1.4.1.11129"};
+
+  for (const char *oid_string : kNoNameOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromOidString(oid_string));
+    EXPECT_THAT(oid.GetShortName().status(),
+                StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetLongName().status(),
+                StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetNumericId().status(),
+                StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetOidString(), IsOkAndHolds(oid_string));
+  }
+}
+
+TEST(Asn1Test, ObjectIdBsslRoundtripDoesNotChangeValue) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId original;
+    ASYLO_ASSERT_OK_AND_ASSIGN(original,
+                               ObjectId::CreateFromOidString(ids.oid_string));
+    ObjectId roundtrip;
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        roundtrip, ObjectId::CreateFromBsslObject(original.GetBsslObject()));
+    ExpectHasIds(roundtrip, ids);
+  }
+}
+
+TEST(Asn1Test, ObjectIdBsslCopyRoundtripDoesNotChangeValue) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId original;
+    ASYLO_ASSERT_OK_AND_ASSIGN(original,
+                               ObjectId::CreateFromOidString(ids.oid_string));
+    bssl::UniquePtr<ASN1_OBJECT> bssl;
+    ASYLO_ASSERT_OK_AND_ASSIGN(bssl, original.GetBsslObjectCopy());
+    ObjectId roundtrip;
+    ASYLO_ASSERT_OK_AND_ASSIGN(roundtrip,
+                               ObjectId::CreateFromBsslObject(*bssl));
+    ExpectHasIds(roundtrip, ids);
+  }
+}
+
+TEST(Asn1Test, ObjectIdEquality) {
+  for (int i = 0; i < ABSL_ARRAYSIZE(kShortLongNidOids); ++i) {
+    ObjectId lhs;
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        lhs, ObjectId::CreateFromOidString(kShortLongNidOids[i].oid_string));
+    for (int j = 0; j < ABSL_ARRAYSIZE(kShortLongNidOids); ++j) {
+      ObjectId rhs;
+      ASYLO_ASSERT_OK_AND_ASSIGN(
+          rhs, ObjectId::CreateFromOidString(kShortLongNidOids[j].oid_string));
+
+      // Eq() calls operator== and Ne() calls operator!=. We should test that
+      // both operators return the correct value in each case.
+      if (i == j) {
+        EXPECT_THAT(lhs, Eq(rhs));
+        EXPECT_THAT(lhs, Not(Ne(rhs)));
+      } else {
+        EXPECT_THAT(lhs, Not(Eq(rhs)));
+        EXPECT_THAT(lhs, Ne(rhs));
+      }
+    }
+  }
+}
+
+TEST(Asn1Test, ObjectIdCopyConstructionPreservesEquality) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid,
+                               ObjectId::CreateFromOidString(ids.oid_string));
+    ObjectId copy(oid);
+    EXPECT_THAT(copy, Eq(oid));
+  }
+}
+
+TEST(Asn1Test, ObjectIdCopyAssignmentPreservesEquality) {
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid,
+                               ObjectId::CreateFromOidString(ids.oid_string));
+    ObjectId copy = oid;
+    EXPECT_THAT(copy, Eq(oid));
+  }
+}
 
 // A template fixture for testing with each of the ASN.1 value types that
 // Asn1Value supports. T must be an invocation of Asn1TypeTag. Each
@@ -242,18 +428,25 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kOctetString>> : public Test {
 template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
  public:
-  using ValueType = std::string;
+  using ValueType = ObjectId;
+  using RawValueType = bssl::UniquePtr<ASN1_OBJECT>;
 
   static std::vector<ValueType> TestData() {
-    return {"1.2", "1.2.840", "1.2.840.113549.1", "2.5", "2.5.8"};
+    return {ObjectId::CreateFromShortName("CN").ValueOrDie(),
+            ObjectId::CreateFromOidString("1.2").ValueOrDie(),
+            ObjectId::CreateFromOidString("1.2.840").ValueOrDie(),
+            ObjectId::CreateFromOidString("1.2.840.113549.1").ValueOrDie(),
+            ObjectId::CreateFromOidString("1.3.6.1.4.1.11129").ValueOrDie(),
+            ObjectId::CreateFromOidString("2.5").ValueOrDie(),
+            ObjectId::CreateFromOidString("2.5.8").ValueOrDie()};
   }
 
-  static std::vector<ValueType> BadTestData() {
-    return {"", "fingers", "......."};
-  }
+  static std::vector<ValueType> BadTestData() { return {}; }
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
-    EXPECT_THAT(lhs, StrEq(rhs));
+    EXPECT_THAT(lhs, Eq(rhs))
+        << absl::StrFormat("\"%s\" != \"%s\"", lhs.GetOidString().ValueOrDie(),
+                           rhs.GetOidString().ValueOrDie());
   }
 
   static StatusOr<Asn1Value> Create(const ValueType &value) {
