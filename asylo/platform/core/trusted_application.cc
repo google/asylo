@@ -33,7 +33,6 @@
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/init.h"
-#include "asylo/platform/arch/include/trusted/time.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/core/shared_name_kind.h"

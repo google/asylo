@@ -32,7 +32,6 @@ cc_library(
     hdrs = [
         "include/trusted/host_calls.h",
         "include/trusted/register_signal.h",
-        "include/trusted/time.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({

@@ -16,8 +16,6 @@
  *
  */
 
-#include "asylo/platform/arch/include/trusted/time.h"
-
 #include <sys/time.h>
 #include <time.h>
 
