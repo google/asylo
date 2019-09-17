@@ -162,7 +162,6 @@ int enc_untrusted_uname(struct utsname *utsname_buf);
 //////////////////////////////////////
 
 void enc_untrusted__exit(int rc);
-pid_t enc_untrusted_fork(const char *enclave_name, bool restore_snapshot);
 
 //////////////////////////////////////
 //            utime.h               //

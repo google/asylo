@@ -173,3 +173,52 @@ cc_proto_library(
     visibility = ["//visibility:public"],
     deps = [":fork_proto"],
 )
+
+# Fork related runtime.
+cc_library(
+    name = "trusted_fork",
+    srcs = select({
+        "@linux_sgx//:sgx_hw": ["fork_sgx_hw.cc"],
+        "//conditions:default": ["fork_sgx_sim.cc"],
+    }),
+    hdrs = ["fork.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
+    tags = [
+        "asylo-sgx",
+        "manual",
+    ],
+    deps = [
+        ":fork_cc_proto",
+        ":trusted_sgx",
+        "@com_google_absl//absl/strings",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/host_call",
+        "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/util:status",
+    ] + select({
+        "@linux_sgx//:sgx_hw": [
+            "@com_google_absl//absl/base:core_headers",
+            "//asylo/crypto:aead_cryptor",
+            "//asylo/crypto/util:bssl_util",
+            "//asylo/crypto/util:byte_container_view",
+            "//asylo/crypto/util:trivial_object_util",
+            "//asylo/platform/posix/memory:memory",
+            "//asylo/platform/primitives/sgx:sgx_error_space",
+            "//asylo/util:logging",
+            "//asylo/grpc/auth/core:client_ekep_handshaker",
+            "//asylo/grpc/auth/core:server_ekep_handshaker",
+            "//asylo/identity:descriptions",
+            "//asylo/identity:identity_acl_evaluator",
+            "//asylo/identity/sgx:code_identity_util",
+            "//asylo/identity/sgx:sgx_identity_expectation_matcher",
+            "//asylo/identity/sgx:sgx_local_assertion_generator",
+            "//asylo/identity/sgx:sgx_local_assertion_verifier",
+            "//asylo/util:cleansing_types",
+            "//asylo/util:cleanup",
+            "@boringssl//:crypto",
+        ],
+        "//conditions:default": [],
+    }),
+)

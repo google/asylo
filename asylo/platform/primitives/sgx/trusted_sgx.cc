@@ -19,7 +19,7 @@
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 
 #include <errno.h>
-
+#include <sys/types.h>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -60,6 +60,17 @@ namespace {
   } while (0)
 
 }  // namespace
+
+pid_t InvokeFork(const char *enclave_name, bool restore_snapshot) {
+  pid_t ret;
+  sgx_status_t status =
+      ocall_enc_untrusted_fork(&ret, enclave_name, restore_snapshot);
+  if (status != SGX_SUCCESS) {
+    errno = EINTR;
+    return -1;
+  }
+  return ret;
+}
 
 // Entry handler installed by the runtime to finalize the enclave at the time it
 // is destroyed.

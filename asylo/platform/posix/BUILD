@@ -139,7 +139,6 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/platform/host_call",
         "//asylo/platform/arch:trusted_arch",
-        "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:time_util",
         "//asylo/platform/core:shared_name",
@@ -289,7 +288,6 @@ sgx.unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":fork_security_test_cc_proto",
-        "//asylo/platform/arch:trusted_fork",
         "//asylo/platform/primitives:trusted_backend",
         "//asylo/test/util:enclave_test_application",
     ],

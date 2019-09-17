@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/arch/include/trusted/fork.h"
+#include "asylo/platform/primitives/sgx/fork.h"
 #include "asylo/platform/posix/fork_security_test.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 

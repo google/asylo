@@ -66,6 +66,7 @@ cc_library(
     ] + select({
         "//asylo/platform/primitives:sgx": [
             "//asylo/platform/primitives/sgx:trusted_sgx",
+            "//asylo/platform/primitives/sgx:trusted_fork",
         ],
         "//conditions:default": [],
     }),

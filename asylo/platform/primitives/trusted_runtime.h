@@ -26,6 +26,12 @@
 
 #include "asylo/platform/primitives/primitive_status.h"
 
+namespace asylo {
+
+pid_t enc_fork(const char *enclave_name);
+
+}  // namespace asylo
+
 #ifdef __cplusplus
 extern "C" {
 #endif

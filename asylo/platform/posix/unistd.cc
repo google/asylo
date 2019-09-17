@@ -23,12 +23,12 @@
 #include <cstdlib>
 #include <cstring>
 
-#include "asylo/platform/arch/include/trusted/fork.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/statusor.h"
 
 using asylo::io::IOManager;

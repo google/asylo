@@ -21,6 +21,8 @@
 
 // This file declares the trusted runtime interface for SGX.
 
+#include <sys/types.h>
+
 #include <cstdint>
 
 namespace asylo {
@@ -32,6 +34,9 @@ namespace primitives {
 // enclave for any enclave call, including initialization and trusted function
 // calls.
 int asylo_enclave_call(uint64_t selector, void *buffer);
+
+// Exits the enclave and triggers the fork routine.
+pid_t InvokeFork(const char *enclave_name, bool restore_snapshot);
 
 }  // namespace primitives
 }  // namespace asylo

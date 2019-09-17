@@ -16,18 +16,14 @@
  *
  */
 
-#include "asylo/platform/arch/include/trusted/fork.h"
+#include "asylo/platform/primitives/sgx/fork.h"
 
 #include <stdlib.h>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
-
-pid_t enc_fork(const char *enclave_name) {
-  return enc_untrusted_fork(enclave_name, /*restore_snapshot=*/false);
-}
 
 bool IsSecureForkSupported() { return false; }
 
@@ -55,6 +51,11 @@ void SaveThreadLayoutForSnapshot() {
 void SetForkRequested() {
   // Only supported in the SGX hardware backend.
   abort();
+}
+
+pid_t enc_fork(const char *enclave_name) {
+  return asylo::primitives::InvokeFork(
+      enclave_name, /*restore_snapshot=*/false);
 }
 
 }  // namespace asylo

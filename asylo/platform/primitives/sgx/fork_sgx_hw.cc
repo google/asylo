@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/arch/include/trusted/fork.h"
+#include "asylo/platform/primitives/sgx/fork.h"
 
 #include <openssl/rand.h>
 #include <sys/socket.h>
@@ -38,11 +38,11 @@
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/memory/memory.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/posix_error_space.h"
@@ -938,9 +938,10 @@ pid_t enc_fork(const char *enclave_name) {
   asylo::SaveThreadLayoutForSnapshot();
 
   // Set the fork requested bit.
-  SetForkRequested();
+  asylo::SetForkRequested();
 
-  return enc_untrusted_fork(enclave_name, /*restore_snapshot=*/true);
+  return asylo::primitives::InvokeFork(
+      enclave_name, /*restore_snapshot=*/true);
 }
 
 }  // namespace asylo

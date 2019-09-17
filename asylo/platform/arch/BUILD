@@ -23,7 +23,6 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Target exposing trusted architecture-dependent components for the build
@@ -266,50 +265,4 @@ cc_library(
         "@linux_sgx//:public",
         "@linux_sgx//:trts",
     ],
-)
-
-# fork related runtime.
-cc_library(
-    name = "trusted_fork",
-    srcs = select({
-        "@linux_sgx//:sgx_hw": ["sgx/trusted/fork.cc"],
-        "//conditions:default": ["common/trusted/fork.cc"],
-    }),
-    hdrs = ["include/trusted/fork.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    linkstatic = 1,
-    tags = ASYLO_ALL_BACKEND_TAGS,
-    deps = [
-        ":trusted_arch",
-        "@com_google_absl//absl/strings",
-        "//asylo:enclave_cc_proto",
-        "//asylo/platform/host_call",
-        "//asylo/platform/primitives:trusted_backend",
-        "//asylo/platform/primitives:trusted_primitives",
-        "//asylo/platform/primitives/sgx:fork_cc_proto",
-        "//asylo/util:status",
-    ] + select({
-        "@linux_sgx//:sgx_hw": [
-            "@com_google_absl//absl/base:core_headers",
-            "//asylo/crypto:aead_cryptor",
-            "//asylo/crypto/util:bssl_util",
-            "//asylo/crypto/util:byte_container_view",
-            "//asylo/crypto/util:trivial_object_util",
-            "//asylo/platform/posix/memory:memory",
-            "//asylo/platform/primitives/sgx:sgx_error_space",
-            "//asylo/util:logging",
-            "//asylo/grpc/auth/core:client_ekep_handshaker",
-            "//asylo/grpc/auth/core:server_ekep_handshaker",
-            "//asylo/identity:descriptions",
-            "//asylo/identity:identity_acl_evaluator",
-            "//asylo/identity/sgx:code_identity_util",
-            "//asylo/identity/sgx:sgx_identity_expectation_matcher",
-            "//asylo/identity/sgx:sgx_local_assertion_generator",
-            "//asylo/identity/sgx:sgx_local_assertion_verifier",
-            "//asylo/util:cleansing_types",
-            "//asylo/util:cleanup",
-            "@boringssl//:crypto",
-        ],
-        "//conditions:default": [],
-    }),
 )

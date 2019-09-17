@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_
-#define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_SGX_FORK_H_
+#define ASYLO_PLATFORM_PRIMITIVES_SGX_FORK_H_
 
 #include <sys/types.h>
 
@@ -26,8 +26,6 @@
 #include "asylo/util/status.h"
 
 namespace asylo {
-
-pid_t enc_fork(const char *enclave_name);
 
 // Returns whether secure fork is supported in the current backend.
 bool IsSecureForkSupported();
@@ -58,4 +56,4 @@ void SetForkRequested();
 
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_FORK_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_SGX_FORK_H_
