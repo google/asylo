@@ -21,6 +21,8 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_WAIT_H_
 
+#include <sys/resource.h>
+
 #ifdef __cplusplus
 extern "C" {
 #endif
