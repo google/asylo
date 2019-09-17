@@ -253,14 +253,14 @@ StatusOr<bool> MatchIdentityToExpectation(
 
   std::vector<std::string> explanations;
 
-  if (machine_config_match_spec.has_is_cpu_svn_match_required() &&
+  if (machine_config_match_spec.is_cpu_svn_match_required() &&
       actual_config.cpu_svn().value() != expected_config.cpu_svn().value()) {
     explanations.emplace_back(absl::StrFormat(
         "CPUSVN value %s does not match expected CPUSVN value %s",
         absl::BytesToHexString(actual_config.cpu_svn().value()),
         absl::BytesToHexString(expected_config.cpu_svn().value())));
   }
-  if (machine_config_match_spec.has_is_sgx_type_match_required() &&
+  if (machine_config_match_spec.is_sgx_type_match_required() &&
       actual_config.sgx_type() != expected_config.sgx_type()) {
     explanations.emplace_back(
         absl::StrFormat("SGX Type %s does not match expected SGX Type %s",

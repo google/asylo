@@ -624,7 +624,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
       IsOkAndHolds(true));
 }
 
-// Make sure that an CodeIdentity matches an expectation when it differs from
+// Make sure that a CodeIdentity matches an expectation when it differs from
 // the expectation in *all* do-not-care fields.
 TEST_F(CodeIdentityUtilTest, CodeIdentityDifferingDoNotCareFields) {
   CodeIdentityMatchSpec spec;
@@ -645,6 +645,36 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityDifferingDoNotCareFields) {
   EXPECT_THAT(
       MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr),
       IsOkAndHolds(true));
+}
+
+// Make sure that an SgxIdentity matches an expectation when it differs from
+// the expectations in fields that the match spec does not care about.
+TEST_F(CodeIdentityUtilTest, SgxIdentityDifferingUnrequiredFields) {
+  SgxIdentityExpectation expectation;
+  *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
+  *expectation.mutable_reference_identity() =
+      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+
+  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+      expectation.mutable_match_spec()
+          ->mutable_machine_configuration_match_spec();
+  machine_config_match_spec->set_is_cpu_svn_match_required(false);
+  machine_config_match_spec->set_is_sgx_type_match_required(false);
+
+  SgxMachineConfiguration *machine_config =
+      expectation.mutable_reference_identity()->mutable_machine_configuration();
+  machine_config->mutable_cpu_svn()->set_value(kValidCpuSvn);
+  machine_config->set_sgx_type(SgxType::STANDARD);
+
+  SgxIdentity identity = expectation.reference_identity();
+  identity.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
+      kValidCpuSvn2);
+  identity.mutable_machine_configuration()->set_sgx_type(
+      SgxType::SGX_TYPE_UNKNOWN);
+
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation,
+                                         /*explanation=*/nullptr),
+              IsOkAndHolds(true));
 }
 
 // Make sure that an CodeIdentity does not match an expectation that differs
@@ -885,7 +915,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySgxTypeMismatch) {
   *expectation.mutable_reference_identity() =
       GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
 
-  // Require a match on CPUSVN.
+  // Require a match on SGX type.
   expectation.mutable_match_spec()
       ->mutable_machine_configuration_match_spec()
       ->set_is_sgx_type_match_required(true);
