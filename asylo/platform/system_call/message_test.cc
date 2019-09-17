@@ -163,7 +163,7 @@ TEST(MessageTest, MessageHeaderNotCompleteTest) {
               StrEq("Message malformed: no completed header present"));
 }
 
-TEST(MessageTest, MessageMagicNumberMissMatchTest) {
+TEST(MessageTest, MessageMagicNumberMisMatchTest) {
   char buf[1024] = "abc";
   std::array<uint64_t, 6> parameters;
   CollectParameters(&parameters[0], 0, buf, sizeof(buf));
@@ -213,7 +213,7 @@ TEST(MessageTest, MessageSystemCallNumberInvalidTest) {
       StrEq(absl::StrCat("Message malformed: sysno ", -1, " is invalid")));
 }
 
-TEST(MessageTest, FixedDataSizeMissMatchTest) {
+TEST(MessageTest, FixedDataSizeMisMatchTest) {
   struct sockaddr *usockaddr = nullptr;
   int usockaddr_len[1] = {0};
   std::array<uint64_t, 6> parameters;
@@ -232,15 +232,14 @@ TEST(MessageTest, FixedDataSizeMissMatchTest) {
                                  "1 size mismatched")));
 }
 
-TEST(MessageTest, ScalarDataSizeMissMatchTest) {
-  void *buff = nullptr;
-  size_t len = 0;
-  uint32_t flags = 0;
-  struct sockaddr *addr = nullptr;
-  int addr_len = 0;
+TEST(MessageTest, ScalarDataSizeMisMatchTest) {
+  cpu_set_t *user_mask = nullptr;
+
   std::array<uint64_t, 6> parameters;
-  CollectParameters(&parameters[0], 0, buff, len, flags, addr, addr_len);
-  auto writer = MessageWriter::ResponseWriter(SYS_sendto, 0, 0, parameters);
+  CollectParameters(&parameters[0], 0, 0, user_mask);
+
+  auto writer =
+      MessageWriter::ResponseWriter(SYS_sched_getaffinity, 0, 0, parameters);
   std::vector<uint8_t> buffer(writer.MessageSize());
   primitives::Extent message(buffer.data(), buffer.size());
   writer.Write(&message);
@@ -251,10 +250,10 @@ TEST(MessageTest, ScalarDataSizeMissMatchTest) {
   // 2nd parameter is kScalar and have mismatched size.
   EXPECT_THAT(status.error_message(),
               StrEq(absl::StrCat("Message malformed: parameter under index ",
-                                 "1 size mismatched")));
+                                 "2 size mismatched")));
 }
 
-TEST(MessageTest, StringDataSizeMissMatchTest) {
+TEST(MessageTest, StringDataSizeMisMatchTest) {
   const char *path = "abc\0";
   int length = 3;
   std::array<uint64_t, 6> parameters;

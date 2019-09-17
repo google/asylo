@@ -24,11 +24,8 @@
 //       * \in: Value copied "in" to the kernel.
 //       * \out: Value copied "out" of the kernel.
 //       * \in_out: Value copied "in" to and "out" of the kernel.
-//       * [bound:PARAM]: Pointer to buffer of PARAM length, where "param"
-//          names the parameter containing length of buffer of the type
-//          defined.
 //       * [count:N]:  Pointer to an array of N items.
-//       * [bounded:PARAM]: Pointer to a buffer of PARAM bytes, where "param"
+//       * [bound:PARAM]: Pointer to a buffer of PARAM bytes, where "param"
 //          names the parameter containing the number of bytes to serialize.
 //
 //   * Consider adding tests in metadata_test.cc and system_call_test.cc.
@@ -113,10 +110,10 @@ SYSCALL_DEFINE3(readlink, const char *, path, \out char * [bound:bufsiz], buf,
                 int, bufsiz)
 SYSCALL_DEFINE3(write, unsigned int, fd, const char * [bound:count], buf,
                 size_t, count)
-SYSCALL_DEFINE4(pread64, unsigned int, fd, \out void *, buf, size_t, count, off_t,
-                offset)
-SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void *, buf, size_t, count,
+SYSCALL_DEFINE4(pread64, unsigned int, fd, \out void *, buf, size_t, count,
                 off_t, offset)
+SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void *, buf, size_t,
+                count, off_t, offset)
 
 // Process Management
 // ==================
@@ -153,8 +150,8 @@ SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname, const void *,
 
 SYSCALL_DEFINE2(listen, int, fd, int, backlog)
 
-SYSCALL_DEFINE6(sendto, int, fd, void * [bounded:len], buff, size_t, len,
-                unsigned int, flags, \in struct sockaddr *, addr,
+SYSCALL_DEFINE6(sendto, int, fd, \in void * [bound:len], buff, size_t, len,
+                unsigned int, flags, \in void * [bound:addr_len], addr,
                 int, addr_len)
 
 SYSCALL_DEFINE2(shutdown, int, fd, int, how)
@@ -180,7 +177,8 @@ SYSCALL_DEFINE6(epoll_pwait, int, epfd, struct epoll_event *, events, int,
 // ==========
 
 SYSCALL_DEFINE0(sched_yield)
-SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid,  uint64_t, len, \out cpu_set_t *, user_mask_ptr)
+SYSCALL_DEFINE3(sched_getaffinity, pid_t, pid,  uint64_t, len, \out cpu_set_t *,
+                user_mask_ptr)
 
 // Synchronization
 // ===============
