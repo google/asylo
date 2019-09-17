@@ -26,12 +26,14 @@
 #include <iostream>
 #include <vector>
 
+#include "absl/strings/escaping.h"
 #include "absl/strings/str_join.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/secs_miscselect.h"
@@ -140,9 +142,25 @@ void FakeEnclave::SetRandomIdentity() {
   }
 }
 
-void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
-  mrenclave_.assign(identity.mrenclave().hash());
-  mrsigner_.assign(identity.signer_assigned_identity().mrsigner().hash());
+void FakeEnclave::SetIdentity(const SgxIdentity &sgx_identity) {
+  const CodeIdentity &identity = sgx_identity.code_identity();
+  const SgxMachineConfiguration &machine_config =
+      sgx_identity.machine_configuration();
+
+  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<SHA256_DIGEST_LENGTH>>(
+           identity.mrenclave().hash(), &mrenclave_)
+           .ok()) {
+    LOG(FATAL) << "MRENCLAVE from SgxIdentity is invalid: "
+               << absl::BytesToHexString(identity.mrenclave().hash());
+  }
+  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<SHA256_DIGEST_LENGTH>>(
+           identity.signer_assigned_identity().mrsigner().hash(), &mrsigner_)
+           .ok()) {
+    LOG(FATAL) << "MRSIGNER from SgxIdentity is invalid: "
+               << absl::BytesToHexString(
+                      identity.signer_assigned_identity().mrsigner().hash());
+  }
+
   isvprodid_ = identity.signer_assigned_identity().isvprodid();
   isvsvn_ = identity.signer_assigned_identity().isvsvn();
 
@@ -163,31 +181,43 @@ void FakeEnclave::SetIdentity(const CodeIdentity &identity) {
                << FormatAttributeSet(required_attributes_);
   }
   miscselect_ = identity.miscselect();
+  if (!SetTrivialObjectFromBinaryString<UnsafeBytes<kCpusvnSize>>(
+           machine_config.cpu_svn().value(), &cpusvn_)
+           .ok()) {
+    LOG(FATAL) << "CPUSVN from SgxIdentity is invalid: "
+               << absl::BytesToHexString(machine_config.cpu_svn().value());
+  }
 }
 
-StatusOr<CodeIdentity> FakeEnclave::GetIdentity() const {
-  CodeIdentity code_identity;
+StatusOr<SgxIdentity> FakeEnclave::GetIdentity() const {
+  SgxIdentity sgx_identity;
+  CodeIdentity *code_identity = sgx_identity.mutable_code_identity();
 
 
-  if (!ConvertSecsAttributeRepresentation(attributes_,
-                                          code_identity.mutable_attributes())) {
+  if (!ConvertSecsAttributeRepresentation(
+          attributes_, code_identity->mutable_attributes())) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to convert attributes representation");
   }
 
-  code_identity.mutable_mrenclave()->set_hash(
+  code_identity->mutable_mrenclave()->set_hash(
       ConvertTrivialObjectToBinaryString(mrenclave_));
 
   SignerAssignedIdentity *signer_assigned_identity =
-      code_identity.mutable_signer_assigned_identity();
+      code_identity->mutable_signer_assigned_identity();
   signer_assigned_identity->mutable_mrsigner()->set_hash(
       ConvertTrivialObjectToBinaryString(mrsigner_));
   signer_assigned_identity->set_isvprodid(isvprodid_);
   signer_assigned_identity->set_isvsvn(isvsvn_);
 
-  code_identity.set_miscselect(miscselect_);
+  code_identity->set_miscselect(miscselect_);
 
-  return code_identity;
+  SgxMachineConfiguration *machine_config =
+      sgx_identity.mutable_machine_configuration();
+  machine_config->mutable_cpu_svn()->set_value(
+      ConvertTrivialObjectToBinaryString(cpusvn_));
+
+  return sgx_identity;
 }
 
 bool FakeEnclave::operator==(const FakeEnclave &other) const {

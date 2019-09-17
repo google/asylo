@@ -653,16 +653,15 @@ TEST_F(SgxLocalSecretSealerTest, BackwardCompatibility) {
 
       sgx::SealedSecretAdditionalInfo info;
       ASSERT_TRUE(info.ParseFromString(header.root_info().additional_info()));
-      enclave.set_cpusvn(UnsafeBytes<sgx::kCpusvnSize>(info.cpusvn()));
 
-      enclave.SetIdentity(record.header().enclave_identity());
+      SgxIdentity identity;
+      *identity.mutable_code_identity() = record.header().enclave_identity();
+      identity.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
+          info.cpusvn());
+
+      enclave.SetIdentity(identity);
     } else if (record.header().has_sgx_identity()) {
-      enclave.set_cpusvn(record.header()
-                             .sgx_identity()
-                             .machine_configuration()
-                             .cpu_svn()
-                             .value());
-      enclave.SetIdentity(record.header().sgx_identity().code_identity());
+      enclave.SetIdentity(record.header().sgx_identity());
     } else {
       FAIL() << "Test data contains neither CodeIdentity nor SgxIdentity.";
     }

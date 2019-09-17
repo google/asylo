@@ -954,6 +954,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
+        ":platform_provisioning_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "//asylo/crypto/util:bytes",
         "//asylo/util:logging",
@@ -966,8 +967,8 @@ cc_library(
         ],
         "//conditions:default": [
             ":attributes_cc_proto",
-            ":code_identity_cc_proto",
             ":proto_format",
+            ":sgx_identity_cc_proto",
             "@com_google_absl//absl/strings",
             "//asylo/crypto/util:bssl_util",
             "//asylo/crypto/util:trivial_object_util",

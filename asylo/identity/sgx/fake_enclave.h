@@ -26,9 +26,9 @@
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -208,11 +208,11 @@ class FakeEnclave {
   void SetRandomIdentity();
 
   // Initializes data members that represent the enclave's identity according to
-  // the |identity|. Does not perform any consistency checks on |identity|.
-  void SetIdentity(const CodeIdentity &identity);
+  // the |sgx_identity|. Does not perform any consistency checks.
+  void SetIdentity(const SgxIdentity &sgx_identity);
 
-  // Gets a CodeIdentity representation of this enclave's identity.
-  StatusOr<CodeIdentity> GetIdentity() const;
+  // Gets an SgxIdentity representation of this enclave's identity.
+  StatusOr<SgxIdentity> GetIdentity() const;
 
   // Equality operator--only needed for testing purposes.
   bool operator==(const FakeEnclave &other) const;

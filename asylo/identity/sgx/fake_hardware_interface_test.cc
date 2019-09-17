@@ -152,19 +152,19 @@ TEST_F(FakeEnclaveTest, GetHardwareRand) {
   EXPECT_NE(collision_count, 3);
 }
 
-// Verify that FakeEnclave's identity can be set correctly from a CodeIdentity.
+// Verify that FakeEnclave's identity can be set correctly from an SgxIdentity.
 TEST_F(FakeEnclaveTest, SetIdentity) {
   enclave_.remove_valid_attribute(SecsAttributeBit::KSS);
   enclave_.SetRandomIdentity();
   FakeEnclave::EnterEnclave(enclave_);
-  CodeIdentity identity = GetSelfIdentity()->sgx_identity.code_identity();
+  SgxIdentity identity = GetSelfIdentity()->sgx_identity;
   FakeEnclave::ExitEnclave();
 
   FakeEnclave enclave2;
   enclave2.SetIdentity(identity);
 
   FakeEnclave::EnterEnclave(enclave2);
-  CodeIdentity identity2 = GetSelfIdentity()->sgx_identity.code_identity();
+  SgxIdentity identity2 = GetSelfIdentity()->sgx_identity;
 
   EXPECT_THAT(identity, EqualsProto(identity2));
   FakeEnclave::ExitEnclave();
@@ -177,11 +177,10 @@ TEST_F(FakeEnclaveTest, GetIdentity) {
 
   auto identity_result = enclave1.GetIdentity();
   ASYLO_ASSERT_OK(identity_result.status());
-  CodeIdentity identity = identity_result.ValueOrDie();
+  SgxIdentity identity = identity_result.ValueOrDie();
 
   FakeEnclave::EnterEnclave(enclave1);
-  EXPECT_THAT(identity,
-              EqualsProto(GetSelfIdentity()->sgx_identity.code_identity()));
+  EXPECT_THAT(identity, EqualsProto(GetSelfIdentity()->sgx_identity));
   FakeEnclave::ExitEnclave();
 
   FakeEnclave enclave2;
