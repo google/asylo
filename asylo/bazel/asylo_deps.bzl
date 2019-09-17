@@ -61,12 +61,12 @@ def asylo_testonly_deps():
     if not native.existing_rule("com_google_googletest"):
         http_archive(
             name = "com_google_googletest",
-            # Commit from 2019 July 18
+            # Commit from 2019 September 16
             urls = [
-                "https://github.com/google/googletest/archive/b77e5c76252bac322bb82c5b444f050bd0d92451.tar.gz",
+                "https://github.com/google/googletest/archive/f2fb48c3b3d79a75a88a99fba6576b25d42ec528.tar.gz",
             ],
-            sha256 = "b666893f592a7728331e10f36e991e5f6090998dc267e511899215c52835512d",
-            strip_prefix = "googletest-b77e5c76252bac322bb82c5b444f050bd0d92451",
+            sha256 = "89439545b04326bc8a9540c665aee5cdb23b728e75ef6cfbfa85b0508ee278e2",
+            strip_prefix = "googletest-f2fb48c3b3d79a75a88a99fba6576b25d42ec528",
         )
 
 def _instantiate_crosstool_impl(repository_ctx):
