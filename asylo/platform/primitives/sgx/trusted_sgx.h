@@ -25,6 +25,8 @@
 
 #include <cstdint>
 
+#include "asylo/platform/common/bridge_types.h"
+
 namespace asylo {
 namespace primitives {
 
@@ -37,6 +39,10 @@ int asylo_enclave_call(uint64_t selector, void *buffer);
 
 // Exits the enclave and triggers the fork routine.
 pid_t InvokeFork(const char *enclave_name, bool restore_snapshot);
+
+int RegisterSignalHandler(
+    int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
+    const sigset_t mask, int flags, const char *enclave_name);
 
 }  // namespace primitives
 }  // namespace asylo

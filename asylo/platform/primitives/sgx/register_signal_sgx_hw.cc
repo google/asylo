@@ -16,23 +16,12 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
-#define ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
+#include "asylo/platform/primitives/trusted_runtime.h"
 
-#include <signal.h>
-#include <stddef.h>
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 
-#ifdef __cplusplus
-extern "C" {
-#endif
-
-// Calls enc_untrusted_register_handler to register a signal handler on the
-// host.
-int enc_register_signal(int signum, const sigset_t mask, int flags,
-                        const char *enclave_name);
-
-#ifdef __cplusplus
-}  // extern "C"
-#endif
-
-#endif  // ASYLO_PLATFORM_ARCH_INCLUDE_TRUSTED_REGISTER_SIGNAL_H_
+extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags,
+                                   const char *enclave_name) {
+  return asylo::primitives::RegisterSignalHandler(
+      signum, /*bridge_sigaction=*/nullptr, mask, flags, enclave_name);
+}

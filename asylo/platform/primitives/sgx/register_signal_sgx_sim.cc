@@ -16,14 +16,13 @@
  *
  */
 
-#include "asylo/platform/arch/include/trusted/register_signal.h"
-
 #include <signal.h>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 
 namespace asylo {
 
@@ -58,6 +57,6 @@ void TranslateAndHandleSignal(int bridge_signum,
 
 extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags,
                                    const char *enclave_name) {
-  return enc_untrusted_register_signal_handler(
+  return asylo::primitives::RegisterSignalHandler(
       signum, &asylo::TranslateAndHandleSignal, mask, flags, enclave_name);
 }

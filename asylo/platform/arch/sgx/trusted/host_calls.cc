@@ -306,24 +306,6 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
 //           signal.h               //
 //////////////////////////////////////
 
-int enc_untrusted_register_signal_handler(
-    int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
-    const sigset_t mask, int flags, const char *enclave_name) {
-  int bridge_signum = asylo::ToBridgeSignal(signum);
-  if (bridge_signum < 0) {
-    errno = EINVAL;
-    return -1;
-  }
-  BridgeSignalHandler handler;
-  handler.sigaction = bridge_sigaction;
-  asylo::ToBridgeSigSet(&mask, &handler.mask);
-  handler.flags = asylo::ToBridgeSignalFlags(flags);
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
-      &ret, bridge_signum, &handler, enclave_name));
-  return ret;
-}
-
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   bridge_sigset_t bridge_set;
   asylo::ToBridgeSigSet(set, &bridge_set);

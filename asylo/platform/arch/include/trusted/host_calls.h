@@ -131,11 +131,6 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid);
 //            signal.h              //
 //////////////////////////////////////
 
-int enc_untrusted_register_signal_handler(
-    int signum,
-    void (*bridge_sigaction)(int, struct bridge_siginfo_t *, void *),
-    const sigset_t mask, int flags, const char *enclave_name);
-
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 
 //////////////////////////////////////

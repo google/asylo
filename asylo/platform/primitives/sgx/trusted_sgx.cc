@@ -25,6 +25,8 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
+#include "asylo/platform/common/bridge_functions.h"
+#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -60,6 +62,24 @@ namespace {
   } while (0)
 
 }  // namespace
+
+int RegisterSignalHandler(
+    int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
+    const sigset_t mask, int flags, const char *enclave_name) {
+  int bridge_signum = asylo::ToBridgeSignal(signum);
+  if (bridge_signum < 0) {
+    errno = EINVAL;
+    return -1;
+  }
+  BridgeSignalHandler handler;
+  handler.sigaction = bridge_sigaction;
+  asylo::ToBridgeSigSet(&mask, &handler.mask);
+  handler.flags = asylo::ToBridgeSignalFlags(flags);
+  int ret;
+  CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
+      &ret, bridge_signum, &handler, enclave_name));
+  return ret;
+}
 
 pid_t InvokeFork(const char *enclave_name, bool restore_snapshot) {
   pid_t ret;

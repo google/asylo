@@ -44,9 +44,11 @@ cc_library(
         {
             "@linux_sgx//:sgx_hw": [
                 "hardware_random_sgx_hw.cc",
+                "register_signal_sgx_hw.cc",
             ],
             "@linux_sgx//:sgx_sim": [
                 "hardware_random_sgx_sim.cc",
+                "register_signal_sgx_sim.cc",
             ],
         },
         no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
@@ -82,6 +84,8 @@ cc_library(
                 "@linux_sgx//:public",
                 "@linux_sgx//:trts",
                 "//asylo/platform/posix/threading:thread_manager",
+                "//asylo/platform/common:bridge_types",
+                "//asylo/platform/posix/signal:signal_manager",
             ],
         },
         no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",

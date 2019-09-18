@@ -31,7 +31,6 @@ cc_library(
     name = "trusted_arch",
     hdrs = [
         "include/trusted/host_calls.h",
-        "include/trusted/register_signal.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({
@@ -174,30 +173,11 @@ cc_library(
         "sgx/trusted/enclave_syscalls.cc",
         "sgx/trusted/host_calls.cc",
         "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
-    ] + select(
-        {
-            "@linux_sgx//:sgx_hw": [
-                "sgx/trusted/register_signal.cc",
-            ],
-            "@linux_sgx//:sgx_sim": [
-                "sgx_sim/trusted/register_signal.cc",
-            ],
-        },
-        no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
-    ),
+    ],
     hdrs = [
         "include/trusted/host_calls.h",
-        "include/trusted/register_signal.h",
     ],
-    copts = select(
-        {
-            "@linux_sgx//:sgx_hw": [
-                "-mrdrnd",  # All SGX chips also support RDRAND
-            ],
-            "@linux_sgx//:sgx_sim": [],
-        },
-        "Must be built for SGX hardware or simulation backend",
-    ) + ASYLO_DEFAULT_COPTS,
+    copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = [
         "asylo-sgx",

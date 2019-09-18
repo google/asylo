@@ -19,7 +19,10 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_TRUSTED_RUNTIME_H_
 #define ASYLO_PLATFORM_PRIMITIVES_TRUSTED_RUNTIME_H_
 
+#include <signal.h>
+#include <stddef.h>
 #include <sys/types.h>
+
 #include <cstdint>
 #include <cstdlib>
 #include <cstring>
@@ -37,6 +40,10 @@ extern "C" {
 #endif
 
 ssize_t enc_hardware_random(uint8_t *buf, size_t count);
+
+// Registers a signal handler on the host.
+int enc_register_signal(int signum, const sigset_t mask, int flags,
+                        const char *enclave_name);
 
 // Prototype of the user-defined enclave initialization function.
 asylo::primitives::PrimitiveStatus asylo_enclave_init();
