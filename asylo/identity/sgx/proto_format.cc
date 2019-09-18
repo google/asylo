@@ -29,6 +29,7 @@
 #include "absl/strings/string_view.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
@@ -44,6 +45,7 @@ class BytesPrinter : public TextFormat::FastFieldValuePrinter {
  public:
   void PrintBytes(const std::string &value,
                   TextFormat::BaseTextGenerator *generator) const override {
+    generator->PrintLiteral("0x");
     generator->PrintString(absl::BytesToHexString(value));
   }
 };
@@ -137,6 +139,11 @@ std::unique_ptr<TextFormat::Printer> CreateSgxProtoPrinter() {
   printer->RegisterFieldValuePrinter(
       descriptor->FindFieldByName("miscselect_match_mask"),
                                      new MiscSelectPrinter());
+
+  // Print CPUSVN as a hex string rather than raw bytes.
+  descriptor = CpuSvn::descriptor();
+  printer->RegisterFieldValuePrinter(descriptor->FindFieldByName("value"),
+                                     new BytesPrinter());
 
   return printer;
 }

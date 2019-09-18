@@ -32,6 +32,7 @@ namespace sgx {
 // readability:
 //   * All Sha256HashProto.hash() fields are hex-encoded.
 //   * All Attributes messages are presented as lists of ATTRIBUTES bit names.
+//   * All CpuSvn.value() fields are hex-encoded.
 std::string FormatProto(const google::protobuf::Message &message);
 
 }  // namespace sgx

@@ -27,8 +27,10 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/secs_miscselect.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 
 namespace asylo {
@@ -37,6 +39,8 @@ namespace {
 
 using ::testing::HasSubstr;
 using ::testing::Test;
+
+constexpr char kValidCpuSvnHexString[] = "00112233445566778899aabbccddeeff";
 
 TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
   CodeIdentity identity;
@@ -48,6 +52,19 @@ TEST(ProtoFormatTest, CodeIdentityHasAttributesByName) {
   for (const auto attribute : named_attributes) {
     EXPECT_THAT(text, HasSubstr(std::string(attribute)));
   }
+}
+
+TEST(ProtoFormatTest, SgxIdentityHasCpuSvnAsHexString) {
+  SgxIdentity sgx_identity;
+  SetSelfSgxIdentity(&sgx_identity);
+
+  CpuSvn cpu_svn;
+  cpu_svn.set_value(absl::HexStringToBytes(kValidCpuSvnHexString));
+  *sgx_identity.mutable_machine_configuration()->mutable_cpu_svn() = cpu_svn;
+  ASSERT_TRUE(IsValidSgxIdentity(sgx_identity));
+
+  std::string text = FormatProto(sgx_identity);
+  EXPECT_THAT(text, HasSubstr(absl::StrCat("0x", kValidCpuSvnHexString)));
 }
 
 TEST(ProtoFormatTest, MiscselectBitsByName) {
@@ -81,10 +98,13 @@ TEST(ProtoFormatTest, CodeIdentityHasHexEncodedBytesFields) {
   std::string text = FormatProto(identity);
 
   EXPECT_THAT(text,
-              HasSubstr(absl::BytesToHexString(identity.mrenclave().hash())));
-  EXPECT_THAT(text,
-              HasSubstr(absl::BytesToHexString(
-                  identity.signer_assigned_identity().mrsigner().hash())));
+              HasSubstr(absl::StrCat(
+                  "0x", absl::BytesToHexString(identity.mrenclave().hash()))));
+  EXPECT_THAT(
+      text,
+      HasSubstr(absl::StrCat(
+          "0x", absl::BytesToHexString(
+                    identity.signer_assigned_identity().mrsigner().hash()))));
 }
 
 TEST(ProtoFormatTest, CodeIdentityMatchSpecHasAttributesByName) {
