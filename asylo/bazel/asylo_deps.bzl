@@ -148,6 +148,16 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "rules_cc-cb2dfba6746bfa3c3705185981f3109f0ae1b893",
         )
 
+    # Required for Protobuf.
+    if not native.existing_rule("rules_proto"):
+        http_archive(
+            name = "rules_proto",
+            # Commit from 2019 August 12
+            urls = ["https://github.com/bazelbuild/rules_proto/archive/9cd4f8f1ede19d81c6d48910429fe96776e567b1.tar.gz"],
+            sha256 = "57001a3b33ec690a175cdf0698243431ef27233017b9bed23f96d44b9c98242f",
+            strip_prefix = "rules_proto-9cd4f8f1ede19d81c6d48910429fe96776e567b1",
+        )
+
     # Absl for C++
     if not native.existing_rule("com_google_absl"):
         http_archive(
