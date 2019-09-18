@@ -375,8 +375,8 @@ go_library(
     visibility = ["//visibility:public"],
 )
 """,
-            # Commit from 2019 July 01
-            urls = ["https://github.com/golang/crypto/archive/4def268fd1a49955bfb3dda92fe3db4f924f2285.tar.gz"],
-            sha256 = "a967af929cf232a8a363e575f54cf5a97468599e259b00239062c7014ba13e2c",
-            strip_prefix = "crypto-4def268fd1a49955bfb3dda92fe3db4f924f2285",
+            # Commit from 2019 September 11
+            urls = ["https://github.com/golang/crypto/archive/227b76d455e791cb042b03e633e2f7fbcfdf74a5.tar.gz"],
+            sha256 = "bf3328f05c661bed6e426525e5c0e26e3cda62915074e9134dce2c21638b0347",
+            strip_prefix = "crypto-227b76d455e791cb042b03e633e2f7fbcfdf74a5",
         )
