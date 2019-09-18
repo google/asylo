@@ -28,6 +28,7 @@
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/proto_format.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -87,6 +88,90 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyPositive) {
       << sgx::FormatProto(code_identity_expectation);
 }
 
+// Tests that SgxIdentityExpectationMatcher correctly matches a legacy identity
+// when the expectation itself is not a legacy expectation, given that the
+// expectation does not expect anything with respect to non-legacy fields.
+TEST(SgxIdentityExpectationMatcherTest,
+     MatchLegacyIdentityNonLegacyExpectationSuccess) {
+  EnclaveIdentityExpectation expectation;
+  SgxIdentityExpectation sgx_identity_expectation;
+  ASSERT_THAT(sgx::SetRandomValidGenericExpectation(&expectation,
+                                                    &sgx_identity_expectation),
+              IsOk());
+
+  // Backfill the expectation with a legacy identity.
+  EnclaveIdentity identity;
+  ASYLO_ASSERT_OK(sgx::SerializeSgxIdentity(
+      sgx_identity_expectation.reference_identity().code_identity(),
+      &identity));
+
+  // Clear the SgxMachineConfiguration fields of the expectation's match spec,
+  // since the legacy identity will never match the expectation identity for
+  // these fields.
+    SgxIdentityMatchSpec *match_spec =
+        sgx_identity_expectation.mutable_match_spec();
+    SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+        match_spec->mutable_machine_configuration_match_spec();
+  machine_config_match_spec->set_is_cpu_svn_match_required(false);
+  machine_config_match_spec->set_is_sgx_type_match_required(false);
+
+  ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(
+      *match_spec, expectation.mutable_match_spec()));
+
+  sgx::CodeIdentity parsed_identity;
+  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
+
+  SgxIdentityExpectationMatcher matcher;
+  StatusOr<bool> matcher_result = matcher.Match(identity, expectation);
+  ASSERT_THAT(matcher_result, IsOk())
+      << sgx::FormatProto(parsed_identity)
+      << sgx::FormatProto(sgx_identity_expectation);
+  EXPECT_TRUE(matcher_result.ValueOrDie())
+      << sgx::FormatProto(parsed_identity)
+      << sgx::FormatProto(sgx_identity_expectation);
+}
+
+// Tests that SgxIdentityExpectationMatcher will fail to evaluate a match for
+// any legacy identity when the expectation itself is not a legacy expectation,
+// given that at least one non-legacy field is set to "expected".
+TEST(SgxIdentityExpectationMatcherTest,
+     MatchLegacyIdentityNonLegacyExpectationIncompatible) {
+  EnclaveIdentityExpectation expectation;
+  SgxIdentityExpectation sgx_identity_expectation;
+  ASSERT_THAT(sgx::SetRandomValidGenericExpectation(&expectation,
+                                                    &sgx_identity_expectation),
+              IsOk());
+
+  // Backfill the expectation with a legacy identity.
+  EnclaveIdentity identity;
+  ASYLO_ASSERT_OK(sgx::SerializeSgxIdentity(
+      sgx_identity_expectation.reference_identity().code_identity(),
+      &identity));
+
+  for (int i = 0;
+       i < SgxMachineConfigurationMatchSpec::GetDescriptor()->field_count();
+       ++i) {
+    SgxIdentityMatchSpec *match_spec =
+        sgx_identity_expectation.mutable_match_spec();
+    SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+        match_spec->mutable_machine_configuration_match_spec();
+    machine_config_match_spec->set_is_cpu_svn_match_required(i == 0);
+    machine_config_match_spec->set_is_sgx_type_match_required(i == 1);
+
+    ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(
+        *match_spec, expectation.mutable_match_spec()));
+
+  sgx::CodeIdentity parsed_identity;
+  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
+
+  SgxIdentityExpectationMatcher matcher;
+  StatusOr<bool> matcher_result = matcher.Match(identity, expectation);
+  ASSERT_THAT(matcher_result, Not(IsOk()))
+      << sgx::FormatProto(parsed_identity)
+      << sgx::FormatProto(sgx_identity_expectation);
+  }
+}
+
 // Tests that when an SgxIdentityExpectationMatcher returns false it populates
 // the explanation, and does not populate the explanation when it returns true.
 TEST(SgxIdentityExpectationMatcherTest, MatchAndExplain) {
@@ -117,7 +202,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatchAndExplain) {
 
 // Tests that SgxIdentityExpectationMatcher returns a non-OK status when
 // invoked with invalid SGX identity.
-TEST(SgxIdentityExpectationMatcherTest, MatcherInvalidIdentity) {
+TEST(SgxIdentityExpectationMatcherTest, MatchInvalidIdentity) {
   EnclaveIdentity identity;
   sgx::SetRandomInvalidGenericIdentity(&identity);
 
@@ -132,7 +217,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherInvalidIdentity) {
       << sgx::FormatProto(sgx_identity_expectation);
 }
 
-TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyInvalidIdentity) {
+TEST(SgxIdentityExpectationMatcherTest, MatchLegacyInvalidIdentity) {
   EnclaveIdentity identity;
   sgx::SetRandomInvalidGenericIdentity(&identity);
 
@@ -149,7 +234,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyInvalidIdentity) {
 
 // Tests that SgxIdentityExpectationMatcher returns a non-OK status when
 // invoked with an invalid SGX identity expectation.
-TEST(SgxIdentityExpectationMatcherTest, MatcherInvalidExpectation) {
+TEST(SgxIdentityExpectationMatcherTest, MatchInvalidExpectation) {
   EnclaveIdentity identity;
   SgxIdentity sgx_identity;
   sgx::SetRandomValidSgxGenericIdentity(&identity, &sgx_identity);
@@ -178,7 +263,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyInvalidExpectation) {
 
 // Tests that SgxIdentityExpectationMatcher returns a non-OK status when
 // invoked with invalid code identity and invalid SGX identity expectation.
-TEST(SgxIdentityExpectationMatcherTest, MatcherInvalidIdentityExpectation) {
+TEST(SgxIdentityExpectationMatcherTest, MatchInvalidIdentityExpectation) {
   EnclaveIdentity identity;
   sgx::SetRandomInvalidGenericIdentity(&identity);
 

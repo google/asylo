@@ -872,6 +872,7 @@ cc_test(
         ":code_identity_test_util",
         ":code_identity_util",
         ":proto_format",
+        ":sgx_identity_cc_proto",
         ":sgx_identity_expectation_matcher",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",

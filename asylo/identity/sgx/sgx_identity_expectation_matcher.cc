@@ -43,7 +43,7 @@ StatusOr<bool> SgxIdentityExpectationMatcher::MatchAndExplain(
   // If this call fails, then |expectation|.reference_identity() either does not
   // have the correct description, or is malformed.
   SgxIdentityExpectation sgx_identity_expectation;
-  bool is_legacy = !identity.has_version();
+  bool is_legacy = !expectation.reference_identity().has_version();
   ASYLO_RETURN_IF_ERROR(sgx::ParseSgxExpectation(
       expectation, &sgx_identity_expectation, is_legacy));
 
