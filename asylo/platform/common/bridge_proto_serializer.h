@@ -19,7 +19,14 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_PROTO_SERIALIZER_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_PROTO_SERIALIZER_H_
 
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <sys/epoll.h>
+#include <sys/inotify.h>
+
+#include <cstddef>
 #include <queue>
+#include <string>
 
 #include "absl/strings/string_view.h"
 #include "asylo/platform/common/bridge_proto_types.pb.h"
