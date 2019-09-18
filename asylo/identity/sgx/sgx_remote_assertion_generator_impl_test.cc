@@ -374,9 +374,10 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
                    gpr_time_from_micros(kDeadlineMicros, GPR_TIMESPAN));
   ASSERT_TRUE(channel->WaitForConnected(absolute_deadline));
 
+  SgxRemoteAssertionGeneratorImpl *service_ptr = service.get();
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back([&certs_signing_key_pairs, &certs_verifying_key_pairs,
-                          &channel, service_ptr = service.get(), this, i] {
+                          &channel, service_ptr, this, i] {
       SgxRemoteAssertionGeneratorClient client(channel);
 
       service_ptr->UpdateSigningKeyAndCertificateChains(
