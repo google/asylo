@@ -110,6 +110,7 @@ cc_library(
         "signal.cc",
         "stat.cc",
         "statfs.cc",
+        "stdio.cc",
         "stdlib.cc",
         "syslog.cc",
         "termios.cc",
