@@ -1,6 +1,23 @@
-# Asylo - An open and flexible framework for enclave applications
+# Asylo ([asylo.dev](https://asylo.dev))
 
-Copyright 2018 Asylo authors
+Asylo is an open and flexible framework for developing enclave applications.
+Asylo lets you take advantage of a range of emerging trusted execution
+environments (TEEs), including both software and hardware isolation
+technologies.
+
+Asylo provides:
+
++   The ability to execute trusted workloads in an untrusted environment,
+    inheriting the confidentiality and integrity guarantees from the security
+    backend, i.e., the underlying enclave technology.
++   Ready-to-use containers, an open source API, libraries, and tools so you can
+    develop and run applications that use one or more enclaves.
++   A choice of security backends.
++   Portability of your application's source code across security backends.
+
+Asylo is under active development. We want to expand Asylo's capabilities to
+meet more developers' needs. To do this, we plan to add support for more
+backends, libraries, and languages.
 
 ## Documentation
 
@@ -19,8 +36,8 @@ There are several ways of getting support with Asylo:
     mailing list to participate in discussions and get help troubleshooting
     problems.
 +   Ask questions and find curated answers on
-    [StackOverflow](https://stackoverflow.com) using the
-    [asylo](https://stackoverflow.com/questions/tagged/asylo) tag.
+    [Stack Overflow](https://stackoverflow.com) using the
+    [`asylo`](https://stackoverflow.com/questions/tagged/asylo) tag.
 
 ## Build Environment in Docker (Recommended)
 
@@ -260,6 +277,26 @@ development.
     +   [util/](asylo/util)
         -   Common utilities provided for use both inside and outside an enclave
             environment.
+
+## License
+
+Asylo is released under the [Apache 2.0 license](LICENSE).
+
+```
+Copyright 2018 Asylo authors
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+    http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
+```
 
 ## Disclaimers
 
