@@ -34,15 +34,19 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce.h QuoteGeneration/pce_wrapper/inc/sgx_pce.h
 --- QuoteGeneration/pce_wrapper/inc/sgx_pce.h
 +++ QuoteGeneration/pce_wrapper/inc/sgx_pce.h
-@@ -40,6 +40,7 @@
+@@ -40,6 +40,11 @@
  
  #include "sgx_key.h"
  #include "sgx_report.h"
 +#include "sgx_pce_constants.h"
++
++#ifdef _MSC_VER
++#include <tchar.h>
++#endif
  
  #define SGX_PCE_MK_ERROR(x)          (0x0000F000|(x))
  typedef enum _sgx_pce_error_t
-@@ -56,16 +57,6 @@
+@@ -56,16 +61,6 @@
  } sgx_pce_error_t;
  
  
@@ -59,17 +63,514 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
  //TODO: in qe pce common header
  /** Typedef enum _sgx_ql_request_policy */ 
  typedef enum _sgx_ql_request_policy
+@@ -91,6 +86,14 @@
+ sgx_pce_error_t sgx_set_pce_enclave_load_policy(
+                               sgx_ql_request_policy_t policy);
+ 
++/** Set the directory in which the PCE binary is located. */
++sgx_pce_error_t sgx_set_pce_enclave_dirpath(
++#if defined(_MSC_VER)
++                              const TCHAR *dirpath);
++#else
++                              const char *dirpath);
++#endif
++
+ sgx_pce_error_t sgx_pce_get_target(
+                               sgx_target_info_t *p_pce_target,
+                               sgx_isv_svn_t *p_pce_isv_svn);
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/linux/pce_parser.cpp QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
+--- QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
++++ QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
+@@ -144,6 +144,7 @@
+ 
+ #define PCE_ENCLAVE_NAME "libsgx_pce.signed.so"
+ bool get_pce_path(
++    const char *p_dirpath,
+     char *p_file_path,
+     size_t buf_size)
+ {
+@@ -151,10 +152,19 @@
+         return false;
+ 
+     Dl_info dl_info;
+-    if(0 != dladdr(__builtin_return_address(0), &dl_info) &&
++    if (p_dirpath != NULL)
++    {
++        if(strnlen(p_dirpath,buf_size)==buf_size)
++        {
++            SE_TRACE(SE_TRACE_ERROR, "Input dirpath is too long\n");
++            return false;
++        }
++        (void)strncpy(p_file_path,p_dirpath,buf_size);
++    }
++    else if(0 != dladdr(__builtin_return_address(0), &dl_info) &&
+         NULL != dl_info.dli_fname)
+     {
+-        if(strnlen(dl_info.dli_fname,buf_size)>=buf_size)
++        if(strnlen(dl_info.dli_fname,buf_size)==buf_size)
+             return false;
+         (void)strncpy(p_file_path,dl_info.dli_fname,buf_size);
+     }
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/pce_wrapper.cpp QuoteGeneration/pce_wrapper/pce_wrapper.cpp
+--- QuoteGeneration/pce_wrapper/pce_wrapper.cpp
++++ QuoteGeneration/pce_wrapper/pce_wrapper.cpp
+@@ -52,24 +52,28 @@
+ 
+ #if defined(_MSC_VER)
+ #include <tchar.h>
+-bool get_pce_path(TCHAR *p_file_path, size_t buf_size);
+-bool pce_get_metadata(const TCHAR* enclave_file, metadata_t *metadata);
+ #else
+ #include <limits.h>
++#include <string.h>
+ #define MAX_PATH PATH_MAX
+-bool get_pce_path(char *p_file_path, size_t buf_size);
+-bool pce_get_metadata(const char* enclave_file, metadata_t *metadata);
+-
++typedef char TCHAR;
++#define _T(str) str
+ #endif
+ 
++bool get_pce_path(const TCHAR *p_dirpath, TCHAR *p_file_path, size_t buf_size);
++bool pce_get_metadata(const TCHAR* enclave_file, metadata_t *metadata);
++
+ struct PCE_status {
+     se_mutex_t m_pce_mutex;
+     sgx_ql_request_policy_t m_pce_enclave_load_policy;
++    TCHAR m_pce_dirpath[MAX_PATH];
++    size_t m_pce_dirpath_length;
+     sgx_enclave_id_t m_pce_eid;
+     sgx_misc_attribute_t m_pce_attributes;
+ 
+     PCE_status() :
+         m_pce_enclave_load_policy(SGX_QL_DEFAULT),
++        m_pce_dirpath_length(0),
+         m_pce_eid(0)
+     {
+         se_mutex_init(&m_pce_mutex);
+@@ -79,6 +83,12 @@
+         if (m_pce_eid != 0) sgx_destroy_enclave(m_pce_eid);
+         se_mutex_destroy(&m_pce_mutex);
+     }
++
++    bool get_pce_path(TCHAR *p_file_path, size_t buf_size) const
++    {
++        const TCHAR *dirpath = m_pce_dirpath_length > 0 ? m_pce_dirpath : NULL;
++        return ::get_pce_path(dirpath, p_file_path, buf_size);
++    }
+ };
+ 
+ static PCE_status g_pce_status;
+@@ -90,11 +100,7 @@
+     sgx_status_t sgx_status = SGX_SUCCESS;
+     int enclave_lost_retry_time = 1;
+     int launch_token_updated = 0;
+-#if defined(_MSC_VER)
+     TCHAR pce_enclave_path[MAX_PATH] = _T("");
+-#else 
+-    char pce_enclave_path[MAX_PATH] = "";
+-#endif
+     memset(p_launch_token, 0, sizeof(*p_launch_token));
+ 
+     int rc = se_mutex_lock(&g_pce_status.m_pce_mutex);
+@@ -107,7 +113,7 @@
+     // Load the PCE
+     if (g_pce_status.m_pce_eid == 0)
+     {
+-        if (!get_pce_path(pce_enclave_path, MAX_PATH))
++        if (!g_pce_status.get_pce_path(pce_enclave_path, MAX_PATH))
+             return SGX_PCE_INTERFACE_UNAVAILABLE;
+         do
+         {
+@@ -190,6 +196,37 @@
+         unload_pce(true);
+     return SGX_PCE_SUCCESS;
+ }
++
++sgx_pce_error_t sgx_set_pce_enclave_dirpath(
++    const TCHAR *dirpath)
++{
++    if (dirpath == NULL)
++    {
++        memset(g_pce_status.m_pce_dirpath, 0, sizeof(g_pce_status.m_pce_dirpath));
++        g_pce_status.m_pce_dirpath_length = 0;
++        return SGX_PCE_SUCCESS;
++    }
++
++    size_t dirpath_length;
++
++#if defined(_MSC_VER)
++    dirpath_length = _tcsnlen(dirpath);
++#else
++    dirpath_length = strlen(dirpath);
++#endif
++
++    if (dirpath_length >= sizeof(g_pce_status.m_pce_dirpath))
++    {
++        return SGX_PCE_INVALID_PARAMETER;
++    }
++
++    memcpy(g_pce_status.m_pce_dirpath, dirpath, dirpath_length);
++    g_pce_status.m_pce_dirpath[dirpath_length] = 0;
++    g_pce_status.m_pce_dirpath_length = dirpath_length;
++
++    return SGX_PCE_SUCCESS;
++}
++
+ sgx_pce_error_t sgx_pce_get_target(sgx_target_info_t *p_target,
+     sgx_isv_svn_t *p_isvsvn)
+ {
+@@ -197,18 +234,14 @@
+     sgx_enclave_id_t pce_eid = 0;
+     sgx_launch_token_t launch_token = { 0 };
+     metadata_t metadata;
+-#if defined(_MSC_VER)
+     TCHAR pce_enclave_path[MAX_PATH] = _T("");
+-#else 
+-    char pce_enclave_path[MAX_PATH] = "";
+-#endif
+     if ((NULL == p_target) ||
+         (NULL == p_isvsvn))
+     {
+         return(SGX_PCE_INVALID_PARAMETER);
+     }
+ 
+-    if (!get_pce_path(pce_enclave_path, MAX_PATH))
++    if (!g_pce_status.get_pce_path(pce_enclave_path, MAX_PATH))
+         return SGX_PCE_INTERFACE_UNAVAILABLE;
+ 
+     if (!pce_get_metadata(pce_enclave_path, &metadata))
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
 --- QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
 +++ QuoteGeneration/quote_wrapper/common/inc/sgx_ql_ecdsa_quote.h
-@@ -40,6 +40,7 @@
+@@ -40,6 +40,11 @@
  #define _SGX_QL_ECDSA_QUOTE_H_
  
  #include "sgx_ql_quote.h"
 +#include "user_types.h"
++
++#ifdef _MSC_VER
++#include <tchar.h>
++#endif
  
  /**
      Class definition of the reference ECDSA-P256 quoting code which implements the quoting interface, IQuote.
+@@ -48,6 +53,12 @@
+ public:
+     virtual quote3_error_t set_enclave_load_policy(sgx_ql_request_policy_t policy);
+ 
++#ifdef _MSC_VER
++    virtual quote3_error_t set_enclave_dirpath(const TCHAR *dirpath);
++#else
++    virtual quote3_error_t set_enclave_dirpath(const char *dirpath);
++#endif
++
+     virtual quote3_error_t init_quote(sgx_ql_att_key_id_t* p_att_key_id,
+                                       sgx_ql_cert_key_type_t certification_key_type,
+                                       sgx_target_info_t *p_target_info,
+@@ -68,6 +79,12 @@
+ private:
+     quote3_error_t ecdsa_set_enclave_load_policy(sgx_ql_request_policy_t policy);
+ 
++#ifdef _MSC_VER
++    quote3_error_t ecdsa_set_enclave_dirpath(const TCHAR *dirpath);
++#else
++    quote3_error_t ecdsa_set_enclave_dirpath(const char *dirpath);
++#endif
++
+     quote3_error_t ecdsa_init_quote(sgx_ql_cert_key_type_t certification_key_type,
+                                     sgx_target_info_t *p_target_info,
+                                     bool refresh_att_key,
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h
+--- QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h
++++ QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h
+@@ -42,12 +42,22 @@
+ #include "sgx_pce.h"
+ #include "sgx_ql_lib_common.h"
+ 
++#if defined(_MSC_VER)
++#include <tchar.h>
++#endif
++
+ #if defined(__cplusplus)
+ extern "C" {
+ #endif
+ 
+ quote3_error_t sgx_qe_set_enclave_load_policy(sgx_ql_request_policy_t policy);
+ 
++#if defined(_MSC_VER)
++quote3_error_t sgx_qe_set_enclave_dirpath(const TCHAR *dirpath);
++#else
++quote3_error_t sgx_qe_set_enclave_dirpath(const char *dirpath);
++#endif
++
+ quote3_error_t sgx_qe_get_target_info(sgx_target_info_t *p_qe_target_info);
+ 
+ quote3_error_t sgx_qe_get_quote_size(uint32_t *p_quote_size);
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/ql/sgx_dcap_ql_wrapper.cpp QuoteGeneration/quote_wrapper/ql/sgx_dcap_ql_wrapper.cpp
+--- QuoteGeneration/quote_wrapper/ql/sgx_dcap_ql_wrapper.cpp
++++ QuoteGeneration/quote_wrapper/ql/sgx_dcap_ql_wrapper.cpp
+@@ -46,6 +46,10 @@
+ #include "sgx_quote_3.h"
+ #include "se_trace.h"
+ 
++#ifndef _MSC_VER
++typedef char TCHAR;
++#endif
++
+ /** 
+  * When the Quoting Library is linked to a process, it needs to know the proper enclave loading policy.  The library
+  * may be linked with a long lived process, such as a service, where it can load the enclaves and leave them loaded 
+@@ -75,6 +79,19 @@
+ }
+ 
+ /**
++ * This API will explicitly set the directory where enclaves required for quoting are located. By default, enclaves
++ * are assumed to be located in the same directory as the application which is calling the ECDSA quoting APIs. This
++ * API will override that default, locating the quoting and provisioning enclaves in dirpath.
++ *
++ * @param dirpath The directory where the quoting and provisioning enclaves are. If NULL, any previously-set
++ * path is cleared.
++ */
++extern "C" quote3_error_t sgx_qe_set_enclave_dirpath(const TCHAR *dirpath)
++{
++    return(sgx_ql_set_enclave_dirpath(dirpath));
++}
++
++/**
+  * This API will allow the calling code to retrieve the target info of the QE.  This maps to the Initialize Quote
+  * Attestation Key API of the core library.  It will be a simple wrapper around the core library's
+  * sgx_ql_init_quote() API. The loading of the QE and the PCE will follow the selected loading policy. 
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h
+--- QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h
++++ QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h
+@@ -40,6 +40,10 @@
+ #include "sgx_quote_3.h"
+ #include "sgx_ql_quote.h"
+ 
++#if defined(_MSC_VER)
++#include <tchar.h>
++#endif
++
+ #define SGX_QL_MAX_ATT_KEY_IDS 10
+ 
+ #define SGX_QL_CERT_TYPE PPID_RSA3072_ENCRYPTED 
+@@ -50,6 +54,12 @@
+ 
+ quote3_error_t sgx_ql_set_enclave_load_policy(sgx_ql_request_policy_t policy);
+ 
++#if defined(_MSC_VER)
++quote3_error_t sgx_ql_set_enclave_dirpath(const TCHAR *dirpath);
++#else
++quote3_error_t sgx_ql_set_enclave_dirpath(const char *dirpath);
++#endif
++
+ quote3_error_t sgx_ql_select_att_key_id(sgx_ql_att_key_id_list_t *p_att_key_id_list,
+                                         sgx_ql_att_key_id_t **p_selected_key_id);
+     
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/qe_logic.cpp QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
+--- QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
++++ QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
+@@ -162,6 +162,8 @@
+     se_mutex_t m_ecdsa_blob_mutex;
+ 
+     sgx_ql_request_policy_t m_load_policy;
++    TCHAR m_qe_dirpath[MAX_PATH];
++    size_t m_qe_dirpath_length;
+     sgx_enclave_id_t m_eid;
+     sgx_misc_attribute_t m_attributes;
+     sgx_launch_token_t m_launch_token;
+@@ -170,6 +172,7 @@
+ 
+     ql_global_data():
+         m_load_policy(SGX_QL_DEFAULT),
++        m_qe_dirpath_length(0),
+         m_eid(0),
+         m_pencryptedppid(NULL)
+     {
+@@ -429,24 +432,38 @@
+     if(!p_file_name || !p_file_path) {
+         return false;
+     }
+-    #ifndef _MSC_VER
+-#ifndef AESM_ECDSA_BUNDLE
+-    Dl_info dl_info;
+-    if(0 != dladdr(__builtin_return_address(0), &dl_info) &&
+-        NULL != dl_info.dli_fname)
+-    {
+-        if(strnlen(dl_info.dli_fname,buf_size)>=buf_size) {
++
++    // If an explicit path as set by a client, use that instead of searching.
++    bool used_explicit_path = false;
++    if (g_ql_global_data.m_qe_dirpath_length > 0) {
++        if(g_ql_global_data.m_qe_dirpath_length>=buf_size) {
+             return false;
+         }
+-        (void)strncpy(p_file_path,dl_info.dli_fname,buf_size);
++        memcpy(p_file_path,g_ql_global_data.m_qe_dirpath,g_ql_global_data.m_qe_dirpath_length);
++        p_file_path[g_ql_global_data.m_qe_dirpath_length] = 0;
++        used_explicit_path = true;
+     }
+-    else //not a dynamic executable
++
++    #ifndef _MSC_VER
++#ifndef AESM_ECDSA_BUNDLE
++    if (!used_explicit_path) {
++        Dl_info dl_info;
++        if(0 != dladdr(__builtin_return_address(0), &dl_info) &&
++            NULL != dl_info.dli_fname)
++        {
++            if(strnlen(dl_info.dli_fname,buf_size)>=buf_size) {
++                return false;
++            }
++            (void)strncpy(p_file_path,dl_info.dli_fname,buf_size);
++        }
++        else //not a dynamic executable
+ #endif
+-    {
+-        ssize_t i = readlink( "/proc/self/exe", p_file_path, buf_size );
+-        if (i == -1)
+-            return false;
+-        p_file_path[i] = '\0';
++        {
++            ssize_t i = readlink( "/proc/self/exe", p_file_path, buf_size );
++            if (i == -1)
++                return false;
++            p_file_path[i] = '\0';
++        }
+     }
+ 
+     char* p_last_slash = strrchr(p_file_path, '/' );
+@@ -463,16 +480,18 @@
+     }
+     (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
+     #else
+-    HMODULE hModule = NULL;
++    if (!used_explicit_path) {
++        HMODULE hModule = NULL;
+ #ifndef AESM_ECDSA_BUNDLE
+-    if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, _T(__FUNCTION__), &hModule))
+-        return false;
++        if (!GetModuleHandleEx(GET_MODULE_HANDLE_EX_FLAG_FROM_ADDRESS, _T(__FUNCTION__), &hModule))
++            return false;
+ #endif
+-    DWORD path_length = GetModuleFileName(hModule, p_file_path, static_cast<DWORD>(buf_size));
+-    if (path_length == 0)
+-        return false;
+-    if (path_length == buf_size)
+-        return false;
++        DWORD path_length = GetModuleFileName(hModule, p_file_path, static_cast<DWORD>(buf_size));
++        if (path_length == 0)
++            return false;
++        if (path_length == buf_size)
++            return false;
++    }
+ 
+     TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
+     if (p_last_slash != NULL)
+@@ -1028,6 +1047,52 @@
+     return(refqt_ret);
+ }
+ 
++quote3_error_t ECDSA256Quote::set_enclave_dirpath(const TCHAR *dirpath)
++{
++    quote3_error_t refqt_ret = SGX_QL_ERROR_UNEXPECTED;
++    sgx_pce_error_t pce_error;
++    int rc = 0;
++    size_t dirpath_len;
++
++#ifndef _MSC_VER
++    dirpath_len = strnlen(dirpath, MAX_PATH);
++#else
++    dirpath_len = _tcsnlen(dirpath, MAX_PATH);
++#endif
++
++    if (dirpath_len >= sizeof(g_ql_global_data.m_qe_dirpath))
++    {
++        refqt_ret = SGX_QL_ERROR_INVALID_PARAMETER;
++        goto CLEANUP;
++    }
++
++    rc = se_mutex_lock(&g_ql_global_data.m_enclave_load_mutex);
++    if (0 == rc) {
++        SE_TRACE(SE_TRACE_ERROR, "Failed to lock mutex\n");
++        refqt_ret = SGX_QL_ERROR_UNEXPECTED;
++        goto CLEANUP;
++    }
++
++    memcpy(g_ql_global_data.m_qe_dirpath, dirpath, dirpath_len);
++    g_ql_global_data.m_qe_dirpath[dirpath_len] = 0;
++    g_ql_global_data.m_qe_dirpath_length = dirpath_len;
++    refqt_ret = SGX_QL_SUCCESS;
++
++    rc = se_mutex_unlock(&g_ql_global_data.m_enclave_load_mutex);
++    if (0 == rc) {
++        SE_TRACE(SE_TRACE_ERROR, "Failed to unlock mutex.\n");
++        refqt_ret = SGX_QL_ERROR_UNEXPECTED;
++    }
++    pce_error = sgx_set_pce_enclave_dirpath(dirpath);
++    if (SGX_PCE_SUCCESS != pce_error) {
++        refqt_ret = translate_pce_errors(pce_error);
++        goto CLEANUP;
++    }
++
++    CLEANUP:
++    return(refqt_ret);
++}
++
+ /**
+  * This is the ECDSA-P256 specific init quote code.  The generic quote interfaces have been converted/reduced to the ECDSA specific inputs.
+  * The method will generate a new key and certify it when needed.
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp
+--- QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp
++++ QuoteGeneration/quote_wrapper/quote/sgx_ql_core_wrapper.cpp
+@@ -42,9 +42,14 @@
+ #include "user_types.h"
+ #include "sgx_report.h"
+ #include "sgx_ql_ecdsa_quote.h"
++#include "sgx_ql_lib_common.h"
+ #include "sgx_ql_core_wrapper.h"
+ #include "qe3.h"
+ 
++#ifndef _MSC_VER
++typedef char TCHAR;
++#endif
++
+ #ifdef USE_DEBUG_MRSIGNER
+ // This is the mrsigner for debug key
+ uint8_t g_qe_mrsigner[32] = { 0xe4, 0xbd, 0x9f, 0xc2, 0x12, 0x98, 0x35, 0xba, 0x1d, 0xcc, 0xa1, 0x93, 0x9d, 0x57, 0xd0, 0x8e,
+@@ -123,6 +128,31 @@
+     if(SGX_QL_SUCCESS != ret_val) {
+         if((ret_val < SGX_QL_ERROR_MIN) ||
+            (ret_val > SGX_QL_ERROR_MAX))
++        {
++                ret_val = SGX_QL_ERROR_UNEXPECTED;
++        }
++    }
++
++    return(ret_val);
++}
++
++/**
++ * This API will explicitly set the directory where enclaves required for quoting are located. By default, enclaves
++ * are assumed to be located in the same directory as the application which is calling the ECDSA quoting APIs. This
++ * API will override that default, locating the quoting and provisionining enclaves in dirpath.
++ *
++ * @param dirpath The directory where the quoting and provisioning enclaves are. If NULL, any previously-set
++ * path is cleared.
++ */
++quote3_error_t sgx_ql_set_enclave_dirpath(const TCHAR *dirpath)
++{
++    quote3_error_t ret_val = SGX_QL_ERROR_UNEXPECTED;
++    ECDSA256Quote ecdsa_quote;
++
++    ret_val = ecdsa_quote.set_enclave_dirpath(dirpath);
++    if(SGX_QL_SUCCESS != ret_val) {
++        if((ret_val < SGX_QL_ERROR_MIN) ||
++           (ret_val > SGX_QL_ERROR_MAX))
+         {
+                 ret_val = SGX_QL_ERROR_UNEXPECTED;
+         }
 --- /dev/null
 +++ BUILD
 @@ -0,0 +1,270 @@
