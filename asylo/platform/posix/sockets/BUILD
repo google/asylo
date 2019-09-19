@@ -66,6 +66,7 @@ cc_library(
     deps = [
         "//asylo/platform/host_call",
     ],
+    alwayslink = 1,
 )
 
 # Contains socket communication class for data transmission.

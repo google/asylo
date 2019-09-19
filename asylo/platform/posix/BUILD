@@ -75,6 +75,7 @@ cc_library(
         "//asylo/platform/host_call",
         "//asylo/platform/posix/sockets:backend_agnostic_sockets",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
