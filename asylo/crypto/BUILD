@@ -584,14 +584,34 @@ cc_test(
 
 cc_library(
     name = "asymmetric_encryption_key",
+    srcs = ["asymmetric_encryption_key.cc"],
     hdrs = ["asymmetric_encryption_key.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_cc_proto",
+        ":keys_cc_proto",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
+    ],
+)
+
+cc_test(
+    name = "asymmetric_encryption_key_test",
+    srcs = ["asymmetric_encryption_key_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":algorithms_cc_proto",
+        ":asymmetric_encryption_key",
+        ":keys_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:error_codes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
     ],
 )
 

@@ -24,6 +24,7 @@
 #include <vector>
 
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
@@ -71,6 +72,16 @@ class AsymmetricDecryptionKey {
   virtual Status Decrypt(ByteContainerView ciphertext,
                          CleansingVector<uint8_t> *plaintext) const = 0;
 };
+
+// Converts the AsymmetricEncryptionKey |key| to a protobuf representation of
+// the key.
+StatusOr<AsymmetricEncryptionKeyProto> ConvertToAsymmetricEncryptionKeyProto(
+    const AsymmetricEncryptionKey &key);
+
+// Converts the AsymmetricDecryptionKey |key| to a protobuf representation of
+// the encryption key.
+StatusOr<AsymmetricEncryptionKeyProto> ConvertToAsymmetricEncryptionKeyProto(
+    const AsymmetricDecryptionKey &key);
 
 }  // namespace asylo
 
