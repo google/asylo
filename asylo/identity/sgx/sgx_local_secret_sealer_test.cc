@@ -44,6 +44,8 @@
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/local_secret_sealer_test_data.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
+#include "asylo/identity/sgx/proto_format.h"
+#include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/test/util/status_matchers.h"
@@ -624,6 +626,155 @@ TEST_F(SgxLocalSecretSealerTest,
       SgxLocalSecretSealer::CreateMrsignerSecretSealer();
   CleansingVector<uint8_t> output_secret;
   EXPECT_THAT(sealer2->Unseal(sealed_secret, &output_secret), Not(IsOk()));
+}
+
+// Verify that a secret cannot be unsealed by an enclave whose identity differs
+// in any of the valid, non-required ATTRIBUTES bits that are considered
+// relevant to the ACL.
+TEST_F(SgxLocalSecretSealerTest, SealUnsealFailureAttributesMismatch) {
+  CleansingVector<uint8_t> input_secret(kTestSecret,
+                                        kTestSecret + kTestSecretSize);
+  std::string input_aad(kTestAad);
+
+  std::unique_ptr<SgxLocalSecretSealer> sealer =
+      SgxLocalSecretSealer::CreateMrsignerSecretSealer();
+  SealedSecretHeader header;
+  PrepareSealedSecretHeader(*sealer, &header);
+
+  SealedSecret sealed_secret;
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
+
+  SgxIdentityExpectation expectation;
+  ASSERT_THAT(
+      sgx::ParseSgxExpectation(header.client_acl().expectation(), &expectation),
+      IsOk());
+  sgx::SecsAttributeSet match_spec_attributes;
+  ASSERT_TRUE(
+      sgx::ConvertSecsAttributeRepresentation(expectation.match_spec()
+                                                  .code_identity_match_spec()
+                                                  .attributes_match_mask(),
+                                              &match_spec_attributes));
+
+  sgx::SecsAttributeSet required_attributes =
+      enclave_->get_required_attributes();
+  sgx::SecsAttributeSet all_valid_attributes = enclave_->get_valid_attributes();
+
+  // The set of ATTRIBUTES bits that can conceivably vary and are expected to
+  // affect whether an enclave can unseal the secret includes the set of
+  // ATTRIBUTES bits that are set in the secret ACL, are considered valid, and
+  // are not required to be set.
+  std::vector<sgx::SecsAttributeBit> can_vary_attributes;
+  ASSERT_TRUE(sgx::ConvertSecsAttributeRepresentation(
+      ((match_spec_attributes & all_valid_attributes) & ~required_attributes),
+      &can_vary_attributes));
+
+  // The actual set of ATTRIBUTES in the sealer's identity.
+  sgx::SecsAttributeSet sealer_attributes;
+  ASSERT_TRUE(sgx::ConvertSecsAttributeRepresentation(
+      expectation.reference_identity().code_identity().attributes(),
+      &sealer_attributes));
+
+  // An enclave whose identity only varies in one of the |can_vary_attributes|
+  // bits should *not* be able to unseal the secret.
+  sgx::FakeEnclave enclave_with_mismatched_attributes(*enclave_);
+  for (sgx::SecsAttributeBit bit : can_vary_attributes) {
+    // Create an set of ATTRIBUTES identical to the sealer's, but with |bit|
+    // flipped.
+    sgx::SecsAttributeSet bit_set;
+    ASYLO_ASSERT_OK_AND_ASSIGN(bit_set, sgx::MakeSecsAttributeSet({bit}));
+    enclave_with_mismatched_attributes.set_attributes(sealer_attributes ^
+                                                      bit_set);
+
+    sgx::FakeEnclave::ExitEnclave();
+    sgx::FakeEnclave::EnterEnclave(enclave_with_mismatched_attributes);
+
+    std::unique_ptr<SgxLocalSecretSealer> sealer2 =
+        SgxLocalSecretSealer::CreateMrsignerSecretSealer();
+
+    CleansingVector<uint8_t> output_secret;
+    EXPECT_THAT(sealer2->Unseal(sealed_secret, &output_secret), Not(IsOk()))
+        << "Sealer Identity: "
+        << sgx::FormatProto(enclave_->GetIdentity().ValueOrDie())
+        << "Unsealer Identity: "
+        << sgx::FormatProto(
+               enclave_with_mismatched_attributes.GetIdentity().ValueOrDie());
+  }
+}
+
+// Verify that a secret can be unsealed by an enclave whose identity differs
+// only in the valid, non-required ATTRIBUTES bits that are not considered
+// relevant to the ACL.
+TEST_F(SgxLocalSecretSealerTest,
+       SealUnsealSuccessMismatchedDoNotCareAttributes) {
+  CleansingVector<uint8_t> input_secret(kTestSecret,
+                                        kTestSecret + kTestSecretSize);
+  std::string input_aad(kTestAad);
+
+  std::unique_ptr<SgxLocalSecretSealer> sealer =
+      SgxLocalSecretSealer::CreateMrsignerSecretSealer();
+  SealedSecretHeader header;
+  PrepareSealedSecretHeader(*sealer, &header);
+
+  SealedSecret sealed_secret;
+  ASSERT_THAT(sealer->Seal(header, input_aad, input_secret, &sealed_secret),
+              IsOk());
+
+  SgxIdentityExpectation expectation;
+  ASSERT_THAT(
+      sgx::ParseSgxExpectation(header.client_acl().expectation(), &expectation),
+      IsOk());
+  sgx::SecsAttributeSet match_spec_attributes;
+  ASSERT_TRUE(
+      sgx::ConvertSecsAttributeRepresentation(expectation.match_spec()
+                                                  .code_identity_match_spec()
+                                                  .attributes_match_mask(),
+                                              &match_spec_attributes));
+
+  sgx::SecsAttributeSet required_attributes =
+      enclave_->get_required_attributes();
+  sgx::SecsAttributeSet all_valid_attributes = enclave_->get_valid_attributes();
+
+  // The set of ATTRIBUTES bits that can conceivably vary and are *not* expected
+  // to affect whether an enclave can unseal the secret includes the set of
+  // ATTRIBUTES bits that are *not* set in the secret ACL, are considered valid,
+  // and are not required to always be set.
+  std::vector<sgx::SecsAttributeBit> can_vary_attributes;
+  ASSERT_TRUE(sgx::ConvertSecsAttributeRepresentation(
+      ((~match_spec_attributes & all_valid_attributes) & ~required_attributes),
+      &can_vary_attributes));
+
+  // The actual set of ATTRIBUTES in the sealer's identity.
+  sgx::SecsAttributeSet sealer_attributes;
+  ASSERT_TRUE(sgx::ConvertSecsAttributeRepresentation(
+      expectation.reference_identity().code_identity().attributes(),
+      &sealer_attributes));
+
+  // An enclave whose identity only varies in one of the |can_vary_attributes|
+  // bits should be able to unseal the secret successfully.
+  sgx::FakeEnclave enclave_with_mismatched_attributes(*enclave_);
+  for (sgx::SecsAttributeBit bit : can_vary_attributes) {
+    // Create an set of ATTRIBUTES identical to the sealer's, but with |bit|
+    // flipped.
+    sgx::SecsAttributeSet bit_set;
+    ASYLO_ASSERT_OK_AND_ASSIGN(bit_set, sgx::MakeSecsAttributeSet({bit}));
+    enclave_with_mismatched_attributes.set_attributes(sealer_attributes ^
+                                                      bit_set);
+
+    sgx::FakeEnclave::ExitEnclave();
+    sgx::FakeEnclave::EnterEnclave(enclave_with_mismatched_attributes);
+
+    std::unique_ptr<SgxLocalSecretSealer> sealer2 =
+        SgxLocalSecretSealer::CreateMrsignerSecretSealer();
+
+    CleansingVector<uint8_t> output_secret;
+    EXPECT_THAT(sealer2->Unseal(sealed_secret, &output_secret), IsOk())
+        << "Sealer Identity: "
+        << sgx::FormatProto(enclave_->GetIdentity().ValueOrDie())
+        << "Unsealer Identity: "
+        << sgx::FormatProto(
+               enclave_with_mismatched_attributes.GetIdentity().ValueOrDie());
+  }
 }
 
 // Verifies that sealed secrets contained in local-secret-sealer-generated

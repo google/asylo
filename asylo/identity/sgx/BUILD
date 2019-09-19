@@ -1545,6 +1545,7 @@ cc_test(
         ":local_secret_sealer_helpers",
         ":local_secret_sealer_test_data_cc_proto",
         ":platform_provisioning_cc_proto",
+        ":proto_format",
         ":sgx_local_secret_sealer",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:byte_container_view",
