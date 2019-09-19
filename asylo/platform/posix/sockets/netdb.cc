@@ -31,16 +31,7 @@ int getaddrinfo(const char *node, const char *service,
   return enc_untrusted_getaddrinfo(node, service, hints, res);
 }
 
-void freeaddrinfo(struct addrinfo *res) {
-  struct addrinfo *prev_info = nullptr;
-  for (struct addrinfo *info = res; info != nullptr; info = info->ai_next) {
-    if (prev_info) free(prev_info);
-    if (info->ai_addr) free(info->ai_addr);
-    if (info->ai_canonname) free(info->ai_canonname);
-    prev_info = info;
-  }
-  if (prev_info) free(prev_info);
-}
+void freeaddrinfo(struct addrinfo *res) { enc_freeaddrinfo(res); }
 
 struct servent *getservbyname(const char *name, const char *proto) {
   abort();

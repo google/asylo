@@ -24,6 +24,7 @@
 // an adversarial implementation.
 
 #include <fcntl.h>
+#include <netdb.h>
 #include <sched.h>
 #include <sys/socket.h>
 
@@ -133,6 +134,9 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
 int enc_untrusted_getaddrinfo(const char *node, const char *service,
                               const struct addrinfo *hints,
                               struct addrinfo **res);
+
+// Calls that are not delegated to the host are defined below.
+void enc_freeaddrinfo(struct addrinfo *res);
 
 #ifdef __cplusplus
 }  // extern "C"

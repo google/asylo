@@ -927,7 +927,7 @@ PrimitiveStatus TestGetAddrInfo(void *context, MessageReader *in,
     out->PushByCopy(Extent{klinux_sock.get(), klinux_sock_len});
   }
 
-  freeaddrinfo(result);
+  enc_freeaddrinfo(result);
   return PrimitiveStatus::OkStatus();
 }
 

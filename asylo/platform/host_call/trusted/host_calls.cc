@@ -80,8 +80,8 @@ bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
 
     if (info->ai_socktype == -1) {
       // Roll back info and linked list constructed until now.
-      freeaddrinfo(info);
-      freeaddrinfo(*out);
+      enc_freeaddrinfo(info);
+      enc_freeaddrinfo(*out);
       return false;
     }
 
@@ -95,8 +95,8 @@ bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
                               reinterpret_cast<sockaddr *>(&sock), &socklen,
                               TrustedPrimitives::BestEffortAbort)) {
         // Roll back info and linked list constructed until now.
-        freeaddrinfo(info);
-        freeaddrinfo(*out);
+        enc_freeaddrinfo(info);
+        enc_freeaddrinfo(*out);
         return false;
       }
       info->ai_addrlen = socklen;
@@ -1137,6 +1137,17 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
     return -1;
   }
   return 0;
+}
+
+void enc_freeaddrinfo(struct addrinfo *res) {
+  struct addrinfo *prev_info = nullptr;
+  for (struct addrinfo *info = res; info != nullptr; info = info->ai_next) {
+    if (prev_info) free(prev_info);
+    if (info->ai_addr) free(info->ai_addr);
+    if (info->ai_canonname) free(info->ai_canonname);
+    prev_info = info;
+  }
+  if (prev_info) free(prev_info);
 }
 
 }  // extern "C"

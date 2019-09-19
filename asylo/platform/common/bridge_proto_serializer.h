@@ -38,13 +38,6 @@ namespace asylo {
 
 constexpr int kIn6AddrNumBytes = 16;
 
-bool SerializeAddrinfo(const struct addrinfo *in, std::string *out,
-                       int *bridge_error_code);
-
-bool DeserializeAddrinfo(const std::string *in, struct addrinfo **out);
-
-void FreeDeserializedAddrinfo(struct addrinfo *in);
-
 bool SerializeIfAddrs(const struct ifaddrs *in, char **out, size_t *len);
 
 bool DeserializeIfAddrs(absl::string_view in, struct ifaddrs **out);
