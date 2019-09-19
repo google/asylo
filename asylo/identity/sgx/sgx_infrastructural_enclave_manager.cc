@@ -24,7 +24,6 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
@@ -152,13 +151,7 @@ SgxInfrastructuralEnclaveManager::AgeGetSgxIdentity() {
       output.GetExtension(sgx::remote_assertion_generator_enclave_output)
           .get_enclave_identity_output();
 
-  SgxIdentity sgx_identity;
-  *sgx_identity.mutable_code_identity() =
-      get_enclave_identity_output.code_identity();
-  *sgx_identity.mutable_machine_configuration()->mutable_cpu_svn() =
-      get_enclave_identity_output.cpu_svn();
-
-  return sgx_identity;
+  return get_enclave_identity_output.sgx_identity();
 }
 
 Status SgxInfrastructuralEnclaveManager::PceGetTargetInfo(

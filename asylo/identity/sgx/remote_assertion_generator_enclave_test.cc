@@ -36,7 +36,6 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
@@ -801,11 +800,7 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GetEnclaveIdentitySuccess) {
   const GetEnclaveIdentityOutput &output =
       enclave_output.GetExtension(remote_assertion_generator_enclave_output)
           .get_enclave_identity_output();
-
-  // Since the code identity are unique to enclave itself, and CPUSVN is a
-  // machine specific value, only the existence of those values is tested here.
-  ASYLO_ASSERT_OK(ValidateCpuSvn(output.cpu_svn()));
-  EXPECT_TRUE(IsValidCodeIdentity(output.code_identity()));
+  EXPECT_TRUE(IsValidSgxIdentity(output.sgx_identity()));
 }
 
 

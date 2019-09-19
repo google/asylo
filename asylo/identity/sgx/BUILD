@@ -217,9 +217,9 @@ proto_library(
     srcs = ["remote_assertion_generator_enclave.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":code_identity_proto",
         ":platform_provisioning_proto",
         ":remote_assertion_proto",
+        ":sgx_identity_proto",
         "//asylo:enclave_proto",
         "//asylo/crypto:certificate_proto",
         "//asylo/crypto:keys_proto",

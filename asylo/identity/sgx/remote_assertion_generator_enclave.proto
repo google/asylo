@@ -22,8 +22,8 @@ import "asylo/crypto/certificate.proto";
 import "asylo/crypto/keys.proto";
 import "asylo/enclave.proto";
 import "asylo/identity/sealed_secret.proto";
-import "asylo/identity/sgx/code_identity.proto";
 import "asylo/identity/sgx/platform_provisioning.proto";
+import "asylo/identity/sgx/sgx_identity.proto";
 
 extend EnclaveConfig {
   optional RemoteAssertionGeneratorEnclaveConfig
@@ -152,12 +152,11 @@ message RemoteAssertionGeneratorEnclaveSecretAad {
   repeated CertificateChain certificate_chains = 1;
 }
 
-// An input message that is used to retrieve the code identity of the
-// RemoteAssertionGenerator enclave and the CPUSVN of the machine on which it is
-// running
+// An input message that is used to retrieve the SGX identity of the
+// RemoteAssertionGenerator enclave.
 message GetEnclaveIdentityInput {}
 
-// An output message that contains the CPUSVN and the code identity of the
+// An output message that contains the SGX identity of the
 // RemoteAssertionGenerator enclave.
 //
 // Note that the output is not authenticated and cannot be verified by the
@@ -165,10 +164,7 @@ message GetEnclaveIdentityInput {}
 // decisions.
 message GetEnclaveIdentityOutput {
   // Required.
-  optional CodeIdentity code_identity = 1;
-
-  // Required.
-  optional CpuSvn cpu_svn = 2;
+  optional SgxIdentity sgx_identity = 1;
 }
 
 // An input message of the RemoteAssertionGenerator enclave.

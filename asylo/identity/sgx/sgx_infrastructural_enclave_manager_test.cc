@@ -338,9 +338,8 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentitySuccess) {
       expected_enclave_output
           .MutableExtension(sgx::remote_assertion_generator_enclave_output)
           ->mutable_get_enclave_identity_output();
-  *expected_get_enclave_identity_output->mutable_cpu_svn() = CpuSvn();
-  *expected_get_enclave_identity_output->mutable_code_identity() =
-      sgx::GetRandomValidCodeIdentity();
+  *expected_get_enclave_identity_output->mutable_sgx_identity() =
+      sgx::GetRandomValidSgxIdentity();
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(DoAll(SetArgPointee<1>(expected_enclave_output),
                       Return(Status::OkStatus())));
@@ -348,11 +347,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentitySuccess) {
   SgxIdentity sgx_identity;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       sgx_identity, sgx_infrastructural_enclave_manager_->AgeGetSgxIdentity());
-  EXPECT_THAT(sgx_identity.machine_configuration().cpu_svn(),
-              EqualsProto(expected_get_enclave_identity_output->cpu_svn()));
   EXPECT_THAT(
-      sgx_identity.code_identity(),
-      EqualsProto(expected_get_enclave_identity_output->code_identity()));
+      sgx_identity,
+      EqualsProto(expected_get_enclave_identity_output->sgx_identity()));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentityFails) {

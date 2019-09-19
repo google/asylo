@@ -36,16 +36,6 @@
 
 namespace asylo {
 namespace sgx {
-namespace {
-
-void SetEnclaveIdentity(GetEnclaveIdentityOutput *output) {
-  const SelfIdentity *self_identity = GetSelfIdentity();
-  output->mutable_cpu_svn()->set_value(self_identity->cpusvn.data(),
-                                       self_identity->cpusvn.size());
-  SetSelfCodeIdentity(output->mutable_code_identity());
-}
-
-}  // namespace
 
 RemoteAssertionGeneratorEnclave::RemoteAssertionGeneratorEnclave()
     : attestation_key_certs_pair_(AttestationKeyCertsPair()),
@@ -97,7 +87,8 @@ Status RemoteAssertionGeneratorEnclave::Run(const EnclaveInput &input,
       return UpdateCerts(enclave_input.update_certs_input(),
                          enclave_output->mutable_update_certs_output());
     case RemoteAssertionGeneratorEnclaveInput::kGetEnclaveIdentityInput:
-      SetEnclaveIdentity(enclave_output->mutable_get_enclave_identity_output());
+      SetSelfSgxIdentity(enclave_output->mutable_get_enclave_identity_output()
+                             ->mutable_sgx_identity());
       return Status::OkStatus();
     default:
       return Status(error::GoogleError::INVALID_ARGUMENT,
