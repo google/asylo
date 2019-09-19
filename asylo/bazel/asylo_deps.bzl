@@ -138,7 +138,7 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "re2-2019-09-01",
         )
 
-    # Required for Absl, Googletest.
+    # Required for Absl, Googletest, Protobuf.
     if not native.existing_rule("rules_cc"):
         http_archive(
             name = "rules_cc",
@@ -146,6 +146,16 @@ def asylo_deps(toolchain_path = None):
             urls = ["https://github.com/bazelbuild/rules_cc/archive/cb2dfba6746bfa3c3705185981f3109f0ae1b893.tar.gz"],
             sha256 = "13ec82e03a878f429a12b618c78412053b559d25351375cbf1bf91c883717b5b",
             strip_prefix = "rules_cc-cb2dfba6746bfa3c3705185981f3109f0ae1b893",
+        )
+
+    # Required for Protobuf
+    if not native.existing_rule("rules_java"):
+        http_archive(
+            name = "rules_java",
+            # Commit from 2019 September 13
+            urls = ["https://github.com/bazelbuild/rules_java/archive/a09ecf2e6f9d4fc0930d8d1440c69cba9f96a1a0.tar.gz"],
+            sha256 = "2ef1b8cf3b518e4cf89deef03d6b48a9e50094731b49b9e8a4fac49e97a2225f",
+            strip_prefix = "rules_java-a09ecf2e6f9d4fc0930d8d1440c69cba9f96a1a0",
         )
 
     # Required for Protobuf.
