@@ -10,6 +10,7 @@ The public key may be extracted with the following command:
 
     openssl rsa -in enclave_test_private.pem -pubout > enclave_test_key.pub
 --
+diff -Nur /dev/null enclave_test_private.pem
 --- /dev/null
 +++ enclave_test_private.pem
 @@ -0,0 +1,39 @@
@@ -52,6 +53,7 @@ The public key may be extracted with the following command:
 +WxlpXKEkaFt3gLd92m/dMqBrHfafH7VwOJY2zT3WIpjwuk0ZzmRg5p0pG/svVQEH
 +NZmwRwlopysbR69B/n1nefJ84UO50fLh5s5Zr3gBRwbWNZyzhXk=
 +-----END RSA PRIVATE KEY-----
+diff -Nur /dev/null enclave_test_key.pub
 --- /dev/null
 +++ enclave_test_key.pub
 @@ -0,0 +1,11 @@

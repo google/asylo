@@ -6,6 +6,8 @@
 ## Modifications to v1.2
   * Moved PCE constants out of sgx_pce.h to sgx_pce_constants.h
   * Added include user_types.h in sgx_ql_ecdsa_quote.h
+  * Added sgx_qe_set_enclave_dirpath to set the directory paths for both the
+    PCE and QE.
 --
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
 --- QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
@@ -571,6 +573,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          {
                  ret_val = SGX_QL_ERROR_UNEXPECTED;
          }
+diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
 @@ -0,0 +1,270 @@

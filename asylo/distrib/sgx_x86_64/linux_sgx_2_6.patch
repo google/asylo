@@ -3059,6 +3059,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  int * get_errno_addr(void);
  bool is_stack_addr(void *address, size_t size);
  bool is_valid_sp(uintptr_t sp);
+diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
 @@ -0,0 +1,1351 @@
@@ -4413,6 +4414,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    srcs = ["sgx_sdk.bzl"],
 +    visibility = ["//visibility:public"],
 +)
+diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
 @@ -0,0 +1,650 @@
@@ -5066,6 +5068,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    unsigned_enclave = sgx_unsigned_enclave,
 +    signed_enclave = sgx_signed_enclave,
 +)
+diff -Nur /dev/null enclave_sim.lds
 --- /dev/null
 +++ enclave_sim.lds
 @@ -0,0 +1,9 @@
@@ -5078,6 +5081,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +    local:
 +        *;
 +};
+diff -Nur /dev/null runtime_support/rts_config.h
 --- /dev/null
 +++ runtime_support/rts_config.h
 @@ -0,0 +1,23 @@
@@ -5104,6 +5108,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#endif
 +
 +#endif  // _RUNTIME_SUPPORT_RTS_CONFIG_H_
+diff -Nur /dev/null runtime_support/sgx_init_string_lib.c
 --- /dev/null
 +++ runtime_support/sgx_init_string_lib.c
 @@ -0,0 +1,8 @@
@@ -5115,6 +5120,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +int sgx_init_string_lib(uint64_t cpu_feature_indicator) {
 +  return 0;
 +}
+diff -Nur /dev/null runtime_support/sgx_init_crypto_lib.c
 --- /dev/null
 +++ runtime_support/sgx_init_crypto_lib.c
 @@ -0,0 +1,10 @@
@@ -5128,6 +5134,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +  return SGX_SUCCESS;
 +}
 +
+diff -Nur /dev/null include/global_data.h
 --- /dev/null
 +++ include/global_data.h
 @@ -0,0 +1,6 @@
@@ -5137,6 +5144,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/internal/global_data.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_GLOBAL_DATA_H_
+diff -Nur /dev/null include/se_memcpy.h
 --- /dev/null
 +++ include/se_memcpy.h
 @@ -0,0 +1,6 @@
@@ -5146,6 +5154,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/internal/se_memcpy.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SE_MEMCPY_H_
+diff -Nur /dev/null include/sgx.h
 --- /dev/null
 +++ include/sgx.h
 @@ -0,0 +1,6 @@
@@ -5155,6 +5164,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_H_
+diff -Nur /dev/null include/sgx_cpuid.h
 --- /dev/null
 +++ include/sgx_cpuid.h
 @@ -0,0 +1,6 @@
@@ -5164,6 +5174,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_cpuid.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_INCLUDE_SGX_CPUID_H_
+diff -Nur /dev/null include/sgx_edger8r.h
 --- /dev/null
 +++ include/sgx_edger8r.h
 @@ -0,0 +1,6 @@
@@ -5173,6 +5184,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_edger8r.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_EDGER8R_H_
+diff -Nur /dev/null include/sgx_eid.h
 --- /dev/null
 +++ include/sgx_eid.h
 @@ -0,0 +1,6 @@
@@ -5182,6 +5194,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_eid.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_EID_H_
+diff -Nur /dev/null include/sgx_error.h
 --- /dev/null
 +++ include/sgx_error.h
 @@ -0,0 +1,6 @@
@@ -5191,6 +5204,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_error.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_ERROR_H_
+diff -Nur /dev/null include/sgx_key.h
 --- /dev/null
 +++ include/sgx_key.h
 @@ -0,0 +1,6 @@
@@ -5200,6 +5214,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_key.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_KEY_H_
+diff -Nur /dev/null include/sgx_lfence.h
 --- /dev/null
 +++ include/sgx_lfence.h
 @@ -0,0 +1,6 @@
@@ -5209,6 +5224,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_lfence.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_LFENCE_H_
+diff -Nur /dev/null include/sgx_quote.h
 --- /dev/null
 +++ include/sgx_quote.h
 @@ -0,0 +1,6 @@
@@ -5218,6 +5234,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_quote.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_QUOTE_H_
+diff -Nur /dev/null include/sgx_report.h
 --- /dev/null
 +++ include/sgx_report.h
 @@ -0,0 +1,6 @@
@@ -5227,6 +5244,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_report.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_REPORT_H_
+diff -Nur /dev/null include/sgx_thread.h
 --- /dev/null
 +++ include/sgx_thread.h
 @@ -0,0 +1,6 @@
@@ -5236,6 +5254,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_thread.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_THREAD_H_
+diff -Nur /dev/null include/sgx_trts.h
 --- /dev/null
 +++ include/sgx_trts.h
 @@ -0,0 +1,6 @@
@@ -5245,6 +5264,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_trts.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_TRTS_H_
+diff -Nur /dev/null include/sgx_trts_exception.h
 --- /dev/null
 +++ include/sgx_trts_exception.h
 @@ -0,0 +1,6 @@
@@ -5254,6 +5274,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_trts_exception.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_TRTS_EXCEPTION_H_
+diff -Nur /dev/null include/sgx_tseal.h
 --- /dev/null
 +++ include/sgx_tseal.h
 @@ -0,0 +1,6 @@
@@ -5263,6 +5284,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_tseal.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_TSEAL_H_
+diff -Nur /dev/null include/sgx_uae_service.h
 --- /dev/null
 +++ include/sgx_uae_service.h
 @@ -0,0 +1,6 @@
@@ -5272,6 +5294,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_uae_service.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_UAE_SERVICE_H_
+diff -Nur /dev/null include/sgx_urts.h
 --- /dev/null
 +++ include/sgx_urts.h
 @@ -0,0 +1,6 @@
@@ -5281,6 +5304,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 +#include "common/inc/sgx_urts.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_URTS_H_
+diff -Nur /dev/null external/rdrand/src/config.h
 --- /dev/null
 +++ external/rdrand/src/config.h
 @@ -0,0 +1,53 @@
