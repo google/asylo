@@ -98,8 +98,8 @@ void ClearSecsAttributeSet(SecsAttributeSet *attributes);
 SecsAttributeSet operator|(const SecsAttributeSet &lhs,
                            const SecsAttributeSet &rhs);
 
-// Computes bitwise OR of two SecsAttributeSet values, and overwrites the lhs
-// with the result.
+// Computes bitwise OR of two SecsAttributeSet values, and overwrites |lhs| with
+// the result.
 SecsAttributeSet &operator|=(SecsAttributeSet &lhs,
                              const SecsAttributeSet &rhs);
 
@@ -107,9 +107,18 @@ SecsAttributeSet &operator|=(SecsAttributeSet &lhs,
 SecsAttributeSet operator&(const SecsAttributeSet &lhs,
                            const SecsAttributeSet &rhs);
 
-// Computes bitwise AND of two SecsAttributeSet values, and overwrites the lhs
+// Computes bitwise AND of two SecsAttributeSet values, and overwrites |lhs|
 // with the result.
 SecsAttributeSet &operator&=(SecsAttributeSet &lhs,
+                             const SecsAttributeSet &rhs);
+
+// Computes bitwise XOR of two SecsAttributeSet values.
+SecsAttributeSet operator^(const SecsAttributeSet &lhs,
+                           const SecsAttributeSet &rhs);
+
+// Computes bitwise XOR of two SecsAttributeSet values, and overwrites |lhs|
+// with the result.
+SecsAttributeSet &operator^=(SecsAttributeSet &lhs,
                              const SecsAttributeSet &rhs);
 
 // Computes bitwise negation of an SecsAttributeSet value.

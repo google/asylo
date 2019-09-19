@@ -124,7 +124,7 @@ TEST_F(SecsAttributesTest, Inequality) {
   }
 }
 
-// Verify the correctness of bit-wise OR operator.
+// Verify the correctness of the bitwise OR operator.
 TEST_F(SecsAttributesTest, BitwiseOr) {
   SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>();
 
@@ -149,7 +149,7 @@ TEST_F(SecsAttributesTest, BitwiseOr) {
   EXPECT_EQ(result.xfrm, all_attributes_.xfrm);
 }
 
-// Verify the correctness of bit-wise OR-assign operator.
+// Verify the correctness of the bitwise OR-assign operator.
 TEST_F(SecsAttributesTest, BitwiseOrAssign) {
   SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>();
 
@@ -175,7 +175,7 @@ TEST_F(SecsAttributesTest, BitwiseOrAssign) {
   EXPECT_EQ(result.xfrm, all_attributes_.xfrm);
 }
 
-// Verify the correctness of bit-wise AND operator.
+// Verify the correctness of the bitwise AND operator.
 TEST_F(SecsAttributesTest, BitwiseAnd) {
   // Verify that ANDing a single-bit attribute set with an attribute set that
   // has all the attributes lit yields correct result.
@@ -194,7 +194,7 @@ TEST_F(SecsAttributesTest, BitwiseAnd) {
   }
 }
 
-// Verify the correctness of bit-wise AND-assign operator.
+// Verify the correctness of the bitwise AND-assign operator.
 TEST_F(SecsAttributesTest, BitwiseAndAssign) {
   // Verify that ANDing a single-bit attribute set with an attribute set that
   // has all the attributes lit yields correct result.
@@ -215,7 +215,44 @@ TEST_F(SecsAttributesTest, BitwiseAndAssign) {
   }
 }
 
-// Verify the correctness of bit-wise negation operator.
+// Verify the correctness of the bitwise XOR operator.
+TEST_F(SecsAttributesTest, BitwiseXor) {
+  // Verify that XORing a set with itself results in all zeroes.
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    SecsAttributeSet result = set ^ set;
+    EXPECT_EQ(result.flags, 0);
+    EXPECT_EQ(result.xfrm, 0);
+  }
+
+  // Verify that XORing a set with all zeroes results in the same set.
+  SecsAttributeSet all_zeroes = TrivialZeroObject<SecsAttributeSet>();
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    SecsAttributeSet result = all_zeroes ^ set;
+    EXPECT_EQ(result.flags, set.flags);
+    EXPECT_EQ(result.xfrm, set.xfrm);
+  }
+}
+
+// Verify the correctness of the bitwise XOR-assign operator.
+TEST_F(SecsAttributesTest, BitwiseXorAssign) {
+  // Verify that XORing a set with itself results in all zeroes.
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    SecsAttributeSet result = set;
+    result ^= set;
+    EXPECT_EQ(result.flags, 0);
+    EXPECT_EQ(result.xfrm, 0);
+  }
+
+  // Verify that XORing a set with all zeroes results in the same set.
+  for (const SecsAttributeSet &set : attribute_sets_) {
+    SecsAttributeSet result = TrivialZeroObject<SecsAttributeSet>();
+    result ^= set;
+    EXPECT_EQ(result.flags, set.flags);
+    EXPECT_EQ(result.xfrm, set.xfrm);
+  }
+}
+
+// Verify the correctness of the bitwise negation operator.
 TEST_F(SecsAttributesTest, BitwiseNegation) {
   SecsAttributeSet zeros = TrivialZeroObject<SecsAttributeSet>();
   SecsAttributeSet ones = TrivialOnesObject<SecsAttributeSet>();

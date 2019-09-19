@@ -178,6 +178,23 @@ SecsAttributeSet &operator&=(SecsAttributeSet &lhs,
   return lhs;
 }
 
+SecsAttributeSet operator^(const SecsAttributeSet &lhs,
+                           const SecsAttributeSet &rhs) {
+  SecsAttributeSet result;
+  result.flags = lhs.flags ^ rhs.flags;
+  result.xfrm = lhs.xfrm ^ rhs.xfrm;
+
+  return result;
+}
+
+SecsAttributeSet &operator^=(SecsAttributeSet &lhs,
+                             const SecsAttributeSet &rhs) {
+  lhs.flags ^= rhs.flags;
+  lhs.xfrm ^= rhs.xfrm;
+
+  return lhs;
+}
+
 SecsAttributeSet operator~(const SecsAttributeSet &value) {
   SecsAttributeSet tmp;
   tmp.flags = ~value.flags;
