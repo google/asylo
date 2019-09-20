@@ -123,7 +123,6 @@ sgx.unsigned_enclave(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
-        "//asylo/platform/primitives/examples:entry_points",
         "//asylo/platform/primitives/sgx:trusted_sgx",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/storage/secure:trusted_secure",

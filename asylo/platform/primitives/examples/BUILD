@@ -96,13 +96,6 @@ sim_enclave_test(
     ],
 )
 
-cc_library(
-    name = "entry_points",
-    srcs = ["entry_points.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    alwayslink = 1,
-)
-
 sgx.unsigned_enclave(
     name = "hello_sgx_enclave_unsigned.so",
     srcs = [
@@ -111,7 +104,6 @@ sgx.unsigned_enclave(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":entry_points",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
         "//asylo/platform/posix:trusted_posix",
         "//asylo/platform/primitives",
