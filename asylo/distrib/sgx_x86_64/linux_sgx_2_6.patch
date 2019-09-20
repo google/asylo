@@ -3062,7 +3062,7 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1351 @@
+@@ -0,0 +1,1336 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -3098,6 +3098,7 @@ diff -Nur /dev/null BUILD
 +    "License.txt",
 +    "enclave_sim.lds",
 +    "enclave_test_private.pem",
++    "sgx_sdk.bzl",
 +])
 +
 +config_setting(
@@ -4396,22 +4397,6 @@ diff -Nur /dev/null BUILD
 +    values = {
 +        "define": "SGX_SIM=1",
 +    },
-+    visibility = ["//visibility:public"],
-+)
-+
-+load("@io_bazel_skydoc//stardoc:stardoc.bzl", "stardoc")
-+load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
-+
-+stardoc(
-+    name = "sgx_sdk_bzl-docs",
-+    out = "sgx_sdk_bzl.md",
-+    input = "sgx_sdk.bzl",
-+    deps = ["@com_google_asylo_backend_provider//:enclave_info_bzl"],
-+)
-+
-+bzl_library(
-+    name = "sgx_sdk_bzl",
-+    srcs = ["sgx_sdk.bzl"],
 +    visibility = ["//visibility:public"],
 +)
 diff -Nur /dev/null sgx_sdk.bzl
