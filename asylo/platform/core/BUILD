@@ -80,6 +80,19 @@ cc_library(
     ],
 )
 
+# Status serializer.
+cc_library(
+    name = "status_serializer",
+    hdrs = [
+        "status_serializer.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/util:status",
+    ],
+)
+
 # Trusted global state.
 cc_library(
     name = "trusted_global_state",
@@ -131,6 +144,7 @@ cc_library(
         ":entry_points",
         ":entry_selectors",
         ":shared_name",
+        ":status_serializer",
         ":trusted_core",
         "//asylo:enclave_cc_proto",
         "//asylo/identity:init",
