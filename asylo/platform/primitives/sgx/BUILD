@@ -181,11 +181,14 @@ cc_proto_library(
 # Fork related runtime.
 cc_library(
     name = "trusted_fork",
-    srcs = select({
+    srcs = ["fork.cc"] + select({
         "@linux_sgx//:sgx_hw": ["fork_sgx_hw.cc"],
         "//conditions:default": ["fork_sgx_sim.cc"],
     }),
-    hdrs = ["fork.h"],
+    hdrs = [
+        "fork.h",
+        "fork_internal.h",
+    ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = [
@@ -197,6 +200,8 @@ cc_library(
         ":trusted_sgx",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/core:status_serializer",
+        "//asylo/platform/core:trusted_core",
         "//asylo/platform/host_call",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",

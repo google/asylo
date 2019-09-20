@@ -25,7 +25,6 @@
 
 #include "asylo/enclave.pb.h"
 #include "asylo/platform/core/entry_points.h"
-#include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -150,14 +149,6 @@ class TrustedApplication {
   friend int __asylo_user_fini(const char *input, size_t input_len,
                                char **output, size_t *output_len);
   friend int __asylo_handle_signal(const char *input, size_t input_len);
-  friend int __asylo_take_snapshot(char **output, size_t *output_len);
-  friend int __asylo_restore(const char *snapshot_layout,
-                             size_t snapshot_layout_len, char **output,
-                             size_t *output_len);
-  friend int __asylo_transfer_secure_snapshot_key(const char *input,
-                                                  size_t input_len,
-                                                  char **output,
-                                                  size_t *output_len);
 };
 
 /// User-supplied factory function for making a trusted application instance.

@@ -29,8 +29,8 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_types.h"
-#include "asylo/platform/core/entry_points.h"
 #include "asylo/platform/primitives/primitives.h"
+#include "asylo/platform/primitives/sgx/fork.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
@@ -48,7 +48,7 @@ int ecall_take_snapshot(char **output, bridge_size_t *output_len) {
   size_t tmp_output_len;
   try {
     result =
-        asylo::__asylo_take_snapshot(output, &tmp_output_len);
+        asylo::TakeSnapshot(output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
@@ -66,8 +66,8 @@ int ecall_restore(const char *input, bridge_size_t input_len, char **output,
   int result = 0;
   size_t tmp_output_len;
   try {
-    result = asylo::__asylo_restore(input, static_cast<size_t>(input_len),
-                                    output, &tmp_output_len);
+    result = asylo::Restore(input, static_cast<size_t>(input_len),
+                                        output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
@@ -86,7 +86,7 @@ int ecall_transfer_secure_snapshot_key(const char *input,
   int result = 0;
   bridge_size_t bridge_output_len;
   try {
-    result = asylo::__asylo_transfer_secure_snapshot_key(
+    result = asylo::TransferSecureSnapshotKey(
         input, static_cast<size_t>(input_len), output, &bridge_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";

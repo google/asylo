@@ -67,25 +67,6 @@ int __asylo_user_fini(const char *final_input, size_t len, char **output,
 // The input type is asylo::EnclaveSignal.
 int __asylo_handle_signal(const char *input, size_t input_len);
 
-// Enclave snapshotting routine.
-//
-// The output type is asylo::EnclaveOutput.
-int __asylo_take_snapshot(char **output, size_t *output_len);
-
-// Enclave restoring routine.
-//
-// The input type is asylo::SnapshotLayout.
-// The output type is asylo::StatusProto.
-int __asylo_restore(const char *snapshot_layout, size_t snapshot_layout_len,
-                    char **output, size_t *output_len);
-
-// Enclave secure snapshot key transfer routine.
-//
-// The input type is asylo::ForkHandshakeConfig.
-// The output type is asylo::StatusProto.
-int __asylo_transfer_secure_snapshot_key(const char *input, size_t input_len,
-                                         char **output, size_t *output_len);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif

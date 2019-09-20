@@ -198,6 +198,7 @@ cc_library(
         "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/platform/primitives/sgx:trusted_fork",
         "//asylo/platform/primitives/sgx:trusted_sgx",
         "//asylo/util:logging",
         "//asylo/util:status",

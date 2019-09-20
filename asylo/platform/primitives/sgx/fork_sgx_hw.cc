@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/primitives/sgx/fork.h"
+#include "asylo/platform/primitives/sgx/fork_internal.h"
 
 #include <openssl/rand.h>
 #include <sys/socket.h>

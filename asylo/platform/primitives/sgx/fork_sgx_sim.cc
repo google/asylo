@@ -16,11 +16,12 @@
  *
  */
 
-#include "asylo/platform/primitives/sgx/fork.h"
+#include "asylo/platform/primitives/sgx/fork_internal.h"
 
 #include <stdlib.h>
 
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
