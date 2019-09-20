@@ -19,9 +19,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/code_identity.pb.h"
+#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
+#include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
@@ -142,18 +144,18 @@ TEST_P(SgxLocalAssertionAuthorityTest, VerifyAssertionSameEnclave) {
   EnclaveIdentity identity;
   ASSERT_THAT(verifier.Verify(kUserData, assertion, &identity), IsOk());
 
-  sgx::CodeIdentity code_identity;
-  ASSERT_TRUE(code_identity.ParseFromString(identity.identity()));
+  SgxIdentity sgx_identity;
+  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &sgx_identity));
 
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(generator_enclave_);
 
-  // Verify that the extracted code identity matches the generator's identity.
-  EXPECT_THAT(code_identity,
-              EqualsProto(sgx::GetSelfIdentity()->sgx_identity.code_identity()))
+  // Verify that the extracted SGX identity matches the generator's identity.
+  EXPECT_THAT(sgx_identity, EqualsProto(sgx::GetSelfIdentity()->sgx_identity))
       << "Extracted identity:\n"
-      << code_identity.DebugString() << "\nExpected identity:\n"
-      << sgx::GetSelfIdentity()->sgx_identity.code_identity().DebugString();
+      << sgx::FormatProto(sgx_identity)
+      << "\nExpected identity:\n"
+      << sgx::FormatProto(sgx::GetSelfIdentity()->sgx_identity);
 }
 
 }  // namespace

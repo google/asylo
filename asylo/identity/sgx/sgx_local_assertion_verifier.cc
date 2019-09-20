@@ -181,18 +181,12 @@ Status SgxLocalAssertionVerifier::Verify(const std::string &user_data,
                   "Assertion is not bound to the provided user-data");
   }
 
-  // Serialize the protobuf representation of the peer's SGX code identity and
-  // save it in |peer_identity|.
-  sgx::CodeIdentity code_identity;
+  // Serialize the protobuf representation of the peer's SGX identity and save
+  // it in |peer_identity|.
+  SgxIdentity sgx_identity;
   ASYLO_RETURN_IF_ERROR(
-      sgx::ParseIdentityFromHardwareReport(report, &code_identity));
-
-  if (!code_identity.SerializeToString(peer_identity->mutable_identity())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to serialize CodeIdentity");
-  }
-
-  SetSgxIdentityDescription(peer_identity->mutable_description());
+      sgx::ParseIdentityFromHardwareReport(report, &sgx_identity));
+  ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(sgx_identity, peer_identity));
 
   return Status::OkStatus();
 }

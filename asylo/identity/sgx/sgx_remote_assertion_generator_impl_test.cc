@@ -201,8 +201,7 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
     }
     RemoteAssertionPayload payload;
     EXPECT_TRUE(payload.ParseFromString(assertion.payload()));
-    EXPECT_THAT(payload.identity().code_identity(),
-                EqualsProto(self_identity_->sgx_identity.code_identity()));
+    EXPECT_THAT(payload.identity(), EqualsProto(self_identity_->sgx_identity));
     EXPECT_EQ(payload.user_data(), kUserData);
     EXPECT_EQ(payload.signature_scheme(), signature_scheme_);
 

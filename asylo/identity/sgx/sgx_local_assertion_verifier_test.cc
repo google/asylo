@@ -35,7 +35,9 @@
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_assertion.pb.h"
+#include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -347,7 +349,7 @@ TEST_F(SgxLocalAssertionVerifierTest,
 }
 
 // Verify that Verify() succeeds when given a valid Assertion, and correctly
-// extracts the enclave's CodeIdentity.
+// extracts the enclave's SgxIdentity.
 TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   SgxLocalAssertionVerifier verifier;
   ASYLO_ASSERT_OK(verifier.Initialize(config_));
@@ -381,15 +383,15 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
   EXPECT_EQ(description.authority_type(), sgx::kSgxAuthorizationAuthority);
 
-  sgx::CodeIdentity code_identity;
-  ASSERT_TRUE(code_identity.ParseFromString(identity.identity()));
+  SgxIdentity sgx_identity;
+  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &sgx_identity));
 
-  sgx::CodeIdentity expected_identity =
-      sgx::GetSelfIdentity()->sgx_identity.code_identity();
-  EXPECT_THAT(code_identity, EqualsProto(expected_identity))
+  // Verify that the extracted SGX identity matches the generator's identity.
+  EXPECT_THAT(sgx_identity, EqualsProto(sgx::GetSelfIdentity()->sgx_identity))
       << "Extracted identity:\n"
-      << code_identity.DebugString() << "\nExpected identity:\n"
-      << expected_identity.DebugString();
+      << sgx::FormatProto(sgx_identity)
+      << "\nExpected identity:\n"
+      << sgx::FormatProto(sgx::GetSelfIdentity()->sgx_identity);
 }
 
 }  // namespace
