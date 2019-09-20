@@ -751,21 +751,31 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
 // binary and in the same virtual address space as the parent enclave.
 // Consequently, the identities of the two enclaves should be exactly the same.
 Status ComparePeerAndSelfIdentity(const EnclaveIdentity &peer_identity) {
-  sgx::CodeIdentityExpectation code_identity_expectation;
-  sgx::SetStrictSelfCodeIdentityExpectation(&code_identity_expectation);
+  // Since we do not require matches on the SgxMachineConfiguration parts of the
+  // identity, use the default SgxIdentityExpectation and enforce strictness on
+  // the CodeIdentityMatchSpec component of the expectation manually.
+  SgxIdentityExpectation sgx_identity_expectation;
+  sgx::SetDefaultSelfSgxIdentityExpectation(&sgx_identity_expectation);
+  sgx::SetStrictMatchSpec(sgx_identity_expectation.mutable_match_spec()
+                          ->mutable_code_identity_match_spec());
+
+  // We should require a CPUSVN match, because when using local attestation,
+  // both enclaves are required to be running on the same hardware.
+  sgx_identity_expectation.mutable_match_spec()
+      ->mutable_machine_configuration_match_spec()
+      ->set_is_cpu_svn_match_required(true);
+
   EnclaveIdentityExpectation enclave_identity_expectation;
   ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxExpectation(
-      code_identity_expectation, &enclave_identity_expectation));
+      sgx_identity_expectation, &enclave_identity_expectation));
   IdentityAclPredicate predicate;
   *predicate.mutable_expectation() = enclave_identity_expectation;
   SgxIdentityExpectationMatcher sgx_matcher;
 
-  auto acl_result =
-      EvaluateIdentityAcl({peer_identity}, predicate, sgx_matcher);
-  if (!acl_result.ok()) {
-    return acl_result.status();
-  }
-  if (!acl_result.ValueOrDie()) {
+  bool acl_result;
+  ASYLO_ASSIGN_OR_RETURN(
+      acl_result, EvaluateIdentityAcl({peer_identity}, predicate, sgx_matcher));
+  if (!acl_result) {
     return Status(
         error::GoogleError::INTERNAL,
         "The identity of the peer enclave does not match expectation");
