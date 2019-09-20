@@ -400,7 +400,9 @@ Status SgxEnclaveClient::DeliverSignalInternal(MessageWriter *input,
       input->Serialize(const_cast<void *>(params.input));
     }
   }
+
   const ocall_table_t *table = &ocall_table_bridge;
+  ScopedCurrentClient scoped_client(this);
   sgx_status_t status =
       sgx_ecall(id_, /*index=*/1, table, &ms, /*is_utility=*/false);
 
@@ -431,6 +433,7 @@ Status SgxEnclaveClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {
   char *output_buf = nullptr;
   size_t output_len = 0;
 
+  ScopedCurrentClient scoped_client(this);
   ASYLO_RETURN_IF_ERROR(TakeSnapshot(id_, &output_buf, &output_len));
 
   // Enclave entry-point was successfully invoked. |output_buf| is guaranteed to
@@ -465,6 +468,7 @@ Status SgxEnclaveClient::EnterAndRestore(
   char *output = nullptr;
   size_t output_len = 0;
 
+  ScopedCurrentClient scoped_client(this);
   ASYLO_RETURN_IF_ERROR(
       Restore(id_, buf.data(), buf.size(), &output, &output_len));
 
@@ -493,6 +497,7 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
   char *output = nullptr;
   size_t output_len = 0;
 
+  ScopedCurrentClient scoped_client(this);
   ASYLO_RETURN_IF_ERROR(TransferSecureSnapshotKey(id_, buf.data(), buf.size(),
                                                   &output, &output_len));
 
