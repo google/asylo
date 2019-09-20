@@ -21,10 +21,13 @@
 
 // Defines the C language interface to the untrusted host environment. These
 // functions invoke code outside the enclave and secure applications must assume
-// an adversarial implementation.
+// an adversarial implementation. Some functions like enc_freeaddrinfo() do not
+// exit the enclave but should be used in conjunction with addrinfo related host
+// calls, like enc_untrusted_getaddrinfo().
 
 #include <fcntl.h>
 #include <netdb.h>
+#include <poll.h>
 #include <sched.h>
 #include <sys/socket.h>
 
@@ -110,6 +113,7 @@ int enc_untrusted_getitimer(int which, struct itimerval *curr_value);
 int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
                             struct itimerval *old_value);
 clock_t enc_untrusted_times(struct tms *buf);
+int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);

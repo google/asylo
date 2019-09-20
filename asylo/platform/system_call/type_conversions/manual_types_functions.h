@@ -23,6 +23,7 @@
 // (enums, structs etc.) between enclave and target host implementation.
 
 #include <netinet/in.h>
+#include <poll.h>
 #include <sched.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -147,5 +148,15 @@ bool TokLinuxItimerval(const struct itimerval *input,
 // struct.
 bool FromkLinuxItimerval(const struct klinux_itimerval *input,
                          struct itimerval *output);
+
+// Converts an enclave based pollfd struct to a kernel based pollfd struct. Also
+// converts the poll events included by pollfd to their klinux poll event
+// counterparts.
+bool TokLinuxPollfd(const struct pollfd *input, struct klinux_pollfd *output);
+
+// Converts a kernel based pollfd struct to an enclave based pollfd struct. Also
+// converts the klinux_ poll events included by kernel pollfd to their enclave
+// poll event counterparts.
+bool FromkLinuxPollfd(const struct klinux_pollfd *input, struct pollfd *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

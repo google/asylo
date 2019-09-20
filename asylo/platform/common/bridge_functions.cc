@@ -136,38 +136,6 @@ const std::unordered_map<int, int> *GetSignalToBridgeSignalMap() {
   return signal_to_bridge_signal_map;
 }
 
-int FromBridgePollEvents(int events) {
-  int result = 0;
-  if (events & POLLIN) result |= BRIDGE_POLLIN;
-  if (events & POLLPRI) result |= BRIDGE_POLLPRI;
-  if (events & POLLOUT) result |= BRIDGE_POLLOUT;
-  if (events & POLLRDHUP) result |= BRIDGE_POLLRDHUP;
-  if (events & POLLERR) result |= BRIDGE_POLLERR;
-  if (events & POLLHUP) result |= BRIDGE_POLLHUP;
-  if (events & POLLNVAL) result |= BRIDGE_POLLNVAL;
-  if (events & POLLRDNORM) result |= BRIDGE_POLLRDNORM;
-  if (events & POLLRDBAND) result |= BRIDGE_POLLRDBAND;
-  if (events & POLLWRNORM) result |= BRIDGE_POLLWRNORM;
-  if (events & POLLWRBAND) result |= BRIDGE_POLLWRBAND;
-  return result;
-}
-
-int ToBridgePollEvents(int bridge_events) {
-  int result = 0;
-  if (bridge_events & BRIDGE_POLLIN) result |= POLLIN;
-  if (bridge_events & BRIDGE_POLLPRI) result |= POLLPRI;
-  if (bridge_events & BRIDGE_POLLOUT) result |= POLLOUT;
-  if (bridge_events & BRIDGE_POLLRDHUP) result |= POLLRDHUP;
-  if (bridge_events & BRIDGE_POLLERR) result |= POLLERR;
-  if (bridge_events & BRIDGE_POLLHUP) result |= POLLHUP;
-  if (bridge_events & BRIDGE_POLLNVAL) result |= POLLNVAL;
-  if (bridge_events & BRIDGE_POLLRDNORM) result |= POLLRDNORM;
-  if (bridge_events & BRIDGE_POLLRDBAND) result |= POLLRDBAND;
-  if (bridge_events & BRIDGE_POLLWRNORM) result |= POLLWRNORM;
-  if (bridge_events & BRIDGE_POLLWRBAND) result |= POLLWRBAND;
-  return result;
-}
-
 }  // namespace
 
 int FromBridgeWaitOptions(int bridge_wait_options) {
@@ -425,24 +393,6 @@ int FromBridgeAfFamily(int bridge_af_family) {
     default:
       return AF_UNSPEC;
   }
-}
-
-struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,
-                                struct pollfd *fd) {
-  if (!bridge_fd || !fd) return nullptr;
-  fd->fd = bridge_fd->fd;
-  fd->events = FromBridgePollEvents(bridge_fd->events);
-  fd->revents = FromBridgePollEvents(bridge_fd->revents);
-  return fd;
-}
-
-struct bridge_pollfd *ToBridgePollfd(const struct pollfd *fd,
-                                     struct bridge_pollfd *bridge_fd) {
-  if (!fd || !bridge_fd) return nullptr;
-  bridge_fd->fd = fd->fd;
-  bridge_fd->events = ToBridgePollEvents(fd->events);
-  bridge_fd->revents = ToBridgePollEvents(fd->revents);
-  return bridge_fd;
 }
 
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,

@@ -273,12 +273,12 @@ TEST(SystemCallTest, BoundedBufferByParamLenTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
 
   struct pollfd fds_actual[2], fds_expected[2];
-  /* watch stdin for input */
+  // Watch stdin for input.
   fds_actual[0].fd = STDIN_FILENO;
   fds_actual[0].events = POLLIN;
   fds_expected[0].fd = STDIN_FILENO;
   fds_expected[0].events = POLLIN;
-  /* watch stdout for ability to write */
+  // Watch stdout for ability to write.
   fds_actual[1].fd = STDOUT_FILENO;
   fds_actual[1].events = POLLOUT;
   fds_expected[1].fd = STDOUT_FILENO;

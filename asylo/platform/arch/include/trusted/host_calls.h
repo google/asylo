@@ -92,12 +92,6 @@ void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected);
 void enc_untrusted_sys_futex_wake(int32_t *futex);
 
 //////////////////////////////////////
-//            poll.h                //
-//////////////////////////////////////
-
-int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
-
-//////////////////////////////////////
 //            epoll.h               //
 //////////////////////////////////////
 

@@ -599,3 +599,22 @@ bool FromkLinuxItimerval(const struct klinux_itimerval *input,
   }
   return true;
 }
+
+bool TokLinuxPollfd(const struct pollfd *input, struct klinux_pollfd *output) {
+  if (!input || !output) return false;
+
+  output->klinux_fd = input->fd;
+  output->klinux_events = TokLinuxPollEvent(input->events);
+  output->klinux_revents = TokLinuxPollEvent(input->revents);
+  return true;
+}
+
+bool FromkLinuxPollfd(const struct klinux_pollfd *input,
+                      struct pollfd *output) {
+  if (!input || !output) return false;
+
+  output->fd = input->klinux_fd;
+  output->events = FromkLinuxPollEvent(input->klinux_events);
+  output->revents = FromkLinuxPollEvent(input->klinux_revents);
+  return true;
+}

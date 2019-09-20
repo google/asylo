@@ -151,14 +151,6 @@ struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
 struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
                                        struct bridge_timeval *bridge_tv);
 
-// Converts |fd| to a bridge pollfd. Returns nullptr if unsuccessful.
-struct pollfd *FromBridgePollfd(const struct bridge_pollfd *bridge_fd,
-                                struct pollfd *fd);
-
-// Converts |bridge_fd| to a runtime pollfd. Returns nullptr if unsuccessful.
-struct bridge_pollfd *ToBridgePollfd(const struct pollfd *fd,
-                                     struct bridge_pollfd *bridge_fd);
-
 // Converts |host_wstatus| to a runtime wstatus.
 // This only works when converting into an enclave runtime wstatus, not on host.
 int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus);

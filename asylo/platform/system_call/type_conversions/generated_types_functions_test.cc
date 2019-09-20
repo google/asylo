@@ -614,6 +614,19 @@ TEST_F(GeneratedTypesFunctionsTest, AddressInfoErrorTest) {
   }
 }
 
+TEST_F(GeneratedTypesFunctionsTest, PollEventTest) {
+  std::vector<int> from_bits = {
+      kLinux_POLLIN,     kLinux_POLLPRI,    kLinux_POLLOUT,   kLinux_POLLRDHUP,
+      kLinux_POLLERR,    kLinux_POLLHUP,    kLinux_POLLNVAL,  kLinux_POLLRDNORM,
+      kLinux_POLLRDBAND, kLinux_POLLWRNORM, kLinux_POLLWRBAND};
+  std::vector<int> to_bits = {POLLIN,     POLLPRI,    POLLOUT,   POLLRDHUP,
+                              POLLERR,    POLLHUP,    POLLNVAL,  POLLRDNORM,
+                              POLLRDBAND, POLLWRNORM, POLLWRBAND};
+
+  TestMultiValuedEnums(from_bits, to_bits, FromkLinuxPollEvent,
+                       TokLinuxPollEvent);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

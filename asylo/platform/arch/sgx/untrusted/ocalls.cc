@@ -236,29 +236,6 @@ int ocall_enc_untrusted_inet_pton(AfFamily af, const char *src, void *dst,
 }
 
 //////////////////////////////////////
-//           poll.h                 //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_poll(struct bridge_pollfd *fds, unsigned int nfds,
-                             int timeout) {
-  auto tmp = absl::make_unique<pollfd[]>(nfds);
-  for (int i = 0; i < nfds; ++i) {
-    if (!asylo::FromBridgePollfd(&fds[i], &tmp[i])) {
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  int ret = poll(tmp.get(), nfds, timeout);
-  for (int i = 0; i < nfds; ++i) {
-    if (!asylo::ToBridgePollfd(&tmp[i], &fds[i])) {
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //           epoll.h                //
 //////////////////////////////////////
 

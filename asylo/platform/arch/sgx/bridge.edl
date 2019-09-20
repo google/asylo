@@ -71,14 +71,6 @@ enclave {
                                       bridge_size_t dst_size) propagate_errno;
 
     //////////////////////////////////////
-    //             poll.h               //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_poll(
-        [in, out, count = nfds] struct bridge_pollfd *fds, unsigned int nfds,
-        int timeout) propagate_errno;
-
-    //////////////////////////////////////
     //           epoll.h                //
     //////////////////////////////////////
 

@@ -145,30 +145,6 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
 }
 
 //////////////////////////////////////
-//           poll.h                 //
-//////////////////////////////////////
-
-int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
-  int ret;
-  auto tmp = absl::make_unique<bridge_pollfd[]>(nfds);
-  for (int i = 0; i < nfds; ++i) {
-    if (!asylo::ToBridgePollfd(&fds[i], &tmp[i])) {
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  CHECK_OCALL(ocall_enc_untrusted_poll(&ret, tmp.get(), nfds, timeout));
-  for (int i = 0; i < nfds; ++i) {
-    if (!asylo::FromBridgePollfd(&tmp[i], &fds[i])) {
-      LOG(ERROR) << "Invalid bridge poll fd in poll response";
-      errno = EFAULT;
-      return -1;
-    }
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //           epoll.h                //
 //////////////////////////////////////
 

@@ -154,4 +154,10 @@ struct klinux_itimerval {
   struct kLinux_timeval klinux_it_value;
 };
 
+struct klinux_pollfd {
+  int klinux_fd;
+  int16_t klinux_events;
+  int16_t klinux_revents;
+};
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

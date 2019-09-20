@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <sys/file.h>
 #include <sys/inotify.h>
+#include <sys/poll.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -57,6 +58,7 @@ using ::testing::Not;
 using ::testing::SizeIs;
 using ::testing::StrEq;
 
+using asylo::primitives::Extent;
 using asylo::primitives::MessageReader;
 using asylo::primitives::MessageWriter;
 
@@ -441,8 +443,8 @@ TEST_F(HostCallTest, TestSendMsg) {
 
   MessageWriter in;
   in.Push<int>(/*value=sockfd=*/connection_socket);
-  in.PushByReference(::asylo::primitives::Extent{kMsg1, sizeof(kMsg1)});
-  in.PushByReference(::asylo::primitives::Extent{kMsg2, sizeof(kMsg2)});
+  in.PushByReference(Extent{kMsg1, sizeof(kMsg1)});
+  in.PushByReference(Extent{kMsg2, sizeof(kMsg2)});
   in.Push<int>(/*value=flags*/ 0);
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSendMsg, &in, &out));
@@ -769,7 +771,7 @@ TEST_F(HostCallTest, TestWrite) {
   std::string write_buf = "text to be written";
   MessageWriter in;
   in.Push<int>(/*value=fd=*/fd);
-  in.PushByCopy(primitives::Extent{write_buf.c_str(), write_buf.length() + 1});
+  in.PushString(write_buf);
   in.Push<size_t>(/*value=count=*/write_buf.length() + 1);
 
   MessageReader out;
@@ -2302,6 +2304,39 @@ TEST_F(HostCallTest, TestGetAddrInfo) {
                           actual_hostname),
                 Not(Eq(expected_hostnames.end())));
   }
+}
+
+// Tests enc_untrusted_poll() by comparing the return value and pollfd obtained
+// from calling the function from inside the enclave and native poll() on the
+// host.
+TEST_F(HostCallTest, TestPoll) {
+  struct pollfd fds_in[2], fds_expected[2];
+  // Watch stdin for input.
+  fds_in[0].fd = STDIN_FILENO;
+  fds_in[0].events = POLLIN;
+  fds_expected[0].fd = STDIN_FILENO;
+  fds_expected[0].events = POLLIN;
+  // Watch stdout for ability to write.
+  fds_in[1].fd = STDOUT_FILENO;
+  fds_in[1].events = POLLOUT;
+  fds_expected[1].fd = STDOUT_FILENO;
+  fds_expected[1].events = POLLOUT;
+
+  ASSERT_THAT(poll(fds_expected, 2, 1000), Not(Eq(-1)));
+
+  MessageWriter in;
+  in.PushByCopy(/*value=fds=*/Extent{reinterpret_cast<void *>(fds_in),
+                                     2 * sizeof(struct pollfd)});
+  in.Push(/*value=nfds=*/2);
+  in.Push(/*value=timeout=*/1000);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestPoll, &in, &out));
+  ASSERT_THAT(out, SizeIs(2));  // Should contain return value and pollfd array.
+  EXPECT_THAT(out.next<int>(), Gt(0));
+
+  struct pollfd *fds_out = out.next().As<pollfd>();
+  EXPECT_THAT(fds_out[0].revents, Eq(fds_expected[0].revents));
+  EXPECT_THAT(fds_out[1].revents, Eq(fds_expected[1].revents));
 }
 
 }  // namespace

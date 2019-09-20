@@ -931,6 +931,30 @@ PrimitiveStatus TestGetAddrInfo(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestPoll(void *context, MessageReader *in, MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 3);
+  auto klinux_pollfd_buffer = in->next();
+  struct klinux_pollfd *klinux_fds = klinux_pollfd_buffer.As<klinux_pollfd>();
+  auto nfds = in->next<nfds_t>();
+  int timeout = in->next<int>();
+
+  struct pollfd fds[2];
+  if (!FromkLinuxPollfd(klinux_fds, &fds[0]) ||
+      !FromkLinuxPollfd(klinux_fds + 1, &fds[1])) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestPoll: Couldn't convert klinux_pollfd to native pollfd"};
+  }
+  out->Push<int>(enc_untrusted_poll(fds, nfds, timeout));
+
+  if (!TokLinuxPollfd(&fds[0], &klinux_fds[0]) ||
+      !TokLinuxPollfd(&fds[1], &klinux_fds[1])) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestPoll: Couldn't convert native pollfd to kernel pollfd"};
+  }
+  out->PushByCopy(Extent{klinux_fds, klinux_pollfd_buffer.size()});
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1117,6 +1141,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestGetAddrInfo,
       EntryHandler{asylo::host_call::TestGetAddrInfo}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestPoll, EntryHandler{asylo::host_call::TestPoll}));
 
   return PrimitiveStatus::OkStatus();
 }

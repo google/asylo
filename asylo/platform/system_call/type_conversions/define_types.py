@@ -256,6 +256,15 @@ define_constants(
     include_header_file="netdb.h",
     or_input_to_default_value=True)
 
+define_constants(
+    name="PollEvent",
+    values=[
+        "POLLIN", "POLLPRI", "POLLOUT", "POLLRDHUP", "POLLERR", "POLLHUP",
+        "POLLNVAL", "POLLRDNORM", "POLLRDBAND", "POLLWRNORM", "POLLWRBAND"
+    ],
+    include_header_file="poll.h",
+    multi_valued=True)
+
 define_struct(
     name="timespec",
     values=[

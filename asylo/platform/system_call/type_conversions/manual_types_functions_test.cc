@@ -288,6 +288,34 @@ TEST(ManualTypesFunctionsTest, FromItimervalTest) {
   EXPECT_THAT(tval.it_value.tv_sec, Eq(4));
 }
 
+TEST(ManualTypesFunctionsTest, ToPollFdTest) {
+  EXPECT_THAT(sizeof(struct pollfd), Eq(sizeof(struct klinux_pollfd)));
+
+  struct pollfd poll_fd {};
+  poll_fd.fd = 1;
+  poll_fd.events = POLLIN;
+  poll_fd.revents = POLLOUT;
+  struct klinux_pollfd klinux_poll_fd {};
+
+  EXPECT_THAT(TokLinuxPollfd(&poll_fd, &klinux_poll_fd), Eq(true));
+  EXPECT_THAT(klinux_poll_fd.klinux_fd, Eq(poll_fd.fd));
+  EXPECT_THAT(klinux_poll_fd.klinux_events, Eq(kLinux_POLLIN));
+  EXPECT_THAT(klinux_poll_fd.klinux_revents, Eq(kLinux_POLLOUT));
+}
+
+TEST(ManualTypesFunctionsTest, FromPollFdTest) {
+  struct klinux_pollfd klinux_poll_fd {};
+  klinux_poll_fd.klinux_fd = 1;
+  klinux_poll_fd.klinux_events = kLinux_POLLIN;
+  klinux_poll_fd.klinux_revents = kLinux_POLLOUT;
+  struct pollfd poll_fd {};
+
+  EXPECT_THAT(FromkLinuxPollfd(&klinux_poll_fd, &poll_fd), Eq(true));
+  EXPECT_THAT(poll_fd.fd, Eq(klinux_poll_fd.klinux_fd));
+  EXPECT_THAT(poll_fd.events, Eq(POLLIN));
+  EXPECT_THAT(poll_fd.revents, Eq(POLLOUT));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo
