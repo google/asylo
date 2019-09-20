@@ -214,12 +214,19 @@ define_constants(
         "SIGALRM", "SIGTERM", "SIGCHLD", "SIGCONT", "SIGSTOP", "SIGTSTP",
         "SIGTTIN", "SIGTTOU", "SIGURG", "SIGXCPU", "SIGXFSZ", "SIGVTALRM",
         "SIGPROF", "SIGWINCH", "SIGSYS", "SIGIO", "SIGPWR", "SIGRTMIN",
-        "SIGRTMAX"
+        "SIGRTMAX", "NSIG"
     ],
     include_header_file="signal.h",
     default_value_newlib=-1,
     default_value_host=-1,
     wrap_macros_with_if_defined=True)
+
+define_constants(
+    name="SigMaskAction",
+    values=["SIG_BLOCK", "SIG_UNBLOCK", "SIG_SETMASK"],
+    include_header_file="signal.h",
+    default_value_newlib=-1,
+    default_value_host=-1)
 
 define_constants(
     name="ClockId",

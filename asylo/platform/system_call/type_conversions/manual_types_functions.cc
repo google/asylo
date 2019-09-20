@@ -64,6 +64,21 @@ void CopySockaddr(void *source, socklen_t source_len, void *addr_dest,
   *addrlen_dest = source_len;
 }
 
+inline void klinux_sigemptyset(klinux_sigset_t *klinux_set) {
+  memset(klinux_set, 0, sizeof(klinux_sigset_t));
+}
+
+inline int klinux_sigismember(const klinux_sigset_t *klinux_set,
+                              int klinux_sig) {
+  uint64_t sig = klinux_sig - 1;
+  return 1 & (klinux_set->klinux_val[0] >> sig);
+}
+
+inline void klinux_sigaddset(klinux_sigset_t *klinux_set, int klinux_sig) {
+  uint64_t sig = klinux_sig - 1;
+  klinux_set->klinux_val[0] |= 1UL << sig;
+}
+
 }  // namespace
 
 int TokLinuxSocketType(int input) {
@@ -546,6 +561,40 @@ int TokLinuxSignalNumber(int input) {
   }
 #endif
   return TokLinuxBaseSignalNumber(input);
+}
+
+bool TokLinuxSigset(const sigset_t *input, klinux_sigset_t *output) {
+  if (!input || !output) {
+    output = nullptr;
+    return false;
+  }
+  klinux_sigemptyset(output);
+  for (int sig = 1; sig < NSIG; sig++) {
+    if (sigismember(input, sig)) {
+      int klinux_sig = TokLinuxSignalNumber(sig);
+      if (klinux_sig != -1) {
+        klinux_sigaddset(output, klinux_sig);
+      }
+    }
+  }
+  return true;
+}
+
+bool FromkLinuxSigset(const klinux_sigset_t *input, sigset_t *output) {
+  if (!input || !output) {
+    output = nullptr;
+    return false;
+  }
+  sigemptyset(output);
+  for (int klinux_sig = 1; klinux_sig < kLinux_NSIG; klinux_sig++) {
+    if (klinux_sigismember(input, klinux_sig)) {
+      int sig = FromkLinuxSignalNumber(klinux_sig);
+      if (sig != -1) {
+        sigaddset(output, sig);
+      }
+    }
+  }
+  return true;
 }
 
 inline uint64_t kLinuxCpuWordNum(int cpu) {

@@ -160,4 +160,10 @@ struct klinux_pollfd {
   int16_t klinux_revents;
 };
 
+#define KLINUX_SIGSET_NWORDS (1024 / (8 * sizeof(uint64_t)))
+
+typedef struct {
+  uint64_t klinux_val[KLINUX_SIGSET_NWORDS];
+} klinux_sigset_t;
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

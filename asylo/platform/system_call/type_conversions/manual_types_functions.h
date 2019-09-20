@@ -159,4 +159,10 @@ bool TokLinuxPollfd(const struct pollfd *input, struct klinux_pollfd *output);
 // poll event counterparts.
 bool FromkLinuxPollfd(const struct klinux_pollfd *input, struct pollfd *output);
 
+// Converts an enclave based sigset to a kernel based sigset.
+bool TokLinuxSigset(const sigset_t *input, klinux_sigset_t *output);
+
+// Converts a kernel based sigset to an enclave based sigset.
+bool FromkLinuxSigset(const klinux_sigset_t *input, sigset_t *output);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

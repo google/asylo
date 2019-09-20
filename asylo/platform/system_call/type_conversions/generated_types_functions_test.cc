@@ -536,13 +536,14 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
       kLinux_SIGCONT,   kLinux_SIGSTOP, kLinux_SIGTSTP,  kLinux_SIGTTIN,
       kLinux_SIGTTOU,   kLinux_SIGURG,  kLinux_SIGXCPU,  kLinux_SIGXFSZ,
       kLinux_SIGVTALRM, kLinux_SIGPROF, kLinux_SIGWINCH, kLinux_SIGSYS,
-      kLinux_SIGIO,     kLinux_SIGPWR,  kLinux_SIGRTMIN, kLinux_SIGRTMAX};
+      kLinux_SIGIO,     kLinux_SIGPWR,  kLinux_SIGRTMIN, kLinux_SIGRTMAX,
+      kLinux_NSIG};
   std::vector<int> to_consts = {
       SIGHUP,  SIGINT,  SIGQUIT,  SIGILL,    SIGTRAP, SIGABRT,  SIGBUS,
       SIGFPE,  SIGKILL, SIGUSR1,  SIGSEGV,   SIGUSR2, SIGPIPE,  SIGALRM,
       SIGTERM, SIGCHLD, SIGCONT,  SIGSTOP,   SIGTSTP, SIGTTIN,  SIGTTOU,
       SIGURG,  SIGXCPU, SIGXFSZ,  SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,
-      SIGIO,   SIGPWR,  SIGRTMIN, SIGRTMAX};
+      SIGIO,   SIGPWR,  SIGRTMIN, SIGRTMAX,  NSIG};
   auto from_matcher = IsFiniteRestrictionOf<int, int>(
       [&](int input) { return FromkLinuxBaseSignalNumber(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,

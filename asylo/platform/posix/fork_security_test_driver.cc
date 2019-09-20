@@ -177,7 +177,7 @@ EnclaveManager *ForkSecurityTest::manager_ = nullptr;
 
 // Tests that trying to take a snapshot or initialize a key transfer without
 // setting the fork requested bit fails.
-TEST_F(ForkSecurityTest, SnapshotFailsWithourForkRequest) {
+TEST_F(ForkSecurityTest, SnapshotFailsWithoutForkRequest) {
   Status status =
       LoadEnclaveAndTakeSnapshot("Snapshot blocked", /*request_fork=*/false);
   if (status != Status(error::GoogleError::UNAVAILABLE,
@@ -187,7 +187,7 @@ TEST_F(ForkSecurityTest, SnapshotFailsWithourForkRequest) {
                 StatusIs(error::GoogleError::PERMISSION_DENIED,
                          "Snapshot is not allowed unless fork is requested"));
 
-    // Tansferring key should be rejected without transfer key request set.
+    // Transferring key should be rejected without transfer key request set.
     asylo::ForkHandshakeConfig fork_handshake_config;
     fork_handshake_config.set_is_parent(true);
     fork_handshake_config.set_socket(0);

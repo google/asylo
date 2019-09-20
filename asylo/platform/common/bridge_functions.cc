@@ -179,20 +179,6 @@ int ToBridgeSignal(int signum) {
   return iterator->second;
 }
 
-int FromBridgeSigMaskAction(int bridge_how) {
-  if (bridge_how == BRIDGE_SIG_BLOCK) return SIG_BLOCK;
-  if (bridge_how == BRIDGE_SIG_UNBLOCK) return SIG_UNBLOCK;
-  if (bridge_how == BRIDGE_SIG_SETMASK) return SIG_SETMASK;
-  return -1;
-}
-
-int ToBridgeSigMaskAction(int how) {
-  if (how == SIG_BLOCK) return BRIDGE_SIG_BLOCK;
-  if (how == SIG_UNBLOCK) return BRIDGE_SIG_UNBLOCK;
-  if (how == SIG_SETMASK) return BRIDGE_SIG_SETMASK;
-  return -1;
-}
-
 sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set) {
   if (!bridge_set || !set) return nullptr;
   sigemptyset(set);

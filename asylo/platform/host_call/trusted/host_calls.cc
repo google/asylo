@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <netdb.h>
+#include <signal.h>
 #include <sys/statfs.h>
 
 #include <algorithm>
@@ -1244,6 +1245,54 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
          std::min(static_cast<size_t>(size),
                   static_cast<size_t>(INET6_ADDRSTRLEN)));
   return dst;
+}
+
+int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
+  klinux_sigset_t klinux_set;
+  if (!TokLinuxSigset(set, &klinux_set)) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  int klinux_how = TokLinuxSigMaskAction(how);
+  if (klinux_how == -1) {
+    errno = EINVAL;
+    return -1;
+  }
+
+  MessageWriter input;
+  input.Push<int>(klinux_how);
+  input.Push<klinux_sigset_t>(klinux_set);
+  MessageReader output;
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kSigprocmaskHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sigprocmask() failed. Aborting");
+  }
+  if (output.size() != 3) {
+    TrustedPrimitives::BestEffortAbort(
+        "Expected 3 arguments in output for sigprocmask host call. Aborting");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+  // sigprocmask() returns -1 on failure, with errno set to indicate the cause
+  // of the error.
+  if (result == -1) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
+    return result;
+  }
+
+  klinux_sigset_t klinux_oldset = output.next<klinux_sigset_t>();
+  if (oldset != nullptr) {
+    if (!FromkLinuxSigset(&klinux_oldset, oldset)) {
+      errno = EINVAL;
+      return -1;
+    }
+  }
+  return result;
 }
 
 }  // extern "C"

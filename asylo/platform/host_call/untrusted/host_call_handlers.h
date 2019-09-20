@@ -147,6 +147,13 @@ Status InetNtopHandler(const std::shared_ptr<primitives::Client> &client,
                        void *context, primitives::MessageReader *input,
                        primitives::MessageWriter *output);
 
+// sigprocmask library call handler on the host; expects [int how,
+// klinux_sigset_t sigset] and returns [int /*result*/, int /*errno*/,
+// klinux_sigset_t /*oldset*/] on the MessageWriter.
+Status SigprocmaskHandler(const std::shared_ptr<primitives::Client> &client,
+                          void *context, primitives::MessageReader *input,
+                          primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

@@ -114,12 +114,6 @@ void enc_untrusted_freeifaddrs(struct ifaddrs *ifa);
 struct passwd *enc_untrusted_getpwuid(uid_t uid);
 
 //////////////////////////////////////
-//            signal.h              //
-//////////////////////////////////////
-
-int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
-
-//////////////////////////////////////
 //        sys/resource.h            //
 //////////////////////////////////////
 

@@ -235,22 +235,6 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
   return &asylo::global_password;
 }
 
-
-//////////////////////////////////////
-//           signal.h               //
-//////////////////////////////////////
-
-int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
-  bridge_sigset_t bridge_set;
-  asylo::ToBridgeSigSet(set, &bridge_set);
-  bridge_sigset_t bridge_old_set;
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_sigprocmask(
-      &ret, asylo::ToBridgeSigMaskAction(how), &bridge_set, &bridge_old_set));
-  asylo::FromBridgeSigSet(&bridge_old_set, oldset);
-  return ret;
-}
-
 //////////////////////////////////////
 //         sys/resource.h           //
 //////////////////////////////////////

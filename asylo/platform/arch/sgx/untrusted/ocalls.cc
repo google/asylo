@@ -375,17 +375,6 @@ int ocall_enc_untrusted_register_signal_handler(
   return sigaction(signum, &newact, &oldact);
 }
 
-int ocall_enc_untrusted_sigprocmask(int how, const bridge_sigset_t *set,
-                                    bridge_sigset_t *oldset) {
-  sigset_t tmp_set;
-  asylo::FromBridgeSigSet(set, &tmp_set);
-  sigset_t tmp_oldset;
-  int ret =
-      sigprocmask(asylo::FromBridgeSigMaskAction(how), &tmp_set, &tmp_oldset);
-  asylo::ToBridgeSigSet(&tmp_oldset, oldset);
-  return ret;
-}
-
 //////////////////////////////////////
 //         sys/resource.h           //
 //////////////////////////////////////

@@ -104,10 +104,6 @@ enclave {
         int bridge_signum, [in] const struct BridgeSignalHandler *handler,
         [in, string] const char *name);
 
-    int ocall_enc_untrusted_sigprocmask(
-        int how, [in] const bridge_sigset_t *set,
-        [out] bridge_sigset_t *oldset);
-
     //////////////////////////////////////
     //         sys/resource.h           //
     //////////////////////////////////////

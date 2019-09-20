@@ -68,20 +68,6 @@ TEST_F(BridgeTest, BridgeRUsageTargetTest) {
               to_matcher);
 }
 
-TEST_F(BridgeTest, BridgeSigMaskActionTest) {
-  intvec from_consts = {BRIDGE_SIG_BLOCK, BRIDGE_SIG_UNBLOCK,
-                        BRIDGE_SIG_SETMASK};
-  intvec to_consts = {SIG_BLOCK, SIG_UNBLOCK, SIG_SETMASK};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeSigMaskAction);
-  EXPECT_THAT(
-      FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1, ITER_BOUND),
-      from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeSigMaskAction);
-  EXPECT_THAT(
-      FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1, ITER_BOUND),
-      to_matcher);
-}
-
 TEST_F(BridgeTest, BridgeSignalCodeTest) {
   intvec from_consts = {BRIDGE_SI_USER, BRIDGE_SI_QUEUE, BRIDGE_SI_TIMER,
                         BRIDGE_SI_ASYNCIO, BRIDGE_SI_MESGQ};

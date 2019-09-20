@@ -419,5 +419,20 @@ Status InetNtopHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status SigprocmaskHandler(const std::shared_ptr<primitives::Client> &client,
+                          void *context, primitives::MessageReader *input,
+                          primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 2);
+
+  int klinux_how = input->next<int>();
+  sigset_t klinux_set = input->next<sigset_t>();
+  sigset_t klinux_oldset;
+
+  output->Push<int>(sigprocmask(klinux_how, &klinux_set, &klinux_oldset));
+  output->Push<int>(errno);
+  output->Push<sigset_t>(klinux_oldset);
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

@@ -56,14 +56,6 @@ int FromBridgeRUsageTarget(enum RUsageTarget bridge_rusage_target);
 // BRIDGE_RUSAGE_UNKNOWN if unsuccessful.
 enum RUsageTarget ToBridgeRUsageTarget(int rusage_target);
 
-// Converts the sigpromask action |bridge_how| to a runtime signal mask action.
-// Returns -1 if unsuccessful.
-int FromBridgeSigMaskAction(int bridge_how);
-
-// Converts the sigprocmask action |how| to a bridge signal mask action. Returns
-// -1 if unsuccessful.
-int ToBridgeSigMaskAction(int how);
-
 // Converts |bridge_set| to a runtime signal mask set. Returns nullptr if
 // unsuccessful.
 sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set);
