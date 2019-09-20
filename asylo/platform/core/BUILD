@@ -51,7 +51,6 @@ cc_library(
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sgx:fork_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",

@@ -32,7 +32,6 @@
 #include "absl/time/time.h"
 #include "absl/types/variant.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
-#include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"

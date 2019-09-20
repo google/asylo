@@ -22,7 +22,6 @@
 #include "absl/container/flat_hash_map.h"
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
-#include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 
