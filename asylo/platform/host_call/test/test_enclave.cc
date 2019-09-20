@@ -218,7 +218,7 @@ PrimitiveStatus TestRead(void *context, MessageReader *in, MessageWriter *out) {
   char read_buf[20];
 
   out->Push<int64_t>(enc_untrusted_read(fd, read_buf, count));
-  out->PushByCopy(Extent{read_buf, strlen(read_buf) + 1});
+  out->PushString(read_buf);
   return PrimitiveStatus::OkStatus();
 }
 
@@ -301,7 +301,7 @@ PrimitiveStatus TestPipe2(void *context, MessageReader *in,
   out->Push<int>(enc_untrusted_pipe2(p, O_NONBLOCK));
   enc_untrusted_write(p[1], msg_to_pipe.data(), msg_to_pipe.size());
   enc_untrusted_read(p[0], inbuf.data(), msg_to_pipe.size());
-  out->Push(std::string(inbuf.data(), msg_to_pipe.size()));
+  out->PushString(inbuf.data(), msg_to_pipe.size());
   return PrimitiveStatus::OkStatus();
 }
 

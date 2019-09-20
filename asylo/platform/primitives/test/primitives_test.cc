@@ -378,7 +378,7 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
   const uint64_t in2 = 12345;
   const char in3[] = "Param3";
   MessageWriter in;
-  in.Push(in1);
+  in.PushString(in1);
   in.Push(in2);
   in.PushByReference({in3, strlen(in3) + 1});
   MessageReader out;

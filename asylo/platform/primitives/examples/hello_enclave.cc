@@ -56,7 +56,7 @@ PrimitiveStatus Hello(void *context, MessageReader *in, MessageWriter *out) {
   auto hello_str = external_output.next();
   std::string hello_world =
       absl::StrCat(reinterpret_cast<const char *>(hello_str.data()), world_str);
-  out->Push(hello_world);
+  out->PushString(hello_world);
   return PrimitiveStatus::OkStatus();
 }
 

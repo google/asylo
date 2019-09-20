@@ -200,7 +200,7 @@ TEST_F(HostCallTest, TestAccess) {
   ASSERT_GE(fd, 0);
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
   in.Push<int>(/*value=mode=*/R_OK | W_OK);
 
   MessageReader out;
@@ -214,7 +214,7 @@ TEST_F(HostCallTest, TestAccessNonExistentPath) {
   const char *path = "illegal_path";
 
   MessageWriter in;
-  in.Push(primitives::Extent{path, strlen(path) + 1});
+  in.PushString(path);
   in.Push<int>(/*value=mode=*/F_OK);
 
   MessageReader out;
@@ -390,7 +390,7 @@ TEST_F(HostCallTest, TestSend) {
 
   MessageWriter in;
   in.Push<int>(/*value=sockfd=*/connection_socket);
-  in.Push(/*value=buf*/ msg);
+  in.PushString(/*value=buf*/ msg);
   in.Push<size_t>(/*value=len*/ msg.length());
   in.Push<int>(/*value=flags*/ 0);
   MessageReader out;
@@ -534,8 +534,8 @@ TEST_F(HostCallTest, TestLink) {
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
   MessageWriter in;
-  in.Push(oldpath);
-  in.Push(newpath);
+  in.PushString(oldpath);
+  in.PushString(newpath);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLink, &in, &out));
@@ -597,7 +597,7 @@ TEST_F(HostCallTest, TestMkdir) {
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/dir_to_make");
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
   in.Push<mode_t>(/*value=mode=*/0777);
 
   MessageReader out;
@@ -613,7 +613,7 @@ TEST_F(HostCallTest, TestMkdirNonExistentPath) {
   std::string path = absl::StrCat("/non-existent-path/dir_to_make");
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
   in.Push<mode_t>(/*value=mode=*/0777);
 
   MessageReader out;
@@ -629,7 +629,7 @@ TEST_F(HostCallTest, TestOpen) {
       absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
   in.Push<int>(/*value=flags=*/O_RDWR | O_CREAT | O_TRUNC);
   in.Push<mode_t>(/*value=mode=*/S_IRUSR | S_IWUSR);
 
@@ -652,7 +652,7 @@ TEST_F(HostCallTest, TestOpenExistingFile) {
   ASSERT_THAT(access(path.c_str(), F_OK), Eq(0));
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
   in.Push<int>(/*value=flags*/ O_RDWR | O_CREAT | O_TRUNC);
 
   MessageReader out;
@@ -676,7 +676,7 @@ TEST_F(HostCallTest, TestUnlink) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &in, &out));
@@ -690,7 +690,7 @@ TEST_F(HostCallTest, TestUnlinkNonExistingFile) {
   ASSERT_THAT(access(path.c_str(), F_OK), Eq(-1));
 
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUnlink, &in, &out));
@@ -710,8 +710,8 @@ TEST_F(HostCallTest, TestRename) {
   ASSERT_NE(access(oldpath.c_str(), F_OK), -1);
 
   MessageWriter in;
-  in.Push(oldpath);
-  in.Push(newpath);
+  in.PushString(oldpath);
+  in.PushString(newpath);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRename, &in, &out));
@@ -799,8 +799,8 @@ TEST_F(HostCallTest, TestSymlink) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   MessageWriter in;
-  in.Push(test_file);
-  in.Push(target);
+  in.PushString(test_file);
+  in.PushString(target);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSymlink, &in, &out));
@@ -828,7 +828,7 @@ TEST_F(HostCallTest, TestReadlink) {
   ASSERT_THAT(symlink(test_file.c_str(), sym_file.c_str()), Eq(0));
 
   MessageWriter in;
-  in.Push(sym_file);
+  in.PushString(sym_file);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestReadLink, &in, &out));
@@ -862,7 +862,7 @@ TEST_F(HostCallTest, TestTruncate) {
 
   MessageWriter in;
   constexpr int kTruncLen = 5;
-  in.Push(test_file);
+  in.PushString(test_file);
   in.Push<off_t>(/*value=length=*/kTruncLen);
 
   MessageReader out;
@@ -931,7 +931,7 @@ TEST_F(HostCallTest, TestRmdir) {
   ASSERT_THAT(mkdir(dir_to_del.c_str(), O_CREAT | O_RDWR), Eq(0));
 
   MessageWriter in;
-  in.Push(dir_to_del);
+  in.PushString(dir_to_del);
 
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestRmdir, &in, &out));
@@ -950,7 +950,7 @@ TEST_F(HostCallTest, TestPipe2) {
   std::string msg_to_pipe = "hello, world";
 
   MessageWriter in;
-  in.Push(msg_to_pipe);
+  in.PushString(msg_to_pipe);
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestPipe2, &in, &out));
   ASSERT_THAT(out, SizeIs(2));
@@ -1123,7 +1123,7 @@ TEST_F(HostCallTest, TestChown) {
   ASSERT_NE(access(test_file.c_str(), F_OK), -1);
 
   MessageWriter in;
-  in.Push(test_file);
+  in.PushString(test_file);
   in.Push<uid_t>(/*value=owner=*/getuid());
   in.Push<gid_t>(/*value=group=*/getgid());
 
@@ -1256,7 +1256,7 @@ TEST_F(HostCallTest, TestChmod) {
   ASSERT_NE(stat(path.c_str(), &sb), -1);
   ASSERT_NE((sb.st_mode & S_IRUSR), 0);
   MessageWriter in;
-  in.Push(path);
+  in.PushString(path);
   in.Push<mode_t>(/*value=mode=*/DEFFILEMODE ^ S_IRUSR);
 
   MessageReader out;
@@ -1273,7 +1273,7 @@ TEST_F(HostCallTest, TestChmodNonExistentFile) {
   const char *path = "illegal_path";
 
   MessageWriter in;
-  in.Push(primitives::Extent{path, strlen(path) + 1});
+  in.PushString(path);
   in.Push<mode_t>(/*value=mode=*/S_IWUSR);
 
   MessageReader out;
@@ -1400,7 +1400,7 @@ TEST_F(HostCallTest, TestInotifyAddWatch) {
   // all events supported by inotify.
   MessageWriter in;
   in.Push<int>(inotify_fd);
-  in.Push(absl::GetFlag(FLAGS_test_tmpdir));
+  in.PushString(absl::GetFlag(FLAGS_test_tmpdir));
 
   in.Push<int>(IN_ALL_EVENTS);
   MessageReader out;
@@ -1634,7 +1634,7 @@ TEST_F(HostCallTest, TestLstat) {
   ASSERT_NE(symlink(path.c_str(), sym_path.c_str()), -1);
   MessageWriter in;
 
-  in.Push(sym_path);
+  in.PushString(sym_path);
   MessageReader out;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestLstat, &in, &out));
@@ -1666,7 +1666,7 @@ TEST_F(HostCallTest, TestStat) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   MessageWriter in;
 
-  in.Push(path);
+  in.PushString(path);
   MessageReader out;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStat, &in, &out));
@@ -1698,7 +1698,7 @@ TEST_F(HostCallTest, TestStatFs) {
   ASSERT_NE(access(path.c_str(), F_OK), -1);
   MessageWriter in;
 
-  in.Push(path);
+  in.PushString(path);
   MessageReader out;
 
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestStatFs, &in, &out));
@@ -1777,7 +1777,7 @@ TEST_F(HostCallTest, TestPwrite64) {
   int len = 7;
 
   in.Push<int>(fd);
-  in.Push(message_write);
+  in.PushString(message_write);
   in.Push<int>(len);
   in.Push<off_t>(offset);
   MessageReader out;
@@ -2274,7 +2274,7 @@ TEST_F(HostCallTest, TestGetAddrInfo) {
 
   // Call enc_untrusted_getaddrinfo().
   MessageWriter in;
-  in.Push(node);
+  in.PushString(node);
   MessageReader out;
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetAddrInfo, &in, &out));
   ASSERT_THAT(

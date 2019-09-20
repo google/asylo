@@ -40,6 +40,7 @@ namespace primitives {
 // serialized using |Serialize()|, passed across the enclave boundary and
 // deserialized using the MessageReader for consumption. The message is simply
 // comprised of a data pointer and the size.
+//
 // The message writer only allows pushing extents or values to it; reading data
 // from the writer is disallowed. The message writer does not perform memory
 // allocation for the serialized message. Extents can be pushed by reference or
@@ -116,10 +117,25 @@ class MessageWriter {
     PushByCopy(Extent{const_cast<T *>(&value)});
   }
 
-  // Pushes a string by copy (since the string could go out of scope after it is
-  // pushed, before Serialize() is called.)
-  void Push(const std::string &s) {
-    PushByCopy(Extent{s.c_str(), s.size() + 1});  // Add 1 for null character.
+  // Pushes a string by copy, including a trailing null character for ease of
+  // compatibility with C-style string consumers.
+  void PushString(const std::string &s) {
+    PushByCopy(Extent{s.c_str(), s.size() + 1});
+  }
+
+  // Pushes a string by copy.
+  void PushString(const char *s) {
+    if (s) {
+      PushByCopy(Extent{s, strlen(s) + 1});
+    } else {
+      PushByCopy(Extent{nullptr, 0});
+    }
+  }
+
+  // Pushes a string by copy, passing an explicit length in bytes. This variant
+  // pushes exactly |length| bytes and does not add a trailing null terminator.
+  void PushString(const char *s, size_t length) {
+    PushByCopy(Extent{s, length});
   }
 
   // Copies the extents of |other| to this MessageWriter.
@@ -188,17 +204,17 @@ class MessageReader {
   // Returns the number of extents read.
   size_t size() const { return extents_.size(); }
 
-  // Gets the next extent from the list of extents read. Extents can only be
-  // traversed and returned once. The reader owns the extent data, so it should
-  // automatically go out of scope with the reader.
+  // Returns the next extent in the MessageReader. The MessageReader may only be
+  // traversed once. The returned pointer remains owned by the MessageReader and
+  // its lifetime is the lifetime of the MessageReader.
   Extent next() {
     Extent result = Extent{extents_[pos_].first.get(), extents_[pos_].second};
     pos_++;
     return result;
   }
 
-  // Returns the next extent's data as a value, based on the template parameter
-  // provided.
+  // Interprets the next item in the MessageReader as a pointer to a value of
+  // type T, consumes it, and returns its value by copy.
   template <typename T>
   T next() {
     Extent result = next();

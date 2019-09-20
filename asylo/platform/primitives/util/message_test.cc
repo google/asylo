@@ -161,14 +161,16 @@ TEST(MessageTest, PushByReferenceTest) {
   EXPECT_THAT(reader.hasNext(), Eq(false));
 }
 
+// Ensure we can read and write strings, both for std::string and string
+// literals.
 TEST(MessageTest, PushPopStrings) {
   MessageWriter writer;
-  std::string hello("hello"), world("world");
-  writer.Push(hello);
-  writer.Push(world);
-
+  writer.PushString(std::string("hello"));
+  writer.PushString(std::string("world"));
+  writer.PushString("goodnight");
+  writer.PushString("moon");
   EXPECT_THAT(writer, Not(IsEmpty()));
-  EXPECT_THAT(writer, SizeIs(2));
+  EXPECT_THAT(writer, SizeIs(4));
 
   const size_t size = writer.MessageSize();
   const auto buffer = absl::make_unique<char[]>(size);
@@ -178,9 +180,11 @@ TEST(MessageTest, PushPopStrings) {
   reader.Deserialize(buffer.get(), size);
 
   ASSERT_THAT(reader, Not(IsEmpty()));
-  ASSERT_THAT(reader, SizeIs(2));
-  EXPECT_THAT(reader.next().As<char>(), StrEq(hello));
-  EXPECT_THAT(reader.next().As<char>(), StrEq(world));
+  ASSERT_THAT(reader, SizeIs(4));
+  EXPECT_THAT(reader.next().As<char>(), StrEq("hello"));
+  EXPECT_THAT(reader.next().As<char>(), StrEq("world"));
+  EXPECT_THAT(reader.next().As<char>(), StrEq("goodnight"));
+  EXPECT_THAT(reader.next().As<char>(), StrEq("moon"));
 }
 
 }  // namespace

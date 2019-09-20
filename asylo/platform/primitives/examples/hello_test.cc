@@ -68,7 +68,7 @@ class HelloTest : public ::testing::Test {
     ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
     // Push our message on to the MessageWriter to pass to the enclave.
-    out->Push("Hello");
+    out->PushString("Hello");
     return Status::OkStatus();
   }
 };
