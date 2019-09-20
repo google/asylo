@@ -314,7 +314,8 @@ size_t MessageWriter::ParameterSize(ParameterDescriptor parameter) const {
   }
 
   if (parameter.is_bounded()) {
-    return parameters_[parameter.bounding_parameter().index()];
+    return parameters_[parameter.bounding_parameter().index()] *
+           parameter.element_size();
   }
 
   // The following line is expected to be unreachable.

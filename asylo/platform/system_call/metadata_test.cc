@@ -18,6 +18,7 @@
 
 #include "asylo/platform/system_call/metadata.h"
 
+#include <sys/poll.h>
 #include <sys/syscall.h>
 
 #include <string>
@@ -169,6 +170,21 @@ TEST(MetaDataTest, InvalidSystemCallParameter) {
   EXPECT_FALSE(SystemCallDescriptor{SYS_dup}.parameter(1).is_valid());
 }
 
+TEST(MetaDataTest, ParameterElementSizeTest) {
+  SystemCallDescriptor poll_des{SYS_poll};
+  ParameterDescriptor bounding_param =
+      poll_des.parameter(0).bounding_parameter();
+  EXPECT_TRUE(poll_des.is_valid());
+  EXPECT_TRUE(poll_des.parameter(0).is_bounded());
+  EXPECT_TRUE(poll_des.parameter(0).is_pointer());
+  EXPECT_THAT(poll_des.parameter(0).element_size(), Eq(sizeof(struct pollfd)));
+  EXPECT_THAT(poll_des.parameter(0).size(),
+              Eq(1));  // Bounded to parameter at index 1 (nfds).
+  EXPECT_TRUE(bounding_param.is_valid());
+  EXPECT_THAT(bounding_param.index(), Eq(1));
+  EXPECT_THAT(bounding_param.is_const(), Eq(true));
+}
+
 TEST(MetaDataTest, Summarize) {
   // int dup(int oldfd);
   EXPECT_THAT(Summarize(SYS_dup), StrEq("dup/1(fildes: u32)"));
@@ -213,7 +229,7 @@ TEST(MetaDataTest, Summarize) {
   // int poll(struct pollfd *fds, nfds_t nfds, int timeout);
   EXPECT_THAT(
       Summarize(SYS_poll),
-      StrEq("poll/3(ufds: in/out fixed[8], nfds: u32, timeout_msecs: s32)"));
+      StrEq("poll/3(fds: in/out bounded[nfds], nfds: u64, timeout: s32)"));
 
   // int select(int nfds, fd_set *readfds, fd_set *writefds,
   //            fd_set *exceptfds, struct timeval *timeout);

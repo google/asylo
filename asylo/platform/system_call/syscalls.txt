@@ -24,9 +24,13 @@
 //       * \in: Value copied "in" to the kernel.
 //       * \out: Value copied "out" of the kernel.
 //       * \in_out: Value copied "in" to and "out" of the kernel.
-//       * [count:N]:  Pointer to an array of N items.
+//       * [count:N]:  Pointer to an array of N items. N must be a numerical
+//          value.
 //       * [bound:PARAM]: Pointer to a buffer of PARAM bytes, where "param"
 //          names the parameter containing the number of bytes to serialize.
+//       * [length:PARAM]: Pointer to an array of PARAM items, where each item
+//          is sizeof(element type) bytes long. PARAM names the parameter
+//          containing the length of the array.
 //
 //   * Consider adding tests in metadata_test.cc and system_call_test.cc.
 //
@@ -77,8 +81,8 @@ SYSCALL_DEFINE2(flock, int, fd, int, operation)
 // I/O Synchronization
 // ===================
 
-SYSCALL_DEFINE3(poll, struct pollfd *, ufds, unsigned int, nfds, int,
-                timeout_msecs)
+SYSCALL_DEFINE3(poll, \in_out struct pollfd * [length:nfds], fds,
+                uint64_t, nfds, int, timeout)
 
 SYSCALL_DEFINE5(select, int, nfds, \in_out fd_set *, readfds,
                 \in_out fd_set *, writefds, \in_out fd_set *, exceptfds,

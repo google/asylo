@@ -19,6 +19,7 @@
 #include "asylo/platform/system_call/system_call.h"
 
 #include <fcntl.h>
+#include <sys/poll.h>
 #include <sys/stat.h>
 #include <sys/syscall.h>
 #include <sys/types.h>
@@ -46,6 +47,7 @@ namespace system_call {
 namespace {
 
 using testing::Eq;
+using testing::Not;
 using testing::StrEq;
 
 // A system call dispatch function which invokes a request message locally.
@@ -259,12 +261,34 @@ TEST(SystemCallTest, Nanosleeptest) {
 
   // If klinux_req interprets order of members incorrectly from req, test will
   // suspend for 15 years!
-  int result = enc_untrusted_syscall(SYS_nanosleep, &klinux_req, &klinux_rem);
-  EXPECT_THAT(result, Eq(0));
+  EXPECT_THAT(enc_untrusted_syscall(SYS_nanosleep, &klinux_req, &klinux_rem),
+              Eq(0));
 
   FromkLinuxtimespec(&klinux_rem, &rem);
   EXPECT_THAT(klinux_rem.kLinux_tv_sec, Eq(0));
   EXPECT_THAT(klinux_rem.kLinux_tv_nsec, Eq(0));
+}
+
+TEST(SystemCallTest, BoundedBufferByParamLenTest) {
+  enc_set_dispatch_syscall(SystemCallDispatcher);
+
+  struct pollfd fds_actual[2], fds_expected[2];
+  /* watch stdin for input */
+  fds_actual[0].fd = STDIN_FILENO;
+  fds_actual[0].events = POLLIN;
+  fds_expected[0].fd = STDIN_FILENO;
+  fds_expected[0].events = POLLIN;
+  /* watch stdout for ability to write */
+  fds_actual[1].fd = STDOUT_FILENO;
+  fds_actual[1].events = POLLOUT;
+  fds_expected[1].fd = STDOUT_FILENO;
+  fds_expected[1].events = POLLOUT;
+
+  EXPECT_THAT(poll(fds_expected, 2, 1000), Not(Eq(-1)));
+  EXPECT_THAT(enc_untrusted_syscall(SYS_poll, fds_actual, 2, 10000),
+              Not(Eq(-1)));
+  EXPECT_THAT(fds_actual[0].revents, Eq(fds_expected[0].revents));
+  EXPECT_THAT(fds_actual[1].revents, Eq(fds_actual[1].revents));
 }
 
 }  // namespace

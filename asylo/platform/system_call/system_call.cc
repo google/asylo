@@ -129,7 +129,7 @@ extern "C" int64_t enc_untrusted_syscall(int sysno, ...) {
       if (parameter.is_fixed()) {
         size = parameter.size();
       } else {
-        size = parameters[parameter.size()];
+        size = parameters[parameter.size()] * parameter.element_size();
       }
       const void *src = response_reader.parameter_address(i);
       void *dst = reinterpret_cast<void *>(parameters[i]);

@@ -102,6 +102,13 @@ class ParameterDescriptor {
   // returned.
   size_t size() const;
 
+  // Returns the element size or stride used to determine the size of a buffer
+  // of a certain type. For non-bounded parameters, and for bounded parameters
+  // of type void* char* etc., element_size is always 1. For other bounded
+  // parameters, element_size is the size of the type of array represented by
+  // the buffer.
+  size_t element_size() const;
+
   // Returns true is this parameter is a constant string copied into the kernel.
   bool in_string() const;
 

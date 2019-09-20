@@ -52,19 +52,36 @@ struct ParameterDescription {
   std::string name;
   std::string flags;
   std::string type;
-  size_t size;
+  size_t size;  // Denotes the size in bytes of a parameter for a non-bounded
+                // parameter. For a bounded buffer parameter, it denotes the
+                // relative position of the binding parameter from the first
+                // parameter to the syscall.
+  size_t
+      element_size;  // Denotes the element size (or stride) for a bounded
+                     // buffer parameter. For a non-bounded parameter or a
+                     // buffer of type void* or char*, element_size is always 1.
 };
 
 // Flag describing a parameter passing convention.
 enum ConventionFlag { kIn = 1, kOut = 2 };
 
 // Returns a table mapping a {system call, parameter} pair to a bounding
-// parameter name.
+// parameter position (relative to the first parameter of the system call).
 absl::flat_hash_map<std::pair<std::string, std::string>, int> *BoundsTable() {
   static auto *bounds_table =
       new absl::flat_hash_map<std::pair<std::string, std::string>, int>{
           PARAMETER_BOUNDS_INIT};
   return bounds_table;
+}
+
+// Returns a table mapping a {system call, parameter} pair to a {bounding
+// parameter position (relative to index), parameter type size} pair.
+absl::flat_hash_map<std::pair<std::string, std::string>, std::pair<int, int>>
+    *LengthsTable() {
+  static auto *lengths_table =
+      new absl::flat_hash_map<std::pair<std::string, std::string>,
+                              std::pair<int, int>>{PARAMETER_LENGTHS_INIT};
+  return lengths_table;
 }
 
 // Returns a table mapping a {system call, parameter} pair to a bit mask of
@@ -141,8 +158,10 @@ std::string TypeFlags(const std::string &syscall, const std::string &name) {
 
   // Test whether this parameter has an explicitly specified size.
   {
-    auto it = BoundsTable()->find({syscall, name});
-    if (it != BoundsTable()->end()) {
+    auto it_bounds = BoundsTable()->find({syscall, name});
+    auto it_lengths = LengthsTable()->find({syscall, name});
+    if (it_bounds != BoundsTable()->end() ||
+        it_lengths != LengthsTable()->end()) {
       flags.push_back("kBounded");
     } else {
       // Otherwise, pointer parameters are interpreted as referring to exactly
@@ -184,17 +203,29 @@ template <typename T>
 size_t EncodingSize(const std::string &syscall, const std::string &name) {
   // Check for an explicitly specified bound.
   {
-    auto it = BoundsTable()->find({syscall, name});
-    if (it != BoundsTable()->end()) {
+    auto it_bounds = BoundsTable()->find({syscall, name});
+    if (it_bounds != BoundsTable()->end()) {
       if (!std::is_pointer<T>()) {
         std::cerr << absl::StreamFormat(
                          "Error: Scalar parameter \"%s\" of system call \"%s\" "
-                         "may not be annotated with an bounding parameter.",
+                         "may not be annotated with a bounding parameter.",
                          syscall, name)
                   << std::endl;
         exit(1);
       }
-      return it->second;
+      return it_bounds->second;  // Return the offset to binding param.
+    }
+    auto it_lengths = LengthsTable()->find({syscall, name});
+    if (it_lengths != LengthsTable()->end()) {
+      if (!std::is_pointer<T>()) {
+        std::cerr << absl::StreamFormat(
+                         "Error: Scalar parameter \"%s\" of system call \"%s\" "
+                         "may not be annotated with a bounding parameter.",
+                         syscall, name)
+                  << std::endl;
+        exit(1);
+      }
+      return it_lengths->second.first;  // Return the offset to binding param.
     }
   }
 
@@ -226,6 +257,24 @@ size_t EncodingSize(const std::string &syscall, const std::string &name) {
 
   // Otherwise this is a scalar type.
   return TypeSize<T>();
+}
+
+// Returns the type size to be used to determine the size of a bounded buffer.
+template <typename T>
+size_t ElementSize(const std::string &syscall, const std::string &name) {
+  auto it_lengths = LengthsTable()->find({syscall, name});
+  if (it_lengths != LengthsTable()->end()) {
+    if (!std::is_pointer<T>()) {
+      std::cerr << absl::StreamFormat(
+                       "Error: Scalar parameter \"%s\" of system call \"%s\" "
+                       "may not be annotated with an bounding parameter.",
+                       syscall, name)
+                << std::endl;
+      exit(1);
+    }
+    return it_lengths->second.second;
+  }
+  return 1;
 }
 
 // Returns a table of system calls descriptions.
@@ -282,9 +331,10 @@ void EmitParameterTable(std::ostream *os) {
   *os << "const ParameterTableEntry kParameterTable[] = {\n";
   for (size_t i = 0; i < ParameterTable()->size(); i++) {
     const ParameterDescription &desc = (*ParameterTable())[i];
-    *os << absl::StreamFormat("  /* %s:%i */ {\"%s\", \"%s\", %s, %llu},\n",
-                              desc.syscall, desc.index, desc.name, desc.type,
-                              desc.flags, desc.size);
+    *os << absl::StreamFormat(
+        "  /* %s:%i */ {\"%s\", \"%s\", %s, %llu, %llu},\n", desc.syscall,
+        desc.index, desc.name, desc.type, desc.flags, desc.size,
+        desc.element_size);
   }
   *os << "};\n";
 }

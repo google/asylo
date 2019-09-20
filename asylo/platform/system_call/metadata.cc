@@ -51,6 +51,7 @@ struct ParameterTableEntry {
   const char *type;
   const uint16_t flags;
   const uint32_t size;
+  const uint32_t element_size;
 };
 
 // Include the metadata tables generated at build time.
@@ -140,6 +141,12 @@ bool ParameterDescriptor::is_out() const { return test_flag(kOut); }
 
 size_t ParameterDescriptor::size() const {
   return is_valid() ? kParameterTable[find_parameter_index(sysno_, index_)].size
+                    : 0;
+}
+
+size_t ParameterDescriptor::element_size() const {
+  return is_valid() ? kParameterTable[find_parameter_index(sysno_, index_)]
+                          .element_size
                     : 0;
 }
 

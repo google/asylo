@@ -58,7 +58,8 @@ primitives::PrimitiveStatus UntrustedInvoke(primitives::Extent request,
       size_t size;
       if (parameter.is_bounded()) {
         int bounding_index = parameter.bounding_parameter().index();
-        size = reader.parameter<size_t>(bounding_index);
+        size =
+            reader.parameter<size_t>(bounding_index) * parameter.element_size();
       } else {
         size = parameter.size();
       }
