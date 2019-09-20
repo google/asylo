@@ -20,38 +20,6 @@
 # The format for this file can be found at:
 # third_party/asylo/platform/arch/sgx/host_calls_generator/host_calls.proto
 
-######################################
-##                IO                ##
-######################################
-
-host_calls {
-  name: "pread"
-  return_type: "ssize_t"
-  parameters {
-    name: "fd"
-    type: "int"
-  }
-  parameters {
-    name: "buf"
-    type: "void *"
-    pointer_attributes {
-      attribute: OUT
-    }
-    pointer_attributes {
-      attribute: SIZE
-      attribute_expression: "count"
-    }
-  }
-  parameters {
-    name: "count"
-    type: "size_t"
-  }
-  parameters {
-    name: "offset"
-    type: "off_t"
-  }
-}
-
 ####################################
 ##             Futex              ##
 ####################################

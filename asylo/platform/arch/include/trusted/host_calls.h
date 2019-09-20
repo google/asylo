@@ -66,12 +66,6 @@ void enc_untrusted_deallocate_free_list(void **free_list, size_t count);
 int enc_untrusted_get_errno();
 
 //////////////////////////////////////
-//          Input / Output          //
-//////////////////////////////////////
-
-ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
-
-//////////////////////////////////////
 //            Threading             //
 //////////////////////////////////////
 
