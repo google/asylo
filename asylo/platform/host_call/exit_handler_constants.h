@@ -80,8 +80,15 @@ static constexpr uint64_t kRaiseHandler = primitives::kSelectorHostCall + 13;
 static constexpr uint64_t kGetSockOptHandler =
     primitives::kSelectorHostCall + 14;
 
+// Exit handler constant for |GetAddrInfoHandler|.
 static constexpr uint64_t kGetAddrInfoHandler =
     primitives::kSelectorHostCall + 15;
+
+// Exit handler constant for |InetPtonHandler|.
+static constexpr uint64_t kInetPtonHandler = primitives::kSelectorHostCall + 16;
+
+// Exit handler constant for |InetNtopHandler|.
+static constexpr uint64_t kInetNtopHandler = primitives::kSelectorHostCall + 17;
 
 }  // namespace host_call
 }  // namespace asylo

@@ -138,6 +138,9 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
 int enc_untrusted_getaddrinfo(const char *node, const char *service,
                               const struct addrinfo *hints,
                               struct addrinfo **res);
+int enc_untrusted_inet_pton(int af, const char *src, void *dst);
+const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
+                                    socklen_t size);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);

@@ -127,14 +127,6 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
 
-// Converts |af_family| to a bridge af family. Returns BRIDGE_AF_UNSUPPORTED if
-// |af_family| is not supported.
-AfFamily ToBridgeAfFamily(int af_family);
-
-// Converts |bridge_af_family| to a host af family. Returns -1 if
-// |bridge_af_family| is not supported.
-int FromBridgeAfFamily(int bridge_af_family);
-
 // Converts |ut| to a runtime timespec.
 struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
                                   struct utimbuf *ut);

@@ -103,48 +103,6 @@ void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
 }
 
 //////////////////////////////////////
-//             Sockets              //
-//////////////////////////////////////
-
-const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
-                                    socklen_t size) {
-  char *ret;
-  bridge_size_t src_size;
-  if (af == AF_INET) {
-    src_size = static_cast<bridge_size_t>(sizeof(struct in_addr));
-  } else if (af == AF_INET6) {
-    src_size = static_cast<bridge_size_t>(sizeof(struct in6_addr));
-  } else {
-    errno = EAFNOSUPPORT;
-    return nullptr;
-  }
-  CHECK_OCALL(ocall_enc_untrusted_inet_ntop(&ret, af, src, src_size, dst,
-                                            static_cast<bridge_size_t>(size)));
-  // Instead of returning |ret| (which points to untrusted memory), we return
-  // |dst| upon success (when |ret| is non-null) and nullptr upon failure.
-  if (!ret) {
-    return nullptr;
-  }
-  return dst;
-}
-
-int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
-  int ret = 0;
-  bridge_size_t dst_size = 0;
-  if (af == AF_INET) {
-    dst_size = static_cast<bridge_size_t>(sizeof(struct in_addr));
-  } else if (af == AF_INET6) {
-    dst_size = static_cast<bridge_size_t>(sizeof(struct in6_addr));
-  } else {
-    errno = EINVAL;
-    return -1;
-  }
-  CHECK_OCALL(ocall_enc_untrusted_inet_pton(&ret, asylo::ToBridgeAfFamily(af),
-                                            src, dst, dst_size));
-  return ret;
-}
-
-//////////////////////////////////////
 //           epoll.h                //
 //////////////////////////////////////
 

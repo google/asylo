@@ -133,6 +133,20 @@ Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
                           void *context, primitives::MessageReader *input,
                           primitives::MessageWriter *output);
 
+// inet_pton library call handler on the host; expects [int af, Extent src] and
+// returns [int /*result*/, int /*errno*/, Extent /*addr*/] on the
+// MessageWriter.
+Status InetPtonHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output);
+
+// inet_ntop library call handler on the host; expects [int af, Extent src,
+// socklen_t size] and returns [Extent /*result*/, int /*errno*/] on the
+// MessageWriter.
+Status InetNtopHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

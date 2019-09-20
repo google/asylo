@@ -453,7 +453,7 @@ bool FromkLinuxSockAddr(const struct klinux_sockaddr *input,
   } else {
     if (abort_handler != nullptr) {
       std::string message = absl::StrCat(
-          "Unsupported AF family for getsockname(): ", klinux_family);
+          "Type conversion error - Unsupported AF family: ", klinux_family);
       abort_handler(message.c_str());
     } else {
       abort();

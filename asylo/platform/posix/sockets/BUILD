@@ -36,7 +36,6 @@ cc_library(
     name = "sockets",
     srcs = [
         "in.cc",
-        "inet.cc",
         "socket.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
@@ -59,6 +58,7 @@ cc_library(
 cc_library(
     name = "backend_agnostic_sockets",
     srcs = [
+        "inet.cc",
         "netdb.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,

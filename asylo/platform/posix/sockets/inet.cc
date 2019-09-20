@@ -19,7 +19,7 @@
 #include <arpa/inet.h>
 #include <byteswap.h>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 
 extern "C" {
 

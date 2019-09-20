@@ -49,11 +49,11 @@ static constexpr uint64_t kSelectorAsyloFini = 3;
 //////////////////////////////////////
 
 // Selector for thread creation handler.
-static constexpr uint64_t kSelectorCreateThread = 103;
+static constexpr uint64_t kSelectorCreateThread = 95;
 
 // Selector values in [kSelectorHostCall, kSelectorUser) range are reserved for
 // untrusted host call handlers and cannot be used by any other component.
-static constexpr uint64_t kSelectorHostCall = 104;
+static constexpr uint64_t kSelectorHostCall = 96;
 
 // Selector values less than `kSelectorUser` are reserved by the runtime and may
 // not be registered by the applications.

@@ -72,14 +72,6 @@ int enc_untrusted_get_errno();
 ssize_t enc_untrusted_pread(int fd, void *buf, size_t count, off_t offset);
 
 //////////////////////////////////////
-//            Sockets               //
-//////////////////////////////////////
-
-const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
-                                    socklen_t size);
-int enc_untrusted_inet_pton(int af, const char *src, void *dst);
-
-//////////////////////////////////////
 //            Threading             //
 //////////////////////////////////////
 

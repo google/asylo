@@ -73,6 +73,12 @@ Status AddHostCallHandlersToExitCallProvider(
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kGetAddrInfoHandler, primitives::ExitHandler{GetAddrInfoHandler}));
 
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kInetPtonHandler, primitives::ExitHandler{InetPtonHandler}));
+
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kInetNtopHandler, primitives::ExitHandler{InetNtopHandler}));
+
   return Status::OkStatus();
 }
 

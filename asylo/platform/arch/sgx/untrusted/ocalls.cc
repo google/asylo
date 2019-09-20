@@ -213,29 +213,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 }
 
 //////////////////////////////////////
-//             Sockets              //
-//////////////////////////////////////
-
-char *ocall_enc_untrusted_inet_ntop(int af, const void *src,
-                                    bridge_size_t src_size, char *dst,
-                                    bridge_size_t buf_size) {
-  // src_size is needed so edgr8r copes the correct number of bytes out of the
-  // enclave. This suppresses unused variable errors.
-  (void)src_size;
-  const char *ret = inet_ntop(af, src, dst, static_cast<size_t>(buf_size));
-  // edgr8r does not support returning const char*
-  return const_cast<char *>(ret);
-}
-
-int ocall_enc_untrusted_inet_pton(AfFamily af, const char *src, void *dst,
-                                  bridge_size_t dst_size) {
-  // The line below is needed to surpress unused variable errors, as |dst_size|
-  // is needed for the edgr8r generated code.
-  (void)dst_size;
-  return inet_pton(asylo::FromBridgeAfFamily(af), src, dst);
-}
-
-//////////////////////////////////////
 //           epoll.h                //
 //////////////////////////////////////
 

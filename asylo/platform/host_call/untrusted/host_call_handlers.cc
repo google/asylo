@@ -18,6 +18,7 @@
 
 #include "asylo/platform/host_call/untrusted/host_call_handlers.h"
 
+#include <arpa/inet.h>
 #include <errno.h>
 #include <netdb.h>
 #include <signal.h>
@@ -373,6 +374,48 @@ Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
 
   // result has been copied to MessageWriter, so free it up.
   freeaddrinfo(result);
+  return Status::OkStatus();
+}
+
+Status InetPtonHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 2);
+  int klinux_af = input->next<int>();
+  auto src_buffer = input->next();
+
+  size_t dst_len = 0;
+  if (klinux_af == AF_INET) {
+    dst_len = sizeof(struct in_addr);
+  } else if (klinux_af == AF_INET6) {
+    dst_len = sizeof(struct in6_addr);
+  } else {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "InetPtonHandler: Unrecognized af_family encountered."};
+  }
+  auto dst = absl::make_unique<char[]>(dst_len);
+  output->Push<int>(inet_pton(klinux_af, src_buffer.As<char>(),
+                              reinterpret_cast<void *>(dst.get())));
+  output->Push<int>(errno);
+  output->PushByCopy(Extent{dst.get(), dst_len});
+
+  return Status::OkStatus();
+}
+
+Status InetNtopHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 3);
+  int klinux_af = input->next<int>();
+  auto src_buffer = input->next();
+  auto size = input->next<socklen_t>();
+
+  auto dst = absl::make_unique<char[]>(size);
+  inet_ntop(klinux_af, src_buffer.data(), dst.get(), size);
+
+  output->PushByCopy(Extent{dst.get(), size});
+  output->Push<int>(errno);
+
   return Status::OkStatus();
 }
 

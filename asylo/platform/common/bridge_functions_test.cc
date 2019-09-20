@@ -156,33 +156,6 @@ TEST_F(BridgeTest, BridgeSysLogPriorityTest) {
   }
 }
 
-TEST_F(BridgeTest, BridgeAfFamilyTest) {
-  std::vector<AfFamily> from_consts = {
-      BRIDGE_AF_UNIX,   BRIDGE_AF_INET,      BRIDGE_AF_INET6,  BRIDGE_AF_UNSPEC,
-      BRIDGE_AF_IPX,    BRIDGE_AF_NETLINK,   BRIDGE_AF_X25,    BRIDGE_AF_AX25,
-      BRIDGE_AF_ATMPVC, BRIDGE_AF_APPLETALK, BRIDGE_AF_PACKET, BRIDGE_AF_ALG};
-  intvec to_consts = {AF_UNIX,   AF_INET,      AF_INET6,  AF_UNSPEC,
-                      AF_IPX,    AF_NETLINK,   AF_X25,    AF_AX25,
-                      AF_ATMPVC, AF_APPLETALK, AF_PACKET, AF_ALG};
-  intvec from_ints = {BRIDGE_AF_UNIX,      BRIDGE_AF_INET,   BRIDGE_AF_INET6,
-                      BRIDGE_AF_UNSPEC,    BRIDGE_AF_IPX,    BRIDGE_AF_NETLINK,
-                      BRIDGE_AF_X25,       BRIDGE_AF_AX25,   BRIDGE_AF_ATMPVC,
-                      BRIDGE_AF_APPLETALK, BRIDGE_AF_PACKET, BRIDGE_AF_ALG};
-
-  if (BRIDGE_AF_UNIX != BRIDGE_AF_LOCAL && AF_UNIX != AF_LOCAL) {
-    from_consts.push_back(BRIDGE_AF_LOCAL);
-    to_consts.push_back(AF_LOCAL);
-    from_ints.push_back(BRIDGE_AF_LOCAL);
-  }
-
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeAfFamily);
-  EXPECT_THAT(zip(from_ints, to_consts), from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, AfFamily>(ToBridgeAfFamily);
-  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts,
-                                             BRIDGE_AF_UNSUPPORTED, ITER_BOUND),
-              to_matcher);
-}
-
 }  // namespace
 
 }  // namespace asylo
