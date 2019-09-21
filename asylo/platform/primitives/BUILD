@@ -39,6 +39,27 @@ cc_library(
 
 # Primitive API headers for untrusted code.
 cc_library(
+    name = "enclave_loader",
+    srcs = [
+        "enclave_loader.cc",
+    ],
+    hdrs = [
+        "enclave_loader.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":untrusted_primitives",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/platform/primitives/sgx:untrusted_sgx",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+    ],
+)
+
+# Primitive API headers for untrusted code.
+cc_library(
     name = "untrusted_primitives",
     srcs = ["untrusted_primitives.cc"],
     hdrs = ["untrusted_primitives.h"],

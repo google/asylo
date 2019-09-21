@@ -32,68 +32,15 @@
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/generic_enclave_client.h"
 #include "asylo/platform/primitives/extent.h"
+#include "asylo/platform/primitives/enclave_loader.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
-#include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
-
-StatusOr<std::unique_ptr<EnclaveClient>> LoadSgxEnclave(
-    const EnclaveLoadConfig &load_config) {
-  const std::string enclave_name = load_config.name();
-  const auto &enclave_config = load_config.config();
-
-  const auto &sgx_config = load_config.GetExtension(sgx_load_config);
-
-  std::shared_ptr<primitives::Client> primitive_client;
-  void *base_address = nullptr;
-  uint64_t enclave_size = 0;
-  if (sgx_config.has_fork_config()) {
-    SgxLoadConfig::ForkConfig fork_config = sgx_config.fork_config();
-    base_address = reinterpret_cast<void *>(fork_config.base_address());
-    enclave_size = fork_config.enclave_size();
-  }
-
-  bool debug = sgx_config.debug();
-  bool is_embedded_enclave = sgx_config.has_embedded_enclave_config();
-  bool is_file_enclave = sgx_config.has_file_enclave_config();
-
-  if (is_embedded_enclave) {
-    std::string section_name =
-        sgx_config.embedded_enclave_config().section_name();
-    ASYLO_ASSIGN_OR_RETURN(
-        primitive_client,
-        primitives::LoadEnclave<primitives::SgxEmbeddedBackend>(
-            enclave_name, base_address, section_name, enclave_size,
-            enclave_config, debug,
-            absl::make_unique<primitives::DispatchTable>()));
-  } else if (is_file_enclave) {
-    std::string enclave_path = sgx_config.file_enclave_config().enclave_path();
-    ASYLO_ASSIGN_OR_RETURN(primitive_client,
-                           primitives::LoadEnclave<primitives::SgxBackend>(
-                               enclave_name, base_address, enclave_path,
-                               enclave_size, enclave_config, debug,
-                               absl::make_unique<primitives::DispatchTable>()));
-  } else {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SGX enclave source not set");
-  }
-  auto client = GenericEnclaveClient::Create(enclave_name, primitive_client);
-  return std::unique_ptr<EnclaveClient>(std::move(client));
-}
-
-// Loads an enclave by redirecting enclave load requests to the primitive
-// backend indicated by the extension set in the EnclaveLoadConfig protobuf.
-StatusOr<std::unique_ptr<EnclaveClient>> LoadEnclave(
-    const EnclaveLoadConfig &load_config) {
-  if (load_config.HasExtension(sgx_load_config)) {
-    return LoadSgxEnclave(load_config);
-  }
-  return Status(error::GoogleError::INVALID_ARGUMENT,
-                "Enclave backend not supported in asylo");
-}
 
 // Returns the value of a monotonic clock as a number of nanoseconds.
 int64_t MonotonicClock() {
@@ -453,8 +400,10 @@ Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
   }
 
   // Attempt to load the enclave.
+  auto primitive_client =
+      asylo::primitives::LoadEnclave(load_config).ValueOrDie();
   StatusOr<std::unique_ptr<EnclaveClient>> result =
-      asylo::LoadEnclave(load_config);
+      GenericEnclaveClient::Create(name, primitive_client);
   if (!result.ok()) {
     LOG(ERROR) << "LoadEnclave failed: " << result.status();
     return result.status();
