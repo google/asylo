@@ -589,6 +589,9 @@ def _impl(ctx):
         ],
     )
 
+    cpp11_feature = feature(name = "c++11")
+    cpp17_feature = feature(name = "c++17", enabled = True)
+
     default_compile_flags_feature = feature(
         name = "default_compile_flags",
         enabled = True,
@@ -677,6 +680,20 @@ def _impl(ctx):
                     ACTION_NAMES.clif_match,
                 ],
                 flag_groups = [flag_group(flags = ["-std=gnu++11"])],
+                with_features = [with_feature_set(features = ["c++11"])],
+            ),
+            flag_set(
+                actions = [
+                    ACTION_NAMES.linkstamp_compile,
+                    ACTION_NAMES.cpp_compile,
+                    ACTION_NAMES.cpp_header_parsing,
+                    ACTION_NAMES.cpp_module_compile,
+                    ACTION_NAMES.cpp_module_codegen,
+                    ACTION_NAMES.lto_backend,
+                    ACTION_NAMES.clif_match,
+                ],
+                flag_groups = [flag_group(flags = ["-std=gnu++17"])],
+                with_features = [with_feature_set(features = ["c++17"])],
             ),
         ],
     )
@@ -1399,6 +1416,8 @@ def _impl(ctx):
     features = [
         no_legacy_features_feature,
         has_configured_linker_path_feature,
+        cpp11_feature,
+        cpp17_feature,
         default_compile_flags_feature,
         symbol_counts_feature,
         shared_flag_feature,
