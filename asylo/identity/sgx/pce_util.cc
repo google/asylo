@@ -77,9 +77,11 @@ absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
       return static_cast<uint8_t>(PCE_ALG_RSA_OAEP_3072);
     case RSA2048_OAEP:
       ABSL_FALLTHROUGH_INTENDED;
-    default:
-      return absl::nullopt;
+    case UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME:
+      break;
   }
+
+  return absl::nullopt;
 }
 
 AsymmetricEncryptionScheme PceCryptoSuiteToAsymmetricEncryptionScheme(
@@ -87,9 +89,9 @@ AsymmetricEncryptionScheme PceCryptoSuiteToAsymmetricEncryptionScheme(
   switch (pce_crypto_suite) {
     case PCE_ALG_RSA_OAEP_3072:
       return RSA3072_OAEP;
-    default:
-      return UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME;
   }
+
+  return UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME;
 }
 
 absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
@@ -97,9 +99,11 @@ absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
   switch (signature_scheme) {
     case ECDSA_P256_SHA256:
       return static_cast<uint8_t>(PCE_NIST_P256_ECDSA_SHA256);
-    default:
-      return absl::nullopt;
+    case UNKNOWN_SIGNATURE_SCHEME:
+      break;
   }
+
+  return absl::nullopt;
 }
 
 SignatureScheme PceSignatureSchemeToSignatureScheme(
@@ -107,9 +111,9 @@ SignatureScheme PceSignatureSchemeToSignatureScheme(
   switch (pce_signature_scheme) {
     case PCE_NIST_P256_ECDSA_SHA256:
       return ECDSA_P256_SHA256;
-    default:
-      return UNKNOWN_SIGNATURE_SCHEME;
   }
+
+  return UNKNOWN_SIGNATURE_SCHEME;
 }
 
 StatusOr<Signature> CreateSignatureFromPckEcdsaP256Sha256Signature(
