@@ -51,9 +51,9 @@ go_register_toolchains()
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 http_archive(
     name = "io_bazel_skydoc",
-    urls = ["https://github.com/bazelbuild/skydoc/archive/c7bbde2950769aac9a99364b0926230060a3ce04.tar.gz"],
-    sha256 = "e6a76586b264f30679688f65f7e71ac112d1446681010a13bf22d9ca071f34b7",
-    strip_prefix = "skydoc-c7bbde2950769aac9a99364b0926230060a3ce04",
+    urls = ["https://github.com/bazelbuild/skydoc/archive/0afcfc62f32c644529fa5cdd8ffeec53a46462d6.tar.gz"],
+    sha256 = "fa548bfea1d485239e6aa20d3d6dd08f53c87d4f468eb57af4d14e311b32990a",
+    strip_prefix = "skydoc-0afcfc62f32c644529fa5cdd8ffeec53a46462d6",
 )
 
 load("@io_bazel_skydoc//:setup.bzl", "skydoc_repositories")
