@@ -54,10 +54,15 @@ class TrustedPrimitives {
   //  * Not assume that the I/O or logging subsystems are usable.
   static void DebugPuts(const char *message);
 
-  // Returns true if a `size` byte value at an address `addr` falls inside the
-  // TCB and may not be modified by untrusted code.
-  static bool IsTrustedExtent(const void *addr,
+  // Returns true if every byte of a `size` byte range at an address `addr`
+  // falls inside the TCB and may not be modified by untrusted code.
+  static bool IsInsideEnclave(const void *addr,
                               size_t size) ASYLO_MUST_USE_RESULT;
+
+  // Returns true if every byte of a `size` byte range at an address `addr`
+  // falls outside the TCB and may be modified by untrusted code.
+  static bool IsOutsideEnclave(const void *addr,
+                               size_t size) ASYLO_MUST_USE_RESULT;
 
   // Allocates `size` bytes of untrusted local memory, which must later be freed
   // by calling UntrustedLocalFree or by free call in local untrusted code.

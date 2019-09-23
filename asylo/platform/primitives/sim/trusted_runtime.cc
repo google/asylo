@@ -41,10 +41,10 @@ extern "C" int enclave_write(int fd, const void *buf, size_t count) {
 }
 
 bool enc_is_within_enclave(void const *address, size_t size) {
-  return ::asylo::primitives::TrustedPrimitives::IsTrustedExtent(address, size);
+  return ::asylo::primitives::TrustedPrimitives::IsInsideEnclave(address, size);
 }
 
 bool enc_is_outside_enclave(void const *address, size_t size) {
-  return !::asylo::primitives::TrustedPrimitives::IsTrustedExtent(address,
-                                                                  size);
+  return !::asylo::primitives::TrustedPrimitives::IsOutsideEnclave(address,
+                                                                   size);
 }

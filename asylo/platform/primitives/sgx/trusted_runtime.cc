@@ -95,6 +95,8 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
   if (!enclave_memory_layout) return;
   struct SgxMemoryLayout memory_layout;
   sgx_memory_layout(&memory_layout);
+  enclave_memory_layout->base = memory_layout.base;
+  enclave_memory_layout->size = memory_layout.size;
   enclave_memory_layout->data_base = memory_layout.data_base;
   enclave_memory_layout->data_size = memory_layout.data_size;
   enclave_memory_layout->bss_base = memory_layout.bss_base;

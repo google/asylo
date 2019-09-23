@@ -505,11 +505,15 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -82,6 +83,63 @@
+@@ -82,6 +83,67 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
 +struct SgxMemoryLayout {
++  // Enclave load address.
++  void *base;
++  // Size of the enclave in bytes.
++  size_t size;
 +  // Base address of the initialized data section in the current enclave.
 +  void *data_base;
 +  // Size of the initialized data section in the current enclave.
@@ -2962,7 +2966,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 --- sdk/trts/trts_util.cpp
 +++ sdk/trts/trts_util.cpp
-@@ -29,6 +29,7 @@
+@@ -29,12 +29,24 @@
   *
   */
  
@@ -2970,10 +2974,11 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  
  #include "trts_util.h"
  #include "global_data.h"
-@@ -36,6 +37,16 @@
+ #include "util.h"
  #include "thread_data.h"
  #include "trts_internal.h"
- 
++#include "sgx_trts.h"
++
 +std::atomic<int> ecall_count(0);
 +std::atomic<bool> block_ecalls(false);
 +
@@ -2983,11 +2988,10 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +
 +void set_block_ecalls(bool block) { block_ecalls = block; }
 +bool get_block_ecalls() { return block_ecalls; }
-+
+ 
  // No need to check the state of enclave or thread.
  // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
- size_t get_enclave_size(void)
-@@ -123,6 +134,47 @@
+@@ -123,6 +135,51 @@
      return rsrv_size;
  }
  
@@ -3001,6 +3005,10 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 +    __attribute__((section(".reserved_heap")));
 +
 +void get_memory_layout(struct SgxMemoryLayout *memory_layout) {
++  // Enclave base and size.
++  memory_layout->base = get_enclave_base();
++  memory_layout->size = get_enclave_size();
++
 +  // Enclave initialized data/uninitialized data/heap.
 +  memory_layout->data_base =
 +      GET_PTR(void, &__ImageBase, g_global_data.data_offset);
@@ -3035,6 +3043,11 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  int * get_errno_addr(void)
  {
      thread_data_t *thread_data = get_thread_data();
+@@ -179,4 +236,3 @@
+     return ( !(sp & (sizeof(uintptr_t) - 1))   // sp is expected to be 4/8 bytes aligned
+            && is_stack_addr((void*)sp, 0) );   // sp points to the top/bottom of stack are accepted
+ }
+-
 diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
 --- sdk/trts/trts_util.h
 +++ sdk/trts/trts_util.h

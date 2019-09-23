@@ -116,7 +116,7 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
   }
 
   if (input) {
-    if (TrustedPrimitives::IsTrustedExtent(input, input_len)) {
+    if (!TrustedPrimitives::IsOutsideEnclave(input, input_len)) {
       return {error::GoogleError::INVALID_ARGUMENT,
               "input should lie in untrusted memory"};
     }
@@ -137,7 +137,7 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
   *output_len = output_size;
 
   if (*output) {
-    if (!TrustedPrimitives::IsTrustedExtent(*output, output_size)) {
+    if (!TrustedPrimitives::IsInsideEnclave(*output, output_size)) {
       return {error::GoogleError::INVALID_ARGUMENT,
               "output should lie in trusted memory"};
     }
@@ -156,11 +156,32 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
   return status;
 }
 
-bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
-  auto begin = reinterpret_cast<const uint8_t *>(Simulator::GetInstance());
-  const uint8_t *end = begin + sizeof(Simulator);
-  return reinterpret_cast<const uint8_t *>(addr) >= begin &&
-         reinterpret_cast<const uint8_t *>(addr) + size < end;
+bool TrustedPrimitives::IsInsideEnclave(const void *addr, size_t size) {
+  auto enclave_begin =
+      reinterpret_cast<const uint8_t *>(Simulator::GetInstance());
+  const uint8_t *enclave_end = enclave_begin + sizeof(Simulator);
+  auto *from = static_cast<const uint8_t *>(addr);
+  auto *to = from + size;
+  if (from > to) {
+    return false;
+  }
+  return from >= enclave_begin && to < enclave_end;
+}
+
+bool TrustedPrimitives::IsOutsideEnclave(const void *addr, size_t size) {
+  auto enclave_begin =
+      reinterpret_cast<const uint8_t *>(Simulator::GetInstance());
+  const uint8_t *enclave_end = enclave_begin + sizeof(Simulator);
+  auto *from = static_cast<const uint8_t *>(addr);
+  auto *to = from + size;
+
+  // A range wrapping around the address space.
+  if (to < from) {
+    return to < enclave_begin && from >= enclave_end;
+  }
+
+  return (from < enclave_begin && to < enclave_begin) ||
+         (from >= enclave_end && to >= enclave_end);
 }
 
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
@@ -199,6 +220,14 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
 
 int TrustedPrimitives::CreateThread() {
   return 0;
+}
+
+// Provide a minimal implementation of enc_get_memory_layout.
+extern "C" void enc_get_memory_layout(
+    struct EnclaveMemoryLayout *enclave_memory_layout) {
+  memset(enclave_memory_layout, 0, sizeof(EnclaveMemoryLayout));
+  enclave_memory_layout->base = Simulator::GetInstance();
+  enclave_memory_layout->size = sizeof(Simulator);
 }
 
 }  // namespace primitives

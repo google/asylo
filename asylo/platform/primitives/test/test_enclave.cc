@@ -128,7 +128,7 @@ PrimitiveStatus TrustedFibonacci(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
-// Tests whether buffers returned by malloc satisfy IsTrustedExtent().
+// Tests whether buffers returned by malloc satisfy IsInsideEnclave().
 // Parameter is a single OUT.
 PrimitiveStatus TrustedMallocTest(void *context, MessageReader *in,
                                   MessageWriter *out) {
@@ -137,7 +137,7 @@ PrimitiveStatus TrustedMallocTest(void *context, MessageReader *in,
   for (int i = 0; i < 20; i++) {
     size_t sz = 1 << i;
     void *buffer = malloc(sz);
-    passed = passed && TrustedPrimitives::IsTrustedExtent(buffer, sz);
+    passed = passed && TrustedPrimitives::IsInsideEnclave(buffer, sz);
     free(buffer);
   }
   out->Push(passed);
@@ -145,7 +145,7 @@ PrimitiveStatus TrustedMallocTest(void *context, MessageReader *in,
 }
 
 // Tests whether any buffer returned by UntrustedLocalAlloc does not satisfy
-// IsTrustedExtent(). Parameter is a single OUT.
+// IsOutsideEnclave(). Parameter is a single OUT.
 PrimitiveStatus UntrustedLocalAllocTest(void *context, MessageReader *in,
                                         MessageWriter *out) {
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
@@ -153,7 +153,7 @@ PrimitiveStatus UntrustedLocalAllocTest(void *context, MessageReader *in,
   for (int i = 0; i < 20; i++) {
     size_t sz = 1 << i;
     void *buffer = TrustedPrimitives::UntrustedLocalAlloc(sz);
-    passed = passed && !TrustedPrimitives::IsTrustedExtent(buffer, sz);
+    passed = passed && TrustedPrimitives::IsOutsideEnclave(buffer, sz);
     TrustedPrimitives::UntrustedLocalFree(buffer);
   }
   out->Push(passed);
@@ -196,6 +196,76 @@ PrimitiveStatus StressMallocs(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus InsideOutsideTest(void *context, MessageReader *in,
+                                  MessageWriter *out) {
+  struct EnclaveMemoryLayout layout;
+  enc_get_memory_layout(&layout);
+
+  const size_t kIntervalSize = 4096;
+
+  // Extent before the enclave.
+  uint8_t *begin = static_cast<uint8_t *>(layout.base);
+  if (!TrustedPrimitives::IsOutsideEnclave(nullptr, kIntervalSize) ||
+      TrustedPrimitives::IsInsideEnclave(nullptr, kIntervalSize)) {
+    out->PushString("Failed for extent before enclave");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  // Extent inside the enclave.
+  begin = static_cast<uint8_t *>(layout.base);
+  if (TrustedPrimitives::IsOutsideEnclave(begin, kIntervalSize) ||
+      !TrustedPrimitives::IsInsideEnclave(begin, kIntervalSize)) {
+    out->PushString("Failed for extent inside enclave");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  // Extent after the enclave.
+  uint8_t *end = begin + layout.size;
+  if (!TrustedPrimitives::IsOutsideEnclave(end, kIntervalSize) ||
+      TrustedPrimitives::IsInsideEnclave(end, kIntervalSize)) {
+    out->PushString("Failed for extent after enclave");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  // Extent covering the enclave.
+  uint8_t *before = begin - kIntervalSize;
+  uint8_t *after = end + kIntervalSize;
+  if (TrustedPrimitives::IsOutsideEnclave(before, after - before) ||
+      TrustedPrimitives::IsInsideEnclave(before, after - before)) {
+    out->PushString("Failed for extent covering enclave");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  // Extent where address arithmetic might overflow.
+  const size_t kLargeSize = ~UINT64_C(0) - kIntervalSize;
+  if (TrustedPrimitives::IsOutsideEnclave(begin - kIntervalSize, kLargeSize) ||
+      TrustedPrimitives::IsInsideEnclave(begin - kIntervalSize, kLargeSize)) {
+    out->PushString("Failed for arithmetic overflow");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  // Extent covering enclave start.
+  if (TrustedPrimitives::IsOutsideEnclave(begin - kIntervalSize,
+                                          2 * kIntervalSize) ||
+      TrustedPrimitives::IsInsideEnclave(begin - kIntervalSize,
+                                         2 * kIntervalSize)) {
+    out->PushString("Failed for extent spanning enclave start");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  // Extent covering enclave end.
+  if (TrustedPrimitives::IsOutsideEnclave(end - kIntervalSize,
+                                          2 * kIntervalSize) ||
+      TrustedPrimitives::IsInsideEnclave(end - kIntervalSize,
+                                         2 * kIntervalSize)) {
+    out->PushString("Failed for extent spanning enclave end");
+    return PrimitiveStatus::OkStatus();
+  }
+
+  out->PushString("pass");
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace primitives
 }  // namespace asylo
@@ -226,6 +296,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::primitives::kStressMallocs,
       EntryHandler{asylo::primitives::StressMallocs}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::primitives::kInsideOutsideTest,
+      EntryHandler{asylo::primitives::InsideOutsideTest}));
   return asylo::primitives::initialized
              ? PrimitiveStatus::OkStatus()
              : PrimitiveStatus{::asylo::error::GoogleError::FAILED_PRECONDITION,

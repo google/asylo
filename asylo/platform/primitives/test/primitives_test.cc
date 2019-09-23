@@ -350,7 +350,7 @@ TEST_F(PrimitivesTest, ThreadLocalStorageTest) {
 }
 
 // Ensure the buffers returned by trusted malloc satisfy
-// TrustedPrimitives::IsTrustedExtent().
+// TrustedPrimitives::IsInsideEnclave().
 TEST_F(PrimitivesTest, TrustedMalloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   MessageReader out;
@@ -361,8 +361,8 @@ TEST_F(PrimitivesTest, TrustedMalloc) {
 }
 
 // Ensure the buffers returned by untrusted alloc do not satisfy
-// TrustedPrimitives::IsTrustedExtent().
-TEST_F(PrimitivesTest, UnrustedAlloc) {
+// TrustedPrimitives::IsInsideEnclave().
+TEST_F(PrimitivesTest, UntrustedAlloc) {
   auto client = LoadTestEnclaveOrDie(/*reload=*/false);
   MessageReader out;
   ASYLO_EXPECT_OK(client->EnclaveCall(kUntrustedLocalAllocTest, nullptr, &out));
@@ -401,6 +401,18 @@ TEST_F(PrimitivesTest, CopyMultipleParams) {
     const std::string out4s(outp4.As<char>(), outp4.size());
     EXPECT_THAT(out4s, StrEq("Foo"));
   }
+  EXPECT_FALSE(out.hasNext());
+}
+
+// Ensure that IsInsideEnclave and IsOutsideEnclave return the expected values.
+TEST_F(PrimitivesTest, InsideOutsideEnclaveTest) {
+  auto client = LoadTestEnclaveOrDie(/*reload=*/false);
+  MessageReader out;
+  ASYLO_EXPECT_OK(client->EnclaveCall(kInsideOutsideTest, nullptr, &out));
+  EXPECT_THAT(out, SizeIs(1));
+  auto result = out.next();
+  EXPECT_THAT(std::string(result.As<char>(), result.size() - 1),
+              StrEq("pass"));
   EXPECT_FALSE(out.hasNext());
 }
 

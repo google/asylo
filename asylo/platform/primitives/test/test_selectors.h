@@ -35,6 +35,7 @@ constexpr uint64_t kUntrustedLocalAllocTest = kSelectorUser + 5;
 constexpr uint64_t kAveragePerThreadSelector = kSelectorUser + 6;
 constexpr uint64_t kCopyMultipleParamsSelector = kSelectorUser + 7;
 constexpr uint64_t kStressMallocs = kSelectorUser + 8;
+constexpr uint64_t kInsideOutsideTest = kSelectorUser + 9;
 
 // Entry point with no registered handler.
 constexpr uint64_t kNotRegisteredSelector = kSelectorUser + 100;

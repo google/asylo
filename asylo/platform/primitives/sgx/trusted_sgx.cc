@@ -162,7 +162,7 @@ int asylo_enclave_call(uint64_t selector, void *buffer) {
   size_t output_size = 0;
 
   if (input) {
-    if (TrustedPrimitives::IsTrustedExtent(input, input_size)) {
+    if (!TrustedPrimitives::IsOutsideEnclave(input, input_size)) {
       PrimitiveStatus status{error::GoogleError::INVALID_ARGUMENT,
                              "input should lie within untrusted memory."};
       return status.error_code();
@@ -183,11 +183,11 @@ int asylo_enclave_call(uint64_t selector, void *buffer) {
       InvokeEntryHandler(selector, input, input_size, &output, &output_size);
 
   if (output) {
-    // Copy trusted |*output| to untrusted memory and pass that as
-    // output. We also free trusted |*output| after it is copied to untrusted
-    // side. The untrusted caller is still responsible for freeing |*output|,
-    // which now points to untrusted memory.
-    if (!TrustedPrimitives::IsTrustedExtent(output, output_size)) {
+    // Copy trusted |*output| to untrusted memory and pass that as output. We
+    // also free trusted |*output| after it is copied to the untrusted side. The
+    // untrusted caller is still responsible for freeing |*output|, which now
+    // points to untrusted memory.
+    if (!TrustedPrimitives::IsInsideEnclave(output, output_size)) {
       PrimitiveStatus{error::GoogleError::INVALID_ARGUMENT,
                       "output should lie in trusted memory"};
       return status.error_code();
@@ -229,8 +229,12 @@ void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   CHECK_OCALL(ocall_untrusted_local_free(ptr));
 }
 
-bool TrustedPrimitives::IsTrustedExtent(const void *addr, size_t size) {
+bool TrustedPrimitives::IsInsideEnclave(const void *addr, size_t size) {
   return enc_is_within_enclave(addr, size);
+}
+
+bool TrustedPrimitives::IsOutsideEnclave(const void *addr, size_t size) {
+  return enc_is_outside_enclave(addr, size);
 }
 
 void TrustedPrimitives::DebugPuts(const char *message) {

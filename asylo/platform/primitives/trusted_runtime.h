@@ -72,6 +72,10 @@ bool enc_is_within_enclave(const void *address, size_t size);
 bool enc_is_outside_enclave(void const *address, size_t size);
 
 struct EnclaveMemoryLayout {
+  // Enclave base load address.
+  void *base;
+  // Enclave size in bytes.
+  size_t size;
   // Base address of the initialized data section in the current enclave.
   void *data_base;
   // Size of the initialized data section in the current enclave.
