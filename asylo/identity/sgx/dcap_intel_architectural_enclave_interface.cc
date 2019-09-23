@@ -20,6 +20,10 @@
 
 #include <vector>
 
+#include "absl/strings/str_cat.h"
+#include "asylo/crypto/algorithms.pb.h"
+#include "asylo/identity/sgx/pce_util.h"
+#include "asylo/util/status.h"
 #include "include/sgx_key.h"
 #include "include/sgx_report.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
@@ -72,19 +76,33 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceTargetinfo(
 
 Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
     const Report &report, absl::Span<const uint8_t> ppid_encryption_key,
-    uint8_t crypto_suite, std::string *ppid_encrypted, uint16_t *pce_svn,
-    uint16_t *pce_id, uint8_t *signature_scheme) {
+    AsymmetricEncryptionScheme ppid_encryption_scheme,
+    std::string *ppid_encrypted, uint16_t *pce_svn, uint16_t *pce_id,
+    SignatureScheme *signature_scheme) {
   static_assert(sizeof(Report) == sizeof(sgx_report_t),
                 "Report struct is not the same size as sgx_report_t struct");
 
+  absl::optional<uint8_t> crypto_suite =
+      AsymmetricEncryptionSchemeToPceCryptoSuite(ppid_encryption_scheme);
+  if (!crypto_suite.has_value()) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Invalid ppid_encryption_scheme: ",
+                     AsymmetricEncryptionScheme_Name(ppid_encryption_scheme)));
+  }
+
   std::vector<uint8_t> ppid_encrypted_tmp(ppid_encrypted->size());
   uint32_t encrypted_ppid_out_size = 0;
-  sgx_pce_error_t result = sgx_get_pce_info(
-      reinterpret_cast<const sgx_report_t *>(&report),
-      ppid_encryption_key.data(), ppid_encryption_key.size(), crypto_suite,
-      ppid_encrypted_tmp.data(), ppid_encrypted_tmp.size(),
-      &encrypted_ppid_out_size, pce_svn, pce_id, signature_scheme);
+  uint8_t pce_signature_scheme;
+  sgx_pce_error_t result =
+      sgx_get_pce_info(reinterpret_cast<const sgx_report_t *>(&report),
+                       ppid_encryption_key.data(), ppid_encryption_key.size(),
+                       crypto_suite.value(), ppid_encrypted_tmp.data(),
+                       ppid_encrypted_tmp.size(), &encrypted_ppid_out_size,
+                       pce_svn, pce_id, &pce_signature_scheme);
   if (result == SGX_PCE_SUCCESS) {
+    *signature_scheme =
+        PceSignatureSchemeToSignatureScheme(pce_signature_scheme);
     ppid_encrypted_tmp.resize(encrypted_ppid_out_size);
     ppid_encrypted->insert(ppid_encrypted->begin(), ppid_encrypted_tmp.cbegin(),
                            ppid_encrypted_tmp.cend());

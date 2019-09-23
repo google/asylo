@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/types/span.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
@@ -49,9 +50,10 @@ class DcapIntelArchitecturalEnclaveInterface
 
   Status GetPceInfo(const Report &report,
                     absl::Span<const uint8_t> ppid_encryption_key,
-                    uint8_t crypto_suite, std::string *ppid_encrypted,
-                    uint16_t *pce_svn, uint16_t *pce_id,
-                    uint8_t *signature_scheme) override;
+                    AsymmetricEncryptionScheme ppid_encryption_scheme,
+                    std::string *ppid_encrypted, uint16_t *pce_svn,
+                    uint16_t *pce_id,
+                    SignatureScheme *signature_scheme) override;
 
   Status PceSignReport(const Report &report, uint16_t target_pce_svn,
                        UnsafeBytes<kCpusvnSize> target_cpu_svn,

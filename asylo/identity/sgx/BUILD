@@ -1315,6 +1315,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
         "@com_google_absl//absl/types:span",
@@ -1331,8 +1332,11 @@ cc_library(
     deps = [
         ":hardware_types",
         ":intel_architectural_enclave_interface",
+        ":pce_util",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
         "@linux_sgx//:public",
         "@sgx_dcap//:pce_wrapper",
@@ -1347,6 +1351,7 @@ cc_library(
     deps = [
         ":hardware_types",
         ":intel_architectural_enclave_interface",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
         "@com_google_absl//absl/types:span",

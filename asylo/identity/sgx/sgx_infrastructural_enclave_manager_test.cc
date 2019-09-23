@@ -393,9 +393,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetInfoSuccess) {
               GetPceInfo(_, _, _, NotNull(), NotNull(), NotNull(), NotNull()))
       .WillOnce(DoAll(SetArgPointee<3>(kEncryptedPpid),
                       SetArgPointee<4>(kPceSvn), SetArgPointee<5>(kPceId),
-                      SetArgPointee<6>(sgx::SignatureSchemeToPceSignatureScheme(
-                                           kPckSignatureScheme)
-                                           .value()),
+                      SetArgPointee<6>(kPckSignatureScheme),
                       Return(Status::OkStatus())));
 
   sgx::ReportProto report = Report();

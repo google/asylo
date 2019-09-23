@@ -180,24 +180,15 @@ Status SgxInfrastructuralEnclaveManager::PceGetInfo(
   std::vector<uint8_t> serialized_ppidek;
   ASYLO_ASSIGN_OR_RETURN(serialized_ppidek, sgx::SerializePpidek(ppidek));
 
-  // This conversion is guaranteed to produce a value because |ppidek| was
-  // successfully serialized.
-  uint8_t crypto_suite = sgx::AsymmetricEncryptionSchemeToPceCryptoSuite(
-                             ppidek.encryption_scheme())
-                             .value();
-
   uint16_t pce_svn_out;
   uint16_t pce_id_out;
-  uint8_t signature_scheme_out;
 
   ASYLO_RETURN_IF_ERROR(intel_ae_interface_->GetPceInfo(
-      report, serialized_ppidek, crypto_suite, encrypted_ppid, &pce_svn_out,
-      &pce_id_out, &signature_scheme_out));
+      report, serialized_ppidek, ppidek.encryption_scheme(), encrypted_ppid,
+      &pce_svn_out, &pce_id_out, pck_signature_scheme));
 
   pce_svn->set_value(pce_svn_out);
   pce_id->set_value(pce_id_out);
-  *pck_signature_scheme =
-      sgx::PceSignatureSchemeToSignatureScheme(signature_scheme_out);
 
   return Status::OkStatus();
 }

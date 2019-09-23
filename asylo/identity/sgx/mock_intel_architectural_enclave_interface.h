@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include "absl/types/span.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
@@ -35,12 +36,16 @@ namespace sgx {
 class MockIntelArchitecturalEnclaveInterface
     : public IntelArchitecturalEnclaveInterface {
  public:
-  MOCK_METHOD2(GetPceTargetinfo, Status(Targetinfo *, uint16_t *));
-  MOCK_METHOD7(GetPceInfo,
-               Status(const Report &, absl::Span<const uint8_t>, uint8_t,
-                      std::string *, uint16_t *, uint16_t *, uint8_t *));
-  MOCK_METHOD4(PceSignReport, Status(const Report &, uint16_t target_pce_svn,
-                                     UnsafeBytes<kCpusvnSize>, std::string *));
+  MOCK_METHOD(Status, GetPceTargetinfo, (Targetinfo *, uint16_t *), (override));
+  MOCK_METHOD(Status, GetPceInfo,
+              (const Report &, absl::Span<const uint8_t>,
+               AsymmetricEncryptionScheme, std::string *, uint16_t *,
+               uint16_t *, SignatureScheme *),
+              (override));
+  MOCK_METHOD(Status, PceSignReport,
+              (const Report &, uint16_t target_pce_svn,
+               UnsafeBytes<kCpusvnSize>, std::string *),
+              (override));
 };
 
 }  // namespace sgx

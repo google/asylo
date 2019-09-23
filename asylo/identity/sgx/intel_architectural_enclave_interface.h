@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/types/span.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/util/status.h"
@@ -52,9 +53,10 @@ class IntelArchitecturalEnclaveInterface {
   //
   // The caller must provide the following:
   //
-  // * |crypto_suite| is the asymmetric crypto suite used to encrypt the PPID.
+  // * |ppid_encryption_scheme| is the asymmetric crypto scheme used to encrypt
+  //   the PPID.
   // * |ppid_encryption_key| is an asymmetric encryption key matching the
-  //   provided |crypto_suite| that is used to encrypt the PPID.
+  //   provided |ppid_encryption_scheme| that is used to encrypt the PPID.
   // * |report| is an SGX hardware REPORT that must meet the following
   //   requirements:
   //   * The REPORT is targeted at the PCE.
@@ -76,9 +78,10 @@ class IntelArchitecturalEnclaveInterface {
   // * |signature_scheme| is set to the signature scheme used by the PCE's PCK.
   virtual Status GetPceInfo(const Report &report,
                             absl::Span<const uint8_t> ppid_encryption_key,
-                            uint8_t crypto_suite, std::string *ppid_encrypted,
-                            uint16_t *pce_svn, uint16_t *pce_id,
-                            uint8_t *signature_scheme) = 0;
+                            AsymmetricEncryptionScheme ppid_encryption_scheme,
+                            std::string *ppid_encrypted, uint16_t *pce_svn,
+                            uint16_t *pce_id,
+                            SignatureScheme *signature_scheme) = 0;
 
   // Requests the PCE to sign the given |report| with the PCK corresponding to
   // |target_pce_svn| and |target_cpusvn|. The resulting signature is written to
