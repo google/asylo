@@ -24,8 +24,8 @@
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/util/status.h"
-#include "asylo/util/statusor.h"
 #include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace primitives {
@@ -58,15 +58,14 @@ StatusOr<std::shared_ptr<primitives::Client>> LoadSgxEnclave(
         primitive_client,
         LoadEnclave<SgxEmbeddedBackend>(
             enclave_name, base_address, section_name, enclave_size,
-            enclave_config, debug,
-            absl::make_unique<DispatchTable>()));
+            enclave_config, debug, absl::make_unique<DispatchTable>()));
   } else if (is_file_enclave) {
     std::string enclave_path = sgx_config.file_enclave_config().enclave_path();
-    ASYLO_ASSIGN_OR_RETURN(primitive_client,
-                           LoadEnclave<SgxBackend>(
-                               enclave_name, base_address, enclave_path,
-                               enclave_size, enclave_config, debug,
-                               absl::make_unique<DispatchTable>()));
+    ASYLO_ASSIGN_OR_RETURN(
+        primitive_client,
+        LoadEnclave<SgxBackend>(enclave_name, base_address, enclave_path,
+                                enclave_size, enclave_config, debug,
+                                absl::make_unique<DispatchTable>()));
   } else {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "SGX enclave source not set");
