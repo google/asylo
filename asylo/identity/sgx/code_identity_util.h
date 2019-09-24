@@ -63,11 +63,9 @@ Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
 bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity);
 
 // Checks if an enclave identity is valid.
-bool IsValidCodeIdentity(const CodeIdentity &identity);
 bool IsValidSgxIdentity(const SgxIdentity &identity);
 
 // Checks if a match specification is valid.
-bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec);
 bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec,
                       bool is_legacy = false);
 
@@ -75,11 +73,6 @@ bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec,
 bool IsValidExpectation(const CodeIdentityExpectation &expectation);
 bool IsValidExpectation(const SgxIdentityExpectation &expectation,
                         bool is_legacy = false);
-
-// Parses CodeIdentity from |report| and places the result in |identity|. Does
-// not verify |report|.
-Status ParseIdentityFromHardwareReport(const Report &report,
-                                       CodeIdentity *identity);
 
 // Parses SgxIdentity from |report| and places the result in |identity|.
 // Does not verify |report|.
@@ -89,7 +82,6 @@ Status ParseIdentityFromHardwareReport(const Report &report,
 // Sets |spec| to the default SGX match spec, which requires a match on
 // MRSIGNER, MISCSELECT, and all ATTRIBUTES that do not fall into the default
 // "do not care" set.
-Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec);
 Status SetDefaultMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |spec| to the strictest SGX match spec, which requires a match on
@@ -103,15 +95,11 @@ void SetSelfSgxIdentity(SgxIdentity *identity);
 
 // Sets |expectation| to default expectation, which is defined as the pair
 // <self identity, default match spec>.
-Status SetDefaultSelfCodeIdentityExpectation(
-    CodeIdentityExpectation *expectation);
 Status SetDefaultSelfSgxIdentityExpectation(
     SgxIdentityExpectation *expectation);
 
 // Sets |expectation| to the strictest self identity expectation, which is
 // defined as the pair <self identity, strict match spec>.
-Status SetStrictSelfCodeIdentityExpectation(
-    CodeIdentityExpectation *expectation);
 Status SetStrictSelfSgxIdentityExpectation(SgxIdentityExpectation *expectation);
 
 // Parses SGX code identity from a EnclaveIdentity proto.
@@ -123,16 +111,11 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
 // Parses SGX match spec |sgx_match_spec| from a string (which is how it is
 // stored in the EnclaveIdentityExpectation proto).
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
-                         CodeIdentityMatchSpec *sgx_match_spec);
-Status ParseSgxMatchSpec(const std::string &generic_match_spec,
                          SgxIdentityMatchSpec *sgx_match_spec,
                          bool is_legacy = false);
 
 // Parses SGX code identity expectation |sgx_expectation| from
 // |generic_expectation|.
-Status ParseSgxExpectation(
-    const EnclaveIdentityExpectation &generic_expectation,
-    CodeIdentityExpectation *sgx_expectation);
 Status ParseSgxExpectation(
     const EnclaveIdentityExpectation &generic_expectation,
     SgxIdentityExpectation *sgx_expectation, bool is_legacy = false);

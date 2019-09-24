@@ -126,6 +126,16 @@ SgxMachineConfigurationMatchSpec GetRandomSgxMachineConfigurationMatchSpec(
   return spec;
 }
 
+// Generates and returns a random SgxIdentityMatchSpec, where each field is
+// randomly set with a |percent|% chance.
+SgxIdentityMatchSpec GetRandomSgxIdentityMatchSpec(int percent = 100) {
+  SgxIdentityMatchSpec spec;
+  *spec.mutable_code_identity_match_spec() = GetRandomMatchSpec(percent);
+  *spec.mutable_machine_configuration_match_spec() =
+      GetRandomSgxMachineConfigurationMatchSpec(percent);
+  return spec;
+}
+
 }  // namespace
 
 CodeIdentity GetRandomValidCodeIdentityWithConstraints(
@@ -376,11 +386,11 @@ Status SetRandomValidGenericMatchSpec(
 }
 
 Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec) {
-  CodeIdentityMatchSpec spec;
+  SgxIdentityMatchSpec spec;
   int count = 0;
   do {
     spec.Clear();
-    spec = GetRandomMatchSpec(/*percent=*/70);
+    spec = GetRandomSgxIdentityMatchSpec(/*percent=*/70);
     // A spec is valid if and only if all four fields in the spec are set.
     // Thus, in each iteration, the probability that a valid spec is produced
     // is 0.25. Consequently, the probability that count will reach 100 is

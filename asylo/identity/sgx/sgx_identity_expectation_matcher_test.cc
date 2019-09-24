@@ -108,15 +108,15 @@ TEST(SgxIdentityExpectationMatcherTest,
   // Clear the SgxMachineConfiguration fields of the expectation's match spec,
   // since the legacy identity will never match the expectation identity for
   // these fields.
-    SgxIdentityMatchSpec *match_spec =
-        sgx_identity_expectation.mutable_match_spec();
-    SgxMachineConfigurationMatchSpec *machine_config_match_spec =
-        match_spec->mutable_machine_configuration_match_spec();
+  SgxIdentityMatchSpec *match_spec =
+      sgx_identity_expectation.mutable_match_spec();
+  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+      match_spec->mutable_machine_configuration_match_spec();
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
   machine_config_match_spec->set_is_sgx_type_match_required(false);
 
-  ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(
-      *match_spec, expectation.mutable_match_spec()));
+  ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(*match_spec,
+                                             expectation.mutable_match_spec()));
 
   sgx::CodeIdentity parsed_identity;
   ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
@@ -161,14 +161,14 @@ TEST(SgxIdentityExpectationMatcherTest,
     ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(
         *match_spec, expectation.mutable_match_spec()));
 
-  sgx::CodeIdentity parsed_identity;
-  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
+    sgx::CodeIdentity parsed_identity;
+    ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
 
-  SgxIdentityExpectationMatcher matcher;
-  StatusOr<bool> matcher_result = matcher.Match(identity, expectation);
-  ASSERT_THAT(matcher_result, Not(IsOk()))
-      << sgx::FormatProto(parsed_identity)
-      << sgx::FormatProto(sgx_identity_expectation);
+    SgxIdentityExpectationMatcher matcher;
+    StatusOr<bool> matcher_result = matcher.Match(identity, expectation);
+    ASSERT_THAT(matcher_result, Not(IsOk()))
+        << sgx::FormatProto(parsed_identity)
+        << sgx::FormatProto(sgx_identity_expectation);
   }
 }
 

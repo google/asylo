@@ -169,6 +169,74 @@ StatusOr<bool> MatchIdentityToExpectation(const CodeIdentity &identity,
   return explanations.empty();
 }
 
+bool IsValidCodeIdentity(const CodeIdentity &identity) {
+  // mrenclave is optional. Only the mrsigner part of the signer-assigned
+  // identity is optional. miscselect and attributes are required fields.
+  if (!identity.has_signer_assigned_identity() ||
+      !IsValidSignerAssignedIdentity(identity.signer_assigned_identity())) {
+    return false;
+  }
+
+  return identity.has_miscselect() && identity.has_attributes();
+}
+
+bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec) {
+  return match_spec.has_is_mrenclave_match_required() &&
+         match_spec.has_is_mrsigner_match_required() &&
+         match_spec.has_miscselect_match_mask() &&
+         match_spec.has_attributes_match_mask();
+}
+
+Status ParseIdentityFromHardwareReport(const Report &report,
+                                       CodeIdentity *identity) {
+  identity->mutable_mrenclave()->set_hash(report.body.mrenclave.data(),
+                                          report.body.mrenclave.size());
+  identity->mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
+      report.body.mrsigner.data(), report.body.mrsigner.size());
+  identity->mutable_signer_assigned_identity()->set_isvprodid(
+      report.body.isvprodid);
+  identity->mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
+  if (!ConvertSecsAttributeRepresentation(report.body.attributes,
+                                          identity->mutable_attributes())) {
+    return Status(::asylo::error::GoogleError::INTERNAL,
+                  "Cound not convert hardware attributes to Attributes proto");
+  }
+  identity->set_miscselect(report.body.miscselect);
+  return Status::OkStatus();
+}
+
+Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec) {
+  // Do not require MRENCLAVE match, as the value of MRENCLAVE changes from one
+  // version of the enclave to another.
+  spec->set_is_mrenclave_match_required(false);
+
+  // Require MRSIGNER match.
+  spec->set_is_mrsigner_match_required(true);
+
+  // All MISCSELECT bits are considered security critical. This is because,
+  // currently only one MISCSELECT bit is defined, which is security critical,
+  // and all undefined bits are, by default, considered security-critical, as
+  // they could be defined to affect security in the future.
+  spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
+
+  // The default attributes_match_mask is a logical NOT of the default "DO NOT
+  // CARE" attributes.
+  return SetDefaultSecsAttributesMask(spec->mutable_attributes_match_mask());
+}
+
+Status ParseSgxMatchSpec(const std::string &generic_match_spec,
+                         CodeIdentityMatchSpec *sgx_match_spec) {
+  if (!sgx_match_spec->ParseFromString(generic_match_spec)) {
+    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+                  "Could not parse SGX match spec from the match-spec string");
+  }
+  if (!IsValidMatchSpec(*sgx_match_spec)) {
+    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
+                  "Parsed SGX match spec is invalid");
+  }
+  return Status::OkStatus();
+}
+
 }  // namespace
 
 namespace internal {
@@ -326,17 +394,6 @@ bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity) {
   return (identity.has_isvprodid() && identity.has_isvsvn());
 }
 
-bool IsValidCodeIdentity(const CodeIdentity &identity) {
-  // mrenclave is optional. Only the mrsigner part of the signer-assigned
-  // identity is optional. miscselect and attributes are required fields.
-  if (!identity.has_signer_assigned_identity() ||
-      !IsValidSignerAssignedIdentity(identity.signer_assigned_identity())) {
-    return false;
-  }
-
-  return identity.has_miscselect() && identity.has_attributes();
-}
-
 bool IsValidSgxIdentity(const SgxIdentity &identity) {
   // Validate |cpu_svn| if present in the SgxIdentity.
   if (identity.machine_configuration().has_cpu_svn() &&
@@ -345,13 +402,6 @@ bool IsValidSgxIdentity(const SgxIdentity &identity) {
   }
 
   return IsValidCodeIdentity(identity.code_identity());
-}
-
-bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec) {
-  return match_spec.has_is_mrenclave_match_required() &&
-         match_spec.has_is_mrsigner_match_required() &&
-         match_spec.has_miscselect_match_mask() &&
-         match_spec.has_attributes_match_mask();
 }
 
 bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec, bool is_legacy) {
@@ -394,49 +444,12 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
 }
 
 Status ParseIdentityFromHardwareReport(const Report &report,
-                                       CodeIdentity *identity) {
-  identity->mutable_mrenclave()->set_hash(report.body.mrenclave.data(),
-                                          report.body.mrenclave.size());
-  identity->mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
-      report.body.mrsigner.data(), report.body.mrsigner.size());
-  identity->mutable_signer_assigned_identity()->set_isvprodid(
-      report.body.isvprodid);
-  identity->mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
-  if (!ConvertSecsAttributeRepresentation(report.body.attributes,
-                                          identity->mutable_attributes())) {
-    return Status(::asylo::error::GoogleError::INTERNAL,
-                  "Cound not convert hardware attributes to Attributes proto");
-  }
-  identity->set_miscselect(report.body.miscselect);
-  return Status::OkStatus();
-}
-
-Status ParseIdentityFromHardwareReport(const Report &report,
                                        SgxIdentity *identity) {
   identity->Clear();
   identity->mutable_machine_configuration()->mutable_cpu_svn()->set_value(
       report.body.cpusvn.data(), report.body.cpusvn.size());
   return ParseIdentityFromHardwareReport(report,
                                          identity->mutable_code_identity());
-}
-
-Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec) {
-  // Do not require MRENCLAVE match, as the value of MRENCLAVE changes from one
-  // version of the enclave to another.
-  spec->set_is_mrenclave_match_required(false);
-
-  // Require MRSIGNER match.
-  spec->set_is_mrsigner_match_required(true);
-
-  // All MISCSELECT bits are considered security critical. This is because,
-  // currently only one MISCSELECT bit is defined, which is security critical,
-  // and all undefined bits are, by default, considered security-critical, as
-  // they could be defined to affect security in the future.
-  spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
-
-  // The default attributes_match_mask is a logical NOT of the default "DO NOT
-  // CARE" attributes.
-  return SetDefaultSecsAttributesMask(spec->mutable_attributes_match_mask());
 }
 
 Status SetDefaultMatchSpec(SgxIdentityMatchSpec *spec) {
@@ -481,27 +494,10 @@ void SetSelfSgxIdentity(SgxIdentity *identity) {
   *identity = GetSelfIdentity()->sgx_identity;
 }
 
-Status SetDefaultSelfCodeIdentityExpectation(
-    CodeIdentityExpectation *expectation) {
-  SetSelfCodeIdentity(expectation->mutable_reference_identity());
-  return SetDefaultMatchSpec(expectation->mutable_match_spec());
-}
-
 Status SetDefaultSelfSgxIdentityExpectation(
     SgxIdentityExpectation *expectation) {
   SetSelfSgxIdentity(expectation->mutable_reference_identity());
   return SetDefaultMatchSpec(expectation->mutable_match_spec());
-}
-
-Status SetStrictSelfCodeIdentityExpectation(
-    CodeIdentityExpectation *expectation) {
-  CodeIdentityMatchSpec match_spec;
-  SetStrictMatchSpec(&match_spec);
-
-  CodeIdentity self_identity;
-  SetSelfCodeIdentity(&self_identity);
-
-  return SetExpectation(match_spec, self_identity, expectation);
 }
 
 Status SetStrictSelfSgxIdentityExpectation(
@@ -584,19 +580,6 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
 }
 
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
-                         CodeIdentityMatchSpec *sgx_match_spec) {
-  if (!sgx_match_spec->ParseFromString(generic_match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse SGX match spec from the match-spec string");
-  }
-  if (!IsValidMatchSpec(*sgx_match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Parsed SGX match spec is invalid");
-  }
-  return Status::OkStatus();
-}
-
-Status ParseSgxMatchSpec(const std::string &generic_match_spec,
                          SgxIdentityMatchSpec *sgx_match_spec, bool is_legacy) {
   if (is_legacy) {
     return ParseSgxMatchSpec(
@@ -609,25 +592,6 @@ Status ParseSgxMatchSpec(const std::string &generic_match_spec,
   if (!IsValidMatchSpec(*sgx_match_spec, is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Parsed SGX match spec is invalid");
-  }
-  return Status::OkStatus();
-}
-
-Status ParseSgxExpectation(
-    const EnclaveIdentityExpectation &generic_expectation,
-    CodeIdentityExpectation *sgx_expectation) {
-  // First, parse the identity portion of the expectation, as that also
-  // verifies whether the expectation is of correct type.
-  ASYLO_RETURN_IF_ERROR(
-      ParseSgxIdentity(generic_expectation.reference_identity(),
-                       sgx_expectation->mutable_reference_identity()));
-  ASYLO_RETURN_IF_ERROR(ParseSgxMatchSpec(
-      generic_expectation.match_spec(), sgx_expectation->mutable_match_spec()));
-  if (!internal::IsIdentityCompatibleWithMatchSpec(
-          sgx_expectation->reference_identity(),
-          sgx_expectation->match_spec())) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Parsed SGX expectation is invalid");
   }
   return Status::OkStatus();
 }

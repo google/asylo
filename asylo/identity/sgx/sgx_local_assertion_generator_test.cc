@@ -38,6 +38,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_assertion.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -407,15 +408,14 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
   EXPECT_EQ(report->body.reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.
-  sgx::CodeIdentity code_identity;
-  ASSERT_THAT(sgx::ParseIdentityFromHardwareReport(*report, &code_identity),
+  SgxIdentity sgx_identity;
+  ASSERT_THAT(sgx::ParseIdentityFromHardwareReport(*report, &sgx_identity),
               IsOk());
 
-  sgx::CodeIdentity expected_identity =
-      sgx::GetSelfIdentity()->sgx_identity.code_identity();
-  EXPECT_THAT(code_identity, EqualsProto(expected_identity))
+  SgxIdentity expected_identity = sgx::GetSelfIdentity()->sgx_identity;
+  EXPECT_THAT(sgx_identity, EqualsProto(expected_identity))
       << "Extracted identity:\n"
-      << code_identity.DebugString() << "\nExpected identity:\n"
+      << sgx_identity.DebugString() << "\nExpected identity:\n"
       << expected_identity.DebugString();
 }
 
