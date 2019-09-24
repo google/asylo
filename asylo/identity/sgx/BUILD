@@ -1598,7 +1598,6 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "proto_format_enclave_test",
     deps = [
-        ":code_identity_cc_proto",
         ":code_identity_util",
         ":hardware_types",
         ":miscselect_cc_proto",
