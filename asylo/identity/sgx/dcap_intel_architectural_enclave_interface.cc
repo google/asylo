@@ -24,6 +24,8 @@
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 #include "include/sgx_key.h"
 #include "include/sgx_report.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
@@ -91,7 +93,11 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
                      AsymmetricEncryptionScheme_Name(ppid_encryption_scheme)));
   }
 
-  std::vector<uint8_t> ppid_encrypted_tmp(ppid_encrypted->size());
+  uint32_t max_ppid_out_size;
+  ASYLO_ASSIGN_OR_RETURN(max_ppid_out_size,
+                         GetEncryptedDataSize(ppid_encryption_scheme));
+
+  std::vector<uint8_t> ppid_encrypted_tmp(max_ppid_out_size);
   uint32_t encrypted_ppid_out_size = 0;
   uint8_t pce_signature_scheme;
   sgx_pce_error_t result =
@@ -101,12 +107,11 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
                        ppid_encrypted_tmp.size(), &encrypted_ppid_out_size,
                        pce_svn, pce_id, &pce_signature_scheme);
   if (result == SGX_PCE_SUCCESS) {
+    ppid_encrypted->assign(
+        ppid_encrypted_tmp.begin(),
+        ppid_encrypted_tmp.begin() + encrypted_ppid_out_size);
     *signature_scheme =
         PceSignatureSchemeToSignatureScheme(pce_signature_scheme);
-    ppid_encrypted_tmp.resize(encrypted_ppid_out_size);
-    ppid_encrypted->insert(ppid_encrypted->begin(), ppid_encrypted_tmp.cbegin(),
-                           ppid_encrypted_tmp.cend());
-    ppid_encrypted->resize(encrypted_ppid_out_size);
   }
 
   return PceErrorToStatus(result);
@@ -118,17 +123,15 @@ Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
   static_assert(sizeof(target_cpu_svn) == sizeof(sgx_cpu_svn_t),
                 "target_cpusvn is not the same size as sgx_cpu_svn_t struct");
 
-  std::vector<uint8_t> signature_tmp(signature->size());
+  std::vector<uint8_t> signature_tmp(kEcdsaP256SignatureSize);
   uint32_t signature_out_size = 0;
   sgx_pce_error_t result = sgx_pce_sign_report(
       &target_pce_svn, reinterpret_cast<sgx_cpu_svn_t *>(&target_cpu_svn),
       reinterpret_cast<const sgx_report_t *>(&report), signature_tmp.data(),
       signature_tmp.size(), &signature_out_size);
   if (result == SGX_PCE_SUCCESS) {
-    signature_tmp.resize(signature_out_size);
-    signature->insert(signature->begin(), signature_tmp.cbegin(),
-                      signature_tmp.cend());
-    signature->resize(signature_out_size);
+    signature->assign(signature_tmp.begin(),
+                      signature_tmp.begin() + signature_out_size);
   }
 
   return PceErrorToStatus(result);

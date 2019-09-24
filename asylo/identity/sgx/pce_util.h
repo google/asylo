@@ -53,6 +53,9 @@ absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
 AsymmetricEncryptionScheme PceCryptoSuiteToAsymmetricEncryptionScheme(
     uint8_t pce_crypto_suite);
 
+// Returns the number of bytes in the encrypted output for |scheme|.
+StatusOr<uint32_t> GetEncryptedDataSize(AsymmetricEncryptionScheme scheme);
+
 // Converts a SignatureScheme to an equivalent signature scheme representation
 // used by the PCE.
 absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(

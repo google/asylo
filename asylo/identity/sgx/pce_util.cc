@@ -94,6 +94,21 @@ AsymmetricEncryptionScheme PceCryptoSuiteToAsymmetricEncryptionScheme(
   return UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME;
 }
 
+StatusOr<uint32_t> GetEncryptedDataSize(AsymmetricEncryptionScheme scheme) {
+  switch (scheme) {
+    case AsymmetricEncryptionScheme::RSA2048_OAEP:
+      return 2048 / 8;
+    case AsymmetricEncryptionScheme::RSA3072_OAEP:
+      return 3072 / 8;
+    case AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME:
+      break;
+  }
+
+  return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                absl::StrCat("Invalid encryption scheme: ",
+                             AsymmetricEncryptionScheme_Name(scheme)));
+}
+
 absl::optional<uint8_t> SignatureSchemeToPceSignatureScheme(
     SignatureScheme signature_scheme) {
   switch (signature_scheme) {

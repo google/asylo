@@ -249,6 +249,23 @@ TEST_F(PceUtilTest, PceCryptoSuiteToAsymmetricEncryptionSchemeUnsupported) {
             UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME);
 }
 
+TEST_F(PceUtilTest, GetEncryptedDataSizeSupported) {
+  EXPECT_THAT(GetEncryptedDataSize(AsymmetricEncryptionScheme::RSA2048_OAEP),
+              IsOkAndHolds(2048 / 8));
+  EXPECT_THAT(GetEncryptedDataSize(AsymmetricEncryptionScheme::RSA3072_OAEP),
+              IsOkAndHolds(3072 / 8));
+}
+
+TEST_F(PceUtilTest, GetEncryptedDataSizeInvalidInput) {
+  EXPECT_THAT(
+      GetEncryptedDataSize(
+          AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME)
+          .status(),
+      StatusIs(asylo::error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(GetEncryptedDataSize((AsymmetricEncryptionScheme)-1234).status(),
+              StatusIs(asylo::error::GoogleError::INVALID_ARGUMENT));
+}
+
 TEST_F(PceUtilTest, SignatureSchemeToPceSignatureSchemeSupported) {
   for (const auto &pair : supported_signature_schemes_) {
     EXPECT_THAT(SignatureSchemeToPceSignatureScheme(pair.first),

@@ -1339,6 +1339,7 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
         "@linux_sgx//:public",
+        "@sgx_dcap//:pce_constants",
         "@sgx_dcap//:pce_wrapper",
     ],
 )

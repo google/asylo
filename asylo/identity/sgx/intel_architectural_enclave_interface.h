@@ -64,10 +64,6 @@ class IntelArchitecturalEnclaveInterface {
   //   * REPORT.REPORTDATA is:
   //     SHA256HASH(pub key modulus || pub key exponent || crypto suite) || 0^32
   //
-  // Additionally, the caller should ensure that the length of |ppid_encrypted|
-  // is at least the expected ciphertext length. For RSA encryption schemes, it
-  // must be pre-sized to at least the length of the public-key modulus.
-  //
   // The following values are populated on success:
   //
   // * |ppid_encrypted| is populated with the encrypted PPID.
@@ -86,10 +82,6 @@ class IntelArchitecturalEnclaveInterface {
   // Requests the PCE to sign the given |report| with the PCK corresponding to
   // |target_pce_svn| and |target_cpusvn|. The resulting signature is written to
   // |signature|.
-  //
-  // The caller must ensure that the length of |signature| is at least the size
-  // of the expected signature length. The supported signature scheme can be
-  // retrieved through the GetPceInfo() method.
   virtual Status PceSignReport(const Report &report, uint16_t target_pce_svn,
                                UnsafeBytes<kCpusvnSize> target_cpu_svn,
                                std::string *signature) = 0;
