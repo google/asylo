@@ -82,7 +82,7 @@ docker run -it --rm \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
     gcr.io/asylo-framework/asylo \
-    bazel run --config=enc-sim //hello_world -- --names="${NAMES}"
+    bazel run --config=sgx-sim //hello_world -- --names="${NAMES}"
 ```
 
 You can also set `NAMES` to a comma-separated list of names and see the
@@ -119,8 +119,8 @@ the host:
 In the above example, we use the following Bazel flags:
 
 +   `--config=CONFIG` configures the Asylo toolchain to build the target for a
-    given enclave backend. You can specify `--config=enc-sim` to build the
-    enclave for the enclave simulation backend or `--config=sgx` to build the
+    given enclave backend. You can specify `--config=sgx-sim` to build the
+    enclave for the Intel SGX simulation backend or `--config=sgx` to build the
     enclave for the Intel SGX hardware backend.
 +   `--names="${NAMES}"` is the argument passed to the `//hello_world` target.
 
@@ -154,7 +154,7 @@ This opens a terminal inside the Docker container. From this terminal, you can
 run Bazel as usual:
 
 ```bash
-bazel run --config=enc-sim //hello_world -- --names="${NAMES}"
+bazel run --config=sgx-sim //hello_world -- --names="${NAMES}"
 ```
 
 #### Running the regression tests
@@ -210,12 +210,12 @@ wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
 ```
 
 Next, use Bazel to build and run the `hello_world` application, which uses a
-simulated enclave backend:
+simulated SGX enclave backend:
 
 ```bash
 cd "${MY_PROJECT}"
 NAMES="${USER}"
-bazel run --config=enc-sim //hello_world -- --names="${NAMES}"
+bazel run --config=sgx-sim //hello_world -- --names="${NAMES}"
 ```
 
 Refer to

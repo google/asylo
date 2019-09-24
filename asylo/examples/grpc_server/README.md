@@ -500,7 +500,7 @@ enclave_loader(
 You can run the server enclave using `bazel`:
 
 ```bash
-$ bazel run --config=enc-sim \
+$ bazel run --config=sgx-sim \
     //asylo/examples/grpc_server:grpc_server
 ```
 
@@ -513,7 +513,7 @@ specifies the number of seconds to wait for a shutdown RPC.
 For example, to set a maximum server lifetime of ten seconds, run:
 
 ```bash
-$ bazel run --config=enc-sim \
+$ bazel run --config=sgx-sim \
     //asylo/examples/grpc_server:grpc_server -- \
     --server_max_lifetime=10
 ```
@@ -524,7 +524,7 @@ In addition, if you want the server listen on a specific port, you can use the
 For example, to make the server listen on port 62831, run:
 
 ```bash
-$ bazel run --config=enc-sim \
+$ bazel run --config=sgx-sim \
     //asylo/examples/grpc_server:grpc_server -- \
     --port=62831
 ```

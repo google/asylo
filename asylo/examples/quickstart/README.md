@@ -430,7 +430,7 @@ docker run -it --rm \
     -v "${MY_PROJECT}":/opt/my-project \
     -w /opt/my-project \
     gcr.io/asylo-framework/asylo \
-    bazel run --config=enc-sim //quickstart -- --message="Asylo Rocks"
+    bazel run --config=sgx-sim //quickstart -- --message="Asylo Rocks"
 Encrypted message:
 2dc402068266ba995608e0d4a16c1604b792355d4635dec43cf2888cf2036d2007772ed5f24e5c
 ```

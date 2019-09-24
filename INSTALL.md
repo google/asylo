@@ -22,11 +22,11 @@ git clone https://github.com/google/asylo.git "${ASYLO}"/sdk
 
 The Asylo framework uses a custom toolchain to compile enclave applications for
 various backend environments. For example, to build your application for a
-simulated enclave backend, use the `enc-sim` config. We plan to support
+simulated SGX enclave backend, use the `sgx-sim` config. We plan to support
 additional backends in the near future.
 
 ```bash
-bazel build --config=enc-sim :my_app
+bazel build --config=sgx-sim :my_app
 ```
 
 You can manually install the toolchain by following these steps:

@@ -53,11 +53,11 @@ ${BAZEL} test --test_tag_filters=-enclave_test --build_tests_only \
 STAT=$(($STAT || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-  --config=enc-sim "${SGX_REGRESSION_TESTS[@]}"
+  --config=sgx-sim "${SGX_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-  -c opt --config=enc-sim "${SGX_REGRESSION_TESTS[@]}"
+  -c opt --config=sgx-sim "${SGX_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
