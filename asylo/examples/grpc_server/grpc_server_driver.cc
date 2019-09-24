@@ -45,7 +45,7 @@ int main(int argc, char *argv[]) {
   absl::ParseCommandLine(argc, argv);
 
   // Create a loader object using the enclave_path flag.
-  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
+  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
 
   // Build an EnclaveConfig object with the address that the gRPC server will
   // run on.

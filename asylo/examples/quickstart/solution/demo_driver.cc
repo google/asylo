@@ -62,7 +62,7 @@ int main(int argc, char *argv[]) {
   LOG_IF(QFATAL, !manager_result.ok()) << "Could not obtain EnclaveManager";
 
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
+  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
   asylo::Status status = manager->LoadEnclave("demo_enclave", loader);
   LOG_IF(QFATAL, !status.ok()) << "LoadEnclave failed with: " << status;
 

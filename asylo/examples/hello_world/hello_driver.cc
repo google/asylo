@@ -50,7 +50,7 @@ int main(int argc, char *argv[]) {
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
   std::cout << "Loading " << absl::GetFlag(FLAGS_enclave_path) << std::endl;
-  asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
+  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
   asylo::Status status = manager->LoadEnclave("hello_enclave", loader);
   if (!status.ok()) {
     LOG(QFATAL) << "Load " << absl::GetFlag(FLAGS_enclave_path)

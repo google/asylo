@@ -72,9 +72,9 @@ using SGXLoader ABSL_DEPRECATED("Use SgxLoader instead") = SgxLoader;
 /// Whole-file enclave loader for simulated enclaves.
 ///
 /// Enclave simulation currently uses the same binary format as SGX enclaves.
-/// However, this is subject to change and consumers of this API should not
-/// make assumptions about it being related to SGX.
-using SimLoader = SgxLoader;
+/// However, this is subject to change and SimLoader is expected to be
+/// replaced with technology-specific backends in the future.
+using SimLoader ABSL_DEPRECATED("Use SgxLoader instead") = SgxLoader;
 
 /// Embedded enclave loader for simulated enclaves.
 ///

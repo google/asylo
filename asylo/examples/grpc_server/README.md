@@ -324,11 +324,11 @@ The driver's `main` function starts by parsing command-line arguments:
 absl::ParseCommandLine(argc, argv);
 ```
 
-Then, the driver creates and configures a `SimLoader` using the `enclave_path`
+Then, the driver creates and configures a `SgxLoader` using the `enclave_path`
 flag and an `EnclaveConfig` message object containing the server address:
 
 ```cpp
-asylo::SimLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
+asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
 
 asylo::EnclaveConfig config;
 config.SetExtension(examples::grpc_server::server_address, kServerAddress);
