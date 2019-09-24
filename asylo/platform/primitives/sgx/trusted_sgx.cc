@@ -156,8 +156,6 @@ int asylo_enclave_call(uint64_t selector, void *buffer) {
 
   const void *input = sgx_params->input;
   size_t input_size = sgx_params->input_size;
-  sgx_params->input = nullptr;
-  sgx_params->input_size = 0;
   void *output = nullptr;
   size_t output_size = 0;
 
@@ -171,10 +169,8 @@ int asylo_enclave_call(uint64_t selector, void *buffer) {
       // Copy untrusted |input| to trusted memory and pass that as input.
       void *trusted_input = malloc(input_size);
       memcpy(trusted_input, input, input_size);
-      TrustedPrimitives::UntrustedLocalFree(const_cast<void *>(input));
       input = trusted_input;
     } else {
-      TrustedPrimitives::UntrustedLocalFree(const_cast<void *>(input));
       input = nullptr;
     }
   }
