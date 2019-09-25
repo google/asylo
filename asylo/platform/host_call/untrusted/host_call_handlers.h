@@ -160,6 +160,13 @@ Status IfNameToIndexHandler(const std::shared_ptr<primitives::Client> &client,
                             void *context, primitives::MessageReader *input,
                             primitives::MessageWriter *output);
 
+// if_indextoname library call handler on the host; expects
+// [unsigned int ifindex] and returns [Extent /*result*/, int /*errno*/] on the
+// MessageWriter.
+Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
+                            void *context, primitives::MessageReader *input,
+                            primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

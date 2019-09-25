@@ -447,5 +447,18 @@ Status IfNameToIndexHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
+                            void *context, primitives::MessageReader *input,
+                            primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+
+  unsigned int ifindex = input->next<unsigned int>();
+  char ifname[IF_NAMESIZE];
+  output->PushString(if_indextoname(ifindex, ifname));
+  output->Push<int>(errno);
+
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

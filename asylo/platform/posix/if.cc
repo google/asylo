@@ -26,4 +26,8 @@ unsigned int if_nametoindex(const char *ifname) {
   return enc_untrusted_if_nametoindex(ifname);
 }
 
+char *if_indextoname(unsigned int ifindex, char *ifname) {
+  return enc_untrusted_if_indextoname(ifindex, ifname);
+}
+
 }  // extern "C"

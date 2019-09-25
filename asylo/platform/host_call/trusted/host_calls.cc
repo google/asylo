@@ -1322,4 +1322,31 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
   return result;
 }
 
+char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname) {
+  MessageWriter input;
+  input.Push(ifindex);
+  MessageReader output;
+
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kIfIndexToNameHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_if_indextoname failed.");
+  }
+
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "Expected 2 arguments in output for enc_untrusted_if_indextoname. "
+        "Aborting");
+  }
+
+  Extent ifname_buffer = output.next();
+  memcpy(ifname, ifname_buffer.As<char>(), ifname_buffer.size());
+  int klinux_errno = output.next<int>();
+  if (ifname_buffer.empty()) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
+  }
+  return ifname;
+}
+
 }  // extern "C"

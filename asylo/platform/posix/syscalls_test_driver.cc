@@ -1184,5 +1184,11 @@ TEST_F(SyscallsTest, IfNameToIndex) {
       IsOk());
 }
 
+TEST_F(SyscallsTest, IfIndexToName) {
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("if_indextoname", /*file_path=*/"", nullptr),
+      IsOk());
+}
+
 }  // namespace
 }  // namespace asylo

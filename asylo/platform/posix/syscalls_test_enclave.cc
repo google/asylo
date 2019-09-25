@@ -169,6 +169,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunGetPWUidTest(output);
     } else if (test_input.test_target() == "if_nametoindex") {
       return RunIfNameToIndexTest();
+    } else if (test_input.test_target() == "if_indextoname") {
+      return RunIfIndexToNameTest();
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1572,6 +1574,35 @@ class SyscallsEnclave : public EnclaveTestCase {
       if (if_nametoindex(addr->ifa_name) == 0) {
         return Status(static_cast<error::PosixError>(errno),
                       absl::StrCat("if_nametoindex failed: ", strerror(errno)));
+      }
+    }
+    freeifaddrs(addrs);
+
+    return Status::OkStatus();
+  }
+
+  Status RunIfIndexToNameTest() {
+    struct ifaddrs *addrs, *addr;
+    if (getifaddrs(&addrs) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getifaddrs failed: ", strerror(errno)));
+    }
+
+    for (addr = addrs; addr != nullptr; addr = addr->ifa_next) {
+      unsigned int ifindex = if_nametoindex(addr->ifa_name);
+      if (ifindex == 0) {
+        return Status(static_cast<error::PosixError>(errno),
+                      absl::StrCat("if_nametoindex failed: ", strerror(errno)));
+      }
+      char ifname[IF_NAMESIZE];
+      if (!if_indextoname(ifindex, ifname)) {
+        return Status(static_cast<error::PosixError>(errno),
+                      absl::StrCat("if_indextoname failed: ", strerror(errno)));
+      }
+      if (memcmp(addr->ifa_name, ifname, strlen(ifname)) != 0) {
+        return Status(
+            error::GoogleError::INTERNAL,
+            "The ifname from if_indextoname does not match original value");
       }
     }
     freeifaddrs(addrs);
