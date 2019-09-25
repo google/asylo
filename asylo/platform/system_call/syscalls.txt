@@ -216,3 +216,5 @@ SYSCALL_DEFINE2(gettimeofday, \out struct timeval *, tv,
 SYSCALL_DEFINE2(getitimer, int, which, \out struct itimerval *, curr_value);
 SYSCALL_DEFINE3(setitimer, int, which, \in struct itimerval *, new_value,
                 \out struct itimerval *, old_value);
+SYSCALL_DEFINE2(utimes, const char *, filename,
+                \in const struct timeval * [count:2], times)

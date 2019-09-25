@@ -136,7 +136,6 @@ void enc_untrusted__exit(int rc);
 //////////////////////////////////////
 
 int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
-int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 
 //////////////////////////////////////
 //           wait.h                 //
