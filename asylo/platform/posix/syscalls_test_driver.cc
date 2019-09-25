@@ -1178,5 +1178,11 @@ TEST_F(SyscallsTest, GetPWUid) {
   EXPECT_TRUE(ComparePassWd(test_output, getpwuid(getuid())));
 }
 
+TEST_F(SyscallsTest, IfNameToIndex) {
+  EXPECT_THAT(
+      RunSyscallInsideEnclave("if_nametoindex", /*file_path=*/"", nullptr),
+      IsOk());
+}
+
 }  // namespace
 }  // namespace asylo

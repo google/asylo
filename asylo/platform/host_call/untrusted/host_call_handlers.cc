@@ -20,6 +20,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <signal.h>
 #include <sys/socket.h>
@@ -431,6 +432,18 @@ Status SigprocmaskHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(sigprocmask(klinux_how, &klinux_set, &klinux_oldset));
   output->Push<int>(errno);
   output->Push<sigset_t>(klinux_oldset);
+  return Status::OkStatus();
+}
+
+Status IfNameToIndexHandler(const std::shared_ptr<primitives::Client> &client,
+                            void *context, primitives::MessageReader *input,
+                            primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+
+  Extent ifname_buffer = input->next();
+  output->Push<unsigned int>(if_nametoindex(ifname_buffer.As<char>()));
+  output->Push<int>(errno);
+
   return Status::OkStatus();
 }
 

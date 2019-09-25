@@ -19,6 +19,7 @@
 #include <errno.h>
 #include <fcntl.h>
 #include <ifaddrs.h>
+#include <net/if.h>
 #include <openssl/rand.h>
 #include <pwd.h>
 #include <regex.h>
@@ -166,6 +167,8 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunUtimesTest(test_input.path_name());
     } else if (test_input.test_target() == "getpwuid") {
       return RunGetPWUidTest(output);
+    } else if (test_input.test_target() == "if_nametoindex") {
+      return RunIfNameToIndexTest();
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -1555,6 +1558,24 @@ class SyscallsEnclave : public EnclaveTestCase {
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
     }
+    return Status::OkStatus();
+  }
+
+  Status RunIfNameToIndexTest() {
+    struct ifaddrs *addrs, *addr;
+    if (getifaddrs(&addrs) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getifaddrs failed: ", strerror(errno)));
+    }
+
+    for (addr = addrs; addr != nullptr; addr = addr->ifa_next) {
+      if (if_nametoindex(addr->ifa_name) == 0) {
+        return Status(static_cast<error::PosixError>(errno),
+                      absl::StrCat("if_nametoindex failed: ", strerror(errno)));
+      }
+    }
+    freeifaddrs(addrs);
+
     return Status::OkStatus();
   }
 };

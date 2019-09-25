@@ -142,6 +142,7 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst);
 const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
                                     socklen_t size);
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
+unsigned int enc_untrusted_if_nametoindex(const char *ifname);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);

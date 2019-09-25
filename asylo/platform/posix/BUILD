@@ -97,6 +97,7 @@ cc_library(
         "eventfd.cc",
         "file.cc",
         "grp.cc",
+        "if.cc",
         "ifaddrs.cc",
         "inotify.cc",
         "ioctl.cc",

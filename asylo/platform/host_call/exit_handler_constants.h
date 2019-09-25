@@ -94,6 +94,10 @@ static constexpr uint64_t kInetNtopHandler = primitives::kSelectorHostCall + 17;
 static constexpr uint64_t kSigprocmaskHandler =
     primitives::kSelectorHostCall + 18;
 
+// Exit handler constant for |IfNameToIndexHandler|.
+static constexpr uint64_t kIfNameToIndexHandler =
+    primitives::kSelectorHostCall + 19;
+
 }  // namespace host_call
 }  // namespace asylo
 

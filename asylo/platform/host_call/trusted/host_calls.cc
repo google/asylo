@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/trusted/host_calls.h"
 
 #include <errno.h>
+#include <net/if.h>
 #include <netdb.h>
 #include <signal.h>
 #include <sys/statfs.h>
@@ -1291,6 +1292,32 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
       errno = EINVAL;
       return -1;
     }
+  }
+  return result;
+}
+
+unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
+  MessageWriter input;
+  input.PushString(ifname);
+  MessageReader output;
+
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kIfNameToIndexHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_if_nametoindex failed.");
+  }
+
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "Expected 2 arguments in output for enc_untrusted_if_nametoindex. "
+        "Aborting");
+  }
+
+  unsigned int result = output.next<unsigned int>();
+  int klinux_errno = output.next<int>();
+  if (result == 0) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
   }
   return result;
 }

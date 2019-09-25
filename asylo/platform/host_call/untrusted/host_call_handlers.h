@@ -154,6 +154,12 @@ Status SigprocmaskHandler(const std::shared_ptr<primitives::Client> &client,
                           void *context, primitives::MessageReader *input,
                           primitives::MessageWriter *output);
 
+// if_nametoindex library call handler on the host; expects [const char *ifname]
+// and returns [unsigned int /*result*/, int /*errno*/] on the MessageWriter.
+Status IfNameToIndexHandler(const std::shared_ptr<primitives::Client> &client,
+                            void *context, primitives::MessageReader *input,
+                            primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

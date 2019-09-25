@@ -19,6 +19,10 @@
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_NET_IF_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_NET_IF_H_
 
+#ifdef __cplusplus
+extern "C" {
+#endif
+
 // Macros from third_party/newlib/src/newlib/libc/sys/linux/include/net/if.h
 // This is the subset of macros which Asylo supports.
 #define IFF_UP 0x1           /* interface is up */
@@ -32,5 +36,13 @@
 #define IFF_PROMISC 0x100    /* receive all packets */
 #define IFF_ALLMULTI 0x200   /* receive all multicast packets */
 #define IFF_MULTICAST 0x400  /* supports multicast */
+
+#define IF_NAMESIZE 16
+
+unsigned int if_nametoindex(const char *ifname);
+
+#ifdef __cplusplus
+}  // extern "C"
+#endif
 
 #endif  // ASYLO_PLATFORM_POSIX_INCLUDE_NET_IF_H_
