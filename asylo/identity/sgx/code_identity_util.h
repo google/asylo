@@ -90,7 +90,6 @@ void SetStrictMatchSpec(CodeIdentityMatchSpec *spec);
 void SetStrictMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |identity| to the current enclave's identity.
-void SetSelfCodeIdentity(CodeIdentity *identity);
 void SetSelfSgxIdentity(SgxIdentity *identity);
 
 // Sets |expectation| to default expectation, which is defined as the pair
@@ -102,9 +101,7 @@ Status SetDefaultSelfSgxIdentityExpectation(
 // defined as the pair <self identity, strict match spec>.
 Status SetStrictSelfSgxIdentityExpectation(SgxIdentityExpectation *expectation);
 
-// Parses SGX code identity from a EnclaveIdentity proto.
-Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
-                        CodeIdentity *sgx_identity);
+// Parses an SGX identity from an EnclaveIdentity proto.
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
                         SgxIdentity *sgx_identity);
 

@@ -34,6 +34,7 @@
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -1070,29 +1071,38 @@ TEST_F(CodeIdentityUtilTest, SetStrictSgxIdentityMatchSpec) {
       spec.machine_configuration_match_spec().is_sgx_type_match_required());
 }
 
-TEST_F(CodeIdentityUtilTest, SetSelfCodeIdentity) {
-  CodeIdentity identity;
-  SetSelfCodeIdentity(&identity);
+TEST_F(CodeIdentityUtilTest, SetSelfSgxIdentity) {
+  SgxIdentity identity;
+  SetSelfSgxIdentity(&identity);
   EXPECT_TRUE(std::equal(
       enclave_->get_mrenclave().cbegin(), enclave_->get_mrenclave().cend(),
-      identity.mrenclave().hash().cbegin(),
+      identity.code_identity().mrenclave().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_TRUE(std::equal(
       enclave_->get_mrsigner().cbegin(), enclave_->get_mrsigner().cend(),
-      identity.signer_assigned_identity().mrsigner().hash().cbegin(),
+      identity.code_identity()
+          .signer_assigned_identity()
+          .mrsigner()
+          .hash()
+          .cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_EQ(enclave_->get_isvprodid(),
-            identity.signer_assigned_identity().isvprodid());
+            identity.code_identity().signer_assigned_identity().isvprodid());
   EXPECT_EQ(enclave_->get_isvsvn(),
-            identity.signer_assigned_identity().isvsvn());
+            identity.code_identity().signer_assigned_identity().isvsvn());
 
   SecsAttributeSet attributes;
-  EXPECT_TRUE(
-      ConvertSecsAttributeRepresentation(identity.attributes(), &attributes));
+  ASSERT_TRUE(ConvertSecsAttributeRepresentation(
+      identity.code_identity().attributes(), &attributes));
   EXPECT_EQ(enclave_->get_attributes(), attributes);
-  EXPECT_EQ(enclave_->get_miscselect(), identity.miscselect());
+  EXPECT_EQ(enclave_->get_miscselect(), identity.code_identity().miscselect());
+
+  UnsafeBytes<kCpusvnSize> cpu_svn;
+  ASYLO_ASSERT_OK(SetTrivialObjectFromBinaryString<UnsafeBytes<kCpusvnSize>>(
+      identity.machine_configuration().cpu_svn().value(), &cpu_svn));
+  EXPECT_EQ(enclave_->get_cpusvn(), cpu_svn);
 }
 
 TEST_F(CodeIdentityUtilTest, SetStrictSelfSgxIdentityExpectation) {

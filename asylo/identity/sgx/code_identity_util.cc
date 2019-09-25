@@ -224,6 +224,34 @@ Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec) {
   return SetDefaultSecsAttributesMask(spec->mutable_attributes_match_mask());
 }
 
+Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
+                        CodeIdentity *sgx_identity) {
+  const EnclaveIdentityDescription &description =
+      generic_identity.description();
+  if (description.identity_type() != CODE_IDENTITY) {
+    return Status(
+        asylo::error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat(
+            "Invalid identity_type: Expected = CODE_IDENTITY, Actual = ",
+            EnclaveIdentityType_Name(description.identity_type())));
+  }
+  if (description.authority_type() != kSgxAuthorizationAuthority) {
+    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid authority_type: Expected = ",
+                               kSgxAuthorizationAuthority,
+                               ", Actual = ", description.authority_type()));
+  }
+  if (!sgx_identity->ParseFromString(generic_identity.identity())) {
+    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                  "Could not parse SGX identity from the identity string");
+  }
+  if (!IsValidCodeIdentity(*sgx_identity)) {
+    return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
+                  "Parsed SGX identity is invalid");
+  }
+  return Status::OkStatus();
+}
+
 Status ParseSgxMatchSpec(const std::string &generic_match_spec,
                          CodeIdentityMatchSpec *sgx_match_spec) {
   if (!sgx_match_spec->ParseFromString(generic_match_spec)) {
@@ -486,10 +514,6 @@ void SetStrictMatchSpec(SgxIdentityMatchSpec *spec) {
   SetStrictMatchSpec(spec->mutable_code_identity_match_spec());
 }
 
-void SetSelfCodeIdentity(CodeIdentity *identity) {
-  *identity = GetSelfIdentity()->sgx_identity.code_identity();
-}
-
 void SetSelfSgxIdentity(SgxIdentity *identity) {
   *identity = GetSelfIdentity()->sgx_identity;
 }
@@ -509,34 +533,6 @@ Status SetStrictSelfSgxIdentityExpectation(
   SetSelfSgxIdentity(&self_identity);
 
   return SetExpectation(match_spec, self_identity, expectation);
-}
-
-Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
-                        CodeIdentity *sgx_identity) {
-  const EnclaveIdentityDescription &description =
-      generic_identity.description();
-  if (description.identity_type() != CODE_IDENTITY) {
-    return Status(
-        ::asylo::error::GoogleError::INVALID_ARGUMENT,
-        ::absl::StrCat(
-            "Invalid identity_type: Expected = CODE_IDENTITY, Actual = ",
-            EnclaveIdentityType_Name(description.identity_type())));
-  }
-  if (description.authority_type() != kSgxAuthorizationAuthority) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  ::absl::StrCat("Invalid authority_type: Expected = ",
-                                 kSgxAuthorizationAuthority,
-                                 ", Actual = ", description.authority_type()));
-  }
-  if (!sgx_identity->ParseFromString(generic_identity.identity())) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Could not parse SGX identity from the identity string");
-  }
-  if (!IsValidCodeIdentity(*sgx_identity)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Parsed SGX identity is invalid");
-  }
-  return Status::OkStatus();
 }
 
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,

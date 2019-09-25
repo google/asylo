@@ -104,6 +104,7 @@ TEST(SgxIdentityExpectationMatcherTest,
   ASYLO_ASSERT_OK(sgx::SerializeSgxIdentity(
       sgx_identity_expectation.reference_identity().code_identity(),
       &identity));
+  ASSERT_FALSE(identity.has_version());
 
   // Clear the SgxMachineConfiguration fields of the expectation's match spec,
   // since the legacy identity will never match the expectation identity for
@@ -118,7 +119,7 @@ TEST(SgxIdentityExpectationMatcherTest,
   ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(*match_spec,
                                              expectation.mutable_match_spec()));
 
-  sgx::CodeIdentity parsed_identity;
+  SgxIdentity parsed_identity;
   ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
 
   SgxIdentityExpectationMatcher matcher;
@@ -147,6 +148,7 @@ TEST(SgxIdentityExpectationMatcherTest,
   ASYLO_ASSERT_OK(sgx::SerializeSgxIdentity(
       sgx_identity_expectation.reference_identity().code_identity(),
       &identity));
+  ASSERT_FALSE(identity.has_version());
 
   for (int i = 0;
        i < SgxMachineConfigurationMatchSpec::GetDescriptor()->field_count();
@@ -161,7 +163,7 @@ TEST(SgxIdentityExpectationMatcherTest,
     ASYLO_ASSERT_OK(sgx::SerializeSgxMatchSpec(
         *match_spec, expectation.mutable_match_spec()));
 
-    sgx::CodeIdentity parsed_identity;
+    SgxIdentity parsed_identity;
     ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &parsed_identity));
 
     SgxIdentityExpectationMatcher matcher;
