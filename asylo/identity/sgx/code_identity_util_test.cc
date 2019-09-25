@@ -199,26 +199,26 @@ TEST_F(CodeIdentityUtilTest, SetSgxRemoteAssertionDescription) {
 
 // Tests to verify the correctness of IsValidSignerAssignedIdentity()
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositive1) {
+TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositiveAllSet) {
   SignerAssignedIdentity id = MakeSignerAssignedIdentity(h_acedface_, 0, 0);
   EXPECT_TRUE(IsValidSignerAssignedIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositive2) {
-  SignerAssignedIdentity id;
-  id.set_isvprodid(0);
-  id.set_isvsvn(0);
+TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositiveNoMrsigner) {
+  SignerAssignedIdentity id = MakeSignerAssignedIdentity(h_acedface_, 0, 0);
+  id.clear_mrsigner();
   EXPECT_TRUE(IsValidSignerAssignedIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegative1) {
+TEST_F(CodeIdentityUtilTest,
+       SignerAssignedIdentityValidityNegativeNoIsvprodid) {
   SignerAssignedIdentity id;
   *id.mutable_mrsigner() = h_acedface_;
   id.set_isvsvn(0);
   EXPECT_FALSE(IsValidSignerAssignedIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegative2) {
+TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegativeNoIsvsvn) {
   SignerAssignedIdentity id;
   *id.mutable_mrsigner() = h_acedface_;
   id.set_isvprodid(0);
@@ -227,7 +227,7 @@ TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegative2) {
 
 // Tests to verify the correctness of IsValidSgxIdentity()
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositive1) {
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveAllSet) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   CodeIdentity *cid = id.mutable_code_identity();
   *cid->mutable_mrenclave() = h_acedface_;
@@ -236,43 +236,44 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositive1) {
   EXPECT_TRUE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositive2) {
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveMinimalIdentity) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   EXPECT_TRUE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositive3) {
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveNoCpusvn) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   id.mutable_machine_configuration()->clear_cpu_svn();
   EXPECT_TRUE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegative1) {
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeEmptyIdentity) {
   SgxIdentity id;
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegative2) {
-  SgxIdentity id;
-  CodeIdentity *cid = id.mutable_code_identity();
-  cid->set_miscselect(kLongAll5);
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeNoMiscselect) {
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  id.mutable_code_identity()->clear_miscselect();
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegative3) {
-  SgxIdentity id;
-  CodeIdentity *cid = id.mutable_code_identity();
-  *cid->mutable_attributes() = attributes_all_5_;
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeNoAttributes) {
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  id.mutable_code_identity()->clear_attributes();
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegative4) {
+// If the SgxMachineConfiguration has the |cpu_svn| field set, it is invalid
+// unless it contains a valid CPUSVN. (SgxIdentityValidityPositiveNoCpusvn
+// passes because the CPUSVN field is completely missing, which is valid.)
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeEmptyCpusvn) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   id.mutable_machine_configuration()->mutable_cpu_svn()->clear_value();
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegative5) {
+TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeInvalidCpusvn) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_machine_configuration()->mutable_cpu_svn()->mutable_value() =
       kInvalidCpuSvn;
@@ -295,38 +296,38 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositiveLegacyMatchSpec) {
   EXPECT_TRUE(IsValidMatchSpec(spec, /*is_legacy=*/true));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative1) {
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeMrenclaveUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_is_mrenclave_match_required();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative2) {
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeMrsignerUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_is_mrsigner_match_required();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative3) {
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeMiscselectUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_miscselect_match_mask();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative4) {
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeAttributesUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_attributes_match_mask();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative5) {
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeCpusvnUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->clear_is_cpu_svn_match_required();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative6) {
+TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeSgxTypeUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->clear_is_sgx_type_match_required();
@@ -334,102 +335,6 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegative6) {
 }
 
 // Tests to verify the correctness of IsValidExpectation()
-
-TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive1) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-  EXPECT_TRUE(IsValidExpectation(expectation));
-}
-
-TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive2) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-  EXPECT_TRUE(IsValidExpectation(expectation));
-}
-
-TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive3) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(false);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-  EXPECT_TRUE(IsValidExpectation(expectation));
-}
-
-TEST_F(CodeIdentityUtilTest, ExpectationValidityPositive4) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-  EXPECT_TRUE(IsValidExpectation(expectation));
-}
-
-TEST_F(CodeIdentityUtilTest, ExpectationValidityNegative1) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-  EXPECT_FALSE(IsValidExpectation(expectation));
-}
-
-TEST_F(CodeIdentityUtilTest, ExpectationValidityNegative2) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-  EXPECT_FALSE(IsValidExpectation(expectation));
-}
 
 TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositive) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
@@ -461,10 +366,12 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveLegacyMatchSpec) {
   EXPECT_TRUE(IsValidExpectation(expectation, /*is_legacy=*/true));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative1) {
+TEST_F(CodeIdentityUtilTest,
+       SgxExpectationValidityPositiveMrenclaveMrsignerMatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
-  spec.mutable_machine_configuration_match_spec()
-      ->set_is_cpu_svn_match_required(true);
+  spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
+      true);
+  spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(true);
 
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
@@ -473,18 +380,82 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative1) {
 
   SgxIdentityExpectation expectation;
   ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+  EXPECT_TRUE(IsValidExpectation(expectation));
+}
+
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveMrsignerMatch) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(true);
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *id.mutable_code_identity()->mutable_signer_assigned_identity() =
+      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+  EXPECT_TRUE(IsValidExpectation(expectation));
+}
+
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveMrenclaveMatch) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
+      true);
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+  EXPECT_TRUE(IsValidExpectation(expectation));
+}
+
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeMrenclaveMismatch) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
+      true);
+  spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(true);
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *id.mutable_code_identity()->mutable_signer_assigned_identity() =
+      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
   EXPECT_FALSE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative2) {
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeMrsignerMismatch) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
+      true);
+  spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(true);
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+  EXPECT_FALSE(IsValidExpectation(expectation));
+}
+
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeCpusvnMismatch) {
+  SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
+  spec.mutable_machine_configuration_match_spec()
+      ->set_is_cpu_svn_match_required(true);
+
+  SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
+  EXPECT_FALSE(IsValidExpectation(expectation));
+}
+
+TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeSgxTypeMismatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->set_is_sgx_type_match_required(true);
 
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
-  *id.mutable_code_identity()->mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
   SgxIdentityExpectation expectation;
   ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));

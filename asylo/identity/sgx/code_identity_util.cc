@@ -364,23 +364,6 @@ StatusOr<bool> MatchIdentityToExpectation(
   return explanations.empty() && code_identity_match_result;
 }
 
-Status SetExpectation(const CodeIdentityMatchSpec &match_spec,
-                      const CodeIdentity &identity,
-                      CodeIdentityExpectation *expectation) {
-  if (!IsValidMatchSpec(match_spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Match spec is invalid");
-  }
-  if (!IsValidCodeIdentity(identity)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Identity is invalid");
-  }
-
-  *expectation->mutable_match_spec() = match_spec;
-  *expectation->mutable_reference_identity() = identity;
-  return Status::OkStatus();
-}
-
 Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
                       const SgxIdentity &identity,
                       SgxIdentityExpectation *expectation) {
@@ -422,18 +405,6 @@ bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec, bool is_legacy) {
     }
   }
   return IsValidMatchSpec(match_spec.code_identity_match_spec());
-}
-
-bool IsValidExpectation(const CodeIdentityExpectation &expectation) {
-  const CodeIdentityMatchSpec &spec = expectation.match_spec();
-  if (!IsValidMatchSpec(spec)) {
-    return false;
-  }
-  const CodeIdentity &identity = expectation.reference_identity();
-  if (!IsValidCodeIdentity(identity)) {
-    return false;
-  }
-  return internal::IsIdentityCompatibleWithMatchSpec(identity, spec);
 }
 
 bool IsValidExpectation(const SgxIdentityExpectation &expectation,

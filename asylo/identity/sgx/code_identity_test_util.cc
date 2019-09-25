@@ -172,19 +172,6 @@ CodeIdentityMatchSpec GetRandomValidMatchSpec() {
   return GetRandomMatchSpec();
 }
 
-CodeIdentityExpectation GetRandomValidExpectation() {
-  CodeIdentityExpectation expectation;
-  *expectation.mutable_match_spec() = GetRandomValidMatchSpec();
-  std::vector<bool> mrenclave_constraint{
-      expectation.match_spec().is_mrenclave_match_required()};
-  std::vector<bool> mrsigner_constraint{
-      expectation.match_spec().is_mrsigner_match_required()};
-  *expectation.mutable_reference_identity() =
-      GetRandomValidCodeIdentityWithConstraints(mrenclave_constraint,
-                                                mrsigner_constraint);
-  return expectation;
-}
-
 SgxIdentity GetRandomValidSgxIdentityWithConstraints(
     const std::vector<bool> &mrenclave_constraint,
     const std::vector<bool> &mrsigner_constraint,
@@ -387,46 +374,42 @@ Status SetRandomValidGenericMatchSpec(
 
 Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec) {
   SgxIdentityMatchSpec spec;
-  int count = 0;
-  do {
+
+  for (int count = 0; count < 100; count++) {
     spec.Clear();
-    spec = GetRandomSgxIdentityMatchSpec(/*percent=*/70);
+    spec = GetRandomSgxIdentityMatchSpec(/*percent=*/75);
     // A spec is valid if and only if all four fields in the spec are set.
     // Thus, in each iteration, the probability that a valid spec is produced
     // is 0.25. Consequently, the probability that count will reach 100 is
     // (0.25)^100, or 2^-200.
-    if (count >= 100) {
-      return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
+    if (!IsValidMatchSpec(spec)) {
+      spec.SerializeToString(generic_spec);
+      return Status::OkStatus();
     }
-    count++;
-  } while (IsValidMatchSpec(spec));
-  spec.SerializeToString(generic_spec);
-  return Status::OkStatus();
+  }
+  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
 }
 
-Status SetRandomValidGenericExpectation(
+Status SetRandomValidLegacyGenericExpectation(
     EnclaveIdentityExpectation *generic_expectation,
-    CodeIdentityExpectation *corresponding_sgx_expectation) {
-  CodeIdentity sgx_identity;
-  CodeIdentityMatchSpec sgx_spec;
-  int count = 0;
+    SgxIdentityExpectation *corresponding_sgx_expectation) {
+  SgxIdentity sgx_identity;
+  CodeIdentityMatchSpec spec;
+  SgxIdentityMatchSpec sgx_spec;
 
-  do {
-    SetRandomValidGenericIdentity(
-        generic_expectation->mutable_reference_identity(), &sgx_identity);
+  for (int count = 0; count < 100; count++) {
+    ASYLO_RETURN_IF_ERROR(SetRandomValidLegacyGenericIdentity(
+        generic_expectation->mutable_reference_identity(), &sgx_identity));
+    ASYLO_RETURN_IF_ERROR(SetRandomValidGenericMatchSpec(
+        generic_expectation->mutable_match_spec(), &spec));
+    *sgx_spec.mutable_code_identity_match_spec() = spec;
 
-    SetRandomValidGenericMatchSpec(generic_expectation->mutable_match_spec(),
-                                   &sgx_spec);
-
-    if (count >= 100) {
-      return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
+    if (internal::IsIdentityCompatibleWithMatchSpec(sgx_identity, sgx_spec)) {
+      SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation);
+      return Status::OkStatus();
     }
-    count++;
-  } while (
-      !internal::IsIdentityCompatibleWithMatchSpec(sgx_identity, sgx_spec));
-
-  SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation);
-  return Status::OkStatus();
+  }
+  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
 }
 
 Status SetRandomValidGenericExpectation(

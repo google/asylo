@@ -45,9 +45,6 @@ CodeIdentity GetRandomValidCodeIdentity();
 // fields set.
 CodeIdentityMatchSpec GetRandomValidMatchSpec();
 
-// Generates a valid CodeIdentityExpectation.
-CodeIdentityExpectation GetRandomValidExpectation();
-
 // Generates a valid SgxIdentity according to the constraints defined by the
 // inputs, in a similar vein as GetRandomValidCodeIdentityWithConstraints.
 SgxIdentity GetRandomValidSgxIdentityWithConstraints(
@@ -100,11 +97,17 @@ Status SetRandomValidGenericMatchSpec(
 Status SetRandomInvalidGenericMatchSpec(std::string *generic_spec);
 
 // Sets |generic_expectation| to a randomly-initialized valid
+// EnclaveIdentityExpectation, where the only fields populated in the identity
+// and match spec contained in the expectation are those that are relevant to
+// CodeIdentity. Also writes the underlying SGX expectation to
+// |corresponding_sgx_expectation|.
+Status SetRandomValidLegacyGenericExpectation(
+    EnclaveIdentityExpectation *generic_expectation,
+    SgxIdentityExpectation *corresponding_sgx_expectation);
+
+// Sets |generic_expectation| to a randomly-initialized valid
 // EnclaveIdentityExpectation. Also writes the underlying SGX expectation to
 // |corresponding_sgx_expectation|.
-Status SetRandomValidGenericExpectation(
-    EnclaveIdentityExpectation *generic_expectation,
-    CodeIdentityExpectation *corresponding_sgx_expectation);
 Status SetRandomValidGenericExpectation(
     EnclaveIdentityExpectation *generic_expectation,
     SgxIdentityExpectation *corresponding_sgx_expectation);

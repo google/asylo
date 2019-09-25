@@ -47,11 +47,8 @@ StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
     std::string *explanation, bool is_legacy = false);
 
-// Sets |expectation| based on |identity| and |match_spec|. Returns true on
-// success (no error), else returns false.
-Status SetExpectation(const CodeIdentityMatchSpec &match_spec,
-                      const CodeIdentity &identity,
-                      CodeIdentityExpectation *expectation);
+// Sets |expectation| based on |identity| and |match_spec|, checking the
+// validity of both components.
 Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
                       const SgxIdentity &identity,
                       SgxIdentityExpectation *expectation);
@@ -67,7 +64,6 @@ bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec,
                       bool is_legacy = false);
 
 // Checks if an identity expectation is valid.
-bool IsValidExpectation(const CodeIdentityExpectation &expectation);
 bool IsValidExpectation(const SgxIdentityExpectation &expectation,
                         bool is_legacy = false);
 
