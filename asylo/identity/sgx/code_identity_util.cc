@@ -303,26 +303,6 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
 }  // namespace internal
 
 StatusOr<bool> MatchIdentityToExpectation(
-    const CodeIdentity &identity, const CodeIdentityExpectation &expectation,
-    std::string *explanation) {
-  if (!IsValidExpectation(expectation)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Expectation parameter is invalid");
-  }
-  const CodeIdentity &expected = expectation.reference_identity();
-  const CodeIdentityMatchSpec &spec = expectation.match_spec();
-  if (!IsValidCodeIdentity(identity)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Identity parameter is invalid");
-  }
-  if (!internal::IsIdentityCompatibleWithMatchSpec(identity, spec)) {
-    return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
-                  "Identity is not compatible with specified match spec");
-  }
-  return MatchIdentityToExpectation(identity, expected, spec, explanation);
-}
-
-StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
     std::string *explanation, bool is_legacy) {
   if (!IsValidExpectation(expectation, is_legacy)) {

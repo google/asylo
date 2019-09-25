@@ -44,9 +44,6 @@ namespace sgx {
 // encountered, and if the match is successful. Else returns false and populates
 // |explanation| with an explanation of why the match failed.
 StatusOr<bool> MatchIdentityToExpectation(
-    const CodeIdentity &identity, const CodeIdentityExpectation &expectation,
-    std::string *explanation);
-StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
     std::string *explanation, bool is_legacy = false);
 

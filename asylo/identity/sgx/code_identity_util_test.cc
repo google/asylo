@@ -46,6 +46,7 @@
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -152,6 +153,15 @@ class CodeIdentityUtilTest : public ::testing::Test {
     mc_spec->set_is_cpu_svn_match_required(false);
     mc_spec->set_is_sgx_type_match_required(false);
     return spec;
+  }
+
+  StatusOr<SgxIdentityExpectation> GetMinimalValidSgxExpectation(
+      uint32_t miscselect, const Attributes &attributes) {
+    SgxIdentityExpectation expectation;
+    SgxIdentityMatchSpec match_spec = GetMinimalValidSgxMatchSpec();
+    SgxIdentity identity = GetMinimalValidSgxIdentity(miscselect, attributes);
+    ASYLO_RETURN_IF_ERROR(SetExpectation(match_spec, identity, &expectation));
+    return expectation;
   }
 
   Sha256HashProto h_acedface_;
@@ -481,30 +491,6 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegative2) {
   EXPECT_FALSE(IsValidExpectation(expectation));
 }
 
-// Check correctness of expectation-to-identity matching
-
-// Make sure that an CodeIdentity matches itself will all the fields marked
-// as *do care*.
-TEST_F(CodeIdentityUtilTest, CodeIdentitySelfMatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  EXPECT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr),
-      IsOkAndHolds(true));
-}
-
 // Make sure that an SgxIdentity matches itself with all the fields marked
 // as *do care*.
 TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
@@ -552,36 +538,12 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
       IsOkAndHolds(true));
 }
 
-// Make sure that a CodeIdentity matches an expectation when it differs from
-// the expectation in *all* do-not-care fields.
-TEST_F(CodeIdentityUtilTest, CodeIdentityDifferingDoNotCareFields) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(false);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_ASSERT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
-  EXPECT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr),
-      IsOkAndHolds(true));
-}
-
 // Make sure that an SgxIdentity matches an expectation when it differs from
 // the expectations in fields that the match spec does not care about.
 TEST_F(CodeIdentityUtilTest, SgxIdentityDifferingUnrequiredFields) {
   SgxIdentityExpectation expectation;
-  *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
-  *expectation.mutable_reference_identity() =
-      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
 
   SgxMachineConfigurationMatchSpec *machine_config_match_spec =
       expectation.mutable_match_spec()
@@ -605,94 +567,85 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityDifferingUnrequiredFields) {
               IsOkAndHolds(true));
 }
 
-// Make sure that an CodeIdentity does not match an expectation that differs
-// in mrenclave value when is_mrenclave_match_required is set to true.
-TEST_F(CodeIdentityUtilTest, CodeIdentityMrEnclaveMismatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(false);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
+// Make sure that an SgxIdentity does not match an expectation that differs
+// in MRENCLAVE value when is_mrenclave_match_required is set to true.
+TEST_F(CodeIdentityUtilTest, SgxIdentityMrenclaveMismatch) {
+  SgxIdentityExpectation expectation;
+  *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrenclave_match_required(true);
+  *expectation.mutable_reference_identity() =
+      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_mrenclave() = h_acedface_;
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
-  *id.mutable_mrenclave() = h_deadbeef_;
+  SgxIdentity identity = expectation.reference_identity();
+  *identity.mutable_code_identity()->mutable_mrenclave() = h_deadbeef_;
 
   std::string explanation;
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
   EXPECT_THAT(explanation, HasSubstr("does not match expected MRENCLAVE"));
 }
 
-// Make sure that an CodeIdentity does not match an expectation that differs
+// Make sure that an SgxIdentity does not match an expectation that differs
 // in signer_assigned_identity.mrsigner value when is_mrsigner_match_required is
 // set to true.
 TEST_F(CodeIdentityUtilTest,
-       CodeIdentitySignerAssignedIdentityMrsignerMismatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
+       SgxIdentitySignerAssignedIdentityMrsignerMismatch) {
+  SgxIdentityExpectation expectation;
+  *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrsigner_match_required(true);
+  *expectation.mutable_reference_identity() =
+      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
-  *id.mutable_signer_assigned_identity() =
+  SgxIdentity identity = expectation.reference_identity();
+  *identity.mutable_code_identity()->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_deadbeef_, 0, 0);
 
   std::string explanation;
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
   EXPECT_THAT(explanation, HasSubstr("does not match expected MRSIGNER value"));
 }
 
-// Make sure that an CodeIdentity does not match an expectation that differs
+// Make sure that an SgxIdentity does not match an expectation that differs
 // in signer_assigned_identity.isvprodid value when is_mrsigner_match_required
 // is set to either true or false.
 TEST_F(CodeIdentityUtilTest,
-       CodeIdentitySignerAssignedIdentityIsvprodidMismatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
+       SgxIdentitySignerAssignedIdentityIsvprodidMismatch) {
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
-  *id.mutable_signer_assigned_identity() =
+  SgxIdentity identity = expectation.reference_identity();
+  *identity.mutable_code_identity()->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 1, 0);
 
   std::string explanation;
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
   EXPECT_THAT(explanation,
               HasSubstr("does not match expected ISVPRODID value"));
 
   // Make sure that the identity does not match expectation even when
-  // is_mrsigner_match_required is set to false.
-  expectation.mutable_match_spec()->set_is_mrsigner_match_required(false);
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  // is_mrsigner_match_required is set to true.
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrsigner_match_required(true);
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
 }
 
@@ -700,33 +653,29 @@ TEST_F(CodeIdentityUtilTest,
 // signer_assigned_identity.isvsvn value larger than that of the identity when
 // is_mrsigner_match_required is set to either true or false.
 TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityIsvsvnMismatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 1);
 
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
-  *id.mutable_signer_assigned_identity() =
+  SgxIdentity identity = expectation.reference_identity();
+  *identity.mutable_code_identity()->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
   std::string explanation;
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
   EXPECT_THAT(explanation, HasSubstr("is lower than expected ISVSVN"));
 
-  // Make sure that the identity does not match expectation even when when
-  // is_mrsigner_match_required is set to false.
-  expectation.mutable_match_spec()->set_is_mrsigner_match_required(false);
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  // Make sure that the identity does not match expectation even when
+  // is_mrsigner_match_required is set to true.
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrsigner_match_required(true);
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
 }
 
@@ -734,76 +683,55 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityIsvsvnMismatch) {
 // signer_assigned_identity.isvsvn value less than that of the identity when
 // is_mrsigner_match_required is set to true.
 TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentitySvnMatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
-
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrsigner_match_required(true);
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_f_);
-  *id.mutable_signer_assigned_identity() =
+  SgxIdentity identity = expectation.reference_identity();
+  *identity.mutable_code_identity()->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 1);
 
-  ASSERT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr),
-      IsOkAndHolds(true));
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation,
+                                         /*explanation=*/nullptr),
+              IsOkAndHolds(true));
 }
 
 // Make sure that an CodeIdentity does not match an expectation that differs
 // from the expectation in the do-care bits of miscselect.
 TEST_F(CodeIdentityUtilTest, CodeIdentityMiscSelectMismatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(false);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAll0, attributes_all_f_);
+  SgxIdentity identity =
+      GetMinimalValidSgxIdentity(kLongAll0, attributes_all_5_);
 
   std::string explanation;
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
   EXPECT_THAT(explanation,
               HasSubstr("does not match expected MISCSELECT value"));
 }
 
-// Make sure that an CodeIdentity does not match an expectation
+// Make sure that an SgxIdentity does not match an expectation
 // that differs from the expectation in the do-care bits of attributes.
-TEST_F(CodeIdentityUtilTest, CodeIdentityAttributesMismatch) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(false);
-  spec.set_is_mrsigner_match_required(false);
-  spec.set_miscselect_match_mask(kLongAll5);
-  *spec.mutable_attributes_match_mask() = attributes_all_5_;
+TEST_F(CodeIdentityUtilTest, SgxIdentityAttributesMismatch) {
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id = GetMinimalValidCodeIdentity(kLongAllF, attributes_all_0_);
+  SgxIdentity identity = expectation.reference_identity();
+  *identity.mutable_code_identity()->mutable_attributes() = attributes_all_0_;
 
   std::string explanation;
-  ASSERT_THAT(MatchIdentityToExpectation(id, expectation, &explanation),
+  ASSERT_THAT(MatchIdentityToExpectation(identity, expectation, &explanation),
               IsOkAndHolds(false));
   EXPECT_THAT(explanation,
               HasSubstr("does not match expected ATTRIBUTES value"));
@@ -813,9 +741,8 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityAttributesMismatch) {
 // CPUSVN value when CPUSVN match is required.
 TEST_F(CodeIdentityUtilTest, SgxIdentityCpusvnMismatch) {
   SgxIdentityExpectation expectation;
-  *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
-  *expectation.mutable_reference_identity() =
-      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
 
   // Require a match on CPUSVN.
   expectation.mutable_match_spec()
@@ -840,9 +767,8 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityCpusvnMismatch) {
 // SGX Type when SGX Type match is required.
 TEST_F(CodeIdentityUtilTest, SgxIdentitySgxTypeMismatch) {
   SgxIdentityExpectation expectation;
-  *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
-  *expectation.mutable_reference_identity() =
-      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
 
   // Require a match on SGX type.
   expectation.mutable_match_spec()
@@ -864,15 +790,16 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySgxTypeMismatch) {
 
 // Make sure that enclave identity match fails with appropriate status if the
 // target expectation is invalid.
-TEST_F(CodeIdentityUtilTest, CodeIdentityMatchInvalidExpectation) {
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
+TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidExpectation) {
+  SgxIdentity identity =
+      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
+  *identity.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
+  *identity.mutable_code_identity()->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
-  CodeIdentityExpectation expectation;
+  SgxIdentityExpectation expectation;
   EXPECT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr)
+      MatchIdentityToExpectation(identity, expectation, /*explanation=*/nullptr)
           .status(),
       StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
                "Expectation parameter is invalid"));
@@ -880,53 +807,37 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchInvalidExpectation) {
 
 // Make sure that enclave identity match fails with appropriate status if the
 // target identity is invalid.
-TEST_F(CodeIdentityUtilTest, CodeIdentityMatchInvalidIdentity) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
+TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidIdentity) {
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
 
-  CodeIdentity id = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id.mutable_mrenclave() = h_acedface_;
-  *id.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
-
-  id.Clear();
-  EXPECT_THAT(
-      MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr)
-          .status(),
-      StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
-               "Identity parameter is invalid"));
+  EXPECT_THAT(MatchIdentityToExpectation(SgxIdentity::default_instance(),
+                                         expectation, /*explanation=*/nullptr)
+                  .status(),
+              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+                       "Identity parameter is invalid"));
 }
 
 // Make sure that enclave identity match fails with appropriate status if
 // match_spec.mrenclave_match_required is true, but the target identity is
 // missing mrenclave.
-TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrenclave) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
+TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrenclave) {
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrenclave_match_required(true);
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_mrenclave() = h_acedface_;
 
-  CodeIdentity id1 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id1.mutable_mrenclave() = h_acedface_;
-  *id1.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
-
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id1, &expectation));
-
-  CodeIdentity id2 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id2.mutable_signer_assigned_identity() =
-      MakeSignerAssignedIdentity(h_acedface_, 0, 0);
+  SgxIdentity identity = expectation.reference_identity();
+  identity.mutable_code_identity()->clear_mrenclave();
 
   EXPECT_THAT(
-      MatchIdentityToExpectation(id2, expectation, /*explanation=*/nullptr)
+      MatchIdentityToExpectation(identity, expectation, /*explanation=*/nullptr)
           .status(),
       StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
                "Identity is not compatible with specified match spec"));
@@ -934,26 +845,25 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrenclave) {
 
 // Make sure that enclave identity match fails with appropriate status if
 // match_spec.mrsigner is true, but the target identity is missing mrsigner.
-TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrsigner) {
-  CodeIdentityMatchSpec spec;
-  spec.set_is_mrenclave_match_required(true);
-  spec.set_is_mrsigner_match_required(true);
-  spec.set_miscselect_match_mask(kLongAllF);
-  *spec.mutable_attributes_match_mask() = attributes_all_f_;
-
-  CodeIdentity id1 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id1.mutable_mrenclave() = h_acedface_;
-  *id1.mutable_signer_assigned_identity() =
+TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrsigner) {
+  SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrsigner_match_required(true);
+  *expectation.mutable_reference_identity()
+       ->mutable_code_identity()
+       ->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
-  CodeIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetExpectation(spec, id1, &expectation));
-
-  CodeIdentity id2 = GetMinimalValidCodeIdentity(kLongAll5, attributes_all_5_);
-  *id2.mutable_mrenclave() = h_acedface_;
+  SgxIdentity identity = expectation.reference_identity();
+  identity.mutable_code_identity()
+      ->mutable_signer_assigned_identity()
+      ->clear_mrsigner();
 
   EXPECT_THAT(
-      MatchIdentityToExpectation(id2, expectation, /*explanation=*/nullptr)
+      MatchIdentityToExpectation(identity, expectation, /*explanation=*/nullptr)
           .status(),
       StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
                "Identity is not compatible with specified match spec"));
@@ -961,9 +871,9 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchIdentityMissingMrsigner) {
 
 TEST_F(CodeIdentityUtilTest, CodeIdentityMatchMultipleMismatchedProperties) {
   SgxIdentityExpectation expectation;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
   *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
-  *expectation.mutable_reference_identity() =
-      GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   *expectation.mutable_reference_identity()
        ->mutable_code_identity()
        ->mutable_signer_assigned_identity() =
