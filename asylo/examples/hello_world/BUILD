@@ -18,11 +18,8 @@ licenses(["notice"])  # Apache v2.0
 
 # Hello World project for Asylo.
 
-load(
-    "//asylo/bazel:asylo.bzl",
-    "enclave_loader",
-    "sim_enclave",
-)
+load("//asylo/bazel:asylo.bzl", "enclave_loader")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(
@@ -42,8 +39,8 @@ cc_proto_library(
     deps = [":hello_proto"],
 )
 
-sim_enclave(
-    name = "hello_enclave.so",
+sgx.unsigned_enclave(
+    name = "hello_enclave_unsigned.so",
     srcs = ["hello_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -53,6 +50,11 @@ sim_enclave(
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],
+)
+
+sgx.debug_enclave(
+    name = "hello_enclave.so",
+    unsigned = "hello_enclave_unsigned.so",
 )
 
 enclave_loader(

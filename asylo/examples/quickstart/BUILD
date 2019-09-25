@@ -20,11 +20,8 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-load(
-    "//asylo/bazel:asylo.bzl",
-    "enclave_loader",
-    "sim_enclave",
-)
+load("//asylo/bazel:asylo.bzl", "enclave_loader")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Example and exercise for using Asylo toolkits.
@@ -39,8 +36,8 @@ cc_proto_library(
     deps = [":demo_proto"],
 )
 
-sim_enclave(
-    name = "demo_enclave",
+sgx.unsigned_enclave(
+    name = "demo_enclave_unsigned.so",
     srcs = ["demo_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -54,11 +51,16 @@ sim_enclave(
     ],
 )
 
+sgx.debug_enclave(
+    name = "demo_enclave.so",
+    unsigned = "demo_enclave_unsigned.so",
+)
+
 enclave_loader(
     name = "quickstart",
     srcs = ["demo_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"enclave": ":demo_enclave"},
+    enclaves = {"enclave": ":demo_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_cc_proto",
