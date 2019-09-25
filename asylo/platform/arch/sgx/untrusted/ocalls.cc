@@ -216,8 +216,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 //           epoll.h                //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_epoll_create(int size) { return epoll_create(size); }
-
 int ocall_enc_untrusted_epoll_ctl(const char *serialized_args,
                                   bridge_size_t serialized_args_len) {
   std::string serialized_args_str(serialized_args,

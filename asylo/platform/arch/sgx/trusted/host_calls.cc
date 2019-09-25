@@ -106,12 +106,6 @@ void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
 //           epoll.h                //
 //////////////////////////////////////
 
-int enc_untrusted_epoll_create(int size) {
-  int ret = 0;
-  CHECK_OCALL(ocall_enc_untrusted_epoll_create(&ret, size));
-  return ret;
-}
-
 int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
                             struct epoll_event *event) {
   char *serialized_args = nullptr;

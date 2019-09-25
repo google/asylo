@@ -1174,6 +1174,11 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout) {
   return result;
 }
 
+int enc_untrusted_epoll_create(int size) {
+  return EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_epoll_create, size);
+}
+
 int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
   if (!src) {
     return 0;

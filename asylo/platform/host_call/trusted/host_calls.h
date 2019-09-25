@@ -114,6 +114,7 @@ int enc_untrusted_setitimer(int which, const struct itimerval *new_value,
                             struct itimerval *old_value);
 clock_t enc_untrusted_times(struct tms *buf);
 int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
+int enc_untrusted_epoll_create(int size);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);
