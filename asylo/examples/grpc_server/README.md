@@ -25,7 +25,7 @@ with it from a client running in an untrusted environment.
 This guide assumes that you are familiar with:
 
 *   The [Asylo quickstart guide](https://asylo.dev/docs/guides/quickstart.html)
-*   The [gRPC C++ basics](https://grpc.io/docs/tutorials/basic/c.html) tutorial
+*   The [gRPC C++ basics](https://grpc.io/docs/tutorials/basic/cpp) tutorial
 *   [Protocol Buffers](https://developers.google.com/protocol-buffers/)
 *   The C++ language
 
