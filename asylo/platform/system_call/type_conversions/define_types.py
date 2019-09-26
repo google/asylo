@@ -301,4 +301,13 @@ define_struct(
     include_header_file="sys/times.h",
     pack_attributes=False)
 
+define_struct(
+    name="utimbuf",
+    values=[
+        ("int64_t", "actime"),
+        ("int64_t", "modtime"),
+    ],
+    include_header_file="utime.h",
+    pack_attributes=False)
+
 write_output()

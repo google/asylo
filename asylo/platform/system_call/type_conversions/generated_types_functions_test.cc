@@ -628,6 +628,24 @@ TEST_F(GeneratedTypesFunctionsTest, PollEventTest) {
                        TokLinuxPollEvent);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, UtimbufTest) {
+  EXPECT_THAT(sizeof(struct utimbuf), Eq(sizeof(struct kLinux_utimbuf)));
+  struct utimbuf from {};
+  struct kLinux_utimbuf to {};
+  from.actime = 1;
+  from.modtime = 2;
+
+  EXPECT_THAT(TokLinuxutimbuf(&from, &to), Eq(true));
+  EXPECT_THAT(to.kLinux_actime, Eq(from.actime));
+  EXPECT_THAT(to.kLinux_modtime, Eq(from.modtime));
+
+  to.kLinux_actime = 3;
+  to.kLinux_modtime = 4;
+  EXPECT_THAT(FromkLinuxutimbuf(&to, &from), Eq(true));
+  EXPECT_THAT(from.actime, Eq(3));
+  EXPECT_THAT(from.modtime, Eq(4));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

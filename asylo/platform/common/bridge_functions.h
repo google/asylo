@@ -119,14 +119,6 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
 
-// Converts |ut| to a runtime timespec.
-struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
-                                  struct utimbuf *ut);
-
-// Converts |ut| to a bridge timespec.
-struct bridge_utimbuf *ToBridgeUtimbuf(const struct utimbuf *ut,
-                                       struct bridge_utimbuf *bridge_ut);
-
 // Converts |bridge_tv| to a runtime timeval.
 struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
                                   struct timeval *tv);

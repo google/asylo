@@ -138,16 +138,6 @@ enclave {
 	allow(ecall_take_snapshot, ecall_restore) propagate_errno;
 
     //////////////////////////////////////
-    //           utime.h                //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_utime(
-        [in, string] const char *filename,
-        [in, size=16/*sizeof(struct utimbuf)*/]
-        const struct bridge_utimbuf *times)
-        propagate_errno;
-
-    //////////////////////////////////////
     //             wait.h               //
     //////////////////////////////////////
 

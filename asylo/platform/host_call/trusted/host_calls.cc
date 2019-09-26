@@ -1190,6 +1190,16 @@ int enc_untrusted_utimes(const char *filename, const struct timeval times[2]) {
                                              filename, klinux_times);
 }
 
+int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
+  struct kLinux_utimbuf klinux_times {};
+
+  // We do not check the return value of the conversion function since utimbuf
+  // is allowed to be null.
+  TokLinuxutimbuf(times, &klinux_times);
+  return EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_utime,
+                                             filename, &klinux_times);
+}
+
 int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
   if (!src) {
     return 0;

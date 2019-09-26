@@ -28,6 +28,7 @@
 #include <sys/statvfs.h>
 #include <sys/types.h>
 #include <sys/un.h>
+#include <utime.h>
 
 #include <algorithm>
 #include <string>
@@ -2337,6 +2338,40 @@ TEST_F(HostCallTest, TestPoll) {
   struct pollfd *fds_out = out.next().As<pollfd>();
   EXPECT_THAT(fds_out[0].revents, Eq(fds_expected[0].revents));
   EXPECT_THAT(fds_out[1].revents, Eq(fds_expected[1].revents));
+}
+
+// Tests enc_untrusted_utime() by updating the access and modification times of
+// a file from inside the enclave and verifying on the host that stat reflects
+// the updated access and modification times.
+TEST_F(HostCallTest, TestUtime) {
+  std::string test_file =
+      absl::StrCat(absl::GetFlag(FLAGS_test_tmpdir), "/test_file.tmp");
+  int fd =
+      open(test_file.c_str(), O_RDWR | O_CREAT | O_TRUNC, S_IRUSR | S_IWUSR);
+  platform::storage::FdCloser fd_closer(fd);
+  ASSERT_GE(fd, 0);
+  ASSERT_NE(access(test_file.c_str(), F_OK), -1);
+
+  struct utimbuf times {};
+  constexpr time_t modtime_expected = 12345678;
+  constexpr time_t actime_expected = 87654321;
+  times.modtime = modtime_expected;
+  times.actime = actime_expected;
+
+  MessageWriter in;
+  in.PushString(test_file);
+  in.Push<struct utimbuf>(times);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestUtime, &in, &out));
+  ASSERT_THAT(out, SizeIs(1));  // Should only contain the return value.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  struct stat statbuf {};
+  EXPECT_THAT(stat(test_file.c_str(), &statbuf), Eq(0));
+  EXPECT_THAT(statbuf.st_atim.tv_sec, Eq(actime_expected));
+  EXPECT_THAT(statbuf.st_atim.tv_nsec, Eq(0));
+  EXPECT_THAT(statbuf.st_mtim.tv_sec, Eq(modtime_expected));
+  EXPECT_THAT(statbuf.st_mtim.tv_nsec, Eq(0));
 }
 
 }  // namespace

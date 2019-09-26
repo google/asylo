@@ -314,22 +314,6 @@ int ToBridgeSysLogPriority(int syslog_priority) {
          ToBridgeSysLogFacility(syslog_facility);
 }
 
-struct utimbuf *FromBridgeUtimbuf(const struct bridge_utimbuf *bridge_ut,
-                                  struct utimbuf *ut) {
-  if (!ut || !bridge_ut) return nullptr;
-  ut->actime = bridge_ut->actime;
-  ut->modtime = bridge_ut->modtime;
-  return ut;
-}
-
-struct bridge_utimbuf *ToBridgeUtimbuf(const struct utimbuf *ut,
-                                       struct bridge_utimbuf *bridge_ut) {
-  if (!ut || !bridge_ut) return nullptr;
-  bridge_ut->actime = ut->actime;
-  bridge_ut->modtime = ut->modtime;
-  return bridge_ut;
-}
-
 struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
                                   struct timeval *tv) {
   if (!bridge_tv || !tv) return nullptr;

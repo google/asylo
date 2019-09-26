@@ -955,6 +955,21 @@ PrimitiveStatus TestPoll(void *context, MessageReader *in, MessageWriter *out) {
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestUtime(void *context, MessageReader *in,
+                          MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 2);
+  auto file_buf = in->next();
+  auto klinux_times = in->next<struct kLinux_utimbuf>();
+
+  struct utimbuf times {};
+  if (!FromkLinuxutimbuf(&klinux_times, &times)) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestUtime: Couldn't convert klinux_utimbuf to native utimbuf"};
+  }
+  out->Push<int>(enc_untrusted_utime(file_buf.As<char>(), &times));
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1143,6 +1158,8 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       EntryHandler{asylo::host_call::TestGetAddrInfo}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestPoll, EntryHandler{asylo::host_call::TestPoll}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestUtime, EntryHandler{asylo::host_call::TestUtime}));
 
   return PrimitiveStatus::OkStatus();
 }

@@ -132,12 +132,6 @@ int enc_untrusted_uname(struct utsname *utsname_buf);
 void enc_untrusted__exit(int rc);
 
 //////////////////////////////////////
-//            utime.h               //
-//////////////////////////////////////
-
-int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
-
-//////////////////////////////////////
 //           wait.h                 //
 //////////////////////////////////////
 

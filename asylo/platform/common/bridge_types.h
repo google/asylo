@@ -205,11 +205,6 @@ struct bridge_timeval {
   int64_t tv_usec;
 } ABSL_ATTRIBUTE_PACKED;
 
-struct bridge_utimbuf {
-  int64_t actime;
-  int64_t modtime;
-} ABSL_ATTRIBUTE_PACKED;
-
 struct bridge_pollfd {
   int32_t fd;
   int16_t events;

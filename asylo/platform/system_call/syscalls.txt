@@ -53,6 +53,7 @@ INCLUDE("sys/time.h")
 INCLUDE("sys/times.h")
 INCLUDE("sys/resource.h")
 INCLUDE("sched.h")
+INCLUDE("utime.h")
 
 // File Descriptors
 // ================
@@ -137,9 +138,6 @@ SYSCALL_DEFINE2(kill, pid_t, pid, int, sig)
 // Networking
 // ==========
 
-SYSCALL_DEFINE3(accept, int, fd, struct sockaddr *, upeer_sockaddr, int *,
-                upeer_addrlen)
-
 SYSCALL_DEFINE3(bind, int, fd, \in void * [bound:addrlen], umyaddr,
                 int, addrlen)
 
@@ -218,3 +216,5 @@ SYSCALL_DEFINE3(setitimer, int, which, \in struct itimerval *, new_value,
                 \out struct itimerval *, old_value);
 SYSCALL_DEFINE2(utimes, const char *, filename,
                 \in const struct timeval * [count:2], times)
+SYSCALL_DEFINE2(utime, const char *, filename,
+                \in const struct utimbuf *, times)

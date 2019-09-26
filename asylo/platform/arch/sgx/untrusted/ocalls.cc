@@ -700,16 +700,6 @@ pid_t ocall_enc_untrusted_waitpid(pid_t pid,
 }
 
 //////////////////////////////////////
-//           utime.h                //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_utime(const char *filename,
-                              const struct bridge_utimbuf *times) {
-  struct utimbuf tmp;
-  return utime(filename, asylo::FromBridgeUtimbuf(times, &tmp));
-}
-
-//////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////
 

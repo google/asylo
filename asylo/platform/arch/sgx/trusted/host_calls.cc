@@ -317,18 +317,6 @@ pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options) {
 }
 
 //////////////////////////////////////
-//           utime.h                //
-//////////////////////////////////////
-
-int enc_untrusted_utime(const char *filename, const struct utimbuf *times) {
-  int ret;
-  struct bridge_utimbuf tmp_bridge_utimbuf;
-  CHECK_OCALL(ocall_enc_untrusted_utime(
-      &ret, filename, asylo::ToBridgeUtimbuf(times, &tmp_bridge_utimbuf)));
-  return ret;
-}
-
-//////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////
 

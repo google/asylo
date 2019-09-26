@@ -116,6 +116,7 @@ clock_t enc_untrusted_times(struct tms *buf);
 int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 int enc_untrusted_epoll_create(int size);
 int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
+int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);

@@ -23,7 +23,6 @@
 #include <cerrno>
 #include <cstring>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/secure_paths.h"
 
