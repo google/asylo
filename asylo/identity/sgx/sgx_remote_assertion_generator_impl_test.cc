@@ -112,8 +112,8 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
     ASYLO_ASSIGN_OR_RETURN(verifying_key_, signing_key->GetVerifyingKey());
     signature_scheme_ = signing_key->GetSignatureScheme();
 
-    return std::move(absl::make_unique<SgxRemoteAssertionGeneratorImpl>(
-        std::move(signing_key), certificate_chains_));
+    return absl::make_unique<SgxRemoteAssertionGeneratorImpl>(
+        std::move(signing_key), certificate_chains_);
   }
 
   void TearDown() override {
