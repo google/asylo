@@ -576,7 +576,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,270 @@
+@@ -0,0 +1,275 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -754,9 +754,12 @@ diff -Nur /dev/null BUILD
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/enclave",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +        "-Wno-address",
++    ],
++    # The DCAP code doesn't qualify header paths.
++    includes = [
++        "QuoteGeneration/pce_wrapper/inc",
++        "QuoteGeneration/quote_wrapper/common/inc",
 +    ],
 +    # The linker option below works around a linker issue. The PCE interface is
 +    # implemented twice in both SGX DCAP and SGX SDK. The latter is used to
@@ -767,7 +770,9 @@ diff -Nur /dev/null BUILD
 +    # as undefined here keeps the linker from complaining about those
 +    # unresolved symbols.
 +    linkopts = ["-Wl,--undefined=sgx_pce_sign_report"],
-+    visibility = ["@linux_sgx//:__subpackages__"],
++    visibility = [
++        "//visibility:public",
++    ],
 +    deps = [
 +        ":common_inc_internal",
 +        ":qe3_untrusted",

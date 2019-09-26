@@ -46,6 +46,8 @@ class DcapIntelArchitecturalEnclaveInterface
 
   // From IntelArchitecturalEnclaveInterface.
 
+  Status SetEnclaveDir(const std::string &path) override;
+
   Status GetPceTargetinfo(Targetinfo *targetinfo, uint16_t *pce_svn) override;
 
   Status GetPceInfo(const Report &report,

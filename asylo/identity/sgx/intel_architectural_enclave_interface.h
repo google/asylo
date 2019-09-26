@@ -41,6 +41,11 @@ class IntelArchitecturalEnclaveInterface {
  public:
   virtual ~IntelArchitecturalEnclaveInterface() = default;
 
+  // Sets the directory |path| where the architectural enclaves are located.
+  // If this function is not called, the enclaves will be loaded from the
+  // directory in which the host binary is located.
+  virtual Status SetEnclaveDir(const std::string &path) = 0;
+
   // Provisioning Certification Enclave (PCE)
 
   // Populates |targetinfo| with the TARGETINFO and |pce_svn| with the PCE SVN

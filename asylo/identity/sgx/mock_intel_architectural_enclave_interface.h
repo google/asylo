@@ -36,6 +36,7 @@ namespace sgx {
 class MockIntelArchitecturalEnclaveInterface
     : public IntelArchitecturalEnclaveInterface {
  public:
+  MOCK_METHOD(Status, SetEnclaveDir, (const std::string &), (override));
   MOCK_METHOD(Status, GetPceTargetinfo, (Targetinfo *, uint16_t *), (override));
   MOCK_METHOD(Status, GetPceInfo,
               (const Report &, absl::Span<const uint8_t>,

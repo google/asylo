@@ -1341,6 +1341,7 @@ cc_library(
         "@linux_sgx//:public",
         "@sgx_dcap//:pce_constants",
         "@sgx_dcap//:pce_wrapper",
+        "@sgx_dcap//:quote_wrapper",
     ],
 )
 

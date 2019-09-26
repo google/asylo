@@ -29,6 +29,7 @@
 #include "include/sgx_key.h"
 #include "include/sgx_report.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
 
 namespace asylo {
 namespace sgx {
@@ -62,7 +63,99 @@ Status PceErrorToStatus(sgx_pce_error_t pce_error) {
   }
 }
 
+Status Quote3ErrorToStatus(quote3_error_t quote3_error) {
+  switch (quote3_error) {
+    case SGX_QL_SUCCESS:
+      return Status::OkStatus();
+    case SGX_QL_ERROR_UNEXPECTED:
+      return Status(error::GoogleError::INTERNAL, "Unexpected error");
+    case SGX_QL_ERROR_INVALID_PARAMETER:
+      return Status(error::GoogleError::INVALID_ARGUMENT, "Invalid parameter");
+    case SGX_QL_ERROR_OUT_OF_MEMORY:
+      return Status(error::GoogleError::RESOURCE_EXHAUSTED, "Out of memory");
+    case SGX_QL_ERROR_ECDSA_ID_MISMATCH:
+      return Status(error::GoogleError::INTERNAL,
+                    "Unexpected ID in the ECDSA key blob");
+    case SGX_QL_PATHNAME_BUFFER_OVERFLOW_ERROR:
+      return Status(error::GoogleError::OUT_OF_RANGE,
+                    "Pathname buffer overflow");
+    case SGX_QL_FILE_ACCESS_ERROR:
+      return Status(error::GoogleError::INTERNAL, "File access error");
+    case SGX_QL_ERROR_STORED_KEY:
+      return Status(error::GoogleError::INTERNAL, "Invalid cached ECDSA key");
+    case SGX_QL_ERROR_PUB_KEY_ID_MISMATCH:
+      return Status(error::GoogleError::INTERNAL,
+                    "Cached ECDSA key ID does not match request");
+    case SGX_QL_ERROR_INVALID_PCE_SIG_SCHEME:
+      return Status(error::GoogleError::INTERNAL,
+                    "The signature scheme supported by the PCE is not "
+                    "supported by the QE");
+    case SGX_QL_ATT_KEY_BLOB_ERROR:
+      return Status(error::GoogleError::INTERNAL, "Attestation key blob error");
+    case SGX_QL_UNSUPPORTED_ATT_KEY_ID:
+      return Status(error::GoogleError::INTERNAL, "Invalid attestation key ID");
+    case SGX_QL_UNSUPPORTED_LOADING_POLICY:
+      return Status(error::GoogleError::INTERNAL,
+                    "Unsupported enclave loading policy");
+    case SGX_QL_INTERFACE_UNAVAILABLE:
+      return Status(error::GoogleError::INTERNAL,
+                    "Unable to load the quoting enclave");
+    case SGX_QL_PLATFORM_LIB_UNAVAILABLE:
+      return Status(
+          error::GoogleError::INTERNAL,
+          "Unable to load the platform quote provider library (not fatal)");
+    case SGX_QL_ATT_KEY_NOT_INITIALIZED:
+      return Status(error::GoogleError::FAILED_PRECONDITION,
+                    "Attestation key not initialized");
+    case SGX_QL_ATT_KEY_CERT_DATA_INVALID:
+      return Status(error::GoogleError::INTERNAL,
+                    "Invalid attestation key certification retrieved from "
+                    "platform quote provider library");
+    case SGX_QL_NO_PLATFORM_CERT_DATA:
+      return Status(error::GoogleError::INTERNAL,
+                    "No certification for the platform could be found");
+    case SGX_QL_OUT_OF_EPC:
+      return Status(error::GoogleError::RESOURCE_EXHAUSTED,
+                    "Insufficient EPC memory to load an enclave");
+    case SGX_QL_ERROR_REPORT:
+      return Status(error::GoogleError::INTERNAL,
+                    "An error occurred validating the report");
+    case SGX_QL_ENCLAVE_LOST:
+      return Status(error::GoogleError::INTERNAL,
+                    "The enclave was lost due to power transition or fork()");
+    case SGX_QL_INVALID_REPORT:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "The application enclave's report failed validation");
+    case SGX_QL_ENCLAVE_LOAD_ERROR:
+      return Status(error::GoogleError::INTERNAL, "Unable to load an enclave");
+    case SGX_QL_UNABLE_TO_GENERATE_QE_REPORT:
+      return Status(
+          error::GoogleError::INTERNAL,
+          "Unable to generate QE report targeting the application enclave");
+    case SGX_QL_KEY_CERTIFCATION_ERROR:
+      return Status(
+          error::GoogleError::INTERNAL,
+          "The platform quote provider library returned an invalid TCB");
+    case SGX_QL_NETWORK_ERROR:
+      return Status(error::GoogleError::INTERNAL,
+                    "Network error getting PCK certificates");
+    case SGX_QL_MESSAGE_ERROR:
+      return Status(error::GoogleError::INTERNAL,
+                    "Protocol error getting PCK certificates");
+    case SGX_QL_ERROR_INVALID_PRIVILEGE:
+      return Status(error::GoogleError::PERMISSION_DENIED,
+                    "Invalid permission");
+    default:
+      return Status(error::GoogleError::UNKNOWN, "Unknown error");
+  }
+}
+
 }  // namespace
+
+Status DcapIntelArchitecturalEnclaveInterface::SetEnclaveDir(
+    const std::string &path) {
+  return Quote3ErrorToStatus(sgx_qe_set_enclave_dirpath(path.c_str()));
+}
 
 Status DcapIntelArchitecturalEnclaveInterface::GetPceTargetinfo(
     Targetinfo *targetinfo, uint16_t *pce_svn) {
