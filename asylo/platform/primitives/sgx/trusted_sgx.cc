@@ -20,6 +20,7 @@
 
 #include <errno.h>
 #include <sys/types.h>
+
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -288,8 +289,8 @@ int TrustedPrimitives::CreateThread() {
     return -1;
   }
   if (output.size() != 1) {
-    DebugPuts("CreateThread error: unexpected output size received.");
-    abort();
+    TrustedPrimitives::BestEffortAbort(
+        "CreateThread error: unexpected output size received.");
   }
   return output.next<int>();
 }

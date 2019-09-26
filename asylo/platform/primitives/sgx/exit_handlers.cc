@@ -51,5 +51,17 @@ Status CreateThreadHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status RegisterSgxExitHandlers(Client::ExitCallProvider *exit_call_provider) {
+  if (!exit_call_provider) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "RegisterSgxExitHandlers: Invalid/NULL ExitCallProvider provided."};
+  }
+
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kSelectorCreateThread, ExitHandler{CreateThreadHandler}));
+
+  return Status::OkStatus();
+}
+
 }  // namespace primitives
 }  // namespace asylo

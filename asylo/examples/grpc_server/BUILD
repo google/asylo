@@ -20,7 +20,10 @@ load(
     "enclave_loader",
     "sgx_enclave_test",
 )
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load(
+    "@linux_sgx//:sgx_sdk.bzl",
+    "sgx",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 

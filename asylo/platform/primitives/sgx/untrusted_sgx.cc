@@ -312,9 +312,7 @@ Status SgxEnclaveClient::Destroy() {
 }
 
 Status SgxEnclaveClient::RegisterExitHandlers() {
-  ASYLO_RETURN_IF_ERROR(exit_call_provider()->RegisterExitHandler(
-      kSelectorCreateThread, ExitHandler{CreateThreadHandler}));
-  return Status::OkStatus();
+  return RegisterSgxExitHandlers(exit_call_provider());
 }
 
 sgx_enclave_id_t SgxEnclaveClient::GetEnclaveId() const { return id_; }

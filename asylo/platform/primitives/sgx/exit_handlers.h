@@ -22,15 +22,20 @@
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace primitives {
 
 // Exit call handler for thread creation. Performs an EnclaveCall to register
 // and start the thread this handler creates.
-Status CreateThreadHandler(const std::shared_ptr<primitives::Client> &client,
-                           void *context, primitives::MessageReader *input,
-                           primitives::MessageWriter *output);
+ASYLO_MUST_USE_RESULT Status CreateThreadHandler(
+    const std::shared_ptr<primitives::Client> &client, void *context,
+    primitives::MessageReader *input, primitives::MessageWriter *output);
+
+// Registers the exit handlers specific to SGX primitives layer.
+ASYLO_MUST_USE_RESULT Status
+RegisterSgxExitHandlers(Client::ExitCallProvider *exit_call_provider);
 
 }  // namespace primitives
 }  // namespace asylo
