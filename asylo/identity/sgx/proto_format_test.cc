@@ -111,7 +111,7 @@ TEST(ProtoFormatTest, SgxIdentityHasHexEncodedBytesFields) {
 
 TEST(ProtoFormatTest, SgxIdentityMatchSpecHasAttributesByName) {
   SgxIdentityMatchSpec match_spec;
-  SetDefaultMatchSpec(&match_spec);
+  SetDefaultLocalSgxMatchSpec(&match_spec);
   std::string text = FormatProto(match_spec);
 
   std::vector<absl::string_view> named_attributes;
@@ -125,7 +125,7 @@ TEST(ProtoFormatTest, SgxIdentityMatchSpecHasAttributesByName) {
 
 TEST(ProtoFormatTest, SgxIdentityMatchSpecHasMiscselectBitsByName) {
   SgxIdentityMatchSpec match_spec;
-  SetDefaultMatchSpec(&match_spec);
+  SetDefaultLocalSgxMatchSpec(&match_spec);
   std::string text = FormatProto(match_spec);
 
   std::vector<absl::string_view> named_miscselect_bits =

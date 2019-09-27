@@ -205,7 +205,7 @@ Status ParseIdentityFromHardwareReport(const Report &report,
   return Status::OkStatus();
 }
 
-Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec) {
+Status SetDefaultCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
   // Do not require MRENCLAVE match, as the value of MRENCLAVE changes from one
   // version of the enclave to another.
   spec->set_is_mrenclave_match_required(false);
@@ -222,6 +222,20 @@ Status SetDefaultMatchSpec(CodeIdentityMatchSpec *spec) {
   // The default attributes_match_mask is a logical NOT of the default "DO NOT
   // CARE" attributes.
   return SetDefaultSecsAttributesMask(spec->mutable_attributes_match_mask());
+}
+
+void SetStrictCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
+  // Require MRENCLAVE match.
+  spec->set_is_mrenclave_match_required(true);
+
+  // Require MRSIGNER match.
+  spec->set_is_mrsigner_match_required(true);
+
+  // Require a match on all MISCSELECT bits.
+  spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
+
+  // Require a match for all ATTRIBUTES bits.
+  SetStrictSecsAttributesMask(spec->mutable_attributes_match_mask());
 }
 
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
@@ -431,54 +445,81 @@ Status ParseIdentityFromHardwareReport(const Report &report,
                                          identity->mutable_code_identity());
 }
 
-Status SetDefaultMatchSpec(SgxIdentityMatchSpec *spec) {
+void SetDefaultLocalSgxMatchSpec(SgxIdentityMatchSpec *spec) {
   SgxMachineConfigurationMatchSpec *machine_config_match_spec =
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
   machine_config_match_spec->set_is_sgx_type_match_required(false);
 
-  return SetDefaultMatchSpec(spec->mutable_code_identity_match_spec());
+  SetDefaultCodeIdentityMatchSpec(spec->mutable_code_identity_match_spec());
 }
 
-void SetStrictMatchSpec(CodeIdentityMatchSpec *spec) {
-  // Require MRENCLAVE match.
-  spec->set_is_mrenclave_match_required(true);
+void SetStrictLocalSgxMatchSpec(SgxIdentityMatchSpec *spec) {
+  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+      spec->mutable_machine_configuration_match_spec();
 
-  // Require MRSIGNER match.
-  spec->set_is_mrsigner_match_required(true);
+  machine_config_match_spec->set_is_cpu_svn_match_required(true);
 
-  // Require a match on all MISCSELECT bits.
-  spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
+  // SgxMachineConfiguration fields other than CPUSVN are not present in
+  // locally-attested SGX identities, and so their match isn't required even in
+  // the case of a "strict" match spec.
+  machine_config_match_spec->set_is_sgx_type_match_required(false);
 
-  // Require a match for all ATTRIBUTES bits.
-  SetStrictSecsAttributesMask(spec->mutable_attributes_match_mask());
+  SetStrictCodeIdentityMatchSpec(spec->mutable_code_identity_match_spec());
 }
 
-void SetStrictMatchSpec(SgxIdentityMatchSpec *spec) {
+void SetDefaultRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec) {
+  SetDefaultLocalSgxMatchSpec(spec);
+}
+
+void SetStrictRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec) {
   SgxMachineConfigurationMatchSpec *machine_config_match_spec =
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(true);
   machine_config_match_spec->set_is_sgx_type_match_required(true);
 
-  SetStrictMatchSpec(spec->mutable_code_identity_match_spec());
+  SetStrictCodeIdentityMatchSpec(spec->mutable_code_identity_match_spec());
 }
 
 void SetSelfSgxIdentity(SgxIdentity *identity) {
   *identity = GetSelfIdentity()->sgx_identity;
 }
 
-Status SetDefaultSelfSgxIdentityExpectation(
-    SgxIdentityExpectation *expectation) {
-  SetSelfSgxIdentity(expectation->mutable_reference_identity());
-  return SetDefaultMatchSpec(expectation->mutable_match_spec());
+Status SetDefaultLocalSelfSgxExpectation(SgxIdentityExpectation *expectation) {
+  SgxIdentityMatchSpec match_spec;
+  SetDefaultLocalSgxMatchSpec(&match_spec);
+
+  SgxIdentity self_identity;
+  SetSelfSgxIdentity(&self_identity);
+
+  return SetExpectation(match_spec, self_identity, expectation);
 }
 
-Status SetStrictSelfSgxIdentityExpectation(
-    SgxIdentityExpectation *expectation) {
+Status SetStrictLocalSelfSgxExpectation(SgxIdentityExpectation *expectation) {
   SgxIdentityMatchSpec match_spec;
-  SetStrictMatchSpec(&match_spec);
+  SetStrictLocalSgxMatchSpec(&match_spec);
+
+  SgxIdentity self_identity;
+  SetSelfSgxIdentity(&self_identity);
+
+  return SetExpectation(match_spec, self_identity, expectation);
+}
+
+Status SetDefaultRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation) {
+  SgxIdentityMatchSpec match_spec;
+  SetDefaultRemoteSgxMatchSpec(&match_spec);
+
+  SgxIdentity self_identity;
+  SetSelfSgxIdentity(&self_identity);
+
+  return SetExpectation(match_spec, self_identity, expectation);
+}
+
+Status SetStrictRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation) {
+  SgxIdentityMatchSpec match_spec;
+  SetStrictRemoteSgxMatchSpec(&match_spec);
 
   SgxIdentity self_identity;
   SetSelfSgxIdentity(&self_identity);

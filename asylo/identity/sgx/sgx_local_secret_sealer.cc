@@ -45,11 +45,11 @@ constexpr size_t kAes256GcmSivKeySize = 32;
 std::unique_ptr<SgxLocalSecretSealer>
 SgxLocalSecretSealer::CreateMrenclaveSecretSealer() {
   SgxIdentityMatchSpec spec;
-  sgx::SetDefaultMatchSpec(&spec);
+  sgx::SetDefaultLocalSgxMatchSpec(&spec);
 
-  // SetDefaultMatchSpec() sets the expectation to match MRSIGNER. The match bit
-  // needs to be flipped so that the LocalSecretSealer sets the ACL to match on
-  // MRENCLAVE.
+  // SetDefaultLocalSgxMatchSpec() sets the expectation to match MRSIGNER. The
+  // match bit needs to be flipped so that the LocalSecretSealer sets the ACL to
+  // match on MRENCLAVE.
   spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
       true);
   spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(
@@ -63,7 +63,7 @@ SgxLocalSecretSealer::CreateMrenclaveSecretSealer() {
 std::unique_ptr<SgxLocalSecretSealer>
 SgxLocalSecretSealer::CreateMrsignerSecretSealer() {
   SgxIdentityMatchSpec spec;
-  sgx::SetDefaultMatchSpec(&spec);
+  sgx::SetDefaultLocalSgxMatchSpec(&spec);
   SgxIdentityExpectation expectation;
   sgx::SetExpectation(spec, sgx::GetSelfIdentity()->sgx_identity, &expectation);
   return absl::WrapUnique<SgxLocalSecretSealer>(

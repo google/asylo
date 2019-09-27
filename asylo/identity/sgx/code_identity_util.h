@@ -72,27 +72,43 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
 Status ParseIdentityFromHardwareReport(const Report &report,
                                        SgxIdentity *identity);
 
-// Sets |spec| to the default SGX match spec, which requires a match on
-// MRSIGNER, MISCSELECT, and all ATTRIBUTES that do not fall into the default
-// "do not care" set.
-Status SetDefaultMatchSpec(SgxIdentityMatchSpec *spec);
+// Sets |spec| to the default local SGX match spec, which requires a match on
+// MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits that do not fall into
+// the default "do not care" set. It requires no matches on any
+// SgxMachineConfiguration fields.
+void SetDefaultLocalSgxMatchSpec(SgxIdentityMatchSpec *spec);
 
-// Sets |spec| to the strictest SGX match spec, which requires a match on
-// MRENCLAVE, MRSIGNER, MISCSELECT, and all ATTRIBUTES bits.
-void SetStrictMatchSpec(CodeIdentityMatchSpec *spec);
-void SetStrictMatchSpec(SgxIdentityMatchSpec *spec);
+// Sets |spec| to the strictest local SGX match spec, which requires a match on
+// MRENCLAVE, MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits, and
+// additionally requires a match on CPUSVN (other SgxMachineConfiguration fields
+// are *not* required to match, as they are not available in local attestation).
+void SetStrictLocalSgxMatchSpec(SgxIdentityMatchSpec *spec);
+
+// Sets |spec| to the default remote SGX match spec, which requires a match on
+// MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits that do not fall into
+// the default "do not care" set. It requires no matches on any
+// SgxMachineConfiguration fields.
+void SetDefaultRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec);
+
+// Sets |spec| to the strictest remote SGX match spec, which requires a match on
+// MRENCLAVE, MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits. It also
+// requires a match on all available SgxMachineConfiguration fields.
+void SetStrictRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |identity| to the current enclave's identity.
 void SetSelfSgxIdentity(SgxIdentity *identity);
 
-// Sets |expectation| to default expectation, which is defined as the pair
-// <self identity, default match spec>.
-Status SetDefaultSelfSgxIdentityExpectation(
-    SgxIdentityExpectation *expectation);
+// Sets |expectation| to the pair <self identity, default local match spec>.
+Status SetDefaultLocalSelfSgxExpectation(SgxIdentityExpectation *expectation);
 
-// Sets |expectation| to the strictest self identity expectation, which is
-// defined as the pair <self identity, strict match spec>.
-Status SetStrictSelfSgxIdentityExpectation(SgxIdentityExpectation *expectation);
+// Sets |expectation| to the pair <self identity, strict local match spec>.
+Status SetStrictLocalSelfSgxExpectation(SgxIdentityExpectation *expectation);
+
+// Sets |expectation| to the pair <self identity, default remote match spec>.
+Status SetDefaultRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation);
+
+// Sets |expectation| to the pair <self identity, strict remote match spec>.
+Status SetStrictRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation);
 
 // Parses an SGX identity from an EnclaveIdentity proto.
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,

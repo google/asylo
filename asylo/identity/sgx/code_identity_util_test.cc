@@ -916,9 +916,9 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFromHardwareReport) {
               EqualsProto(report_cpusvn));
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultSgxIdentityMatchSpec) {
+TEST_F(CodeIdentityUtilTest, SetDefaultLocalSgxMatchSpec) {
   SgxIdentityMatchSpec spec;
-  ASYLO_ASSERT_OK(SetDefaultMatchSpec(&spec));
+  SetDefaultLocalSgxMatchSpec(&spec);
   EXPECT_FALSE(spec.code_identity_match_spec().is_mrenclave_match_required());
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
   EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
@@ -934,9 +934,47 @@ TEST_F(CodeIdentityUtilTest, SetDefaultSgxIdentityMatchSpec) {
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
 }
 
-TEST_F(CodeIdentityUtilTest, SetStrictSgxIdentityMatchSpec) {
+TEST_F(CodeIdentityUtilTest, SetStrictLocalSgxMatchSpec) {
   SgxIdentityMatchSpec spec;
-  SetStrictMatchSpec(&spec);
+  SetStrictLocalSgxMatchSpec(&spec);
+  EXPECT_TRUE(spec.code_identity_match_spec().is_mrenclave_match_required());
+  EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
+  EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
+
+  Attributes expected_attributes;
+  SetStrictSecsAttributesMask(&expected_attributes);
+  EXPECT_EQ(spec.code_identity_match_spec().attributes_match_mask(),
+            expected_attributes);
+
+  EXPECT_TRUE(
+      spec.machine_configuration_match_spec().is_cpu_svn_match_required());
+  EXPECT_FALSE(
+      spec.machine_configuration_match_spec().is_sgx_type_match_required());
+}
+
+TEST_F(CodeIdentityUtilTest, SetDefaultRemoteSgxMatchSpec) {
+  SgxIdentityMatchSpec spec;
+  SetDefaultRemoteSgxMatchSpec(&spec);
+  EXPECT_FALSE(spec.code_identity_match_spec().is_mrenclave_match_required());
+  EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
+  EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
+  SecsAttributeSet attributes;
+  EXPECT_TRUE(GetDefaultDoNotCareSecsAttributes(&attributes));
+
+  Attributes default_attributes_mask;
+  ConvertSecsAttributeRepresentation(~attributes, &default_attributes_mask);
+  EXPECT_EQ(spec.code_identity_match_spec().attributes_match_mask(),
+            default_attributes_mask);
+
+  EXPECT_FALSE(
+      spec.machine_configuration_match_spec().is_cpu_svn_match_required());
+  EXPECT_FALSE(
+      spec.machine_configuration_match_spec().is_sgx_type_match_required());
+}
+
+TEST_F(CodeIdentityUtilTest, SetStrictRemoteSgxMatchSpec) {
+  SgxIdentityMatchSpec spec;
+  SetStrictRemoteSgxMatchSpec(&spec);
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrenclave_match_required());
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
   EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
@@ -986,35 +1024,68 @@ TEST_F(CodeIdentityUtilTest, SetSelfSgxIdentity) {
   EXPECT_EQ(enclave_->get_cpusvn(), cpu_svn);
 }
 
-TEST_F(CodeIdentityUtilTest, SetStrictSelfSgxIdentityExpectation) {
-  SgxIdentityExpectation expectation;
-  SetStrictSelfSgxIdentityExpectation(&expectation);
-
-  SgxIdentityMatchSpec match_spec;
-  SetStrictMatchSpec(&match_spec);
-
-  EXPECT_THAT(expectation.reference_identity(),
-              EquivalentProto(GetSelfIdentity()->sgx_identity))
-      << FormatProto(expectation.reference_identity())
-      << FormatProto(GetSelfIdentity()->sgx_identity);
-  EXPECT_THAT(expectation.match_spec(), EquivalentProto(match_spec))
-      << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
-}
-
-TEST_F(CodeIdentityUtilTest, SetDefaultSelfSgxIdentityExpectation) {
+TEST_F(CodeIdentityUtilTest, SetDefaultLocalSelfSgxExpectation) {
   SgxIdentity identity;
   SetSelfSgxIdentity(&identity);
 
-  SgxIdentityMatchSpec spec;
-  ASYLO_ASSERT_OK(SetDefaultMatchSpec(&spec));
+  SgxIdentityMatchSpec match_spec;
+  SetDefaultLocalSgxMatchSpec(&match_spec);
 
   SgxIdentityExpectation expectation;
-  ASYLO_EXPECT_OK(SetDefaultSelfSgxIdentityExpectation(&expectation));
+  ASYLO_EXPECT_OK(SetDefaultLocalSelfSgxExpectation(&expectation));
 
-  EXPECT_THAT(expectation.reference_identity(), EquivalentProto(identity))
+  EXPECT_THAT(expectation.reference_identity(), EqualsProto(identity))
       << FormatProto(expectation.reference_identity()) << FormatProto(identity);
-  EXPECT_THAT(expectation.match_spec(), EquivalentProto(spec))
-      << FormatProto(expectation.match_spec()) << FormatProto(spec);
+  EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec))
+      << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
+}
+
+TEST_F(CodeIdentityUtilTest, SetStrictLocalSelfSgxExpectation) {
+  SgxIdentity identity;
+  SetSelfSgxIdentity(&identity);
+
+  SgxIdentityMatchSpec match_spec;
+  SetStrictLocalSgxMatchSpec(&match_spec);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetStrictLocalSelfSgxExpectation(&expectation));
+
+  EXPECT_THAT(expectation.reference_identity(), EqualsProto(identity))
+      << FormatProto(expectation.reference_identity()) << FormatProto(identity);
+  EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec))
+      << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
+}
+
+TEST_F(CodeIdentityUtilTest, SetDefaultRemoteSelfSgxExpectation) {
+  SgxIdentity identity;
+  SetSelfSgxIdentity(&identity);
+
+  SgxIdentityMatchSpec match_spec;
+  SetDefaultRemoteSgxMatchSpec(&match_spec);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetDefaultRemoteSelfSgxExpectation(&expectation));
+
+  EXPECT_THAT(expectation.reference_identity(), EqualsProto(identity))
+      << FormatProto(expectation.reference_identity()) << FormatProto(identity);
+  EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec))
+      << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
+}
+
+TEST_F(CodeIdentityUtilTest, SetStrictRemoteSelfSgxExpectation) {
+  SgxIdentity identity;
+  SetSelfSgxIdentity(&identity);
+
+  SgxIdentityMatchSpec match_spec;
+  SetStrictRemoteSgxMatchSpec(&match_spec);
+
+  SgxIdentityExpectation expectation;
+  ASYLO_EXPECT_OK(SetStrictRemoteSelfSgxExpectation(&expectation));
+
+  EXPECT_THAT(expectation.reference_identity(), EqualsProto(identity))
+      << FormatProto(expectation.reference_identity()) << FormatProto(identity);
+  EXPECT_THAT(expectation.match_spec(), EqualsProto(match_spec))
+      << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
 TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentitySuccess) {
