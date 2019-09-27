@@ -44,11 +44,14 @@ namespace asylo {
 /// \param identities A list of identities to match against the ACL.
 /// \param acl An ACL specifying expectations on an identity.
 /// \param matcher The matcher to use to evaluate `identities` against `acl`.
+/// \param[out] explanation An explanation of why the match failed, if the
+///             result is false.
 /// \return A bool indicating whether the ACL evaluated to true, or a non-OK
 ///         Status if any if the inputs are invalid.
 StatusOr<bool> EvaluateIdentityAcl(
     const std::vector<EnclaveIdentity> &identities,
-    const IdentityAclPredicate &acl, const IdentityExpectationMatcher &matcher);
+    const IdentityAclPredicate &acl, const IdentityExpectationMatcher &matcher,
+    std::string *explanation = nullptr);
 
 }  // namespace asylo
 
