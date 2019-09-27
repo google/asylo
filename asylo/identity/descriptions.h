@@ -25,35 +25,45 @@
 
 namespace asylo {
 
-// Sets |assertion_description| to describe a null assertion.
+/// Sets `assertion_description` to describe a null assertion.
+///
+/// \param assertion_description The `AssertionDescription` to populate.
 inline void SetNullAssertionDescription(
     AssertionDescription *assertion_description) {
   assertion_description->set_identity_type(EnclaveIdentityType::NULL_IDENTITY);
   assertion_description->set_authority_type(kNullAssertionAuthority);
 }
 
-// Sets |identity_description| to describe a null identity.
+/// Sets `identity_description` to describe a null identity.
+///
+/// \param identity_description The `EnclaveIdentityDescription` to populate.
 inline void SetNullIdentityDescription(
     EnclaveIdentityDescription *identity_description) {
   identity_description->set_identity_type(EnclaveIdentityType::NULL_IDENTITY);
   identity_description->set_authority_type(kNullAuthorizationAuthority);
 }
 
-// Sets |assertion_description| to describe an SGX local assertion.
+/// Sets `assertion_description` to describe an SGX local assertion.
+///
+/// \param assertion_description The `AssertionDescription` to populate.
 inline void SetSgxLocalAssertionDescription(
     AssertionDescription *assertion_description) {
   assertion_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
   assertion_description->set_authority_type(sgx::kSgxLocalAssertionAuthority);
 }
 
-// Sets |assertion_description| to describe an SGX remote assertion.
+/// Sets `assertion_description` to describe an SGX remote assertion.
+///
+/// \param assertion_description The `AssertionDescription` to populate.
 inline void SetSgxRemoteAssertionDescription(
     AssertionDescription *assertion_description) {
   assertion_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
   assertion_description->set_authority_type(sgx::kSgxRemoteAssertionAuthority);
 }
 
-// Sets |identity_description| to describe an SGX code identity.
+/// Sets `identity_description` to describe an SGX identity.
+///
+/// \param identity_description The `EnclaveIdentityDescription` to populate.
 inline void SetSgxIdentityDescription(
     EnclaveIdentityDescription *identity_description) {
   identity_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
