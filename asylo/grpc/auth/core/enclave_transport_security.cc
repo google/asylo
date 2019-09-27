@@ -25,12 +25,16 @@
 
 #include <google/protobuf/io/coded_stream.h>
 #include "absl/memory/memory.h"
+#include "absl/types/optional.h"
 #include "asylo/grpc/auth/core/client_ekep_handshaker.h"
 #include "asylo/grpc/auth/core/ekep_handshaker.h"
 #include "asylo/grpc/auth/core/ekep_handshaker_util.h"
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/grpc/auth/core/server_ekep_handshaker.h"
+#include "asylo/identity/delegating_identity_expectation_matcher.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/identity_acl_evaluator.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/statusor.h"
 #include "include/grpc/support/log.h"
@@ -245,11 +249,15 @@ tsi_result enclave_handshaker_result_create(
 struct tsi_enclave_handshaker {
   tsi_handshaker base;
   bool is_client;
+  const absl::optional<IdentityAclPredicate> peer_acl;
   std::unique_ptr<EkepHandshaker> handshaker;
   std::string outgoing_bytes;
 
   tsi_enclave_handshaker(bool is_client,
+                         const absl::optional<IdentityAclPredicate> &peer_acl,
                          std::unique_ptr<EkepHandshaker> ekep_handshaker);
+
+  tsi_result evaluate_acl(const std::vector<EnclaveIdentity> &identities);
 };
 
 void enclave_handshaker_destroy(tsi_handshaker *self) {
@@ -332,12 +340,20 @@ tsi_result enclave_handshaker_next(
         return TSI_INTERNAL_ERROR;
       }
 
+      std::unique_ptr<EnclaveIdentities> identities =
+          std::move(identities_result).ValueOrDie();
+
+      tsi_result acl_eval_result = tsi_handshaker->evaluate_acl(
+          {identities->identities().begin(), identities->identities().end()});
+      if (acl_eval_result != TSI_OK) {
+        return acl_eval_result;
+      }
+
       // Create the handshaker result object.
       tsi_result result = enclave_handshaker_result_create(
           absl::make_unique<TsiEnclaveHandshakerResult>(
               tsi_handshaker->is_client, record_protocol_result.ValueOrDie(),
-              key_result.ValueOrDie(),
-              std::move(identities_result).ValueOrDie(),
+              key_result.ValueOrDie(), std::move(identities),
               unused_bytes_result.ValueOrDie()),
           handshaker_result);
       if (result == TSI_OK) {
@@ -362,11 +378,34 @@ const tsi_handshaker_vtable handshaker_vtable = {
 };
 
 tsi_enclave_handshaker::tsi_enclave_handshaker(
-    bool is_client, std::unique_ptr<EkepHandshaker> ekep_handshaker)
-    : is_client(is_client), handshaker(std::move(ekep_handshaker)) {
+    bool is_client, const absl::optional<IdentityAclPredicate> &peer_acl,
+    std::unique_ptr<EkepHandshaker> ekep_handshaker)
+    : is_client(is_client),
+      peer_acl(peer_acl),
+      handshaker(std::move(ekep_handshaker)) {
   base.handshaker_result_created = false;
   base.handshake_shutdown = false;
   base.vtable = &handshaker_vtable;
+}
+
+tsi_result tsi_enclave_handshaker::evaluate_acl(
+    const std::vector<EnclaveIdentity> &identities) {
+  if (!peer_acl.has_value()) {
+    return TSI_OK;
+  }
+  DelegatingIdentityExpectationMatcher matcher;
+  StatusOr<bool> acl_result =
+      EvaluateIdentityAcl(identities, peer_acl.value(), matcher);
+  if (!acl_result.ok()) {
+    gpr_log(GPR_ERROR, "Error evaluating ACL: %s",
+            acl_result.status().ToString().c_str());
+    return TSI_INTERNAL_ERROR;
+  }
+  if (!acl_result.ValueOrDie()) {
+    gpr_log(GPR_ERROR, "Identities did not match ACL");
+    return TSI_PERMISSION_DENIED;
+  }
+  return TSI_OK;
 }
 
 }  // namespace asylo
@@ -375,14 +414,15 @@ tsi_result tsi_enclave_handshaker_create(
     int is_client, const assertion_description_array *self_assertions,
     const assertion_description_array *accepted_peer_assertions,
     const safe_string *additional_authenticated_data,
+    const absl::optional<asylo::IdentityAclPredicate> &peer_acl,
     tsi_handshaker **handshaker) {
   GRPC_API_TRACE(
       "tsi_enclave_handshaker_create(is_client=%d, self_assertions=%p, "
       "accepted_peer_assertions=%p, additional_authenticated_data=%p, "
-      "handshaker=%p)",
-      5,
+      "peer_acl=%d, handshaker=%p)",
+      6,
       (is_client, self_assertions, accepted_peer_assertions,
-       additional_authenticated_data, handshaker));
+       additional_authenticated_data, peer_acl.has_value(), handshaker));
 
   // Convert arguments to handshaker options.
   asylo::EkepHandshakerOptions options;
@@ -406,6 +446,11 @@ tsi_result tsi_enclave_handshaker_create(
             desc.ShortDebugString().c_str());
   }
 
+  if (peer_acl.has_value()) {
+    gpr_log(GPR_DEBUG, "accepted peer ACL: (%s)",
+            peer_acl.value().ShortDebugString().c_str());
+  }
+
   // Create an EkepHandshaker object and wrap it with a tsi_handshaker object.
   std::unique_ptr<asylo::EkepHandshaker> ekep_handshaker =
       is_client ? asylo::ClientEkepHandshaker::Create(options)
@@ -413,8 +458,10 @@ tsi_result tsi_enclave_handshaker_create(
   if (!ekep_handshaker) {
     return TSI_INTERNAL_ERROR;
   }
+
   asylo::tsi_enclave_handshaker *tsi_handshaker =
-      new asylo::tsi_enclave_handshaker(is_client, std::move(ekep_handshaker));
+      new asylo::tsi_enclave_handshaker(is_client, peer_acl,
+                                        std::move(ekep_handshaker));
 
   *handshaker = &tsi_handshaker->base;
   return TSI_OK;

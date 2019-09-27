@@ -19,8 +19,10 @@
 #ifndef ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_OPTIONS_H_
 #define ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_OPTIONS_H_
 
+#include "absl/types/optional.h"
 #include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/util/safe_string.h"
+#include "asylo/identity/identity_acl.pb.h"
 
 typedef struct {
   safe_string additional_authenticated_data;
@@ -31,6 +33,8 @@ typedef struct {
   /* The credential holder's accepted peer assertions. */
   assertion_description_array accepted_peer_assertions;
 
+  /* The credential holder's accepted peer ACL. */
+  absl::optional<asylo::IdentityAclPredicate> peer_acl;
 } grpc_enclave_credentials_options;
 
 /* Initializes an options object. This should be called before assigning to or

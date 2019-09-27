@@ -21,8 +21,10 @@
 
 #include <string>
 
+#include "absl/types/optional.h"
 #include "asylo/identity/assertion_description_util.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
 
 namespace asylo {
 
@@ -46,6 +48,11 @@ struct EnclaveCredentialsOptions {
 
   /// Peer assertions accepted by the credential holder.
   AssertionDescriptionHashSet accepted_peer_assertions;
+
+  /// The accepted ACL for the peer. Failure to match the ACL against the
+  // authenticated peer's identities will cause gRPC channel establishment to
+  // fail.
+  absl::optional<IdentityAclPredicate> peer_acl;
 };
 
 }  // namespace asylo

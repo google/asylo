@@ -17,12 +17,14 @@
  */
 
 #include "asylo/grpc/auth/enclave_credentials_options.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
+#include "asylo/identity/identity_acl.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 
 namespace asylo {
@@ -98,6 +100,55 @@ TEST_F(EnclaveCredentialsOptionsTest, BidirectionalSgxLocalNull) {
       bidirectional_null_sgx_local.accepted_peer_assertions,
       UnorderedElementsAre(EqualsProto(null_assertion_description_),
                            EqualsProto(sgx_local_assertion_description_)));
+}
+
+TEST_F(EnclaveCredentialsOptionsTest, CombineIdentityAclPredicatesOnlyLhs) {
+  EnclaveCredentialsOptions lhs = BidirectionalSgxLocalCredentialsOptions();
+  IdentityAclPredicate lhs_acl;
+  lhs_acl.mutable_expectation()->mutable_reference_identity()->set_identity(
+      "Random identity");
+  lhs_acl.mutable_expectation()->set_match_spec("Random match spec");
+  lhs.peer_acl = lhs_acl;
+  EXPECT_THAT(lhs.Add(BidirectionalNullCredentialsOptions()).peer_acl,
+              Optional(EqualsProto(lhs_acl)));
+}
+
+TEST_F(EnclaveCredentialsOptionsTest, CombineIdentityAclPredicatesOnlyRhs) {
+  EnclaveCredentialsOptions rhs = BidirectionalNullCredentialsOptions();
+  IdentityAclPredicate rhs_acl;
+  IdentityAclGroup *rhs_acl_group = rhs_acl.mutable_acl_group();
+  rhs_acl_group->set_type(IdentityAclGroup::AND);
+  IdentityAclPredicate *group_predicate = rhs_acl_group->add_predicates();
+  group_predicate->mutable_expectation()
+      ->mutable_reference_identity()
+      ->set_identity("Random identity");
+  rhs.peer_acl = rhs_acl;
+  EXPECT_THAT(BidirectionalSgxLocalCredentialsOptions().Add(rhs).peer_acl,
+              Optional(EqualsProto(rhs_acl)));
+}
+
+TEST_F(EnclaveCredentialsOptionsTest, CombineIdentityAclPredicates) {
+  EnclaveCredentialsOptions lhs = BidirectionalSgxLocalCredentialsOptions();
+  IdentityAclPredicate lhs_acl;
+  lhs_acl.mutable_expectation()->mutable_reference_identity()->set_identity(
+      "LHS Identity");
+  lhs.peer_acl = lhs_acl;
+
+  EnclaveCredentialsOptions rhs = BidirectionalSgxLocalCredentialsOptions();
+  IdentityAclPredicate rhs_acl;
+  IdentityAclGroup *rhs_acl_group = rhs_acl.mutable_acl_group();
+  rhs_acl_group->set_type(IdentityAclGroup::AND);
+  IdentityAclPredicate *group_predicate = rhs_acl_group->add_predicates();
+  group_predicate->mutable_expectation()
+      ->mutable_reference_identity()
+      ->set_identity("Random identity");
+  rhs.peer_acl = rhs_acl;
+
+  IdentityAclPredicate combined;
+  combined.mutable_acl_group()->set_type(IdentityAclGroup::OR);
+  *combined.mutable_acl_group()->add_predicates() = lhs_acl;
+  *combined.mutable_acl_group()->add_predicates() = rhs_acl;
+  EXPECT_THAT(lhs.Add(rhs).peer_acl, Optional(EqualsProto(combined)));
 }
 
 }  // namespace

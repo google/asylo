@@ -53,7 +53,10 @@ cc_library(
         ":handshake_cc_proto",
         ":server_ekep_handshaker",
         "//asylo/grpc/auth/util:safe_string",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_acl_evaluator",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity:identity_expectation_matcher",
         "//asylo/util:cleansing_types",
         "//asylo/util:logging",
         "//asylo/util:status",
@@ -64,6 +67,7 @@ cc_library(
         "@com_github_grpc_grpc//:ref_counted_ptr",
         "@com_github_grpc_grpc//:tsi_interface",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/types:optional",
         "@com_google_protobuf//:protobuf_lite",
     ],
 )
@@ -77,6 +81,8 @@ cc_library(
     deps = [
         ":assertion_description",
         "//asylo/grpc/auth/util:safe_string",
+        "//asylo/identity:identity_acl_cc_proto",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 

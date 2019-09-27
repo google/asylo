@@ -87,6 +87,8 @@ grpc_enclave_channel_credentials::grpc_enclave_channel_credentials(
   assertion_description_array_copy(
       /*src=*/&options.accepted_peer_assertions,
       /*dest=*/&accepted_peer_assertions_);
+
+  peer_acl_ = options.peer_acl;
 }
 
 grpc_enclave_server_credentials::grpc_enclave_server_credentials(
@@ -105,4 +107,6 @@ grpc_enclave_server_credentials::grpc_enclave_server_credentials(
   assertion_description_array_copy(
       /*src=*/&options.accepted_peer_assertions,
       /*dest=*/&accepted_peer_assertions_);
+
+  peer_acl_ = options.peer_acl;
 }

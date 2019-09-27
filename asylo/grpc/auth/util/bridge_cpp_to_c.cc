@@ -63,6 +63,8 @@ void CopyEnclaveCredentialsOptions(const EnclaveCredentialsOptions &src,
                        src.additional_authenticated_data.size(),
                        src.additional_authenticated_data.data());
   }
+
+  dest->peer_acl = src.peer_acl;
 }
 
 }  // namespace asylo

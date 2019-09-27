@@ -19,11 +19,13 @@
 #ifndef ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_
 #define ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_
 
+#include "absl/types/optional.h"
 #include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/core/enclave_credentials_options.h"
 #include "asylo/grpc/auth/util/safe_string.h"
-#include "src/core/lib/security/credentials/credentials.h"
+#include "asylo/identity/identity_acl.pb.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
+#include "src/core/lib/security/credentials/credentials.h"
 
 #define GRPC_CREDENTIALS_TYPE_ENCLAVE "Enclave"
 
@@ -64,6 +66,7 @@ class grpc_enclave_channel_credentials final : public grpc_channel_credentials {
   assertion_description_array* mutable_accepted_peer_assertions() {
     return &accepted_peer_assertions_;
   }
+  absl::optional<asylo::IdentityAclPredicate> peer_acl() { return peer_acl_; }
 
  private:
   // Additional authenticated data provided by the client.
@@ -75,6 +78,8 @@ class grpc_enclave_channel_credentials final : public grpc_channel_credentials {
   // Server assertions accepted by the client.
   assertion_description_array accepted_peer_assertions_;
 
+  // Optional ACL enforced on the server's identity.
+  absl::optional<asylo::IdentityAclPredicate> peer_acl_;
 };
 
 class grpc_enclave_server_credentials final : public grpc_server_credentials {
@@ -96,6 +101,8 @@ class grpc_enclave_server_credentials final : public grpc_server_credentials {
     return &accepted_peer_assertions_;
   }
 
+  absl::optional<asylo::IdentityAclPredicate> peer_acl() { return peer_acl_; }
+
  private:
   // Additional authenticated data provided by the server.
   safe_string additional_authenticated_data_;
@@ -106,6 +113,8 @@ class grpc_enclave_server_credentials final : public grpc_server_credentials {
   // Client assertions accepted by the server.
   assertion_description_array accepted_peer_assertions_;
 
+  // Optional ACL enforced on the client's identity.
+  absl::optional<asylo::IdentityAclPredicate> peer_acl_;
 };
 
 #endif  // ASYLO_GRPC_AUTH_CORE_ENCLAVE_CREDENTIALS_H_

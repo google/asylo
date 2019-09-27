@@ -21,6 +21,7 @@
 #include <stdbool.h>
 #include <string.h>
 
+#include "absl/types/optional.h"
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/core/enclave_credentials.h"
@@ -172,7 +173,7 @@ class grpc_enclave_channel_security_connector final
         /*is_client=*/true, channel_creds->mutable_self_assertions(),
         channel_creds->mutable_accepted_peer_assertions(),
         channel_creds->mutable_additional_authenticated_data(),
-        &tsi_handshaker);
+        channel_creds->peer_acl(), &tsi_handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -218,7 +219,8 @@ class grpc_enclave_server_security_connector final
     tsi_result result = tsi_enclave_handshaker_create(
         /*is_client=*/false, server_creds->mutable_self_assertions(),
         server_creds->mutable_accepted_peer_assertions(),
-        server_creds->mutable_additional_authenticated_data(), &tsi_handshaker);
+        server_creds->mutable_additional_authenticated_data(),
+        server_creds->peer_acl(), &tsi_handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
               tsi_result_to_string(result));

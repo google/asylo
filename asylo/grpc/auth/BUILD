@@ -47,8 +47,10 @@ cc_library(
         "//asylo/grpc/auth/core:grpc_security_enclave",
         "//asylo/grpc/auth/util:bridge_cpp_to_c",
         "//asylo/identity:assertion_description_util",
+        "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",
         "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 
@@ -59,7 +61,9 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/identity:assertion_description_util",
+        "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 
@@ -149,6 +153,7 @@ cc_test(
         ":null_credentials_options",
         ":sgx_local_credentials_options",
         "//asylo/identity:descriptions",
+        "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:test_main",

@@ -17,7 +17,22 @@
  */
 #include "asylo/grpc/auth/enclave_credentials_options.h"
 
+#include "asylo/identity/identity_acl.pb.h"
+
 namespace asylo {
+namespace {
+
+IdentityAclPredicate CombineIdentityAclPredicates(
+    const IdentityAclPredicate &lhs, const IdentityAclPredicate &rhs) {
+  IdentityAclPredicate combined;
+  IdentityAclGroup *combined_group = combined.mutable_acl_group();
+  combined_group->set_type(IdentityAclGroup::OR);
+  *combined_group->add_predicates() = lhs;
+  *combined_group->add_predicates() = rhs;
+  return combined;
+}
+
+}  // namespace
 
 EnclaveCredentialsOptions &EnclaveCredentialsOptions::Add(
     const EnclaveCredentialsOptions &additional) {
@@ -25,6 +40,15 @@ EnclaveCredentialsOptions &EnclaveCredentialsOptions::Add(
                          additional.self_assertions.end());
   accepted_peer_assertions.insert(additional.accepted_peer_assertions.begin(),
                                   additional.accepted_peer_assertions.end());
+  if (additional.peer_acl.has_value()) {
+    if (peer_acl.has_value()) {
+      peer_acl = CombineIdentityAclPredicates(peer_acl.value(),
+                                              additional.peer_acl.value());
+    } else {
+      peer_acl = additional.peer_acl;
+    }
+  }
+
   return *this;
 }
 
