@@ -29,21 +29,6 @@
 namespace asylo {
 namespace sgx {
 
-// The SGX architecture defines the size of all hardware keys to be 128 bits
-// (16 bytes), which is same as size of an AES block.
-constexpr size_t kHardwareKeySize = AES_BLOCK_SIZE;
-
-// Type alias used for holding a hardware key. It uses the SafeBytes
-// template to ensure proper cleansing after the object goes out of scope.
-using HardwareKey = SafeBytes<kHardwareKeySize>;
-
-static_assert(sizeof(HardwareKey) == kHardwareKeySize,
-              "Size of the struct HardwareKey is incorrect.");
-
-// The SGX architecture requires that the output memory address passed into the
-// EGETKEY instruction must be aligned on a 16-byte boundary.
-using AlignedHardwareKeyPtr = AlignedObjectPtr<HardwareKey, 16>;
-
 // Gets a 64-bit random number using the RDRAND instruction. The function
 // attempts to obtain the desired entropy by executing the RDRAND instruction
 // at most 10 times (as recommended by Intel). If the execution of RDRAND fails

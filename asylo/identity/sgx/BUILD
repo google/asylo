@@ -692,7 +692,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_util",
-        ":hardware_interface",
+        ":fake_enclave",
         ":local_assertion_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
@@ -789,6 +789,7 @@ cc_test(
         ":code_identity_constants",
         ":code_identity_test_util",
         ":code_identity_util",
+        ":fake_enclave",
         ":hardware_interface",
         ":hardware_types",
         ":platform_provisioning_cc_proto",
@@ -942,42 +943,54 @@ cc_test(
     ],
 )
 
+# This target should not be used inside an enclave. This target should only be
+# used directly by tests. It is not marked as "testonly" since
+# hardware_interface depends on it.
+cc_library(
+    name = "fake_enclave",
+    srcs = ["fake_enclave.cc"],
+    hdrs = ["fake_enclave.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":attributes_cc_proto",
+        ":hardware_types",
+        ":platform_provisioning_cc_proto",
+        ":proto_format",
+        ":sgx_identity_cc_proto",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/util:sha256_hash_cc_proto",
+        "//asylo/platform/primitives/sgx:sgx_error_space",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
 cc_library(
     name = "hardware_interface",
     srcs = select({
         "@com_google_asylo//asylo": ["hardware_interface.cc"],
-        "//conditions:default": [
-            "fake_enclave.cc",
-            "fake_hardware_interface.cc",
-        ],
+        "//conditions:default": ["fake_hardware_interface.cc"],
     }),
-    hdrs = ["hardware_interface.h"] + select({
-        "@com_google_asylo//asylo": [],
-        "//conditions:default": ["fake_enclave.h"],
-    }),
+    hdrs = ["hardware_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
-        ":platform_provisioning_cc_proto",
         "@com_google_absl//absl/base:core_headers",
         "//asylo/crypto/util:bytes",
-        "//asylo/util:logging",
-        "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/util:status",
         "@boringssl//:crypto",
     ] + select({
         "@com_google_asylo//asylo": [
+            "//asylo/platform/primitives/sgx:sgx_error_space",
             "@linux_sgx//:trts",
         ],
-        "//conditions:default": [
-            ":attributes_cc_proto",
-            ":proto_format",
-            ":sgx_identity_cc_proto",
-            "@com_google_absl//absl/strings",
-            "//asylo/crypto/util:bssl_util",
-            "//asylo/crypto/util:trivial_object_util",
-            "//asylo/identity/util:sha256_hash_cc_proto",
-        ],
+        "//conditions:default": [":fake_enclave"],
     }),
 )
 
@@ -987,6 +1000,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_util",
+        ":fake_enclave",
         ":hardware_interface",
         ":hardware_types",
         "//asylo/crypto/util:bytes",
@@ -1599,7 +1613,7 @@ cc_binary(
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_util",
-        ":hardware_interface",
+        ":fake_enclave",
         ":hardware_types",
         ":local_secret_sealer_test_data_cc_proto",
         ":sgx_local_secret_sealer",
@@ -1625,7 +1639,7 @@ cc_test(
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_util",
-        ":hardware_interface",
+        ":fake_enclave",
         ":hardware_types",
         ":local_sealed_secret_cc_proto",
         ":local_secret_sealer_helpers",
