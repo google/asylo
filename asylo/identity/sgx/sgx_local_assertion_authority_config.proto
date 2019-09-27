@@ -16,11 +16,22 @@
 
 syntax = "proto2";
 
+// $title: SGX Local Assertion Authority Config
+// $overview: Protobuf definition for SGX Local Assertion Authority Config.
+// $location: https://asylo.dev/docs/reference/proto/asylo.sgx_local_assertion_authority_config.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/sgx_local_assertion_authority_config.html
+
 package asylo;
 
 // Configuration for an SGX local assertion authority.
 message SgxLocalAssertionAuthorityConfig {
-  // A 16-byte string containing the attestation domain to which this SGX local
-  // assertion authority belongs.
+  // A 16-byte value that defines the attestation domain to which this SGX local
+  // assertion authority belongs. This value is used to determine whether two
+  // enclaves are running on the same hardware. SGX enclaves running on the same
+  // hardware can use SGX local attestation.
+  //
+  // An attestation domain is expected to be unique to a particular SGX machine
+  // (i.e., two different SGX machines should have different attestation
+  // domains). It can be thought of as the machine's UUID.
   optional bytes attestation_domain = 1;
 }
