@@ -18,9 +18,13 @@
 
 #include "asylo/crypto/rsa_oaep_encryption_key.h"
 
+#include <openssl/base.h>
 #include <openssl/bio.h>
 #include <openssl/bn.h>
+#include <openssl/engine.h>
+#include <openssl/evp.h>
 #include <openssl/pem.h>
+#include <openssl/rsa.h>
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -63,6 +67,71 @@ Status CheckKeySize(int key_size) {
   }
   return Status::OkStatus();
 }
+
+// Defines a functor which performs RSA crypto with OAEP.
+class RsaOaepOperation {
+ public:
+  // Encrypts data with RSA-OAEP.
+  static const RsaOaepOperation kEncrypt;
+
+  // Decrypts data with RSA-OAEP.
+  static const RsaOaepOperation kDecrypt;
+
+  // Encrypt and decrypt functions have identical signatures.
+  using InitFunc = decltype(&EVP_PKEY_encrypt_init);
+  using CryptoFunc = decltype(&EVP_PKEY_encrypt);
+
+  // Performs an BoringSSL EVP key crypto operation using an BoringSSL RSA
+  // object.
+  template <typename AllocatorT>
+  Status operator()(RSA *rsa, ByteContainerView input,
+                    std::vector<uint8_t, AllocatorT> *output) const {
+    bssl::UniquePtr<EVP_PKEY> evp_key(EVP_PKEY_new());
+    if (EVP_PKEY_set1_RSA(evp_key.get(), rsa) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+
+    bssl::UniquePtr<EVP_PKEY_CTX> ctx(
+        EVP_PKEY_CTX_new(evp_key.get(), /*ENGINE e=*/nullptr));
+    if (ctx == nullptr) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+
+    if (init_func_(ctx.get()) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+    if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_OAEP_PADDING) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+
+    size_t out_len = 0;
+    if (crypto_func_(ctx.get(), /*out=*/nullptr, &out_len, input.data(),
+                     input.size()) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+
+    output->resize(out_len);
+    if (crypto_func_(ctx.get(), output->data(), &out_len, input.data(),
+                     input.size()) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+    output->resize(out_len);
+    return Status::OkStatus();
+  }
+
+ private:
+  InitFunc init_func_;
+  CryptoFunc crypto_func_;
+
+  RsaOaepOperation(InitFunc init_func, CryptoFunc crypto_func)
+      : init_func_(init_func), crypto_func_(crypto_func) {}
+};
+
+const RsaOaepOperation RsaOaepOperation::kEncrypt{EVP_PKEY_encrypt_init,
+                                                  EVP_PKEY_encrypt};
+
+const RsaOaepOperation RsaOaepOperation::kDecrypt{EVP_PKEY_decrypt_init,
+                                                  EVP_PKEY_decrypt};
 
 }  // namespace
 
@@ -131,15 +200,7 @@ StatusOr<std::string> RsaOaepEncryptionKey::SerializeToDer() const {
 
 Status RsaOaepEncryptionKey::Encrypt(ByteContainerView plaintext,
                                      std::vector<uint8_t> *ciphertext) const {
-  size_t out_len;
-  ciphertext->resize(RSA_size(public_key_.get()));
-  if (RSA_encrypt(public_key_.get(), &out_len, ciphertext->data(),
-                  ciphertext->size(), plaintext.data(), plaintext.size(),
-                  RSA_PKCS1_OAEP_PADDING) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-  ciphertext->resize(out_len);
-  return Status::OkStatus();
+  return RsaOaepOperation::kEncrypt(public_key_.get(), plaintext, ciphertext);
 }
 
 RsaOaepEncryptionKey::RsaOaepEncryptionKey(bssl::UniquePtr<RSA> public_key)
@@ -194,15 +255,7 @@ RsaOaepDecryptionKey::GetEncryptionKey() const {
 
 Status RsaOaepDecryptionKey::Decrypt(
     ByteContainerView ciphertext, CleansingVector<uint8_t> *plaintext) const {
-  size_t out_len;
-  plaintext->resize(RSA_size(private_key_.get()));
-  if (RSA_decrypt(private_key_.get(), &out_len, plaintext->data(),
-                  plaintext->size(), ciphertext.data(), ciphertext.size(),
-                  RSA_PKCS1_OAEP_PADDING) != 1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-  plaintext->resize(out_len);
-  return Status::OkStatus();
+  return RsaOaepOperation::kDecrypt(private_key_.get(), ciphertext, plaintext);
 }
 
 RsaOaepDecryptionKey::RsaOaepDecryptionKey(bssl::UniquePtr<RSA> private_key)
