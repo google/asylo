@@ -1345,6 +1345,82 @@ cc_library(
     ],
 )
 
+proto_library(
+    name = "report_oracle_enclave_proto",
+    srcs = ["report_oracle_enclave.proto"],
+    deps = [
+        ":platform_provisioning_proto",
+        "//asylo:enclave_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "report_oracle_enclave_cc_proto",
+    deps = ["report_oracle_enclave_proto"],
+)
+
+sgx.unsigned_enclave(
+    name = "report_oracle_enclave_unsigned.so",
+    srcs = ["report_oracle_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_interface",
+        ":platform_provisioning",
+        ":report_oracle_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_runtime",
+        "//asylo/util:status",
+    ],
+)
+
+sgx.enclave_configuration(
+    name = "report_oracle_enclave_config",
+    provision_key = "1",
+)
+
+sgx.debug_enclave(
+    name = "report_oracle_enclave.so",
+    unsigned = "report_oracle_enclave_unsigned.so",
+    config = ":report_oracle_enclave_config",
+)
+
+sgx_enclave_test(
+    name = "dcap_intel_architectural_enclave_interface_e2e_test",
+    srcs = ["dcap_intel_architectural_enclave_interface_e2e_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "report_oracle_enclave_path": ":report_oracle_enclave.so",
+    },
+    tags = ["noregression"],
+    test_args = [
+        "--report_oracle_enclave_path='{report_oracle_enclave_path}'",
+    ],
+    deps = [
+        ":code_identity_util",
+        ":dcap_intel_architectural_enclave_interface",
+        ":hardware_types",
+        ":pce_util",
+        ":platform_provisioning",
+        ":platform_provisioning_cc_proto",
+        ":report_oracle_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:rsa_oaep_encryption_key",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+        "@sgx_dcap//:pce_constants",
+    ],
+)
+
 cc_library(
     name = "mock_intel_architectural_enclave_interface",
     testonly = 1,

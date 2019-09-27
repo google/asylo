@@ -102,10 +102,12 @@ std::pair<SecsAttributeBit, const char *> kPrintableSecsAttributeBitNames[] = {
     {SecsAttributeBit::INIT, "INIT"},
     {SecsAttributeBit::DEBUG, "DEBUG"},
     {SecsAttributeBit::MODE64BIT, "MODE64BIT"},
+    // Bit 3 is an unused bit.
     {SecsAttributeBit::PROVISIONKEY, "PROVISIONKEY"},
     {SecsAttributeBit::INITTOKENKEY, "INITTOKENKEY"},
+    // Bit 6 is an unused bit.
     {SecsAttributeBit::KSS, "KSS"},
-
+    // Bits 8 through 63 are unused.
     {SecsAttributeBit::FPU, "FPU"},
     {SecsAttributeBit::SSE, "SSE"},
     {SecsAttributeBit::AVX, "AVX"},
