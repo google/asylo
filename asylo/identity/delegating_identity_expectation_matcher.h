@@ -40,13 +40,6 @@ namespace asylo {
 class DelegatingIdentityExpectationMatcher final
     : public IdentityExpectationMatcher {
  public:
-  DelegatingIdentityExpectationMatcher() = default;
-  ~DelegatingIdentityExpectationMatcher() override = default;
-  DelegatingIdentityExpectationMatcher(
-      const DelegatingIdentityExpectationMatcher &other) = default;
-  DelegatingIdentityExpectationMatcher(
-      DelegatingIdentityExpectationMatcher &&other) = default;
-
   // From the IdentityExpectationMatcher interface.
 
   StatusOr<bool> Match(
