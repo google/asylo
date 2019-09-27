@@ -302,7 +302,7 @@ bool operator!=(const ObjectId &lhs, const ObjectId &rhs) {
   return !(lhs == rhs);
 }
 
-Asn1Value::Asn1Value() : value_(ASN1_TYPE_new()) {}
+Asn1Value::Asn1Value() : value_(CHECK_NOTNULL(ASN1_TYPE_new())) {}
 
 Asn1Value::Asn1Value(const Asn1Value &other)
     : value_(Asn1TypeCopy(other.value_.get())) {}
@@ -313,12 +313,12 @@ Asn1Value &Asn1Value::operator=(const Asn1Value &other) {
 }
 
 Asn1Value::Asn1Value(Asn1Value &&other) : value_(std::move(other.value_)) {
-  other.value_.reset(ASN1_TYPE_new());
+  other.value_.reset(CHECK_NOTNULL(ASN1_TYPE_new()));
 }
 
 Asn1Value &Asn1Value::operator=(Asn1Value &&other) {
   value_ = std::move(other.value_);
-  other.value_.reset(ASN1_TYPE_new());
+  other.value_.reset(CHECK_NOTNULL(ASN1_TYPE_new()));
   return *this;
 }
 
@@ -385,10 +385,7 @@ absl::optional<Asn1Type> Asn1Value::Type() const {
   return value_ != nullptr ? FromOpensslType(value_->type) : absl::nullopt;
 }
 
-StatusOr<bool> Asn1Value::GetBoolean() const {
-  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kBoolean));
-  return value_->value.boolean;
-}
+StatusOr<bool> Asn1Value::GetBoolean() const { return GetBsslBoolean(); }
 
 StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetInteger() const {
   ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kInteger));
@@ -440,11 +437,8 @@ StatusOr<ObjectId> Asn1Value::GetObjectId() const {
 }
 
 StatusOr<std::vector<Asn1Value>> Asn1Value::GetSequence() const {
-  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kSequence));
-  const ASN1_STRING *der_string = value_->value.sequence;
-  const unsigned char *der_data = ASN1_STRING_get0_data(der_string);
-  bssl::UniquePtr<ASN1_SEQUENCE_ANY> sequence(d2i_ASN1_SEQUENCE_ANY(
-      /*a=*/nullptr, &der_data, ASN1_STRING_length(der_string)));
+  bssl::UniquePtr<ASN1_SEQUENCE_ANY> sequence;
+  ASYLO_ASSIGN_OR_RETURN(sequence, GetBsslSequence());
   if (sequence == nullptr) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
@@ -461,14 +455,7 @@ StatusOr<std::vector<Asn1Value>> Asn1Value::GetSequence() const {
   return result;
 }
 
-Status Asn1Value::SetBoolean(bool value) {
-  // A non-null pointer. Used when calling ASN1_TYPE_set() with V_ASN1_BOOLEAN.
-  void *const kNonNullPointer = reinterpret_cast<void *>(true);
-
-  ASN1_TYPE_set(value_.get(), V_ASN1_BOOLEAN,
-                value ? kNonNullPointer : nullptr);
-  return Status::OkStatus();
-}
+Status Asn1Value::SetBoolean(bool value) { return SetBsslBoolean(value); }
 
 Status Asn1Value::SetInteger(const BIGNUM &value) {
   bssl::UniquePtr<ASN1_INTEGER> value_asn1_integer(
@@ -533,9 +520,150 @@ Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
       return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
     }
   }
+  return SetBsslSequence(*sequence);
+}
+
+StatusOr<std::vector<uint8_t>> Asn1Value::SerializeToDer() const {
+  if (value_ == nullptr) {
+    return Status(error::GoogleError::INVALID_ARGUMENT, "Asn1Value is empty");
+  }
 
   unsigned char *der_unowned = nullptr;
-  int der_length = i2d_ASN1_SEQUENCE_ANY(sequence.get(), &der_unowned);
+  int der_length = i2d_ASN1_TYPE(value_.get(), &der_unowned);
+  if (der_length < 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  bssl::UniquePtr<unsigned char> der(der_unowned);
+  std::vector<uint8_t> result(der.get(), &der.get()[der_length]);
+  return result;
+}
+
+StatusOr<Asn1Value> Asn1Value::CreateBooleanFromBssl(ASN1_BOOLEAN bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslBoolean(bssl_value));
+  return asn1;
+}
+
+StatusOr<Asn1Value> Asn1Value::CreateIntegerFromBssl(
+    const ASN1_INTEGER &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslInteger(bssl_value));
+  return asn1;
+}
+
+StatusOr<Asn1Value> Asn1Value::CreateEnumeratedFromBssl(
+    const ASN1_ENUMERATED &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslEnumerated(bssl_value));
+  return asn1;
+}
+
+StatusOr<Asn1Value> Asn1Value::CreateOctetStringFromBssl(
+    const ASN1_OCTET_STRING &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslOctetString(bssl_value));
+  return asn1;
+}
+
+StatusOr<Asn1Value> Asn1Value::CreateObjectIdFromBssl(
+    const ASN1_OBJECT &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslObjectId(bssl_value));
+  return asn1;
+}
+
+StatusOr<Asn1Value> Asn1Value::CreateSequenceFromBssl(
+    const ASN1_SEQUENCE_ANY &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslSequence(bssl_value));
+  return asn1;
+}
+
+StatusOr<ASN1_BOOLEAN> Asn1Value::GetBsslBoolean() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kBoolean));
+  return value_->value.boolean;
+}
+
+StatusOr<bssl::UniquePtr<ASN1_INTEGER>> Asn1Value::GetBsslInteger() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kInteger));
+  return bssl::UniquePtr<ASN1_INTEGER>(
+      CHECK_NOTNULL(ASN1_INTEGER_dup(value_->value.integer)));
+}
+
+StatusOr<bssl::UniquePtr<ASN1_ENUMERATED>> Asn1Value::GetBsslEnumerated()
+    const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kEnumerated));
+  return bssl::UniquePtr<ASN1_ENUMERATED>(
+      CHECK_NOTNULL(ASN1_STRING_dup(value_->value.enumerated)));
+}
+
+StatusOr<bssl::UniquePtr<ASN1_OCTET_STRING>> Asn1Value::GetBsslOctetString()
+    const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kOctetString));
+  return bssl::UniquePtr<ASN1_OCTET_STRING>(
+      CHECK_NOTNULL(ASN1_OCTET_STRING_dup(value_->value.octet_string)));
+}
+
+StatusOr<bssl::UniquePtr<ASN1_OBJECT>> Asn1Value::GetBsslObjectId() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kObjectId));
+  return Asn1ObjectCopy(value_->value.object);
+}
+
+StatusOr<bssl::UniquePtr<ASN1_SEQUENCE_ANY>> Asn1Value::GetBsslSequence()
+    const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kSequence));
+  const ASN1_STRING *der_string = value_->value.sequence;
+  const unsigned char *der_data = ASN1_STRING_get0_data(der_string);
+  bssl::UniquePtr<ASN1_SEQUENCE_ANY> sequence(d2i_ASN1_SEQUENCE_ANY(
+      /*a=*/nullptr, &der_data, ASN1_STRING_length(der_string)));
+  if (sequence == nullptr) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  // GCC 4.9 requires this std::move() invocation.
+  return std::move(sequence);
+}
+
+Status Asn1Value::SetBsslBoolean(ASN1_BOOLEAN bssl_value) {
+  // A non-null pointer. Used when calling ASN1_TYPE_set() with V_ASN1_BOOLEAN.
+  void *const kNonNullPointer = reinterpret_cast<void *>(true);
+
+  ASN1_TYPE_set(value_.get(), V_ASN1_BOOLEAN,
+                bssl_value ? kNonNullPointer : nullptr);
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBsslInteger(const ASN1_INTEGER &bssl_value) {
+  if (ASN1_TYPE_set1(value_.get(), V_ASN1_INTEGER, &bssl_value) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBsslEnumerated(const ASN1_ENUMERATED &bssl_value) {
+  if (ASN1_TYPE_set1(value_.get(), V_ASN1_ENUMERATED, &bssl_value) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBsslOctetString(const ASN1_OCTET_STRING &bssl_value) {
+  if (ASN1_TYPE_set1(value_.get(), V_ASN1_OCTET_STRING, &bssl_value) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBsslObjectId(const ASN1_OBJECT &bssl_value) {
+  if (ASN1_TYPE_set1(value_.get(), V_ASN1_OBJECT, &bssl_value) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value) {
+  unsigned char *der_unowned = nullptr;
+  int der_length = i2d_ASN1_SEQUENCE_ANY(&bssl_value, &der_unowned);
   if (der_length < 0) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
@@ -549,22 +677,6 @@ Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
 
   ASN1_TYPE_set(value_.get(), V_ASN1_SEQUENCE, der_string.release());
   return Status::OkStatus();
-}
-
-StatusOr<std::vector<uint8_t>> Asn1Value::SerializeToDer() const {
-  if (value_ == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT, "Asn1Value is empty");
-  }
-
-  unsigned char *der_unowned = nullptr;
-  int der_length = i2d_ASN1_TYPE(value_.get(), &der_unowned);
-  if (der_length == -1) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-  bssl::UniquePtr<unsigned char> der(der_unowned);
-  ByteContainerView der_view(der.get(), der_length);
-  std::vector<uint8_t> result(der_view.begin(), der_view.end());
-  return result;
 }
 
 Asn1Value::Asn1Value(bssl::UniquePtr<ASN1_TYPE> value)

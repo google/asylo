@@ -18,6 +18,7 @@
 
 #include "asylo/crypto/asn1.h"
 
+#include <openssl/asn1.h>
 #include <openssl/base.h>
 #include <openssl/bn.h>
 #include <openssl/nid.h>
@@ -270,6 +271,10 @@ TEST(Asn1Test, ObjectIdCopyAssignmentPreservesEquality) {
 //       // kSomeType.
 //       using ValueType = ...;
 //
+//       // The OpenSSL object type to use to represent owned mutable values of
+//       // type kSomeType.
+//       using BsslValueType = ...;
+//
 //       // Test data for kSomeType.
 //       static std::vector<ValueType> TestData() {
 //         ...
@@ -283,7 +288,7 @@ TEST(Asn1Test, ObjectIdCopyAssignmentPreservesEquality) {
 //
 //       // Tests whether |lhs| and |rhs| are equal.
 //       static void ExpectEqual(const ValueType &lhs,
-//                              const ValueType &rhs) {
+//                               const ValueType &rhs) {
 //         ...
 //       }
 //
@@ -295,6 +300,19 @@ TEST(Asn1Test, ObjectIdCopyAssignmentPreservesEquality) {
 //
 //       // A wrapper for the appropriate Asn1Value setter method.
 //       static Status Set(Asn1Value *asn1, const ValueType &value) { ... }
+//
+//       // A wrapper for the appropriate Asn1Value "Bssl" factory method.
+//       static StatusOr<Asn1Value> CreateFromBssl(
+//           const BsslValueType &bssl_value) {
+//         ...
+//       }
+//
+//       // A wrapper for the appropriate Asn1Value "Bssl" getter method.
+//       static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) { ... }
+//
+//       // A wrapper for the appropriate Asn1Value "Bssl" setter method.
+//       static Status SetBssl(Asn1Value *asn1,
+//                             const BsslValueType &bssl_value) { ... }
 //     };
 template <typename T>
 class Asn1Test;
@@ -304,6 +322,7 @@ template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kBoolean>> : public Test {
  public:
   using ValueType = bool;
+  using BsslValueType = ASN1_BOOLEAN;
 
   static std::vector<ValueType> TestData() { return {false, true}; }
 
@@ -324,6 +343,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kBoolean>> : public Test {
   static Status Set(Asn1Value *asn1, const ValueType &value) {
     return asn1->SetBoolean(value);
   }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateBooleanFromBssl(bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslBoolean();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslBoolean(bssl_value);
+  }
 };
 
 // Specialization of Asn1Test for Asn1Type::kInteger.
@@ -331,6 +362,7 @@ template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kInteger>> : public Test {
  public:
   using ValueType = bssl::UniquePtr<BIGNUM>;
+  using BsslValueType = bssl::UniquePtr<ASN1_INTEGER>;
 
   static std::vector<ValueType> TestData() {
     bssl::UniquePtr<BIGNUM> test_data[] = {
@@ -363,6 +395,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kInteger>> : public Test {
   static Status Set(Asn1Value *asn1, const ValueType &value) {
     return asn1->SetInteger(*value);
   }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateIntegerFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslInteger();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslInteger(*bssl_value);
+  }
 };
 
 // Specialization of Asn1Test for Asn1Type::kEnumerated.
@@ -373,6 +417,7 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kEnumerated>> : public Test {
   using Base = Asn1Test<Asn1TypeTag<Asn1Type::kInteger>>;
 
   using ValueType = Base::ValueType;
+  using BsslValueType = bssl::UniquePtr<ASN1_ENUMERATED>;
 
   static std::vector<ValueType> TestData() { return Base::TestData(); }
 
@@ -393,6 +438,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kEnumerated>> : public Test {
   static Status Set(Asn1Value *asn1, const ValueType &value) {
     return asn1->SetEnumerated(*value);
   }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateEnumeratedFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslEnumerated();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslEnumerated(*bssl_value);
+  }
 };
 
 // Specialization of Asn1Test for Asn1Type::kOctetString.
@@ -400,6 +457,7 @@ template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kOctetString>> : public Test {
  public:
   using ValueType = std::vector<uint8_t>;
+  using BsslValueType = bssl::UniquePtr<ASN1_OCTET_STRING>;
 
   static std::vector<ValueType> TestData() {
     return {{}, {1}, {1, 1, 2, 3, 5, 8, 13, 21, 34, 55}, {4, 0, 4}};
@@ -422,6 +480,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kOctetString>> : public Test {
   static Status Set(Asn1Value *asn1, const ValueType &value) {
     return asn1->SetOctetString(value);
   }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateOctetStringFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslOctetString();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslOctetString(*bssl_value);
+  }
 };
 
 // Specialization of Asn1Test for Asn1Type::kObjectId.
@@ -429,7 +499,7 @@ template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
  public:
   using ValueType = ObjectId;
-  using RawValueType = bssl::UniquePtr<ASN1_OBJECT>;
+  using BsslValueType = bssl::UniquePtr<ASN1_OBJECT>;
 
   static std::vector<ValueType> TestData() {
     return {ObjectId::CreateFromShortName("CN").ValueOrDie(),
@@ -460,6 +530,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
   static Status Set(Asn1Value *asn1, const ValueType &value) {
     return asn1->SetObjectId(value);
   }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateObjectIdFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslObjectId();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslObjectId(*bssl_value);
+  }
 };
 
 // Specialization of Asn1Test for Asn1Type::kSequence.
@@ -467,6 +549,7 @@ template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
  public:
   using ValueType = std::vector<Asn1Value>;
+  using BsslValueType = bssl::UniquePtr<ASN1_SEQUENCE_ANY>;
 
   static std::vector<ValueType> TestData() {
     return {{},
@@ -496,6 +579,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
 
   static Status Set(Asn1Value *asn1, const ValueType &value) {
     return asn1->SetSequence(absl::MakeSpan(value));
+  }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateSequenceFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslSequence();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslSequence(*bssl_value);
   }
 };
 
@@ -595,6 +690,37 @@ TYPED_TEST(Asn1Test,
         EXPECT_THAT(lhs, Ne(rhs));
       }
     }
+  }
+}
+
+TYPED_TEST(Asn1Test, BsslGetAndCreateFromBsslRoundtripDoesntChangeValue) {
+  Asn1Value original;
+  Asn1Value roundtrip;
+  for (const auto &value : TestFixture::TestData()) {
+    ASYLO_ASSERT_OK_AND_ASSIGN(original, TestFixture::Create(value));
+    typename TestFixture::BsslValueType bssl_value;
+    ASYLO_ASSERT_OK_AND_ASSIGN(bssl_value, TestFixture::GetBssl(original));
+    ASYLO_ASSERT_OK_AND_ASSIGN(roundtrip,
+                               TestFixture::CreateFromBssl(bssl_value));
+    EXPECT_THAT(roundtrip, Eq(original));
+    typename TestFixture::ValueType roundtrip_value;
+    ASYLO_ASSERT_OK_AND_ASSIGN(roundtrip_value, TestFixture::Get(roundtrip));
+    TestFixture::ExpectEqual(roundtrip_value, value);
+  }
+}
+
+TYPED_TEST(Asn1Test, BsslGetAndBsslSetRoundtripDoesntChangeValue) {
+  Asn1Value original;
+  Asn1Value roundtrip;
+  for (const auto &value : TestFixture::TestData()) {
+    ASYLO_ASSERT_OK_AND_ASSIGN(original, TestFixture::Create(value));
+    typename TestFixture::BsslValueType bssl_value;
+    ASYLO_ASSERT_OK_AND_ASSIGN(bssl_value, TestFixture::GetBssl(original));
+    ASYLO_ASSERT_OK(TestFixture::SetBssl(&roundtrip, bssl_value));
+    EXPECT_THAT(roundtrip, Eq(original));
+    typename TestFixture::ValueType roundtrip_value;
+    ASYLO_ASSERT_OK_AND_ASSIGN(roundtrip_value, TestFixture::Get(roundtrip));
+    TestFixture::ExpectEqual(roundtrip_value, value);
   }
 }
 

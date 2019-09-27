@@ -172,6 +172,41 @@ class Asn1Value {
   // on Asn1Values of unsupported types.
   StatusOr<std::vector<uint8_t>> SerializeToDer() const;
 
+  // Each "Bssl" factory method creates an Asn1Value of the appropriate ASN.1
+  // type from the input BoringSSL type.
+  static StatusOr<Asn1Value> CreateBooleanFromBssl(ASN1_BOOLEAN bssl_value);
+  static StatusOr<Asn1Value> CreateIntegerFromBssl(
+      const ASN1_INTEGER &bssl_value);
+  static StatusOr<Asn1Value> CreateEnumeratedFromBssl(
+      const ASN1_ENUMERATED &bssl_value);
+  static StatusOr<Asn1Value> CreateOctetStringFromBssl(
+      const ASN1_OCTET_STRING &bssl_value);
+  static StatusOr<Asn1Value> CreateObjectIdFromBssl(
+      const ASN1_OBJECT &bssl_value);
+  static StatusOr<Asn1Value> CreateSequenceFromBssl(
+      const ASN1_SEQUENCE_ANY &bssl_value);
+
+  // Each "Bssl" getter returns the contained value in the appropriate BoringSSL
+  // type. Fails if the Asn1Value does not have the appropriate type.
+  //
+  // All returned data is copied.
+  StatusOr<ASN1_BOOLEAN> GetBsslBoolean() const;
+  StatusOr<bssl::UniquePtr<ASN1_INTEGER>> GetBsslInteger() const;
+  StatusOr<bssl::UniquePtr<ASN1_ENUMERATED>> GetBsslEnumerated() const;
+  StatusOr<bssl::UniquePtr<ASN1_OCTET_STRING>> GetBsslOctetString() const;
+  StatusOr<bssl::UniquePtr<ASN1_OBJECT>> GetBsslObjectId() const;
+  StatusOr<bssl::UniquePtr<ASN1_SEQUENCE_ANY>> GetBsslSequence() const;
+
+  // Each "Bssl" setter sets the Asn1Value to have the appropriate type and the
+  // given value. If a setter fails, then the value of the Asn1Value is
+  // unchanged.
+  Status SetBsslBoolean(ASN1_BOOLEAN bssl_value);
+  Status SetBsslInteger(const ASN1_INTEGER &bssl_value);
+  Status SetBsslEnumerated(const ASN1_ENUMERATED &bssl_value);
+  Status SetBsslOctetString(const ASN1_OCTET_STRING &bssl_value);
+  Status SetBsslObjectId(const ASN1_OBJECT &bssl_value);
+  Status SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value);
+
  private:
   friend bool operator==(const Asn1Value &lhs, const Asn1Value &rhs);
 
