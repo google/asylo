@@ -84,9 +84,6 @@ EnclaveAuthContext::EnclaveAuthContext(EnclaveIdentities identities,
           {identities.identities().begin(), identities.identities().end()}),
       record_protocol_(record_protocol) {}
 
-EnclaveAuthContext::EnclaveAuthContext()
-    : EnclaveAuthContext({}, UNKNOWN_RECORD_PROTOCOL) {}
-
 RecordProtocol EnclaveAuthContext::GetRecordProtocol() const {
   return record_protocol_;
 }
@@ -114,14 +111,26 @@ StatusOr<const EnclaveIdentity *> EnclaveAuthContext::FindEnclaveIdentity(
 
 StatusOr<bool> EnclaveAuthContext::EvaluateAcl(
     const IdentityAclPredicate &acl) const {
-  return EvaluateIdentityAcl(identities_, acl, matcher_);
+  return EvaluateAcl(acl, /*explanation=*/nullptr);
+}
+
+StatusOr<bool> EnclaveAuthContext::EvaluateAcl(const IdentityAclPredicate &acl,
+                                               std::string *explanation) const {
+  return EvaluateIdentityAcl(identities_, acl, matcher_,
+                             /*explanation=*/explanation);
 }
 
 StatusOr<bool> EnclaveAuthContext::EvaluateAcl(
     const EnclaveIdentityExpectation &expectation) const {
+  return EvaluateAcl(expectation, /*explanation=*/nullptr);
+}
+
+StatusOr<bool> EnclaveAuthContext::EvaluateAcl(
+    const EnclaveIdentityExpectation &expectation,
+    std::string *explanation) const {
   IdentityAclPredicate acl;
   *acl.mutable_expectation() = expectation;
-  return EvaluateAcl(acl);
+  return EvaluateAcl(acl, explanation);
 }
 
 }  // namespace asylo

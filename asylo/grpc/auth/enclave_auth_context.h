@@ -56,6 +56,7 @@ class EnclaveAuthContext {
   static StatusOr<EnclaveAuthContext> CreateFromAuthContext(
       const ::grpc::AuthContext &auth_context);
 
+  EnclaveAuthContext() = default;
   virtual ~EnclaveAuthContext() = default;
 
   /// Gets the secure transport record-protocol used for securing frames over
@@ -87,18 +88,38 @@ class EnclaveAuthContext {
   ///         non-OK Status if an error occurred while evaluating the ACL.
   virtual StatusOr<bool> EvaluateAcl(const IdentityAclPredicate &acl) const;
 
+  /// Evaluates the peer's identities against `acl`.
+  ///
+  /// \param acl The ACL against which to evaluate the peer's identities.
+  /// \param[out] explanation An explanation of why the peer's identities did
+  ///             not match `acl`, if the result is false.
+  /// \return A bool indicating whether the peer's identities match `acl`, or a
+  ///         non-OK Status if an error occurred while evaluating the ACL.
+  virtual StatusOr<bool> EvaluateAcl(const IdentityAclPredicate &acl,
+                                     std::string *explanation) const;
+
   /// Evaluates whether any of the peer's identities match `expectation`.
   ///
   /// \param expectation The expectation against which to evaluate the peer's
-  /// identities.
+  ///                    identities.
   /// \return A bool indicating whether any of the peer's identities match
-  ///         `expectation, or a non-OK Status if an error occurred while
+  ///         `expectation`, or a non-OK Status if an error occurred while
   ///         evaluating `expectation`.
   virtual StatusOr<bool> EvaluateAcl(
       const EnclaveIdentityExpectation &expectation) const;
 
- protected:
-  EnclaveAuthContext();
+  /// Evaluates whether any of the peer's identities match `expectation`.
+  ///
+  /// \param expectation The expectation against which to evaluate the peer's
+  ///                    identities.
+  /// \param[out] explanation An explanation of why the peer's identities did
+  ///                         not match `expectation`, if the result is false.
+  /// \return A bool indicating whether any of the peer's identities match
+  ///         `expectation`, or a non-OK Status if an error occurred while
+  ///         evaluating `expectation`.
+  virtual StatusOr<bool> EvaluateAcl(
+      const EnclaveIdentityExpectation &expectation,
+      std::string *explanation) const;
 
  private:
   // Creates an EnclaveAuthContext for the given peer's |identities| and the
@@ -107,10 +128,10 @@ class EnclaveAuthContext {
                      RecordProtocol record_protocol);
 
   // Enclave identities held by the authenticated peer.
-  const std::vector<EnclaveIdentity> identities_;
+  std::vector<EnclaveIdentity> identities_;
 
   // Secure transport record protocol.
-  const RecordProtocol record_protocol_;
+  RecordProtocol record_protocol_;
 
   // Matcher used to evaluate ACLs against the authenticated peer's identities.
   DelegatingIdentityExpectationMatcher matcher_;
