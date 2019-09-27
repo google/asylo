@@ -19,6 +19,8 @@
 #ifndef ASYLO_CRYPTO_SIGNING_KEY_H_
 #define ASYLO_CRYPTO_SIGNING_KEY_H_
 
+#include <openssl/base.h>
+
 #include <cstdint>
 
 #include "asylo/crypto/algorithms.pb.h"
@@ -81,6 +83,12 @@ class SigningKey {
                       std::vector<uint8_t> *signature) const = 0;
   virtual Status Sign(ByteContainerView message,
                       Signature *signature) const = 0;
+
+  // Signs |x509|. Returns a non-OK Status if the signing operation failed. This
+  // method treats |x509| as an in-out parameter.
+  //
+  // This function should only be used by Asylo's certificate abstractions.
+  virtual Status SignX509(X509 *x509) const = 0;
 };
 
 }  // namespace asylo

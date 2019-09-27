@@ -19,6 +19,8 @@
 #ifndef ASYLO_CRYPTO_FAKE_SIGNING_KEY_H_
 #define ASYLO_CRYPTO_FAKE_SIGNING_KEY_H_
 
+#include <openssl/base.h>
+
 #include <cstdint>
 #include <memory>
 #include <string>
@@ -98,6 +100,9 @@ class FakeSigningKey : public SigningKey {
 
   // Unimplemented.
   Status Sign(ByteContainerView message, Signature *signature) const override;
+
+  // Unimplemented.
+  Status SignX509(X509 *x509) const override;
 
  private:
   const SignatureScheme scheme_;

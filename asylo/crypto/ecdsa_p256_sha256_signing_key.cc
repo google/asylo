@@ -22,6 +22,7 @@
 #include <openssl/crypto.h>
 #include <openssl/ec_key.h>
 #include <openssl/ecdsa.h>
+#include <openssl/evp.h>
 #include <openssl/mem.h>
 #include <openssl/nid.h>
 #include <openssl/pem.h>
@@ -380,6 +381,17 @@ Status EcdsaP256Sha256SigningKey::Sign(ByteContainerView message,
 
   signature->set_signature_scheme(GetSignatureScheme());
   *signature->mutable_ecdsa_signature() = std::move(ecdsa_signature);
+  return Status::OkStatus();
+}
+
+Status EcdsaP256Sha256SigningKey::SignX509(X509 *x509) const {
+  bssl::UniquePtr<EVP_PKEY> evp_pkey(EVP_PKEY_new());
+  if (EVP_PKEY_set1_EC_KEY(evp_pkey.get(), private_key_.get()) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  if (X509_sign(x509, evp_pkey.get(), EVP_sha256()) == 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
   return Status::OkStatus();
 }
 

@@ -128,4 +128,9 @@ Status FakeSigningKey::Sign(ByteContainerView message,
                 "Sign overload unimplemented");
 }
 
+Status FakeSigningKey::SignX509(X509 *x509) const {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "SignX509 overload unimplemented");
+}
+
 }  // namespace asylo

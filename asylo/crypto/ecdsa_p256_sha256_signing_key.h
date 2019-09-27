@@ -105,6 +105,8 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
 
   Status Sign(ByteContainerView message, Signature *signature) const override;
 
+  Status SignX509(X509 *x509) const override;
+
  private:
   EcdsaP256Sha256SigningKey(bssl::UniquePtr<EC_KEY> private_key,
                             bssl::UniquePtr<EC_KEY> public_key);
