@@ -72,7 +72,7 @@ Status GenerateRandomAttestationDomain(std::string *domain) {
 Status CreateAndWriteNewAttestationDomain(const char *domain_file_path,
                                           std::string *domain) {
   // Attempt to create the attestation-domain file.
-  int fd = open(domain_file_path, O_EXCL | O_CREAT | O_RDWR);
+  int fd = open(domain_file_path, O_EXCL | O_CREAT | O_RDWR, /*mode=*/0777);
 
   if (fd < 0) {
     if (errno == EEXIST) {

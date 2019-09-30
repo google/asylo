@@ -64,7 +64,8 @@ class AttestationDomainTest : public ::testing::Test {
 };
 
 TEST_F(AttestationDomainTest, AttestationDomainReadAll0) {
-  int fd = open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR);
+  int fd =
+      open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR, /*mode=*/0777);
   ASSERT_GT(fd, 0);
   ASSERT_EQ(fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO), 0);
   ASSERT_EQ(write(fd, kAll0, sizeof(kAll0) - 1), sizeof(kAll0) - 1);
@@ -76,7 +77,8 @@ TEST_F(AttestationDomainTest, AttestationDomainReadAll0) {
 }
 
 TEST_F(AttestationDomainTest, AttestationDomainReadAllF) {
-  int fd = open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR);
+  int fd =
+      open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR, /*mode=*/0777);
   ASSERT_GT(fd, 0);
   ASSERT_EQ(fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO), 0);
   ASSERT_EQ(write(fd, kAllF, sizeof(kAllF) - 1), sizeof(kAllF) - 1);
@@ -100,7 +102,8 @@ TEST_F(AttestationDomainTest, AttestationDomainCreate) {
 }
 
 TEST_F(AttestationDomainTest, AttestationDomainTooShort) {
-  int fd = open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR);
+  int fd =
+      open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR, /*mode=*/0777);
   ASSERT_GT(fd, 0);
   ASSERT_EQ(fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO), 0);
   ASSERT_EQ(write(fd, kAttestationDomainTooShort,
@@ -114,7 +117,8 @@ TEST_F(AttestationDomainTest, AttestationDomainTooShort) {
 }
 
 TEST_F(AttestationDomainTest, AttestationDomainTooLong) {
-  int fd = open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR);
+  int fd =
+      open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR, /*mode=*/0777);
   ASSERT_GT(fd, 0);
   ASSERT_EQ(fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO), 0);
   ASSERT_EQ(write(fd, kAttestationDomainTooLong,
@@ -128,7 +132,8 @@ TEST_F(AttestationDomainTest, AttestationDomainTooLong) {
 }
 
 TEST_F(AttestationDomainTest, AttestationDomainBadChars) {
-  int fd = open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR);
+  int fd =
+      open(domain_file_path_.c_str(), O_EXCL | O_CREAT | O_RDWR, /*mode=*/0777);
   ASSERT_GT(fd, 0);
   ASSERT_EQ(fchmod(fd, S_IRWXU | S_IRWXG | S_IRWXO), 0);
   ASSERT_EQ(write(fd, kAttestationDomainBadChars,
