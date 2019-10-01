@@ -567,7 +567,9 @@ cc_binary(
     srcs = ["double_die.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],
@@ -637,6 +639,7 @@ sgx_enclave_test(
     deps = [
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/flags:flag",
@@ -689,7 +692,9 @@ sgx_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     embedded_enclaves = {"enclave": ":fail_finalize_enclave.so"},
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

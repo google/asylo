@@ -23,7 +23,9 @@
 #include <unistd.h>
 
 #include "absl/memory/memory.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/test_string.pb.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status_macros.h"
@@ -39,8 +41,22 @@ Status EnclaveTestLauncher::SetUp(const std::string &enclave_path,
   EnclaveManager::Configure(EnclaveManagerOptions());
   ASYLO_ASSIGN_OR_RETURN(manager_, EnclaveManager::Instance());
 
-  loader_ = absl::make_unique<SgxLoader>(enclave_path, /*debug=*/true);
-  ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(enclave_url, *loader_, econfig));
+  // Create an EnclaveLoadConfig object.
+  EnclaveLoadConfig load_config;
+  load_config.set_name(enclave_url);
+  *load_config.mutable_config() = econfig;
+
+  // Create an SgxLoadConfig object.
+  SgxLoadConfig sgx_config;
+  SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+  file_enclave_config.set_enclave_path(enclave_path);
+  *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+  sgx_config.set_debug(true);
+
+  // Set an SGX message extension to load_config.
+  *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+  ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(load_config));
 
   client_ = manager_->GetClient(enclave_url);
   if (!client_) {

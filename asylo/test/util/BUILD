@@ -100,6 +100,7 @@ cc_library(
         ":test_string_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",

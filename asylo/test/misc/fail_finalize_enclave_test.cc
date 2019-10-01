@@ -19,7 +19,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -36,9 +38,23 @@ TEST(FailFinalizeEnclaveTest, FailFinalize) {
   EnclaveManager *manager;
   ASYLO_ASSERT_OK_AND_ASSIGN(manager, EnclaveManager::Instance());
 
-  SimEmbeddedLoader loader(kEnclaveName, /*debug=*/true);
+  // Create an EnclaveLoadConfig object.
+  EnclaveLoadConfig load_config;
+  load_config.set_name(kClientName);
   EnclaveConfig config;
-  ASYLO_ASSERT_OK(manager->LoadEnclave(kClientName, loader, config));
+  *load_config.mutable_config() = config;
+
+  // Create an SgxLoadConfig object.
+  SgxLoadConfig sgx_config;
+  SgxLoadConfig::EmbeddedEnclaveConfig embedded_enclave_config;
+  embedded_enclave_config.set_section_name(kEnclaveName);
+  *sgx_config.mutable_embedded_enclave_config() = embedded_enclave_config;
+  sgx_config.set_debug(true);
+
+  // Set an SGX message extension to load_config.
+  *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+  ASYLO_ASSERT_OK(manager->LoadEnclave(load_config));
 
   auto client = manager->GetClient(kClientName);
   EnclaveFinal final_proto;

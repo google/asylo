@@ -39,11 +39,12 @@ namespace asylo {
 // through the EnclaveConfig:
 //
 //   EnclaveManager *manager = ...
-//   EnclaveLoader loader = ...
+//   EnclaveLoadConfig load_config = ...
 //   EnclaveConfig config;
 //   *config.add_enclave_assertion_authority_configs() =
 //       GetFooAssertionAuthorityTestConfig();
-//   ASSERT_OK(manager->LoadEnclave("/some/enclave/path", loader, config));
+//   *load_config.mutable_config() = config;
+//   ASSERT_OK(manager->LoadEnclave(load_config));
 
 // Gets a suitable test configuration for null assertion authorities.
 EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig();

@@ -23,6 +23,7 @@
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
 ABSL_FLAG(std::string, enclave_section, "",
@@ -40,11 +41,24 @@ TEST(EmbeddedEnclaveTest, EnclaveLoadsAndRuns) {
   ASSERT_THAT(manager_result, IsOk());
   EnclaveManager *manager = manager_result.ValueOrDie();
 
-  // Load the enclave.
-  SgxEmbeddedLoader loader(absl::GetFlag(FLAGS_enclave_section),
-                           /*debug=*/true);
+  // Create an EnclaveLoadConfig object.
+  EnclaveLoadConfig load_config;
+  load_config.set_name(kEnclaveName);
   EnclaveConfig config;
-  ASSERT_THAT(manager->LoadEnclave(kEnclaveName, loader, config), IsOk());
+  *load_config.mutable_config() = config;
+
+  // Create an SgxLoadConfig object.
+  SgxLoadConfig sgx_config;
+  SgxLoadConfig::EmbeddedEnclaveConfig embedded_enclave_config;
+  embedded_enclave_config.set_section_name(
+      absl::GetFlag(FLAGS_enclave_section));
+  *sgx_config.mutable_embedded_enclave_config() = embedded_enclave_config;
+  sgx_config.set_debug(true);
+
+  // Set an SGX message extension to load_config.
+  *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+  ASSERT_THAT(manager->LoadEnclave(load_config), IsOk());
   EnclaveClient *client = manager->GetClient(kEnclaveName);
 
   // Enter the enclave with a no-op.

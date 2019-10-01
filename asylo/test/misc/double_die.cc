@@ -25,6 +25,8 @@
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 
 namespace asylo {
 namespace {
@@ -44,10 +46,23 @@ class DieTest {
     }
     manager_ = manager_result.ValueOrDie();
     std::cerr << "Init " << enclave_path << std::endl;
-    loader_ = absl::make_unique<SgxLoader>(enclave_path, /*debug=*/true);
-
     std::string enclave_url = "/die";
-    Status status = manager_->LoadEnclave(enclave_url, *loader_);
+
+    // Create an EnclaveLoadConfig object.
+    EnclaveLoadConfig load_config;
+    load_config.set_name(enclave_url);
+
+    // Create an SgxLoadConfig object.
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(enclave_path);
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(true);
+
+    // Set an SGX message extension to load_config.
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    Status status = manager_->LoadEnclave(load_config);
     ASSERT_TRUE(status.ok());
     client_ = manager_->GetClient(enclave_url);
   }
@@ -91,7 +106,6 @@ class DieTest {
 
  protected:
   EnclaveManager *manager_;
-  std::unique_ptr<SgxLoader> loader_;
   EnclaveClient *client_;
 };
 
