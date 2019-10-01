@@ -60,10 +60,6 @@ enclave {
     //           epoll.h                //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_epoll_ctl(
-        [in, size=serialized_args_len] const char *serialized_args,
-        bridge_size_t serialized_args_len) propagate_errno;
-
     int ocall_enc_untrusted_epoll_wait(
         [in, size=serialized_args_len] const char *serialized_args,
         bridge_size_t serialized_args_len,

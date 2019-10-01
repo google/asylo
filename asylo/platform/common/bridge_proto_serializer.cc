@@ -175,28 +175,6 @@ EpollCtlArgs::EpollCtlOp ConvertToProtoOp(int host_op) {
   return EpollCtlArgs::UNSUPPORTED;
 }
 
-int ConvertToHostOp(EpollCtlArgs::EpollCtlOp proto_op) {
-  if (proto_op == EpollCtlArgs::PROTO_CTL_ADD)
-    return EPOLL_CTL_ADD;
-  else if (proto_op == EpollCtlArgs::PROTO_CTL_DEL)
-    return EPOLL_CTL_DEL;
-  else if (proto_op == EpollCtlArgs::PROTO_CTL_MOD)
-    return EPOLL_CTL_MOD;
-  return -1;
-}
-
-bool ConvertToEpollCtlArgsProtobuf(int epfd, int op, int fd,
-                                   struct epoll_event *event,
-                                   EpollCtlArgs *args) {
-  if ((!event && op != EPOLL_CTL_DEL) || !args) return false;
-  args->set_epfd(epfd);
-  args->set_op(ConvertToProtoOp(op));
-  args->set_hostfd(fd);
-  EpollEvent *event_proto = args->mutable_event();
-  if (event) ConvertToEpollEventProtobuf(event, event_proto);
-  return true;
-}
-
 bool ConvertToEpollWaitArgsProtobuf(int epfd, int maxevents, int timeout,
                                     EpollWaitArgs *args) {
   if (!args) return false;
@@ -448,31 +426,6 @@ void AddToInotifyEventQueue(const InotifyEventList &event_list,
 }
 
 }  // namespace
-
-bool SerializeEpollCtlArgs(int epfd, int op, int fd, struct epoll_event *event,
-                           char **out, size_t *len) {
-  if (!out || !len) return false;
-  EpollCtlArgs args_proto;
-  if (ConvertToEpollCtlArgsProtobuf(epfd, op, fd, event, &args_proto)) {
-    *len = args_proto.ByteSizeLong();
-    // The caller is responsible for freeing the memory allocated by malloc.
-    *out = static_cast<char *>(malloc(*len));
-    return args_proto.SerializeToArray(*out, *len);
-  }
-  return false;
-}
-
-bool DeserializeEpollCtlArgs(absl::string_view in, int *epfd, int *op, int *fd,
-                             struct epoll_event *event) {
-  if (!epfd || !op || !fd || (!event && *op == EPOLL_CTL_DEL)) return false;
-  EpollCtlArgs args_proto;
-  if (!args_proto.ParseFromArray(in.data(), in.length())) return false;
-  *epfd = args_proto.epfd();
-  *op = ConvertToHostOp(args_proto.op());
-  *fd = args_proto.hostfd();
-  if (args_proto.has_event()) ConvertToEpollEvent(args_proto.event(), event);
-  return true;
-}
 
 bool SerializeEpollWaitArgs(int epfd, int maxevents, int timeout, char **out,
                             size_t *len) {

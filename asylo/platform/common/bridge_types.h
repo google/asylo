@@ -186,30 +186,10 @@ enum SysLogLevel {
   BRIDGE_LOG_DEBUG = 7,
 };
 
-enum BridgePollEvents {
-  BRIDGE_POLLIN = 0x001,
-  BRIDGE_POLLPRI = 0x002,
-  BRIDGE_POLLOUT = 0x004,
-  BRIDGE_POLLRDHUP = 0x008,
-  BRIDGE_POLLERR = 0x010,
-  BRIDGE_POLLHUP = 0x020,
-  BRIDGE_POLLNVAL = 0x040,
-  BRIDGE_POLLRDNORM = 0x080,
-  BRIDGE_POLLRDBAND = 0x100,
-  BRIDGE_POLLWRNORM = 0x200,
-  BRIDGE_POLLWRBAND = 0x400,
-};
-
 struct bridge_timeval {
   int64_t tv_sec;
   int64_t tv_usec;
 } ABSL_ATTRIBUTE_PACKED;
-
-struct bridge_pollfd {
-  int32_t fd;
-  int16_t events;
-  int16_t revents;
-};
 
 struct bridge_siginfo_t {
   int32_t si_signo;

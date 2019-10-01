@@ -216,22 +216,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 //           epoll.h                //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_epoll_ctl(const char *serialized_args,
-                                  bridge_size_t serialized_args_len) {
-  std::string serialized_args_str(serialized_args,
-                                  static_cast<size_t>(serialized_args_len));
-  int epfd = 0;
-  int op = 0;
-  int hostfd = 0;
-  struct epoll_event event;
-  if (!asylo::DeserializeEpollCtlArgs(serialized_args_str, &epfd, &op, &hostfd,
-                                      &event)) {
-    errno = EINVAL;
-    return -1;
-  }
-  return epoll_ctl(epfd, op, hostfd, &event);
-}
-
 int ocall_enc_untrusted_epoll_wait(const char *serialized_args,
                                    bridge_size_t serialized_args_len,
                                    char **serialized_events,

@@ -106,23 +106,6 @@ void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
 //           epoll.h                //
 //////////////////////////////////////
 
-int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
-                            struct epoll_event *event) {
-  char *serialized_args = nullptr;
-  asylo::MallocUniquePtr<char[]> args_ptr(serialized_args);
-  size_t len = 0;
-  if (!asylo::SerializeEpollCtlArgs(epfd, op, fd, event, &serialized_args,
-                                    &len)) {
-    errno = EINVAL;
-    return -1;
-  }
-  bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
-  int ret = 0;
-  CHECK_OCALL(ocall_enc_untrusted_epoll_ctl(&ret, serialized_args,
-                                            serialized_args_len));
-  return ret;
-}
-
 int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
                              int maxevents, int timeout) {
   char *serialized_args = nullptr;

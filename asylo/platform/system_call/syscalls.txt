@@ -165,8 +165,8 @@ SYSCALL_DEFINE3(socket, int, family, int, type, int, protocol)
 
 SYSCALL_DEFINE1(epoll_create, int, size)
 
-SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd, struct epoll_event *,
-                event)
+SYSCALL_DEFINE4(epoll_ctl, int, epfd, int, op, int, fd,
+                \in struct epoll_event *, event)
 
 SYSCALL_DEFINE4(epoll_wait, int, epfd, struct epoll_event *, events, int,
                 maxevents, int, timeout)

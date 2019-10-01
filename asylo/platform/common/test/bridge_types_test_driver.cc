@@ -47,9 +47,5 @@ TEST_F(BridgeTypesTest, TestPackedSize_bridge_timeval) {
   RunTest<bridge_timeval>("bridge_timeval");
 }
 
-TEST_F(BridgeTypesTest, TestPackedSize_bridge_pollfd) {
-  RunTest<bridge_pollfd>("bridge_pollfd");
-}
-
 }  // namespace
 }  // namespace asylo

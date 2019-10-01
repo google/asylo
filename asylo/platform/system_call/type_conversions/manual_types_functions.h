@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <sched.h>
+#include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/un.h>
@@ -164,5 +165,9 @@ bool TokLinuxSigset(const sigset_t *input, klinux_sigset_t *output);
 
 // Converts a kernel based sigset to an enclave based sigset.
 bool FromkLinuxSigset(const klinux_sigset_t *input, sigset_t *output);
+
+// Converts an enclave based epoll event to a kernel based epoll event.
+bool TokLinuxEpollEvent(const struct epoll_event *input,
+                        struct klinux_epoll_event *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

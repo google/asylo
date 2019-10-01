@@ -272,6 +272,21 @@ define_constants(
     include_header_file="poll.h",
     multi_valued=True)
 
+define_constants(
+    name="EpollCtlOp",
+    values=["EPOLL_CTL_ADD", "EPOLL_CTL_MOD", "EPOLL_CTL_DEL"],
+    include_header_file="sys/epoll.h")
+
+define_constants(
+    name="EpollEvents",
+    values=[
+        "EPOLLIN", "EPOLLOUT", "EPOLLRDHUP", "EPOLLPRI", "EPOLLERR", "EPOLLHUP",
+        "EPOLLET", "EPOLLONESHOT", "EPOLLWAKEUP", "EPOLLMSG"
+    ],
+    include_header_file="sys/epoll.h",
+    multi_valued=True,
+    data_type="uint32_t")
+
 define_struct(
     name="timespec",
     values=[

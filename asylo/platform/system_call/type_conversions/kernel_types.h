@@ -166,4 +166,16 @@ typedef struct {
   uint64_t klinux_val[KLINUX_SIGSET_NWORDS];
 } klinux_sigset_t;
 
+typedef union klinux_epoll_data {
+  void *ptr;
+  int fd;
+  uint32_t u32;
+  uint64_t u64;
+} klinux_epoll_data_t;
+
+struct klinux_epoll_event {
+  uint32_t events;
+  klinux_epoll_data_t data;
+} ABSL_ATTRIBUTE_PACKED;
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

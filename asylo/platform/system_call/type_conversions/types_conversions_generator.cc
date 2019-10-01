@@ -45,7 +45,7 @@ struct EnumProperties {
   // cannot be simply a map from enum values to enum names since multiple enum
   // names may resolve to the same enum value.
   // Eg. AF_UNIX and AF_LOCAL both share the same value (typically 1).
-  std::vector<std::pair<std::string, int>> values;
+  std::vector<std::pair<std::string, int64_t>> values;
 };
 
 // A record describing a C++ struct.
@@ -110,17 +110,18 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
        << ") == "
        << (to_prefix ? enum_pair.first
                      : absl::StrCat(klinux_prefix, "_", enum_pair.first))
-       << ") output |= "
+       << ") output |= static_cast<" << enum_properties.data_type << ">("
        << (to_prefix ? absl::StrCat(klinux_prefix, "_", enum_pair.first)
                      : enum_pair.first)
-       << ";\n";
+       << ");\n";
     if (enum_properties.wrap_macros_with_if_defined) {
       os << "#endif\n";
     }
   }
 
   if (enum_properties.or_input_to_default_value) {
-    os << "  output |= input;\n";
+    os << "  output |= static_cast<" << enum_properties.data_type
+       << ">(input);\n";
   }
   os << "  return output;\n";
   return os.str();

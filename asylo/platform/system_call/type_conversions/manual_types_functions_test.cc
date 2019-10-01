@@ -316,6 +316,11 @@ TEST(ManualTypesFunctionsTest, FromPollFdTest) {
   EXPECT_THAT(poll_fd.revents, Eq(POLLOUT));
 }
 
+TEST(ManualTypesFunctionsTest, EpollEventTest) {
+  EXPECT_THAT(sizeof(struct epoll_event),
+              Eq(sizeof(struct klinux_epoll_event)));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

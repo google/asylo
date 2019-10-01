@@ -36,7 +36,6 @@ class EnclaveBridgeTypes : public EnclaveTestCase {
   Status Initialize(const EnclaveConfig &config) override {
     std::vector<std::pair<std::string, size_t>> sizes_list = {
         {"bridge_timeval", sizeof(bridge_timeval)},
-        {"bridge_pollfd", sizeof(bridge_pollfd)},
     };
     absl::flat_hash_map<std::string, size_t> sizes(sizes_list.begin(),
                                                    sizes_list.end());

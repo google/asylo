@@ -27,8 +27,6 @@ namespace asylo {
 size_t bridge_type_size(const std::string &type_name) {
   if (type_name == "bridge_timeval") {
     return 16;
-  } else if (type_name == "bridge_pollfd") {
-    return 8;
   } else {
     return 0;
   }
