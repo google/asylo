@@ -263,7 +263,9 @@ sgx_enclave_test(
     enclaves = {"enclave": "fork_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
@@ -314,6 +316,7 @@ sgx_enclave_test(
         "//asylo/platform/common:memory",
         "//asylo/platform/core:untrusted_core",
         "//asylo/platform/primitives/sgx:fork_cc_proto",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

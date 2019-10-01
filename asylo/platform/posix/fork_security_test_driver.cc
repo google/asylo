@@ -25,11 +25,12 @@
 #include "absl/flags/flag.h"
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
 #include "asylo/platform/posix/fork_security_test.pb.h"
+#include "asylo/platform/primitives/sgx/fork.pb.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -120,11 +121,23 @@ class ForkSecurityTest : public ::testing::Test {
 
   Status LoadEnclaveAndTakeSnapshot(const std::string &enclave_name,
                                     bool request_fork) {
-    SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
     EnclaveConfig config;
     // Allow a user utility thread for snapshotting and restoring.
     config.set_enable_fork(true);
-    ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(enclave_name, loader, config));
+
+    // Prepare |load_config| message.
+    EnclaveLoadConfig load_config;
+    load_config.set_name(enclave_name);
+    *load_config.mutable_config() = config;
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(absl::GetFlag(FLAGS_enclave_path));
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(true);
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    // Load Enclave with prepared |EnclaveManager| and |load_config| message.
+    ASYLO_RETURN_IF_ERROR(manager_->LoadEnclave(load_config));
 
     client_ = reinterpret_cast<GenericEnclaveClient *>(
         manager_->GetClient(enclave_name));

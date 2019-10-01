@@ -22,6 +22,8 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
@@ -41,9 +43,22 @@ class ForkTest : public ::testing::Test {
     *config.add_enclave_assertion_authority_configs() =
         GetSgxLocalAssertionAuthorityTestConfig();
     config.set_enable_fork(true);
-    auto loader =
-        absl::make_unique<SgxLoader>(absl::GetFlag(FLAGS_enclave_path), true);
-    ASSERT_THAT(manager_->LoadEnclave("/fork_test", *loader, config), IsOk());
+
+    // Prepare |load_config| message.
+    EnclaveLoadConfig load_config;
+    load_config.set_name("/fork_test");
+    *load_config.mutable_config() = config;
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(absl::GetFlag(FLAGS_enclave_path));
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(true);
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    // Load Enclave with prepared |EnclaveManager| and |load_config| message.
+    asylo::EnclaveManager *manager = manager_result.ValueOrDie();
+    ASSERT_THAT(manager->LoadEnclave(load_config), IsOk());
+
     client_ = manager_->GetClient("/fork_test");
   }
 
