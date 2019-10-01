@@ -240,7 +240,7 @@ def get_constants():
   data_type, {{"const_val1", const_val1}, {"const_val2", const_val2}}}}, \
   """
   enum_rows = []
-  for enum_name, enum_properties in _enum_map.items():
+  for enum_name, enum_properties in sorted(_enum_map.items()):
     enum_rows.append(
         '{{{name}, {{{default_value_host}, {default_value_newlib}, '
         '{multi_valued}, {skip_conversions}, {or_input_to_default_value}, '
@@ -278,7 +278,7 @@ def get_structs():
   {{"member_name1", "member_type1"}, {"member_name2", "member_type2"}}}}
   """
   struct_rows = []
-  for struct_name, struct_properties in _struct_map.items():
+  for struct_name, struct_properties in sorted(_struct_map.items()):
     struct_rows.append(
         '{{{struct}, {{{pack_attributes}, {skip_conversions}, {{{values}}}}}}}'
         .format(
