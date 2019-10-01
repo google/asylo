@@ -69,10 +69,10 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
    defined "storage" field.
     - Affected files:
       + `common/inc/sgx_random_buffers.h`
-* [PR369](https://github.com/intel/linux-sgx/pull/369): Change static extern "C"
-   to just extern "C". The combination is not supported outside GCC.
+* [PR450](https://github.com/intel/linux-sgx/pull/450): Add a missing #include
+   for a necessary C-preprocessor define.
     - Affected files:
-      + `sdk/trts/trts_switchless.cpp`
+      + `sdk/trts/trts_veh.cpp`
 
 ### Non-upstreamed changes
 * `sdk/trts/init_enclave.cpp`: Remove a memset_s of the enclave heap since
@@ -3072,6 +3072,17 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  int * get_errno_addr(void);
  bool is_stack_addr(void *address, size_t size);
  bool is_valid_sp(uintptr_t sp);
+diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
+--- sdk/trts/trts_veh.cpp
++++ sdk/trts/trts_veh.cpp
+@@ -49,6 +49,7 @@
+ #include "util.h"
+ #include "trts_util.h"
+ #include "trts_shared_constants.h"
++#include "se_cdefs.h"
+ 
+ 
+ typedef struct _handler_node_t
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
