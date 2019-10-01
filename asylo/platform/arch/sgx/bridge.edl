@@ -57,16 +57,6 @@ enclave {
         bridge_size_t count) propagate_errno;
 
     //////////////////////////////////////
-    //           epoll.h                //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_epoll_wait(
-        [in, size=serialized_args_len] const char *serialized_args,
-        bridge_size_t serialized_args_len,
-        [out] char **serialized_events,
-        [out] bridge_size_t *serialized_events_len) propagate_errno;
-
-    //////////////////////////////////////
     //           inotify.h              //
     //////////////////////////////////////
 

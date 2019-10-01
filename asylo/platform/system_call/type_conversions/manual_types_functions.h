@@ -170,4 +170,8 @@ bool FromkLinuxSigset(const klinux_sigset_t *input, sigset_t *output);
 bool TokLinuxEpollEvent(const struct epoll_event *input,
                         struct klinux_epoll_event *output);
 
+// Converts a kernel based epoll event to an enclave based epoll event.
+bool FromkLinuxEpollEvent(const struct klinux_epoll_event *input,
+                          struct epoll_event *output);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

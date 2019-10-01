@@ -103,51 +103,6 @@ void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
 }
 
 //////////////////////////////////////
-//           epoll.h                //
-//////////////////////////////////////
-
-int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
-                             int maxevents, int timeout) {
-  char *serialized_args = nullptr;
-  asylo::MallocUniquePtr<char[]> args_ptr(serialized_args);
-  size_t len = 0;
-  if (!asylo::SerializeEpollWaitArgs(epfd, maxevents, timeout, &serialized_args,
-                                     &len)) {
-    errno = EINVAL;
-    return -1;
-  }
-
-  bridge_size_t serialized_args_len = static_cast<bridge_size_t>(len);
-  int ret = 0;
-  char *serialized_event_list = nullptr;
-  bridge_size_t serialized_event_list_len = 0;
-  CHECK_OCALL(ocall_enc_untrusted_epoll_wait(
-      &ret, serialized_args, serialized_args_len, &serialized_event_list,
-      &serialized_event_list_len));
-  if (!sgx_is_outside_enclave(serialized_event_list,
-                              serialized_event_list_len)) {
-    abort();
-  }
-  asylo::UntrustedUniquePtr<char[]> serialized_events_ptr(
-      serialized_event_list);
-  // The line below intentially copies |serialized_event_list| into trusted
-  // memory.
-  std::string event_list_str(serialized_event_list, serialized_event_list_len);
-  int numevents = 0;
-  if (!asylo::DeserializeEvents(event_list_str, events, &numevents)) {
-    errno = EBADE;
-    return -1;
-  }
-  // Check if the number of events in the deserialized results (|numevents|) is
-  // the same as the return value of epoll_wait (|ret|). An inconsistency would
-  // suggest malicious behavior, therefore, we would abort().
-  if (numevents != ret) {
-    abort();
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //           inotify.h              //
 //////////////////////////////////////
 

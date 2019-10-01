@@ -78,13 +78,6 @@ void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected);
 void enc_untrusted_sys_futex_wake(int32_t *futex);
 
 //////////////////////////////////////
-//            epoll.h               //
-//////////////////////////////////////
-
-int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
-                             int maxevents, int timeout);
-
-//////////////////////////////////////
 //            inotify.h             //
 //////////////////////////////////////
 

@@ -213,37 +213,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 }
 
 //////////////////////////////////////
-//           epoll.h                //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_epoll_wait(const char *serialized_args,
-                                   bridge_size_t serialized_args_len,
-                                   char **serialized_events,
-                                   bridge_size_t *serialized_events_len) {
-  int epfd = 0;
-  int maxevents = 0;
-  int timeout = 0;
-  std::string serialized_args_str(serialized_args,
-                                  static_cast<size_t>(serialized_args_len));
-  if (!asylo::DeserializeEpollWaitArgs(serialized_args_str, &epfd, &maxevents,
-                                       &timeout)) {
-    errno = EINVAL;
-    return -1;
-  }
-  struct epoll_event *event_array = static_cast<struct epoll_event *>(
-      malloc(sizeof(struct epoll_event) * maxevents));
-  asylo::MallocUniquePtr<struct epoll_event> event_array_ptr(event_array);
-  int ret = epoll_wait(epfd, event_array, maxevents, timeout);
-  size_t len = 0;
-  if (!asylo::SerializeEvents(event_array, ret, serialized_events, &len)) {
-    errno = EINVAL;
-    return -1;
-  }
-  *serialized_events_len = static_cast<bridge_size_t>(len);
-  return ret;
-}
-
-//////////////////////////////////////
 //           inotify.h              //
 //////////////////////////////////////
 

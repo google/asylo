@@ -70,13 +70,6 @@ struct BridgeWStatus {
   uint8_t info;
 };
 
-// The possible actions when calling sigprocmask.
-enum SigMaskAction {
-  BRIDGE_SIG_SETMASK = 0,
-  BRIDGE_SIG_BLOCK = 1,
-  BRIDGE_SIG_UNBLOCK = 2,
-};
-
 // All the signals that are supported to be registered inside enclave (except
 // SIGSTOP and SIGKILL).
 enum SignalNumber {

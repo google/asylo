@@ -118,6 +118,8 @@ int enc_untrusted_poll(struct pollfd *fds, nfds_t nfds, int timeout);
 int enc_untrusted_epoll_create(int size);
 int enc_untrusted_epoll_ctl(int epfd, int op, int fd,
                             struct epoll_event *event);
+int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
+                             int maxevents, int timeout);
 int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
 

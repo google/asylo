@@ -49,18 +49,6 @@ void FreeDeserializedIfAddrs(struct ifaddrs *ifa);
 // IfAddrSupported is exposed here since it is used in tests.
 bool IfAddrSupported(const struct ifaddrs *entry);
 
-bool SerializeEpollWaitArgs(int epfd, int maxevents, int timeout, char **out,
-                            size_t *len);
-
-bool DeserializeEpollWaitArgs(absl::string_view in, int *epfd, int *maxevents,
-                              int *timeout);
-
-bool SerializeEvents(const struct epoll_event *events, int numevents,
-                     char **out, size_t *len);
-
-bool DeserializeEvents(absl::string_view in, struct epoll_event *events,
-                       int *numevents);
-
 bool SerializeInotifyEvents(char *buf, size_t buf_len, char **out, size_t *len);
 
 bool DeserializeInotifyEvents(absl::string_view in,
