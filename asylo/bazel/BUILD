@@ -23,7 +23,6 @@ exports_files([
     "asylo_deps.bzl",
     "copts.bzl",
     "installation_path.bzl",
-    "proto.bzl",
     "sgx_deps.bzl",
     "sim_enclave.bzl",
 ])
