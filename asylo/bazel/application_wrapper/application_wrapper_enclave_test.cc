@@ -33,6 +33,7 @@
 #include "asylo/client.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/fd_utils.h"
 #include "asylo/util/status.h"
@@ -112,11 +113,23 @@ class ApplicationWrapperEnclaveTest : public ::testing::Test {
       variable->set_value(pair.second);
     }
 
-    // Load the enclave.
-    SgxEmbeddedLoader loader(absl::GetFlag(FLAGS_enclave_section),
-                             /*debug=*/true);
-    Status status = manager_->LoadEnclave(kEnclaveName, loader, config);
+    // Create an EnclaveLoadConfig object.
+    EnclaveLoadConfig load_config;
+    load_config.set_name(kEnclaveName);
+    *load_config.mutable_config() = config;
 
+    // Create an SgxLoadConfig object.
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::EmbeddedEnclaveConfig embedded_enclave_config;
+    embedded_enclave_config.set_section_name(
+        absl::GetFlag(FLAGS_enclave_section));
+    *sgx_config.mutable_embedded_enclave_config() = embedded_enclave_config;
+    sgx_config.set_debug(true);
+
+    // Set an SGX message extension to load_config.
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    Status status = manager_->LoadEnclave(load_config);
     if (status.ok()) {
       client_ = manager_->GetClient(kEnclaveName);
     }

@@ -44,6 +44,7 @@
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
 #include "asylo/identity/sgx/remote_assertion_generator_test_util_enclave.pb.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -143,11 +144,23 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
 
   Status InitializeRemoteAssertionGeneratorEnclave(
       const EnclaveConfig &config) {
-    SgxLoader loader(
-        absl::GetFlag(FLAGS_remote_assertion_generator_enclave_path),
-        /*debug=*/true);
-    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(
-        kAssertionGeneratorEnclaveName, loader, config));
+    // Create an EnclaveLoadConfig object.
+    EnclaveLoadConfig load_config;
+    load_config.set_name(kAssertionGeneratorEnclaveName);
+    *load_config.mutable_config() = config;
+
+    // Create an SgxLoadConfig object.
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(
+        absl::GetFlag(FLAGS_remote_assertion_generator_enclave_path));
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(true);
+
+    // Set an SGX message extension to load_config.
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
     remote_assertion_generator_enclave_client_ =
         enclave_manager_->GetClient(kAssertionGeneratorEnclaveName);
     return Status::OkStatus();
@@ -163,11 +176,23 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
   }
 
   Status StartTestUtilEnclave(const EnclaveConfig &config) {
-    SgxLoader loader(
-        absl::GetFlag(FLAGS_remote_assertion_generator_test_util_enclave_path),
-        /*debug=*/true);
-    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(
-        kRemoteAssertionGeneratorTestUtilEnclaveName, loader, config));
+    // Create an EnclaveLoadConfig object.
+    EnclaveLoadConfig load_config;
+    load_config.set_name(kRemoteAssertionGeneratorTestUtilEnclaveName);
+    *load_config.mutable_config() = config;
+
+    // Create an SgxLoadConfig object.
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(
+        absl::GetFlag(FLAGS_remote_assertion_generator_test_util_enclave_path));
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(true);
+
+    // Set an SGX message extension to load_config.
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
     remote_assertion_generator_test_util_enclave_client_ =
         enclave_manager_->GetClient(
             kRemoteAssertionGeneratorTestUtilEnclaveName);

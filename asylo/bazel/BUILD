@@ -87,7 +87,9 @@ cc_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":test_shim_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:test_flags",
         "//asylo/util:logging",
         "@com_google_absl//absl/flags:flag",

@@ -38,6 +38,7 @@
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/report_oracle_enclave.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
@@ -90,9 +91,22 @@ class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
       return enclave_client_;
     }
 
-    SgxLoader loader(absl::GetFlag(FLAGS_report_oracle_enclave_path),
-                     /*debug=*/false);
-    if (!enclave_manager_->LoadEnclave(kTestEnclaveName, loader).ok()) {
+    // Create an EnclaveLoadConfig object.
+    EnclaveLoadConfig load_config;
+    load_config.set_name(kTestEnclaveName);
+
+    // Create an SgxLoadConfig object.
+    SgxLoadConfig sgx_config;
+    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+    file_enclave_config.set_enclave_path(
+        absl::GetFlag(FLAGS_report_oracle_enclave_path));
+    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+    sgx_config.set_debug(true);
+
+    // Set an SGX message extension to load_config.
+    *load_config.MutableExtension(sgx_load_config) = sgx_config;
+
+    if (!enclave_manager_->LoadEnclave(load_config).ok()) {
       return nullptr;
     }
 
