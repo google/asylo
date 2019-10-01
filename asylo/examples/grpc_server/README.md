@@ -324,22 +324,37 @@ The driver's `main` function starts by parsing command-line arguments:
 absl::ParseCommandLine(argc, argv);
 ```
 
-Then, the driver creates and configures a `SgxLoader` using the `enclave_path`
-flag and an `EnclaveConfig` message object containing the server address:
+Then, the driver creates and configures an `EnclaveLoadConfig` message object
+using an `EnclaveConfig` message object containing the server address and a
+`sgx_load_config` message extension containing the `enclave_path` flag:
 
 ```cpp
-asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
+
+// Create an EnclaveLoadConfig object.
+EnclaveLoadConfig load_config;
+load_config.set_name("grpc_example");
 
 asylo::EnclaveConfig config;
 config.SetExtension(examples::grpc_server::server_address, kServerAddress);
 config.SetExtension(examples::grpc_server::server_max_lifetime,
                     absl::GetFlag(FLAGS_server_max_lifetime));
 config.SetExtension(examples::grpc_server::port, absl::GetFlag(FLAGS_port));
+*load_config.mutable_config() = config;
+
+// Create an SgxLoadConfig object.
+SgxLoadConfig sgx_config;
+SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+file_enclave_config.set_enclave_path(absl::GetFlag(FLAGS_enclave_path));
+*sgx_config.mutable_file_enclave_config() = file_enclave_config;
+sgx_config.set_debug(true);
+
+// Set an SGX message extension to load_config.
+*load_config.MutableExtension(sgx_load_config) = sgx_config;
 ```
 
 #### Starting the enclave
 
-The driver gets the `EnclaveManager` and loads the enclave with the config
+The driver gets the `EnclaveManager` and loads the enclave with the load config
 object. The call to `LoadEnclave` triggers a call to the `Initialize` method of
 the `TrustedApplication`:
 
@@ -351,7 +366,7 @@ LOG_IF(QFATAL, !manager_result.ok())
     << manager_result.status();
 asylo::EnclaveManager *manager = manager_result.ValueOrDie();
 
-asylo::Status status = manager->LoadEnclave("grpc_example", loader, config);
+asylo::Status status = manager->LoadEnclave(load_config);
 LOG_IF(QFATAL, !status.ok())
     << "Load " << absl::GetFlag(FLAGS_enclave_path) << " failed: " << status;
 ```

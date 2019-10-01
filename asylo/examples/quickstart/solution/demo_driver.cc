@@ -22,8 +22,10 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/examples/quickstart/solution/demo.pb.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 
 ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 ABSL_FLAG(std::string, message1, "", "The first message to encrypt");
@@ -61,9 +63,22 @@ int main(int argc, char *argv[]) {
   auto manager_result = asylo::EnclaveManager::Instance();
   LOG_IF(QFATAL, !manager_result.ok()) << "Could not obtain EnclaveManager";
 
+  // Create an EnclaveLoadConfig object.
+  asylo::EnclaveLoadConfig load_config;
+  load_config.set_name("demo_enclave");
+
+  // Create an SgxLoadConfig object.
+  asylo::SgxLoadConfig sgx_config;
+  asylo::SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+  file_enclave_config.set_enclave_path(absl::GetFlag(FLAGS_enclave_path));
+  *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+  sgx_config.set_debug(true);
+
+  // Set an SGX message extension to load_config.
+  *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
+
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
-  asylo::Status status = manager->LoadEnclave("demo_enclave", loader);
+  asylo::Status status = manager->LoadEnclave(load_config);
   LOG_IF(QFATAL, !status.ok()) << "LoadEnclave failed with: " << status;
 
   // Part 2: Secure execution

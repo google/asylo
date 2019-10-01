@@ -22,8 +22,10 @@
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/examples/grpc_server/grpc_server_config.pb.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 
 ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 
@@ -44,8 +46,9 @@ int main(int argc, char *argv[]) {
   // Parse command-line arguments.
   absl::ParseCommandLine(argc, argv);
 
-  // Create a loader object using the enclave_path flag.
-  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
+  // Create an EnclaveLoadConfig object.
+  asylo::EnclaveLoadConfig load_config;
+  load_config.set_name("grpc_example");
 
   // Build an EnclaveConfig object with the address that the gRPC server will
   // run on.
@@ -56,6 +59,17 @@ int main(int argc, char *argv[]) {
                           ? absl::GetFlag(FLAGS_server_lifetime)
                           : absl::GetFlag(FLAGS_server_max_lifetime));
   config.SetExtension(examples::grpc_server::port, absl::GetFlag(FLAGS_port));
+  *load_config.mutable_config() = config;
+
+  // Create an SgxLoadConfig object.
+  asylo::SgxLoadConfig sgx_config;
+  asylo::SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+  file_enclave_config.set_enclave_path(absl::GetFlag(FLAGS_enclave_path));
+  *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+  sgx_config.set_debug(true);
+
+  // Set an SGX message extension to load_config.
+  *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
 
   // Configure and retrieve the EnclaveManager.
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());
@@ -67,7 +81,7 @@ int main(int argc, char *argv[]) {
 
   // Load the enclave. Calling LoadEnclave() triggers a call to the Initialize()
   // method of the TrustedApplication.
-  asylo::Status status = manager->LoadEnclave("grpc_example", loader, config);
+  asylo::Status status = manager->LoadEnclave(load_config);
   LOG_IF(QFATAL, !status.ok())
       << "Load " << absl::GetFlag(FLAGS_enclave_path) << " failed: " << status;
 

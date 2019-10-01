@@ -24,8 +24,10 @@
 #include "absl/flags/parse.h"
 #include "absl/strings/str_split.h"
 #include "asylo/client.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/examples/hello_world/hello.pb.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/sgx/loader.pb.h"
 
 ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 ABSL_FLAG(std::string, names, "",
@@ -50,8 +52,21 @@ int main(int argc, char *argv[]) {
   }
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
   std::cout << "Loading " << absl::GetFlag(FLAGS_enclave_path) << std::endl;
-  asylo::SgxLoader loader(absl::GetFlag(FLAGS_enclave_path), /*debug=*/true);
-  asylo::Status status = manager->LoadEnclave("hello_enclave", loader);
+
+  // Create an EnclaveLoadConfig object.
+  asylo::EnclaveLoadConfig load_config;
+  load_config.set_name("hello_enclave");
+
+  // Create an SgxLoadConfig object.
+  asylo::SgxLoadConfig sgx_config;
+  asylo::SgxLoadConfig::FileEnclaveConfig file_enclave_config;
+  file_enclave_config.set_enclave_path(absl::GetFlag(FLAGS_enclave_path));
+  *sgx_config.mutable_file_enclave_config() = file_enclave_config;
+  sgx_config.set_debug(true);
+
+  // Set an SGX message extension to load_config.
+  *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
+  asylo::Status status = manager->LoadEnclave(load_config);
   if (!status.ok()) {
     LOG(QFATAL) << "Load " << absl::GetFlag(FLAGS_enclave_path)
                 << " failed: " << status;
