@@ -95,4 +95,9 @@ int munlockall(void) {
   return -1;
 }
 
+int mprotect(void *addr, size_t len, int prot) {
+  errno = ENOSYS;
+  return -1;
+}
+
 }  // extern "C"
