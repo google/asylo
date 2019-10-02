@@ -203,6 +203,7 @@ cc_library(
         "//asylo/platform/core:status_serializer",
         "//asylo/platform/core:trusted_core",
         "//asylo/platform/host_call",
+        "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/util:status",

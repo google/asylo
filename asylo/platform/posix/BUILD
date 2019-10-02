@@ -294,6 +294,7 @@ sgx.unsigned_enclave(
     deps = [
         ":fork_security_test_cc_proto",
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives/sgx:trusted_fork",
         "//asylo/test/util:enclave_test_application",
     ],
 )
