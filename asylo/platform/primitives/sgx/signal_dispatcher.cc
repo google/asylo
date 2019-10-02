@@ -19,7 +19,6 @@
 #include "asylo/platform/primitives/sgx/signal_dispatcher.h"
 
 #include <signal.h>
-#include <sys/ucontext.h>
 
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
@@ -109,11 +108,6 @@ Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
   enclave_signal.set_signum(signum);
   enclave_signal.set_code(info->si_code);
   enclave_signal.clear_gregs();
-  ucontext_t *uc = reinterpret_cast<ucontext_t *>(ucontext);
-  for (int greg_index = 0; greg_index < NGREG; ++greg_index) {
-    enclave_signal.add_gregs(
-        static_cast<uint64_t>(uc->uc_mcontext.gregs[greg_index]));
-  }
   return client->EnterAndHandleSignal(enclave_signal);
 }
 

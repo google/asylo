@@ -21,7 +21,6 @@
 #include <errno.h>
 #include <signal.h>
 #include <sys/types.h>
-#include <sys/ucontext.h>
 
 #include <vector>
 
@@ -99,12 +98,6 @@ int DeliverSignal(const char *input, size_t input_len) {
   siginfo_t info;
   info.si_signo = signum;
   info.si_code = signal.code();
-  ucontext_t ucontext;
-  for (int greg_index = 0;
-       greg_index < NGREG && greg_index < signal.gregs_size(); ++greg_index) {
-    ucontext.uc_mcontext.gregs[greg_index] =
-        static_cast<greg_t>(signal.gregs(greg_index));
-  }
   SignalManager *signal_manager = SignalManager::GetInstance();
   const sigset_t mask = signal_manager->GetSignalMask();
 
@@ -113,7 +106,7 @@ int DeliverSignal(const char *input, size_t input_len) {
   if (sigismember(&mask, signum)) {
     return -1;
   }
-  if (!signal_manager->HandleSignal(signum, &info, &ucontext).ok()) {
+  if (!signal_manager->HandleSignal(signum, &info, /*ucontext=*/nullptr).ok()) {
     return 1;
   }
   return 0;
