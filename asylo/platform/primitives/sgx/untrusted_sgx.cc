@@ -24,10 +24,12 @@
 #include <cstdlib>
 #include <string>
 
+#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
+#include "asylo/platform/primitives/sgx/signal_dispatcher.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/cleanup.h"
@@ -76,11 +78,8 @@ struct ms_ecall_dispatch_trusted_call_t {
 struct ms_ecall_deliver_signal_t {
   // Return value from the trusted call.
   int ms_retval;
-
-  // Pointer to the flat buffer passed to primitives::EnclaveCall. The
-  // pointer is interpreted as a void pointer as edger8r only allows trivial
-  // data types to be passed across the bridge.
-  void *ms_buffer;
+  const char *ms_input;
+  bridge_size_t ms_input_len;
 };
 
 // Edger8r-generated primitives ms_ecall_transfer_secure_snapshot_key_t
@@ -308,6 +307,9 @@ Status SgxEnclaveClient::Destroy() {
     return Status(status, "Failed to destroy enclave");
   }
   is_destroyed_ = true;
+  ASYLO_RETURN_IF_ERROR(
+      EnclaveSignalDispatcher::GetInstance()->DeregisterAllSignalsForClient(
+          this));
   return Status::OkStatus();
 }
 
@@ -372,32 +374,29 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
   return Status::OkStatus();
 }
 
-Status SgxEnclaveClient::DeliverSignalInternal(MessageWriter *input,
-                                               MessageReader *output) {
+Status SgxEnclaveClient::EnterAndHandleSignal(const EnclaveSignal signal) {
   if (is_destroyed_) {
     return Status{error::GoogleError::FAILED_PRECONDITION,
                   "Cannot make an enclave call to a closed enclave."};
   }
 
-  ms_ecall_deliver_signal_t ms;
-  SgxParams params;
-  ms.ms_buffer = &params;
-
-  params.input_size = 0;
-  params.input = nullptr;
-  Cleanup clean_up([&params] {
-    if (params.input) {
-      free(const_cast<void *>(params.input));
-    }
-  });
-
-  if (input) {
-    params.input_size = input->MessageSize();
-    if (params.input_size > 0) {
-      params.input = malloc(static_cast<size_t>(params.input_size));
-      input->Serialize(const_cast<void *>(params.input));
-    }
+  EnclaveSignal enclave_signal(signal);
+  int bridge_signum = ToBridgeSignal(signal.signum());
+  if (bridge_signum < 0) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Failed to convert signum (", signal.signum(),
+                               ") to bridge signum"));
   }
+  enclave_signal.set_signum(bridge_signum);
+  std::string serialized_enclave_signal;
+  if (!enclave_signal.SerializeToString(&serialized_enclave_signal)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Failed to serialize EnclaveSignal");
+  }
+
+  ms_ecall_deliver_signal_t ms;
+  ms.ms_input = serialized_enclave_signal.data();
+  ms.ms_input_len = serialized_enclave_signal.size();
 
   const ocall_table_t *table = &ocall_table_bridge;
   ScopedCurrentClient scoped_client(this);

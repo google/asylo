@@ -41,7 +41,6 @@
 #include "asylo/platform/posix/io/io_manager.h"
 #include "asylo/platform/posix/io/native_paths.h"
 #include "asylo/platform/posix/io/random_devices.h"
-#include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -156,25 +155,6 @@ PrimitiveStatus Finalize(void *context, MessageReader *in, MessageWriter *out) {
     out->PushByCopy(Extent{output, output_len});
   }
   free(output);
-  return PrimitiveStatus(result);
-}
-
-// Handler installed by the runtime to invoke the enclave signal handling entry
-// point.
-PrimitiveStatus DeliverSignal(void *context, MessageReader *in,
-                              MessageWriter *out) {
-  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
-  auto input_extent = in->next();
-  int result = 0;
-  try {
-    result = asylo::__asylo_handle_signal(input_extent.As<char>(),
-                                          input_extent.size());
-  } catch (...) {
-    // Abort directly here instead of LOG(FATAL). LOG tries to obtain a mutex,
-    // and acquiring a non-reentrant mutex in signal handling may cause deadlock
-    // if the thread had already obtained that mutex when interrupted.
-    TrustedPrimitives::BestEffortAbort("Uncaught exception in enclave");
-  }
   return PrimitiveStatus(result);
 }
 
@@ -410,44 +390,6 @@ int __asylo_user_fini(const char *input, size_t input_len, char **output,
   return status_serializer.Serialize(status);
 }
 
-int __asylo_handle_signal(const char *input, size_t input_len) {
-  asylo::EnclaveSignal signal;
-  if (!signal.ParseFromArray(input, input_len)) {
-    return 1;
-  }
-  TrustedApplication *trusted_application = GetApplicationInstance();
-  EnclaveState current_state = trusted_application->GetState();
-  if (current_state < EnclaveState::kRunning ||
-      current_state > EnclaveState::kFinalizing) {
-    return 2;
-  }
-  int signum = FromBridgeSignal(signal.signum());
-  if (signum < 0) {
-    return 1;
-  }
-  siginfo_t info;
-  info.si_signo = signum;
-  info.si_code = signal.code();
-  ucontext_t ucontext;
-  for (int greg_index = 0;
-       greg_index < NGREG && greg_index < signal.gregs_size(); ++greg_index) {
-    ucontext.uc_mcontext.gregs[greg_index] =
-        static_cast<greg_t>(signal.gregs(greg_index));
-  }
-  SignalManager *signal_manager = SignalManager::GetInstance();
-  const sigset_t mask = signal_manager->GetSignalMask();
-
-  // If the signal is blocked and still passed into the enclave. The signal
-  // masks inside the enclave is out of sync with the untrusted signal mask.
-  if (sigismember(&mask, signum)) {
-    return -1;
-  }
-  if (!signal_manager->HandleSignal(signum, &info, &ucontext).ok()) {
-    return 1;
-  }
-  return 0;
-}
-
 }  // extern "C"
 
 }  // namespace asylo
@@ -473,15 +415,6 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
   EntryHandler finalize_handler{asylo::Finalize};
   if (!TrustedPrimitives::RegisterEntryHandler(asylo::kSelectorAsyloFini,
                                                finalize_handler)
-           .ok()) {
-    TrustedPrimitives::BestEffortAbort("Could not register entry handler");
-  }
-
-  // Register the enclave signal handling entry handler.
-  EntryHandler deliver_signal_handler{asylo::DeliverSignal};
-  if (!TrustedPrimitives::RegisterEntryHandler(
-           asylo::primitives::kSelectorAsyloDeliverSignal,
-           deliver_signal_handler)
            .ok()) {
     TrustedPrimitives::BestEffortAbort("Could not register entry handler");
   }

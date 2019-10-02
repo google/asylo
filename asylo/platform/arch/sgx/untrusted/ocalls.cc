@@ -55,6 +55,7 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"
+#include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
 #include "asylo/platform/common/bridge_functions.h"
@@ -67,8 +68,8 @@
 #include "asylo/platform/core/shared_name.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
+#include "asylo/platform/primitives/sgx/signal_dispatcher.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
-#include "asylo/util/logging.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/util/posix_error_space.h"
@@ -105,8 +106,8 @@ void TranslateToBridgeAndHandleSignal(int signum, siginfo_t *info,
 // In simulation mode, this is called if the signal arrives when the TCS is
 // inactive.
 void EnterEnclaveAndHandleSignal(int signum, siginfo_t *info, void *ucontext) {
-  asylo::EnclaveSignalDispatcher::GetInstance()->EnterEnclaveAndHandleSignal(
-      signum, info, ucontext);
+  asylo::primitives::EnclaveSignalDispatcher::GetInstance()
+      ->EnterEnclaveAndHandleSignal(signum, info, ucontext);
 }
 
 // Checks the enclave TCS state to determine which function to call to handle
@@ -116,17 +117,15 @@ void EnterEnclaveAndHandleSignal(int signum, siginfo_t *info, void *ucontext) {
 //
 // In simulation mode, this is registered as the signal handler.
 void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
-  auto client_result =
-      asylo::EnclaveSignalDispatcher::GetInstance()->GetClientForSignal(signum);
+  auto client_result = asylo::primitives::EnclaveSignalDispatcher::GetInstance()
+                           ->GetClientForSignal(signum);
   if (!client_result.ok()) {
     return;
   }
-  asylo::GenericEnclaveClient *client =
-      dynamic_cast<asylo::GenericEnclaveClient *>(client_result.ValueOrDie());
-  std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
-      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-          client->GetPrimitiveClient());
-  if (primitive_client->IsTcsActive()) {
+  asylo::primitives::SgxEnclaveClient *client =
+      dynamic_cast<asylo::primitives::SgxEnclaveClient *>(
+          client_result.ValueOrDie());
+  if (client->IsTcsActive()) {
     TranslateToBridgeAndHandleSignal(signum, info, ucontext);
   } else {
     EnterEnclaveAndHandleSignal(signum, info, ucontext);
@@ -296,12 +295,17 @@ int ocall_enc_untrusted_register_signal_handler(
   // EnclaveManager knows which enclave to enter to handle the signal.
   asylo::EnclaveManager *manager = manager_result.ValueOrDie();
   asylo::EnclaveClient *client = manager->GetClient(enclave_name);
-  const asylo::EnclaveClient *old_client =
-      asylo::EnclaveSignalDispatcher::GetInstance()->RegisterSignal(signum,
-                                                                    client);
+  asylo::GenericEnclaveClient *generic_client =
+      dynamic_cast<asylo::GenericEnclaveClient *>(client);
+  std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
+      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
+          generic_client->GetPrimitiveClient());
+  const asylo::primitives::SgxEnclaveClient *old_client =
+      asylo::primitives::EnclaveSignalDispatcher::GetInstance()->RegisterSignal(
+          signum, primitive_client.get());
   if (old_client) {
     LOG(WARNING) << "Overwriting the signal handler for signal: " << signum
-                 << " registered by enclave: " << manager->GetName(old_client);
+                 << " registered by another enclave";
   }
   struct sigaction newact;
   if (!handler || !handler->sigaction) {

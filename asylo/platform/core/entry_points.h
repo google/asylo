@@ -62,11 +62,6 @@ int __asylo_user_run(const char *input, size_t input_len, char **output,
 int __asylo_user_fini(const char *final_input, size_t len, char **output,
                       size_t *output_len);
 
-// Enclave signal handler routine.
-//
-// The input type is asylo::EnclaveSignal.
-int __asylo_handle_signal(const char *input, size_t input_len);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif

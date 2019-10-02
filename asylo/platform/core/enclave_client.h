@@ -70,9 +70,6 @@ class EnclaveClient {
   // Enters the enclave and invokes its finalization entry point.
   virtual Status EnterAndFinalize(const EnclaveFinal &final_input) = 0;
 
-  // Enters the enclave and invokes its signal handling entry point.
-  virtual Status EnterAndHandleSignal(const EnclaveSignal &signal) = 0;
-
   // Invoked by the EnclaveManager immediately before the enclave is
   // destroyed. This hook is provided to enable execution of custom logic by the
   // client at the time the enclave is destroyed.

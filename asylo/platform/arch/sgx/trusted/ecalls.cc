@@ -105,7 +105,13 @@ int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
 
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
-int ecall_deliver_signal(void *buffer) {
-  return asylo::primitives::asylo_enclave_call(
-      asylo::primitives::kSelectorAsyloDeliverSignal, buffer);
+int ecall_deliver_signal(const char *input, size_t input_len) {
+  int result = 0;
+  try {
+    result =
+        asylo::primitives::DeliverSignal(input, static_cast<size_t>(input_len));
+  } catch (...) {
+    LOG(FATAL) << "Uncaught exception in enclave";
+  }
+  return result;
 }

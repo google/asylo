@@ -49,7 +49,6 @@ class GenericEnclaveClient : public EnclaveClient {
  private:
   Status EnterAndInitialize(const EnclaveConfig &config) override;
   Status EnterAndFinalize(const EnclaveFinal &final_input) override;
-  Status EnterAndHandleSignal(const EnclaveSignal &signal) override;
   Status DestroyEnclave() override;
 
   // Enters the enclave and invokes the initialization entry-point. If the ecall
@@ -76,10 +75,6 @@ class GenericEnclaveClient : public EnclaveClient {
   // that contains output from the enclave.
   Status Finalize(const char *input, size_t input_len,
                   std::unique_ptr<char[]> *output, size_t *output_len);
-
-  // Enters the enclave and invokes the signal handle entry-point. If the ecall
-  // fails, returns a non-OK status.
-  Status DeliverSignal(const char *input, size_t input_len);
 };
 
 }  // namespace asylo

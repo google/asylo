@@ -70,6 +70,7 @@ cc_library(
     deps = select(
         {
             "//asylo/platform/primitives:asylo_sgx": [
+                "//asylo:enclave_cc_proto",
                 "//asylo/platform/primitives",
                 "//asylo/util:logging",
                 "//asylo/platform/primitives:trusted_primitives",
@@ -99,8 +100,14 @@ cc_library(
 
 cc_library(
     name = "untrusted_sgx",
-    srcs = ["untrusted_sgx.cc"],
-    hdrs = ["untrusted_sgx.h"],
+    srcs = [
+        "signal_dispatcher.cc",
+        "untrusted_sgx.cc",
+    ],
+    hdrs = [
+        "signal_dispatcher.h",
+        "untrusted_sgx.h",
+    ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":exit_handlers",
@@ -115,7 +122,10 @@ cc_library(
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
     ],

@@ -58,9 +58,6 @@ class MockedEnclaveClient : public Client {
                              MessageReader *out) override {
     return Status::OkStatus();
   }
-  Status DeliverSignalInternal(MessageWriter *in, MessageReader *out) override {
-    return Status::OkStatus();
-  }
 };
 
 TEST(DispatchTableTest, HandlersRegistration) {

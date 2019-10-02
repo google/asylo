@@ -36,7 +36,6 @@ class MockEnclaveClient : public EnclaveClient {
   MOCK_CONST_METHOD0(get_name, absl::string_view());
   MOCK_METHOD1(EnterAndInitialize, Status(const EnclaveConfig &));
   MOCK_METHOD1(EnterAndFinalize, Status(const EnclaveFinal &));
-  MOCK_METHOD1(EnterAndHandleSignal, Status(const EnclaveSignal &));
   MOCK_METHOD0(DestroyEnclave, Status());
 };
 

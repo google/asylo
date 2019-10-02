@@ -97,6 +97,8 @@ class SgxEnclaveClient : public Client {
   Status EnterAndTransferSecureSnapshotKey(
       const ForkHandshakeConfig &fork_handshake_config);
 
+  Status EnterAndHandleSignal(const EnclaveSignal enclave_signal);
+
   // Returns true when a TCS is active in simulation mode. Always returns false
   // in hardware mode, since TCS active/inactive state is only set and used in
   // simulation mode.
@@ -108,8 +110,6 @@ class SgxEnclaveClient : public Client {
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                              MessageReader *output) override;
-  Status DeliverSignalInternal(MessageWriter *input,
-                               MessageReader *output) override;
   bool IsClosed() const override;
 
  private:

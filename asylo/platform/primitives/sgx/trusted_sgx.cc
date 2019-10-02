@@ -19,15 +19,19 @@
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 
 #include <errno.h>
+#include <signal.h>
 #include <sys/types.h>
+#include <sys/ucontext.h>
 
 #include <vector>
 
 #include "absl/strings/str_cat.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -80,6 +84,39 @@ int RegisterSignalHandler(
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
       &ret, bridge_signum, &handler, enclave_name));
   return ret;
+}
+
+int DeliverSignal(const char *input, size_t input_len) {
+  asylo::EnclaveSignal signal;
+  if (!signal.ParseFromArray(input, input_len)) {
+    return 1;
+  }
+
+  int signum = FromBridgeSignal(signal.signum());
+  if (signum < 0) {
+    return 1;
+  }
+  siginfo_t info;
+  info.si_signo = signum;
+  info.si_code = signal.code();
+  ucontext_t ucontext;
+  for (int greg_index = 0;
+       greg_index < NGREG && greg_index < signal.gregs_size(); ++greg_index) {
+    ucontext.uc_mcontext.gregs[greg_index] =
+        static_cast<greg_t>(signal.gregs(greg_index));
+  }
+  SignalManager *signal_manager = SignalManager::GetInstance();
+  const sigset_t mask = signal_manager->GetSignalMask();
+
+  // If the signal is blocked and still passed into the enclave. The signal
+  // masks inside the enclave is out of sync with the untrusted signal mask.
+  if (sigismember(&mask, signum)) {
+    return -1;
+  }
+  if (!signal_manager->HandleSignal(signum, &info, &ucontext).ok()) {
+    return 1;
+  }
+  return 0;
 }
 
 pid_t InvokeFork(const char *enclave_name, bool restore_snapshot) {
