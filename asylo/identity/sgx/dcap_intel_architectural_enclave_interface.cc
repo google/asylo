@@ -18,6 +18,7 @@
 
 #include "asylo/identity/sgx/dcap_intel_architectural_enclave_interface.h"
 
+#include <memory>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -150,11 +151,61 @@ Status Quote3ErrorToStatus(quote3_error_t quote3_error) {
   }
 }
 
+// The wrapper functions here are never unit tested, and should thus be simple
+// pass-throughs with no additional functionality beyond what Intel's API
+// provides. All additional functionality must be put into
+// DcapIntelArchitecturalEnclaveInterface so that it may be unit tested.
+class DefaultDcapLibraryInterface
+    : public DcapIntelArchitecturalEnclaveInterface::DcapLibraryInterface {
+ public:
+  ~DefaultDcapLibraryInterface() override = default;
+
+  quote3_error_t qe_set_enclave_dirpath(const char *dirpath) const override {
+    return sgx_qe_set_enclave_dirpath(dirpath);
+  }
+
+  sgx_pce_error_t pce_get_target(sgx_target_info_t *p_pce_target,
+                                 sgx_isv_svn_t *p_pce_isv_svn) const override {
+    return sgx_pce_get_target(p_pce_target, p_pce_isv_svn);
+  };
+
+  sgx_pce_error_t get_pce_info(const sgx_report_t *p_report,
+                               const uint8_t *p_pek, uint32_t pek_size,
+                               uint8_t crypto_suite, uint8_t *p_encrypted_ppid,
+                               uint32_t encrypted_ppid_size,
+                               uint32_t *p_encrypted_ppid_out_size,
+                               sgx_isv_svn_t *p_pce_isvsvn, uint16_t *p_pce_id,
+                               uint8_t *p_signature_scheme) const override {
+    return sgx_get_pce_info(p_report, p_pek, pek_size, crypto_suite,
+                            p_encrypted_ppid, encrypted_ppid_size,
+                            p_encrypted_ppid_out_size, p_pce_isvsvn, p_pce_id,
+                            p_signature_scheme);
+  }
+
+  sgx_pce_error_t pce_sign_report(
+      const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
+      const sgx_report_t *p_report, uint8_t *p_signature,
+      uint32_t signature_buf_size,
+      uint32_t *p_signature_out_size) const override {
+    return sgx_pce_sign_report(isv_svn, cpu_svn, p_report, p_signature,
+                               signature_buf_size, p_signature_out_size);
+  }
+};
+
 }  // namespace
+
+DcapIntelArchitecturalEnclaveInterface::DcapIntelArchitecturalEnclaveInterface()
+    : DcapIntelArchitecturalEnclaveInterface(
+          absl::make_unique<DefaultDcapLibraryInterface>()) {}
+
+DcapIntelArchitecturalEnclaveInterface::DcapIntelArchitecturalEnclaveInterface(
+    std::unique_ptr<DcapLibraryInterface> dcap_library)
+    : dcap_library_(std::move(dcap_library)) {}
 
 Status DcapIntelArchitecturalEnclaveInterface::SetEnclaveDir(
     const std::string &path) {
-  return Quote3ErrorToStatus(sgx_qe_set_enclave_dirpath(path.c_str()));
+  return Quote3ErrorToStatus(
+      dcap_library_->qe_set_enclave_dirpath(path.c_str()));
 }
 
 Status DcapIntelArchitecturalEnclaveInterface::GetPceTargetinfo(
@@ -163,7 +214,7 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceTargetinfo(
       sizeof(Targetinfo) == sizeof(sgx_target_info_t),
       "Targetinfo struct is not the same size as sgx_target_info_t struct");
 
-  sgx_pce_error_t result = sgx_pce_get_target(
+  sgx_pce_error_t result = dcap_library_->pce_get_target(
       reinterpret_cast<sgx_target_info_t *>(targetinfo), pce_svn);
 
   return PceErrorToStatus(result);
@@ -193,12 +244,12 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
   std::vector<uint8_t> ppid_encrypted_tmp(max_ppid_out_size);
   uint32_t encrypted_ppid_out_size = 0;
   uint8_t pce_signature_scheme;
-  sgx_pce_error_t result =
-      sgx_get_pce_info(reinterpret_cast<const sgx_report_t *>(&report),
-                       ppid_encryption_key.data(), ppid_encryption_key.size(),
-                       crypto_suite.value(), ppid_encrypted_tmp.data(),
-                       ppid_encrypted_tmp.size(), &encrypted_ppid_out_size,
-                       pce_svn, pce_id, &pce_signature_scheme);
+  sgx_pce_error_t result = dcap_library_->get_pce_info(
+      reinterpret_cast<const sgx_report_t *>(&report),
+      ppid_encryption_key.data(), ppid_encryption_key.size(),
+      crypto_suite.value(), ppid_encrypted_tmp.data(),
+      ppid_encrypted_tmp.size(), &encrypted_ppid_out_size, pce_svn, pce_id,
+      &pce_signature_scheme);
   if (result == SGX_PCE_SUCCESS) {
     ppid_encrypted->assign(
         ppid_encrypted_tmp.begin(),
@@ -218,7 +269,7 @@ Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
 
   std::vector<uint8_t> signature_tmp(kEcdsaP256SignatureSize);
   uint32_t signature_out_size = 0;
-  sgx_pce_error_t result = sgx_pce_sign_report(
+  sgx_pce_error_t result = dcap_library_->pce_sign_report(
       &target_pce_svn, reinterpret_cast<sgx_cpu_svn_t *>(&target_cpu_svn),
       reinterpret_cast<const sgx_report_t *>(&report), signature_tmp.data(),
       signature_tmp.size(), &signature_out_size);

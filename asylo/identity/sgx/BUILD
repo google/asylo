@@ -1437,6 +1437,28 @@ sgx_enclave_test(
     ],
 )
 
+cc_test(
+    name = "dcap_intel_architectural_enclave_interface_test",
+    srcs = ["dcap_intel_architectural_enclave_interface_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    # No enclave_test_name, as the DCAP interface is never used in an enclave.
+    deps = [
+        ":dcap_intel_architectural_enclave_interface",
+        ":hardware_types",
+        ":pce_util",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+        "@sgx_dcap//:pce_constants",
+        "@sgx_dcap//:pce_wrapper",
+    ],
+)
+
 cc_library(
     name = "mock_intel_architectural_enclave_interface",
     testonly = 1,

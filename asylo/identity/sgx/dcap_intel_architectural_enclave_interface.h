@@ -20,6 +20,8 @@
 #define ASYLO_IDENTITY_SGX_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_
 
 #include <cstdint>
+#include <functional>
+#include <memory>
 #include <string>
 
 #include "absl/types/span.h"
@@ -28,6 +30,9 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/util/status.h"
+#include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
+#include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
 
 namespace asylo {
 namespace sgx {
@@ -40,7 +45,42 @@ namespace sgx {
 class DcapIntelArchitecturalEnclaveInterface
     : public IntelArchitecturalEnclaveInterface {
  public:
-  DcapIntelArchitecturalEnclaveInterface() = default;
+  // DcapLibraryInterface provides an interface allowing unit tests to inject
+  // mocks when constructing DcapIntelArchitecturalEnclaveInterface.
+  class DcapLibraryInterface {
+   public:
+    virtual ~DcapLibraryInterface() = default;
+
+    // Wraps sgx_qe_set_enclave_dirpath.
+    virtual quote3_error_t qe_set_enclave_dirpath(const char *) const = 0;
+
+    // Wraps sgx_pce_get_target.
+    virtual sgx_pce_error_t pce_get_target(
+        sgx_target_info_t *p_pce_target,
+        sgx_isv_svn_t *p_pce_isv_svn) const = 0;
+
+    // Wraps sgx_get_pce_info.
+    virtual sgx_pce_error_t get_pce_info(
+        const sgx_report_t *p_report, const uint8_t *p_pek, uint32_t pek_size,
+        uint8_t crypto_suite, uint8_t *p_encrypted_ppid,
+        uint32_t encrypted_ppid_size, uint32_t *p_encrypted_ppid_out_size,
+        sgx_isv_svn_t *p_pce_isvsvn, uint16_t *p_pce_id,
+        uint8_t *p_signature_scheme) const = 0;
+
+    // Wraps sgx_pce_sign_report.
+    virtual sgx_pce_error_t pce_sign_report(
+        const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
+        const sgx_report_t *p_report, uint8_t *p_signature,
+        uint32_t signature_buf_size, uint32_t *p_signature_out_size) const = 0;
+  };
+
+  // Constructs an object that calls into the Intel DCAP library.
+  DcapIntelArchitecturalEnclaveInterface();
+
+  // Constructs an object that calls the redirected |dcap_library| instead
+  // of the real Intel DCAP library.
+  explicit DcapIntelArchitecturalEnclaveInterface(
+      std::unique_ptr<DcapLibraryInterface> dcap_library);
 
   ~DcapIntelArchitecturalEnclaveInterface() override = default;
 
@@ -60,6 +100,9 @@ class DcapIntelArchitecturalEnclaveInterface
   Status PceSignReport(const Report &report, uint16_t target_pce_svn,
                        UnsafeBytes<kCpusvnSize> target_cpu_svn,
                        std::string *signature) override;
+
+ private:
+  std::unique_ptr<DcapLibraryInterface> dcap_library_;
 };
 
 }  // namespace sgx
