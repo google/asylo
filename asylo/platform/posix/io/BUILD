@@ -59,6 +59,7 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":util",
+        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:memory",
         "//asylo/platform/core:untrusted_cache_malloc",
