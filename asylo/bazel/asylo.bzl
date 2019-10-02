@@ -488,6 +488,7 @@ def enclave_loader(
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
         tags = kwargs.get("tags", []) + ["manual"],
+        visibility = kwargs.get("visibility", []),
         data = kwargs.get("data", []),
     )
 
