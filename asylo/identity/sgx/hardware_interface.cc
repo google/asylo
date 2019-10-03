@@ -18,7 +18,6 @@
 
 #include "asylo/identity/sgx/hardware_interface.h"
 
-#include "asylo/util/logging.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "include/sgx.h"
