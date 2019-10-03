@@ -230,14 +230,6 @@ SgxIdentityExpectation GetRandomValidSgxExpectation() {
   return expectation;
 }
 
-void SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
-                                   CodeIdentity *corresponding_sgx_identity) {
-  SetSgxIdentityDescription(generic_identity->mutable_description());
-  CodeIdentity sgx_identity = GetRandomValidCodeIdentity();
-  sgx_identity.SerializeToString(generic_identity->mutable_identity());
-  *corresponding_sgx_identity = sgx_identity;
-}
-
 Status SetRandomValidLegacyGenericIdentity(
     EnclaveIdentity *generic_identity,
     SgxIdentity *corresponding_sgx_identity) {
@@ -255,9 +247,8 @@ Status SetRandomValidLegacyGenericIdentity(
   return Status::OkStatus();
 }
 
-Status SetRandomValidSgxGenericIdentity(
-    EnclaveIdentity *generic_identity,
-    SgxIdentity *corresponding_sgx_identity) {
+Status SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
+                                     SgxIdentity *corresponding_sgx_identity) {
   SetSgxIdentityDescription(generic_identity->mutable_description());
   *generic_identity->mutable_version() = kSgxIdentityVersionString;
 
@@ -273,10 +264,9 @@ Status SetRandomValidSgxGenericIdentity(
   return Status::OkStatus();
 }
 
-void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
-  bool is_valid;
-  do {
-    is_valid = true;
+void SetRandomInvalidLegacyGenericIdentity(EnclaveIdentity *generic_identity) {
+  bool is_valid = true;
+  while (is_valid) {
     std::vector<EnclaveIdentityType> identity_types{
         UNKNOWN_IDENTITY, NULL_IDENTITY, CODE_IDENTITY, CERT_IDENTITY};
     EnclaveIdentityType identity_type = RandomSelect(identity_types);
@@ -306,10 +296,10 @@ void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
     std::string identity_string = RandomSelect(identity_strings);
     generic_identity->set_identity(identity_string);
     is_valid &= (identity_string == identity_strings[2]);
-  } while (is_valid);
+  }
 }
 
-Status SetRandomInvalidGenericSgxIdentity(EnclaveIdentity *generic_identity) {
+Status SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity) {
   bool is_valid = true;
   while (is_valid) {
     EnclaveIdentityType identity_type = RandomSelect(
@@ -350,14 +340,14 @@ Status SetRandomInvalidGenericSgxIdentity(EnclaveIdentity *generic_identity) {
   return Status::OkStatus();
 }
 
-Status SetRandomValidGenericMatchSpec(
-    std::string *generic_spec, CodeIdentityMatchSpec *corresponding_sgx_spec) {
+Status SetRandomValidLegacyGenericMatchSpec(
+    std::string *generic_spec, SgxIdentityMatchSpec *corresponding_sgx_spec) {
   CodeIdentityMatchSpec spec = GetRandomValidMatchSpec();
   if (!spec.SerializeToString(generic_spec)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Failed to serialize CodeIdentityMatchSpec");
   }
-  *corresponding_sgx_spec = spec;
+  *corresponding_sgx_spec->mutable_code_identity_match_spec() = spec;
   return Status::OkStatus();
 }
 
@@ -394,18 +384,18 @@ Status SetRandomValidLegacyGenericExpectation(
     EnclaveIdentityExpectation *generic_expectation,
     SgxIdentityExpectation *corresponding_sgx_expectation) {
   SgxIdentity sgx_identity;
-  CodeIdentityMatchSpec spec;
   SgxIdentityMatchSpec sgx_spec;
 
   for (int count = 0; count < 100; count++) {
     ASYLO_RETURN_IF_ERROR(SetRandomValidLegacyGenericIdentity(
         generic_expectation->mutable_reference_identity(), &sgx_identity));
-    ASYLO_RETURN_IF_ERROR(SetRandomValidGenericMatchSpec(
-        generic_expectation->mutable_match_spec(), &spec));
-    *sgx_spec.mutable_code_identity_match_spec() = spec;
-
-    if (internal::IsIdentityCompatibleWithMatchSpec(sgx_identity, sgx_spec)) {
-      SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation);
+    ASYLO_RETURN_IF_ERROR(SetRandomValidLegacyGenericMatchSpec(
+        generic_expectation->mutable_match_spec(), &sgx_spec));
+    ASYLO_RETURN_IF_ERROR(SetExpectation(sgx_spec, sgx_identity,
+                                         corresponding_sgx_expectation,
+                                         /*is_legacy=*/true));
+    if (IsValidExpectation(*corresponding_sgx_expectation,
+                           /*is_legacy=*/true)) {
       return Status::OkStatus();
     }
   }
@@ -419,51 +409,50 @@ Status SetRandomValidGenericExpectation(
   SgxIdentityMatchSpec sgx_spec;
 
   for (int count = 0; count < 100; count++) {
-    ASYLO_RETURN_IF_ERROR(SetRandomValidSgxGenericIdentity(
+    ASYLO_RETURN_IF_ERROR(SetRandomValidGenericIdentity(
         generic_expectation->mutable_reference_identity(), &sgx_identity));
     ASYLO_RETURN_IF_ERROR(SetRandomValidGenericMatchSpec(
         generic_expectation->mutable_match_spec(), &sgx_spec));
-
-    if (internal::IsIdentityCompatibleWithMatchSpec(sgx_identity, sgx_spec)) {
-      SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation);
+    ASYLO_RETURN_IF_ERROR(
+        SetExpectation(sgx_spec, sgx_identity, corresponding_sgx_expectation));
+    if (IsValidExpectation(*corresponding_sgx_expectation)) {
       return Status::OkStatus();
     }
   }
-
   return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
 }
 
 Status SetRandomInvalidGenericExpectation(
     EnclaveIdentityExpectation *generic_expectation) {
-  CodeIdentity sgx_identity;
-  CodeIdentityMatchSpec sgx_spec;
+  SgxIdentity sgx_identity;
+  SgxIdentityMatchSpec sgx_spec;
+  SgxIdentityExpectation expectation;
   std::vector<bool> validity_choices{true, false};
-  bool identity_and_spec_are_valid = true;
-  int count = 0;
-  do {
+
+  for (int count = 0; count < 100; count++) {
     if (RandomSelect(validity_choices)) {
-      SetRandomValidGenericIdentity(
-          generic_expectation->mutable_reference_identity(), &sgx_identity);
+      ASYLO_RETURN_IF_ERROR(SetRandomValidGenericIdentity(
+          generic_expectation->mutable_reference_identity(), &sgx_identity));
     } else {
-      SetRandomInvalidGenericIdentity(
-          generic_expectation->mutable_reference_identity());
-      identity_and_spec_are_valid = false;
+      ASYLO_RETURN_IF_ERROR(SetRandomInvalidGenericIdentity(
+          generic_expectation->mutable_reference_identity()));
     }
     if (RandomSelect(validity_choices)) {
-      SetRandomValidGenericMatchSpec(generic_expectation->mutable_match_spec(),
-                                     &sgx_spec);
+      ASYLO_RETURN_IF_ERROR(SetRandomValidGenericMatchSpec(
+          generic_expectation->mutable_match_spec(), &sgx_spec));
     } else {
       ASYLO_RETURN_IF_ERROR(SetRandomInvalidGenericMatchSpec(
           generic_expectation->mutable_match_spec()));
-      identity_and_spec_are_valid = false;
     }
-    if (count >= 100) {
-      return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
+
+    *expectation.mutable_reference_identity() = sgx_identity;
+    *expectation.mutable_match_spec() = sgx_spec;
+
+    if (!IsValidExpectation(expectation)) {
+      return Status::OkStatus();
     }
-    count++;
-  } while (identity_and_spec_are_valid &&
-           internal::IsIdentityCompatibleWithMatchSpec(sgx_identity, sgx_spec));
-  return Status::OkStatus();
+  }
+  return Status(error::GoogleError::INTERNAL, "Exceeded max attempts");
 }
 
 }  // namespace sgx

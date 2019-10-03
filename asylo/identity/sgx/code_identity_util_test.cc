@@ -1106,8 +1106,8 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SgxIdentity generated_sgx_identity;
-    ASYLO_ASSERT_OK(SetRandomValidSgxGenericIdentity(&generic_identity,
-                                                     &generated_sgx_identity));
+    ASYLO_ASSERT_OK(SetRandomValidGenericIdentity(&generic_identity,
+                                                  &generated_sgx_identity));
     SgxIdentity parsed_sgx_identity;
     ASYLO_ASSERT_OK(ParseSgxIdentity(generic_identity, &parsed_sgx_identity));
     ASSERT_THAT(generated_sgx_identity, EquivalentProto(parsed_sgx_identity))
@@ -1120,7 +1120,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
 TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentityFailure) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
-    SetRandomInvalidGenericIdentity(&generic_identity);
+    SetRandomInvalidLegacyGenericIdentity(&generic_identity);
     SgxIdentity parsed_sgx_identity;
     ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity),
                 Not(IsOk()));
@@ -1131,7 +1131,7 @@ TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentityFailure) {
 TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
-    ASYLO_ASSERT_OK(SetRandomInvalidGenericSgxIdentity(&generic_identity));
+    ASYLO_ASSERT_OK(SetRandomInvalidGenericIdentity(&generic_identity));
     SgxIdentity parsed_sgx_identity;
     ASSERT_THAT(ParseSgxIdentity(generic_identity, &parsed_sgx_identity),
                 Not(IsOk()));

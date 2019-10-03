@@ -59,11 +59,6 @@ SgxIdentityMatchSpec GetRandomValidSgxMatchSpec();
 
 SgxIdentityExpectation GetRandomValidSgxExpectation();
 
-// Sets |generic_identity| to a randomly-initialized valid EnclaveIdentity.
-// Also writes the underlying SGX code identity to |corresponding_sgx_identity|
-void SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
-                                   CodeIdentity *corresponding_sgx_identity);
-
 // Sets |generic_identity| to a randomly-initialized valid EnclaveIdentity,
 // where the |identity| is a serialized CodeIdentity. Also writes the underlying
 // SGX identity to |corresponding_sgx_identity|->code_identity.
@@ -71,24 +66,28 @@ Status SetRandomValidLegacyGenericIdentity(
     EnclaveIdentity *generic_identity, SgxIdentity *corresponding_sgx_identity);
 
 // Sets |generic_identity| to a randomly-initialized valid EnclaveIdentity,
-// where the |identity| is a serialized SgxIdentity.
-// Also writes the underlying SGX identity to |corresponding_sgx_identity|.
-Status SetRandomValidSgxGenericIdentity(
-    EnclaveIdentity *generic_identity, SgxIdentity *corresponding_sgx_identity);
+// where the |identity| is a serialized SgxIdentity. Also writes the underlying
+// SGX identity to |corresponding_sgx_identity|.
+Status SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
+                                     SgxIdentity *corresponding_sgx_identity);
 
 // Sets |generic_identity| to a randomly-initialized invalid EnclaveIdentity.
 // where the serialized identity is a CodeIdentity.
-void SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity);
+void SetRandomInvalidLegacyGenericIdentity(EnclaveIdentity *generic_identity);
 
 // Sets |generic_identity| to a randomly-initialized invalid EnclaveIdentity,
 // where the serialized identity is an SgxIdentity.
-Status SetRandomInvalidGenericSgxIdentity(EnclaveIdentity *generic_identity);
+Status SetRandomInvalidGenericIdentity(EnclaveIdentity *generic_identity);
+
+// Sets |generic_spec| to a randomly-initialized string that corresponds to a
+// valid CodeIdentityMatchSpec. Also writes the underlying match spec to
+// |corresponding_sgx_spec|->code_identity_match_spec.
+Status SetRandomValidLegacyGenericMatchSpec(
+    std::string *generic_spec, SgxIdentityMatchSpec *corresponding_sgx_spec);
 
 // Sets |generic_spec| to a randomly-initialized string that corresponds to a
 // valid SGX match spec. Also writes the underlying SGX match spec to
 // |corresponding_sgx_spec|.
-Status SetRandomValidGenericMatchSpec(
-    std::string *generic_spec, CodeIdentityMatchSpec *corresponding_sgx_spec);
 Status SetRandomValidGenericMatchSpec(
     std::string *generic_spec, SgxIdentityMatchSpec *corresponding_sgx_spec);
 

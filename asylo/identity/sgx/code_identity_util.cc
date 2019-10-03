@@ -279,10 +279,7 @@ Status ParseSgxMatchSpec(const std::string &generic_match_spec,
   return Status::OkStatus();
 }
 
-}  // namespace
-
-namespace internal {
-
+// Verifies whether |identity| is compatible with |spec|.
 bool IsIdentityCompatibleWithMatchSpec(const CodeIdentity &identity,
                                        const CodeIdentityMatchSpec &spec) {
   if (spec.is_mrenclave_match_required() && !identity.has_mrenclave()) {
@@ -295,6 +292,7 @@ bool IsIdentityCompatibleWithMatchSpec(const CodeIdentity &identity,
   return true;
 }
 
+// Verifies whether |identity| is compatible with |spec|.
 bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
                                        const SgxIdentityMatchSpec &spec) {
   const SgxMachineConfiguration &machine_config =
@@ -314,7 +312,7 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
                                            spec.code_identity_match_spec());
 }
 
-}  // namespace internal
+}  // namespace
 
 StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
@@ -327,8 +325,7 @@ StatusOr<bool> MatchIdentityToExpectation(
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Identity parameter is invalid");
   }
-  if (!internal::IsIdentityCompatibleWithMatchSpec(identity,
-                                                   expectation.match_spec())) {
+  if (!IsIdentityCompatibleWithMatchSpec(identity, expectation.match_spec())) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Identity is not compatible with specified match spec");
   }
@@ -380,8 +377,8 @@ StatusOr<bool> MatchIdentityToExpectation(
 
 Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
                       const SgxIdentity &identity,
-                      SgxIdentityExpectation *expectation) {
-  if (!IsValidMatchSpec(match_spec)) {
+                      SgxIdentityExpectation *expectation, bool is_legacy) {
+  if (!IsValidMatchSpec(match_spec, is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Match spec is invalid");
   }
@@ -433,7 +430,7 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
     return false;
   }
 
-  return internal::IsIdentityCompatibleWithMatchSpec(identity, spec);
+  return IsIdentityCompatibleWithMatchSpec(identity, spec);
 }
 
 Status ParseIdentityFromHardwareReport(const Report &report,
@@ -595,9 +592,8 @@ Status ParseSgxExpectation(
   ASYLO_RETURN_IF_ERROR(ParseSgxMatchSpec(generic_expectation.match_spec(),
                                           sgx_expectation->mutable_match_spec(),
                                           is_legacy));
-  if (!internal::IsIdentityCompatibleWithMatchSpec(
-          sgx_expectation->reference_identity(),
-          sgx_expectation->match_spec())) {
+  if (!IsIdentityCompatibleWithMatchSpec(sgx_expectation->reference_identity(),
+                                         sgx_expectation->match_spec())) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Parsed SGX expectation is invalid");
   }

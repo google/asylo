@@ -48,10 +48,12 @@ StatusOr<bool> MatchIdentityToExpectation(
     std::string *explanation, bool is_legacy = false);
 
 // Sets |expectation| based on |identity| and |match_spec|, checking the
-// validity of both components.
+// validity of both components. The |is_legacy| parameter affects the validation
+// of the |match_spec|, but not the |identity|.
 Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
                       const SgxIdentity &identity,
-                      SgxIdentityExpectation *expectation);
+                      SgxIdentityExpectation *expectation,
+                      bool is_legacy = false);
 
 // Checks if a signer-assigned identity is valid.
 bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity);
@@ -157,15 +159,6 @@ void SetTargetinfoFromSelfIdentity(Targetinfo *tinfo);
 // Verifies the hardware report |report|.
 Status VerifyHardwareReport(const Report &report);
 
-namespace internal {
-
-// Verifies whether |identity| is compatible with |spec|. This function is
-// exposed through this header for testing purposes only.
-bool IsIdentityCompatibleWithMatchSpec(const CodeIdentity &identity,
-                                       const CodeIdentityMatchSpec &spec);
-bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
-                                       const SgxIdentityMatchSpec &spec);
-}  // namespace internal
 }  // namespace sgx
 }  // namespace asylo
 

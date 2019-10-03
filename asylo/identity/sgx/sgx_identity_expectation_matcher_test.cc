@@ -239,7 +239,7 @@ TEST(SgxIdentityExpectationMatcherTest, MatchLegacyInvalidIdentity) {
 TEST(SgxIdentityExpectationMatcherTest, MatchInvalidExpectation) {
   EnclaveIdentity identity;
   SgxIdentity sgx_identity;
-  sgx::SetRandomValidSgxGenericIdentity(&identity, &sgx_identity);
+  sgx::SetRandomValidGenericIdentity(&identity, &sgx_identity);
 
   EnclaveIdentityExpectation expectation;
   ASSERT_THAT(sgx::SetRandomInvalidGenericExpectation(&expectation), IsOk());
@@ -251,16 +251,16 @@ TEST(SgxIdentityExpectationMatcherTest, MatchInvalidExpectation) {
 
 TEST(SgxIdentityExpectationMatcherTest, MatcherLegacyInvalidExpectation) {
   EnclaveIdentity identity;
-  sgx::CodeIdentity code_identity;
-  sgx::SetRandomValidGenericIdentity(&identity, &code_identity);
+  SgxIdentity sgx_identity;
+  sgx::SetRandomValidLegacyGenericIdentity(&identity, &sgx_identity);
 
   EnclaveIdentityExpectation expectation;
-  sgx::CodeIdentityExpectation code_identity_expectation;
+  SgxIdentityExpectation sgx_identity_expectation;
   ASYLO_ASSERT_OK(sgx::SetRandomInvalidGenericExpectation(&expectation));
 
   SgxIdentityExpectationMatcher matcher;
   ASSERT_THAT(matcher.Match(identity, expectation), Not(IsOk()))
-      << sgx::FormatProto(code_identity) << sgx::FormatProto(expectation);
+      << sgx::FormatProto(sgx_identity) << sgx::FormatProto(expectation);
 }
 
 // Tests that SgxIdentityExpectationMatcher returns a non-OK status when
