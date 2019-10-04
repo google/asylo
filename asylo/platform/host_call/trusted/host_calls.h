@@ -152,9 +152,11 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
 int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset);
 unsigned int enc_untrusted_if_nametoindex(const char *ifname);
 char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname);
+int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);
+void enc_freeifaddrs(struct ifaddrs *ifa);
 
 #ifdef __cplusplus
 }  // extern "C"

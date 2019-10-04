@@ -19,6 +19,10 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 #define ASYLO_PLATFORM_PRIMITIVES_UTIL_MESSAGE_H_
 
+#include <netinet/in.h>
+#include <sys/socket.h>
+#include <sys/un.h>
+
 #include <algorithm>
 #include <cstring>
 #include <functional>
@@ -29,6 +33,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/extent.h"
+#include "asylo/platform/primitives/primitive_status.h"
 
 namespace asylo {
 namespace primitives {
@@ -136,6 +141,26 @@ class MessageWriter {
   // pushes exactly |length| bytes and does not add a trailing null terminator.
   void PushString(const char *s, size_t length) {
     PushByCopy(Extent{s, length});
+  }
+
+  // Determines the type of a sockaddr and pushes it on the MessageWriter.
+  PrimitiveStatus PushSockAddr(struct sockaddr *sock) {
+    if (!sock) {
+      PushByCopy(Extent{nullptr, 0});
+    } else if (sock->sa_family == AF_UNIX) {
+      PushByCopy(
+          Extent{reinterpret_cast<char *>(sock), sizeof(struct sockaddr_un)});
+    } else if (sock->sa_family == AF_INET) {
+      PushByCopy(
+          Extent{reinterpret_cast<char *>(sock), sizeof(struct sockaddr_in)});
+    } else if (sock->sa_family == AF_INET6) {
+      PushByCopy(
+          Extent{reinterpret_cast<char *>(sock), sizeof(struct sockaddr_in6)});
+    } else {
+      return {error::GoogleError::INVALID_ARGUMENT,
+              "PushSockAddr: Unsupported sa_family encountered."};
+    }
+    return PrimitiveStatus::OkStatus();
   }
 
   // Copies the extents of |other| to this MessageWriter.

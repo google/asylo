@@ -17,14 +17,15 @@
  */
 
 #include <ifaddrs.h>
+
 #include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 
 extern "C" {
 
 int getifaddrs(struct ifaddrs **ifap) { return enc_untrusted_getifaddrs(ifap); }
 
-void freeifaddrs(struct ifaddrs *ifa) { enc_untrusted_freeifaddrs(ifa); }
+void freeifaddrs(struct ifaddrs *ifa) { enc_freeifaddrs(ifa); }
 
 }  // extern "C"

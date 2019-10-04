@@ -19,6 +19,7 @@
 #include "asylo/platform/host_call/trusted/host_calls.h"
 
 #include <errno.h>
+#include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <signal.h>
@@ -49,12 +50,19 @@ int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
 
 namespace {
 
-size_t CalculateTotalSize(const struct msghdr *msg) {
+size_t CalculateTotalMessageSize(const struct msghdr *msg) {
   size_t total_message_size = 0;
   for (int i = 0; i < msg->msg_iovlen; ++i) {
     total_message_size += msg->msg_iov[i].iov_len;
   }
   return total_message_size;
+}
+
+template <typename D, typename S>
+D *MallocAndCopy(S *src, size_t len) {
+  void *ret = malloc(len);
+  memcpy(ret, reinterpret_cast<void *>(src), len);
+  return reinterpret_cast<D *>(ret);
 }
 
 bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
@@ -70,7 +78,12 @@ bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
   struct addrinfo *prev_info = nullptr;
   for (int i = 0; i < num_addrs; i++) {
     auto info = static_cast<struct addrinfo *>(malloc(sizeof(struct addrinfo)));
-    if (info == nullptr) return false;
+    if (info == nullptr) {
+      // Roll back info and linked list constructed until now.
+      enc_freeaddrinfo(info);
+      enc_freeaddrinfo(*out);
+      return false;
+    }
     memset(info, 0, sizeof(struct addrinfo));
 
     info->ai_flags = FromkLinuxAddressInfoFlag(in->next<int>());
@@ -102,8 +115,7 @@ bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
         return false;
       }
       info->ai_addrlen = socklen;
-      info->ai_addr = reinterpret_cast<sockaddr *>(malloc(socklen));
-      memcpy(info->ai_addr, &sock, socklen);
+      info->ai_addr = MallocAndCopy<sockaddr>(&sock, socklen);
     } else {
       info->ai_addr = nullptr;
       info->ai_addrlen = 0;
@@ -121,6 +133,107 @@ bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
       prev_info->ai_next = info;
     }
     prev_info = info;
+  }
+
+  return true;
+}
+
+bool DeserializeIfAddrs(MessageReader *in, size_t num_ifaddrs,
+                        struct ifaddrs **out) {
+  if (!in || !out) return false;
+  if (num_ifaddrs == 0) {
+    if (out != nullptr) *out = nullptr;
+    return true;
+  }
+  // 5 entries per ifaddr expected on |in| for deserialization.
+  if (in->size() < num_ifaddrs * 5) return false;
+
+  struct ifaddrs *prev_addrs = nullptr;
+  for (int i = 0; i < num_ifaddrs; i++) {
+    auto addrs =
+        static_cast<struct ifaddrs *>(calloc(1, sizeof(struct ifaddrs)));
+    if (addrs == nullptr) {
+      // Roll back current ifaddrs node and linked list constructed until now.
+      enc_freeifaddrs(addrs);
+      enc_freeifaddrs(*out);
+      return false;
+    }
+
+    Extent ifa_name_buf = in->next();
+    auto klinux_ifa_flags = in->next<unsigned int>();
+    Extent klinux_ifa_addr_buf = in->next();
+    Extent klinux_ifa_netmask_buf = in->next();
+    Extent klinux_ifa_dstaddr_buf = in->next();
+
+    addrs->ifa_name = strdup(ifa_name_buf.As<char>());
+    addrs->ifa_flags = FromkLinuxIffFlag(klinux_ifa_flags);
+    addrs->ifa_data = nullptr;  // Unsupported
+
+    // Optionally set addrs->ifa_addr.
+    if (!klinux_ifa_addr_buf.empty()) {
+      const struct klinux_sockaddr *klinux_sock =
+          klinux_ifa_addr_buf.As<struct klinux_sockaddr>();
+      struct sockaddr_storage sock {};
+      socklen_t socklen = sizeof(struct sockaddr_storage);
+      if (!FromkLinuxSockAddr(klinux_sock, klinux_ifa_addr_buf.size(),
+                              reinterpret_cast<sockaddr *>(&sock), &socklen,
+                              TrustedPrimitives::BestEffortAbort)) {
+        // Roll back info and linked list constructed until now.
+        enc_freeifaddrs(addrs);
+        enc_freeifaddrs(*out);
+        return false;
+      }
+      addrs->ifa_addr = MallocAndCopy<sockaddr>(&sock, socklen);
+    } else {
+      addrs->ifa_addr = nullptr;
+    }
+
+    // Optionally set addrs->ifa_netmask.
+    if (!klinux_ifa_netmask_buf.empty()) {
+      const struct klinux_sockaddr *klinux_sock =
+          klinux_ifa_netmask_buf.As<struct klinux_sockaddr>();
+      struct sockaddr_storage sock {};
+      socklen_t socklen = sizeof(struct sockaddr_storage);
+      if (!FromkLinuxSockAddr(klinux_sock, klinux_ifa_netmask_buf.size(),
+                              reinterpret_cast<sockaddr *>(&sock), &socklen,
+                              TrustedPrimitives::BestEffortAbort)) {
+        // Roll back current ifaddrs node and linked list constructed until now.
+        enc_freeifaddrs(addrs);
+        enc_freeifaddrs(*out);
+        return false;
+      }
+      addrs->ifa_netmask = MallocAndCopy<sockaddr>(&sock, socklen);
+    } else {
+      addrs->ifa_netmask = nullptr;
+    }
+
+    // Optionally set addrs->ifa_ifu.ifu_dstaddr.
+    if (!klinux_ifa_dstaddr_buf.empty()) {
+      const struct klinux_sockaddr *klinux_sock =
+          klinux_ifa_dstaddr_buf.As<struct klinux_sockaddr>();
+      struct sockaddr_storage sock {};
+      socklen_t socklen = sizeof(struct sockaddr_storage);
+      if (!FromkLinuxSockAddr(klinux_sock, klinux_ifa_dstaddr_buf.size(),
+                              reinterpret_cast<sockaddr *>(&sock), &socklen,
+                              TrustedPrimitives::BestEffortAbort)) {
+        // Roll back current ifaddrs node and linked list constructed until now.
+        enc_freeifaddrs(addrs);
+        enc_freeifaddrs(*out);
+        return false;
+      }
+      addrs->ifa_ifu.ifu_dstaddr = MallocAndCopy<sockaddr>(&sock, socklen);
+    } else {
+      addrs->ifa_ifu.ifu_dstaddr = nullptr;
+    }
+
+    // Construct ifaddrs linked list.
+    addrs->ifa_next = nullptr;
+    if (!prev_addrs) {
+      *out = addrs;
+    } else {
+      prev_addrs->ifa_next = addrs;
+    }
+    prev_addrs = addrs;
   }
 
   return true;
@@ -670,7 +783,7 @@ int enc_untrusted_connect(int sockfd, const struct sockaddr *addr,
 }
 
 ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
-  size_t total_message_size = CalculateTotalSize(msg);
+  size_t total_message_size = CalculateTotalMessageSize(msg);
   std::unique_ptr<char[]> msg_iov_buffer(new char[total_message_size]);
   size_t copied_bytes = 0;
   for (int i = 0; i < msg->msg_iovlen; ++i) {
@@ -707,7 +820,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
 }
 
 ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
-  size_t total_buffer_size = CalculateTotalSize(msg);
+  size_t total_buffer_size = CalculateTotalMessageSize(msg);
 
   MessageWriter input;
   input.Push(sockfd);
@@ -1116,7 +1229,7 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
 
   int klinux_ret = output.next<int>();
   int klinux_errno = output.next<int>();
-  size_t num_addrinfos = output.next<int>();
+  size_t num_addrinfos = output.next<size_t>();
 
   int ret = FromkLinuxAddressInfoError(klinux_ret);
   if (ret != 0) {
@@ -1340,7 +1453,7 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
         "Aborting");
   }
 
-  unsigned int result = output.next<unsigned int>();
+  auto result = output.next<unsigned int>();
   int klinux_errno = output.next<int>();
   if (result == 0) {
     errno = FromkLinuxErrorNumber(klinux_errno);
@@ -1426,6 +1539,58 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
     }
   }
   return result;
+}
+
+int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
+  MessageWriter input;
+  MessageReader output;
+
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kGetIfAddrsHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_getifaddrs failed.");
+  }
+  if (output.size() < 3) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getifaddrs: Expected at least 3 parameters received on "
+        "output MessageReader.");
+  }
+
+  int result = output.next<int>();
+  int klinux_errno = output.next<int>();
+  size_t num_ifaddrs = output.next<size_t>();
+  if (result != 0) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
+    return result;
+  }
+
+  // We are to pop 5 entries per ifaddrs from output.
+  if (output.size() != 3 + (num_ifaddrs * 5)) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getifaddrs: addrinfo deserialization error. Unexpected "
+        "number of arguments on the MessageReader.");
+  }
+
+  if (!DeserializeIfAddrs(&output, num_ifaddrs, ifap)) {
+    TrustedPrimitives::DebugPuts(
+        "enc_untrusted_getifaddrs: Invalid ifaddrs in response.");
+    return -1;
+  }
+  return 0;
+}
+
+void enc_freeifaddrs(struct ifaddrs *ifa) {
+  struct ifaddrs *curr = ifa;
+  while (curr != nullptr) {
+    struct ifaddrs *next = curr->ifa_next;
+    if (curr->ifa_name) free(curr->ifa_name);
+    if (curr->ifa_addr) free(curr->ifa_addr);
+    if (curr->ifa_netmask) free(curr->ifa_netmask);
+    if (curr->ifa_ifu.ifu_dstaddr) free(curr->ifa_ifu.ifu_dstaddr);
+    free(curr);
+    curr = next;
+  }
 }
 
 }  // extern "C"

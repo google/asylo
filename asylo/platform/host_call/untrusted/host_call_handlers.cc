@@ -20,6 +20,7 @@
 
 #include <arpa/inet.h>
 #include <errno.h>
+#include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
 #include <signal.h>
@@ -43,6 +44,72 @@ size_t GetNumAddrinfos(struct addrinfo *addrs) {
     ret++;
   }
   return ret;
+}
+
+// Returns true if the sa_family is AF_INET or AF_INET6, false otherwise.
+bool IpCompliant(const struct sockaddr *addr) {
+  return (addr->sa_family == AF_INET) || (addr->sa_family == AF_INET6);
+}
+
+bool IsIfAddrSupported(const struct ifaddrs *entry) {
+  if (entry->ifa_addr && !IpCompliant(entry->ifa_addr)) return false;
+  if (entry->ifa_netmask && !IpCompliant(entry->ifa_netmask)) return false;
+  if (entry->ifa_ifu.ifu_dstaddr && !IpCompliant(entry->ifa_ifu.ifu_dstaddr)) {
+    return false;
+  }
+  return true;
+}
+
+// Gets the number of ifaddr nodes in a linked list of ifaddrs. Skips nodes that
+// have unsupported AF families.
+size_t GetNumIfAddrs(struct ifaddrs *addrs) {
+  size_t ret = 0;
+  for (struct ifaddrs *addr = addrs; addr != nullptr; addr = addr->ifa_next) {
+    if (IsIfAddrSupported(addr)) ret++;
+  }
+  return ret;
+}
+
+Status SerializeIfAddrs(primitives::MessageWriter *writer,
+                        struct ifaddrs *ifaddr_list) {
+  if (!writer || !ifaddr_list) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "SerializeIfAddrs: NULL MessageWriter or ifaddrs provided."};
+  }
+
+  for (struct ifaddrs *addr = ifaddr_list; addr != nullptr;
+       addr = addr->ifa_next) {
+    // If the entry is of a format we don't support, don't include it.
+    if (!IsIfAddrSupported(addr)) continue;
+
+    // We push 5 entries per ifaddr to output.
+    writer->PushString(addr->ifa_name);
+    writer->Push<uint32_t>(addr->ifa_flags);
+    ASYLO_RETURN_IF_ERROR(MakeStatus(writer->PushSockAddr(addr->ifa_addr)));
+    ASYLO_RETURN_IF_ERROR(MakeStatus(writer->PushSockAddr(addr->ifa_netmask)));
+    ASYLO_RETURN_IF_ERROR(
+        MakeStatus(writer->PushSockAddr(addr->ifa_ifu.ifu_dstaddr)));
+  }
+
+  return Status::OkStatus();
+}
+
+Status SerializeAddrInfo(primitives::MessageWriter *writer,
+                         struct addrinfo *addrs) {
+  for (struct addrinfo *addr = addrs; addr != nullptr; addr = addr->ai_next) {
+    // We push 6 entries per addrinfo to output.
+    writer->Push<int>(addr->ai_flags);
+    writer->Push<int>(addr->ai_family);
+    writer->Push<int>(addr->ai_socktype);
+    writer->Push<int>(addr->ai_protocol);
+    writer->PushByCopy(
+        Extent{reinterpret_cast<char *>(addr->ai_addr), addr->ai_addrlen});
+    writer->PushByCopy(Extent{
+        addr->ai_canonname,
+        addr->ai_canonname == nullptr ? 0 : strlen(addr->ai_canonname) + 1});
+  }
+
+  return Status::OkStatus();
 }
 
 }  // namespace
@@ -359,19 +426,7 @@ Status GetAddrInfoHandler(const std::shared_ptr<primitives::Client> &client,
       getaddrinfo(node, service, hints_provided ? &hints : nullptr, &result));
   output->Push<int>(errno);
   output->Push<uint64_t>(GetNumAddrinfos(result));
-
-  for (struct addrinfo *addr = result; addr != nullptr; addr = addr->ai_next) {
-    // We push 6 entries per addrinfo to output.
-    output->Push<int>(addr->ai_flags);
-    output->Push<int>(addr->ai_family);
-    output->Push<int>(addr->ai_socktype);
-    output->Push<int>(addr->ai_protocol);
-    output->PushByCopy(
-        Extent{reinterpret_cast<char *>(addr->ai_addr), addr->ai_addrlen});
-    output->PushByCopy(Extent{
-        addr->ai_canonname,
-        addr->ai_canonname == nullptr ? 0 : strlen(addr->ai_canonname) + 1});
-  }
+  ASYLO_RETURN_IF_ERROR(SerializeAddrInfo(output, result));
 
   // result has been copied to MessageWriter, so free it up.
   freeaddrinfo(result);
@@ -457,6 +512,20 @@ Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
   output->PushString(if_indextoname(ifindex, ifname));
   output->Push<int>(errno);
 
+  return Status::OkStatus();
+}
+
+Status GetIfAddrsHandler(const std::shared_ptr<primitives::Client> &client,
+                         void *context, primitives::MessageReader *input,
+                         primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_READER_NOT_EMPTY(*input);
+  struct ifaddrs *ifaddr_list = nullptr;
+  output->Push<int>(getifaddrs(&ifaddr_list));
+  output->Push<int>(errno);
+  output->Push<uint64_t>(GetNumIfAddrs(ifaddr_list));
+  ASYLO_RETURN_IF_ERROR(SerializeIfAddrs(output, ifaddr_list));
+
+  freeifaddrs(ifaddr_list);
   return Status::OkStatus();
 }
 

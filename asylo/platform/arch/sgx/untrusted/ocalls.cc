@@ -237,27 +237,6 @@ int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
 }
 
 //////////////////////////////////////
-//           ifaddrs.h              //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_getifaddrs(char **serialized_ifaddrs,
-                                   bridge_ssize_t *serialized_ifaddrs_len) {
-  struct ifaddrs *ifaddr_list = nullptr;
-  int ret = getifaddrs(&ifaddr_list);
-  if (ret != 0) {
-    return -1;
-  }
-  size_t len = 0;
-  if (!asylo::SerializeIfAddrs(ifaddr_list, serialized_ifaddrs, &len)) {
-    freeifaddrs(ifaddr_list);
-    return -1;
-  }
-  *serialized_ifaddrs_len = static_cast<bridge_ssize_t>(len);
-  freeifaddrs(ifaddr_list);
-  return ret;
-}
-
-//////////////////////////////////////
 //            pwd.h                 //
 //////////////////////////////////////
 

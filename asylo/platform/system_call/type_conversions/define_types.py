@@ -287,6 +287,17 @@ define_constants(
     multi_valued=True,
     data_type="uint32_t")
 
+define_constants(
+    name="IffFlag",
+    values=[
+        "IFF_UP", "IFF_BROADCAST", "IFF_DEBUG", "IFF_LOOPBACK",
+        "IFF_POINTOPOINT", "IFF_NOTRAILERS", "IFF_RUNNING", "IFF_NOARP",
+        "IFF_PROMISC", "IFF_ALLMULTI", "IFF_MULTICAST"
+    ],
+    include_header_file="net/if.h",
+    multi_valued=True,
+    data_type="unsigned int")
+
 define_struct(
     name="timespec",
     values=[

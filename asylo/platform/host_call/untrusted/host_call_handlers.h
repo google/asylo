@@ -167,6 +167,16 @@ Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
                             void *context, primitives::MessageReader *input,
                             primitives::MessageWriter *output);
 
+// getifaddrs library call handler on the host; expects no input parameter, and
+// returns [int result, int errno, size_t num_ifaddrs, (char *ifa_name,
+// unsigned int ifa_flags, struct sockaddr ifa_addr, struct sockaddr
+// ifa_netmask, struct sockaddr ifa_dstaddr)] on
+// the MessageWriter. The items in () braces are repeated in multiples of
+// num_ifaddrs.
+Status GetIfAddrsHandler(const std::shared_ptr<primitives::Client> &client,
+                         void *context, primitives::MessageReader *input,
+                         primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

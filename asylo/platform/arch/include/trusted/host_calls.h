@@ -85,13 +85,6 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
                                size_t *serialized_events_len);
 
 //////////////////////////////////////
-//            ifaddrs.h             //
-//////////////////////////////////////
-
-int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
-void enc_untrusted_freeifaddrs(struct ifaddrs *ifa);
-
-//////////////////////////////////////
 //              pwd.h               //
 //////////////////////////////////////
 

@@ -65,14 +65,6 @@ enclave {
         [out] bridge_size_t *serialized_events_len) propagate_errno;
 
     //////////////////////////////////////
-    //           ifaddrs.h              //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_getifaddrs(
-        [out] char **serialized_ifaddrs,
-        [out] bridge_ssize_t *serialized_ifaddrs_len) propagate_errno;
-
-    //////////////////////////////////////
     //            pwd.h                 //
     //////////////////////////////////////
 

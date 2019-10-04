@@ -65,11 +65,11 @@ primitives::PrimitiveStatus SystemCallDispatcher(const uint8_t* request_buffer,
 primitives::PrimitiveStatus NonSystemCallDispatcher(
     uint64_t exit_selector, primitives::MessageWriter* input,
     primitives::MessageReader* output) {
-  if (input == nullptr || input->empty()) {
+  if (!input) {
     return primitives::PrimitiveStatus{
         error::GoogleError::FAILED_PRECONDITION,
-        "Null or empty input provided. Need a valid request to dispatch the "
-        "host call"};
+        "NonSystemCallDispatcher: Null input provided. Need a valid request to "
+        "dispatch the host call"};
   }
 
   ASYLO_RETURN_IF_ERROR(primitives::TrustedPrimitives::UntrustedCall(
