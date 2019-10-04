@@ -38,7 +38,9 @@
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
+#include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -1041,7 +1043,11 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   ASSERT_EQ(ret, 0);
   struct ifaddrs *enclave_front = nullptr;
   std::string serialized_ifaddrs = test_output.serialized_proto_return();
-  ASSERT_TRUE(asylo::DeserializeIfAddrs(serialized_ifaddrs, &enclave_front));
+
+  primitives::MessageReader reader;
+  reader.Deserialize(serialized_ifaddrs.data(), serialized_ifaddrs.length());
+  ASSERT_TRUE(host_call::DeserializeIfAddrs(&reader, &enclave_front, nullptr));
+
   // Since we cannot rely on any sort of ordering in the linked lists, we will
   // only verify that every IPv4/IPv6 entry in the enclave list also exists in
   // the host list. Furthermore, we shall verify that all IPv4/IPv6 entries in
@@ -1059,13 +1065,13 @@ TEST_F(SyscallsTest, GetIfAddrs) {
   // entries encountered are in our set.
   for (struct ifaddrs *host_list_curr = host_front; host_list_curr != nullptr;
        host_list_curr = host_list_curr->ifa_next) {
-    if (IfAddrSupported(host_list_curr)) {
+    if (host_call::IsIfAddrSupported(host_list_curr)) {
       supported_host.push_back(host_list_curr);
     }
   }
   EXPECT_THAT(supported_host.size(), Eq(expected.size())) << serialized_ifaddrs;
   EXPECT_THAT(supported_host, UnorderedElementsAreArray(expected));
-  asylo::FreeDeserializedIfAddrs(enclave_front);
+  asylo::host_call::FreeDeserializedIfAddrs(enclave_front);
   freeifaddrs(host_front);
 }
 

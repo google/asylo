@@ -57,6 +57,15 @@ primitives::PrimitiveStatus SerializeIfAddrs(
     void (*abort_handler)(const char *message),
     bool explicit_klinux_conversion = false);
 
+// Returns true if all sockaddr fields are compatible with IPv4 or IPv6, false
+// otherwise. The sockaddr fields in the ifaddrs struct may also be null.
+// IfAddrSupported is exposed here since it is used in tests.
+bool IsIfAddrSupported(const struct ifaddrs *entry);
+
+// Frees up the ifaddrs that are allocated by enc_untrusted_getifaddrs() or by
+// DeserializeIfAddrs.
+void FreeDeserializedIfAddrs(struct ifaddrs *ifa);
+
 }  // namespace host_call
 }  // namespace asylo
 

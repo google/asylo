@@ -42,15 +42,6 @@ bool IpCompliant(const struct sockaddr *addr) {
   return (addr->sa_family == AF_INET) || (addr->sa_family == AF_INET6);
 }
 
-bool IsIfAddrSupported(const struct ifaddrs *entry) {
-  if (entry->ifa_addr && !IpCompliant(entry->ifa_addr)) return false;
-  if (entry->ifa_netmask && !IpCompliant(entry->ifa_netmask)) return false;
-  if (entry->ifa_ifu.ifu_dstaddr && !IpCompliant(entry->ifa_ifu.ifu_dstaddr)) {
-    return false;
-  }
-  return true;
-}
-
 // Gets the number of ifaddr nodes in a linked list of ifaddrs. Skips nodes that
 // have unsupported AF families.
 size_t GetNumIfAddrs(struct ifaddrs *addrs) {
@@ -96,8 +87,9 @@ PrimitiveStatus PushkLinuxSockAddrToWriter(
   }
 
   socklen_t klinux_sock_len =
-      std::max(std::max(sizeof(klinux_sockaddr_un), sizeof(klinux_sockaddr_in)),
-               sizeof(klinux_sockaddr_in6));
+      std::max(std::max(sizeof(struct klinux_sockaddr_un),
+                        sizeof(struct klinux_sockaddr_in)),
+               sizeof(struct klinux_sockaddr_in6));
   auto klinux_sock = absl::make_unique<char[]>(klinux_sock_len);
 
   if (!TokLinuxSockAddr(sock, GetSocklen(sock, abort_handler),
@@ -111,6 +103,15 @@ PrimitiveStatus PushkLinuxSockAddrToWriter(
 }
 
 }  // namespace
+
+bool IsIfAddrSupported(const struct ifaddrs *entry) {
+  if (entry->ifa_addr && !IpCompliant(entry->ifa_addr)) return false;
+  if (entry->ifa_netmask && !IpCompliant(entry->ifa_netmask)) return false;
+  if (entry->ifa_ifu.ifu_dstaddr && !IpCompliant(entry->ifa_ifu.ifu_dstaddr)) {
+    return false;
+  }
+  return true;
+}
 
 bool DeserializeAddrinfo(primitives::MessageReader *in, struct addrinfo **out,
                          void (*abort_handler)(const char *message)) {
@@ -129,7 +130,7 @@ bool DeserializeAddrinfo(primitives::MessageReader *in, struct addrinfo **out,
   struct addrinfo *prev_info = nullptr;
   for (int i = 0; i < num_addrs; i++) {
     auto info = static_cast<struct addrinfo *>(malloc(sizeof(struct addrinfo)));
-    if (info == nullptr) {
+    if (!info) {
       // Roll back info and linked list constructed until now.
       freeaddrinfo(info);
       freeaddrinfo(*out);
@@ -194,7 +195,9 @@ bool DeserializeIfAddrs(primitives::MessageReader *in, struct ifaddrs **out,
   if (!in || !out || in->empty()) return false;
   size_t num_ifaddrs = in->next<size_t>();
   if (num_ifaddrs == 0) {
-    if (out != nullptr) *out = nullptr;
+    if (out) {
+      *out = nullptr;
+    }
     return true;
   }
 
@@ -205,7 +208,7 @@ bool DeserializeIfAddrs(primitives::MessageReader *in, struct ifaddrs **out,
   for (int i = 0; i < num_ifaddrs; i++) {
     auto addrs =
         static_cast<struct ifaddrs *>(calloc(1, sizeof(struct ifaddrs)));
-    if (addrs == nullptr) {
+    if (!addrs) {
       // Roll back current ifaddrs node and linked list constructed until now.
       freeifaddrs(addrs);
       freeifaddrs(*out);
@@ -371,6 +374,19 @@ PrimitiveStatus SerializeIfAddrs(primitives::MessageWriter *writer,
   }
 
   return PrimitiveStatus::OkStatus();
+}
+
+void FreeDeserializedIfAddrs(struct ifaddrs *ifa) {
+  struct ifaddrs *curr = ifa;
+  while (curr != nullptr) {
+    struct ifaddrs *next = curr->ifa_next;
+    if (curr->ifa_name) free(curr->ifa_name);
+    if (curr->ifa_addr) free(curr->ifa_addr);
+    if (curr->ifa_netmask) free(curr->ifa_netmask);
+    if (curr->ifa_ifu.ifu_dstaddr) free(curr->ifa_ifu.ifu_dstaddr);
+    free(curr);
+    curr = next;
+  }
 }
 
 }  // namespace host_call

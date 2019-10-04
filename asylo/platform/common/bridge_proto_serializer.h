@@ -38,17 +38,6 @@ namespace asylo {
 
 constexpr int kIn6AddrNumBytes = 16;
 
-bool SerializeIfAddrs(const struct ifaddrs *in, char **out, size_t *len);
-
-bool DeserializeIfAddrs(absl::string_view in, struct ifaddrs **out);
-
-void FreeDeserializedIfAddrs(struct ifaddrs *ifa);
-
-// Returns true if all sockaddr fields are compatible with IPv4 or IPv6, false
-// otherwise. The sockaddr fields in the ifaddrs struct may also be null.
-// IfAddrSupported is exposed here since it is used in tests.
-bool IfAddrSupported(const struct ifaddrs *entry);
-
 bool SerializeInotifyEvents(char *buf, size_t buf_len, char **out, size_t *len);
 
 bool DeserializeInotifyEvents(absl::string_view in,

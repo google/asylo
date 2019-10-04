@@ -40,7 +40,11 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
+#include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
+#include "asylo/platform/primitives/util/message.h"
+#include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/util/posix_error_space.h"
@@ -1179,13 +1183,21 @@ class SyscallsEnclave : public EnclaveTestCase {
   Status RunGetIfAddrsTest(EnclaveOutput *output) {
     struct ifaddrs *front = nullptr;
     int ret = getifaddrs(&front);
-    char *serialized_ifaddrs = nullptr;
-    size_t len;
-    asylo::SerializeIfAddrs(front, &serialized_ifaddrs, &len);
+
+    primitives::MessageWriter writer;
+    ASYLO_RETURN_IF_ERROR(
+        primitives::MakeStatus(asylo::host_call::SerializeIfAddrs(
+            &writer, front, primitives::TrustedPrimitives::BestEffortAbort,
+            /*explicit_klinux_conversion=*/true)));
+
+    const size_t message_len = writer.MessageSize();
+    auto message_buffer = absl::make_unique<char[]>(message_len);
+    writer.Serialize(message_buffer.get());
+
     freeifaddrs(front);
     SyscallsTestOutput output_ret;
     output_ret.set_serialized_proto_return(
-        std::string(serialized_ifaddrs, len));
+        std::string(message_buffer.get(), message_len));
     output_ret.set_int_syscall_return(ret);
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
@@ -1431,8 +1443,7 @@ class SyscallsEnclave : public EnclaveTestCase {
                     "mmap(MAP_ANONYMOUS) returned uninitialized memory");
     }
     if (munmap(ptr, 10000) != 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    "munmap() failed");
+      return Status(static_cast<error::PosixError>(errno), "munmap() failed");
     }
     return Status::OkStatus();
   }

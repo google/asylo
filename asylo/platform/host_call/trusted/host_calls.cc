@@ -514,7 +514,7 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
 
   // realloc only sets the errno (ENOMEM) when output pointer is null and a
   // non-zero |size| is provided.
-  if (result == nullptr && size != 0) {
+  if (!result && size != 0) {
     int klinux_errno = output.next<int>();
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
@@ -1387,16 +1387,7 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
 }
 
 void enc_freeifaddrs(struct ifaddrs *ifa) {
-  struct ifaddrs *curr = ifa;
-  while (curr != nullptr) {
-    struct ifaddrs *next = curr->ifa_next;
-    if (curr->ifa_name) free(curr->ifa_name);
-    if (curr->ifa_addr) free(curr->ifa_addr);
-    if (curr->ifa_netmask) free(curr->ifa_netmask);
-    if (curr->ifa_ifu.ifu_dstaddr) free(curr->ifa_ifu.ifu_dstaddr);
-    free(curr);
-    curr = next;
-  }
+  asylo::host_call::FreeDeserializedIfAddrs(ifa);
 }
 
 }  // extern "C"
