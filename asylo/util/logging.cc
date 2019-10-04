@@ -134,6 +134,7 @@ bool EnsureDirectory(const char *path) {
 }
 
 bool InitLogging(const char *directory, const char *file_name, int level) {
+  tzset();  // For later use of localtime_r()
   set_vlog_level(level);
   std::string log_directory = directory ? std::string(directory) : "";
   if (!set_log_directory(log_directory)) {
@@ -188,8 +189,9 @@ void LogMessage::Init(const char *file, int line, LogSeverity severity) {
 
   constexpr int kTimeMessageSize = 22;
   char buffer[kTimeMessageSize];
+  struct tm datetime;
   strftime(buffer, kTimeMessageSize, "%Y-%m-%d %H:%M:%S  ",
-           localtime(&time_stamp.tv_sec));
+           localtime_r(&time_stamp.tv_sec, &datetime));
   stream() << buffer;
   stream() << LogSeverityNames[severity_] << "  " << filename << " : " << line
            << " : ";
