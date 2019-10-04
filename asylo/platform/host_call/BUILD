@@ -33,6 +33,7 @@ cc_library(
     deps = [
         ":exit_handler_constants",
         ":host_call_dispatcher",
+        ":serializer_functions",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/system_call",
         "//asylo/platform/system_call/type_conversions",
@@ -46,11 +47,27 @@ cc_library(
     hdrs = ["untrusted/host_call_handlers.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":serializer_functions",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/platform/system_call:untrusted_invoke",
         "//asylo/util:status",
+    ],
+)
+
+# Library containing functions for serializing/deserializing data structures on
+# the MessageWriter.
+cc_library(
+    name = "serializer_functions",
+    srcs = ["serializer_functions.cc"],
+    hdrs = ["serializer_functions.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/platform/system_call/type_conversions",
+        "//asylo/util:status_macros",
     ],
 )
 

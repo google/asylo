@@ -28,6 +28,7 @@
 #include <algorithm>
 
 #include "asylo/platform/host_call/exit_handler_constants.h"
+#include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/host_call/trusted/host_call_dispatcher.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
@@ -56,187 +57,6 @@ size_t CalculateTotalMessageSize(const struct msghdr *msg) {
     total_message_size += msg->msg_iov[i].iov_len;
   }
   return total_message_size;
-}
-
-template <typename D, typename S>
-D *MallocAndCopy(S *src, size_t len) {
-  void *ret = malloc(len);
-  memcpy(ret, reinterpret_cast<void *>(src), len);
-  return reinterpret_cast<D *>(ret);
-}
-
-bool DeserializeAddrinfo(MessageReader *in, size_t num_addrs,
-                         struct addrinfo **out) {
-  if (!in || !out) return false;
-  if (num_addrs == 0) {
-    *out = nullptr;
-    return true;
-  }
-  // 6 entries per addrinfo expected on |in| for deserialization.
-  if (in->size() < num_addrs * 6) return false;
-
-  struct addrinfo *prev_info = nullptr;
-  for (int i = 0; i < num_addrs; i++) {
-    auto info = static_cast<struct addrinfo *>(malloc(sizeof(struct addrinfo)));
-    if (info == nullptr) {
-      // Roll back info and linked list constructed until now.
-      enc_freeaddrinfo(info);
-      enc_freeaddrinfo(*out);
-      return false;
-    }
-    memset(info, 0, sizeof(struct addrinfo));
-
-    info->ai_flags = FromkLinuxAddressInfoFlag(in->next<int>());
-    info->ai_family = FromkLinuxAfFamily(in->next<int>());
-    info->ai_socktype = FromkLinuxSocketType(in->next<int>());
-    info->ai_protocol = in->next<int>();
-    Extent klinux_sockaddr_buf = in->next();
-    Extent ai_canonname = in->next();
-
-    if (info->ai_socktype == -1) {
-      // Roll back info and linked list constructed until now.
-      enc_freeaddrinfo(info);
-      enc_freeaddrinfo(*out);
-      return false;
-    }
-
-    // Optionally set ai_addr and ai_addrlen.
-    if (!klinux_sockaddr_buf.empty()) {
-      const struct klinux_sockaddr *klinux_sock =
-          klinux_sockaddr_buf.As<struct klinux_sockaddr>();
-      struct sockaddr_storage sock {};
-      socklen_t socklen = sizeof(struct sockaddr_storage);
-      if (!FromkLinuxSockAddr(klinux_sock, klinux_sockaddr_buf.size(),
-                              reinterpret_cast<sockaddr *>(&sock), &socklen,
-                              TrustedPrimitives::BestEffortAbort)) {
-        // Roll back info and linked list constructed until now.
-        enc_freeaddrinfo(info);
-        enc_freeaddrinfo(*out);
-        return false;
-      }
-      info->ai_addrlen = socklen;
-      info->ai_addr = MallocAndCopy<sockaddr>(&sock, socklen);
-    } else {
-      info->ai_addr = nullptr;
-      info->ai_addrlen = 0;
-    }
-
-    // Optionally set ai_canonname.
-    info->ai_canonname =
-        ai_canonname.empty() ? nullptr : strdup(ai_canonname.As<char>());
-
-    // Construct addrinfo linked list.
-    info->ai_next = nullptr;
-    if (!prev_info) {
-      *out = info;
-    } else {
-      prev_info->ai_next = info;
-    }
-    prev_info = info;
-  }
-
-  return true;
-}
-
-bool DeserializeIfAddrs(MessageReader *in, size_t num_ifaddrs,
-                        struct ifaddrs **out) {
-  if (!in || !out) return false;
-  if (num_ifaddrs == 0) {
-    if (out != nullptr) *out = nullptr;
-    return true;
-  }
-  // 5 entries per ifaddr expected on |in| for deserialization.
-  if (in->size() < num_ifaddrs * 5) return false;
-
-  struct ifaddrs *prev_addrs = nullptr;
-  for (int i = 0; i < num_ifaddrs; i++) {
-    auto addrs =
-        static_cast<struct ifaddrs *>(calloc(1, sizeof(struct ifaddrs)));
-    if (addrs == nullptr) {
-      // Roll back current ifaddrs node and linked list constructed until now.
-      enc_freeifaddrs(addrs);
-      enc_freeifaddrs(*out);
-      return false;
-    }
-
-    Extent ifa_name_buf = in->next();
-    auto klinux_ifa_flags = in->next<unsigned int>();
-    Extent klinux_ifa_addr_buf = in->next();
-    Extent klinux_ifa_netmask_buf = in->next();
-    Extent klinux_ifa_dstaddr_buf = in->next();
-
-    addrs->ifa_name = strdup(ifa_name_buf.As<char>());
-    addrs->ifa_flags = FromkLinuxIffFlag(klinux_ifa_flags);
-    addrs->ifa_data = nullptr;  // Unsupported
-
-    // Optionally set addrs->ifa_addr.
-    if (!klinux_ifa_addr_buf.empty()) {
-      const struct klinux_sockaddr *klinux_sock =
-          klinux_ifa_addr_buf.As<struct klinux_sockaddr>();
-      struct sockaddr_storage sock {};
-      socklen_t socklen = sizeof(struct sockaddr_storage);
-      if (!FromkLinuxSockAddr(klinux_sock, klinux_ifa_addr_buf.size(),
-                              reinterpret_cast<sockaddr *>(&sock), &socklen,
-                              TrustedPrimitives::BestEffortAbort)) {
-        // Roll back info and linked list constructed until now.
-        enc_freeifaddrs(addrs);
-        enc_freeifaddrs(*out);
-        return false;
-      }
-      addrs->ifa_addr = MallocAndCopy<sockaddr>(&sock, socklen);
-    } else {
-      addrs->ifa_addr = nullptr;
-    }
-
-    // Optionally set addrs->ifa_netmask.
-    if (!klinux_ifa_netmask_buf.empty()) {
-      const struct klinux_sockaddr *klinux_sock =
-          klinux_ifa_netmask_buf.As<struct klinux_sockaddr>();
-      struct sockaddr_storage sock {};
-      socklen_t socklen = sizeof(struct sockaddr_storage);
-      if (!FromkLinuxSockAddr(klinux_sock, klinux_ifa_netmask_buf.size(),
-                              reinterpret_cast<sockaddr *>(&sock), &socklen,
-                              TrustedPrimitives::BestEffortAbort)) {
-        // Roll back current ifaddrs node and linked list constructed until now.
-        enc_freeifaddrs(addrs);
-        enc_freeifaddrs(*out);
-        return false;
-      }
-      addrs->ifa_netmask = MallocAndCopy<sockaddr>(&sock, socklen);
-    } else {
-      addrs->ifa_netmask = nullptr;
-    }
-
-    // Optionally set addrs->ifa_ifu.ifu_dstaddr.
-    if (!klinux_ifa_dstaddr_buf.empty()) {
-      const struct klinux_sockaddr *klinux_sock =
-          klinux_ifa_dstaddr_buf.As<struct klinux_sockaddr>();
-      struct sockaddr_storage sock {};
-      socklen_t socklen = sizeof(struct sockaddr_storage);
-      if (!FromkLinuxSockAddr(klinux_sock, klinux_ifa_dstaddr_buf.size(),
-                              reinterpret_cast<sockaddr *>(&sock), &socklen,
-                              TrustedPrimitives::BestEffortAbort)) {
-        // Roll back current ifaddrs node and linked list constructed until now.
-        enc_freeifaddrs(addrs);
-        enc_freeifaddrs(*out);
-        return false;
-      }
-      addrs->ifa_ifu.ifu_dstaddr = MallocAndCopy<sockaddr>(&sock, socklen);
-    } else {
-      addrs->ifa_ifu.ifu_dstaddr = nullptr;
-    }
-
-    // Construct ifaddrs linked list.
-    addrs->ifa_next = nullptr;
-    if (!prev_addrs) {
-      *out = addrs;
-    } else {
-      prev_addrs->ifa_next = addrs;
-    }
-    prev_addrs = addrs;
-  }
-
-  return true;
 }
 
 }  // namespace
@@ -1229,7 +1049,6 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
 
   int klinux_ret = output.next<int>();
   int klinux_errno = output.next<int>();
-  size_t num_addrinfos = output.next<size_t>();
 
   int ret = FromkLinuxAddressInfoError(klinux_ret);
   if (ret != 0) {
@@ -1239,14 +1058,8 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
     return ret;
   }
 
-  // We are to pop 6 entries per addrinfo from output.
-  if (output.size() != 3 + (num_addrinfos * 6)) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getaddrinfo: addrinfo deserialization error. Unexpected "
-        "number of arguments on the MessageReader.");
-  }
-
-  if (!DeserializeAddrinfo(&output, num_addrinfos, res)) {
+  if (!asylo::host_call::DeserializeAddrinfo(
+          &output, res, TrustedPrimitives::BestEffortAbort)) {
     TrustedPrimitives::DebugPuts(
         "enc_untrusted_getaddrinfo: Invalid addrinfo in response.");
     return -1;
@@ -1559,20 +1372,13 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
-  size_t num_ifaddrs = output.next<size_t>();
   if (result != 0) {
     errno = FromkLinuxErrorNumber(klinux_errno);
     return result;
   }
 
-  // We are to pop 5 entries per ifaddrs from output.
-  if (output.size() != 3 + (num_ifaddrs * 5)) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getifaddrs: addrinfo deserialization error. Unexpected "
-        "number of arguments on the MessageReader.");
-  }
-
-  if (!DeserializeIfAddrs(&output, num_ifaddrs, ifap)) {
+  if (!asylo::host_call::DeserializeIfAddrs(
+          &output, ifap, TrustedPrimitives::BestEffortAbort)) {
     TrustedPrimitives::DebugPuts(
         "enc_untrusted_getifaddrs: Invalid ifaddrs in response.");
     return -1;

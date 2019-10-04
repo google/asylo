@@ -1,0 +1,63 @@
+/*
+ *
+ * Copyright 2019 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#ifndef ASYLO_PLATFORM_HOST_CALL_SERIALIZER_FUNCTIONS_H_
+#define ASYLO_PLATFORM_HOST_CALL_SERIALIZER_FUNCTIONS_H_
+
+#include <ifaddrs.h>
+#include <netdb.h>
+#include <sys/socket.h>
+
+#include "asylo/platform/primitives/primitive_status.h"
+#include "asylo/platform/primitives/util/message.h"
+
+namespace asylo {
+namespace host_call {
+
+// Deserializes a MessageReader containing serialized linked list of addrinfos
+// into |*out|.
+bool DeserializeAddrinfo(primitives::MessageReader *in, struct addrinfo **out,
+                         void (*abort_handler)(const char *message));
+
+// Deserializes a MessageReader containing serialized linked list of ifaddrs
+// into |*out|.
+bool DeserializeIfAddrs(primitives::MessageReader *in, struct ifaddrs **out,
+                        void (*abort_handler)(const char *message));
+
+// Serializes a native addrinfo linked list on the MessageWriter provided. The
+// sockaddrs contained in |addrs| are converted to klinux_sockaddr before being
+// pushed on the writer. Similarly, ai_flags, ai_family, ai_socktype are
+// converted to their klinux values.
+primitives::PrimitiveStatus SerializeAddrInfo(
+    primitives::MessageWriter *writer, struct addrinfo *addrs,
+    void (*abort_handler)(const char *message),
+    bool explicit_klinux_conversion = false);
+
+// Serializes a native ifaddrs linked list on the MessageWriter provided. The
+// sockaddrs contained in |ifaddr_list| are converted to klinux_sockaddr before
+// being pushed on the Writer. Similarly, ifa_flags are converted to klinux
+// ifa_flags.
+primitives::PrimitiveStatus SerializeIfAddrs(
+    primitives::MessageWriter *writer, struct ifaddrs *ifaddr_list,
+    void (*abort_handler)(const char *message),
+    bool explicit_klinux_conversion = false);
+
+}  // namespace host_call
+}  // namespace asylo
+
+#endif  // ASYLO_PLATFORM_HOST_CALL_SERIALIZER_FUNCTIONS_H_
