@@ -174,4 +174,10 @@ bool TokLinuxEpollEvent(const struct epoll_event *input,
 bool FromkLinuxEpollEvent(const struct klinux_epoll_event *input,
                           struct epoll_event *output);
 
+// Converts a kernel based rusage to an enclave based rusage.
+bool FromkLinuxRusage(const struct klinux_rusage *input, struct rusage *output);
+
+// Converts an enclave based rusage to a kernel based rusage.
+bool TokLinuxRusage(const struct rusage *input, struct klinux_rusage *output);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

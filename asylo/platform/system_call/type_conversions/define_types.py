@@ -298,6 +298,11 @@ define_constants(
     multi_valued=True,
     data_type="unsigned int")
 
+define_constants(
+    name="RusageTarget",
+    values=["RUSAGE_SELF", "RUSAGE_CHILDREN"],
+    include_header_file="sys/resource.h")
+
 define_struct(
     name="timespec",
     values=[

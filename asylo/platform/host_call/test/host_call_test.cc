@@ -22,6 +22,7 @@
 #include <sys/file.h>
 #include <sys/inotify.h>
 #include <sys/poll.h>
+#include <sys/resource.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/statfs.h>
@@ -63,6 +64,7 @@ using asylo::primitives::Extent;
 using asylo::primitives::MessageReader;
 using asylo::primitives::MessageWriter;
 
+constexpr int64_t kMicroSecondsPerSecond = 1000000L;
 constexpr int64_t kNanosecondsPerSecond = 1000000000L;
 
 namespace asylo {
@@ -2372,6 +2374,36 @@ TEST_F(HostCallTest, TestUtime) {
   EXPECT_THAT(statbuf.st_atim.tv_nsec, Eq(0));
   EXPECT_THAT(statbuf.st_mtim.tv_sec, Eq(modtime_expected));
   EXPECT_THAT(statbuf.st_mtim.tv_nsec, Eq(0));
+}
+
+// Tests enc_untrusted_getrusage() by making the call from inside the enclave
+// and on the host, and ensuring that the difference for rusage.ru_utime and
+// rusage.ru_stime between host and enclave versions is less than a second.
+TEST_F(HostCallTest, GetRusageTest) {
+  struct rusage usage_expected {};
+  ASSERT_THAT(getrusage(RUSAGE_SELF, &usage_expected), Eq(0));
+
+  MessageWriter in;
+  in.Push<int>(RUSAGE_SELF);
+  MessageReader out;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestGetRusage, &in, &out));
+  ASSERT_THAT(out,
+              SizeIs(2));  // Should contain the return value and struct rusage.
+  EXPECT_THAT(out.next<int>(), Eq(0));
+
+  struct rusage usage_actual = out.next<struct rusage>();
+
+  uint64_t diff_utime =
+      kMicroSecondsPerSecond *
+          (usage_actual.ru_utime.tv_sec - usage_expected.ru_utime.tv_sec) +
+      usage_actual.ru_utime.tv_usec - usage_expected.ru_utime.tv_usec;
+  EXPECT_LE(diff_utime, kMicroSecondsPerSecond);
+
+  uint64_t diff_stime =
+      kMicroSecondsPerSecond *
+          (usage_actual.ru_stime.tv_sec - usage_expected.ru_stime.tv_sec) +
+      usage_actual.ru_stime.tv_usec - usage_expected.ru_stime.tv_usec;
+  EXPECT_LE(diff_stime, kMicroSecondsPerSecond);
 }
 
 }  // namespace

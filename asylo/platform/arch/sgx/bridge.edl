@@ -81,14 +81,6 @@ enclave {
         [in, string] const char *name);
 
     //////////////////////////////////////
-    //         sys/resource.h           //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_getrusage(
-        enum RUsageTarget who, [out] struct BridgeRUsage *bridge_usage)
-        propagate_errno;
-
-    //////////////////////////////////////
     //          sys/syslog.h            //
     //////////////////////////////////////
 

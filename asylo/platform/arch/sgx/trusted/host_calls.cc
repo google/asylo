@@ -140,19 +140,6 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
 }
 
 //////////////////////////////////////
-//         sys/resource.h           //
-//////////////////////////////////////
-
-int enc_untrusted_getrusage(int who, struct rusage *usage) {
-  int ret;
-  BridgeRUsage bridge_usage;
-  CHECK_OCALL(ocall_enc_untrusted_getrusage(
-      &ret, asylo::ToBridgeRUsageTarget(who), &bridge_usage));
-  asylo::FromBridgeRUsage(&bridge_usage, usage);
-  return ret;
-}
-
-//////////////////////////////////////
 //          sys/syslog.h            //
 //////////////////////////////////////
 

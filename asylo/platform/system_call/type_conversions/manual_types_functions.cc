@@ -689,3 +689,26 @@ bool FromkLinuxEpollEvent(const struct klinux_epoll_event *input,
   output->data.u64 = input->data.u64;
   return true;
 }
+
+bool FromkLinuxRusage(const struct klinux_rusage *input,
+                      struct rusage *output) {
+  if (!input || !output) {
+    return false;
+  }
+  if (!FromkLinuxtimeval(&input->ru_stime, &output->ru_stime) ||
+      !FromkLinuxtimeval(&input->ru_utime, &output->ru_utime)) {
+    return false;
+  }
+  return true;
+}
+
+bool TokLinuxRusage(const struct rusage *input, struct klinux_rusage *output) {
+  if (!input || !output) {
+    return false;
+  }
+  if (!TokLinuxtimeval(&input->ru_stime, &output->ru_stime) ||
+      !TokLinuxtimeval(&input->ru_utime, &output->ru_utime)) {
+    return false;
+  }
+  return true;
+}

@@ -48,14 +48,6 @@ int FromBridgeWaitOptions(int bridge_wait_options);
 // wait options are provided.
 int ToBridgeWaitOptions(int wait_options);
 
-// Converts |bridge_rusage_target| to a runtime rusage target. Returns -1 if
-// unsuccessful.
-int FromBridgeRUsageTarget(enum RUsageTarget bridge_rusage_target);
-
-// Converts |rusage_target| to a bridge rusage target. Returns
-// BRIDGE_RUSAGE_UNKNOWN if unsuccessful.
-enum RUsageTarget ToBridgeRUsageTarget(int rusage_target);
-
 // Converts |bridge_set| to a runtime signal mask set. Returns nullptr if
 // unsuccessful.
 sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set);

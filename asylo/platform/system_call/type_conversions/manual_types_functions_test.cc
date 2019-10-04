@@ -321,6 +321,10 @@ TEST(ManualTypesFunctionsTest, EpollEventTest) {
               Eq(sizeof(struct klinux_epoll_event)));
 }
 
+TEST(ManualTypesFunctionsTest, RusageSizeTest) {
+  EXPECT_THAT(sizeof(struct klinux_rusage), Eq(sizeof(struct rusage)));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

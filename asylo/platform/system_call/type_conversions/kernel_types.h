@@ -178,4 +178,23 @@ struct klinux_epoll_event {
   klinux_epoll_data_t data;
 } ABSL_ATTRIBUTE_PACKED;
 
+struct klinux_rusage {
+  struct kLinux_timeval ru_utime;
+  struct kLinux_timeval ru_stime;
+  int64_t ru_maxrss;
+  int64_t ru_ixrss;
+  int64_t ru_idrss;
+  int64_t ru_isrss;
+  int64_t ru_minflt;
+  int64_t ru_majflt;
+  int64_t ru_nswap;
+  int64_t ru_inblock;
+  int64_t ru_oublock;
+  int64_t ru_msgsnd;
+  int64_t ru_msgrcv;
+  int64_t ru_nsignals;
+  int64_t ru_nvcsw;
+  int64_t ru_nivcsw;
+};
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

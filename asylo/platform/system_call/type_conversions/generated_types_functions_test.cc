@@ -646,6 +646,21 @@ TEST_F(GeneratedTypesFunctionsTest, UtimbufTest) {
   EXPECT_THAT(from.modtime, Eq(4));
 }
 
+TEST_F(GeneratedTypesFunctionsTest, RusageTargetTest) {
+  std::vector<int> from_consts = {kLinux_RUSAGE_SELF, kLinux_RUSAGE_CHILDREN};
+  std::vector<int> to_consts = {RUSAGE_SELF, RUSAGE_CHILDREN};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxRusageTarget(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, 0,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxRusageTarget(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, 0,
+                                             kIterationCount),
+              to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

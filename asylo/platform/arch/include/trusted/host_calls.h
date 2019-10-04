@@ -91,12 +91,6 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
 struct passwd *enc_untrusted_getpwuid(uid_t uid);
 
 //////////////////////////////////////
-//        sys/resource.h            //
-//////////////////////////////////////
-
-int enc_untrusted_getrusage(int who, struct rusage *usage);
-
-//////////////////////////////////////
 //         sys/syslog.h             //
 //////////////////////////////////////
 

@@ -150,18 +150,6 @@ int ToBridgeWaitOptions(int wait_options) {
   return bridge_wait_options;
 }
 
-int FromBridgeRUsageTarget(enum RUsageTarget bridge_rusage_target) {
-  if (bridge_rusage_target == BRIDGE_RUSAGE_SELF) return RUSAGE_SELF;
-  if (bridge_rusage_target == BRIDGE_RUSAGE_CHILDREN) return RUSAGE_CHILDREN;
-  return -1;
-}
-
-enum RUsageTarget ToBridgeRUsageTarget(int rusage_target) {
-  if (rusage_target == RUSAGE_SELF) return BRIDGE_RUSAGE_SELF;
-  if (rusage_target == RUSAGE_CHILDREN) return BRIDGE_RUSAGE_CHILDREN;
-  return BRIDGE_RUSAGE_UNKNOWN;
-}
-
 int FromBridgeSignal(int bridge_signum) {
   for (auto signal : *GetSignalToBridgeSignalMap()) {
     if (bridge_signum == signal.second) {

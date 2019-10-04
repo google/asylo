@@ -52,22 +52,6 @@ TEST_F(BridgeTest, BridgeWaitOptionsTest) {
               to_matcher);
 }
 
-TEST_F(BridgeTest, BridgeRUsageTargetTest) {
-  std::vector<enum RUsageTarget> from_consts = {
-      BRIDGE_RUSAGE_SELF,
-      BRIDGE_RUSAGE_CHILDREN,
-  };
-  intvec to_consts = {RUSAGE_SELF, RUSAGE_CHILDREN};
-  auto from_matcher =
-      IsFiniteRestrictionOf<enum RUsageTarget, int>(FromBridgeRUsageTarget);
-  EXPECT_THAT(zip(from_consts, to_consts), from_matcher);
-  auto to_matcher =
-      IsFiniteRestrictionOf<int, enum RUsageTarget>(ToBridgeRUsageTarget);
-  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts,
-                                             BRIDGE_RUSAGE_UNKNOWN, ITER_BOUND),
-              to_matcher);
-}
-
 TEST_F(BridgeTest, BridgeSignalCodeTest) {
   intvec from_consts = {BRIDGE_SI_USER, BRIDGE_SI_QUEUE, BRIDGE_SI_TIMER,
                         BRIDGE_SI_ASYNCIO, BRIDGE_SI_MESGQ};

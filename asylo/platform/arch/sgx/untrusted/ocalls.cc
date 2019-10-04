@@ -310,18 +310,6 @@ int ocall_enc_untrusted_register_signal_handler(
 }
 
 //////////////////////////////////////
-//         sys/resource.h           //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_getrusage(enum RUsageTarget who,
-                                  struct BridgeRUsage *bridge_usage) {
-  struct rusage usage;
-  int ret = getrusage(asylo::FromBridgeRUsageTarget(who), &usage);
-  asylo::ToBridgeRUsage(&usage, bridge_usage);
-  return ret;
-}
-
-//////////////////////////////////////
 //          sys/syslog.h            //
 //////////////////////////////////////
 

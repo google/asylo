@@ -970,6 +970,24 @@ PrimitiveStatus TestUtime(void *context, MessageReader *in,
   return PrimitiveStatus::OkStatus();
 }
 
+PrimitiveStatus TestGetRusage(void *context, MessageReader *in,
+                              MessageWriter *out) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*in, 1);
+  int klinux_who = in->next<int>();
+
+  struct rusage usage {};
+  struct klinux_rusage klinux_usage {};
+  out->Push<int>(
+      enc_untrusted_getrusage(FromkLinuxRusageTarget(klinux_who), &usage));
+
+  if (!TokLinuxRusage(&usage, &klinux_usage)) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestGetRusage: Conversion to klinux_rusage failed."};
+  }
+  out->Push<struct klinux_rusage>(klinux_usage);
+  return PrimitiveStatus::OkStatus();
+}
+
 }  // namespace
 }  // namespace host_call
 }  // namespace asylo
@@ -1160,6 +1178,9 @@ extern "C" PrimitiveStatus asylo_enclave_init() {
       asylo::host_call::kTestPoll, EntryHandler{asylo::host_call::TestPoll}));
   ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
       asylo::host_call::kTestUtime, EntryHandler{asylo::host_call::TestUtime}));
+  ASYLO_RETURN_IF_ERROR(TrustedPrimitives::RegisterEntryHandler(
+      asylo::host_call::kTestGetRusage,
+      EntryHandler{asylo::host_call::TestGetRusage}));
 
   return PrimitiveStatus::OkStatus();
 }

@@ -206,16 +206,21 @@ SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char *, pathname,
 // Time
 // ====
 
-SYSCALL_DEFINE1(times, \out struct tms *, buf);
+SYSCALL_DEFINE1(times, \out struct tms *, buf)
 SYSCALL_DEFINE2(nanosleep, \in const struct timespec *, req,
                 \out struct timespec *, rem)
 SYSCALL_DEFINE2(clock_gettime, clockid_t, clk_id, \out struct timespec *, tp)
 SYSCALL_DEFINE2(gettimeofday, \out struct timeval *, tv,
-                \in struct timezone *, tz);
-SYSCALL_DEFINE2(getitimer, int, which, \out struct itimerval *, curr_value);
+                \in struct timezone *, tz)
+SYSCALL_DEFINE2(getitimer, int, which, \out struct itimerval *, curr_value)
 SYSCALL_DEFINE3(setitimer, int, which, \in struct itimerval *, new_value,
-                \out struct itimerval *, old_value);
+                \out struct itimerval *, old_value)
 SYSCALL_DEFINE2(utimes, const char *, filename,
                 \in const struct timeval * [count:2], times)
 SYSCALL_DEFINE2(utime, const char *, filename,
                 \in const struct utimbuf *, times)
+
+// Resource
+// ========
+
+SYSCALL_DEFINE2(getrusage, int, who, \out struct rusage *, usage)
