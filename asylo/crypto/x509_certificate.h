@@ -44,7 +44,7 @@ class X509Certificate : public CertificateInterface {
 
   // Creates and returns an X509Certificate with the given |certificate| as
   // data. Returns a non-OK Status if the certificate could not be transformed
-  // into a X509Certificate.
+  // into an X509Certificate.
   static StatusOr<std::unique_ptr<X509Certificate>> Create(
       const Certificate &certificate);
 
