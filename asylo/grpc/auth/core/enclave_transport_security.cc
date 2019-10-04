@@ -394,15 +394,16 @@ tsi_result tsi_enclave_handshaker::evaluate_acl(
     return TSI_OK;
   }
   DelegatingIdentityExpectationMatcher matcher;
+  std::string explanation;
   StatusOr<bool> acl_result =
-      EvaluateIdentityAcl(identities, peer_acl.value(), matcher);
+      EvaluateIdentityAcl(identities, peer_acl.value(), matcher, &explanation);
   if (!acl_result.ok()) {
     gpr_log(GPR_ERROR, "Error evaluating ACL: %s",
             acl_result.status().ToString().c_str());
     return TSI_INTERNAL_ERROR;
   }
   if (!acl_result.ValueOrDie()) {
-    gpr_log(GPR_ERROR, "Identities did not match ACL");
+    gpr_log(GPR_ERROR, "Identities did not match ACL: %s", explanation.c_str());
     return TSI_PERMISSION_DENIED;
   }
   return TSI_OK;
