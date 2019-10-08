@@ -3086,7 +3086,7 @@ diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1336 @@
+@@ -0,0 +1,1344 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(
@@ -4328,6 +4328,14 @@ diff -Nur /dev/null BUILD
 +    deps = [":common_inc"],
 +)
 +
++cc_library(
++    name = "debug_key_mrsigner",
++    testonly = 1,
++    srcs = ["debug_key_mrsigner.cc"],
++    hdrs = ["debug_key_mrsigner.h"],
++    visibility = ["//visibility:public"],
++)
++
 +# Target selecting either simulation or hardware mode trusted include files
 +# based on the value of SGX_SIM.
 +cc_library(
@@ -5077,6 +5085,46 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    unsigned_enclave = sgx_unsigned_enclave,
 +    signed_enclave = sgx_signed_enclave,
 +)
+diff -Nur /dev/null debug_key_mrsigner.cc
+--- /dev/null
++++ debug_key_mrsigner.cc
+@@ -0,0 +1,18 @@
++#include "debug_key_mrsigner.h"
++
++namespace linux_sgx {
++
++// To generate this constant from enclave_test_private.pem, run the following
++// command:
++// openssl rsa -in enclave_test_private.pem -modulus -noout \
++// | sed -e 's/Modulus=//' | xxd -r -p - \
++// | perl -077e 'print scalar reverse <>' \
++// | sha256sum
++const char *const kDebugKeyMrsignerHex =
++    "83d719e77deaca1470f6baf62a4d774303c899db69020f9c70ee1dfc08c7ce9e";
++
++const char *const kDebugKeyMrsignerTextProto = R"pb(
++  hash: "\x83\xd7\x19\xe7\x7d\xea\xca\x14\x70\xf6\xba\xf6\x2a\x4d\x77\x43\x03\xc8\x99\xdb\x69\x02\x0f\x9c\x70\xee\x1d\xfc\x08\xc7\xce\x9e"
++)pb";
++
++}  // namespace linux_sgx
+diff -Nur /dev/null debug_key_mrsigner.h
+--- /dev/null
++++ debug_key_mrsigner.h
+@@ -0,0 +1,14 @@
++#ifndef _DEBUG_KEY_MRSIGNER_H_
++#define _DEBUG_KEY_MRSIGNER_H_
++
++namespace linux_sgx {
++
++// Hex-encoded constant representing the MRSIGNER value for enclaves signed
++// using the debug signing key.
++extern const char *const kDebugKeyMrsignerHex;
++
++extern const char *const kDebugKeyMrsignerTextProto;
++
++}  // namespace linux_sgx
++
++#endif  // _DEBUG_KEY_MRSIGNER_H_
 diff -Nur /dev/null enclave_sim.lds
 --- /dev/null
 +++ enclave_sim.lds
@@ -5090,59 +5138,6 @@ diff -Nur /dev/null enclave_sim.lds
 +    local:
 +        *;
 +};
-diff -Nur /dev/null runtime_support/rts_config.h
---- /dev/null
-+++ runtime_support/rts_config.h
-@@ -0,0 +1,23 @@
-+#ifndef _RUNTIME_SUPPORT_RTS_CONFIG_H_
-+#define _RUNTIME_SUPPORT_RTS_CONFIG_H_
-+
-+#include <string.h>
-+
-+#ifndef _ERNNO_T_DEFINED
-+#define _ERRNO_T_DEFINED
-+typedef int errno_t;
-+#endif
-+
-+#ifdef __cplusplus
-+extern "C" {
-+#endif
-+
-+errno_t memset_s(void *s, size_t smax, int c, size_t n);
-+
-+int consttime_memequal(const void *b1, const void *b2, size_t len);
-+
-+#ifdef __cplusplus
-+}
-+#endif
-+
-+#endif  // _RUNTIME_SUPPORT_RTS_CONFIG_H_
-diff -Nur /dev/null runtime_support/sgx_init_string_lib.c
---- /dev/null
-+++ runtime_support/sgx_init_string_lib.c
-@@ -0,0 +1,8 @@
-+
-+#include <stdint.h>
-+
-+int __NR_rt_sigprocmask;
-+
-+int sgx_init_string_lib(uint64_t cpu_feature_indicator) {
-+  return 0;
-+}
-diff -Nur /dev/null runtime_support/sgx_init_crypto_lib.c
---- /dev/null
-+++ runtime_support/sgx_init_crypto_lib.c
-@@ -0,0 +1,10 @@
-+
-+#include <stdint.h>
-+
-+#include "sgx_error.h"
-+
-+sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator,
-+                                 uint32_t *cpuid_table) {
-+  return SGX_SUCCESS;
-+}
-+
 diff -Nur /dev/null include/global_data.h
 --- /dev/null
 +++ include/global_data.h
@@ -5313,6 +5308,59 @@ diff -Nur /dev/null include/sgx_urts.h
 +#include "common/inc/sgx_urts.h"  // IWYU pragma: export
 +
 +#endif  // _INCLUDE_SGX_URTS_H_
+diff -Nur /dev/null runtime_support/rts_config.h
+--- /dev/null
++++ runtime_support/rts_config.h
+@@ -0,0 +1,23 @@
++#ifndef _RUNTIME_SUPPORT_RTS_CONFIG_H_
++#define _RUNTIME_SUPPORT_RTS_CONFIG_H_
++
++#include <string.h>
++
++#ifndef _ERNNO_T_DEFINED
++#define _ERRNO_T_DEFINED
++typedef int errno_t;
++#endif
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++errno_t memset_s(void *s, size_t smax, int c, size_t n);
++
++int consttime_memequal(const void *b1, const void *b2, size_t len);
++
++#ifdef __cplusplus
++}
++#endif
++
++#endif  // _RUNTIME_SUPPORT_RTS_CONFIG_H_
+diff -Nur /dev/null runtime_support/sgx_init_crypto_lib.c
+--- /dev/null
++++ runtime_support/sgx_init_crypto_lib.c
+@@ -0,0 +1,10 @@
++
++#include <stdint.h>
++
++#include "sgx_error.h"
++
++sgx_status_t sgx_init_crypto_lib(uint64_t cpu_feature_indicator,
++                                 uint32_t *cpuid_table) {
++  return SGX_SUCCESS;
++}
++
+diff -Nur /dev/null runtime_support/sgx_init_string_lib.c
+--- /dev/null
++++ runtime_support/sgx_init_string_lib.c
+@@ -0,0 +1,8 @@
++
++#include <stdint.h>
++
++int __NR_rt_sigprocmask;
++
++int sgx_init_string_lib(uint64_t cpu_feature_indicator) {
++  return 0;
++}
 diff -Nur /dev/null external/rdrand/src/config.h
 --- /dev/null
 +++ external/rdrand/src/config.h
