@@ -41,15 +41,15 @@ namespace sgx {
 // invalid for this field to be missing on non-legacy match specs.
 
 // Matches |identity| to given |expectation|. Returns true if there is no error
-// encountered, and if the match is successful. Else returns false and populates
+// encountered, and if the match is successful, else returns false and populates
 // |explanation| with an explanation of why the match failed.
 StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
-    std::string *explanation, bool is_legacy = false);
+    std::string *explanation, bool is_legacy_expectation = false);
 
 // Sets |expectation| based on |identity| and |match_spec|, checking the
 // validity of both components. The |is_legacy| parameter affects the validation
-// of the |match_spec|, but not the |identity|.
+// of the |identity| and the |match_spec|.
 Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
                       const SgxIdentity &identity,
                       SgxIdentityExpectation *expectation,
@@ -59,7 +59,7 @@ Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
 bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity);
 
 // Checks if an enclave identity is valid.
-bool IsValidSgxIdentity(const SgxIdentity &identity);
+bool IsValidSgxIdentity(const SgxIdentity &identity, bool is_legacy = false);
 
 // Checks if a match specification is valid.
 bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec,
@@ -112,7 +112,9 @@ Status SetDefaultRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation);
 // Sets |expectation| to the pair <self identity, strict remote match spec>.
 Status SetStrictRemoteSelfSgxExpectation(SgxIdentityExpectation *expectation);
 
-// Parses an SGX identity from an EnclaveIdentity proto.
+// Parses an SGX identity from an EnclaveIdentity proto. The |is_legacy|
+// parameter present on the other parsing methods is not required here, as we
+// can detect a legacy identity via |generic_identity.has_version()|.
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
                         SgxIdentity *sgx_identity);
 

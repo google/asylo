@@ -294,19 +294,22 @@ bool IsIdentityCompatibleWithMatchSpec(const CodeIdentity &identity,
 
 // Verifies whether |identity| is compatible with |spec|.
 bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
-                                       const SgxIdentityMatchSpec &spec) {
-  const SgxMachineConfiguration &machine_config =
-      identity.machine_configuration();
-  const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
-      spec.machine_configuration_match_spec();
+                                       const SgxIdentityMatchSpec &spec,
+                                       bool is_legacy = false) {
+  if (!is_legacy) {
+    const SgxMachineConfiguration &machine_config =
+        identity.machine_configuration();
+    const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
+        spec.machine_configuration_match_spec();
 
-  if (machine_config_match_spec.is_cpu_svn_match_required() &&
-      !machine_config.has_cpu_svn()) {
-    return false;
-  }
-  if (machine_config_match_spec.is_sgx_type_match_required() &&
-      !machine_config.has_sgx_type()) {
-    return false;
+    if (machine_config_match_spec.is_cpu_svn_match_required() &&
+        !machine_config.has_cpu_svn()) {
+      return false;
+    }
+    if (machine_config_match_spec.is_sgx_type_match_required() &&
+        !machine_config.has_sgx_type()) {
+      return false;
+    }
   }
   return IsIdentityCompatibleWithMatchSpec(identity.code_identity(),
                                            spec.code_identity_match_spec());
@@ -316,16 +319,22 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
 
 StatusOr<bool> MatchIdentityToExpectation(
     const SgxIdentity &identity, const SgxIdentityExpectation &expectation,
-    std::string *explanation, bool is_legacy) {
-  if (!IsValidExpectation(expectation, is_legacy)) {
+    std::string *explanation, bool is_legacy_expectation) {
+  if (!IsValidExpectation(expectation, is_legacy_expectation)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Expectation parameter is invalid");
   }
+
+  // We don't propagate the |is_legacy_expectation| parameter to this call
+  // because we still want to be able to perform matches where "legacy state" of
+  // the expectation and the identity are mismatched (resulting in a success if
+  // the partial match is a success).
   if (!IsValidSgxIdentity(identity)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Identity parameter is invalid");
   }
-  if (!IsIdentityCompatibleWithMatchSpec(identity, expectation.match_spec())) {
+  if (!IsIdentityCompatibleWithMatchSpec(identity, expectation.match_spec(),
+                                         is_legacy_expectation)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Identity is not compatible with specified match spec");
   }
@@ -382,7 +391,7 @@ Status SetExpectation(const SgxIdentityMatchSpec &match_spec,
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Match spec is invalid");
   }
-  if (!IsValidSgxIdentity(identity)) {
+  if (!IsValidSgxIdentity(identity, is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Identity is invalid");
   }
@@ -396,11 +405,17 @@ bool IsValidSignerAssignedIdentity(const SignerAssignedIdentity &identity) {
   return (identity.has_isvprodid() && identity.has_isvsvn());
 }
 
-bool IsValidSgxIdentity(const SgxIdentity &identity) {
-  // Validate |cpu_svn| if present in the SgxIdentity.
-  if (identity.machine_configuration().has_cpu_svn() &&
-      !ValidateCpuSvn(identity.machine_configuration().cpu_svn()).ok()) {
-    return false;
+bool IsValidSgxIdentity(const SgxIdentity &identity, bool is_legacy) {
+  if (!is_legacy) {
+    // We cannot assume that all non-legacy SgxIdentity messages will have a
+    // valid, set CPUSVN, because expectations are not required to populate the
+    // CPUSVN value for their reference identities.
+    const SgxMachineConfiguration &machine_config =
+        identity.machine_configuration();
+    if (machine_config.has_cpu_svn() &&
+        !ValidateCpuSvn(machine_config.cpu_svn()).ok()) {
+      return false;
+    }
   }
 
   return IsValidCodeIdentity(identity.code_identity());
@@ -426,11 +441,11 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
   }
 
   const SgxIdentity &identity = expectation.reference_identity();
-  if (!IsValidSgxIdentity(identity)) {
+  if (!IsValidSgxIdentity(identity, is_legacy)) {
     return false;
   }
 
-  return IsIdentityCompatibleWithMatchSpec(identity, spec);
+  return IsIdentityCompatibleWithMatchSpec(identity, spec, is_legacy);
 }
 
 Status ParseIdentityFromHardwareReport(const Report &report,
@@ -557,7 +572,7 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Could not parse SGX identity from the identity string");
   }
-  if (!IsValidSgxIdentity(*sgx_identity)) {
+  if (!IsValidSgxIdentity(*sgx_identity, /*is_legacy=*/false)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Parsed SGX identity is invalid");
   }
@@ -593,7 +608,8 @@ Status ParseSgxExpectation(
                                           sgx_expectation->mutable_match_spec(),
                                           is_legacy));
   if (!IsIdentityCompatibleWithMatchSpec(sgx_expectation->reference_identity(),
-                                         sgx_expectation->match_spec())) {
+                                         sgx_expectation->match_spec(),
+                                         is_legacy)) {
     return Status(::asylo::error::GoogleError::INVALID_ARGUMENT,
                   "Parsed SGX expectation is invalid");
   }
