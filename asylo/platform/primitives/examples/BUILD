@@ -44,6 +44,7 @@ primitives_sim_enclave(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/strings",
     ],
 )
 
