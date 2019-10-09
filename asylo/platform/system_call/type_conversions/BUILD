@@ -69,7 +69,6 @@ cc_binary(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/util:logging",
-        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
         "@com_google_absl//absl/strings",

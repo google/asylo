@@ -17,10 +17,10 @@
  */
 
 #include <fstream>
+#include <map>
 #include <string>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/flags/flag.h"
 #include "absl/flags/parse.h"
 #include "absl/strings/str_cat.h"
@@ -62,16 +62,15 @@ ABSL_FLAG(std::string, output_dir, "",
           "Path of the output dir for generated types.");
 
 // Returns a mapping from enum name to EnumProperties.
-absl::flat_hash_map<std::string, EnumProperties> *GetEnumPropertiesTable() {
-  static auto enum_map =
-      new absl::flat_hash_map<std::string, EnumProperties>{ENUMS_INIT};
+std::map<std::string, EnumProperties> *GetEnumPropertiesTable() {
+  static auto enum_map = new std::map<std::string, EnumProperties>{ENUMS_INIT};
   return enum_map;
 }
 
 // Returns a mapping from struct name to StructProperties.
-absl::flat_hash_map<std::string, StructProperties> *GetStructPropertiesTable() {
+std::map<std::string, StructProperties> *GetStructPropertiesTable() {
   static auto struct_map =
-      new absl::flat_hash_map<std::string, StructProperties>{STRUCTS_INIT};
+      new std::map<std::string, StructProperties>{STRUCTS_INIT};
   return struct_map;
 }
 
@@ -192,9 +191,9 @@ std::string GetStructConversionsFuncBody(
 
 // Generate and write enum conversion function declarations and definitions to
 // provided output streams for .h and .cc files.
-void WriteEnumConversions(const absl::flat_hash_map<std::string, EnumProperties>
-                              *enum_properties_table,
-                          std::ostream *os_h, std::ostream *os_cc) {
+void WriteEnumConversions(
+    const std::map<std::string, EnumProperties> *enum_properties_table,
+    std::ostream *os_h, std::ostream *os_cc) {
   for (const auto &it : *enum_properties_table) {
     if (it.second.skip_conversions) {
       continue;
@@ -241,8 +240,7 @@ void WriteEnumConversions(const absl::flat_hash_map<std::string, EnumProperties>
 // Generate and write struct conversion function declarations and definitions to
 // provided output streams for .h and .cc files.
 void WriteStructConversions(
-    const absl::flat_hash_map<std::string, StructProperties>
-        *struct_properties_table,
+    const std::map<std::string, StructProperties> *struct_properties_table,
     std::ostream *os_h, std::ostream *os_cc) {
   for (const auto &it : *struct_properties_table) {
     if (it.second.skip_conversions) {
@@ -290,9 +288,9 @@ void WriteStructConversions(
 
 // Writes enum definitions obtained from |enum_properties_table| to an output
 // stream provided.
-void WriteEnumDefinitions(const absl::flat_hash_map<std::string, EnumProperties>
-                              *enum_properties_table,
-                          std::ostream *os) {
+void WriteEnumDefinitions(
+    const std::map<std::string, EnumProperties> *enum_properties_table,
+    std::ostream *os) {
   for (const auto &it : *enum_properties_table) {
     *os << absl::StreamFormat("\nenum %s : %s {\n", it.first,
                               it.second.data_type);
@@ -310,8 +308,7 @@ void WriteEnumDefinitions(const absl::flat_hash_map<std::string, EnumProperties>
 // Writes struct definitions obtained from |struct_properties_table| to an
 // output stream provided.
 void WriteStructDefinitions(
-    const absl::flat_hash_map<std::string, StructProperties>
-        *struct_properties_table,
+    const std::map<std::string, StructProperties> *struct_properties_table,
     std::ostream *os) {
   for (const auto &it : *struct_properties_table) {
     *os << absl::StreamFormat("\nstruct %s_%s {\n", klinux_prefix, it.first);
@@ -331,10 +328,8 @@ void WriteStructDefinitions(
 // definitions for the types. Prefixes the appropriate klinux or klinux prefix
 // to the type definitions generated. Currently supports enums and structs.
 void WriteTypeDefinitions(
-    const absl::flat_hash_map<std::string, EnumProperties>
-        *enum_properties_table,
-    const absl::flat_hash_map<std::string, StructProperties>
-        *struct_properties_table,
+    const std::map<std::string, EnumProperties> *enum_properties_table,
+    const std::map<std::string, StructProperties> *struct_properties_table,
     std::ostream *os) {
   // Write #ifdef guard
   std::string header_guard =
@@ -362,8 +357,8 @@ void WriteTypeDefinitions(
 // the corresponding implementations to |os_cc|. Currently supports enums and
 // structs.
 void WriteTypesConversions(
-    absl::flat_hash_map<std::string, EnumProperties> *enum_properties_table,
-    absl::flat_hash_map<std::string, StructProperties> *struct_properties_table,
+    std::map<std::string, EnumProperties> *enum_properties_table,
+    std::map<std::string, StructProperties> *struct_properties_table,
     std::ostream *os_h, std::ostream *os_cc) {
   // Write #ifdef guard for .h file.
   std::string header_guard =
