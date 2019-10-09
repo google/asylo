@@ -306,6 +306,11 @@ define_constants(
     values=["RUSAGE_SELF", "RUSAGE_CHILDREN"],
     include_header_file="sys/resource.h")
 
+define_constants(
+    name="WaitOption",
+    values=["WNOHANG", "WUNTRACED"],
+    include_header_file="sys/wait.h")
+
 define_struct(
     name="timespec",
     values=[

@@ -113,7 +113,6 @@ void enc_untrusted__exit(int rc);
 //           wait.h                 //
 //////////////////////////////////////
 
-pid_t enc_untrusted_wait3(int *wstatus, int options, struct rusage *usage);
 pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options);
 
 //////////////////////////////////////
