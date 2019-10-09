@@ -21,6 +21,7 @@
 
 #include <ifaddrs.h>
 #include <netdb.h>
+#include <pwd.h>
 #include <sys/socket.h>
 
 #include "asylo/platform/primitives/primitive_status.h"
@@ -38,6 +39,10 @@ bool DeserializeAddrinfo(primitives::MessageReader *in, struct addrinfo **out,
 // into |*out|.
 bool DeserializeIfAddrs(primitives::MessageReader *in, struct ifaddrs **out,
                         void (*abort_handler)(const char *message));
+
+// Serializes struct passwd on the MessageWriter provided.
+bool SerializePasswd(primitives::MessageWriter *writer,
+                     struct passwd *password);
 
 // Serializes a native addrinfo linked list on the MessageWriter provided. The
 // sockaddrs contained in |addrs| are converted to klinux_sockaddr before being

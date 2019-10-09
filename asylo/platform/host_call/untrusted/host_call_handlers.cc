@@ -23,9 +23,11 @@
 #include <ifaddrs.h>
 #include <net/if.h>
 #include <netdb.h>
+#include <pwd.h>
 #include <signal.h>
 #include <sys/socket.h>
 #include <unistd.h>
+
 #include <ctime>
 
 #include "asylo/platform/host_call/serializer_functions.h"
@@ -470,6 +472,20 @@ Status GetCpuClockIdHandler(const std::shared_ptr<primitives::Client> &client,
   clockid_t klinux_clock_id;
   output->Push<int>(clock_getcpuclockid(pid, &klinux_clock_id));
   output->Push<uint64_t>(static_cast<uint64_t>(klinux_clock_id));
+  return Status::OkStatus();
+}
+
+Status GetPwUidHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  auto uid = input->next<uid_t>();
+  struct passwd *password = getpwuid(uid);
+
+  output->Push<int>(errno);
+  if (password) {
+    SerializePasswd(output, password);
+  }
   return Status::OkStatus();
 }
 

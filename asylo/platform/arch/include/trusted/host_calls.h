@@ -85,12 +85,6 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
                                size_t *serialized_events_len);
 
 //////////////////////////////////////
-//              pwd.h               //
-//////////////////////////////////////
-
-struct passwd *enc_untrusted_getpwuid(uid_t uid);
-
-//////////////////////////////////////
 //         sys/syslog.h             //
 //////////////////////////////////////
 

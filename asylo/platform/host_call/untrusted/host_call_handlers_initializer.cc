@@ -91,6 +91,12 @@ Status AddHostCallHandlersToExitCallProvider(
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kGetIfAddrsHandler, primitives::ExitHandler{GetIfAddrsHandler}));
 
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kGetCpuClockIdHandler, primitives::ExitHandler{GetCpuClockIdHandler}));
+
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kGetPwUidHandler, primitives::ExitHandler{GetPwUidHandler}));
+
   return Status::OkStatus();
 }
 

@@ -51,12 +51,75 @@ int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
 
 namespace {
 
+// A global passwd struct. The address of it is used as the return value of
+// getpwuid.
+struct passwd global_passwd;
+
 size_t CalculateTotalMessageSize(const struct msghdr *msg) {
   size_t total_message_size = 0;
   for (int i = 0; i < msg->msg_iovlen; ++i) {
     total_message_size += msg->msg_iov[i].iov_len;
   }
   return total_message_size;
+}
+
+#define PASSWD_HOLDER_FIELD_LENGTH 1024
+
+// Struct for storing the buffers needed by struct passwd members.
+struct passwd_holder {
+  char pw_name[PASSWD_HOLDER_FIELD_LENGTH];
+  char pw_passwd[PASSWD_HOLDER_FIELD_LENGTH];
+  uid_t pw_uid;
+  gid_t pw_gid;
+  char pw_gecos[PASSWD_HOLDER_FIELD_LENGTH];
+  char pw_dir[PASSWD_HOLDER_FIELD_LENGTH];
+  char pw_shell[PASSWD_HOLDER_FIELD_LENGTH];
+};
+
+bool DeserializePasswd(MessageReader *reader,
+                       struct passwd_holder *passwd_buffers) {
+  if (!reader || !passwd_buffers) {
+    return false;
+  }
+  if (reader->size() < 7) {
+    return false;
+  }
+
+  auto pw_name_buf = reader->next();
+  auto pw_passwd_buf = reader->next();
+  auto pw_uid = reader->next<uid_t>();
+  auto pw_gid = reader->next<gid_t>();
+  auto pw_gecos_buf = reader->next();
+  auto pw_dir_buf = reader->next();
+  auto pw_shell_buf = reader->next();
+
+  strncpy(passwd_buffers->pw_name, pw_name_buf.As<char>(), pw_name_buf.size());
+  strncpy(passwd_buffers->pw_passwd, pw_passwd_buf.As<char>(),
+          pw_passwd_buf.size());
+  passwd_buffers->pw_uid = pw_uid;
+  passwd_buffers->pw_gid = pw_gid;
+  strncpy(passwd_buffers->pw_gecos, pw_gecos_buf.As<char>(),
+          pw_gecos_buf.size());
+  strncpy(passwd_buffers->pw_dir, pw_dir_buf.As<char>(), pw_dir_buf.size());
+  strncpy(passwd_buffers->pw_shell, pw_shell_buf.As<char>(),
+          pw_shell_buf.size());
+  return true;
+}
+
+bool PasswdHolderToPasswd(struct passwd_holder *passwd_in,
+                          struct passwd *passwd_out) {
+  if (!passwd_in || !passwd_out) {
+    return false;
+  }
+
+  passwd_out->pw_name = passwd_in->pw_name;
+  passwd_out->pw_passwd = passwd_in->pw_passwd;
+  passwd_out->pw_uid = passwd_in->pw_uid;
+  passwd_out->pw_gid = passwd_in->pw_gid;
+  passwd_out->pw_gecos = passwd_in->pw_gecos;
+  passwd_out->pw_dir = passwd_in->pw_dir;
+  passwd_out->pw_shell = passwd_in->pw_shell;
+  return true;
 }
 
 }  // namespace
@@ -1476,6 +1539,40 @@ int enc_untrusted_uname(struct utsname *buf) {
         "enc_untrusted_uname: Returned an ill-formed utsname.");
   }
   return 0;
+}
+
+struct passwd *enc_untrusted_getpwuid(uid_t uid) {
+  MessageWriter input;
+  MessageReader output;
+  input.Push<uid_t>(uid);
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kGetPwUidHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_getpwuid failed.");
+  }
+  if (output.empty()) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getpwuid: Expected at least 1 parameter received on "
+        "output MessageReader.");
+  }
+
+  int klinux_errno = output.next<int>();
+  if (output.size() == 1) {
+    errno = FromkLinuxErrorNumber(klinux_errno);
+    return nullptr;
+  }
+
+  // Store the struct passwd members in a static passwd_holder, and direct the
+  // pointers in global_passwd to those members.
+  static struct passwd_holder passwd_buffers;
+  if (!DeserializePasswd(&output, &passwd_buffers) ||
+      !PasswdHolderToPasswd(&passwd_buffers, &global_passwd)) {
+    errno = EFAULT;
+    return nullptr;
+  }
+
+  return &global_passwd;
 }
 
 }  // extern "C"

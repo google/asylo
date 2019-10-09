@@ -170,12 +170,24 @@ Status IfIndexToNameHandler(const std::shared_ptr<primitives::Client> &client,
 // getifaddrs library call handler on the host; expects no input parameter, and
 // returns [int result, int errno, size_t num_ifaddrs, (char *ifa_name,
 // unsigned int ifa_flags, struct sockaddr ifa_addr, struct sockaddr
-// ifa_netmask, struct sockaddr ifa_dstaddr)] on
-// the MessageWriter. The items in () braces are repeated in multiples of
-// num_ifaddrs.
+// ifa_netmask, struct sockaddr ifa_dstaddr)] on the MessageWriter. The items in
+// () braces are repeated in multiples of num_ifaddrs.
 Status GetIfAddrsHandler(const std::shared_ptr<primitives::Client> &client,
                          void *context, primitives::MessageReader *input,
                          primitives::MessageWriter *output);
+
+// clock_getcpuclockid library call handler on the host; expects [pid_t pid] and
+// returns [int /*result*/, uint64_t /*clock_id*/] on the MessageWriter.
+Status GetCpuClockIdHandler(const std::shared_ptr<primitives::Client> &client,
+                            void *context, primitives::MessageReader *input,
+                            primitives::MessageWriter *output);
+
+// getpwuid library call handler on the host; expects [uid_t uid] and returns
+// [int errno, char *pw_name, char *pw_passwd, uid_t pw_uid, gid_t pw_gid, char
+// *pw_gecos, char *pw_dir, char *pw_shell] on the MessageWriter.
+Status GetPwUidHandler(const std::shared_ptr<primitives::Client> &client,
+                       void *context, primitives::MessageReader *input,
+                       primitives::MessageWriter *output);
 
 }  // namespace host_call
 }  // namespace asylo

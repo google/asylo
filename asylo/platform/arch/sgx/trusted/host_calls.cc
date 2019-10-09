@@ -73,10 +73,6 @@ namespace {
     }                                                                        \
   } while (0)
 
-// A global passwd struct. The address of it is used as the return value of
-// getpwuid.
-struct passwd global_password;
-
 }  // namespace
 }  // namespace asylo
 
@@ -112,31 +108,6 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
   CHECK_OCALL(ocall_enc_untrusted_inotify_read(
       &ret, fd, count, serialized_events, serialized_events_len));
   return ret;
-}
-
-//////////////////////////////////////
-//            pwd.h                 //
-//////////////////////////////////////
-
-struct passwd *enc_untrusted_getpwuid(uid_t uid) {
-  struct BridgePassWd bridge_password;
-  int ret = 0;
-  CHECK_OCALL(ocall_enc_untrusted_getpwuid(&ret, uid, &bridge_password));
-  if (ret != 0) {
-    return nullptr;
-  }
-
-  // Store the buffers in static storage wrapped in struct BridgePassWd, and
-  // direct the pointers in |global_password| to those buffers.
-  static struct BridgePassWd password_buffers;
-
-  if (!asylo::CopyBridgePassWd(&bridge_password, &password_buffers) ||
-      !asylo::FromBridgePassWd(&password_buffers, &asylo::global_password)) {
-    errno = EFAULT;
-    return nullptr;
-  }
-
-  return &asylo::global_password;
 }
 
 //////////////////////////////////////

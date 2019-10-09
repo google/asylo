@@ -103,32 +103,6 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
 
-// Converts |bridge_password| to a runtime passwd. Returns nullptr if
-// unsuccessful. This method does not copy and data, just sets the pointers in
-// |passwd| to point to the buffers in |bridge_password|.
-struct passwd *FromBridgePassWd(struct BridgePassWd *bridge_password,
-                                struct passwd *password);
-
-// Converts |password| to a bridge passwd. Returns nullptr if unsuccessful. This
-// method copies all buffers from |password| to |bridge_password|.
-struct BridgePassWd *ToBridgePassWd(const struct passwd *password,
-                                    struct BridgePassWd *bridge_password);
-
-// Copies all the string fields from |source_bridge_passwd| to
-// |destination_bridge_password|. This is used to copy the data from untrusted
-// side to a global buffer inside the enclave.
-struct BridgePassWd *CopyBridgePassWd(
-    const struct BridgePassWd *source_bridge_password,
-    struct BridgePassWd *destination_bridge_password);
-
-// Copies the C string |source_buf| into |dest_buf|. Only copies up to size-1
-// non-null characters. Always terminates the copied string with a null byte on
-// a successful write.
-//
-// Fails if |source_buf| contains more than |size| bytes (including the
-// terminating null byte).
-bool CStringCopy(const char *source_buf, char *dest_buf, size_t size);
-
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_COMMON_BRIDGE_FUNCTIONS_H_

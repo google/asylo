@@ -236,23 +236,6 @@ int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
 }
 
 //////////////////////////////////////
-//            pwd.h                 //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_getpwuid(uid_t uid,
-                                 struct BridgePassWd *bridge_password) {
-  struct passwd *password = getpwuid(uid);
-  if (!password) {
-    return -1;
-  }
-  if (!asylo::ToBridgePassWd(password, bridge_password)) {
-    errno = EFAULT;
-    return -1;
-  }
-  return 0;
-}
-
-//////////////////////////////////////
 //          signal.h                //
 //////////////////////////////////////
 

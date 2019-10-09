@@ -389,5 +389,21 @@ void FreeDeserializedIfAddrs(struct ifaddrs *ifa) {
   }
 }
 
+bool SerializePasswd(primitives::MessageWriter *writer,
+                     struct passwd *password) {
+  if (!password || !writer) {
+    return false;
+  }
+
+  writer->PushString(password->pw_name);
+  writer->PushString(password->pw_passwd);
+  writer->Push<uid_t>(password->pw_uid);
+  writer->Push<gid_t>(password->pw_gid);
+  writer->PushString(password->pw_gecos);
+  writer->PushString(password->pw_dir);
+  writer->PushString(password->pw_shell);
+  return true;
+}
+
 }  // namespace host_call
 }  // namespace asylo

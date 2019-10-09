@@ -110,6 +110,9 @@ static constexpr uint64_t kGetIfAddrsHandler =
 static constexpr uint64_t kGetCpuClockIdHandler =
     primitives::kSelectorHostCall + 22;
 
+// Exit handler constant for |GetPwUidHandler|.
+static constexpr uint64_t kGetPwUidHandler = primitives::kSelectorHostCall + 23;
+
 }  // namespace host_call
 }  // namespace asylo
 
