@@ -106,6 +106,10 @@ static constexpr uint64_t kIfIndexToNameHandler =
 static constexpr uint64_t kGetIfAddrsHandler =
     primitives::kSelectorHostCall + 21;
 
+// Exit handler constant for |GetCpuClockIdHandler|.
+static constexpr uint64_t kGetCpuClockIdHandler =
+    primitives::kSelectorHostCall + 22;
+
 }  // namespace host_call
 }  // namespace asylo
 

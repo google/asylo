@@ -230,7 +230,10 @@ define_constants(
 
 define_constants(
     name="ClockId",
-    values=["CLOCK_REALTIME", "CLOCK_MONOTONIC"],
+    values=[
+        "CLOCK_REALTIME",
+        "CLOCK_MONOTONIC",
+    ],
     include_header_file="time.h",
     default_value_newlib=-1,
     default_value_host=-1,

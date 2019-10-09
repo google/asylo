@@ -5046,7 +5046,7 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/stdlib.h ./newlib/libc/i
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/libc/include/sys/features.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h
 +++ ./newlib/libc/include/sys/features.h
-@@ -384,6 +384,15 @@
+@@ -384,6 +384,17 @@
  # define _POSIX_VERSION 199009L
  #endif
  
@@ -5055,6 +5055,8 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/features.h ./newlib/
 +#define _POSIX_TIMERS              1
 +#define _POSIX_THREADS             1
 +#define _POSIX_MONOTONIC_CLOCK     200112L
++#define _POSIX_CPUTIME             200112L
++#define _POSIX_THREAD_CPUTIME      200112L
 +#define _POSIX_READER_WRITER_LOCKS 200112L
 +#define _UNIX98_THREAD_MUTEX_ATTRIBUTES   1
 +#endif
@@ -5185,6 +5187,25 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h ./newlib/li
  typedef	long		__suseconds_t;	/* microseconds (signed) */
  typedef	unsigned long	__useconds_t;	/* microseconds (unsigned) */
  
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/time.h ./newlib/libc/include/time.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/time.h
++++ ./newlib/libc/include/time.h
+@@ -301,15 +301,6 @@
+ 
+ #endif /* _POSIX_CPUTIME */
+ 
+-#if defined(_POSIX_CPUTIME) || defined(_POSIX_THREAD_CPUTIME)
+-
+-/* CPU-time Clock Attribute Access, P1003.4b/D8, p. 56 */
+-
+-int _EXFUN(clock_setenable_attr, (clockid_t clock_id, int attr));
+-int _EXFUN(clock_getenable_attr, (clockid_t clock_id, int *attr));
+-
+-#endif /* _POSIX_CPUTIME or _POSIX_THREAD_CPUTIME */
+-
+ #ifdef __cplusplus
+ }
+ #endif
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/locale/lctype.c ./newlib/libc/locale/lctype.c
 --- ../newlib-2.5.0.20170922/newlib/libc/locale/lctype.c
 +++ ./newlib/libc/locale/lctype.c

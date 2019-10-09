@@ -75,6 +75,11 @@ int clock_gettime(clockid_t clock_id, struct timespec *time) {
   return result;
 }
 
+
+int clock_getcpuclockid(pid_t pid, clockid_t *clock_id) {
+  return enc_untrusted_clock_getcpuclockid(pid, clock_id);
+}
+
 int getitimer(int which, struct itimerval *curr_value) {
   return enc_untrusted_getitimer(which, curr_value);
 }

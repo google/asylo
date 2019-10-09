@@ -557,9 +557,12 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, ClockIdTest) {
-  std::vector<clockid_t> from_consts = {kLinux_CLOCK_MONOTONIC,
-                                        kLinux_CLOCK_REALTIME};
-  std::vector<clockid_t> to_consts = {CLOCK_MONOTONIC, CLOCK_REALTIME};
+  std::vector<clockid_t> from_consts = {
+      kLinux_CLOCK_MONOTONIC, kLinux_CLOCK_REALTIME,
+  };
+  std::vector<clockid_t> to_consts = {
+    CLOCK_MONOTONIC, CLOCK_REALTIME,
+  };
 
   for (int i = 0; i < from_consts.size(); i++) {
     EXPECT_THAT(TokLinuxClockId(to_consts[i]), Eq(from_consts[i]));
