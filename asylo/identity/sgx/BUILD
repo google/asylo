@@ -813,6 +813,42 @@ cc_test(
 )
 
 cc_library(
+    name = "sgx_identity_util",
+    srcs = ["sgx_identity_util.cc"],
+    hdrs = ["sgx_identity_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":code_identity_util",
+        ":sgx_identity_cc_proto",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
+# should not be used inside a real enclave, this test does not have an
+# "enclave_test_name" attribute.
+cc_test(
+    name = "sgx_identity_util_test",
+    srcs = ["sgx_identity_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":code_identity_test_util",
+        ":fake_enclave",
+        ":proto_format",
+        ":sgx_identity_cc_proto",
+        ":sgx_identity_util",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "attributes_util",
     srcs = ["attributes_util.cc"],
     hdrs = ["attributes_util.h"],
