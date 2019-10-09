@@ -5081,9 +5081,9 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    enclave_configuration = sgx_enclave_configuration,
 +    full_enclave_configuration = sgx_full_enclave_configuration,
 +    generate_sigstruct = sgx_generate_sigstruct,
++    signed_enclave = sgx_signed_enclave,
 +    tags = sgx_tags,
 +    unsigned_enclave = sgx_unsigned_enclave,
-+    signed_enclave = sgx_signed_enclave,
 +)
 diff -Nur /dev/null debug_key_mrsigner.cc
 --- /dev/null
