@@ -49,8 +49,8 @@ applications for various enclave backends.
 docker run -it --rm gcr.io/asylo-framework/asylo
 ```
 
-See the [Dockerfile](asylo/distrib/toolchain/Dockerfile) for an in-depth view of
-what's inside the container image.
+See the [Dockerfile](/asylo/distrib/toolchain/Dockerfile) for an in-depth view
+of what's inside the container image.
 
 See this
 [guide](https://cloud.google.com/container-registry/docs/pushing-and-pulling#pulling_images_from_the_registry)
@@ -104,9 +104,9 @@ In the above example, we use the following Docker flags:
     run` command is executed in the example project.
 
 If using the Intel SGX hardware backend (see the
-[Manual Installation guide](INSTALL.md#intel-sgx-hardware-backend-support)), the
-following Docker flags are needed to propagate the necessary capabilities from
-the host:
+[Manual Installation guide](/INSTALL.md#intel-sgx-hardware-backend-support)),
+the following Docker flags are needed to propagate the necessary capabilities
+from the host:
 
 +   `--device=/dev/isgx` gives the container access to the SGX device that is
     used to interact with the SGX hardware features.
@@ -189,7 +189,7 @@ files to `/opt/asylo/sdk`.
 If you don't want to use the Asylo Docker image, you can manually install Asylo
 and its dependencies instead.
 
-See [INSTALL.md](INSTALL.md) for detailed installation steps.
+See [INSTALL.md](/INSTALL.md) for detailed installation steps.
 
 ### Examples
 
@@ -256,31 +256,31 @@ The following packages contain source code that may be of particular interest to
 users of the Asylo framework as well as those looking to contribute to Asylo
 development.
 
-+   [asylo](asylo)
-    +   [crypto/](asylo/crypto)
++   [asylo](/asylo)
+    +   [crypto/](/asylo/crypto)
         -   Crypto utilities and wrappers around BoringSSL.
-    +   [distrib/](asylo/distrib)
+    +   [distrib/](/asylo/distrib)
         -   Asylo toolchain and dependencies.
-    +   [examples/](asylo/examples)
+    +   [examples/](/asylo/examples)
         -   Sample applications written with the Asylo framework.
-    +   [grpc/](asylo/grpc)
-        +   [auth/](asylo/grpc/auth)
+    +   [grpc/](/asylo/grpc)
+        +   [auth/](/asylo/grpc/auth)
             -   gRPC authentication support.
-        +   [util/](asylo/grpc/util)
+        +   [util/](/asylo/grpc/util)
             -   Utilities for using gRPC from a trusted application.
-    +   [identity/](asylo/identity)
+    +   [identity/](/asylo/identity)
         -   Identity and attestation support.
-    +   [platform/](asylo/platform)
+    +   [platform/](/asylo/platform)
         -   Implementation of enclave platforms and backends.
-    +   [test/](asylo/test)
+    +   [test/](/asylo/test)
         -   Testing utilities provided to application writers.
-    +   [util/](asylo/util)
+    +   [util/](/asylo/util)
         -   Common utilities provided for use both inside and outside an enclave
             environment.
 
 ## License
 
-Asylo is released under the [Apache 2.0 license](LICENSE).
+Asylo is released under the [Apache 2.0 license](/LICENSE).
 
 ```
 Copyright 2018 Asylo authors

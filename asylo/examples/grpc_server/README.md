@@ -36,8 +36,7 @@ The Asylo enclave runtime features rich POSIX support that allows full-featured
 serve as secure nodes in your distributed systems and cloud applications.
 
 The source files for this example are located in the
-[asylo/examples/grpc_server](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server)
-folder.
+[asylo/examples/grpc_server](/asylo/examples/grpc_server) folder.
 
 ## Setting up the environment
 
@@ -56,7 +55,7 @@ into English. The service also includes a shutdown RPC that triggers server
 shutdown.
 
 This example uses the following service definition from
-[translator_server.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server.proto):
+[translator_server.proto](/asylo/examples/grpc_server/translator_server.proto):
 
 ```protobuf
 // An empty message to serve as the input to the Shutdown RPC.
@@ -89,9 +88,9 @@ service Translator {
 
 This document doesn't include the server implementation because the details are
 mostly irrelevant to this example. To learn about the server implementation, see
-[translator_server_impl.h](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server_impl.h)
+[translator_server_impl.h](/asylo/examples/grpc_server/translator_server_impl.h)
 and
-[translator_server_impl.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/translator_server_impl.cc).
+[translator_server_impl.cc](/asylo/examples/grpc_server/translator_server_impl.cc).
 
 ## Setting up a server enclave
 
@@ -100,13 +99,13 @@ that you can see how gRPC works within Asylo. However, if you want to skip the
 example and get a server up and running sooner, you can use the `EnclaveServer`
 utility included in Asylo. `EnclaveServer` is a whole enclave that runs a single
 gRPC service. You can find `EnclaveServer` in
-[enclave_server.h](https://github.com/google/asylo/tree/master/asylo/grpc/util/enclave_server.h).
+[enclave_server.h](/asylo/grpc/util/enclave_server.h).
 
 To set up the server, the enclave needs to know the desired server address and
 the maximum time the server will wait before shutting down the server. This
 information can be passed through the `Initialize` method, which accepts an
 `EnclaveConfig`. This example extends the `EnclaveConfig` in a new file named
-[grpc_server_config.proto](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_config.proto):
+[grpc_server_config.proto](/asylo/examples/grpc_server/grpc_server_config.proto):
 
 ```protobuf
 extend asylo.EnclaveConfig {
@@ -143,7 +142,7 @@ is fine to rely on a non-secure source of time here.
 The enclave keeps track of the server, service object, shutdown timeout, and
 whether a shutdown RPC has been received in member variables. This example
 defines the server enclave in
-[grpc_server_enclave.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_enclave.cc):
+[grpc_server_enclave.cc](/asylo/examples/grpc_server/grpc_server_enclave.cc):
 
 ```cpp
 class GrpcServerEnclave final : public asylo::TrustedApplication {
@@ -294,7 +293,7 @@ The driver for the server enclave does the following:
 *   Finalizes the enclave cleanly
 
 This example implements the driver in
-[grpc_server_driver.cc](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/grpc_server_driver.cc).
+[grpc_server_driver.cc](/asylo/examples/grpc_server/grpc_server_driver.cc).
 
 #### Driver setting definitions
 
@@ -406,8 +405,7 @@ LOG_IF(QFATAL, !status.ok())
 ## Building the application
 
 To build the gRPC service with Bazel, the
-[BUILD file](https://github.com/google/asylo/tree/master/asylo/examples/grpc_server/BUILD)
-needs the following targets:
+[BUILD file](/asylo/examples/grpc_server/BUILD) needs the following targets:
 
 *   A `proto_library` target that contains the proto definitions
 *   A `cc_proto_library` target that contains the C++ language specific proto
