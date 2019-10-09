@@ -4544,7 +4544,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave.specs ./libgloss/en
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libgloss/enclave/enclave_syscalls.h
 --- ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h
 +++ ./libgloss/enclave/enclave_syscalls.h
-@@ -0,0 +1,43 @@
+@@ -0,0 +1,47 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
 +#define THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
 +
@@ -4555,6 +4555,10 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 +#include <sys/types.h>
 +
 +
++// The changed signatures need to match immediately and in the container, but
++// the container is behind until the next release. This define allows manual
++// installs to use the new signatures (since the define is present) but the
++// container to use the old signatures (since the define is not yet present).
 +#define ASYLO_ENCLAVE_SYSCALL_TRANSITION 1
 +
 +#if defined(__cplusplus)
@@ -10443,6 +10447,21 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/memory.h ./n
 +#include <string.h>
 +
 +#endif  // _MEMORY_H
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/_newlib_version.h ./newlib/libc/sys/enclave/include/_newlib_version.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/_newlib_version.h
++++ ./newlib/libc/sys/enclave/include/_newlib_version.h
+@@ -0,0 +1,11 @@
++/* _newlib_version.h.  Generated from _newlib_version.hin by configure.  */
++/* Version macros for internal and downstream use. */
++#ifndef _NEWLIB_VERSION_H__
++#define _NEWLIB_VERSION_H__ 1
++
++#define _NEWLIB_VERSION "2.5.0"
++#define __NEWLIB__ 2
++#define __NEWLIB_MINOR__ 5
++#define __NEWLIB_PATCHLEVEL__ 0
++
++#endif /* !_NEWLIB_VERSION_H__ */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/nl_types.h ./newlib/libc/sys/enclave/include/nl_types.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/nl_types.h
 +++ ./newlib/libc/sys/enclave/include/nl_types.h
