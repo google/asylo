@@ -296,9 +296,13 @@ int enc_untrusted_flock(int fd, int operation) {
 }
 
 int enc_untrusted_wait(int *wstatus) {
-  return EnsureInitializedAndDispatchSyscall(
-      asylo::system_call::kSYS_wait4, /*wpid=*/-1, wstatus, /*options=*/0,
+  int klinux_wstatus;
+  pid_t ret = EnsureInitializedAndDispatchSyscall(
+      asylo::system_call::kSYS_wait4, /*wpid=*/-1, &klinux_wstatus,
+      /*options=*/0,
       /*rusage=*/nullptr);
+  *wstatus = FromkLinuxToNewlibWstatus(klinux_wstatus);
+  return ret;
 }
 
 int enc_untrusted_inotify_init1(int flags) {

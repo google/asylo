@@ -22,6 +22,7 @@
 #include <sys/stat.h>
 #include <sys/statfs.h>
 #include <sys/un.h>
+#include <sys/wait.h>
 
 #include <vector>
 
@@ -718,10 +719,18 @@ PrimitiveStatus TestPwrite64(void *context, MessageReader *in,
 PrimitiveStatus TestWait(void *context, MessageReader *in, MessageWriter *out) {
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
 
-  int wstatus = 0;
+  int enclave_wstatus = 0;
+  out->Push<int>(enc_untrusted_wait(&enclave_wstatus));
 
-  out->Push<int>(enc_untrusted_wait(&wstatus));
-  out->Push<int>(wstatus);
+  if (!WIFEXITED(enclave_wstatus)) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestWait: Expected WIFEXITED to be true, found false."};
+  }
+  if (WEXITSTATUS(enclave_wstatus) != 0) {
+    return {error::GoogleError::INVALID_ARGUMENT,
+            "TestWait: Found non-zero WEXITSTATUS."};
+  }
+
   return PrimitiveStatus::OkStatus();
 }
 

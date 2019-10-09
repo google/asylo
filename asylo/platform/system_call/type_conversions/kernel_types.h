@@ -197,4 +197,7 @@ struct klinux_rusage {
   int64_t ru_nivcsw;
 };
 
+#define KLINUX_WIFEXITED(status) (((status)&0x7f) == 0)
+#define KLINUX_WIFSTOPPED(status) (((status)&0xff) == 0x7f)
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

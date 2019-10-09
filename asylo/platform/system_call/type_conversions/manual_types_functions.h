@@ -180,4 +180,8 @@ bool FromkLinuxRusage(const struct klinux_rusage *input, struct rusage *output);
 // Converts an enclave based rusage to a kernel based rusage.
 bool TokLinuxRusage(const struct rusage *input, struct klinux_rusage *output);
 
+// Converts a kernel based wstatus word to a newlib based wstatus inside the
+// enclave.
+int FromkLinuxToNewlibWstatus(int input);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

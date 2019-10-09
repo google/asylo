@@ -1809,8 +1809,6 @@ TEST_F(HostCallTest, TestWait) {
     _exit(0);
   } else {
     int returnpid = -1;
-    int wstatus = -1;
-
     while (returnpid != pid) {
       // We do not push the empty status pointer on the stack since we would
       // need to create one in the enclave anyways.
@@ -1818,14 +1816,11 @@ TEST_F(HostCallTest, TestWait) {
       MessageReader out;
       ASYLO_ASSERT_OK(client_->EnclaveCall(kTestWait, &in, &out));
       ASSERT_THAT(out,
-                  SizeIs(2));  // should contain return value and wstatus ptr
+                  SizeIs(1));  // Should only contain return value.
       returnpid = out.next<int>();
-      wstatus = out.next<int>();
     }
 
     EXPECT_THAT(returnpid, Eq(pid));
-    EXPECT_TRUE(WIFEXITED(wstatus));
-    EXPECT_THAT(WEXITSTATUS(wstatus), Eq(0));
   }
 }
 
