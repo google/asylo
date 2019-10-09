@@ -155,30 +155,6 @@ void enc_untrusted_syslog(int priority, const char *message) {
 }
 
 //////////////////////////////////////
-//         sys/utsname.h            //
-//////////////////////////////////////
-
-int enc_untrusted_uname(struct utsname *utsname_val) {
-  if (!utsname_val) {
-    errno = EFAULT;
-    return -1;
-  }
-
-  struct BridgeUtsName bridge_utsname_val;
-  int ret;
-  CHECK_OCALL(ocall_enc_untrusted_uname(&ret, &bridge_utsname_val));
-  if (ret != 0) {
-    return ret;
-  }
-
-  if (!asylo::ConvertUtsName(bridge_utsname_val, utsname_val)) {
-    LOG(FATAL) << "uname returned an ill-formed utsname";
-  }
-
-  return ret;
-}
-
-//////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
 

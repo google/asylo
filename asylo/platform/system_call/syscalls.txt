@@ -52,6 +52,7 @@ INCLUDE("sys/wait.h")
 INCLUDE("sys/time.h")
 INCLUDE("sys/times.h")
 INCLUDE("sys/resource.h")
+INCLUDE("sys/utsname.h")
 INCLUDE("sched.h")
 INCLUDE("utime.h")
 
@@ -224,3 +225,7 @@ SYSCALL_DEFINE2(utime, const char *, filename,
 // ========
 
 SYSCALL_DEFINE2(getrusage, int, who, \out struct rusage *, usage)
+
+// Utsname.h
+// =========
+SYSCALL_DEFINE1(uname, \out struct utsname *, buf)

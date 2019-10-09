@@ -19,7 +19,7 @@
 #include <stdlib.h>
 #include <sys/utsname.h>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 
 extern "C" {
 

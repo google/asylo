@@ -137,38 +137,6 @@ struct BridgePassWd *CopyBridgePassWd(
 // terminating null byte).
 bool CStringCopy(const char *source_buf, char *dest_buf, size_t size);
 
-// Copies |source_utsname| into |*dest_utsname|, which may have a different
-// type. Both SrcUtsNameType and DstUtsNameType must have public fixed-length
-// char array fields called:
-//   * sysname
-//   * nodename
-//   * release
-//   * version
-//   * machine
-//   * domainname
-// If SrcUtsNameType has state outside of these fields, it is not copied. If
-// DstUtsNameType has state outside of these fields, it is not set.
-template <typename SrcUtsNameType, typename DstUtsNameType>
-bool ConvertUtsName(const SrcUtsNameType &source_utsname,
-                    DstUtsNameType *dest_utsname) {
-  if (!dest_utsname) {
-    return false;
-  }
-
-  return CStringCopy(source_utsname.sysname, dest_utsname->sysname,
-                     sizeof(dest_utsname->sysname)) &&
-         CStringCopy(source_utsname.nodename, dest_utsname->nodename,
-                     sizeof(dest_utsname->nodename)) &&
-         CStringCopy(source_utsname.release, dest_utsname->release,
-                     sizeof(dest_utsname->release)) &&
-         CStringCopy(source_utsname.version, dest_utsname->version,
-                     sizeof(dest_utsname->version)) &&
-         CStringCopy(source_utsname.machine, dest_utsname->machine,
-                     sizeof(dest_utsname->machine)) &&
-         CStringCopy(source_utsname.domainname, dest_utsname->domainname,
-                     sizeof(dest_utsname->domainname));
-}
-
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_COMMON_BRIDGE_FUNCTIONS_H_

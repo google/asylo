@@ -124,6 +124,7 @@ int enc_untrusted_epoll_wait(int epfd, struct epoll_event *events,
 int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
+int enc_untrusted_uname(struct utsname *buf);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);

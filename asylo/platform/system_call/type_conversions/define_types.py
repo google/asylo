@@ -311,6 +311,16 @@ define_constants(
     values=["WNOHANG", "WUNTRACED"],
     include_header_file="sys/wait.h")
 
+define_constants(
+    name="UtsNameLength",
+    values=[
+        "_UTSNAME_SYSNAME_LENGTH", "_UTSNAME_NODENAME_LENGTH",
+        "_UTSNAME_RELEASE_LENGTH", "_UTSNAME_VERSION_LENGTH",
+        "_UTSNAME_MACHINE_LENGTH", "_UTSNAME_DOMAIN_LENGTH"
+    ],
+    include_header_file="sys/utsname.h",
+    skip_conversions=True)
+
 define_struct(
     name="timespec",
     values=[

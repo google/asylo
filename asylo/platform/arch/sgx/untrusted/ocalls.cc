@@ -18,7 +18,7 @@
 
 // Stubs invoked by edger8r generated bridge code for ocalls.
 
-// For |domainname| field in struct utsname and pipe2().
+// For |domainname| field in pipe2().
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
@@ -37,7 +37,6 @@
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/time.h>
-#include <sys/utsname.h>
 #include <sys/wait.h>
 #include <syslog.h>
 #include <unistd.h>
@@ -320,30 +319,6 @@ void ocall_enc_untrusted_openlog(const char *ident, int option, int facility) {
 
 void ocall_enc_untrusted_syslog(int priority, const char *message) {
   syslog(asylo::FromBridgeSysLogPriority(priority), "%s", message);
-}
-
-//////////////////////////////////////
-//         sys/utsname.h            //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_uname(struct BridgeUtsName *bridge_utsname_val) {
-  if (!bridge_utsname_val) {
-    errno = EFAULT;
-    return -1;
-  }
-
-  struct utsname utsname_val;
-  int ret = uname(&utsname_val);
-  if (ret != 0) {
-    return ret;
-  }
-
-  if (!asylo::ConvertUtsName(utsname_val, bridge_utsname_val)) {
-    errno = EINTR;
-    return -1;
-  }
-
-  return ret;
 }
 
 //////////////////////////////////////

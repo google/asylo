@@ -79,6 +79,17 @@ inline void klinux_sigaddset(klinux_sigset_t *klinux_set, int klinux_sig) {
   klinux_set->klinux_val[0] |= 1UL << sig;
 }
 
+// Copies the C string |source_buf| into |dest_buf|. Only copies up to size-1
+// non-null characters. Always terminates the copied string with a null byte on
+// a successful write.
+//
+// Fails if |source_buf| contains more than |size| bytes (including the
+// terminating null byte).
+bool CStringCopy(const char *source_buf, char *dest_buf, size_t size) {
+  int ret = snprintf(dest_buf, size, "%s", source_buf);
+  return ret >= 0 && static_cast<size_t>(ret) < size;
+}
+
 }  // namespace
 
 int TokLinuxSocketType(int input) {
@@ -724,4 +735,34 @@ int FromkLinuxToNewlibWstatus(int input) {
   }
 
   return info + code;
+}
+
+bool FromkLinuxUtsName(const struct klinux_utsname *input,
+                       struct utsname *output) {
+  if (!input || !output) {
+    return false;
+  }
+
+  if (!CStringCopy(input->sysname, output->sysname, sizeof(output->sysname)) ||
+      !CStringCopy(input->nodename, output->nodename,
+                   sizeof(output->nodename)) ||
+      !CStringCopy(input->release, output->release, sizeof(output->release)) ||
+      !CStringCopy(input->version, output->version, sizeof(output->version)) ||
+      !CStringCopy(input->machine, output->machine, sizeof(output->machine))) {
+    return false;
+  }
+
+#if (defined(__USE_GNU) && __USE_GNU) || \
+    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
+  if (!CStringCopy(input->domainname, output->domainname,
+                   sizeof(output->domainname))) {
+    return false;
+  }
+#else
+  if (!CStringCopy(input->__domainname, output->domainname,
+                   sizeof(output->domainname))) {
+    return false;
+  }
+#endif
+  return true;
 }

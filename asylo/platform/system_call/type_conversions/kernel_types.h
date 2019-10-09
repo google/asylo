@@ -200,4 +200,19 @@ struct klinux_rusage {
 #define KLINUX_WIFEXITED(status) (((status)&0x7f) == 0)
 #define KLINUX_WIFSTOPPED(status) (((status)&0xff) == 0x7f)
 
+struct klinux_utsname {
+  char sysname[kLinux__UTSNAME_SYSNAME_LENGTH];
+  char nodename[kLinux__UTSNAME_NODENAME_LENGTH];
+  char release[kLinux__UTSNAME_RELEASE_LENGTH];
+  char version[kLinux__UTSNAME_VERSION_LENGTH];
+  char machine[kLinux__UTSNAME_MACHINE_LENGTH];
+
+#if (defined(__USE_GNU) && __USE_GNU) || \
+    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
+  char domainname[kLinux__UTSNAME_DOMAIN_LENGTH];
+#else
+  char __domainname[kLinux__UTSNAME_DOMAIN_LENGTH];
+#endif
+};
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

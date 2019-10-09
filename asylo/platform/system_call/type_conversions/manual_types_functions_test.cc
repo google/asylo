@@ -21,6 +21,7 @@
 #include <netinet/in.h>
 #include <signal.h>
 #include <sys/un.h>
+#include <sys/utsname.h>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -323,6 +324,49 @@ TEST(ManualTypesFunctionsTest, EpollEventTest) {
 
 TEST(ManualTypesFunctionsTest, RusageSizeTest) {
   EXPECT_THAT(sizeof(struct klinux_rusage), Eq(sizeof(struct rusage)));
+}
+
+TEST(ManualTypesFunctionsTest, UtsnameLengthTest) {
+  EXPECT_THAT(sizeof(struct klinux_utsname), Eq(sizeof(struct utsname)));
+}
+
+TEST(ManualTypesFunctionsTest, UtsnameTest) {
+  const char *sysname = "abc";
+  const char *nodename = "def";
+  const char *release = "ghi";
+  const char *version = "jkl";
+  const char *machine = "mno";
+  const char *domainname = "pqr";
+  struct utsname uname {};
+  struct klinux_utsname klinux_uname {};
+
+  strncpy(klinux_uname.sysname, sysname, sizeof(klinux_uname.sysname));
+  strncpy(klinux_uname.nodename, nodename, sizeof(klinux_uname.sysname));
+  strncpy(klinux_uname.release, release, sizeof(klinux_uname.sysname));
+  strncpy(klinux_uname.version, version, sizeof(klinux_uname.sysname));
+  strncpy(klinux_uname.machine, machine, sizeof(klinux_uname.sysname));
+
+#if (defined(__USE_GNU) && __USE_GNU) || \
+    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
+  strncpy(klinux_uname.domainname, domainname, sizeof(klinux_uname.domainname));
+#else
+  strncpy(klinux_uname.__domainname, domainname,
+          sizeof(klinux_uname.__domainname));
+#endif
+
+  EXPECT_THAT(FromkLinuxUtsName(&klinux_uname, &uname), Eq(true));
+  EXPECT_THAT(uname.sysname, StrEq(sysname));
+  EXPECT_THAT(uname.nodename, StrEq(nodename));
+  EXPECT_THAT(uname.release, StrEq(release));
+  EXPECT_THAT(uname.version, StrEq(version));
+  EXPECT_THAT(uname.machine, StrEq(machine));
+
+#if (defined(__USE_GNU) && __USE_GNU) || \
+    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
+  EXPECT_THAT(uname.domainname, StrEq(domainname));
+#else
+  EXPECT_THAT(uname.__domainname, StrEq(domainname));
+#endif
 }
 
 }  // namespace

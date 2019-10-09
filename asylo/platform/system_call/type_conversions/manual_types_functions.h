@@ -29,6 +29,7 @@
 #include <sys/socket.h>
 #include <sys/time.h>
 #include <sys/un.h>
+#include <sys/utsname.h>
 
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
 #include "asylo/platform/system_call/type_conversions/kernel_types.h"
@@ -183,5 +184,9 @@ bool TokLinuxRusage(const struct rusage *input, struct klinux_rusage *output);
 // Converts a kernel based wstatus word to a newlib based wstatus inside the
 // enclave.
 int FromkLinuxToNewlibWstatus(int input);
+
+// Converts a kernel based utsname struct to an enclave based utsname.
+bool FromkLinuxUtsName(const struct klinux_utsname *input,
+                       struct utsname *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

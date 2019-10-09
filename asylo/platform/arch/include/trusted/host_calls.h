@@ -98,12 +98,6 @@ void enc_untrusted_openlog(const char *ident, int option, int facility);
 void enc_untrusted_syslog(int priority, const char *message);
 
 //////////////////////////////////////
-//         sys/utsname.h            //
-//////////////////////////////////////
-
-int enc_untrusted_uname(struct utsname *utsname_buf);
-
-//////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
 
