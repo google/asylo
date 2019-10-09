@@ -27,6 +27,7 @@
 // make an untrusted call.
 static const size_t kPageSize = 4096;
 
+#ifndef ASYLO_MMAN_MOVE_TRANSITION
 void *mmap(void *addr, size_t length, int prot, int flags, int fd,
            off_t offset) {
   if (addr || prot != (PROT_READ | PROT_WRITE) ||
@@ -43,6 +44,7 @@ int munmap(void *addr, size_t length) {
   free(addr);
   return 0;
 }
+#endif
 
 // Only _SC_PAGESIZE is supported for now.
 long sysconf(int name) {

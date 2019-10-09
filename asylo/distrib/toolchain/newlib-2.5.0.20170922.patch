@@ -4663,7 +4663,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	else t='$(program_transform_name)'; echo objcopy | sed -e $$t ; fi`
 +
 +# object files needed
-+OBJS = enclave.o
++OBJS = enclave.o mman.o
 +
 +# Object files specific to particular targets.
 +EVALOBJS = ${OBJS}
@@ -4733,6 +4733,113 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/Makefile.in ./libgloss/encl
 +	touch $@
 +
 +all-recursive: stmp-targ-include
+diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/mman.c ./libgloss/enclave/mman.c
+--- ../newlib-2.5.0.20170922/libgloss/enclave/mman.c
++++ ./libgloss/enclave/mman.c
+@@ -0,0 +1,103 @@
++/*
++ *
++ * Copyright 2018 Asylo authors
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ */
++
++#include <sys/mman.h>
++
++#include <errno.h>
++#include <stdlib.h>
++#include <string.h>
++
++
++// Simulated page size, used by the POSIX wrappers.
++static const size_t kPageSize = 4096;
++
++
++void *mmap(void *addr, size_t length, int prot, int flags, int fd,
++           off_t offset) {
++  if (addr || prot != (PROT_READ | PROT_WRITE) ||
++      flags != (MAP_ANONYMOUS | MAP_PRIVATE) || fd != -1 || offset != 0) {
++    errno = ENOSYS;
++    return MAP_FAILED;
++  }
++  void *ptr = NULL;
++  if (posix_memalign(&ptr, kPageSize, length)) {
++    return MAP_FAILED;
++  }
++
++  memset(ptr, 0, length);
++  return ptr;
++}
++
++int munmap(void *addr, size_t length) {
++  free(addr);
++  return 0;
++}
++
++// Declared here instead of from #include <malloc.h> due to clang errors.
++void *memalign(size_t alignment, size_t size);
++
++int posix_memalign(void **memptr, size_t alignment, size_t size) {
++  // The spec says passing a size of 0 should either return a null pointer or
++  // a valid freeable pointer.
++  // The latter behavior is used by some applications to check that
++  // allocations can succeed.
++
++  void *ptr = memalign(alignment, size);
++
++  // From the man page: "On Linux (and other systems), posix_memalign() does not
++  // modify memptr on failure.  A requirement standardizing this behavior was
++  // added in POSIX.1-2016."
++  if (!ptr) {
++    return ENOMEM;
++  }
++
++  *memptr = ptr;
++  return 0;
++}
++
++int mlock(const void *addr, size_t len) {
++  errno = ENOSYS;
++  return -1;
++}
++
++int mlock2(const void *addr, size_t len, int flags) {
++  errno = ENOSYS;
++  return -1;
++}
++
++int munlock(const void *addr, size_t len) {
++  errno = ENOSYS;
++  return -1;
++}
++
++int mlockall(int flags) {
++  errno = ENOSYS;
++  return -1;
++}
++
++int munlockall(void) {
++  errno = ENOSYS;
++  return -1;
++}
++
++// mprotect is weak to allow an optional definition with Intel's trts_mprotect.
++__attribute__((weak))
++int mprotect(void *addr, size_t len, int prot) {
++  errno = ENOSYS;
++  return -1;
++}
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/warning.h ./libgloss/enclave/warning.h
 --- ../newlib-2.5.0.20170922/libgloss/enclave/warning.h
 +++ ./libgloss/enclave/warning.h
@@ -5191,6 +5298,22 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h ./newlib/li
  typedef	long		__suseconds_t;	/* microseconds (signed) */
  typedef	unsigned long	__useconds_t;	/* microseconds (unsigned) */
  
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/types.h ./newlib/libc/include/sys/types.h
+--- ../newlib-2.5.0.20170922/newlib/libc/include/sys/types.h
++++ ./newlib/libc/include/sys/types.h
+@@ -21,6 +21,12 @@
+ #include <sys/cdefs.h>
+ #include <machine/_types.h>
+ 
++/* Asylo toolchain transitional defines to allow smooth changes to libc between
++ * releases to the container, and manual toolchain installations. */
++
++
++#define ASYLO_MMAN_MOVE_TRANSITION 1
++
+ /* BSD types permitted by POSIX and always exposed as in Glibc.  Only provided
+    for backward compatibility with BSD code.  The uintN_t standard types should
+    be preferred in new code. */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/time.h ./newlib/libc/include/time.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/time.h
 +++ ./newlib/libc/include/time.h
@@ -10531,6 +10654,76 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/dirent.h
 +long int telldir(DIR *);
 +
 +#endif  // _SYS_DIRENT_H
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h ./newlib/libc/sys/enclave/include/sys/mman.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/mman.h
++++ ./newlib/libc/sys/enclave/include/sys/mman.h
+@@ -0,0 +1,66 @@
++/*
++ *
++ * Copyright 2018 Asylo authors
++ *
++ * Licensed under the Apache License, Version 2.0 (the "License");
++ * you may not use this file except in compliance with the License.
++ * You may obtain a copy of the License at
++ *
++ *     http://www.apache.org/licenses/LICENSE-2.0
++ *
++ * Unless required by applicable law or agreed to in writing, software
++ * distributed under the License is distributed on an "AS IS" BASIS,
++ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
++ * See the License for the specific language governing permissions and
++ * limitations under the License.
++ *
++ */
++
++#ifndef _SYS_MMAN_H_
++#define _SYS_MMAN_H_
++
++#include <sys/types.h>
++
++#ifdef __cplusplus
++extern "C" {
++#endif
++
++#define PROT_READ  0x01
++#define PROT_WRITE 0x02
++#define PROT_EXEC  0x04
++
++#define MAP_FAILED ((void *)-1)
++
++#define MAP_SHARED     0x00001
++#define MAP_PRIVATE    0x00002
++#define MAP_FIXED      0x00010 /* Interpret addr exactly.  */
++#define MAP_ANONYMOUS  0x00020 /* Don't use a file.  */
++#define MAP_ANON MAP_ANONYMOUS
++#define MAP_GROWSDOWN  0x00100 /* Stack-like segment.  */
++#define MAP_DENYWRITE  0x00800 /* ETXTBSY */
++#define MAP_EXECUTABLE 0x01000 /* Mark it as an executable.  */
++#define MAP_LOCKED     0x02000 /* Lock the mapping.  */
++#define MAP_NORESERVE  0x04000 /* Don't check for reservations.  */
++#define MAP_POPULATE   0x08000 /* Populate (prefault) pagetables.  */
++#define MAP_NONBLOCK   0x10000 /* Do not block on IO.  */
++#define MAP_STACK      0x20000 /* Allocation is for a stack.  */
++#define MAP_HUGETLB    0x40000 /* Create huge page mapping.  */
++
++void *mmap(void *addr, size_t length, int prot, int flags, int fd,
++           off_t offset);
++
++int munmap(void *addr, size_t length);
++
++// Unimplemented.
++int mlock(const void *addr, size_t len);
++int mlock2(const void *addr, size_t len, int flags);
++int munlock(const void *addr, size_t len);
++int mlockall(int flags);
++int munlockall(void);
++int mprotect(void *addr, size_t len, int prot);
++
++#ifdef __cplusplus
++}  // extern "C"
++#endif
++
++#endif  // _SYS_MMAN_H_
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/_pthreadtypes.h
 +++ ./newlib/libc/sys/enclave/include/sys/_pthreadtypes.h

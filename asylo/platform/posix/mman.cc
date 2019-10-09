@@ -18,6 +18,10 @@
 
 #include <sys/mman.h>
 
+
+// mman.cc is moved to newlib/libgloss/enclave to be layered under libc++.
+#ifndef ASYLO_MMAN_MOVE_TRANSITION
+
 #include <errno.h>
 #include <stdlib.h>
 #include <string.h>
@@ -101,3 +105,5 @@ int mprotect(void *addr, size_t len, int prot) {
 }
 
 }  // extern "C"
+
+#endif  // ASYLO_MMAN_MOVE_TRANSITION

@@ -16,10 +16,15 @@
  *
  */
 
+#include <sys/types.h>
+
+#ifdef ASYLO_MMAN_MOVE_TRANSITION
+#include_next <sys/mman.h>
+#else  // ASYLO_MMAN_MOVE_TRANSITION
+
 #ifndef ASYLO_PLATFORM_POSIX_INCLUDE_SYS_MMAN_H_
 #define ASYLO_PLATFORM_POSIX_INCLUDE_SYS_MMAN_H_
 
-#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,5 +66,7 @@ int munlockall(void);
 #ifdef __cplusplus
 }  // extern "C"
 #endif
+
+#endif  // ASYLO_MMAN_MOVE_TRANSITION
 
 #endif  // ASYLO_PLATFORM_POSIX_INCLUDE_SYS_MMAN_H_
