@@ -185,21 +185,6 @@ int enc_untrusted_uname(struct utsname *utsname_val) {
 void enc_untrusted__exit(int rc) { ocall_enc_untrusted__exit(rc); }
 
 //////////////////////////////////////
-//             wait.h               //
-//////////////////////////////////////
-
-pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options) {
-  pid_t ret;
-  struct BridgeWStatus bridge_wstatus;
-  CHECK_OCALL(ocall_enc_untrusted_waitpid(&ret, pid, &bridge_wstatus,
-                                          asylo::ToBridgeWaitOptions(options)));
-  if (wstatus) {
-    *wstatus = asylo::FromBridgeWStatus(bridge_wstatus);
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////
 

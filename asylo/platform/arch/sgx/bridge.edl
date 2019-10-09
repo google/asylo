@@ -108,14 +108,6 @@ enclave {
 	allow(ecall_take_snapshot, ecall_restore) propagate_errno;
 
     //////////////////////////////////////
-    //             wait.h               //
-    //////////////////////////////////////
-
-    pid_t ocall_enc_untrusted_waitpid(
-        pid_t pid, [out] struct BridgeWStatus *wstatus, int options)
-	propagate_errno;
-
-    //////////////////////////////////////
     //           Debugging              //
     //////////////////////////////////////
     // Temporary calls to help with debugging, or other workarounds go here.

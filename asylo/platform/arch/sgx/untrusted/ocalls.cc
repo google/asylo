@@ -596,21 +596,6 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name,
 }
 
 //////////////////////////////////////
-//             wait.h               //
-//////////////////////////////////////
-
-pid_t ocall_enc_untrusted_waitpid(pid_t pid,
-                                  struct BridgeWStatus *bridge_wstatus,
-                                  int options) {
-  int wstatus;
-  pid_t ret = waitpid(pid, &wstatus, asylo::FromBridgeWaitOptions(options));
-  if (bridge_wstatus) {
-    *bridge_wstatus = asylo::ToBridgeWStatus(wstatus);
-  }
-  return ret;
-}
-
-//////////////////////////////////////
 //           Debugging              //
 //////////////////////////////////////
 

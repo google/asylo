@@ -156,6 +156,7 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname);
 char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname);
 int enc_untrusted_getifaddrs(struct ifaddrs **ifap);
 pid_t enc_untrusted_wait3(int *status, int options, struct rusage *rusage);
+pid_t enc_untrusted_waitpid(pid_t pid, int *status, int options);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);

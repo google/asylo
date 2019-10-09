@@ -110,12 +110,6 @@ int enc_untrusted_uname(struct utsname *utsname_buf);
 void enc_untrusted__exit(int rc);
 
 //////////////////////////////////////
-//           wait.h                 //
-//////////////////////////////////////
-
-pid_t enc_untrusted_waitpid(pid_t pid, int *wstatus, int options);
-
-//////////////////////////////////////
 //            Debugging             //
 //////////////////////////////////////
 
