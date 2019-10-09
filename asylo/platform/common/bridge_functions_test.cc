@@ -41,17 +41,6 @@ class BridgeTest : public ::testing::Test {
 
 using intvec = std::vector<int>;
 
-TEST_F(BridgeTest, BridgeWaitOptionsTest) {
-  intvec from_consts = {BRIDGE_WNOHANG};
-  intvec to_consts = {WNOHANG};
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(FromBridgeWaitOptions);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(from_consts, to_consts, ITER_BOUND),
-              from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(ToBridgeWaitOptions);
-  EXPECT_THAT(FuzzBitsetTranslationFunction(to_consts, from_consts, ITER_BOUND),
-              to_matcher);
-}
-
 TEST_F(BridgeTest, BridgeSignalCodeTest) {
   intvec from_consts = {BRIDGE_SI_USER, BRIDGE_SI_QUEUE, BRIDGE_SI_TIMER,
                         BRIDGE_SI_ASYNCIO, BRIDGE_SI_MESGQ};

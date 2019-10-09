@@ -43,11 +43,6 @@ extern "C" {
 typedef uint64_t bridge_size_t;
 typedef int64_t bridge_sigset_t;
 
-// The wait options that are supported inside the enclave.
-enum WaitOptions {
-  BRIDGE_WNOHANG = 1,
-};
-
 // All the signals that are supported to be registered inside enclave (except
 // SIGSTOP and SIGKILL).
 enum SignalNumber {
@@ -134,11 +129,6 @@ enum SysLogLevel {
   BRIDGE_LOG_DEBUG = 7,
 };
 
-struct bridge_timeval {
-  int64_t tv_sec;
-  int64_t tv_usec;
-} ABSL_ATTRIBUTE_PACKED;
-
 struct bridge_siginfo_t {
   int32_t si_signo;
   int32_t si_code;
@@ -148,11 +138,6 @@ struct BridgeSignalHandler {
   void (*sigaction)(int, struct bridge_siginfo_t *, void *);
   bridge_sigset_t mask;
   int flags;
-};
-
-struct BridgeRUsage {
-  struct bridge_timeval ru_utime;
-  struct bridge_timeval ru_stime;
 };
 
 #ifndef BRIDGE_FD_SETSIZE

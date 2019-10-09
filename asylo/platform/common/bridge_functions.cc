@@ -130,18 +130,6 @@ const std::unordered_map<int, int> *GetSignalToBridgeSignalMap() {
 
 }  // namespace
 
-int FromBridgeWaitOptions(int bridge_wait_options) {
-  int wait_options = 0;
-  if (bridge_wait_options & BRIDGE_WNOHANG) wait_options |= WNOHANG;
-  return wait_options;
-}
-
-int ToBridgeWaitOptions(int wait_options) {
-  int bridge_wait_options = 0;
-  if (wait_options & WNOHANG) bridge_wait_options |= BRIDGE_WNOHANG;
-  return bridge_wait_options;
-}
-
 int FromBridgeSignal(int bridge_signum) {
   for (auto signal : *GetSignalToBridgeSignalMap()) {
     if (bridge_signum == signal.second) {

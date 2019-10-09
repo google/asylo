@@ -40,14 +40,6 @@
 
 namespace asylo {
 
-// Converts |bridge_wait_options| to runtime wait options. Returns 0 if no
-// supported wait options are provided.
-int FromBridgeWaitOptions(int bridge_wait_options);
-
-// Converts |wait_options| to bridge wait options. Returns 0 if no supported
-// wait options are provided.
-int ToBridgeWaitOptions(int wait_options);
-
 // Converts |bridge_set| to a runtime signal mask set. Returns nullptr if
 // unsuccessful.
 sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set);
