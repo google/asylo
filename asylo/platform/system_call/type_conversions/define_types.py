@@ -19,7 +19,7 @@
 
 Describes the types that need to be generated with the default values on the
 target implementation. For each type, only include the values/members that are
-present in newlib as well as the target host library.
+present in enclave C library as well as the target host library.
 """
 
 from asylo.platform.system_call.type_conversions.types_parse_functions import define_constants
@@ -57,7 +57,7 @@ define_constants(
     ],
     include_header_file="fcntl.h",
     default_value_host=-1,
-    default_value_newlib=-1)
+    default_value_enclave=-1)
 
 define_constants(
     name="AfFamily",
@@ -69,7 +69,7 @@ define_constants(
     ],
     include_header_file="sys/socket.h",
     default_value_host="AF_UNSPEC",
-    default_value_newlib="AF_UNSPEC")
+    default_value_enclave="AF_UNSPEC")
 
 define_constants(
     name="SocketType",
@@ -91,7 +91,7 @@ define_constants(
     values=["TCP_NODELAY", "TCP_KEEPIDLE", "TCP_KEEPINTVL", "TCP_KEEPCNT"],
     include_header_file="netinet/tcp.h",
     default_value_host=-1,
-    default_value_newlib=-1)
+    default_value_enclave=-1)
 
 define_constants(
     name="IpV6OptionName",
@@ -103,7 +103,7 @@ define_constants(
     ],
     include_header_file="netinet/in.h",
     default_value_host=-1,
-    default_value_newlib=-1)
+    default_value_enclave=-1)
 
 define_constants(
     name="SocketOptionName",
@@ -116,7 +116,7 @@ define_constants(
     ],
     include_header_file="sys/socket.h",
     default_value_host=-1,
-    default_value_newlib=-1)
+    default_value_enclave=-1)
 
 define_constants(
     name="FLockOperation",
@@ -174,7 +174,7 @@ define_constants(
     include_header_file="errno.h",
     multi_valued=False,
     default_value_host=0x8000,
-    default_value_newlib=0x8000,
+    default_value_enclave=0x8000,
     or_input_to_default_value=True)
 
 define_constants(
@@ -192,7 +192,7 @@ define_constants(
     ],
     include_header_file="unistd.h",
     default_value_host=-1,
-    default_value_newlib=-1)
+    default_value_enclave=-1)
 
 define_constants(
     name="RecvSendFlag",
@@ -217,7 +217,7 @@ define_constants(
         "SIGRTMAX", "NSIG"
     ],
     include_header_file="signal.h",
-    default_value_newlib=-1,
+    default_value_enclave=-1,
     default_value_host=-1,
     wrap_macros_with_if_defined=True)
 
@@ -225,7 +225,7 @@ define_constants(
     name="SigMaskAction",
     values=["SIG_BLOCK", "SIG_UNBLOCK", "SIG_SETMASK"],
     include_header_file="signal.h",
-    default_value_newlib=-1,
+    default_value_enclave=-1,
     default_value_host=-1)
 
 define_constants(
@@ -235,7 +235,7 @@ define_constants(
         "CLOCK_MONOTONIC",
     ],
     include_header_file="time.h",
-    default_value_newlib=-1,
+    default_value_enclave=-1,
     default_value_host=-1,
     data_type="clockid_t")
 
@@ -244,7 +244,7 @@ define_constants(
     values=["ITIMER_REAL", "ITIMER_VIRTUAL", "ITIMER_PROF"],
     include_header_file="sys/time.h",
     default_value_host=-1,
-    default_value_newlib=-1)
+    default_value_enclave=-1)
 
 define_constants(
     name="AddressInfoFlag",

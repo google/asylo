@@ -137,9 +137,9 @@ cc_test(
 )
 
 # Library containing the type definitions and type conversion functions
-# between newlib and the target host implementation. This library contains
-# both the auto-generated as well as manually written type definitions and
-# type conversion functions.
+# between enclave C library implementation and the target host implementation.
+# This library contains both the auto-generated as well as manually written
+# type definitions and type conversion functions.
 cc_library(
     name = "type_conversions",
     hdrs = [

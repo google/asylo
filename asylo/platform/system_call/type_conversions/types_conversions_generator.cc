@@ -33,7 +33,7 @@
 // by the types conversions generator.
 struct EnumProperties {
   int64_t default_value_host;
-  int64_t default_value_newlib;
+  int64_t default_value_enclave;
   bool multi_valued;
   bool skip_conversions;
   bool or_input_to_default_value;
@@ -75,8 +75,8 @@ std::map<std::string, StructProperties> *GetStructPropertiesTable() {
 }
 
 // Writes the provided includes to an output stream. These includes are needed
-// by the type conversion functions for resolving the type definitions in
-// newlib.
+// by the type conversion functions for resolving the type definitions on the
+// host C library.
 void WriteMacroProvidedIncludes(std::ostream *os) {
   std::vector<std::string> includes = {INCLUDES};
   for (const auto &incl : includes) {
@@ -94,7 +94,7 @@ std::string GetOrBasedEnumBody(bool to_prefix, const std::string &enum_name,
   // Generate result initialization.
   os << "  " << enum_properties.data_type << " output = "
      << (to_prefix ? enum_properties.default_value_host
-                   : enum_properties.default_value_newlib)
+                   : enum_properties.default_value_enclave)
      << ";\n";
 
   // Generate or-based enum result accumulation. Since there are cases that enum
@@ -154,7 +154,7 @@ std::string GetIfBasedEnumBody(bool to_prefix, const std::string &enum_name,
 
   // Generate code for handling default case.
   int64_t default_output = to_prefix ? enum_properties.default_value_host
-                                     : enum_properties.default_value_newlib;
+                                     : enum_properties.default_value_enclave;
   if (enum_properties.or_input_to_default_value) {
     os << "  return " << default_output << " | input;\n";
   } else {
@@ -315,7 +315,7 @@ void WriteStructDefinitions(
 
     for (const auto &current : it.second.values) {
       // Prefix |klinux_prefix| to each member name to avoid possible
-      // collisions with macro names in newlib/libc.
+      // collisions with macro names in enclave C library/host C library.
       *os << absl::StreamFormat("  %s %s_%s;\n", current.second, klinux_prefix,
                                 current.first);
     }

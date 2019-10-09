@@ -44,7 +44,7 @@ class TypesParseFunctionsTest(TestCase):
         values=['a'],
         include_header_file='stdio',
         default_value_host=1,
-        default_value_newlib=2,
+        default_value_enclave=2,
         multi_valued=True,
         skip_conversions=True,
         or_input_to_default_value=True,

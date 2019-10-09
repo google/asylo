@@ -21,7 +21,7 @@ Implements the functions for describing and parsing the type definitions. Allows
 emitting macros which can be read directly by a C/C++ program, to evaluate the
 unresolved values in such macros and then generate include directives, constant
 definitions and conversion functions that allow system constants to be converted
-from the newlib implementation used by Asylo inside the enclave to target host
+from the enclave C library implementation used by Asylo to target host
 implementation on the untrusted side (typically libc).
 
 For each type definition (eg. define_constants, define_structs), a definition
@@ -53,8 +53,8 @@ _enum_map = collections.defaultdict(dict)
 _struct_map = collections.defaultdict(dict)
 
 # Declare the prefix to be used for C enum declarations and conversion
-# functions. This prefix should be used for direct conversions between newlib
-# and host library, ones which do not involve an intermediate bridge.
+# functions. This prefix should be used for direct conversions between enclave
+# C library and host library, ones which do not involve an intermediate bridge.
 _klinux_prefix = 'kLinux'
 
 
@@ -73,7 +73,7 @@ def define_constants(name,
                      values,
                      include_header_file,
                      default_value_host=0,
-                     default_value_newlib=0,
+                     default_value_enclave=0,
                      multi_valued=False,
                      skip_conversions=False,
                      or_input_to_default_value=False,
@@ -89,13 +89,13 @@ def define_constants(name,
       system header file (included as #include <filename>). This system header
       file is used twice - once for resolving values of constants on the target
       host implementation at compile time, then by the generated conversion
-      functions for converting the constant values between newlib and the target
-      host implementation at runtime.
+      functions for converting the constant values between enclave C library and
+      the target host C library at runtime.
     default_value_host: Default constant value on the target host
       implementation. This can be an actual numerical (|data_type|) value or the
       unresolved constant name provided as a string.
-    default_value_newlib: Default constant value in newlib. This can be an
-      actual numerical (|data_type|) value or the unresolved constant name
+    default_value_enclave: Default constant value in enclave C library. This can
+      be an actual numerical (|data_type|) value or the unresolved constant name
       provided as a string.
     multi_valued: Boolean indicating if the constant values can be combined
       using bitwise OR operations.
@@ -105,7 +105,7 @@ def define_constants(name,
       the constants definitions can be generated automatically by resolving the
       constants for the target host implementation.
     or_input_to_default_value: Boolean indicating if the input be bitwise OR'ed
-      with default_value_host (or default_value_newlib) in the generated
+      with default_value_host (or default_value_enclave) in the generated
       conversion function, if no match for the input constant value is found.
       This is useful for cases when we wish to preserve the input for debugging,
       while providing a default output in case no matching constant value for
@@ -134,7 +134,7 @@ def define_constants(name,
       '{{"{}", {}}}'.format(val, val) for val in values)
 
   _enum_map[name]['default_value_host'] = default_value_host
-  _enum_map[name]['default_value_newlib'] = default_value_newlib
+  _enum_map[name]['default_value_enclave'] = default_value_enclave
   _enum_map[name]['multi_valued'] = multi_valued
   _enum_map[name]['skip_conversions'] = skip_conversions
   _enum_map[name]['or_input_to_default_value'] = or_input_to_default_value
@@ -172,11 +172,12 @@ def define_struct(name,
 
   Args:
     name: Name of the struct. This should be the same as the struct name used in
-      newlib/libc libraries for the system calls. Eg. 'stat', 'timeval'
+      enclave C library and the host C library for the system calls. Eg. 'stat',
+      'timeval'
     values: List containing tuples of struct member types and struct member
       names. The struct members names should match the corresponding struct
-      member names in the struct from newlib/libc. Eg. [("int64_t", "st_dev"),
-      ("int64_t", "st_ino")].
+      member names in the struct from enclave C library and libc. Eg.
+      [("int64_t", "st_dev"), ("int64_t", "st_ino")].
     include_header_file: Kernel header file to include to identify |name| as a
       valid kernel struct when generating conversion functions between kernel
       structs and enclave structs.
@@ -235,19 +236,19 @@ def get_constants():
   O_RDONLY}, {"O_WRONLY", O_WRONLY}}}}
 
   Each line contains an enum, and has the following pattern -
-  {"EnumName", {defaultValueHost, defaultValueNewlib, multi_valued,
+  {"EnumName", {defaultValueHost, defaultValueEnclave, multi_valued,
   skip_conversions, or_input_to_default_value, wrap_macros_with_if_defined,
   data_type, {{"const_val1", const_val1}, {"const_val2", const_val2}}}}, \
   """
   enum_rows = []
   for enum_name, enum_properties in sorted(_enum_map.items()):
     enum_rows.append(
-        '{{{name}, {{{default_value_host}, {default_value_newlib}, '
+        '{{{name}, {{{default_value_host}, {default_value_enclave}, '
         '{multi_valued}, {skip_conversions}, {or_input_to_default_value}, '
         '{wrap_macros_with_if_defined}, {data_type}, {{{values}}}}}}}'.format(
             name='"{}"'.format(enum_name),
             default_value_host=enum_properties['default_value_host'],
-            default_value_newlib=enum_properties['default_value_newlib'],
+            default_value_enclave=enum_properties['default_value_enclave'],
             multi_valued='true' if enum_properties['multi_valued'] else 'false',
             skip_conversions='true'
             if enum_properties['skip_conversions'] else 'false',

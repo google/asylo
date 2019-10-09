@@ -20,7 +20,7 @@
 #define ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_TYPES_FUNCTIONS_H_
 
 // This is the top-level include file for using type conversion functions
-// between newlib and the host implementation.
+// between enclave and the host implementation.
 
 #include "asylo/platform/system_call/type_conversions/generated_types_functions.h"  // IWYU pragma: export
 #include "asylo/platform/system_call/type_conversions/manual_types_functions.h"  // IWYU pragma: export
