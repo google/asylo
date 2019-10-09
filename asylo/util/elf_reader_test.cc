@@ -147,7 +147,7 @@ class ElfReaderTest : public ::testing::Test {
     auto create_from_span_result =
         ElfReader::CreateFromSpan(elf_file_mapping_.buffer());
     EXPECT_THAT(create_from_span_result, Not(IsOk()));
-    EXPECT_THAT(create_from_span_result.status(),
+    EXPECT_THAT(create_from_span_result,
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
     EXPECT_EQ(create_from_span_result.status().error_message(), error_message);
   }
@@ -347,8 +347,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfSectionNotFound) {
 
   auto get_section_data_result = reader.GetSectionData(kAbsentSectionName);
   EXPECT_THAT(get_section_data_result, Not(IsOk()));
-  EXPECT_THAT(get_section_data_result.status(),
-              StatusIs(error::GoogleError::NOT_FOUND));
+  EXPECT_THAT(get_section_data_result, StatusIs(error::GoogleError::NOT_FOUND));
   EXPECT_EQ(get_section_data_result.status().error_message(),
             absl::StrCat("File does not contain a section called ",
                          kAbsentSectionName));
@@ -367,7 +366,7 @@ TEST_F(ElfReaderTest, ReturnsAppropriateErrorIfTargetSectionHasNoData) {
   auto get_section_data_result =
       reader.GetSectionData(absl::GetFlag(FLAGS_section_name));
   EXPECT_THAT(get_section_data_result, Not(IsOk()));
-  EXPECT_THAT(get_section_data_result.status(),
+  EXPECT_THAT(get_section_data_result,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
   EXPECT_EQ(get_section_data_result.status().error_message(),
             absl::StrCat("Section ", absl::GetFlag(FLAGS_section_name),
@@ -382,7 +381,7 @@ TEST(ElfReaderFixturelessTest, ReturnsAppropriateErrorIfFileTooSmall) {
   auto create_from_span_result = ElfReader::CreateFromSpan(
       absl::Span<uint8_t>(too_small_buffer, sizeof(too_small_buffer)));
   EXPECT_THAT(create_from_span_result, Not(IsOk()));
-  EXPECT_THAT(create_from_span_result.status(),
+  EXPECT_THAT(create_from_span_result,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
   EXPECT_EQ(create_from_span_result.status().error_message(),
             "Unsupported file format: not a 64-bit ELF file");

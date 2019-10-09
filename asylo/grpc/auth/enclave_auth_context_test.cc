@@ -174,9 +174,8 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadIdentityProto) {
   secure_auth_context.AddProperty(GRPC_ENCLAVE_IDENTITIES_PROTO_PROPERTY_NAME,
                                   "foobar");
 
-  EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context).status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(secure_auth_context),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context has an
@@ -192,9 +191,8 @@ TEST_F(EnclaveAuthContextTest, CreateFailsBadTransportSecurityType) {
   secure_auth_context.AddProperty(GRPC_TRANSPORT_SECURITY_TYPE_PROPERTY_NAME,
                                   "foobar");
 
-  EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context).status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(secure_auth_context),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context has an
@@ -203,9 +201,8 @@ TEST_F(EnclaveAuthContextTest, CreateFailsUnrecognizedAuthProperty) {
   // Add an unrecognized property.
   secure_auth_context_->AddProperty("foo property", "foobar");
 
-  EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_).status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(*secure_auth_context_),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that CreateFromAuthContext() fails when the auth context does not
@@ -216,9 +213,8 @@ TEST_F(EnclaveAuthContextTest, CreateFailsPeerUnauthenticated) {
   ::grpc::SecureAuthContext secure_auth_context(
       grpc_core::MakeRefCounted<grpc_auth_context>(/*chained=*/nullptr).get());
 
-  EXPECT_THAT(
-      EnclaveAuthContext::CreateFromAuthContext(secure_auth_context).status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(EnclaveAuthContext::CreateFromAuthContext(secure_auth_context),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that HasEnclaveIdentity() works as expected for identities that are
@@ -261,9 +257,8 @@ TEST_F(EnclaveAuthContextTest, FindEnclaveIdentityNotFound) {
   StatusOr<const EnclaveIdentity *> identity_result =
       auth_context.FindEnclaveIdentity(bad_identity_description_);
 
-  EXPECT_THAT(
-      auth_context.FindEnclaveIdentity(bad_identity_description_).status(),
-      StatusIs(error::GoogleError::NOT_FOUND));
+  EXPECT_THAT(auth_context.FindEnclaveIdentity(bad_identity_description_),
+              StatusIs(error::GoogleError::NOT_FOUND));
 }
 
 // Verify that GetRecordProtocol() returns the record protocol.

@@ -89,7 +89,7 @@ TEST(SgxRemoteAssertionGeneratorClientTest, GenerateSgxRemoteAssertionFails) {
   SgxRemoteAssertionGeneratorClient client(
       std::unique_ptr<SgxRemoteAssertionGenerator::StubInterface>(
           std::move(mock_stub)));
-  EXPECT_THAT(client.GenerateSgxRemoteAssertion(kUserData).status(),
+  EXPECT_THAT(client.GenerateSgxRemoteAssertion(kUserData),
               StatusIs(error::GoogleError::PERMISSION_DENIED));
 }
 

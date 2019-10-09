@@ -34,15 +34,13 @@ using ::testing::IsEmpty;
 
 TEST(SecsMiscselectTest, TestMiscselectBitInvalid) {
   uint32_t miscselect = 0;
-  EXPECT_THAT(TestMiscselectBit(static_cast<SecsMiscselectBit>(32), miscselect)
-                  .status(),
+  EXPECT_THAT(TestMiscselectBit(static_cast<SecsMiscselectBit>(32), miscselect),
               StatusIs(asylo::error::INVALID_ARGUMENT));
 
   Miscselect miscselect_proto;
   miscselect_proto.set_value(miscselect);
   EXPECT_THAT(
-      TestMiscselectBit(static_cast<SecsMiscselectBit>(32), miscselect_proto)
-          .status(),
+      TestMiscselectBit(static_cast<SecsMiscselectBit>(32), miscselect_proto),
       StatusIs(asylo::error::INVALID_ARGUMENT));
 }
 

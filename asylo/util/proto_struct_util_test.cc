@@ -35,15 +35,15 @@ using ::testing::StrEq;
 TEST(JsonUtilTest, JsonGetObjectFailsOnNonObjects) {
   google::protobuf::Value value;
   value.set_number_value(0.);
-  EXPECT_THAT(JsonGetObject(value).status(),
+  EXPECT_THAT(JsonGetObject(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.set_string_value("");
-  EXPECT_THAT(JsonGetObject(value).status(),
+  EXPECT_THAT(JsonGetObject(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.mutable_list_value();
-  EXPECT_THAT(JsonGetObject(value).status(),
+  EXPECT_THAT(JsonGetObject(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -57,15 +57,15 @@ TEST(JsonUtilTest, JsonGetObjectSucceedsOnObjects) {
 TEST(JsonUtilTest, JsonGetArrayFailsOnNonArrays) {
   google::protobuf::Value value;
   value.set_number_value(0.);
-  EXPECT_THAT(JsonGetArray(value).status(),
+  EXPECT_THAT(JsonGetArray(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.set_string_value("");
-  EXPECT_THAT(JsonGetArray(value).status(),
+  EXPECT_THAT(JsonGetArray(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.mutable_struct_value();
-  EXPECT_THAT(JsonGetArray(value).status(),
+  EXPECT_THAT(JsonGetArray(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -80,15 +80,15 @@ TEST(JsonUtilTest, JsonGetArraySucceedsOnArrays) {
 TEST(JsonUtilTest, JsonGetStringFailsOnNonStrings) {
   google::protobuf::Value value;
   value.set_number_value(0.);
-  EXPECT_THAT(JsonGetString(value).status(),
+  EXPECT_THAT(JsonGetString(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.mutable_list_value();
-  EXPECT_THAT(JsonGetString(value).status(),
+  EXPECT_THAT(JsonGetString(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.mutable_struct_value();
-  EXPECT_THAT(JsonGetString(value).status(),
+  EXPECT_THAT(JsonGetString(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -104,15 +104,15 @@ TEST(JsonUtilTest, JsonGetStringSucceedsOnStrings) {
 TEST(JsonUtilTest, JsonGetNumberFailsOnNonNumbers) {
   google::protobuf::Value value;
   value.set_string_value("");
-  EXPECT_THAT(JsonGetNumber(value).status(),
+  EXPECT_THAT(JsonGetNumber(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.mutable_list_value();
-  EXPECT_THAT(JsonGetNumber(value).status(),
+  EXPECT_THAT(JsonGetNumber(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   value.mutable_struct_value();
-  EXPECT_THAT(JsonGetNumber(value).status(),
+  EXPECT_THAT(JsonGetNumber(value),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -133,7 +133,7 @@ TEST(JsonUtilTest, JsonObjectGetFieldFailsIfTheFieldIsAbsent) {
   google::protobuf::Value value;
   value.set_number_value(0.);
   object.mutable_fields()->insert({"bar", value});
-  EXPECT_THAT(JsonObjectGetField(object, "foo").status(),
+  EXPECT_THAT(JsonObjectGetField(object, "foo"),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

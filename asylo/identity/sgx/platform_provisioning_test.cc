@@ -140,7 +140,7 @@ TEST(PlatformProvisioningTest, ReportProtoWithoutValueFieldIsInvalid) {
   ReportProto report_proto;
   EXPECT_THAT(ValidateReportProto(report_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto).status(),
+  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -149,7 +149,7 @@ TEST(PlatformProvisioningTest, ReportProtoWithValueFieldOfBadLengthIsInvalid) {
   report_proto.set_value("short");
   EXPECT_THAT(ValidateReportProto(report_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto).status(),
+  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   Report report = TrivialRandomObject<Report>();
@@ -159,7 +159,7 @@ TEST(PlatformProvisioningTest, ReportProtoWithValueFieldOfBadLengthIsInvalid) {
   report_proto.set_value(report_bin);
   EXPECT_THAT(ValidateReportProto(report_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto).status(),
+  EXPECT_THAT(ConvertReportProtoToHardwareReport(report_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -167,7 +167,7 @@ TEST(PlatformProvisioningTest, TargetInfoProtoWithoutValueFieldIsInvalid) {
   TargetInfoProto target_info_proto;
   EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto).status(),
+  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -177,7 +177,7 @@ TEST(PlatformProvisioningTest,
   target_info_proto.set_value("short");
   EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto).status(),
+  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   Targetinfo targetinfo = TrivialRandomObject<Targetinfo>();
@@ -187,7 +187,7 @@ TEST(PlatformProvisioningTest,
   target_info_proto.set_value(targetinfo_bin);
   EXPECT_THAT(ValidateTargetInfoProto(target_info_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto).status(),
+  EXPECT_THAT(ConvertTargetInfoProtoToTargetinfo(target_info_proto),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

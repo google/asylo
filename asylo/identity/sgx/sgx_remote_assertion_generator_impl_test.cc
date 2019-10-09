@@ -229,7 +229,7 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
 
   std::shared_ptr<::grpc::ChannelCredentials> channel_credentials =
       EnclaveChannelCredentials(BidirectionalSgxLocalCredentialsOptions());
-  EXPECT_THAT(GenerateSgxRemoteAssertion(channel_credentials).status(),
+  EXPECT_THAT(GenerateSgxRemoteAssertion(channel_credentials),
               StatusIs(error::GoogleError::FAILED_PRECONDITION));
 }
 
@@ -423,7 +423,7 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
       EnclaveChannelCredentials(BidirectionalNullCredentialsOptions());
   auto result = GenerateSgxRemoteAssertion(credentials);
 
-  ASSERT_THAT(result.status(), StatusIs(error::GoogleError::PERMISSION_DENIED));
+  ASSERT_THAT(result, StatusIs(error::GoogleError::PERMISSION_DENIED));
 }
 
 TEST_F(SgxRemoteAssertionGeneratorImplTest,
@@ -441,7 +441,7 @@ TEST_F(SgxRemoteAssertionGeneratorImplTest,
       ::grpc::InsecureChannelCredentials();
   auto result = GenerateSgxRemoteAssertion(credentials);
 
-  ASSERT_THAT(result.status(), StatusIs(error::GoogleError::INTERNAL));
+  ASSERT_THAT(result, StatusIs(error::GoogleError::INTERNAL));
 }
 
 }  // namespace

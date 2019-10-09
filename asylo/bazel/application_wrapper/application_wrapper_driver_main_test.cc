@@ -152,8 +152,7 @@ TEST_F(ApplicationWrapperDriverMainTest,
   char *arg = nullptr;
   EXPECT_THAT(
       ApplicationWrapperDriverMain(Loader(), "no_extension", /*argc=*/0,
-                                   /*argv=*/&arg)
-          .status(),
+                                   /*argv=*/&arg),
       StatusIs(error::GoogleError::INTERNAL,
                "EnclaveOutput does not have a main_return_value extension"));
 }

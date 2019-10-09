@@ -136,8 +136,8 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   asymmetric_signing_key.set_key_type(AsymmetricSigningKeyProto::VERIFYING_KEY);
 
   EXPECT_THAT(
-      ExtractAttestationKeyFromAsymmetricSigningKeyProto(asymmetric_signing_key)
-          .status(),
+      ExtractAttestationKeyFromAsymmetricSigningKeyProto(
+          asymmetric_signing_key),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                absl::StrCat("The sealed secret key has invalid key type: ",
                             AsymmetricSigningKeyProto_KeyType_Name(
@@ -159,8 +159,8 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
       AsymmetricKeyEncoding::ASYMMETRIC_KEY_PEM);
 
   EXPECT_THAT(
-      ExtractAttestationKeyFromAsymmetricSigningKeyProto(asymmetric_signing_key)
-          .status(),
+      ExtractAttestationKeyFromAsymmetricSigningKeyProto(
+          asymmetric_signing_key),
       StatusIs(
           error::GoogleError::UNIMPLEMENTED,
           "Create attestation key from a PEM-encoded key is not supported"));
@@ -186,8 +186,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   std::vector<CertificateChain> certificate_chains_extracted;
   EXPECT_THAT(
       ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
-          sealed_secret, &certificate_chains_extracted)
-          .status(),
+          sealed_secret, &certificate_chains_extracted),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                "Invalid sealed secret header: incorrect secret purpose"));
 }
@@ -212,8 +211,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
 
   std::vector<CertificateChain> certificate_chains_extracted;
   EXPECT_THAT(ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
-                  sealed_secret, &certificate_chains_extracted)
-                  .status(),
+                  sealed_secret, &certificate_chains_extracted),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Cannot parse the additional authenticated data"));
 }
@@ -234,8 +232,7 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
 
   std::vector<CertificateChain> certificate_chains_extracted;
   EXPECT_THAT(ExtractAttestationKeyAndCertificateChainsFromSealedSecret(
-                  sealed_secret, &certificate_chains_extracted)
-                  .status(),
+                  sealed_secret, &certificate_chains_extracted),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Cannot parse the sealed secret"));
 }

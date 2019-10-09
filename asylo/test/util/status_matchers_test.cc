@@ -22,8 +22,10 @@
 #include <string>
 
 #include <gmock/gmock.h>
+#include <gtest/gtest-spi.h>
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
+#include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -163,6 +165,70 @@ TEST(StatusMatchersTest, IsOkAndHoldsExplainsNonMatchCorrectly) {
   EXPECT_EQ(MatchExplanation(IsOkAndHolds(IsEmpty()), non_matching_statusor),
             absl::StrCat("which contains a value ",
                          MatchExplanation(IsEmpty(), non_empty_vector)));
+}
+
+// Tests that StatusIs matches Status objects correctly.
+TEST(StatusMatchersTest, StatusIsMatchesStatusObjects) {
+  const std::string kMessage = "something very bad!";
+  const std::string kWrongMessage = "this is not the same error";
+
+  constexpr auto kErrorCode = error::GoogleError::INVALID_ARGUMENT;
+  constexpr auto kWrongErrorCode = error::GoogleError::INTERNAL;
+  const Status kError(kErrorCode, kMessage);
+
+  EXPECT_THAT(kError, StatusIs(kErrorCode));
+  EXPECT_THAT(kError, StatusIs(kErrorCode, kMessage));
+  EXPECT_THAT(kError, Not(StatusIs(kWrongErrorCode)));
+  EXPECT_THAT(kError, Not(StatusIs(kErrorCode, kWrongMessage)));
+
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(kError, StatusIs(kWrongErrorCode)),
+                          "INTERNAL");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kError, StatusIs(kErrorCode, kWrongMessage)), kWrongMessage);
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(kError, Not(StatusIs(kErrorCode))),
+                          "does not match error code INVALID_ARGUMENT");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kError, Not(StatusIs(kErrorCode, kMessage))), kMessage);
+}
+
+// Tests that StatusIs matches StatusOr objects correctly.
+TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
+  const std::string kMessage = "oops";
+  const std::string kWrongMessage = "different error message";
+  constexpr auto kErrorCode = error::GoogleError::FAILED_PRECONDITION;
+  constexpr auto kWrongErrorCode = error::GoogleError::INTERNAL;
+  const StatusOr<int> kFailure = Status(kErrorCode, kMessage);
+
+  EXPECT_THAT(kFailure, StatusIs(kErrorCode));
+  EXPECT_THAT(kFailure, StatusIs(kErrorCode, kMessage));
+
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(kFailure, StatusIs(kWrongErrorCode)),
+                          "INTERNAL");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kFailure, StatusIs(kErrorCode, kWrongMessage)),
+      kWrongMessage);
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(kFailure, Not(StatusIs(kErrorCode))),
+                          "does not match error code FAILED_PRECONDITION");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kFailure, Not(StatusIs(kErrorCode, kMessage))), kMessage);
+
+  const StatusOr<int> kSuccess = 1;
+  EXPECT_THAT(kSuccess, StatusIs(error::GoogleError::OK));
+  EXPECT_THAT(kSuccess, StatusIs(error::GoogleError::OK, ""));
+  EXPECT_THAT(kSuccess, Not(StatusIs(kErrorCode)));
+  EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK, kMessage)));
+
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(kSuccess, StatusIs(kErrorCode)),
+                          "FAILED_PRECONDITION");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kSuccess, StatusIs(error::GoogleError::OK, kMessage)),
+      kMessage);
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK))),
+      "does not match error code OK");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK, ""))),
+      "does not match error message ''");
 }
 
 }  // namespace

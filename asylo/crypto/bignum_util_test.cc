@@ -166,13 +166,13 @@ TEST(BignumUtilTest, IntegerFromBignumFailsIfBignumIsOutOfRange) {
   bssl::UniquePtr<BIGNUM> bignum;
   ASYLO_ASSERT_OK_AND_ASSIGN(bignum,
                              BignumFromBigEndianBytes(absl::MakeSpan(kBytes)));
-  EXPECT_THAT(IntegerFromBignum(*bignum).status(),
+  EXPECT_THAT(IntegerFromBignum(*bignum),
               StatusIs(error::GoogleError::OUT_OF_RANGE));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(
       bignum,
       BignumFromBigEndianBytes(absl::MakeSpan(kBytes), Sign::kNegative));
-  EXPECT_THAT(IntegerFromBignum(*bignum).status(),
+  EXPECT_THAT(IntegerFromBignum(*bignum),
               StatusIs(error::GoogleError::OUT_OF_RANGE));
 }
 

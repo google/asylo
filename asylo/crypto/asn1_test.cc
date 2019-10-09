@@ -116,7 +116,7 @@ TEST(Asn1Test, ObjectIdCreateFromShortNameFailsIfNoSuchName) {
   constexpr const char *kBadShortNames[] = {"xkcd", "Jean-Luc Picard"};
 
   for (const char *bad_name : kBadShortNames) {
-    EXPECT_THAT(ObjectId::CreateFromShortName(bad_name).status(),
+    EXPECT_THAT(ObjectId::CreateFromShortName(bad_name),
                 StatusIs(error::GoogleError::NOT_FOUND));
   }
 }
@@ -134,7 +134,7 @@ TEST(Asn1Test, ObjectIdCreateFromLongNameFailsIfNoSuchName) {
   constexpr const char *kBadLongNames[] = {"Oliver Cromwell", "Oscar Wilde"};
 
   for (const char *bad_name : kBadLongNames) {
-    EXPECT_THAT(ObjectId::CreateFromLongName(bad_name).status(),
+    EXPECT_THAT(ObjectId::CreateFromLongName(bad_name),
                 StatusIs(error::GoogleError::NOT_FOUND));
   }
 }
@@ -151,7 +151,7 @@ TEST(Asn1Test, ObjectIdCreateFromNidFailsIfNoSuchNid) {
   constexpr int kBadNids[] = {-1, 8675309};
 
   for (int bad_nid : kBadNids) {
-    EXPECT_THAT(ObjectId::CreateFromNumericId(bad_nid).status(),
+    EXPECT_THAT(ObjectId::CreateFromNumericId(bad_nid),
                 StatusIs(error::GoogleError::NOT_FOUND));
   }
 }
@@ -169,7 +169,7 @@ TEST(Asn1Test, ObjectIdCreateFromOidStringFailsIfInvalidOid) {
   constexpr const char *kBadOids[] = {"1.2.cranberry", "9..9"};
 
   for (const char *bad_oid : kBadOids) {
-    EXPECT_THAT(ObjectId::CreateFromOidString(bad_oid).status(),
+    EXPECT_THAT(ObjectId::CreateFromOidString(bad_oid),
                 StatusIs(error::GoogleError::INTERNAL));
   }
 }
@@ -181,12 +181,9 @@ TEST(Asn1Test, ObjectIdGettersFailIfIdNotInBoringssl) {
   for (const char *oid_string : kNoNameOids) {
     ObjectId oid;
     ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromOidString(oid_string));
-    EXPECT_THAT(oid.GetShortName().status(),
-                StatusIs(error::GoogleError::NOT_FOUND));
-    EXPECT_THAT(oid.GetLongName().status(),
-                StatusIs(error::GoogleError::NOT_FOUND));
-    EXPECT_THAT(oid.GetNumericId().status(),
-                StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetShortName(), StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetLongName(), StatusIs(error::GoogleError::NOT_FOUND));
+    EXPECT_THAT(oid.GetNumericId(), StatusIs(error::GoogleError::NOT_FOUND));
     EXPECT_THAT(oid.GetOidString(), IsOkAndHolds(oid_string));
   }
 }
@@ -619,7 +616,7 @@ TYPED_TEST(Asn1Test, CreateCreatesAsn1ValueWithCorrectTypeAndValue) {
 
 TYPED_TEST(Asn1Test, CreateFailsWithBadInputs) {
   for (const auto &value : TestFixture::BadTestData()) {
-    EXPECT_THAT(TestFixture::Create(value).status(),
+    EXPECT_THAT(TestFixture::Create(value),
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
   }
 }
@@ -746,7 +743,7 @@ TYPED_TEST(Asn1Test, ValuesOfUnsupportedTypesHaveNulloptType) {
       unsupported, Asn1Value::CreateFromDer(
                        absl::HexStringToBytes(kUnsupportedValueDerHex)));
   EXPECT_THAT(unsupported.Type(), Eq(absl::nullopt));
-  EXPECT_THAT(TestFixture::Get(unsupported).status(),
+  EXPECT_THAT(TestFixture::Get(unsupported),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

@@ -259,10 +259,9 @@ TEST_F(PceUtilTest, GetEncryptedDataSizeSupported) {
 TEST_F(PceUtilTest, GetEncryptedDataSizeInvalidInput) {
   EXPECT_THAT(
       GetEncryptedDataSize(
-          AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME)
-          .status(),
+          AsymmetricEncryptionScheme::UNKNOWN_ASYMMETRIC_ENCRYPTION_SCHEME),
       StatusIs(asylo::error::GoogleError::INVALID_ARGUMENT));
-  EXPECT_THAT(GetEncryptedDataSize((AsymmetricEncryptionScheme)-1234).status(),
+  EXPECT_THAT(GetEncryptedDataSize((AsymmetricEncryptionScheme)-1234),
               StatusIs(asylo::error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -301,7 +300,7 @@ TEST_F(
     CreateSignatureFromPckEcdasP256Sha256SignatureFailsWithInvalidSignature) {
   const std::string kBadSignature = "signature";
   EXPECT_THAT(
-      CreateSignatureFromPckEcdsaP256Sha256Signature(kBadSignature).status(),
+      CreateSignatureFromPckEcdsaP256Sha256Signature(kBadSignature),
       StatusIs(
           error::GoogleError::INVALID_ARGUMENT,
           absl::StrCat("Signature is the wrong size for ECDSA-P256-SHA256: ",
@@ -311,7 +310,7 @@ TEST_F(
 
 TEST_F(PceUtilTest, ParseRsa3072PublicKeyInvalidSize) {
   std::vector<uint8_t> public_key(0);
-  ASSERT_THAT(ParseRsa3072PublicKey(absl::MakeSpan(public_key)).status(),
+  ASSERT_THAT(ParseRsa3072PublicKey(absl::MakeSpan(public_key)),
               StatusIs(error::INVALID_ARGUMENT));
 }
 
@@ -327,7 +326,7 @@ TEST_F(PceUtilTest, ParseRsa3072PublicKeySuccess) {
   public_key.insert(public_key.end(), exponent.cbegin(), exponent.cend());
 
   auto result = ParseRsa3072PublicKey(absl::MakeSpan(public_key));
-  ASYLO_ASSERT_OK(result.status());
+  ASYLO_ASSERT_OK(result);
 
   bssl::UniquePtr<RSA> rsa = std::move(result).ValueOrDie();
 
@@ -383,7 +382,7 @@ TEST_F(PceUtilTest, SerializePpidekWithDecryptionKeyFails) {
   AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
   ppidek.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
 
-  EXPECT_THAT(SerializePpidek(ppidek).status(),
+  EXPECT_THAT(SerializePpidek(ppidek),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "PPIDEK must be an encryption key"));
 }
@@ -392,7 +391,7 @@ TEST_F(PceUtilTest, SerializePpidekWithUnsupportedEncryptionSchemeFails) {
   AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
   ppidek.set_encryption_scheme(AsymmetricEncryptionScheme::RSA2048_OAEP);
 
-  EXPECT_THAT(SerializePpidek(ppidek).status(),
+  EXPECT_THAT(SerializePpidek(ppidek),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "Unsupported encryption scheme: RSA2048_OAEP"));
 }
@@ -402,7 +401,7 @@ TEST_F(PceUtilTest, SerializePpidekWithUnsupportedKeyEncodingFails) {
   ppidek.set_encoding(AsymmetricKeyEncoding::UNKNOWN_ASYMMETRIC_KEY_ENCODING);
 
   EXPECT_THAT(
-      SerializePpidek(ppidek).status(),
+      SerializePpidek(ppidek),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                "Unsupported key encoding: UNKNOWN_ASYMMETRIC_KEY_ENCODING"));
 }
@@ -411,7 +410,7 @@ TEST_F(PceUtilTest, SerializePpidekWithBadKeyFails) {
   AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
   ppidek.set_key("Not really a key");
 
-  EXPECT_THAT(SerializePpidek(ppidek).status(), Not(IsOk()));
+  EXPECT_THAT(SerializePpidek(ppidek), Not(IsOk()));
 }
 
 TEST_F(PceUtilTest, SerializePpidekRsa3072Success) {
@@ -478,7 +477,7 @@ TEST_F(PceUtilTest,
   ppidek.set_encryption_scheme(AsymmetricEncryptionScheme::RSA2048_OAEP);
 
   EXPECT_THAT(
-      CreateReportdataForGetPceInfo(ppidek).status(),
+      CreateReportdataForGetPceInfo(ppidek),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                absl::StrCat("Unsupported encryption scheme: ",
                             AsymmetricEncryptionScheme_Name(
@@ -489,7 +488,7 @@ TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidKeyTypeFails) {
   AsymmetricEncryptionKeyProto ppidek = Rsa3072PublicKeyProto();
   ppidek.set_key_type(AsymmetricEncryptionKeyProto::DECRYPTION_KEY);
 
-  EXPECT_THAT(CreateReportdataForGetPceInfo(ppidek).status(),
+  EXPECT_THAT(CreateReportdataForGetPceInfo(ppidek),
               StatusIs(error::GoogleError::INVALID_ARGUMENT,
                        "PPIDEK must be an encryption key"));
 }
@@ -499,7 +498,7 @@ TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidEncodingFails) {
   ppidek.set_encoding(AsymmetricKeyEncoding::UNKNOWN_ASYMMETRIC_KEY_ENCODING);
 
   EXPECT_THAT(
-      CreateReportdataForGetPceInfo(ppidek).status(),
+      CreateReportdataForGetPceInfo(ppidek),
       StatusIs(
           error::GoogleError::INVALID_ARGUMENT,
           absl::StrCat(

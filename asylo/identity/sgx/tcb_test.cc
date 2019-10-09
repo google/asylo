@@ -343,12 +343,12 @@ TEST(TcbTest, ParseRawTcbHex_ValidRawTcbHexParseSuccessfully) {
 }
 
 TEST(TcbTest, ParseRawTcbHex_NonHexStringFailsToParse) {
-  EXPECT_THAT(ParseRawTcbHex("not a hex string").status(),
+  EXPECT_THAT(ParseRawTcbHex("not a hex string"),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(TcbTest, ParseRawTcbHex_WrongSizedStringFailsToParse) {
-  EXPECT_THAT(ParseRawTcbHex("1234567890").status(),
+  EXPECT_THAT(ParseRawTcbHex("1234567890"),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -378,11 +378,11 @@ TEST(TcbTest, TcbStatusToStringSucceedsOnValidKnownStatusValues) {
 
 TEST(TcbTest, TcbStatusToStringFailsOnBadInputs) {
   TcbStatus status;
-  EXPECT_THAT(TcbStatusToString(status).status(),
+  EXPECT_THAT(TcbStatusToString(status),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   status.set_known_status(TcbStatus::INVALID);
-  EXPECT_THAT(TcbStatusToString(status).status(),
+  EXPECT_THAT(TcbStatusToString(status),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

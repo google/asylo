@@ -250,14 +250,13 @@ TEST_F(X509CertificateTest, CertificateX509CreateValidDer) {
 
 // Verifies that Create fails with an non-X509 certificate format.
 TEST_F(X509CertificateTest, CreateFromNonX509CertificateFails) {
-  EXPECT_THAT(
-      CreateX509Cert(Certificate::UNKNOWN, kOtherIntermediateCertPem).status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(CreateX509Cert(Certificate::UNKNOWN, kOtherIntermediateCertPem),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verifies that Create fails when the data is malformed.
 TEST_F(X509CertificateTest, CreateFromMalformedX509CertificateFails) {
-  EXPECT_THAT(CreateX509Cert(Certificate::X509_PEM, kNotACert).status(),
+  EXPECT_THAT(CreateX509Cert(Certificate::X509_PEM, kNotACert),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
@@ -271,8 +270,7 @@ TEST_F(X509CertificateTest, CreateFromPemSuccess) {
 // PEM-encoding.
 TEST_F(X509CertificateTest, CreateFromPemFailure) {
   EXPECT_THAT(X509Certificate::CreateFromPem(
-                  absl::HexStringToBytes(kTestIntermediateCertDerHex))
-                  .status(),
+                  absl::HexStringToBytes(kTestIntermediateCertDerHex)),
               StatusIs(error::GoogleError::INTERNAL));
 }
 // Verifies that X509Certificate::CreateFromDer returns an OK Status with a
@@ -284,7 +282,7 @@ TEST_F(X509CertificateTest, CreateFromDerSuccess) {
 // Verifies that X509Certificate::CreateFromDer returns an error with an invalid
 // DER-encoding.
 TEST_F(X509CertificateTest, CreateFromDerFailure) {
-  EXPECT_THAT(X509Certificate::CreateFromDer(kTestRootCertPem).status(),
+  EXPECT_THAT(X509Certificate::CreateFromDer(kTestRootCertPem),
               StatusIs(error::GoogleError::INTERNAL));
 }
 // Verifies that Create followed by ToPemCertificate returns the
@@ -309,7 +307,7 @@ TEST_F(X509CertificateTest, CertificateSigningRequestToX509ReqMalformedData) {
   csr.set_format(CertificateSigningRequest::PKCS10_PEM);
   csr.set_data(kNotACert);
 
-  EXPECT_THAT(CertificateSigningRequestToX509Req(csr).status(),
+  EXPECT_THAT(CertificateSigningRequestToX509Req(csr),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
@@ -320,7 +318,7 @@ TEST_F(X509CertificateTest, CertificateSigningRequestToX509ReqInvalidFormat) {
   csr.set_format(CertificateSigningRequest::UNKNOWN);
   csr.set_data(kCsrDerHex);
 
-  EXPECT_THAT(CertificateSigningRequestToX509Req(csr).status(),
+  EXPECT_THAT(CertificateSigningRequestToX509Req(csr),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -360,7 +358,7 @@ TEST_F(X509CertificateTest, ExtractPkcs10SubjectKeyDerCsrMalformedData) {
   csr.set_format(CertificateSigningRequest::PKCS10_DER);
   csr.set_data(kNotACert);
 
-  EXPECT_THAT(ExtractPkcs10SubjectKeyDer(csr).status(),
+  EXPECT_THAT(ExtractPkcs10SubjectKeyDer(csr),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
@@ -371,7 +369,7 @@ TEST_F(X509CertificateTest, ExtractPkcs10SubjectKeyDerCsrInvalidFormat) {
   csr.set_format(CertificateSigningRequest::UNKNOWN);
   csr.set_data(kCsrPem);
 
-  EXPECT_THAT(ExtractPkcs10SubjectKeyDer(csr).status(),
+  EXPECT_THAT(ExtractPkcs10SubjectKeyDer(csr),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

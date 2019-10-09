@@ -101,20 +101,20 @@ class IsOkAndHoldsGenerator {
   const ValueMatcherT value_matcher_;
 };
 
-// Implements a gMock matcher for checking error-code expectations on
-// asylo::Status objects.
+// Implements a polymorphic matcher for checking expectations on Status-like
+// objects.
 template <typename Enum>
-class StatusMatcher : public ::testing::MatcherInterface<const Status &> {
+class StatusMatcher {
  public:
   StatusMatcher(Enum code, absl::optional<absl::string_view> message)
       : code_(code),
         message_(message),
         error_space_(error::error_enum_traits<Enum>::get_error_space()) {}
 
-  // From testing::MatcherInterface.
+  // Required by testing::MakePolymorphicMatcher
   //
   // Describes the expected error code.
-  void DescribeTo(std::ostream *os) const override {
+  void DescribeTo(std::ostream *os) const {
     *os << "error code " << error_space_->SpaceName()
         << "::" << error_space_->String(static_cast<int>(code_));
     if (message_.has_value()) {
@@ -122,15 +122,28 @@ class StatusMatcher : public ::testing::MatcherInterface<const Status &> {
     }
   }
 
-  // From testing::MatcherInterface.
+  // Required by testing::MakePolymorphicMatcher
+  //
+  // Describes the status not matching the expected error code.
+  void DescribeNegationTo(std::ostream *os) const {
+    *os << "does not match expected error space" << error_space_->SpaceName()
+        << ", or does not match error code "
+        << error_space_->String(static_cast<int>(code_));
+    if (message_.has_value()) {
+      *os << ", or does not match error message '" << message_.value() << "'";
+    }
+  }
+
+  // Required by testing::MakePolymorphicMatcher
   //
   // Tests whether |status| has an error code that meets this matcher's
   // expectation. If an error message string is specified in this matcher, it
   // also tests that |status| has an error message that matches that
   // expectation.
-  bool MatchAndExplain(
-      const Status &status,
-      ::testing::MatchResultListener *listener) const override {
+  template <typename T>
+  bool MatchAndExplain(const T &status_like,
+                       ::testing::MatchResultListener *listener) const {
+    Status status = GetStatus(status_like);
     if (!status.Is(code_)) {
       *listener << "whose error code is " << status.error_space()->SpaceName()
                 << "::" << status.error_space()->String(status.error_code());
@@ -144,6 +157,17 @@ class StatusMatcher : public ::testing::MatcherInterface<const Status &> {
   }
 
  private:
+  template <typename ValueT>
+  static Status GetStatus(const StatusOr<ValueT> &status_or) {
+    return status_or.status();
+  }
+
+  static Status GetStatus(const Status &status) { return status; }
+
+  // To extend this type to support additional types, add a new GetStatus
+  // implementation that accepts the type which can be converted to a Status
+  // object for comparison by MatchAndExplain.
+
   // Expected error code.
   const Enum code_;
 
@@ -236,18 +260,19 @@ internal::IsOkAndHoldsGenerator<ValueMatcherT> IsOkAndHolds(
 // Returns a gMock matcher that expects an asylo::Status object to have the
 // given |code|.
 template <typename Enum>
-::testing::Matcher<const Status &> StatusIs(Enum code) {
-  return ::testing::MakeMatcher(
-      new internal::StatusMatcher<Enum>(code, absl::nullopt));
+::testing::PolymorphicMatcher<internal::StatusMatcher<Enum>> StatusIs(
+    Enum code) {
+  return ::testing::MakePolymorphicMatcher(
+      internal::StatusMatcher<Enum>(code, absl::nullopt));
 }
 
 // Returns a gMock matcher that expects an asylo::Status object to have the
 // given |code| and |message|.
 template <typename Enum>
-::testing::Matcher<const Status &> StatusIs(Enum code,
-                                            absl::string_view message) {
-  return ::testing::MakeMatcher(
-      new internal::StatusMatcher<Enum>(code, message));
+::testing::PolymorphicMatcher<internal::StatusMatcher<Enum>> StatusIs(
+    Enum code, absl::string_view message) {
+  return ::testing::MakePolymorphicMatcher(
+      internal::StatusMatcher<Enum>(code, message));
 }
 
 // Returns an internal::IsOkMatcherGenerator, which may be typecast to a

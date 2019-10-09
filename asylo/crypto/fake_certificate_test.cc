@@ -40,7 +40,7 @@ TEST(FakeCertificateTest, CreateFailsWithMalformedData) {
   cert.set_format(Certificate::X509_DER);
   cert.set_data("bad data 1-k");
 
-  EXPECT_THAT(FakeCertificate::Create(cert).status(),
+  EXPECT_THAT(FakeCertificate::Create(cert),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

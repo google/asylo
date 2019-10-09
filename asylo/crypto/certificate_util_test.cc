@@ -576,9 +576,8 @@ TEST(CertificateUtilTest, VerifyCertificateChainCaValuesSet) {
 
 TEST(CertificateUtilTest, CreateCertificateChainMissingFormat) {
   CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_PEM});
-  EXPECT_THAT(
-      CreateCertificateChain(factory_map, TestCertificateChain()).status(),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(CreateCertificateChain(factory_map, TestCertificateChain()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(CertificateUtilTest, CreateCertificateChainMalformedCertificate) {
@@ -588,7 +587,7 @@ TEST(CertificateUtilTest, CreateCertificateChainMalformedCertificate) {
   malformed_cert->set_format(Certificate::X509_PEM);
   malformed_cert->set_data(kMalformedCertData);
 
-  EXPECT_THAT(CreateCertificateChain(factory_map, chain).status(),
+  EXPECT_THAT(CreateCertificateChain(factory_map, chain),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -622,7 +621,7 @@ TEST(CertificateUtilTest, GetCertificateFromPem_Success) {
 }
 
 TEST(GetCertFromPemTest, GetCertificateFromPem_NonPemCertFailsToParse) {
-  EXPECT_THAT(GetCertificateFromPem("Not a PEM cert").status(),
+  EXPECT_THAT(GetCertificateFromPem("Not a PEM cert"),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
@@ -649,15 +648,14 @@ TEST(CertificateUtilTest,
 
 TEST(CertificateUtilTest,
      GetCertificateChainFromPem_NonPemCertChainFailsToParse) {
-  EXPECT_THAT(GetCertificateChainFromPem("Not a PEM cert chain").status(),
+  EXPECT_THAT(GetCertificateChainFromPem("Not a PEM cert chain"),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(CertificateUtilTest,
      GetCertificateChainFromPem_CertChainWithOneInvalidCertFailsToParse) {
-  EXPECT_THAT(
-      GetCertificateChainFromPem(kPemCertChainWithOneInvalidCert).status(),
-      StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(GetCertificateChainFromPem(kPemCertChainWithOneInvalidCert),
+              StatusIs(error::GoogleError::INTERNAL));
 }
 
 TEST(CertificateUtilTest, GetCrlFromPemTest_Success) {

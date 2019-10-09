@@ -255,11 +255,11 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest,
 
   asylo::AsymmetricEncryptionKeyProto ppidek = Ppidek();
   sgx::TargetInfoProto pce_target_info;
-  EXPECT_THAT(sgx_infrastructural_enclave_manager_
-                  ->AgeGeneratePceInfoSgxHardwareReport(pce_target_info, ppidek)
-                  .status(),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       kInputMissingPpidEncryptionKeyErrorMessage));
+  EXPECT_THAT(
+      sgx_infrastructural_enclave_manager_->AgeGeneratePceInfoSgxHardwareReport(
+          pce_target_info, ppidek),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT,
+               kInputMissingPpidEncryptionKeyErrorMessage));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsSuccess) {
@@ -288,8 +288,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeUpdateCertsFailure) {
   std::vector<CertificateChain> certificate_chains;
   SetCertificateChain(&certificate_chains);
   EXPECT_THAT(
-      sgx_infrastructural_enclave_manager_->AgeUpdateCerts(certificate_chains)
-          .status(),
+      sgx_infrastructural_enclave_manager_->AgeUpdateCerts(certificate_chains),
       StatusIs(error::GoogleError::FAILED_PRECONDITION,
                kNoAttestationKeyErrorMessage));
 }
@@ -356,9 +355,8 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, AgeGetSgxIdentityFails) {
   EXPECT_CALL(*mock_assertion_generator_enclave_, EnterAndRun)
       .WillOnce(Return(Status(error::GoogleError::UNKNOWN, "UNKNOWN")));
 
-  EXPECT_THAT(
-      sgx_infrastructural_enclave_manager_->AgeGetSgxIdentity().status(),
-      StatusIs(error::GoogleError::UNKNOWN, "UNKNOWN"));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->AgeGetSgxIdentity(),
+              StatusIs(error::GoogleError::UNKNOWN, "UNKNOWN"));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceGetTargetInfoSuccess) {
@@ -482,11 +480,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportFailure) {
   sgx::PceSvn pck_target_pce_svn = PceSvn();
   sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
   sgx::ReportProto report = Report();
-  EXPECT_THAT(
-      sgx_infrastructural_enclave_manager_
-          ->PceSignReport(pck_target_pce_svn, pck_target_cpu_svn, report)
-          .status(),
-      StatusIs(error::GoogleError::UNKNOWN));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
+                  pck_target_pce_svn, pck_target_cpu_svn, report),
+              StatusIs(error::GoogleError::UNKNOWN));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadPceSvnFails) {
@@ -494,11 +490,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadPceSvnFails) {
   sgx::PceSvn pck_target_pce_svn;
   sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
   sgx::ReportProto report = Report();
-  EXPECT_THAT(
-      sgx_infrastructural_enclave_manager_
-          ->PceSignReport(pck_target_pce_svn, pck_target_cpu_svn, report)
-          .status(),
-      Not(IsOk()));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
+                  pck_target_pce_svn, pck_target_cpu_svn, report),
+              Not(IsOk()));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadCpuSvnFails) {
@@ -506,11 +500,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadCpuSvnFails) {
   // Uninitialized.
   sgx::CpuSvn pck_target_cpu_svn;
   sgx::ReportProto report = Report();
-  EXPECT_THAT(
-      sgx_infrastructural_enclave_manager_
-          ->PceSignReport(pck_target_pce_svn, pck_target_cpu_svn, report)
-          .status(),
-      Not(IsOk()));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
+                  pck_target_pce_svn, pck_target_cpu_svn, report),
+              Not(IsOk()));
 }
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignWithBadReportFails) {
@@ -518,11 +510,9 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignWithBadReportFails) {
   sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
   // Uninitialized.
   sgx::ReportProto report;
-  EXPECT_THAT(
-      sgx_infrastructural_enclave_manager_
-          ->PceSignReport(pck_target_pce_svn, pck_target_cpu_svn, report)
-          .status(),
-      Not(IsOk()));
+  EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
+                  pck_target_pce_svn, pck_target_cpu_svn, report),
+              Not(IsOk()));
 }
 
 }  // namespace

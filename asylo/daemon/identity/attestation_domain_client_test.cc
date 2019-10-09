@@ -75,7 +75,7 @@ TEST(AttestationDomainClientMockTest, GeAttestationDomainFails) {
       std::unique_ptr<AttestationDomainService::StubInterface>(
           std::move(mock_stub)));
 
-  EXPECT_THAT(client.GetAttestationDomain().status(),
+  EXPECT_THAT(client.GetAttestationDomain(),
               StatusIs(error::GoogleError::DEADLINE_EXCEEDED));
 }
 

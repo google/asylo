@@ -461,13 +461,13 @@ TEST_F(SecsAttributesTest, MakeSecsAttributeSetPositive) {
       EXPECT_EQ(TestAttribute(bit2, attributes), (bit1 == bit2));
     }
   }
-  EXPECT_THAT(MakeSecsAttributeSet({bad_attribute_}).status(),
+  EXPECT_THAT(MakeSecsAttributeSet({bad_attribute_}),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that MakeSecsAttributeSet fails for an invalid attribute bit.
 TEST_F(SecsAttributesTest, MakeSecsAttributeSetNegative) {
-  EXPECT_THAT(MakeSecsAttributeSet({bad_attribute_}).status(),
+  EXPECT_THAT(MakeSecsAttributeSet({bad_attribute_}),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

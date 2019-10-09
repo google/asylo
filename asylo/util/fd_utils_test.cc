@@ -57,13 +57,13 @@ TEST(FdUtilsTest, ReadAllNoBlockWriteAllNoBlockBlockingPipe) {
   ASYLO_ASSERT_OK_AND_ASSIGN(pipe, Pipe::CreatePipe());
 
   EXPECT_THAT(
-      WriteAllNoBlock(pipe.write_fd(), kData).status(),
+      WriteAllNoBlock(pipe.write_fd(), kData),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                absl::StrCat("Cannot write to fd ", pipe.write_fd(),
                             " without blocking because ", pipe.write_fd(),
                             " is a blocking file descriptor")));
   EXPECT_THAT(
-      ReadAllNoBlock(pipe.read_fd()).status(),
+      ReadAllNoBlock(pipe.read_fd()),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                absl::StrCat("Cannot read from fd ", pipe.read_fd(),
                             " without blocking because ", pipe.read_fd(),

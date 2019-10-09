@@ -235,7 +235,7 @@ TEST_P(AeadKeyTest, AeadKeyTestInvalidKey) {
 
   StatusOr<std::unique_ptr<AeadKey>> bad_test_key_result =
       GetParam().factory(bad_key);
-  EXPECT_THAT(bad_test_key_result.status(),
+  EXPECT_THAT(bad_test_key_result,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 

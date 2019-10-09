@@ -144,9 +144,8 @@ TEST_F(VirtualHandlerTest, PartialFileMatch) {
   // Verify that handler isn't matched.
   auto result_or_error = Read(path + "x");
   ASSERT_THAT(result_or_error, Not(IsOk()));
-  EXPECT_THAT(result_or_error.status(),
-              StatusIs(error::GoogleError::INTERNAL,
-                       "Error: Cannot open /test/foo/qux"));
+  EXPECT_THAT(result_or_error, StatusIs(error::GoogleError::INTERNAL,
+                                        "Error: Cannot open /test/foo/qux"));
 
   // Cleanup registered handler.
   DeregisterVirtualPathHandler(path);

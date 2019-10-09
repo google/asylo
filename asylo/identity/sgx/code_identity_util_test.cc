@@ -769,11 +769,10 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidExpectation) {
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
   SgxIdentityExpectation expectation;
-  EXPECT_THAT(
-      MatchIdentityToExpectation(identity, expectation, /*explanation=*/nullptr)
-          .status(),
-      StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
-               "Expectation parameter is invalid"));
+  EXPECT_THAT(MatchIdentityToExpectation(identity, expectation,
+                                         /*explanation=*/nullptr),
+              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+                       "Expectation parameter is invalid"));
 }
 
 // Make sure that enclave identity match fails with appropriate status if the
@@ -784,8 +783,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidIdentity) {
       expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
 
   EXPECT_THAT(MatchIdentityToExpectation(SgxIdentity::default_instance(),
-                                         expectation, /*explanation=*/nullptr)
-                  .status(),
+                                         expectation, /*explanation=*/nullptr),
               StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
                        "Identity parameter is invalid"));
 }
@@ -807,11 +805,10 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrenclave) {
   SgxIdentity identity = expectation.reference_identity();
   identity.mutable_code_identity()->clear_mrenclave();
 
-  EXPECT_THAT(
-      MatchIdentityToExpectation(identity, expectation, /*explanation=*/nullptr)
-          .status(),
-      StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
-               "Identity is not compatible with specified match spec"));
+  EXPECT_THAT(MatchIdentityToExpectation(identity, expectation,
+                                         /*explanation=*/nullptr),
+              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+                       "Identity is not compatible with specified match spec"));
 }
 
 // Make sure that enclave identity match fails with appropriate status if
@@ -833,11 +830,10 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrsigner) {
       ->mutable_signer_assigned_identity()
       ->clear_mrsigner();
 
-  EXPECT_THAT(
-      MatchIdentityToExpectation(identity, expectation, /*explanation=*/nullptr)
-          .status(),
-      StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
-               "Identity is not compatible with specified match spec"));
+  EXPECT_THAT(MatchIdentityToExpectation(identity, expectation,
+                                         /*explanation=*/nullptr),
+              StatusIs(::asylo::error::GoogleError::INVALID_ARGUMENT,
+                       "Identity is not compatible with specified match spec"));
 }
 
 TEST_F(CodeIdentityUtilTest, CodeIdentityMatchMultipleMismatchedProperties) {
