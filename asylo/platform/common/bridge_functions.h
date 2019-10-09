@@ -111,30 +111,6 @@ int FromBridgeSysLogPriority(int bridge_syslog_priority);
 // |syslog_priority| does not contain a supported facility or level.
 int ToBridgeSysLogPriority(int syslog_priority);
 
-// Converts |bridge_tv| to a runtime timeval.
-struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
-                                  struct timeval *tv);
-
-// Converts |tv| to a bridge timeval.
-struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
-                                       struct bridge_timeval *bridge_tv);
-
-// Converts |host_wstatus| to a runtime wstatus.
-// This only works when converting into an enclave runtime wstatus, not on host.
-int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus);
-
-// Converts |wstatus| to a bridge wstatus.
-struct BridgeWStatus ToBridgeWStatus(int wstatus);
-
-// Converts |bridge_rusage| to a runtime rusage. Returns nullptr if
-// unsuccessful.
-struct rusage *FromBridgeRUsage(const struct BridgeRUsage *bridge_rusage,
-                                struct rusage *rusage);
-
-// Converts |rusage| to a bridge rusage. Returns nullptr if unsuccessful.
-struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
-                                    struct BridgeRUsage *bridge_rusage);
-
 // Converts |bridge_password| to a runtime passwd. Returns nullptr if
 // unsuccessful. This method does not copy and data, just sets the pointers in
 // |passwd| to point to the buffers in |bridge_password|.

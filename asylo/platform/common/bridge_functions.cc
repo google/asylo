@@ -50,14 +50,6 @@
 namespace asylo {
 namespace {
 
-bool BridgeWIfExited(BridgeWStatus bridge_wstatus) {
-  return bridge_wstatus.code == 0;
-}
-
-bool BridgeWIfStopped(BridgeWStatus bridge_wstatus) {
-  return bridge_wstatus.code == BRIDGE_WSTOPPED;
-}
-
 int FromBridgeSysLogLevel(int bridge_syslog_level) {
   if (bridge_syslog_level == BRIDGE_LOG_EMERG) return LOG_EMERG;
   if (bridge_syslog_level == BRIDGE_LOG_ALERT) return LOG_ALERT;
@@ -300,64 +292,6 @@ int ToBridgeSysLogPriority(int syslog_priority) {
   int syslog_facility = syslog_priority & ~0x07;
   return ToBridgeSysLogLevel(syslog_level) |
          ToBridgeSysLogFacility(syslog_facility);
-}
-
-struct timeval *FromBridgeTimeVal(const struct bridge_timeval *bridge_tv,
-                                  struct timeval *tv) {
-  if (!bridge_tv || !tv) return nullptr;
-  tv->tv_sec = bridge_tv->tv_sec;
-  tv->tv_usec = bridge_tv->tv_usec;
-  return tv;
-}
-
-struct bridge_timeval *ToBridgeTimeVal(const struct timeval *tv,
-                                       struct bridge_timeval *bridge_tv) {
-  if (!tv || !bridge_tv) return nullptr;
-  bridge_tv->tv_sec = tv->tv_sec;
-  bridge_tv->tv_usec = tv->tv_usec;
-  return bridge_tv;
-}
-
-int FromBridgeWStatus(struct BridgeWStatus bridge_wstatus) {
-  int wstatus = static_cast<int>(bridge_wstatus.info) << 8;
-  if (BridgeWIfExited(bridge_wstatus)) {
-    return wstatus;
-  }
-  if (BridgeWIfStopped(bridge_wstatus)) {
-    return wstatus + BRIDGE_WSTOPPED;
-  }
-  return wstatus + bridge_wstatus.code;
-}
-
-BridgeWStatus ToBridgeWStatus(int wstatus) {
-  BridgeWStatus bridge_wstatus;
-  // The info byte is the byte before the code byte, which is the 9 - 16 from
-  // the lowest bits.
-  bridge_wstatus.info = wstatus >> 8 & 0xff;
-  if (WIFEXITED(wstatus)) {
-    bridge_wstatus.code = 0;
-  } else if (WIFSTOPPED(wstatus)) {
-    bridge_wstatus.code = BRIDGE_WSTOPPED;
-  } else {
-    bridge_wstatus.code = wstatus & BRIDGE_WSTOPPED;
-  }
-  return bridge_wstatus;
-}
-
-struct rusage *FromBridgeRUsage(const struct BridgeRUsage *bridge_rusage,
-                                struct rusage *rusage) {
-  if (!bridge_rusage || !rusage) return nullptr;
-  FromBridgeTimeVal(&bridge_rusage->ru_utime, &rusage->ru_utime);
-  FromBridgeTimeVal(&bridge_rusage->ru_stime, &rusage->ru_stime);
-  return rusage;
-}
-
-struct BridgeRUsage *ToBridgeRUsage(const struct rusage *rusage,
-                                    struct BridgeRUsage *bridge_rusage) {
-  if (!rusage || !bridge_rusage) return nullptr;
-  ToBridgeTimeVal(&rusage->ru_utime, &bridge_rusage->ru_utime);
-  ToBridgeTimeVal(&rusage->ru_stime, &bridge_rusage->ru_stime);
-  return bridge_rusage;
 }
 
 bool CStringCopy(const char *source_buf, char *dest_buf, size_t size) {

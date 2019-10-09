@@ -41,33 +41,11 @@ extern "C" {
 // Replace size_t, ssize_t, and sigset_t with types of known width for
 // transmission across the enclave boundary.
 typedef uint64_t bridge_size_t;
-typedef int64_t bridge_ssize_t;
 typedef int64_t bridge_sigset_t;
-
-// The target for getrusage(2) that are supported inside the enclave.
-enum RUsageTarget {
-  BRIDGE_RUSAGE_UNKNOWN = 0,
-  BRIDGE_RUSAGE_SELF = 1,
-  BRIDGE_RUSAGE_CHILDREN = 2,
-};
 
 // The wait options that are supported inside the enclave.
 enum WaitOptions {
   BRIDGE_WNOHANG = 1,
-};
-
-// The code byte of wstatus that are supported inside the enclave. The last 8
-// bit of wstatus is the code byte. WIFEXITED returns true if the code byte is
-// 0. WIFSTOPPED returns true if the code byte is 0x7f. Otherwise WIFSIGNALED
-// returns true.
-enum WStatusCode {
-  BRIDGE_WCODEBYTE = 0xff,
-  BRIDGE_WSTOPPED = 0x7f,
-};
-
-struct BridgeWStatus {
-  uint8_t code;
-  uint8_t info;
 };
 
 // All the signals that are supported to be registered inside enclave (except
@@ -118,29 +96,6 @@ enum SignalCode {
 enum SignalFlags {
   BRIDGE_SA_NODEFER = 0x01,
   BRIDGE_SA_RESETHAND = 0x02,
-};
-
-// The possible return error codes for getaddrinfo.
-enum AddrInfoErrorCode {
-  BRIDGE_EAI_SUCCESS = 0,
-  BRIDGE_EAI_ADDRFAMILY = 1,
-  BRIDGE_EAI_AGAIN = 2,
-  BRIDGE_EAI_BADFLAGS = 3,
-  BRIDGE_EAI_FAIL = 4,
-  BRIDGE_EAI_FAMILY = 5,
-  BRIDGE_EAI_MEMORY = 6,
-  BRIDGE_EAI_NODATA = 7,
-  BRIDGE_EAI_NONAME = 8,
-  BRIDGE_EAI_SERVICE = 9,
-  BRIDGE_EAI_SOCKTYPE = 10,
-  BRIDGE_EAI_SYSTEM = 11,
-  BRIDGE_EAI_OVERFLOW = 12,
-  BRIDGE_EAI_INPROGRESS = 13,
-  BRIDGE_EAI_CANCELED = 14,
-  BRIDGE_EAI_ALLDONE = 15,
-  BRIDGE_EAI_INTR = 16,
-  BRIDGE_EAI_IDN_ENCODE = 17,
-  BRIDGE_EAI_UNKNOWN = 20,  // The result of a bad translation.
 };
 
 // All the syslog options supported inside the enclave.
