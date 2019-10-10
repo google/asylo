@@ -351,6 +351,13 @@ cc_test(
 )
 
 cc_library(
+    name = "remote_assertion_generator_constants",
+    srcs = ["remote_assertion_generator_constants.cc"],
+    hdrs = ["remote_assertion_generator_constants.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+)
+
+cc_library(
     name = "remote_assertion_generator_enclave_util",
     srcs = ["remote_assertion_generator_enclave_util.cc"],
     hdrs = ["remote_assertion_generator_enclave_util.h"],
@@ -358,6 +365,7 @@ cc_library(
     deps = [
         ":attestation_key_cc_proto",
         ":hardware_types",
+        ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
         ":sgx_local_secret_sealer",
         ":sgx_remote_assertion_generator_impl",
@@ -386,6 +394,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attestation_key_cc_proto",
+        ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
         ":remote_assertion_generator_enclave_util",
         ":sgx_local_secret_sealer",
@@ -497,6 +506,7 @@ sgx_enclave_test(
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
         ":remote_assertion_cc_proto",
+        ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
         ":remote_assertion_generator_enclave_util",
         ":remote_assertion_generator_test_util_enclave_cc_proto",

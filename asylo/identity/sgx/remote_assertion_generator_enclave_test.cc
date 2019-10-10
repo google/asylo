@@ -41,6 +41,7 @@
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
+#include "asylo/identity/sgx/remote_assertion_generator_constants.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
 #include "asylo/identity/sgx/remote_assertion_generator_test_util_enclave.pb.h"

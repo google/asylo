@@ -31,6 +31,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
+#include "asylo/identity/sgx/remote_assertion_generator_constants.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_local_secret_sealer.h"
 #include "asylo/test/util/proto_matchers.h"

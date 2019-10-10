@@ -31,6 +31,7 @@
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
+#include "asylo/identity/sgx/remote_assertion_generator_constants.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_local_secret_sealer.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
@@ -42,13 +43,6 @@
 
 namespace asylo {
 namespace sgx {
-
-const char *const kAttestationPublicKeyVersion =
-    "Assertion Generator Enclave Attestation Key v0.1";
-const char *const kAttestationPublicKeyPurpose =
-    "Assertion Generator Enclave Attestation Key";
-const char *const kPceSignReportPayloadVersion = "PCE Sign Report v0.1";
-
 namespace {
 
 using ::google::protobuf::RepeatedPtrField;

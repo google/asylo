@@ -41,10 +41,6 @@
 namespace asylo {
 namespace sgx {
 
-extern const char *const kAttestationPublicKeyVersion;
-extern const char *const kAttestationPublicKeyPurpose;
-extern const char *const kPceSignReportPayloadVersion;
-
 // Checks that the sealed secret header contains correct name, version, and
 // purpose.
 Status CheckRemoteAssertionGeneratorEnclaveSecretHeader(
