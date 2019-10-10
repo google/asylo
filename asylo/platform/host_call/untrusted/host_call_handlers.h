@@ -189,6 +189,12 @@ Status GetPwUidHandler(const std::shared_ptr<primitives::Client> &client,
                        void *context, primitives::MessageReader *input,
                        primitives::MessageWriter *output);
 
+// Handler for host call enc_untrusted_hex_dump; expects [Extent buf] and
+// returns [int /*result*/, int /*errno*/] on the MessageWriter.
+Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

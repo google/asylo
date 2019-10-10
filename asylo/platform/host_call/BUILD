@@ -48,6 +48,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":serializer_functions",
+        "//asylo/platform/common:debug_strings",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",

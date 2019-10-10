@@ -91,15 +91,6 @@ enclave {
         [in, string]const char *enclave_name,
 	      bool restore_snapshot)
 	allow(ecall_take_snapshot, ecall_restore) propagate_errno;
-
-    //////////////////////////////////////
-    //           Debugging              //
-    //////////////////////////////////////
-    // Temporary calls to help with debugging, or other workarounds go here.
-
-    // Prints nbytes of memory starting at buf as hex.
-    void ocall_enc_untrusted_hex_dump([in, size=nbytes] const void *buf,
-                                      bridge_size_t nbytes);
   };
 
 };

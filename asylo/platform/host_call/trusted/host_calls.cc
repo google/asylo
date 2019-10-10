@@ -1575,4 +1575,16 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
   return &global_passwd;
 }
 
+void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
+  MessageWriter input;
+  MessageReader output;
+  input.PushByReference(Extent{reinterpret_cast<const char *>(buf), nbytes});
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kHexDumpHandler, &input, &output);
+
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_hex_dump failed.");
+  }
+}
+
 }  // extern "C"

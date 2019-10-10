@@ -30,6 +30,7 @@
 
 #include <ctime>
 
+#include "asylo/platform/common/debug_strings.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
@@ -486,6 +487,19 @@ Status GetPwUidHandler(const std::shared_ptr<primitives::Client> &client,
   if (password) {
     SerializePasswd(output, password);
   }
+  return Status::OkStatus();
+}
+
+Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  auto buf = input->next();
+
+  output->Push<int>(
+      fprintf(stderr, "%s\n",
+              asylo::buffer_to_hex_string(buf.data(), buf.size()).c_str()));
+  output->Push<int>(errno);
   return Status::OkStatus();
 }
 

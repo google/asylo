@@ -60,7 +60,6 @@
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
-#include "asylo/platform/common/debug_strings.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
@@ -551,14 +550,6 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name,
     }
   }
   return pid;
-}
-
-//////////////////////////////////////
-//           Debugging              //
-//////////////////////////////////////
-
-void ocall_enc_untrusted_hex_dump(const void *buf, bridge_size_t nbytes) {
-  fprintf(stderr, "%s\n", asylo::buffer_to_hex_string(buf, nbytes).c_str());
 }
 
 int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {

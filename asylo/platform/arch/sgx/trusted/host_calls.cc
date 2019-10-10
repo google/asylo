@@ -131,12 +131,4 @@ void enc_untrusted_syslog(int priority, const char *message) {
 
 void enc_untrusted__exit(int rc) { ocall_enc_untrusted__exit(rc); }
 
-//////////////////////////////////////
-//           Debugging              //
-//////////////////////////////////////
-
-void enc_untrusted_hex_dump(const void *buf, int nbytes) {
-  CHECK_OCALL(ocall_enc_untrusted_hex_dump(buf, nbytes));
-}
-
 }  // extern "C"

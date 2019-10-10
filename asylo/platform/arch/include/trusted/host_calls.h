@@ -97,13 +97,6 @@ void enc_untrusted_syslog(int priority, const char *message);
 
 void enc_untrusted__exit(int rc);
 
-//////////////////////////////////////
-//            Debugging             //
-//////////////////////////////////////
-
-// Prints a buffer to standard error as hex.
-void enc_untrusted_hex_dump(const void *buf, int nbytes);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif
