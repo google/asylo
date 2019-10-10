@@ -71,7 +71,7 @@ PrimitiveStatus Client::ExitCallback(uint64_t untrusted_selector,
 }
 
 // This provides a default, no-op implementation if this function is not
-// overriden for any backend.
+// overridden for any backend.
 Status Client::RegisterExitHandlers() { return Status::OkStatus(); }
 
 }  // namespace primitives

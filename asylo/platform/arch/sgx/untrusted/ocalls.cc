@@ -308,8 +308,6 @@ void ocall_enc_untrusted_syslog(int priority, const char *message) {
 //            unistd.h              //
 //////////////////////////////////////
 
-void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
-
 pid_t ocall_enc_untrusted_fork(const char *enclave_name,
                                bool restore_snapshot) {
   auto manager_result = asylo::EnclaveManager::Instance();

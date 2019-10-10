@@ -1587,4 +1587,9 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
   }
 }
 
+void enc_untrusted_exit_group(int status) {
+  EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_exit_group,
+                                      status);
+}
+
 }  // extern "C"

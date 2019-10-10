@@ -278,7 +278,11 @@ int enclave_unlink(const char *pathname) {
   return IOManager::GetInstance().Unlink(pathname);
 }
 
-void enclave_exit(int rc) { enc_untrusted__exit(rc); }
+void enclave_exit(int rc) {
+  while (true) {
+    enc_untrusted_exit_group(rc);
+  }
+}
 
 pid_t enclave_fork() { return ForkEnclave(); }
 

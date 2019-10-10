@@ -125,10 +125,4 @@ void enc_untrusted_syslog(int priority, const char *message) {
       asylo::ToBridgeSysLogPriority(priority), message));
 }
 
-//////////////////////////////////////
-//            unistd.h              //
-//////////////////////////////////////
-
-void enc_untrusted__exit(int rc) { ocall_enc_untrusted__exit(rc); }
-
 }  // extern "C"

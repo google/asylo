@@ -91,12 +91,6 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
 void enc_untrusted_openlog(const char *ident, int option, int facility);
 void enc_untrusted_syslog(int priority, const char *message);
 
-//////////////////////////////////////
-//            unistd.h              //
-//////////////////////////////////////
-
-void enc_untrusted__exit(int rc);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif
