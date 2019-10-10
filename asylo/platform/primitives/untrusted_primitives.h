@@ -19,6 +19,8 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_UNTRUSTED_PRIMITIVES_H_
 #define ASYLO_PLATFORM_PRIMITIVES_UNTRUSTED_PRIMITIVES_H_
 
+#include <unistd.h>
+
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -109,16 +111,17 @@ class Client : public std::enable_shared_from_this<Client> {
   class ScopedCurrentClient {
    public:
     explicit ScopedCurrentClient(Client *client)
-        : saved_client_(Client::current_client_) {
+        : saved_client_(Client::current_client_), pid_(getpid()) {
       current_client_ = client;
     }
-    ~ScopedCurrentClient() { current_client_ = saved_client_; }
+    ~ScopedCurrentClient();
 
     ScopedCurrentClient(const ScopedCurrentClient &other) = delete;
     ScopedCurrentClient &operator=(const ScopedCurrentClient &other) = delete;
 
    private:
-    Client *saved_client_;
+    Client *const saved_client_;
+    const pid_t pid_;
   };
 
   virtual ~Client() = default;
@@ -140,6 +143,11 @@ class Client : public std::enable_shared_from_this<Client> {
   ///
   /// \return The name of the enclave.
   virtual const absl::string_view &Name() const { return name_; }
+
+  // Sets |current_client_| to the calling primitive client. This should only be
+  // called if an enclave entry happens without going through a regular enclave
+  // entry point (like a fork from inside the enclave).
+  void SetCurrentClient();
 
   // Enters the enclave synchronously at an entry point to trusted code
   // designated by `selector`.

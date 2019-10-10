@@ -68,6 +68,7 @@
 #include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/platform/primitives/sgx/signal_dispatcher.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
+#include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
 #include "asylo/util/posix_error_space.h"
@@ -464,6 +465,10 @@ pid_t ocall_enc_untrusted_fork(const char *enclave_name,
       errno = EAGAIN;
       return -1;
     }
+
+    // Sets |current_client_| to the new client pointing to the child enclave,
+    // instead of the one to the parent.
+    primitive_client->SetCurrentClient();
 
     std::string child_result = "Child fork succeeded";
     asylo::Status status = DoSnapshotKeyTransfer(

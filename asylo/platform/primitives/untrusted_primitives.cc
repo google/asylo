@@ -18,6 +18,8 @@
 
 #include "asylo/platform/primitives/untrusted_primitives.h"
 
+#include <unistd.h>
+
 #include <cstdint>
 #include <memory>
 #include <utility>
@@ -34,6 +36,18 @@ namespace asylo {
 namespace primitives {
 
 thread_local Client *Client::current_client_ = nullptr;
+
+Client::ScopedCurrentClient::~ScopedCurrentClient() {
+  if (pid_ != getpid()) {
+    // This is a process forked during an enclave entry, we should not restore
+    // the old client.
+    current_client_ = nullptr;
+    return;
+  }
+  current_client_ = saved_client_;
+}
+
+void Client::SetCurrentClient() { current_client_ = this; }
 
 Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
                            MessageReader *output) {
