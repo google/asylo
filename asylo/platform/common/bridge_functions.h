@@ -79,30 +79,6 @@ int FromBridgeSignalFlags(int bridge_sa_flags);
 // provided.
 int ToBridgeSignalFlags(int sa_flags);
 
-// Converts |bridge_syslog_option| to a runtime syslog option. Returns 0 if
-// |bridge_syslog_option| does not contain any supported options.
-int FromBridgeSysLogOption(int bridge_syslog_option);
-
-// Converts |syslog_option| to a bridge syslog option. Returns 0 if
-// |syslog_option| does not contain any supported options.
-int ToBridgeSysLogOption(int syslog_option);
-
-// Converts |bridge_syslog_facility| to a runtime syslog facility. Returns 0 if
-// |bridge_syslog_facility| does not map to a supported facility.
-int FromBridgeSysLogFacility(int bridge_syslog_facility);
-
-// Converts |syslog_facility| to a bridge syslog facility. Returns 0 if
-// |syslog_facility| does not map to a supported facility.
-int ToBridgeSysLogFacility(int syslog_facility);
-
-// Converts |bridge_syslog_priority| to a runtime syslog priority. Returns 0 if
-// |bridge_syslog_priority| does not contain a supported facility or level.
-int FromBridgeSysLogPriority(int bridge_syslog_priority);
-
-// Converts |syslog_priority| to a bridge syslog priority. Returns 0 if
-// |syslog_priority| does not contain a supported facility or level.
-int ToBridgeSysLogPriority(int syslog_priority);
-
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_COMMON_BRIDGE_FUNCTIONS_H_

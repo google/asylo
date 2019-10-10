@@ -26,6 +26,7 @@
 #include <pwd.h>
 #include <signal.h>
 #include <sys/socket.h>
+#include <syslog.h>
 #include <unistd.h>
 
 #include <ctime>
@@ -466,8 +467,8 @@ Status GetIfAddrsHandler(const std::shared_ptr<primitives::Client> &client,
 }
 
 Status GetCpuClockIdHandler(const std::shared_ptr<primitives::Client> &client,
-                         void *context, primitives::MessageReader *input,
-                         primitives::MessageWriter *output) {
+                            void *context, primitives::MessageReader *input,
+                            primitives::MessageWriter *output) {
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*input);
   pid_t pid = input->next<int32_t>();
   clockid_t klinux_clock_id;
@@ -499,6 +500,20 @@ Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<int>(
       fprintf(stderr, "%s\n",
               asylo::buffer_to_hex_string(buf.data(), buf.size()).c_str()));
+  output->Push<int>(errno);
+  return Status::OkStatus();
+}
+
+Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 3);
+  auto ident_buf = input->next();
+  int option = input->next<int>();
+  int facility = input->next<int>();
+  const char *ident = ident_buf.empty() ? nullptr : ident_buf.As<char>();
+
+  openlog(ident, option, facility);
   output->Push<int>(errno);
   return Status::OkStatus();
 }

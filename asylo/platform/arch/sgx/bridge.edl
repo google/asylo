@@ -73,16 +73,6 @@ enclave {
         [in, string] const char *name);
 
     //////////////////////////////////////
-    //          sys/syslog.h            //
-    //////////////////////////////////////
-
-    void ocall_enc_untrusted_openlog([in, string] const char *ident, int option,
-                                     int facility);
-
-    void ocall_enc_untrusted_syslog(int priority,
-                                    [in, string] const char *message);
-
-    //////////////////////////////////////
     //            unistd.h              //
     //////////////////////////////////////
 

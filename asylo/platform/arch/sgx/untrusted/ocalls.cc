@@ -292,19 +292,6 @@ int ocall_enc_untrusted_register_signal_handler(
 }
 
 //////////////////////////////////////
-//          sys/syslog.h            //
-//////////////////////////////////////
-
-void ocall_enc_untrusted_openlog(const char *ident, int option, int facility) {
-  openlog(ident, asylo::FromBridgeSysLogOption(option),
-          asylo::FromBridgeSysLogFacility(facility));
-}
-
-void ocall_enc_untrusted_syslog(int priority, const char *message) {
-  syslog(asylo::FromBridgeSysLogPriority(priority), "%s", message);
-}
-
-//////////////////////////////////////
 //            unistd.h              //
 //////////////////////////////////////
 

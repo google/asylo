@@ -321,6 +321,31 @@ define_constants(
     include_header_file="sys/utsname.h",
     skip_conversions=True)
 
+define_constants(
+    name="SyslogFacility",
+    values=[
+        "LOG_USER", "LOG_LOCAL0", "LOG_LOCAL1", "LOG_LOCAL2", "LOG_LOCAL3",
+        "LOG_LOCAL4", "LOG_LOCAL5", "LOG_LOCAL6", "LOG_LOCAL7"
+    ],
+    include_header_file="syslog.h")
+
+define_constants(
+    name="SyslogOption",
+    values=[
+        "LOG_PID", "LOG_CONS", "LOG_ODELAY", "LOG_NDELAY", "LOG_NOWAIT",
+        "LOG_PERROR"
+    ],
+    include_header_file="syslog.h",
+    multi_valued=True)
+
+define_constants(
+    name="SyslogLevel",
+    values=[
+        "LOG_EMERG", "LOG_ALERT", "LOG_CRIT", "LOG_ERR", "LOG_WARNING",
+        "LOG_NOTICE", "LOG_INFO", "LOG_DEBUG"
+    ],
+    include_header_file="syslog.h")
+
 define_struct(
     name="timespec",
     values=[

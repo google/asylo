@@ -227,6 +227,10 @@ SYSCALL_DEFINE2(utime, const char *, filename,
 
 SYSCALL_DEFINE2(getrusage, int, who, \out struct rusage *, usage)
 
-// Utsname.h
+// utsname.h
 // =========
 SYSCALL_DEFINE1(uname, \out struct utsname *, buf)
+
+// syslog.h
+// ========
+SYSCALL_DEFINE3(syslog, int, type, \in const char * [bound:len], buf, int, len)

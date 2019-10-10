@@ -110,19 +110,4 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
   return ret;
 }
 
-//////////////////////////////////////
-//          sys/syslog.h            //
-//////////////////////////////////////
-
-void enc_untrusted_openlog(const char *ident, int option, int facility) {
-  CHECK_OCALL(
-      ocall_enc_untrusted_openlog(ident, asylo::ToBridgeSysLogOption(option),
-                                  asylo::ToBridgeSysLogFacility(facility)));
-}
-
-void enc_untrusted_syslog(int priority, const char *message) {
-  CHECK_OCALL(ocall_enc_untrusted_syslog(
-      asylo::ToBridgeSysLogPriority(priority), message));
-}
-
 }  // extern "C"

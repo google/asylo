@@ -116,6 +116,9 @@ static constexpr uint64_t kGetPwUidHandler = primitives::kSelectorHostCall + 23;
 // Exit handler constant for |HexDumpHandler|.
 static constexpr uint64_t kHexDumpHandler = primitives::kSelectorHostCall + 24;
 
+// Exit handler constant for |OpenLogHandler|.
+static constexpr uint64_t kOpenLogHandler = primitives::kSelectorHostCall + 25;
+
 }  // namespace host_call
 }  // namespace asylo
 

@@ -195,6 +195,12 @@ Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
                       void *context, primitives::MessageReader *input,
                       primitives::MessageWriter *output);
 
+// Handler for library call openlog; expects [char *ident, int option, int
+// facility] and returns [int /*errno*/] on the MessageWriter.
+Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
+                      void *context, primitives::MessageReader *input,
+                      primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

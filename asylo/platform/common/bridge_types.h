@@ -93,42 +93,6 @@ enum SignalFlags {
   BRIDGE_SA_RESETHAND = 0x02,
 };
 
-// All the syslog options supported inside the enclave.
-enum SysLogOptions {
-  BRIDGE_LOG_PID = 0x01,
-  BRIDGE_LOG_CONS = 0x02,
-  BRIDGE_LOG_ODELAY = 0x04,
-  BRIDGE_LOG_NDELAY = 0x08,
-  BRIDGE_LOG_NOWAIT = 0x10,
-  BRIDGE_LOG_PERROR = 0x20,
-};
-
-// All the syslog facilities supported inside the enclave.
-enum SysLogFacilities {
-  BRIDGE_LOG_USER = 1 << 3,
-  BRIDGE_LOG_LOCAL0 = 16 << 3,
-  BRIDGE_LOG_LOCAL1 = 17 << 3,
-  BRIDGE_LOG_LOCAL2 = 18 << 3,
-  BRIDGE_LOG_LOCAL3 = 19 << 3,
-  BRIDGE_LOG_LOCAL4 = 20 << 3,
-  BRIDGE_LOG_LOCAL5 = 21 << 3,
-  BRIDGE_LOG_LOCAL6 = 22 << 3,
-  BRIDGE_LOG_LOCAL7 = 23 << 3,
-};
-
-// All the supported syslog level that are allowed to be called outside the
-// enclave.
-enum SysLogLevel {
-  BRIDGE_LOG_EMERG = 0,
-  BRIDGE_LOG_ALERT = 1,
-  BRIDGE_LOG_CRIT = 2,
-  BRIDGE_LOG_ERR = 3,
-  BRIDGE_LOG_WARNING = 4,
-  BRIDGE_LOG_NOTICE = 5,
-  BRIDGE_LOG_INFO = 6,
-  BRIDGE_LOG_DEBUG = 7,
-};
-
 struct bridge_siginfo_t {
   int32_t si_signo;
   int32_t si_code;

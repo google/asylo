@@ -50,30 +50,6 @@
 namespace asylo {
 namespace {
 
-int FromBridgeSysLogLevel(int bridge_syslog_level) {
-  if (bridge_syslog_level == BRIDGE_LOG_EMERG) return LOG_EMERG;
-  if (bridge_syslog_level == BRIDGE_LOG_ALERT) return LOG_ALERT;
-  if (bridge_syslog_level == BRIDGE_LOG_CRIT) return LOG_CRIT;
-  if (bridge_syslog_level == BRIDGE_LOG_ERR) return LOG_ERR;
-  if (bridge_syslog_level == BRIDGE_LOG_WARNING) return LOG_WARNING;
-  if (bridge_syslog_level == BRIDGE_LOG_NOTICE) return LOG_NOTICE;
-  if (bridge_syslog_level == BRIDGE_LOG_INFO) return LOG_INFO;
-  if (bridge_syslog_level == BRIDGE_LOG_DEBUG) return LOG_DEBUG;
-  return 0;
-}
-
-int ToBridgeSysLogLevel(int syslog_level) {
-  if (syslog_level == LOG_EMERG) return BRIDGE_LOG_EMERG;
-  if (syslog_level == LOG_ALERT) return BRIDGE_LOG_ALERT;
-  if (syslog_level == LOG_CRIT) return BRIDGE_LOG_CRIT;
-  if (syslog_level == LOG_ERR) return BRIDGE_LOG_ERR;
-  if (syslog_level == LOG_WARNING) return BRIDGE_LOG_WARNING;
-  if (syslog_level == LOG_NOTICE) return BRIDGE_LOG_NOTICE;
-  if (syslog_level == LOG_INFO) return BRIDGE_LOG_INFO;
-  if (syslog_level == LOG_DEBUG) return BRIDGE_LOG_DEBUG;
-  return 0;
-}
-
 void BridgeSigAddSet(bridge_sigset_t *bridge_set, const int sig) {
   *bridge_set |= (UINT64_C(1) << sig);
 }
@@ -216,70 +192,6 @@ int ToBridgeSignalFlags(int sa_flags) {
   if (sa_flags & SA_NODEFER) bridge_sa_flags |= BRIDGE_SA_NODEFER;
   if (sa_flags & SA_RESETHAND) bridge_sa_flags |= BRIDGE_SA_RESETHAND;
   return bridge_sa_flags;
-}
-
-int FromBridgeSysLogOption(int bridge_syslog_option) {
-  int syslog_option = 0;
-  if (bridge_syslog_option & BRIDGE_LOG_PID) syslog_option |= LOG_PID;
-  if (bridge_syslog_option & BRIDGE_LOG_CONS) syslog_option |= LOG_CONS;
-  if (bridge_syslog_option & BRIDGE_LOG_ODELAY) syslog_option |= LOG_ODELAY;
-  if (bridge_syslog_option & BRIDGE_LOG_NDELAY) syslog_option |= LOG_NDELAY;
-  if (bridge_syslog_option & BRIDGE_LOG_NOWAIT) syslog_option |= LOG_NOWAIT;
-  if (bridge_syslog_option & BRIDGE_LOG_PERROR) syslog_option |= LOG_PERROR;
-  return syslog_option;
-}
-
-int ToBridgeSysLogOption(int syslog_option) {
-  int bridge_syslog_option = 0;
-  if (syslog_option & LOG_PID) bridge_syslog_option |= BRIDGE_LOG_PID;
-  if (syslog_option & LOG_CONS) bridge_syslog_option |= BRIDGE_LOG_CONS;
-  if (syslog_option & LOG_ODELAY) bridge_syslog_option |= BRIDGE_LOG_ODELAY;
-  if (syslog_option & LOG_NDELAY) bridge_syslog_option |= BRIDGE_LOG_NDELAY;
-  if (syslog_option & LOG_NOWAIT) bridge_syslog_option |= BRIDGE_LOG_NOWAIT;
-  if (syslog_option & LOG_PERROR) bridge_syslog_option |= BRIDGE_LOG_PERROR;
-  return bridge_syslog_option;
-}
-
-int FromBridgeSysLogFacility(int bridge_syslog_facility) {
-  if (bridge_syslog_facility == BRIDGE_LOG_USER) return LOG_USER;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL0) return LOG_LOCAL0;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL1) return LOG_LOCAL1;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL2) return LOG_LOCAL2;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL3) return LOG_LOCAL3;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL4) return LOG_LOCAL4;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL5) return LOG_LOCAL5;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL6) return LOG_LOCAL6;
-  if (bridge_syslog_facility == BRIDGE_LOG_LOCAL7) return LOG_LOCAL7;
-  return 0;
-}
-
-int ToBridgeSysLogFacility(int syslog_facility) {
-  if (syslog_facility == LOG_USER) return BRIDGE_LOG_USER;
-  if (syslog_facility == LOG_LOCAL0) return BRIDGE_LOG_LOCAL0;
-  if (syslog_facility == LOG_LOCAL1) return BRIDGE_LOG_LOCAL1;
-  if (syslog_facility == LOG_LOCAL2) return BRIDGE_LOG_LOCAL2;
-  if (syslog_facility == LOG_LOCAL3) return BRIDGE_LOG_LOCAL3;
-  if (syslog_facility == LOG_LOCAL4) return BRIDGE_LOG_LOCAL4;
-  if (syslog_facility == LOG_LOCAL5) return BRIDGE_LOG_LOCAL5;
-  if (syslog_facility == LOG_LOCAL6) return BRIDGE_LOG_LOCAL6;
-  if (syslog_facility == LOG_LOCAL7) return BRIDGE_LOG_LOCAL7;
-  return 0;
-}
-
-// Priorities are encoded into a single 32-bit integer. The bottom 3 bits are
-// the level and the rest are the facility.
-int FromBridgeSysLogPriority(int bridge_syslog_priority) {
-  int bridge_syslog_level = bridge_syslog_priority & 0x07;
-  int bridge_syslog_facility = bridge_syslog_priority & ~0x07;
-  return FromBridgeSysLogLevel(bridge_syslog_level) |
-         FromBridgeSysLogFacility(bridge_syslog_facility);
-}
-
-int ToBridgeSysLogPriority(int syslog_priority) {
-  int syslog_level = syslog_priority & 0x07;
-  int syslog_facility = syslog_priority & ~0x07;
-  return ToBridgeSysLogLevel(syslog_level) |
-         ToBridgeSysLogFacility(syslog_facility);
 }
 
 }  // namespace asylo

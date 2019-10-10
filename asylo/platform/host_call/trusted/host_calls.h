@@ -126,6 +126,7 @@ int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
 int enc_untrusted_uname(struct utsname *buf);
 void enc_untrusted_exit_group(int status);
+void enc_untrusted_syslog(int priority, const char *message, int len);
 
 // Calls to library functions delegated to the host are defined below.
 int enc_untrusted_isatty(int fd);
@@ -161,6 +162,7 @@ pid_t enc_untrusted_wait3(int *status, int options, struct rusage *rusage);
 pid_t enc_untrusted_waitpid(pid_t pid, int *status, int options);
 struct passwd *enc_untrusted_getpwuid(uid_t uid);
 void enc_untrusted_hex_dump(const void *buf, size_t nbytes);
+void enc_untrusted_openlog(const char *ident, int option, int facility);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);

@@ -33,11 +33,6 @@
 namespace asylo {
 namespace {
 
-// Returns true if the sa_family is AF_INET or AF_INET6, false otherwise.
-bool IpCompliant(const struct sockaddr *addr) {
-  return (addr->sa_family == AF_INET) || (addr->sa_family == AF_INET6);
-}
-
 void ConvertToInotifyMaskProto(uint32_t mask,
                                google::protobuf::RepeatedField<int> *mask_proto) {
   if (mask & IN_ACCESS) mask_proto->Add(InotifyFlag::PROTO_ACCESS);

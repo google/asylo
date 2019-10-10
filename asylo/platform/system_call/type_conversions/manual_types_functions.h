@@ -189,4 +189,8 @@ int FromkLinuxToNewlibWstatus(int input);
 bool FromkLinuxUtsName(const struct klinux_utsname *input,
                        struct utsname *output);
 
+// Converts an enclave based syslog priority value to a kernel based syslog
+// priority.
+int TokLinuxSyslogPriority(int input);
+
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

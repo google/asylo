@@ -16,13 +16,13 @@
  *
  */
 
+#include <stdarg.h>
 #include <sys/syslog.h>
 
-#include <stdarg.h>
 #include <cstdio>
 #include <memory>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
+#include "asylo/platform/host_call/trusted/host_calls.h"
 
 extern "C" {
 
@@ -44,7 +44,7 @@ void syslog(int priority, const char *format, ...) {
   // Reads the formatted string to the buffer.
   vsnprintf(buffer.get(), size, format, args);
   va_end(args);
-  enc_untrusted_syslog(priority, buffer.get());
+  enc_untrusted_syslog(priority, buffer.get(), size);
 }
 
 }  // extern "C"

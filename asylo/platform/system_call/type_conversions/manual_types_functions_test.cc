@@ -369,6 +369,31 @@ TEST(ManualTypesFunctionsTest, UtsnameTest) {
 #endif
 }
 
+TEST(ManualTypesFunctionsTest, SysLogPriorityTest) {
+  std::vector<int> high_from_consts = {kLinux_LOG_USER,   kLinux_LOG_LOCAL0,
+                                       kLinux_LOG_LOCAL1, kLinux_LOG_LOCAL2,
+                                       kLinux_LOG_LOCAL3, kLinux_LOG_LOCAL4,
+                                       kLinux_LOG_LOCAL5, kLinux_LOG_LOCAL6,
+                                       kLinux_LOG_LOCAL7, 0};
+  std::vector<int> low_from_consts = {
+      kLinux_LOG_EMERG,   kLinux_LOG_ALERT,  kLinux_LOG_CRIT, kLinux_LOG_ERR,
+      kLinux_LOG_WARNING, kLinux_LOG_NOTICE, kLinux_LOG_INFO, kLinux_LOG_DEBUG};
+  std::vector<int> high_to_consts = {
+      LOG_USER,   LOG_LOCAL0, LOG_LOCAL1, LOG_LOCAL2, LOG_LOCAL3,
+      LOG_LOCAL4, LOG_LOCAL5, LOG_LOCAL6, LOG_LOCAL7, 0};
+  std::vector<int> low_to_consts = {LOG_EMERG, LOG_ALERT,   LOG_CRIT,
+                                    LOG_ERR,   LOG_WARNING, LOG_NOTICE,
+                                    LOG_INFO,  LOG_DEBUG};
+
+  for (int i = 0; i < high_from_consts.size(); i++) {
+    for (int j = 0; j < low_from_consts.size(); j++) {
+      int from = high_from_consts[i] | low_from_consts[j];
+      int to = high_to_consts[i] | low_to_consts[j];
+      EXPECT_EQ(TokLinuxSyslogPriority(to), from);
+    }
+  }
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

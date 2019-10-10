@@ -766,3 +766,12 @@ bool FromkLinuxUtsName(const struct klinux_utsname *input,
 #endif
   return true;
 }
+
+// Priorities are encoded into a single 32-bit integer. The bottom 3 bits are
+// the level and the rest are the facility.
+int TokLinuxSyslogPriority(int input) {
+  int syslog_level = input & 0x07;
+  int syslog_facility = input & ~0x07;
+  return TokLinuxSyslogLevel(syslog_level) |
+         TokLinuxSyslogFacility(syslog_facility);
+}

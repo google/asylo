@@ -442,7 +442,12 @@ int enc_untrusted_isatty(int fd) {
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kIsAttyHandler, &input, &output);
   if (!status.ok()) {
-    abort();
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_isatty failed.");
+  }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_isatty: Expected 2 parameters on the output "
+        "MessageWriter");
   }
 
   int result = output.next<int>();
@@ -464,15 +469,20 @@ int enc_untrusted_usleep(useconds_t usec) {
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kUSleepHandler, &input, &output);
   if (!status.ok()) {
-    abort();
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_usleep failed.");
+  }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sleep: Expected 2 parameters on the output "
+        "MessageWriter");
   }
 
   int result = output.next<int>();
+  int klinux_errno = output.next<int>();
 
   // usleep() returns 0 on success. On error, -1 is returned, with errno set to
   // indicate the cause of the error.
   if (result == -1) {
-    int klinux_errno = output.next<int>();
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
 
@@ -549,10 +559,15 @@ int64_t enc_untrusted_sysconf(int name) {
   if (!status.ok()) {
     TrustedPrimitives::BestEffortAbort("enc_untrusted_sysconf failed.");
   }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sysconf: Expected 2 parameters on the output "
+        "MessageReader");
+  }
 
   int64_t result = output.next<int>();
+  int klinux_errno = output.next<int>();
   if (result == -1) {
-    int klinux_errno = output.next<int>();
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
 
@@ -577,12 +592,17 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
   if (!status.ok()) {
     TrustedPrimitives::BestEffortAbort("enc_untrusted_realloc failed.");
   }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_realloc: Expected 2 parameters on the output "
+        "MessageReader");
+  }
   void *result = output.next<void *>();
+  int klinux_errno = output.next<int>();
 
   // realloc only sets the errno (ENOMEM) when output pointer is null and a
   // non-zero |size| is provided.
   if (!result && size != 0) {
-    int klinux_errno = output.next<int>();
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
   return result;
@@ -598,7 +618,11 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
   if (!status.ok()) {
     TrustedPrimitives::BestEffortAbort("enc_untrusted_sleep failed");
   }
-
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sleep: Expected 2 parameters on the output "
+        "MessageReader");
+  }
   // Returns sleep's return value directly since it doesn't set errno.
   return output.next<uint32_t>();
 }
@@ -643,6 +667,12 @@ int enc_untrusted_clock_getcpuclockid(pid_t pid, clockid_t *clock_id) {
     TrustedPrimitives::BestEffortAbort(
         "enc_untrusted_clock_getcpuclockid failed");
   }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_getcpuclockid: Expected 2 parameters on the output "
+        "MessageReader");
+  }
+
   // clock_getcpuclockid returns an errno value directly, without setting errno.
   // The value must still be translated in order to be interpreted.
   int klinux_errno_result = output.next<int32_t>();
@@ -716,16 +746,19 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   if (!status.ok()) {
     abort();
   }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_sendmsg: Expected 2 parameters on the output "
+        "MessageReader.");
+  }
 
   ssize_t result = output.next<ssize_t>();
-
+  int klinux_errno = output.next<int>();
   // sendmsg() returns the number of characters sent. On error, -1 is returned,
   // with errno set to indicate the cause of the error.
   if (result == -1) {
-    int klinux_errno = output.next<int>();
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
-
   return result;
 }
 
@@ -748,6 +781,11 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
   if (!status.ok()) {
     TrustedPrimitives::BestEffortAbort(
         "enc_untrusted_recvmsg host call failed. Aborting");
+  }
+  if (output.size() < 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_recvmsg: Expected at least 2 parameters on the output "
+        "MessageReader");
   }
 
   ssize_t result = output.next<ssize_t>();
@@ -1017,6 +1055,11 @@ int enc_untrusted_raise(int sig) {
 
   if (!status.ok()) {
     TrustedPrimitives::BestEffortAbort("raise host call failed. Aborting");
+  }
+  if (output.size() != 2) {
+    TrustedPrimitives::BestEffortAbort(
+        "enc_untrusted_raise: Expected 2 parameters on the output "
+        "MessageReader.");
   }
 
   int result = output.next<int>();
@@ -1590,6 +1633,26 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
 void enc_untrusted_exit_group(int status) {
   EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_exit_group,
                                       status);
+}
+
+void enc_untrusted_syslog(int priority, const char *message, int len) {
+  EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_syslog,
+                                      TokLinuxSyslogPriority(priority), message,
+                                      len);
+}
+
+void enc_untrusted_openlog(const char *ident, int option, int facility) {
+  MessageWriter input;
+  MessageReader output;
+  input.PushString(ident);
+  input.Push<int>(TokLinuxSyslogOption(option));
+  input.Push<int>(TokLinuxSyslogFacility(facility));
+
+  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+      ::asylo::host_call::kOpenLogHandler, &input, &output);
+  if (!status.ok()) {
+    TrustedPrimitives::BestEffortAbort("enc_untrusted_openlog failed.");
+  }
 }
 
 }  // extern "C"

@@ -561,7 +561,7 @@ TEST_F(GeneratedTypesFunctionsTest, ClockIdTest) {
       kLinux_CLOCK_MONOTONIC, kLinux_CLOCK_REALTIME,
   };
   std::vector<clockid_t> to_consts = {
-    CLOCK_MONOTONIC, CLOCK_REALTIME,
+      CLOCK_MONOTONIC, CLOCK_REALTIME,
   };
 
   for (int i = 0; i < from_consts.size(); i++) {
@@ -662,6 +662,55 @@ TEST_F(GeneratedTypesFunctionsTest, RusageTargetTest) {
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, 0,
                                              kIterationCount),
               to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, SyslogFacilityTest) {
+  std::vector<int> from_consts = {
+      kLinux_LOG_USER,   kLinux_LOG_LOCAL0, kLinux_LOG_LOCAL1,
+      kLinux_LOG_LOCAL2, kLinux_LOG_LOCAL3, kLinux_LOG_LOCAL4,
+      kLinux_LOG_LOCAL5, kLinux_LOG_LOCAL6, kLinux_LOG_LOCAL7};
+  std::vector<int> to_consts = {LOG_USER,   LOG_LOCAL0, LOG_LOCAL1,
+                                LOG_LOCAL2, LOG_LOCAL3, LOG_LOCAL4,
+                                LOG_LOCAL5, LOG_LOCAL6, LOG_LOCAL7};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxSyslogFacility(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, 0,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxSyslogFacility(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, 0,
+                                             kIterationCount),
+              to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, SyslogLevelTest) {
+  std::vector<int> from_consts = {
+      kLinux_LOG_EMERG,   kLinux_LOG_ALERT,  kLinux_LOG_CRIT, kLinux_LOG_ERR,
+      kLinux_LOG_WARNING, kLinux_LOG_NOTICE, kLinux_LOG_INFO, kLinux_LOG_DEBUG};
+  std::vector<int> to_consts = {LOG_EMERG,   LOG_ALERT,  LOG_CRIT, LOG_ERR,
+                                LOG_WARNING, LOG_NOTICE, LOG_INFO, LOG_DEBUG};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxSyslogLevel(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, 0,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxSyslogLevel(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, 0,
+                                             kIterationCount),
+              to_matcher);
+}
+
+TEST_F(GeneratedTypesFunctionsTest, SyslogOptionTest) {
+  std::vector<int> from_bits = {kLinux_LOG_PID,    kLinux_LOG_CONS,
+                                kLinux_LOG_ODELAY, kLinux_LOG_NDELAY,
+                                kLinux_LOG_NOWAIT, kLinux_LOG_PERROR};
+  std::vector<int> to_bits = {LOG_PID,    LOG_CONS,   LOG_ODELAY,
+                              LOG_NDELAY, LOG_NOWAIT, LOG_PERROR};
+
+  TestMultiValuedEnums(from_bits, to_bits, FromkLinuxSyslogOption,
+                       TokLinuxSyslogOption);
 }
 
 }  // namespace
