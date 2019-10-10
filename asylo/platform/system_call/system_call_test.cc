@@ -47,6 +47,7 @@ namespace system_call {
 namespace {
 
 using testing::Eq;
+using testing::IsNull;
 using testing::Not;
 using testing::StrEq;
 
@@ -107,7 +108,8 @@ TEST(SystemCallTest, BufferOutTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
   char buffer_expected[2048];
   char buffer_actual[2048];
-  getcwd(buffer_expected, sizeof(buffer_expected));
+  EXPECT_THAT(getcwd(buffer_expected, sizeof(buffer_expected)), Not(IsNull()));
+
   enc_untrusted_syscall(SYS_getcwd, buffer_actual, sizeof(buffer_actual));
   EXPECT_THAT(&buffer_expected[0], StrEq(buffer_actual));
 }
@@ -190,9 +192,10 @@ TEST(SystemCallTest, ArrayOutTest) {
   int fd[2];
   EXPECT_THAT(enc_untrusted_syscall(SYS_pipe, &fd), Eq(0));
   const char message[] = "testing one, two, three...";
-  write(fd[1], &message, strlen(message) + 1);
+  int message_len = strlen(message) + 1;
+  EXPECT_THAT(write(fd[1], &message, message_len), Eq(message_len));
   char buf[1024];
-  read(fd[0], buf, sizeof(buf));
+  EXPECT_THAT(read(fd[0], buf, sizeof(buf)), Eq(message_len));
   EXPECT_THAT(buf, StrEq(message));
   close(fd[0]);
   close(fd[1]);
