@@ -16,16 +16,16 @@
  *
  */
 
-#include "asylo/platform/primitives/sgx/fork_internal.h"
-
 #include <openssl/rand.h>
 #include <sys/socket.h>
 
 #include <atomic>
 #include <cstddef>
+#include <string>
 #include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/crypto/aead_cryptor.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -40,9 +40,10 @@
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/memory/memory.h"
+#include "asylo/platform/primitives/sgx/fork_internal.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
-#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/posix_error_space.h"
@@ -763,12 +764,16 @@ Status ComparePeerAndSelfIdentity(const EnclaveIdentity &peer_identity) {
   SgxIdentityExpectationMatcher sgx_matcher;
 
   bool acl_result;
+  std::string explanation;
   ASYLO_ASSIGN_OR_RETURN(
-      acl_result, EvaluateIdentityAcl({peer_identity}, predicate, sgx_matcher));
+      acl_result, EvaluateIdentityAcl({peer_identity}, predicate, sgx_matcher,
+                                      &explanation));
   if (!acl_result) {
     return Status(
         error::GoogleError::INTERNAL,
-        "The identity of the peer enclave does not match expectation");
+        absl::StrCat(
+            "The identity of the peer enclave does not match expectation: ",
+            explanation));
   }
   return Status::OkStatus();
 }
