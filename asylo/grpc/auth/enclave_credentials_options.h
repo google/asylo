@@ -50,8 +50,8 @@ struct EnclaveCredentialsOptions {
   AssertionDescriptionHashSet accepted_peer_assertions;
 
   /// The accepted ACL for the peer. Failure to match the ACL against the
-  // authenticated peer's identities will cause gRPC channel establishment to
-  // fail.
+  /// authenticated peer's identities will cause gRPC channel establishment to
+  /// fail.
   absl::optional<IdentityAclPredicate> peer_acl;
 };
 
