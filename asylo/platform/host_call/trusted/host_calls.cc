@@ -122,6 +122,32 @@ bool PasswdHolderToPasswd(struct passwd_holder *passwd_in,
   return true;
 }
 
+void CheckStatusAndParamCount(const asylo::primitives::PrimitiveStatus &status,
+                              const MessageReader &output, const char *name,
+                              int expected_params,
+                              bool match_exact_params = true) {
+  if (!status.ok()) {
+    std::string message = absl::StrCat("Host call '", name, "' failed.");
+    TrustedPrimitives::BestEffortAbort(message.c_str());
+  }
+
+  if (!match_exact_params) {
+    if (output.size() < expected_params) {
+      std::string message = absl::StrCat(
+          "Host call '", name, "': Expected at least ", expected_params,
+          " parameters on the MessageReader, found ", output.size());
+      TrustedPrimitives::BestEffortAbort(message.c_str());
+    }
+  } else {
+    if (output.size() != expected_params) {
+      std::string message = absl::StrCat(
+          "Host call '", name, "': Expected ", expected_params,
+          " parameters on the MessageReader, found ", output.size());
+      TrustedPrimitives::BestEffortAbort(message.c_str());
+    }
+  }
+}
+
 }  // namespace
 
 extern "C" {
@@ -441,14 +467,7 @@ int enc_untrusted_isatty(int fd) {
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kIsAttyHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_isatty failed.");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_isatty: Expected 2 parameters on the output "
-        "MessageWriter");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_isatty", 2);
 
   int result = output.next<int>();
 
@@ -468,14 +487,7 @@ int enc_untrusted_usleep(useconds_t usec) {
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kUSleepHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_usleep failed.");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sleep: Expected 2 parameters on the output "
-        "MessageWriter");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_usleep", 2);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -556,14 +568,7 @@ int64_t enc_untrusted_sysconf(int name) {
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kSysconfHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_sysconf failed.");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sysconf: Expected 2 parameters on the output "
-        "MessageReader");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_sysconf", 2);
 
   int64_t result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -588,15 +593,8 @@ void *enc_untrusted_realloc(void *ptr, size_t size) {
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kReallocHandler, &input, &output);
+  CheckStatusAndParamCount(status, output, "enc_untrusted_realloc", 2);
 
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_realloc failed.");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_realloc: Expected 2 parameters on the output "
-        "MessageReader");
-  }
   void *result = output.next<void *>();
   int klinux_errno = output.next<int>();
 
@@ -615,14 +613,8 @@ uint32_t enc_untrusted_sleep(uint32_t seconds) {
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(asylo::host_call::kSleepHandler,
                                                 &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_sleep failed");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sleep: Expected 2 parameters on the output "
-        "MessageReader");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_sleep", 2);
+
   // Returns sleep's return value directly since it doesn't set errno.
   return output.next<uint32_t>();
 }
@@ -663,15 +655,7 @@ int enc_untrusted_clock_getcpuclockid(pid_t pid, clockid_t *clock_id) {
   asylo::primitives::PrimitiveStatus status =
       asylo::host_call::NonSystemCallDispatcher(
           asylo::host_call::kGetCpuClockIdHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_clock_getcpuclockid failed");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getcpuclockid: Expected 2 parameters on the output "
-        "MessageReader");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getcpuclockid", 2);
 
   // clock_getcpuclockid returns an errno value directly, without setting errno.
   // The value must still be translated in order to be interpreted.
@@ -743,14 +727,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kSendMsgHandler, &input, &output);
-  if (!status.ok()) {
-    abort();
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sendmsg: Expected 2 parameters on the output "
-        "MessageReader.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_sendmsg", 2);
 
   ssize_t result = output.next<ssize_t>();
   int klinux_errno = output.next<int>();
@@ -777,16 +754,8 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kRecvMsgHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_recvmsg host call failed. Aborting");
-  }
-  if (output.size() < 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_recvmsg: Expected at least 2 parameters on the output "
-        "MessageReader");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_recvmsg", 2,
+                           /*match_exact_params=*/false);
 
   ssize_t result = output.next<ssize_t>();
   int klinux_errno = output.next<int>();
@@ -839,16 +808,7 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetSocknameHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getsockname failed. Aborting");
-  }
-  if (output.size() != 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for enc_untrusted_getsockname. "
-        "Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getsockname", 3);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -878,14 +838,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kAcceptHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_accept failed. Aborting");
-  }
-  if (output.size() != 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for enc_untrusted_accept. Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_accept", 3);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -921,16 +874,7 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetPeernameHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getpeername host call failed. Aborting");
-  }
-  if (output.size() != 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for enc_untrusted_getpeername. "
-        "Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getpeername", 3);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -965,15 +909,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kRecvFromHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_recvfrom failed. Aborting");
-  }
-  if (output.size() != 4) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 4 arguments in output for enc_untrusted_recvfrom. Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_recvfrom", 4);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1052,15 +988,7 @@ int enc_untrusted_raise(int sig) {
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kRaiseHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("raise host call failed. Aborting");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_raise: Expected 2 parameters on the output "
-        "MessageReader.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_raise", 2);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1085,16 +1013,7 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetSockOptHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getsockopt failed. Aborting");
-  }
-  if (output.size() != 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for enc_untrusted_getsockopt. "
-        "Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getsockopt", 3);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1171,14 +1090,8 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetAddrInfoHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_getaddrinfo failed.");
-  }
-  if (output.size() < 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected at least 3 arguments in output for enc_untrusted_getaddrinfo."
-        "Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getaddrinfo", 3,
+                           /*match_exact_params=*/false);
 
   int klinux_ret = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1272,13 +1185,7 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kInetPtonHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_inet_pton failed.");
-  }
-  if (output.size() != 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for enc_untrusted_inet_pton.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_inet_pton", 3);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1312,13 +1219,7 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kInetNtopHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_inet_ntop failed.");
-  }
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for enc_untrusted_inet_ntop.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_inet_ntop", 2);
 
   auto result = output.next();
   int klinux_errno = output.next<int>();
@@ -1352,15 +1253,7 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   MessageReader output;
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kSigprocmaskHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_sigprocmask() failed. Aborting");
-  }
-  if (output.size() != 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 3 arguments in output for sigprocmask host call. Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_sigprocmask", 3);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1388,16 +1281,7 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kIfNameToIndexHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_if_nametoindex failed.");
-  }
-
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 2 arguments in output for enc_untrusted_if_nametoindex. "
-        "Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_nametoindex", 2);
 
   auto result = output.next<unsigned int>();
   int klinux_errno = output.next<int>();
@@ -1414,16 +1298,7 @@ char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kIfIndexToNameHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_if_indextoname failed.");
-  }
-
-  if (output.size() != 2) {
-    TrustedPrimitives::BestEffortAbort(
-        "Expected 2 arguments in output for enc_untrusted_if_indextoname. "
-        "Aborting");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_indextoname", 2);
 
   Extent ifname_buffer = output.next();
   memcpy(ifname, ifname_buffer.As<char>(), ifname_buffer.size());
@@ -1493,15 +1368,8 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetIfAddrsHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_getifaddrs failed.");
-  }
-  if (output.size() < 3) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getifaddrs: Expected at least 3 parameters received on "
-        "output MessageReader.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getifaddrs", 3,
+                           /*match_exact_params=*/false);
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
@@ -1590,15 +1458,8 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
   input.Push<uid_t>(uid);
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kGetPwUidHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_getpwuid failed.");
-  }
-  if (output.empty()) {
-    TrustedPrimitives::BestEffortAbort(
-        "enc_untrusted_getpwuid: Expected at least 1 parameter received on "
-        "output MessageReader.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_getpwuid", 1,
+                           /*match_exact_params=*/false);
 
   int klinux_errno = output.next<int>();
   if (output.size() == 1) {
@@ -1624,10 +1485,7 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
   input.PushByReference(Extent{reinterpret_cast<const char *>(buf), nbytes});
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kHexDumpHandler, &input, &output);
-
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_hex_dump failed.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_hex_dump", 2);
 }
 
 void enc_untrusted_exit_group(int status) {
@@ -1650,9 +1508,7 @@ void enc_untrusted_openlog(const char *ident, int option, int facility) {
 
   const auto status = ::asylo::host_call::NonSystemCallDispatcher(
       ::asylo::host_call::kOpenLogHandler, &input, &output);
-  if (!status.ok()) {
-    TrustedPrimitives::BestEffortAbort("enc_untrusted_openlog failed.");
-  }
+  CheckStatusAndParamCount(status, output, "enc_untrusted_openlog", 1);
 }
 
 }  // extern "C"
