@@ -24,13 +24,14 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace sgx {
@@ -42,8 +43,7 @@ using ::testing::Test;
 constexpr char kValidCpuSvnHexString[] = "00112233445566778899aabbccddeeff";
 
 TEST(ProtoFormatTest, SgxIdentityHasAttributesByName) {
-  SgxIdentity identity;
-  SetSelfSgxIdentity(&identity);
+  const SgxIdentity identity = GetSelfSgxIdentity();
   std::string text = FormatProto(identity);
 
   std::vector<absl::string_view> named_attributes;
@@ -55,15 +55,14 @@ TEST(ProtoFormatTest, SgxIdentityHasAttributesByName) {
 }
 
 TEST(ProtoFormatTest, SgxIdentityHasCpuSvnAsHexString) {
-  SgxIdentity sgx_identity;
-  SetSelfSgxIdentity(&sgx_identity);
+  SgxIdentity identity = GetSelfSgxIdentity();
 
   CpuSvn cpu_svn;
   cpu_svn.set_value(absl::HexStringToBytes(kValidCpuSvnHexString));
-  *sgx_identity.mutable_machine_configuration()->mutable_cpu_svn() = cpu_svn;
-  ASSERT_TRUE(IsValidSgxIdentity(sgx_identity));
+  *identity.mutable_machine_configuration()->mutable_cpu_svn() = cpu_svn;
+  ASSERT_TRUE(IsValidSgxIdentity(identity));
 
-  std::string text = FormatProto(sgx_identity);
+  std::string text = FormatProto(identity);
   EXPECT_THAT(text, HasSubstr(absl::StrCat("0x", kValidCpuSvnHexString)));
 }
 
@@ -81,8 +80,7 @@ TEST(ProtoFormatTest, MiscselectBitsByName) {
 }
 
 TEST(ProtoFormatTest, SgxIdentityHasMiscselectBitsByName) {
-  SgxIdentity identity;
-  SetSelfSgxIdentity(&identity);
+  const SgxIdentity identity = GetSelfSgxIdentity();
   std::string text = FormatProto(identity);
 
   std::vector<absl::string_view> named_miscselect_bits =
@@ -93,8 +91,7 @@ TEST(ProtoFormatTest, SgxIdentityHasMiscselectBitsByName) {
 }
 
 TEST(ProtoFormatTest, SgxIdentityHasHexEncodedBytesFields) {
-  SgxIdentity identity;
-  SetSelfSgxIdentity(&identity);
+  const SgxIdentity identity = GetSelfSgxIdentity();
   std::string text = FormatProto(identity);
 
   EXPECT_THAT(text,
@@ -111,7 +108,9 @@ TEST(ProtoFormatTest, SgxIdentityHasHexEncodedBytesFields) {
 
 TEST(ProtoFormatTest, SgxIdentityMatchSpecHasAttributesByName) {
   SgxIdentityMatchSpec match_spec;
-  SetDefaultLocalSgxMatchSpec(&match_spec);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      match_spec,
+      CreateSgxIdentityMatchSpec(SgxIdentityMatchSpecOptions::DEFAULT));
   std::string text = FormatProto(match_spec);
 
   std::vector<absl::string_view> named_attributes;
@@ -125,7 +124,9 @@ TEST(ProtoFormatTest, SgxIdentityMatchSpecHasAttributesByName) {
 
 TEST(ProtoFormatTest, SgxIdentityMatchSpecHasMiscselectBitsByName) {
   SgxIdentityMatchSpec match_spec;
-  SetDefaultLocalSgxMatchSpec(&match_spec);
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      match_spec,
+      CreateSgxIdentityMatchSpec(SgxIdentityMatchSpecOptions::DEFAULT));
   std::string text = FormatProto(match_spec);
 
   std::vector<absl::string_view> named_miscselect_bits =

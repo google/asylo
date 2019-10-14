@@ -25,9 +25,9 @@
 #include <gtest/gtest.h>
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 
@@ -52,8 +52,7 @@ TEST(RemoteAssertionUtilTest, MakeRemoteAssertionSucceeds) {
       std::move(signing_key_result).ValueOrDie();
 
   // Current enclave's SGX identity.
-  SgxIdentity identity;
-  SetSelfSgxIdentity(&identity);
+  const SgxIdentity identity = GetSelfSgxIdentity();
 
   RemoteAssertion assertion;
   ASSERT_THAT(MakeRemoteAssertion(kUserData, identity, *signing_key,

@@ -35,9 +35,9 @@
 #include "asylo/grpc/auth/core/server_ekep_handshaker.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity_acl_evaluator.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/memory/memory.h"
 #include "asylo/platform/primitives/sgx/fork_internal.h"
@@ -753,14 +753,15 @@ Status RunEkepHandshake(EkepHandshaker *handshaker, bool is_parent,
 // Consequently, the identities of the two enclaves should be exactly the same.
 Status ComparePeerAndSelfIdentity(const EnclaveIdentity &peer_identity) {
   SgxIdentityExpectation sgx_identity_expectation;
-  ASYLO_RETURN_IF_ERROR(
-      sgx::SetStrictLocalSelfSgxExpectation(&sgx_identity_expectation));
+  ASYLO_ASSIGN_OR_RETURN(
+      sgx_identity_expectation,
+      CreateSgxIdentityExpectation(GetSelfSgxIdentity(),
+                                   SgxIdentityMatchSpecOptions::STRICT_LOCAL));
 
-  EnclaveIdentityExpectation enclave_identity_expectation;
-  ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxExpectation(
-      sgx_identity_expectation, &enclave_identity_expectation));
   IdentityAclPredicate predicate;
-  *predicate.mutable_expectation() = enclave_identity_expectation;
+  ASYLO_ASSIGN_OR_RETURN(
+      *predicate.mutable_expectation(),
+      SerializeSgxIdentityExpectation(sgx_identity_expectation));
   SgxIdentityExpectationMatcher sgx_matcher;
 
   bool acl_result;

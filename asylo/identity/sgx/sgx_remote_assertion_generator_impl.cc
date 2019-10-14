@@ -23,10 +23,11 @@
 
 #include "asylo/grpc/auth/enclave_auth_context.h"
 #include "asylo/identity/descriptions.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/remote_assertion_util.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "include/grpcpp/support/status.h"
 
 namespace asylo {
@@ -43,7 +44,10 @@ Status ExtractSgxIdentity(const EnclaveAuthContext &auth_context,
     return Status(error::GoogleError::PERMISSION_DENIED,
                   "Peer does not have SGX identity");
   }
-  return sgx::ParseSgxIdentity(*identity_result.ValueOrDie(), sgx_identity);
+
+  ASYLO_ASSIGN_OR_RETURN(*sgx_identity,
+                         ParseSgxIdentity(*identity_result.ValueOrDie()));
+  return Status::OkStatus();
 }
 
 }  // namespace

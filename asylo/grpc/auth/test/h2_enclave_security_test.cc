@@ -27,9 +27,9 @@
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/init.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "include/grpc/impl/codegen/grpc_types.h"
 #include "include/grpc/support/alloc.h"
@@ -59,13 +59,19 @@ struct EnclaveFullStackFixtureData {
 };
 
 IdentityAclPredicate CreateStrictPredicate(const SgxIdentity &identity) {
-  SgxIdentityExpectation expectation;
-  *expectation.mutable_reference_identity() = identity;
-  sgx::SetStrictLocalSgxMatchSpec(expectation.mutable_match_spec());
+  StatusOr<SgxIdentityExpectation> expectation_result =
+      CreateSgxIdentityExpectation(identity,
+                                   SgxIdentityMatchSpecOptions::STRICT_LOCAL);
+  GPR_ASSERT(expectation_result.ok());
+
+  StatusOr<EnclaveIdentityExpectation> serialized_expectation_result =
+      SerializeSgxIdentityExpectation(
+          std::move(expectation_result).ValueOrDie());
+  GPR_ASSERT(serialized_expectation_result.ok());
+
   IdentityAclPredicate acl;
-  GPR_ASSERT(
-      sgx::SerializeSgxExpectation(expectation, acl.mutable_expectation())
-          .ok());
+  *acl.mutable_expectation() =
+      std::move(serialized_expectation_result).ValueOrDie();
   return acl;
 }
 
@@ -101,8 +107,8 @@ grpc_end2end_test_fixture CreateFixtureSecureFullstack(
   sgx::FakeEnclave::EnterEnclave(enclave);
   auto server_identity_result = enclave.GetIdentity();
   GPR_ASSERT(server_identity_result.ok());
-  fixture_data->identity_acl = CreateStrictPredicate(
-      server_identity_result.ValueOrDie());
+  fixture_data->identity_acl =
+      CreateStrictPredicate(server_identity_result.ValueOrDie());
 
   return f;
 }
@@ -310,7 +316,6 @@ void TearDownSecureFullstack(grpc_end2end_test_fixture *f) {
   gpr_free(fixture_data);
 }
 
-
 // All test configurations for the enclave gRPC stack.
 static grpc_end2end_test_config configs[] = {
     // Bidirectional null-identity-based attestation.
@@ -382,8 +387,8 @@ int main(int argc, char **argv) {
 
   // Explicitly initialize all assertion authorities used in this test.
   std::vector<asylo::EnclaveAssertionAuthorityConfig> authority_configs = {
-    asylo::GetNullAssertionAuthorityTestConfig(),
-    asylo::GetSgxLocalAssertionAuthorityTestConfig(),
+      asylo::GetNullAssertionAuthorityTestConfig(),
+      asylo::GetSgxLocalAssertionAuthorityTestConfig(),
   };
   GPR_ASSERT(InitializeEnclaveAssertionAuthorities(authority_configs.cbegin(),
                                                    authority_configs.cend())

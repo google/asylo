@@ -35,11 +35,10 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_secret_sealer_test_data.pb.h"
-#include "asylo/identity/sgx/self_identity.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_secret_sealer.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
@@ -127,8 +126,7 @@ Status SetTestDataRecord(std::unique_ptr<SgxLocalSecretSealer> sealer,
   record->mutable_header()->set_change_id(change_id);
   record->mutable_header()->set_enclave_type(
       TestDataRecordHeader::FAKE_ENCLAVE);
-  *record->mutable_header()->mutable_sgx_identity() =
-      GetSelfIdentity()->sgx_identity;
+  *record->mutable_header()->mutable_sgx_identity() = GetSelfSgxIdentity();
 
   // Set the sealed-secret header.
   SealedSecretHeader header;

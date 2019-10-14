@@ -19,11 +19,11 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/sgx/sgx_local_assertion_generator.h"
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
@@ -145,7 +145,7 @@ TEST_P(SgxLocalAssertionAuthorityTest, VerifyAssertionSameEnclave) {
   ASSERT_THAT(verifier.Verify(kUserData, assertion, &identity), IsOk());
 
   SgxIdentity sgx_identity;
-  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(identity, &sgx_identity));
+  ASYLO_ASSERT_OK_AND_ASSIGN(sgx_identity, ParseSgxIdentity(identity));
 
   sgx::FakeEnclave::ExitEnclave();
   sgx::FakeEnclave::EnterEnclave(generator_enclave_);
