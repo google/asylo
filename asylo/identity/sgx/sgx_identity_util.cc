@@ -32,16 +32,17 @@ SgxIdentity GetSelfSgxIdentity() {
   return identity;
 }
 
-StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(MatchSpecOptions options) {
+StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(
+    SgxIdentityMatchSpecOptions options) {
   SgxIdentityMatchSpec match_spec;
   switch (options) {
-    case MatchSpecOptions::DEFAULT:
+    case SgxIdentityMatchSpecOptions::DEFAULT:
       sgx::SetDefaultLocalSgxMatchSpec(&match_spec);
       return match_spec;
-    case MatchSpecOptions::STRICT_LOCAL:
+    case SgxIdentityMatchSpecOptions::STRICT_LOCAL:
       sgx::SetStrictLocalSgxMatchSpec(&match_spec);
       return match_spec;
-    case MatchSpecOptions::STRICT_REMOTE:
+    case SgxIdentityMatchSpecOptions::STRICT_REMOTE:
       sgx::SetStrictRemoteSgxMatchSpec(&match_spec);
       return match_spec;
   }
@@ -64,7 +65,7 @@ StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
 }
 
 StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
-    SgxIdentity identity, MatchSpecOptions options) {
+    SgxIdentity identity, SgxIdentityMatchSpecOptions options) {
   SgxIdentityMatchSpec match_spec;
   ASYLO_ASSIGN_OR_RETURN(match_spec, CreateSgxMatchSpec(options));
   return CreateSgxExpectation(std::move(identity), std::move(match_spec));

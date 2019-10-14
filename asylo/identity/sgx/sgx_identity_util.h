@@ -45,14 +45,15 @@ namespace asylo {
 /// ### `STRICT_REMOTE`
 /// - Equivalent to the `STRICT_LOCAL` match spec, with the added requirement of
 ///   matching all `SgxMachineConfiguration` fields (not just CPUSVN).
-enum class MatchSpecOptions { DEFAULT, STRICT_LOCAL, STRICT_REMOTE };
+enum class SgxIdentityMatchSpecOptions { DEFAULT, STRICT_LOCAL, STRICT_REMOTE };
 
 /// Returns the current enclave's identity.
 SgxIdentity GetSelfSgxIdentity();
 
 /// Returns an `SgxIdentityMatchSpec` corresponding to `options` on success or a
 /// non-OK Status on failure.
-StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(MatchSpecOptions options);
+StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(
+    SgxIdentityMatchSpecOptions options);
 
 /// Returns an `SgxIdentityExpectation` formed from `identity` and `match_spec`,
 /// or returns a non-OK Status if either are invalid or if they are
@@ -63,8 +64,8 @@ StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
 /// Returns an `SgxIdentityExpectation` formed from `identity` and the match
 /// spec corresponding to `options`, or returns a non-OK Status if either are
 /// invalid or if they are incompatible with each other.
-StatusOr<SgxIdentityExpectation> CreateSgxExpectation(SgxIdentity identity,
-                                                      MatchSpecOptions options);
+StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
+    SgxIdentity identity, SgxIdentityMatchSpecOptions options);
 
 /// Returns whether `identity` is valid.
 ///

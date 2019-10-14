@@ -42,12 +42,13 @@ TEST(SgxIdentityUtilTest, GetSelfSgxIdentity) {
 }
 
 TEST(SgxIdentityUtilTest, CreateMatchSpecs) {
-  const auto all_options = {MatchSpecOptions::DEFAULT,
-                            MatchSpecOptions::STRICT_LOCAL,
-                            MatchSpecOptions::STRICT_REMOTE};
+  const auto all_options = {SgxIdentityMatchSpecOptions::DEFAULT,
+                            SgxIdentityMatchSpecOptions::STRICT_LOCAL,
+                            SgxIdentityMatchSpecOptions::STRICT_REMOTE};
 
-  // Check that all MatchSpecOptions create valid SgxIdentityMatchSpec objects,
-  // and that all of them are unique (there are no redundant enum values).
+  // Check that all SgxIdentityMatchSpecOptions create valid
+  // SgxIdentityMatchSpec objects, and that all are unique (ie. there are no
+  // redundant enum values).
   for (auto options_1 : all_options) {
     SgxIdentityMatchSpec match_spec_1;
     ASYLO_ASSERT_OK_AND_ASSIGN(match_spec_1, CreateSgxMatchSpec(options_1));
@@ -67,8 +68,8 @@ TEST(SgxIdentityUtilTest, CreateMatchSpecs) {
 TEST(SgxIdentityUtilTest, CreateSgxExpectationSuccess) {
   // The self identity should be compatible with the default match spec.
   SgxIdentityMatchSpec match_spec;
-  ASYLO_ASSERT_OK_AND_ASSIGN(match_spec,
-                             CreateSgxMatchSpec(MatchSpecOptions::DEFAULT));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      match_spec, CreateSgxMatchSpec(SgxIdentityMatchSpecOptions::DEFAULT));
   ASYLO_EXPECT_OK(
       CreateSgxExpectation(GetSelfSgxIdentity(), std::move(match_spec)));
 }
@@ -78,12 +79,14 @@ TEST(SgxIdentityUtilTest, CreateSgxExpectationFailure) {
   SgxIdentity identity;
   SgxIdentityMatchSpec match_spec;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      match_spec, CreateSgxMatchSpec(MatchSpecOptions::STRICT_LOCAL));
+      match_spec,
+      CreateSgxMatchSpec(SgxIdentityMatchSpecOptions::STRICT_LOCAL));
   EXPECT_THAT(CreateSgxExpectation(identity, match_spec),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      match_spec, CreateSgxMatchSpec(MatchSpecOptions::STRICT_REMOTE));
+      match_spec,
+      CreateSgxMatchSpec(SgxIdentityMatchSpecOptions::STRICT_REMOTE));
   EXPECT_THAT(CreateSgxExpectation(identity, match_spec),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
@@ -93,14 +96,15 @@ TEST(SgxIdentityUtilTest, CreateSgxExpectationFromOptions) {
 
   SgxIdentityExpectation expectation_1;
   SgxIdentityMatchSpec match_spec;
-  ASYLO_ASSERT_OK_AND_ASSIGN(match_spec,
-                             CreateSgxMatchSpec(MatchSpecOptions::DEFAULT));
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      match_spec, CreateSgxMatchSpec(SgxIdentityMatchSpecOptions::DEFAULT));
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation_1, CreateSgxExpectation(identity, std::move(match_spec)));
 
   SgxIdentityExpectation expectation_2;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      expectation_2, CreateSgxExpectation(identity, MatchSpecOptions::DEFAULT));
+      expectation_2,
+      CreateSgxExpectation(identity, SgxIdentityMatchSpecOptions::DEFAULT));
 
   EXPECT_THAT(expectation_1, EqualsProto(expectation_2))
       << sgx::FormatProto(expectation_1) << "\n"
