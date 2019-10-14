@@ -287,7 +287,7 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
   std::string SpaceName() const override { return space_name_; }
 
   std::string String(int code) const override {
-    const auto &it = code_translation_map_.find(code);
+    auto it = code_translation_map_.find(code);
     if (it == code_translation_map_.cend()) {
       if (code == 0) {
         return "OK";
@@ -302,7 +302,7 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
       // Error code value of zero must map to GoogleError::OK.
       return GoogleError::OK;
     }
-    const auto &it = code_translation_map_.find(code);
+    auto it = code_translation_map_.find(code);
     if (it == code_translation_map_.cend()) {
       return GoogleError::UNKNOWN;
     }
