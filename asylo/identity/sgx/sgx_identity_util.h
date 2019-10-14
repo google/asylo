@@ -52,19 +52,19 @@ SgxIdentity GetSelfSgxIdentity();
 
 /// Returns an `SgxIdentityMatchSpec` corresponding to `options` on success or a
 /// non-OK Status on failure.
-StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(
+StatusOr<SgxIdentityMatchSpec> CreateSgxIdentityMatchSpec(
     SgxIdentityMatchSpecOptions options);
 
 /// Returns an `SgxIdentityExpectation` formed from `identity` and `match_spec`,
 /// or returns a non-OK Status if either are invalid or if they are
 /// incompatible with each other.
-StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
+StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation(
     SgxIdentity identity, SgxIdentityMatchSpec match_spec);
 
 /// Returns an `SgxIdentityExpectation` formed from `identity` and the match
 /// spec corresponding to `options`, or returns a non-OK Status if either are
 /// invalid or if they are incompatible with each other.
-StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
+StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation(
     SgxIdentity identity, SgxIdentityMatchSpecOptions options);
 
 /// Returns whether `identity` is valid.
@@ -77,13 +77,13 @@ bool IsValidSgxIdentity(const SgxIdentity &identity);
 /// Returns whether `match_spec` is valid.
 ///
 /// An `SgxIdentityMatchSpec` is valid if all of its constituent fields are set.
-bool IsValidSgxMatchSpec(const SgxIdentityMatchSpec &match_spec);
+bool IsValidSgxIdentityMatchSpec(const SgxIdentityMatchSpec &match_spec);
 
 /// Returns whether `expectation` is valid.
 ///
 /// An `SgxIdentityExpectation` is valid if its identity and match spec
 /// components are valid and they are both compatible with each other.
-bool IsValidSgxExpectation(const SgxIdentityExpectation &expectation);
+bool IsValidSgxIdentityExpectation(const SgxIdentityExpectation &expectation);
 
 /// Parses and validates `generic_identity`, returning an `SgxIdentity` on
 /// success or a non-OK Status on failure.
@@ -91,12 +91,12 @@ StatusOr<SgxIdentity> ParseSgxIdentity(const EnclaveIdentity &generic_identity);
 
 /// Parses and validates `generic_match_spec`, returning an
 /// `SgxIdentityMatchSpec` on success or a non-OK Status on failure.
-StatusOr<SgxIdentityMatchSpec> ParseSgxMatchSpec(
+StatusOr<SgxIdentityMatchSpec> ParseSgxIdentityMatchSpec(
     const std::string &generic_match_spec);
 
 /// Parses and validates `generic_expectation`, returning an
 /// `SgxIdentityExpectation` on success or a non-OK Status on failure.
-StatusOr<SgxIdentityExpectation> ParseSgxExpectation(
+StatusOr<SgxIdentityExpectation> ParseSgxIdentityExpectation(
     const EnclaveIdentityExpectation &generic_expectation);
 
 /// Serializes `sgx_identity`, returning an `EnclaveIdentity` on success or a
@@ -105,12 +105,12 @@ StatusOr<EnclaveIdentity> SerializeSgxIdentity(const SgxIdentity &sgx_identity);
 
 /// Serializes `sgx_match_spec`, returning a string on success or a non-OK
 /// Status on failure.
-StatusOr<std::string> SerializeSgxMatchSpec(
+StatusOr<std::string> SerializeSgxIdentityMatchSpec(
     const SgxIdentityMatchSpec &sgx_match_spec);
 
 /// Serializes `sgx_expectation`, returning an `EnclaveIdentityExpectation` on
 /// success or a non-OK Status on failure.
-StatusOr<EnclaveIdentityExpectation> SerializeSgxExpectation(
+StatusOr<EnclaveIdentityExpectation> SerializeSgxIdentityExpectation(
     const SgxIdentityExpectation &sgx_expectation);
 
 }  // namespace asylo

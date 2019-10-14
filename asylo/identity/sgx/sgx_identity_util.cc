@@ -32,7 +32,7 @@ SgxIdentity GetSelfSgxIdentity() {
   return identity;
 }
 
-StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(
+StatusOr<SgxIdentityMatchSpec> CreateSgxIdentityMatchSpec(
     SgxIdentityMatchSpecOptions options) {
   SgxIdentityMatchSpec match_spec;
   switch (options) {
@@ -50,7 +50,7 @@ StatusOr<SgxIdentityMatchSpec> CreateSgxMatchSpec(
                 absl::StrCat("Invalid MatchSpecOptions: ", options));
 }
 
-StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
+StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation(
     SgxIdentity identity, SgxIdentityMatchSpec match_spec) {
   SgxIdentityExpectation expectation;
   *expectation.mutable_reference_identity() = std::move(identity);
@@ -64,22 +64,23 @@ StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
   return expectation;
 }
 
-StatusOr<SgxIdentityExpectation> CreateSgxExpectation(
+StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation(
     SgxIdentity identity, SgxIdentityMatchSpecOptions options) {
   SgxIdentityMatchSpec match_spec;
-  ASYLO_ASSIGN_OR_RETURN(match_spec, CreateSgxMatchSpec(options));
-  return CreateSgxExpectation(std::move(identity), std::move(match_spec));
+  ASYLO_ASSIGN_OR_RETURN(match_spec, CreateSgxIdentityMatchSpec(options));
+  return CreateSgxIdentityExpectation(std::move(identity),
+                                      std::move(match_spec));
 }
 
 bool IsValidSgxIdentity(const SgxIdentity &identity) {
   return sgx::IsValidSgxIdentity(identity);
 }
 
-bool IsValidSgxMatchSpec(const SgxIdentityMatchSpec &match_spec) {
+bool IsValidSgxIdentityMatchSpec(const SgxIdentityMatchSpec &match_spec) {
   return sgx::IsValidMatchSpec(match_spec);
 }
 
-bool IsValidSgxExpectation(const SgxIdentityExpectation &expectation) {
+bool IsValidSgxIdentityExpectation(const SgxIdentityExpectation &expectation) {
   return sgx::IsValidExpectation(expectation);
 }
 
@@ -90,7 +91,7 @@ StatusOr<SgxIdentity> ParseSgxIdentity(
   return sgx_identity;
 }
 
-StatusOr<SgxIdentityMatchSpec> ParseSgxMatchSpec(
+StatusOr<SgxIdentityMatchSpec> ParseSgxIdentityMatchSpec(
     const std::string &generic_match_spec) {
   SgxIdentityMatchSpec sgx_match_spec;
   ASYLO_RETURN_IF_ERROR(
@@ -98,7 +99,7 @@ StatusOr<SgxIdentityMatchSpec> ParseSgxMatchSpec(
   return sgx_match_spec;
 }
 
-StatusOr<SgxIdentityExpectation> ParseSgxExpectation(
+StatusOr<SgxIdentityExpectation> ParseSgxIdentityExpectation(
     const EnclaveIdentityExpectation &generic_expectation) {
   SgxIdentityExpectation sgx_expectation;
   ASYLO_RETURN_IF_ERROR(
@@ -114,7 +115,7 @@ StatusOr<EnclaveIdentity> SerializeSgxIdentity(
   return generic_identity;
 }
 
-StatusOr<std::string> SerializeSgxMatchSpec(
+StatusOr<std::string> SerializeSgxIdentityMatchSpec(
     const SgxIdentityMatchSpec &sgx_match_spec) {
   std::string generic_match_spec;
   ASYLO_RETURN_IF_ERROR(
@@ -122,7 +123,7 @@ StatusOr<std::string> SerializeSgxMatchSpec(
   return generic_match_spec;
 }
 
-StatusOr<EnclaveIdentityExpectation> SerializeSgxExpectation(
+StatusOr<EnclaveIdentityExpectation> SerializeSgxIdentityExpectation(
     const SgxIdentityExpectation &sgx_expectation) {
   EnclaveIdentityExpectation generic_expectation;
   ASYLO_RETURN_IF_ERROR(
