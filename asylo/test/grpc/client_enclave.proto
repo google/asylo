@@ -19,6 +19,7 @@ syntax = "proto2";
 package asylo;
 
 import "asylo/enclave.proto";
+import "asylo/identity/identity_acl.proto";
 
 extend EnclaveInput {
   optional ClientEnclaveInput client_enclave_input = 225075181;
@@ -50,4 +51,7 @@ message ClientEnclaveInput {
 
   // Connection deadline in milliseconds.
   optional int64 connection_deadline_milliseconds = 5;
+
+  // ACL for the server.
+  optional IdentityAclPredicate peer_acl = 6;
 }

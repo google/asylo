@@ -21,7 +21,7 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave_configuration")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -48,7 +48,10 @@ proto_library(
     name = "client_enclave_proto",
     srcs = ["client_enclave.proto"],
     visibility = ["//asylo:implementation"],
-    deps = ["//asylo:enclave_proto"],
+    deps = [
+        "//asylo:enclave_proto",
+        "//asylo/identity:identity_acl_proto",
+    ],
 )
 
 cc_proto_library(
@@ -292,5 +295,56 @@ sgx_enclave_test(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
+    ],
+)
+
+sgx_enclave_configuration(
+    name = "client_side_auth_test_enclave_config",
+    base = "//asylo/grpc/util:grpc_enclave_config",
+    isvsvn = "2",
+    prodid = "1",
+)
+
+sgx.debug_enclave(
+    name = "client_side_auth_server_enclave.so",
+    testonly = 1,
+    config = ":client_side_auth_test_enclave_config",
+    unsigned = ":server_enclave_unsigned.so",
+)
+
+# Test for client-side gRPC authorization.
+sgx_enclave_test(
+    name = "client_side_authorization_test",
+    srcs = ["client_side_authorization_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "client_enclave": ":client_enclave.so",
+        "server_enclave": ":client_side_auth_server_enclave.so",
+    },
+    test_args = [
+        "--client_enclave_path='{client_enclave}'",
+        "--server_enclave_path='{server_enclave}'",
+    ],
+    deps = [
+        ":client_enclave_cc_proto",
+        ":messenger_server_impl",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/grpc/util:enclave_server_cc_proto",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity/sgx:attributes_cc_proto",
+        "//asylo/identity/sgx:code_identity_cc_proto",
+        "//asylo/identity/sgx:code_identity_util",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/util:sha256_hash_cc_proto",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+        "@linux_sgx//:debug_key_mrsigner",
     ],
 )
