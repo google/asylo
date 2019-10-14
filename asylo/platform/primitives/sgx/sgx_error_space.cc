@@ -43,6 +43,9 @@ SgxErrorSpace::SgxErrorSpace()
   AddTranslationMapEntry(SGX_ERROR_INVALID_STATE,
                          "SGX API invoked in incorrect order or state",
                          GoogleError::INTERNAL);
+  AddTranslationMapEntry(SGX_ERROR_FEATURE_NOT_SUPPORTED,
+                         "Feature is not supported on this platform",
+                         GoogleError::INVALID_ARGUMENT);
   AddTranslationMapEntry(SGX_ERROR_INVALID_FUNCTION, "Invalid ecall or ocall",
                          GoogleError::INTERNAL);
   AddTranslationMapEntry(SGX_ERROR_OUT_OF_TCS, "Out of TCS",
@@ -84,6 +87,9 @@ SgxErrorSpace::SgxErrorSpace()
                          "Cannot open enclave file", GoogleError::INTERNAL);
   AddTranslationMapEntry(SGX_ERROR_INVALID_MISC,
                          "Invalid MiscSelect/MiscMask settings",
+                         GoogleError::INVALID_ARGUMENT);
+  AddTranslationMapEntry(SGX_ERROR_INVALID_LAUNCH_TOKEN,
+                         "The launch token is not correct",
                          GoogleError::INVALID_ARGUMENT);
   AddTranslationMapEntry(SGX_ERROR_MAC_MISMATCH, "MAC verification failed",
                          GoogleError::INTERNAL);
@@ -130,6 +136,88 @@ SgxErrorSpace::SgxErrorSpace()
   AddTranslationMapEntry(SGX_ERROR_KDF_MISMATCH,
                          "Key derivation function mismatch",
                          GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_UNRECOGNIZED_PLATFORM,
+                         "EPID provisioning failed due to platform not "
+                         "recognized by backend server",
+                         GoogleError::INTERNAL);
+  AddTranslationMapEntry(SGX_ERROR_UNSUPPORTED_CONFIG,
+                         "The config for trigging EPID Provisiong or PSE "
+                         "Provisiong&LTP is invalid",
+                         GoogleError::INVALID_ARGUMENT);
+  AddTranslationMapEntry(SGX_ERROR_NO_PRIVILEGE,
+                         "Not enough privilege to perform the operation",
+                         GoogleError::PERMISSION_DENIED);
+  AddTranslationMapEntry(SGX_ERROR_PCL_ENCRYPTED,
+                         "Trying to encrypt an already encrypted enclave",
+                         GoogleError::ALREADY_EXISTS);
+  AddTranslationMapEntry(
+      SGX_ERROR_PCL_NOT_ENCRYPTED,
+      "Trying to load a plain enclave using sgx_create_encrypted_enclave",
+      GoogleError::INVALID_ARGUMENT);
+  AddTranslationMapEntry(SGX_ERROR_PCL_MAC_MISMATCH,
+                         "Section mac result does not match build time mac",
+                         GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(
+      SGX_ERROR_PCL_SHA_MISMATCH,
+      "Unsealed key MAC does not match MAC of key hardcoded in enclave binary",
+      GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(
+      SGX_ERROR_PCL_GUID_MISMATCH,
+      "GUID in sealed blob does not match GUID hardcoded in enclave binary",
+      GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_FILE_BAD_STATUS, "The file is in bad status",
+                         GoogleError::INTERNAL);
+  AddTranslationMapEntry(
+      SGX_ERROR_FILE_NO_KEY_ID,
+      "The Key ID field is all zeros, can't re-generate the encryption key",
+      GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_FILE_NAME_MISMATCH,
+                         "The current file name is different then the original "
+                         "file name (not allowed, substitution attack)",
+                         GoogleError::INVALID_ARGUMENT);
+  AddTranslationMapEntry(SGX_ERROR_FILE_NOT_SGX_FILE,
+                         "The file is not an SGX file",
+                         GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(
+      SGX_ERROR_FILE_CANT_OPEN_RECOVERY_FILE,
+      "A recovery file can't be opened, so flush operation can't continue",
+      GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(
+      SGX_ERROR_FILE_CANT_WRITE_RECOVERY_FILE,
+      "A recovery file can't be written, so flush operation can't continue",
+      GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_FILE_RECOVERY_NEEDED,
+                         "When opening the file, recovery is needed, but the "
+                         "recovery process failed",
+                         GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_FILE_FLUSH_FAILED,
+                         "fflush operation (to disk) failed",
+                         GoogleError::INTERNAL);
+  AddTranslationMapEntry(SGX_ERROR_FILE_CLOSE_FAILED,
+                         "fclose operation (to disk) failed",
+                         GoogleError::INTERNAL);
+  AddTranslationMapEntry(
+      SGX_ERROR_UNSUPPORTED_ATT_KEY_ID,
+      "Platform quoting infrastructure does not support the key",
+      GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_ATT_KEY_CERTIFICATION_FAILURE,
+                         "Failed to generate and certify the attestation key",
+                         GoogleError::INTERNAL);
+  AddTranslationMapEntry(SGX_ERROR_ATT_KEY_UNINITIALIZED,
+                         "The platform quoting infrastructure does not have "
+                         "the attestation key available to generate quote",
+                         GoogleError::FAILED_PRECONDITION);
+  AddTranslationMapEntry(SGX_ERROR_INVALID_ATT_KEY_CERT_DATA,
+                         "The data returned by the platform library's "
+                         "sgx_get_quote_config() is invalid",
+                         GoogleError::INVALID_ARGUMENT);
+  AddTranslationMapEntry(SGX_ERROR_PLATFORM_CERT_UNAVAILABLE,
+                         "The PCK Cert for the platform is not available",
+                         GoogleError::UNAVAILABLE);
+  AddTranslationMapEntry(
+      SGX_INTERNAL_ERROR_ENCLAVE_CREATE_INTERRUPTED,
+      "The ioctl for enclave_create unexpectedly failed with EINTR",
+      GoogleError::INTERNAL);
 }
 
 ErrorSpace const *GetErrorSpace(ErrorSpaceAdlTag<sgx_status_t> tag) {
