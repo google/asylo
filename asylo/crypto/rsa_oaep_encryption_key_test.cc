@@ -192,7 +192,7 @@ INSTANTIATE_TEST_SUITE_P(
         static_cast<HashAlgorithm>(HashAlgorithm::UNKNOWN_HASH_ALGORITHM + 1),
         static_cast<HashAlgorithm>(HashAlgorithm_MAX + 1)));
 
-TEST_P(RsaOaepHashAlgorithmTest, TestEncryptDecryptSuccess) {
+TEST_P(RsaOaepHashAlgorithmTest, EncryptDecryptSuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(decryption_key,
                              CreateDecryptionKeyFromTestDer(GetParam()));
@@ -202,7 +202,7 @@ TEST_P(RsaOaepHashAlgorithmTest, TestEncryptDecryptSuccess) {
   VerifyEncryptionDecryptionSuccess(*encryption_key, *decryption_key);
 }
 
-TEST_P(RsaOaepHashAlgorithmTest, TestEncryptDecryptFailsOnHashMismatch) {
+TEST_P(RsaOaepHashAlgorithmTest, EncryptDecryptFailsOnHashMismatch) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(decryption_key,
                              CreateDecryptionKeyFromTestDer(GetParam()));
@@ -224,7 +224,7 @@ TEST_P(RsaOaepHashAlgorithmTest, TestEncryptDecryptFailsOnHashMismatch) {
               StatusIs(error::GoogleError::INTERNAL));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestCreateWithInvalidHashAlgorithmFails) {
+TEST(RsaOaepEncryptionKeyTest, CreateWithInvalidHashAlgorithmFails) {
   std::string pubkey_der;
   ASSERT_TRUE(absl::Base64Unescape(kRsa3072PublicKeyDer, &pubkey_der));
 
@@ -242,7 +242,7 @@ TEST(RsaOaepEncryptionKeyTest, TestCreateWithInvalidHashAlgorithmFails) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestCreateWithBoringSslKeyPointerSuccess) {
+TEST(RsaOaepEncryptionKeyTest, CreateWithBoringSslKeyPointerSuccess) {
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
                              RsaOaepEncryptionKey::CreateFromPem(
@@ -266,7 +266,7 @@ TEST(RsaOaepEncryptionKeyTest, TestCreateWithBoringSslKeyPointerSuccess) {
   EXPECT_THAT(encryption_key_copy->SerializeToDer(), IsOkAndHolds(der));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestCreateFromPemSerializationSuccess) {
+TEST(RsaOaepEncryptionKeyTest, CreateFromPemSerializationSuccess) {
   constexpr auto kHashAlg = HashAlgorithm::SHA256;
 
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
@@ -286,7 +286,7 @@ TEST(RsaOaepEncryptionKeyTest, TestCreateFromPemSerializationSuccess) {
               ElementsAreArray(kPlaintext, sizeof(kPlaintext) - 1));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep3072) {
+TEST(RsaOaepEncryptionKeyTest, GetAsymmetricEncryptionKeySchemeOaep3072) {
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
                              RsaOaepEncryptionKey::CreateFromPem(
@@ -296,7 +296,7 @@ TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep3072) {
               Eq(AsymmetricEncryptionScheme::RSA3072_OAEP));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep2048) {
+TEST(RsaOaepEncryptionKeyTest, GetAsymmetricEncryptionKeySchemeOaep2048) {
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
                              RsaOaepEncryptionKey::CreateFromPem(
@@ -314,13 +314,13 @@ TEST(RsaOaepEncryptionKeyTest,
       StatusIs(error::GoogleError::INVALID_ARGUMENT, "Invalid key size: 1024"));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestCreateFromInvalidPemSerializationFails) {
+TEST(RsaOaepEncryptionKeyTest, CreateFromInvalidPemSerializationFails) {
   EXPECT_THAT(RsaOaepEncryptionKey::CreateFromPem(kBadPublicKeyPem,
                                                   HashAlgorithm::SHA256),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestDecryptInvalidInputFails) {
+TEST(RsaOaepEncryptionKeyTest, DecryptInvalidInputFails) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       decryption_key, CreateDecryptionKeyFromTestDer(HashAlgorithm::SHA256));
@@ -338,7 +338,7 @@ TEST(RsaOaepEncryptionKeyTest, TestDecryptInvalidInputFails) {
               StatusIs(error::GoogleError::INTERNAL));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestCreateRsa3072OaepDecryptionKeySuccess) {
+TEST(RsaOaepEncryptionKeyTest, CreateRsa3072OaepDecryptionKeySuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
@@ -349,7 +349,7 @@ TEST(RsaOaepEncryptionKeyTest, TestCreateRsa3072OaepDecryptionKeySuccess) {
   VerifyEncryptionDecryptionSuccess(*encryption_key, *decryption_key);
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestEncryptionKeySerializeAndRestoreSuccess) {
+TEST(RsaOaepEncryptionKeyTest, EncryptionKeySerializeAndRestoreSuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       decryption_key, CreateDecryptionKeyFromTestDer(HashAlgorithm::SHA256));
@@ -368,7 +368,7 @@ TEST(RsaOaepEncryptionKeyTest, TestEncryptionKeySerializeAndRestoreSuccess) {
   VerifyEncryptionDecryptionSuccess(*restored_encryption_key, *decryption_key);
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestDecryptionKeySerializeAndRestoreSuccess) {
+TEST(RsaOaepEncryptionKeyTest, DecryptionKeySerializeAndRestoreSuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       decryption_key, CreateDecryptionKeyFromTestDer(HashAlgorithm::SHA256));
@@ -387,7 +387,7 @@ TEST(RsaOaepEncryptionKeyTest, TestDecryptionKeySerializeAndRestoreSuccess) {
   VerifyEncryptionDecryptionSuccess(*encryption_key, *restored_decryption_key);
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestCreateFromInvalidDerSerializationFails) {
+TEST(RsaOaepEncryptionKeyTest, CreateFromInvalidDerSerializationFails) {
   std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
   EXPECT_THAT(
       RsaOaepDecryptionKey::CreateFromDer(serialized_key, HashAlgorithm::SHA_1),
