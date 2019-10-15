@@ -14,6 +14,10 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+
 licenses(["notice"])  # Apache v2.0
 
 package(
@@ -24,8 +28,6 @@ exports_files([
     "bridge.edl",
     "errno.edl",
 ])
-
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 cc_library(
     name = "sgx_params",
@@ -241,4 +243,37 @@ cc_library(
         ],
         "//conditions:default": [],
     }),
+)
+
+# Singleton class responsible for allocating shared buffers between trusted
+# and untrusted code.
+cc_library(
+    name = "untrusted_cache_malloc",
+    srcs = ["untrusted_cache_malloc.cc"],
+    hdrs = ["untrusted_cache_malloc.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/arch:trusted_arch",
+        "//asylo/platform/common:spin_lock",
+        "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+sgx.enclave_configuration(
+    name = "many_threads_enclave_config",
+    tcs_num = "1000",
+)
+
+cc_enclave_test(
+    name = "untrusted_cache_malloc_test",
+    srcs = ["untrusted_cache_malloc_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_config = ":many_threads_enclave_config",
+    deps = [
+        ":untrusted_cache_malloc",
+        "@com_google_googletest//:gtest",
+    ],
 )

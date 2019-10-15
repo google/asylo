@@ -15,7 +15,7 @@
  * limitations under the License.
  *
  */
-#include "asylo/platform/core/untrusted_cache_malloc.h"
+#include "asylo/platform/primitives/sgx/untrusted_cache_malloc.h"
 
 #include <cstdlib>
 #include <memory>
