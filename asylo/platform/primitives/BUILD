@@ -51,6 +51,12 @@ _UNTRUSTED_REMOTE_DEPS = [
     "//asylo/util/remote:remote_proxy_config",
 ]
 
+# Target exposing untrusted Fortanix EDP backend-specific components for the build configuration.
+_UNTRUSTED_FORTANIX_EDP_DEPS = [
+    "//asylo/platform/primitives/fortanix_edp:loader_cc_proto",
+    "//asylo/platform/primitives/fortanix_edp:untrusted_edp",
+]
+
 # Loader for Asylo enclaves. The target selects the untrusted backend-specific components
 # based on the configuration passed by the user via the command line.
 cc_library(
@@ -59,6 +65,9 @@ cc_library(
         {
             "//asylo/platform/primitives:asylo_remote": [
                 "//asylo/platform/primitives/remote:enclave_loader.cc",
+            ],
+            "//asylo/platform/primitives:edp": [
+                "//asylo/platform/primitives/fortanix_edp:enclave_loader.cc",
             ],
             "//conditions:default": [],
         },
@@ -72,6 +81,12 @@ cc_library(
         ":untrusted_primitives",
     ] + select({
         "//asylo/platform/primitives:asylo_remote": _UNTRUSTED_REMOTE_DEPS + [
+            "//asylo/platform/primitives/util:dispatch_table",
+            "//asylo/platform/primitives/util:exit_log",
+            "//asylo/util:status",
+            "//asylo/util:status_macros",
+        ],
+        "//asylo/platform/primitives:edp": _UNTRUSTED_FORTANIX_EDP_DEPS + [
             "//asylo/platform/primitives/util:dispatch_table",
             "//asylo/platform/primitives/util:exit_log",
             "//asylo/util:status",
@@ -207,4 +222,12 @@ config_setting(
         "define": "ASYLO_REMOTE=1",
     },
     visibility = ["//visibility:public"],
+)
+
+# Configuration setting for the primitives/fortanix_edp backend.
+config_setting(
+    name = "edp",
+    values = {
+        "define": "FORTANIX_EDP=1",
+    },
 )

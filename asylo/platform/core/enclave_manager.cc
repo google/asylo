@@ -34,6 +34,8 @@
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
+#include "asylo/platform/primitives/fortanix_edp/loader.pb.h"
+#include "asylo/platform/primitives/fortanix_edp/untrusted_edp.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -257,8 +259,8 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
                                    void *base_address,
                                    const size_t enclave_size) {
   EnclaveLoadConfig load_config = loader.GetEnclaveLoadConfig();
+  load_config.set_name(name.data(), name.size());
   if (load_config.HasExtension(sgx_load_config)) {
-    load_config.set_name(name.data(), name.size());
     if (!base_address && enclave_size != 0) {
       if (load_config.HasExtension(sgx_load_config)) {
         SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
@@ -269,6 +271,8 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
         *sgx_config.mutable_fork_config() = fork_config;
       }
     }
+    return LoadEnclave(load_config);
+  } else if (load_config.HasExtension(fortanix_edp_load_config)) {
     return LoadEnclave(load_config);
   } else {
     return LoadFakeEnclave(name, loader,
@@ -282,8 +286,8 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
                                    EnclaveConfig config, void *base_address,
                                    const size_t enclave_size) {
   EnclaveLoadConfig load_config = loader.GetEnclaveLoadConfig();
+  load_config.set_name(name.data(), name.size());
   if (load_config.HasExtension(sgx_load_config)) {
-    load_config.set_name(name.data(), name.size());
     *load_config.mutable_config() = config;
     if (!base_address && enclave_size != 0) {
       if (load_config.HasExtension(sgx_load_config)) {
@@ -295,6 +299,8 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
         *sgx_config.mutable_fork_config() = fork_config;
       }
     }
+    return LoadEnclave(load_config);
+  } else if (load_config.HasExtension(fortanix_edp_load_config)) {
     return LoadEnclave(load_config);
   } else {
     EnclaveConfig sanitized_config = std::move(config);

@@ -1,0 +1,19 @@
+[package]
+name = "asylo"
+version = "0.1.0"
+authors = ["Fortanix, Inc."]
+license = "Apache-2.0"
+description = """
+Runtime and types required for running Fortanix EDP enclaves in Asylo.
+"""
+repository = "https://github.com/google/asylo"
+homepage = "https://edp.fortanix.com/"
+keywords = ["sgx", "enclave", "edp", "asylo"]
+categories = ["os", "hardware-support"]
+edition = "2018"
+
+[dependencies]
+protobuf = "2.8"
+
+[build-dependencies]
+protoc-rust = "2.8"

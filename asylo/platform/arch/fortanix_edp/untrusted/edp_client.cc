@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +12,21 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-#ifndef ASYLO_CLIENT_H_
-#define ASYLO_CLIENT_H_
+#include "asylo/platform/arch/fortanix_edp/untrusted/edp_client.h"
 
-#include "asylo/platform/core/enclave_client.h"  // IWYU pragma: export
-#include "asylo/platform/arch/sgx/untrusted/sgx_client.h"  // IWYU pragma: export
-#include "asylo/platform/arch/fortanix_edp/untrusted/edp_client.h"  // IWYU pragma: export
+#include "asylo/enclave.pb.h"
+#include "asylo/platform/primitives/fortanix_edp/loader.pb.h"
 
-#endif  // ASYLO_CLIENT_H_
+namespace asylo {
+
+EnclaveLoadConfig FortanixEdpLoader::GetEnclaveLoadConfig() const {
+  EnclaveLoadConfig load_config;
+  FortanixEdpLoadConfig edp_config;
+  edp_config.set_enclave_path(enclave_path_);
+  *load_config.MutableExtension(fortanix_edp_load_config) = edp_config;
+  return load_config;
+}
+
+}  //  namespace asylo

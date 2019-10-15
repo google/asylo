@@ -1,0 +1,22 @@
+[package]
+name = "edp_runner"
+version = "0.1.0"
+authors = ["Mohsen Zohrevandi <mohsen.zohrevandi@fortanix.com>"]
+edition = "2018"
+
+[lib]
+crate_type = ["staticlib"]
+
+[profile.dev]
+panic = "abort"
+[profile.release]
+panic = "abort"
+
+[dependencies]
+enclave-runner = { version = "0.2.1", default-features = false }
+aesm-client = { version = "0.2.0", features = ["sgxs"] }
+sgxs-loaders = "0.2.1"
+sgxs = { version = "0.7.2", features = ["sha2"] }
+failure = "0.1"
+num-bigint = "0.2.3"
+sha2 = "0.8"

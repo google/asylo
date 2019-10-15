@@ -36,3 +36,7 @@ build:enc-sim --config=sgx-sim
 
 build:asylo-dlopen --config=asylo
 build:asylo-dlopen --define=ASYLO_DLOPEN=1
+
+build:edp --define=ASYLO_SGX=0
+build:edp --define=SGX_SIM=0
+build:edp --define=FORTANIX_EDP=1

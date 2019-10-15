@@ -720,3 +720,14 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "fortanix_edp_crypto",
+    srcs = ["fortanix_edp_crypto.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "//asylo/crypto/util:bssl_util",
+        "@boringssl//:crypto",
+    ],
+)

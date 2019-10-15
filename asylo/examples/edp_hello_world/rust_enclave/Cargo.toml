@@ -1,0 +1,12 @@
+[package]
+name = "hello_world"
+version = "0.1.0"
+authors = ["Mohsen Zohrevandi <mohsen.zohrevandi@fortanix.com>"]
+edition = "2018"
+
+[dependencies]
+asylo = { path = "../../../rust-asylo" } # FIXME: use published version from crates.io
+protobuf = "2.8"
+
+[build-dependencies]
+protoc-rust = "2.8"

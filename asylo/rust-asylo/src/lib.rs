@@ -1,6 +1,5 @@
 /*
- *
- * Copyright 2017 Asylo authors
+ * Copyright 2018 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,14 +12,19 @@
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
  * See the License for the specific language governing permissions and
  * limitations under the License.
- *
  */
 
-#ifndef ASYLO_CLIENT_H_
-#define ASYLO_CLIENT_H_
+mod error;
+mod extent;
+pub mod proto;
+mod runtime;
 
-#include "asylo/platform/core/enclave_client.h"  // IWYU pragma: export
-#include "asylo/platform/arch/sgx/untrusted/sgx_client.h"  // IWYU pragma: export
-#include "asylo/platform/arch/fortanix_edp/untrusted/edp_client.h"  // IWYU pragma: export
+pub use self::error::*;
+pub use self::runtime::run;
+pub use self::proto::enclave::{EnclaveConfig, EnclaveInput, EnclaveOutput, EnclaveFinal};
 
-#endif  // ASYLO_CLIENT_H_
+pub trait TrustedApplication: Sized {
+    fn initialize(config: EnclaveConfig) -> Result<Self, Status>;
+    fn run(&mut self, input: EnclaveInput, output: Option<&mut EnclaveOutput>) -> Status;
+    fn finalize(self, final_input: EnclaveFinal) -> Status;
+}

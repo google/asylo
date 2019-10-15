@@ -52,6 +52,8 @@ cc_library(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
+        "//asylo/platform/primitives/fortanix_edp:loader_cc_proto",
+        "//asylo/platform/primitives/fortanix_edp:untrusted_edp",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:logging",
         "//asylo/util:status",

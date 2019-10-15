@@ -44,9 +44,13 @@ cc_library(
 # Target exposing untrusted client components for all backends.
 cc_library(
     name = "untrusted_arch",
-    srcs = ["sgx/untrusted/sgx_client.cc"],
+    srcs = [
+        "sgx/untrusted/sgx_client.cc",
+        "fortanix_edp/untrusted/edp_client.cc",
+    ],
     hdrs = [
         "sgx/untrusted/sgx_client.h",
+        "fortanix_edp/untrusted/edp_client.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
