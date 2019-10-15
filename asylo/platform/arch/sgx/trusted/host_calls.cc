@@ -24,19 +24,11 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
 #include <errno.h>
-#include <fcntl.h>
-#include <poll.h>
-#include <pwd.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/types.h>
-#include <sys/utsname.h>
 #include <unistd.h>
-#include <utime.h>
 
 #include <cstring>
 #include <string>
@@ -77,26 +69,6 @@ namespace {
 }  // namespace asylo
 
 extern "C" {
-
-///////////////////////////////////////
-//              IO                   //
-///////////////////////////////////////
-
-void **enc_untrusted_allocate_buffers(size_t count, size_t size) {
-  void **buffers;
-  CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
-      &buffers, static_cast<bridge_size_t>(count),
-      static_cast<bridge_size_t>(size)));
-  if (!buffers || !sgx_is_outside_enclave(buffers, size)) {
-    abort();
-  }
-  return buffers;
-}
-
-void enc_untrusted_deallocate_free_list(void **free_list, size_t count) {
-  CHECK_OCALL(ocall_enc_untrusted_deallocate_free_list(
-      free_list, static_cast<bridge_size_t>(count)));
-}
 
 //////////////////////////////////////
 //           inotify.h              //

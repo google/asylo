@@ -23,8 +23,8 @@
 #include <stack>
 
 #include "absl/container/flat_hash_set.h"
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/spin_lock.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/util/trusted_memory.h"
 
 namespace asylo {
@@ -64,7 +64,7 @@ class UntrustedCacheMalloc {
 
  private:
   struct FreeList {
-    UntrustedUniquePtr<void*> buffers;
+    UntrustedUniquePtr<void *> buffers;
     int count;
   };
 

@@ -325,5 +325,21 @@ int TrustedPrimitives::CreateThread() {
   return output.next<int>();
 }
 
+void **AllocateUntrustedBuffers(size_t count, size_t size) {
+  void **buffers;
+  CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
+      &buffers, static_cast<bridge_size_t>(count),
+      static_cast<bridge_size_t>(size)));
+  if (!buffers || !sgx_is_outside_enclave(buffers, size)) {
+    abort();
+  }
+  return buffers;
+}
+
+void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
+  CHECK_OCALL(ocall_enc_untrusted_deallocate_free_list(
+      free_list, static_cast<bridge_size_t>(count)));
+}
+
 }  // namespace primitives
 }  // namespace asylo

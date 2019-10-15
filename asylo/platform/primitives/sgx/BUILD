@@ -253,7 +253,7 @@ cc_library(
     hdrs = ["untrusted_cache_malloc.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/arch:trusted_arch",
+        ":trusted_sgx",
         "//asylo/platform/common:spin_lock",
         "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/primitives:trusted_primitives",

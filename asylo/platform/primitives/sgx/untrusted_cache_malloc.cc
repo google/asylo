@@ -74,8 +74,8 @@ UntrustedCacheMalloc::~UntrustedCacheMalloc() {
   // The free_list_ object and the struct FreeList member buffers are destroyed
   // when the unique pointers referencing them go out of scope.
   if (free_list_->count > 0) {
-    enc_untrusted_deallocate_free_list(free_list_->buffers.get(),
-                                       free_list_->count);
+    primitives::DeAllocateUntrustedBuffers(free_list_->buffers.get(),
+                                           free_list_->count);
   }
   is_destroyed = true;
 }
@@ -89,10 +89,11 @@ void *UntrustedCacheMalloc::GetBuffer() {
     ScopedSpinLock spin_lock(&lock_);
     is_pool_empty = buffer_pool_.empty();
     if (is_pool_empty) {
-      buffers = enc_untrusted_allocate_buffers(kPoolIncrement, kPoolEntrySize);
+      buffers =
+          primitives::AllocateUntrustedBuffers(kPoolIncrement, kPoolEntrySize);
       for (int i = 0; i < kPoolIncrement; i++) {
-        if (!buffers[i]
-            || !enc_is_outside_enclave(buffers[i], kPoolEntrySize)) {
+        if (!buffers[i] ||
+            !enc_is_outside_enclave(buffers[i], kPoolEntrySize)) {
           abort();
         }
         buffer_pool_.push(buffers[i]);
@@ -105,7 +106,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
 
   if (is_pool_empty) {
     // Free memory held by the array of buffer pointers returned by
-    // enc_untrusted_allocate_buffers.
+    // AllocateUntrustedBuffers.
     Free(buffers);
   }
   return buffer;
@@ -123,8 +124,8 @@ void UntrustedCacheMalloc::PushToFreeList(void *buffer) {
   free_list_->count++;
 
   if (free_list_->count == kFreeListCapacity) {
-    enc_untrusted_deallocate_free_list(free_list_->buffers.get(),
-                                       kFreeListCapacity);
+    primitives::DeAllocateUntrustedBuffers(free_list_->buffers.get(),
+                                           kFreeListCapacity);
     free_list_->count = 0;
   }
 }

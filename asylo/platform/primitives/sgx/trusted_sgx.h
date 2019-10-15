@@ -47,6 +47,14 @@ int RegisterSignalHandler(
     int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
     const sigset_t mask, int flags, const char *enclave_name);
 
+// Allocates |count| buffers of size |size| on the untrusted heap, returning a
+// pointer to an array of buffer pointers.
+void **AllocateUntrustedBuffers(size_t count, size_t size);
+
+// Releases memory on the untrusted heap pointed to by buffer pointers stored in
+// |free_list|.
+void DeAllocateUntrustedBuffers(void **free_list, size_t count);
+
 }  // namespace primitives
 }  // namespace asylo
 
