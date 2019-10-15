@@ -48,15 +48,6 @@ enclave {
   // corresponding function on the host.
   untrusted {
     //////////////////////////////////////
-    //              IO                  //
-    //////////////////////////////////////
-
-    void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
-        bridge_size_t size) propagate_errno;
-    void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,
-        bridge_size_t count) propagate_errno;
-
-    //////////////////////////////////////
     //           inotify.h              //
     //////////////////////////////////////
 
@@ -71,15 +62,5 @@ enclave {
     int ocall_enc_untrusted_register_signal_handler(
         int bridge_signum, [in] const struct BridgeSignalHandler *handler,
         [in, string] const char *name);
-
-    //////////////////////////////////////
-    //            unistd.h              //
-    //////////////////////////////////////
-
-    pid_t ocall_enc_untrusted_fork(
-        [in, string]const char *enclave_name,
-	      bool restore_snapshot)
-	allow(ecall_take_snapshot, ecall_restore) propagate_errno;
   };
-
 };
