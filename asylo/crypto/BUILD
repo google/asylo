@@ -193,6 +193,7 @@ cc_test(
         ":bignum_util",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:integral_type_test_data",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
@@ -231,6 +232,7 @@ cc_test(
     deps = [
         ":bignum_util",
         "//asylo/crypto/util:bssl_util",
+        "//asylo/test/util:integral_type_test_data",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",

@@ -29,8 +29,10 @@
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"
+#include "asylo/crypto/bignum_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -127,13 +129,26 @@ class Asn1Value {
   // the input data.
   static StatusOr<Asn1Value> CreateBoolean(bool value);
   static StatusOr<Asn1Value> CreateInteger(const BIGNUM &value);
-  static StatusOr<Asn1Value> CreateIntegerFromInt64(int64_t value);
   static StatusOr<Asn1Value> CreateEnumerated(const BIGNUM &value);
-  static StatusOr<Asn1Value> CreateEnumeratedFromInt64(int64_t value);
   static StatusOr<Asn1Value> CreateOctetString(ByteContainerView value);
   static StatusOr<Asn1Value> CreateObjectId(const ObjectId &value);
   static StatusOr<Asn1Value> CreateSequence(
       absl::Span<const Asn1Value> elements);
+
+  // Factory methods for creating INTEGER and ENUMERATED values directly from
+  // integral types.
+  template <typename IntT>
+  static StatusOr<Asn1Value> CreateIntegerFromInt(IntT value) {
+    Asn1Value result;
+    ASYLO_RETURN_IF_ERROR(result.SetIntegerFromInt(value));
+    return result;
+  }
+  template <typename IntT>
+  static StatusOr<Asn1Value> CreateEnumeratedFromInt(IntT value) {
+    Asn1Value result;
+    ASYLO_RETURN_IF_ERROR(result.SetEnumeratedFromInt(value));
+    return result;
+  }
 
   // Creates an Asn1Value from the DER-encoded |asn1_der|. CreateFromDer() does
   // not fail if |asn1_der| represents an ASN.1 value containing unsupported
@@ -150,23 +165,49 @@ class Asn1Value {
   // All returned data is copied.
   StatusOr<bool> GetBoolean() const;
   StatusOr<bssl::UniquePtr<BIGNUM>> GetInteger() const;
-  StatusOr<int64_t> GetIntegerAsInt64() const;
   StatusOr<bssl::UniquePtr<BIGNUM>> GetEnumerated() const;
-  StatusOr<int64_t> GetEnumeratedAsInt64() const;
   StatusOr<std::vector<uint8_t>> GetOctetString() const;
   StatusOr<ObjectId> GetObjectId() const;
   StatusOr<std::vector<Asn1Value>> GetSequence() const;
+
+  // Getters that get an INTEGER or ENUMERATED value directly as an integral
+  // type.
+  template <typename IntT>
+  StatusOr<IntT> GetIntegerAsInt() const {
+    bssl::UniquePtr<BIGNUM> bignum;
+    ASYLO_ASSIGN_OR_RETURN(bignum, GetInteger());
+    return IntegerFromBignum<IntT>(*bignum);
+  }
+  template <typename IntT>
+  StatusOr<IntT> GetEnumeratedAsInt() const {
+    bssl::UniquePtr<BIGNUM> bignum;
+    ASYLO_ASSIGN_OR_RETURN(bignum, GetEnumerated());
+    return IntegerFromBignum<IntT>(*bignum);
+  }
 
   // Each setter sets the Asn1Value to have the appropriate type and the given
   // value. If a setter fails, then the value of the Asn1Value is unchanged.
   Status SetBoolean(bool value);
   Status SetInteger(const BIGNUM &value);
-  Status SetIntegerFromInt64(int64_t value);
   Status SetEnumerated(const BIGNUM &value);
-  Status SetEnumeratedFromInt64(int64_t value);
   Status SetOctetString(ByteContainerView value);
   Status SetObjectId(const ObjectId &value);
   Status SetSequence(absl::Span<const Asn1Value> elements);
+
+  // Setters for setting an Asn1Value to be an INTEGER or ENUMERATED value from
+  // an integral type.
+  template <typename IntT>
+  Status SetIntegerFromInt(IntT value) {
+    bssl::UniquePtr<BIGNUM> bignum;
+    ASYLO_ASSIGN_OR_RETURN(bignum, BignumFromInteger(value));
+    return SetInteger(*bignum);
+  }
+  template <typename IntT>
+  Status SetEnumeratedFromInt(IntT value) {
+    bssl::UniquePtr<BIGNUM> bignum;
+    ASYLO_ASSIGN_OR_RETURN(bignum, BignumFromInteger(value));
+    return SetEnumerated(*bignum);
+  }
 
   // Serializes this Asn1Value to a DER-encoded string. This function works even
   // on Asn1Values of unsupported types.

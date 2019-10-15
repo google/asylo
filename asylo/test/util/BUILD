@@ -123,6 +123,16 @@ cc_library(
     ],
 )
 
+# Boundary values of integral types.
+cc_library(
+    name = "integral_type_test_data",
+    testonly = 1,
+    hdrs = ["integral_type_test_data.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = ["@com_google_googletest//:gtest"],
+)
+
 # Program entry to parse flags and run all gtest tests.
 cc_library(
     name = "test_main_impl",

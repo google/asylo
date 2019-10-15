@@ -42,6 +42,7 @@
 #include "asylo/crypto/bignum_util.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/test/util/integral_type_test_data.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -75,6 +76,16 @@ std::string PrintBignum(const BIGNUM &bignum) {
 // A type to represent an Asn1Type in a Types<> invocation.
 template <Asn1Type kType>
 using Asn1TypeTag = std::integral_constant<Asn1Type, kType>;
+
+// A type tag for tests of Asn1Value's functions for converting between INTEGER
+// values and IntT.
+template <typename IntT>
+struct Asn1IntegerConversionTag {};
+
+// A type tag for tests of Asn1Value's functions for converting between
+// ENUMERATED values and IntT.
+template <typename IntT>
+struct Asn1EnumeratedConversionTag {};
 
 // Contains a short name, long name, NID, and OID string for a given OID. All
 // pointers should point to data with static storage duration or be nullptr.
@@ -258,19 +269,25 @@ TEST(Asn1Test, ObjectIdCopyAssignmentPreservesEquality) {
 }
 
 // A template fixture for testing with each of the ASN.1 value types that
-// Asn1Value supports. T must be an invocation of Asn1TypeTag. Each
+// Asn1Value supports. T must be an invocation of Asn1TypeTag,
+// Asn1IntegerConversionTag, or Asn1EnumeratedConversionTag. Each
 // specialization of Asn1Test should look like:
 //
-//     template <>
-//     class Asn1Test<Asn1TypeTag<Asn1Type::kSomeType>> : public Test {
+//     template <...>
+//     class Asn1Test<...> : public Test {
 //      public:
-//       // The C++ type to use to represent owned mutable values of ASN.1 type
-//       // kSomeType.
+//       // The C++ type to use to represent owned mutable values of the ASN.1
+//       // type being tested.
 //       using ValueType = ...;
 //
 //       // The OpenSSL object type to use to represent owned mutable values of
-//       // type kSomeType.
+//       // the ASN.1 type being tested.
 //       using BsslValueType = ...;
+//
+//       // The Asn1Type being tested.
+//       static constexpr Asn1Type Type() {
+//         ...
+//       }
 //
 //       // Test data for kSomeType.
 //       static std::vector<ValueType> TestData() {
@@ -321,6 +338,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kBoolean>> : public Test {
   using ValueType = bool;
   using BsslValueType = ASN1_BOOLEAN;
 
+  static constexpr Asn1Type Type() { return Asn1Type::kBoolean; }
+
   static std::vector<ValueType> TestData() { return {false, true}; }
 
   static std::vector<ValueType> BadTestData() { return {}; }
@@ -360,6 +379,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kInteger>> : public Test {
  public:
   using ValueType = bssl::UniquePtr<BIGNUM>;
   using BsslValueType = bssl::UniquePtr<ASN1_INTEGER>;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kInteger; }
 
   static std::vector<ValueType> TestData() {
     bssl::UniquePtr<BIGNUM> test_data[] = {
@@ -406,6 +427,51 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kInteger>> : public Test {
   }
 };
 
+// Specialization of Asn1Test for converting between INTEGER values and integral
+// types. Does not test conversions with BoringSSL types.
+template <typename IntT>
+class Asn1Test<Asn1IntegerConversionTag<IntT>> : public Test {
+ public:
+  using ValueType = IntT;
+  using BsslValueType = Asn1Value;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kInteger; }
+
+  static std::vector<ValueType> TestData() {
+    return std::vector<IntT>(std::begin(IntegralTypeTestData<IntT>::kValues),
+                             std::end(IntegralTypeTestData<IntT>::kValues));
+  }
+
+  static std::vector<ValueType> BadTestData() { return {}; }
+
+  static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
+    EXPECT_THAT(lhs, Eq(rhs));
+  }
+
+  static StatusOr<Asn1Value> Create(const ValueType &value) {
+    return Asn1Value::CreateIntegerFromInt(value);
+  }
+
+  static StatusOr<ValueType> Get(const Asn1Value &asn1) {
+    return asn1.GetIntegerAsInt<IntT>();
+  }
+
+  static Status Set(Asn1Value *asn1, const ValueType &value) {
+    return asn1->SetIntegerFromInt(value);
+  }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return bssl_value;
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) { return asn1; }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    *asn1 = bssl_value;
+    return Status::OkStatus();
+  }
+};
+
 // Specialization of Asn1Test for Asn1Type::kEnumerated.
 template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kEnumerated>> : public Test {
@@ -416,12 +482,14 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kEnumerated>> : public Test {
   using ValueType = Base::ValueType;
   using BsslValueType = bssl::UniquePtr<ASN1_ENUMERATED>;
 
+  static constexpr Asn1Type Type() { return Asn1Type::kEnumerated; }
+
   static std::vector<ValueType> TestData() { return Base::TestData(); }
 
   static std::vector<ValueType> BadTestData() { return Base::BadTestData(); }
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
-    return Base::ExpectEqual(lhs, rhs);
+    Base::ExpectEqual(lhs, rhs);
   }
 
   static StatusOr<Asn1Value> Create(const ValueType &value) {
@@ -449,12 +517,60 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kEnumerated>> : public Test {
   }
 };
 
+// Specialization of Asn1Test for converting between ENUMERATED values and
+// integral types. Does not test conversions with BoringSSL types.
+template <typename IntT>
+class Asn1Test<Asn1EnumeratedConversionTag<IntT>> : public Test {
+ public:
+  // ENUMERATED tests re-use functionality from INTEGER tests.
+  using Base = Asn1Test<Asn1IntegerConversionTag<IntT>>;
+
+  using ValueType = typename Base::ValueType;
+  using BsslValueType = typename Base::BsslValueType;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kEnumerated; }
+
+  static std::vector<ValueType> TestData() { return Base::TestData(); }
+
+  static std::vector<ValueType> BadTestData() { return Base::BadTestData(); }
+
+  static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
+    Base::ExpectEqual(lhs, rhs);
+  }
+
+  static StatusOr<Asn1Value> Create(const ValueType &value) {
+    return Asn1Value::CreateEnumeratedFromInt(value);
+  }
+
+  static StatusOr<ValueType> Get(const Asn1Value &asn1) {
+    return asn1.GetEnumeratedAsInt<IntT>();
+  }
+
+  static Status Set(Asn1Value *asn1, const ValueType &value) {
+    return asn1->SetEnumeratedFromInt(value);
+  }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Base::CreateFromBssl(bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return Base::GetBssl(asn1);
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return Base::SetBssl(asn1, bssl_value);
+  }
+};
+
 // Specialization of Asn1Test for Asn1Type::kOctetString.
 template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kOctetString>> : public Test {
  public:
   using ValueType = std::vector<uint8_t>;
   using BsslValueType = bssl::UniquePtr<ASN1_OCTET_STRING>;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kOctetString; }
 
   static std::vector<ValueType> TestData() {
     return {{}, {1}, {1, 1, 2, 3, 5, 8, 13, 21, 34, 55}, {4, 0, 4}};
@@ -497,6 +613,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
  public:
   using ValueType = ObjectId;
   using BsslValueType = bssl::UniquePtr<ASN1_OBJECT>;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kObjectId; }
 
   static std::vector<ValueType> TestData() {
     return {ObjectId::CreateFromShortName("CN").ValueOrDie(),
@@ -548,6 +666,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
   using ValueType = std::vector<Asn1Value>;
   using BsslValueType = bssl::UniquePtr<ASN1_SEQUENCE_ANY>;
 
+  static constexpr Asn1Type Type() { return Asn1Type::kSequence; }
+
   static std::vector<ValueType> TestData() {
     return {{},
             {Asn1Value::CreateBoolean(false).ValueOrDie()},
@@ -591,11 +711,18 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
   }
 };
 
-using Asn1TestingTypes =
-    Types<Asn1TypeTag<Asn1Type::kBoolean>, Asn1TypeTag<Asn1Type::kInteger>,
-          Asn1TypeTag<Asn1Type::kEnumerated>,
-          Asn1TypeTag<Asn1Type::kOctetString>, Asn1TypeTag<Asn1Type::kObjectId>,
-          Asn1TypeTag<Asn1Type::kSequence>>;
+using Asn1TestingTypes = Types<
+    Asn1TypeTag<Asn1Type::kBoolean>, Asn1TypeTag<Asn1Type::kInteger>,
+    Asn1IntegerConversionTag<int8_t>, Asn1IntegerConversionTag<uint8_t>,
+    Asn1IntegerConversionTag<int16_t>, Asn1IntegerConversionTag<uint16_t>,
+    Asn1IntegerConversionTag<int32_t>, Asn1IntegerConversionTag<uint32_t>,
+    Asn1IntegerConversionTag<int64_t>, Asn1IntegerConversionTag<uint16_t>,
+    Asn1TypeTag<Asn1Type::kEnumerated>, Asn1EnumeratedConversionTag<int8_t>,
+    Asn1EnumeratedConversionTag<uint8_t>, Asn1EnumeratedConversionTag<int16_t>,
+    Asn1EnumeratedConversionTag<uint16_t>, Asn1EnumeratedConversionTag<int32_t>,
+    Asn1EnumeratedConversionTag<uint32_t>, Asn1EnumeratedConversionTag<int64_t>,
+    Asn1EnumeratedConversionTag<uint16_t>, Asn1TypeTag<Asn1Type::kOctetString>,
+    Asn1TypeTag<Asn1Type::kObjectId>, Asn1TypeTag<Asn1Type::kSequence>>;
 TYPED_TEST_SUITE(Asn1Test, Asn1TestingTypes);
 
 // std::vector<Asn1ValueType<TestParam::value>>::const_reference is used for
@@ -606,7 +733,7 @@ TYPED_TEST(Asn1Test, CreateCreatesAsn1ValueWithCorrectTypeAndValue) {
   Asn1Value asn1;
   for (const auto &value : TestFixture::TestData()) {
     ASYLO_ASSERT_OK_AND_ASSIGN(asn1, TestFixture::Create(value));
-    EXPECT_THAT(asn1.Type(), Optional(TypeParam::value));
+    EXPECT_THAT(asn1.Type(), Optional(TestFixture::Type()));
 
     typename TestFixture::ValueType roundtrip;
     ASYLO_ASSERT_OK_AND_ASSIGN(roundtrip, TestFixture::Get(asn1));
@@ -625,7 +752,7 @@ TYPED_TEST(Asn1Test, SetterSetsAsn1ValueToHaveCorrectTypeAndValue) {
   Asn1Value asn1;
   for (const auto &value : TestFixture::TestData()) {
     ASYLO_ASSERT_OK(TestFixture::Set(&asn1, value));
-    EXPECT_THAT(asn1.Type(), Optional(TypeParam::value));
+    EXPECT_THAT(asn1.Type(), Optional(TestFixture::Type()));
 
     typename TestFixture::ValueType roundtrip;
     ASYLO_ASSERT_OK_AND_ASSIGN(roundtrip, TestFixture::Get(asn1));

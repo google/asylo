@@ -18,17 +18,20 @@
 
 #include "asylo/crypto/bignum_util.h"
 
-#include <endian.h>
+#include <openssl/base.h>
+#include <openssl/bn.h>
 
 #include <algorithm>
-#include <cstdlib>
-#include <limits>
+#include <cstdint>
+#include <utility>
+#include <vector>
 
-#include "absl/base/call_once.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace {
@@ -67,6 +70,15 @@ StatusOr<std::vector<uint8_t>> PaddedAbsoluteValueBigEndianBytesFromBignum(
 }
 
 }  // namespace
+
+namespace internal {
+
+bool IsBigEndianSystem() {
+  static const uint16_t kOne = 1;
+  return *reinterpret_cast<const uint8_t *>(&kOne) == 0;
+}
+
+}  // namespace internal
 
 StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromBigEndianBytes(
     ByteContainerView bytes, Sign sign) {
@@ -122,45 +134,6 @@ PaddedLittleEndianBytesFromBignum(const BIGNUM &bignum, size_t padded_size) {
                          PaddedBigEndianBytesFromBignum(bignum, padded_size));
   std::reverse(result.second.begin(), result.second.end());
   return result;
-}
-
-StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromInteger(int64_t number) {
-  int64_t big_endian_absolute_value = htobe64(llabs(number));
-  ByteContainerView bytes_view(&big_endian_absolute_value,
-                               sizeof(big_endian_absolute_value));
-  return BignumFromBigEndianBytes(
-      bytes_view, number < 0 ? Sign::kNegative : Sign::kPositive);
-}
-
-StatusOr<int64_t> IntegerFromBignum(const BIGNUM &bignum) {
-  static absl::once_flag once_init;
-  static BIGNUM *int64_min = nullptr;
-  static BIGNUM *int64_max = nullptr;
-  absl::call_once(once_init, [] {
-    int64_min = BignumFromInteger(std::numeric_limits<int64_t>::min())
-                    .ValueOrDie()
-                    .release();
-    int64_max = BignumFromInteger(std::numeric_limits<int64_t>::max())
-                    .ValueOrDie()
-                    .release();
-  });
-
-  if (BN_cmp(&bignum, int64_min) == -1 || BN_cmp(&bignum, int64_max) == 1) {
-    return Status(error::GoogleError::OUT_OF_RANGE,
-                  "BIGNUM cannot fit in int64_t");
-  }
-
-  // This check is necessary because the absolute value of
-  // std::numeric_limits<int64_t>::min() cannot fit in an int64_t.
-  if (BN_cmp(&bignum, int64_min) == 0) {
-    return std::numeric_limits<int64_t>::min();
-  }
-  std::vector<uint8_t> bytes;
-  ASYLO_ASSIGN_OR_RETURN(bytes, AbsoluteValueBigEndianBytesFromBignum(bignum));
-  std::reverse(bytes.begin(), bytes.end());
-  bytes.resize(sizeof(int64_t), 0);
-  int64_t absolute_value = le64toh(*reinterpret_cast<uint64_t *>(bytes.data()));
-  return BN_is_negative(&bignum) ? -absolute_value : absolute_value;
 }
 
 }  // namespace asylo

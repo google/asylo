@@ -22,11 +22,17 @@
 #include <openssl/base.h>
 #include <openssl/bn.h>
 
+#include <algorithm>
 #include <cstdint>
+#include <limits>
+#include <type_traits>
 #include <utility>
 #include <vector>
 
+#include "absl/base/call_once.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -74,14 +80,77 @@ StatusOr<std::pair<Sign, std::vector<uint8_t>>> LittleEndianBytesFromBignum(
 StatusOr<std::pair<Sign, std::vector<uint8_t>>>
 PaddedLittleEndianBytesFromBignum(const BIGNUM &bignum, size_t padded_size);
 
-// Returns a BIGNUM representing |number|.
-StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromInteger(int64_t number);
+namespace internal {
 
-// Returns the value of |bignum| as an int64_t. If |bignum| does not fit in an
-// int64_t, then IntegerFromBignum() returns an OUT_OF_RANGE error.
+// Returns true if the host is big-endian and false otherwise.
+bool IsBigEndianSystem();
+
+}  // namespace internal
+
+// Returns a BIGNUM representing |number|.
+template <typename IntT>
+StatusOr<bssl::UniquePtr<BIGNUM>> BignumFromInteger(IntT number) {
+  static_assert(std::is_integral<IntT>::value, "IntT must be an integral type");
+
+  Sign sign = Sign::kPositive;
+  if (std::is_signed<IntT>::value && number < 0) {
+    sign = Sign::kNegative;
+    // Note that in two's complement arithmetic, the raw bits in
+    // std::numeric_limits<IntT>::min() are the same as the raw bits of the
+    // absolute value of std::numeric_limits<IntT>::min()) as an unsigned
+    // integer of the same width as IntT.
+    number = (number == std::numeric_limits<IntT>::min() ? number : -number);
+  }
+  ByteContainerView number_view(&number, sizeof(number));
+  return internal::IsBigEndianSystem()
+             ? BignumFromBigEndianBytes(number_view, sign)
+             : BignumFromLittleEndianBytes(number_view, sign);
+}
+
+// Returns the value of |bignum| as an IntT. If |bignum| does not fit in an
+// IntT, then IntegerFromBignum() returns an OUT_OF_RANGE error.
 //
 // This function leaks the value of |bignum| to non-cleansing memory.
-StatusOr<int64_t> IntegerFromBignum(const BIGNUM &bignum);
+template <typename IntT>
+StatusOr<IntT> IntegerFromBignum(const BIGNUM &bignum) {
+  static_assert(std::is_integral<IntT>::value, "IntT must be an integral type");
+
+  static absl::once_flag once_init;
+  static BIGNUM *int_t_min = nullptr;
+  static BIGNUM *int_t_max = nullptr;
+  absl::call_once(once_init, [] {
+    int_t_min = BignumFromInteger(std::numeric_limits<IntT>::min())
+                    .ValueOrDie()
+                    .release();
+    int_t_max = BignumFromInteger(std::numeric_limits<IntT>::max())
+                    .ValueOrDie()
+                    .release();
+  });
+
+  if (BN_cmp(&bignum, int_t_min) == -1 || BN_cmp(&bignum, int_t_max) == 1) {
+    return Status(error::GoogleError::OUT_OF_RANGE,
+                  "BIGNUM cannot fit in the desired type");
+  }
+
+  // This check is necessary because the absolute value of
+  // std::numeric_limits<IntT>::min() cannot fit in an IntT if IntT is signed.
+  if (std::is_signed<IntT>::value && BN_cmp(&bignum, int_t_min) == 0) {
+    return std::numeric_limits<IntT>::min();
+  }
+
+  Sign sign;
+  std::vector<uint8_t> bytes;
+  ASYLO_ASSIGN_OR_RETURN(std::tie(sign, bytes),
+                         LittleEndianBytesFromBignum(bignum));
+  bytes.resize(sizeof(IntT), 0);
+  if (internal::IsBigEndianSystem()) {
+    std::reverse(bytes.begin(), bytes.end());
+  }
+  IntT absolute_value = *reinterpret_cast<const IntT *>(bytes.data());
+  return std::is_unsigned<IntT>::value || sign == Sign::kPositive
+             ? absolute_value
+             : -absolute_value;
+}
 
 }  // namespace asylo
 

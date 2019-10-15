@@ -23,10 +23,12 @@
 
 #include <cstdint>
 #include <limits>
+#include <type_traits>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/types/span.h"
+#include "asylo/test/util/integral_type_test_data.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 
@@ -35,6 +37,7 @@ namespace {
 
 using ::testing::ElementsAreArray;
 using ::testing::Pair;
+using ::testing::Test;
 
 constexpr uint8_t kBytes[] = {84,  104, 101, 115, 101, 32,  118, 105, 111, 108,
                               101, 110, 116, 32,  100, 101, 108, 105, 103, 104,
@@ -147,32 +150,30 @@ TEST(BignumUtilTest, LittleEndianNegativeZeroPadded) {
                                 ElementsAreArray(kBytesWithZerosAppended))));
 }
 
-TEST(BignumUtilTest, IntegerRoundtrip) {
-  constexpr int64_t kValues[] = {0,
-                                 1729,
-                                 -1337,
-                                 std::numeric_limits<int64_t>::max(),
-                                 std::numeric_limits<int64_t>::min() + 1,
-                                 std::numeric_limits<int64_t>::min()};
+// A test fixture for conversions between BIGNUM and IntT.
+template <typename IntT>
+class BignumUtilIntegerTest : public Test {};
+TYPED_TEST_SUITE(BignumUtilIntegerTest, IntegralTypes);
 
-  for (int64_t value : absl::MakeSpan(kValues)) {
+TYPED_TEST(BignumUtilIntegerTest, IntegerRoundtrip) {
+  for (TypeParam value : IntegralTypeTestData<TypeParam>::kValues) {
     bssl::UniquePtr<BIGNUM> bignum;
     ASYLO_ASSERT_OK_AND_ASSIGN(bignum, BignumFromInteger(value));
-    EXPECT_THAT(IntegerFromBignum(*bignum), IsOkAndHolds(value));
+    EXPECT_THAT(IntegerFromBignum<TypeParam>(*bignum), IsOkAndHolds(value));
   }
 }
 
-TEST(BignumUtilTest, IntegerFromBignumFailsIfBignumIsOutOfRange) {
+TYPED_TEST(BignumUtilIntegerTest, IntegerFromBignumFailsIfBignumIsOutOfRange) {
   bssl::UniquePtr<BIGNUM> bignum;
   ASYLO_ASSERT_OK_AND_ASSIGN(bignum,
                              BignumFromBigEndianBytes(absl::MakeSpan(kBytes)));
-  EXPECT_THAT(IntegerFromBignum(*bignum),
+  EXPECT_THAT(IntegerFromBignum<TypeParam>(*bignum),
               StatusIs(error::GoogleError::OUT_OF_RANGE));
 
   ASYLO_ASSERT_OK_AND_ASSIGN(
       bignum,
       BignumFromBigEndianBytes(absl::MakeSpan(kBytes), Sign::kNegative));
-  EXPECT_THAT(IntegerFromBignum(*bignum),
+  EXPECT_THAT(IntegerFromBignum<TypeParam>(*bignum),
               StatusIs(error::GoogleError::OUT_OF_RANGE));
 }
 

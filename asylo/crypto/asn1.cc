@@ -27,7 +27,6 @@
 
 #include "absl/base/macros.h"
 #include "absl/strings/str_format.h"
-#include "asylo/crypto/bignum_util.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/util/status_macros.h"
@@ -334,21 +333,9 @@ StatusOr<Asn1Value> Asn1Value::CreateInteger(const BIGNUM &value) {
   return result;
 }
 
-StatusOr<Asn1Value> Asn1Value::CreateIntegerFromInt64(int64_t value) {
-  Asn1Value result;
-  ASYLO_RETURN_IF_ERROR(result.SetIntegerFromInt64(value));
-  return result;
-}
-
 StatusOr<Asn1Value> Asn1Value::CreateEnumerated(const BIGNUM &value) {
   Asn1Value result;
   ASYLO_RETURN_IF_ERROR(result.SetEnumerated(value));
-  return result;
-}
-
-StatusOr<Asn1Value> Asn1Value::CreateEnumeratedFromInt64(int64_t value) {
-  Asn1Value result;
-  ASYLO_RETURN_IF_ERROR(result.SetEnumeratedFromInt64(value));
   return result;
 }
 
@@ -399,12 +386,6 @@ StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetInteger() const {
   return std::move(result);
 }
 
-StatusOr<int64_t> Asn1Value::GetIntegerAsInt64() const {
-  bssl::UniquePtr<BIGNUM> bignum;
-  ASYLO_ASSIGN_OR_RETURN(bignum, GetInteger());
-  return IntegerFromBignum(*bignum);
-}
-
 StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetEnumerated() const {
   ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kEnumerated));
   bssl::UniquePtr<BIGNUM> result(
@@ -415,12 +396,6 @@ StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetEnumerated() const {
 
   // GCC 4.9 requires this std::move() invocation.
   return std::move(result);
-}
-
-StatusOr<int64_t> Asn1Value::GetEnumeratedAsInt64() const {
-  bssl::UniquePtr<BIGNUM> bignum;
-  ASYLO_ASSIGN_OR_RETURN(bignum, GetEnumerated());
-  return IntegerFromBignum(*bignum);
 }
 
 StatusOr<std::vector<uint8_t>> Asn1Value::GetOctetString() const {
@@ -468,12 +443,6 @@ Status Asn1Value::SetInteger(const BIGNUM &value) {
   return Status::OkStatus();
 }
 
-Status Asn1Value::SetIntegerFromInt64(int64_t value) {
-  bssl::UniquePtr<BIGNUM> bignum;
-  ASYLO_ASSIGN_OR_RETURN(bignum, BignumFromInteger(value));
-  return SetInteger(*bignum);
-}
-
 Status Asn1Value::SetEnumerated(const BIGNUM &value) {
   bssl::UniquePtr<ASN1_ENUMERATED> value_asn1_enumerated(
       BN_to_ASN1_ENUMERATED(const_cast<BIGNUM *>(&value), /*ai=*/nullptr));
@@ -484,12 +453,6 @@ Status Asn1Value::SetEnumerated(const BIGNUM &value) {
   ASN1_TYPE_set(value_.get(), V_ASN1_ENUMERATED,
                 value_asn1_enumerated.release());
   return Status::OkStatus();
-}
-
-Status Asn1Value::SetEnumeratedFromInt64(int64_t value) {
-  bssl::UniquePtr<BIGNUM> bignum;
-  ASYLO_ASSIGN_OR_RETURN(bignum, BignumFromInteger(value));
-  return SetEnumerated(*bignum);
 }
 
 Status Asn1Value::SetOctetString(ByteContainerView value) {
