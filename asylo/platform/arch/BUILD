@@ -14,7 +14,9 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 # Architecture abstraction layer.
 #
@@ -22,8 +24,6 @@ licenses(["notice"])  # Apache v2.0
 package(
     default_visibility = ["//asylo:implementation"],
 )
-
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Target exposing trusted architecture-dependent components for the build
 # configuration.

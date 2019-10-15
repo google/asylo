@@ -14,16 +14,16 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 package(
     default_visibility = ["//asylo:implementation"],
 )
 
 exports_files(["LICENSE"])
-
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Core untrusted Asylo components.
 cc_library(

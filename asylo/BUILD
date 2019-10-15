@@ -14,14 +14,14 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 # Asylo framework.
-
-exports_files(["LICENSE"])
 
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
+
+exports_files(["LICENSE"])
 
 package_group(
     name = "implementation",

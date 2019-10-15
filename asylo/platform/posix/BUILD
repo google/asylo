@@ -23,7 +23,7 @@ load(
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 # asylo POSIX interface.
 

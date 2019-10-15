@@ -14,12 +14,6 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
-package(
-    default_visibility = ["//visibility:public"],
-)
-
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:asylo.bzl",
@@ -31,6 +25,12 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:sim_enclave.bzl",
     "primitives_sim_enclave",
+)
+
+licenses(["notice"])
+
+package(
+    default_visibility = ["//visibility:public"],
 )
 
 primitives_sim_enclave(

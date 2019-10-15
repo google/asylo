@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 # Socket implementation, tests, and perf measurement tools.
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
@@ -26,6 +24,8 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 package(
     default_visibility = ["//asylo:implementation"],

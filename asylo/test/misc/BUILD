@@ -14,8 +14,6 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 # Enclave test cases.
 
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
@@ -27,6 +25,8 @@ load(
     "sgx_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 # A protobuf used by block enclave entries test. The input contains whether the
 # thread entering the enclave is to block/unblock entries, or the thread that
