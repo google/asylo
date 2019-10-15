@@ -21,9 +21,9 @@
 
 #include <signal.h>
 #include <memory>
+#include <unordered_map>
+#include <unordered_set>
 
-#include "absl/container/flat_hash_map.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/status.h"
 
@@ -77,11 +77,11 @@ class SignalManager {
   void operator=(SignalManager const &) = delete;
 
   mutable absl::Mutex signal_to_sigaction_lock_;
-  absl::flat_hash_map<int, std::unique_ptr<struct sigaction>>
+  std::unordered_map<int, std::unique_ptr<struct sigaction>>
       signal_to_sigaction_ ABSL_GUARDED_BY(signal_to_sigaction_lock_);
 
   mutable absl::Mutex signal_to_reset_lock_;
-  absl::flat_hash_set<int> signal_to_reset_
+  std::unordered_set<int> signal_to_reset_
       ABSL_GUARDED_BY(signal_to_reset_lock_);
 
   thread_local static sigset_t signal_mask_;
