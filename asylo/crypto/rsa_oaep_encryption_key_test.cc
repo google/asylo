@@ -25,6 +25,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include <gmock/gmock.h>
@@ -36,27 +37,18 @@
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace {
 
+using ::testing::ElementsAreArray;
 using ::testing::Eq;
+using ::testing::NotNull;
 using ::testing::Test;
 
 constexpr char kPlaintext[] = "secret message";
-
-constexpr char kRsa3072PublicKeyPem[] =
-    R"(-----BEGIN PUBLIC KEY-----
-MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAvxMDugH2cYvUWzjQhSgR
-D4nT5Gj/2d2NHK3eZ52hzOfwn7Rv7PvNIzKWZWsI0SWfrOyZ3cZvuqRLvuUp3ouk
-NPBfTMDGd6aUXK1U8ujgIIrSIY/Xq88tKoh3b63TuTgaMZuQhe+Yi5ME/JVMsHuc
-SiY9SmCNJSLWJbNDnY8tMpnMLo027EN7gBIPinTQJK6IeqDkdsoxFXuydpC367bJ
-qYSWSEbEgRpzrs4UUgdVMBc/fJU9zRqB50pFcVzbccFaB7XYiqZtrdqU07eorbpd
-XINBBPFdfePByVdiUW6zfsxf8eUXLVXk9TioF1MqcJcVuHMndry2na28vQG9ZNH4
-Glrb332S4+gfHYOTv5PJxLteIrWfyRstWxzuegpUcmrGSjgrMdjcuUOJjCnDJ2bW
-0r0UE9um8JQodJKpILtTpq1rV+QlseUPu90ZID3OTk5PSne6NtJe7bN+9WeJspQO
-C5xYNu944AfU3z0rnYRx0fEkiftBTiunrAioOA5jMQFHAgMBAAE=
------END PUBLIC KEY-----)";
 
 constexpr char kRsa2048PublicKeyPem[] =
     R"(-----BEGIN PUBLIC KEY-----
@@ -101,7 +93,80 @@ constexpr char kRsa1024PrivateKeyDer[] =
     "ad158c6d1a32f623b4eac34ae1118608c22574ec874e9028f956645f9a16300e3bd961cf24"
     "2809db58b848c403a2ab446cac03ef";
 
+// This public key corresponds with kRsa3072PrivateKeyDerBase64
+constexpr char kRsa3072PublicKeyPem[] =
+    R"(-----BEGIN PUBLIC KEY-----
+MIIBojANBgkqhkiG9w0BAQEFAAOCAY8AMIIBigKCAYEAzhyEsC43bxgIYmVMYWXq
+C0H0D0o9uYR1nw8SeCmj7ywTfTFkPtkeUFFGhd3pmP+/cJdCNcxlJrBAsnUOBMLW
+ZO+pVeeuLLt6CAtohH50mm+x0VE7GkKbaA10yNryBWT1EeeblJ3l5SOT+W7pVp2o
+q+MaMGMpJOFrMEjUCFMutdt9uCQlnfDpU297ai/luGrdufRet6Y9CPYINqwdizMI
+jYwG8medtD9L2i2GlPKn0aeJpoyXp4W9BKj+DlNcue9VBsa85Bw3Fq/P2f/5gizq
+wb0+ucQOUNaWNtp2To1t/I/XpCEXbkuYIyjhrjkLEFS5Lo4yvadjHb72Rm/xosJ9
+jDaRc+ySlEmp9kiXEQJsEzhxd16+m/7wufsdgNLSHNoRua+y5KK5oP77OIwkgv01
+NWavmYjDLWdZJ3w+dlv/F6HgxmsigZoHz1PfesgDfTQ6pZPTGopavgVf0twU93Nd
+I7mFs4MtE8RKDJgiyGm29vGqQ+cX8ubGrQXTM4soVd/TAgMBAAE=
+-----END PUBLIC KEY-----)";
+
+constexpr char kRsa3072PublicKeyDer[] =
+    "MIIBigKCAYEAzhyEsC43bxgIYmVMYWXqC0H0D0o9uYR1nw8SeCmj7ywTfTFkPtkeUFFGhd3pmP"
+    "+/cJdCNcxlJrBAsnUOBMLWZO+pVeeuLLt6CAtohH50mm+x0VE7GkKbaA10yNryBWT1EeeblJ3l"
+    "5SOT+W7pVp2oq+MaMGMpJOFrMEjUCFMutdt9uCQlnfDpU297ai/luGrdufRet6Y9CPYINqwdiz"
+    "MIjYwG8medtD9L2i2GlPKn0aeJpoyXp4W9BKj+DlNcue9VBsa85Bw3Fq/P2f/5gizqwb0+ucQO"
+    "UNaWNtp2To1t/I/XpCEXbkuYIyjhrjkLEFS5Lo4yvadjHb72Rm/xosJ9jDaRc+ySlEmp9kiXEQ"
+    "JsEzhxd16+m/7wufsdgNLSHNoRua+y5KK5oP77OIwkgv01NWavmYjDLWdZJ3w+dlv/F6Hgxmsi"
+    "gZoHz1PfesgDfTQ6pZPTGopavgVf0twU93NdI7mFs4MtE8RKDJgiyGm29vGqQ+cX8ubGrQXTM4"
+    "soVd/TAgMBAAE=";
+
+// This private key corresponds with kRsa3072PublicKeyPem above.
+constexpr char kRsa3072PrivateKeyDerBase64[] =
+    "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";
+
 constexpr uint8_t kBadKey[] = "bad key";
+
+StatusOr<std::unique_ptr<RsaOaepDecryptionKey>> CreateDecryptionKeyFromTestDer(
+    HashAlgorithm hash_alg) {
+  std::string der;
+  if (!absl::Base64Unescape(kRsa3072PrivateKeyDerBase64, &der)) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "Base64 data is not properly encoded");
+  }
+  std::unique_ptr<RsaOaepDecryptionKey> key;
+  ASYLO_ASSIGN_OR_RETURN(key,
+                         RsaOaepDecryptionKey::CreateFromDer(der, hash_alg));
+  // Explicit move is required by some versions of GCC.
+  return std::move(key);
+}
 
 void VerifyEncryptionDecryptionSuccess(
     const AsymmetricEncryptionKey &encryption_key,
@@ -115,20 +180,117 @@ void VerifyEncryptionDecryptionSuccess(
   EXPECT_THAT(decrypted_text, Eq(kPlaintext));
 }
 
+class RsaOaepHashAlgorithmTest
+    : public ::testing::TestWithParam<HashAlgorithm> {
+ protected:
+  void SetUp() override { ASSERT_TRUE(HashAlgorithm_IsValid(GetParam())); }
+};
+
+INSTANTIATE_TEST_SUITE_P(
+    RsaOaepHashAlgorithmTests, RsaOaepHashAlgorithmTest,
+    ::testing::Range(
+        static_cast<HashAlgorithm>(HashAlgorithm::UNKNOWN_HASH_ALGORITHM + 1),
+        static_cast<HashAlgorithm>(HashAlgorithm_MAX + 1)));
+
+TEST_P(RsaOaepHashAlgorithmTest, TestEncryptDecryptSuccess) {
+  std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(decryption_key,
+                             CreateDecryptionKeyFromTestDer(GetParam()));
+  std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
+                             decryption_key->GetEncryptionKey());
+  VerifyEncryptionDecryptionSuccess(*encryption_key, *decryption_key);
+}
+
+TEST_P(RsaOaepHashAlgorithmTest, TestEncryptDecryptFailsOnHashMismatch) {
+  std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(decryption_key,
+                             CreateDecryptionKeyFromTestDer(GetParam()));
+
+  HashAlgorithm mismatched_hash_alg = HashAlgorithm::SHA256;
+  if (GetParam() == mismatched_hash_alg) {
+    mismatched_hash_alg = HashAlgorithm::SHA_1;
+  }
+
+  std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      encryption_key, RsaOaepEncryptionKey::CreateFromPem(kRsa3072PublicKeyPem,
+                                                          mismatched_hash_alg));
+
+  std::vector<uint8_t> ciphertext;
+  CleansingVector<uint8_t> plaintext;
+  ASYLO_ASSERT_OK(encryption_key->Encrypt(kPlaintext, &ciphertext));
+  EXPECT_THAT(decryption_key->Decrypt(ciphertext, &plaintext),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST(RsaOaepEncryptionKeyTest, TestCreateWithInvalidHashAlgorithmFails) {
+  std::string pubkey_der;
+  ASSERT_TRUE(absl::Base64Unescape(kRsa3072PublicKeyDer, &pubkey_der));
+
+  EXPECT_THAT(RsaOaepEncryptionKey::CreateFromDer(
+                  pubkey_der, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(RsaOaepEncryptionKey::CreateFromPem(
+                  kRsa3072PublicKeyPem, HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(
+      CreateDecryptionKeyFromTestDer(HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  EXPECT_THAT(RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
+                  HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(RsaOaepEncryptionKeyTest, TestCreateWithBoringSslKeyPointerSuccess) {
+  std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
+                             RsaOaepEncryptionKey::CreateFromPem(
+                                 kRsa3072PublicKeyPem, HashAlgorithm::SHA256));
+
+  bssl::UniquePtr<RSA> rsa(RSAPublicKey_dup(encryption_key->GetRsaPublicKey()));
+  ASSERT_THAT(rsa.get(), NotNull());
+  EXPECT_THAT(RsaOaepEncryptionKey::Create(
+                  std::move(rsa), HashAlgorithm::UNKNOWN_HASH_ALGORITHM),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  rsa.reset(RSAPublicKey_dup(encryption_key->GetRsaPublicKey()));
+  ASSERT_THAT(rsa.get(), NotNull());
+  std::unique_ptr<RsaOaepEncryptionKey> encryption_key_copy;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      encryption_key_copy,
+      RsaOaepEncryptionKey::Create(std::move(rsa), HashAlgorithm::SHA256));
+
+  std::string der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(der, encryption_key->SerializeToDer());
+  EXPECT_THAT(encryption_key_copy->SerializeToDer(), IsOkAndHolds(der));
+}
+
 TEST(RsaOaepEncryptionKeyTest, TestCreateFromPemSerializationSuccess) {
+  constexpr auto kHashAlg = HashAlgorithm::SHA256;
+
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       encryption_key,
-      RsaOaepEncryptionKey::CreateFromPem(kRsa3072PublicKeyPem));
+      RsaOaepEncryptionKey::CreateFromPem(kRsa3072PublicKeyPem, kHashAlg));
   std::vector<uint8_t> ciphertext;
   ASYLO_ASSERT_OK(encryption_key->Encrypt(kPlaintext, &ciphertext));
+
+  std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(decryption_key,
+                             CreateDecryptionKeyFromTestDer(kHashAlg));
+
+  CleansingVector<uint8_t> kDecryptedPlaintext;
+  ASYLO_ASSERT_OK(decryption_key->Decrypt(ciphertext, &kDecryptedPlaintext));
+  EXPECT_THAT(kDecryptedPlaintext,
+              ElementsAreArray(kPlaintext, sizeof(kPlaintext) - 1));
 }
 
 TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep3072) {
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      encryption_key,
-      RsaOaepEncryptionKey::CreateFromPem(kRsa3072PublicKeyPem));
+  ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
+                             RsaOaepEncryptionKey::CreateFromPem(
+                                 kRsa3072PublicKeyPem, HashAlgorithm::SHA256));
   EXPECT_THAT(RSA_bits(encryption_key->GetRsaPublicKey()), Eq(3072));
   EXPECT_THAT(encryption_key->GetEncryptionScheme(),
               Eq(AsymmetricEncryptionScheme::RSA3072_OAEP));
@@ -136,9 +298,9 @@ TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep3072) {
 
 TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep2048) {
   std::unique_ptr<RsaOaepEncryptionKey> encryption_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      encryption_key,
-      RsaOaepEncryptionKey::CreateFromPem(kRsa2048PublicKeyPem));
+  ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
+                             RsaOaepEncryptionKey::CreateFromPem(
+                                 kRsa2048PublicKeyPem, HashAlgorithm::SHA256));
   EXPECT_THAT(RSA_bits(encryption_key->GetRsaPublicKey()), Eq(2048));
   EXPECT_THAT(encryption_key->GetEncryptionScheme(),
               Eq(AsymmetricEncryptionScheme::RSA2048_OAEP));
@@ -147,19 +309,21 @@ TEST(RsaOaepEncryptionKeyTest, TestGetAsymmetricEncryptionKeySchemeOaep2048) {
 TEST(RsaOaepEncryptionKeyTest,
      TestCreateAsymmetricEncryptionKeyWithInvalidSizeFails) {
   EXPECT_THAT(
-      RsaOaepEncryptionKey::CreateFromPem(kRsa1024PublicKeyPem).status(),
+      RsaOaepEncryptionKey::CreateFromPem(kRsa1024PublicKeyPem,
+                                          HashAlgorithm::SHA_1),
       StatusIs(error::GoogleError::INVALID_ARGUMENT, "Invalid key size: 1024"));
 }
 
 TEST(RsaOaepEncryptionKeyTest, TestCreateFromInvalidPemSerializationFails) {
-  EXPECT_THAT(RsaOaepEncryptionKey::CreateFromPem(kBadPublicKeyPem).status(),
+  EXPECT_THAT(RsaOaepEncryptionKey::CreateFromPem(kBadPublicKeyPem,
+                                                  HashAlgorithm::SHA256),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
 TEST(RsaOaepEncryptionKeyTest, TestDecryptInvalidInputFails) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey());
+      decryption_key, CreateDecryptionKeyFromTestDer(HashAlgorithm::SHA256));
 
   std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
@@ -174,22 +338,21 @@ TEST(RsaOaepEncryptionKeyTest, TestDecryptInvalidInputFails) {
               StatusIs(error::GoogleError::INTERNAL));
 }
 
-TEST(RsaOaepEncryptionKeyTest, TestEncryptDecryptSuccess) {
+TEST(RsaOaepEncryptionKeyTest, TestCreateRsa3072OaepDecryptionKeySuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey());
-
+      decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
+                          HashAlgorithm::SHA256));
   std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
                              decryption_key->GetEncryptionKey());
-
   VerifyEncryptionDecryptionSuccess(*encryption_key, *decryption_key);
 }
 
 TEST(RsaOaepEncryptionKeyTest, TestEncryptionKeySerializeAndRestoreSuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey());
+      decryption_key, CreateDecryptionKeyFromTestDer(HashAlgorithm::SHA256));
 
   std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
@@ -198,9 +361,9 @@ TEST(RsaOaepEncryptionKeyTest, TestEncryptionKeySerializeAndRestoreSuccess) {
   std::string serialized_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key, encryption_key->SerializeToDer());
   std::unique_ptr<AsymmetricEncryptionKey> restored_encryption_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      restored_encryption_key,
-      RsaOaepEncryptionKey::CreateFromDer(serialized_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(restored_encryption_key,
+                             RsaOaepEncryptionKey::CreateFromDer(
+                                 serialized_key, HashAlgorithm::SHA256));
 
   VerifyEncryptionDecryptionSuccess(*restored_encryption_key, *decryption_key);
 }
@@ -208,7 +371,7 @@ TEST(RsaOaepEncryptionKeyTest, TestEncryptionKeySerializeAndRestoreSuccess) {
 TEST(RsaOaepEncryptionKeyTest, TestDecryptionKeySerializeAndRestoreSuccess) {
   std::unique_ptr<AsymmetricDecryptionKey> decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey());
+      decryption_key, CreateDecryptionKeyFromTestDer(HashAlgorithm::SHA256));
 
   std::unique_ptr<AsymmetricEncryptionKey> encryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(encryption_key,
@@ -217,26 +380,25 @@ TEST(RsaOaepEncryptionKeyTest, TestDecryptionKeySerializeAndRestoreSuccess) {
   CleansingVector<uint8_t> serialized_key;
   ASYLO_ASSERT_OK(decryption_key->SerializeToDer(&serialized_key));
   std::unique_ptr<AsymmetricDecryptionKey> restored_decryption_key;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      restored_decryption_key,
-      RsaOaepDecryptionKey::CreateFromDer(
-          {serialized_key.data(), serialized_key.size()}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(restored_decryption_key,
+                             RsaOaepDecryptionKey::CreateFromDer(
+                                 serialized_key, HashAlgorithm::SHA256));
 
   VerifyEncryptionDecryptionSuccess(*encryption_key, *restored_decryption_key);
 }
 
 TEST(RsaOaepEncryptionKeyTest, TestCreateFromInvalidDerSerializationFails) {
   std::vector<uint8_t> serialized_key(kBadKey, kBadKey + sizeof(kBadKey));
-  EXPECT_THAT(RsaOaepDecryptionKey::CreateFromDer(serialized_key).status(),
-              StatusIs(error::GoogleError::INTERNAL));
+  EXPECT_THAT(
+      RsaOaepDecryptionKey::CreateFromDer(serialized_key, HashAlgorithm::SHA_1),
+      StatusIs(error::GoogleError::INTERNAL));
 }
 
 TEST(RsaOaepEncryptionKeyTest,
      TestCreateAsymmetricDecryptionKeyWithInvalidKeySizeFails) {
   EXPECT_THAT(
       RsaOaepDecryptionKey::CreateFromDer(
-          absl::HexStringToBytes(kRsa1024PrivateKeyDer))
-          .status(),
+          absl::HexStringToBytes(kRsa1024PrivateKeyDer), HashAlgorithm::SHA256),
       StatusIs(error::GoogleError::INVALID_ARGUMENT, "Invalid key size: 1024"));
 }
 

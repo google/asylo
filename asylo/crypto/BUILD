@@ -639,6 +639,7 @@ cc_library(
 
 cc_test(
     name = "rsa_oaep_encryption_key_test",
+    size = "small",
     srcs = ["rsa_oaep_encryption_key_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
@@ -650,6 +651,8 @@ cc_test(
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",

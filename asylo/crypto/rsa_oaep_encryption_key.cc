@@ -68,6 +68,15 @@ Status CheckKeySize(int key_size) {
   return Status::OkStatus();
 }
 
+// Checks if |hash_alg| is a valid hash and returns an error if it's not.
+Status CheckHashAlgorithm(HashAlgorithm hash_alg) {
+  if (hash_alg == HashAlgorithm::UNKNOWN_HASH_ALGORITHM) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "UNKNOWN_HASH_ALGORITHM is not valid for RSA-OAEP hashing.");
+  }
+  return Status::OkStatus();
+}
+
 // Defines a functor which performs RSA crypto with OAEP.
 class RsaOaepOperation {
  public:
@@ -84,8 +93,11 @@ class RsaOaepOperation {
   // Performs an BoringSSL EVP key crypto operation using an BoringSSL RSA
   // object.
   template <typename AllocatorT>
-  Status operator()(RSA *rsa, ByteContainerView input,
+  Status operator()(RSA *rsa, HashAlgorithm hash_alg, ByteContainerView input,
                     std::vector<uint8_t, AllocatorT> *output) const {
+    const EVP_MD *md;
+    ASYLO_ASSIGN_OR_RETURN(md, GetBoringSslHash(hash_alg));
+
     bssl::UniquePtr<EVP_PKEY> evp_key(EVP_PKEY_new());
     if (EVP_PKEY_set1_RSA(evp_key.get(), rsa) != 1) {
       return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
@@ -101,6 +113,9 @@ class RsaOaepOperation {
       return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
     }
     if (EVP_PKEY_CTX_set_rsa_padding(ctx.get(), RSA_PKCS1_OAEP_PADDING) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+    if (EVP_PKEY_CTX_set_rsa_oaep_md(ctx.get(), md) != 1) {
       return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
     }
 
@@ -123,6 +138,27 @@ class RsaOaepOperation {
   InitFunc init_func_;
   CryptoFunc crypto_func_;
 
+  static StatusOr<const EVP_MD *> GetBoringSslHash(HashAlgorithm hash_alg) {
+    switch (hash_alg) {
+      case HashAlgorithm::SHA_1:
+        return EVP_sha1();
+      case HashAlgorithm::SHA224:
+        return EVP_sha224();
+      case HashAlgorithm::SHA256:
+        return EVP_sha256();
+      case HashAlgorithm::SHA384:
+        return EVP_sha384();
+      case HashAlgorithm::SHA512:
+        return EVP_sha512();
+      case HashAlgorithm::UNKNOWN_HASH_ALGORITHM:
+        break;
+    }
+
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrCat("Invalid hash algorithm in RSA key object: ", hash_alg));
+  }
+
   RsaOaepOperation(InitFunc init_func, CryptoFunc crypto_func)
       : init_func_(init_func), crypto_func_(crypto_func) {}
 };
@@ -136,7 +172,9 @@ const RsaOaepOperation RsaOaepOperation::kDecrypt{EVP_PKEY_decrypt_init,
 }  // namespace
 
 StatusOr<std::unique_ptr<RsaOaepEncryptionKey>>
-RsaOaepEncryptionKey::CreateFromDer(ByteContainerView serialized_key) {
+RsaOaepEncryptionKey::CreateFromDer(ByteContainerView serialized_key,
+                                    HashAlgorithm hash_alg) {
+  ASYLO_RETURN_IF_ERROR(CheckHashAlgorithm(hash_alg));
   // The input data containing the serialized public key.
   bssl::UniquePtr<RSA> public_key(
       RSA_public_key_from_bytes(serialized_key.data(), serialized_key.size()));
@@ -145,11 +183,13 @@ RsaOaepEncryptionKey::CreateFromDer(ByteContainerView serialized_key) {
   }
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(public_key.get())));
 
-  return Create(std::move(public_key));
+  return Create(std::move(public_key), hash_alg);
 }
 
 StatusOr<std::unique_ptr<RsaOaepEncryptionKey>>
-RsaOaepEncryptionKey::CreateFromPem(ByteContainerView serialized_key) {
+RsaOaepEncryptionKey::CreateFromPem(ByteContainerView serialized_key,
+                                    HashAlgorithm hash_alg) {
+  ASYLO_RETURN_IF_ERROR(CheckHashAlgorithm(hash_alg));
   // The input data containing the serialized public key.
   bssl::UniquePtr<BIO> key_bio(
       BIO_new_mem_buf(serialized_key.data(), serialized_key.size()));
@@ -163,11 +203,12 @@ RsaOaepEncryptionKey::CreateFromPem(ByteContainerView serialized_key) {
   }
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(public_key.get())));
 
-  return Create(std::move(public_key));
+  return Create(std::move(public_key), hash_alg);
 }
 
 StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> RsaOaepEncryptionKey::Create(
-    bssl::UniquePtr<RSA> public_key) {
+    bssl::UniquePtr<RSA> public_key, HashAlgorithm hash_alg) {
+  ASYLO_RETURN_IF_ERROR(CheckHashAlgorithm(hash_alg));
   const BIGNUM *n;
   const BIGNUM *e;
   RSA_get0_key(public_key.get(), &n, &e, /*out_d=*/nullptr);
@@ -177,7 +218,7 @@ StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> RsaOaepEncryptionKey::Create(
   }
 
   return absl::WrapUnique<RsaOaepEncryptionKey>(
-      new RsaOaepEncryptionKey(std::move(public_key)));
+      new RsaOaepEncryptionKey(std::move(public_key), hash_alg));
 }
 
 const RSA *RsaOaepEncryptionKey::GetRsaPublicKey() const {
@@ -200,22 +241,27 @@ StatusOr<std::string> RsaOaepEncryptionKey::SerializeToDer() const {
 
 Status RsaOaepEncryptionKey::Encrypt(ByteContainerView plaintext,
                                      std::vector<uint8_t> *ciphertext) const {
-  return RsaOaepOperation::kEncrypt(public_key_.get(), plaintext, ciphertext);
+  return RsaOaepOperation::kEncrypt(public_key_.get(), hash_alg_, plaintext,
+                                    ciphertext);
 }
 
-RsaOaepEncryptionKey::RsaOaepEncryptionKey(bssl::UniquePtr<RSA> public_key)
-    : public_key_(std::move(public_key)) {}
+RsaOaepEncryptionKey::RsaOaepEncryptionKey(bssl::UniquePtr<RSA> public_key,
+                                           HashAlgorithm hash_alg)
+    : public_key_(std::move(public_key)), hash_alg_(hash_alg) {}
 
 StatusOr<std::unique_ptr<RsaOaepDecryptionKey>>
-RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey() {
+RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(HashAlgorithm hash_alg) {
+  ASYLO_RETURN_IF_ERROR(CheckHashAlgorithm(hash_alg));
   bssl::UniquePtr<RSA> private_key(RSA_new());
   ASYLO_ASSIGN_OR_RETURN(private_key, CreateRsaKey(/*number_of_bits=*/3072));
   return absl::WrapUnique<RsaOaepDecryptionKey>(
-      new RsaOaepDecryptionKey(std::move(private_key)));
+      new RsaOaepDecryptionKey(std::move(private_key), hash_alg));
 }
 
 StatusOr<std::unique_ptr<RsaOaepDecryptionKey>>
-RsaOaepDecryptionKey::CreateFromDer(ByteContainerView serialized_key) {
+RsaOaepDecryptionKey::CreateFromDer(ByteContainerView serialized_key,
+                                    HashAlgorithm hash_alg) {
+  ASYLO_RETURN_IF_ERROR(CheckHashAlgorithm(hash_alg));
   // The input data containing the serialized public key.
   bssl::UniquePtr<RSA> private_key(
       RSA_private_key_from_bytes(serialized_key.data(), serialized_key.size()));
@@ -225,7 +271,7 @@ RsaOaepDecryptionKey::CreateFromDer(ByteContainerView serialized_key) {
   ASYLO_RETURN_IF_ERROR(CheckKeySize(RSA_bits(private_key.get())));
 
   return absl::WrapUnique<RsaOaepDecryptionKey>(
-      new RsaOaepDecryptionKey(std::move(private_key)));
+      new RsaOaepDecryptionKey(std::move(private_key), hash_alg));
 }
 
 AsymmetricEncryptionScheme RsaOaepDecryptionKey::GetEncryptionScheme() const {
@@ -250,15 +296,17 @@ RsaOaepDecryptionKey::GetEncryptionKey() const {
   if (!public_key_copy) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
-  return RsaOaepEncryptionKey::Create(std::move(public_key_copy));
+  return RsaOaepEncryptionKey::Create(std::move(public_key_copy), hash_alg_);
 }
 
 Status RsaOaepDecryptionKey::Decrypt(
     ByteContainerView ciphertext, CleansingVector<uint8_t> *plaintext) const {
-  return RsaOaepOperation::kDecrypt(private_key_.get(), ciphertext, plaintext);
+  return RsaOaepOperation::kDecrypt(private_key_.get(), hash_alg_, ciphertext,
+                                    plaintext);
 }
 
-RsaOaepDecryptionKey::RsaOaepDecryptionKey(bssl::UniquePtr<RSA> private_key)
-    : private_key_(std::move(private_key)) {}
+RsaOaepDecryptionKey::RsaOaepDecryptionKey(bssl::UniquePtr<RSA> private_key,
+                                           HashAlgorithm hash_alg)
+    : private_key_(std::move(private_key)), hash_alg_(hash_alg) {}
 
 }  // namespace asylo

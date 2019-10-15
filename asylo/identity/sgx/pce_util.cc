@@ -48,11 +48,13 @@ StatusOr<std::vector<uint8_t>> SerializeRsa3072Ppidek(
   switch (encoding) {
     case AsymmetricKeyEncoding::ASYMMETRIC_KEY_DER:
       ASYLO_ASSIGN_OR_RETURN(encryption_key,
-                             RsaOaepEncryptionKey::CreateFromDer(ppidek.key()));
+                             RsaOaepEncryptionKey::CreateFromDer(
+                                 ppidek.key(), kPpidRsaOaepHashAlgorithm));
       break;
     case AsymmetricKeyEncoding::ASYMMETRIC_KEY_PEM:
       ASYLO_ASSIGN_OR_RETURN(encryption_key,
-                             RsaOaepEncryptionKey::CreateFromPem(ppidek.key()));
+                             RsaOaepEncryptionKey::CreateFromPem(
+                                 ppidek.key(), kPpidRsaOaepHashAlgorithm));
       break;
     default:
       return Status(error::GoogleError::INVALID_ARGUMENT,
@@ -69,6 +71,8 @@ const size_t kRsa3072SerializedExponentSize = 4;
 // The size of an ECDSA-P256 signature. The r parameter is 32 bytes and the s
 // parameter is 32 bytes, totaling 64 bytes.
 const size_t kEcdsaP256SignatureSize = 64;
+
+const HashAlgorithm kPpidRsaOaepHashAlgorithm = HashAlgorithm::SHA256;
 
 absl::optional<uint8_t> AsymmetricEncryptionSchemeToPceCryptoSuite(
     AsymmetricEncryptionScheme asymmetric_encryption_scheme) {

@@ -40,6 +40,9 @@ namespace sgx {
 ABSL_CONST_INIT extern const size_t kRsa3072SerializedExponentSize;
 ABSL_CONST_INIT extern const size_t kEcdsaP256SignatureSize;
 
+// The hash used by the PCE when encrypting the PPID with RSA-OAEP.
+ABSL_CONST_INIT extern const HashAlgorithm kPpidRsaOaepHashAlgorithm;
+
 // This file contains utility functions related to Intel-defined protocols used
 // by the Provisioning Certification Enclave (PCE).
 

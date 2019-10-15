@@ -26,6 +26,8 @@ enum HashAlgorithm {
   SHA256 = 2;
   SHA384 = 3;
   SHA512 = 4;
+
+  SHA_1 = 5;
 }
 
 enum AeadScheme {

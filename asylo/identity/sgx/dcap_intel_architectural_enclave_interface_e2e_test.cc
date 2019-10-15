@@ -177,8 +177,8 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
 
   std::unique_ptr<RsaOaepDecryptionKey> ppid_decryption_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      ppid_decryption_key,
-      RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey());
+      ppid_decryption_key, RsaOaepDecryptionKey::CreateRsa3072OaepDecryptionKey(
+                               kPpidRsaOaepHashAlgorithm));
 
   AsymmetricEncryptionKeyProto ppid_ek_proto;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -209,10 +209,10 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
   EXPECT_THAT(signature_scheme, Eq(SignatureScheme::ECDSA_P256_SHA256));
   EXPECT_THAT(pce_svn_from_get_target_info, Eq(pce_svn));
 
-  EXPECT_THAT(
-      ppid_encrypted.size(),
-      Eq(GetEncryptedDataSize(ppid_decryption_key->GetEncryptionScheme())
-             .ValueOrDie()));
+  CleansingVector<uint8_t> ppid_decrypted;
+  ASYLO_ASSERT_OK(
+      ppid_decryption_key->Decrypt(ppid_encrypted, &ppid_decrypted));
+  EXPECT_THAT(ppid_decrypted.size(), Eq(kPpidSize));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, PceSignReport) {

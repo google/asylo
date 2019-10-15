@@ -47,24 +47,25 @@ namespace asylo {
 // max_size <= k - 2hLen - 2, where k is the length in octets of the RSA modulus
 // n, and hLen is the digest length in octets of OAEP function.
 //
-// For example, the current implementation of OAEP utilizes SHA-1 which produces
-// a digest size of 20 bytes, an RsaOaepEncryptionKey with a 3072-bit key can
-// encrypt a message that has maximum size 384 - 2 * 20 - 2 = 342 bytes.
+// For example, consider OAEP with SHA-1 which produces a digest size of 20
+// bytes. An RsaOaepEncryptionKey with a 3072-bit key can encrypt a message that
+// has maximum size 384 - 2 * 20 - 2 = 342 bytes.
 class RsaOaepEncryptionKey : public AsymmetricEncryptionKey {
  public:
   // Creates an RSA encryption key from the given DER-encoded
-  // |serialized_key|.
+  // |serialized_key|. Uses |hash_alg| for OAEP padding.
   static StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> CreateFromDer(
-      ByteContainerView serialized_key);
+      ByteContainerView serialized_key, HashAlgorithm hash_alg);
 
   // Creates an RSA encryption key from the given PEM-encoded
-  // |serialized_key|.
+  // |serialized_key|. Uses |hash_alg| for OAEP padding.
   static StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> CreateFromPem(
-      ByteContainerView serialized_key);
+      ByteContainerView serialized_key, HashAlgorithm hash_alg);
 
-  // Creates a new RSA encryption key from the given |public_key|.
+  // Creates a new RSA encryption key from the given |public_key|, using
+  // |hash_alg| for OAEP hashing. Uses |hash_alg| for OAEP padding.
   static StatusOr<std::unique_ptr<RsaOaepEncryptionKey>> Create(
-      bssl::UniquePtr<RSA> public_key);
+      bssl::UniquePtr<RSA> public_key, HashAlgorithm hash_alg);
 
   const RSA *GetRsaPublicKey() const;
 
@@ -78,10 +79,13 @@ class RsaOaepEncryptionKey : public AsymmetricEncryptionKey {
                  std::vector<uint8_t> *ciphertext) const override;
 
  private:
-  RsaOaepEncryptionKey(bssl::UniquePtr<RSA> public_key);
+  RsaOaepEncryptionKey(bssl::UniquePtr<RSA> public_key, HashAlgorithm hash_alg);
 
   // An RSA public key.
   bssl::UniquePtr<RSA> public_key_;
+
+  // The hash algorithm to use with the OAEP algorithm.
+  HashAlgorithm hash_alg_;
 };
 
 // An implementation of the AsymmetricDecryptionKey interface that uses RSA-OAEP
@@ -89,14 +93,14 @@ class RsaOaepEncryptionKey : public AsymmetricEncryptionKey {
 class RsaOaepDecryptionKey : public AsymmetricDecryptionKey {
  public:
   // Creates a random RSA-3072 decryption key. The public exponent is always set
-  // to F4.
+  // to 65537. Uses |hash_alg| for OAEP padding.
   static StatusOr<std::unique_ptr<RsaOaepDecryptionKey>>
-  CreateRsa3072OaepDecryptionKey();
+  CreateRsa3072OaepDecryptionKey(HashAlgorithm hash_alg);
 
   // Creates an RSA decryption key from the given DER-encoded
-  // |serialized_key|.
+  // |serialized_key|. Uses |hash_alg| for OAEP padding.
   static StatusOr<std::unique_ptr<RsaOaepDecryptionKey>> CreateFromDer(
-      ByteContainerView serialized_key);
+      ByteContainerView serialized_key, HashAlgorithm hash_alg);
 
   // From AsymmetricDecryptionKey.
 
@@ -112,10 +116,14 @@ class RsaOaepDecryptionKey : public AsymmetricDecryptionKey {
                  CleansingVector<uint8_t> *plaintext) const override;
 
  private:
-  RsaOaepDecryptionKey(bssl::UniquePtr<RSA> private_key);
+  RsaOaepDecryptionKey(bssl::UniquePtr<RSA> private_key,
+                       HashAlgorithm hash_alg);
 
   // An RSA private key.
   bssl::UniquePtr<RSA> private_key_;
+
+  // The hash algorithm to use with the OAEP algorithm.
+  HashAlgorithm hash_alg_;
 };
 
 }  // namespace asylo
