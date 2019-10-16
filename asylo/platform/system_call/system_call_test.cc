@@ -279,11 +279,13 @@ TEST(SystemCallTest, BoundedBufferByParamLenTest) {
   // Watch stdin for input.
   fds_actual[0].fd = STDIN_FILENO;
   fds_actual[0].events = POLLIN;
+  fds_actual[0].revents = -1;
   fds_expected[0].fd = STDIN_FILENO;
   fds_expected[0].events = POLLIN;
   // Watch stdout for ability to write.
   fds_actual[1].fd = STDOUT_FILENO;
   fds_actual[1].events = POLLOUT;
+  fds_actual[1].revents = -1;
   fds_expected[1].fd = STDOUT_FILENO;
   fds_expected[1].events = POLLOUT;
 
