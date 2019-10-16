@@ -3086,13 +3086,10 @@ diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1344 @@
+@@ -0,0 +1,1341 @@
 +# linux-sgx is the Intel SGX SDK
 +
-+load(
-+    ":sgx_sdk.bzl",
-+    "sgx",
-+)
++load(":sgx_sdk.bzl", "sgx")
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
