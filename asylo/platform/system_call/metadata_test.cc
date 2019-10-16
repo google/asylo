@@ -250,9 +250,6 @@ TEST(MetaDataTest, Summarize) {
   // int close(int fd);
   EXPECT_THAT(Summarize(SYS_close), StrEq("close/1(fd: u32)"));
 
-  // int pipe(int pipefd[2]);
-  EXPECT_THAT(Summarize(SYS_pipe), StrEq("pipe/1(fildes: out fixed[8])"));
-
   // int pipe2(int pipefd[2], int flags);
   EXPECT_THAT(Summarize(SYS_pipe2),
               StrEq("pipe2/2(fildes: out fixed[8], flags: s32)"));

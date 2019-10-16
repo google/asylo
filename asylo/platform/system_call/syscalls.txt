@@ -96,7 +96,6 @@ SYSCALL_DEFINE5(select, int, nfds, \in_out fd_set *, readfds,
 SYSCALL_DEFINE1(chdir, const char *, filename)
 SYSCALL_DEFINE1(close, unsigned int, fd)
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
-SYSCALL_DEFINE1(pipe, \out int * [count:2], fildes)
 SYSCALL_DEFINE2(access, const char *, filename, int, mode)
 SYSCALL_DEFINE2(fstat, unsigned int, fd, \out struct stat *, statbuf)
 SYSCALL_DEFINE2(fstatfs, int, fd, \out struct statfs *, statbuf)
@@ -110,15 +109,15 @@ SYSCALL_DEFINE3(chown, const char *, filename, uid_t, user, gid_t, group)
 SYSCALL_DEFINE3(fchown, unsigned int, fd, uid_t, user, gid_t, group)
 SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 SYSCALL_DEFINE3(open, const char *, filename, int, flags, umode_t, mode)
-SYSCALL_DEFINE3(read, unsigned int, fd, \out char * [bound:count], buf, size_t,
+SYSCALL_DEFINE3(read, unsigned int, fd, \out void * [bound:count], buf, size_t,
                 count)
 SYSCALL_DEFINE3(readlink, const char *, path, \out char * [bound:bufsiz], buf,
                 int, bufsiz)
-SYSCALL_DEFINE3(write, unsigned int, fd, const char * [bound:count], buf,
+SYSCALL_DEFINE3(write, unsigned int, fd, \in const void * [bound:count], buf,
                 size_t, count)
-SYSCALL_DEFINE4(pread64, unsigned int, fd, \out char * [bound:count], buf,
+SYSCALL_DEFINE4(pread64, unsigned int, fd, \out void * [bound:count], buf,
                 size_t, count, off_t, offset)
-SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const char * [bound:count],
+SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void * [bound:count],
                 buf, size_t, count, off_t, offset)
 
 // Process Management
@@ -149,8 +148,8 @@ SYSCALL_DEFINE3(connect, int, fd, \in void * [bound:addrlen], uservaddr,
 SYSCALL_DEFINE3(getsockname, int, fd, struct sockaddr *, usockaddr, int *,
                 usockaddr_len)
 
-SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname, const void *,
-                optval, socklen_t, optlen)
+SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname,
+                \in const void * [bound:optlen], optval, socklen_t, optlen)
 
 SYSCALL_DEFINE2(listen, int, fd, int, backlog)
 

@@ -190,7 +190,7 @@ TEST(SystemCallTest, FixedOutTest) {
 TEST(SystemCallTest, ArrayOutTest) {
   enc_set_dispatch_syscall(SystemCallDispatcher);
   int fd[2];
-  EXPECT_THAT(enc_untrusted_syscall(SYS_pipe, &fd), Eq(0));
+  EXPECT_THAT(enc_untrusted_syscall(SYS_pipe2, &fd, 0), Eq(0));
   const char message[] = "testing one, two, three...";
   int message_len = strlen(message) + 1;
   EXPECT_THAT(write(fd[1], &message, message_len), Eq(message_len));
