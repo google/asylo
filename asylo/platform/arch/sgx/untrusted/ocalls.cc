@@ -60,6 +60,7 @@
 #include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/common/futex.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
@@ -74,7 +75,6 @@
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
-#include "asylo/platform/common/futex.h"
 
 namespace {
 
@@ -286,7 +286,7 @@ int ocall_enc_untrusted_register_signal_handler(
   }
   // Set the flag so that sa_sigaction is registered as the signal handler
   // instead of sa_handler.
-  newact.sa_flags = asylo::FromBridgeSignalFlags(handler->flags);
+  newact.sa_flags = handler->flags;
   newact.sa_flags |= SA_SIGINFO;
   struct sigaction oldact;
   return sigaction(signum, &newact, &oldact);
@@ -568,10 +568,10 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
 
 void ocall_untrusted_local_free(void *buffer) { free(buffer); }
 
-void ocall_enc_untrusted_sys_futex_wait(int32_t * futex, int32_t expected) {
+void ocall_enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected) {
   return sys_futex_wait(futex, expected);
 }
 
-void ocall_enc_untrusted_sys_futex_wake(int32_t * futex) {
+void ocall_enc_untrusted_sys_futex_wake(int32_t *futex) {
   return sys_futex_wake(futex);
 }

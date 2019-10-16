@@ -43,6 +43,7 @@
 #include "asylo/platform/primitives/util/primitive_locks.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/primitives/x86/spin_lock.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/cleanup.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -78,7 +79,7 @@ int RegisterSignalHandler(
   BridgeSignalHandler handler;
   handler.sigaction = bridge_sigaction;
   asylo::ToBridgeSigSet(&mask, &handler.mask);
-  handler.flags = asylo::ToBridgeSignalFlags(flags);
+  handler.flags = TokLinuxSignalFlag(flags);
   int ret;
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
       &ret, bridge_signum, &handler, enclave_name));
@@ -341,11 +342,11 @@ void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
       free_list, static_cast<bridge_size_t>(count)));
 }
 
-void enc_untrusted_sys_futex_wait(int32_t * futex, int32_t expected) {
+void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected) {
   CHECK_OCALL(ocall_enc_untrusted_sys_futex_wait(futex, expected));
 }
 
-void enc_untrusted_sys_futex_wake(int32_t * futex) {
+void enc_untrusted_sys_futex_wake(int32_t *futex) {
   CHECK_OCALL(ocall_enc_untrusted_sys_futex_wake(futex));
 }
 

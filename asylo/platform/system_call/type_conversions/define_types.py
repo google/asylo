@@ -346,6 +346,13 @@ define_constants(
     ],
     include_header_file="syslog.h")
 
+define_constants(
+    name="SignalFlag",
+    values=["SA_NODEFER", "SA_RESETHAND"],
+    include_header_file="signal.h",
+    multi_valued=True,
+    data_type="int64_t")
+
 define_struct(
     name="timespec",
     values=[

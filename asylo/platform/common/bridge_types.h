@@ -19,15 +19,8 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 
-#include <netdb.h>
-#include <netinet/tcp.h>
 #include <signal.h>
 #include <stdint.h>
-#include <sys/resource.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/wait.h>
-#include <syslog.h>
 
 #include "absl/base/attributes.h"
 
@@ -87,12 +80,6 @@ enum SignalCode {
   BRIDGE_SI_MESGQ = 5,
 };
 
-// The signal behavior flags.
-enum SignalFlags {
-  BRIDGE_SA_NODEFER = 0x01,
-  BRIDGE_SA_RESETHAND = 0x02,
-};
-
 struct bridge_siginfo_t {
   int32_t si_signo;
   int32_t si_code;
@@ -101,7 +88,7 @@ struct bridge_siginfo_t {
 struct BridgeSignalHandler {
   void (*sigaction)(int, struct bridge_siginfo_t *, void *);
   bridge_sigset_t mask;
-  int flags;
+  int64_t flags;
 };
 
 #ifdef __cplusplus

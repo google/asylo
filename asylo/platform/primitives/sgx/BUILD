@@ -89,6 +89,7 @@ cc_library(
                 "//asylo/platform/posix/threading:thread_manager",
                 "//asylo/platform/common:bridge_types",
                 "//asylo/platform/posix/signal:signal_manager",
+                "//asylo/platform/system_call/type_conversions",
             ],
         },
         no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",
