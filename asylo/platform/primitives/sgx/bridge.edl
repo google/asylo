@@ -91,5 +91,10 @@ enclave {
         [in, string]const char *enclave_name,
 	      bool restore_snapshot)
 	      allow(ecall_take_snapshot, ecall_restore) propagate_errno;
+    void ocall_enc_untrusted_sys_futex_wait([user_check] int32_t * futex,
+        int32_t expected) propagate_errno;
+    void ocall_enc_untrusted_sys_futex_wake([user_check] int32_t * futex)
+        propagate_errno;
+
   };
 };

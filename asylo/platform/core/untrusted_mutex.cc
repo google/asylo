@@ -21,8 +21,8 @@
 #include <cstdio>
 #include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/core/atomic.h"
+#include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 
@@ -72,9 +72,8 @@ UntrustedMutex::~UntrustedMutex() {
 void UntrustedMutex::Lock() {
   // Ensure the value of the shared futex word is valid.
   if (*untrusted_futex_ < kUnlocked || *untrusted_futex_ > kQueued) {
-    primitives::TrustedPrimitives::DebugPuts(
+    primitives::TrustedPrimitives::BestEffortAbort(
         "Invalid futex value in UntrustedMutex::Lock.");
-    abort();
   }
 
   if (is_recursive_ && owner_ == enc_thread_self()) {
@@ -101,7 +100,7 @@ void UntrustedMutex::Lock() {
 
       // Unless another thread has released the futex already, suspend until the
       // thread are awoken by a call to futex_wait.
-      enc_untrusted_sys_futex_wait(untrusted_futex_, kQueued);
+      primitives::enc_untrusted_sys_futex_wait(untrusted_futex_, kQueued);
 
       // After returning from futex_wait, try to obtain it again. On success,
       // futex_value will be set to kUnlocked and the loop is finished. Note
@@ -149,9 +148,8 @@ void UntrustedMutex::Unlock() {
   // It is a fatal error to attempt to unlock a mutex the calling thread
   // does not own.
   if (owner_ != enc_thread_self()) {
-    primitives::TrustedPrimitives::DebugPuts(
+    primitives::TrustedPrimitives::BestEffortAbort(
         "UntrustedMutex::Unlock called by thread that does not own it.");
-    abort();
   }
 
   if (is_recursive_) {
@@ -176,7 +174,7 @@ void UntrustedMutex::Unlock() {
     // suspended threads.
     if (futex_value != kHeld) {
       AtomicRelease(untrusted_futex_);
-      enc_untrusted_sys_futex_wake(untrusted_futex_);
+      primitives::enc_untrusted_sys_futex_wake(untrusted_futex_);
     }
   }
 }

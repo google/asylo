@@ -53,18 +53,6 @@ extern "C" {
 int enc_untrusted_get_errno();
 
 //////////////////////////////////////
-//            Threading             //
-//////////////////////////////////////
-
-// Exits the enclave and, if the value stored at |futex| equals |expected|,
-// suspends the calling thread until it is resumed by a call to
-// enc_untrusted_sys_futex_wake. Otherwise returns immediately.
-void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected);
-
-// Exits the enclave and wakes a suspended thread blocked on |futex|.
-void enc_untrusted_sys_futex_wake(int32_t *futex);
-
-//////////////////////////////////////
 //            inotify.h             //
 //////////////////////////////////////
 

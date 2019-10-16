@@ -341,5 +341,13 @@ void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
       free_list, static_cast<bridge_size_t>(count)));
 }
 
+void enc_untrusted_sys_futex_wait(int32_t * futex, int32_t expected) {
+  CHECK_OCALL(ocall_enc_untrusted_sys_futex_wait(futex, expected));
+}
+
+void enc_untrusted_sys_futex_wake(int32_t * futex) {
+  CHECK_OCALL(ocall_enc_untrusted_sys_futex_wake(futex));
+}
+
 }  // namespace primitives
 }  // namespace asylo

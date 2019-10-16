@@ -105,7 +105,6 @@ genrule(
         "sgx/bridge.edl",
         "//asylo/platform/primitives/sgx:errno.edl",
         "//asylo/third_party/intel:sgx_tstdc.edl",
-        "//asylo/platform/arch/sgx/host_calls_generator:generated_bridge.edl",
         "//asylo/platform/primitives/sgx:bridge.edl",
     ],
     outs = [
@@ -126,7 +125,6 @@ cc_library(
         "sgx/untrusted/generated_bridge_u.h",
         "sgx/untrusted/ocalls.cc",
         "sgx/untrusted/sgx_client.cc",
-        "//asylo/platform/arch/sgx/host_calls_generator:generated_ocalls.cc",
     ],
     hdrs = ["sgx/untrusted/sgx_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -171,7 +169,6 @@ cc_library(
         "sgx/trusted/ecalls.cc",
         "sgx/trusted/enclave_syscalls.cc",
         "sgx/trusted/host_calls.cc",
-        "//asylo/platform/arch/sgx/host_calls_generator:generated_host_calls.cc",
     ],
     hdrs = [
         "include/trusted/host_calls.h",

@@ -42,7 +42,6 @@ enclave {
 
   from "../../../platform/primitives/sgx/bridge.edl" import *;
   from "../../../platform/primitives/sgx/errno.edl" import *;
-  from "host_calls_generator/generated_bridge.edl" import *;
 
   // Unless otherwise specified, each of the following calls invokes the
   // corresponding function on the host.
