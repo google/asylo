@@ -29,6 +29,8 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/attestation_key_certificate.pb.h"
+#include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -47,6 +49,10 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
   static StatusOr<std::unique_ptr<AttestationKeyCertificateImpl>> Create(
       const Certificate &certificate);
 
+  // Extracts the SgxIdentity asserted by the serialized Report in the
+  // certificate.
+  StatusOr<SgxIdentity> GetAssertedSgxIdentity() const;
+
   // From CertificateInterface.
 
   Status Verify(const CertificateInterface &issuer_certificate,
@@ -63,11 +69,13 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
  private:
   explicit AttestationKeyCertificateImpl(
       AttestationKeyCertificate attestation_key_cert,
-      AsymmetricSigningKeyProto subject_key);
+      AsymmetricSigningKeyProto subject_key, Report report);
 
   const AttestationKeyCertificate attestation_key_cert_;
 
   const AsymmetricSigningKeyProto subject_key_;
+
+  const Report report_;
 };
 
 }  // namespace sgx

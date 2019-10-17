@@ -21,6 +21,7 @@
 #include <memory>
 #include <string>
 
+#include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
@@ -36,6 +37,8 @@
 #include "asylo/identity/sgx/attestation_key_certificate.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
+#include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/statusor.h"
 
@@ -81,6 +84,29 @@ constexpr char kTestAttestationKeyCertificateDerKeyHex[] =
     "73746174696f6e204b65791214504345205369676e205265706f72742076302e311a480801"
     "12440a20a6a6e3bf578aa7bb236bae4cf90eb2d69ce703c35354c860826f8a8d424d9b7d12"
     "20b375ee4ba12e616889ebb0ad47489c73c7977fa053c40476c2ee9852f1279d51";
+
+// The SGX identity asserted by the above certificate.
+constexpr char kTestAttestationKeyAssertedIdentity[] = R"pb(
+  code_identity {
+    mrenclave {
+      hash: "\xb0\xf5\x88\x25\xc2\x6d\x52\x77\xc2\x0a\xaa\xef\x3b\x34\x93\xaa\xfc\xef\x70\xf3\x69\x57\xb3\xd9\x07\x12\xee\x2c\x96\xb3\xf6\x52"
+    }
+    signer_assigned_identity {
+      mrsigner {
+        hash: "\xbd\xf1\xe3\x99\x90\x51\x0c\xf9\x42\x9f\xae\x5f\xa6\x4b\x6c\xd3\x9a\x67\xc9\x99\x58\xa0\x10\x3b\xa9\xbe\x79\x48\xaa\xe7\xde\x0c"
+      }
+      isvprodid: 11294
+      isvsvn: 39992
+    }
+    miscselect: 1
+    attributes { flags: 39 xfrm: 39 }
+  }
+  machine_configuration {
+    cpu_svn {
+      value: "\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000\000"
+    }
+  }
+)pb";
 
 // The attestation public key is PEM-encoded.
 constexpr char kTestAttestationKeyCertificatePemKeyHex[] =
@@ -177,6 +203,23 @@ TEST(AttestationKeyCertificateImplTest, CreateSuccess) {
       absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex));
 
   ASYLO_EXPECT_OK(AttestationKeyCertificateImpl::Create(cert));
+}
+
+TEST(AttestationKeyCertificateImplTest, GetAssertedIdentitySuccess) {
+  Certificate cert;
+  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl,
+                             AttestationKeyCertificateImpl::Create(cert));
+
+  SgxIdentity identity;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
+      kTestAttestationKeyAssertedIdentity, &identity));
+  EXPECT_THAT(ak_cert_impl->GetAssertedSgxIdentity(),
+              IsOkAndHolds(EqualsProto(identity)));
 }
 
 TEST(AttestationKeyCertificateImplTest, VerifySignatureFailure) {

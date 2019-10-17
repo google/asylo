@@ -34,6 +34,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
+#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_constants.h"
@@ -200,7 +201,16 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
       new AttestationKeyCertificateImpl(std::move(attestation_key_cert),
                                         std::move(pce_sign_report_payload)
                                             .attestation_public_key()
-                                            .attestation_public_key()));
+                                            .attestation_public_key(),
+                                        report));
+}
+
+StatusOr<SgxIdentity> AttestationKeyCertificateImpl::GetAssertedSgxIdentity()
+    const {
+  SgxIdentity sgx_identity;
+  ASYLO_RETURN_IF_ERROR(
+      ParseIdentityFromHardwareReport(report_, &sgx_identity));
+  return sgx_identity;
 }
 
 Status AttestationKeyCertificateImpl::Verify(
@@ -236,9 +246,10 @@ absl::optional<KeyUsageInformation> AttestationKeyCertificateImpl::KeyUsage()
 
 AttestationKeyCertificateImpl::AttestationKeyCertificateImpl(
     AttestationKeyCertificate attestation_key_cert,
-    AsymmetricSigningKeyProto subject_key)
+    AsymmetricSigningKeyProto subject_key, Report report)
     : attestation_key_cert_(std::move(attestation_key_cert)),
-      subject_key_(std::move(subject_key)) {}
+      subject_key_(std::move(subject_key)),
+      report_(report) {}
 
 }  // namespace sgx
 }  // namespace asylo
