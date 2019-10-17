@@ -541,3 +541,24 @@ sim_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "hex_util",
+    srcs = ["hex_util.cc"],
+    hdrs = ["hex_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = ["@com_google_absl//absl/strings"],
+)
+
+cc_test(
+    name = "hex_util_test",
+    srcs = ["hex_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "hex_util_enclave_test",
+    deps = [
+        ":hex_util",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)

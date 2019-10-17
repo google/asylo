@@ -31,6 +31,7 @@
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/tcb_container_util.h"
+#include "asylo/util/hex_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -264,17 +265,6 @@ Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
                     absl::StrCat("TcbInfoImpl has an unknown (Intel) version: ",
                                  tcb_info_impl.version()));
   }
-}
-
-// Checks whether |str| is hex-encoded. Returns true if |str| is hex-encoded,
-// false otherwise.
-bool IsHexEncoded(absl::string_view str) {
-  for (char c : str) {
-    if (!absl::ascii_isxdigit(c)) {
-      return false;
-    }
-  }
-  return str.size() % 2 == 0;
 }
 
 }  // namespace

@@ -46,6 +46,7 @@
 #include "asylo/identity/sgx/tcb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/identity/sgx/tcb_container_util.h"
+#include "asylo/util/hex_util.h"
 #include "asylo/util/proto_struct_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -75,18 +76,6 @@ bool CanBeTimestampProto(absl::Time time) {
   const absl::Time timestamp_proto_maximum =
       absl::FromCivil(absl::CivilSecond(9999, 12, 31, 23, 59, 59), utc);
   return time >= timestamp_proto_minimum && time <= timestamp_proto_maximum;
-}
-
-// Returns true if |str| can be interpreted as a hex-encoding of a sequence of
-// bytes.
-bool IsHexEncoded(const std::string &str) {
-  for (char c : str) {
-    if (!absl::ascii_isxdigit(c)) {
-      return false;
-    }
-  }
-
-  return str.size() % 2 == 0;
 }
 
 // Returns a map from known Intel TCB status strings to TcbStatus.StatusType
