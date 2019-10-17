@@ -33,6 +33,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -144,7 +145,7 @@ void FakeEnclave::SetRandomIdentity() {
 
 void FakeEnclave::SetIdentity(const SgxIdentity &sgx_identity) {
   const CodeIdentity &identity = sgx_identity.code_identity();
-  const SgxMachineConfiguration &machine_config =
+  const MachineConfiguration &machine_config =
       sgx_identity.machine_configuration();
 
   if (!SetTrivialObjectFromBinaryString<UnsafeBytes<SHA256_DIGEST_LENGTH>>(
@@ -212,7 +213,7 @@ StatusOr<SgxIdentity> FakeEnclave::GetIdentity() const {
 
   code_identity->set_miscselect(miscselect_);
 
-  SgxMachineConfiguration *machine_config =
+  MachineConfiguration *machine_config =
       sgx_identity.mutable_machine_configuration();
   machine_config->mutable_cpu_svn()->set_value(
       ConvertTrivialObjectToBinaryString(cpusvn_));

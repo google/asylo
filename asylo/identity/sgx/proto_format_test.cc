@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"

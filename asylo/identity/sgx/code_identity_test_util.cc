@@ -26,6 +26,7 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
@@ -112,16 +113,16 @@ CodeIdentityMatchSpec GetRandomMatchSpec(int percent = 100) {
   return spec;
 }
 
-// Generates and returns a random SgxMachineConfigurationMatchSpec, where each
+// Generates and returns a random MachineConfigurationMatchSpec, where each
 // field is randomly set with a |percent|% chance.
-SgxMachineConfigurationMatchSpec GetRandomSgxMachineConfigurationMatchSpec(
+MachineConfigurationMatchSpec GetRandomSgxMachineConfigurationMatchSpec(
     int percent = 100) {
-  SgxMachineConfigurationMatchSpec spec;
+  MachineConfigurationMatchSpec spec;
   FuzzField(percent,
-            &SgxMachineConfigurationMatchSpec::set_is_cpu_svn_match_required,
+            &MachineConfigurationMatchSpec::set_is_cpu_svn_match_required,
             &spec);
   FuzzField(percent,
-            &SgxMachineConfigurationMatchSpec::set_is_sgx_type_match_required,
+            &MachineConfigurationMatchSpec::set_is_sgx_type_match_required,
             &spec);
   return spec;
 }
@@ -235,7 +236,7 @@ Status SetRandomValidLegacyGenericIdentity(
     SgxIdentity *corresponding_sgx_identity) {
   SetSgxIdentityDescription(generic_identity->mutable_description());
 
-  SgxMachineConfiguration machine_config;
+  MachineConfiguration machine_config;
   *corresponding_sgx_identity->mutable_machine_configuration() = machine_config;
 
   CodeIdentity sgx_identity = GetRandomValidCodeIdentity();
@@ -253,7 +254,7 @@ Status SetRandomValidGenericIdentity(EnclaveIdentity *generic_identity,
   *generic_identity->mutable_version() = kSgxIdentityVersionString;
 
   *corresponding_sgx_identity->mutable_machine_configuration() =
-      SgxMachineConfiguration::default_instance();
+      MachineConfiguration::default_instance();
 
   SgxIdentity sgx_identity = GetRandomValidSgxIdentity();
   if (!sgx_identity.SerializeToString(generic_identity->mutable_identity())) {

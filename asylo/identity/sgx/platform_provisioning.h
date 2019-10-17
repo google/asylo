@@ -22,6 +22,7 @@
 #include <cstdint>
 
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"

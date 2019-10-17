@@ -27,6 +27,7 @@
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/status_matchers.h"
@@ -106,12 +107,12 @@ TEST(SgxIdentityExpectationMatcherTest,
       &identity));
   ASSERT_FALSE(identity.has_version());
 
-  // Clear the SgxMachineConfiguration fields of the expectation's match spec,
+  // Clear the MachineConfiguration fields of the expectation's match spec,
   // since the legacy identity will never match the expectation identity for
   // these fields.
   SgxIdentityMatchSpec *match_spec =
       sgx_identity_expectation.mutable_match_spec();
-  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+  sgx::MachineConfigurationMatchSpec *machine_config_match_spec =
       match_spec->mutable_machine_configuration_match_spec();
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
   machine_config_match_spec->set_is_sgx_type_match_required(false);
@@ -151,11 +152,11 @@ TEST(SgxIdentityExpectationMatcherTest,
   ASSERT_FALSE(identity.has_version());
 
   for (int i = 0;
-       i < SgxMachineConfigurationMatchSpec::GetDescriptor()->field_count();
+       i < sgx::MachineConfigurationMatchSpec::GetDescriptor()->field_count();
        ++i) {
     SgxIdentityMatchSpec *match_spec =
         sgx_identity_expectation.mutable_match_spec();
-    SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+    sgx::MachineConfigurationMatchSpec *machine_config_match_spec =
         match_spec->mutable_machine_configuration_match_spec();
     machine_config_match_spec->set_is_cpu_svn_match_required(i == 0);
     machine_config_match_spec->set_is_sgx_type_match_required(i == 1);

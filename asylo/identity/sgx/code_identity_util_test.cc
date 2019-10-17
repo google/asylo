@@ -35,6 +35,7 @@
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -142,7 +143,7 @@ class CodeIdentityUtilTest : public ::testing::Test {
   SgxIdentityMatchSpec GetMinimalValidSgxMatchSpec() {
     SgxIdentityMatchSpec spec;
     CodeIdentityMatchSpec *ci_spec = spec.mutable_code_identity_match_spec();
-    SgxMachineConfigurationMatchSpec *mc_spec =
+    MachineConfigurationMatchSpec *mc_spec =
         spec.mutable_machine_configuration_match_spec();
 
     ci_spec->set_is_mrenclave_match_required(false);
@@ -264,7 +265,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeNoAttributes) {
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-// If the SgxMachineConfiguration has the |cpu_svn| field set, it is invalid
+// If the MachineConfiguration has the |cpu_svn| field set, it is invalid
 // unless it contains a valid CPUSVN. (SgxIdentityValidityPositiveNoCpusvn
 // passes because the CPUSVN field is completely missing, which is valid.)
 TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeEmptyCpusvn) {
@@ -290,7 +291,7 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositive) {
 TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositiveLegacyMatchSpec) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
 
-  // Clear SgxMachineConfiguration to create a valid legacy match spec.
+  // Clear MachineConfiguration to create a valid legacy match spec.
   spec.clear_machine_configuration_match_spec();
   EXPECT_FALSE(IsValidMatchSpec(spec, /*is_legacy=*/false));
   EXPECT_TRUE(IsValidMatchSpec(spec, /*is_legacy=*/true));
@@ -360,7 +361,7 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveLegacyMatchSpec) {
   SgxIdentityExpectation expectation;
   ASYLO_EXPECT_OK(SetExpectation(spec, id, &expectation));
 
-  // Clear SgxMachineConfiguration to create a valid legacy match spec.
+  // Clear MachineConfiguration to create a valid legacy match spec.
   expectation.mutable_match_spec()->clear_machine_configuration_match_spec();
   EXPECT_FALSE(IsValidExpectation(expectation, /*is_legacy=*/false));
   EXPECT_TRUE(IsValidExpectation(expectation, /*is_legacy=*/true));
@@ -475,7 +476,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
   *code_identity_match_spec->mutable_attributes_match_mask() =
       attributes_all_f_;
 
-  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+  MachineConfigurationMatchSpec *machine_config_match_spec =
       spec.mutable_machine_configuration_match_spec();
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
   machine_config_match_spec->set_is_sgx_type_match_required(false);
@@ -487,7 +488,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
   *code_id->mutable_signer_assigned_identity() =
       MakeSignerAssignedIdentity(h_acedface_, 0, 0);
 
-  SgxMachineConfiguration *machine_config = id.mutable_machine_configuration();
+  MachineConfiguration *machine_config = id.mutable_machine_configuration();
   *machine_config->mutable_cpu_svn()->mutable_value() = kValidCpuSvn;
 
   SgxIdentityExpectation expectation;
@@ -501,11 +502,11 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
   expectation.mutable_match_spec()->clear_machine_configuration_match_spec();
   EXPECT_THAT(
       MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr,
-                                 /*is_legacy=*/false),
+                                 /*is_legacy_expectation=*/false),
       Not(IsOk()));
   EXPECT_THAT(
       MatchIdentityToExpectation(id, expectation, /*explanation=*/nullptr,
-                                 /*is_legacy=*/true),
+                                 /*is_legacy_expectation=*/true),
       IsOkAndHolds(true));
 }
 
@@ -516,13 +517,13 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityDifferingUnrequiredFields) {
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
 
-  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+  MachineConfigurationMatchSpec *machine_config_match_spec =
       expectation.mutable_match_spec()
           ->mutable_machine_configuration_match_spec();
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
   machine_config_match_spec->set_is_sgx_type_match_required(false);
 
-  SgxMachineConfiguration *machine_config =
+  MachineConfiguration *machine_config =
       expectation.mutable_reference_identity()->mutable_machine_configuration();
   machine_config->mutable_cpu_svn()->set_value(kValidCpuSvn);
   machine_config->set_sgx_type(SgxType::STANDARD);

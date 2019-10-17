@@ -41,6 +41,7 @@
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
@@ -297,9 +298,9 @@ bool IsIdentityCompatibleWithMatchSpec(const SgxIdentity &identity,
                                        const SgxIdentityMatchSpec &spec,
                                        bool is_legacy = false) {
   if (!is_legacy) {
-    const SgxMachineConfiguration &machine_config =
+    const MachineConfiguration &machine_config =
         identity.machine_configuration();
-    const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
+    const MachineConfigurationMatchSpec &machine_config_match_spec =
         spec.machine_configuration_match_spec();
 
     if (machine_config_match_spec.is_cpu_svn_match_required() &&
@@ -339,12 +340,11 @@ StatusOr<bool> MatchIdentityToExpectation(
                   "Identity is not compatible with specified match spec");
   }
 
-  // Perform checks for the SgxMachineConfiguration component of SgxIdentity.
-  const SgxMachineConfiguration &actual_config =
-      identity.machine_configuration();
-  const SgxMachineConfiguration &expected_config =
+  // Perform checks for the MachineConfiguration component of SgxIdentity.
+  const MachineConfiguration &actual_config = identity.machine_configuration();
+  const MachineConfiguration &expected_config =
       expectation.reference_identity().machine_configuration();
-  const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
+  const MachineConfigurationMatchSpec &machine_config_match_spec =
       expectation.match_spec().machine_configuration_match_spec();
 
   std::vector<std::string> explanations;
@@ -410,7 +410,7 @@ bool IsValidSgxIdentity(const SgxIdentity &identity, bool is_legacy) {
     // We cannot assume that all non-legacy SgxIdentity messages will have a
     // valid, set CPUSVN, because expectations are not required to populate the
     // CPUSVN value for their reference identities.
-    const SgxMachineConfiguration &machine_config =
+    const MachineConfiguration &machine_config =
         identity.machine_configuration();
     if (machine_config.has_cpu_svn() &&
         !ValidateCpuSvn(machine_config.cpu_svn()).ok()) {
@@ -423,7 +423,7 @@ bool IsValidSgxIdentity(const SgxIdentity &identity, bool is_legacy) {
 
 bool IsValidMatchSpec(const SgxIdentityMatchSpec &match_spec, bool is_legacy) {
   if (!is_legacy) {
-    const SgxMachineConfigurationMatchSpec &machine_config_match_spec =
+    const MachineConfigurationMatchSpec &machine_config_match_spec =
         match_spec.machine_configuration_match_spec();
     if (!machine_config_match_spec.has_is_cpu_svn_match_required() ||
         !machine_config_match_spec.has_is_sgx_type_match_required()) {
@@ -458,7 +458,7 @@ Status ParseIdentityFromHardwareReport(const Report &report,
 }
 
 void SetDefaultLocalSgxMatchSpec(SgxIdentityMatchSpec *spec) {
-  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+  MachineConfigurationMatchSpec *machine_config_match_spec =
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(false);
@@ -468,7 +468,7 @@ void SetDefaultLocalSgxMatchSpec(SgxIdentityMatchSpec *spec) {
 }
 
 void SetStrictLocalSgxMatchSpec(SgxIdentityMatchSpec *spec) {
-  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+  MachineConfigurationMatchSpec *machine_config_match_spec =
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(true);
@@ -486,7 +486,7 @@ void SetDefaultRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec) {
 }
 
 void SetStrictRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec) {
-  SgxMachineConfigurationMatchSpec *machine_config_match_spec =
+  MachineConfigurationMatchSpec *machine_config_match_spec =
       spec->mutable_machine_configuration_match_spec();
 
   machine_config_match_spec->set_is_cpu_svn_match_required(true);

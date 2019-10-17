@@ -40,13 +40,6 @@ message Ppid {
   optional bytes value = 1;
 }
 
-// A CPU SVN. The CPU SVN contains security-relevant information about the Intel
-// microcode version and running authenticated code modules.
-message CpuSvn {
-  // The bytes of the CPU SVN. Must be exactly 16 bytes long. Required.
-  optional bytes value = 1;
-}
-
 // A Provisioning Certification Enclave (PCE) SVN.
 message PceSvn {
   // The value of the PCE SVN. Must be a valid unsigned 16-bit integer.
@@ -54,8 +47,7 @@ message PceSvn {
   optional uint32 value = 1;
 }
 
-// A PCE ID number. The PCE ID distinguishes between PPID-generating algorithms
-// in the PCE.
+// The PCE ID distinguishes between PPID-generating algorithms in the PCE.
 message PceId {
   // The value of the PCE ID. Must be a valid unsigned 16-bit integer. Required.
   optional uint32 value = 1;
@@ -65,18 +57,6 @@ message PceId {
 message Fmspc {
   // Must be exactly 6 bytes long. Required.
   optional bytes value = 1;
-}
-
-// The possible values for an SGXType extension in a PCK certificate.
-//
-// WARNING: The tag numbers do NOT correspond to the ASN.1 ENUMERATED integer
-// values in PCK certificates.
-enum SgxType {
-  // SGX_TYPE_UNKNOWN does not represent a value possible in a PCK certificate.
-  // It exists so that the default value for an SgxType cannot be confused for a
-  // real SGXType.
-  SGX_TYPE_UNKNOWN = 0;
-  STANDARD = 1001;
 }
 
 // An SGX REPORT structure. REPORT is a CPU-generated attestation of an

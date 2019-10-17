@@ -54,12 +54,24 @@ cc_proto_library(
 )
 
 proto_library(
+    name = "machine_configuration_proto",
+    srcs = ["machine_configuration.proto"],
+    visibility = ["//asylo:implementation"],
+)
+
+cc_proto_library(
+    name = "machine_configuration_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":machine_configuration_proto"],
+)
+
+proto_library(
     name = "sgx_identity_proto",
     srcs = ["sgx_identity.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
         ":code_identity_proto",
-        ":platform_provisioning_proto",
+        ":machine_configuration_proto",
     ],
 )
 
@@ -189,6 +201,7 @@ proto_library(
     srcs = ["tcb.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
+        ":machine_configuration_proto",
         ":platform_provisioning_proto",
         "@com_google_protobuf//:timestamp_proto",
     ],
@@ -788,6 +801,7 @@ cc_library(
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":code_identity_util",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":sgx_identity_cc_proto",
         "//asylo/crypto/util:bytes",
@@ -821,6 +835,7 @@ cc_library(
         ":code_identity_constants",
         ":hardware_interface",
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
         ":proto_format",
@@ -858,6 +873,7 @@ cc_test(
         ":fake_enclave",
         ":hardware_interface",
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
@@ -975,6 +991,7 @@ cc_test_and_cc_enclave_test(
         ":code_identity_constants",
         ":code_identity_test_util",
         ":code_identity_util",
+        ":machine_configuration_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
         ":sgx_identity_expectation_matcher",
@@ -1053,6 +1070,7 @@ cc_library(
     deps = [
         ":attributes_cc_proto",
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
@@ -1137,6 +1155,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/util:status",
@@ -1278,6 +1297,7 @@ cc_test_and_cc_enclave_test(
     srcs = ["tcb_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":tcb",
         ":tcb_cc_proto",
@@ -1299,6 +1319,7 @@ cc_library(
     hdrs = ["tcb_container_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":tcb_cc_proto",
         "//asylo/crypto/util:byte_container_util",
@@ -1574,8 +1595,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":code_identity_cc_proto",
         ":intel_architectural_enclave_interface",
+        ":machine_configuration_cc_proto",
         ":pce_util",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
@@ -1600,11 +1621,11 @@ cc_test(
     deps = [
         ":code_identity_test_util",
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":mock_intel_architectural_enclave_interface",
         ":pce_util",
         ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
-        ":sgx_identity_cc_proto",
         ":sgx_infrastructural_enclave_manager",
         "//asylo:enclave_cc_proto",
         "//asylo/crypto:algorithms_cc_proto",
@@ -1633,6 +1654,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":intel_architectural_enclave_interface",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
         ":sgx_identity_cc_proto",
@@ -1657,6 +1679,7 @@ cc_library(
         ":hardware_interface",
         ":hardware_types",
         ":local_sealed_secret_cc_proto",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":sgx_identity_cc_proto",
         "//asylo/crypto:aead_cryptor",
@@ -1760,6 +1783,7 @@ cc_test(
         ":local_sealed_secret_cc_proto",
         ":local_secret_sealer_helpers",
         ":local_secret_sealer_test_data_cc_proto",
+        ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_local_secret_sealer",
@@ -1791,6 +1815,7 @@ cc_library(
         ":attributes_cc_proto",
         ":code_identity_cc_proto",
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
         ":platform_provisioning_cc_proto",
         "//asylo/identity/util:sha256_hash_cc_proto",
@@ -1806,6 +1831,7 @@ cc_test_and_cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
+        ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
         ":platform_provisioning_cc_proto",
         ":proto_format",

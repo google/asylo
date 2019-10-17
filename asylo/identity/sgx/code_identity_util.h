@@ -33,8 +33,8 @@ namespace asylo {
 namespace sgx {
 
 // A "legacy" identity, match spec, or expectation is one that does not contain
-// any SgxMachineConfiguration-related fields. When the |is_legacy| parameter on
-// any of these methods is set to true, all checks on SgxMachineConfiguration-
+// any MachineConfiguration-related fields. When the |is_legacy| parameter on
+// any of these methods is set to true, all checks on MachineConfiguration-
 // related fields are skipped. The rationale behind introducing an explicit
 // parameter to control this rather than simply checking for the presence of
 // the |machine_configuration| field within a match spec is that it *should* be
@@ -77,24 +77,24 @@ Status ParseIdentityFromHardwareReport(const Report &report,
 // Sets |spec| to the default local SGX match spec, which requires a match on
 // MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits that do not fall into
 // the default "do not care" set. It requires no matches on any
-// SgxMachineConfiguration fields.
+// MachineConfiguration fields.
 void SetDefaultLocalSgxMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |spec| to the strictest local SGX match spec, which requires a match on
 // MRENCLAVE, MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits, and
-// additionally requires a match on CPUSVN (other SgxMachineConfiguration fields
+// additionally requires a match on CPUSVN (other MachineConfiguration fields
 // are *not* required to match, as they are not available in local attestation).
 void SetStrictLocalSgxMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |spec| to the default remote SGX match spec, which requires a match on
 // MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits that do not fall into
 // the default "do not care" set. It requires no matches on any
-// SgxMachineConfiguration fields.
+// MachineConfiguration fields.
 void SetDefaultRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |spec| to the strictest remote SGX match spec, which requires a match on
 // MRENCLAVE, MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits. It also
-// requires a match on all available SgxMachineConfiguration fields.
+// requires a match on all available MachineConfiguration fields.
 void SetStrictRemoteSgxMatchSpec(SgxIdentityMatchSpec *spec);
 
 // Sets |identity| to the current enclave's identity.

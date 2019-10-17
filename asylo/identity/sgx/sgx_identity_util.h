@@ -34,17 +34,17 @@ namespace asylo {
 /// ### `DEFAULT`
 /// - Requires a match on MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES
 ///   bits that are considered security-critical by default.
-/// - Does not require a match on any `SgxMachineConfiguration` fields.
+/// - Does not require a match on any `sgx::MachineConfiguration` fields.
 ///
 /// ### `STRICT_LOCAL`
 /// - Requires a match on MRENCLAVE, MRSIGNER, all MISCSELECT bits, and all
 ///   ATTRIBUTES bits.
 /// - Requires a match on CPUSVN.
-///   - Note that no other `SgxMachineConfiguration` fields are required to
+///   - Note that no other `sgx::MachineConfiguration` fields are required to
 ///     match, as they are unavailable in local attestation.
 /// ### `STRICT_REMOTE`
 /// - Equivalent to the `STRICT_LOCAL` match spec, with the added requirement of
-///   matching all `SgxMachineConfiguration` fields (not just CPUSVN).
+///   matching all `sgx::MachineConfiguration` fields (not just CPUSVN).
 enum class SgxIdentityMatchSpecOptions { DEFAULT, STRICT_LOCAL, STRICT_REMOTE };
 
 /// Returns the current enclave's identity.

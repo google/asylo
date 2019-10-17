@@ -34,11 +34,11 @@
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/mock_intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
-#include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/mock_enclave_client.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
@@ -108,7 +108,7 @@ sgx::PceSvn PceSvn() {
   return pce_svn;
 }
 
-sgx::CpuSvn CpuSvn() {
+sgx::CpuSvn CreateCpuSvn() {
   sgx::CpuSvn cpu_svn;
   cpu_svn.set_value(kCpuSvn);
   return cpu_svn;
@@ -465,7 +465,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportSuccess) {
           DoAll(SetArgPointee<3>(PckSignature()), Return(Status::OkStatus())));
 
   sgx::PceSvn pck_target_pce_svn = PceSvn();
-  sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
+  sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
   sgx::ReportProto report = Report();
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
                   pck_target_pce_svn, pck_target_cpu_svn, report),
@@ -478,7 +478,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportFailure) {
           Return(Status(error::GoogleError::UNKNOWN, kUnknownErrorMessage)));
 
   sgx::PceSvn pck_target_pce_svn = PceSvn();
-  sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
+  sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
   sgx::ReportProto report = Report();
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
                   pck_target_pce_svn, pck_target_cpu_svn, report),
@@ -488,7 +488,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportFailure) {
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadPceSvnFails) {
   // Uninitialized.
   sgx::PceSvn pck_target_pce_svn;
-  sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
+  sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
   sgx::ReportProto report = Report();
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(
                   pck_target_pce_svn, pck_target_cpu_svn, report),
@@ -507,7 +507,7 @@ TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignReportWithBadCpuSvnFails) {
 
 TEST_F(SgxInfrastructuralEnclaveManagerTest, PceSignWithBadReportFails) {
   sgx::PceSvn pck_target_pce_svn = PceSvn();
-  sgx::CpuSvn pck_target_cpu_svn = CpuSvn();
+  sgx::CpuSvn pck_target_cpu_svn = CreateCpuSvn();
   // Uninitialized.
   sgx::ReportProto report;
   EXPECT_THAT(sgx_infrastructural_enclave_manager_->PceSignReport(

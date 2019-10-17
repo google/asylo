@@ -43,6 +43,7 @@
 #include "asylo/identity/sgx/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/local_secret_sealer_test_data.pb.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"

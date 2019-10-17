@@ -28,6 +28,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/sealed_secret.pb.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
