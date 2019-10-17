@@ -13,18 +13,17 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
+
+# Used to enable gtest tests to run inside an enclave.
+load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test", "sgx_enclave_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
 # This package defines sgx-specific portions of the enclave-identity and
 # key-management library.
-
-load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-
-# Used to enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test", "sgx_enclave_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 proto_library(
     name = "attributes_proto",
@@ -274,11 +273,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_remote_assertion_generator_client_test",
     srcs = ["sgx_remote_assertion_generator_client_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "sgx_remote_assertion_generator_client_enclave_test",
     deps = [
         ":remote_assertion_cc_proto",
         ":sgx_remote_assertion_generator_client",
@@ -314,8 +312,8 @@ cc_library(
     ],
 )
 
-# This test can only be run outside an enclave. Consequently, it does not have
-# an enclave_test_name parameter.
+# This test can only be run outside an enclave. Consequently, this test is not
+# a "cc_test_and_cc_enclave_test" target.
 cc_test(
     name = "sgx_remote_assertion_generator_impl_test",
     srcs = ["sgx_remote_assertion_generator_impl_test.cc"],
@@ -355,6 +353,59 @@ cc_library(
     srcs = ["remote_assertion_generator_constants.cc"],
     hdrs = ["remote_assertion_generator_constants.h"],
     copts = ASYLO_DEFAULT_COPTS,
+)
+
+cc_library(
+    name = "attestation_key_certificate_impl",
+    srcs = ["attestation_key_certificate_impl.cc"],
+    hdrs = ["attestation_key_certificate_impl.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":attestation_key_cc_proto",
+        ":attestation_key_certificate_cc_proto",
+        ":hardware_types",
+        ":platform_provisioning",
+        ":remote_assertion_generator_constants",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_interface",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:optional",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "attestation_key_certificate_impl_test",
+    srcs = ["attestation_key_certificate_impl_test.cc"],
+    deps = [
+        ":attestation_key_cc_proto",
+        ":attestation_key_certificate_cc_proto",
+        ":attestation_key_certificate_impl",
+        ":hardware_types",
+        ":platform_provisioning",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_interface",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:fake_certificate",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
 )
 
 cc_library(
@@ -548,11 +599,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "remote_assertion_util_test",
     srcs = ["remote_assertion_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "remote_assertion_util_enclave_test",
     deps = [
         ":remote_assertion_cc_proto",
         ":remote_assertion_util",
@@ -599,14 +649,13 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_local_assertion_generator_test",
     srcs = [
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_generator_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "sgx_local_assertion_generator_enclave_test",
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
@@ -657,14 +706,13 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_local_assertion_verifier_test",
     srcs = [
         "sgx_local_assertion_verifier.h",
         "sgx_local_assertion_verifier_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "sgx_local_assertion_verifier_enclave_test",
     deps = [
         ":code_identity_constants",
         ":code_identity_util",
@@ -691,8 +739,8 @@ cc_test(
 )
 
 # This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
-# should not be used inside a real enclave, this test does not have an
-# "enclave_test_name" attribute.
+# should not be used inside a real enclave, this test is not a
+# "cc_test_and_cc_enclave_test" target.
 cc_test(
     name = "sgx_local_assertion_authority_test",
     srcs = [
@@ -789,8 +837,8 @@ cc_library(
 )
 
 # This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
-# should not be used inside a real enclave, this test does not have an
-# "enclave_test_name" attribute.
+# should not be used inside a real enclave, this test is not a
+# "cc_test_and_cc_enclave_test" target.
 cc_test(
     name = "code_identity_util_test",
     srcs = ["code_identity_util_test.cc"],
@@ -840,8 +888,8 @@ cc_library(
 )
 
 # This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
-# should not be used inside a real enclave, this test does not have an
-# "enclave_test_name" attribute.
+# should not be used inside a real enclave, this test is not a
+# "cc_test_and_cc_enclave_test" target.
 cc_test(
     name = "sgx_identity_util_test",
     srcs = ["sgx_identity_util_test.cc"],
@@ -871,11 +919,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "attributes_util_test",
     srcs = ["attributes_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "attributes_util_enclave_test",
     deps = [
         ":attributes_cc_proto",
         ":attributes_util",
@@ -911,14 +958,13 @@ cc_library(
     alwayslink = 1,
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_identity_expectation_matcher_test",
     srcs = [
         "sgx_identity_expectation_matcher.h",
         "sgx_identity_expectation_matcher_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "sgx_identity_expectation_matcher_enclave_test",
     deps = [
         ":code_identity_cc_proto",
         ":code_identity_constants",
@@ -963,11 +1009,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "secs_attributes_test",
     srcs = ["secs_attributes_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "secs_attributes_enclave_test",
     deps = [
         ":attributes_cc_proto",
         ":hardware_types",
@@ -979,11 +1024,10 @@ cc_test(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "secs_miscselect_test",
     srcs = ["secs_miscselect_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "secs_miscselect_enclave_test",
     deps = [
         ":hardware_types",
         "//asylo/test/util:status_matchers",
@@ -1065,11 +1109,10 @@ cc_test(
 )
 
 # Test for VerifyHardwareReport in SGX-sim and SGX-hw.
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "verify_hardware_report_test",
     srcs = ["verify_hardware_report_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "verify_hardware_report_enclave_test",
     deps = [
         ":code_identity_util",
         ":hardware_interface",
@@ -1096,11 +1139,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "platform_provisioning_test",
     srcs = ["platform_provisioning_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "platform_provisioning_enclave_test",
     deps = [
         ":hardware_types",
         ":platform_provisioning",
@@ -1138,11 +1180,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "pce_util_test",
     srcs = ["pce_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "pce_util_enclave_test",
     deps = [
         ":hardware_types",
         ":pce_util",
@@ -1185,11 +1226,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "pck_certificates_test",
     srcs = ["pck_certificates_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "pck_certificates_enclave_test",
     deps = [
         ":pck_certificates",
         ":pck_certificates_cc_proto",
@@ -1227,11 +1267,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "tcb_test",
     srcs = ["tcb_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "tcb_enclave_test",
     deps = [
         ":platform_provisioning_cc_proto",
         ":tcb",
@@ -1268,12 +1307,11 @@ sgx.enclave_configuration(
     heap_max_size = "0x1000000",
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "tcb_container_util_test",
     srcs = ["tcb_container_util_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_config = ":tcb_container_util_enclave_test_config",
-    enclave_test_name = "tcb_container_util_enclave_test",
     deps = [
         ":hardware_types",
         ":platform_provisioning",
@@ -1313,11 +1351,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "tcb_info_from_json_test",
     srcs = ["tcb_info_from_json_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "tcb_info_from_json_enclave_test",
     deps = [
         ":platform_provisioning_cc_proto",
         ":tcb",
@@ -1355,11 +1392,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "provisioning_consistency_checker_test",
     srcs = ["provisioning_consistency_checker_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "provisioning_consistency_checker_enclave_test",
     deps = [
         ":provisioning_consistency_checker",
         ":tcb_cc_proto",
@@ -1485,11 +1521,12 @@ sgx_enclave_test(
     ],
 )
 
+# Since the DCAP interface is never used in an enclave, this test is not a
+# "cc_test_and_cc_enclave_test" target.
 cc_test(
     name = "dcap_intel_architectural_enclave_interface_test",
     srcs = ["dcap_intel_architectural_enclave_interface_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    # No enclave_test_name, as the DCAP interface is never used in an enclave.
     deps = [
         ":dcap_intel_architectural_enclave_interface",
         ":hardware_types",
@@ -1701,8 +1738,8 @@ cc_binary(
 )
 
 # This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
-# should not be used inside a real enclave, this test does not have an
-# "enclave_test_name" attribute.
+# should not be used inside a real enclave, this test is not a
+# "cc_test_and_cc_enclave_test" target.
 cc_test(
     name = "sgx_local_secret_sealer_test",
     srcs = ["sgx_local_secret_sealer_test.cc"],
@@ -1756,11 +1793,10 @@ cc_library(
     ],
 )
 
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "proto_format_test",
     srcs = ["proto_format_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "proto_format_enclave_test",
     deps = [
         ":hardware_types",
         ":miscselect_cc_proto",
