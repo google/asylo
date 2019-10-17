@@ -498,7 +498,6 @@ sgx_enclave_test(
     test_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":enclave_entry_count_test_cc_proto",
-        "//asylo/platform/primitives:trusted_backend",
     ] + TEST_DEPS_COMMON,
 )
 
@@ -557,7 +556,6 @@ sgx_enclave_test(
     deps = [
         ":block_enclave_entries_test_cc_proto",
         "//asylo/platform/storage/utils:fd_closer",
-        "//asylo/platform/primitives:trusted_backend",
     ] + TEST_DEPS_COMMON,
 )
 

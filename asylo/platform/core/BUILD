@@ -184,19 +184,20 @@ cc_library(
 # An untrusted mutex object which depends on host kernel resources.
 cc_library(
     name = "untrusted_mutex",
-    srcs = [
-        "untrusted_mutex.cc",
-    ],
-    hdrs = [
-        "untrusted_mutex.h",
-    ],
+    srcs = ["untrusted_mutex.cc"],
+    hdrs = ["untrusted_mutex.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":atomic",
-        "//asylo/platform/primitives:trusted_backend",
-        "//asylo/platform/primitives:trusted_primitives",
-        "//asylo/platform/primitives/sgx:trusted_sgx",
-    ],
+    tags = ASYLO_ALL_BACKEND_TAGS,
+    deps = [":atomic"] + select(
+        {
+            "@com_google_asylo//asylo": [
+                "//asylo/platform/primitives/sgx:trusted_sgx",
+                "//asylo/platform/primitives:trusted_backend",
+                "//asylo/platform/primitives:trusted_primitives",
+            ],
+        },
+        no_match_error = "Must be built with the Asylo toolchain",
+    ),
 )
 
 # An trusted spin lock object.
@@ -247,12 +248,16 @@ cc_library(
     srcs = ["trusted_mutex.cc"],
     hdrs = ["trusted_mutex.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":trusted_spin_lock",
-        ":untrusted_mutex",
-        "//asylo/platform/primitives:trusted_backend",
-        "//asylo/platform/primitives:trusted_primitives",
-    ],
+    tags = ASYLO_ALL_BACKEND_TAGS,
+    deps = select(
+        {"@com_google_asylo//asylo": [
+            ":trusted_spin_lock",
+            ":untrusted_mutex",
+            "//asylo/platform/primitives:trusted_backend",
+            "//asylo/platform/primitives:trusted_primitives",
+        ]},
+        no_match_error = "Must be built with the Asylo toolchain.",
+    ),
 )
 
 # Sanity check test for enclave clock variables.

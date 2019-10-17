@@ -25,14 +25,17 @@ package(
 # Trusted simulator components.
 cc_library(
     name = "trusted_sim",
-    srcs = [
-        "malloc_lock.cc",
-        "runtime_stubs.c",
-        "runtime_syscalls.c",
-        "shared_sim.h",
-        "trusted_runtime.cc",
-        "trusted_sim.cc",
-    ],
+    srcs = select(
+        {"//asylo/platform/primitives:asylo_sim": [
+            "malloc_lock.cc",
+            "runtime_stubs.c",
+            "runtime_syscalls.c",
+            "shared_sim.h",
+            "trusted_runtime.cc",
+            "trusted_sim.cc",
+        ]},
+        no_match_error = "Trusted simulation components must be built with the backend selected",
+    ),
     copts = ASYLO_DEFAULT_COPTS,
     tags = [
         "asylo-sim",
@@ -40,7 +43,7 @@ cc_library(
     ],
     deps = select(
         {
-            "//asylo/platform/primitives:asylo_sim": [
+            "@com_google_asylo//asylo": [
                 "//asylo/platform/primitives",
                 "//asylo/platform/primitives/util:primitive_locks",
                 "//asylo/platform/primitives/x86:spin_lock",
@@ -52,7 +55,7 @@ cc_library(
                 "//asylo/platform/posix:backend_agnostic_posix",
             ],
         },
-        "Trusted simulation components must be built with --define=ASYLO_SIM=1",
+        "Trusted simulation components must be built with Asylo toolchain",
     ) + ["//asylo/util:cleanup"],
     alwayslink = 1,
 )

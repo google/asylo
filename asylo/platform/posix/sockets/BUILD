@@ -78,10 +78,10 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         "//asylo/util:logging",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
+            "//asylo/platform/arch:trusted_arch",
             ":sockets",
         ],
         "//conditions:default": [],
@@ -98,11 +98,11 @@ cc_library(
     deps = [
         ":socket_transmit",
         "//asylo/util:logging",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
+            "//asylo/platform/arch:trusted_arch",
             ":sockets",
         ],
         "//conditions:default": [],
@@ -119,11 +119,11 @@ cc_library(
     deps = [
         ":socket_transmit",
         "//asylo/util:logging",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/storage/utils:fd_closer",
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
+            "//asylo/platform/arch:trusted_arch",
             ":sockets",
         ],
         "//conditions:default": [],
@@ -190,7 +190,6 @@ sgx_enclave_test(
         ":socket_test_cc_proto",
         ":socket_test_transmit",
         "//asylo:enclave_client",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_flags",
@@ -235,7 +234,6 @@ sgx_enclave_test(
         ":socket_test_cc_proto",
         ":socket_test_transmit",
         "//asylo:enclave_client",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/test/util:enclave_test",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

@@ -50,9 +50,9 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = select(
         {
-            "//asylo/platform/primitives:sgx": [":posix"],
+            "@com_google_asylo//asylo": [":posix"],
         },
-        no_match_error = "Expected a trusted backend configuration (e.g., --config=sgx)",
+        no_match_error = "Must be built in the Asylo toolchain",
     ),
 )
 
@@ -86,6 +86,10 @@ cc_library(
 )
 
 # POSIX runtime implementation.
+_POSIX_SGX_HDRS = ["//asylo/third_party/intel:posix_sgx_headers"]
+
+_POSIX_SGX_DEPS = ["@linux_sgx//:trts"]
+
 cc_library(
     name = "posix",
     srcs = [
@@ -125,39 +129,47 @@ cc_library(
     ],
     hdrs = [
         ":posix_headers",
-    ] + select({
-        "//asylo/platform/primitives:sgx": [
-            "//asylo/third_party/intel:posix_sgx_headers",
-        ],
-        "//conditions:default": [],
-    }),
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": _POSIX_SGX_HDRS,
+            "@linux_sgx//:sgx_sim": _POSIX_SGX_HDRS,
+            "//conditions:default": [],
+        },
+    ),
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
     tags = ASYLO_ALL_BACKEND_TAGS,
     visibility = ["//visibility:private"],
     deps = [
-        ":pthread_impl",
-        ":backend_agnostic_posix",
         "@com_google_absl//absl/synchronization",
         "//asylo/util:logging",
         "//asylo/platform/host_call",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:time_util",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/core:trusted_core",
         "//asylo/platform/posix/io:io_manager",
         "//asylo/platform/posix/sockets",
-        "//asylo/platform/primitives:trusted_backend",
-        "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
         "//asylo/platform/system",
         "//asylo/util:status",
     ] + select(
         {
-            "//asylo/platform/primitives:sgx": ["@linux_sgx//:trts"],
-            "//asylo": [],  # Only trusted architectures should build.
+            "@linux_sgx//:sgx_hw": _POSIX_SGX_DEPS,
+            "@linux_sgx//:sgx_sim": _POSIX_SGX_DEPS,
+            "//conditions:default": [],
+        },
+    ) + select(
+        {
+            "@com_google_asylo//asylo": [
+                # Only trusted architectures should build.
+                ":pthread_impl",
+                ":backend_agnostic_posix",
+                "//asylo/platform/primitives:trusted_backend",
+                "//asylo/platform/primitives:trusted_primitives",
+                "//asylo/platform/arch:trusted_arch",
+            ],
         },
         no_match_error = "Must be built within the Asylo toolchain.",
     ),

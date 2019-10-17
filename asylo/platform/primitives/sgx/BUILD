@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
@@ -36,6 +36,24 @@ cc_library(
 )
 
 # Trusted runtime components for SGX.
+_TRUSTED_SGX_BACKEND_DEPS = [
+    "//asylo:enclave_cc_proto",
+    "//asylo/platform/primitives",
+    "//asylo/util:logging",
+    "//asylo/platform/primitives/util:primitive_locks",
+    "//asylo/platform/primitives/util:trusted_runtime_helper",
+    "//asylo/platform/primitives/x86:spin_lock",
+    "//asylo/util:error_codes",
+    "//asylo/platform/arch:trusted_sgx_bridge",
+    "//asylo/util:status",
+    "//asylo/platform/primitives/sgx:sgx_error_space",
+    "@linux_sgx//:public",
+    "@linux_sgx//:trts",
+    "//asylo/platform/posix/threading:thread_manager",
+    "//asylo/platform/common:bridge_types",
+    "//asylo/platform/posix/signal:signal_manager",
+]
+
 cc_library(
     name = "trusted_sgx",
     srcs = [
@@ -71,26 +89,17 @@ cc_library(
     ],
     deps = select(
         {
-            "//asylo/platform/primitives:asylo_sgx": [
-                "//asylo:enclave_cc_proto",
-                "//asylo/platform/primitives",
-                "//asylo/util:logging",
+            "@com_google_asylo//asylo": [
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
-                "//asylo/platform/primitives/util:primitive_locks",
-                "//asylo/platform/primitives/util:trusted_runtime_helper",
-                "//asylo/platform/primitives/x86:spin_lock",
-                "//asylo/util:error_codes",
-                "//asylo/platform/arch:trusted_sgx_bridge",
-                "//asylo/util:status",
-                "//asylo/platform/primitives/sgx:sgx_error_space",
-                "@linux_sgx//:public",
-                "@linux_sgx//:trts",
-                "//asylo/platform/posix/threading:thread_manager",
-                "//asylo/platform/common:bridge_types",
-                "//asylo/platform/posix/signal:signal_manager",
                 "//asylo/platform/system_call/type_conversions",
             ],
+        },
+        no_match_error = "Must be built in the Asylo toolchain",
+    ) + select(
+        {
+            "@linux_sgx//:sgx_hw": _TRUSTED_SGX_BACKEND_DEPS,
+            "@linux_sgx//:sgx_sim": _TRUSTED_SGX_BACKEND_DEPS,
         },
         no_match_error = "Trusted SGX components must be built with --define=ASYLO_SGX=1",
     ) + [
@@ -210,18 +219,23 @@ cc_library(
     ],
     deps = [
         ":fork_cc_proto",
-        ":trusted_sgx",
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/core:status_serializer",
         "//asylo/platform/core:trusted_core",
         "//asylo/platform/host_call",
         "//asylo/platform/posix/threading:thread_manager",
-        "//asylo/platform/primitives:trusted_primitives",
-        "//asylo/platform/primitives:trusted_runtime",
         "//asylo/util:status",
-    ] + select({
+    ] + select(
+        {"@com_google_asylo//asylo": [
+            "//asylo/platform/primitives:trusted_primitives",
+            "//asylo/platform/primitives:trusted_runtime",
+        ]},
+        no_match_error = "Must be built in Asylo toolchain",
+    ) + select({
+        "@linux_sgx//:sgx_sim": [":trusted_sgx"],
         "@linux_sgx//:sgx_hw": [
+            ":trusted_sgx",
             "@com_google_absl//absl/base:core_headers",
             "//asylo/crypto:aead_cryptor",
             "//asylo/crypto/util:bssl_util",
@@ -253,14 +267,21 @@ cc_library(
     srcs = ["untrusted_cache_malloc.cc"],
     hdrs = ["untrusted_cache_malloc.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":trusted_sgx",
-        "//asylo/platform/common:spin_lock",
-        "//asylo/platform/primitives:trusted_backend",
-        "//asylo/platform/primitives:trusted_primitives",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",
-    ],
+        "//asylo/platform/common:spin_lock",
+    ] + select(
+        {
+            "@com_google_asylo//asylo": [
+                "//asylo/platform/primitives:trusted_backend",
+                "//asylo/platform/primitives:trusted_primitives",
+            ],
+        },
+        no_match_error = "Trusted components must be built with the Asylo toolchain",
+    ),
 )
 
 sgx.enclave_configuration(

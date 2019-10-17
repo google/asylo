@@ -34,8 +34,9 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({
-        "//asylo/platform/primitives:sgx": ["trusted_sgx"],
-        "//conditions:default": ["trusted_build_only"],
+        "@linux_sgx//:sgx_hw": [":trusted_sgx"],
+        "@linux_sgx//:sgx_sim": [":trusted_sgx"],
+        "//conditions:default": [":trusted_build_only"],
     }) + [
         "//asylo:enclave_cc_proto",
         "//asylo/platform/core:shared_name",
@@ -163,6 +164,11 @@ cc_library(
 )
 
 # Trusted runtime components for SGX.
+_TRUSTED_SGX_BACKEND_DEPS = [
+    ":trusted_sgx_bridge",
+    "@linux_sgx//:trts",
+]
+
 cc_library(
     name = "trusted_sgx",
     srcs = [
@@ -181,8 +187,10 @@ cc_library(
     ],
     visibility = ["//visibility:private"],
     deps = [
-        ":trusted_sgx_bridge",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
+        "//asylo/util:logging",
         "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:memory",
@@ -196,13 +204,15 @@ cc_library(
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:trusted_fork",
         "//asylo/platform/primitives/sgx:trusted_sgx",
-        "//asylo/util:logging",
         "//asylo/util:status",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
-        "@linux_sgx//:trts",
-    ],
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": _TRUSTED_SGX_BACKEND_DEPS,
+            "@linux_sgx//:sgx_sim": _TRUSTED_SGX_BACKEND_DEPS,
+        },
+        no_match_error = "Must be built in SGX backend",
+    ),
     alwayslink = 1,
 )
 
@@ -221,11 +231,11 @@ cc_library(
 )
 
 # Trusted side of the SGX SDK generated bridge.
+_TRUSTED_SGX_BRIDGE_BACKEND_DEPS = ["@linux_sgx//:public"]
+
 cc_library(
     name = "trusted_sgx_bridge",
-    srcs = [
-        "sgx/trusted/generated_bridge_t.c",
-    ],
+    srcs = ["sgx/trusted/generated_bridge_t.c"],
     hdrs = [
         "sgx/trusted/generated_bridge_t.h",
     ],
@@ -238,7 +248,14 @@ cc_library(
     deps = [
         "//asylo/platform/common:bridge_types",
         "//asylo/platform/core:shared_name",
-        "@linux_sgx//:public",
-        "@linux_sgx//:trts",
-    ],
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": _TRUSTED_SGX_BRIDGE_BACKEND_DEPS,
+            "@linux_sgx//:sgx_sim": _TRUSTED_SGX_BRIDGE_BACKEND_DEPS,
+        },
+        no_match_error = "Must be built in SGX backend",
+    ) + select(
+        {"@com_google_asylo//asylo": ["@linux_sgx//:trts"]},
+        no_match_error = "Must be built in Asylo toolchain",
+    ),
 )

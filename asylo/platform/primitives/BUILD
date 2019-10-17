@@ -14,6 +14,7 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])
@@ -74,6 +75,11 @@ cc_library(
 )
 
 # Target exposing trusted backend-dependent components for the build configuration.
+_TRUSTED_BACKEND_SGX_DEPS = [
+    "//asylo/platform/primitives/sgx:trusted_sgx",
+    "//asylo/platform/primitives/sgx:trusted_fork",
+]
+
 cc_library(
     name = "trusted_backend",
     hdrs = [
@@ -81,14 +87,15 @@ cc_library(
         "//asylo/platform/primitives/util:trusted_memory.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":primitives",
-        ":trusted_primitives",
-    ] + select({
-        "//asylo/platform/primitives:sgx": [
-            "//asylo/platform/primitives/sgx:trusted_sgx",
-            "//asylo/platform/primitives/sgx:trusted_fork",
-        ],
+    tags = ASYLO_ALL_BACKEND_TAGS,
+    deps = [":primitives"] + select(
+        {
+            "@com_google_asylo//asylo": [":trusted_primitives"],
+        },
+        no_match_error = "Must be built in the Asylo toolchain",
+    ) + select({
+        "@linux_sgx//:sgx_hw": _TRUSTED_BACKEND_SGX_DEPS,
+        "@linux_sgx//:sgx_sim": _TRUSTED_BACKEND_SGX_DEPS,
         "//conditions:default": [],
     }),
 )
@@ -147,20 +154,5 @@ config_setting(
     values = {
         "define": "ASYLO_SIM=1",
     },
-)
-
-# Configuration setting for the primitives/sgx backend.
-config_setting(
-    name = "asylo_sgx",
-    values = {
-        "define": "ASYLO_SGX=1",
-    },
-)
-
-# Set when we are compiling for sgx backend.
-config_setting(
-    name = "sgx",
-    values = {
-        "crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
-    },
+    visibility = ["//visibility:public"],
 )
