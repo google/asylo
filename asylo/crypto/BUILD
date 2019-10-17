@@ -207,6 +207,38 @@ cc_test(
     ],
 )
 
+# Library for specifying ASN.1 structures.
+cc_library(
+    name = "asn1_schema",
+    srcs = ["asn1_schema.cc"],
+    hdrs = ["asn1_schema.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":asn1",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+# Tests for the ASN.1 specification library.
+cc_test(
+    name = "asn1_schema_test",
+    srcs = ["asn1_schema_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":asn1",
+        ":asn1_schema",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Utility library for OpenSSL BIGNUMs.
 cc_library(
     name = "bignum_util",
