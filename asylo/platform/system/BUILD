@@ -29,7 +29,6 @@ filegroup(
     name = "system_headers",
     srcs = glob(["include/**/*.h"]) + [
         "include/cmath",
-        "include/string",
     ],
     visibility = ["//visibility:public"],
 )
