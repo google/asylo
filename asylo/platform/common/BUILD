@@ -110,7 +110,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/system_call/type_conversions",
-        "@com_google_absl//absl/base:core_headers",
     ],
 )
 

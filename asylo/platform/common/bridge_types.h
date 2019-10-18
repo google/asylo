@@ -22,8 +22,6 @@
 #include <signal.h>
 #include <stdint.h>
 
-#include "absl/base/attributes.h"
-
 // This file provides a set of type definitions used both inside and outside the
 // enclave.
 

@@ -25,6 +25,7 @@
 #include <netinet/in.h>
 #include <poll.h>
 #include <sched.h>
+#include <signal.h>
 #include <sys/epoll.h>
 #include <sys/socket.h>
 #include <sys/time.h>
@@ -61,19 +62,19 @@ bool TokLinuxStat(const struct stat *input, struct klinux_stat *output);
 // AF_LOCAL.
 bool SockaddrTokLinuxSockaddrUn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
-                                klinux_sockaddr_un *output);
+                                struct klinux_sockaddr_un *output);
 
 // Converts an enclave based sockaddr, |*input| to a host based kernel
 // sockaddr_in struct. Requires the input sockaddr to have the domain AF_INET.
 bool SockaddrTokLinuxSockaddrIn(const struct sockaddr *input,
                                 socklen_t input_addrlen,
-                                klinux_sockaddr_in *output);
+                                struct klinux_sockaddr_in *output);
 
 // Converts an enclave based sockaddr, |*input| to a host based kernel
 // sockaddr_in6 struct. Requires the input sockaddr to have the domain AF_INET6.
 bool SockaddrTokLinuxSockaddrIn6(const struct sockaddr *input,
                                  socklen_t input_addrlen,
-                                 klinux_sockaddr_in6 *output);
+                                 struct klinux_sockaddr_in6 *output);
 
 // Converts a Linux based sockaddr_un to an enclave based sockaddr_un.
 bool FromkLinuxSockAddrUn(const struct klinux_sockaddr_un *input,
@@ -192,5 +193,15 @@ bool FromkLinuxUtsName(const struct klinux_utsname *input,
 // Converts an enclave based syslog priority value to a kernel based syslog
 // priority.
 int TokLinuxSyslogPriority(int input);
+
+// Converts an enclave based siginfo_t struct to a Linux based siginfo struct.
+// Only performs conversions on fields of interest currently, i.e. si_signo and
+// si_code, keeping others members intact.
+bool TokLinuxSiginfo(const siginfo_t *input, klinux_siginfo_t *output);
+
+// Converts a Linux based siginfo_t struct to an enclave based siginfo struct.
+// Only performs conversions on fields of interest currently, i.e. si_signo and
+// si_code, keeping others members intact.
+bool FromkLinuxSiginfo(const klinux_siginfo_t *input, siginfo_t *output);
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_MANUAL_TYPES_FUNCTIONS_H_

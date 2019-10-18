@@ -394,6 +394,12 @@ TEST(ManualTypesFunctionsTest, SysLogPriorityTest) {
   }
 }
 
+TEST(ManualTypesFunctionsTest, SigInfoSizeTest) {
+  siginfo_t sig{};
+  klinux_siginfo_t k_sig{};
+  EXPECT_THAT(sizeof(k_sig), Eq(sizeof(sig)));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

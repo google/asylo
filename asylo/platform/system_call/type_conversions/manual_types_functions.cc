@@ -775,3 +775,21 @@ int TokLinuxSyslogPriority(int input) {
   return TokLinuxSyslogLevel(syslog_level) |
          TokLinuxSyslogFacility(syslog_facility);
 }
+
+bool TokLinuxSiginfo(const siginfo_t *input, klinux_siginfo_t *output) {
+  if (!input || !output) {
+    return false;
+  }
+  output->si_signo = TokLinuxSignalNumber(input->si_signo);
+  output->si_code = TokLinuxSignalNumber(input->si_code);
+  return true;
+}
+
+bool FromkLinuxSiginfo(const klinux_siginfo_t *input, siginfo_t *output) {
+  if (!input || !output) {
+    return false;
+  }
+  output->si_signo = FromkLinuxSignalNumber(input->si_signo);
+  output->si_code = FromkLinuxSignalNumber(input->si_code);
+  return true;
+}

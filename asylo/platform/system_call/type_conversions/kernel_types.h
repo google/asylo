@@ -145,9 +145,9 @@ typedef uint64_t klinux_cpu_set_word;
 #define KLINUX_CPU_SET_NUM_WORDS \
   (KLINUX_CPU_SET_MAX_CPUS / (8 * sizeof(klinux_cpu_set_word)))
 
-struct klinux_cpu_set_t {
+typedef struct {
   uint64_t words[KLINUX_CPU_SET_NUM_WORDS];
-};
+} klinux_cpu_set_t;
 
 struct klinux_itimerval {
   struct kLinux_timeval klinux_it_interval;
@@ -214,5 +214,73 @@ struct klinux_utsname {
   char __domainname[kLinux__UTSNAME_DOMAIN_LENGTH];
 #endif
 };
+
+#define KLINUX__SI_MAX_SIZE 128
+#define KLINUX__SI_PAD_SIZE ((KLINUX__SI_MAX_SIZE / sizeof(int)) - 4)
+#define KLINUX__SI_ALIGNMENT
+
+typedef union klinux_sigval {
+  int sival_int;
+  void *sival_ptr;
+} klinux_sigval_t;
+
+typedef struct {
+  int si_signo;  // Signal number.
+  int si_errno;  // If non-zero, an errno value associated with this signal, as
+                 // defined in <errno.h>.
+  int si_code;   // Signal code.
+
+  union {
+    int klinux_pad[KLINUX__SI_PAD_SIZE];
+
+    /* kill().  */
+    struct {
+      pid_t klinux_si_pid;  // Sending process ID.
+      uid_t klinux_si_uid;  // Real user ID of sending process.
+    } klinux_kill;
+
+    /* POSIX.1b timers.  */
+    struct {
+      int klinux_si_tid;                 // Timer ID.
+      int klinux_si_overrun;             // Overrun count.
+      klinux_sigval_t klinux_si_sigval;  // Signal value.
+    } klinux_timer;
+
+    /* POSIX.1b signals.  */
+    struct {
+      pid_t klinux_si_pid;               // Sending process ID.
+      uid_t klinux_si_uid;               // Real user ID of sending process.
+      klinux_sigval_t klinux_si_sigval;  // Signal value.
+    } klinux_rt;
+
+    /* SIGCHLD.  */
+    struct {
+      pid_t klinux_si_pid;      // Which child.
+      uid_t klinux_si_uid;      // Real user ID of sending process.
+      int klinux_si_status;     // Exit value or signal.
+      int64_t klinux_si_utime;  // Assumes clock_t on Linux is a long int type.
+      int64_t klinux_si_stime;  // Assumes clock_t on Linux is a long int type.
+    } klinux_sigchld;
+
+    /* SIGILL, SIGFPE, SIGSEGV, SIGBUS.  */
+    struct {
+      void *klinux_si_addr;        // Faulting insn/memory ref.
+      int16_t klinux_si_addr_lsb;  // Valid LSB of the reported address.
+    } klinux_sigfault;
+
+    /* SIGPOLL.  */
+    struct {
+      int64_t klinux_si_band;  // Band event for SIGPOLL.
+      int klinux_si_fd;
+    } klinux_sigpoll;
+
+    /* SIGSYS.  */
+    struct {
+      void *klinux_call_addr;    // Calling user insn.
+      int klinux_syscall;        // Triggering system call number.
+      unsigned int klinux_arch;  // AUDIT_ARCH_* of syscall.
+    } klinux_sigsys;
+  } klinux_sifields;
+} klinux_siginfo_t KLINUX__SI_ALIGNMENT;
 
 #endif  // ASYLO_PLATFORM_SYSTEM_CALL_TYPE_CONVERSIONS_KERNEL_TYPES_H_

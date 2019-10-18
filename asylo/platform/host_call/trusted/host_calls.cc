@@ -433,7 +433,7 @@ int enc_untrusted_sched_yield() {
 
 int enc_untrusted_sched_getaffinity(pid_t pid, size_t cpusetsize,
                                     cpu_set_t *mask) {
-  struct klinux_cpu_set_t klinux_mask {};
+  klinux_cpu_set_t klinux_mask{};
   int result = EnsureInitializedAndDispatchSyscall(
       asylo::system_call::kSYS_sched_getaffinity, pid,
       static_cast<uint64_t>(cpusetsize), &klinux_mask);
