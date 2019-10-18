@@ -19,6 +19,7 @@
 #include "asylo/identity/null_identity/null_identity_expectation_matcher.h"
 
 #include <google/protobuf/util/message_differencer.h>
+#include "absl/strings/str_format.h"
 #include "asylo/identity/null_identity/null_identity_util.h"
 
 namespace asylo {
@@ -26,18 +27,31 @@ namespace asylo {
 StatusOr<bool> NullIdentityExpectationMatcher::Match(
     const EnclaveIdentity &identity,
     const EnclaveIdentityExpectation &expectation) const {
+  return MatchAndExplain(identity, expectation, /*explanation=*/nullptr);
+}
+
+StatusOr<bool> NullIdentityExpectationMatcher::MatchAndExplain(
+    const EnclaveIdentity &identity,
+    const EnclaveIdentityExpectation &expectation,
+    std::string *explanation) const {
   // Make sure that the |identity| and the |expectation|.reference_identity()
   // have the correct description.
-  EnclaveIdentityDescription self_description = Description();
+  const EnclaveIdentityDescription self_description = Description();
+  const EnclaveIdentity &reference_identity = expectation.reference_identity();
   if (!::google::protobuf::util::MessageDifferencer::Equivalent(identity.description(),
                                                       self_description) ||
       !::google::protobuf::util::MessageDifferencer::Equivalent(
-          expectation.reference_identity().description(), self_description)) {
+          reference_identity.description(), self_description)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Input parameter identity has incompatible description");
   }
 
-  return identity.identity() == expectation.reference_identity().identity();
+  bool match = identity.identity() == reference_identity.identity();
+  if (!match && explanation != nullptr) {
+    *explanation = absl::StrFormat("%s does not match %s", identity.identity(),
+                                   reference_identity.identity());
+  }
+  return match;
 }
 
 EnclaveIdentityDescription NullIdentityExpectationMatcher::Description() const {

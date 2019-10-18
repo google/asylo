@@ -19,6 +19,8 @@
 #ifndef ASYLO_IDENTITY_NULL_IDENTITY_NULL_IDENTITY_EXPECTATION_MATCHER_H_
 #define ASYLO_IDENTITY_NULL_IDENTITY_NULL_IDENTITY_EXPECTATION_MATCHER_H_
 
+#include <string>
+
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
 
@@ -33,9 +35,14 @@ class NullIdentityExpectationMatcher final
   ~NullIdentityExpectationMatcher() override = default;
 
   // From the IdentityExpectationMatcher interface.
+
   StatusOr<bool> Match(
       const EnclaveIdentity &identity,
       const EnclaveIdentityExpectation &expectation) const override;
+
+  StatusOr<bool> MatchAndExplain(const EnclaveIdentity &identity,
+                                 const EnclaveIdentityExpectation &expectation,
+                                 std::string *explanation) const override;
 
   // From the NamedIdentityExpectationmatcher interface.
   EnclaveIdentityDescription Description() const override;

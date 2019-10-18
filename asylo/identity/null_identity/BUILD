@@ -118,6 +118,7 @@ cc_library(
         ":null_identity_util",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
+        "@com_google_absl//absl/strings:str_format",
         "@com_google_protobuf//:protobuf",
     ],
     alwayslink = 1,

@@ -18,6 +18,8 @@
 
 #include "asylo/identity/null_identity/null_identity_expectation_matcher.h"
 
+#include <string>
+
 #include <gtest/gtest.h>
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
@@ -30,6 +32,7 @@ namespace asylo {
 
 namespace {
 
+using ::testing::HasSubstr;
 using ::testing::Not;
 
 // A test fixture is used to initialize state consistently.
@@ -75,6 +78,21 @@ TEST_F(NullIdentityExpectationMatcherTest, MatchNullIdentityToNullExpectation) {
   NullIdentityExpectationMatcher matcher;
   EXPECT_THAT(matcher.Match(null_identity_, null_expectation_),
               IsOkAndHolds(true));
+}
+
+// Tests that an identity with the null identity description, but an incorrect
+// identity string, fails to match against a null identity expectation.
+TEST_F(NullIdentityExpectationMatcherTest,
+       MatchAndExplainMismatchedIdentityFails) {
+  EnclaveIdentity bad_null_identity = null_identity_;
+  bad_null_identity.set_identity("foobar");
+
+  std::string explanation;
+  NullIdentityExpectationMatcher matcher;
+  ASSERT_THAT(matcher.MatchAndExplain(bad_null_identity, null_expectation_,
+                                      &explanation),
+              IsOkAndHolds(false));
+  EXPECT_THAT(explanation, HasSubstr("foobar does not match"));
 }
 
 // Tests that attempt to match non_null_expectation_ using
