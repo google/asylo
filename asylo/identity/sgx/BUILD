@@ -264,6 +264,18 @@ cc_proto_library(
     deps = [":remote_assertion_generator_test_util_enclave_proto"],
 )
 
+proto_library(
+    name = "sgx_pcs_client_proto",
+    srcs = ["sgx_pcs_client.proto"],
+    visibility = ["//asylo:implementation"],
+)
+
+cc_proto_library(
+    name = "sgx_pcs_client_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = [":sgx_pcs_client_proto"],
+)
+
 cc_grpc_library(
     name = "sgx_remote_assertion_generator_service",
     srcs = [":sgx_remote_assertion_generator_proto"],
