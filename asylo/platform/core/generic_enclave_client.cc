@@ -37,8 +37,8 @@ namespace asylo {
 std::unique_ptr<GenericEnclaveClient> GenericEnclaveClient::Create(
     const absl::string_view name,
     const std::shared_ptr<primitives::Client> primitive_client) {
-  auto client = std::unique_ptr<GenericEnclaveClient>(
-      new GenericEnclaveClient(std::string(name)));
+  auto client =
+      std::unique_ptr<GenericEnclaveClient>(new GenericEnclaveClient(name));
   client->primitive_client_ = primitive_client;
   return client;
 }
