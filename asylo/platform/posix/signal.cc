@@ -63,10 +63,7 @@ int sigaction(int signum, const struct sigaction *act,
   {
     absl::MutexLock lock(&sigaction_lock);
     if (oldact) {
-      if (signal_manager->GetSigAction(signum)) {
-        oldact = const_cast<struct sigaction *>(
-            signal_manager->GetSigAction(signum));
-      } else {
+      if (!signal_manager->GetSigAction(signum, oldact)) {
         oldact->sa_handler = SIG_DFL;
       }
     }

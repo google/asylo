@@ -43,7 +43,7 @@ class SignalManager {
       ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Gets a signal handler for a specific signal |signum|.
-  const struct sigaction *GetSigAction(int signum) const
+  bool GetSigAction(int signum, struct sigaction *act)
       ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
 
   // Remove a signal handler for a specific signal |signum|.

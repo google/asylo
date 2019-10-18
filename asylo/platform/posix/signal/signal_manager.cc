@@ -44,20 +44,20 @@ SignalManager *SignalManager::GetInstance() {
 }
 
 void SignalManager::HandleSignal(int signum, siginfo_t *info, void *ucontext) {
-  auto act = ::absl::make_unique<struct sigaction>(*GetSigAction(signum));
-  if (!act) {
+  struct sigaction act;
+  if (!GetSigAction(signum, &act)) {
     return;
   }
   if (IsResetOnHandle(signum)) {
     ClearSigAction(signum);
   }
   sigset_t old_mask = GetSignalMask();
-  BlockSignals(act->sa_mask);
-  bool is_siginfo = act->sa_flags & SA_SIGINFO;
-  if (is_siginfo && act->sa_sigaction) {
-    act->sa_sigaction(signum, info, ucontext);
-  } else if (!is_siginfo && act->sa_handler) {
-    act->sa_handler(signum);
+  BlockSignals(act.sa_mask);
+  bool is_siginfo = act.sa_flags & SA_SIGINFO;
+  if (is_siginfo && act.sa_sigaction) {
+    act.sa_sigaction(signum, info, ucontext);
+  } else if (!is_siginfo && act.sa_handler) {
+    act.sa_handler(signum);
   }
   SetSignalMask(old_mask);
 }
@@ -76,13 +76,14 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
   sigprocmask(SIG_SETMASK, &old_mask, nullptr);
 }
 
-const struct sigaction *SignalManager::GetSigAction(int signum) const {
+bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
   absl::MutexLock lock(&signal_to_sigaction_lock_);
   auto sigaction_iterator = signal_to_sigaction_.find(signum);
   if (sigaction_iterator == signal_to_sigaction_.end()) {
-    return nullptr;
+    return false;
   }
-  return sigaction_iterator->second.get();
+  *act = *sigaction_iterator->second;
+  return true;
 }
 
 void SignalManager::ClearSigAction(int signum) {
