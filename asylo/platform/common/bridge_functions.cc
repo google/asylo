@@ -38,6 +38,7 @@
 #include <sys/un.h>
 #include <unistd.h>
 #include <utime.h>
+
 #include <algorithm>
 #include <csignal>
 #include <cstdint>
@@ -46,6 +47,7 @@
 
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 namespace asylo {
 namespace {
@@ -106,23 +108,6 @@ const std::unordered_map<int, int> *GetSignalToBridgeSignalMap() {
 
 }  // namespace
 
-int FromBridgeSignal(int bridge_signum) {
-  for (auto signal : *GetSignalToBridgeSignalMap()) {
-    if (bridge_signum == signal.second) {
-      return signal.first;
-    }
-  }
-  return -1;
-}
-
-int ToBridgeSignal(int signum) {
-  auto iterator = GetSignalToBridgeSignalMap()->find(signum);
-  if (iterator == GetSignalToBridgeSignalMap()->end()) {
-    return -1;
-  }
-  return iterator->second;
-}
-
 sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set) {
   if (!bridge_set || !set) return nullptr;
   sigemptyset(set);
@@ -146,37 +131,19 @@ bridge_sigset_t *ToBridgeSigSet(const sigset_t *set,
   return bridge_set;
 }
 
-int FromBridgeSignalCode(int bridge_si_code) {
-  if (bridge_si_code == BRIDGE_SI_USER) return SI_USER;
-  if (bridge_si_code == BRIDGE_SI_QUEUE) return SI_QUEUE;
-  if (bridge_si_code == BRIDGE_SI_TIMER) return SI_TIMER;
-  if (bridge_si_code == BRIDGE_SI_ASYNCIO) return SI_ASYNCIO;
-  if (bridge_si_code == BRIDGE_SI_MESGQ) return SI_MESGQ;
-  return -1;
-}
-
-int ToBridgeSignalCode(int si_code) {
-  if (si_code == SI_USER) return BRIDGE_SI_USER;
-  if (si_code == SI_QUEUE) return BRIDGE_SI_QUEUE;
-  if (si_code == SI_TIMER) return BRIDGE_SI_TIMER;
-  if (si_code == SI_ASYNCIO) return BRIDGE_SI_ASYNCIO;
-  if (si_code == SI_MESGQ) return BRIDGE_SI_MESGQ;
-  return -1;
-}
-
 siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,
                              siginfo_t *siginfo) {
   if (!bridge_siginfo || !siginfo) return nullptr;
-  siginfo->si_signo = FromBridgeSignal(bridge_siginfo->si_signo);
-  siginfo->si_code = FromBridgeSignalCode(bridge_siginfo->si_code);
+  siginfo->si_signo = FromkLinuxSignalNumber(bridge_siginfo->si_signo);
+  siginfo->si_code = FromkLinuxSignalCode(bridge_siginfo->si_code);
   return siginfo;
 }
 
 struct bridge_siginfo_t *ToBridgeSigInfo(
     const siginfo_t *siginfo, struct bridge_siginfo_t *bridge_siginfo) {
   if (!siginfo || !bridge_siginfo) return nullptr;
-  bridge_siginfo->si_signo = ToBridgeSignal(siginfo->si_signo);
-  bridge_siginfo->si_code = ToBridgeSignalCode(siginfo->si_code);
+  bridge_siginfo->si_signo = TokLinuxSignalNumber(siginfo->si_signo);
+  bridge_siginfo->si_code = TokLinuxSignalCode(siginfo->si_code);
   return bridge_siginfo;
 }
 

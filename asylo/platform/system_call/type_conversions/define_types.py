@@ -353,6 +353,14 @@ define_constants(
     multi_valued=True,
     data_type="int64_t")
 
+# The code that describes the cause of a signal.
+define_constants(
+    name="SignalCode",
+    values=["SI_USER", "SI_QUEUE", "SI_TIMER", "SI_ASYNCIO", "SI_MESGQ"],
+    include_header_file="signal.h",
+    default_value_host=-1,
+    default_value_enclave=-1)
+
 define_struct(
     name="timespec",
     values=[

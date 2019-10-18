@@ -48,20 +48,6 @@ sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set);
 bridge_sigset_t *ToBridgeSigSet(const sigset_t *set,
                                 bridge_sigset_t *bridge_set);
 
-// Converts |bridge_signum| to a runtime signal number. Returns -1 if
-// unsuccessful.
-int FromBridgeSignal(int bridge_signum);
-
-// Converts |signum| to a bridge signal number. Returns -1 if unsuccessful.
-int ToBridgeSignal(int signum);
-
-// Converts |bridge_si_code| to a runtime signal code. Returns -1 if
-// unsuccessful.
-int FromBridgeSignalCode(int bridge_si_code);
-
-// Converts |si_code| to a bridge signal code. Returns -1 if unsuccessful.
-int ToBridgeSignalCode(int si_code);
-
 // Converts |bridge_siginfo| to a runtime siginfo_t. Returns nullptr if
 // unsuccessful.
 siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,

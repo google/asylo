@@ -109,21 +109,9 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
-    ],
-)
-
-# Tests for the bridge functions
-cc_test(
-    name = "bridge_functions_test",
-    srcs = ["bridge_functions_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":bridge_types",
-        "//asylo/test/util:finite_domain_fuzz",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
     ],
 )
 

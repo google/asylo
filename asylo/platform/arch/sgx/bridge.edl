@@ -59,7 +59,7 @@ enclave {
     //////////////////////////////////////
 
     int ocall_enc_untrusted_register_signal_handler(
-        int bridge_signum, [in] const struct BridgeSignalHandler *handler,
+        int klinux_signum, [in] const struct BridgeSignalHandler *handler,
         [in, string] const char *name);
   };
 };

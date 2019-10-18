@@ -79,24 +79,22 @@
 namespace {
 
 // Stores a pointer to a function inside the enclave that translates
-// |bridge_signum| to a value inside the enclave and calls the registered signal
+// |klinux_signum| to a value inside the enclave and calls the registered signal
 // handler for that signal.
 static void (*handle_signal_inside_enclave)(int, bridge_siginfo_t *,
                                             void *) = nullptr;
 
-// Translates host |signum| to |bridge_signum|, and calls the function
-// registered as the signal handler inside the enclave.
-void TranslateToBridgeAndHandleSignal(int signum, siginfo_t *info,
+// Calls the function registered as the signal handler inside the enclave.
+void TranslateToBridgeAndHandleSignal(int klinux_signum, siginfo_t *info,
                                       void *ucontext) {
-  int bridge_signum = asylo::ToBridgeSignal(signum);
-  if (bridge_signum < 0) {
+  if (klinux_signum < 0) {
     // Invalid incoming signal number.
     return;
   }
   struct bridge_siginfo_t bridge_siginfo;
   asylo::ToBridgeSigInfo(info, &bridge_siginfo);
   if (handle_signal_inside_enclave) {
-    handle_signal_inside_enclave(bridge_signum, &bridge_siginfo, ucontext);
+    handle_signal_inside_enclave(klinux_signum, &bridge_siginfo, ucontext);
   }
 }
 
@@ -240,11 +238,10 @@ int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
 //////////////////////////////////////
 
 int ocall_enc_untrusted_register_signal_handler(
-    int bridge_signum, const struct BridgeSignalHandler *handler,
+    int klinux_signum, const struct BridgeSignalHandler *handler,
     const char *name) {
   std::string enclave_name(name);
-  int signum = asylo::FromBridgeSignal(bridge_signum);
-  if (signum < 0) {
+  if (klinux_signum < 0) {
     errno = EINVAL;
     return -1;
   }
@@ -263,10 +260,10 @@ int ocall_enc_untrusted_register_signal_handler(
           generic_client->GetPrimitiveClient());
   const asylo::primitives::SgxEnclaveClient *old_client =
       asylo::primitives::EnclaveSignalDispatcher::GetInstance()->RegisterSignal(
-          signum, primitive_client.get());
+          klinux_signum, primitive_client.get());
   if (old_client) {
-    LOG(WARNING) << "Overwriting the signal handler for signal: " << signum
-                 << " registered by another enclave";
+    LOG(WARNING) << "Overwriting the signal handler for signal: "
+                 << klinux_signum << " registered by another enclave";
   }
   struct sigaction newact;
   if (!handler || !handler->sigaction) {
@@ -288,7 +285,7 @@ int ocall_enc_untrusted_register_signal_handler(
   newact.sa_flags = handler->flags;
   newact.sa_flags |= SA_SIGINFO;
   struct sigaction oldact;
-  return sigaction(signum, &newact, &oldact);
+  return sigaction(klinux_signum, &newact, &oldact);
 }
 
 //////////////////////////////////////

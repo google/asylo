@@ -380,11 +380,8 @@ int SgxEnclaveClient::EnterAndHandleSignal(const EnclaveSignal signal) {
   }
 
   EnclaveSignal enclave_signal(signal);
-  int bridge_signum = ToBridgeSignal(signal.signum());
-  if (bridge_signum < 0) {
-    return -1;
-  }
-  enclave_signal.set_signum(bridge_signum);
+  enclave_signal.set_signum(signal.signum());
+
   std::string serialized_enclave_signal;
   if (!enclave_signal.SerializeToString(&serialized_enclave_signal)) {
     return -1;

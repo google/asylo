@@ -713,6 +713,24 @@ TEST_F(GeneratedTypesFunctionsTest, SyslogOptionTest) {
                        TokLinuxSyslogOption);
 }
 
+TEST_F(GeneratedTypesFunctionsTest, SignalCodeTest) {
+  std::vector<int> from_consts = {kLinux_SI_USER, kLinux_SI_QUEUE,
+                                  kLinux_SI_TIMER, kLinux_SI_ASYNCIO,
+                                  kLinux_SI_MESGQ};
+  std::vector<int> to_consts = {SI_USER, SI_QUEUE, SI_TIMER, SI_ASYNCIO,
+                                SI_MESGQ};
+  auto from_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return FromkLinuxSignalCode(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
+                                             kIterationCount),
+              from_matcher);
+  auto to_matcher = IsFiniteRestrictionOf<int, int>(
+      [&](int input) { return TokLinuxSignalCode(input); });
+  EXPECT_THAT(FuzzFiniteFunctionWithFallback(to_consts, from_consts, -1,
+                                             kIterationCount),
+              to_matcher);
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo

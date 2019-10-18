@@ -71,15 +71,6 @@ enum SignalNumber {
   BRIDGE_SIGRTMAX = 64,
 };
 
-// The code that describes the cause of a signal.
-enum SignalCode {
-  BRIDGE_SI_USER = 1,
-  BRIDGE_SI_QUEUE = 2,
-  BRIDGE_SI_TIMER = 3,
-  BRIDGE_SI_ASYNCIO = 4,
-  BRIDGE_SI_MESGQ = 5,
-};
-
 struct bridge_siginfo_t {
   int32_t si_signo;
   int32_t si_code;

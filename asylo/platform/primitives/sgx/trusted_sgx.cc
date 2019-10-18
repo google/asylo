@@ -71,8 +71,8 @@ namespace {
 int RegisterSignalHandler(
     int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
     const sigset_t mask, int flags, const char *enclave_name) {
-  int bridge_signum = asylo::ToBridgeSignal(signum);
-  if (bridge_signum < 0) {
+  int klinux_signum = TokLinuxSignalNumber(signum);
+  if (klinux_signum < 0) {
     errno = EINVAL;
     return -1;
   }
@@ -82,7 +82,7 @@ int RegisterSignalHandler(
   handler.flags = TokLinuxSignalFlag(flags);
   int ret;
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
-      &ret, bridge_signum, &handler, enclave_name));
+      &ret, klinux_signum, &handler, enclave_name));
   return ret;
 }
 
@@ -92,7 +92,7 @@ int DeliverSignal(const char *input, size_t input_len) {
     return 1;
   }
 
-  int signum = FromBridgeSignal(signal.signum());
+  int signum = FromkLinuxSignalNumber(signal.signum());
   if (signum < 0) {
     return 1;
   }
