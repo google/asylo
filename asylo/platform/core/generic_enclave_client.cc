@@ -23,7 +23,6 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"  // IWYU pragma: export
-#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/core/entry_selectors.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/extent.h"

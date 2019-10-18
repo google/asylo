@@ -28,16 +28,8 @@
 #define _XOPEN_SOURCE
 #endif  // _XOPEN_SOURCE
 
-#include <fcntl.h>
-#include <netdb.h>
-#include <netinet/in.h>
-#include <poll.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
 #include <sys/types.h>
-#include <sys/un.h>
 #include <unistd.h>
-#include <utime.h>
 
 #include <algorithm>
 #include <csignal>
@@ -45,7 +37,6 @@
 #include <cstring>
 #include <unordered_map>
 
-#include "asylo/util/logging.h"
 #include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 

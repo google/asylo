@@ -110,7 +110,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/system_call/type_conversions",
-        "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
     ],
 )
@@ -133,7 +132,6 @@ cc_library(
     hdrs = ["bridge_proto_serializer.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":bridge_types",
         ":bridge_types_cc_proto",
         "@com_google_absl//absl/strings",
     ],

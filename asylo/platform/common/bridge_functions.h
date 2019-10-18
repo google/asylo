@@ -19,20 +19,6 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_FUNCTIONS_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_FUNCTIONS_H_
 
-#include <netdb.h>
-#include <netinet/tcp.h>
-#include <poll.h>
-#include <pwd.h>
-#include <sys/resource.h>
-#include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/times.h>
-#include <sys/types.h>
-#include <sys/wait.h>
-#include <syslog.h>
-#include <utime.h>
-
 #include <csignal>
 #include <cstdint>
 

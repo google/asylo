@@ -19,9 +19,6 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_PROTO_SERIALIZER_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_PROTO_SERIALIZER_H_
 
-#include <ifaddrs.h>
-#include <netdb.h>
-#include <sys/epoll.h>
 #include <sys/inotify.h>
 
 #include <cstddef>

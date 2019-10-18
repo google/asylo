@@ -16,19 +16,11 @@
  *
  */
 
-#include <ifaddrs.h>
-#include <net/if.h>
-#include <netdb.h>
-#include <sys/epoll.h>
 #include <sys/inotify.h>
-#include <sys/ioctl.h>
-#include <sys/socket.h>
 #include <sys/types.h>
 #include <string>
 
-#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
-#include "asylo/platform/common/bridge_types.h"
 
 namespace asylo {
 namespace {
