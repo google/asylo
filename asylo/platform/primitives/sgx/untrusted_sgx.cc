@@ -79,7 +79,7 @@ struct ms_ecall_deliver_signal_t {
   // Return value from the trusted call.
   int ms_retval;
   const char *ms_input;
-  bridge_size_t ms_input_len;
+  uint64_t ms_input_len;
 };
 
 // Edger8r-generated primitives ms_ecall_transfer_secure_snapshot_key_t
@@ -87,9 +87,9 @@ struct ms_ecall_deliver_signal_t {
 struct ms_ecall_transfer_secure_snapshot_key_t {
   int ms_retval;
   const char *ms_input;
-  bridge_size_t ms_input_len;
+  uint64_t ms_input_len;
   char **ms_output;
-  bridge_size_t *ms_output_len;
+  uint64_t *ms_output_len;
 };
 
 // Enters the enclave and invokes the secure snapshot key transfer entry-point.
@@ -97,7 +97,7 @@ struct ms_ecall_transfer_secure_snapshot_key_t {
 static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid, const char *input,
                                         size_t input_len, char **output,
                                         size_t *output_len) {
-  bridge_size_t bridge_output_len;
+  uint64_t bridge_output_len;
   ms_ecall_transfer_secure_snapshot_key_t ms;
   ms.ms_input = input;
   ms.ms_input_len = input_len;
@@ -123,14 +123,14 @@ static Status TransferSecureSnapshotKey(sgx_enclave_id_t eid, const char *input,
 struct ms_ecall_take_snapshot_t {
   int ms_retval;
   char **ms_output;
-  bridge_size_t *ms_output_len;
+  uint64_t *ms_output_len;
 };
 
 // Enters the enclave and invokes the snapshotting entry-point. If the ecall
 // fails, return a non-OK status.
 static Status TakeSnapshot(sgx_enclave_id_t eid, char **output,
                            size_t *output_len) {
-  bridge_size_t bridge_output_len;
+  uint64_t bridge_output_len;
   ms_ecall_take_snapshot_t ms;
   ms.ms_output = output;
   ms.ms_output_len = &bridge_output_len;
@@ -157,16 +157,16 @@ static Status TakeSnapshot(sgx_enclave_id_t eid, char **output,
 struct ms_ecall_restore_t {
   int ms_retval;
   const char *ms_input;
-  bridge_size_t ms_input_len;
+  uint64_t ms_input_len;
   char **ms_output;
-  bridge_size_t *ms_output_len;
+  uint64_t *ms_output_len;
 };
 
 // Enters the enclave and invokes the restoring entry-point. If the ecall fails,
 // return a non-OK status.
 static Status Restore(sgx_enclave_id_t eid, const char *input, size_t input_len,
                       char **output, size_t *output_len) {
-  bridge_size_t bridge_output_len;
+  uint64_t bridge_output_len;
   ms_ecall_restore_t ms;
   ms.ms_input = input;
   ms.ms_input_len = input_len;

@@ -31,7 +31,6 @@
 // be added to untrusted/enclave_calls.* and trusted/host_calls.* respectively.
 enclave {
   include "asylo/platform/common/bridge_types.h"
-  include "asylo/platform/core/shared_name_kind.h"
 
   from "../../../third_party/intel/sgx_tstdc.edl" import
       sgx_thread_wait_untrusted_event_ocall,
@@ -50,9 +49,9 @@ enclave {
     //           inotify.h              //
     //////////////////////////////////////
 
-    int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
+    int ocall_enc_untrusted_inotify_read(int fd, uint64_t count,
         [out] char **serialized_events,
-        [out] bridge_size_t *serialized_events_len) propagate_errno;
+        [out] uint64_t *serialized_events_len) propagate_errno;
 
     //////////////////////////////////////
     //            signal.h              //

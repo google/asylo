@@ -23,7 +23,6 @@
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 
-#include <errno.h>
 #include <stdarg.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -32,18 +31,11 @@
 
 #include <cstring>
 #include <string>
-#include <vector>
 
-#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
-#include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
-#include "asylo/platform/common/bridge_functions.h"
-#include "asylo/platform/common/bridge_proto_serializer.h"
-#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
-#include "asylo/platform/primitives/util/trusted_memory.h"
 #include "asylo/util/status.h"
 #include "include/sgx_trts.h"
 

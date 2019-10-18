@@ -327,8 +327,7 @@ int TrustedPrimitives::CreateThread() {
 void **AllocateUntrustedBuffers(size_t count, size_t size) {
   void **buffers;
   CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
-      &buffers, static_cast<bridge_size_t>(count),
-      static_cast<bridge_size_t>(size)));
+      &buffers, static_cast<uint64_t>(count), static_cast<uint64_t>(size)));
   if (!buffers || !sgx_is_outside_enclave(buffers, size)) {
     abort();
   }
@@ -337,7 +336,7 @@ void **AllocateUntrustedBuffers(size_t count, size_t size) {
 
 void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
   CHECK_OCALL(ocall_enc_untrusted_deallocate_free_list(
-      free_list, static_cast<bridge_size_t>(count)));
+      free_list, static_cast<uint64_t>(count)));
 }
 
 void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected) {

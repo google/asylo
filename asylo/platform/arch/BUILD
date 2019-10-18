@@ -191,15 +191,12 @@ cc_library(
         "@com_google_absl//absl/strings",
         "//asylo:enclave_cc_proto",
         "//asylo/util:logging",
-        "//asylo/platform/common:bridge_proto_serializer",
-        "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:memory",
         "//asylo/platform/core:entry_points",
         "//asylo/platform/core:shared_name",
         "//asylo/platform/host_call",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/primitives",
-        "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/platform/primitives/sgx:trusted_fork",
@@ -247,7 +244,6 @@ cc_library(
     ],
     deps = [
         "//asylo/platform/common:bridge_types",
-        "//asylo/platform/core:shared_name",
     ] + select(
         {
             "@linux_sgx//:sgx_hw": _TRUSTED_SGX_BRIDGE_BACKEND_DEPS,

@@ -29,9 +29,8 @@
 extern "C" {
 #endif
 
-// Replace size_t, ssize_t, and sigset_t with types of known width for
-// transmission across the enclave boundary.
-typedef uint64_t bridge_size_t;
+// Replace sigset_t with types of known width for transmission across the
+// enclave boundary.
 typedef int64_t bridge_sigset_t;
 
 // All the signals that are supported to be registered inside enclave (except

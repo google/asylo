@@ -187,8 +187,7 @@ void *ocall_untrusted_local_alloc(uint64_t size) {
   return ret;
 }
 
-void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
-                                            bridge_size_t size) {
+void **ocall_enc_untrusted_allocate_buffers(uint64_t count, uint64_t size) {
   void **buffers = reinterpret_cast<void **>(
       malloc(static_cast<size_t>(count) * sizeof(void *)));
   for (int i = 0; i < count; i++) {
@@ -198,7 +197,7 @@ void **ocall_enc_untrusted_allocate_buffers(bridge_size_t count,
 }
 
 void ocall_enc_untrusted_deallocate_free_list(void **free_list,
-                                              bridge_size_t count) {
+                                              uint64_t count) {
   // This function only releases memory on the untrusted heap pointed to by
   // buffer pointers stored in |free_list|, not freeing the |free_list| object
   // itself. The client making the host call is responsible for the deallocation
@@ -212,9 +211,9 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 //           inotify.h              //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
+int ocall_enc_untrusted_inotify_read(int fd, uint64_t count,
                                      char **serialized_events,
-                                     bridge_size_t *serialized_events_len) {
+                                     uint64_t *serialized_events_len) {
   size_t buf_size =
       std::max(sizeof(struct inotify_event) + NAME_MAX + 1, count);
   char *buf = static_cast<char *>(malloc(buf_size));
@@ -229,7 +228,7 @@ int ocall_enc_untrusted_inotify_read(int fd, bridge_size_t count,
                                      &len)) {
     return -1;
   }
-  *serialized_events_len = static_cast<bridge_size_t>(len);
+  *serialized_events_len = static_cast<uint64_t>(len);
   return 0;
 }
 

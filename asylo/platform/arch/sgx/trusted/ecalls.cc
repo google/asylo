@@ -28,7 +28,6 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
-#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/fork.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
@@ -43,7 +42,7 @@
 
 // Invokes the enclave snapshotting entry-point. Returns a non-zero error code
 // on failure.
-int ecall_take_snapshot(char **output, bridge_size_t *output_len) {
+int ecall_take_snapshot(char **output, uint64_t *output_len) {
   int result = 0;
   size_t tmp_output_len;
   try {
@@ -54,15 +53,15 @@ int ecall_take_snapshot(char **output, bridge_size_t *output_len) {
   }
 
   if (output_len) {
-    *output_len = static_cast<bridge_size_t>(tmp_output_len);
+    *output_len = static_cast<uint64_t>(tmp_output_len);
   }
   return result;
 }
 
 // Invokes the enclave restoring entry-point. Returns a non-zero error code on
 // failure.
-int ecall_restore(const char *input, bridge_size_t input_len, char **output,
-                  bridge_size_t *output_len) {
+int ecall_restore(const char *input, uint64_t input_len, char **output,
+                  uint64_t *output_len) {
   int result = 0;
   size_t tmp_output_len;
   try {
@@ -73,18 +72,17 @@ int ecall_restore(const char *input, bridge_size_t input_len, char **output,
   }
 
   if (output_len) {
-    *output_len = static_cast<bridge_size_t>(tmp_output_len);
+    *output_len = static_cast<uint64_t>(tmp_output_len);
   }
   return result;
 }
 
 // Invokes the enclave secure snapshot key transfer entry-point. Returns a
 // non-zero error code on failure.
-int ecall_transfer_secure_snapshot_key(const char *input,
-                                       bridge_size_t input_len, char **output,
-                                       bridge_size_t *output_len) {
+int ecall_transfer_secure_snapshot_key(const char *input, uint64_t input_len,
+                                       char **output, uint64_t *output_len) {
   int result = 0;
-  bridge_size_t bridge_output_len;
+  uint64_t bridge_output_len;
   try {
     result = asylo::TransferSecureSnapshotKey(
         input, static_cast<size_t>(input_len), output, &bridge_output_len);

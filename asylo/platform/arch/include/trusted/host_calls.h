@@ -23,20 +23,7 @@
 // functions invoke code outside the enclave and secure applications must assume
 // an adversarial implementation.
 
-#include <arpa/inet.h>
-#include <ifaddrs.h>
-#include <poll.h>
-#include <pwd.h>
-#include <sched.h>
 #include <stddef.h>
-#include <stdint.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-#include <sys/utsname.h>
-#include <time.h>
-#include <unistd.h>
-
-#include "asylo/platform/core/shared_name_kind.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -44,13 +31,6 @@ extern "C" {
 
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
-
-//////////////////////////////////////
-//          Error Handling          //
-//////////////////////////////////////
-
-// Fetches the value of errno from the untrusted C runtime.
-int enc_untrusted_get_errno();
 
 //////////////////////////////////////
 //            inotify.h             //

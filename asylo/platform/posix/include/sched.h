@@ -27,8 +27,8 @@
 extern "C" {
 #endif
 
-// The maximum number of CPUs we support. Should match BRIDGE_CPU_SET_MAX_CPUS
-// in third_party/asylo/platform/common/bridge_types.h.
+// The maximum number of CPUs we support. Should match KLINUX_CPU_SET_MAX_CPUS
+// in third_party/asylo/platform/system_call/type_conversions/kernel_types.h.
 #define CPU_SETSIZE CPU_SET_MAX_CPUS
 
 // Represents a set of (up to) CPU_SETSIZE CPUs as a bitset.
