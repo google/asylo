@@ -182,6 +182,7 @@ cc_test(
     srcs = ["epoll_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_name = "epoll_enclave_test",
+    tags = ["noregression"],
     deps = [
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
