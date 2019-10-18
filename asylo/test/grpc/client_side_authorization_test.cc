@@ -29,9 +29,9 @@
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
@@ -126,12 +126,8 @@ class ClientSideAuthorizationTest : public Test {
   }
 
   StatusOr<SgxIdentityExpectation> CreateSgxIdentityExpectation() {
-    SgxIdentityExpectation sgx_expectation;
-
-    sgx::SetDefaultLocalSgxMatchSpec(sgx_expectation.mutable_match_spec());
-
-    sgx::CodeIdentity *code_identity =
-        sgx_expectation.mutable_reference_identity()->mutable_code_identity();
+    SgxIdentity sgx_identity;
+    sgx::CodeIdentity *code_identity = sgx_identity.mutable_code_identity();
     code_identity->set_miscselect(0);
     if (!ConvertSecsAttributeRepresentation(
             {sgx::SecsAttributeBit::INIT, sgx::SecsAttributeBit::DEBUG,
@@ -150,7 +146,8 @@ class ClientSideAuthorizationTest : public Test {
     signer_assigned_identity->set_isvprodid(kExpectedServerIsvprodid);
     signer_assigned_identity->set_isvsvn(kExpectedServerIsvsvn);
 
-    return sgx_expectation;
+    return asylo::CreateSgxIdentityExpectation(
+        std::move(sgx_identity), SgxIdentityMatchSpecOptions::DEFAULT);
   }
 
   static asylo::EnclaveManager *manager_;
@@ -170,8 +167,8 @@ TEST_F(ClientSideAuthorizationTest, AuthorizationSuccess) {
   ASYLO_ASSERT_OK_AND_ASSIGN(sgx_expectation, CreateSgxIdentityExpectation());
 
   IdentityAclPredicate acl;
-  ASYLO_ASSERT_OK(
-      sgx::SerializeSgxExpectation(sgx_expectation, acl.mutable_expectation()));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*acl.mutable_expectation(),
+                             SerializeSgxIdentityExpectation(sgx_expectation));
 
   *client_input.mutable_peer_acl() = std::move(acl);
 
@@ -197,8 +194,8 @@ TEST_F(ClientSideAuthorizationTest, AuthorizationIncorrectSgxIdentityFailure) {
       ->back() ^= 1;
 
   IdentityAclPredicate acl;
-  ASYLO_ASSERT_OK(
-      sgx::SerializeSgxExpectation(sgx_expectation, acl.mutable_expectation()));
+  ASYLO_ASSERT_OK_AND_ASSIGN(*acl.mutable_expectation(),
+                             SerializeSgxIdentityExpectation(sgx_expectation));
 
   *client_input.mutable_peer_acl() = std::move(acl);
 
