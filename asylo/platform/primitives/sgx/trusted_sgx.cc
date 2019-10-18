@@ -107,9 +107,7 @@ int DeliverSignal(const char *input, size_t input_len) {
   if (sigismember(&mask, signum)) {
     return -1;
   }
-  if (!signal_manager->HandleSignal(signum, &info, /*ucontext=*/nullptr).ok()) {
-    return 1;
-  }
+  signal_manager->HandleSignal(signum, &info, /*ucontext=*/nullptr);
   return 0;
 }
 

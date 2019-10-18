@@ -117,14 +117,13 @@ void EnterEnclaveAndHandleSignal(int signum, siginfo_t *info, void *ucontext) {
 //
 // In simulation mode, this is registered as the signal handler.
 void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
-  auto client_result = asylo::primitives::EnclaveSignalDispatcher::GetInstance()
-                           ->GetClientForSignal(signum);
-  if (!client_result.ok()) {
-    return;
-  }
   asylo::primitives::SgxEnclaveClient *client =
       dynamic_cast<asylo::primitives::SgxEnclaveClient *>(
-          client_result.ValueOrDie());
+          asylo::primitives::EnclaveSignalDispatcher::GetInstance()
+              ->GetClientForSignal(signum));
+  if (!client) {
+    return;
+  }
   if (client->IsTcsActive()) {
     TranslateToBridgeAndHandleSignal(signum, info, ucontext);
   } else {

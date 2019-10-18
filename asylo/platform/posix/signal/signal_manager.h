@@ -36,7 +36,7 @@ class SignalManager {
   static SignalManager *GetInstance();
 
   // Locates and calls the handler registered for |signum|.
-  Status HandleSignal(int signum, siginfo_t *info, void *ucontext);
+  void HandleSignal(int signum, siginfo_t *info, void *ucontext);
 
   // Sets a signal handler pointer for a specific signal |signum|.
   void SetSigAction(int signum, const struct sigaction &act)

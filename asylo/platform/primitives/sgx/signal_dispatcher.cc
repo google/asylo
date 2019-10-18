@@ -35,13 +35,12 @@ EnclaveSignalDispatcher *EnclaveSignalDispatcher::GetInstance() {
   return instance;
 }
 
-StatusOr<SgxEnclaveClient *> EnclaveSignalDispatcher::GetClientForSignal(
+SgxEnclaveClient *EnclaveSignalDispatcher::GetClientForSignal(
     int signum) const {
   absl::MutexLock lock(&signal_enclave_map_lock_);
   auto it = signal_to_client_map_.find(signum);
   if (it == signal_to_client_map_.end()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("No enclave has registered signal: ", signum));
+    return nullptr;
   }
   return it->second;
 }
@@ -99,15 +98,16 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
   return status;
 }
 
-Status EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
-                                                            siginfo_t *info,
-                                                            void *ucontext) {
-  SgxEnclaveClient *client;
-  ASYLO_ASSIGN_OR_RETURN(client, GetClientForSignal(signum));
+int EnclaveSignalDispatcher::EnterEnclaveAndHandleSignal(int signum,
+                                                         siginfo_t *info,
+                                                         void *ucontext) {
+  SgxEnclaveClient *client = GetClientForSignal(signum);
+  if (!client) {
+    return -1;
+  }
   EnclaveSignal enclave_signal;
   enclave_signal.set_signum(signum);
   enclave_signal.set_code(info->si_code);
-  enclave_signal.clear_gregs();
   return client->EnterAndHandleSignal(enclave_signal);
 }
 

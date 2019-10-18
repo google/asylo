@@ -47,10 +47,7 @@ void TranslateAndHandleSignal(int bridge_signum,
   if (sigismember(&mask, signum)) {
     return;
   }
-  Status status = signal_manager->HandleSignal(signum, &info, ucontext);
-  if (!status.ok()) {
-    LOG(ERROR) << status;
-  }
+  signal_manager->HandleSignal(signum, &info, ucontext);
 }
 
 }  // namespace asylo

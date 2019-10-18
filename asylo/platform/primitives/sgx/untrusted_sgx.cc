@@ -374,24 +374,20 @@ Status SgxEnclaveClient::EnclaveCallInternal(uint64_t selector,
   return Status::OkStatus();
 }
 
-Status SgxEnclaveClient::EnterAndHandleSignal(const EnclaveSignal signal) {
+int SgxEnclaveClient::EnterAndHandleSignal(const EnclaveSignal signal) {
   if (is_destroyed_) {
-    return Status{error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot make an enclave call to a closed enclave."};
+    return -1;
   }
 
   EnclaveSignal enclave_signal(signal);
   int bridge_signum = ToBridgeSignal(signal.signum());
   if (bridge_signum < 0) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Failed to convert signum (", signal.signum(),
-                               ") to bridge signum"));
+    return -1;
   }
   enclave_signal.set_signum(bridge_signum);
   std::string serialized_enclave_signal;
   if (!enclave_signal.SerializeToString(&serialized_enclave_signal)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Failed to serialize EnclaveSignal");
+    return -1;
   }
 
   ms_ecall_deliver_signal_t ms;
@@ -403,27 +399,11 @@ Status SgxEnclaveClient::EnterAndHandleSignal(const EnclaveSignal signal) {
   sgx_status_t status =
       sgx_ecall(id_, /*index=*/1, table, &ms, /*is_utility=*/false);
 
-  if (status != SGX_SUCCESS) {
-    // Return a Status object in the SGX error space.
-    return Status(status, "Call to primitives deliver signal endpoint failed");
-  } else if (ms.ms_retval) {
-    std::string message;
-    switch (ms.ms_retval) {
-      case 1:
-        message = "Invalid or unregistered incoming signal";
-        break;
-      case 2:
-        message = "Enclave unable to handle signal in current state";
-        break;
-      case -1:
-        message = "Incoming signal is blocked inside the enclave";
-        break;
-      default:
-        message = "Unexpected error while handling signal";
-    }
-    return Status(error::GoogleError::INTERNAL, message);
+  if (status != SGX_SUCCESS || ms.ms_retval) {
+    return -1;
   }
-  return Status::OkStatus();
+
+  return 0;
 }
 
 Status SgxEnclaveClient::EnterAndTakeSnapshot(SnapshotLayout *snapshot_layout) {

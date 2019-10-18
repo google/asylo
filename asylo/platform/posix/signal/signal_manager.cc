@@ -43,18 +43,14 @@ SignalManager *SignalManager::GetInstance() {
   return instance;
 }
 
-Status SignalManager::HandleSignal(int signum, siginfo_t *info,
-                                   void *ucontext) {
+void SignalManager::HandleSignal(int signum, siginfo_t *info, void *ucontext) {
   auto act = ::absl::make_unique<struct sigaction>(*GetSigAction(signum));
   if (!act) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        absl::StrCat("No handler has been registered for signal: ", signum));
+    return;
   }
   if (IsResetOnHandle(signum)) {
     ClearSigAction(signum);
   }
-  Status status;
   sigset_t old_mask = GetSignalMask();
   BlockSignals(act->sa_mask);
   bool is_siginfo = act->sa_flags & SA_SIGINFO;
@@ -62,13 +58,8 @@ Status SignalManager::HandleSignal(int signum, siginfo_t *info,
     act->sa_sigaction(signum, info, ucontext);
   } else if (!is_siginfo && act->sa_handler) {
     act->sa_handler(signum);
-  } else {
-    status = Status(
-        error::GoogleError::INTERNAL,
-        absl::StrCat("Handler registered for signal: ", signum, " is invalid"));
   }
   SetSignalMask(old_mask);
-  return status;
 }
 
 void SignalManager::SetSigAction(int signum, const struct sigaction &act) {

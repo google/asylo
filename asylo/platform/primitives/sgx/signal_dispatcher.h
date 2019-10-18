@@ -46,7 +46,7 @@ class EnclaveSignalDispatcher {
       ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
 
   // Gets the enclave that registered a handler for |signum|.
-  StatusOr<SgxEnclaveClient *> GetClientForSignal(int signum) const
+  SgxEnclaveClient *GetClientForSignal(int signum) const
       ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
 
   // Deregisters all the signals registered by |client|.
@@ -56,8 +56,7 @@ class EnclaveSignalDispatcher {
   // Looks for the enclave client that registered |signum|, and calls
   // EnterAndHandleSignal() with that enclave client. |signum|, |info| and
   // |ucontext| are passed into the enclave.
-  Status EnterEnclaveAndHandleSignal(int signum, siginfo_t *info,
-                                     void *ucontext);
+  int EnterEnclaveAndHandleSignal(int signum, siginfo_t *info, void *ucontext);
 
  private:
   EnclaveSignalDispatcher() = default;  // Private to enforce singleton.
