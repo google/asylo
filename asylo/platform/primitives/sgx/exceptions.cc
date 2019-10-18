@@ -16,6 +16,7 @@
  *
  */
 
+#include <stdint.h>
 #include <stdlib.h>
 
 #include "include/sgx_cpuid.h"
@@ -47,6 +48,18 @@ struct CpuidResult {
 };
 CpuidResult cpuid_results[kMaxSupportedCpuidLeaf + 1];
 
+// CPUID bits taken from Intel SDM, Vol 2A, CPUID section
+constexpr uint32_t CPUID_01H_ECX_SSE3 = 1 << 0;
+constexpr uint32_t CPUID_01H_ECX_PCLMULQDQ = 1 << 1;
+constexpr uint32_t CPUID_01H_ECX_SSSE3 = 1 << 9;
+constexpr uint32_t CPUID_01H_ECX_SSE4_1 = 1 << 19;
+constexpr uint32_t CPUID_01H_ECX_SSE4_2 = 1 << 20;
+constexpr uint32_t CPUID_01H_ECX_AESNI = 1 << 25;
+constexpr uint32_t CPUID_01H_ECX_RDRND = 1 << 30;
+constexpr uint32_t CPUID_01H_EDX_SSE = 1 << 25;
+constexpr uint32_t CPUID_01H_EDX_SSE2 = 1 << 26;
+constexpr uint32_t CPUID_07H_EBX_RDSEED = 1 << 18;
+
 // Prior to any CPUID instructions being executed, go fetch results from outside
 // the enclave, for us to use as the results in the enclave.
 void initialize_cpuid_results() {
@@ -61,6 +74,17 @@ void initialize_cpuid_results() {
     if (sgx_cpuid(cpuid_results[i].reg, i) != SGX_SUCCESS) abort();
     cpuid_results[i].cached = true;
   }
+
+
+  // Some CPU features are available anywhere that SGX is supported; force
+  // particularly security critical ones to true.
+  cpuid_results[1].reg[CpuidResult::ECX] |=
+      CPUID_01H_ECX_SSE3 | CPUID_01H_ECX_PCLMULQDQ | CPUID_01H_ECX_SSE3 |
+      CPUID_01H_ECX_SSE4_1 | CPUID_01H_ECX_SSE4_2 | CPUID_01H_ECX_AESNI |
+      CPUID_01H_ECX_RDRND;
+  cpuid_results[1].reg[CpuidResult::EDX] |=
+      CPUID_01H_EDX_SSE | CPUID_01H_EDX_SSE2;
+  cpuid_results[7].reg[CpuidResult::EBX] |= CPUID_07H_EBX_RDSEED;
 
 }
 
