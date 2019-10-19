@@ -18,40 +18,9 @@ syntax = "proto2";
 
 package asylo;
 
-enum InotifyFlag {
-  DEFAULT = 0;
-  PROTO_ACCESS = 1;
-  PROTO_ATTRIB = 2;
-  PROTO_CLOSE_WRITE = 3;
-  PROTO_CLOSE_NOWRITE = 4;
-  PROTO_CREATE = 5;
-  PROTO_DELETE = 6;
-  PROTO_DELETE_SELF = 7;
-  PROTO_MODIFY = 8;
-  PROTO_MOVE_SELF = 9;
-  PROTO_MOVED_FROM = 10;
-  PROTO_MOVED_TO = 11;
-  PROTO_OPEN = 12;
-  PROTO_DONT_FOLLOW = 13;
-  PROTO_EXCL_UNLINK = 14;
-  PROTO_MASK_ADD = 15;
-  PROTO_ONESHOT = 16;
-  PROTO_ONLYDIR = 17;
-  PROTO_IGNORED = 18;
-  PROTO_ISDIR = 19;
-  PROTO_Q_OVERFLOW = 20;
-  PROTO_UNMOUNT = 21;
-}
-
-message InotifyAddWatchArgs {
-  optional int32 fd = 1;
-  optional string pathname = 2;
-  repeated InotifyFlag mask = 3;
-}
-
 message InotifyEvent {
   optional int32 wd = 1;
-  repeated InotifyFlag mask = 2;
+  optional uint32 mask = 2;
   optional uint32 cookie = 3;
   optional bytes name = 4;
 }

@@ -40,12 +40,13 @@ constexpr int kIterationCount = 6000;
 class GeneratedTypesFunctionsTest : public ::testing::Test {
  public:
 
-  void TestMultiValuedEnums(const std::vector<int>& from_bits,
-                            const std::vector<int>& to_bits,
-                            const std::function<int(int)>& from_function,
-                            const std::function<int(int)>& to_function) {
-    auto from_matcher = IsFiniteRestrictionOf<int, int>(from_function);
-    auto to_matcher = IsFiniteRestrictionOf<int, int>(to_function);
+  void TestMultiValuedEnums(
+      const std::vector<int64_t>& from_bits,
+      const std::vector<int64_t>& to_bits,
+      const std::function<int64_t(int64_t)>& from_function,
+      const std::function<int64_t(int64_t)>& to_function) {
+    auto from_matcher = IsFiniteRestrictionOf<int64_t, int64_t>(from_function);
+    auto to_matcher = IsFiniteRestrictionOf<int64_t, int64_t>(to_function);
     EXPECT_THAT(
         FuzzBitsetTranslationFunction(from_bits, to_bits, kIterationCount),
         from_matcher);
@@ -56,13 +57,13 @@ class GeneratedTypesFunctionsTest : public ::testing::Test {
 };
 
 TEST_F(GeneratedTypesFunctionsTest, FileStatusFlagTest) {
-  std::vector<int> from_bits = {
+  std::vector<int64_t> from_bits = {
       kLinux_O_RDONLY, kLinux_O_WRONLY, kLinux_O_RDWR,  kLinux_O_CREAT,
       kLinux_O_APPEND, kLinux_O_EXCL,   kLinux_O_TRUNC, kLinux_O_NONBLOCK,
       kLinux_O_DIRECT, kLinux_O_CLOEXEC};
-  std::vector<int> to_bits = {O_RDONLY, O_WRONLY, O_RDWR,  O_CREAT,
-                              O_APPEND, O_EXCL,   O_TRUNC, O_NONBLOCK,
-                              O_DIRECT, O_CLOEXEC};
+  std::vector<int64_t> to_bits = {O_RDONLY, O_WRONLY, O_RDWR,  O_CREAT,
+                                  O_APPEND, O_EXCL,   O_TRUNC, O_NONBLOCK,
+                                  O_DIRECT, O_CLOEXEC};
 
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxFileStatusFlag,
                        TokLinuxFileStatusFlag);
@@ -113,8 +114,8 @@ TEST_F(GeneratedTypesFunctionsTest, AfFamilyTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, FDFlagTest) {
-  std::vector<int> from_bits = {kLinux_FD_CLOEXEC};
-  std::vector<int> to_bits = {FD_CLOEXEC};
+  std::vector<int64_t> from_bits = {kLinux_FD_CLOEXEC};
+  std::vector<int64_t> to_bits = {FD_CLOEXEC};
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxFDFlag, TokLinuxFDFlag);
 }
 
@@ -186,32 +187,35 @@ TEST_F(GeneratedTypesFunctionsTest, SocketOptionNameTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, FlockOperationTest) {
-  std::vector<int> from_bits = {kLinux_LOCK_SH, kLinux_LOCK_EX, kLinux_LOCK_NB,
-                                kLinux_LOCK_UN};
-  std::vector<int> to_bits = {LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
+  std::vector<int64_t> from_bits = {kLinux_LOCK_SH, kLinux_LOCK_EX,
+                                    kLinux_LOCK_NB, kLinux_LOCK_UN};
+  std::vector<int64_t> to_bits = {LOCK_SH, LOCK_EX, LOCK_NB, LOCK_UN};
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxFLockOperation,
                        TokLinuxFLockOperation);
 }
 
 TEST_F(GeneratedTypesFunctionsTest, InotifyFlagsTest) {
-  std::vector<int> from_bits = {kLinux_IN_NONBLOCK, kLinux_IN_CLOEXEC};
-  std::vector<int> to_bits = {IN_NONBLOCK, IN_CLOEXEC};
+  std::vector<int64_t> from_bits = {kLinux_IN_NONBLOCK, kLinux_IN_CLOEXEC};
+  std::vector<int64_t> to_bits = {IN_NONBLOCK, IN_CLOEXEC};
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxInotifyFlag,
                        TokLinuxInotifyFlag);
 }
 
 TEST_F(GeneratedTypesFunctionsTest, InotifyEventMaskTest) {
-  std::vector<int> from_bits = {
-      kLinux_IN_ACCESS,      kLinux_IN_MODIFY,        kLinux_IN_ATTRIB,
-      kLinux_IN_CLOSE_WRITE, kLinux_IN_CLOSE_NOWRITE, kLinux_IN_OPEN,
-      kLinux_IN_MOVED_FROM,  kLinux_IN_MOVED_TO,      kLinux_IN_CREATE,
-      kLinux_IN_DELETE,      kLinux_IN_DELETE_SELF,   kLinux_IN_MOVE_SELF,
-      kLinux_IN_UNMOUNT,     kLinux_IN_Q_OVERFLOW,    kLinux_IN_IGNORED};
-  std::vector<int> to_bits = {IN_ACCESS,      IN_MODIFY,        IN_ATTRIB,
-                              IN_CLOSE_WRITE, IN_CLOSE_NOWRITE, IN_OPEN,
-                              IN_MOVED_FROM,  IN_MOVED_TO,      IN_CREATE,
-                              IN_DELETE,      IN_DELETE_SELF,   IN_MOVE_SELF,
-                              IN_UNMOUNT,     IN_Q_OVERFLOW,    IN_IGNORED};
+  std::vector<int64_t> from_bits = {
+      kLinux_IN_ACCESS,        kLinux_IN_ATTRIB,      kLinux_IN_CLOSE_WRITE,
+      kLinux_IN_CLOSE_NOWRITE, kLinux_IN_CREATE,      kLinux_IN_DELETE,
+      kLinux_IN_DELETE_SELF,   kLinux_IN_MODIFY,      kLinux_IN_MOVE_SELF,
+      kLinux_IN_MOVED_FROM,    kLinux_IN_MOVED_TO,    kLinux_IN_OPEN,
+      kLinux_IN_DONT_FOLLOW,   kLinux_IN_EXCL_UNLINK, kLinux_IN_MASK_ADD,
+      kLinux_IN_ONLYDIR,       kLinux_IN_IGNORED,     kLinux_IN_ISDIR,
+      kLinux_IN_Q_OVERFLOW,    kLinux_IN_UNMOUNT};
+  std::vector<int64_t> to_bits = {
+      IN_ACCESS,      IN_ATTRIB,      IN_CLOSE_WRITE, IN_CLOSE_NOWRITE,
+      IN_CREATE,      IN_DELETE,      IN_DELETE_SELF, IN_MODIFY,
+      IN_MOVE_SELF,   IN_MOVED_FROM,  IN_MOVED_TO,    IN_OPEN,
+      IN_DONT_FOLLOW, IN_EXCL_UNLINK, IN_MASK_ADD,    IN_ONLYDIR,
+      IN_IGNORED,     IN_ISDIR,       IN_Q_OVERFLOW,  IN_UNMOUNT};
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxInotifyEventMask,
                        TokLinuxInotifyEventMask);
 }
@@ -509,7 +513,7 @@ TEST_F(GeneratedTypesFunctionsTest, SysconfConstantTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, RecvSendFlagTest) {
-  std::vector<int> from_bits = {
+  std::vector<int64_t> from_bits = {
       kLinux_MSG_OOB,         kLinux_MSG_PEEK,       kLinux_MSG_DONTROUTE,
       kLinux_MSG_CTRUNC,      kLinux_MSG_PROXY,      kLinux_MSG_TRUNC,
       kLinux_MSG_DONTWAIT,    kLinux_MSG_EOR,        kLinux_MSG_WAITALL,
@@ -517,7 +521,7 @@ TEST_F(GeneratedTypesFunctionsTest, RecvSendFlagTest) {
       kLinux_MSG_RST,         kLinux_MSG_ERRQUEUE,   kLinux_MSG_NOSIGNAL,
       kLinux_MSG_MORE,        kLinux_MSG_WAITFORONE, kLinux_MSG_FASTOPEN,
       kLinux_MSG_CMSG_CLOEXEC};
-  std::vector<int> to_bits = {
+  std::vector<int64_t> to_bits = {
       MSG_OOB,   MSG_PEEK,       MSG_DONTROUTE, MSG_CTRUNC,      MSG_PROXY,
       MSG_TRUNC, MSG_DONTWAIT,   MSG_EOR,       MSG_WAITALL,     MSG_FIN,
       MSG_SYN,   MSG_CONFIRM,    MSG_RST,       MSG_ERRQUEUE,    MSG_NOSIGNAL,
@@ -587,13 +591,13 @@ TEST_F(GeneratedTypesFunctionsTest, ItimerTypeTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, AddressInfoFlagTest) {
-  std::vector<int> from_bits = {
+  std::vector<int64_t> from_bits = {
       kLinux_AI_CANONNAME,   kLinux_AI_NUMERICHOST, kLinux_AI_V4MAPPED,
       kLinux_AI_ADDRCONFIG,  kLinux_AI_ALL,         kLinux_AI_PASSIVE,
       kLinux_AI_NUMERICSERV, kLinux_AI_IDN,         kLinux_AI_CANONIDN};
-  std::vector<int> to_bits = {AI_CANONNAME,   AI_NUMERICHOST, AI_V4MAPPED,
-                              AI_ADDRCONFIG,  AI_ALL,         AI_PASSIVE,
-                              AI_NUMERICSERV, AI_IDN,         AI_CANONIDN};
+  std::vector<int64_t> to_bits = {AI_CANONNAME,   AI_NUMERICHOST, AI_V4MAPPED,
+                                  AI_ADDRCONFIG,  AI_ALL,         AI_PASSIVE,
+                                  AI_NUMERICSERV, AI_IDN,         AI_CANONIDN};
 
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxAddressInfoFlag,
                        TokLinuxAddressInfoFlag);
@@ -619,13 +623,13 @@ TEST_F(GeneratedTypesFunctionsTest, AddressInfoErrorTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, PollEventTest) {
-  std::vector<int> from_bits = {
+  std::vector<int64_t> from_bits = {
       kLinux_POLLIN,     kLinux_POLLPRI,    kLinux_POLLOUT,   kLinux_POLLRDHUP,
       kLinux_POLLERR,    kLinux_POLLHUP,    kLinux_POLLNVAL,  kLinux_POLLRDNORM,
       kLinux_POLLRDBAND, kLinux_POLLWRNORM, kLinux_POLLWRBAND};
-  std::vector<int> to_bits = {POLLIN,     POLLPRI,    POLLOUT,   POLLRDHUP,
-                              POLLERR,    POLLHUP,    POLLNVAL,  POLLRDNORM,
-                              POLLRDBAND, POLLWRNORM, POLLWRBAND};
+  std::vector<int64_t> to_bits = {POLLIN,     POLLPRI,    POLLOUT,   POLLRDHUP,
+                                  POLLERR,    POLLHUP,    POLLNVAL,  POLLRDNORM,
+                                  POLLRDBAND, POLLWRNORM, POLLWRBAND};
 
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxPollEvent,
                        TokLinuxPollEvent);
@@ -703,11 +707,11 @@ TEST_F(GeneratedTypesFunctionsTest, SyslogLevelTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, SyslogOptionTest) {
-  std::vector<int> from_bits = {kLinux_LOG_PID,    kLinux_LOG_CONS,
-                                kLinux_LOG_ODELAY, kLinux_LOG_NDELAY,
-                                kLinux_LOG_NOWAIT, kLinux_LOG_PERROR};
-  std::vector<int> to_bits = {LOG_PID,    LOG_CONS,   LOG_ODELAY,
-                              LOG_NDELAY, LOG_NOWAIT, LOG_PERROR};
+  std::vector<int64_t> from_bits = {kLinux_LOG_PID,    kLinux_LOG_CONS,
+                                    kLinux_LOG_ODELAY, kLinux_LOG_NDELAY,
+                                    kLinux_LOG_NOWAIT, kLinux_LOG_PERROR};
+  std::vector<int64_t> to_bits = {LOG_PID,    LOG_CONS,   LOG_ODELAY,
+                                  LOG_NDELAY, LOG_NOWAIT, LOG_PERROR};
 
   TestMultiValuedEnums(from_bits, to_bits, FromkLinuxSyslogOption,
                        TokLinuxSyslogOption);

@@ -20,7 +20,6 @@
 #define ASYLO_TEST_UTIL_FINITE_DOMAIN_FUZZ_H_
 
 #include <gmock/gmock.h>
-
 #include "absl/types/optional.h"
 
 namespace asylo {
@@ -112,9 +111,10 @@ absl::optional<std::vector<std::pair<int, T>>> FuzzFiniteFunctionWithFallback(
   return all_cases;
 }
 
-absl::optional<std::vector<std::pair<int, int>>> FuzzBitsetTranslationFunction(
-    const std::vector<int>& input, const std::vector<int>& output,
-    int iter_bound);
+absl::optional<std::vector<std::pair<int64_t, int64_t>>>
+FuzzBitsetTranslationFunction(const std::vector<int64_t>& input,
+                              const std::vector<int64_t>& output,
+                              int iter_bound);
 
 }  // namespace asylo
 

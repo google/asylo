@@ -132,6 +132,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":bridge_types_cc_proto",
+        "//asylo/platform/system_call/type_conversions",
         "@com_google_absl//absl/strings",
     ],
 )

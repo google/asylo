@@ -38,9 +38,10 @@ int random_flag() {
   return 1 << index;
 }
 
-absl::optional<std::vector<std::pair<int, int>>> FuzzBitsetTranslationFunction(
-    const std::vector<int>& input, const std::vector<int>& output,
-    int iter_bound) {
+absl::optional<std::vector<std::pair<int64_t, int64_t>>>
+FuzzBitsetTranslationFunction(const std::vector<int64_t>& input,
+                              const std::vector<int64_t>& output,
+                              int iter_bound) {
   auto all_cases = zip(input, output);
   if (!all_cases) {
     return all_cases;
@@ -66,7 +67,7 @@ absl::optional<std::vector<std::pair<int, int>>> FuzzBitsetTranslationFunction(
     // Test multiple flags in and outside the defined domain
     in = 0;
     out = 0;
-    for (int i = 0; i < sizeof(int) * 8; i++) {
+    for (int j = 0; j < sizeof(int64_t) * 8; j++) {
       int flag = random_flag();
       auto found = find(begin, end, flag);
       size_t index = found - begin;
