@@ -19,7 +19,6 @@
 #ifndef ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 #define ASYLO_PLATFORM_COMMON_BRIDGE_TYPES_H_
 
-#include <signal.h>
 #include <stdint.h>
 
 // This file provides a set of type definitions used both inside and outside the

@@ -30,36 +30,5 @@
 // Once new functions are defined and generated, user-friendly wrappers need to
 // be added to untrusted/enclave_calls.* and trusted/host_calls.* respectively.
 enclave {
-  from "../../../third_party/intel/sgx_tstdc.edl" import
-      sgx_thread_wait_untrusted_event_ocall,
-      sgx_oc_cpuidex,
-      sgx_thread_set_untrusted_event_ocall,
-      sgx_thread_setwait_untrusted_events_ocall,
-      sgx_thread_set_multiple_untrusted_events_ocall;
-
   from "../../../platform/primitives/sgx/bridge.edl" import *;
-  from "../../../platform/primitives/sgx/errno.edl" import *;
-
-  // Unless otherwise specified, each of the following calls invokes the
-  // corresponding function on the host.
-  untrusted {
-    //////////////////////////////////////
-    //           inotify.h              //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_inotify_read(int fd, uint64_t count,
-        [out] char **serialized_events,
-        [out] uint64_t *serialized_events_len) propagate_errno;
-
-    //////////////////////////////////////
-    //            signal.h              //
-    //////////////////////////////////////
-
-    int ocall_enc_untrusted_register_signal_handler(
-        int klinux_signum,
-        [user_check] void *sigaction_ptr,
-        [in, size=klinux_mask_len] const void *klinux_mask, int klinux_mask_len,
-        int64_t flags,
-        [in, string] const char *name);
-  };
 };
