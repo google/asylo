@@ -39,16 +39,13 @@ class SignalManager {
   void HandleSignal(int signum, siginfo_t *info, void *ucontext);
 
   // Sets a signal handler pointer for a specific signal |signum|.
-  void SetSigAction(int signum, const struct sigaction &act)
-      ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+  void SetSigAction(int signum, const struct sigaction &act);
 
   // Gets a signal handler for a specific signal |signum|.
-  bool GetSigAction(int signum, struct sigaction *act)
-      ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+  bool GetSigAction(int signum, struct sigaction *act);
 
   // Remove a signal handler for a specific signal |signum|.
-  void ClearSigAction(int signum)
-      ABSL_LOCKS_EXCLUDED(signal_to_sigaction_lock_);
+  void ClearSigAction(int signum);
 
   // Blocks all the signals in |set|.
   void BlockSignals(const sigset_t &set);
@@ -66,23 +63,22 @@ class SignalManager {
   sigset_t GetUnblockedSet(const sigset_t &set);
 
   // Add a signal to the reset list.
-  void SetResetOnHandle(int signum) ABSL_LOCKS_EXCLUDED(signal_to_reset_lock_);
+  void SetResetOnHandle(int signum);
 
   // Check if a signal needs to reset handler.
-  bool IsResetOnHandle(int signum) ABSL_LOCKS_EXCLUDED(signal_to_reset_lock_);
+  bool IsResetOnHandle(int signum);
 
  private:
   SignalManager() = default;  // Private to enforce singleton.
   SignalManager(SignalManager const &) = delete;
   void operator=(SignalManager const &) = delete;
 
-  mutable absl::Mutex signal_to_sigaction_lock_;
+  mutable pthread_mutex_t signal_to_sigaction_lock_;
   std::unordered_map<int, std::unique_ptr<struct sigaction>>
-      signal_to_sigaction_ ABSL_GUARDED_BY(signal_to_sigaction_lock_);
+      signal_to_sigaction_;
 
-  mutable absl::Mutex signal_to_reset_lock_;
-  std::unordered_set<int> signal_to_reset_
-      ABSL_GUARDED_BY(signal_to_reset_lock_);
+  mutable pthread_mutex_t signal_to_reset_lock_;
+  std::unordered_set<int> signal_to_reset_;
 
   thread_local static sigset_t signal_mask_;
 };

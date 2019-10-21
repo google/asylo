@@ -34,6 +34,18 @@ sigset_t EmptySigSet() {
   return set;
 }
 
+class PthreadMutexLock {
+ public:
+  PthreadMutexLock(pthread_mutex_t *mutex) : mutex_(mutex) {
+    pthread_mutex_lock(mutex);
+  }
+
+  ~PthreadMutexLock() { pthread_mutex_unlock(mutex_); }
+
+ private:
+  pthread_mutex_t *mutex_;
+};
+
 }  // namespace
 
 thread_local sigset_t SignalManager::signal_mask_ = EmptySigSet();
@@ -69,7 +81,7 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
   sigset_t old_mask;
   sigprocmask(SIG_SETMASK, &mask, &old_mask);
   {
-    absl::MutexLock lock(&signal_to_sigaction_lock_);
+    PthreadMutexLock lock(&signal_to_sigaction_lock_);
     signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(act);
   }
   // Set the signal mask back to the original one to unblock the signals.
@@ -77,7 +89,7 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
 }
 
 bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
-  absl::MutexLock lock(&signal_to_sigaction_lock_);
+  PthreadMutexLock lock(&signal_to_sigaction_lock_);
   auto sigaction_iterator = signal_to_sigaction_.find(signum);
   if (sigaction_iterator == signal_to_sigaction_.end()) {
     return false;
@@ -87,7 +99,7 @@ bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
 }
 
 void SignalManager::ClearSigAction(int signum) {
-  absl::MutexLock lock(&signal_to_sigaction_lock_);
+  PthreadMutexLock lock(&signal_to_sigaction_lock_);
   signal_to_sigaction_.erase(signum);
 }
 
@@ -123,12 +135,12 @@ sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
 }
 
 void SignalManager::SetResetOnHandle(int signum) {
-  absl::MutexLock lock(&signal_to_reset_lock_);
+  PthreadMutexLock lock(&signal_to_reset_lock_);
   signal_to_reset_.insert(signum);
 }
 
 bool SignalManager::IsResetOnHandle(int signum) {
-  absl::MutexLock lock(&signal_to_reset_lock_);
+  PthreadMutexLock lock(&signal_to_reset_lock_);
   return signal_to_reset_.find(signum) != signal_to_reset_.end();
 }
 
