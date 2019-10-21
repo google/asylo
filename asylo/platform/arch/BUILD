@@ -242,9 +242,7 @@ cc_library(
         "asylo-sgx",
         "manual",
     ],
-    deps = [
-        "//asylo/platform/common:bridge_types",
-    ] + select(
+    deps = select(
         {
             "@linux_sgx//:sgx_hw": _TRUSTED_SGX_BRIDGE_BACKEND_DEPS,
             "@linux_sgx//:sgx_sim": _TRUSTED_SGX_BRIDGE_BACKEND_DEPS,

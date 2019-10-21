@@ -30,8 +30,6 @@
 // Once new functions are defined and generated, user-friendly wrappers need to
 // be added to untrusted/enclave_calls.* and trusted/host_calls.* respectively.
 enclave {
-  include "asylo/platform/common/bridge_types.h"
-
   from "../../../third_party/intel/sgx_tstdc.edl" import
       sgx_thread_wait_untrusted_event_ocall,
       sgx_oc_cpuidex,
@@ -58,7 +56,10 @@ enclave {
     //////////////////////////////////////
 
     int ocall_enc_untrusted_register_signal_handler(
-        int klinux_signum, [in] const struct BridgeSignalHandler *handler,
+        int klinux_signum,
+        [user_check] void *sigaction_ptr,
+        [in, size=klinux_mask_len] const void *klinux_mask, int klinux_mask_len,
+        int64_t flags,
         [in, string] const char *name);
   };
 };

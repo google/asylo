@@ -26,14 +26,6 @@
 
 namespace asylo {
 
-// Converts |bridge_set| to a runtime signal mask set. Returns nullptr if
-// unsuccessful.
-sigset_t *FromBridgeSigSet(const bridge_sigset_t *bridge_set, sigset_t *set);
-
-// Converts |set| to a bridge signal mask set. Returns nullptr if unsuccessful.
-bridge_sigset_t *ToBridgeSigSet(const sigset_t *set,
-                                bridge_sigset_t *bridge_set);
-
 // Converts |bridge_siginfo| to a runtime siginfo_t. Returns nullptr if
 // unsuccessful.
 siginfo_t *FromBridgeSigInfo(const struct bridge_siginfo_t *bridge_siginfo,

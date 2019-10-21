@@ -76,13 +76,13 @@ int RegisterSignalHandler(
     errno = EINVAL;
     return -1;
   }
-  BridgeSignalHandler handler;
-  handler.sigaction = bridge_sigaction;
-  asylo::ToBridgeSigSet(&mask, &handler.mask);
-  handler.flags = TokLinuxSignalFlag(flags);
+  klinux_sigset_t klinux_mask;
+  TokLinuxSigset(&mask, &klinux_mask);
   int ret;
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
-      &ret, klinux_signum, &handler, enclave_name));
+      &ret, klinux_signum, reinterpret_cast<void *>(bridge_sigaction),
+      reinterpret_cast<void *>(&klinux_mask), sizeof(klinux_mask),
+      TokLinuxSignalFlag(flags), enclave_name));
   return ret;
 }
 
@@ -112,7 +112,7 @@ int DeliverSignal(const char *input, size_t input_len) {
 }
 
 pid_t InvokeFork(const char *enclave_name, bool restore_snapshot) {
-  pid_t ret;
+  int32_t ret;
   sgx_status_t status =
       ocall_enc_untrusted_fork(&ret, enclave_name, restore_snapshot);
   if (status != SGX_SUCCESS) {

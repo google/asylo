@@ -87,7 +87,7 @@ enclave {
         uint64_t size);
     void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,
         uint64_t count);
-    pid_t ocall_enc_untrusted_fork(
+    int32_t ocall_enc_untrusted_fork(
         [in, string]const char *enclave_name,
 	      bool restore_snapshot)
 	      allow(ecall_take_snapshot, ecall_restore) propagate_errno;
@@ -95,6 +95,5 @@ enclave {
         int32_t expected) propagate_errno;
     void ocall_enc_untrusted_sys_futex_wake([user_check] int32_t * futex)
         propagate_errno;
-
   };
 };

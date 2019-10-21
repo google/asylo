@@ -29,54 +29,9 @@
 extern "C" {
 #endif
 
-// Replace sigset_t with types of known width for transmission across the
-// enclave boundary.
-typedef int64_t bridge_sigset_t;
-
-// All the signals that are supported to be registered inside enclave (except
-// SIGSTOP and SIGKILL).
-enum SignalNumber {
-  BRIDGE_SIGHUP = 1,
-  BRIDGE_SIGINT = 2,
-  BRIDGE_SIGQUIT = 3,
-  BRIDGE_SIGILL = 4,
-  BRIDGE_SIGTRAP = 5,
-  BRIDGE_SIGABRT = 6,
-  BRIDGE_SIGBUS = 7,
-  BRIDGE_SIGFPE = 8,
-  BRIDGE_SIGKILL = 9,
-  BRIDGE_SIGUSR1 = 10,
-  BRIDGE_SIGSEGV = 11,
-  BRIDGE_SIGUSR2 = 12,
-  BRIDGE_SIGPIPE = 13,
-  BRIDGE_SIGALRM = 14,
-  BRIDGE_SIGTERM = 15,
-  BRIDGE_SIGCHLD = 16,
-  BRIDGE_SIGCONT = 17,
-  BRIDGE_SIGSTOP = 18,
-  BRIDGE_SIGTSTP = 19,
-  BRIDGE_SIGTTIN = 20,
-  BRIDGE_SIGTTOU = 21,
-  BRIDGE_SIGURG = 22,
-  BRIDGE_SIGXCPU = 23,
-  BRIDGE_SIGXFSZ = 24,
-  BRIDGE_SIGVTALRM = 25,
-  BRIDGE_SIGPROF = 26,
-  BRIDGE_SIGWINCH = 27,
-  BRIDGE_SIGSYS = 28,
-  BRIDGE_SIGRTMIN = 32,
-  BRIDGE_SIGRTMAX = 64,
-};
-
 struct bridge_siginfo_t {
   int32_t si_signo;
   int32_t si_code;
-};
-
-struct BridgeSignalHandler {
-  void (*sigaction)(int, struct bridge_siginfo_t *, void *);
-  bridge_sigset_t mask;
-  int64_t flags;
 };
 
 #ifdef __cplusplus

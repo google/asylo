@@ -237,8 +237,8 @@ int ocall_enc_untrusted_inotify_read(int fd, uint64_t count,
 //////////////////////////////////////
 
 int ocall_enc_untrusted_register_signal_handler(
-    int klinux_signum, const struct BridgeSignalHandler *handler,
-    const char *name) {
+    int klinux_signum, void *sigaction_ptr, const void *klinux_mask,
+    int klinux_mask_len, int64_t flags, const char *name) {
   std::string enclave_name(name);
   if (klinux_signum < 0) {
     errno = EINVAL;
@@ -265,7 +265,7 @@ int ocall_enc_untrusted_register_signal_handler(
                  << klinux_signum << " registered by another enclave";
   }
   struct sigaction newact;
-  if (!handler || !handler->sigaction) {
+  if (!sigaction_ptr) {
     // Hardware mode: The registered signal handler triggers an ecall to enter
     // the enclave and handle the signal.
     newact.sa_sigaction = &EnterEnclaveAndHandleSignal;
@@ -273,16 +273,18 @@ int ocall_enc_untrusted_register_signal_handler(
     // Simulation mode: The registered signal handler does the same as hardware
     // mode if the TCS is active, or calls the signal handler registered inside
     // the enclave directly if the TCS is inactive.
-    handle_signal_inside_enclave = handler->sigaction;
+    handle_signal_inside_enclave =
+        reinterpret_cast<void (*)(int, struct bridge_siginfo_t *, void *)>(
+            sigaction_ptr);
     newact.sa_sigaction = &HandleSignalInSim;
   }
-  if (handler) {
-    asylo::FromBridgeSigSet(&handler->mask, &newact.sa_mask);
-  }
+
   // Set the flag so that sa_sigaction is registered as the signal handler
   // instead of sa_handler.
-  newact.sa_flags = handler->flags;
+  newact.sa_flags = flags;
   newact.sa_flags |= SA_SIGINFO;
+  newact.sa_mask = *reinterpret_cast<const sigset_t *>(klinux_mask);
+
   struct sigaction oldact;
   return sigaction(klinux_signum, &newact, &oldact);
 }
@@ -291,8 +293,8 @@ int ocall_enc_untrusted_register_signal_handler(
 //            unistd.h              //
 //////////////////////////////////////
 
-pid_t ocall_enc_untrusted_fork(const char *enclave_name,
-                               bool restore_snapshot) {
+int32_t ocall_enc_untrusted_fork(const char *enclave_name,
+                                 bool restore_snapshot) {
   auto manager_result = asylo::EnclaveManager::Instance();
   if (!manager_result.ok()) {
     return -1;
