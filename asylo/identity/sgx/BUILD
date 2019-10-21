@@ -1856,3 +1856,40 @@ cc_test_and_cc_enclave_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "signed_tcb_info_from_json",
+    srcs = ["signed_tcb_info_from_json.cc"],
+    hdrs = ["signed_tcb_info_from_json.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":sgx_pcs_client_cc_proto",
+        "//asylo/util:error_codes",
+        "//asylo/util:hex_util",
+        "//asylo/util:proto_struct_util",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+        "@com_googlesource_code_re2//:re2",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "signed_tcb_info_from_json_test",
+    srcs = ["signed_tcb_info_from_json_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_pcs_client_cc_proto",
+        ":signed_tcb_info_from_json",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:error_codes",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
