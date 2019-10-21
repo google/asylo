@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/code_identity_test_util.h"
+#include "asylo/identity/sgx/sgx_identity_test_util.h"
 
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -25,10 +25,10 @@
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/util/status_macros.h"
 

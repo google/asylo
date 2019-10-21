@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 
 #include <openssl/cmac.h>
 

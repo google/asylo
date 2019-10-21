@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_CODE_IDENTITY_UTIL_H_
-#define ASYLO_IDENTITY_SGX_CODE_IDENTITY_UTIL_H_
+#ifndef ASYLO_IDENTITY_SGX_SGX_IDENTITY_UTIL_INTERNAL_H_
+#define ASYLO_IDENTITY_SGX_SGX_IDENTITY_UTIL_INTERNAL_H_
 
 #include <string>
 
@@ -164,4 +164,4 @@ Status VerifyHardwareReport(const Report &report);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_CODE_IDENTITY_UTIL_H_
+#endif  // ASYLO_IDENTITY_SGX_SGX_IDENTITY_UTIL_INTERNAL_H_

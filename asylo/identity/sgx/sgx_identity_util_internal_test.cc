@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/code_identity_util.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 
 #include <string>
 #include <vector>
@@ -31,7 +31,6 @@
 #include "asylo/identity/sgx/attributes_util.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
-#include "asylo/identity/sgx/code_identity_test_util.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
@@ -41,6 +40,7 @@
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_test_util.h"
 #include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/identity/util/sha256_hash_util.h"
 #include "asylo/platform/common/singleton.h"
@@ -87,7 +87,7 @@ constexpr char kInvalidCpuSvn[] = "not16bytes";
 constexpr char kInvalidString[] = "Invalid String";
 
 // A test fixture is used to ensure naming correctness and future expandability.
-class CodeIdentityUtilTest : public ::testing::Test {
+class SgxIdentityUtilInternalTest : public ::testing::Test {
  protected:
   void SetUp() override {
     Sha256HashFromHexString(
@@ -174,7 +174,7 @@ class CodeIdentityUtilTest : public ::testing::Test {
   FakeEnclave *enclave_;
 };
 
-TEST_F(CodeIdentityUtilTest, SetSgxIdentityDescription) {
+TEST_F(SgxIdentityUtilInternalTest, SetSgxIdentityDescription) {
   EnclaveIdentityDescription description;
   SetSgxIdentityDescription(&description);
 
@@ -182,7 +182,7 @@ TEST_F(CodeIdentityUtilTest, SetSgxIdentityDescription) {
   EXPECT_EQ(description.authority_type(), kSgxAuthorizationAuthority);
 }
 
-TEST_F(CodeIdentityUtilTest, SetSgxLocalAssertionDescription) {
+TEST_F(SgxIdentityUtilInternalTest, SetSgxLocalAssertionDescription) {
   AssertionDescription description;
   SetSgxLocalAssertionDescription(&description);
 
@@ -190,7 +190,7 @@ TEST_F(CodeIdentityUtilTest, SetSgxLocalAssertionDescription) {
   EXPECT_EQ(description.authority_type(), kSgxLocalAssertionAuthority);
 }
 
-TEST_F(CodeIdentityUtilTest, SetSgxRemoteAssertionDescription) {
+TEST_F(SgxIdentityUtilInternalTest, SetSgxRemoteAssertionDescription) {
   AssertionDescription description;
   SetSgxRemoteAssertionDescription(&description);
 
@@ -200,18 +200,20 @@ TEST_F(CodeIdentityUtilTest, SetSgxRemoteAssertionDescription) {
 
 // Tests to verify the correctness of IsValidSignerAssignedIdentity()
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositiveAllSet) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SignerAssignedIdentityValidityPositiveAllSet) {
   SignerAssignedIdentity id = MakeSignerAssignedIdentity(h_acedface_, 0, 0);
   EXPECT_TRUE(IsValidSignerAssignedIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityPositiveNoMrsigner) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SignerAssignedIdentityValidityPositiveNoMrsigner) {
   SignerAssignedIdentity id = MakeSignerAssignedIdentity(h_acedface_, 0, 0);
   id.clear_mrsigner();
   EXPECT_TRUE(IsValidSignerAssignedIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest,
+TEST_F(SgxIdentityUtilInternalTest,
        SignerAssignedIdentityValidityNegativeNoIsvprodid) {
   SignerAssignedIdentity id;
   *id.mutable_mrsigner() = h_acedface_;
@@ -219,7 +221,8 @@ TEST_F(CodeIdentityUtilTest,
   EXPECT_FALSE(IsValidSignerAssignedIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegativeNoIsvsvn) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SignerAssignedIdentityValidityNegativeNoIsvsvn) {
   SignerAssignedIdentity id;
   *id.mutable_mrsigner() = h_acedface_;
   id.set_isvprodid(0);
@@ -228,7 +231,7 @@ TEST_F(CodeIdentityUtilTest, SignerAssignedIdentityValidityNegativeNoIsvsvn) {
 
 // Tests to verify the correctness of IsValidSgxIdentity()
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveAllSet) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityPositiveAllSet) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   CodeIdentity *cid = id.mutable_code_identity();
   *cid->mutable_mrenclave() = h_acedface_;
@@ -237,29 +240,30 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveAllSet) {
   EXPECT_TRUE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveMinimalIdentity) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxIdentityValidityPositiveMinimalIdentity) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   EXPECT_TRUE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityPositiveNoCpusvn) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityPositiveNoCpusvn) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   id.mutable_machine_configuration()->clear_cpu_svn();
   EXPECT_TRUE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeEmptyIdentity) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityNegativeEmptyIdentity) {
   SgxIdentity id;
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeNoMiscselect) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityNegativeNoMiscselect) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   id.mutable_code_identity()->clear_miscselect();
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeNoAttributes) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityNegativeNoAttributes) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   id.mutable_code_identity()->clear_attributes();
   EXPECT_FALSE(IsValidSgxIdentity(id));
@@ -268,13 +272,13 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeNoAttributes) {
 // If the MachineConfiguration has the |cpu_svn| field set, it is invalid
 // unless it contains a valid CPUSVN. (SgxIdentityValidityPositiveNoCpusvn
 // passes because the CPUSVN field is completely missing, which is valid.)
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeEmptyCpusvn) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityNegativeEmptyCpusvn) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   id.mutable_machine_configuration()->mutable_cpu_svn()->clear_value();
   EXPECT_FALSE(IsValidSgxIdentity(id));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeInvalidCpusvn) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityValidityNegativeInvalidCpusvn) {
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   *id.mutable_machine_configuration()->mutable_cpu_svn()->mutable_value() =
       kInvalidCpuSvn;
@@ -283,12 +287,13 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityValidityNegativeInvalidCpusvn) {
 
 // Tests to verify the correctness of IsValidMatchSpec()
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositive) {
+TEST_F(SgxIdentityUtilInternalTest, SgxMatchSpecValidityPositive) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   EXPECT_TRUE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositiveLegacyMatchSpec) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxMatchSpecValidityPositiveLegacyMatchSpec) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
 
   // Clear MachineConfiguration to create a valid legacy match spec.
@@ -297,38 +302,41 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityPositiveLegacyMatchSpec) {
   EXPECT_TRUE(IsValidMatchSpec(spec, /*is_legacy=*/true));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeMrenclaveUnset) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxMatchSpecValidityNegativeMrenclaveUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_is_mrenclave_match_required();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeMrsignerUnset) {
+TEST_F(SgxIdentityUtilInternalTest, SgxMatchSpecValidityNegativeMrsignerUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_is_mrsigner_match_required();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeMiscselectUnset) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxMatchSpecValidityNegativeMiscselectUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_miscselect_match_mask();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeAttributesUnset) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxMatchSpecValidityNegativeAttributesUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->clear_attributes_match_mask();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeCpusvnUnset) {
+TEST_F(SgxIdentityUtilInternalTest, SgxMatchSpecValidityNegativeCpusvnUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->clear_is_cpu_svn_match_required();
   EXPECT_FALSE(IsValidMatchSpec(spec));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeSgxTypeUnset) {
+TEST_F(SgxIdentityUtilInternalTest, SgxMatchSpecValidityNegativeSgxTypeUnset) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->clear_is_sgx_type_match_required();
@@ -337,7 +345,7 @@ TEST_F(CodeIdentityUtilTest, SgxMatchSpecValidityNegativeSgxTypeUnset) {
 
 // Tests to verify the correctness of IsValidExpectation()
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositive) {
+TEST_F(SgxIdentityUtilInternalTest, SgxExpectationValidityPositive) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
 
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
@@ -350,7 +358,8 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositive) {
   EXPECT_TRUE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveLegacyMatchSpec) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityPositiveLegacyMatchSpec) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
 
   SgxIdentity id = GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
@@ -367,7 +376,7 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveLegacyMatchSpec) {
   EXPECT_TRUE(IsValidExpectation(expectation, /*is_legacy=*/true));
 }
 
-TEST_F(CodeIdentityUtilTest,
+TEST_F(SgxIdentityUtilInternalTest,
        SgxExpectationValidityPositiveMrenclaveMrsignerMatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
@@ -384,7 +393,8 @@ TEST_F(CodeIdentityUtilTest,
   EXPECT_TRUE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveMrsignerMatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityPositiveMrsignerMatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(true);
 
@@ -397,7 +407,8 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveMrsignerMatch) {
   EXPECT_TRUE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveMrenclaveMatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityPositiveMrenclaveMatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
       true);
@@ -410,7 +421,8 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityPositiveMrenclaveMatch) {
   EXPECT_TRUE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeMrenclaveMismatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityNegativeMrenclaveMismatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
       true);
@@ -425,7 +437,8 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeMrenclaveMismatch) {
   EXPECT_FALSE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeMrsignerMismatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityNegativeMrsignerMismatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
       true);
@@ -439,7 +452,8 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeMrsignerMismatch) {
   EXPECT_FALSE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeCpusvnMismatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityNegativeCpusvnMismatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->set_is_cpu_svn_match_required(true);
@@ -451,7 +465,8 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeCpusvnMismatch) {
   EXPECT_FALSE(IsValidExpectation(expectation));
 }
 
-TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeSgxTypeMismatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SgxExpectationValidityNegativeSgxTypeMismatch) {
   SgxIdentityMatchSpec spec = GetMinimalValidSgxMatchSpec();
   spec.mutable_machine_configuration_match_spec()
       ->set_is_sgx_type_match_required(true);
@@ -465,7 +480,7 @@ TEST_F(CodeIdentityUtilTest, SgxExpectationValidityNegativeSgxTypeMismatch) {
 
 // Make sure that an SgxIdentity matches itself with all the fields marked
 // as *do care*.
-TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentitySelfMatch) {
   SgxIdentityMatchSpec spec;
 
   CodeIdentityMatchSpec *code_identity_match_spec =
@@ -512,7 +527,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySelfMatch) {
 
 // Make sure that an SgxIdentity matches an expectation when it differs from
 // the expectations in fields that the match spec does not care about.
-TEST_F(CodeIdentityUtilTest, SgxIdentityDifferingUnrequiredFields) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityDifferingUnrequiredFields) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -541,7 +556,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityDifferingUnrequiredFields) {
 
 // Make sure that an SgxIdentity does not match an expectation that differs
 // in MRENCLAVE value when is_mrenclave_match_required is set to true.
-TEST_F(CodeIdentityUtilTest, SgxIdentityMrenclaveMismatch) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMrenclaveMismatch) {
   SgxIdentityExpectation expectation;
   *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
   expectation.mutable_match_spec()
@@ -565,7 +580,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMrenclaveMismatch) {
 // Make sure that an SgxIdentity does not match an expectation that differs
 // in signer_assigned_identity.mrsigner value when is_mrsigner_match_required is
 // set to true.
-TEST_F(CodeIdentityUtilTest,
+TEST_F(SgxIdentityUtilInternalTest,
        SgxIdentitySignerAssignedIdentityMrsignerMismatch) {
   SgxIdentityExpectation expectation;
   *expectation.mutable_match_spec() = GetMinimalValidSgxMatchSpec();
@@ -592,7 +607,7 @@ TEST_F(CodeIdentityUtilTest,
 // Make sure that an SgxIdentity does not match an expectation that differs
 // in signer_assigned_identity.isvprodid value when is_mrsigner_match_required
 // is set to either true or false.
-TEST_F(CodeIdentityUtilTest,
+TEST_F(SgxIdentityUtilInternalTest,
        SgxIdentitySignerAssignedIdentityIsvprodidMismatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
@@ -624,7 +639,8 @@ TEST_F(CodeIdentityUtilTest,
 // Make sure that an CodeIdentity does not match an expectation that has a
 // signer_assigned_identity.isvsvn value larger than that of the identity when
 // is_mrsigner_match_required is set to either true or false.
-TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityIsvsvnMismatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       CodeIdentitySignerAssignedIdentityIsvsvnMismatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -654,7 +670,8 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentityIsvsvnMismatch) {
 // Make sure that an CodeIdentity *does* match an expectation that has a
 // signer_assigned_identity.isvsvn value less than that of the identity when
 // is_mrsigner_match_required is set to true.
-TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentitySvnMatch) {
+TEST_F(SgxIdentityUtilInternalTest,
+       CodeIdentitySignerAssignedIdentitySvnMatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -677,7 +694,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentitySignerAssignedIdentitySvnMatch) {
 
 // Make sure that an CodeIdentity does not match an expectation that differs
 // from the expectation in the do-care bits of miscselect.
-TEST_F(CodeIdentityUtilTest, CodeIdentityMiscSelectMismatch) {
+TEST_F(SgxIdentityUtilInternalTest, CodeIdentityMiscSelectMismatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -694,7 +711,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMiscSelectMismatch) {
 
 // Make sure that an SgxIdentity does not match an expectation
 // that differs from the expectation in the do-care bits of attributes.
-TEST_F(CodeIdentityUtilTest, SgxIdentityAttributesMismatch) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityAttributesMismatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -711,7 +728,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityAttributesMismatch) {
 
 // Check that an SgxIdentity does not match an expectation with a differing
 // CPUSVN value when CPUSVN match is required.
-TEST_F(CodeIdentityUtilTest, SgxIdentityCpusvnMismatch) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityCpusvnMismatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -737,7 +754,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityCpusvnMismatch) {
 
 // Check that an SgxIdentity does not match an expectation with a differing
 // SGX Type when SGX Type match is required.
-TEST_F(CodeIdentityUtilTest, SgxIdentitySgxTypeMismatch) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentitySgxTypeMismatch) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -762,7 +779,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentitySgxTypeMismatch) {
 
 // Make sure that enclave identity match fails with appropriate status if the
 // target expectation is invalid.
-TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidExpectation) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchInvalidExpectation) {
   SgxIdentity identity =
       GetMinimalValidSgxIdentity(kLongAll5, attributes_all_5_);
   *identity.mutable_code_identity()->mutable_mrenclave() = h_acedface_;
@@ -778,7 +795,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidExpectation) {
 
 // Make sure that enclave identity match fails with appropriate status if the
 // target identity is invalid.
-TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidIdentity) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchInvalidIdentity) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
@@ -792,7 +809,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchInvalidIdentity) {
 // Make sure that enclave identity match fails with appropriate status if
 // match_spec.mrenclave_match_required is true, but the target identity is
 // missing mrenclave.
-TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrenclave) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchIdentityMissingMrenclave) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
@@ -814,7 +831,7 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrenclave) {
 
 // Make sure that enclave identity match fails with appropriate status if
 // match_spec.mrsigner is true, but the target identity is missing mrsigner.
-TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrsigner) {
+TEST_F(SgxIdentityUtilInternalTest, SgxIdentityMatchIdentityMissingMrsigner) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAllF, attributes_all_f_));
@@ -837,7 +854,8 @@ TEST_F(CodeIdentityUtilTest, SgxIdentityMatchIdentityMissingMrsigner) {
                        "Identity is not compatible with specified match spec"));
 }
 
-TEST_F(CodeIdentityUtilTest, CodeIdentityMatchMultipleMismatchedProperties) {
+TEST_F(SgxIdentityUtilInternalTest,
+       CodeIdentityMatchMultipleMismatchedProperties) {
   SgxIdentityExpectation expectation;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expectation, GetMinimalValidSgxExpectation(kLongAll5, attributes_all_5_));
@@ -872,7 +890,7 @@ TEST_F(CodeIdentityUtilTest, CodeIdentityMatchMultipleMismatchedProperties) {
   EXPECT_THAT(explanation, HasSubstr("and"));
 }
 
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFromHardwareReport) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityFromHardwareReport) {
   AlignedTargetinfoPtr tinfo;
   AlignedReportdataPtr reportdata;
   AlignedReportPtr report;
@@ -913,7 +931,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFromHardwareReport) {
               EqualsProto(report_cpusvn));
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultLocalSgxMatchSpec) {
+TEST_F(SgxIdentityUtilInternalTest, SetDefaultLocalSgxMatchSpec) {
   SgxIdentityMatchSpec spec;
   SetDefaultLocalSgxMatchSpec(&spec);
   EXPECT_FALSE(spec.code_identity_match_spec().is_mrenclave_match_required());
@@ -931,7 +949,7 @@ TEST_F(CodeIdentityUtilTest, SetDefaultLocalSgxMatchSpec) {
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
 }
 
-TEST_F(CodeIdentityUtilTest, SetStrictLocalSgxMatchSpec) {
+TEST_F(SgxIdentityUtilInternalTest, SetStrictLocalSgxMatchSpec) {
   SgxIdentityMatchSpec spec;
   SetStrictLocalSgxMatchSpec(&spec);
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrenclave_match_required());
@@ -949,7 +967,7 @@ TEST_F(CodeIdentityUtilTest, SetStrictLocalSgxMatchSpec) {
       spec.machine_configuration_match_spec().is_sgx_type_match_required());
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultRemoteSgxMatchSpec) {
+TEST_F(SgxIdentityUtilInternalTest, SetDefaultRemoteSgxMatchSpec) {
   SgxIdentityMatchSpec spec;
   SetDefaultRemoteSgxMatchSpec(&spec);
   EXPECT_FALSE(spec.code_identity_match_spec().is_mrenclave_match_required());
@@ -969,7 +987,7 @@ TEST_F(CodeIdentityUtilTest, SetDefaultRemoteSgxMatchSpec) {
       spec.machine_configuration_match_spec().is_sgx_type_match_required());
 }
 
-TEST_F(CodeIdentityUtilTest, SetStrictRemoteSgxMatchSpec) {
+TEST_F(SgxIdentityUtilInternalTest, SetStrictRemoteSgxMatchSpec) {
   SgxIdentityMatchSpec spec;
   SetStrictRemoteSgxMatchSpec(&spec);
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrenclave_match_required());
@@ -987,7 +1005,7 @@ TEST_F(CodeIdentityUtilTest, SetStrictRemoteSgxMatchSpec) {
       spec.machine_configuration_match_spec().is_sgx_type_match_required());
 }
 
-TEST_F(CodeIdentityUtilTest, SetSelfSgxIdentity) {
+TEST_F(SgxIdentityUtilInternalTest, SetSelfSgxIdentity) {
   SgxIdentity identity;
   SetSelfSgxIdentity(&identity);
   EXPECT_TRUE(std::equal(
@@ -1021,7 +1039,7 @@ TEST_F(CodeIdentityUtilTest, SetSelfSgxIdentity) {
   EXPECT_EQ(enclave_->get_cpusvn(), cpu_svn);
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultLocalSelfSgxExpectation) {
+TEST_F(SgxIdentityUtilInternalTest, SetDefaultLocalSelfSgxExpectation) {
   SgxIdentity identity;
   SetSelfSgxIdentity(&identity);
 
@@ -1037,7 +1055,7 @@ TEST_F(CodeIdentityUtilTest, SetDefaultLocalSelfSgxExpectation) {
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
-TEST_F(CodeIdentityUtilTest, SetStrictLocalSelfSgxExpectation) {
+TEST_F(SgxIdentityUtilInternalTest, SetStrictLocalSelfSgxExpectation) {
   SgxIdentity identity;
   SetSelfSgxIdentity(&identity);
 
@@ -1053,7 +1071,7 @@ TEST_F(CodeIdentityUtilTest, SetStrictLocalSelfSgxExpectation) {
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
-TEST_F(CodeIdentityUtilTest, SetDefaultRemoteSelfSgxExpectation) {
+TEST_F(SgxIdentityUtilInternalTest, SetDefaultRemoteSelfSgxExpectation) {
   SgxIdentity identity;
   SetSelfSgxIdentity(&identity);
 
@@ -1069,7 +1087,7 @@ TEST_F(CodeIdentityUtilTest, SetDefaultRemoteSelfSgxExpectation) {
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
-TEST_F(CodeIdentityUtilTest, SetStrictRemoteSelfSgxExpectation) {
+TEST_F(SgxIdentityUtilInternalTest, SetStrictRemoteSelfSgxExpectation) {
   SgxIdentity identity;
   SetSelfSgxIdentity(&identity);
 
@@ -1085,7 +1103,7 @@ TEST_F(CodeIdentityUtilTest, SetStrictRemoteSelfSgxExpectation) {
       << FormatProto(expectation.match_spec()) << FormatProto(match_spec);
 }
 
-TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentitySuccess) {
+TEST_F(SgxIdentityUtilInternalTest, ParseLegacySgxIdentitySuccess) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SgxIdentity generated_sgx_identity;
@@ -1099,7 +1117,7 @@ TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentitySuccess) {
   }
 }
 
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentitySuccess) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SgxIdentity generated_sgx_identity;
@@ -1114,7 +1132,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentitySuccess) {
 }
 
 // Parse legacy CodeIdentity-based EnclaveIdentity messages into SgxIdentity.
-TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentityFailure) {
+TEST_F(SgxIdentityUtilInternalTest, ParseLegacySgxIdentityFailure) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     SetRandomInvalidLegacyGenericIdentity(&generic_identity);
@@ -1125,7 +1143,7 @@ TEST_F(CodeIdentityUtilTest, ParseLegacySgxIdentityFailure) {
 }
 
 // Parse SgxIdentity-based EnclaveIdentity messages into SgxIdentity.
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityFailure) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentity generic_identity;
     ASYLO_ASSERT_OK(SetRandomInvalidGenericIdentity(&generic_identity));
@@ -1135,7 +1153,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityFailure) {
   }
 }
 
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentityMatchSpecSuccess) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityMatchSpecSuccess) {
   std::string generic_match_spec;
   SgxIdentityMatchSpec generated_sgx_spec;
   SgxIdentityMatchSpec parsed_sgx_spec;
@@ -1150,7 +1168,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityMatchSpecSuccess) {
   }
 }
 
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentityMatchSpecFailure) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityMatchSpecFailure) {
   std::string generic_match_spec;
   SgxIdentityMatchSpec parsed_sgx_spec;
 
@@ -1164,7 +1182,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityMatchSpecFailure) {
               Not(IsOk()));
 }
 
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationSuccess) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityExpectationSuccess) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentityExpectation generic_expectation;
     SgxIdentityExpectation generated_sgx_expectation;
@@ -1181,7 +1199,7 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationSuccess) {
   }
 }
 
-TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationFailure) {
+TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityExpectationFailure) {
   for (int i = 0; i < kNumRandomParseTrials; i++) {
     EnclaveIdentityExpectation generic_expectation;
 
@@ -1193,7 +1211,8 @@ TEST_F(CodeIdentityUtilTest, ParseSgxIdentityExpectationFailure) {
   }
 }
 
-TEST_F(CodeIdentityUtilTest, SerializeAndParseLegacySgxIdentityEndToEnd) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SerializeAndParseLegacySgxIdentityEndToEnd) {
   SgxIdentity generated_sgx_identity;
   EnclaveIdentity generic_identity;
 
@@ -1210,7 +1229,7 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseLegacySgxIdentityEndToEnd) {
       << FormatProto(parsed_sgx_identity);
 }
 
-TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityEndToEnd) {
+TEST_F(SgxIdentityUtilInternalTest, SerializeAndParseSgxIdentityEndToEnd) {
   SgxIdentity generated_sgx_identity;
   EnclaveIdentity generic_identity;
 
@@ -1226,7 +1245,8 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityEndToEnd) {
       << FormatProto(parsed_sgx_identity);
 }
 
-TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityMatchSpecEndToEnd) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SerializeAndParseSgxIdentityMatchSpecEndToEnd) {
   SgxIdentityMatchSpec generated_sgx_spec;
   std::string generic_spec;
 
@@ -1240,7 +1260,7 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityMatchSpecEndToEnd) {
       << FormatProto(generated_sgx_spec) << FormatProto(parsed_sgx_spec);
 }
 
-TEST_F(CodeIdentityUtilTest,
+TEST_F(SgxIdentityUtilInternalTest,
        SerializeAndParseLegacySgxIdentityMatchSpecEndToEnd) {
   SgxIdentityMatchSpec generated_sgx_spec;
   std::string generic_spec;
@@ -1261,7 +1281,8 @@ TEST_F(CodeIdentityUtilTest,
       << FormatProto(parsed_sgx_spec) << FormatProto(generated_sgx_spec);
 }
 
-TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityExpectationEndToEnd) {
+TEST_F(SgxIdentityUtilInternalTest,
+       SerializeAndParseSgxIdentityExpectationEndToEnd) {
   SgxIdentityExpectation generated_sgx_expectation;
   EnclaveIdentityExpectation generic_expectation;
 
@@ -1280,7 +1301,7 @@ TEST_F(CodeIdentityUtilTest, SerializeAndParseSgxIdentityExpectationEndToEnd) {
       << FormatProto(parsed_sgx_expectation);
 }
 
-TEST_F(CodeIdentityUtilTest,
+TEST_F(SgxIdentityUtilInternalTest,
        SerializeAndParseLegacySgxIdentityExpectationEndToEnd) {
   SgxIdentityExpectation generated_sgx_expectation =
       GetRandomValidSgxExpectation();
@@ -1313,7 +1334,7 @@ TEST_F(CodeIdentityUtilTest,
       << FormatProto(generated_sgx_expectation);
 }
 
-TEST_F(CodeIdentityUtilTest, SetTargetinfoFromSelfIdentity) {
+TEST_F(SgxIdentityUtilInternalTest, SetTargetinfoFromSelfIdentity) {
   AlignedTargetinfoPtr tinfo;
   SetTargetinfoFromSelfIdentity(tinfo.get());
 
@@ -1327,7 +1348,7 @@ TEST_F(CodeIdentityUtilTest, SetTargetinfoFromSelfIdentity) {
             TrivialZeroObject<UnsafeBytes<sizeof(tinfo->reserved2)>>());
 }
 
-TEST_F(CodeIdentityUtilTest, VerifyHardwareReportPositive) {
+TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportPositive) {
   AlignedTargetinfoPtr tinfo;
   SetTargetinfoFromSelfIdentity(tinfo.get());
 
@@ -1338,7 +1359,7 @@ TEST_F(CodeIdentityUtilTest, VerifyHardwareReportPositive) {
   ASYLO_EXPECT_OK(VerifyHardwareReport(*report));
 }
 
-TEST_F(CodeIdentityUtilTest, VerifyHardwareReportWrongTarget) {
+TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportWrongTarget) {
   AlignedTargetinfoPtr tinfo;
   AlignedReportPtr report;
   AlignedReportdataPtr data;
@@ -1351,7 +1372,7 @@ TEST_F(CodeIdentityUtilTest, VerifyHardwareReportWrongTarget) {
   EXPECT_THAT(VerifyHardwareReport(*report), Not(IsOk()));
 }
 
-TEST_F(CodeIdentityUtilTest, VerifyHardwareReportBadReport) {
+TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportBadReport) {
   AlignedTargetinfoPtr tinfo;
   SetTargetinfoFromSelfIdentity(tinfo.get());
 

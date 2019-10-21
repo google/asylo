@@ -19,8 +19,8 @@
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 
 #include "asylo/identity/descriptions.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

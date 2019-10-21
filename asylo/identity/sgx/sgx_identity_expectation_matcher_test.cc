@@ -25,11 +25,11 @@
 #include "asylo/identity/named_identity_expectation_matcher.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
-#include "asylo/identity/sgx/code_identity_test_util.h"
-#include "asylo/identity/sgx/code_identity_util.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/identity/sgx/sgx_identity_test_util.h"
+#include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
