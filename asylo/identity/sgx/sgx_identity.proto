@@ -16,31 +16,39 @@
 
 syntax = "proto2";
 
+// $title: SGX Identity
+// $overview: Protobuf definition for SgxIdentity and related submessages.
+// $location: https://asylo.dev/docs/reference/proto/asylo.sgx_identity.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/sgx_identity.html
+
 package asylo;
 
 import "asylo/identity/sgx/code_identity.proto";
 import "asylo/identity/sgx/machine_configuration.proto";
 
 // A high-level representation of the identity of an SGX enclave, which includes
-// the properties of its code identity (sgx.CodeIdentity) and the security-
-// relevant properties of its execution environment (sgx.MachineConfiguration).
+// the properties of its code identity (`sgx.CodeIdentity`) and the
+// security-relevant properties of its execution environment
+// (`sgx.MachineConfiguration`).
 message SgxIdentity {
-  optional sgx.CodeIdentity code_identity = 1;
-  optional sgx.MachineConfiguration machine_configuration = 2;
+  optional sgx.CodeIdentity code_identity = 1;                  // Required.
+  optional sgx.MachineConfiguration machine_configuration = 2;  // Required.
 }
 
-// Specification of which fields from SgxIdentity to match.
+// Specification of which fields from `SgxIdentity` to match.
 message SgxIdentityMatchSpec {
-  optional sgx.CodeIdentityMatchSpec code_identity_match_spec = 1;
+  optional sgx.CodeIdentityMatchSpec code_identity_match_spec = 1;  // Required.
   optional sgx.MachineConfigurationMatchSpec machine_configuration_match_spec =
-      2;
+      2;  // Required.
 }
 
-// A verifier's expectation on an SgxIdentity.
+// A verifier's expectation on an `SgxIdentity`.
 message SgxIdentityExpectation {
   // Reference identity matched against the target identity per `match_spec`.
+  // Required.
   optional SgxIdentity reference_identity = 1;
 
-  // Specification of which fields from enclave identity to match.
+  // Specification of which fields from the target enclave identity to match.
+  // Required.
   optional SgxIdentityMatchSpec match_spec = 2;
 }

@@ -43,12 +43,12 @@ cc_test(
 proto_library(
     name = "sha256_hash_proto",
     srcs = ["sha256_hash.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
 )
 
 cc_proto_library(
     name = "sha256_hash_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = ["sha256_hash_proto"],
 )
 

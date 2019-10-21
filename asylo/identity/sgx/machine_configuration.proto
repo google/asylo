@@ -30,8 +30,8 @@ message CpuSvn {
 // WARNING: The tag numbers do NOT correspond to the ASN.1 ENUMERATED integer
 // values in PCK certificates.
 enum SgxType {
-  // `SGX_TYPE_UNKNOWN` does not represent a value possible in a PCK
-  // certificate. It exists so that the default value for an `SgxType` cannot be
+  // `SGX_TYPE_UNKNOWN` does not represent a possible value in a PCK
+  // certificate; it exists so that the default value for an `SgxType` cannot be
   // confused for a real SGX Type.
   SGX_TYPE_UNKNOWN = 0;
   STANDARD = 1001;
@@ -39,15 +39,12 @@ enum SgxType {
 
 // Security-relevant machine configuration properties.
 message MachineConfiguration {
-  optional CpuSvn cpu_svn = 1;    // Optional.
-  optional SgxType sgx_type = 2;  // Optional.
+  optional CpuSvn cpu_svn = 1;      // Optional.
+  optional SgxType sgx_type = 2;    // Optional.
 }
 
-// Specification of which fields from MachineConfiguration to match.
+// Specification of which fields from `MachineConfiguration` to match.
 message MachineConfigurationMatchSpec {
-  // Flag indicating whether to perform a match on |cpu_svn|. Required.
-  optional bool is_cpu_svn_match_required = 1;
-
-  // Flag indicating whether to perform a match on |sgx_type|. Required.
-  optional bool is_sgx_type_match_required = 2;
+  optional bool is_cpu_svn_match_required = 1;    // Required.
+  optional bool is_sgx_type_match_required = 2;   // Required.
 }

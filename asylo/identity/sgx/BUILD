@@ -28,19 +28,19 @@ licenses(["notice"])  # Apache v2.0
 proto_library(
     name = "attributes_proto",
     srcs = ["attributes.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
 )
 
 cc_proto_library(
     name = "attributes_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [":attributes_proto"],
 )
 
 proto_library(
     name = "code_identity_proto",
     srcs = ["code_identity.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         ":attributes_proto",
         "//asylo/identity/util:sha256_hash_proto",
@@ -49,26 +49,26 @@ proto_library(
 
 cc_proto_library(
     name = "code_identity_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [":code_identity_proto"],
 )
 
 proto_library(
     name = "machine_configuration_proto",
     srcs = ["machine_configuration.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
 )
 
 cc_proto_library(
     name = "machine_configuration_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [":machine_configuration_proto"],
 )
 
 proto_library(
     name = "sgx_identity_proto",
     srcs = ["sgx_identity.proto"],
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         ":code_identity_proto",
         ":machine_configuration_proto",
@@ -77,7 +77,7 @@ proto_library(
 
 cc_proto_library(
     name = "sgx_identity_cc_proto",
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [":sgx_identity_proto"],
 )
 
@@ -910,7 +910,7 @@ cc_library(
     srcs = ["sgx_identity_util.cc"],
     hdrs = ["sgx_identity_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         ":code_identity_util",
         ":sgx_identity_cc_proto",
