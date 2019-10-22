@@ -108,7 +108,6 @@ PartialOrder OrderCombine(PartialOrder lhs, PartialOrder rhs) {
     case PartialOrder::kIncomparable:
       return PartialOrder::kIncomparable;
   }
-  // GCC 4.9 requires this unreachable return statement.
   return PartialOrder::kIncomparable;
 }
 

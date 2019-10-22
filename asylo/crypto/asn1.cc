@@ -18,6 +18,7 @@
 
 #include "asylo/crypto/asn1.h"
 
+#include <openssl/asn1.h>
 #include <openssl/bn.h>
 #include <openssl/obj.h>
 
@@ -72,8 +73,7 @@ int ToOpensslType(Asn1Type type) {
       return V_ASN1_SEQUENCE;
   }
 
-  // GCC 4.9 requires this unreachable return statement.
-  return 0;
+  return V_ASN1_UNDEF;
 }
 
 // Returns the name of the type corresponding to the OpenSSL ASN.1 type code
@@ -691,7 +691,6 @@ bool operator==(const Asn1Value &lhs, const Asn1Value &rhs) {
       return ASN1_TYPE_cmp(lhs.value_.get(), rhs.value_.get()) == 0;
   }
 
-  // GCC 4.9 requires this unreachable return statement.
   return false;
 }
 
