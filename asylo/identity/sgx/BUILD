@@ -839,7 +839,6 @@ cc_library(
         "sgx_identity_util_internal.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_cc_proto",
         ":attributes_util",
