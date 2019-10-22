@@ -67,11 +67,16 @@ std::string ConvertTrivialObjectToHexString(const T &obj) {
 }
 
 template <class T>
-T TrivialRandomObject() {
+void RandomFillTrivialObject(T *obj) {
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
+  RAND_bytes(reinterpret_cast<uint8_t *>(obj), sizeof(*obj));
+}
+
+template <class T>
+T TrivialRandomObject() {
   T tmp;
-  RAND_bytes(reinterpret_cast<uint8_t *>(&tmp), sizeof(tmp));
+  RandomFillTrivialObject(&tmp);
   return tmp;
 }
 

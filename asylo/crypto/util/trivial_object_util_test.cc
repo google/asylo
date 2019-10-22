@@ -53,15 +53,18 @@ typedef ::testing::Types<UnsafeBytes<16>, UnsafeBytes<32>, TrivialStructure,
 TYPED_TEST_SUITE(TypedTrivialObjectUtilTest, MyTypes);
 
 // Rough sanity check on TrivialRandomObject. This test generates
-// 16 different values and expects no collisions. Since the smallest
+// 32 different values and expects no collisions. Since the smallest
 // trivial-object size is 64 bits, the probability of this test failing
-// is O(2^-56), if the entropy source is doing what it is
-// supposed to do!
+// is O(2^-55), if the entropy source is doing what it is supposed to do!
 TYPED_TEST(TypedTrivialObjectUtilTest, Random) {
   absl::flat_hash_set<std::string> set;
   for (int i = 0; i < 16; i++) {
     TypeParam obj = TrivialRandomObject<TypeParam>();
     std::string str = ConvertTrivialObjectToHexString(obj);
+    EXPECT_TRUE(set.emplace(str).second);
+
+    RandomFillTrivialObject(&obj);
+    str = ConvertTrivialObjectToHexString(obj);
     EXPECT_TRUE(set.emplace(str).second);
 
     for (auto &c : str) {
