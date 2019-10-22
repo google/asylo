@@ -10448,6 +10448,14 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/arpa/inet.h 
 +#define _ARPA_INET_H_
 +
 +#endif  // _ARPA_INET_H_
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/arpa/nameser_compat.h ./newlib/libc/sys/enclave/include/arpa/nameser_compat.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/arpa/nameser_compat.h
++++ ./newlib/libc/sys/enclave/include/arpa/nameser_compat.h
+@@ -0,0 +1,4 @@
++#ifndef _ARPA_NAMESER_COMPAT_H_
++#define _ARPA_NAMESER_COMPAT_H_
++
++#endif  // _ARPA_NAMESER_COMPAT_H_
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/arpa/nameser.h ./newlib/libc/sys/enclave/include/arpa/nameser.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/arpa/nameser.h
 +++ ./newlib/libc/sys/enclave/include/arpa/nameser.h
@@ -11125,6 +11133,14 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/syslog.h
 +#define _SYS_SYSLOG_H_
 +
 +#endif  // _SYS_SYSLOG_H_
+diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/sysmacros.h ./newlib/libc/sys/enclave/include/sys/sysmacros.h
+--- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/sysmacros.h
++++ ./newlib/libc/sys/enclave/include/sys/sysmacros.h
+@@ -0,0 +1,4 @@
++#ifndef _SYS_SYSMACROS_H_
++#define _SYS_SYSMACROS_H_
++
++#endif  // _SYS_SYSMACROS_H_
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ucontext.h ./newlib/libc/sys/enclave/include/sys/ucontext.h
 --- ../newlib-2.5.0.20170922/newlib/libc/sys/enclave/include/sys/ucontext.h
 +++ ./newlib/libc/sys/enclave/include/sys/ucontext.h
