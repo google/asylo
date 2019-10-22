@@ -30,13 +30,10 @@
 
 namespace asylo {
 
-
 template <class T>
 Status SetTrivialObjectFromHexString(absl::string_view view, T *obj) {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   // Make sure that the string has correct number of hex characters
   // to exactly fill obj, and that obj is not a nullptr.
   if (obj == nullptr) {
@@ -63,20 +60,16 @@ Status SetTrivialObjectFromHexString(absl::string_view view, T *obj) {
 
 template <class T>
 std::string ConvertTrivialObjectToHexString(const T &obj) {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   return absl::BytesToHexString(
       absl::string_view(reinterpret_cast<const char *>(&obj), sizeof(obj)));
 }
 
 template <class T>
 T TrivialRandomObject() {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   T tmp;
   RAND_bytes(reinterpret_cast<uint8_t *>(&tmp), sizeof(tmp));
   return tmp;
@@ -84,10 +77,8 @@ T TrivialRandomObject() {
 
 template <class T>
 T TrivialZeroObject() {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   T tmp;
   memset(&tmp, 0, sizeof(tmp));
   return tmp;
@@ -95,10 +86,8 @@ T TrivialZeroObject() {
 
 template <class T>
 T TrivialOnesObject() {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   T tmp;
   memset(&tmp, 0xff, sizeof(tmp));
   return tmp;
@@ -106,10 +95,8 @@ T TrivialOnesObject() {
 
 template <class T>
 Status SetTrivialObjectFromBinaryString(absl::string_view view, T *obj) {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   if (view.size() != sizeof(*obj)) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   absl::StrCat("Cannot set a ", sizeof(*obj), "byte object",
@@ -121,10 +108,8 @@ Status SetTrivialObjectFromBinaryString(absl::string_view view, T *obj) {
 
 template <class T>
 std::string ConvertTrivialObjectToBinaryString(const T &obj) {
-#ifndef __ASYLO__
   static_assert(std::is_trivially_copy_assignable<T>::value,
                 "Template parameter is not trivially copy-assignable.");
-#endif  // __ASYLO__
   return std::string(reinterpret_cast<const char *>(&obj), sizeof(obj));
 }
 
