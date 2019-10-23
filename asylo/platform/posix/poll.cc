@@ -21,7 +21,6 @@
 #include <sys/select.h>
 #include <cstdlib>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/posix/io/io_manager.h"
 
 using asylo::io::IOManager;

@@ -254,7 +254,6 @@ sgx.unsigned_enclave(
     srcs = ["fork_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",

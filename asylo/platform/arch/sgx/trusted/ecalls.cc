@@ -26,7 +26,6 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/fork.h"

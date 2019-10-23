@@ -21,8 +21,6 @@
 #include <sys/stat.h>
 #include <sys/time.h>
 
-#include "asylo/platform/arch/include/trusted/host_calls.h"
-
 // This file provides a bridge between Asylo and the newlib C runtime
 // library. The functions provided here implement the services libc would
 // typically delegate to the operating system.
