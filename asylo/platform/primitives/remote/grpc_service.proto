@@ -1,0 +1,93 @@
+//
+// Copyright 2018 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.primitives;
+
+import "asylo/util/status.proto";
+
+// Remote enclave Communicator service.
+
+service CommunicatorService {
+  // Invoke: sends data over the wire and returns empty message. Success or
+  // error is reported by gRPC status of the call.
+  rpc Communicate(CommunicationMessage) returns (CommunicationConfirmation) {}
+
+  // Indicates that Communicator is being disconnected. Processed immediately
+  // on the RPC thread.
+  rpc Disconnect(DisconnectRequest) returns (DisconnectReply) {}
+
+  // Reports actual target gRPC server address from target to the host side.
+  // Used only if host side does not know the address. Processed immediately
+  // on the RPC thread.
+  rpc EndPointAddress(EndPointAddressNotification)
+      returns (EndPointAddressReply) {}
+
+  // Indicates that a thread has exited on the host side and now the matching
+  // target side thread needs to be terminated too. Processed immediately on the
+  // RPC thread.
+  rpc DisposeOfThread(DisposeOfThreadRequest) returns (DisposeOfThreadReply) {}
+}
+
+// Communicate() API request or result (as indicated by |status| field).
+// Processed on the thread specified with |invocation_thread_id|.
+
+message CommunicationMessage {
+  // Thread id which made the outermost Invoke call. Indicates which thread
+  // should handle the message. Response must match the request thread id.
+  optional uint64 invocation_thread_id = 1;  // required
+
+  // Message handler selector. Response must match the request selector.
+  optional uint64 selector = 2;  // required
+
+  // Request sequence number, atomically and monotonically increasing every time
+  // new request is being created. When a response is returned, this field must
+  // match the one sent with request, to make certain the response is not
+  // misassociated to the request on the caller side.
+  optional uint64 request_sequence_number = 3;  // required.
+
+  // Status:
+  //   - UNKNOWN for request,
+  //   - OK (or absent) for successful response,
+  //   - CANCEL if Communicator is disconnected,
+  //   - all others for failed response.
+  optional StatusProto status = 4;
+
+  // Input MessageReader for request, output MessageWriter for response.
+  repeated bytes items = 5;
+}
+
+message CommunicationConfirmation {}
+
+message DisconnectRequest {}
+
+message DisconnectReply {}
+
+message EndPointAddressNotification {
+  // Actual gRPC server end point address on the target side.
+  optional string address = 1;  // required.
+}
+
+message EndPointAddressReply {}
+
+message DisposeOfThreadRequest {
+  // Thread id of the thread that exited on the host side and need to be
+  // disposed of on the target side.
+  optional uint64 exiting_thread_id = 1;
+}
+
+message DisposeOfThreadReply {}

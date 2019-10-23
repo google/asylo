@@ -319,6 +319,10 @@ exec "./{loader}" {args} "$@"
     args = _interpolate_enclave_paths(ctx.attr.enclaves, ctx.attr.loader_args)
     files = [ctx.executable.loader] + ctx.files.enclaves + ctx.files.data
 
+    if ctx.executable.remote_proxy:
+        args = args + ["--remote_proxy='" + ctx.executable.remote_proxy.short_path + "'"]
+        files = files + [ctx.executable.remote_proxy]
+
     script_src = script_tmpl.format(
         loader = ctx.executable.loader.short_path,
         args = " ".join(args),
@@ -366,6 +370,13 @@ def _make_enclave_runner_rule(test = False):
                 # correctly.
                 cfg = "target",
                 mandatory = True,
+                allow_single_file = True,
+            ),
+            "remote_proxy": attr.label(
+                default = None,
+                executable = True,
+                cfg = "target",
+                mandatory = False,
                 allow_single_file = True,
             ),
             "loader_args": attr.string_list(),
@@ -433,6 +444,7 @@ def enclave_loader(
         enclaves = {},
         embedded_enclaves = {},
         loader_args = [],
+        remote_proxy = None,
         **kwargs):
     """Wraps a cc_binary with a dependency on enclave availability at runtime.
 
@@ -460,6 +472,9 @@ def enclave_loader(
       loader_args: List of arguments to be passed to `loader`. Arguments may
         contain {enclave_name}-style references to keys from the `enclaves` dict,
         each of which will be replaced with the path to the named enclave.
+      remote_proxy: Host-side executable that is going to run remote enclave
+        proxy server which will actually load the enclave(s). If empty, the
+        enclave(s) are loaded locally.
       **kwargs: cc_binary arguments.
     """
 
@@ -487,6 +502,7 @@ def enclave_loader(
         loader = loader_name,
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
+        remote_proxy = remote_proxy,
         tags = kwargs.get("tags", []) + ["manual"],
         visibility = kwargs.get("visibility", []),
         data = kwargs.get("data", []),
@@ -497,6 +513,7 @@ def sim_enclave_loader(
         enclaves = {},
         embedded_enclaves = {},
         loader_args = [],
+        remote_proxy = None,
         **kwargs):
     """Thin wrapper around enclave loader, adds necessary linkopts and testonly=1
 
@@ -512,6 +529,10 @@ def sim_enclave_loader(
       loader_args: List of arguments to be passed to `loader`. Arguments may
         contain {enclave_name}-style references to keys from the `enclaves` dict,
         each of which will be replaced with the path to the named enclave.
+      remote_proxy: Host-side executable that is going to run remote enclave
+        proxy server which will actually load the enclave(s). If empty, the
+        enclave(s) are loaded locally.
+      **kwargs: cc_binary arguments.
     """
 
     if "manual" not in kwargs.get("tags", []):
@@ -523,6 +544,7 @@ def sim_enclave_loader(
         embedded_enclaves = embedded_enclaves,
         loader_args = loader_args,
         testonly = 1,
+        remote_proxy = remote_proxy,
         **kwargs
     )
 
@@ -681,6 +703,7 @@ def enclave_test(
         enclaves = {},
         embedded_enclaves = {},
         test_args = [],
+        remote_proxy = None,
         tags = [],
         **kwargs):
     """Build target for testing one or more enclaves.
@@ -702,12 +725,15 @@ def enclave_test(
         string in `test_args` after each enclave target is interpreted as the
         path to its output binary.
       embedded_enclaves: Dictionary from ELF section names (that do not start
-       with '.') to target dependencies. Each target in the dictionary is
-       embedded in the test binary under the corresponding ELF section.
+        with '.') to target dependencies. Each target in the dictionary is
+        embedded in the test binary under the corresponding ELF section.
       test_args: List of arguments to be passed to the test binary. Arguments may
-       contain {enclave_name}-style references to keys from the `enclaves` dict,
-       each of which will be replaced with the path to the named enclave. This
-       replacement only occurs for non-embedded enclaves.
+        contain {enclave_name}-style references to keys from the `enclaves` dict,
+        each of which will be replaced with the path to the named enclave. This
+        replacement only occurs for non-embedded enclaves.
+      remote_proxy: Host-side executable that is going to run remote enclave
+        proxy server which will actually load the enclave(s). If empty, the
+        enclave(s) are loaded locally.
       tags: Label attached to this test to allow for querying.
       **kwargs: cc_test arguments.
     """
@@ -744,6 +770,7 @@ def enclave_test(
         data = data,
         flaky = flaky,
         size = size,
+        remote_proxy = remote_proxy,
         testonly = 1,
         tags = ["enclave_test"] + tags,
     )
@@ -859,20 +886,24 @@ def cc_enclave_test(
         name,
         srcs,
         enclave_config = "",
+        remote_proxy = None,
         tags = [],
         deps = [],
         test_in_initialize = False,
         **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
-    This macro creates two targets, one sgx_enclave target with the test source.
-    And another test runner application to launch the test enclave.
+    This macro creates two targets, one sgx.debug_enclave target with the test
+    source. And another test runner application to launch the test enclave.
 
     Args:
       name: Target name for will be <name>_enclave.
       srcs: Same as cc_test srcs.
       enclave_config: An sgx.enclave_configuration target to be passed to the
           enclave. Optional.
+      remote_proxy: Host-side executable that is going to run remote enclave
+          proxy server which will actually load the enclave(s). If empty, the
+          enclave(s) are loaded locally.
       tags: Same as cc_test tags.
       deps: Same as cc_test deps.
       test_in_initialize: If True, tests run in Initialize, rather than Run. This
@@ -948,6 +979,7 @@ def cc_enclave_test(
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
         data = kwargs.get("data", []),
+        remote_proxy = remote_proxy,
         testonly = 1,
         size = size,
         tags = ["enclave_test"] + tags,

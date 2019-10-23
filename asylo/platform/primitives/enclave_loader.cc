@@ -19,10 +19,13 @@
 #include "asylo/platform/primitives/enclave_loader.h"
 
 #include "asylo/enclave.pb.h"
+#include "asylo/platform/primitives/remote/proxy_client.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/util/remote/remote_loader.pb.h"
+#include "asylo/util/remote/remote_proxy_config.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -73,12 +76,34 @@ StatusOr<std::shared_ptr<primitives::Client>> LoadSgxEnclave(
   return std::move(primitive_client);
 }
 
+StatusOr<std::shared_ptr<Client>> LoadRemoteEnclave(
+    const EnclaveLoadConfig &load_config) {
+  const std::string &enclave_name = load_config.name();
+  const auto &remote_config = load_config.GetExtension(remote_load_config);
+
+  auto client_config =
+      absl::WrapUnique(reinterpret_cast<RemoteProxyClientConfig *>(
+          remote_config.remote_proxy_config()));
+
+  std::shared_ptr<primitives::RemoteEnclaveProxyClient> primitive_client;
+  ASYLO_ASSIGN_OR_RETURN(primitive_client,
+                         primitives::RemoteEnclaveProxyClient::Create(
+                             enclave_name, std::move(client_config),
+                             absl::make_unique<primitives::DispatchTable>(),
+                             remote_config.loader_case()));
+  ASYLO_RETURN_IF_ERROR(primitive_client->Connect(load_config));
+  return std::move(primitive_client);
+}
+
 }  // namespace
 
 StatusOr<std::shared_ptr<Client>> LoadEnclave(
     const EnclaveLoadConfig &load_config) {
   if (load_config.HasExtension(sgx_load_config)) {
     return LoadSgxEnclave(load_config);
+  }
+  if (load_config.HasExtension(remote_load_config)) {
+    return LoadRemoteEnclave(load_config);
   }
   return Status(error::GoogleError::INVALID_ARGUMENT,
                 "Enclave backend not supported in asylo");

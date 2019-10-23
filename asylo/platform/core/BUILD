@@ -56,6 +56,8 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "//asylo/util:status_macros",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "//asylo/util/remote:remote_proxy_config",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",

@@ -1,0 +1,40 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+import "asylo/enclave.proto";
+import "asylo/platform/primitives/sgx/loader.proto";
+import "asylo/platform/primitives/sim/loader.proto";
+
+// |RemoteLoadConfig| is used with |EnclaveManager| to load an enclave
+// remotely and create a |RemoteEnclaveProxyClient|.
+message RemoteLoadConfig {
+  // |remote_proxy_config| is the address id of a |RemoteProxyClientConfig|.
+  optional int64 remote_proxy_config = 1;
+
+  // Fully configured loader of the desired load type.
+  oneof loader {
+    SgxLoadConfig sgx_load_config = 2;
+    SimLoadConfig sim_load_config = 3;
+  }
+}
+
+extend EnclaveLoadConfig {
+  optional RemoteLoadConfig remote_load_config = 263791925;
+}

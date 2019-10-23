@@ -143,3 +143,102 @@ sim_enclave_test(
         "@com_google_absl//absl/memory",
     ],
 )
+
+cc_library(
+    name = "remote_test_backend",
+    testonly = 1,
+    srcs = ["remote_test_backend.cc"],
+    hdrs = ["remote_test_backend.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":test_backend",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/remote:proxy_client",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/test/util:test_flags",
+        "//asylo/util:logging",
+        "//asylo/util:path",
+        "//asylo/util:status",
+        "//asylo/util/remote:provision",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
+    # Required to prevent the linker from dropping the flag symbols.
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "remote_sim_test_backend",
+    testonly = 1,
+    srcs = ["remote_sim_test_backend.cc"],
+    hdrs = ["remote_sim_test_backend.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_test_backend",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sim:loader_cc_proto",
+        "//asylo/test/util:test_flags",
+        "//asylo/util:path",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
+    # Required to prevent the linker from dropping the flag symbols.
+    alwayslink = 1,
+)
+
+cc_library(
+    name = "remote_sgx_test_backend",
+    testonly = 1,
+    srcs = ["remote_sgx_test_backend.cc"],
+    hdrs = ["remote_sgx_test_backend.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_test_backend",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/test/util:test_flags",
+        "//asylo/util:path",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
+    # Required to prevent the linker from dropping the flag symbols.
+    alwayslink = 1,
+)
+
+sim_enclave_test(
+    name = "sim_proxy_primitives_test",
+    size = "small",
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "sim": ":sim_test_enclave.so",
+    },
+    linkstatic = True,
+    remote_proxy = "//asylo/util/remote:sim_remote_proxy",
+    tags = [
+        "exclusive",
+    ],
+    test_args = [
+        "--enclave_binary='{sim}'",
+    ],
+    deps = [
+        ":primitives_test_lib",
+        ":remote_sim_test_backend",
+        ":test_backend",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/remote:proxy_client",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "//asylo/util/remote:local_provision",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+    ],
+)

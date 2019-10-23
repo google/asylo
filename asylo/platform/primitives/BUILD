@@ -51,11 +51,14 @@ cc_library(
     deps = [
         ":untrusted_primitives",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives/remote:proxy_client",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
         "//asylo/util:status_macros",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "//asylo/util/remote:remote_proxy_config",
     ],
 )
 

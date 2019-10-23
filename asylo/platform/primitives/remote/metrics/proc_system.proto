@@ -1,0 +1,456 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.primitives;
+
+// Status information about a process. This information is parsed directly
+// from the process's `/proc/[pid]/stat` file and is not processed in any way.
+// All fields are named after the fields in the `/stat` file.
+//
+// Each field description is provided here for convienence. Further information
+// can be found at http://man7.org/linux/man-pages/man5/proc.5.html or by using
+// the command `man 5 proc` on linux.
+//
+// To convert the file to a protobuf, the following type conversions have been
+// made:
+// SCANF - PROTO
+// %c    - string
+// %d    - int64
+// %ld   - int64
+// %llu  - uint64
+// %lu   - uint64
+// %s    - string
+// %u    - uint64
+//
+// Some fields are goverened by ptrace access mode check. If the check
+// denies access these fields will be displayed as 0. The affected fields are
+// marked with // PTRACE_ACCESS_CHECK_REQUIRED.
+//
+// The accuracy and availablilty of all fields is governed by the kernel version
+// of the system. All fields identified as available in the proc subsystem are
+// gathered here. Unreliable fields are noted as either deprecated or
+// unmaintained.
+message ProcStat {
+  // The process id.
+  optional int64 pid = 1;
+
+  // The filename of the process.
+  optional string comm = 2;
+
+  // A single character representing the current process state.
+  // One of:
+  // R - Running
+  // S - Sleeping in an interuptible wait
+  // D - Waiting in uninterruptible disk sleep
+  // Z - Zombie
+  // T - Stopped or trace stopped
+  // t - Tracing stop
+  // W - Paging
+  // X - Dead
+  // x - Dead
+  // K - Wakekill
+  // W - Waking
+  // P - Parked
+  optional string state = 3;
+
+  // The process id of the Enclave's parent process. When using the Remote
+  // Enclave Backend, this PID should be owned by the Remote Enclave Proxy
+  // Server.
+  optional int64 ppid = 4;
+
+  // The process group id of the process.
+  optional int64 pgrp = 5;
+
+  // The session id of the process.
+  optional int64 session = 6;
+
+  // The controlling terminal of the process.
+  optional int64 tty_nr = 7;
+
+  // The id of the foreground process group of the controlling terminal of the
+  // process.
+  optional int64 tpgid = 8;
+
+  // The kernel flags of the process.
+  optional uint64 flags = 9;
+
+  // The number of minor faults the process has made.
+  optional uint64 minflt = 10;
+
+  // The number of minor faults that any of the process's waited-for children
+  // have made.
+  optional uint64 cminflt = 11;
+
+  // The number of major faults the process has made.
+  optional uint64 majflt = 12;
+
+  // The number of major faults that any of the process's waited-for children
+  // have made.
+  optional uint64 cmajflt = 13;
+
+  // Amount of time that the process has been scheduled in user mode. Reported
+  // in clock ticks.
+  optional uint64 utime = 14;
+
+  // Amount of time that the process has been scheduled in kernel mode. Reported
+  // in clock ticks.
+  optional uint64 stime = 15;
+
+  // Amount of time that the process' waited-for children have been scheduled in
+  // user mode. Reported in clock ticks.
+  optional int64 cutime = 16;
+
+  // Amount of time that this process' waited-for children have been scheduled
+  // in kernel mode. Reported in clock ticks.
+  optional int64 cstime = 17;
+
+  // For processes running a real-time scheduling policy, this is the negated
+  // scheduling priority, minus one.
+  optional int64 priority = 18;
+
+  // The nice value
+  optional int64 nice = 19;
+
+  // The number of threads in this process.
+  optional int64 num_threads = 20;
+
+  // The number of jiffies until the next SIGALRM is sent to the process.
+  optional int64 itrealvalue = 21;
+
+  // The time the process started after system boot. Expressed in clock ticks.
+  optional uint64 starttime = 22;
+
+  // Virtual memory size in bytes.
+  optional uint64 vsize = 23;
+
+  // Number of pages the process has in real memory.
+  optional int64 rss = 24;
+
+  // Current soft limit in bytes on the rss of the process.
+  optional uint64 rsslim = 25;
+
+  // The address above which program text can run.
+  optional uint64 startcode = 26;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // The address below which program text can run.
+  optional uint64 endcode = 27;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // The address of the start of the stack.
+  optional uint64 startstack = 28;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // The current value of ESP.
+  optional uint64 kstkesp = 29;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // The current EIP.
+  optional uint64 kstkeip = 30;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Bitmap of pending signals. Deprecated in favor of /proc/[pid]/status.
+  optional uint64 signal = 31;
+
+  // Bitmap of blocked signals. Deprecated in favor of /proc/[pid]/status.
+  optional uint64 blocked = 32;
+
+  // Bitmap of ignored signals. Deprecated in favor of /proc/[pid]/status.
+  optional uint64 sigignore = 33;
+
+  // Bitmap of caught signals. Deprecated in favor of /proc/[pid]/status.
+  optional uint64 sigcatch = 34;
+
+  // The channel the process is waiting in.
+  optional uint64 wchan = 35;
+
+  // Number of pages swapped (not maintained).
+  optional uint64 nswap = 36;
+
+  //  Cumulative nswap for child process (not maintained).
+  optional uint64 cnswap = 37;
+
+  // Signal to be sent to parent when the process dies.
+  optional int64 exit_signal = 38;
+
+  // CPU number last executed on.
+  optional int64 processor = 39;
+
+  // Real-time scheduling priority.
+  optional uint64 rt_priority = 40;
+
+  // Scheduling Policy
+  optional uint64 policy = 41;
+
+  // Aggregated block I/O delays. Reported in clock ticks.
+  optional uint64 delayacct_blkio_ticks = 42;
+
+  // Guest time of the process. Reported in clock ticks.
+  optional uint64 guest_time = 43;
+
+  // Guest time of the process' children. Reported in clock ticks.
+  optional int64 cguest_time = 44;
+
+  // Address above which the process BSS data are placed.
+  optional uint64 start_data = 45;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Address below which the process BSS data are placed
+  optional uint64 end_data = 46;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Address above which program heap can be expanded
+  optional uint64 start_brk = 47;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Address above which program command-line arguments are placed.
+  optional uint64 arg_start = 48;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Address below which program command-line arguments are placed.
+  optional uint64 arg_end = 49;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Address above which program environment is placed.
+  optional uint64 env_start = 50;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // Address below which program environment is placed.
+  optional uint64 env_end = 51;  // PTRACE_ACCESS_CHECK_REQUIRED
+
+  // The thread's exit status.
+  optional int64 exit_code = 52;  // PTRACE_ACCESS_CHECK_REQUIRED
+}
+
+// The system clock ticks per second is provided as |sc_clk_tck| in order to
+// convert any clock times measured in ticks to seconds.
+message ProcStatResponse {
+  optional ProcStat proc_stat = 1;
+  optional uint64 sc_clk_tck = 2;
+}
+
+message ProcStatRequest {}
+
+// Status information about a process. This information is parsed directly
+// from the process's `/proc/[pid]/status` file and is not processed in any way.
+// All fields are named after the fields in the `/status` file.
+//
+// Each field description is provided here for convienence. Further information
+// can be found at http://man7.org/linux/man-pages/man5/proc.5.html or by using
+// the command `man 5 proc` on linux.
+//
+// The accuracy and availablilty of all fields is governed by the kernel version
+// of the system.
+message ProcStatus {
+  // Message for User ID information.
+  message UID {
+    optional int64 real_uid = 1;
+    optional int64 effective_uid = 2;
+    optional int64 saved_set_uid = 3;
+    optional int64 filesystem_uid = 4;
+  }
+
+  // Message for Group ID information.
+  message GID {
+    optional int64 real_gid = 1;
+    optional int64 effective_gid = 2;
+    optional int64 saved_set_gid = 3;
+    optional int64 filesystem_gid = 4;
+  }
+
+  // Message for Signal Queue information.
+  message SigQ {
+    optional uint64 real_user_queued_signal_count = 1;
+    optional uint64 resource_limit_queued_signal = 2;
+  }
+
+  // Command run by this process.
+  optional string name = 1;
+
+  // Process umask, expressed as a decimal rather than octal.
+  optional uint64 umask = 2;
+
+  // Current State of the process.
+  // One of:
+  // R - Running
+  // S - Sleeping
+  // D - Disk Sleep
+  // T - Stopped or Tracing Stop
+  // Z - Zombie
+  // X - Dead
+  optional string state = 3;
+
+  // Thread Group Id
+  optional int64 tgid = 4;
+
+  // NUMA group id. 0 if None.
+  optional int64 ngid = 5;
+
+  // Thread Id
+  optional int64 pid = 6;
+
+  // PID of the parent.
+  optional int64 ppid = 7;
+
+  // PID of process tracing this process. 0 if None.
+  optional int64 tracerpid = 8;
+
+  // UIDs of the process.
+  optional UID uids = 9;
+
+  // GIDs of the process.
+  optional GID gids = 10;
+
+  // Number of fds allocated.
+  optional uint64 fdsize = 11;
+
+  // List of groups.
+  repeated int64 groups = 12;
+
+  // Namespaced Thread group IDs.
+  repeated int64 nstgid = 13;
+
+  // Namespaced Thread Ids.
+  repeated int64 nspid = 14;
+
+  // Namespaced Process Group Ids.
+  repeated int64 nspgid = 15;
+
+  // Namspaced Session Ids.
+  repeated int64 nssid = 16;
+
+  // Peak virtual memory size in kB.
+  optional uint64 vmpeak = 17;
+
+  // Virtual memory size in kB.
+  optional uint64 vmsize = 18;
+
+  // Locked Memory size in kB.
+  optional uint64 vmlck = 19;
+
+  // Pinned Memory Size in kB.
+  optional uint64 vmpin = 20;
+
+  // Peak Resident Set Size in kB.
+  optional uint64 vmhwm = 21;
+
+  // Resident Set Size in kB.
+  optional uint64 vmrss = 22;
+
+  // Resident Anonymous Memory size in kB.
+  optional uint64 rssanon = 23;
+
+  // Resident File Mappings size in kB.
+  optional uint64 rssfile = 24;
+
+  // Resident shared memory size in kB.
+  optional uint64 rssshmem = 25;
+
+  // Virtual Memory Data size in kB.
+  optional uint64 vmdata = 26;
+
+  // Virtual Memory Stack size in kB.
+  optional uint64 vmstk = 27;
+
+  // Virtual Memory Text size in kB.
+  optional uint64 vmexe = 28;
+
+  // Virtual Memory Library size in kB.
+  optional uint64 vmlib = 29;
+
+  // Virtual Memory Page Table size in kB.
+  optional uint64 vmpte = 30;
+
+  // Virtual Memory second-level page tables size in kB.
+  optional uint64 vmpmd = 31;
+
+  // Virtual Memory swapped out size in kB.
+  optional uint64 vmswap = 32;
+
+  // Hugetlb memory portions size in kB.
+  optional uint64 hugetlbpages = 33;
+
+  // True if currently dumping core, false otherwise.
+  optional bool coredumping = 34;
+
+  // Number of threads.
+  optional uint64 threads = 35;
+
+  // Signal queue.
+  optional SigQ sigq = 36;
+
+  // Process Signals pending count.
+  optional uint64 sigpnd = 37;
+
+  // Thread Signals pending count.
+  optional uint64 shdpnd = 38;
+
+  // Mask for signals being blocked.
+  optional uint64 sigblk = 39;
+
+  // Mask for signals being ignored.
+  optional uint64 sigign = 40;
+
+  // Mask for signals being caught.
+  optional uint64 sigcgt = 41;
+
+  // Capabilities inherited mask.
+  optional uint64 capinh = 42;
+
+  // Capabilities Permitted Mask.
+  optional uint64 capprm = 43;
+
+  // Capabilities effective set mask.
+  optional uint64 capeff = 44;
+
+  // Capabilities bounding set.
+  optional uint64 capbnd = 45;
+
+  // Ambient capabilities set.
+  optional uint64 capamb = 46;
+
+  // Value of no_new_privs.
+  optional uint64 nonewprivs = 47;
+
+  // Seccomp mode of the process.
+  optional uint64 seccomp = 48;
+
+  // Speculation flaw mitigation state.
+  optional string speculation_store_bypass = 49;
+
+  // Mask of CPUs this process can run on.
+  optional uint64 cpus_allowed = 50;
+
+  // Same information as cpus_allowed in a list format.
+  repeated uint64 cpus_allowed_list = 51;
+
+  // Mask of Memory Nodes allowed for this process.
+  optional uint64 mems_allowed = 52;
+
+  // Same information as mems_allowed in a list format.
+  repeated uint64 mems_allowed_list = 53;
+
+  // Number of voluntary context switches.
+  optional uint64 voluntary_ctxt_switches = 54;
+
+  // Number of nonvoluntary context switches.
+  optional uint64 nonvoluntary_ctxt_switches = 55;
+}
+
+message ProcStatusRequest {}
+
+message ProcStatusResponse {
+  optional ProcStatus proc_status = 1;
+}
+
+service ProcSystemService {
+  // Request ProcStat data.
+  rpc GetProcStat(ProcStatRequest) returns (ProcStatResponse) {}
+
+  // Request ProcStatus data.
+  rpc GetProcStatus(ProcStatusRequest) returns (ProcStatusResponse) {}
+}

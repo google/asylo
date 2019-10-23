@@ -52,6 +52,10 @@ static constexpr uint64_t kSelectorCreateThread = 87;
 // untrusted host call handlers and cannot be used by any other component.
 static constexpr uint64_t kSelectorHostCall = 88;
 
+// Selector values in [kSelectorRemote, kSelectorUser) range are reserved for
+// remote backend needs and cannot be used by any other component.
+static constexpr uint64_t kSelectorRemote = 120;
+
 // Selector values less than `kSelectorUser` are reserved by the runtime and may
 // not be registered by the applications.
 static constexpr uint64_t kSelectorUser = 128;

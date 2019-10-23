@@ -30,6 +30,10 @@ asylo_testonly_deps()
 load("//asylo/bazel:sgx_deps.bzl", "sgx_deps")
 sgx_deps()
 
+# Remote backend dependencies.
+load("@com_google_asylo//asylo/bazel:remote_deps.bzl", "remote_deps")
+remote_deps()
+
 # The grpc dependency is defined by asylo_deps, and load must be top-level,
 # so this has to come after asylo_deps().
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")

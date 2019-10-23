@@ -82,3 +82,42 @@ cc_library(
         "@com_google_absl//absl/strings",
     ],
 )
+
+cc_library(
+    name = "sim_remote_proxy_lib",
+    srcs = ["sim_remote_proxy.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":loader_cc_proto",
+        ":untrusted_sim",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/remote/util:remote_proxy_lib",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:error_codes",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+    ],
+    # Required to prevent the linker from dropping the flag symbol.
+    alwayslink = 1,
+)
+
+# Message definitions for simulator enclave load configuration.
+proto_library(
+    name = "loader_proto",
+    srcs = ["loader.proto"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//asylo:enclave_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "loader_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = [":loader_proto"],
+)

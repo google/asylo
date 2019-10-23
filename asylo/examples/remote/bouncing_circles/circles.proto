@@ -1,0 +1,49 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package bouncing_circles;
+
+import "asylo/enclave.proto";
+
+// Extensions to EnclaveInput for use with Circles enclave.
+
+message CirclesSetupInput {
+  optional int32 width = 1;
+  optional int32 height = 2;
+}
+
+message CirclesSetupOutput {}
+
+message CirclesUpdatePositionInput {}
+
+message CirclesUpdatePositionOutput {
+  optional int32 x = 1;
+  optional int32 y = 2;
+  optional int32 radius = 3;
+  optional string color = 4;
+}
+
+extend asylo.EnclaveInput {
+  optional CirclesSetupInput enclave_setup_input = 9080;
+  optional CirclesUpdatePositionInput enclave_update_position_input = 9090;
+}
+
+extend asylo.EnclaveOutput {
+  optional CirclesSetupOutput enclave_setup_output = 9081;
+  optional CirclesUpdatePositionOutput enclave_update_position_output = 9091;
+}

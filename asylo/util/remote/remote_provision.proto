@@ -1,0 +1,45 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo;
+
+service ProvisionService {
+  // Starts or locates remote replica to run the given enclave.
+  // The enclave binary is streamed, with the first block also featuring
+  // |client_address|. Having received that, the service actually provisions
+  // proxy and triggers it to load the enclave into memory.
+  rpc Provision(stream ProvisionRequest) returns (ProvisionResponse) {}
+}
+
+message ProvisionRequest {
+  // Enclave bytes block (streamed by the client).
+  optional bytes enclave_binary = 1;
+
+  // Cumulative SHA256 hash from the start of the file (including this block).
+  optional bytes cumulative_sha256 = 2;
+
+  // Address of the remove proxy client (IP:port) opened for the proxy to
+  // connect to. Must be present in the first of the streamed request records,
+  // may not appear in the continuation blocks.
+  optional string client_address = 3;
+}
+
+message ProvisionResponse {
+  // Enclave location on the file system, available to proxy.
+  optional string enclave_path = 1;
+}

@@ -119,6 +119,12 @@ static constexpr uint64_t kHexDumpHandler = primitives::kSelectorHostCall + 24;
 // Exit handler constant for |OpenLogHandler|.
 static constexpr uint64_t kOpenLogHandler = primitives::kSelectorHostCall + 25;
 
+// Assert that the largest host call handler lies in
+// [kSelectorHostCall, kSelectorRemote).
+static_assert(kOpenLogHandler < primitives::kSelectorRemote,
+              "Cannot have host call handler constant spill over into "
+              "|kSelectorRemote|.");
+
 }  // namespace host_call
 }  // namespace asylo
 

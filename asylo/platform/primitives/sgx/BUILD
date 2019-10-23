@@ -186,6 +186,29 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "sgx_remote_proxy_lib",
+    srcs = ["sgx_remote_proxy.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":loader_cc_proto",
+        ":untrusted_sgx",
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/arch:untrusted_arch",
+        "//asylo/platform/primitives",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/remote/util:remote_proxy_lib",
+        "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/util:error_codes",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+    ],
+    alwayslink = 1,
+)
+
 # Protobuf used by fork.
 proto_library(
     name = "fork_proto",
