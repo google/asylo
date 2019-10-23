@@ -43,10 +43,9 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
   return Status::OkStatus();
 }
 
-// Finds and invokes an exit handler, setting an error status on failure.
-Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
-                                        MessageReader *input,
-                                        MessageWriter *output, Client *client) {
+Status DispatchTable::PerformExit(uint64_t untrusted_selector,
+                                  MessageReader *input, MessageWriter *output,
+                                  Client *client) {
   ExitHandler handler;
   {
     auto locked_exit_table = exit_table_.ReaderLock();
@@ -59,6 +58,20 @@ Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
   }
   return handler.callback(client->shared_from_this(), handler.context, input,
                           output);
+}
+
+// Finds and invokes an exit handler, setting an error status on failure.
+Status DispatchTable::InvokeExitHandler(uint64_t untrusted_selector,
+                                        MessageReader *input,
+                                        MessageWriter *output, Client *client) {
+  if (exit_hook_factory_) {
+    auto hook = exit_hook_factory_->CreateExitHook();
+    ASYLO_RETURN_IF_ERROR(hook->PreExit(untrusted_selector));
+    return hook->PostExit(
+        PerformExit(untrusted_selector, input, output, client));
+  } else {
+    return PerformExit(untrusted_selector, input, output, client);
+  }
 }
 
 }  // namespace primitives

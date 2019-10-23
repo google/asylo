@@ -24,6 +24,7 @@
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/platform/primitives/util/exit_log.h"
 #include "asylo/util/remote/remote_loader.pb.h"
 #include "asylo/util/remote/remote_proxy_config.h"
 #include "asylo/util/status.h"
@@ -33,6 +34,15 @@
 namespace asylo {
 namespace primitives {
 namespace {
+
+std::unique_ptr<Client::ExitCallProvider> MakeExitCallProvider(
+    const EnclaveLoadConfig &load_config) {
+  if (load_config.exit_logging()) {
+    return absl::make_unique<DispatchTable>(
+        absl::make_unique<ExitLogHookFactory>());
+  }
+  return absl::make_unique<DispatchTable>();
+}
 
 StatusOr<std::shared_ptr<primitives::Client>> LoadSgxEnclave(
     const EnclaveLoadConfig &load_config) {
@@ -53,6 +63,7 @@ StatusOr<std::shared_ptr<primitives::Client>> LoadSgxEnclave(
   bool debug = sgx_config.debug();
   bool is_embedded_enclave = sgx_config.has_embedded_enclave_config();
   bool is_file_enclave = sgx_config.has_file_enclave_config();
+  auto exit_call_provider = MakeExitCallProvider(load_config);
 
   if (is_embedded_enclave) {
     std::string section_name =
@@ -61,14 +72,14 @@ StatusOr<std::shared_ptr<primitives::Client>> LoadSgxEnclave(
         primitive_client,
         LoadEnclave<SgxEmbeddedBackend>(
             enclave_name, base_address, section_name, enclave_size,
-            enclave_config, debug, absl::make_unique<DispatchTable>()));
+            enclave_config, debug, std::move(exit_call_provider)));
   } else if (is_file_enclave) {
     std::string enclave_path = sgx_config.file_enclave_config().enclave_path();
     ASYLO_ASSIGN_OR_RETURN(
         primitive_client,
         LoadEnclave<SgxBackend>(enclave_name, base_address, enclave_path,
                                 enclave_size, enclave_config, debug,
-                                absl::make_unique<DispatchTable>()));
+                                std::move(exit_call_provider)));
   } else {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "SGX enclave source not set");
@@ -85,12 +96,13 @@ StatusOr<std::shared_ptr<Client>> LoadRemoteEnclave(
       absl::WrapUnique(reinterpret_cast<RemoteProxyClientConfig *>(
           remote_config.remote_proxy_config()));
 
+  auto exit_call_provider = MakeExitCallProvider(load_config);
   std::shared_ptr<primitives::RemoteEnclaveProxyClient> primitive_client;
-  ASYLO_ASSIGN_OR_RETURN(primitive_client,
-                         primitives::RemoteEnclaveProxyClient::Create(
-                             enclave_name, std::move(client_config),
-                             absl::make_unique<primitives::DispatchTable>(),
-                             remote_config.loader_case()));
+  ASYLO_ASSIGN_OR_RETURN(
+      primitive_client,
+      primitives::RemoteEnclaveProxyClient::Create(
+          enclave_name, std::move(client_config), std::move(exit_call_provider),
+          remote_config.loader_case()));
   ASYLO_RETURN_IF_ERROR(primitive_client->Connect(load_config));
   return std::move(primitive_client);
 }

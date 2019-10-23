@@ -32,7 +32,44 @@ namespace primitives {
 // Implementation of ExitCallProvider based on dispatch table (thread safe).
 class DispatchTable : public Client::ExitCallProvider {
  public:
-  DispatchTable() : exit_table_(absl::flat_hash_map<uint64_t, ExitHandler>()) {}
+  // A hook class which gives users a callback mechanism to inspect
+  // exit calls.
+  class ExitHook {
+   public:
+    // PreExit is called with the exit call selector before an exit
+    // call is made. If it returns anything other than an OK status,
+    // that exit call will NOT be made, and that non-ok status will be
+    // returned back to the enclave.
+    virtual Status PreExit(uint64_t untrusted_selector) = 0;
+
+    // PostExit is called with the result of the external exit call,
+    // after that call is made (but before returning to the
+    // enclave). PostExit returns a status as well, which will be
+    // returned to the enclave. It is expected that most
+    // implementations will simply pass the argument status directly
+    // through and return it.
+    virtual Status PostExit(Status result) = 0;
+
+    virtual ~ExitHook() {}
+  };
+
+  // A factory for hook objects. The factory pattern is used here in
+  // order to allow each hook object to store state between PreExit
+  // and PostExit: for instance a timestamp corresponding to the
+  // beginning and end of a host call.
+  class ExitHookFactory {
+   public:
+    virtual std::unique_ptr<ExitHook> CreateExitHook() = 0;
+    virtual ~ExitHookFactory() {}
+  };
+
+  DispatchTable()
+      : exit_table_(absl::flat_hash_map<uint64_t, ExitHandler>()),
+        exit_hook_factory_() {}
+
+  DispatchTable(std::unique_ptr<ExitHookFactory> exit_hook_factory)
+      : exit_table_(absl::flat_hash_map<uint64_t, ExitHandler>()),
+        exit_hook_factory_(std::move(exit_hook_factory)) {}
 
   // Registers a callback as the handler routine for an enclave exit point
   // `untrusted_selector`. Returns an error code if a handler has already been
@@ -47,7 +84,12 @@ class DispatchTable : public Client::ExitCallProvider {
                            Client *client) override ASYLO_MUST_USE_RESULT;
 
  private:
+  // Internal helper to actually perform an exit call.
+  Status PerformExit(uint64_t untrusted_selector, MessageReader *input,
+                     MessageWriter *output, Client *client);
+
   MutexGuarded<absl::flat_hash_map<uint64_t, ExitHandler>> exit_table_;
+  const std::unique_ptr<ExitHookFactory> exit_hook_factory_;
 };
 
 }  // namespace primitives

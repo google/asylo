@@ -55,6 +55,7 @@ cc_library(
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/primitives/util:exit_log",
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "//asylo/util/remote:remote_loader_cc_proto",

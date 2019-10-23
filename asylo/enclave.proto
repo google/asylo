@@ -71,6 +71,9 @@ message EnclaveLoadConfig {
   // Configuration passed to an enclave during initialization.
   optional EnclaveConfig config = 2;
 
+  // Should enclave exit call logging be enabled.
+  optional bool exit_logging = 3;
+
   // Allow user extensions.
   extensions 1000 to max;
 }

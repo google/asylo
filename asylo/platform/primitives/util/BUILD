@@ -77,6 +77,20 @@ cc_library(
     ],
 )
 
+# Exit call hooks which log every exit call
+cc_library(
+    name = "exit_log",
+    srcs = ["exit_log.cc"],
+    hdrs = ["exit_log.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":dispatch_table",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/time",
+    ],
+)
+
 cc_test(
     name = "dispatch_table_test",
     srcs = ["dispatch_table_test.cc"],
