@@ -40,6 +40,14 @@ config_setting(
     visibility = ["//visibility:public"],
 )
 
+config_setting(
+    name = "no_backend",
+    flag_values = {
+        "@com_google_asylo_backend_provider//:backend": "@com_google_asylo_backend_provider//:none",
+    },
+    visibility = ["//visibility:public"],
+)
+
 # Client library for applications consuming Asylo enclaves.
 cc_library(
     name = "enclave_client",

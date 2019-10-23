@@ -16,7 +16,11 @@
 
 """Rule definitions for creating targets for simulated Asylo enclaves."""
 
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
+load(
+    "@com_google_asylo_backend_provider//:enclave_info.bzl",
+    "AsyloBackendInfo",
+    "EnclaveInfo",
+)
 
 # website-docs-metadata
 # ---
@@ -37,6 +41,17 @@ load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
 # {% include home.html %}
 
 SimEnclaveInfo = provider()
+
+def _asylo_sim_backend_impl(ctx):
+    return [AsyloBackendInfo(
+        forward_providers = [EnclaveInfo, SimEnclaveInfo, CcInfo],
+    )]
+
+asylo_sim_backend = rule(
+    doc = "Declares name of the Asylo sim backend. Used in backend transitions.",
+    implementation = _asylo_sim_backend_impl,
+    attrs = {},
+)
 
 def _reprovide_binary_with_enclave_info_impl(ctx):
     return [
