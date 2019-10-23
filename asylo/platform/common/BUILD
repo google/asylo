@@ -99,20 +99,6 @@ cc_test(
     ],
 )
 
-# Shared types across bridge boundaries.
-cc_library(
-    name = "bridge_types",
-    srcs = ["bridge_functions.cc"],
-    hdrs = [
-        "bridge_functions.h",
-        "bridge_types.h",
-    ],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/platform/system_call/type_conversions",
-    ],
-)
-
 # Types for arguments to be serialized and passed across the enclave boundary.
 proto_library(
     name = "bridge_types_proto",

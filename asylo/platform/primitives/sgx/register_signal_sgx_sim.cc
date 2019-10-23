@@ -18,8 +18,6 @@
 
 #include <signal.h>
 
-#include "asylo/platform/common/bridge_functions.h"
-#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
@@ -30,14 +28,14 @@ namespace asylo {
 // Translates |klinux_signum| to the value inside the enclave, and passes it to
 // the signal handler registered inside enclave.
 void TranslateAndHandleSignal(int klinux_signum,
-                              bridge_siginfo_t *bridge_siginfo,
+                              klinux_siginfo_t *klinux_siginfo,
                               void *ucontext) {
   int signum = FromkLinuxSignalNumber(klinux_signum);
   if (signum < 0) {
     return;
   }
   siginfo_t info;
-  if (!FromBridgeSigInfo(bridge_siginfo, &info)) {
+  if (!FromkLinuxSiginfo(klinux_siginfo, &info)) {
     // Malformed siginfo struct.
     return;
   }

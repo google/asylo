@@ -25,7 +25,7 @@
 
 #include <cstdint>
 
-#include "asylo/platform/common/bridge_types.h"
+#include "asylo/platform/system_call/type_conversions/types.h"
 
 namespace asylo {
 namespace primitives {
@@ -44,7 +44,7 @@ pid_t InvokeFork(const char *enclave_name, bool restore_snapshot);
 int DeliverSignal(const char *input, size_t input_len);
 
 int RegisterSignalHandler(
-    int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
+    int signum, void (*klinux_sigaction)(int, klinux_siginfo_t *, void *),
     const sigset_t mask, int flags, const char *enclave_name);
 
 // Allocates |count| buffers of size |size| on the untrusted heap, returning a

@@ -136,7 +136,6 @@ cc_library(
     deps = [
         "//asylo:enclave_cc_proto",
         "//asylo/platform/common:bridge_proto_serializer",
-        "//asylo/platform/common:bridge_types",
         "//asylo/platform/common:futex",
         "//asylo/platform/common:memory",
         "//asylo/platform/core:shared_name",
@@ -150,6 +149,7 @@ cc_library(
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
         "//asylo/util:logging",

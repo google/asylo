@@ -24,8 +24,6 @@
 #include <cstdlib>
 #include <string>
 
-#include "asylo/platform/common/bridge_functions.h"
-#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"

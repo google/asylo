@@ -28,8 +28,6 @@
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
-#include "asylo/platform/common/bridge_functions.h"
-#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
 #include "asylo/platform/primitives/extent.h"
@@ -69,7 +67,7 @@ namespace {
 }  // namespace
 
 int RegisterSignalHandler(
-    int signum, void (*bridge_sigaction)(int, bridge_siginfo_t *, void *),
+    int signum, void (*klinux_sigaction)(int, klinux_siginfo_t *, void *),
     const sigset_t mask, int flags, const char *enclave_name) {
   int klinux_signum = TokLinuxSignalNumber(signum);
   if (klinux_signum < 0) {
@@ -80,7 +78,7 @@ int RegisterSignalHandler(
   TokLinuxSigset(&mask, &klinux_mask);
   int ret;
   CHECK_OCALL(ocall_enc_untrusted_register_signal_handler(
-      &ret, klinux_signum, reinterpret_cast<void *>(bridge_sigaction),
+      &ret, klinux_signum, reinterpret_cast<void *>(klinux_sigaction),
       reinterpret_cast<void *>(&klinux_mask), sizeof(klinux_mask),
       TokLinuxSignalFlag(flags), enclave_name));
   return ret;

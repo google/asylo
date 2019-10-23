@@ -57,9 +57,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
-#include "asylo/platform/common/bridge_functions.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
-#include "asylo/platform/common/bridge_types.h"
 #include "asylo/platform/common/futex.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
@@ -72,6 +70,7 @@
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/storage/utils/fd_closer.h"
+#include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -81,7 +80,7 @@ namespace {
 // Stores a pointer to a function inside the enclave that translates
 // |klinux_signum| to a value inside the enclave and calls the registered signal
 // handler for that signal.
-static void (*handle_signal_inside_enclave)(int, bridge_siginfo_t *,
+static void (*handle_signal_inside_enclave)(int, klinux_siginfo_t *,
                                             void *) = nullptr;
 
 // Calls the function registered as the signal handler inside the enclave.
@@ -91,10 +90,18 @@ void TranslateToBridgeAndHandleSignal(int klinux_signum, siginfo_t *info,
     // Invalid incoming signal number.
     return;
   }
-  struct bridge_siginfo_t bridge_siginfo;
-  asylo::ToBridgeSigInfo(info, &bridge_siginfo);
+
+  // |info| is handled inside the enclave via the function pointer
+  // |handle_signal_inside_enclave|, and therefore needs to have a consistent
+  // type inside and outside the enclave. We utilize our definition of
+  // klinux_siginfo_t for this purpose, instead of defining a new "bridge" type.
+  klinux_siginfo_t klinux_siginfo;
+  if (!TokLinuxSiginfo(info, &klinux_siginfo)) {
+    return;
+  }
+
   if (handle_signal_inside_enclave) {
-    handle_signal_inside_enclave(klinux_signum, &bridge_siginfo, ucontext);
+    handle_signal_inside_enclave(klinux_signum, &klinux_siginfo, ucontext);
   }
 }
 
@@ -274,7 +281,7 @@ int ocall_enc_untrusted_register_signal_handler(
     // mode if the TCS is active, or calls the signal handler registered inside
     // the enclave directly if the TCS is inactive.
     handle_signal_inside_enclave =
-        reinterpret_cast<void (*)(int, struct bridge_siginfo_t *, void *)>(
+        reinterpret_cast<void (*)(int, klinux_siginfo_t *, void *)>(
             sigaction_ptr);
     newact.sa_sigaction = &HandleSignalInSim;
   }
