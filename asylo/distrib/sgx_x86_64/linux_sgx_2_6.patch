@@ -5092,9 +5092,9 @@ diff -Nur /dev/null debug_key_mrsigner.cc
 +
 +// To generate this constant from enclave_test_private.pem, run the following
 +// command:
-+// openssl rsa -in enclave_test_private.pem -modulus -noout \
-+// | sed -e 's/Modulus=//' | xxd -r -p - \
-+// | perl -077e 'print scalar reverse <>' \
++// openssl rsa -in enclave_test_private.pem -modulus -noout
++// | sed -e 's/Modulus=//' | xxd -r -p -
++// | perl -077e 'print scalar reverse <>'
 +// | sha256sum
 +const char *const kDebugKeyMrsignerHex =
 +    "83d719e77deaca1470f6baf62a4d774303c899db69020f9c70ee1dfc08c7ce9e";
