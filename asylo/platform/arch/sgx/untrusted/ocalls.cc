@@ -57,7 +57,6 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/arch/sgx/untrusted/generated_bridge_u.h"
 #include "asylo/platform/arch/sgx/untrusted/sgx_client.h"
-#include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/futex.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"

@@ -37,7 +37,6 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
-#include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/posix/syscalls_test.pb.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -238,7 +237,7 @@ bool SockaddrsEqual(const struct sockaddr *sa1, const struct sockaddr *sa2) {
            (addr1->sin6_port == addr2->sin6_port) &&
            (addr1->sin6_flowinfo == addr2->sin6_flowinfo) &&
            (memcmp(&(addr1->sin6_addr.s6_addr), &(addr2->sin6_addr.s6_addr),
-                   asylo::kIn6AddrNumBytes) == 0) &&
+                   sizeof(struct in6_addr)) == 0) &&
            (addr1->sin6_scope_id == addr2->sin6_scope_id);
   }
   return false;

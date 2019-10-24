@@ -60,7 +60,6 @@ cc_library(
     deps = [
         ":util",
         "//asylo/platform/arch:trusted_arch",
-        "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:memory",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",

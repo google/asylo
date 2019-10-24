@@ -99,30 +99,6 @@ cc_test(
     ],
 )
 
-# Types for arguments to be serialized and passed across the enclave boundary.
-proto_library(
-    name = "bridge_types_proto",
-    srcs = ["bridge_proto_types.proto"],
-)
-
-cc_proto_library(
-    name = "bridge_types_cc_proto",
-    deps = [":bridge_types_proto"],
-)
-
-# Shared proto serializer and deserializer across bridge boundaries.
-cc_library(
-    name = "bridge_proto_serializer",
-    srcs = ["bridge_proto_serializer.cc"],
-    hdrs = ["bridge_proto_serializer.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":bridge_types_cc_proto",
-        "//asylo/platform/system_call/type_conversions",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
 # Synchronized bounded queue type.
 cc_library(
     name = "ring_buffer",

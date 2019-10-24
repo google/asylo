@@ -135,7 +135,6 @@ cc_library(
     visibility = ["//visibility:private"],
     deps = [
         "//asylo:enclave_cc_proto",
-        "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/common:futex",
         "//asylo/platform/common:memory",
         "//asylo/platform/core:shared_name",

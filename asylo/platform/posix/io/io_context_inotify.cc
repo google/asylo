@@ -20,7 +20,6 @@
 #include <sys/inotify.h>
 
 #include "asylo/platform/arch/include/trusted/host_calls.h"
-#include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"

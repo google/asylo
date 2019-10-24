@@ -358,7 +358,6 @@ sgx.unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":syscalls_test_cc_proto",
-        "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/host_call:serializer_functions",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
@@ -387,7 +386,6 @@ sgx_enclave_test(
     deps = [
         ":syscalls_test_cc_proto",
         "//asylo:enclave_client",
-        "//asylo/platform/common:bridge_proto_serializer",
         "//asylo/platform/host_call:serializer_functions",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/test/util:enclave_test",
