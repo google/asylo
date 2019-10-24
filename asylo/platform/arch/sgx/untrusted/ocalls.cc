@@ -215,31 +215,6 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 }
 
 //////////////////////////////////////
-//           inotify.h              //
-//////////////////////////////////////
-
-int ocall_enc_untrusted_inotify_read(int fd, uint64_t count,
-                                     char **serialized_events,
-                                     uint64_t *serialized_events_len) {
-  size_t buf_size =
-      std::max(sizeof(struct inotify_event) + NAME_MAX + 1, count);
-  char *buf = static_cast<char *>(malloc(buf_size));
-  asylo::MallocUniquePtr<char> buf_ptr(buf);
-  int bytes_read = read(fd, buf, buf_size);
-  if (bytes_read < 0) {
-    // Errno will be set by read.
-    return -1;
-  }
-  size_t len = 0;
-  if (!asylo::SerializeInotifyEvents(buf, bytes_read, serialized_events,
-                                     &len)) {
-    return -1;
-  }
-  *serialized_events_len = static_cast<uint64_t>(len);
-  return 0;
-}
-
-//////////////////////////////////////
 //          signal.h                //
 //////////////////////////////////////
 

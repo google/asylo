@@ -163,6 +163,8 @@ pid_t enc_untrusted_waitpid(pid_t pid, int *status, int options);
 struct passwd *enc_untrusted_getpwuid(uid_t uid);
 void enc_untrusted_hex_dump(const void *buf, size_t nbytes);
 void enc_untrusted_openlog(const char *ident, int option, int facility);
+int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
+                               size_t *serialized_events_len);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);

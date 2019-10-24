@@ -32,13 +32,6 @@ extern "C" {
 // Unless otherwise specified, each of the following calls invokes the
 // corresponding function on the host.
 
-//////////////////////////////////////
-//            inotify.h             //
-//////////////////////////////////////
-
-int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
-                               size_t *serialized_events_len);
-
 #ifdef __cplusplus
 }  // extern "C"
 #endif

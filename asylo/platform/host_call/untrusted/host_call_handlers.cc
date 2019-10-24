@@ -32,6 +32,7 @@
 #include <ctime>
 
 #include "asylo/platform/common/debug_strings.h"
+#include "asylo/platform/common/memory.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
@@ -515,6 +516,38 @@ Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
 
   openlog(ident, option, facility);
   output->Push<int>(errno);
+  return Status::OkStatus();
+}
+
+Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
+                          void *context, primitives::MessageReader *input,
+                          primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 2);
+  int fd = input->next<int>();
+  auto count = input->next<size_t>();
+
+  size_t buf_size =
+      std::max(sizeof(struct inotify_event) + NAME_MAX + 1, count);
+  char *buf = static_cast<char *>(malloc(buf_size));
+  asylo::MallocUniquePtr<char> buf_ptr(buf);
+
+  int bytes_read = read(fd, buf, buf_size);
+  char *serialized_events = nullptr;
+  size_t serialized_len = 0;
+
+  if (bytes_read < 0 ||
+      !SerializenotifyEvents(buf, bytes_read, &serialized_events,
+                             &serialized_len)) {
+    output->Push<int>(-1);
+    output->Push<int>(errno);
+    return Status::OkStatus();
+  }
+
+  asylo::MallocUniquePtr<char> serialized_events_deleter(serialized_events);
+  output->Push<int>(0);
+  output->Push<int>(errno);
+  output->PushByCopy(Extent{serialized_events, serialized_len});
+
   return Status::OkStatus();
 }
 

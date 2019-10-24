@@ -119,6 +119,10 @@ static constexpr uint64_t kHexDumpHandler = primitives::kSelectorHostCall + 24;
 // Exit handler constant for |OpenLogHandler|.
 static constexpr uint64_t kOpenLogHandler = primitives::kSelectorHostCall + 25;
 
+// Exit handler constant for |InotifyReadHandler|.
+static constexpr uint64_t kInotifyReadHandler =
+    primitives::kSelectorHostCall + 26;
+
 // Assert that the largest host call handler lies in
 // [kSelectorHostCall, kSelectorRemote).
 static_assert(kOpenLogHandler < primitives::kSelectorRemote,

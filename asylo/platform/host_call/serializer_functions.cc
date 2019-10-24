@@ -405,5 +405,64 @@ bool SerializePasswd(primitives::MessageWriter *writer,
   return true;
 }
 
+bool SerializenotifyEvents(const char *buf, size_t buf_len, char **out,
+                           size_t *len) {
+  if (!out || !buf || !len) {
+    return false;
+  }
+
+  primitives::MessageWriter writer;
+  char *curr_event_ptr = const_cast<char *>(buf);
+  while (curr_event_ptr < buf + buf_len) {
+    auto *curr_event = reinterpret_cast<struct inotify_event *>(curr_event_ptr);
+    writer.Push<int>(curr_event->wd);
+    writer.Push<uint32_t>(TokLinuxInotifyEventMask(curr_event->mask));
+    writer.Push<uint32_t>(curr_event->cookie);
+    writer.PushString(curr_event->name, curr_event->len);
+
+    curr_event_ptr += sizeof(struct inotify_event) + curr_event->len;
+  }
+
+  *len = writer.MessageSize();
+  *out = reinterpret_cast<char *>(malloc(*len));
+  writer.Serialize(*out);
+  return true;
+}
+
+bool DeserializeInotifyEvents(const char *buf, size_t buf_len,
+                              std::queue<struct inotify_event *> *events) {
+  if (!events) {
+    return false;
+  }
+
+  primitives::MessageReader reader;
+  reader.Deserialize(buf, buf_len);
+
+  // We pop 4 items per inotify_event from the MessageReader.
+  if (reader.size() % 4 != 0) {
+    return false;
+  }
+
+  for (int i = 0; i < reader.size(); i += 4) {
+    int wd = reader.next<int>();
+    uint32_t mask = FromkLinuxInotifyEventMask(reader.next<uint32_t>());
+    uint32_t cookie = reader.next<uint32_t>();
+    Extent name_buf = reader.next();
+
+    auto *new_event_struct = static_cast<struct inotify_event *>(
+        malloc(sizeof(struct inotify_event) + name_buf.size()));
+    new_event_struct->wd = wd;
+    new_event_struct->mask = mask;
+    new_event_struct->cookie = cookie;
+    new_event_struct->len = name_buf.size();
+    if (!name_buf.empty()) {
+      memcpy(new_event_struct->name, name_buf.As<char>(), name_buf.size());
+    }
+
+    events->push(new_event_struct);
+  }
+  return true;
+}
+
 }  // namespace host_call
 }  // namespace asylo

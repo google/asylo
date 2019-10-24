@@ -201,6 +201,12 @@ Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
                       void *context, primitives::MessageReader *input,
                       primitives::MessageWriter *output);
 
+// Handler for host call enc_untrusted_inotify_read(). Expects [int fd, size_t
+// count] and returns the return value and a list of serialized inotify_event
+// structs on the MessageWriter.
+Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
+                          void *context, primitives::MessageReader *input,
+                          primitives::MessageWriter *output);
 }  // namespace host_call
 }  // namespace asylo
 

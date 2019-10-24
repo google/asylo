@@ -62,16 +62,4 @@ namespace {
 
 extern "C" {
 
-//////////////////////////////////////
-//           inotify.h              //
-//////////////////////////////////////
-
-int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
-                               size_t *serialized_events_len) {
-  int ret = 0;
-  CHECK_OCALL(ocall_enc_untrusted_inotify_read(
-      &ret, fd, count, serialized_events, serialized_events_len));
-  return ret;
-}
-
 }  // extern "C"

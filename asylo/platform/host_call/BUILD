@@ -49,6 +49,7 @@ cc_library(
     deps = [
         ":serializer_functions",
         "//asylo/platform/common:debug_strings",
+        "//asylo/platform/common:memory",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/primitives/util:status_conversions",

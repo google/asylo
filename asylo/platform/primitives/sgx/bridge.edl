@@ -103,11 +103,6 @@ enclave {
         int32_t expected) propagate_errno;
     void ocall_enc_untrusted_sys_futex_wake([user_check] int32_t * futex)
         propagate_errno;
-
-    int ocall_enc_untrusted_inotify_read(int fd, uint64_t count,
-        [out] char **serialized_events,
-        [out] uint64_t *serialized_events_len) propagate_errno;
-
     int ocall_enc_untrusted_register_signal_handler(
         int klinux_signum,
         [user_check] void *sigaction_ptr,

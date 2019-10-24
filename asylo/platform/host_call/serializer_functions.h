@@ -22,7 +22,10 @@
 #include <ifaddrs.h>
 #include <netdb.h>
 #include <pwd.h>
+#include <sys/inotify.h>
 #include <sys/socket.h>
+
+#include <queue>
 
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -70,6 +73,16 @@ bool IsIfAddrSupported(const struct ifaddrs *entry);
 // Frees up the ifaddrs that are allocated by enc_untrusted_getifaddrs() or by
 // DeserializeIfAddrs.
 void FreeDeserializedIfAddrs(struct ifaddrs *ifa);
+
+// Serializes a buffer containing list of inotify event structs to the buffer
+// |*out|. The caller is responsible for ownership of serialized events.
+bool SerializenotifyEvents(const char *buf, size_t buf_len, char **out,
+                           size_t *len);
+
+// Deserializes a buffer containing list of inotify event structs into a
+// queue of events owned by the caller.
+bool DeserializeInotifyEvents(const char *buf, size_t buf_len,
+                              std::queue<struct inotify_event *> *events);
 
 }  // namespace host_call
 }  // namespace asylo

@@ -22,8 +22,8 @@
 #include "asylo/platform/arch/include/trusted/host_calls.h"
 #include "asylo/platform/common/bridge_proto_serializer.h"
 #include "asylo/platform/common/memory.h"
+#include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
-#include "asylo/platform/primitives/util/trusted_memory.h"
 
 namespace asylo {
 namespace io {
@@ -71,16 +71,16 @@ ssize_t IOContextInotify::Read(void *buf, size_t count) {
   }
   // Read serialized events from the host, adjusting for space left in buffer.
   char *serialized_events = nullptr;
-  size_t len = 0;
-  if (enc_untrusted_inotify_read(host_fd_, count, &serialized_events, &len) <
-      0) {
+  size_t serialized_events_len = 0;
+  if (enc_untrusted_inotify_read(host_fd_, count, &serialized_events,
+                                 &serialized_events_len) < 0) {
     // errno is set by enc_untrusted_inotify_read.
     return -1;
   }
-  asylo::UntrustedUniquePtr<char> serialized_events_ptr(serialized_events);
+  asylo::MallocUniquePtr<char> serialized_events_ptr(serialized_events);
   // Extract events back into the queue.
-  std::string serialized_events_str(serialized_events, len);
-  if (!asylo::DeserializeInotifyEvents(serialized_events_str, &event_queue_)) {
+  if (!asylo::host_call::DeserializeInotifyEvents(
+          serialized_events, serialized_events_len, &event_queue_)) {
     errno = EBADE;
     return -1;
   }
