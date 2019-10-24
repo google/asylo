@@ -79,7 +79,7 @@ void initialize_cpuid_results() {
   // Some CPU features are available anywhere that SGX is supported; force
   // particularly security critical ones to true.
   cpuid_results[1].reg[CpuidResult::ECX] |=
-      CPUID_01H_ECX_SSE3 | CPUID_01H_ECX_PCLMULQDQ | CPUID_01H_ECX_SSE3 |
+      CPUID_01H_ECX_SSE3 | CPUID_01H_ECX_PCLMULQDQ | CPUID_01H_ECX_SSSE3 |
       CPUID_01H_ECX_SSE4_1 | CPUID_01H_ECX_SSE4_2 | CPUID_01H_ECX_AESNI |
       CPUID_01H_ECX_RDRND;
   cpuid_results[1].reg[CpuidResult::EDX] |=
