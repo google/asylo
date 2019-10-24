@@ -35,7 +35,6 @@
 #include "asylo/grpc/auth/core/server_ekep_handshaker.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity_acl_evaluator.h"
-#include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
