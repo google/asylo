@@ -199,6 +199,7 @@ cc_test(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/hash:hash_testing",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_absl//absl/types:optional",

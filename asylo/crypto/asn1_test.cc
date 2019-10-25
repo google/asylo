@@ -33,6 +33,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/base/macros.h"
+#include "absl/hash/hash_testing.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -266,6 +267,26 @@ TEST(Asn1Test, ObjectIdCopyAssignmentPreservesEquality) {
     ObjectId copy = oid;
     EXPECT_THAT(copy, Eq(oid));
   }
+}
+
+TEST(Asn1Test, AbslHashValueForObjectIdBehavesCorrectly) {
+  constexpr const char *kNoNameOids[] = {"1.2.840.113741.1.13.1",
+                                         "1.3.6.1.4.1.11129"};
+
+  std::vector<ObjectId> oids;
+  for (const auto &ids : kShortLongNidOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid,
+                               ObjectId::CreateFromOidString(ids.oid_string));
+    oids.push_back(std::move(oid));
+  }
+  for (const char *oid_string : kNoNameOids) {
+    ObjectId oid;
+    ASYLO_ASSERT_OK_AND_ASSIGN(oid, ObjectId::CreateFromOidString(oid_string));
+    oids.push_back(std::move(oid));
+  }
+
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(oids));
 }
 
 // A template fixture for testing with each of the ASN.1 value types that

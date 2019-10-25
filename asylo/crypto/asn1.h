@@ -24,6 +24,7 @@
 
 #include <cstdint>
 #include <string>
+#include <type_traits>
 #include <vector>
 
 #include "absl/strings/string_view.h"
@@ -105,6 +106,17 @@ class ObjectId {
 // Equality/inequality operators for ObjectId.
 bool operator==(const ObjectId &lhs, const ObjectId &rhs);
 bool operator!=(const ObjectId &lhs, const ObjectId &rhs);
+
+// AbslHashValue() overload for ObjectId.
+template <typename H>
+H AbslHashValue(H hash, const ObjectId &oid) {
+  // BoringSSL ensures that the OID string representation of an object is a
+  // sequence of integers with no leading zeroes joined by '.' characters (i.e.
+  // matches /((0|[1-9][0-9]*)\.)*(0|[1-9][0-9]*)/). The exact requirements are
+  // more strict, but the properties described above guarantee that the hash of
+  // the OID string is a valid hash for an ObjectId.
+  return H::combine(std::move(hash), oid.GetOidString().ValueOrDie());
+}
 
 // Represents a general ASN.1 value. Only some ASN.1 types are supported; see
 // the Asn1Type enum for a list of supported types.
