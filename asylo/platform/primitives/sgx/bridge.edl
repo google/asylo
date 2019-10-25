@@ -51,7 +51,7 @@ enclave {
     // WARNING: Do not add calls before ecall_deliver_signal, as callers
     // may assume this to be the second entry in the generated ecall table.
     exception_handler public int ecall_deliver_signal(
-        [in, size=input_len] const char *input, uint64_t input_len);
+        [user_check] const char *input, uint64_t input_len);
 
     // Invokes a utility ecall that enters the enclave to take a snapshot.
     // This is a private ecall because it should only be invoked by an
