@@ -54,7 +54,7 @@ bazel build :web_application --config=${CONFIG_TYPE}
 
 Note: The `CONFIG_TYPE=sgx` flag selects our enclave cross compiler toolchain,
 which builds code to run inside enclaves. To run on non-SGX hardware, specify
-simulated SGX flag `CONFIG_TYPE=sgx-sim`
+simulated SGX flag `CONFIG_TYPE=sgx-sim`.
 
 ### Running
 
@@ -74,7 +74,7 @@ The previous demo launched the application with local provisioning.
 
 To make it truly remote, we will now now utilize remote provisioning with our
 example remote
-[provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision-server)
+[provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision_server)
 and run the same application with enclaves deployed on another docker image.
 
 First, if you haven't already done so, download the Asylo SDK and Examples
@@ -100,8 +100,8 @@ docker run -it --net=host \
     ./build.sh
 ```
 
-Once the provisioning server reports that it is listening to port 4321, run the
-container with the following command:
+Once the provisioning server reports that it is listening to port `4321`
+(configurable), run the container with the following command:
 
 ```bash
 export CONFIG_TYPE=sgx # Or sgx-sim if Remote Provision server isn't running on SGX-enabled hardware.

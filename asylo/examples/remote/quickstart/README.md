@@ -372,7 +372,7 @@ Note that the demo above had ran the application within a single docker image.
 
 To make it truly remote, we will now build and run the same application with
 enclaves deployed on another docker image, using
-[provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision-server)
+[provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision_server).
 
 First, if you haven't already done so, download the Asylo SDK and Examples
 repos:
@@ -397,9 +397,9 @@ docker run -it --net=host \
     ./build.sh
 ```
 
-Then, once it started and reported to the port 4321 (configurable), build and
-run the application `quickstart_remote` (to run it in simulated mode, replace
-`CONFIG_TYPE=sgx` with `CONFIG_TYPE=sgx-sim`):
+Then, once it started and reported listening to the port `4321` (configurable),
+build and run the application `quickstart_remote` (to run it in simulated mode,
+replace `CONFIG_TYPE=sgx` with `CONFIG_TYPE=sgx-sim`):
 
 ```bash
 export MESSAGE="Asylo Rocks" # Or another message
