@@ -23,24 +23,9 @@
 #define _GNU_SOURCE
 #endif
 
-#include <arpa/inet.h>
-#include <fcntl.h>
-#include <ifaddrs.h>
-#include <netdb.h>
-#include <poll.h>
-#include <pwd.h>
-#include <sched.h>
-#include <sys/epoll.h>
 #include <sys/file.h>
-#include <sys/inotify.h>
-#include <sys/select.h>
 #include <sys/socket.h>
-#include <sys/stat.h>
-#include <sys/time.h>
-#include <sys/wait.h>
-#include <syslog.h>
 #include <unistd.h>
-#include <utime.h>
 
 #include <algorithm>
 #include <cerrno>

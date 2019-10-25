@@ -29,9 +29,6 @@ package(
 # configuration.
 cc_library(
     name = "trusted_arch",
-    hdrs = [
-        "include/trusted/host_calls.h",
-    ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = select({
         "@linux_sgx//:sgx_hw": [":trusted_sgx"],
@@ -173,10 +170,6 @@ cc_library(
     srcs = [
         "sgx/trusted/ecalls.cc",
         "sgx/trusted/enclave_syscalls.cc",
-        "sgx/trusted/host_calls.cc",
-    ],
-    hdrs = [
-        "include/trusted/host_calls.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     linkstatic = 1,
@@ -219,9 +212,6 @@ cc_library(
 # since no actual implementation is provided.
 cc_library(
     name = "trusted_build_only",
-    hdrs = [
-        "include/trusted/host_calls.h",
-    ],
     visibility = ["//visibility:private"],
     deps = ["//asylo/platform/core:shared_name"],
 )
