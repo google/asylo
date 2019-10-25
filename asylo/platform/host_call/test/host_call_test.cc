@@ -1911,7 +1911,7 @@ TEST_F(HostCallTest, TestSleep) {
 
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
-  EXPECT_GE(duration, 1000);
+  EXPECT_GE(duration, 999);
   EXPECT_LE(duration,
             1600);  // Allow sufficient time padding for EnclaveCall to perform
                     // enc_untrusted_sleep() and return from the enclave.
@@ -1938,7 +1938,7 @@ TEST_F(HostCallTest, TestNanosleep) {
 
   ASSERT_THAT(out, SizeIs(2));  // Should contain return value and klinux_rem.
   EXPECT_THAT(out.next<int>(), Eq(0));
-  EXPECT_GE(duration, 500);
+  EXPECT_GE(duration, 499);
   EXPECT_LE(duration,
             1100);  // Allow sufficient time padding for EnclaveCall to perform
                     // enc_untrusted_nanosleep() and return from the enclave.
