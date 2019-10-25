@@ -92,6 +92,14 @@ Status ParseKeyGenerationParamsFromSealedSecretHeader(
 
   bool is_legacy = IsLegacySealedSecret(header);
 
+  if (is_legacy) {
+    LOG(WARNING)
+        << "Support for unsealing pre-Asylo 0.5 secrets is deprecated, and "
+           "will be removed in Asylo 0.6. To retain the ability to unseal "
+        << (header.has_secret_name() ? header.secret_name() : "this secret")
+        << ", please reseal it (see the Asylo release notes for more info).";
+  }
+
   // Call ParseSgxExpectation before attempting to populate legacy fields to
   // avoid causing the parsing step to "undo" any of the fields manually set
   // by the legacy flow.
