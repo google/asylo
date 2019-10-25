@@ -1,15 +1,13 @@
 <!--jekyll-front-matter
 ---
 
-title: Remote Backend Example
+title: Remote Backend Bouncing Circles Guide
 
-overview: Demonstrate multiple enclaves running remotely,
-with an application being able to seamlessly communicate with them
-as if they were running locally.
+overview: Demonstrate multiple enclaves running remotely
 
-location: /_docs/guides/remote_backend.md
+location: /_docs/guides/bouncing_circles.md
 
-order: 10
+order: 62
 
 layout: docs
 
@@ -21,11 +19,11 @@ toc: true
 {% include home.html %}
 jekyll-front-matter-->
 
-# Bouncing Circles Remote Enclave Example
+## Introduction
 
 This guide demonstrates more elaborate usage of Asylo with a Remote Backend. It
 assumes the reader has knowledge introduced in the
-[remote quickstart guide](https://github.com/google/asylo/tree/master/asylo/examples/remote/quickstart).
+[Remote Quickstart Guide](https://asylo.dev/docs/guides/remote_quickstart.html).
 
 The bouncing circles web application uses four separate enclaves to track four
 circles. A simple web server accesses each enclave via the remote enclave
@@ -79,7 +77,19 @@ example remote
 [provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision-server)
 and run the same application with enclaves deployed on another docker image.
 
-First, run the provision server:
+First, if you haven't already done so, download the Asylo SDK and Examples
+repos:
+
+```bash
+export ASYLO_SDK=~/asylo-sdk
+git clone https://github.com/google/asylo.git "${ASYLO_SDK}"
+export MY_PROJECT=~/asylo-examples
+mkdir -p "${MY_PROJECT}"
+wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
+    tar -zxv --strip 1 --directory "${MY_PROJECT}"
+```
+
+Next, run the provision server:
 
 ```bash
 docker run -it --net=host \
@@ -90,7 +100,7 @@ docker run -it --net=host \
     ./build.sh
 ```
 
-Once the provisioning server reports that it is running on port 4321, run the
+Once the provisioning server reports that it is listening to port 4321, run the
 container with the following command:
 
 ```bash

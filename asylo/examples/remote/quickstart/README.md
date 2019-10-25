@@ -1,13 +1,13 @@
 <!--jekyll-front-matter
 ---
 
-title: Asylo Remote Backend Guide
+title: Remote Backend Quickstart Guide
 
-overview: Learn how to utilize an Asylo Remote Backend
+overview: Learn how to utilize Asylo Remote Backend
 
-location: /_docs/guides/remotebackend.md
+location: /_docs/guides/remote_quickstart.md
 
-order: 11
+order: 60
 
 layout: docs
 
@@ -18,8 +18,6 @@ toc: true
 ---
 {% include home.html %}
 jekyll-front-matter-->
-
-# Asylo Remote Backend Guide
 
 This guide demonstrates using Asylo with a Remote Backend. It assumes the reader
 has knowledge introduced in the
@@ -115,8 +113,8 @@ wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
 
 Note that you can set `MY_PROJECT` to any directory of your choice. This
 environment variable is later used in the instructions for
-[building and running](#building-and-running-a-remote-enclave-application) the
-enclave application in this example.
+[building-and-running](#building-and-running-a-remote-enclave-application-on-a-single-machine)
+the enclave application in this example.
 
 The example source code can be found in the
 [Asylo SDK](https://github.com/google/asylo/tree/master/asylo/examples) on
@@ -222,21 +220,21 @@ The changes from the non-remote quickstart guide are as follows:
 
 2.  `RemoteLoadConfig`
 
-    The `RemoteLoadConfig` holds a regular `SgxLoadConfig` and passes it to
-    the`RemoteEnclaveProxyServer`to load the enclave. The `RemoteLoadConfig`
-    needs to be built with the filepath of the enclave shared object library on
-    the`RemoteEnclaveProxyServer`.
+    The `RemoteLoadConfig` holds a regular `SgxLoadConfig` and passes it to the
+    `RemoteEnclaveProxyServer` to load the enclave. The `RemoteLoadConfig` needs
+    to be built with the filepath of the enclave shared object library on the
+    `RemoteEnclaveProxyServer`.
 
 3.  `remote_proxy` flag
 
     The `remote_proxy` flag points to a binary that will be executed in order to
-    start a RemoteEnclaveProxyServer. Normally this would be done by a
+    start a `RemoteEnclaveProxyServer`. Normally this would be done by a
     provisioning layer, but is started manually as part of this example.
 
 4.  `sgx_config`
 
-    The sgx\_config variable is created by the `remote\_config` rather than the
-    `enclave\_config`. This is because the it is sent across the wire to the
+    The `sgx_config` variable is created by the `remote_config` rather than the
+    `enclave_config`. This is because the it is sent across the wire to the
     `RemoteEnclaveProxyServer` and used as part of the launch.
 
 ## Writing an enclave application
@@ -329,8 +327,22 @@ Let us now run the demo enclave inside the Docker image we downloaded
 flag passed to the `//remote/quickstart` target to contain any string that you
 would like to encrypt.
 
+First, if you haven't already done so, download the Asylo SDK and Examples
+repos:
+
+```bash
+ASYLO_SDK=~/asylo-sdk
+git clone https://github.com/google/asylo.git "${ASYLO_SDK}"
+MY_PROJECT=~/asylo-examples
+mkdir -p "${MY_PROJECT}"
+wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
+    tar -zxv --strip 1 --directory "${MY_PROJECT}"
+```
+
+Then run the quickstart example:
+
 Note: The following command runs the enclave in sgx mode (to run it in simulated
-mode, replace 'CONFIG_TYPE=sgx' with 'CONFIG_TYPE=sgx-sim').
+mode, replace `CONFIG_TYPE=sgx` with `CONFIG_TYPE=sgx-sim`).
 
 ```bash
 export MESSAGE="Asylo Rocks" # Or another message
@@ -360,9 +372,21 @@ Note that the demo above had ran the application within a single docker image.
 
 To make it truly remote, we will now build and run the same application with
 enclaves deployed on another docker image, using
-[Provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision-server)
+[provision server](https://github.com/google/asylo/tree/master/asylo/examples/remote/provision-server)
 
-First, build and run container with the provision server.
+First, if you haven't already done so, download the Asylo SDK and Examples
+repos:
+
+```bash
+export ASYLO_SDK=~/asylo-sdk
+git clone https://github.com/google/asylo.git "${ASYLO_SDK}"
+export MY_PROJECT=~/asylo-examples
+mkdir -p "${MY_PROJECT}"
+wget -q -O - https://github.com/google/asylo-examples/archive/master.tar.gz | \
+    tar -zxv --strip 1 --directory "${MY_PROJECT}"
+```
+
+Next, run the provision server:
 
 ```bash
 docker run -it --net=host \
@@ -374,8 +398,8 @@ docker run -it --net=host \
 ```
 
 Then, once it started and reported to the port 4321 (configurable), build and
-run the application 'quickstart_remote' (to run it in simulated mode, replace
-'CONFIG_TYPE=sgx' with 'CONFIG_TYPE=sgx-sim'):
+run the application `quickstart_remote` (to run it in simulated mode, replace
+`CONFIG_TYPE=sgx` with `CONFIG_TYPE=sgx-sim`):
 
 ```bash
 export MESSAGE="Asylo Rocks" # Or another message
