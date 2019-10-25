@@ -212,8 +212,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":atomic",
-        "//asylo/platform/primitives:trusted_backend",
         "//asylo/platform/primitives:trusted_primitives",
+        "//asylo/platform/primitives:trusted_runtime",
     ],
 )
 
