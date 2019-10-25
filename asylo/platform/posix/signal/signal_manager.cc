@@ -36,7 +36,7 @@ sigset_t EmptySigSet() {
 
 class PthreadMutexLock {
  public:
-  PthreadMutexLock(pthread_mutex_t *mutex) : mutex_(mutex) {
+  explicit PthreadMutexLock(pthread_mutex_t *mutex) : mutex_(mutex) {
     pthread_mutex_lock(mutex);
   }
 
