@@ -34,7 +34,9 @@
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_format.h"
+#include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/bignum_util.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -68,6 +70,29 @@ Status DoSha256Hash(ByteContainerView message, std::vector<uint8_t> *digest) {
   hasher.Init();
   hasher.Update(message);
   return hasher.CumulativeHash(digest);
+}
+
+Status CheckKeyProtoValues(const AsymmetricSigningKeyProto &key_proto,
+                           AsymmetricSigningKeyProto::KeyType expected_type) {
+  if (key_proto.key_type() != expected_type) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrFormat(
+            "Key type of the key (%s) does not match the expected "
+            "key type (%s)",
+            AsymmetricSigningKeyProto_KeyType_Name(key_proto.key_type()),
+            AsymmetricSigningKeyProto_KeyType_Name(expected_type)));
+  }
+
+  if (key_proto.signature_scheme() != ECDSA_P256_SHA256) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrFormat("Signature scheme of the key (%s) does not match the "
+                        "expected signature scheme (%s)",
+                        SignatureScheme_Name(key_proto.signature_scheme()),
+                        SignatureScheme_Name(ECDSA_P256_SHA256)));
+  }
+  return Status::OkStatus();
 }
 
 }  // namespace
@@ -105,6 +130,29 @@ EcdsaP256Sha256VerifyingKey::CreateFromPem(ByteContainerView serialized_key) {
   }
 
   return Create(std::move(key));
+}
+
+StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
+EcdsaP256Sha256VerifyingKey::CreateFromProto(
+    const AsymmetricSigningKeyProto &key_proto) {
+  ASYLO_RETURN_IF_ERROR(
+      CheckKeyProtoValues(key_proto, AsymmetricSigningKeyProto::VERIFYING_KEY));
+
+  switch (key_proto.encoding()) {
+    case ASYMMETRIC_KEY_DER:
+      return CreateFromDer(key_proto.key());
+    case ASYMMETRIC_KEY_PEM:
+      return CreateFromPem(key_proto.key());
+    case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
+      return Status(
+          error::GoogleError::UNIMPLEMENTED,
+          absl::StrFormat("Asymmetric key encoding (%s) unsupported",
+                          AsymmetricKeyEncoding_Name(key_proto.encoding())));
+    default:
+      return Status(error::GoogleError::UNIMPLEMENTED,
+                    absl::StrFormat("Asymmetric key encoding (%d) unsupported",
+                                    key_proto.encoding()));
+  }
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
@@ -239,7 +287,7 @@ EcdsaP256Sha256SigningKey::Create() {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
 
-  return EcdsaP256Sha256SigningKey::Create(std::move(key));
+  return Create(std::move(key));
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>
@@ -275,6 +323,29 @@ EcdsaP256Sha256SigningKey::CreateFromPem(ByteContainerView serialized_key) {
   }
 
   return Create(std::move(key));
+}
+
+StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>
+EcdsaP256Sha256SigningKey::CreateFromProto(
+    const AsymmetricSigningKeyProto &key_proto) {
+  ASYLO_RETURN_IF_ERROR(
+      CheckKeyProtoValues(key_proto, AsymmetricSigningKeyProto::SIGNING_KEY));
+
+  switch (key_proto.encoding()) {
+    case ASYMMETRIC_KEY_DER:
+      return CreateFromDer(key_proto.key());
+    case ASYMMETRIC_KEY_PEM:
+      return CreateFromPem(key_proto.key());
+    case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
+      return Status(
+          error::GoogleError::UNIMPLEMENTED,
+          absl::StrFormat("Asymmetric key encoding (%s) unsupported",
+                          AsymmetricKeyEncoding_Name(key_proto.encoding())));
+    default:
+      return Status(error::GoogleError::UNIMPLEMENTED,
+                    absl::StrFormat("Asymmetric key encoding (%d) unsupported",
+                                    key_proto.encoding()));
+  }
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>

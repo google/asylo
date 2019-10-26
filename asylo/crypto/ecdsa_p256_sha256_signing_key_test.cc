@@ -30,12 +30,14 @@
 #include <utility>
 #include <vector>
 
+#include <google/protobuf/text_format.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/fake_signing_key.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -67,6 +69,22 @@ MHcCAQEEIP4d1debEdG6Xy974ETYt+78I5b3fpA8qR/OY3pSX+gwoAoGCCqGSM49
 AwEHoUQDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8kjfH6o3c1n4ix1zXURnqmqAv
 ds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==
 -----END EC PRIVATE KEY-----)";
+
+// An AsymmetricSigningKeyProto with the DER-encoded signing key.
+constexpr char kTestSigningKeyDerProto[] = R"pb(
+  key_type: SIGNING_KEY
+  signature_scheme: ECDSA_P256_SHA256
+  encoding: ASYMMETRIC_KEY_DER
+  key: "\x30\x77\x02\x01\x01\x04\x20\xfe\x1d\xd5\xd7\x9b\x11\xd1\xba\x5f\x2f\x7b\xe0\x44\xd8\xb7\xee\xfc\x23\x96\xf7\x7e\x90\x3c\xa9\x1f\xce\x63\x7a\x52\x5f\xe8\x30\xa0\x0a\x06\x08\x2a\x86\x48\xce\x3d\x03\x01\x07\xa1\x44\x03\x42\x00\x04\xea\xed\xa5\x10\x3e\x89\x19\x4f\x43\xbf\xe0\xd8\x44\xf3\xe7\x9f\x00\x09\x57\xfc\x3c\x92\x37\xc7\xea\x8d\xdc\xd6\x7e\x22\xc7\x5c\xd7\x51\x19\xea\x9a\xa0\x2f\x76\xce\xca\xcb\xbf\x1b\x2f\xe6\x1c\x69\xfc\x9e\xea\xda\x1f\xe2\x9a\x56\x7d\x6c\xeb\x46\x8e\x16\xbd"
+)pb";
+
+// An AsymmetricSigningKeyProto with the PEM-encoded signing key.
+constexpr char kTestSigningKeyPemProto[] = R"pb(
+  key_type: SIGNING_KEY
+  signature_scheme: ECDSA_P256_SHA256
+  encoding: ASYMMETRIC_KEY_PEM
+  key: "-----BEGIN EC PRIVATE KEY-----\nMHcCAQEEIP4d1debEdG6Xy974ETYt+78I5b3fpA8qR/OY3pSX+gwoAoGCCqGSM49\nAwEHoUQDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8kjfH6o3c1n4ix1zXURnqmqAv\nds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==\n-----END EC PRIVATE KEY-----"
+)pb";
 
 constexpr uint8_t kBadKey[] = "bad key";
 
@@ -106,20 +124,114 @@ MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAEAHmUUiRjaRBFLAiNPXkezj/adUZg
 PhT+dvyvzddfy359Y7+zKolHkL9vEo/mn32i+FOU0vrEIIMFEAISwQ8i2Q==
 -----END PUBLIC KEY-----)";
 
+// An AsymmetricSigningKeyProto with the DER-encoded verifying key.
+constexpr char kTestVerifyingKeyDerProto[] = R"pb(
+  key_type: VERIFYING_KEY
+  signature_scheme: ECDSA_P256_SHA256
+  encoding: ASYMMETRIC_KEY_DER
+  key: "\x30\x59\x30\x13\x06\x07\x2a\x86\x48\xce\x3d\x02\x01\x06\x08\x2a\x86\x48\xce\x3d\x03\x01\x07\x03\x42\x00\x04\xea\xed\xa5\x10\x3e\x89\x19\x4f\x43\xbf\xe0\xd8\x44\xf3\xe7\x9f\x00\x09\x57\xfc\x3c\x92\x37\xc7\xea\x8d\xdc\xd6\x7e\x22\xc7\x5c\xd7\x51\x19\xea\x9a\xa0\x2f\x76\xce\xca\xcb\xbf\x1b\x2f\xe6\x1c\x69\xfc\x9e\xea\xda\x1f\xe2\x9a\x56\x7d\x6c\xeb\x46\x8e\x16\xbd"
+)pb";
+
+// An AsymmetricSigningKeyProto with the PEM-encoded verifying key.
+constexpr char kTestVerifyingKeyPemProto[] = R"pb(
+  key_type: VERIFYING_KEY
+  signature_scheme: ECDSA_P256_SHA256
+  encoding: ASYMMETRIC_KEY_PEM
+  key: "-----BEGIN PUBLIC KEY-----\nMFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE6u2lED6JGU9Dv+DYRPPnnwAJV/w8\nkjfH6o3c1n4ix1zXURnqmqAvds7Ky78bL+Ycafye6tof4ppWfWzrRo4WvQ==\n-----END PUBLIC KEY-----"
+)pb";
+
 struct VerifyingKeyParam {
   std::function<StatusOr<std::unique_ptr<VerifyingKey>>(ByteContainerView)>
       factory;
   std::string key_data;
 };
 
-// Verify that EcdsaP256Sha256VerifyingKey::Create() fails when the key has an
-// incorrect group.
+// Verify that Create() fails when the key has an incorrect group.
 TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
      CreateVerifyingKeyWithBadGroupFails) {
   bssl::UniquePtr<EC_KEY> bad_key(EC_KEY_new_by_curve_name(kBadGroup));
   ASSERT_EQ(EC_KEY_generate_key(bad_key.get()), 1);
   ASSERT_THAT(EcdsaP256Sha256VerifyingKey::Create(std::move(bad_key)),
               Not(IsOk()));
+}
+
+// Verify that CreateFromProto() fails when the signature scheme is incorrect.
+TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
+     VerifyingKeyCreateFromProtoUnknownBadSignatureSchemeFails) {
+  AsymmetricSigningKeyProto key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyPemProto,
+                                                  &key_proto));
+  key_proto.set_signature_scheme(UNKNOWN_SIGNATURE_SCHEME);
+
+  EXPECT_THAT(EcdsaP256Sha256VerifyingKey::CreateFromProto(key_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that CreateFromProto() fails when the key type is incorrect.
+TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
+     VerifyingKeyCreateFromProtoWithSigningKeyTypeFails) {
+  AsymmetricSigningKeyProto key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyPemProto,
+                                                  &key_proto));
+  key_proto.set_key_type(AsymmetricSigningKeyProto::SIGNING_KEY);
+
+  EXPECT_THAT(EcdsaP256Sha256VerifyingKey::CreateFromProto(key_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that CreateFromProto() fails when the key encoding is invalid.
+TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
+     VerifyingKeyCreateFromProtoWithUnknownEncodingFails) {
+  AsymmetricSigningKeyProto key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyPemProto,
+                                                  &key_proto));
+  key_proto.set_encoding(UNKNOWN_ASYMMETRIC_KEY_ENCODING);
+
+  EXPECT_THAT(EcdsaP256Sha256VerifyingKey::CreateFromProto(key_proto),
+              StatusIs(error::GoogleError::UNIMPLEMENTED));
+}
+
+// Verify that CreateFromProto() fails when the key does not match the encoding.
+TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
+     VerifyingKeyCreateFromProtoWithMismatchedEncodingFails) {
+  AsymmetricSigningKeyProto pem_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyPemProto,
+                                                  &pem_key_proto));
+  pem_key_proto.set_encoding(ASYMMETRIC_KEY_DER);
+
+  EXPECT_THAT(EcdsaP256Sha256VerifyingKey::CreateFromProto(pem_key_proto),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+// Verify that keys created from CreateFromProto() match equivalent keys created
+// from CreateFromPem and CreateFromDer.
+TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
+     VerifyingKeyCreateFromProtoSuccess) {
+  std::unique_ptr<VerifyingKey> expected_pem_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expected_pem_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kTestVerifyingKeyPem));
+
+  AsymmetricSigningKeyProto pem_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyPemProto,
+                                                  &pem_key_proto));
+  std::unique_ptr<VerifyingKey> pem_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      pem_key, EcdsaP256Sha256VerifyingKey::CreateFromProto(pem_key_proto));
+  EXPECT_EQ(*pem_key, *expected_pem_key);
+
+  std::unique_ptr<VerifyingKey> expected_der_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(expected_der_key,
+                             EcdsaP256Sha256VerifyingKey::CreateFromDer(
+                                 absl::HexStringToBytes(kTestVerifyingKeyDer)));
+
+  AsymmetricSigningKeyProto der_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyDerProto,
+                                                  &der_key_proto));
+  std::unique_ptr<VerifyingKey> der_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      der_key, EcdsaP256Sha256VerifyingKey::CreateFromProto(der_key_proto));
+  EXPECT_EQ(*der_key, *expected_der_key);
 }
 
 class EcdsaP256Sha256VerifyingKeyTest
@@ -368,9 +480,67 @@ class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
   std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key_;
 };
 
+// Verify that CreateFromProto() fails when the signature scheme is incorrect.
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       SigningKeyCreateFromProtoWithUnknownSignatureSchemeFails) {
+  AsymmetricSigningKeyProto key_proto;
+  ASSERT_TRUE(
+      google::protobuf::TextFormat::ParseFromString(kTestSigningKeyPemProto, &key_proto));
+  key_proto.set_signature_scheme(UNKNOWN_SIGNATURE_SCHEME);
 
-// Verify that EcdsaP256Sha256SigningKey::Create() fails when the key has an
-// incorrect group.
+  EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromProto(key_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that CreateFromProto() fails when the key type is incorrect.
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       SigningKeyCreateFromProtoWithVerifyingKeyTypeFails) {
+  AsymmetricSigningKeyProto key_proto;
+  ASSERT_TRUE(
+      google::protobuf::TextFormat::ParseFromString(kTestSigningKeyPemProto, &key_proto));
+  key_proto.set_key_type(AsymmetricSigningKeyProto::VERIFYING_KEY);
+
+  EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromProto(key_proto),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+// Verify that CreateFromProto() fails when the key encoding is invalid.
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       SigningKeyCreateFromProtoWithUnknownEncodingFails) {
+  AsymmetricSigningKeyProto key_proto;
+  ASSERT_TRUE(
+      google::protobuf::TextFormat::ParseFromString(kTestSigningKeyPemProto, &key_proto));
+  key_proto.set_encoding(UNKNOWN_ASYMMETRIC_KEY_ENCODING);
+
+  EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromProto(key_proto),
+              StatusIs(error::GoogleError::UNIMPLEMENTED));
+}
+
+// Verify that CreateFromProto() fails when the key does not match the encoding.
+TEST_F(EcdsaP256Sha256SigningKeyTest,
+       SigningKeyCreateFromProtoWithMismatchedEncodingFails) {
+  AsymmetricSigningKeyProto pem_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestSigningKeyPemProto,
+                                                  &pem_key_proto));
+  pem_key_proto.set_encoding(ASYMMETRIC_KEY_DER);
+
+  EXPECT_THAT(EcdsaP256Sha256SigningKey::CreateFromProto(pem_key_proto),
+              StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST_F(EcdsaP256Sha256SigningKeyTest, SigningKeyCreateFromProtoSuccess) {
+  AsymmetricSigningKeyProto pem_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestSigningKeyPemProto,
+                                                  &pem_key_proto));
+  ASYLO_EXPECT_OK(EcdsaP256Sha256SigningKey::CreateFromProto(pem_key_proto));
+
+  AsymmetricSigningKeyProto der_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestSigningKeyDerProto,
+                                                  &der_key_proto));
+  ASYLO_EXPECT_OK(EcdsaP256Sha256SigningKey::CreateFromProto(der_key_proto));
+}
+
+// Verify that Create() fails when the key has an incorrect group.
 TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyWithBadGroupFails) {
   bssl::UniquePtr<EC_KEY> bad_key(EC_KEY_new_by_curve_name(kBadGroup));
   ASSERT_TRUE(EC_KEY_generate_key(bad_key.get()));

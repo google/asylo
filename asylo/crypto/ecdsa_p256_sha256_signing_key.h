@@ -45,6 +45,10 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
   static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> CreateFromPem(
       ByteContainerView serialized_key);
 
+  // Creates an ECDSA P256 verifying key from the given |key_proto|.
+  static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> CreateFromProto(
+      const AsymmetricSigningKeyProto &key_proto);
+
   // Creates a new EcdsaP56VerifyingKey from the given |public_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>> Create(
       bssl::UniquePtr<EC_KEY> public_key);
@@ -86,6 +90,10 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
   // |serialized_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> CreateFromPem(
       ByteContainerView serialized_key);
+
+  // Creates an ECDSA P256 signing key from the given |key_proto|.
+  static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> CreateFromProto(
+      const AsymmetricSigningKeyProto &key_proto);
 
   // Creates an ECDSA P256 signing key from the given |private_key|.
   static StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>> Create(

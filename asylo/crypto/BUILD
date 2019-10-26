@@ -516,6 +516,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":algorithms_cc_proto",
         ":bignum_util",
         ":keys_cc_proto",
         ":sha256_hash",
@@ -536,6 +537,7 @@ cc_test(
     deps = [
         ":ecdsa_p256_sha256_signing_key",
         ":fake_signing_key",
+        ":keys_cc_proto",
         ":signing_key",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
@@ -547,6 +549,7 @@ cc_test(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
