@@ -42,7 +42,6 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":backend_agnostic_sockets",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:memory",
         "//asylo/platform/posix/io:io_manager",
     ],
@@ -81,7 +80,6 @@ cc_library(
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
-            "//asylo/platform/arch:trusted_arch",
             ":sockets",
         ],
         "//conditions:default": [],
@@ -102,7 +100,6 @@ cc_library(
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
-            "//asylo/platform/arch:trusted_arch",
             ":sockets",
         ],
         "//conditions:default": [],
@@ -123,7 +120,6 @@ cc_library(
         "//asylo/util:status",
     ] + select({
         "@com_google_asylo//asylo": [
-            "//asylo/platform/arch:trusted_arch",
             ":sockets",
         ],
         "//conditions:default": [],

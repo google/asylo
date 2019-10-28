@@ -38,7 +38,6 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/core:shared_name",
         "//asylo/util:status",
-        "//asylo/platform/host_call",
     ],
 )
 
@@ -58,7 +57,6 @@ cc_library(
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
-        "@linux_sgx//:urts",
     ],
 )
 

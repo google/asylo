@@ -74,7 +74,6 @@ sgx.unsigned_enclave(
     srcs = ["hello_world.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/test/util:enclave_test_application",
     ],
 )

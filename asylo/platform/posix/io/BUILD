@@ -59,7 +59,6 @@ cc_library(
     tags = ASYLO_ALL_BACKEND_TAGS,
     deps = [
         ":util",
-        "//asylo/platform/arch:trusted_arch",
         "//asylo/platform/common:memory",
         "//asylo/platform/crypto/gcmlib:gcm_cryptor",
         "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
