@@ -33,6 +33,11 @@
 ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 ABSL_FLAG(bool, test_in_initialize, false,
           "Run tests in Initialize, rather than Run");
+ABSL_FLAG(std::string, benchmarks, "",
+          "A regular expression that specifies the set of benchmarks "
+          "to execute.  If this flag is empty, no benchmarks are run. "
+          "If this flag is the string \"all\", all benchmarks linked "
+          "into the process are run.");
 ABSL_FLAG(int32_t, v, 0, "Logging verbosity level");
 
 namespace {
@@ -65,6 +70,9 @@ int main(int argc, char *argv[]) {
   asylo::TestShimEnclaveConfig *shim_config =
       config.MutableExtension(asylo::test_shim_enclave_config);
   shim_config->set_test_in_initialize(absl::GetFlag(FLAGS_test_in_initialize));
+
+  // Pass the value of the benchmarks flag to the enclave.
+  shim_config->set_benchmarks(absl::GetFlag(FLAGS_benchmarks));
 
   // Load the enclave
   asylo::EnclaveManager::Configure(asylo::EnclaveManagerOptions());

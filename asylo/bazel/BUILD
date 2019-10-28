@@ -70,6 +70,7 @@ cc_library(
         ":test_shim_enclave_cc_proto",
         "//asylo/test/util:enclave_test_application",
         "//asylo/test/util:test_flags",
+        "@com_github_google_benchmark//:benchmark",
         "@com_google_absl//absl/flags:flag",
         "@com_google_googletest//:gtest",
     ],

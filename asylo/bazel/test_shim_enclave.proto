@@ -28,6 +28,8 @@ message TestShimEnclaveConfig {
   optional string test_tmpdir = 2;
   // Run tests in Initialize, rather than Run, if set and true.
   optional bool test_in_initialize = 3;
+  // Regex that specifies the set of benchmarks to be executed.
+  optional string benchmarks = 4;
 }
 
 extend EnclaveConfig {
