@@ -139,10 +139,8 @@ class Client : public std::enable_shared_from_this<Client> {
   // operations by concurrent client threads.
   virtual Status Destroy() = 0;
 
-  /// Returns the name of the enclave.
-  ///
-  /// \return The name of the enclave.
-  virtual const absl::string_view &Name() const { return name_; }
+  // Returns the name of the enclave.
+  virtual absl::string_view Name() const { return name_; }
 
   // Sets |current_client_| to the calling primitive client. This should only be
   // called if an enclave entry happens without going through a regular enclave
