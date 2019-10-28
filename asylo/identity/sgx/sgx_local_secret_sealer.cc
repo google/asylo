@@ -31,9 +31,8 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/local_secret_sealer_helpers.h"
-#include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
-#include "asylo/identity/sgx/sgx_identity_util_internal.h"
+#include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -44,28 +43,36 @@ constexpr size_t kAes256GcmSivKeySize = 32;
 
 std::unique_ptr<SgxLocalSecretSealer>
 SgxLocalSecretSealer::CreateMrenclaveSecretSealer() {
-  SgxIdentityMatchSpec spec;
-  sgx::SetDefaultLocalSgxMatchSpec(&spec);
+  // This always returns OK because the DEFAULT match spec options are valid.
+  auto expectation_status = CreateSgxIdentityExpectation(
+      GetSelfSgxIdentity(), SgxIdentityMatchSpecOptions::DEFAULT);
+  CHECK(expectation_status.ok())
+      << "Failed to create default self identity expectation";
+  SgxIdentityExpectation expectation = expectation_status.ValueOrDie();
 
-  // SetDefaultLocalSgxMatchSpec() sets the expectation to match MRSIGNER. The
-  // match bit needs to be flipped so that the LocalSecretSealer sets the ACL to
-  // match on MRENCLAVE.
-  spec.mutable_code_identity_match_spec()->set_is_mrenclave_match_required(
-      true);
-  spec.mutable_code_identity_match_spec()->set_is_mrsigner_match_required(
-      false);
-  SgxIdentityExpectation expectation;
-  sgx::SetExpectation(spec, sgx::GetSelfIdentity()->sgx_identity, &expectation);
+  // SgxIdentityMatchSpecOptions::DEFAULT sets the expectation to match
+  // MRSIGNER. The match bit needs to be flipped so that the LocalSecretSealer
+  // sets the ACL to match on MRENCLAVE.
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrenclave_match_required(true);
+  expectation.mutable_match_spec()
+      ->mutable_code_identity_match_spec()
+      ->set_is_mrsigner_match_required(false);
+
   return absl::WrapUnique<SgxLocalSecretSealer>(
       new SgxLocalSecretSealer(expectation));
 }
 
 std::unique_ptr<SgxLocalSecretSealer>
 SgxLocalSecretSealer::CreateMrsignerSecretSealer() {
-  SgxIdentityMatchSpec spec;
-  sgx::SetDefaultLocalSgxMatchSpec(&spec);
-  SgxIdentityExpectation expectation;
-  sgx::SetExpectation(spec, sgx::GetSelfIdentity()->sgx_identity, &expectation);
+  // This always returns OK because the DEFAULT match spec options are valid.
+  auto expectation_status = CreateSgxIdentityExpectation(
+      GetSelfSgxIdentity(), SgxIdentityMatchSpecOptions::DEFAULT);
+  CHECK(expectation_status.ok())
+      << "Failed to create default self identity expectation";
+  SgxIdentityExpectation expectation = expectation_status.ValueOrDie();
+
   return absl::WrapUnique<SgxLocalSecretSealer>(
       new SgxLocalSecretSealer(expectation));
 }
@@ -92,10 +99,11 @@ Status SgxLocalSecretSealer::SetDefaultHeader(
   info->set_sealing_root_name(RootName());
   info->set_aead_scheme(AeadScheme::AES256_GCM_SIV);
 
-  ASYLO_RETURN_IF_ERROR(sgx::SerializeSgxIdentity(
-      sgx::GetSelfIdentity()->sgx_identity, header->add_author()));
-  return sgx::SerializeSgxExpectation(
-      default_client_acl_, header->mutable_client_acl()->mutable_expectation());
+  ASYLO_ASSIGN_OR_RETURN(*header->add_author(),
+                         SerializeSgxIdentity(GetSelfSgxIdentity()));
+  ASYLO_ASSIGN_OR_RETURN(*header->mutable_client_acl()->mutable_expectation(),
+                         SerializeSgxIdentityExpectation(default_client_acl_));
+  return Status::OkStatus();
 }
 
 StatusOr<size_t> SgxLocalSecretSealer::MaxMessageSize(

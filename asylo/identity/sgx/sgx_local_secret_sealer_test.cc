@@ -49,6 +49,7 @@
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/platform/common/singleton.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/path.h"
 #include "asylo/util/status.h"
@@ -148,6 +149,24 @@ TEST_F(SgxLocalSecretSealerTest, VerifyRootAcl) {
 
   sealer = SgxLocalSecretSealer::CreateMrsignerSecretSealer();
   EXPECT_TRUE(sealer->RootAcl().empty());
+}
+
+// Verify that SetDefaultHeader() sets the reference identity in the header to
+// the current enclave's identity.
+TEST_F(SgxLocalSecretSealerTest, VerifyDefaultHeaderReferenceIdentity) {
+  std::unique_ptr<SgxLocalSecretSealer> sealer =
+      SgxLocalSecretSealer::CreateMrenclaveSecretSealer();
+  SealedSecretHeader header;
+  sealer->SetDefaultHeader(&header);
+  SgxIdentity reference_identity;
+  ASYLO_ASSERT_OK(sgx::ParseSgxIdentity(
+      header.client_acl().expectation().reference_identity(),
+      &reference_identity));
+
+  SgxIdentity current_identity;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      current_identity, sgx::FakeEnclave::GetCurrentEnclave()->GetIdentity());
+  EXPECT_THAT(reference_identity, EqualsProto(current_identity));
 }
 
 // Verify that ParseKeyGenerationParamsFromSealedSecretHeader() fails when the
@@ -269,12 +288,6 @@ TEST_F(SgxLocalSecretSealerTest,
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
               IsOk());
-
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
-                                           .machine_configuration()
-                                           .cpu_svn()
-                                           .value());
-  EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
   EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
@@ -297,12 +310,6 @@ TEST_F(SgxLocalSecretSealerTest,
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
               IsOk());
-
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
-                                           .machine_configuration()
-                                           .cpu_svn()
-                                           .value());
-  EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
   EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
@@ -339,12 +346,6 @@ TEST_F(SgxLocalSecretSealerTest,
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
               IsOk());
-
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
-                                           .machine_configuration()
-                                           .cpu_svn()
-                                           .value());
-  EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
   EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
@@ -367,12 +368,6 @@ TEST_F(SgxLocalSecretSealerTest,
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
               IsOk());
-
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
-                                           .machine_configuration()
-                                           .cpu_svn()
-                                           .value());
-  EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
   EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
@@ -394,12 +389,6 @@ TEST_F(SgxLocalSecretSealerTest,
   EXPECT_THAT(sgx::internal::ParseKeyGenerationParamsFromSealedSecretHeader(
                   header, &aead_scheme, &sgx_expectation),
               IsOk());
-
-  UnsafeBytes<sgx::kCpusvnSize> cpusvn(sgx_expectation.reference_identity()
-                                           .machine_configuration()
-                                           .cpu_svn()
-                                           .value());
-  EXPECT_EQ(cpusvn, sgx::FakeEnclave::GetCurrentEnclave()->get_cpusvn());
   EXPECT_EQ(aead_scheme, AeadScheme::AES256_GCM_SIV);
 }
 
