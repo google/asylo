@@ -138,7 +138,7 @@ As the SQLite build target is created, now it can be run with the following
 `bazel` command from the Docker container:
 
 ```shell
-bazel run --config=sgx-sim :asylo_redis
+bazel run --config=sgx-sim :asylo_sqlite
 ```
 
 After finishing building, you should be able to see SQLite up and messages
