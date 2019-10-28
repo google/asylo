@@ -36,7 +36,7 @@ asylo_backend(
 # The flag can be set with a rule (e.g., transitions.backend_binary), or from
 # the top level with a flag like so:
 #
-#   --//asylo/distrib/backend=@linux_sgx//:asylo_sgx_sim
+#   --@com_google_asylo_backend_provider//:backend=@linux_sgx//:asylo_sgx_sim
 label_flag(
     name = "backend",
     # The default backend is "none" to avoid a default of asylo_sgx_sim causing

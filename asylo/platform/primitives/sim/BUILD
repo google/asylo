@@ -15,6 +15,7 @@
 #
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:sim_enclave.bzl", "asylo_sim_backend")
 
 licenses(["notice"])
 
@@ -22,18 +23,24 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+asylo_sim_backend(name = "sim")
+
+_TRUSTED_SIM_SRCS = [
+    "malloc_lock.cc",
+    "runtime_stubs.c",
+    "runtime_syscalls.c",
+    "shared_sim.h",
+    "trusted_runtime.cc",
+    "trusted_sim.cc",
+]
+
 # Trusted simulator components.
 cc_library(
     name = "trusted_sim",
     srcs = select(
-        {"//asylo/platform/primitives:asylo_sim": [
-            "malloc_lock.cc",
-            "runtime_stubs.c",
-            "runtime_syscalls.c",
-            "shared_sim.h",
-            "trusted_runtime.cc",
-            "trusted_sim.cc",
-        ]},
+        {
+            "//asylo/platform/primitives:asylo_sim": _TRUSTED_SIM_SRCS,
+        },
         no_match_error = "Trusted simulation components must be built with the backend selected",
     ),
     copts = ASYLO_DEFAULT_COPTS,

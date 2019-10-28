@@ -53,6 +53,16 @@ _TRUSTED_SGX_BACKEND_DEPS = [
     "//asylo/platform/posix/signal:signal_manager",
 ]
 
+_TRUSTED_SGX_HW_SRCS = [
+    "hardware_random_sgx_hw.cc",
+    "register_signal_sgx_hw.cc",
+]
+
+_TRUSTED_SGX_SIM_SRCS = [
+    "hardware_random_sgx_sim.cc",
+    "register_signal_sgx_sim.cc",
+]
+
 cc_library(
     name = "trusted_sgx",
     srcs = [
@@ -61,14 +71,8 @@ cc_library(
         "trusted_sgx.cc",
     ] + select(
         {
-            "@linux_sgx//:sgx_hw": [
-                "hardware_random_sgx_hw.cc",
-                "register_signal_sgx_hw.cc",
-            ],
-            "@linux_sgx//:sgx_sim": [
-                "hardware_random_sgx_sim.cc",
-                "register_signal_sgx_sim.cc",
-            ],
+            "@linux_sgx//:sgx_hw": _TRUSTED_SGX_HW_SRCS,
+            "@linux_sgx//:sgx_sim": _TRUSTED_SGX_SIM_SRCS,
         },
         no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
     ),
@@ -222,6 +226,29 @@ cc_proto_library(
 )
 
 # Fork related runtime.
+_TRUSTED_FORK_HW_DEPS = [
+    ":trusted_sgx",
+    "@com_google_absl//absl/base:core_headers",
+    "//asylo/crypto:aead_cryptor",
+    "//asylo/crypto/util:bssl_util",
+    "//asylo/crypto/util:byte_container_view",
+    "//asylo/crypto/util:trivial_object_util",
+    "//asylo/platform/posix/memory:memory",
+    "//asylo/platform/primitives/sgx:sgx_error_space",
+    "//asylo/util:logging",
+    "//asylo/grpc/auth/core:client_ekep_handshaker",
+    "//asylo/grpc/auth/core:server_ekep_handshaker",
+    "//asylo/identity:descriptions",
+    "//asylo/identity:identity_acl_evaluator",
+    "//asylo/identity/sgx:sgx_identity_expectation_matcher",
+    "//asylo/identity/sgx:sgx_identity_util",
+    "//asylo/identity/sgx:sgx_local_assertion_generator",
+    "//asylo/identity/sgx:sgx_local_assertion_verifier",
+    "//asylo/util:cleansing_types",
+    "//asylo/util:cleanup",
+    "@boringssl//:crypto",
+]
+
 cc_library(
     name = "trusted_fork",
     srcs = ["fork.cc"] + select({
@@ -254,29 +281,8 @@ cc_library(
         ]},
         no_match_error = "Must be built in Asylo toolchain",
     ) + select({
+        "@linux_sgx//:sgx_hw": _TRUSTED_FORK_HW_DEPS,
         "@linux_sgx//:sgx_sim": [":trusted_sgx"],
-        "@linux_sgx//:sgx_hw": [
-            ":trusted_sgx",
-            "@com_google_absl//absl/base:core_headers",
-            "//asylo/crypto:aead_cryptor",
-            "//asylo/crypto/util:bssl_util",
-            "//asylo/crypto/util:byte_container_view",
-            "//asylo/crypto/util:trivial_object_util",
-            "//asylo/platform/posix/memory:memory",
-            "//asylo/platform/primitives/sgx:sgx_error_space",
-            "//asylo/util:logging",
-            "//asylo/grpc/auth/core:client_ekep_handshaker",
-            "//asylo/grpc/auth/core:server_ekep_handshaker",
-            "//asylo/identity:descriptions",
-            "//asylo/identity:identity_acl_evaluator",
-            "//asylo/identity/sgx:sgx_identity_expectation_matcher",
-            "//asylo/identity/sgx:sgx_identity_util",
-            "//asylo/identity/sgx:sgx_local_assertion_generator",
-            "//asylo/identity/sgx:sgx_local_assertion_verifier",
-            "//asylo/util:cleansing_types",
-            "//asylo/util:cleanup",
-            "@boringssl//:crypto",
-        ],
         "//conditions:default": [],
     }),
 )

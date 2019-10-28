@@ -3278,7 +3278,7 @@ diff -Nur /dev/null BUILD
 @@ -0,0 +1,1341 @@
 +# linux-sgx is the Intel SGX SDK
 +
-+load(":sgx_sdk.bzl", "sgx")
++load(":sgx_sdk.bzl", "asylo_sgx_backend", "sgx")
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
@@ -4368,9 +4368,7 @@ diff -Nur /dev/null BUILD
 +        ":common_inc_internal",
 +        ":uae_service_select",
 +    ] + select({
-+        ":sgx_hw": [
-+            ":urts_hw",
-+        ],
++        ":sgx_hw": [":urts_hw"],
 +        "//conditions:default": [
 +            ":urts_sim",
 +        ],
@@ -4594,11 +4592,13 @@ diff -Nur /dev/null BUILD
 +# By default enclave launching applications will support simulation enclaves.
 +# You can manually specify "bazel build --define="SGX_SIM=1" :mytarget" to
 +# support hardware enclaves.
-+config_setting(
-+    name = "sgx",
-+    values = {
-+        "define": "ASYLO_SGX=1",
-+    },
++asylo_sgx_backend(
++    name = "asylo_sgx_hw",
++    visibility = ["//visibility:public"],
++)
++
++asylo_sgx_backend(
++    name = "asylo_sgx_sim",
 +    visibility = ["//visibility:public"],
 +)
 +
@@ -4620,10 +4620,10 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,650 @@
+@@ -0,0 +1,660 @@
 +"""Build tools for supporting Intel's SDK."""
 +
-+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
++load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo", "EnclaveInfo")
 +
 +# website-docs-metadata
 +# ---
@@ -4660,6 +4660,16 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    "tcs_policy",
 +])
 +SGXSigstructInfo = provider(fields = ["config", "unsigned"])
++
++def _asylo_sgx_backend_impl(ctx):
++    return [AsyloBackendInfo(
++        forward_providers = [EnclaveInfo, SGXEnclaveInfo, CcInfo],
++    )]
++
++asylo_sgx_backend = rule(
++    implementation = _asylo_sgx_backend_impl,
++    attrs = {},
++)
 +
 +
 +def sgx_unsigned_enclave(
@@ -5238,7 +5248,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +def sgx_tags():
 +    """Returns tags for SGX targets."""
 +    return [
-+        "manual",  
++        "manual",
 +        "sgxbuilder",
 +    ]
 +
