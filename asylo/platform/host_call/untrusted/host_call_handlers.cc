@@ -31,12 +31,12 @@
 
 #include <ctime>
 
-#include "asylo/platform/common/debug_strings.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/host_call/serializer_functions.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/system_call/untrusted_invoke.h"
+#include "asylo/util/hex_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -500,7 +500,7 @@ Status HexDumpHandler(const std::shared_ptr<primitives::Client> &client,
 
   output->Push<int>(
       fprintf(stderr, "%s\n",
-              asylo::buffer_to_hex_string(buf.data(), buf.size()).c_str()));
+              asylo::BufferToDebugHexString(buf.data(), buf.size()).c_str()));
   output->Push<int>(errno);
   return Status::OkStatus();
 }

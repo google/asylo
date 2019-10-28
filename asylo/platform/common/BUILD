@@ -148,26 +148,3 @@ cc_library(
     hdrs = ["futex.h"],
     copts = ASYLO_DEFAULT_COPTS,
 )
-
-# Utility functions for creating debug report strings.
-cc_library(
-    name = "debug_strings",
-    srcs = ["debug_strings.cc"],
-    hdrs = ["debug_strings.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
-    ],
-)
-
-cc_test(
-    name = "debug_strings_test",
-    srcs = ["debug_strings_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":debug_strings",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)

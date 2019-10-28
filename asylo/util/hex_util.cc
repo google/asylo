@@ -22,6 +22,7 @@
 
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
 
 namespace asylo {
 
@@ -38,6 +39,22 @@ std::string Uint16ToLittleEndianHexString(uint16_t val) {
   uint16_t le_val = htole16(val);
   return absl::BytesToHexString(
       absl::string_view{reinterpret_cast<char *>(&le_val), sizeof(uint16_t)});
+}
+
+std::string BufferToDebugHexString(const void *buf, int nbytes) {
+  if (!buf) {
+    return "null";
+  }
+  if (nbytes < 0) {
+    return absl::StrCat("[ERROR: negative length ", nbytes, "]");
+  }
+  if (nbytes == 0) {
+    return "[]";
+  }
+  return absl::StrCat("[0x",
+                      absl::BytesToHexString(absl::string_view(
+                          reinterpret_cast<const char *>(buf), nbytes)),
+                      "]");
 }
 
 }  // namespace asylo

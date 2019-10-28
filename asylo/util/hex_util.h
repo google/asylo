@@ -33,6 +33,14 @@ bool IsHexEncoded(absl::string_view str);
 // Returns the little-endian hex-string representation of |val|.
 std::string Uint16ToLittleEndianHexString(uint16_t val);
 
+// Returns a hex representation of the provided input buffer of a given size.
+// If |buf| is nullptr, returns "null".
+// If |nbytes| is 0, returns "[]".
+// If |nbytes| is negative, returns an error message with the negative value.
+// Otherwise, returns "[0x" buf[0]...buf[nbytes-1] "]" formatted as hexadecimal
+// digits.
+std::string BufferToDebugHexString(const void *buf, int nbytes);
+
 }  // namespace asylo
 
 #endif  // ASYLO_UTIL_HEX_UTIL_H_
