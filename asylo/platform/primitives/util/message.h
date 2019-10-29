@@ -230,10 +230,10 @@ class MessageReader {
   size_t size() const { return extents_.size(); }
 
   // Returns the next extent in the MessageReader. The MessageReader may only be
-  // traversed once. The returned pointer remains owned by the MessageReader and
+  // traversed once. The returned extent remains owned by the MessageReader and
   // its lifetime is the lifetime of the MessageReader.
   Extent next() {
-    Extent result = Extent{extents_[pos_].first.get(), extents_[pos_].second};
+    Extent result = peek();
     pos_++;
     return result;
   }
@@ -243,6 +243,21 @@ class MessageReader {
   template <typename T>
   T next() {
     Extent result = next();
+    return *(result.As<T>());
+  }
+
+  // Peeks at the next extent in the MessageReader; the ensuing next() call will
+  // return the same extent. The extent remains owned by the MessageReader and
+  // its lifetime is the lifetime of the MessageReader.
+  Extent peek() {
+    return Extent{extents_[pos_].first.get(), extents_[pos_].second};
+  }
+
+  // Interprets the peek item in the MessageReader as a pointer to a value of
+  // type T, consumes it, and returns its value by const reference.
+  template <typename T>
+  const T &peek() {
+    Extent result = peek();
     return *(result.As<T>());
   }
 

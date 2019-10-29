@@ -88,7 +88,9 @@ TEST(MessageTest, PushPopDataByValue) {
 
   ASSERT_THAT(reader, Not(IsEmpty()));
   ASSERT_THAT(reader, SizeIs(4));
+  EXPECT_THAT(reader.peek<int>(), Eq(1));
   EXPECT_THAT(*(reader.next().As<int>()), Eq(1));
+  EXPECT_THAT(reader.peek<int>(), Eq(2));
   EXPECT_THAT(*(reader.next().As<int>()), Eq(2));
   EXPECT_THAT(reader.next().As<char>(), StrEq("hello"));
   EXPECT_THAT(reader.next().As<char>(), StrEq("world"));
@@ -110,6 +112,7 @@ TEST(MessageTest, ExtendMessageWriterFromOther) {
   ASSERT_THAT(reader, SizeIs(kNumBuffer));
   for (int i = 0; i < kNumBuffer; ++i) {
     ASSERT_TRUE(reader.hasNext());
+    EXPECT_THAT(reader.peek<int>(), Eq(i));
     EXPECT_THAT(reader.next<int>(), Eq(i));
   }
 }
