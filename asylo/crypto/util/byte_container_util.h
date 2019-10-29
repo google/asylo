@@ -39,6 +39,19 @@ Status AppendSerializedByteContainers(ByteContainerT *serialized,
   return internal::AppendSerializedByteContainers(views, serialized);
 }
 
+// Appends the raw bytes of |obj| to |view|.
+//
+// ByteContainerT must have a value_type that is 1-byte in size.
+template <class ByteContainerT, typename ObjT>
+void AppendTrivialObject(const ObjT &obj, ByteContainerT *view) {
+  static_assert(std::is_trivially_copy_assignable<ObjT>::value,
+                "ObjT is not trivially copy-assignable.");
+  static_assert(sizeof(typename ByteContainerT::value_type) == 1,
+                "ConstViewT must have a 1-byte value_type");
+  ByteContainerView obj_bytes(&obj, sizeof(obj));
+  std::copy(obj_bytes.cbegin(), obj_bytes.cend(), std::back_inserter(*view));
+}
+
 // Serializes |args| into |serialized|, overwriting any existing contents.
 //
 // ByteContainerT must have a value_type that is 1-byte in size. Each of |args|

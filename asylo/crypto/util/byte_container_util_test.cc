@@ -19,19 +19,26 @@
 #include "asylo/crypto/util/byte_container_util.h"
 
 #include <cstdint>
+#include <limits>
+#include <numeric>
 #include <string>
 #include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/base/macros.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/bytes.h"
+#include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
 
 namespace asylo {
 namespace {
+
+using ::testing::Eq;
 
 constexpr char kStr1[] = "foo";
 constexpr char kStr2[] = "bar";
@@ -151,6 +158,39 @@ TYPED_TEST(ByteContainerUtilTypedTest, SafeComparePositive) {
 TYPED_TEST(ByteContainerUtilTypedTest, SafeCompareNegative) {
   TypeParam container(kStr1, kStr1 + sizeof(kStr1) - 1);
   EXPECT_FALSE(SafeCompareByteContainers(container, kStr2));
+}
+
+TYPED_TEST(ByteContainerUtilTypedTest, AppendObjects) {
+  uint8_t inputs[std::numeric_limits<uint8_t>::max()];
+  std::iota(inputs, std::end(inputs), 0);
+
+  TypeParam buffer;
+  for (auto i : inputs) {
+    AppendTrivialObject(i, &buffer);
+  }
+
+  ASSERT_THAT(buffer.size(), Eq(sizeof(inputs)));
+  for (size_t i = 0; i < ABSL_ARRAYSIZE(inputs); ++i) {
+    EXPECT_THAT(static_cast<uint8_t>(buffer[i]), Eq(inputs[i]));
+  }
+}
+
+TYPED_TEST(ByteContainerUtilTypedTest, AppendObjectsOfDifferentSizes) {
+  struct TestData {
+    int8_t small_integer;
+    UnsafeBytes<123> bytes;
+    int64_t big_integer;
+  } ABSL_ATTRIBUTE_PACKED;
+
+  const TestData kTestData = TrivialRandomObject<TestData>();
+
+  TypeParam buffer;
+  AppendTrivialObject(kTestData.small_integer, &buffer);
+  AppendTrivialObject(kTestData.bytes, &buffer);
+  AppendTrivialObject(kTestData.big_integer, &buffer);
+
+  ASSERT_THAT(buffer.size(), Eq(sizeof(kTestData)));
+  EXPECT_THAT(memcmp(buffer.data(), &kTestData, sizeof(kTestData)), Eq(0));
 }
 
 TEST(ByteContainerUtilTest, MakeStringView) {
