@@ -69,9 +69,17 @@ message CommunicationMessage {
 
   // Input MessageReader for request, output MessageWriter for response.
   repeated bytes items = 5;
+
+  // Time at the host (set only when host calls target, skipped otherwise).
+  // Matches absl::GetCurrentTimeNanos().
+  optional int64 host_time_nanos = 6;
 }
 
-message CommunicationConfirmation {}
+message CommunicationConfirmation {
+  // Time at the host (set only when host responds to target, skipped
+  // otherwise). Matches absl::GetCurrentTimeNanos().
+  optional int64 host_time_nanos = 1;
+}
 
 message DisconnectRequest {}
 

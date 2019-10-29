@@ -20,12 +20,15 @@
 
 #include <atomic>
 #include <cstdint>
+#include <ctime>
 #include <iterator>
 #include <string>
 
+#include "absl/flags/flag.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/synchronization/notification.h"
+#include "absl/time/time.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/remote/grpc_service.grpc.pb.h"
@@ -36,7 +39,9 @@
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "asylo/util/thread.h"
+#include "include/grpc/impl/codegen/gpr_types.h"
 #include "include/grpc/support/time.h"
+#include "include/grpcpp/impl/codegen/completion_queue.h"
 #include "include/grpcpp/support/status.h"
 #include "include/grpcpp/create_channel.h"
 #include "include/grpcpp/impl/codegen/async_unary_call.h"
@@ -45,6 +50,11 @@
 #include "include/grpcpp/server.h"
 #include "include/grpcpp/server_builder.h"
 #include "include/grpcpp/server_impl.h"
+
+ABSL_FLAG(
+    int64_t, host_time_expiration_ms, 500,
+    "For target side only: number of milliseconds the timestamp is to be used "
+    "after it has been received from the host communicator");
 
 namespace asylo {
 namespace primitives {
@@ -202,6 +212,11 @@ class Communicator::ServiceImpl::CommunicationRpcInstance
 
  private:
   void RespondRpc() override {
+    // If host responds to the target, add time stamp.
+    if (service()->communicator_->is_host()) {
+      confirmation_.set_host_time_nanos(absl::GetCurrentTimeNanos());
+    }
+
     // And we are done! Let the gRPC runtime know we've finished, using the
     // memory address of this instance as the uniquely identifying tag for
     // the event.
@@ -213,6 +228,12 @@ class Communicator::ServiceImpl::CommunicationRpcInstance
     // we process the one for this InvokeRpcInstance. The instance will
     // deallocate itself once completed.
     new CommunicationRpcInstance(service());
+
+    // If received time stamp from host with request, store it.
+    if (!service()->communicator_->is_host() &&
+        message_.has_host_time_nanos()) {
+      service()->communicator_->set_host_time_nanos(message_.host_time_nanos());
+    }
 
     service()->communicator_->QueueMessageForThread(CommunicationMessagePtr(
         &message_, WrappedMessageDeleter([this] { Complete(); })));
@@ -420,7 +441,21 @@ void Communicator::ServiceImpl::ServerRpcLoop() {
   // memory address of an RpcInstance.
   // The return value of Next should always be checked. This return value
   // tells us whether there is any kind of event or cq_ is shutting down.
-  while (completion_queue_->Next(&tag, &ok)) {
+  for (;;) {
+    gpr_timespec next_deadline = gpr_time_add(
+        gpr_now(GPR_CLOCK_REALTIME),
+        gpr_time_from_millis(absl::GetFlag(FLAGS_host_time_expiration_ms),
+                             GPR_TIMESPAN));
+    const auto next_status =
+        completion_queue_->AsyncNext(&tag, &ok, next_deadline);
+    if (next_status == grpc::CompletionQueue::SHUTDOWN) {
+      break;
+    }
+    if (next_status == grpc::CompletionQueue::TIMEOUT) {
+      communicator_->invalidate_host_time_nanos();
+      continue;
+    }
+    CHECK_EQ(next_status, grpc::CompletionQueue::GOT_EVENT);
     static_cast<RpcInstance *>(tag)->ProcessRpc(ok);
   }
 }

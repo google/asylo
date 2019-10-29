@@ -156,6 +156,9 @@ Status Communicator::ClientImpl::SendCommunication(
     const CommunicationMessage &message) {
   ASYLO_RETURN_IF_ERROR(IsMessageValid(message));
   CommunicationConfirmation confirmation;
+  if (communicator_->is_host()) {
+    confirmation.set_host_time_nanos(absl::GetCurrentTimeNanos());
+  }
   ::grpc::ClientContext context;
   gpr_timespec absolute_deadline = gpr_time_add(
       gpr_now(GPR_CLOCK_REALTIME), gpr_time_from_seconds(5, GPR_TIMESPAN));
@@ -166,6 +169,11 @@ Status Communicator::ClientImpl::SendCommunication(
                   absl::StrCat("gRPC ErrorCode=", grpc_status.error_code(),
                                ", ErrorMessage=", grpc_status.error_message())};
   }
+  // If host responded with time stamp, process it.
+  if (!communicator_->is_host() && confirmation.has_host_time_nanos()) {
+    communicator_->set_host_time_nanos(confirmation.host_time_nanos());
+  }
+
   return Status::OkStatus();
 }
 

@@ -33,6 +33,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/string_view.h"
 #include "absl/time/time.h"
+#include "absl/types/optional.h"
 #include "absl/types/span.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
@@ -202,6 +203,12 @@ class Communicator {
   // Returns port assigned when creating the server.
   int server_port() const;
 
+  // Accessor to the last time received from the host (valid only
+  // on target Communicator, has no use on the host one).
+  absl::optional<int64_t> last_host_time_nanos() const {
+    return *last_host_time_nanos_.ReaderLock();
+  }
+
  private:
   class ClientImpl;
   // gRPC service and client implementation.
@@ -236,6 +243,15 @@ class Communicator {
   // Returns status if not.
   static Status IsMessageValid(const CommunicationMessage &message);
 
+  // Setters for the last time received from the host (valid only
+  // on target Communicator, have no use on the host one).
+  void set_host_time_nanos(int64_t time_nanos) {
+    *last_host_time_nanos_.Lock() = time_nanos;
+  }
+  void invalidate_host_time_nanos() {
+    *last_host_time_nanos_.Lock() = absl::nullopt;
+  }
+
   // Static map of registered communicators, used by host thread exiter callback
   // to signal matching target threads to exit.
   static MutexGuarded<absl::flat_hash_set<Communicator *>>
@@ -254,6 +270,10 @@ class Communicator {
   // by receiving notification from the communicator counterpart.
   std::atomic<bool> is_server_ready_;
   std::atomic<bool> is_client_ready_;
+
+  // Last time stamp received from the host (set only on target Communicator).
+  // Expires after time specified by --host_time_nanos_expiration flag.
+  MutexGuarded<absl::optional<int64_t>> last_host_time_nanos_;
 
   // Host-side only: exit callback stored in thread-local storage and
   // automatically invoked when the thread exits and thread-local objects are

@@ -27,6 +27,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "asylo/util/logging.h"
 #include "include/grpcpp/support/status.h"
 #include "asylo/platform/primitives/remote/grpc_client_impl.h"
@@ -296,7 +297,10 @@ Status Communicator::Connect(const RemoteProxyConfig &config,
 }
 
 Communicator::Communicator(bool is_host)
-    : is_host_(is_host), is_server_ready_(false), is_client_ready_(false) {
+    : is_host_(is_host),
+      is_server_ready_(false),
+      is_client_ready_(false),
+      last_host_time_nanos_(absl::nullopt) {
   if (is_host) {
     // For host: register communicator in the static set.
     CHECK(active_communicators()->Lock()->emplace(this).second);
