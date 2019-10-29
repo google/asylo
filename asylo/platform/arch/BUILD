@@ -44,6 +44,7 @@ cc_library(
 # Target exposing untrusted client components for all backends.
 cc_library(
     name = "untrusted_arch",
+    srcs = ["sgx/untrusted/sgx_client.cc"],
     hdrs = [
         "sgx/untrusted/sgx_client.h",
     ],
@@ -57,6 +58,7 @@ cc_library(
         "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/types:span",
     ],
 )
 
@@ -120,9 +122,7 @@ cc_library(
         "sgx/untrusted/generated_bridge_u.c",
         "sgx/untrusted/generated_bridge_u.h",
         "sgx/untrusted/ocalls.cc",
-        "sgx/untrusted/sgx_client.cc",
     ],
-    hdrs = ["sgx/untrusted/sgx_client.h"],
     copts = ASYLO_DEFAULT_COPTS,
     # This option prevents the linker from discarding the definition of
     # ocall_table_bridge before it encounters a reference to it.
@@ -151,7 +151,6 @@ cc_library(
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
     ],
