@@ -20,11 +20,12 @@
 #define ASYLO_PLATFORM_POSIX_SIGNAL_SIGNAL_MANAGER_H_
 
 #include <signal.h>
+
 #include <memory>
 #include <unordered_map>
 #include <unordered_set>
 
-#include "absl/synchronization/mutex.h"
+#include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -69,15 +70,17 @@ class SignalManager {
   bool IsResetOnHandle(int signum);
 
  private:
-  SignalManager() = default;  // Private to enforce singleton.
+  SignalManager();  // Private to enforce singleton.
   SignalManager(SignalManager const &) = delete;
   void operator=(SignalManager const &) = delete;
 
-  mutable pthread_mutex_t signal_to_sigaction_lock_;
+  // Use spin lock in SignalManager to avoid exiting the enclave while handling
+  // the signal.
+  TrustedSpinLock signal_maps_lock_;
+
   std::unordered_map<int, std::unique_ptr<struct sigaction>>
       signal_to_sigaction_;
 
-  mutable pthread_mutex_t signal_to_reset_lock_;
   std::unordered_set<int> signal_to_reset_;
 
   thread_local static sigset_t signal_mask_;

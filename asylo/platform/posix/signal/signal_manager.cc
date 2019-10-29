@@ -34,21 +34,14 @@ sigset_t EmptySigSet() {
   return set;
 }
 
-class PthreadMutexLock {
- public:
-  explicit PthreadMutexLock(pthread_mutex_t *mutex) : mutex_(mutex) {
-    pthread_mutex_lock(mutex);
-  }
-
-  ~PthreadMutexLock() { pthread_mutex_unlock(mutex_); }
-
- private:
-  pthread_mutex_t *mutex_;
-};
-
 }  // namespace
 
 thread_local sigset_t SignalManager::signal_mask_ = EmptySigSet();
+
+// Initialize the spin locks to be recursive so that signal handling does not
+// cause deadlock if a signal arrives while the thread is registering a signal.
+SignalManager::SignalManager()
+    : signal_maps_lock_(/*is_recursive=*/true) {}
 
 SignalManager *SignalManager::GetInstance() {
   static SignalManager *instance = new SignalManager();
@@ -81,7 +74,7 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
   sigset_t old_mask;
   sigprocmask(SIG_SETMASK, &mask, &old_mask);
   {
-    PthreadMutexLock lock(&signal_to_sigaction_lock_);
+    TrustedSpinLockGuard lock(&signal_maps_lock_);
     signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(act);
   }
   // Set the signal mask back to the original one to unblock the signals.
@@ -89,7 +82,7 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
 }
 
 bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
-  PthreadMutexLock lock(&signal_to_sigaction_lock_);
+  TrustedSpinLockGuard lock(&signal_maps_lock_);
   auto sigaction_iterator = signal_to_sigaction_.find(signum);
   if (sigaction_iterator == signal_to_sigaction_.end()) {
     return false;
@@ -99,7 +92,7 @@ bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
 }
 
 void SignalManager::ClearSigAction(int signum) {
-  PthreadMutexLock lock(&signal_to_sigaction_lock_);
+  TrustedSpinLockGuard lock(&signal_maps_lock_);
   signal_to_sigaction_.erase(signum);
 }
 
@@ -135,12 +128,12 @@ sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
 }
 
 void SignalManager::SetResetOnHandle(int signum) {
-  PthreadMutexLock lock(&signal_to_reset_lock_);
+  TrustedSpinLockGuard lock(&signal_maps_lock_);
   signal_to_reset_.insert(signum);
 }
 
 bool SignalManager::IsResetOnHandle(int signum) {
-  PthreadMutexLock lock(&signal_to_reset_lock_);
+  TrustedSpinLockGuard lock(&signal_maps_lock_);
   return signal_to_reset_.find(signum) != signal_to_reset_.end();
 }
 

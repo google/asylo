@@ -30,9 +30,9 @@ cc_library(
     hdrs = ["signal_manager.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/core:trusted_spin_lock",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
     ],
 )
