@@ -18,10 +18,8 @@
 
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 
-#include "asylo/util/logging.h"
-#include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
-#include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
+#include "asylo/identity/enclave_assertion_authority_configs.h"
 
 namespace asylo {
 
@@ -29,21 +27,12 @@ namespace asylo {
 const char kAttestationDomain[] = "A 16-byte string";
 
 EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig() {
-  EnclaveAssertionAuthorityConfig test_config;
-  SetNullAssertionDescription(test_config.mutable_description());
-  // No configuration needed for the null assertion authority.
-  return test_config;
+  return CreateNullAssertionAuthorityConfig();
 }
 
 EnclaveAssertionAuthorityConfig GetSgxLocalAssertionAuthorityTestConfig() {
-  EnclaveAssertionAuthorityConfig test_config;
-  SetSgxLocalAssertionDescription(test_config.mutable_description());
-
-  SgxLocalAssertionAuthorityConfig config;
-  config.set_attestation_domain(kAttestationDomain);
-  CHECK(config.SerializeToString(test_config.mutable_config()));
-
-  return test_config;
+  return CreateSgxLocalAssertionAuthorityConfig(kAttestationDomain)
+      .ValueOrDie();
 }
 
 }  // namespace asylo

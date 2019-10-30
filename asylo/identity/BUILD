@@ -120,6 +120,39 @@ cc_library(
 )
 
 cc_library(
+    name = "enclave_assertion_authority_configs",
+    srcs = ["enclave_assertion_authority_configs.cc"],
+    hdrs = ["enclave_assertion_authority_configs.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":descriptions",
+        ":enclave_assertion_authority_config_cc_proto",
+        "//asylo/daemon/identity:attestation_domain",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test(
+    name = "enclave_assertion_authority_configs_test",
+    srcs = ["enclave_assertion_authority_configs_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":descriptions",
+        ":enclave_assertion_authority_config_cc_proto",
+        ":enclave_assertion_authority_configs",
+        ":identity_cc_proto",
+        "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "secret_sealer",
     srcs = ["secret_sealer.cc"],
     hdrs = ["secret_sealer.h"],

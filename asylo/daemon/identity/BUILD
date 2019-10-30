@@ -44,6 +44,7 @@ cc_library(
     srcs = ["attestation_domain.cc"],
     hdrs = ["attestation_domain.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/crypto/util:bssl_util",
         "//asylo/util:logging",
