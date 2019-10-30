@@ -469,7 +469,7 @@ class EcdsaP256Sha256SigningKeyTest : public ::testing::Test {
       signing_key_ = std::move(signing_key_result).ValueOrDie();
 
       CleansingVector<uint8_t> serialized;
-      ASYLO_ASSERT_OK(signing_key_->SerializeToDer(&serialized));
+      ASYLO_ASSERT_OK_AND_ASSIGN(serialized, signing_key_->SerializeToDer());
 
       LOG(INFO) << "Using random SigningKey: "
                 << absl::BytesToHexString(
@@ -564,7 +564,7 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyFromPemMatchesDer) {
       EcdsaP256Sha256SigningKey::CreateFromPem(kTestSigningKeyPem));
 
   CleansingVector<uint8_t> serialized_der;
-  ASYLO_ASSERT_OK(signing_key_pem->SerializeToDer(&serialized_der));
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_der, signing_key_pem->SerializeToDer());
 
   EXPECT_EQ(ByteContainerView(serialized_der),
             ByteContainerView(absl::HexStringToBytes(kTestSigningKeyDer)));
@@ -613,7 +613,7 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, SignAndVerifySignatureOverloads) {
 // signature produced by the original key successfully.
 TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToDerAndRestoreSigningKey) {
   CleansingVector<uint8_t> serialized_key;
-  ASYLO_ASSERT_OK(signing_key_->SerializeToDer(&serialized_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key, signing_key_->SerializeToDer());
 
   auto signing_key_result2 =
       EcdsaP256Sha256SigningKey::CreateFromDer(serialized_key);
@@ -653,7 +653,8 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, RestoreFromAndSerializeToDerSigningKey) {
       std::move(signing_key_result2).ValueOrDie();
 
   CleansingVector<uint8_t> serialized_key_bin_actual;
-  signing_key2->SerializeToDer(&serialized_key_bin_actual);
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key_bin_actual,
+                             signing_key2->SerializeToDer());
 
   EXPECT_EQ(serialized_key_bin_expected, serialized_key_bin_actual);
 }

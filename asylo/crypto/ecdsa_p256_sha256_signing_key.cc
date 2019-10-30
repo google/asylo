@@ -367,8 +367,8 @@ EcdsaP256Sha256SigningKey::Create(bssl::UniquePtr<EC_KEY> private_key) {
                                     std::move(public_key_result).ValueOrDie()));
 }
 
-Status EcdsaP256Sha256SigningKey::SerializeToDer(
-    CleansingVector<uint8_t> *serialized_key) const {
+StatusOr<CleansingVector<uint8_t>> EcdsaP256Sha256SigningKey::SerializeToDer()
+    const {
   CBB buffer;
   if (!CBB_init(&buffer, /*initial_capacity=*/0) ||
       !EC_KEY_marshal_private_key(&buffer, private_key_.get(),
@@ -381,12 +381,12 @@ Status EcdsaP256Sha256SigningKey::SerializeToDer(
   size_t key_data_size = 0;
   CBB_finish(&buffer, &key_data, &key_data_size);
 
-  serialized_key->assign(key_data, key_data + key_data_size);
+  CleansingVector<uint8_t> serialized_key(key_data, key_data + key_data_size);
 
   OPENSSL_cleanse(key_data, key_data_size);
   OPENSSL_free(key_data);
 
-  return Status::OkStatus();
+  return serialized_key;
 }
 
 SignatureScheme EcdsaP256Sha256SigningKey::GetSignatureScheme() const {

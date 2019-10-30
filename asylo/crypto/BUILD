@@ -598,6 +598,7 @@ cc_library(
         ":algorithms_cc_proto",
         ":keys_cc_proto",
         ":signing_key",
+        "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",

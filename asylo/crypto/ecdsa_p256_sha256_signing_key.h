@@ -103,8 +103,7 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
 
   SignatureScheme GetSignatureScheme() const override;
 
-  Status SerializeToDer(
-      CleansingVector<uint8_t> *serialized_key) const override;
+  StatusOr<CleansingVector<uint8_t>> SerializeToDer() const override;
 
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override;
 

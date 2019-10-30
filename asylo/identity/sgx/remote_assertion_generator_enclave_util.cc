@@ -189,7 +189,7 @@ ExtractAttestationKeyFromAsymmetricSigningKeyProto(
 StatusOr<AsymmetricSigningKeyProto> GetAsymmetricSigningKeyProtoFromSigningKey(
     const SigningKey &signing_key) {
   CleansingVector<uint8_t> signing_key_der;
-  ASYLO_RETURN_IF_ERROR(signing_key.SerializeToDer(&signing_key_der));
+  ASYLO_ASSIGN_OR_RETURN(signing_key_der, signing_key.SerializeToDer());
   std::string serialized_key_der = {signing_key_der.begin(),
                                     signing_key_der.end()};
 

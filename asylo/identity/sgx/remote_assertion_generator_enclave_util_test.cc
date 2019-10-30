@@ -116,10 +116,11 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
                                  asymmetric_signing_key_proto));
 
   CleansingVector<uint8_t> serialized_key_expected;
-  ASYLO_ASSERT_OK(attestation_key->SerializeToDer(&serialized_key_expected));
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key_expected,
+                             attestation_key->SerializeToDer());
   CleansingVector<uint8_t> serialized_key_actual;
-  ASYLO_ASSERT_OK(
-      attestation_key_extracted->SerializeToDer(&serialized_key_actual));
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key_actual,
+                             attestation_key_extracted->SerializeToDer());
   EXPECT_THAT(serialized_key_actual, Eq(serialized_key_expected));
 }
 
@@ -268,9 +269,10 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
               EqualsProto(update_certs_input.certificate_chains(0)));
   CleansingVector<uint8_t> serialized_key_expected;
   CleansingVector<uint8_t> serialized_key_actual;
-  ASYLO_ASSERT_OK(attestation_key->SerializeToDer(&serialized_key_expected));
-  ASYLO_ASSERT_OK(
-      unsealed_attestation_key->SerializeToDer(&serialized_key_actual));
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key_expected,
+                             attestation_key->SerializeToDer());
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key_actual,
+                             unsealed_attestation_key->SerializeToDer());
   EXPECT_THAT(serialized_key_actual, Eq(serialized_key_expected));
 }
 
@@ -293,7 +295,8 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
               Eq(attestation_key->GetSignatureScheme()));
 
   CleansingVector<uint8_t> serialized_attestation_key;
-  ASYLO_ASSERT_OK(attestation_key->SerializeToDer(&serialized_attestation_key));
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_attestation_key,
+                             attestation_key->SerializeToDer());
   std::string key_expected = {serialized_attestation_key.begin(),
                               serialized_attestation_key.end()};
   EXPECT_THAT(asymmetric_signing_key_proto.key(), Eq(key_expected));

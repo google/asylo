@@ -22,6 +22,7 @@
 #include <iterator>
 
 #include "absl/memory/memory.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -95,15 +96,10 @@ FakeSigningKey::FakeSigningKey(SignatureScheme scheme,
 
 SignatureScheme FakeSigningKey::GetSignatureScheme() const { return scheme_; }
 
-Status FakeSigningKey::SerializeToDer(
-    CleansingVector<uint8_t> *serialized_key) const {
+StatusOr<CleansingVector<uint8_t>> FakeSigningKey::SerializeToDer() const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
-  const std::string &key_der = serialize_to_der_result_.ValueOrDie();
-
-  serialized_key->clear();
-  std::copy(key_der.begin(), key_der.end(),
-            std::back_inserter(*serialized_key));
-  return Status::OkStatus();
+  return CopyToByteContainer<CleansingVector<uint8_t>>(
+      serialize_to_der_result_.ValueOrDie());
 }
 
 StatusOr<std::unique_ptr<VerifyingKey>> FakeSigningKey::GetVerifyingKey()

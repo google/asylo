@@ -196,8 +196,7 @@ TEST(FakeSigningKeyTest, SigningKeySerializeToDer) {
   FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
 
   CleansingVector<uint8_t> serialized_key;
-  ASYLO_ASSERT_OK(signing_key.SerializeToDer(&serialized_key));
-
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key, signing_key.SerializeToDer());
   EXPECT_EQ(ByteContainerView(serialized_key), ByteContainerView(kTestKeyDer));
 }
 
@@ -208,8 +207,7 @@ TEST(FakeSigningKeyTest, SigningKeySerializeToDerFailure) {
       UNKNOWN_SIGNATURE_SCHEME,
       Status(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
 
-  CleansingVector<uint8_t> serialized_key;
-  EXPECT_THAT(signing_key.SerializeToDer(&serialized_key),
+  EXPECT_THAT(signing_key.SerializeToDer(),
               StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
 }
 

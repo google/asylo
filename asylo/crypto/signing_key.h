@@ -67,10 +67,9 @@ class SigningKey {
   // Returns the signature scheme used by this SigningKey.
   virtual SignatureScheme GetSignatureScheme() const = 0;
 
-  // Serializes this SigningKey into a DER-encoded key structure and writes it
-  // to |serialized_key|.
-  virtual Status SerializeToDer(
-      CleansingVector<uint8_t> *serialized_key) const = 0;
+  // Serializes this SigningKey into a DER-encoded key structure and returns the
+  // serialized key.
+  virtual StatusOr<CleansingVector<uint8_t>> SerializeToDer() const = 0;
 
   // Returns a VerifyingKey that can verify signatures produced by this
   // SigningKey.

@@ -84,10 +84,9 @@ class FakeSigningKey : public SigningKey {
   // Returns the signature scheme set at construction.
   SignatureScheme GetSignatureScheme() const override;
 
-  // Sets |serialized_key| to the DER-encoded key value set at construction or
-  // if relevant returns the non-OK Status passed at construction.
-  Status SerializeToDer(
-      CleansingVector<uint8_t> *serialized_key) const override;
+  // Returns the DER-encoded key value or the non-OK Status value passed at
+  // construction.
+  StatusOr<CleansingVector<uint8_t>> SerializeToDer() const override;
 
   // Creates and returns the verifying key counterpart to this object.
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override;
