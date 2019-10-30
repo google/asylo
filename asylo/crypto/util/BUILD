@@ -95,6 +95,35 @@ cc_test(
 )
 
 cc_library(
+    name = "byte_container_reader",
+    hdrs = ["byte_container_reader.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":byte_container_view",
+        "//asylo/util:status",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings:str_format",
+    ],
+)
+
+cc_test(
+    name = "byte_container_reader_test",
+    srcs = ["byte_container_reader_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":byte_container_reader",
+        ":byte_container_view",
+        ":trivial_object_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "bytes",
     hdrs = ["bytes.h"],
     copts = ASYLO_DEFAULT_COPTS,
