@@ -174,9 +174,11 @@ cc_library(
     linkstatic = True,
     deps = [
         ":communicator",
+        "//asylo/platform/host_call:exit_handler_constants",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/platform/system_call/type_conversions:types_definitions",
         "//asylo/util:logging",
         "//asylo/util:status",
         "//asylo/util:thread",
