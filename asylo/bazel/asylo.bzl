@@ -45,6 +45,7 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave")
 # any enclave backend, so their tags include ASYLO_ALL_BACKENDS.
 # The trusted_sgx target is SGX-only, so its only backend tag is asylo-sgx.
 ASYLO_ALL_BACKENDS = [
+    "asylo-dlopen",
     "asylo-sgx",
     "asylo-sim",
 ]
@@ -77,6 +78,7 @@ def asylo_tags(backend_tag = None):
                    one of
                    * "asylo-sgx"
                    * "asylo-sim"
+                   * "asylo-dlopen"
                    * None
     """
     result = []
@@ -786,6 +788,8 @@ def sim_enclave_test(
     """
 
     tags = kwargs.pop("tags", [])
+    if "asylo-dlopen" not in tags:
+        tags += ["asylo-dlopen"]
     if "asylo-sim" not in tags:
         tags += ["asylo-sim"]
 

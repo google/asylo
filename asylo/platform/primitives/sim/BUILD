@@ -45,6 +45,7 @@ cc_library(
     ),
     copts = ASYLO_DEFAULT_COPTS,
     tags = [
+        "asylo-dlopen",
         "asylo-sim",
         "manual",
     ],

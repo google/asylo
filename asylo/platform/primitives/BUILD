@@ -160,3 +160,12 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
+
+# Configuration setting for the primitives/dlopen backend.
+config_setting(
+    name = "asylo_dlopen",
+    values = {
+        "define": "ASYLO_DLOPEN=1",
+    },
+    visibility = ["//visibility:public"],
+)

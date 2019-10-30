@@ -22,7 +22,7 @@ PKG="//asylo"
 # platform/primitives.
 ASYLO_TESTS="tests(${PKG}/...)"
 ASYLO_SGX_TESTS="attr(tags, \"asylo-sgx\", tests(${PKG}/...))"
-ASYLO_SIM_TESTS="attr(tags, \"asylo-sim\", tests(${PKG}/...))"
+ASYLO_DLOPEN_TESTS="attr(tags, \"asylo-dlopen\", tests(${PKG}/...))"
 ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(${PKG}/...))"
 ASYLO_PRIMITIVES="tests(${PKG}/platform/primitives/...)"
 NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
@@ -32,11 +32,11 @@ HOST_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
 SGX_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SGX_TESTS} except
   ${NOREGRESSION_TESTS}")
 )
-SIM_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SIM_TESTS} except
+DLOPEN_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_DLOPEN_TESTS} except
   ${NOREGRESSION_TESTS}")
 )
 UNTAGGED_TESTS=($(${BAZEL} query "${ENCLAVE_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ASYLO_SIM_TESTS} union ${ASYLO_SGX_TESTS})"))
+  (${NOREGRESSION_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_TESTS})"))
 
 STAT=0
 if [[ "${#UNTAGGED_TESTS[@]}" -ne 0 ]]; then
@@ -57,7 +57,7 @@ ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
 STAT=$((${STAT} || $?))
 
 ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-  --config=asylo --define=ASYLO_SIM=1 "${SIM_REGRESSION_TESTS[@]}"
+  --config=asylo --define=ASYLO_DLOPEN=1 "${DLOPEN_REGRESSION_TESTS[@]}"
 STAT=$((${STAT} || $?))
 
 RED='\e[1;31m'
