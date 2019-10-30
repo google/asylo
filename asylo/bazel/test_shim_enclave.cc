@@ -23,7 +23,6 @@
 #include "asylo/bazel/test_shim_enclave.pb.h"
 #include "asylo/test/util/enclave_test_application.h"
 #include "asylo/test/util/test_flags.h"
-#include <benchmark/benchmark.h>
 
 namespace asylo {
 
@@ -43,10 +42,6 @@ class TestShimEnclave : public EnclaveTestCase {
 
     if (shim_config.has_test_tmpdir()) {
       absl::SetFlag(&FLAGS_test_tmpdir, shim_config.test_tmpdir());
-    }
-
-    if (shim_config.has_benchmarks()) {
-      benchmark_flag = shim_config.benchmarks();
     }
 
     if (shim_config.has_test_in_initialize() &&
@@ -70,17 +65,13 @@ class TestShimEnclave : public EnclaveTestCase {
  private:
   void EnclaveRunAllTests() {
     int argc = 1;
-    char argv0[] = "benchmarks";
-    char *argv[] = {argv0, const_cast<char*>(benchmark_flag.c_str())};
+    char argv0[] = "placeholder";
+    char *argv[] = {argv0, nullptr};
     ::testing::InitGoogleTest(&argc, argv);
-    if (!benchmark_flag.empty()) {
-      benchmark::RunSpecifiedBenchmarks();
-    }
     CHECK_EQ(RUN_ALL_TESTS(), 0);
   }
 
   bool test_in_initialize_;
-  std::string benchmark_flag;
 };
 
 TrustedApplication *BuildTrustedApplication() { return new TestShimEnclave; }
