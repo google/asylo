@@ -358,6 +358,13 @@ StatusOr<Asn1Value> Asn1Value::CreateSequence(
   return result;
 }
 
+StatusOr<Asn1Value> Asn1Value::CreateSequenceFromStatusOrs(
+    absl::Span<const StatusOr<Asn1Value>> results) {
+  Asn1Value result;
+  ASYLO_RETURN_IF_ERROR(result.SetSequenceFromStatusOrs(results));
+  return result;
+}
+
 StatusOr<Asn1Value> Asn1Value::CreateFromDer(ByteContainerView asn1_der) {
   const uint8_t *der_data = asn1_der.data();
   bssl::UniquePtr<ASN1_TYPE> asn1(
@@ -484,6 +491,15 @@ Status Asn1Value::SetSequence(absl::Span<const Asn1Value> elements) {
     }
   }
   return SetBsslSequence(*sequence);
+}
+
+Status Asn1Value::SetSequenceFromStatusOrs(
+    absl::Span<const StatusOr<Asn1Value>> results) {
+  std::vector<Asn1Value> elements(results.size());
+  for (int i = 0; i < results.size(); ++i) {
+    ASYLO_ASSIGN_OR_RETURN(elements[i], results[i]);
+  }
+  return SetSequence(elements);
 }
 
 StatusOr<std::vector<uint8_t>> Asn1Value::SerializeToDer() const {

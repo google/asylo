@@ -44,17 +44,6 @@ using ::testing::IsNull;
 using ::testing::Not;
 using ::testing::SizeIs;
 
-// Returns an Asn1Value representing a sequence composed of the values in
-// |values| if all the values are OK. Otherwise, returns an error.
-StatusOr<Asn1Value> CreateAsn1Sequence(
-    absl::Span<const StatusOr<Asn1Value>> values) {
-  std::vector<Asn1Value> elements(values.size());
-  for (int i = 0; i < values.size(); ++i) {
-    ASYLO_ASSIGN_OR_RETURN(elements[i], values[i]);
-  }
-  return Asn1Value::CreateSequence(elements);
-}
-
 // The schema returned by FailSchema().
 template <typename ValueTypeT>
 class FailSchemaImpl : public Asn1Schema<ValueTypeT> {
@@ -142,9 +131,9 @@ TEST(Asn1SchemaTest, Asn1SequenceReadValidValues) {
   ASYLO_ASSERT_OK_AND_ASSIGN(some_oid, ObjectId::CreateFromNumericId(NID_md5));
 
   Asn1Value asn1;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateObjectId(some_oid),
-                                Asn1Value::CreateBoolean(true)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateObjectId(some_oid),
+                                        Asn1Value::CreateBoolean(true)}));
   std::tuple<ObjectId, Asn1Value> value;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       value, Asn1Sequence(Asn1ObjectId(), Asn1Any())->Read(asn1));
@@ -161,26 +150,26 @@ TEST(Asn1SchemaTest, Asn1SequenceReadInvalidValues) {
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateObjectId(some_oid)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateObjectId(some_oid)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateIntegerFromInt(55),
-                                Asn1Value::CreateBoolean(false)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateIntegerFromInt(55),
+                                        Asn1Value::CreateBoolean(false)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateObjectId(some_oid),
-                                Asn1Value::CreateIntegerFromInt(55)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateObjectId(some_oid),
+                                        Asn1Value::CreateIntegerFromInt(55)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateIntegerFromInt(55),
-                                Asn1Value::CreateObjectId(some_oid)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateIntegerFromInt(55),
+                                        Asn1Value::CreateObjectId(some_oid)}));
   EXPECT_THAT(Asn1Sequence(Asn1ObjectId(), Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
@@ -234,24 +223,27 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadValidValues) {
   Asn1Value asn1;
   for (int i = 0; i <= kMaxTestSequenceElements; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                  i, Asn1Value::CreateObjectId(some_oid))));
+        asn1,
+        Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
+            i, Asn1Value::CreateObjectId(some_oid))));
     EXPECT_THAT(
         Asn1SequenceOf(Asn1ObjectId())->Read(asn1),
         IsOkAndHolds(ElementsAreArray(std::vector<ObjectId>(i, some_oid))));
   }
   for (int i = 3; i <= kMaxTestSequenceElements; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                  i, Asn1Value::CreateObjectId(some_oid))));
+        asn1,
+        Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
+            i, Asn1Value::CreateObjectId(some_oid))));
     EXPECT_THAT(
         Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3)->Read(asn1),
         IsOkAndHolds(ElementsAreArray(std::vector<ObjectId>(i, some_oid))));
   }
   for (int i = 0; i <= 3; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                  i, Asn1Value::CreateObjectId(some_oid))));
+        asn1,
+        Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
+            i, Asn1Value::CreateObjectId(some_oid))));
     EXPECT_THAT(
         Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/0,
                        /*max_size=*/3)
@@ -259,8 +251,9 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadValidValues) {
         IsOkAndHolds(ElementsAreArray(std::vector<ObjectId>(i, some_oid))));
   }
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                3, Asn1Value::CreateObjectId(some_oid))));
+      asn1,
+      Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
+          3, Asn1Value::CreateObjectId(some_oid))));
   EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3,
                              /*max_size=*/3)
                   ->Read(asn1),
@@ -274,29 +267,31 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadInvalidValues) {
   ASYLO_ASSERT_OK_AND_ASSIGN(some_oid, ObjectId::CreateFromNumericId(NID_md5));
 
   Asn1Value asn1;
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateIntegerFromInt(12)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateIntegerFromInt(12)}));
   EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
-  ASYLO_ASSERT_OK_AND_ASSIGN(
-      asn1, CreateAsn1Sequence({Asn1Value::CreateObjectId(some_oid),
-                                Asn1Value::CreateIntegerFromInt(-1),
-                                Asn1Value::CreateObjectId(some_oid)}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateObjectId(some_oid),
+                                        Asn1Value::CreateIntegerFromInt(-1),
+                                        Asn1Value::CreateObjectId(some_oid)}));
   EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId())->Read(asn1),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 
   for (int i = 0; i < 3; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                  i, Asn1Value::CreateObjectId(some_oid))));
+        asn1,
+        Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
+            i, Asn1Value::CreateObjectId(some_oid))));
     EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3)->Read(asn1),
                 StatusIs(error::GoogleError::INVALID_ARGUMENT));
   }
   for (int i = 4; i <= kMaxTestSequenceElements; ++i) {
     ASYLO_ASSERT_OK_AND_ASSIGN(
-        asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                  i, Asn1Value::CreateObjectId(some_oid))));
+        asn1,
+        Asn1Value::CreateSequenceFromStatusOrs(std::vector<StatusOr<Asn1Value>>(
+            i, Asn1Value::CreateObjectId(some_oid))));
     EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/0,
                                /*max_size=*/3)
                     ->Read(asn1),
@@ -305,8 +300,9 @@ TEST(Asn1SchemaTest, Asn1SequenceOfReadInvalidValues) {
   for (int i = 0; i <= kMaxTestSequenceElements; ++i) {
     if (i != 3) {
       ASYLO_ASSERT_OK_AND_ASSIGN(
-          asn1, CreateAsn1Sequence(std::vector<StatusOr<Asn1Value>>(
-                    i, Asn1Value::CreateObjectId(some_oid))));
+          asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                    std::vector<StatusOr<Asn1Value>>(
+                        i, Asn1Value::CreateObjectId(some_oid))));
       EXPECT_THAT(Asn1SequenceOf(Asn1ObjectId(), /*min_size=*/3,
                                  /*max_size=*/3)
                       ->Read(asn1),

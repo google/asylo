@@ -162,6 +162,11 @@ class Asn1Value {
     return result;
   }
 
+  // Creates an Asn1Value representing a sequence composed of the values in
+  // |values| if all the values are OK. Otherwise, returns an error.
+  static StatusOr<Asn1Value> CreateSequenceFromStatusOrs(
+      absl::Span<const StatusOr<Asn1Value>> results);
+
   // Creates an Asn1Value from the DER-encoded |asn1_der|. CreateFromDer() does
   // not fail if |asn1_der| represents an ASN.1 value containing unsupported
   // types.
@@ -220,6 +225,11 @@ class Asn1Value {
     ASYLO_ASSIGN_OR_RETURN(bignum, BignumFromInteger(value));
     return SetEnumerated(*bignum);
   }
+
+  // Sets the Asn1Value to a sequence composed of the values in |values| if all
+  // the values are OK. Otherwise, returns an error.
+  Status SetSequenceFromStatusOrs(
+      absl::Span<const StatusOr<Asn1Value>> results);
 
   // Serializes this Asn1Value to a DER-encoded string. This function works even
   // on Asn1Values of unsupported types.

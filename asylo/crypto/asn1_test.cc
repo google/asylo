@@ -53,9 +53,11 @@ namespace {
 
 using ::testing::ContainerEq;
 using ::testing::Eq;
+using ::testing::IsEmpty;
 using ::testing::Ne;
 using ::testing::Not;
 using ::testing::Optional;
+using ::testing::SizeIs;
 using ::testing::StrEq;
 using ::testing::Test;
 using ::testing::Types;
@@ -287,6 +289,83 @@ TEST(Asn1Test, AbslHashValueForObjectIdBehavesCorrectly) {
   }
 
   EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(oids));
+}
+
+TEST(Asn1Test, CreateSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
+  Asn1Value asn1;
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs({}));
+  EXPECT_THAT(asn1.GetSequence(), IsOkAndHolds(IsEmpty()));
+
+  ASYLO_ASSERT_OK_AND_ASSIGN(asn1, Asn1Value::CreateSequenceFromStatusOrs(
+                                       {Asn1Value::CreateBoolean(true)}));
+  std::vector<Asn1Value> elements;
+  ASYLO_ASSERT_OK_AND_ASSIGN(elements, asn1.GetSequence());
+  ASSERT_THAT(elements, SizeIs(1));
+  EXPECT_THAT(elements[0].GetBoolean(), IsOkAndHolds(true));
+
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      asn1,
+      Asn1Value::CreateSequenceFromStatusOrs(
+          {Asn1Value::CreateBoolean(false), Asn1Value::CreateIntegerFromInt(17),
+           Asn1Value::CreateOctetString("\x04\x02")}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(elements, asn1.GetSequence());
+  ASSERT_THAT(elements, SizeIs(3));
+  EXPECT_THAT(elements[0].GetBoolean(), IsOkAndHolds(false));
+  EXPECT_THAT(elements[1].GetIntegerAsInt<int>(), IsOkAndHolds(17));
+  EXPECT_THAT(elements[2].GetOctetString(),
+              IsOkAndHolds(std::vector<uint8_t>({4, 2})));
+}
+
+TEST(Asn1Test, CreateSequenceFromStatusOrsFailsIfAnyInputsAreNotOk) {
+  EXPECT_THAT(Asn1Value::CreateSequenceFromStatusOrs(
+                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
+              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+  EXPECT_THAT(Asn1Value::CreateSequenceFromStatusOrs(
+                  {Asn1Value::CreateBoolean(false),
+                   Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
+              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+  EXPECT_THAT(Asn1Value::CreateSequenceFromStatusOrs(
+                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar"),
+                   Asn1Value::CreateBoolean(false)}),
+              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+}
+
+TEST(Asn1Test, SetSequenceFromStatusOrsCreatesCorrectValueIfAllInputsAreOk) {
+  Asn1Value asn1;
+  ASYLO_ASSERT_OK(asn1.SetSequenceFromStatusOrs({}));
+  EXPECT_THAT(asn1.GetSequence(), IsOkAndHolds(IsEmpty()));
+
+  ASYLO_ASSERT_OK(
+      asn1.SetSequenceFromStatusOrs({Asn1Value::CreateBoolean(true)}));
+  std::vector<Asn1Value> elements;
+  ASYLO_ASSERT_OK_AND_ASSIGN(elements, asn1.GetSequence());
+  ASSERT_THAT(elements, SizeIs(1));
+  EXPECT_THAT(elements[0].GetBoolean(), IsOkAndHolds(true));
+
+  ASYLO_ASSERT_OK(asn1.SetSequenceFromStatusOrs(
+      {Asn1Value::CreateBoolean(false), Asn1Value::CreateIntegerFromInt(17),
+       Asn1Value::CreateOctetString("\x04\x02")}));
+  ASYLO_ASSERT_OK_AND_ASSIGN(elements, asn1.GetSequence());
+  ASSERT_THAT(elements, SizeIs(3));
+  EXPECT_THAT(elements[0].GetBoolean(), IsOkAndHolds(false));
+  EXPECT_THAT(elements[1].GetIntegerAsInt<int>(), IsOkAndHolds(17));
+  EXPECT_THAT(elements[2].GetOctetString(),
+              IsOkAndHolds(std::vector<uint8_t>({4, 2})));
+}
+
+TEST(Asn1Test, SetSequenceFromStatusOrsFailsIfAnyInputsAreNotOk) {
+  Asn1Value asn1;
+  EXPECT_THAT(asn1.SetSequenceFromStatusOrs(
+                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
+              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+  EXPECT_THAT(asn1.SetSequenceFromStatusOrs(
+                  {Asn1Value::CreateBoolean(false),
+                   Status(error::GoogleError::OUT_OF_RANGE, "foobar")}),
+              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
+  EXPECT_THAT(asn1.SetSequenceFromStatusOrs(
+                  {Status(error::GoogleError::OUT_OF_RANGE, "foobar"),
+                   Asn1Value::CreateBoolean(false)}),
+              StatusIs(error::GoogleError::OUT_OF_RANGE, "foobar"));
 }
 
 // A template fixture for testing with each of the ASN.1 value types that
