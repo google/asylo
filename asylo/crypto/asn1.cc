@@ -19,18 +19,27 @@
 #include "asylo/crypto/asn1.h"
 
 #include <openssl/asn1.h>
+#include <openssl/base.h>
 #include <openssl/bn.h>
 #include <openssl/obj.h>
 
+#include <cstdint>
 #include <memory>
+#include <string>
 #include <utility>
 #include <vector>
 
+#include "absl/base/attributes.h"
 #include "absl/base/macros.h"
 #include "absl/strings/str_format.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "asylo/crypto/util/bssl_util.h"
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
+#include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace {
@@ -45,6 +54,8 @@ absl::optional<Asn1Type> FromOpensslType(int openssl_type) {
       return Asn1Type::kInteger;
     case V_ASN1_ENUMERATED:
       return Asn1Type::kEnumerated;
+    case V_ASN1_BIT_STRING:
+      return Asn1Type::kBitString;
     case V_ASN1_OCTET_STRING:
       return Asn1Type::kOctetString;
     case V_ASN1_OBJECT:
@@ -65,6 +76,8 @@ int ToOpensslType(Asn1Type type) {
       return V_ASN1_INTEGER;
     case Asn1Type::kEnumerated:
       return V_ASN1_ENUMERATED;
+    case Asn1Type::kBitString:
+      return V_ASN1_BIT_STRING;
     case Asn1Type::kOctetString:
       return V_ASN1_OCTET_STRING;
     case Asn1Type::kObjectId:
@@ -91,6 +104,8 @@ std::string OpensslTypeName(int openssl_type) {
       ABSL_FALLTHROUGH_INTENDED;
     case V_ASN1_NEG_INTEGER:
       return "INTEGER";
+    case V_ASN1_BIT_STRING:
+      return "BIT STRING";
     case V_ASN1_OCTET_STRING:
       return "OCTET STRING";
     case V_ASN1_NULL:
@@ -339,6 +354,12 @@ StatusOr<Asn1Value> Asn1Value::CreateEnumerated(const BIGNUM &value) {
   return result;
 }
 
+StatusOr<Asn1Value> Asn1Value::CreateBitString(const std::vector<bool> &value) {
+  Asn1Value result;
+  ASYLO_RETURN_IF_ERROR(result.SetBitString(value));
+  return result;
+}
+
 StatusOr<Asn1Value> Asn1Value::CreateOctetString(ByteContainerView value) {
   Asn1Value result;
   ASYLO_RETURN_IF_ERROR(result.SetOctetString(value));
@@ -405,6 +426,25 @@ StatusOr<bssl::UniquePtr<BIGNUM>> Asn1Value::GetEnumerated() const {
   return std::move(result);
 }
 
+StatusOr<std::vector<bool>> Asn1Value::GetBitString() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kBitString));
+  // Copy the value because ASN1_BIT_STRING_get_bit() takes a non-const
+  // ASN1_BIT_STRING pointer.
+  bssl::UniquePtr<ASN1_BIT_STRING> bssl_bit_string(
+      CHECK_NOTNULL(ASN1_STRING_dup(value_->value.bit_string)));
+  int num_bits_upper_bound = ASN1_STRING_length(bssl_bit_string.get()) * 8;
+  std::vector<bool> bits(num_bits_upper_bound, false);
+  int highest_bit = -1;
+  for (int i = 0; i < num_bits_upper_bound; ++i) {
+    if (ASN1_BIT_STRING_get_bit(bssl_bit_string.get(), i)) {
+      highest_bit = i;
+      bits[i] = true;
+    }
+  }
+  bits.resize(highest_bit + 1);
+  return bits;
+}
+
 StatusOr<std::vector<uint8_t>> Asn1Value::GetOctetString() const {
   ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kOctetString));
   const ASN1_OCTET_STRING *string = value_->value.octet_string;
@@ -459,6 +499,19 @@ Status Asn1Value::SetEnumerated(const BIGNUM &value) {
 
   ASN1_TYPE_set(value_.get(), V_ASN1_ENUMERATED,
                 value_asn1_enumerated.release());
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBitString(const std::vector<bool> &value) {
+  bssl::UniquePtr<ASN1_BIT_STRING> bssl_bit_string(
+      CHECK_NOTNULL(ASN1_BIT_STRING_new()));
+  for (int i = 0; i < value.size(); ++i) {
+    if (ASN1_BIT_STRING_set_bit(bssl_bit_string.get(), i, value[i]) != 1) {
+      return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+    }
+  }
+
+  ASN1_TYPE_set(value_.get(), V_ASN1_BIT_STRING, bssl_bit_string.release());
   return Status::OkStatus();
 }
 
@@ -537,6 +590,13 @@ StatusOr<Asn1Value> Asn1Value::CreateEnumeratedFromBssl(
   return asn1;
 }
 
+StatusOr<Asn1Value> Asn1Value::CreateBitStringFromBssl(
+    const ASN1_BIT_STRING &bssl_value) {
+  Asn1Value asn1;
+  ASYLO_RETURN_IF_ERROR(asn1.SetBsslBitString(bssl_value));
+  return asn1;
+}
+
 StatusOr<Asn1Value> Asn1Value::CreateOctetStringFromBssl(
     const ASN1_OCTET_STRING &bssl_value) {
   Asn1Value asn1;
@@ -574,6 +634,12 @@ StatusOr<bssl::UniquePtr<ASN1_ENUMERATED>> Asn1Value::GetBsslEnumerated()
   ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kEnumerated));
   return bssl::UniquePtr<ASN1_ENUMERATED>(
       CHECK_NOTNULL(ASN1_STRING_dup(value_->value.enumerated)));
+}
+
+StatusOr<bssl::UniquePtr<ASN1_BIT_STRING>> Asn1Value::GetBsslBitString() const {
+  ASYLO_RETURN_IF_ERROR(CheckIsType(Asn1Type::kBitString));
+  return bssl::UniquePtr<ASN1_BIT_STRING>(
+      CHECK_NOTNULL(ASN1_STRING_dup(value_->value.bit_string)));
 }
 
 StatusOr<bssl::UniquePtr<ASN1_OCTET_STRING>> Asn1Value::GetBsslOctetString()
@@ -621,6 +687,13 @@ Status Asn1Value::SetBsslInteger(const ASN1_INTEGER &bssl_value) {
 
 Status Asn1Value::SetBsslEnumerated(const ASN1_ENUMERATED &bssl_value) {
   if (ASN1_TYPE_set1(value_.get(), V_ASN1_ENUMERATED, &bssl_value) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return Status::OkStatus();
+}
+
+Status Asn1Value::SetBsslBitString(const ASN1_BIT_STRING &bssl_value) {
+  if (ASN1_TYPE_set1(value_.get(), V_ASN1_BIT_STRING, &bssl_value) != 1) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
   }
   return Status::OkStatus();
@@ -700,9 +773,8 @@ bool operator==(const Asn1Value &lhs, const Asn1Value &rhs) {
     case Asn1Type::kSequence:
       return lhs.GetSequence().ValueOrDie() == rhs.GetSequence().ValueOrDie();
     case Asn1Type::kBoolean:
-      ABSL_FALLTHROUGH_INTENDED;
+    case Asn1Type::kBitString:
     case Asn1Type::kObjectId:
-      ABSL_FALLTHROUGH_INTENDED;
     case Asn1Type::kOctetString:
       return ASN1_TYPE_cmp(lhs.value_.get(), rhs.value_.get()) == 0;
   }

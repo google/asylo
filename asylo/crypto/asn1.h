@@ -50,6 +50,10 @@ enum class Asn1Type {
   // ENUMERATED values are represented by OpenSSL BIGNUMs.
   kEnumerated,
 
+  // BIT STRING values are represented by std::vector<bool>s. Two BIT STRINGs
+  // that differ only in the number of trailing zeros are considered equal.
+  kBitString,
+
   // OCTET STRING values are represented by arrays of uint8_ts.
   kOctetString,
 
@@ -142,6 +146,7 @@ class Asn1Value {
   static StatusOr<Asn1Value> CreateBoolean(bool value);
   static StatusOr<Asn1Value> CreateInteger(const BIGNUM &value);
   static StatusOr<Asn1Value> CreateEnumerated(const BIGNUM &value);
+  static StatusOr<Asn1Value> CreateBitString(const std::vector<bool> &value);
   static StatusOr<Asn1Value> CreateOctetString(ByteContainerView value);
   static StatusOr<Asn1Value> CreateObjectId(const ObjectId &value);
   static StatusOr<Asn1Value> CreateSequence(
@@ -180,9 +185,15 @@ class Asn1Value {
   // if the Asn1Value does not have the appropriate type.
   //
   // All returned data is copied.
+  //
+  // The implementation of GetBitString() ensures that either the returned
+  // std::vector<bool> is empty or its last element is true, which allows users
+  // to use operator==() to correctly compare two return values from
+  // GetBitString().
   StatusOr<bool> GetBoolean() const;
   StatusOr<bssl::UniquePtr<BIGNUM>> GetInteger() const;
   StatusOr<bssl::UniquePtr<BIGNUM>> GetEnumerated() const;
+  StatusOr<std::vector<bool>> GetBitString() const;
   StatusOr<std::vector<uint8_t>> GetOctetString() const;
   StatusOr<ObjectId> GetObjectId() const;
   StatusOr<std::vector<Asn1Value>> GetSequence() const;
@@ -207,6 +218,7 @@ class Asn1Value {
   Status SetBoolean(bool value);
   Status SetInteger(const BIGNUM &value);
   Status SetEnumerated(const BIGNUM &value);
+  Status SetBitString(const std::vector<bool> &value);
   Status SetOctetString(ByteContainerView value);
   Status SetObjectId(const ObjectId &value);
   Status SetSequence(absl::Span<const Asn1Value> elements);
@@ -242,6 +254,8 @@ class Asn1Value {
       const ASN1_INTEGER &bssl_value);
   static StatusOr<Asn1Value> CreateEnumeratedFromBssl(
       const ASN1_ENUMERATED &bssl_value);
+  static StatusOr<Asn1Value> CreateBitStringFromBssl(
+      const ASN1_BIT_STRING &bssl_value);
   static StatusOr<Asn1Value> CreateOctetStringFromBssl(
       const ASN1_OCTET_STRING &bssl_value);
   static StatusOr<Asn1Value> CreateObjectIdFromBssl(
@@ -256,6 +270,7 @@ class Asn1Value {
   StatusOr<ASN1_BOOLEAN> GetBsslBoolean() const;
   StatusOr<bssl::UniquePtr<ASN1_INTEGER>> GetBsslInteger() const;
   StatusOr<bssl::UniquePtr<ASN1_ENUMERATED>> GetBsslEnumerated() const;
+  StatusOr<bssl::UniquePtr<ASN1_BIT_STRING>> GetBsslBitString() const;
   StatusOr<bssl::UniquePtr<ASN1_OCTET_STRING>> GetBsslOctetString() const;
   StatusOr<bssl::UniquePtr<ASN1_OBJECT>> GetBsslObjectId() const;
   StatusOr<bssl::UniquePtr<ASN1_SEQUENCE_ANY>> GetBsslSequence() const;
@@ -266,6 +281,7 @@ class Asn1Value {
   Status SetBsslBoolean(ASN1_BOOLEAN bssl_value);
   Status SetBsslInteger(const ASN1_INTEGER &bssl_value);
   Status SetBsslEnumerated(const ASN1_ENUMERATED &bssl_value);
+  Status SetBsslBitString(const ASN1_BIT_STRING &bssl_value);
   Status SetBsslOctetString(const ASN1_OCTET_STRING &bssl_value);
   Status SetBsslObjectId(const ASN1_OBJECT &bssl_value);
   Status SetBsslSequence(const ASN1_SEQUENCE_ANY &bssl_value);

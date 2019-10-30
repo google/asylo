@@ -62,8 +62,8 @@ using ::testing::StrEq;
 using ::testing::Test;
 using ::testing::Types;
 
-// A hex string of the DER encoding of a BIT STRING value.
-constexpr char kUnsupportedValueDerHex[] = "0304066e5dc0";
+// A hex string of the DER encoding of a PrintableString value.
+constexpr char kUnsupportedValueDerHex[] = "130f5072696e7461626c65537472696e67";
 
 // Prints a BIGNUM value.
 std::string PrintBignum(const BIGNUM &bignum) {
@@ -389,8 +389,17 @@ TEST(Asn1Test, SetSequenceFromStatusOrsFailsIfAnyInputsAreNotOk) {
 //         ...
 //       }
 //
-//       // Test data for kSomeType.
+//       // Test data for kSomeType. None of the values should be equal to each
+//       // other when converted to Asn1Values via Create().
 //       static std::vector<ValueType> TestData() {
+//         ...
+//       }
+//
+//       // Test data where every element in each inner std::vector<...> should
+//       // be equal when converted to Asn1Values via Create(). However, values
+//       // from different inner vectors should not be equal when converted to
+//       // Asn1Values via Create().
+//       static std::vector<std::vector<ValueType>> EqualTestData() {
 //         ...
 //       }
 //
@@ -441,6 +450,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kBoolean>> : public Test {
   static constexpr Asn1Type Type() { return Asn1Type::kBoolean; }
 
   static std::vector<ValueType> TestData() { return {false, true}; }
+
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
 
   static std::vector<ValueType> BadTestData() { return {}; }
 
@@ -495,6 +506,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kInteger>> : public Test {
         std::make_move_iterator(std::end(test_data)));
   }
 
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
+
   static std::vector<ValueType> BadTestData() { return {}; }
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
@@ -542,6 +555,8 @@ class Asn1Test<Asn1IntegerConversionTag<IntT>> : public Test {
                              std::end(IntegralTypeTestData<IntT>::kValues));
   }
 
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
+
   static std::vector<ValueType> BadTestData() { return {}; }
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
@@ -585,6 +600,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kEnumerated>> : public Test {
   static constexpr Asn1Type Type() { return Asn1Type::kEnumerated; }
 
   static std::vector<ValueType> TestData() { return Base::TestData(); }
+
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
 
   static std::vector<ValueType> BadTestData() { return Base::BadTestData(); }
 
@@ -632,6 +649,8 @@ class Asn1Test<Asn1EnumeratedConversionTag<IntT>> : public Test {
 
   static std::vector<ValueType> TestData() { return Base::TestData(); }
 
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
+
   static std::vector<ValueType> BadTestData() { return Base::BadTestData(); }
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
@@ -663,6 +682,64 @@ class Asn1Test<Asn1EnumeratedConversionTag<IntT>> : public Test {
   }
 };
 
+// Specialization of Asn1Test for Asn1Type::kBitString.
+template <>
+class Asn1Test<Asn1TypeTag<Asn1Type::kBitString>> : public Test {
+ public:
+  using ValueType = std::vector<bool>;
+  using BsslValueType = bssl::UniquePtr<ASN1_BIT_STRING>;
+
+  static constexpr Asn1Type Type() { return Asn1Type::kBitString; }
+
+  static std::vector<ValueType> TestData() {
+    return {{},
+            {true},
+            {false, true, true, false, true, false, false, true},
+            {false, true, true, false, true, false, false, true, true},
+            {false, true, true, false, true, false, false, true, true, false,
+             false, true, false, true, true}};
+  }
+
+  static std::vector<std::vector<ValueType>> EqualTestData() {
+    return {{{}, {false}, {false, false, false}},
+            {{true, false, true}, {true, false, true, false, false}},
+            {{false, true, true, false, true, false, false, true, true, false,
+              false, true, false, true, true, false},
+             {false, true, true, false, true, false, false, true, true, false,
+              false, true, false, true, true, false, false, false, false}}};
+  }
+
+  static std::vector<ValueType> BadTestData() { return {}; }
+
+  static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
+    EXPECT_THAT(lhs, ContainerEq(rhs));
+  }
+
+  static StatusOr<Asn1Value> Create(const ValueType &value) {
+    return Asn1Value::CreateBitString(value);
+  }
+
+  static StatusOr<ValueType> Get(const Asn1Value &asn1) {
+    return asn1.GetBitString();
+  }
+
+  static Status Set(Asn1Value *asn1, const ValueType &value) {
+    return asn1->SetBitString(value);
+  }
+
+  static StatusOr<Asn1Value> CreateFromBssl(const BsslValueType &bssl_value) {
+    return Asn1Value::CreateBitStringFromBssl(*bssl_value);
+  }
+
+  static StatusOr<BsslValueType> GetBssl(const Asn1Value &asn1) {
+    return asn1.GetBsslBitString();
+  }
+
+  static Status SetBssl(Asn1Value *asn1, const BsslValueType &bssl_value) {
+    return asn1->SetBsslBitString(*bssl_value);
+  }
+};
+
 // Specialization of Asn1Test for Asn1Type::kOctetString.
 template <>
 class Asn1Test<Asn1TypeTag<Asn1Type::kOctetString>> : public Test {
@@ -675,6 +752,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kOctetString>> : public Test {
   static std::vector<ValueType> TestData() {
     return {{}, {1}, {1, 1, 2, 3, 5, 8, 13, 21, 34, 55}, {4, 0, 4}};
   }
+
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
 
   static std::vector<ValueType> BadTestData() { return {}; }
 
@@ -725,6 +804,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kObjectId>> : public Test {
             ObjectId::CreateFromOidString("2.5").ValueOrDie(),
             ObjectId::CreateFromOidString("2.5.8").ValueOrDie()};
   }
+
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
 
   static std::vector<ValueType> BadTestData() { return {}; }
 
@@ -780,6 +861,8 @@ class Asn1Test<Asn1TypeTag<Asn1Type::kSequence>> : public Test {
                  .ValueOrDie()}};
   }
 
+  static std::vector<std::vector<ValueType>> EqualTestData() { return {}; }
+
   static std::vector<ValueType> BadTestData() { return {}; }
 
   static void ExpectEqual(const ValueType &lhs, const ValueType &rhs) {
@@ -821,8 +904,9 @@ using Asn1TestingTypes = Types<
     Asn1EnumeratedConversionTag<uint8_t>, Asn1EnumeratedConversionTag<int16_t>,
     Asn1EnumeratedConversionTag<uint16_t>, Asn1EnumeratedConversionTag<int32_t>,
     Asn1EnumeratedConversionTag<uint32_t>, Asn1EnumeratedConversionTag<int64_t>,
-    Asn1EnumeratedConversionTag<uint16_t>, Asn1TypeTag<Asn1Type::kOctetString>,
-    Asn1TypeTag<Asn1Type::kObjectId>, Asn1TypeTag<Asn1Type::kSequence>>;
+    Asn1EnumeratedConversionTag<uint16_t>, Asn1TypeTag<Asn1Type::kBitString>,
+    Asn1TypeTag<Asn1Type::kOctetString>, Asn1TypeTag<Asn1Type::kObjectId>,
+    Asn1TypeTag<Asn1Type::kSequence>>;
 TYPED_TEST_SUITE(Asn1Test, Asn1TestingTypes);
 
 // std::vector<Asn1ValueType<TestParam::value>>::const_reference is used for
@@ -893,8 +977,9 @@ TYPED_TEST(Asn1Test, CopyAssignedAsn1ValuesContainSameValueAsOriginal) {
   }
 }
 
-TYPED_TEST(Asn1Test,
-           Asn1ValuesOfSameTypeCompareEqualIfAndOnlyIfConstructedFromSameData) {
+TYPED_TEST(
+    Asn1Test,
+    Asn1ValuesOfSameTypeAreEqualIfAndOnlyIfConstructedFromEquivalentData) {
   std::vector<typename TestFixture::ValueType> test_data =
       TestFixture::TestData();
   Asn1Value lhs;
@@ -912,6 +997,31 @@ TYPED_TEST(Asn1Test,
       } else {
         EXPECT_THAT(lhs, Not(Eq(rhs)));
         EXPECT_THAT(lhs, Ne(rhs));
+      }
+    }
+  }
+
+  std::vector<std::vector<typename TestFixture::ValueType>> equal_test_data =
+      TestFixture::EqualTestData();
+  for (int lhs_set = 0; lhs_set < equal_test_data.size(); ++lhs_set) {
+    for (int rhs_set = 0; rhs_set < equal_test_data.size(); ++rhs_set) {
+      for (int i = 0; i < equal_test_data[lhs_set].size(); ++i) {
+        ASYLO_ASSERT_OK_AND_ASSIGN(
+            lhs, TestFixture::Create(equal_test_data[lhs_set][i]));
+        for (int j = 0; j < equal_test_data[rhs_set].size(); ++j) {
+          ASYLO_ASSERT_OK_AND_ASSIGN(
+              rhs, TestFixture::Create(equal_test_data[rhs_set][j]));
+
+          // Eq() calls operator== and Ne() calls operator!=. We should test
+          // that both operators return the correct value in each case.
+          if (lhs_set == rhs_set) {
+            EXPECT_THAT(lhs, Eq(rhs));
+            EXPECT_THAT(lhs, Not(Ne(rhs)));
+          } else {
+            EXPECT_THAT(lhs, Not(Eq(rhs)));
+            EXPECT_THAT(lhs, Ne(rhs));
+          }
+        }
       }
     }
   }
