@@ -123,8 +123,6 @@ constexpr uint64_t kTestPwrite64 =
 constexpr uint64_t kTestPipe2 = kFirstSelector + asylo::system_call::kSYS_pipe2;
 constexpr uint64_t kTestNanosleep =
     kFirstSelector + asylo::system_call::kSYS_nanosleep;
-constexpr uint64_t kTestClockGettime =
-    kFirstSelector + asylo::system_call::kSYS_clock_gettime;
 constexpr uint64_t kTestBind = kFirstSelector + asylo::system_call::kSYS_bind;
 constexpr uint64_t kTestConnect =
     kFirstSelector + asylo::system_call::kSYS_connect;
@@ -150,6 +148,7 @@ constexpr uint64_t kTestAccept = kHostLibCSelector + 10;
 constexpr uint64_t kTestRaise = kHostLibCSelector + 11;
 constexpr uint64_t kTestGetSockOpt = kHostLibCSelector + 12;
 constexpr uint64_t kTestGetAddrInfo = kHostLibCSelector + 13;
+constexpr uint64_t kTestClockGettime = kHostLibCSelector + 14;
 
 }  // namespace host_call
 }  // namespace asylo

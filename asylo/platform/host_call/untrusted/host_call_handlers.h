@@ -207,6 +207,14 @@ Status OpenLogHandler(const std::shared_ptr<primitives::Client> &client,
 Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
                           void *context, primitives::MessageReader *input,
                           primitives::MessageWriter *output);
+
+// Handler for host call enc_untrusted_clock_gettime(). Expects [clockid_t
+// clk_d] and returns [int /*result*/, int /*errno*/, struct timespec
+// /*klinux_tp*/] on the MessageWriter.
+Status ClockGettimeHandler(const std::shared_ptr<primitives::Client> &client,
+                           void *context, primitives::MessageReader *input,
+                           primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

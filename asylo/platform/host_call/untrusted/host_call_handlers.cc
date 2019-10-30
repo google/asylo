@@ -551,5 +551,18 @@ Status InotifyReadHandler(const std::shared_ptr<primitives::Client> &client,
   return Status::OkStatus();
 }
 
+Status ClockGettimeHandler(const std::shared_ptr<primitives::Client> &client,
+                           void *context, primitives::MessageReader *input,
+                           primitives::MessageWriter *output) {
+  ASYLO_RETURN_IF_INCORRECT_READER_ARGUMENTS(*input, 1);
+  clockid_t clk_id = input->next<clockid_t>();
+  struct timespec tp {};
+  output->Push<int>(clock_gettime(clk_id, &tp));
+  output->Push<int>(errno);
+  output->Push<struct timespec>(tp);
+
+  return Status::OkStatus();
+}
+
 }  // namespace host_call
 }  // namespace asylo

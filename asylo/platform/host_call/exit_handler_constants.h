@@ -123,6 +123,10 @@ static constexpr uint64_t kOpenLogHandler = primitives::kSelectorHostCall + 25;
 static constexpr uint64_t kInotifyReadHandler =
     primitives::kSelectorHostCall + 26;
 
+// Exit handler constant for |ClockGettimeHandler|.
+static constexpr uint64_t kClockGettimeHandler =
+    primitives::kSelectorHostCall + 27;
+
 // Assert that the largest host call handler lies in
 // [kSelectorHostCall, kSelectorRemote).
 static_assert(kOpenLogHandler < primitives::kSelectorRemote,

@@ -103,7 +103,6 @@ int enc_untrusted_pwrite64(int fd, const void *buf, size_t count, off_t offset);
 int enc_untrusted_wait(int *wstatus);
 int enc_untrusted_close(int fd);
 int enc_untrusted_nanosleep(const struct timespec *req, struct timespec *rem);
-int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp);
 int enc_untrusted_clock_getcpuclockid(pid_t pid, clockid_t *clock_id);
 int enc_untrusted_bind(int sockfd, const struct sockaddr *addr,
                        socklen_t addrlen);
@@ -129,6 +128,7 @@ void enc_untrusted_exit_group(int status);
 void enc_untrusted_syslog(int priority, const char *message, int len);
 
 // Calls to library functions delegated to the host are defined below.
+int enc_untrusted_clock_gettime(clockid_t clk_id, struct timespec *tp);
 int enc_untrusted_isatty(int fd);
 int enc_untrusted_usleep(useconds_t usec);
 int64_t enc_untrusted_sysconf(int name);
