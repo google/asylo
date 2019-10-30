@@ -341,6 +341,18 @@ cc_library(
             strip_prefix = "markupsafe-1.1.1/src",
         )
 
+    # Libcurl for Intel PCS client
+    if not native.existing_rule("com_github_curl_curl"):
+        http_archive(
+            name = "com_github_curl_curl",
+            urls = [
+                "https://github.com/curl/curl/archive/curl-7_66_0.tar.gz",
+            ],
+            sha256 = "cd6b8c8c8e9f0c66c72842ec921f800b4524c4b67822c6e4d779446005bc6d8d",
+            strip_prefix = "curl-curl-7_66_0",
+            build_file = str(Label("//asylo/third_party:curl.BUILD")),
+        )
+
 def asylo_go_deps():
     """Macro to include Asylo's Go dependencies in a WORKSPACE."""
 
