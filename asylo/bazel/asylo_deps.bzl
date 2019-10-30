@@ -142,10 +142,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("rules_cc"):
         http_archive(
             name = "rules_cc",
-            # Commit from 2019 September 3
-            urls = ["https://github.com/bazelbuild/rules_cc/archive/cb2dfba6746bfa3c3705185981f3109f0ae1b893.tar.gz"],
-            sha256 = "13ec82e03a878f429a12b618c78412053b559d25351375cbf1bf91c883717b5b",
-            strip_prefix = "rules_cc-cb2dfba6746bfa3c3705185981f3109f0ae1b893",
+            # Commit from 2019 October 24
+            urls = ["https://github.com/bazelbuild/rules_cc/archive/262ebec3c2296296526740db4aefce68c80de7fa.tar.gz"],
+            sha256 = "3057c13fa4d431eb0e7a9c28eea13f25987d29f869406b5ee3f2bd9c4134cb0c",
+            strip_prefix = "rules_cc-262ebec3c2296296526740db4aefce68c80de7fa",
         )
 
     # Required for Protobuf
