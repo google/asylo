@@ -26,9 +26,9 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/arch/sgx/trusted/generated_bridge_t.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/sgx/fork.h"
+#include "asylo/platform/primitives/sgx/generated_bridge_t.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
@@ -45,8 +45,7 @@ int ecall_take_snapshot(char **output, uint64_t *output_len) {
   int result = 0;
   size_t tmp_output_len;
   try {
-    result =
-        asylo::TakeSnapshot(output, &tmp_output_len);
+    result = asylo::TakeSnapshot(output, &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
@@ -64,8 +63,8 @@ int ecall_restore(const char *input, uint64_t input_len, char **output,
   int result = 0;
   size_t tmp_output_len;
   try {
-    result = asylo::Restore(input, static_cast<size_t>(input_len),
-                                        output, &tmp_output_len);
+    result = asylo::Restore(input, static_cast<size_t>(input_len), output,
+                            &tmp_output_len);
   } catch (...) {
     LOG(FATAL) << "Uncaught exception in enclave";
   }
