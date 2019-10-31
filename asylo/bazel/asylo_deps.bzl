@@ -32,8 +32,16 @@ def _asylo_backend_deps_impl(repository_ctx):
         Label("@com_google_asylo//asylo/distrib/backend:enclave_info.bzl.tpl"),
     )
     repository_ctx.template(
+        "transitions.bzl",
+        Label("@com_google_asylo//asylo/distrib/backend:transitions.bzl.tpl"),
+    )
+    repository_ctx.template(
         "WORKSPACE",
         Label("@com_google_asylo//asylo/distrib/backend:WORKSPACE.tpl"),
+    )
+    repository_ctx.template(
+        "tools/whitelists/function_transition_whitelist/BUILD",
+        Label("@com_google_asylo//asylo/distrib/backend/tools/whitelists/function_transition_whitelist:BUILD.tpl"),
     )
 
 # Rule to include Asylo's backend support dependencies in a WORKSPACE.

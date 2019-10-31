@@ -16,11 +16,13 @@
 
 licenses(["notice"])
 
-# BUILD file needed make template files available to instantiate.
-
-exports_files([
-    "BUILD.tpl",
-    "enclave_info.bzl.tpl",
-    "transitions.bzl.tpl",
-    "WORKSPACE.tpl",
-])
+# This group must exist at this label in order to enable Bazel transitions.
+# This might have problems if used from a client workspace.
+package_group(
+    name = "function_transition_whitelist",
+    includes = [
+        "@com_google_asylo_backend_provider//:implementation",
+        "@linux_sgx//:implementation",
+    ],
+    packages = ["//..."],
+)

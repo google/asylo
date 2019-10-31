@@ -21,7 +21,12 @@ licenses(["notice"])
 
 # BUILD file needed make enclave_info.bzl available to load.
 
-exports_files(["enclave_info.bzl"])
+exports_files(["enclave_info.bzl", "transitions.bzl"])
+
+package_group(
+    name = "implementation",
+    packages = ["//..."],
+)
 
 # Placeholder label for "no Asylo backend selected". At least transitionally,
 # we cannot set a real backend label as default.
@@ -52,5 +57,11 @@ label_flag(
 bzl_library(
     name = "enclave_info_bzl",
     srcs = ["enclave_info.bzl"],
+    visibility = ["//visibility:public"],
+)
+
+bzl_library(
+    name = "transitions_bzl",
+    srcs = ["transitions.bzl"],
     visibility = ["//visibility:public"],
 )
