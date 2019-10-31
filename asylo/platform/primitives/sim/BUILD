@@ -39,6 +39,7 @@ cc_library(
     name = "trusted_sim",
     srcs = select(
         {
+            "//asylo/platform/primitives:asylo_dlopen": _TRUSTED_SIM_SRCS,
             "//asylo/platform/primitives:asylo_sim": _TRUSTED_SIM_SRCS,
         },
         no_match_error = "Trusted simulation components must be built with the backend selected",
