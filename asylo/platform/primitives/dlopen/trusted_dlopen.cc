@@ -21,9 +21,9 @@
 #include <cstdio>
 #include <cstring>
 
+#include "asylo/platform/primitives/dlopen/shared_dlopen.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
-#include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -37,23 +37,23 @@ namespace {
 
 // Size of the enclave heap in bytes, set here to 128 megabytes for rough parity
 // with Intel SGX. This is the size of the nominally secure heap considered
-// "trusted" for purposes of the simulation.
-constexpr size_t kSimulatorHeapSize = 128 * 1024 * 1024;
+// "trusted" for purposes of the backend.
+constexpr size_t kDlopenHeapSize = 128 * 1024 * 1024;
 
-// A statically initialized record describing the state of the simulator.
-struct Simulator {
-  // The simulator heap is implemented as a block of static storage allocated at
+// A statically initialized record describing the state of the dlopen backend.
+struct DlopenState {
+  // The backend heap is implemented as a block of static storage allocated at
   // enclave load time by dlopen(). Note that the newlib malloc implementation
   // expects sbrk() to return maximally aligned addresses.
-  uint8_t heap[kSimulatorHeapSize] __attribute__((aligned(8)));
+  uint8_t heap[kDlopenHeapSize] __attribute__((aligned(8)));
 
   // The "program break," defined as the first location after the end of the of
   // the heap.
   uint8_t *brk = heap;
 
-  // Returns the singleton Simulator instance.
-  static Simulator *GetInstance() {
-    static Simulator instance;
+  // Returns the singleton DlopenState instance.
+  static DlopenState *GetInstance() {
+    static DlopenState instance;
     return &instance;
   }
 };
@@ -66,11 +66,11 @@ PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
                                 MessageWriter *out) {
   ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   PrimitiveStatus status = asylo_enclave_fini();
-  memset(Simulator::GetInstance(), 0, sizeof(Simulator));
+  memset(DlopenState::GetInstance(), 0, sizeof(DlopenState));
   return status;
 }
 
-// Registers simulator specific entry handlers.
+// Registers backend-specific entry handlers.
 void RegisterInternalHandlers() {
   // Register the enclave finalization entry handler.
   EntryHandler handler{FinalizeEnclave};
@@ -95,12 +95,12 @@ PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
 }
 
 extern "C" void *enclave_sbrk(intptr_t increment) {
-  if (Simulator::GetInstance()->brk + increment >
-      Simulator::GetInstance()->heap + kSimulatorHeapSize) {
+  if (DlopenState::GetInstance()->brk + increment >
+      DlopenState::GetInstance()->heap + kDlopenHeapSize) {
     return reinterpret_cast<void *>(INT64_C(-1));
   }
-  void *result = Simulator::GetInstance()->brk;
-  Simulator::GetInstance()->brk += increment;
+  void *result = DlopenState::GetInstance()->brk;
+  DlopenState::GetInstance()->brk += increment;
   return result;
 }
 
@@ -108,10 +108,10 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
                                               const void *input,
                                               size_t input_len, void **output,
                                               size_t *output_len) {
-  if (GetSimTrampoline()->magic_number != kTrampolineMagicNumber ||
-      GetSimTrampoline()->version != kTrampolineVersion) {
+  if (GetDlopenTrampoline()->magic_number != kTrampolineMagicNumber ||
+      GetDlopenTrampoline()->version != kTrampolineVersion) {
     TrustedPrimitives::BestEffortAbort(
-        "Simulator trampoline version or magic number mismatch");
+        "DlopenState trampoline version or magic number mismatch");
     return PrimitiveStatus::OkStatus();
   }
 
@@ -158,8 +158,8 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
 
 bool TrustedPrimitives::IsInsideEnclave(const void *addr, size_t size) {
   auto enclave_begin =
-      reinterpret_cast<const uint8_t *>(Simulator::GetInstance());
-  const uint8_t *enclave_end = enclave_begin + sizeof(Simulator);
+      reinterpret_cast<const uint8_t *>(DlopenState::GetInstance());
+  const uint8_t *enclave_end = enclave_begin + sizeof(DlopenState);
   auto *from = static_cast<const uint8_t *>(addr);
   auto *to = from + size;
   if (from > to) {
@@ -170,8 +170,8 @@ bool TrustedPrimitives::IsInsideEnclave(const void *addr, size_t size) {
 
 bool TrustedPrimitives::IsOutsideEnclave(const void *addr, size_t size) {
   auto enclave_begin =
-      reinterpret_cast<const uint8_t *>(Simulator::GetInstance());
-  const uint8_t *enclave_end = enclave_begin + sizeof(Simulator);
+      reinterpret_cast<const uint8_t *>(DlopenState::GetInstance());
+  const uint8_t *enclave_end = enclave_begin + sizeof(DlopenState);
   auto *from = static_cast<const uint8_t *>(addr);
   auto *to = from + size;
 
@@ -185,11 +185,11 @@ bool TrustedPrimitives::IsOutsideEnclave(const void *addr, size_t size) {
 }
 
 void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
-  return GetSimTrampoline()->asylo_local_alloc_handler(size);
+  return GetDlopenTrampoline()->asylo_local_alloc_handler(size);
 }
 
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
-  GetSimTrampoline()->asylo_local_free_handler(ptr);
+  GetDlopenTrampoline()->asylo_local_free_handler(ptr);
 }
 
 PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
@@ -206,7 +206,7 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
   }
   size_t output_size = 0;
   void *output_buffer = nullptr;
-  auto status = GetSimTrampoline()->asylo_exit_call(
+  auto status = GetDlopenTrampoline()->asylo_exit_call(
       untrusted_selector, input_buffer, input_size, &output_buffer,
       &output_size);
   if (output_buffer) {
@@ -226,8 +226,8 @@ int TrustedPrimitives::CreateThread() {
 extern "C" void enc_get_memory_layout(
     struct EnclaveMemoryLayout *enclave_memory_layout) {
   memset(enclave_memory_layout, 0, sizeof(EnclaveMemoryLayout));
-  enclave_memory_layout->base = Simulator::GetInstance();
-  enclave_memory_layout->size = sizeof(Simulator);
+  enclave_memory_layout->base = DlopenState::GetInstance();
+  enclave_memory_layout->size = sizeof(DlopenState);
 }
 
 }  // namespace primitives

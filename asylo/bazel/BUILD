@@ -22,9 +22,9 @@ exports_files([
     "asylo.bzl",
     "asylo_deps.bzl",
     "copts.bzl",
+    "dlopen_enclave.bzl",
     "installation_path.bzl",
     "sgx_deps.bzl",
-    "sim_enclave.bzl",
 ])
 
 load(

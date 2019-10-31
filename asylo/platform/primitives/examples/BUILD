@@ -17,14 +17,14 @@
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:asylo.bzl",
+    "dlopen_enclave_loader",
+    "dlopen_enclave_test",
     "sgx_enclave_test",
-    "sim_enclave_loader",
-    "sim_enclave_test",
 )
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
-    "//asylo/bazel:sim_enclave.bzl",
-    "primitives_sim_enclave",
+    "//asylo/bazel:dlopen_enclave.bzl",
+    "primitives_dlopen_enclave",
 )
 
 licenses(["notice"])
@@ -33,8 +33,8 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
-primitives_sim_enclave(
-    name = "hello_sim_enclave.so",
+primitives_dlopen_enclave(
+    name = "hello_dlopen_enclave.so",
     srcs = [
         "hello_enclave.cc",
         "hello_enclave.h",
@@ -48,18 +48,18 @@ primitives_sim_enclave(
     ],
 )
 
-sim_enclave_loader(
-    name = "hello_sim_driver",
+dlopen_enclave_loader(
+    name = "hello_dlopen_driver",
     srcs = [
         "hello_driver.cc",
         "hello_enclave.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"hello": ":hello_sim_enclave.so"},
+    enclaves = {"hello": ":hello_dlopen_enclave.so"},
     deps = [
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/test:sim_test_backend",
+        "//asylo/platform/primitives/test:dlopen_test_backend",
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",
@@ -68,15 +68,15 @@ sim_enclave_loader(
     ],
 )
 
-sim_enclave_test(
-    name = "hello_sim_test",
+dlopen_enclave_test(
+    name = "hello_dlopen_test",
     size = "small",
     srcs = [
         "hello_enclave.h",
         "hello_test.cc",
     ],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"hello": ":hello_sim_enclave.so"},
+    enclaves = {"hello": ":hello_dlopen_enclave.so"},
     test_args = [
         "--enclave_binary='{hello}'",
     ],
@@ -86,7 +86,7 @@ sim_enclave_test(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/test:sim_test_backend",
+        "//asylo/platform/primitives/test:dlopen_test_backend",
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/test/util:status_matchers",

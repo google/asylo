@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_PRIMITIVES_TEST_REMOTE_SIM_TEST_BACKEND_H_
-#define ASYLO_PLATFORM_PRIMITIVES_TEST_REMOTE_SIM_TEST_BACKEND_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_TEST_REMOTE_DLOPEN_TEST_BACKEND_H_
+#define ASYLO_PLATFORM_PRIMITIVES_TEST_REMOTE_DLOPEN_TEST_BACKEND_H_
 
 #include "absl/strings/string_view.h"
 #include "asylo/platform/primitives/test/remote_test_backend.h"
@@ -28,9 +28,9 @@ namespace asylo {
 namespace primitives {
 namespace test {
 
-class RemoteSimTestBackend : public RemoteTestBackend {
+class RemoteDlopenTestBackend : public RemoteTestBackend {
  public:
-  RemoteSimTestBackend() = default;
+  RemoteDlopenTestBackend() = default;
 
   void PrepareBackendLoaderParameters(
       RemoteLoadConfig *remote_config,
@@ -41,4 +41,4 @@ class RemoteSimTestBackend : public RemoteTestBackend {
 }  // namespace primitives
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_PRIMITIVES_TEST_REMOTE_SIM_TEST_BACKEND_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_TEST_REMOTE_DLOPEN_TEST_BACKEND_H_

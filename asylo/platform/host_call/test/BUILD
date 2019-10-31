@@ -14,16 +14,16 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load(
     "//asylo/bazel:asylo.bzl",
+    "dlopen_enclave_test",
     "sgx_enclave_test",
-    "sim_enclave_test",
 )
-load("//asylo/bazel:sim_enclave.bzl", "primitives_sim_enclave")
+load("//asylo/bazel:dlopen_enclave.bzl", "primitives_dlopen_enclave")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -43,8 +43,8 @@ cc_library(
 )
 
 # Test enclave for invoking host calls for the tests.
-primitives_sim_enclave(
-    name = "sim_test_enclave.so",
+primitives_dlopen_enclave(
+    name = "dlopen_test_enclave.so",
     testonly = 1,
     srcs = [
         "test_enclave.cc",
@@ -92,20 +92,20 @@ cc_library(
     alwayslink = 1,
 )
 
-# Tests host calls against sim backend.
-sim_enclave_test(
-    name = "sim_host_call_test",
+# Tests host calls against dlopen backend.
+dlopen_enclave_test(
+    name = "dlopen_host_call_test",
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"sim": ":sim_test_enclave.so"},
+    enclaves = {"enclave_binary": ":dlopen_test_enclave.so"},
     linkstatic = True,
     test_args = [
-        "--enclave_binary='{sim}'",
+        "--enclave_binary='{enclave_binary}'",
     ],
     deps = [
         ":host_call_test_lib",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_runtime",
-        "//asylo/platform/primitives/test:sim_test_backend",
+        "//asylo/platform/primitives/test:dlopen_test_backend",
         "//asylo/test/util:test_main",
     ],
 )

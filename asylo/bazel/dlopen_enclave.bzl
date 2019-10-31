@@ -14,22 +14,18 @@
 # limitations under the License.
 #
 
-"""Rule definitions for creating targets for simulated Asylo enclaves."""
+"""Rule definitions for creating targets for dlopen Asylo enclaves."""
 
-load(
-    "@com_google_asylo_backend_provider//:enclave_info.bzl",
-    "AsyloBackendInfo",
-    "EnclaveInfo",
-)
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo", "EnclaveInfo")
 
 # website-docs-metadata
 # ---
 #
-# title:  Asylo simulation backend build rules
+# title:  Asylo dlopen backend build rules
 #
-# overview: Build rules for the process-separated simulation enclave backend.
+# overview: Build rules for the process-separated dlopen enclave backend.
 #
-# location: /_docs/reference/api/bazel/sim_enclave_bzl.md
+# location: /_docs/reference/api/bazel/dlopen_enclave_bzl.md
 #
 # layout: docs
 #
@@ -40,16 +36,16 @@ load(
 # ---
 # {% include home.html %}
 
-SimEnclaveInfo = provider()
+DlopenEnclaveInfo = provider()
 
-def _asylo_sim_backend_impl(ctx):
+def _asylo_dlopen_backend_impl(ctx):
     return [AsyloBackendInfo(
-        forward_providers = [EnclaveInfo, SimEnclaveInfo, CcInfo],
+        forward_providers = [EnclaveInfo, DlopenEnclaveInfo, CcInfo],
     )]
 
-asylo_sim_backend = rule(
-    doc = "Declares name of the Asylo sim backend. Used in backend transitions.",
-    implementation = _asylo_sim_backend_impl,
+asylo_dlopen_backend = rule(
+    doc = "Declares name of the Asylo dlopen backend. Used in backend transitions.",
+    implementation = _asylo_dlopen_backend_impl,
     attrs = {},
 )
 
@@ -60,7 +56,7 @@ def _reprovide_binary_with_enclave_info_impl(ctx):
             data_runfiles = ctx.attr.binary[DefaultInfo].data_runfiles,
             default_runfiles = ctx.attr.binary[DefaultInfo].default_runfiles,
         ),
-        SimEnclaveInfo(),
+        DlopenEnclaveInfo(),
         EnclaveInfo(),
     ]
 
@@ -71,37 +67,37 @@ _reprovide_binary_with_enclave_info = rule(
     },
 )
 
-def primitives_sim_enclave(
+def primitives_dlopen_enclave(
         name,
         deps = [],
         **kwargs):
-    """Build rule for creating a simulated enclave shared object file.
+    """Build rule for creating a dlopen enclave shared object file.
 
     This build rule is intended for use by the primitives layer, for building
     enclaves not relying on TrustedApplication.
 
-    A rule like cc_binary, but builds name_simulated.so and provides
+    A rule like cc_binary, but builds name_dlopen.so and provides
     name as a target that may be consumed as an enclave in Asylo.
 
     Creates two targets:
       name: A binary that may be provided to an enclave loader's enclaves.
-      name_simulated.so: The underlying cc_binary which is reprovided as an
+      name_dlopen.so: The underlying cc_binary which is reprovided as an
                          enclave target. If name has a ".so" suffix, then it
-                         is replaced with "_simulated.so".
+                         is replaced with "_dlopen.so".
 
     Args:
-      name: The simulated enclave target name.
+      name: The dlopen enclave target name.
       deps: Dependencies for the cc_binary
       **kwargs: cc_binary arguments.
     """
     if not kwargs.pop("linkshared", True):
-        fail("A primitives_sim_enclave must be build with linkshared = True")
+        fail("A primitives_dlopen_enclave must be build with linkshared = True")
     if not kwargs.pop("linkstatic", True):
-        fail("A primitives_sim_enclave must be build with linkstatic = True")
+        fail("A primitives_dlopen_enclave must be build with linkstatic = True")
 
-    binary_name = name + "_simulated.so"
+    binary_name = name + "_dlopen.so"
     if ".so" in name:
-        binary_name = name.replace(".so", "_simulated.so", 1)
+        binary_name = name.replace(".so", "_dlopen.so", 1)
 
     if "asylo" in native.package_name():
         _workspace_name = "//asylo"
@@ -112,7 +108,7 @@ def primitives_sim_enclave(
         name = binary_name,
         deps = deps + [
             _workspace_name + "/platform/primitives:trusted_primitives",
-            _workspace_name + "/platform/primitives/sim:trusted_sim",
+            _workspace_name + "/platform/primitives/dlopen:trusted_dlopen",
         ],
         linkopts = ["-Wl,-Bsymbolic"],
         linkshared = True,

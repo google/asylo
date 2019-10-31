@@ -16,14 +16,14 @@
  *
  */
 
-#include "asylo/platform/primitives/test/remote_sim_test_backend.h"
+#include "asylo/platform/primitives/test/remote_dlopen_test_backend.h"
 
 #include <sys/wait.h>
 
 #include <string>
 
 #include "absl/flags/flag.h"
-#include "asylo/platform/primitives/sim/loader.pb.h"
+#include "asylo/platform/primitives/dlopen/loader.pb.h"
 #include "asylo/platform/primitives/test/remote_test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/util/path.h"
@@ -33,14 +33,14 @@ namespace asylo {
 namespace primitives {
 namespace test {
 
-void RemoteSimTestBackend::PrepareBackendLoaderParameters(
+void RemoteDlopenTestBackend::PrepareBackendLoaderParameters(
     RemoteLoadConfig *remote_config, absl::string_view enclave_binary) const {
-  auto sim_config = remote_config->mutable_sim_load_config();
-  sim_config->set_enclave_path(enclave_binary.data(), enclave_binary.size());
+  auto dlopen_config = remote_config->mutable_dlopen_load_config();
+  dlopen_config->set_enclave_path(enclave_binary.data(), enclave_binary.size());
 }
 
 TestBackend *TestBackend::Get() {
-  static TestBackend *backend = new RemoteSimTestBackend;
+  static TestBackend *backend = new RemoteDlopenTestBackend;
   return backend;
 }
 

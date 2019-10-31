@@ -16,14 +16,14 @@
  *
  */
 
-#include "asylo/platform/primitives/test/sim_test_backend.h"
+#include "asylo/platform/primitives/test/dlopen_test_backend.h"
 
 #include <memory>
 #include <string>
 
 #include "absl/flags/flag.h"
 #include "absl/memory/memory.h"
-#include "asylo/platform/primitives/sim/untrusted_sim.h"
+#include "asylo/platform/primitives/dlopen/untrusted_dlopen.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
@@ -37,16 +37,16 @@ namespace asylo {
 namespace primitives {
 namespace test {
 
-StatusOr<std::shared_ptr<Client>> SimTestBackend::LoadTestEnclave(
+StatusOr<std::shared_ptr<Client>> DlopenTestBackend::LoadTestEnclave(
     const absl::string_view enclave_name,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
-  return LoadEnclave<SimBackend>(enclave_name,
+  return LoadEnclave<DlopenBackend>(enclave_name,
                                  absl::GetFlag(FLAGS_enclave_binary),
                                  std::move(exit_call_provider));
 }
 
 TestBackend *TestBackend::Get() {
-  static TestBackend *backend = new SimTestBackend;
+  static TestBackend *backend = new DlopenTestBackend;
   return backend;
 }
 

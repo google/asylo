@@ -25,12 +25,12 @@
 
 #include "absl/memory/memory.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/dlopen/loader.pb.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/remote/communicator.h"
 #include "asylo/platform/primitives/remote/proxy_selectors.h"
 #include "asylo/platform/primitives/sgx/exit_handlers.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
-#include "asylo/platform/primitives/sim/loader.pb.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/remote/remote_proxy_config.h"
@@ -140,10 +140,10 @@ Status RemoteEnclaveProxyClient::Connect(const EnclaveLoadConfig &load_config) {
               ->mutable_file_enclave_config()
               ->mutable_enclave_path();
       break;
-    case RemoteLoadConfig::kSimLoadConfig:
+    case RemoteLoadConfig::kDlopenLoadConfig:
       enclave_path =
           provisioned_load_config.MutableExtension(remote_load_config)
-              ->mutable_sim_load_config()
+              ->mutable_dlopen_load_config()
               ->mutable_enclave_path();
       break;
     default:

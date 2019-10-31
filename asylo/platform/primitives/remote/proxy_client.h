@@ -119,7 +119,7 @@ class RemoteEnclaveProxyClient : public Client {
   // Host-side instance of Communicator.
   const std::unique_ptr<Communicator> communicator_;
 
-  // Loader type of the RemoteLoadConfig, eg. kSgxLoadConfig, kSimLoadConfig.
+  // Loader type of the RemoteLoadConfig, eg. kSgxLoadConfig, kDlopenLoadConfig.
   const RemoteLoadConfig::LoaderCase loader_case_;
 };
 

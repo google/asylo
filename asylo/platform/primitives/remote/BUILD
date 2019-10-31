@@ -16,7 +16,7 @@
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:asylo.bzl", "sim_enclave_test")
+load("//asylo/bazel:asylo.bzl", "dlopen_enclave_test")
 
 licenses(["notice"])
 
@@ -125,7 +125,7 @@ cc_test(
     ],
 )
 
-sim_enclave_test(
+dlopen_enclave_test(
     name = "primitives_communicator_test",
     size = "medium",
     srcs = [
@@ -203,10 +203,10 @@ cc_library(
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/dlopen:loader_cc_proto",
         "//asylo/platform/primitives/remote/metrics/clients:opencensus_client",
         "//asylo/platform/primitives/sgx:exit_handlers",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/platform/primitives/sim:loader_cc_proto",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:logging",
         "//asylo/util:status",

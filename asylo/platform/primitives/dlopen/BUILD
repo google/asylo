@@ -15,7 +15,7 @@
 #
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:sim_enclave.bzl", "asylo_sim_backend")
+load("//asylo/bazel:dlopen_enclave.bzl", "asylo_dlopen_backend")
 
 licenses(["notice"])
 
@@ -23,25 +23,25 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-asylo_sim_backend(name = "sim")
+asylo_dlopen_backend(name = "dlopen")
 
-_TRUSTED_SIM_SRCS = [
+_TRUSTED_DLOPEN_SRCS = [
     "malloc_lock.cc",
     "runtime_stubs.c",
     "runtime_syscalls.c",
-    "shared_sim.h",
+    "shared_dlopen.h",
     "trusted_runtime.cc",
-    "trusted_sim.cc",
+    "trusted_dlopen.cc",
 ]
 
-# Trusted simulator components.
+# Trusted dlopen components.
 cc_library(
-    name = "trusted_sim",
+    name = "trusted_dlopen",
     srcs = select(
         {
-            "//asylo/platform/primitives:asylo_dlopen": _TRUSTED_SIM_SRCS,
+            "//asylo/platform/primitives:asylo_dlopen": _TRUSTED_DLOPEN_SRCS,
         },
-        no_match_error = "Trusted simulation components must be built with the backend selected",
+        no_match_error = "Trusted dlopen components must be built with the backend selected",
     ),
     copts = ASYLO_DEFAULT_COPTS,
     tags = [
@@ -62,18 +62,18 @@ cc_library(
                 "//asylo/platform/posix:backend_agnostic_posix",
             ],
         },
-        "Trusted simulation components must be built with Asylo toolchain",
+        "Trusted dlopen components must be built with Asylo toolchain",
     ) + ["//asylo/util:cleanup"],
     alwayslink = 1,
 )
 
 cc_library(
-    name = "untrusted_sim",
+    name = "untrusted_dlopen",
     srcs = [
-        "shared_sim.h",
-        "untrusted_sim.cc",
+        "shared_dlopen.h",
+        "untrusted_dlopen.cc",
     ],
-    hdrs = ["untrusted_sim.h"],
+    hdrs = ["untrusted_dlopen.h"],
     copts = ASYLO_DEFAULT_COPTS,
     linkopts = ["-ldl"],
     deps = [
@@ -91,12 +91,12 @@ cc_library(
 )
 
 cc_library(
-    name = "sim_remote_proxy_lib",
-    srcs = ["sim_remote_proxy.cc"],
+    name = "dlopen_remote_proxy_lib",
+    srcs = ["dlopen_remote_proxy.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":loader_cc_proto",
-        ":untrusted_sim",
+        ":untrusted_dlopen",
         "//asylo:enclave_cc_proto",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
@@ -113,7 +113,7 @@ cc_library(
     alwayslink = 1,
 )
 
-# Message definitions for simulator enclave load configuration.
+# Message definitions for dlopen enclave load configuration.
 proto_library(
     name = "loader_proto",
     srcs = ["loader.proto"],

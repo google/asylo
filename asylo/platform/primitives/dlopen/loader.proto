@@ -20,12 +20,12 @@ package asylo;
 
 import "asylo/enclave.proto";
 
-// Load configuration for a simulator enclave.
-message SimLoadConfig {
+// Load configuration for a dlopen enclave.
+message DlopenLoadConfig {
   // Path to the enclave binary (.so) file to load.
   optional string enclave_path = 1;
 }
 
 extend EnclaveLoadConfig {
-  optional SimLoadConfig sim_load_config = 266195984;
+  optional DlopenLoadConfig dlopen_load_config = 266195984;
 }

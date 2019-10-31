@@ -152,15 +152,6 @@ cc_test(
     ],
 )
 
-# Configuration setting for the primitives/sim backend.
-config_setting(
-    name = "asylo_sim",
-    values = {
-        "define": "ASYLO_SIM=1",
-    },
-    visibility = ["//visibility:public"],
-)
-
 # Configuration setting for the primitives/dlopen backend.
 config_setting(
     name = "asylo_dlopen",

@@ -19,8 +19,8 @@ syntax = "proto2";
 package asylo;
 
 import "asylo/enclave.proto";
+import "asylo/platform/primitives/dlopen/loader.proto";
 import "asylo/platform/primitives/sgx/loader.proto";
-import "asylo/platform/primitives/sim/loader.proto";
 
 // |RemoteLoadConfig| is used with |EnclaveManager| to load an enclave
 // remotely and create a |RemoteEnclaveProxyClient|.
@@ -31,7 +31,7 @@ message RemoteLoadConfig {
   // Fully configured loader of the desired load type.
   oneof loader {
     SgxLoadConfig sgx_load_config = 2;
-    SimLoadConfig sim_load_config = 3;
+    DlopenLoadConfig dlopen_load_config = 3;
   }
 }
 

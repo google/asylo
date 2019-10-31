@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 package(
     default_visibility = ["//asylo:implementation"],

@@ -14,18 +14,18 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+load(
+    "//asylo/bazel:asylo.bzl",
+    "dlopen_enclave_test",
+)
+load("//asylo/bazel:dlopen_enclave.bzl", "primitives_dlopen_enclave")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 package(
     default_visibility = ["//asylo:implementation"],
 )
-
-load(
-    "//asylo/bazel:asylo.bzl",
-    "sim_enclave_test",
-)
-load("//asylo/bazel:sim_enclave.bzl", "primitives_sim_enclave")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 cc_library(
     name = "test_selectors",
@@ -46,8 +46,8 @@ cc_library(
     ],
 )
 
-primitives_sim_enclave(
-    name = "sim_test_enclave.so",
+primitives_dlopen_enclave(
+    name = "dlopen_test_enclave.so",
     testonly = 1,
     srcs = ["test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -85,15 +85,15 @@ cc_library(
 )
 
 cc_library(
-    name = "sim_test_backend",
+    name = "dlopen_test_backend",
     testonly = 1,
-    srcs = ["sim_test_backend.cc"],
-    hdrs = ["sim_test_backend.h"],
+    srcs = ["dlopen_test_backend.cc"],
+    hdrs = ["dlopen_test_backend.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":test_backend",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sim:untrusted_sim",
+        "//asylo/platform/primitives/dlopen:untrusted_dlopen",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
@@ -123,20 +123,20 @@ cc_library(
     alwayslink = 1,
 )
 
-sim_enclave_test(
+dlopen_enclave_test(
     name = "primitives_test",
     size = "small",
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"sim": ":sim_test_enclave.so"},
+    enclaves = {"enclave_binary": ":dlopen_test_enclave.so"},
     linkstatic = True,
     test_args = [
-        "--enclave_binary='{sim}'",
+        "--enclave_binary='{enclave_binary}'",
     ],
     deps = [
+        ":dlopen_test_backend",
         ":primitives_test_lib",
-        ":sim_test_backend",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sim:untrusted_sim",
+        "//asylo/platform/primitives/dlopen:untrusted_dlopen",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
@@ -171,15 +171,15 @@ cc_library(
 )
 
 cc_library(
-    name = "remote_sim_test_backend",
+    name = "remote_dlopen_test_backend",
     testonly = 1,
-    srcs = ["remote_sim_test_backend.cc"],
-    hdrs = ["remote_sim_test_backend.h"],
+    srcs = ["remote_dlopen_test_backend.cc"],
+    hdrs = ["remote_dlopen_test_backend.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":remote_test_backend",
         "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/sim:loader_cc_proto",
+        "//asylo/platform/primitives/dlopen:loader_cc_proto",
         "//asylo/test/util:test_flags",
         "//asylo/util:path",
         "//asylo/util/remote:remote_loader_cc_proto",
@@ -210,24 +210,24 @@ cc_library(
     alwayslink = 1,
 )
 
-sim_enclave_test(
-    name = "sim_proxy_primitives_test",
+dlopen_enclave_test(
+    name = "dlopen_proxy_primitives_test",
     size = "small",
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
-        "sim": ":sim_test_enclave.so",
+        "enclave_binary": ":dlopen_test_enclave.so",
     },
     linkstatic = True,
-    remote_proxy = "//asylo/util/remote:sim_remote_proxy",
+    remote_proxy = "//asylo/util/remote:dlopen_remote_proxy",
     tags = [
         "exclusive",
     ],
     test_args = [
-        "--enclave_binary='{sim}'",
+        "--enclave_binary='{enclave_binary}'",
     ],
     deps = [
         ":primitives_test_lib",
-        ":remote_sim_test_backend",
+        ":remote_dlopen_test_backend",
         ":test_backend",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",

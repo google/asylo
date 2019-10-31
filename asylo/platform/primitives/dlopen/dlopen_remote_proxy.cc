@@ -24,11 +24,11 @@
 #include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
+#include "asylo/platform/primitives/dlopen/loader.pb.h"
+#include "asylo/platform/primitives/dlopen/untrusted_dlopen.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/remote/util/remote_proxy_lib.h"
-#include "asylo/platform/primitives/sim/loader.pb.h"
-#include "asylo/platform/primitives/sim/untrusted_sim.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/error_codes.h"
@@ -59,23 +59,23 @@ StatusOr<std::shared_ptr<Client>> LocalEnclaveFactory::Get(
                   "EnclaveLoadConfig.name was empty");
   }
 
-  // Parse and verify the SimLoadConfig
+  // Parse and verify the DlopenLoadConfig
   if (remote_config.loader_case() !=
-      RemoteLoadConfig::LoaderCase::kSimLoadConfig) {
+      RemoteLoadConfig::LoaderCase::kDlopenLoadConfig) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Expected SimLoadConfig held by RemoteLoadConfig.");
+                  "Expected DlopenLoadConfig held by RemoteLoadConfig.");
   }
-  const auto &sim_config = remote_config.sim_load_config();
+  const auto &dlopen_config = remote_config.dlopen_load_config();
 
-  const std::string enclave_path = sim_config.enclave_path();
+  const std::string enclave_path = dlopen_config.enclave_path();
   if (enclave_path.empty()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "SimLoadConfig.enclave_path was empty");
+                  "DlopenLoadConfig.enclave_path was empty");
   }
 
-  // Load simulated enclave to be proxied.
-  return LoadEnclave<SimBackend>(enclave_name, enclave_path,
-                                 std::move(exit_call_provider));
+  // Load dlopen()ed enclave to be proxied.
+  return LoadEnclave<DlopenBackend>(enclave_name, enclave_path,
+                                    std::move(exit_call_provider));
 }
 
 }  // namespace primitives

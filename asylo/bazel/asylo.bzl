@@ -508,7 +508,7 @@ def enclave_loader(
         data = kwargs.get("data", []),
     )
 
-def sim_enclave_loader(
+def dlopen_enclave_loader(
         name,
         enclaves = {},
         embedded_enclaves = {},
@@ -775,7 +775,7 @@ def enclave_test(
         tags = ["enclave_test"] + tags,
     )
 
-def sim_enclave_test(
+def dlopen_enclave_test(
         name,
         **kwargs):
     """Thin wrapper around enclave test, adds 'asylo-dlopen' tag and necessary linkopts

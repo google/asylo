@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/platform/primitives/sim/untrusted_sim.h"
+#include "asylo/platform/primitives/dlopen/untrusted_dlopen.h"
 
 #include <dlfcn.h>
 #include <sys/mman.h>
@@ -31,10 +31,10 @@
 #include "absl/debugging/leak_check.h"
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/platform/primitives/dlopen/shared_dlopen.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
-#include "asylo/platform/primitives/sim/shared_sim.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
@@ -47,9 +47,9 @@ namespace primitives {
 
 namespace {
 
-PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector,
-                                    const void *input, size_t input_size,
-                                    void **output, size_t *output_size) {
+PrimitiveStatus dlopen_asylo_exit_call(uint64_t untrusted_selector,
+                                       const void *input, size_t input_size,
+                                       void **output, size_t *output_size) {
   MessageReader in;
   in.Deserialize(input, input_size);
   *output_size = 0;
@@ -69,9 +69,9 @@ PrimitiveStatus sim_asylo_exit_call(uint64_t untrusted_selector,
   return status;
 }
 
-void *sim_asylo_local_alloc_handler(size_t size) { return malloc(size); }
+void *dlopen_asylo_local_alloc_handler(size_t size) { return malloc(size); }
 
-void sim_asylo_local_free_handler(void *ptr) { return free(ptr); }
+void dlopen_asylo_local_free_handler(void *ptr) { return free(ptr); }
 
 inline size_t RoundUpToPageBoundary(size_t size) {
   const size_t kPageSize = getpagesize();
@@ -81,30 +81,31 @@ inline size_t RoundUpToPageBoundary(size_t size) {
 absl::once_flag init_trampoline_once;
 
 void InitTrampolineOnce() {
-  static SimTrampoline *sim_trampoline = nullptr;
-  if (sim_trampoline != nullptr) {
+  static DlopenTrampoline *dlopen_trampoline = nullptr;
+  if (dlopen_trampoline != nullptr) {
     return;
   }
-  sim_trampoline = static_cast<SimTrampoline *>(mmap(
-      /*addr=*/reinterpret_cast<void *>(sim_trampoline_address),
-      /*len=*/RoundUpToPageBoundary(sizeof(SimTrampoline)),
+  dlopen_trampoline = static_cast<DlopenTrampoline *>(mmap(
+      /*addr=*/reinterpret_cast<void *>(dlopen_trampoline_address),
+      /*len=*/RoundUpToPageBoundary(sizeof(DlopenTrampoline)),
       /*prot=*/PROT_EXEC | PROT_READ | PROT_WRITE,
       /*flags=*/MAP_ANONYMOUS | MAP_PRIVATE,
       /*fd=*/-1,
       /*offset=*/0));
-  CHECK_EQ(sim_trampoline, GetSimTrampoline())
-      << "Failed to map sim_trampoline, errno=" << strerror(errno);
-  GetSimTrampoline()->magic_number = kTrampolineMagicNumber;
-  GetSimTrampoline()->version = kTrampolineVersion;
-  GetSimTrampoline()->asylo_exit_call = &sim_asylo_exit_call;
-  GetSimTrampoline()->asylo_local_alloc_handler =
-      &sim_asylo_local_alloc_handler;
-  GetSimTrampoline()->asylo_local_free_handler = &sim_asylo_local_free_handler;
+  CHECK_EQ(dlopen_trampoline, GetDlopenTrampoline())
+      << "Failed to map dlopen_trampoline, errno=" << strerror(errno);
+  GetDlopenTrampoline()->magic_number = kTrampolineMagicNumber;
+  GetDlopenTrampoline()->version = kTrampolineVersion;
+  GetDlopenTrampoline()->asylo_exit_call = &dlopen_asylo_exit_call;
+  GetDlopenTrampoline()->asylo_local_alloc_handler =
+      &dlopen_asylo_local_alloc_handler;
+  GetDlopenTrampoline()->asylo_local_free_handler =
+      &dlopen_asylo_local_free_handler;
 }
 
 }  // namespace
 
-SimEnclaveClient::~SimEnclaveClient() {
+DlopenEnclaveClient::~DlopenEnclaveClient() {
   if (dl_handle_) {
     if (enclave_call_) {
       size_t output_size = 0;
@@ -115,7 +116,7 @@ SimEnclaveClient::~SimEnclaveClient() {
   }
 }
 
-StatusOr<std::shared_ptr<Client>> SimBackend::Load(
+StatusOr<std::shared_ptr<Client>> DlopenBackend::Load(
     absl::string_view enclave_name, const std::string &path,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
   // Initialize trampoline once. absl::call_once guarantees that initialization
@@ -123,8 +124,8 @@ StatusOr<std::shared_ptr<Client>> SimBackend::Load(
   // run it, but will instead wait for the first one to finish running.
   absl::call_once(init_trampoline_once, &InitTrampolineOnce);
 
-  std::shared_ptr<SimEnclaveClient> client(
-      new SimEnclaveClient(enclave_name, std::move(exit_call_provider)));
+  std::shared_ptr<DlopenEnclaveClient> client(
+      new DlopenEnclaveClient(enclave_name, std::move(exit_call_provider)));
   ASYLO_RETURN_IF_ERROR(client->RegisterExitHandlers());
 
   // Open the enclave shared object file.
@@ -156,7 +157,7 @@ StatusOr<std::shared_ptr<Client>> SimBackend::Load(
   return client;
 }
 
-Status SimEnclaveClient::Destroy() {
+Status DlopenEnclaveClient::Destroy() {
   if (dl_handle_) {
     dlclose(dl_handle_);
     dl_handle_ = nullptr;
@@ -164,9 +165,9 @@ Status SimEnclaveClient::Destroy() {
   return Status::OkStatus();
 }
 
-Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
-                                             MessageWriter *input,
-                                             MessageReader *output) {
+Status DlopenEnclaveClient::EnclaveCallInternal(uint64_t selector,
+                                                MessageWriter *input,
+                                                MessageReader *output) {
   // Ensure client is properly initialized.
   if (!dl_handle_ || !enclave_call_) {
     return Status{error::GoogleError::FAILED_PRECONDITION,
@@ -193,7 +194,7 @@ Status SimEnclaveClient::EnclaveCallInternal(uint64_t selector,
   return MakeStatus(status);
 }
 
-bool SimEnclaveClient::IsClosed() const { return dl_handle_ == nullptr; }
+bool DlopenEnclaveClient::IsClosed() const { return dl_handle_ == nullptr; }
 
 }  // namespace primitives
 }  // namespace asylo

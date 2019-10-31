@@ -14,18 +14,18 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+load(
+    "//asylo/bazel:asylo.bzl",
+    "dlopen_enclave_test",
+)
+load("//asylo/bazel:dlopen_enclave.bzl", "primitives_dlopen_enclave")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 package(
     default_visibility = ["//asylo:implementation"],
 )
-
-load(
-    "//asylo/bazel:asylo.bzl",
-    "sim_enclave_test",
-)
-load("//asylo/bazel:sim_enclave.bzl", "primitives_sim_enclave")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 cc_library(
     name = "long_living_test_selectors",
@@ -34,8 +34,8 @@ cc_library(
     deps = ["//asylo/platform/primitives"],
 )
 
-primitives_sim_enclave(
-    name = "sim_long_living_test_enclave.so",
+primitives_dlopen_enclave(
+    name = "dlopen_long_living_test_enclave.so",
     testonly = 1,
     srcs = ["long_living_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -75,28 +75,28 @@ cc_library(
     alwayslink = 1,
 )
 
-sim_enclave_test(
+dlopen_enclave_test(
     name = "long_living_test",
     size = "small",
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
-        "sim": ":sim_long_living_test_enclave.so",
+        "enclave_binary": ":dlopen_long_living_test_enclave.so",
     },
     linkstatic = True,
-    remote_proxy = "//asylo/util/remote:sim_remote_proxy",
+    remote_proxy = "//asylo/util/remote:dlopen_remote_proxy",
     tags = [
         "exclusive",
     ],
     test_args = [
         "--sleep_time='15s'",
-        "--enclave_binary='{sim}'",
+        "--enclave_binary='{enclave_binary}'",
     ],
     deps = [
         ":long_living_test_lib",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/remote:proxy_client",
-        "//asylo/platform/primitives/test:remote_sim_test_backend",
+        "//asylo/platform/primitives/test:remote_dlopen_test_backend",
         "//asylo/platform/primitives/test:test_backend",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/util:logging",

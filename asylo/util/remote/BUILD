@@ -26,8 +26,8 @@ proto_library(
     visibility = ["//visibility:public"],
     deps = [
         "//asylo:enclave_proto",
+        "//asylo/platform/primitives/dlopen:loader_proto",
         "//asylo/platform/primitives/sgx:loader_proto",
-        "//asylo/platform/primitives/sim:loader_proto",
     ],
 )
 
@@ -118,17 +118,17 @@ cc_library(
 )
 
 copy_from_host(
-    output = "sim_remote_proxy",
-    target = "sim_remote_proxy_bin",
+    output = "dlopen_remote_proxy",
+    target = "dlopen_remote_proxy_bin",
     visibility = ["//visibility:public"],
 )
 
 cc_binary(
-    name = "sim_remote_proxy_bin",
+    name = "dlopen_remote_proxy_bin",
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo/platform/primitives/dlopen:dlopen_remote_proxy_lib",
         "//asylo/platform/primitives/remote/util:remote_proxy_lib",
-        "//asylo/platform/primitives/sim:sim_remote_proxy_lib",
     ],
 )
 

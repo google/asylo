@@ -39,10 +39,10 @@ stardoc(
 )
 
 stardoc(
-    name = "sim_enclave_bzl-docs",
-    out = "sim_enclave_bzl.md",
+    name = "dlopen_enclave_bzl-docs",
+    out = "dlopen_enclave_bzl.md",
     func_template = "bzl_function.vm",
-    input = "//asylo/bazel:sim_enclave.bzl",
+    input = "//asylo/bazel:dlopen_enclave.bzl",
     deps = ["@com_google_asylo_backend_provider//:enclave_info_bzl"],
 )
 

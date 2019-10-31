@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves", "sim_enclave_test")
+load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves", "dlopen_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
@@ -527,7 +527,7 @@ cc_test(
     ],
 )
 
-sim_enclave_test(
+dlopen_enclave_test(
     name = "primitives_thread_test",
     srcs = ["thread_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,

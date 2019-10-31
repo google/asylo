@@ -16,26 +16,26 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_PRIMITIVES_SIM_UNTRUSTED_SIM_H_
-#define ASYLO_PLATFORM_PRIMITIVES_SIM_UNTRUSTED_SIM_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_DLOPEN_UNTRUSTED_DLOPEN_H_
+#define ASYLO_PLATFORM_PRIMITIVES_DLOPEN_UNTRUSTED_DLOPEN_H_
 
 #include <cstdint>
 #include <memory>
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
-#include "asylo/platform/primitives/sim/shared_sim.h"
+#include "asylo/platform/primitives/dlopen/shared_dlopen.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/statusor.h"
 
-// Simulated Enclave Untrusted Primitives
+// dlopen Enclave Untrusted Primitives
 // ======================================
 //
-// The enclave simulator implements the Asylo primitives API inside a Unix
+// This enclave backend implements the Asylo primitives API inside a Unix
 // process with no special security properties or guarantees.
 //
-// The simulator loads "trusted" code from a shared library object file with a
+// This backend loads "trusted" code from a shared library object file with a
 // call to dlopen(). The enclave library is expected to export "C" linkage
 // symbols `asylo_enclave_init` and `asylo_enclave_fini` which will be called by
 // the runtime to initialize and finalize the enclave respectively.
@@ -49,9 +49,9 @@ using EnclaveCallPtr = PrimitiveStatus (*)(uint64_t trusted_selector,
                                            const void *input, size_t input_size,
                                            void **output, size_t *output_size);
 
-// Simulator implementation of the generic "EnclaveBackend" concept.
-struct SimBackend {
-  // Loads a simulation enclave from a file system path for the untrusted
+// dlopen implementation of the generic "EnclaveBackend" concept.
+struct DlopenBackend {
+  // Loads a dlopen enclave from a file system path for the untrusted
   // application. Returns a client to the loaded enclave or an error status on
   // failure.
   static StatusOr<std::shared_ptr<Client>> Load(
@@ -59,10 +59,10 @@ struct SimBackend {
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider);
 };
 
-// Simulator implementation of Client.
-class SimEnclaveClient : public Client {
+// dlopem implementation of Client.
+class DlopenEnclaveClient : public Client {
  public:
-  ~SimEnclaveClient() override;
+  ~DlopenEnclaveClient() override;
   Status Destroy() override;
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,
                              MessageReader *output) override;
@@ -70,18 +70,18 @@ class SimEnclaveClient : public Client {
 
  private:
   // Allow the loader to create client instances directly.
-  friend SimBackend;
+  friend DlopenBackend;
 
   // Constructor.
-  SimEnclaveClient(absl::string_view name,
-                   std::unique_ptr<ExitCallProvider> exit_call_provider)
+  DlopenEnclaveClient(absl::string_view name,
+                      std::unique_ptr<ExitCallProvider> exit_call_provider)
       : Client(name, std::move(exit_call_provider)) {}
 
   // Dynamic library handle for enclave instance loaded at runtime.
   void *dl_handle_ = nullptr;
 
-  // Enclave entry point trampoline, performing a simulated context switch into
-  // trusted execution mode and entering the enclave with a selector and message
+  // Enclave entry point trampoline, performing a context switch into trusted
+  // execution mode and entering the enclave with a selector and message
   // buffers.
   EnclaveCallPtr enclave_call_ = nullptr;
 };
@@ -89,4 +89,4 @@ class SimEnclaveClient : public Client {
 }  // namespace primitives
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_PRIMITIVES_SIM_UNTRUSTED_SIM_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_DLOPEN_UNTRUSTED_DLOPEN_H_

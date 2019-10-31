@@ -16,10 +16,10 @@
  *
  */
 
-#ifndef ASYLO_PLATFORM_PRIMITIVES_TEST_SIM_TEST_BACKEND_H_
-#define ASYLO_PLATFORM_PRIMITIVES_TEST_SIM_TEST_BACKEND_H_
+#ifndef ASYLO_PLATFORM_PRIMITIVES_TEST_DLOPEN_TEST_BACKEND_H_
+#define ASYLO_PLATFORM_PRIMITIVES_TEST_DLOPEN_TEST_BACKEND_H_
 
-#include "asylo/platform/primitives/sim/untrusted_sim.h"
+#include "asylo/platform/primitives/dlopen/untrusted_dlopen.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/util/statusor.h"
 
@@ -27,11 +27,11 @@ namespace asylo {
 namespace primitives {
 namespace test {
 
-class SimTestBackend : public TestBackend {
+class DlopenTestBackend : public TestBackend {
  public:
-  SimTestBackend() = default;
+  DlopenTestBackend() = default;
 
-  // Loads an instance of a sim test enclave, aborting on failure.
+  // Loads an instance of a dlopen test enclave, aborting on failure.
   StatusOr<std::shared_ptr<Client>> LoadTestEnclave(
       const absl::string_view enclave_name,
       std::unique_ptr<Client::ExitCallProvider> exit_call_provider) override;
@@ -44,4 +44,4 @@ class SimTestBackend : public TestBackend {
 }  // namespace primitives
 }  // namespace asylo
 
-#endif  // ASYLO_PLATFORM_PRIMITIVES_TEST_SIM_TEST_BACKEND_H_
+#endif  // ASYLO_PLATFORM_PRIMITIVES_TEST_DLOPEN_TEST_BACKEND_H_
