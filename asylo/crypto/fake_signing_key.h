@@ -53,10 +53,12 @@ class FakeVerifyingKey : public VerifyingKey {
   // Returns the signature scheme set at construction.
   SignatureScheme GetSignatureScheme() const override;
 
-  // Returns the DER-encoded key value set at construction.
+  // Returns the DER-encoded key value or the non-OK Status value passed at
+  // construction.
   StatusOr<std::string> SerializeToDer() const override;
 
-  // Unimplemented.
+  // Unimplemented. Because of this, SerializeToKeyProto is also unimplemented
+  // for PEM.
   StatusOr<std::string> SerializeToPem() const override;
 
   // Verifies that the signature is |message| appended to the value of
@@ -91,7 +93,8 @@ class FakeSigningKey : public SigningKey {
   // construction.
   StatusOr<CleansingVector<uint8_t>> SerializeToDer() const override;
 
-  // Unimplemented.
+  // Unimplemented. Because of this, SerializeToKeyProto is also unimplemented
+  // for PEM.
   StatusOr<CleansingVector<char>> SerializeToPem() const override;
 
   // Creates and returns the verifying key counterpart to this object.

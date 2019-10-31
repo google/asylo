@@ -42,6 +42,7 @@
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
+#include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/string_matchers.h"
 #include "asylo/util/cleansing_types.h"
@@ -146,6 +147,16 @@ struct VerifyingKeyParam {
       factory;
   std::string key_data;
 };
+
+void CheckPemKeyProtoResult(StatusOr<AsymmetricSigningKeyProto> actual_result,
+                            AsymmetricSigningKeyProto expected) {
+  AsymmetricSigningKeyProto actual;
+  ASYLO_ASSERT_OK_AND_ASSIGN(actual, actual_result);
+  ASSERT_THAT(actual.encoding(), ASYMMETRIC_KEY_PEM);
+  EXPECT_EQ(actual.key_type(), expected.key_type());
+  EXPECT_EQ(actual.signature_scheme(), expected.signature_scheme());
+  EXPECT_THAT(actual.key(), EqualIgnoreWhiteSpace(expected.key()));
+}
 
 // Verify that Create() fails when the key has an incorrect group.
 TEST(EcdsaP256Sha256VerifyingKeyCreateTest,
@@ -274,6 +285,30 @@ TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyingKeySerializeToDer) {
 TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyingKeySerializeToPem) {
   EXPECT_THAT(verifying_key_->SerializeToPem(),
               IsOkAndHolds(EqualIgnoreWhiteSpace(kTestVerifyingKeyPem)));
+}
+
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, SerializeToKeyProtoUnknownFailure) {
+  EXPECT_THAT(
+      verifying_key_->SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_P(EcdsaP256Sha256VerifyingKeyTest,
+       VerifyingKeySerializeToKeyProtoSuccess) {
+  AsymmetricSigningKeyProto expected_der_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyDerProto,
+                                                  &expected_der_key_proto));
+
+  EXPECT_THAT(verifying_key_->SerializeToKeyProto(ASYMMETRIC_KEY_DER),
+              IsOkAndHolds(EqualsProto(expected_der_key_proto)));
+
+  AsymmetricSigningKeyProto expected_pem_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestVerifyingKeyPemProto,
+                                                  &expected_pem_key_proto));
+
+  CheckPemKeyProtoResult(
+      verifying_key_->SerializeToKeyProto(ASYMMETRIC_KEY_PEM),
+      expected_pem_key_proto);
 }
 
 // Verify that an EcdsaP256Sha256VerifyingKey verifies a valid signature.
@@ -587,6 +622,39 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyFromDerMatchesPem) {
 
   EXPECT_THAT(CopyToByteContainer<std::string>(serialized_pem),
               EqualIgnoreWhiteSpace(kTestSigningKeyPem));
+}
+
+TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToKeyProtoUnknownFailure) {
+  EXPECT_THAT(
+      signing_key_->SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(EcdsaP256Sha256SigningKeyTest, SerializeToKeyProtoSuccess) {
+  std::unique_ptr<SigningKey> signing_key_der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(signing_key_der,
+                             EcdsaP256Sha256SigningKey::CreateFromDer(
+                                 absl::HexStringToBytes(kTestSigningKeyDer)));
+
+  AsymmetricSigningKeyProto expected_der_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestSigningKeyDerProto,
+                                                  &expected_der_key_proto));
+
+  EXPECT_THAT(signing_key_der->SerializeToKeyProto(ASYMMETRIC_KEY_DER),
+              IsOkAndHolds(EqualsProto(expected_der_key_proto)));
+
+  std::unique_ptr<SigningKey> signing_key_pem;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key_pem,
+      EcdsaP256Sha256SigningKey::CreateFromPem(kTestSigningKeyPem));
+
+  AsymmetricSigningKeyProto expected_pem_key_proto;
+  ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(kTestSigningKeyPemProto,
+                                                  &expected_pem_key_proto));
+
+  CheckPemKeyProtoResult(
+      signing_key_pem->SerializeToKeyProto(ASYMMETRIC_KEY_PEM),
+      expected_pem_key_proto);
 }
 
 // Verify that a randomly-generated EcdsaP256Sha256SigningKey can produce a

@@ -40,9 +40,7 @@ class VerifyingKey {
 
   virtual bool operator==(const VerifyingKey &other) const = 0;
 
-  virtual bool operator!=(const VerifyingKey &other) const {
-    return !(*this == other);
-  }
+  virtual bool operator!=(const VerifyingKey &other) const;
 
   // Returns the signature scheme used by this VerifyingKey.
   virtual SignatureScheme GetSignatureScheme() const = 0;
@@ -54,6 +52,11 @@ class VerifyingKey {
   // Serializes this VerifyingKey into a PEM-encoded key structure and returns
   // the serialized key.
   virtual StatusOr<std::string> SerializeToPem() const = 0;
+
+  // Returns an AsymmetricSigningKeyProto representation of this VerifyingKey
+  // that uses |encoding|.
+  StatusOr<AsymmetricSigningKeyProto> SerializeToKeyProto(
+      AsymmetricKeyEncoding encoding) const;
 
   // Verifies that |signature| is a valid signature over a hash of |message|
   // produced by the underlying hash function. Returns a non-OK Status if
@@ -79,6 +82,10 @@ class SigningKey {
   // Serializes this SigningKey into a PEM-encoded key structure and writes it
   // to |serialized_key|.
   virtual StatusOr<CleansingVector<char>> SerializeToPem() const = 0;
+
+  // Returns an AsymmetricSigningKeyProto representation of this SigningKey.
+  StatusOr<AsymmetricSigningKeyProto> SerializeToKeyProto(
+      AsymmetricKeyEncoding encoding) const;
 
   // Returns a VerifyingKey that can verify signatures produced by this
   // SigningKey.

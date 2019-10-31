@@ -63,6 +63,32 @@ TEST(FakeSigningKeyTest, VerifyingKeyFailsSerializeToDer) {
               StatusIs(error::GoogleError::FAILED_PRECONDITION, kTestMessage));
 }
 
+TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoSuccess) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  AsymmetricSigningKeyProto key_proto;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      key_proto, verifying_key.SerializeToKeyProto(ASYMMETRIC_KEY_DER));
+  EXPECT_EQ(key_proto.key_type(), AsymmetricSigningKeyProto::VERIFYING_KEY);
+  EXPECT_EQ(key_proto.signature_scheme(), UNKNOWN_SIGNATURE_SCHEME);
+  EXPECT_EQ(key_proto.encoding(), ASYMMETRIC_KEY_DER);
+  EXPECT_EQ(key_proto.key(), kTestKeyDer);
+}
+
+TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoPemFailure) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  AsymmetricSigningKeyProto key_proto;
+  EXPECT_THAT(verifying_key.SerializeToKeyProto(ASYMMETRIC_KEY_PEM),
+              StatusIs(error::GoogleError::UNIMPLEMENTED));
+}
+
+TEST(FakeSigningKeyTest, VerifyingKeySerializeToKeyProtoUnknownFailure) {
+  FakeVerifyingKey verifying_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  AsymmetricSigningKeyProto key_proto;
+  EXPECT_THAT(
+      verifying_key.SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
+      StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
 // Verify that a FakeVerifyingKey with a status passed at construction for the
 // DER-encoded key value returns that status for Verify().
 TEST(FakeSigningKeyTest, VerifyingKeyConstructedWithStatusVerify) {
@@ -198,6 +224,31 @@ TEST(FakeSigningKeyTest, SigningKeySerializeToDer) {
   CleansingVector<uint8_t> serialized_key;
   ASYLO_ASSERT_OK_AND_ASSIGN(serialized_key, signing_key.SerializeToDer());
   EXPECT_EQ(ByteContainerView(serialized_key), ByteContainerView(kTestKeyDer));
+}
+
+TEST(FakeSigningKeyTest, SigningKeySerializeToKeyProtoSuccess) {
+  FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  AsymmetricSigningKeyProto key_proto;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      key_proto, signing_key.SerializeToKeyProto(ASYMMETRIC_KEY_DER));
+  EXPECT_EQ(key_proto.key_type(), AsymmetricSigningKeyProto::SIGNING_KEY);
+  EXPECT_EQ(key_proto.signature_scheme(), UNKNOWN_SIGNATURE_SCHEME);
+  EXPECT_EQ(key_proto.encoding(), ASYMMETRIC_KEY_DER);
+  EXPECT_EQ(key_proto.key(), kTestKeyDer);
+}
+
+TEST(FakeSigningKeyTest, SigningKeySerializeToKeyProtoPemFailure) {
+  FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  AsymmetricSigningKeyProto key_proto;
+  EXPECT_THAT(signing_key.SerializeToKeyProto(ASYMMETRIC_KEY_PEM),
+              StatusIs(error::GoogleError::UNIMPLEMENTED));
+}
+
+TEST(FakeSigningKeyTest, SigningKeySerializeToKeyProtoUnknownFailure) {
+  FakeSigningKey signing_key(UNKNOWN_SIGNATURE_SCHEME, kTestKeyDer);
+  AsymmetricSigningKeyProto key_proto;
+  EXPECT_THAT(signing_key.SerializeToKeyProto(UNKNOWN_ASYMMETRIC_KEY_ENCODING),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 // Verify that a FakeSigningKey returns the non-OK Status passed at construction

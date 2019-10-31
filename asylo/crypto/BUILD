@@ -497,16 +497,19 @@ cc_test(
 
 cc_library(
     name = "signing_key",
+    srcs = ["signing_key.cc"],
     hdrs = ["signing_key.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
         ":algorithms_cc_proto",
         ":keys_cc_proto",
+        "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 
@@ -542,12 +545,14 @@ cc_test(
         ":signing_key",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
+        "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:string_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
         "//asylo/util:logging",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
