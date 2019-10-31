@@ -18,6 +18,7 @@
 
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 
+#include <openssl/bio.h>
 #include <openssl/bytestring.h>
 #include <openssl/crypto.h>
 #include <openssl/ec_key.h>
@@ -148,11 +149,10 @@ EcdsaP256Sha256VerifyingKey::CreateFromProto(
           error::GoogleError::UNIMPLEMENTED,
           absl::StrFormat("Asymmetric key encoding (%s) unsupported",
                           AsymmetricKeyEncoding_Name(key_proto.encoding())));
-    default:
-      return Status(error::GoogleError::UNIMPLEMENTED,
-                    absl::StrFormat("Asymmetric key encoding (%d) unsupported",
-                                    key_proto.encoding()));
   }
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                absl::StrFormat("Asymmetric key encoding (%d) unsupported",
+                                key_proto.encoding()));
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
@@ -198,6 +198,21 @@ StatusOr<std::string> EcdsaP256Sha256VerifyingKey::SerializeToDer() const {
   }
   bssl::UniquePtr<uint8_t> deleter(key);
   return std::string(reinterpret_cast<char *>(key), length);
+}
+
+StatusOr<std::string> EcdsaP256Sha256VerifyingKey::SerializeToPem() const {
+  bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
+  if (!PEM_write_bio_EC_PUBKEY(key_bio.get(), public_key_.get())) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  size_t key_data_size;
+  const uint8_t *key_data = nullptr;
+  if (BIO_mem_contents(key_bio.get(), &key_data, &key_data_size) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return std::string(reinterpret_cast<const char *>(key_data), key_data_size);
 }
 
 Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,
@@ -341,11 +356,10 @@ EcdsaP256Sha256SigningKey::CreateFromProto(
           error::GoogleError::UNIMPLEMENTED,
           absl::StrFormat("Asymmetric key encoding (%s) unsupported",
                           AsymmetricKeyEncoding_Name(key_proto.encoding())));
-    default:
-      return Status(error::GoogleError::UNIMPLEMENTED,
-                    absl::StrFormat("Asymmetric key encoding (%d) unsupported",
-                                    key_proto.encoding()));
   }
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                absl::StrFormat("Asymmetric key encoding (%d) unsupported",
+                                key_proto.encoding()));
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256SigningKey>>
@@ -387,6 +401,24 @@ StatusOr<CleansingVector<uint8_t>> EcdsaP256Sha256SigningKey::SerializeToDer()
   OPENSSL_free(key_data);
 
   return serialized_key;
+}
+
+StatusOr<CleansingVector<char>> EcdsaP256Sha256SigningKey::SerializeToPem()
+    const {
+  bssl::UniquePtr<BIO> key_bio(BIO_new(BIO_s_mem()));
+  if (!PEM_write_bio_ECPrivateKey(key_bio.get(), private_key_.get(),
+                                  /*enc=*/nullptr, /*kstr=*/nullptr, /*klen=*/0,
+                                  /*cb=*/nullptr, /*u=*/nullptr)) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  size_t key_data_size;
+  const uint8_t *key_data = nullptr;
+  if (BIO_mem_contents(key_bio.get(), &key_data, &key_data_size) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return CleansingVector<char>(key_data, key_data + key_data_size);
 }
 
 SignatureScheme EcdsaP256Sha256SigningKey::GetSignatureScheme() const {

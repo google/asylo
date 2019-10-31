@@ -43,6 +43,7 @@
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/test/util/string_matchers.h"
 #include "asylo/util/cleansing_types.h"
 
 ABSL_FLAG(std::string, serialized_signing_key, "",
@@ -268,6 +269,11 @@ TEST_P(EcdsaP256Sha256VerifyingKeyTest,
 TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyingKeySerializeToDer) {
   EXPECT_THAT(verifying_key_->SerializeToDer(),
               IsOkAndHolds(absl::HexStringToBytes(kTestVerifyingKeyDer)));
+}
+
+TEST_P(EcdsaP256Sha256VerifyingKeyTest, VerifyingKeySerializeToPem) {
+  EXPECT_THAT(verifying_key_->SerializeToPem(),
+              IsOkAndHolds(EqualIgnoreWhiteSpace(kTestVerifyingKeyPem)));
 }
 
 // Verify that an EcdsaP256Sha256VerifyingKey verifies a valid signature.
@@ -568,6 +574,19 @@ TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyFromPemMatchesDer) {
 
   EXPECT_EQ(ByteContainerView(serialized_der),
             ByteContainerView(absl::HexStringToBytes(kTestSigningKeyDer)));
+}
+
+TEST_F(EcdsaP256Sha256SigningKeyTest, CreateSigningKeyFromDerMatchesPem) {
+  std::unique_ptr<SigningKey> signing_key_der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(signing_key_der,
+                             EcdsaP256Sha256SigningKey::CreateFromDer(
+                                 absl::HexStringToBytes(kTestSigningKeyDer)));
+
+  CleansingVector<char> serialized_pem;
+  ASYLO_ASSERT_OK_AND_ASSIGN(serialized_pem, signing_key_der->SerializeToPem());
+
+  EXPECT_THAT(CopyToByteContainer<std::string>(serialized_pem),
+              EqualIgnoreWhiteSpace(kTestSigningKeyPem));
 }
 
 // Verify that a randomly-generated EcdsaP256Sha256SigningKey can produce a

@@ -60,6 +60,11 @@ StatusOr<std::string> FakeVerifyingKey::SerializeToDer() const {
   return serialize_to_der_result_;
 }
 
+StatusOr<std::string> FakeVerifyingKey::SerializeToPem() const {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "SerializeToPem unimplemented");
+}
+
 Status FakeVerifyingKey::Verify(ByteContainerView message,
                                 ByteContainerView signature) const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
@@ -100,6 +105,11 @@ StatusOr<CleansingVector<uint8_t>> FakeSigningKey::SerializeToDer() const {
   ASYLO_RETURN_IF_ERROR(serialize_to_der_result_.status());
   return CopyToByteContainer<CleansingVector<uint8_t>>(
       serialize_to_der_result_.ValueOrDie());
+}
+
+StatusOr<CleansingVector<char>> FakeSigningKey::SerializeToPem() const {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "SerializeToPem unimplemented");
 }
 
 StatusOr<std::unique_ptr<VerifyingKey>> FakeSigningKey::GetVerifyingKey()

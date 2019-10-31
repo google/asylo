@@ -543,6 +543,7 @@ cc_test(
         "//asylo/crypto/util:byte_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:string_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleansing_types",
         "//asylo/util:logging",

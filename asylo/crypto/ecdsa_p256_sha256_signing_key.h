@@ -22,7 +22,9 @@
 #include <openssl/base.h>
 #include <openssl/ec.h>
 
+#include <cstdint>
 #include <memory>
+#include <string>
 
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
@@ -60,6 +62,8 @@ class EcdsaP256Sha256VerifyingKey : public VerifyingKey {
   SignatureScheme GetSignatureScheme() const override;
 
   StatusOr<std::string> SerializeToDer() const override;
+
+  StatusOr<std::string> SerializeToPem() const override;
 
   Status Verify(ByteContainerView message,
                 ByteContainerView signature) const override;
@@ -104,6 +108,8 @@ class EcdsaP256Sha256SigningKey : public SigningKey {
   SignatureScheme GetSignatureScheme() const override;
 
   StatusOr<CleansingVector<uint8_t>> SerializeToDer() const override;
+
+  StatusOr<CleansingVector<char>> SerializeToPem() const override;
 
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override;
 

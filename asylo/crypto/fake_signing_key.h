@@ -56,6 +56,9 @@ class FakeVerifyingKey : public VerifyingKey {
   // Returns the DER-encoded key value set at construction.
   StatusOr<std::string> SerializeToDer() const override;
 
+  // Unimplemented.
+  StatusOr<std::string> SerializeToPem() const override;
+
   // Verifies that the signature is |message| appended to the value of
   // SerializeToDer(). If SerializeToDer() returns a non-OK Status, return that
   // status.
@@ -87,6 +90,9 @@ class FakeSigningKey : public SigningKey {
   // Returns the DER-encoded key value or the non-OK Status value passed at
   // construction.
   StatusOr<CleansingVector<uint8_t>> SerializeToDer() const override;
+
+  // Unimplemented.
+  StatusOr<CleansingVector<char>> SerializeToPem() const override;
 
   // Creates and returns the verifying key counterpart to this object.
   StatusOr<std::unique_ptr<VerifyingKey>> GetVerifyingKey() const override;

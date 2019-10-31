@@ -22,6 +22,7 @@
 #include <openssl/base.h>
 
 #include <cstdint>
+#include <string>
 
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/keys.pb.h"
@@ -50,6 +51,10 @@ class VerifyingKey {
   // the serialized key.
   virtual StatusOr<std::string> SerializeToDer() const = 0;
 
+  // Serializes this VerifyingKey into a PEM-encoded key structure and returns
+  // the serialized key.
+  virtual StatusOr<std::string> SerializeToPem() const = 0;
+
   // Verifies that |signature| is a valid signature over a hash of |message|
   // produced by the underlying hash function. Returns a non-OK Status if
   // verification failed or an error occurred during verification.
@@ -70,6 +75,10 @@ class SigningKey {
   // Serializes this SigningKey into a DER-encoded key structure and returns the
   // serialized key.
   virtual StatusOr<CleansingVector<uint8_t>> SerializeToDer() const = 0;
+
+  // Serializes this SigningKey into a PEM-encoded key structure and writes it
+  // to |serialized_key|.
+  virtual StatusOr<CleansingVector<char>> SerializeToPem() const = 0;
 
   // Returns a VerifyingKey that can verify signatures produced by this
   // SigningKey.
