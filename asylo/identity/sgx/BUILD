@@ -618,12 +618,11 @@ cc_library(
     hdrs = ["remote_assertion_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":code_identity_cc_proto",
         ":remote_assertion_cc_proto",
         ":sgx_identity_cc_proto",
-        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:signing_key",
+        "//asylo/crypto/util:byte_container_util",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],
