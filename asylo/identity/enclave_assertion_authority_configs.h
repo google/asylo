@@ -24,44 +24,57 @@
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/util/statusor.h"
 
-// This file provides factory functions for configs that can be used to
-// initialize various enclave assertion authorities. The term "enclave assertion
-// authority" refers to the combination of EnclaveAssertionGenerator and
-// EnclaveAssertionVerifier for a particular type of assertion.
-//
-// To configure assertion authorities in the untrusted application, use a call
-// like the following:
-//
-//   std::vector<EnclaveAssertionAuthorityConfig> authority_configs = {
-//       CreateNullAssertionAuthorityConfig(),
-//   };
-//   ASSERT_OK(InitializeEnclaveAssertionAuthorities(
-//       authority_configs.cbegin(), authority_configs.cend());
-//
-// To configure assertion authorities inside an enclave, pass the set of
-// configurations through the EnclaveConfig:
-//
-//   EnclaveManager *manager = ...
-//   EnclaveLoadConfig load_config = ...
-//   EnclaveConfig config;
-//   *config.add_enclave_assertion_authority_configs() =
-//       CreateNullAssertionAuthorityTestConfig();
-//   *load_config.mutable_config() = config;
-//   ASSERT_OK(manager->LoadEnclave(load_config));
-//
-// Assertion authorities are automatically initialized in the TrustedApplication
-// using the provided configurations.
+/// @file enclave_assertion_authority_configs.h
+/// @brief Provides functions for creating enclave assertion authority configs.
+///
+/// The term "enclave assertion authority" refers to the combination of
+/// EnclaveAssertionGenerator and EnclaveAssertionVerifier for a particular type
+/// of assertion.
+///
+/// To configure assertion authorities in the untrusted application, use a
+/// sequence of calls like the following:
+///
+/// ```
+///   std::vector<EnclaveAssertionAuthorityConfig> authority_configs = {
+///       CreateNullAssertionAuthorityConfig(),
+///   };
+///   CHECK(InitializeEnclaveAssertionAuthorities(
+///       authority_configs.cbegin(), authority_configs.cend()).ok());
+/// ```
+///
+/// To configure assertion authorities inside an enclave, pass the set of
+/// configurations through the EnclaveConfig:
+///
+/// ```
+///   EnclaveManager *manager = ...
+///   EnclaveLoadConfig load_config = ...
+///   EnclaveConfig config;
+///   *config.add_enclave_assertion_authority_configs() =
+///       CreateNullAssertionAuthorityTestConfig();
+///   *load_config.mutable_config() = config;
+///   CHECK(manager->LoadEnclave(load_config).ok());
+/// ```
+///
+/// Assertion authorities are automatically initialized in TrustedApplication
+/// using the provided configurations.
 
 namespace asylo {
 
-// Creates configuration for the null assertion authority. This configuration is
-// required when using the NullAssertionGenerator or NullAssertionVerifier.
+/// Creates a configuration for the null assertion authority.
+///
+/// This configuration is required when using the NullAssertionGenerator or
+/// NullAssertionVerifier.
+///
+/// \return A config for the null assertion authority.
 EnclaveAssertionAuthorityConfig CreateNullAssertionAuthorityConfig();
 
-// Creates configuration for the SGX local assertion authority. The
-// |attestation_domain| is a 16-byte unique identifier for the SGX machine. This
-// configuration is required when using the SgxLocalAssertionGenerator or
-// SgxLocalAssertionVerifier.
+/// Creates a configuration for the SGX local assertion authority.
+///
+/// This configuration is required when using the SgxLocalAssertionGenerator or
+/// SgxLocalAssertionVerifier.
+///
+/// \param attestation_domain A 16-byte unique identifier for the SGX machine.
+/// \return A config for the SGX local assertion authority.
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain);
 

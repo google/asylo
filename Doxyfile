@@ -802,6 +802,7 @@ asylo/grpc/auth/null_credentials_options.h \
 asylo/grpc/auth/sgx_local_credentials_options.h \
 asylo/identity/descriptions.h \
 asylo/identity/enclave_assertion_authority.h \
+asylo/identity/enclave_assertion_authority_configs.h \
 asylo/identity/enclave_assertion_generator.h \
 asylo/identity/enclave_assertion_verifier.h \
 asylo/identity/identity_acl_evaluator.h \
