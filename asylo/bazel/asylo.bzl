@@ -47,7 +47,6 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave")
 ASYLO_ALL_BACKENDS = [
     "asylo-dlopen",
     "asylo-sgx",
-    "asylo-sim",
 ]
 
 ASYLO_ALL_BACKEND_TAGS = ASYLO_ALL_BACKENDS + [
@@ -76,9 +75,8 @@ def asylo_tags(backend_tag = None):
     Args:
       backend_tag: String that indicates the backend technology used. Can be
                    one of
-                   * "asylo-sgx"
-                   * "asylo-sim"
                    * "asylo-dlopen"
+                   * "asylo-sgx"
                    * None
     """
     result = []
@@ -780,7 +778,7 @@ def enclave_test(
 def sim_enclave_test(
         name,
         **kwargs):
-    """Thin wrapper around enclave test, adds 'asylo-sim' tag and necessary linkopts
+    """Thin wrapper around enclave test, adds 'asylo-dlopen' tag and necessary linkopts
 
     Args:
       name: enclave_test name
@@ -790,8 +788,6 @@ def sim_enclave_test(
     tags = kwargs.pop("tags", [])
     if "asylo-dlopen" not in tags:
         tags += ["asylo-dlopen"]
-    if "asylo-sim" not in tags:
-        tags += ["asylo-sim"]
 
     enclave_test(
         name,
