@@ -645,9 +645,6 @@ def cc_enclave_binary(
     if not application_enclave_config:
         application_enclave_config = _workspace_name + "/bazel/application_wrapper:default_config"
 
-    if enclave_build_config:
-        enclave_kwargs["config"] = enclave_build_config
-
     sgx.unsigned_enclave(
         name = unsigned_enclave_name,
         copts = ASYLO_DEFAULT_COPTS,
@@ -658,10 +655,16 @@ def cc_enclave_binary(
         ],
         **enclave_kwargs
     )
+
+    debug_kwargs = {}
+    if enclave_build_config:
+        debug_kwargs["config"] = enclave_build_config
+
     sgx.debug_enclave(
         name = enclave_name,
         unsigned = unsigned_enclave_name,
         tags = ["asylo-sgx"],
+        **debug_kwargs
     )
 
     enclave_loader(
