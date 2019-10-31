@@ -360,6 +360,7 @@ cc_test(
         ":certificate_interface",
         ":x509_certificate",
         "//asylo/test/util:status_matchers",
+        "//asylo/test/util:string_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",

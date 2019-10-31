@@ -252,6 +252,31 @@ cc_test(
 )
 
 cc_library(
+    name = "string_matchers",
+    testonly = 1,
+    hdrs = ["string_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "string_matchers_test",
+    srcs = ["string_matchers_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "string_matchers_enclave_test",
+    deps = [
+        ":string_matchers",
+        ":test_main",
+        "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "finite_domain_fuzz",
     testonly = 1,
     srcs = ["finite_domain_fuzz.cc"],

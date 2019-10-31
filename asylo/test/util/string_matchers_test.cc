@@ -1,0 +1,53 @@
+/*
+ *
+ * Copyright 2019 Asylo authors
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *
+ */
+
+#include "asylo/test/util/string_matchers.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include "absl/strings/string_view.h"
+
+namespace asylo {
+namespace {
+
+using ::testing::Not;
+
+TEST(StringMatchersTest, EqualIgnoreWhiteSpaceDifferentWhiteSpaceSuccess) {
+  EXPECT_THAT("\ng\t \nood\t\t", EqualIgnoreWhiteSpace(" go\no\td"));
+}
+
+TEST(StringMatchersTest, EqualIgnoreWhiteSpaceWithoutWhiteSpacesSuccess) {
+  EXPECT_THAT("good", EqualIgnoreWhiteSpace("\ngo od\r"));
+}
+
+TEST(StringMatchersTest, EqualIgnoreWhiteSpaceEmptyStringSuccess) {
+  EXPECT_THAT("", EqualIgnoreWhiteSpace("\t\r "));
+}
+
+TEST(StringMatchersTest, EqualIgnoreWhiteSpaceNonNulTerminatedSuccess) {
+  constexpr char kAllWhiteSpace[] = {' ', '\t', '\r'};
+  EXPECT_THAT(absl::string_view(kAllWhiteSpace, sizeof(kAllWhiteSpace)),
+              EqualIgnoreWhiteSpace(""));
+}
+
+TEST(StringMatchersTest, EqualIgnoreWhiteSpaceFailure) {
+  EXPECT_THAT("\ngood ", Not(EqualIgnoreWhiteSpace("\ngo o")));
+}
+
+}  // namespace
+}  // namespace asylo

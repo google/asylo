@@ -17,8 +17,6 @@
  */
 #include "asylo/crypto/x509_certificate.h"
 
-#include <algorithm>
-#include <cctype>
 #include <memory>
 #include <string>
 
@@ -28,6 +26,7 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/test/util/string_matchers.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -201,22 +200,6 @@ constexpr char kCsrDerHex[] =
 using ::testing::Eq;
 using ::testing::Optional;
 using ::testing::Test;
-
-MATCHER_P(EqualIgnoreWhiteSpace, expected_arg, "") {
-  // Make copies for modification.
-  std::string actual = arg;
-  std::string expected = expected_arg;
-
-  actual.erase(std::remove_if(actual.begin(), actual.end(),
-                              [](unsigned char x) { return std::isspace(x); }),
-               actual.end());
-  expected.erase(
-      std::remove_if(expected.begin(), expected.end(),
-                     [](unsigned char x) { return std::isspace(x); }),
-      expected.end());
-
-  return actual == expected;
-}
 
 class X509CertificateTest : public Test {
  public:
