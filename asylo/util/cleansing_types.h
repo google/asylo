@@ -27,6 +27,8 @@
 namespace asylo {
 
 /// A string that zeros its memory on free.
+///
+/// \deprecated Use `CleansingVector` instead.
 using CleansingString =
     std::basic_string<char, std::char_traits<char>, CleansingAllocator<char>>;
 
