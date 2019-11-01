@@ -107,6 +107,7 @@ cc_library(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:cleanup",
     ],
+    alwayslink = 1,
 )
 
 cc_library(
