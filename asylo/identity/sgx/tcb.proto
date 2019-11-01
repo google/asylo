@@ -65,8 +65,21 @@ message TcbLevel {
   // Required.
   optional Tcb tcb = 1;
 
+  // From Intel's documentation: "Representation of date and time when the TCB
+  // level was certified not to be vulnerable to any issues described in SAs
+  // that were published on or prior to this date." Optional, but see
+  // TcbInfoImpl.tcb_levels.
+  optional google.protobuf.Timestamp tcb_date = 3;
+
   // Status of the TcbLevel. Required.
   optional TcbStatus status = 2;
+
+  // Advisory IDs for vulnerabilities that this TCB level is known to be
+  // vulnerable to. See
+  // https://www.intel.com/content/www/us/en/security-center/default.html for
+  // more information on Advisory IDs. Optional (i.e. may be empty), but see
+  // TcbInfoImpl.tcb_levels.
+  repeated string advisory_ids = 4;
 }
 
 // SGX TCB Info implementation.
@@ -86,6 +99,17 @@ message TcbInfoImpl {
   // PCE identifier. Required.
   optional PceId pce_id = 5;
 
+  // TCB type indicating how TCB levels should be compared. Required if
+  // |version| >= 2, otherwise must not be present.
+  optional int32 tcb_type = 7;
+
+  // Monotonic counter indicating how many times TCB info has been updated for
+  // this FMSPC. Required if |version| >= 2, otherwise must not be present.
+  optional int32 tcb_evaluation_data_number = 8;
+
+  // If |version| >= 2, then each TcbLevel must have a |tcb_date| field.
+  // Otherwise, each TcbLevel must not have a |tcb_date| field and its
+  // |advisory_ids| field must be empty.
   repeated TcbLevel tcb_levels = 6;
 }
 
