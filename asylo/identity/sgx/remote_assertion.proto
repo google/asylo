@@ -20,6 +20,7 @@ package asylo.sgx;
 
 import "asylo/crypto/algorithms.proto";
 import "asylo/crypto/certificate.proto";
+import "asylo/crypto/keys.proto";
 import "asylo/identity/sgx/sgx_identity.proto";
 
 // A payload that is serialized and signed to produce an SGX remote assertion.
@@ -51,13 +52,13 @@ message RemoteAssertion {
   // about what message was signed, the exact bytes must be provided explicitly.
   optional bytes payload = 1;
 
-  // The signature scheme used to produce |signature|.
-  optional SignatureScheme signature_scheme = 2;
+  // The verifying key information to verify |signature|.
+  optional AsymmetricSigningKeyProto verifying_key = 2;
 
-  // A signature over |payload|.
+  // A signature over |payload| that can be verified with |verifying_key|.
   optional bytes signature = 3;
 
-  // One or more certificate chains that can be used to verify the authenticity
-  // of |signature|.
+  // One or more certificate chains that certify |verifying_key| and can be used
+  // to verify the authenticity of |signature|.
   repeated CertificateChain certificate_chains = 4;
 }

@@ -32,6 +32,7 @@
 #include "absl/time/time.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/grpc/auth/enclave_channel_credentials.h"
 #include "asylo/grpc/auth/enclave_server_credentials.h"
@@ -193,7 +194,7 @@ class SgxRemoteAssertionGeneratorImplTest : public testing::Test {
       const RemoteAssertion &assertion,
       const std::vector<CertificateChain> &certificate_chains,
       const VerifyingKey &verifying_key) {
-    EXPECT_EQ(assertion.signature_scheme(), signature_scheme_);
+    EXPECT_EQ(assertion.verifying_key().signature_scheme(), signature_scheme_);
     EXPECT_EQ(assertion.certificate_chains().size(), certificate_chains.size());
     for (size_t i = 0; i < assertion.certificate_chains().size(); ++i) {
       EXPECT_THAT(assertion.certificate_chains(i),

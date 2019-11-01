@@ -166,6 +166,7 @@ proto_library(
         ":sgx_identity_proto",
         "//asylo/crypto:algorithms_proto",
         "//asylo/crypto:certificate_proto",
+        "//asylo/crypto:keys_proto",
     ],
 )
 
@@ -308,6 +309,7 @@ cc_test_and_cc_enclave_test(
         ":sgx_remote_assertion_generator_service",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -353,6 +355,7 @@ cc_test(
         "//asylo:enclave_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:null_credentials_options",
@@ -620,7 +623,9 @@ cc_library(
     deps = [
         ":remote_assertion_cc_proto",
         ":sgx_identity_cc_proto",
+        "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/util:status",
@@ -639,10 +644,13 @@ cc_test_and_cc_enclave_test(
         ":sgx_identity_util",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:signing_key",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 

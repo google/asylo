@@ -18,7 +18,14 @@
 
 #include "asylo/identity/sgx/remote_assertion_util.h"
 
+#include <cstdint>
+#include <memory>
+#include <string>
+#include <vector>
+
 #include "absl/strings/str_cat.h"
+#include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/util/status_macros.h"
 
@@ -36,7 +43,12 @@ Status MakeRemoteAssertion(const std::string &user_data,
                            const std::vector<CertificateChain> &cert_chains,
                            RemoteAssertion *assertion) {
   assertion->Clear();
-  assertion->set_signature_scheme(signing_key.GetSignatureScheme());
+  std::unique_ptr<VerifyingKey> verifying_key;
+  ASYLO_ASSIGN_OR_RETURN(verifying_key, signing_key.GetVerifyingKey());
+  ASYLO_ASSIGN_OR_RETURN(
+      *assertion->mutable_verifying_key(),
+      verifying_key->SerializeToKeyProto(ASYMMETRIC_KEY_DER));
+
   for (const auto &chain : cert_chains) {
     *assertion->add_certificate_chains() = chain;
   }

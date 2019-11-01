@@ -234,7 +234,7 @@ class RemoteAssertionGeneratorEnclaveTest : public ::testing::Test {
             .get_remote_assertion_output()
             .assertion();
     EXPECT_TRUE(assertion.has_signature());
-    EXPECT_THAT(assertion.signature_scheme(),
+    EXPECT_THAT(assertion.verifying_key().signature_scheme(),
                 Eq(SignatureScheme::ECDSA_P256_SHA256));
     if (assertion_has_certificate_chains) {
       EXPECT_THAT(assertion.certificate_chains(), SizeIs(1));

@@ -23,6 +23,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/crypto/keys.pb.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_mock.grpc.pb.h"
 #include "asylo/test/util/proto_matchers.h"
@@ -53,7 +54,11 @@ TEST(SgxRemoteAssertionGeneratorClientTest,
   sgx::RemoteAssertion &assertion = *response.mutable_assertion();
   assertion.set_payload("payload");
   assertion.set_signature("signature");
-  assertion.set_signature_scheme(ECDSA_P256_SHA256);
+  AsymmetricSigningKeyProto *verifying_key = assertion.mutable_verifying_key();
+  verifying_key->set_key_type(AsymmetricSigningKeyProto::VERIFYING_KEY);
+  verifying_key->set_signature_scheme(ECDSA_P256_SHA256);
+  verifying_key->set_encoding(ASYMMETRIC_KEY_PEM);
+  verifying_key->set_key("key data");
   Certificate &certificate =
       *assertion.add_certificate_chains()->add_certificates();
   certificate.set_format(Certificate::X509_DER);
