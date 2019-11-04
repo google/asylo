@@ -176,6 +176,16 @@ def asylo_deps(toolchain_path = None):
             strip_prefix = "rules_proto-0b96d7d6b4cdee3ef22b8b26a8ce8bf8dcc83478",
         )
 
+    # Required for Protobuf.
+    if not native.existing_rule("rules_python"):
+        http_archive(
+            name = "rules_python",
+            # Commit from 2019 October 23
+            urls = ["https://github.com/bazelbuild/rules_python/archive/230f6d15b4ab23cd3a46c54023c9e5fb3e1e3542.tar.gz"],
+            sha256 = "52197b7445ab0d9fbdec45bf18e90371ead860280de5cd9b2725669d759a3584",
+            strip_prefix = "rules_python-230f6d15b4ab23cd3a46c54023c9e5fb3e1e3542",
+        )
+
     # Absl for C++
     if not native.existing_rule("com_google_absl"):
         http_archive(
@@ -201,9 +211,9 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_google_protobuf"):
         http_archive(
             name = "com_google_protobuf",
-            strip_prefix = "protobuf-3.9.1",
-            urls = ["https://github.com/google/protobuf/archive/v3.9.1.tar.gz"],
-            sha256 = "98e615d592d237f94db8bf033fba78cd404d979b0b70351a9e5aaff725398357",
+            strip_prefix = "protobuf-3.10.1",
+            urls = ["https://github.com/google/protobuf/archive/v3.10.1.tar.gz"],
+            sha256 = "6adf73fd7f90409e479d6ac86529ade2d45f50494c5c10f539226693cb8fe4f7",
         )
 
     # gRPC
