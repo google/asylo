@@ -300,6 +300,7 @@ StatusOr<std::shared_ptr<Client>> SgxEmbeddedBackend::Load(
 Status SgxEnclaveClient::Destroy() {
   MessageReader output;
   ASYLO_RETURN_IF_ERROR(EnclaveCall(kSelectorAsyloFini, nullptr, &output));
+  ScopedCurrentClient scoped_client(this);
   sgx_status_t status = sgx_destroy_enclave(id_);
   if (status != SGX_SUCCESS) {
     return Status(status, "Failed to destroy enclave");
