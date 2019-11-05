@@ -5,6 +5,9 @@
 
 ## Modifications to v1.2
   * Moved PCE constants out of sgx_pce.h to sgx_pce_constants.h
+  * Moved quote constants out of QuoteVerification src and into include dir.
+    moved non-constexpr definitions into QuoteConstants.cpp so as not to violate
+    the one definition rule.
   * Added include user_types.h in sgx_ql_ecdsa_quote.h
   * Added sgx_qe_set_enclave_dirpath to set the directory paths for both the
     PCE and QE.
@@ -573,10 +576,195 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          {
                  ret_val = SGX_QL_ERROR_UNEXPECTED;
          }
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h
+--- QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h
++++ QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h
+@@ -0,0 +1,55 @@
++/*
++* Copyright (c) 2017, Intel Corporation
++*
++* Redistribution and use in source and binary forms, with or without modification,
++* are permitted provided that the following conditions are met:
++
++* 1. Redistributions of source code must retain the above copyright notice,
++*    this list of conditions and the following disclaimer.
++* 2. Redistributions in binary form must reproduce the above copyright notice,
++*    this list of conditions and the following disclaimer in the documentation
++*    and/or other materials provided with the distribution.
++* 3. Neither the name of the copyright holder nor the names of its contributors
++*    may be used to endorse or promote products derived from this software
++*    without specific prior written permission.
++*
++* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++* ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
++* BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
++* OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
++* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++* OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++* WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++* OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
++* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#ifndef INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
++#define INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
++
++#include <array>
++
++namespace intel { namespace sgx { namespace qvl { namespace constants {
++
++extern const uint16_t QUOTE_VERSION;
++
++extern const uint16_t ECDSA_256_WITH_P256_CURVE;
++extern const uint16_t ECDSA_384_WITH_P384_CURVE;
++extern const size_t ECDSA_P256_SIGNATURE_BYTE_LEN;
++extern const size_t ENCLAVE_REPORT_BYTE_LEN;
++
++extern const uint16_t PCK_ID_PLAIN_PPID;
++extern const uint16_t PCK_ID_ENCRYPTED_PPID_2048;
++extern const uint16_t PCK_ID_ENCRYPTED_PPID_3072;
++extern const uint16_t PCK_ID_PCK_CERTIFICATE;
++extern const uint16_t PCK_ID_PCK_CERT_CHAIN;
++
++extern const std::array<uint16_t, 5> SUPPORTED_PCK_IDS;
++extern const std::array<uint16_t, 1> ALLOWED_ATTESTATION_KEY_TYPES;
++extern const std::array<uint8_t, 16> INTEL_QE_VENDOR_ID;
++
++}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
++
++#endif
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.cpp QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.cpp
+--- QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.cpp
++++ QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.cpp
+@@ -0,0 +1,61 @@
++/*
++* Copyright (c) 2017, Intel Corporation
++*
++* Redistribution and use in source and binary forms, with or without
++modification,
++* are permitted provided that the following conditions are met:
++
++* 1. Redistributions of source code must retain the above copyright notice,
++*    this list of conditions and the following disclaimer.
++* 2. Redistributions in binary form must reproduce the above copyright notice,
++*    this list of conditions and the following disclaimer in the documentation
++*    and/or other materials provided with the distribution.
++* 3. Neither the name of the copyright holder nor the names of its contributors
++*    may be used to endorse or promote products derived from this software
++*    without specific prior written permission.
++*
++* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
++* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
++* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
++* ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
++* BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
++* OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
++* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
++* OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
++* WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
++* OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
++* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
++*/
++
++#include <array>
++
++#include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
++
++namespace intel { namespace sgx { namespace qvl { namespace constants {
++
++extern const uint16_t QUOTE_VERSION = 3;
++
++extern const uint16_t ECDSA_256_WITH_P256_CURVE = 1;
++extern const uint16_t ECDSA_384_WITH_P384_CURVE = 2;
++extern const size_t ECDSA_P256_SIGNATURE_BYTE_LEN = 64;
++extern const size_t ENCLAVE_REPORT_BYTE_LEN = 384;
++
++extern const uint16_t PCK_ID_PLAIN_PPID = 1;
++extern const uint16_t PCK_ID_ENCRYPTED_PPID_2048 = 2;
++extern const uint16_t PCK_ID_ENCRYPTED_PPID_3072 = 3;
++extern const uint16_t PCK_ID_PCK_CERTIFICATE = 4;
++extern const uint16_t PCK_ID_PCK_CERT_CHAIN = 5;
++
++extern const std::array<uint16_t, 5> SUPPORTED_PCK_IDS = {
++    {PCK_ID_PLAIN_PPID, PCK_ID_ENCRYPTED_PPID_2048, PCK_ID_ENCRYPTED_PPID_3072,
++     PCK_ID_PCK_CERTIFICATE, PCK_ID_PCK_CERT_CHAIN}};
++
++extern const std::array<uint16_t, 1> ALLOWED_ATTESTATION_KEY_TYPES = {
++    {ECDSA_256_WITH_P256_CURVE}};
++
++extern const std::array<uint8_t, 16> INTEL_QE_VENDOR_ID = {
++    {0x93, 0x9A, 0x72, 0x33, 0xF7, 0x9C, 0x4C, 0xA9, 0x94, 0x0A, 0x0D, 0xB3,
++     0x95, 0x7F, 0x06, 0x07}};
++
++}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
++
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
+--- QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
++++ QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.h
+@@ -1,57 +0,0 @@
+-/*
+-* Copyright (c) 2017, Intel Corporation
+-*
+-* Redistribution and use in source and binary forms, with or without modification,
+-* are permitted provided that the following conditions are met:
+-
+-* 1. Redistributions of source code must retain the above copyright notice,
+-*    this list of conditions and the following disclaimer.
+-* 2. Redistributions in binary form must reproduce the above copyright notice,
+-*    this list of conditions and the following disclaimer in the documentation
+-*    and/or other materials provided with the distribution.
+-* 3. Neither the name of the copyright holder nor the names of its contributors
+-*    may be used to endorse or promote products derived from this software
+-*    without specific prior written permission.
+-*
+-* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+-* AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
+-* THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+-* ARE DISCLAIMED.  IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS
+-* BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
+-* OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT
+-* OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS;
+-* OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
+-* WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE
+-* OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE,
+-* EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+-*/
+-
+-#ifndef INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
+-#define INTEL_SGX_QVL_QUOTE_CONSTANTS_H_
+-
+-#include <array>
+-
+-namespace intel { namespace sgx { namespace qvl { namespace constants {
+-
+-const uint16_t QUOTE_VERSION = 3;
+-
+-const uint16_t ECDSA_256_WITH_P256_CURVE = 1;
+-const uint16_t ECDSA_384_WITH_P384_CURVE = 2;
+-constexpr size_t ECDSA_P256_SIGNATURE_BYTE_LEN = 64;
+-constexpr size_t ENCLAVE_REPORT_BYTE_LEN = 384;
+-
+-const uint16_t PCK_ID_PLAIN_PPID = 1;
+-const uint16_t PCK_ID_ENCRYPTED_PPID_2048 = 2;
+-const uint16_t PCK_ID_ENCRYPTED_PPID_3072 = 3;
+-const uint16_t PCK_ID_PCK_CERTIFICATE = 4;
+-const uint16_t PCK_ID_PCK_CERT_CHAIN = 5;
+-
+-const std::array<uint16_t, 5> SUPPORTED_PCK_IDS = {{ PCK_ID_PLAIN_PPID, PCK_ID_ENCRYPTED_PPID_2048,
+-    PCK_ID_ENCRYPTED_PPID_3072, PCK_ID_PCK_CERTIFICATE, PCK_ID_PCK_CERT_CHAIN }};
+-
+-const std::array<uint16_t, 1> ALLOWED_ATTESTATION_KEY_TYPES = {{ ECDSA_256_WITH_P256_CURVE }};
+-const std::array<uint8_t, 16> INTEL_QE_VENDOR_ID = {{ 0x93, 0x9A, 0x72, 0x33, 0xF7, 0x9C, 0x4C, 0xA9, 0x94, 0x0A, 0x0D, 0xB3, 0x95, 0x7F, 0x06, 0x07 }};
+-
+-}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
+-
+-#endif
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,275 @@
+@@ -0,0 +1,282 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -626,6 +814,13 @@ diff -Nur /dev/null BUILD
 +    copts = [
 +        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +    ],
++    visibility = ["//visibility:public"],
++)
++
++cc_library(
++    name = "quote_constants",
++    srcs = ["QuoteVerification/Src/AttestationLibrary/src/QuoteVerification/QuoteConstants.cpp"],
++    hdrs = ["QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"],
 +    visibility = ["//visibility:public"],
 +)
 +
