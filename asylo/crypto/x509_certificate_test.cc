@@ -17,20 +17,55 @@
  */
 #include "asylo/crypto/x509_certificate.h"
 
+#include <openssl/base.h>
+#include <openssl/bn.h>
+
+#include <algorithm>
+#include <cctype>
+#include <cstdint>
 #include <memory>
 #include <string>
+#include <tuple>
+#include <utility>
+#include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
+#include "absl/time/clock.h"
+#include "absl/time/time.h"
+#include "absl/types/optional.h"
+#include "absl/types/span.h"
+#include "asylo/crypto/bignum_util.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
+#include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/string_matchers.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
 namespace {
+
+using ::testing::ElementsAreArray;
+using ::testing::Eq;
+using ::testing::IsEmpty;
+using ::testing::Optional;
+using ::testing::SizeIs;
+using ::testing::StrEq;
+using ::testing::Test;
+
+// A private key to use for testing. Unrelated to the keys and certificates in
+// the rest of the test data.
+constexpr char kTestPrivateKeyDerHex[] =
+    "30770201010420cb1bc570d3819aba58f1069e2a8850f40ffdc9f72295f565be845f1efbbe"
+    "bb94a00a06082a8648ce3d030107a144034200044af7b0c4b084a83cd7ffb80493cfaf0222"
+    "367b617c54c996c5d50a79ee94b150db9f332f628dde57cf0a48111799a01d763b8ebeac0e"
+    "3ee99d899bbedd31e22f";
 
 // This root certificate has the same root key as all the other root
 // certificates, and the only verification-relevant extension is a CA value of
@@ -52,6 +87,10 @@ constexpr char kTestRootPublicKeyDerHex[] =
     "3059301306072a8648ce3d020106082a8648ce3d03010703420004eaeda5103e89194f43bf"
     "e0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe6"
     "1c69fc9eeada1fe29a567d6ceb468e16bd";
+
+// The SHA-1 digest of the public key BIT STRING in kTestRootPublicKeyDerHex.
+constexpr char kTestRootPublicKeySha1Hex[] =
+    "70ddc84363112bf787eca4840f7abef62b75fdad";
 
 // An intermediate cert signed by the root key. No extensions are set.
 constexpr char kTestIntermediateCertDerHex[] =
@@ -197,9 +236,45 @@ constexpr char kCsrDerHex[] =
     "2100c504e760b0a1a189b46ba3531027267a4e45d8b143ccd2776646445fe74d55c0022100"
     "cff61cd5ab7c48afa493253dd534a5ff8b1436a13e390faeeba8543142987df7";
 
-using ::testing::Eq;
-using ::testing::Optional;
-using ::testing::Test;
+// A fake serial number to be used in certificates.
+constexpr int64_t kFakeSerialNumber = 8675309;
+
+MATCHER(Nullopt, negation ? "has a value" : "is equal to absl::nullopt") {
+  return !arg.has_value();
+}
+
+// Returns an X509CertificateBuilder with all mandatory fields filled, but all
+// optional fields set to absl::nullopt and no |other_extensions|.
+//
+// Uses kFakeSerialNumber for the serial number of the return builder.
+X509CertificateBuilder CreateMinimalBuilder() {
+  X509NameEntry issuer_name_entry;
+  issuer_name_entry.field =
+      ObjectId::CreateFromLongName("commonName").ValueOrDie();
+  issuer_name_entry.value = "Fake CA";
+
+  X509NameEntry subject_name_entry;
+  subject_name_entry.field =
+      ObjectId::CreateFromLongName("commonName").ValueOrDie();
+  subject_name_entry.value = "Fake leaf certificate";
+
+  X509CertificateBuilder builder;
+  builder.version = X509Version::kVersion3;
+  builder.serial_number =
+      std::move(BignumFromInteger(kFakeSerialNumber)).ValueOrDie();
+  builder.issuer.emplace({issuer_name_entry});
+  // Truncate the validity periods to seconds to match the precision of ASN.1
+  // time structures.
+  builder.validity.emplace();
+  builder.validity->not_before =
+      absl::FromUnixSeconds(absl::ToUnixSeconds(absl::Now()));
+  builder.validity->not_after =
+      builder.validity->not_before + absl::Hours(24 * 1000);
+  builder.subject.emplace({subject_name_entry});
+  builder.subject_public_key_der.emplace(
+      absl::HexStringToBytes(kTestRootPublicKeyDerHex));
+  return builder;
+}
 
 class X509CertificateTest : public Test {
  public:
@@ -591,6 +666,227 @@ TEST_F(X509CertificateTest, KeyUsageNoExtension) {
                      absl::HexStringToBytes(kTestIntermediateCertDerHex)));
 
   EXPECT_THAT(x509->KeyUsage(), Eq(absl::nullopt));
+}
+
+TEST_F(X509CertificateTest, SignAndBuildSucceedsWithExtensions) {
+  constexpr char kFakeOid[] = "1.3.6.1.4.1.11129.24.1729";
+
+  X509Extension other_extension;
+  ASYLO_ASSERT_OK_AND_ASSIGN(other_extension.oid,
+                             ObjectId::CreateFromOidString(kFakeOid));
+  other_extension.is_critical = true;
+  ASYLO_ASSERT_OK_AND_ASSIGN(other_extension.value,
+                             Asn1Value::CreateOctetString("foobar"));
+
+  X509CertificateBuilder builder = CreateMinimalBuilder();
+  builder.authority_key_identifier = {8, 6, 7, 5, 3, 0, 9};
+  builder.subject_key_identifier_method =
+      SubjectKeyIdMethod::kSubjectPublicKeySha1;
+  builder.key_usage.emplace();
+  builder.key_usage->certificate_signing = true;
+  builder.key_usage->crl_signing = true;
+  builder.key_usage->digital_signature = true;
+  builder.basic_constraints.emplace();
+  builder.basic_constraints->is_ca = true;
+  builder.basic_constraints->pathlen.emplace(3);
+  builder.crl_distribution_points.emplace();
+  builder.crl_distribution_points->uri =
+      "https://en.wikipedia.org/wiki/Dark_Side_of_the_Rainbow";
+  builder.crl_distribution_points->reasons.emplace();
+  builder.crl_distribution_points->reasons->key_compromise = true;
+  builder.crl_distribution_points->reasons->ca_compromise = true;
+  builder.crl_distribution_points->reasons->priviledge_withdrawn = true;
+  builder.other_extensions = {other_extension};
+
+  std::unique_ptr<SigningKey> signing_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key, EcdsaP256Sha256SigningKey::CreateFromDer(
+                       absl::HexStringToBytes(kTestPrivateKeyDerHex)));
+  std::unique_ptr<X509Certificate> certificate;
+  ASYLO_ASSERT_OK_AND_ASSIGN(certificate, builder.SignAndBuild(*signing_key));
+
+  EXPECT_THAT(certificate->GetVersion(), Eq(builder.version));
+
+  bssl::UniquePtr<BIGNUM> final_serial_number;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_serial_number,
+                             certificate->GetSerialNumber());
+  EXPECT_THAT(IntegerFromBignum<int64_t>(*final_serial_number),
+              IsOkAndHolds(kFakeSerialNumber));
+
+  X509Name final_issuer;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_issuer, certificate->GetIssuerName());
+  ASSERT_THAT(final_issuer, SizeIs(builder.issuer->size()));
+  for (int i = 0; i < final_issuer.size(); ++i) {
+    EXPECT_THAT(final_issuer[i].field, Eq((*builder.issuer)[i].field));
+    EXPECT_THAT(final_issuer[i].value, StrEq((*builder.issuer)[i].value));
+  }
+
+  X509Validity final_validity;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_validity, certificate->GetValidity());
+  EXPECT_THAT(final_validity.not_before, Eq(builder.validity->not_before));
+  EXPECT_THAT(final_validity.not_after, Eq(builder.validity->not_after));
+
+  X509Name final_subject;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_subject, certificate->GetSubjectName());
+  ASSERT_THAT(final_subject, SizeIs(builder.subject->size()));
+  for (int i = 0; i < final_subject.size(); ++i) {
+    EXPECT_THAT(final_subject[i].field, Eq((*builder.subject)[i].field));
+    EXPECT_THAT(final_subject[i].value, StrEq((*builder.subject)[i].value));
+  }
+
+  EXPECT_THAT(certificate->SubjectKeyDer(),
+              IsOkAndHolds(StrEq(builder.subject_public_key_der.value())));
+
+  EXPECT_THAT(certificate->GetAuthorityKeyIdentifier(),
+              IsOkAndHolds(Optional(builder.authority_key_identifier.value())));
+
+  EXPECT_THAT(certificate->GetSubjectKeyIdentifier(),
+              IsOkAndHolds(
+                  Optional(ElementsAreArray(MakeView<absl::Span<const uint8_t>>(
+                      absl::HexStringToBytes(kTestRootPublicKeySha1Hex))))));
+
+  absl::optional<KeyUsageInformation> final_key_usage = certificate->KeyUsage();
+  ASSERT_TRUE(final_key_usage.has_value());
+  EXPECT_THAT(final_key_usage->certificate_signing,
+              Eq(builder.key_usage->certificate_signing));
+  EXPECT_THAT(final_key_usage->crl_signing, Eq(builder.key_usage->crl_signing));
+  EXPECT_THAT(final_key_usage->digital_signature,
+              Eq(builder.key_usage->digital_signature));
+
+  absl::optional<BasicConstraints> final_constraints;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_constraints,
+                             certificate->GetBasicConstraints());
+  ASSERT_TRUE(final_constraints.has_value());
+  EXPECT_THAT(final_constraints->is_ca, Eq(builder.basic_constraints->is_ca));
+  EXPECT_THAT(final_constraints->pathlen,
+              Optional(builder.basic_constraints->pathlen.value()));
+
+  absl::optional<CrlDistributionPoints> final_crl_distribution_points;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_crl_distribution_points,
+                             certificate->GetCrlDistributionPoints());
+  ASSERT_TRUE(final_crl_distribution_points.has_value());
+  EXPECT_THAT(final_crl_distribution_points->uri,
+              StrEq(builder.crl_distribution_points->uri));
+  ASSERT_TRUE(final_crl_distribution_points->reasons.has_value());
+  EXPECT_THAT(final_crl_distribution_points->reasons->key_compromise,
+              Eq(builder.crl_distribution_points->reasons->key_compromise));
+  EXPECT_THAT(final_crl_distribution_points->reasons->ca_compromise,
+              Eq(builder.crl_distribution_points->reasons->ca_compromise));
+  EXPECT_THAT(
+      final_crl_distribution_points->reasons->affiliation_changed,
+      Eq(builder.crl_distribution_points->reasons->affiliation_changed));
+  EXPECT_THAT(final_crl_distribution_points->reasons->superseded,
+              Eq(builder.crl_distribution_points->reasons->superseded));
+  EXPECT_THAT(
+      final_crl_distribution_points->reasons->cessation_of_operation,
+      Eq(builder.crl_distribution_points->reasons->cessation_of_operation));
+  EXPECT_THAT(final_crl_distribution_points->reasons->certificate_hold,
+              Eq(builder.crl_distribution_points->reasons->certificate_hold));
+  EXPECT_THAT(
+      final_crl_distribution_points->reasons->priviledge_withdrawn,
+      Eq(builder.crl_distribution_points->reasons->priviledge_withdrawn));
+  EXPECT_THAT(final_crl_distribution_points->reasons->aa_compromise,
+              Eq(builder.crl_distribution_points->reasons->aa_compromise));
+
+  std::vector<X509Extension> final_extensions;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_extensions,
+                             certificate->GetOtherExtensions());
+  ASSERT_THAT(final_extensions, SizeIs(builder.other_extensions.size()));
+  for (int i = 0; i < final_extensions.size(); ++i) {
+    EXPECT_THAT(final_extensions[i].oid, Eq(builder.other_extensions[i].oid));
+    EXPECT_THAT(final_extensions[i].is_critical,
+                Eq(builder.other_extensions[i].is_critical));
+    EXPECT_THAT(final_extensions[i].value,
+                Eq(builder.other_extensions[i].value));
+  }
+}
+
+TEST_F(X509CertificateTest, SignAndBuildSucceedsWithoutExtensions) {
+  X509CertificateBuilder builder = CreateMinimalBuilder();
+
+  std::unique_ptr<SigningKey> signing_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key, EcdsaP256Sha256SigningKey::CreateFromDer(
+                       absl::HexStringToBytes(kTestPrivateKeyDerHex)));
+  std::unique_ptr<X509Certificate> certificate;
+  ASYLO_ASSERT_OK_AND_ASSIGN(certificate, builder.SignAndBuild(*signing_key));
+
+  EXPECT_THAT(certificate->GetVersion(), Eq(builder.version));
+
+  bssl::UniquePtr<BIGNUM> final_serial_number;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_serial_number,
+                             certificate->GetSerialNumber());
+  EXPECT_THAT(IntegerFromBignum<int64_t>(*final_serial_number),
+              IsOkAndHolds(kFakeSerialNumber));
+
+  X509Name final_issuer;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_issuer, certificate->GetIssuerName());
+  ASSERT_THAT(final_issuer, SizeIs(builder.issuer->size()));
+  for (int i = 0; i < final_issuer.size(); ++i) {
+    EXPECT_THAT(final_issuer[i].field, Eq((*builder.issuer)[i].field));
+    EXPECT_THAT(final_issuer[i].value, StrEq((*builder.issuer)[i].value));
+  }
+
+  X509Validity final_validity;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_validity, certificate->GetValidity());
+  EXPECT_THAT(final_validity.not_before, Eq(builder.validity->not_before));
+  EXPECT_THAT(final_validity.not_after, Eq(builder.validity->not_after));
+
+  X509Name final_subject;
+  ASYLO_ASSERT_OK_AND_ASSIGN(final_subject, certificate->GetSubjectName());
+  ASSERT_THAT(final_subject, SizeIs(builder.subject->size()));
+  for (int i = 0; i < final_subject.size(); ++i) {
+    EXPECT_THAT(final_subject[i].field, Eq((*builder.subject)[i].field));
+    EXPECT_THAT(final_subject[i].value, StrEq((*builder.subject)[i].value));
+  }
+
+  EXPECT_THAT(certificate->SubjectKeyDer(),
+              IsOkAndHolds(StrEq(*builder.subject_public_key_der)));
+
+  EXPECT_THAT(certificate->GetAuthorityKeyIdentifier(),
+              IsOkAndHolds(Nullopt()));
+
+  EXPECT_THAT(certificate->GetSubjectKeyIdentifier(), IsOkAndHolds(Nullopt()));
+
+  EXPECT_THAT(certificate->KeyUsage(), Nullopt());
+
+  EXPECT_THAT(certificate->GetBasicConstraints(), IsOkAndHolds(Nullopt()));
+
+  EXPECT_THAT(certificate->GetCrlDistributionPoints(), IsOkAndHolds(Nullopt()));
+
+  EXPECT_THAT(certificate->GetOtherExtensions(), IsOkAndHolds(IsEmpty()));
+}
+
+TEST_F(X509CertificateTest, SignAndBuildFailsWithMissingFields) {
+  std::unique_ptr<SigningKey> signing_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key, EcdsaP256Sha256SigningKey::CreateFromDer(
+                       absl::HexStringToBytes(kTestPrivateKeyDerHex)));
+
+  X509CertificateBuilder builder = CreateMinimalBuilder();
+  BN_set_negative(builder.serial_number.get(), /*sign=*/1);
+  EXPECT_THAT(builder.SignAndBuild(*signing_key),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  builder = CreateMinimalBuilder();
+  builder.issuer.reset();
+  EXPECT_THAT(builder.SignAndBuild(*signing_key),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  builder = CreateMinimalBuilder();
+  builder.validity.reset();
+  EXPECT_THAT(builder.SignAndBuild(*signing_key),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  builder = CreateMinimalBuilder();
+  builder.subject.reset();
+  EXPECT_THAT(builder.SignAndBuild(*signing_key),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+
+  builder = CreateMinimalBuilder();
+  builder.subject_public_key_der.reset();
+  EXPECT_THAT(builder.SignAndBuild(*signing_key),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 }  // namespace
