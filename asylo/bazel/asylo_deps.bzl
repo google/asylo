@@ -220,10 +220,10 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("com_github_grpc_grpc"):
         http_archive(
             name = "com_github_grpc_grpc",
-            urls = ["https://github.com/grpc/grpc/archive/v1.23.0.tar.gz"],
-            sha256 = "f56ced18740895b943418fa29575a65cc2396ccfa3159fa40d318ef5f59471f9",
-            patches = ["@com_google_asylo//asylo/distrib:grpc_1_23_0.patch"],
-            strip_prefix = "grpc-1.23.0",
+            urls = ["https://github.com/grpc/grpc/archive/v1.24.3.tar.gz"],
+            sha256 = "c84b3fa140fcd6cce79b3f9de6357c5733a0071e04ca4e65ba5f8d306f10f033",
+            patches = ["@com_google_asylo//asylo/distrib:grpc_1_24_3.patch"],
+            strip_prefix = "grpc-1.24.3",
         )
 
     # Required by gRPC
@@ -233,6 +233,15 @@ def asylo_deps(toolchain_path = None):
             urls = ["https://github.com/bazelbuild/rules_apple/archive/0.18.0.tar.gz"],
             sha256 = "53a8f9590b4026fbcfefd02c868e48683b44a314338d03debfb8e8f6c50d1239",
             strip_prefix = "rules_apple-0.18.0",
+        )
+
+    # Required by gRPC
+    if not native.existing_rule("build_bazel_rules_swift"):
+        http_archive(
+            name = "build_bazel_rules_swift",
+            urls = ["https://github.com/bazelbuild/rules_swift/archive/0.13.0.tar.gz"],
+            sha256 = "617e568aa8263c454f63362f5ab837038da710d646510b8f4a6760ff6361f714",
+            strip_prefix = "rules_swift-0.13.0",
         )
 
     # Required by gRPC

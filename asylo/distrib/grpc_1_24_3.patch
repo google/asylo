@@ -1,7 +1,7 @@
 diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
 --- include/grpc/impl/codegen/port_platform.h
 +++ include/grpc/impl/codegen/port_platform.h
-@@ -186,6 +186,27 @@
+@@ -194,6 +194,27 @@
  #else /* musl libc */
  #define GPR_MUSL_LIBC_COMPAT 1
  #endif
