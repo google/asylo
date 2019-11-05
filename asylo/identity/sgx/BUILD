@@ -1456,14 +1456,19 @@ cc_test_and_cc_enclave_test(
 # Defines an interface for interacting with Intel Architectural Enclaves.
 cc_library(
     name = "intel_architectural_enclave_interface",
-    hdrs = ["intel_architectural_enclave_interface.h"],
+    hdrs = [
+        "intel_architectural_enclave_interface.h",
+        "intel_ecdsa_quote.h",
+    ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/types:span",
+        "@com_google_absl//absl/types:variant",
     ],
 )
 
