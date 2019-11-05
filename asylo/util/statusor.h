@@ -24,6 +24,7 @@
 #include "absl/base/attributes.h"
 #include "absl/meta/type_traits.h"
 #include "asylo/util/logging.h"
+#include "asylo/util/cleanup.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_error_space.h"
 
@@ -336,12 +337,13 @@ class StatusOr {
     if (!ok()) {
       LOG(FATAL) << "Object does not have a usable value";
     }
-    T tmp(std::move(variant_.value_));
 
-    // Invalidate this StatusOr object.
-    OverwriteValueWithStatus(
-        Status(error::StatusError::MOVED, kValueOrDieMovedMsg));
-    return std::move(tmp);
+    // Invalidate this StatusOr object before returning control to caller.
+    Cleanup set_moved_status([this] {
+      OverwriteValueWithStatus(
+          Status(error::StatusError::MOVED, kValueOrDieMovedMsg));
+    });
+    return std::move(variant_.value_);
   }
 
  private:

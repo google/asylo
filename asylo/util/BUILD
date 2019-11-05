@@ -289,6 +289,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
+        ":cleanup",
         ":status_cc_proto",
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
