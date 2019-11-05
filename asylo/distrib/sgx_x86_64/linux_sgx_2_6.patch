@@ -3275,10 +3275,10 @@ diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1341 @@
+@@ -0,0 +1,1340 @@
 +# linux-sgx is the Intel SGX SDK
 +
-+load(":sgx_sdk.bzl", "asylo_sgx_backend", "sgx")
++load(":sgx_sdk.bzl", "asylo_sgx_backend", "sgx", "enclave_lds")
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
@@ -3306,7 +3306,7 @@ diff -Nur /dev/null BUILD
 +
 +exports_files([
 +    "License.txt",
-+    "enclave_sim.lds",
++    "enclave.lds.tpl",
 +    "enclave_test_private.pem",
 +    "sgx_sdk.bzl",
 +])
@@ -3317,6 +3317,21 @@ diff -Nur /dev/null BUILD
 +        "compilation_mode": "dbg",
 +    },
 +    visibility = ["//visibility:public"],
++)
++
++enclave_lds(
++    name = "enclave_lds",
++    debug = select({
++        ":dbg": True,
++        "//conditions:default": False,
++    }),
++    simulation = select({
++        ":sgx_sim": True,
++        "//conditions:default": False,
++    }),
++    visibility = [
++        "//visibility:public",
++    ],
 +)
 +
 +sgx.full_enclave_configuration(
@@ -3336,23 +3351,6 @@ diff -Nur /dev/null BUILD
 +    tcs_num = "12",
 +    tcs_policy = "0",
 +    visibility = ["//visibility:public"],
-+)
-+
-+# A wrapping library that wraps linux_sgx targets used by enclave.
-+cc_library(
-+    name = "intel_runtime",
-+    tags = [
-+        "manual",
-+    ],
-+    visibility = ["//visibility:public"],
-+    deps = [
-+        ":common_inc",
-+        ":sgx_spin_lock",
-+        ":sgx_tcrypto",
-+        ":sgx_tthread",
-+        ":trts",
-+        ":trusted_inc",
-+    ],
 +)
 +
 +cc_library(
@@ -3907,6 +3905,7 @@ diff -Nur /dev/null BUILD
 +        ":common_inc_internal",
 +        ":sgx_runtime_support",
 +        ":sgx_spin_lock",
++        ":sgx_tcrypto",
 +        ":tinst_sim",
 +        ":trts_common",
 +        ":trts_nsp_internal",
@@ -4620,7 +4619,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,660 @@
+@@ -0,0 +1,680 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo", "EnclaveInfo")
@@ -4671,6 +4670,31 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    attrs = {},
 +)
 +
++def _enclave_lds_impl(ctx):
++    output = ctx.actions.declare_file("enclave.lds")
++    ctx.actions.expand_template(
++        template = ctx.file._template,
++        output = output,
++        substitutions = {
++            "{g_global_data_sim}": "g_global_data_sim;" if ctx.attr.simulation else "",
++            "{g_peak_heap_used}": "g_peak_heap_used;" if ctx.attr.debug else "",
++        },
++    )
++    linking_context = cc_common.create_linking_context(
++        additional_inputs = [output],
++        user_link_flags = ["-Wl,--version-script", output.path],
++    )
++    return [DefaultInfo(files = depset([output])), CcInfo(linking_context = linking_context)]
++
++enclave_lds = rule(
++    implementation = _enclave_lds_impl,
++    doc = "Creates a version script to limit enclave symbol visibility",
++    attrs = {
++        "simulation": attr.bool(mandatory = True),
++        "debug": attr.bool(mandatory = True),
++        "_template": attr.label(default = "@linux_sgx//:enclave.lds.tpl", allow_single_file = True),
++    },
++)
 +
 +def sgx_unsigned_enclave(
 +        name,
@@ -4686,8 +4710,6 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +    # Append enclave specific arguments.
 +    kwargs["copts"] = kwargs.get("copts", []) + ["-fstack-protector"]
-+
-+    lds_label = "@linux_sgx//:enclave_sim.lds"
 +    kwargs["features"] = kwargs.get("features", []) + [
 +        "fully_static_link",
 +    ]
@@ -4697,16 +4719,13 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        "-Wl,-pie,-eenclave_entry",
 +        "-Wl,--defsym,__ImageBase=0",
 +        "-Wl,--export-dynamic",
-+        "-Wl,--version-script",
-+        "$(location %s)" % lds_label,
 +    ]
 +    kwargs["linkshared"] = 1
 +    kwargs["linkstatic"] = 1
 +
 +    kwargs["tags"] = kwargs.get("tags", []) + sgx_tags()
 +    kwargs["deps"] = kwargs.get("deps", []) + [
-+        lds_label,
-+        "@linux_sgx//:intel_runtime",
++        "@linux_sgx//:enclave_lds",
 +    ]
 +
 +    # Create rule to build unsigned enclave.
@@ -5321,16 +5340,17 @@ diff -Nur /dev/null debug_key_mrsigner.h
 +}  // namespace linux_sgx
 +
 +#endif  // _DEBUG_KEY_MRSIGNER_H_
-diff -Nur /dev/null enclave_sim.lds
+diff -Nur /dev/null enclave.lds.tpl
 --- /dev/null
-+++ enclave_sim.lds
-@@ -0,0 +1,9 @@
++++ enclave.lds.tpl
+@@ -0,0 +1,10 @@
 +enclave.so
 +{
 +    global:
 +        enclave_entry;
 +        g_global_data;
-+        g_global_data_sim;
++        {g_global_data_sim}
++        {g_peak_heap_used}
 +    local:
 +        *;
 +};
