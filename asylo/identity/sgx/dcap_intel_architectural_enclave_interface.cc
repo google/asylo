@@ -23,13 +23,14 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
-#include "include/sgx_key.h"
 #include "include/sgx_report.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
+#include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 #include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
 
 namespace asylo {
@@ -190,6 +191,21 @@ class DefaultDcapLibraryInterface
     return sgx_pce_sign_report(isv_svn, cpu_svn, p_report, p_signature,
                                signature_buf_size, p_signature_out_size);
   }
+
+  quote3_error_t qe_get_target_info(
+      sgx_target_info_t *p_qe_target_info) const override {
+    return sgx_qe_get_target_info(p_qe_target_info);
+  }
+
+  quote3_error_t qe_get_quote_size(uint32_t *p_quote_size) const override {
+    return sgx_qe_get_quote_size(p_quote_size);
+  }
+
+  quote3_error_t qe_get_quote(const sgx_report_t *p_app_report,
+                              uint32_t quote_size,
+                              uint8_t *p_quote) const override {
+    return sgx_qe_get_quote(p_app_report, quote_size, p_quote);
+  }
 };
 
 }  // namespace
@@ -279,6 +295,35 @@ Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
   }
 
   return PceErrorToStatus(result);
+}
+
+StatusOr<Targetinfo> DcapIntelArchitecturalEnclaveInterface::GetQeTargetinfo() {
+  Targetinfo target_info;
+  quote3_error_t result = dcap_library_->qe_get_target_info(
+      reinterpret_cast<sgx_target_info_t *>(&target_info));
+  if (result == SGX_QL_SUCCESS) {
+    return target_info;
+  }
+  return Quote3ErrorToStatus(result);
+}
+
+StatusOr<std::vector<uint8_t>>
+DcapIntelArchitecturalEnclaveInterface::GetQeQuote(const Report &report) {
+  uint32_t quote_size;
+  quote3_error_t result = dcap_library_->qe_get_quote_size(&quote_size);
+  if (result != SGX_QL_SUCCESS) {
+    return Quote3ErrorToStatus(result);
+  }
+
+  std::vector<uint8_t> quote(quote_size);
+  result = dcap_library_->qe_get_quote(
+      reinterpret_cast<const sgx_report_t *>(&report), quote_size,
+      quote.data());
+  if (result != SGX_QL_SUCCESS) {
+    return Quote3ErrorToStatus(result);
+  }
+
+  return quote;
 }
 
 }  // namespace sgx

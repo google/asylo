@@ -23,6 +23,7 @@
 #include <functional>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -32,7 +33,6 @@
 #include "asylo/util/status.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
-#include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
 
 namespace asylo {
 namespace sgx {
@@ -72,6 +72,18 @@ class DcapIntelArchitecturalEnclaveInterface
         const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
         const sgx_report_t *p_report, uint8_t *p_signature,
         uint32_t signature_buf_size, uint32_t *p_signature_out_size) const = 0;
+
+    // Wraps sgx_qe_get_target_info.
+    virtual quote3_error_t qe_get_target_info(
+        sgx_target_info_t *p_qe_target_info) const = 0;
+
+    // Wraps sgx_qe_get_quote_size.
+    virtual quote3_error_t qe_get_quote_size(uint32_t *p_quote_size) const = 0;
+
+    // Wraps sgx_qe_get_quote.
+    virtual quote3_error_t qe_get_quote(const sgx_report_t *p_app_report,
+                                        uint32_t quote_size,
+                                        uint8_t *p_quote) const = 0;
   };
 
   // Constructs an object that calls into the Intel DCAP library.
@@ -100,6 +112,10 @@ class DcapIntelArchitecturalEnclaveInterface
   Status PceSignReport(const Report &report, uint16_t target_pce_svn,
                        UnsafeBytes<kCpusvnSize> target_cpu_svn,
                        std::string *signature) override;
+
+  StatusOr<Targetinfo> GetQeTargetinfo() override;
+
+  StatusOr<std::vector<uint8_t>> GetQeQuote(const Report &report) override;
 
  private:
   std::unique_ptr<DcapLibraryInterface> dcap_library_;

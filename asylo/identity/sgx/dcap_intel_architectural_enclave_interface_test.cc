@@ -20,12 +20,15 @@
 
 #include <cstdint>
 #include <cstring>
+#include <numeric>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/memory/memory.h"
 #include "asylo/crypto/algorithms.pb.h"
+#include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
@@ -33,15 +36,27 @@
 #include "asylo/util/status.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
+#include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
 
 namespace asylo {
 namespace sgx {
+
+// Overload resolution requires the overload be outside the anonymous namespace.
+bool operator==(const Targetinfo &lhs, const Targetinfo &rhs) {
+  return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
+}
+
+bool operator==(const Report &lhs, const Report &rhs) {
+  return memcmp(&lhs, &rhs, sizeof(rhs)) == 0;
+}
+
 namespace {
 
 using ::testing::_;
 using ::testing::DoAll;
 using ::testing::Eq;
 using ::testing::Not;
+using ::testing::NotNull;
 using ::testing::Pointee;
 using ::testing::Return;
 using ::testing::SetArgPointee;
@@ -66,6 +81,14 @@ class MockDcapLibraryInterface
               (const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
                const sgx_report_t *p_report, uint8_t *p_signature,
                uint32_t signature_buf_size, uint32_t *p_signature_out_size),
+              (const, override));
+  MOCK_METHOD(quote3_error_t, qe_get_target_info,
+              (sgx_target_info_t * p_qe_target_info), (const, override));
+  MOCK_METHOD(quote3_error_t, qe_get_quote_size, (uint32_t * p_quote_size),
+              (const, override));
+  MOCK_METHOD(quote3_error_t, qe_get_quote,
+              (const sgx_report_t *p_app_report, uint32_t quote_size,
+               uint8_t *p_quote),
               (const, override));
 };
 
@@ -100,7 +123,15 @@ MATCHER_P2(BufferEq, expected, size, "") {
 // Copies |buffer| into buffer pointed to by arg number |k|.
 ACTION_TEMPLATE(SetArgBuffer, HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_2_VALUE_PARAMS(buffer, size)) {
-  std::memcpy(std::get<k>(args), buffer, size);
+  memcpy(std::get<k>(args), buffer, size);
+}
+
+// Copies |container| into buffer pointed to by arg number |k|.
+ACTION_TEMPLATE(SetArgContainer, HAS_1_TEMPLATE_PARAMS(int, k),
+                AND_1_VALUE_PARAMS(container)) {
+  static_assert(sizeof(typename container_type::value_type) == 1,
+                "The container must contain bytes");
+  memcpy(std::get<k>(args), container.data(), container.size());
 }
 
 class DcapIntelArchitecturalEnclaveInterfaceTests : public Test {
@@ -246,6 +277,56 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SignReportFailure) {
   EXPECT_THAT(
       dcap_.PceSignReport(Report{}, /*target_pce_svn=*/0, kCpuSvn, &signature),
       Not(IsOk()));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoSuccess) {
+  const Targetinfo kExpectedTargetinfo = TrivialRandomObject<Targetinfo>();
+
+  EXPECT_CALL(*dcap_library_, qe_get_target_info(NotNull()))
+      .WillOnce(DoAll(
+          SetArgBuffer<0>(&kExpectedTargetinfo, sizeof(kExpectedTargetinfo)),
+          Return(SGX_QL_SUCCESS)));
+
+  EXPECT_THAT(dcap_.GetQeTargetinfo(), IsOkAndHolds(kExpectedTargetinfo));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoFailure) {
+  EXPECT_CALL(*dcap_library_, qe_get_target_info(NotNull()))
+      .WillOnce(Return(SGX_QL_ERROR_UNEXPECTED));
+  EXPECT_THAT(dcap_.GetQeTargetinfo(), StatusIs(error::GoogleError::INTERNAL));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
+       GetQeQuoteSucceedsWithCompleteQuoteData) {
+  const Report kReport = TrivialRandomObject<Report>();
+  std::vector<uint8_t> quote(4321);  // arbitrary quote size
+  std::iota(quote.begin(), quote.end(), 0);
+  EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
+      .WillOnce(DoAll(SetArgPointee<0>(quote.size()), Return(SGX_QL_SUCCESS)));
+  EXPECT_CALL(*dcap_library_,
+              qe_get_quote(BufferEq(&kReport), quote.size(), NotNull()))
+      .WillOnce(DoAll(SetArgContainer<2>(quote), Return(SGX_QL_SUCCESS)));
+
+  EXPECT_THAT(dcap_.GetQeQuote(kReport), IsOkAndHolds(quote));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteSizeFailure) {
+  EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
+      .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
+  EXPECT_THAT(dcap_.GetQeQuote(Report{}),
+              StatusIs(error::GoogleError::PERMISSION_DENIED));
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteFailure) {
+  constexpr uint32_t kFakeQuoteSize = 32;  // size is arbitrary
+  EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
+      .WillOnce(
+          DoAll(SetArgPointee<0>(kFakeQuoteSize), Return(SGX_QL_SUCCESS)));
+  EXPECT_CALL(*dcap_library_,
+              qe_get_quote(NotNull(), kFakeQuoteSize, NotNull()))
+      .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
+  EXPECT_THAT(dcap_.GetQeQuote(Report{}),
+              StatusIs(error::GoogleError::PERMISSION_DENIED));
 }
 
 }  // namespace

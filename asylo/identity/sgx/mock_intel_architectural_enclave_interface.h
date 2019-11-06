@@ -47,6 +47,9 @@ class MockIntelArchitecturalEnclaveInterface
               (const Report &, uint16_t target_pce_svn,
                UnsafeBytes<kCpusvnSize>, std::string *),
               (override));
+  MOCK_METHOD(StatusOr<Targetinfo>, GetQeTargetinfo, (), (override));
+  MOCK_METHOD(StatusOr<std::vector<uint8_t>>, GetQeQuote,
+              (const Report &report), (override));
 };
 
 }  // namespace sgx
