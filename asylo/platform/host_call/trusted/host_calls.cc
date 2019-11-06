@@ -1031,11 +1031,13 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
 
   int result = output.next<int>();
   int klinux_errno = output.next<int>();
+  Extent opt_received = output.next();
+
   if (result == -1) {
     errno = FromkLinuxErrorNumber(klinux_errno);
+    return -1;
   }
 
-  Extent opt_received = output.next();
   *optlen = opt_received.size();
   memcpy(optval, opt_received.data(), *optlen);
   return result;
