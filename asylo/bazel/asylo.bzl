@@ -18,7 +18,7 @@
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 # website-docs-metadata
 # ---
@@ -679,26 +679,6 @@ def cc_enclave_binary(
             _workspace_name + "/bazel/application_wrapper:application_wrapper_driver",
         ],
         **loader_kwargs
-    )
-
-def sim_enclave(name, **kwargs):
-    """Build rule for creating simulated enclave object files signed for testing.
-
-    The enclave simulation backend currently makes use of the SGX simulator.
-    However, this is subject to change and users of this rule should not make
-    assumptions about it being related to SGX.
-
-    Args:
-      name: The name of the signed enclave object file.
-      **kwargs: cc_binary arguments.
-
-    Deprecated:
-      For identical behavior, use sgx_enclave.
-    """
-    sgx_enclave(
-        name,
-        deprecation = "The duplicate sim_enclave build rule in asylo.bzl is deprecated, and will be removed in the future. For identical behavior, use sgx_enclave.",
-        **kwargs
     )
 
 def enclave_test(
