@@ -941,6 +941,7 @@ def cc_enclave_test(
     # Collect any arguments to sgx.unsigned_enclave that override the defaults
     tags = ["asylo-sgx"] + tags
     size = kwargs.pop("size", None)  # Meant for the test.
+    data = kwargs.pop("data", [])  # Meant for the test.
     sgx.unsigned_enclave(
         name = unsigned_enclave_name,
         srcs = srcs,
@@ -981,7 +982,7 @@ def cc_enclave_test(
         loader = host_test_name,
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
-        data = kwargs.get("data", []),
+        data = data,
         remote_proxy = remote_proxy,
         testonly = 1,
         size = size,

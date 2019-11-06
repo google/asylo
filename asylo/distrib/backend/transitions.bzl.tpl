@@ -2,7 +2,7 @@
 
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo")
 
-BACKEND_LABEL = "//third_party/asylo/distrib/backend:backend"
+BACKEND_LABEL = "@com_google_asylo_backend_provider//:backend"
 PRETRANSITION_TAGS = [
     "asylo-pretransition",
     "manual",
@@ -21,7 +21,7 @@ empty_transition = transition(
 def _asylo_toolchain_and_backend_transition_impl(settings, attr):
     """Returns the configuration to use the Asylo toolchain."""
     result = {
-        "//command_line_option:crosstool_top": "//third_party/unsupported_toolchains/enclave/toolchains:crosstool",
+        "//command_line_option:crosstool_top": "@com_google_asylo_toolchain//toolchain:crosstool",
         "//command_line_option:custom_malloc": "//third_party/unsupported_toolchains/enclave/toolchains:malloc",
         "//command_line_option:dynamic_mode": "off",
         "//command_line_option:host_crosstool_top": "//third_party/crosstool",

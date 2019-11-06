@@ -132,7 +132,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "active_enclave_signal_test.so",
-    unsigned = "active_enclave_signal_test_unsigned.so",
+    unsigned = ":active_enclave_signal_test_unsigned.so",
 )
 
 # SGX enclave used to test signal handling inside an enclave with no active TCS.
@@ -149,7 +149,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "inactive_enclave_signal_test.so",
-    unsigned = "inactive_enclave_signal_test_unsigned.so",
+    unsigned = ":inactive_enclave_signal_test_unsigned.so",
 )
 
 # SGX enclave linked against the sgx_runtime that calls abort().
@@ -165,7 +165,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "die.so",
-    unsigned = "die_unsigned.so",
+    unsigned = ":die_unsigned.so",
 )
 
 # SGX enclave throws exception.
@@ -187,7 +187,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "exception.so",
-    unsigned = "exception_unsigned.so",
+    unsigned = ":exception_unsigned.so",
 )
 
 # SGX enclave testing logging.
@@ -204,7 +204,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "logging.so",
-    unsigned = "logging_unsigned.so",
+    unsigned = ":logging_unsigned.so",
 )
 
 # Common exception class for inside and outside enclave.
@@ -228,7 +228,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "test_enclave_smoke.so",
-    unsigned = "test_enclave_smoke_unsigned.so",
+    unsigned = ":test_enclave_smoke_unsigned.so",
 )
 
 # SGX enclave that returns various errors across the enclave boundary.
@@ -245,7 +245,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "error_propagation_enclave.so",
-    unsigned = "error_propagation_enclave_unsigned.so",
+    unsigned = ":error_propagation_enclave_unsigned.so",
 )
 
 # SGX enclave used to test blocking enclave entries.
@@ -264,7 +264,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "block_enclave_entries_test.so",
-    unsigned = "block_enclave_entries_test_unsigned.so",
+    unsigned = ":block_enclave_entries_test_unsigned.so",
 )
 
 TEST_DEPS_COMMON = [
@@ -327,7 +327,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "exhaust_sgx_tcs.so",
-    unsigned = "exhaust_sgx_tcs_unsigned.so",
+    unsigned = ":exhaust_sgx_tcs_unsigned.so",
     config = ":exhaust_sgx_tcs_config",
     testonly = 1,
 )
@@ -658,7 +658,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "threaded_finalize.so",
-    unsigned = "threaded_finalize_unsigned.so",
+    unsigned = ":threaded_finalize_unsigned.so",
 )
 
 sgx_enclave_test(
@@ -679,7 +679,7 @@ sgx.unsigned_enclave(
 
 sgx.debug_enclave(
     name = "fail_finalize_enclave.so",
-    unsigned = "fail_finalize_enclave_unsigned.so",
+    unsigned = ":fail_finalize_enclave_unsigned.so",
 )
 
 sgx_enclave_test(
