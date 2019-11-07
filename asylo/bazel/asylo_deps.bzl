@@ -248,9 +248,9 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("build_bazel_apple_support"):
         http_archive(
             name = "build_bazel_apple_support",
-            urls = ["https://github.com/bazelbuild/apple_support/archive/0.7.1.tar.gz"],
-            sha256 = "140fa73e1c712900097aabdb846172ffa0a5e9523b87d6c564c13116a6180a62",
-            strip_prefix = "apple_support-0.7.1",
+            urls = ["https://github.com/bazelbuild/apple_support/archive/0.7.2.tar.gz"],
+            sha256 = "519a3bc32132f7b5780e82c2fc6ad2a78d4b28b81561e6fd7b7e0b14ea110074",
+            strip_prefix = "apple_support-0.7.2",
         )
 
     # Required by gRPC
