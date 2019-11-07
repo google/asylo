@@ -305,9 +305,9 @@ cc_library(
     if not native.existing_rule("bazel_skylib"):
         http_archive(
             name = "bazel_skylib",
-            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/0.9.0.tar.gz"],
-            sha256 = "9245b0549e88e356cd6a25bf79f97aa19332083890b7ac6481a2affb6ada9752",
-            strip_prefix = "bazel-skylib-0.9.0",
+            urls = ["https://github.com/bazelbuild/bazel-skylib/archive/1.0.2.tar.gz"],
+            sha256 = "e5d90f0ec952883d56747b7604e2a15ee36e288bb556c3d0ed33e818a4d971f2",
+            strip_prefix = "bazel-skylib-1.0.2",
         )
 
     # Required by protobuf_python
