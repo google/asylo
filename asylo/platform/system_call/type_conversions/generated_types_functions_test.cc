@@ -41,10 +41,10 @@ class GeneratedTypesFunctionsTest : public ::testing::Test {
  public:
 
   void TestMultiValuedEnums(
-      const std::vector<int64_t>& from_bits,
-      const std::vector<int64_t>& to_bits,
-      const std::function<int64_t(int64_t)>& from_function,
-      const std::function<int64_t(int64_t)>& to_function) {
+      const std::vector<int64_t> &from_bits,
+      const std::vector<int64_t> &to_bits,
+      const std::function<int64_t(int64_t)> &from_function,
+      const std::function<int64_t(int64_t)> &to_function) {
     auto from_matcher = IsFiniteRestrictionOf<int64_t, int64_t>(from_function);
     auto to_matcher = IsFiniteRestrictionOf<int64_t, int64_t>(to_function);
     EXPECT_THAT(
@@ -76,16 +76,10 @@ TEST_F(GeneratedTypesFunctionsTest, FcntlCommandTest) {
   std::vector<int> to_consts = {F_GETFD, F_SETFD,      F_GETFL,
                                 F_SETFL, F_GETPIPE_SZ, F_SETPIPE_SZ};
 
-  auto from_matcher = IsFiniteRestrictionOf<int, int>(
-      [&](int input) { return FromkLinuxFcntlCommand(input); });
-  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
-                                             kIterationCount),
-              from_matcher);
-  auto to_matcher = IsFiniteRestrictionOf<int, int>(
-      [&](int input) { return TokLinuxFcntlCommand(input); });
-  EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,
-                                             kIterationCount),
-              to_matcher);
+  for (int i = 0; i < from_consts.size(); ++i) {
+    EXPECT_THAT(FromkLinuxFcntlCommand(from_consts[i]), Eq(to_consts[i]));
+    EXPECT_THAT(TokLinuxFcntlCommand(to_consts[i]), Eq(from_consts[i]));
+  }
 }
 
 TEST_F(GeneratedTypesFunctionsTest, AfFamilyTest) {
@@ -202,7 +196,7 @@ TEST_F(GeneratedTypesFunctionsTest, InotifyFlagsTest) {
 }
 
 TEST_F(GeneratedTypesFunctionsTest, InotifyEventMaskTest) {
-  std::vector<int64_t> from_bits = {
+  std::vector<uint32_t> from_bits = {
       kLinux_IN_ACCESS,        kLinux_IN_ATTRIB,      kLinux_IN_CLOSE_WRITE,
       kLinux_IN_CLOSE_NOWRITE, kLinux_IN_CREATE,      kLinux_IN_DELETE,
       kLinux_IN_DELETE_SELF,   kLinux_IN_MODIFY,      kLinux_IN_MOVE_SELF,
@@ -210,14 +204,16 @@ TEST_F(GeneratedTypesFunctionsTest, InotifyEventMaskTest) {
       kLinux_IN_DONT_FOLLOW,   kLinux_IN_EXCL_UNLINK, kLinux_IN_MASK_ADD,
       kLinux_IN_ONLYDIR,       kLinux_IN_IGNORED,     kLinux_IN_ISDIR,
       kLinux_IN_Q_OVERFLOW,    kLinux_IN_UNMOUNT};
-  std::vector<int64_t> to_bits = {
+  std::vector<uint32_t> to_bits = {
       IN_ACCESS,      IN_ATTRIB,      IN_CLOSE_WRITE, IN_CLOSE_NOWRITE,
       IN_CREATE,      IN_DELETE,      IN_DELETE_SELF, IN_MODIFY,
       IN_MOVE_SELF,   IN_MOVED_FROM,  IN_MOVED_TO,    IN_OPEN,
       IN_DONT_FOLLOW, IN_EXCL_UNLINK, IN_MASK_ADD,    IN_ONLYDIR,
       IN_IGNORED,     IN_ISDIR,       IN_Q_OVERFLOW,  IN_UNMOUNT};
-  TestMultiValuedEnums(from_bits, to_bits, FromkLinuxInotifyEventMask,
-                       TokLinuxInotifyEventMask);
+  for (int i = 0; i < from_bits.size(); i++) {
+    EXPECT_THAT(FromkLinuxInotifyEventMask(from_bits[i]), Eq(to_bits[i]));
+    EXPECT_THAT(TokLinuxInotifyEventMask(to_bits[i]), Eq(from_bits[i]));
+  }
 }
 
 TEST_F(GeneratedTypesFunctionsTest, ErrorNumberTest) {
@@ -540,14 +536,32 @@ TEST_F(GeneratedTypesFunctionsTest, BaseSignalNumberTest) {
       kLinux_SIGCONT,   kLinux_SIGSTOP, kLinux_SIGTSTP,  kLinux_SIGTTIN,
       kLinux_SIGTTOU,   kLinux_SIGURG,  kLinux_SIGXCPU,  kLinux_SIGXFSZ,
       kLinux_SIGVTALRM, kLinux_SIGPROF, kLinux_SIGWINCH, kLinux_SIGSYS,
-      kLinux_SIGIO,     kLinux_SIGPWR,  kLinux_SIGRTMIN, kLinux_SIGRTMAX,
-      kLinux_NSIG};
+      kLinux_SIGIO,     kLinux_NSIG,
+#ifdef SIGPWR
+      kLinux_SIGPWR,
+#endif
+#ifdef SIGRTMIN
+      kLinux_SIGRTMIN,
+#endif
+#ifdef SIGRTMAX
+      kLinux_SIGRTMAX,
+#endif
+  };
   std::vector<int> to_consts = {
-      SIGHUP,  SIGINT,  SIGQUIT,  SIGILL,    SIGTRAP, SIGABRT,  SIGBUS,
-      SIGFPE,  SIGKILL, SIGUSR1,  SIGSEGV,   SIGUSR2, SIGPIPE,  SIGALRM,
-      SIGTERM, SIGCHLD, SIGCONT,  SIGSTOP,   SIGTSTP, SIGTTIN,  SIGTTOU,
-      SIGURG,  SIGXCPU, SIGXFSZ,  SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,
-      SIGIO,   SIGPWR,  SIGRTMIN, SIGRTMAX,  NSIG};
+      SIGHUP,    SIGINT,  SIGQUIT,  SIGILL,  SIGTRAP, SIGABRT, SIGBUS,  SIGFPE,
+      SIGKILL,   SIGUSR1, SIGSEGV,  SIGUSR2, SIGPIPE, SIGALRM, SIGTERM, SIGCHLD,
+      SIGCONT,   SIGSTOP, SIGTSTP,  SIGTTIN, SIGTTOU, SIGURG,  SIGXCPU, SIGXFSZ,
+      SIGVTALRM, SIGPROF, SIGWINCH, SIGSYS,  SIGIO,   NSIG,
+#ifdef SIGPWR
+      SIGPWR,
+#endif
+#ifdef SIGRTMIN
+      SIGRTMIN,
+#endif
+#ifdef SIGRTMAX
+      SIGRTMAX,
+#endif
+  };
   auto from_matcher = IsFiniteRestrictionOf<int, int>(
       [&](int input) { return FromkLinuxBaseSignalNumber(input); });
   EXPECT_THAT(FuzzFiniteFunctionWithFallback(from_consts, to_consts, -1,

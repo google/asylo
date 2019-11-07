@@ -14,9 +14,10 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
+load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
 
 package(
     default_visibility = ["//asylo:implementation"],
@@ -120,13 +121,22 @@ cc_library(
     ],
 )
 
-# Tests for generated and manually written type conversion functions.
-cc_test(
-    name = "types_functions_test",
-    srcs = [
-        "generated_types_functions_test.cc",
-        "manual_types_functions_test.cc",
+# Tests generated conversion functions on the host and inside the enclave.
+cc_test_and_cc_enclave_test(
+    name = "generated_types_functions_test",
+    srcs = ["generated_types_functions_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":types_functions",
+        "//asylo/test/util:finite_domain_fuzz",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
     ],
+)
+
+cc_test(
+    name = "manual_types_functions_test",
+    srcs = ["manual_types_functions_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":types_functions",
