@@ -150,53 +150,13 @@ TEST(ManualTypesFunctionsTest, FromkLinuxSockAddrToSockAddrUnTruncateTest) {
           sizeof(klinux_sock_un.klinux_sun_path) - 1);
 
   sockaddr sock = {};
-  socklen_t sock_len = sizeof(sa_family_t) + truncated_path.length();
+  socklen_t sock_len = sizeof(sa_family_t) + truncated_path.length() + 1;
   FromkLinuxSockAddr(reinterpret_cast<klinux_sockaddr *>(&klinux_sock_un),
                      sizeof(klinux_sock_un),
                      reinterpret_cast<sockaddr *>(&sock), &sock_len, nullptr);
   auto sock_un = reinterpret_cast<sockaddr_un *>(&sock);
   EXPECT_THAT(sock_un->sun_family, Eq(AF_UNIX));
   EXPECT_THAT(sock_un->sun_path, StrEq(truncated_path));
-}
-
-// Since klinux_fd_set is expected to be a drop-in replacement for fd_set from a
-// native Linux environment, this test checks if klinux_fd_set can be
-// interchangeably used with the native Linux macros - FD_ZERO, FD_SET, FD_CLR
-// and FD_ISSET.
-TEST(ManualTypesFunctionsTest, KlinuxFdSetStructTest) {
-  klinux_fd_set kfs = {};
-  FD_ZERO(&kfs);
-  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
-    EXPECT_THAT(klinux_fds_bit, Eq(0));
-  }
-
-  int fd = 21;
-  EXPECT_THAT(FD_ISSET(fd, &kfs), Eq(0));
-  FD_SET(fd, &kfs);
-  EXPECT_THAT(FD_ISSET(fd, &kfs), Gt(0));
-  FD_CLR(fd, &kfs);
-  EXPECT_THAT(FD_ISSET(fd, &kfs), Eq(0));
-  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
-    EXPECT_THAT(klinux_fds_bit, Eq(0));
-  }
-}
-
-TEST(ManualTypesFunctionsTest, KlinuxFdSetMacroTest) {
-  klinux_fd_set kfs = {};
-  KLINUX_FD_ZERO(&kfs);
-  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
-    EXPECT_THAT(klinux_fds_bit, Eq(0));
-  }
-
-  int fd = 21;
-  EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Eq(0));
-  KLINUX_FD_SET(fd, &kfs);
-  EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Gt(0));
-  KLINUX_FD_CLR(fd, &kfs);
-  EXPECT_THAT(KLINUX_FD_ISSET(fd, &kfs), Eq(0));
-  for (uint64_t klinux_fds_bit : kfs.fds_bits) {
-    EXPECT_THAT(klinux_fds_bit, Eq(0));
-  }
 }
 
 TEST(ManualTypesFunctionsTest, FromkLinuxFdSetTest) {
@@ -242,19 +202,41 @@ TEST(ManualTypesFunctionsTest, TokLinuxFdSetTest) {
 }
 
 TEST(ManualTypesFunctionsTest, SignalNumberTest) {
+#if defined(SIGRTMIN)
   int sig = SIGRTMIN + 2;
   int klinux_sig = TokLinuxSignalNumber(sig);
   EXPECT_THAT(klinux_sig, Eq(kLinux_SIGRTMIN + 2));
 
   sig = FromkLinuxSignalNumber(klinux_sig);
   EXPECT_THAT(sig, Eq(SIGRTMIN + 2));
+#endif
 
-  sig = SIGABRT;
-  klinux_sig = TokLinuxSignalNumber(sig);
-  EXPECT_THAT(klinux_sig, Eq(kLinux_SIGABRT));
+  EXPECT_THAT(TokLinuxSignalNumber(SIGABRT), Eq(kLinux_SIGABRT));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGABRT), Eq(SIGABRT));
 
-  sig = FromkLinuxSignalNumber(klinux_sig);
-  EXPECT_THAT(sig, Eq(SIGABRT));
+  EXPECT_THAT(TokLinuxSignalNumber(SIGILL), Eq(kLinux_SIGILL));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGILL), Eq(SIGILL));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGABRT), Eq(kLinux_SIGABRT));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGABRT), Eq(SIGABRT));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGKILL), Eq(kLinux_SIGKILL));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGKILL), Eq(SIGKILL));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGSEGV), Eq(kLinux_SIGSEGV));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGSEGV), Eq(SIGSEGV));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGTERM), Eq(kLinux_SIGTERM));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGTERM), Eq(SIGTERM));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGPROF), Eq(kLinux_SIGPROF));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGPROF), Eq(SIGPROF));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGCHLD), Eq(kLinux_SIGCHLD));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGCHLD), Eq(SIGCHLD));
+
+  EXPECT_THAT(TokLinuxSignalNumber(SIGINT), Eq(kLinux_SIGINT));
+  EXPECT_THAT(FromkLinuxSignalNumber(kLinux_SIGINT), Eq(SIGINT));
 }
 
 TEST(ManualTypesFunctionsTest, ToItimervalTest) {
@@ -317,26 +299,12 @@ TEST(ManualTypesFunctionsTest, FromPollFdTest) {
   EXPECT_THAT(poll_fd.revents, Eq(POLLOUT));
 }
 
-TEST(ManualTypesFunctionsTest, EpollEventTest) {
-  EXPECT_THAT(sizeof(struct epoll_event),
-              Eq(sizeof(struct klinux_epoll_event)));
-}
-
-TEST(ManualTypesFunctionsTest, RusageSizeTest) {
-  EXPECT_THAT(sizeof(struct klinux_rusage), Eq(sizeof(struct rusage)));
-}
-
-TEST(ManualTypesFunctionsTest, UtsnameLengthTest) {
-  EXPECT_THAT(sizeof(struct klinux_utsname), Eq(sizeof(struct utsname)));
-}
-
 TEST(ManualTypesFunctionsTest, UtsnameTest) {
   const char *sysname = "abc";
   const char *nodename = "def";
   const char *release = "ghi";
   const char *version = "jkl";
   const char *machine = "mno";
-  const char *domainname = "pqr";
   struct utsname uname {};
   struct klinux_utsname klinux_uname {};
 
@@ -346,27 +314,12 @@ TEST(ManualTypesFunctionsTest, UtsnameTest) {
   strncpy(klinux_uname.version, version, sizeof(klinux_uname.sysname));
   strncpy(klinux_uname.machine, machine, sizeof(klinux_uname.sysname));
 
-#if (defined(__USE_GNU) && __USE_GNU) || \
-    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
-  strncpy(klinux_uname.domainname, domainname, sizeof(klinux_uname.domainname));
-#else
-  strncpy(klinux_uname.__domainname, domainname,
-          sizeof(klinux_uname.__domainname));
-#endif
-
   EXPECT_THAT(FromkLinuxUtsName(&klinux_uname, &uname), Eq(true));
   EXPECT_THAT(uname.sysname, StrEq(sysname));
   EXPECT_THAT(uname.nodename, StrEq(nodename));
   EXPECT_THAT(uname.release, StrEq(release));
   EXPECT_THAT(uname.version, StrEq(version));
   EXPECT_THAT(uname.machine, StrEq(machine));
-
-#if (defined(__USE_GNU) && __USE_GNU) || \
-    (defined(__GNU_VISIBLE) && __GNU_VISIBLE)
-  EXPECT_THAT(uname.domainname, StrEq(domainname));
-#else
-  EXPECT_THAT(uname.__domainname, StrEq(domainname));
-#endif
 }
 
 TEST(ManualTypesFunctionsTest, SysLogPriorityTest) {
@@ -392,12 +345,6 @@ TEST(ManualTypesFunctionsTest, SysLogPriorityTest) {
       EXPECT_EQ(TokLinuxSyslogPriority(to), from);
     }
   }
-}
-
-TEST(ManualTypesFunctionsTest, SigInfoSizeTest) {
-  siginfo_t sig{};
-  klinux_siginfo_t k_sig{};
-  EXPECT_THAT(sizeof(k_sig), Eq(sizeof(sig)));
 }
 
 }  // namespace

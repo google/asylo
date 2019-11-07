@@ -14,7 +14,11 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_enclave_test",
+    "cc_test_and_cc_enclave_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
@@ -134,13 +138,26 @@ cc_test_and_cc_enclave_test(
     ],
 )
 
+# Tests whether manually written kernel types match the native types on the
+# host.
 cc_test(
+    name = "kernel_types_test",
+    srcs = ["kernel_types_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":types_functions",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+# Tests the manually written type conversion functions inside the enclave.
+cc_enclave_test(
     name = "manual_types_functions_test",
     srcs = ["manual_types_functions_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":types_functions",
-        "//asylo/test/util:finite_domain_fuzz",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
