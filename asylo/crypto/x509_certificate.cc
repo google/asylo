@@ -524,7 +524,9 @@ Status SetCrlDistributionPoints(
   }
 
   if (crl_distribution_points.reasons.has_value()) {
-    auto [reasons_bitvec, reasons_flags] =
+    std::vector<bool> reasons_bitvec;
+    int reasons_flags;
+    std::tie(reasons_bitvec, reasons_flags) =
         ReasonsToBitvecAndFlags(crl_distribution_points.reasons.value());
     Asn1Value reasons_asn1;
     ASYLO_ASSIGN_OR_RETURN(reasons_asn1,
