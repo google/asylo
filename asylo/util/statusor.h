@@ -307,7 +307,9 @@ class StatusOr {
   /// \return The stored `T` value.
   const T &ValueOrDie() const & {
     if (!ok()) {
-      LOG(FATAL) << "Object does not have a usable value";
+      LOG(FATAL)
+          << "Object does not have a usable value, instead contains status: "
+          << status();
     }
     return variant_.value_;
   }
@@ -320,7 +322,9 @@ class StatusOr {
   /// \return The stored `T` value.
   T &ValueOrDie() & {
     if (!ok()) {
-      LOG(FATAL) << "Object does not have a usable value";
+      LOG(FATAL)
+          << "Object does not have a usable value, instead contains status: "
+          << status();
     }
     return variant_.value_;
   }
@@ -335,7 +339,9 @@ class StatusOr {
   /// \return The stored `T` value.
   T ValueOrDie() && {
     if (!ok()) {
-      LOG(FATAL) << "Object does not have a usable value";
+      LOG(FATAL)
+          << "Object does not have a usable value, instead contains status: "
+          << status();
     }
 
     // Invalidate this StatusOr object before returning control to caller.
