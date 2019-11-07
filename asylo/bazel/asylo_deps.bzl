@@ -230,9 +230,9 @@ def asylo_deps(toolchain_path = None):
     if not native.existing_rule("build_bazel_rules_apple"):
         http_archive(
             name = "build_bazel_rules_apple",
-            urls = ["https://github.com/bazelbuild/rules_apple/archive/0.18.0.tar.gz"],
-            sha256 = "53a8f9590b4026fbcfefd02c868e48683b44a314338d03debfb8e8f6c50d1239",
-            strip_prefix = "rules_apple-0.18.0",
+            urls = ["https://github.com/bazelbuild/rules_apple/archive/0.19.0.tar.gz"],
+            sha256 = "4bd79bb66d48a629f67515ad4822d293368a0e84f3102e2bd660435c83a20a19",
+            strip_prefix = "rules_apple-0.19.0",
         )
 
     # Required by gRPC
