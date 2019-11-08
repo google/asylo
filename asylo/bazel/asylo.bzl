@@ -599,16 +599,6 @@ def cc_enclave_binary(
     enclave_kwargs = {}
     loader_kwargs = {}
 
-    # This is a temporary workaround to resolve conflicts in building Asylo
-    # directly and importing Asylo as a dependency. Currently when we import
-    # "com_google_asylo" from inside Asylo, bazel treats them as two different
-    # sources and generates conflict symbol errors. Therefore we need to
-    # differentiate the two cases based on the package name.
-    if "asylo" in native.package_name():
-        _workspace_name = "//asylo"
-    else:
-        _workspace_name = "@com_google_asylo//asylo"
-
     # The "args" attribute should be moved to the loader since cc_library does
     # not support it. The whole-application wrapper contains all the machinery
     # necessary to propagate the arguments.

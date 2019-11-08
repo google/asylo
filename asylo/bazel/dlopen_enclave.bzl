@@ -17,7 +17,14 @@
 """Rule definitions for creating targets for dlopen Asylo enclaves."""
 
 load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo", "EnclaveInfo")
+load(
+    "@com_google_asylo_backend_provider//:enclave_info.bzl",
+    "AsyloBackendInfo",
+    "CC_BINARY_ATTRS",
+    "EnclaveInfo",
+    "merge_dicts",
+    "native_cc_binary",
+)
 
 # website-docs-metadata
 # ---
@@ -39,9 +46,49 @@ load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo"
 
 DlopenEnclaveInfo = provider()
 
+def _primitives_dlopen_enclave_impl(ctx):
+    providers = native_cc_binary(
+        ctx,
+        ctx.label.name.replace(".so", ""),
+        extra_linkopts = ["-Wl,-Bsymbolic"],
+        extra_features = ["mostly_static_linking_mode"],
+        extra_deps = [ctx.attr._trusted_primitives, ctx.attr._trusted_dlopen],
+    )
+    return providers + [EnclaveInfo(), DlopenEnclaveInfo()]
+
+primitives_dlopen_enclave = rule(
+    implementation = _primitives_dlopen_enclave_impl,
+    attrs = merge_dicts(CC_BINARY_ATTRS, {
+        "_trusted_primitives": attr.label(default = "//asylo/platform/primitives:trusted_primitives"),
+        "_trusted_dlopen": attr.label(default = "//asylo/platform/primitives/dlopen:trusted_dlopen"),
+    }),
+    fragments = ["cpp"],
+)
+
+def _forward_debug_sign(ctx):
+    # Signing is a no-op. Just copy the target through. There are no runfiles
+    # for enclave targets.
+    binary_output = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.run_shell(
+        inputs = [ctx.file.unsigned],
+        command = "cp {} {}".format(ctx.file.unsigned.path, binary_output.path),
+        outputs = [binary_output],
+    )
+    return [
+        DefaultInfo(
+            files = depset([binary_output]),
+            executable = binary_output,
+        ),
+        OutputGroupInfo(bin = depset([binary_output])),
+        EnclaveInfo(),
+        DlopenEnclaveInfo(),
+    ]
+
 def _asylo_dlopen_backend_impl(ctx):
     return [AsyloBackendInfo(
         forward_providers = [EnclaveInfo, DlopenEnclaveInfo, CcInfo],
+        unsigned_enclave_implementation = _primitives_dlopen_enclave_impl,
+        debug_sign_implementation = _forward_debug_sign,
     )]
 
 asylo_dlopen_backend = rule(
@@ -49,74 +96,6 @@ asylo_dlopen_backend = rule(
     implementation = _asylo_dlopen_backend_impl,
     attrs = {},
 )
-
-def _reprovide_binary_with_enclave_info_impl(ctx):
-    return [
-        DefaultInfo(
-            files = ctx.attr.binary[DefaultInfo].files,
-            data_runfiles = ctx.attr.binary[DefaultInfo].data_runfiles,
-            default_runfiles = ctx.attr.binary[DefaultInfo].default_runfiles,
-        ),
-        DlopenEnclaveInfo(),
-        EnclaveInfo(),
-    ]
-
-_reprovide_binary_with_enclave_info = rule(
-    implementation = _reprovide_binary_with_enclave_info_impl,
-    attrs = {
-        "binary": attr.label(mandatory = True),
-    },
-)
-
-def primitives_dlopen_enclave(
-        name,
-        deps = [],
-        **kwargs):
-    """Build rule for creating a dlopen enclave shared object file.
-
-    This build rule is intended for use by the primitives layer, for building
-    enclaves not relying on TrustedApplication.
-
-    A rule like cc_binary, but builds name_dlopen.so and provides
-    name as a target that may be consumed as an enclave in Asylo.
-
-    Creates two targets:
-      name: A binary that may be provided to an enclave loader's enclaves.
-      name_dlopen.so: The underlying cc_binary which is reprovided as an
-                         enclave target. If name has a ".so" suffix, then it
-                         is replaced with "_dlopen.so".
-
-    Args:
-      name: The dlopen enclave target name.
-      deps: Dependencies for the cc_binary
-      **kwargs: cc_binary arguments.
-    """
-    if not kwargs.pop("linkshared", True):
-        fail("A primitives_dlopen_enclave must be build with linkshared = True")
-    if not kwargs.pop("linkstatic", True):
-        fail("A primitives_dlopen_enclave must be build with linkstatic = True")
-
-    binary_name = name + "_dlopen.so"
-    if ".so" in name:
-        binary_name = name.replace(".so", "_dlopen.so", 1)
-
-    native.cc_binary(
-        name = binary_name,
-        deps = deps + [
-            "//asylo/platform/primitives:trusted_primitives",
-            "//asylo/platform/primitives/dlopen:trusted_dlopen",
-        ],
-        linkopts = ["-Wl,-Bsymbolic"],
-        linkshared = True,
-        features = ["mostly_static_linking_mode"],
-        linkstatic = False,  # Allow the .so to be created, not .a.
-        **kwargs
-    )
-    _reprovide_binary_with_enclave_info(
-        name = name,
-        testonly = kwargs.get("testonly", 0),
-        binary = binary_name,
-    )
 
 def dlopen_enclave_loader(
         name,

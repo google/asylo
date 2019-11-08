@@ -14,13 +14,13 @@
 # limitations under the License.
 #
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
 )
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
 

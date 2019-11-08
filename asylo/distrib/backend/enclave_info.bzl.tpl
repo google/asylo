@@ -37,8 +37,17 @@ AsyloBackendInfo = provider(
     doc = "Provided by all Asylo backends." +
           " The forward_providers field is a list of all providers that enclave" +
           " binaries should forward through a transition." +
-          " Both EnclaveInfo and CcInfo are good baselines.",
-    fields = ["forward_providers"],
+          " Both EnclaveInfo and CcInfo are good baselines. The" +
+          " unsigned_enclave_implementation field is a Starlark rule" +
+          " implementation function that has common attributes to all" +
+          " unsigned enclave rules. The debug_sign_implementation field is a" +
+          " Starlark rule implementation function that has common attributes" +
+          " to all debug sign rules (unsigned, enclave_build_configuration).",
+    fields = [
+        "forward_providers",
+        "unsigned_enclave_implementation",
+        "debug_sign_implementation",
+    ],
 )
 
 def _asylo_backend_impl(ctx):
@@ -93,6 +102,18 @@ CC_BINARY_ATTRS = {
     "_cc_toolchain": attr.label(default = "@com_google_asylo_toolchain//toolchain:crosstool"),
 }
 
+def merge_dicts(base, extension):
+    """Returns a copy of base with all extension key/value pairs added.
+
+    Args:
+        base: The base dictionary to be extended.
+        extension: The dictionary whose key/value pairs are written to the copy
+            of base.
+    """
+    result = dict(base)
+    result.update(extension)
+    return result
+
 def native_cc_binary(
         ctx,
         basename,
@@ -134,7 +155,7 @@ def native_cc_binary(
         unsupported_features = ctx.disabled_features + [feature[1:] for feature in features if feature.startswith("-")],
     )
 
-    deps = ctx.attr.deps
+    deps = ctx.attr.deps + extra_deps
     compilation_contexts = [dep[CcInfo].compilation_context for dep in deps]
     linking_contexts = [dep[CcInfo].linking_context for dep in deps]
 

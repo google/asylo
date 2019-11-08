@@ -4616,7 +4616,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,703 @@
+@@ -0,0 +1,701 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load(
@@ -4624,6 +4624,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    "AsyloBackendInfo",
 +    "CC_BINARY_ATTRS",
 +    "EnclaveInfo",
++    "merge_dicts",
 +    "native_cc_binary",
 +)
 +
@@ -4662,16 +4663,6 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    "tcs_policy",
 +])
 +SGXSigstructInfo = provider(fields = ["config", "unsigned"])
-+
-+def _asylo_sgx_backend_impl(ctx):
-+    return [AsyloBackendInfo(
-+        forward_providers = [EnclaveInfo, SGXEnclaveInfo, CcInfo],
-+    )]
-+
-+asylo_sgx_backend = rule(
-+    implementation = _asylo_sgx_backend_impl,
-+    attrs = {},
-+)
 +
 +def _enclave_lds_impl(ctx):
 +    output = ctx.actions.declare_file("enclave.lds")
@@ -4720,14 +4711,9 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )
 +    return providers + [SGXEnclaveInfo(), EnclaveInfo()]
 +
-+def _merge(dict0, dict1):
-+    result = dict(dict0)
-+    result.update(dict1)
-+    return result
-+
 +sgx_cc_unsigned_enclave = rule(
 +    implementation = _sgx_cc_unsigned_enclave_impl,
-+    attrs = _merge(CC_BINARY_ATTRS, {
++    attrs = merge_dicts(CC_BINARY_ATTRS, {
 +        "_lds": attr.label(default = "@linux_sgx//:enclave_lds", allow_single_file = True),
 +    }),
 +    fragments = ["cpp"],
@@ -5308,6 +5294,18 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +def _unsigned_enclave_name(enclave):
 +    return _extend_enclave_name(enclave, "_unsigned")
++
++def _asylo_sgx_backend_impl(ctx):
++    return [AsyloBackendInfo(
++        forward_providers = [EnclaveInfo, SGXEnclaveInfo, CcInfo],
++        unsigned_enclave_implementation = _sgx_cc_unsigned_enclave_impl,
++        debug_sign_implementation = _sgx_debug_enclave_impl,
++    )]
++
++asylo_sgx_backend = rule(
++    implementation = _asylo_sgx_backend_impl,
++    attrs = {},
++)
 +
 +# Export all rules and macros in one identifier to load.
 +sgx = struct(
