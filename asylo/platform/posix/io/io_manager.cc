@@ -336,6 +336,7 @@ int IOManager::Select(int nfds, fd_set *readfds, fd_set *writefds,
     std::shared_ptr<IOContext> context = fd_table_.Get(fd);
     if (context) {
       int host_fd = context->GetHostFileDescriptor();
+      if (host_fd < 0) continue;
       if (FD_ISSET(host_fd, &host_readfds)) {
         host_readfds_set.insert(host_fd);
       }
