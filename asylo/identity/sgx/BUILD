@@ -339,12 +339,11 @@ cc_library(
     ],
 )
 
-# This test can only be run outside an enclave. Consequently, this test is not
-# a "cc_test_and_cc_enclave_test" target.
-cc_test(
+cc_test_and_cc_enclave_test(
     name = "sgx_remote_assertion_generator_impl_test",
     srcs = ["sgx_remote_assertion_generator_impl_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":code_identity_cc_proto",
         ":remote_assertion_cc_proto",
