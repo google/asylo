@@ -28,7 +28,7 @@ cc_library(
     name = "signal_manager",
     srcs = ["signal_manager.cc"],
     hdrs = ["signal_manager.h"],
-    copts = ASYLO_DEFAULT_COPTS,
+    copts = ASYLO_DEFAULT_COPTS + ["-faligned-new"],
     deps = [
         "//asylo/platform/core:trusted_spin_lock",
         "//asylo/util:status",
