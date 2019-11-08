@@ -343,15 +343,15 @@ cc_library(
     if not native.existing_rule("com_github_pallets_jinja"):
         http_archive(
             name = "com_github_pallets_jinja",
-            url = "https://github.com/pallets/jinja/archive/2.10.1.tar.gz",
+            url = "https://github.com/pallets/jinja/archive/2.10.3.tar.gz",
             build_file_content = """py_library(
     name = "jinja2",
     visibility = ["//visibility:public"],
     srcs = glob(["jinja2/*.py"]),
     deps = ["@com_github_pallets_markupsafe//:markupsafe"],
 )""",
-            sha256 = "e9baab084b8d84b511c75aca98bba8585041dbe971d5476ee53d9c6eea1b58b3",
-            strip_prefix = "jinja-2.10.1",
+            sha256 = "db49236731373e4f3118af880eb91bb0aa6978bc0cf8b35760f6a026f1a9ffc4",
+            strip_prefix = "jinja-2.10.3",
         )
 
     # Markupsafe for Jinja
