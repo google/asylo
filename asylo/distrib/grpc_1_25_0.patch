@@ -1,0 +1,23 @@
+diff -Naur -x '*~' -x '*.orig' include/grpc/impl/codegen/port_platform.h include/grpc/impl/codegen/port_platform.h
+--- include/grpc/impl/codegen/port_platform.h
++++ include/grpc/impl/codegen/port_platform.h
+@@ -198,6 +198,8 @@
+ #define GPR_POSIX_TIME 1
+ #define GPR_POSIX_ENV 1
+ #define GPR_ASYLO 1
++#define GRPC_HAVE_UNIX_SOCKET 1
++#define GRPC_IF_NAMETOINDEX 0
+ #define GRPC_POSIX_SOCKET 1
+ #define GRPC_POSIX_SOCKETADDR
+ #define GRPC_POSIX_SOCKETUTILS 1
+diff -Naur -x '*~' -x '*.orig' test/core/end2end/generate_tests.bzl test/core/end2end/generate_tests.bzl
+--- test/core/end2end/generate_tests.bzl
++++ test/core/end2end/generate_tests.bzl
+@@ -390,6 +390,7 @@
+             "end2end_tests.h",
+         ],
+         language = "C++",
++        visibility = ["//visibility:public"],
+         deps = [
+             ":cq_verifier",
+             ":ssl_test_data",

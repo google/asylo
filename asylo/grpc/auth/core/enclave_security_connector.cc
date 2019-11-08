@@ -162,6 +162,7 @@ class grpc_enclave_channel_security_connector final
   }
 
   void add_handshakers(
+      const grpc_channel_args* args,
       grpc_pollset_set *interested_parties,
       grpc_handshake_manager *handshake_mgr) override {
     tsi_handshaker *tsi_handshaker = nullptr;
@@ -180,7 +181,8 @@ class grpc_enclave_channel_security_connector final
     }
 
     grpc_handshake_manager_add(
-        handshake_mgr, grpc_security_handshaker_create(tsi_handshaker, this));
+        handshake_mgr, grpc_security_handshaker_create(tsi_handshaker, this,
+                                                       args));
   }
 
  private:
@@ -209,6 +211,7 @@ class grpc_enclave_server_security_connector final
   }
 
   void add_handshakers(
+      const grpc_channel_args* args,
       grpc_pollset_set *interested_parties,
       grpc_handshake_manager *handshake_mgr) override {
     tsi_handshaker *tsi_handshaker = nullptr;
@@ -227,7 +230,8 @@ class grpc_enclave_server_security_connector final
     }
 
     grpc_handshake_manager_add(
-        handshake_mgr, grpc_security_handshaker_create(tsi_handshaker, this));
+        handshake_mgr, grpc_security_handshaker_create(tsi_handshaker, this,
+                                                       args));
   }
 };
 
