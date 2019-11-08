@@ -14,17 +14,15 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
-# Enclave test cases.
-
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
-    "sgx_enclave_test",
 )
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 proto_library(
     name = "proto_test_proto",

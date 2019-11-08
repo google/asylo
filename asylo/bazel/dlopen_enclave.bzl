@@ -16,6 +16,7 @@
 
 """Rule definitions for creating targets for dlopen Asylo enclaves."""
 
+load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo", "EnclaveInfo")
 
 # website-docs-metadata
@@ -99,16 +100,11 @@ def primitives_dlopen_enclave(
     if ".so" in name:
         binary_name = name.replace(".so", "_dlopen.so", 1)
 
-    if "asylo" in native.package_name():
-        _workspace_name = "//asylo"
-    else:
-        _workspace_name = "@com_google_asylo//asylo"
-
     native.cc_binary(
         name = binary_name,
         deps = deps + [
-            _workspace_name + "/platform/primitives:trusted_primitives",
-            _workspace_name + "/platform/primitives/dlopen:trusted_dlopen",
+            "//asylo/platform/primitives:trusted_primitives",
+            "//asylo/platform/primitives/dlopen:trusted_dlopen",
         ],
         linkopts = ["-Wl,-Bsymbolic"],
         linkshared = True,
@@ -120,4 +116,64 @@ def primitives_dlopen_enclave(
         name = name,
         testonly = kwargs.get("testonly", 0),
         binary = binary_name,
+    )
+
+def dlopen_enclave_loader(
+        name,
+        enclaves = {},
+        embedded_enclaves = {},
+        loader_args = [],
+        remote_proxy = None,
+        **kwargs):
+    """Thin wrapper around enclave loader, adds necessary linkopts and testonly=1
+
+    Args:
+      name: Name for build target.
+      enclaves: Dictionary from enclave names to target dependencies. The
+        dictionary must be injective. This dictionary is used to format each
+        string in `loader_args` after each enclave target is interpreted as the
+        path to its output binary.
+      embedded_enclaves: Dictionary from ELF section names (that do not start
+        with '.') to target dependencies. Each target in the dictionary is
+        embedded in the loader binary under the corresponding ELF section.
+      loader_args: List of arguments to be passed to `loader`. Arguments may
+        contain {enclave_name}-style references to keys from the `enclaves` dict,
+        each of which will be replaced with the path to the named enclave.
+      remote_proxy: Host-side executable that is going to run remote enclave
+        proxy server which will actually load the enclave(s). If empty, the
+        enclave(s) are loaded locally.
+      **kwargs: cc_binary arguments.
+    """
+
+    if "manual" not in kwargs.get("tags", []):
+        kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
+
+    enclave_loader(
+        name,
+        enclaves = enclaves,
+        embedded_enclaves = embedded_enclaves,
+        loader_args = loader_args,
+        testonly = 1,
+        remote_proxy = remote_proxy,
+        **kwargs
+    )
+
+def dlopen_enclave_test(
+        name,
+        **kwargs):
+    """Thin wrapper around enclave test, adds 'asylo-dlopen' tag and necessary linkopts
+
+    Args:
+      name: enclave_test name
+      **kwargs: same as enclave_test kwargs
+    """
+
+    tags = kwargs.pop("tags", [])
+    if "asylo-dlopen" not in tags:
+        tags += ["asylo-dlopen"]
+
+    enclave_test(
+        name,
+        tags = tags,
+        **kwargs
     )

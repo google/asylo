@@ -14,11 +14,7 @@
 # limitations under the License.
 #
 
-load(
-    "//asylo/bazel:asylo.bzl",
-    "dlopen_enclave_test",
-)
-load("//asylo/bazel:dlopen_enclave.bzl", "primitives_dlopen_enclave")
+load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test", "primitives_dlopen_enclave")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])

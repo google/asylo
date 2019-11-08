@@ -25,6 +25,7 @@ exports_files([
     "dlopen_enclave.bzl",
     "installation_path.bzl",
     "sgx_deps.bzl",
+    "sgx_rules.bzl",
 ])
 
 load(

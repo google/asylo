@@ -19,8 +19,8 @@ load(
     "ASYLO_ALL_BACKEND_TAGS",
     "cc_enclave_test",
     "cc_test",
-    "sgx_enclave_test",
 )
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 

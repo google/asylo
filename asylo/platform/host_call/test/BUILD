@@ -14,12 +14,8 @@
 # limitations under the License.
 #
 
-load(
-    "//asylo/bazel:asylo.bzl",
-    "dlopen_enclave_test",
-    "sgx_enclave_test",
-)
-load("//asylo/bazel:dlopen_enclave.bzl", "primitives_dlopen_enclave")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test", "primitives_dlopen_enclave")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 

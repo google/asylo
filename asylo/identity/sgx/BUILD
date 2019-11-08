@@ -16,7 +16,8 @@
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 # Used to enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test", "sgx_enclave_test")
+load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 

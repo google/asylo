@@ -22,8 +22,8 @@ load(
     "cc_enclave_test",
     "cc_test",
     "copy_from_host",
-    "sgx_enclave_test",
 )
+load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])

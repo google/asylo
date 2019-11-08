@@ -445,6 +445,7 @@ def enclave_loader(
         embedded_enclaves = {},
         loader_args = [],
         remote_proxy = None,
+        deprecation = None,
         **kwargs):
     """Wraps a cc_binary with a dependency on enclave availability at runtime.
 
@@ -475,6 +476,8 @@ def enclave_loader(
       remote_proxy: Host-side executable that is going to run remote enclave
         proxy server which will actually load the enclave(s). If empty, the
         enclave(s) are loaded locally.
+      deprecation: A string deprecation message for uses of this macro that
+          have been marked deprecated. Optional.
       **kwargs: cc_binary arguments.
     """
 
@@ -504,6 +507,7 @@ def enclave_loader(
         enclaves = _invert_enclave_name_mapping(enclaves),
         remote_proxy = remote_proxy,
         tags = kwargs.get("tags", []) + ["manual"],
+        deprecation = deprecation,
         visibility = kwargs.get("visibility", []),
         data = kwargs.get("data", []),
     )
@@ -545,6 +549,11 @@ def dlopen_enclave_loader(
         loader_args = loader_args,
         testonly = 1,
         remote_proxy = remote_proxy,
+        deprecation =
+            "asylo.bzl:dlopen_enclave_loader is deprecated and will go" +
+            " away in the future. Please load from dlopen_enclave.bzl or use" +
+            " enclave_loader directly with" +
+            " backends = [\"//asylo/platform/primitives/dlopen\"]",
         **kwargs
     )
 
@@ -643,7 +652,7 @@ def cc_enclave_binary(
     )
 
     if not application_enclave_config:
-        application_enclave_config = _workspace_name + "/bazel/application_wrapper:default_config"
+        application_enclave_config = "//asylo/bazel/application_wrapper:default_config"
 
     sgx.unsigned_enclave(
         name = unsigned_enclave_name,
@@ -651,7 +660,7 @@ def cc_enclave_binary(
         tags = ["asylo-sgx"],
         deps = [
             ":" + application_library_name,
-            _workspace_name + "/bazel/application_wrapper:application_wrapper_enclave_core",
+            "//asylo/bazel/application_wrapper:application_wrapper_enclave_core",
         ],
         **enclave_kwargs
     )
@@ -676,7 +685,7 @@ def cc_enclave_binary(
         linkopts = ["-Wl,--undefined=GetApplicationConfig"],
         deps = [
             application_enclave_config,
-            _workspace_name + "/bazel/application_wrapper:application_wrapper_driver",
+            "//asylo/bazel/application_wrapper:application_wrapper_driver",
         ],
         **loader_kwargs
     )
@@ -688,6 +697,7 @@ def enclave_test(
         test_args = [],
         remote_proxy = None,
         tags = [],
+        deprecation = None,
         **kwargs):
     """Build target for testing one or more enclaves.
 
@@ -718,6 +728,8 @@ def enclave_test(
         proxy server which will actually load the enclave(s). If empty, the
         enclave(s) are loaded locally.
       tags: Label attached to this test to allow for querying.
+      deprecation: A string deprecation message for uses of this macro that
+          have been marked deprecated. Optional.
       **kwargs: cc_test arguments.
     """
 
@@ -755,6 +767,7 @@ def enclave_test(
         size = size,
         remote_proxy = remote_proxy,
         testonly = 1,
+        deprecation = deprecation,
         tags = ["enclave_test"] + tags,
     )
 
@@ -775,6 +788,11 @@ def dlopen_enclave_test(
     enclave_test(
         name,
         tags = tags,
+        deprecation =
+            "asylo.bzl:dlopen_enclave_test is deprecated and will go" +
+            " away in the future. Please load from dlopen_enclave.bzl or use" +
+            " enclave_test directly with" +
+            " backends = [\"//asylo/platform/primitives/dlopen\"]",
         **kwargs
     )
 
@@ -833,7 +851,7 @@ def cc_test_and_cc_enclave_test(
 
     This is most useful if imported as
       load(
-          _workspace_name + "/bazel:asylo.bzl",
+          "//asylo/bazel:asylo.bzl",
           cc_test = "cc_test_and_cc_enclave_test",
       )
     so any cc_test defined in the BUILD file will generate both native and
@@ -908,7 +926,7 @@ def cc_enclave_test(
     # Create a copy of the gtest enclave runner
     host_test_name = name + "_host_driver"
     copy_from_host(
-        target = _workspace_name + "/bazel:test_shim_loader",
+        target = "//asylo/bazel:test_shim_loader",
         output = host_test_name,
         name = name + "_as_host",
     )
@@ -925,7 +943,7 @@ def cc_enclave_test(
     sgx.unsigned_enclave(
         name = unsigned_enclave_name,
         srcs = srcs,
-        deps = deps + [_workspace_name + "/bazel:test_shim_enclave"],
+        deps = deps + ["//asylo/bazel:test_shim_enclave"],
         testonly = 1,
         tags = tags,
         **kwargs
@@ -987,5 +1005,9 @@ def sgx_enclave_test(name, srcs, **kwargs):
             "asylo-sgx",
             "manual",
         ],
+        deprecation =
+            "asylo.bzl:sgx_enclave_test is deprecated and will go" +
+            " away in the future. Please load from sgx_rules.bzl or use" +
+            " enclave_test directly with backends = sgx.backend_labels.",
         **kwargs
     )
