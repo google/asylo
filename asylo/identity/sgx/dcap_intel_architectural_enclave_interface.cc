@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/dcap_intel_architectural_enclave_interface.h"
 
 #include <memory>
+#include <type_traits>
 #include <vector>
 
 #include "absl/strings/str_cat.h"
@@ -36,6 +37,24 @@
 namespace asylo {
 namespace sgx {
 namespace {
+
+// Performs a reinterpret_cast from a pointer of type |InT| to |OutT|. Both
+// |InT| and |OutT| must be pointer types. Both pointed-to types must be trivial
+// and the same size. Precondition failures result in a compilation error.
+template <typename OutT, typename InT>
+OutT CheckedPointerCast(InT in) {
+  static_assert(std::is_pointer<OutT>::value && std::is_pointer<InT>::value,
+                "OutT and InT must both be pointer types");
+  using OutObjT = typename std::remove_pointer<OutT>::type;
+  using InObjT = typename std::remove_pointer<InT>::type;
+  static_assert(sizeof(OutObjT) == sizeof(InObjT),
+                "Object sizes must be the same to safely cast");
+  static_assert(std::is_trivial<OutObjT>::value,
+                "Output type must be trivial to safely cast");
+  static_assert(std::is_trivial<InObjT>::value,
+                "Input type must be trivial to safely cast");
+  return reinterpret_cast<OutT>(in);
+}
 
 Status PceErrorToStatus(sgx_pce_error_t pce_error) {
   switch (pce_error) {
@@ -226,12 +245,8 @@ Status DcapIntelArchitecturalEnclaveInterface::SetEnclaveDir(
 
 Status DcapIntelArchitecturalEnclaveInterface::GetPceTargetinfo(
     Targetinfo *targetinfo, uint16_t *pce_svn) {
-  static_assert(
-      sizeof(Targetinfo) == sizeof(sgx_target_info_t),
-      "Targetinfo struct is not the same size as sgx_target_info_t struct");
-
   sgx_pce_error_t result = dcap_library_->pce_get_target(
-      reinterpret_cast<sgx_target_info_t *>(targetinfo), pce_svn);
+      CheckedPointerCast<sgx_target_info_t *>(targetinfo), pce_svn);
 
   return PceErrorToStatus(result);
 }
@@ -241,9 +256,6 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
     AsymmetricEncryptionScheme ppid_encryption_scheme,
     std::string *ppid_encrypted, uint16_t *pce_svn, uint16_t *pce_id,
     SignatureScheme *signature_scheme) {
-  static_assert(sizeof(Report) == sizeof(sgx_report_t),
-                "Report struct is not the same size as sgx_report_t struct");
-
   absl::optional<uint8_t> crypto_suite =
       AsymmetricEncryptionSchemeToPceCryptoSuite(ppid_encryption_scheme);
   if (!crypto_suite.has_value()) {
@@ -261,7 +273,7 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
   uint32_t encrypted_ppid_out_size = 0;
   uint8_t pce_signature_scheme;
   sgx_pce_error_t result = dcap_library_->get_pce_info(
-      reinterpret_cast<const sgx_report_t *>(&report),
+      CheckedPointerCast<const sgx_report_t *>(&report),
       ppid_encryption_key.data(), ppid_encryption_key.size(),
       crypto_suite.value(), ppid_encrypted_tmp.data(),
       ppid_encrypted_tmp.size(), &encrypted_ppid_out_size, pce_svn, pce_id,
@@ -280,14 +292,11 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
 Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
     const Report &report, uint16_t target_pce_svn,
     UnsafeBytes<kCpusvnSize> target_cpu_svn, std::string *signature) {
-  static_assert(sizeof(target_cpu_svn) == sizeof(sgx_cpu_svn_t),
-                "target_cpusvn is not the same size as sgx_cpu_svn_t struct");
-
   std::vector<uint8_t> signature_tmp(kEcdsaP256SignatureSize);
   uint32_t signature_out_size = 0;
   sgx_pce_error_t result = dcap_library_->pce_sign_report(
-      &target_pce_svn, reinterpret_cast<sgx_cpu_svn_t *>(&target_cpu_svn),
-      reinterpret_cast<const sgx_report_t *>(&report), signature_tmp.data(),
+      &target_pce_svn, CheckedPointerCast<sgx_cpu_svn_t *>(&target_cpu_svn),
+      CheckedPointerCast<const sgx_report_t *>(&report), signature_tmp.data(),
       signature_tmp.size(), &signature_out_size);
   if (result == SGX_PCE_SUCCESS) {
     signature->assign(signature_tmp.begin(),
@@ -300,7 +309,7 @@ Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
 StatusOr<Targetinfo> DcapIntelArchitecturalEnclaveInterface::GetQeTargetinfo() {
   Targetinfo target_info;
   quote3_error_t result = dcap_library_->qe_get_target_info(
-      reinterpret_cast<sgx_target_info_t *>(&target_info));
+      CheckedPointerCast<sgx_target_info_t *>(&target_info));
   if (result == SGX_QL_SUCCESS) {
     return target_info;
   }
@@ -317,7 +326,7 @@ DcapIntelArchitecturalEnclaveInterface::GetQeQuote(const Report &report) {
 
   std::vector<uint8_t> quote(quote_size);
   result = dcap_library_->qe_get_quote(
-      reinterpret_cast<const sgx_report_t *>(&report), quote_size,
+      CheckedPointerCast<const sgx_report_t *>(&report), quote_size,
       quote.data());
   if (result != SGX_QL_SUCCESS) {
     return Quote3ErrorToStatus(result);
