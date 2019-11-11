@@ -37,7 +37,7 @@ EnclaveSignalDispatcher *EnclaveSignalDispatcher::GetInstance() {
 
 SgxEnclaveClient *EnclaveSignalDispatcher::GetClientForSignal(
     int signum) const {
-  absl::MutexLock lock(&signal_enclave_map_lock_);
+  std::lock_guard<std::recursive_mutex> lock(signal_enclave_map_lock_);
   auto it = signal_to_client_map_.find(signum);
   if (it == signal_to_client_map_.end()) {
     return nullptr;
@@ -53,7 +53,7 @@ const SgxEnclaveClient *EnclaveSignalDispatcher::RegisterSignal(
   sigprocmask(SIG_SETMASK, &mask, &oldmask);
   SgxEnclaveClient *old_client = nullptr;
   {
-    absl::MutexLock lock(&signal_enclave_map_lock_);
+    std::lock_guard<std::recursive_mutex> lock(signal_enclave_map_lock_);
     // If this signal is registered by another enclave, deregister it first.
     auto client_iterator = signal_to_client_map_.find(signum);
     if (client_iterator != signal_to_client_map_.end()) {
@@ -73,7 +73,7 @@ Status EnclaveSignalDispatcher::DeregisterAllSignalsForClient(
   sigprocmask(SIG_SETMASK, &mask, &oldmask);
   Status status = Status::OkStatus();
   {
-    absl::MutexLock lock(&signal_enclave_map_lock_);
+    std::lock_guard<std::recursive_mutex> lock(signal_enclave_map_lock_);
     // If this enclave has registered any signals, deregister them and set the
     // signal handler to the default one.
     for (auto iterator = signal_to_client_map_.begin();

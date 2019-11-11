@@ -20,6 +20,7 @@
 #define ASYLO_PLATFORM_PRIMITIVES_SGX_SIGNAL_DISPATCHER_H_
 
 #include <signal.h>
+#include <mutex>
 
 #include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
@@ -42,16 +43,13 @@ class EnclaveSignalDispatcher {
   //
   // Returns the enclave client that previous registered |signum|, or nullptr if
   // no enclave has registered |signum| yet.
-  const SgxEnclaveClient *RegisterSignal(int signum, SgxEnclaveClient *client)
-      ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
+  const SgxEnclaveClient *RegisterSignal(int signum, SgxEnclaveClient *client);
 
   // Gets the enclave that registered a handler for |signum|.
-  SgxEnclaveClient *GetClientForSignal(int signum) const
-      ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
+  SgxEnclaveClient *GetClientForSignal(int signum) const;
 
   // Deregisters all the signals registered by |client|.
-  Status DeregisterAllSignalsForClient(SgxEnclaveClient *client)
-      ABSL_LOCKS_EXCLUDED(signal_enclave_map_lock_);
+  Status DeregisterAllSignalsForClient(SgxEnclaveClient *client);
 
   // Looks for the enclave client that registered |signum|, and calls
   // EnterAndHandleSignal() with that enclave client. |signum|, |info| and
@@ -64,11 +62,15 @@ class EnclaveSignalDispatcher {
   void operator=(EnclaveSignalDispatcher const &) = delete;
 
   // Mapping of signal number to the enclave client that registered it.
-  absl::flat_hash_map<int, SgxEnclaveClient *> signal_to_client_map_
-      ABSL_GUARDED_BY(signal_enclave_map_lock_);
+  absl::flat_hash_map<int, SgxEnclaveClient *> signal_to_client_map_;
 
   // A mutex that guards signal_to_client_map_ and client_to_signal_map_.
-  mutable absl::Mutex signal_enclave_map_lock_;
+  // This is a recursive mutex so that a signal entering the enclave won't cause
+  // deadlock while the same thread is holding the lock.
+  // This is safe to do because we are masking signals while modifying the map
+  // to prevent a signal handler from interrupting at thread while it's
+  // modifying it.
+  mutable std::recursive_mutex signal_enclave_map_lock_;
 };
 
 }  // namespace primitives
