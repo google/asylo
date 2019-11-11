@@ -62,7 +62,7 @@ TEST_F(ErrorSpaceTest, GoogleErrorSpaceInterface) {
   EXPECT_EQ(space->String(GoogleError::UNAVAILABLE), "UNAVAILABLE");
   EXPECT_EQ(space->String(GoogleError::DATA_LOSS), "DATA_LOSS");
   EXPECT_EQ(space->String(GoogleError::UNAUTHENTICATED), "UNAUTHENTICATED");
-  EXPECT_EQ(space->String(100), "Unrecognized Code");
+  EXPECT_EQ(space->String(100), "Unrecognized Code (100)");
 
   for (int i = 0; i <= GoogleError::UNAUTHENTICATED; i++) {
     EXPECT_EQ(space->GoogleErrorCode(i), i);

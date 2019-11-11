@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/str_format.h"
 
 namespace asylo {
 namespace error {
@@ -147,7 +148,8 @@ TEST_F(PosixErrorSpaceTest, PosixErrorSpaceString) {
   for (int i = kMinErrorCode; i < kMaxErrorCode; i++) {
     PosixError code = static_cast<PosixError>(i);
     if (codes_.find(code) == codes_.end()) {
-      EXPECT_EQ(space->String(code), "Unrecognized Code");
+      EXPECT_EQ(space->String(code),
+                absl::StrFormat("%s (%d)", "Unrecognized Code", code));
     }
   }
 }

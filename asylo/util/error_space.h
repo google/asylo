@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/container/flat_hash_map.h"
+#include "absl/strings/str_format.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/util/error_codes.h"
 
@@ -292,7 +293,7 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
       if (code == 0) {
         return "OK";
       }
-      return default_error_string_;
+      return absl::StrFormat("%s (%d)", default_error_string_, code);
     }
     return it->second.first;
   }
