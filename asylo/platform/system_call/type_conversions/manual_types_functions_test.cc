@@ -347,6 +347,34 @@ TEST(ManualTypesFunctionsTest, SysLogPriorityTest) {
   }
 }
 
+TEST(ManualTypesFunctionsTest, TokLinuxSockAddrIn6Test) {
+  struct sockaddr_in6 enclave_in6 {};
+  enclave_in6.sin6_addr = in6addr_loopback;
+  enclave_in6.sin6_family = AF_INET6;
+  enclave_in6.sin6_flowinfo = 1;
+  enclave_in6.sin6_port = 1234;
+  enclave_in6.sin6_scope_id = 10;
+
+  struct klinux_sockaddr_in6 host_in6 {};
+  socklen_t host_in6_len = sizeof(host_in6);
+  EXPECT_THAT(
+      TokLinuxSockAddr(reinterpret_cast<struct sockaddr *>(&enclave_in6),
+                       sizeof(enclave_in6),
+                       reinterpret_cast<struct klinux_sockaddr *>(&host_in6),
+                       &host_in6_len, nullptr),
+      Eq(true));
+  EXPECT_THAT(host_in6.klinux_sin6_family, Eq(kLinux_AF_INET6));
+  EXPECT_THAT(host_in6.klinux_sin6_flowinfo, Eq(1));
+  EXPECT_THAT(host_in6.klinux_sin6_port, Eq(1234));
+  EXPECT_THAT(host_in6.klinux_sin6_scope_id, Eq(10));
+
+  // Verify loopback address to be {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,1}
+  for (int i = 0; i < 15; i++) {
+    EXPECT_THAT(host_in6.klinux_sin6_addr.klinux_s6_addr[i], Eq(0));
+  }
+  EXPECT_THAT(host_in6.klinux_sin6_addr.klinux_s6_addr[15], Eq(1));
+}
+
 }  // namespace
 }  // namespace system_call
 }  // namespace asylo
