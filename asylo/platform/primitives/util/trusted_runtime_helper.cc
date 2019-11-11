@@ -23,13 +23,12 @@
 #include <cstdio>
 #include <cstring>
 
+#include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
-#include "asylo/platform/primitives/util/primitive_locks.h"
-#include "asylo/platform/primitives/x86/spin_lock.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -47,24 +46,24 @@ enum Flag : uint64_t { kInitialized = 0x1, kAborted = 0x2 };
 struct {
   // Lock ensuring thread-safe enclave initialization. Note that this lock must
   // always be acquired *before* flags_write_lock.
-  asylo_spinlock_t initialization_lock = ASYLO_SPIN_LOCK_INITIALIZER;
+  TrustedSpinLock initialization_lock{/*is_recursive=*/true};
 
   // Status flag bitmap.
   uint64_t flags = 0;
 
   // Lock protecting writes to the flags bitmap.
-  asylo_spinlock_t flags_write_lock = ASYLO_SPIN_LOCK_INITIALIZER;
+  TrustedSpinLock flags_write_lock{/*is_recursive=*/true};
 
   // Table of enclave entry handlers.
   EntryHandler entry_table[kEntryPointMax];
 
   // Lock protecting entry_table.
-  asylo_spinlock_t entry_table_lock = ASYLO_SPIN_LOCK_INITIALIZER;
+  TrustedSpinLock entry_table_lock{/*is_recursive=*/true};
 } enclave_state;
 
 // Updates the state of the enclave.
 void UpdateEnclaveState(const Flag &flag) {
-  SpinLockGuard lock(&enclave_state.flags_write_lock);
+  TrustedSpinLockGuard lock(&enclave_state.flags_write_lock);
   enclave_state.flags |= flag;
 }
 
@@ -75,7 +74,7 @@ PrimitiveStatus ReservedEntry(void *context, MessageReader *in,
 
 // Initializes the enclave if it has not been initialized already.
 void EnsureInitialized() {
-  SpinLockGuard lock(&enclave_state.initialization_lock);
+  TrustedSpinLockGuard lock(&enclave_state.initialization_lock);
   if (!(enclave_state.flags & Flag::kInitialized)) {
     // Register placeholder handlers for reserved entry points.
     for (uint64_t i = kSelectorAsyloFini + 1; i < kSelectorUser; i++) {
@@ -103,7 +102,7 @@ void EnsureInitialized() {
 
 PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
                                      const EntryHandler &handler) {
-  SpinLockGuard lock(&enclave_state.entry_table_lock);
+  TrustedSpinLockGuard lock(&enclave_state.entry_table_lock);
   if (trusted_selector >= kEntryPointMax ||
       !enclave_state.entry_table[trusted_selector].IsNull()) {
     return {error::GoogleError::OUT_OF_RANGE,

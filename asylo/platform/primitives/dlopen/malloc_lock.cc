@@ -18,8 +18,7 @@
 
 #include <cstdlib>
 
-#include "asylo/platform/primitives/util/primitive_locks.h"
-#include "asylo/platform/primitives/x86/spin_lock.h"
+#include "asylo/platform/core/trusted_spin_lock.h"
 
 // The newlib implementation of malloc and free in mallocr.c depends on symbols
 // _malloc_lock and _malloc_unlock, and requires that a thread waiting on a lock
@@ -31,27 +30,13 @@ namespace asylo {
 namespace primitives {
 
 // Global lock protecting the heap.
-asylo_spinlock_t heap_lock = ASYLO_SPIN_LOCK_INITIALIZER;
-
-// Per-thread counter of how many times the lock was taken.
-// It is only incremented once a thread took the lock, so for all threads except
-// possibly one it will be zero.
-thread_local int64_t thread_lock_count = 0;
+TrustedSpinLock heap_lock{/*is_recursive=*/true};
 
 extern "C" {
 
-void __malloc_lock(struct reent *) {
-  if (thread_lock_count == 0) {
-    asylo_spin_lock(&heap_lock);
-  }
-  ++thread_lock_count;
-}
+void __malloc_lock(struct reent *) { heap_lock.Lock(); }
 
-void __malloc_unlock(struct reent *) {
-  if (--thread_lock_count == 0) {
-    asylo_spin_unlock(&heap_lock);
-  }
-}
+void __malloc_unlock(struct reent *) { heap_lock.Unlock(); }
 
 }  // extern "C"
 

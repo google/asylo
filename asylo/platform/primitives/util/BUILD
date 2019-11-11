@@ -49,16 +49,6 @@ cc_test(
     ],
 )
 
-# Utilities for working with primitive locks.
-cc_library(
-    name = "primitive_locks",
-    hdrs = ["primitive_locks.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/platform/primitives/x86:spin_lock",
-    ],
-)
-
 # A dispatch table implementation of Client::ExitCallProvider.
 cc_library(
     name = "dispatch_table",
@@ -117,11 +107,10 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":message_reader_writer",
-        ":primitive_locks",
+        "//asylo/platform/core:trusted_spin_lock",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
-        "//asylo/platform/primitives/x86:spin_lock",
         "//asylo/util:status_macros",
     ],
 )

@@ -26,7 +26,7 @@
 
 namespace asylo {
 
-// A spin lock implementation depending on onlytrusted resources.
+// A spin lock implementation depending on only trusted resources.
 //
 // An TrustedSpinLock object is a thread synchronization primitive that depends
 // on only resources inside the enclave.
