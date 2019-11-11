@@ -160,3 +160,12 @@ config_setting(
     },
     visibility = ["//visibility:public"],
 )
+
+# Configuration setting for remote enclaves.
+config_setting(
+    name = "asylo_remote",
+    values = {
+        "define": "ASYLO_REMOTE=1",
+    },
+    visibility = ["//visibility:public"],
+)
