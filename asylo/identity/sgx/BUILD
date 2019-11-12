@@ -1469,22 +1469,49 @@ cc_test_and_cc_enclave_test(
     ],
 )
 
+cc_library(
+    name = "intel_ecdsa_quote",
+    srcs = ["intel_ecdsa_quote.cc"],
+    hdrs = ["intel_ecdsa_quote.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_types",
+        "//asylo/crypto/util:byte_container_reader",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/strings",
+        "@sgx_dcap//:quote_constants",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "intel_ecdsa_quote_test",
+    srcs = ["intel_ecdsa_quote_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":intel_ecdsa_quote",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+        "@sgx_dcap//:quote_constants",
+    ],
+)
+
 # Defines an interface for interacting with Intel Architectural Enclaves.
 cc_library(
     name = "intel_architectural_enclave_interface",
-    hdrs = [
-        "intel_architectural_enclave_interface.h",
-        "intel_ecdsa_quote.h",
-    ],
+    hdrs = ["intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/util:status",
-        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/types:span",
-        "@com_google_absl//absl/types:variant",
     ],
 )
 
