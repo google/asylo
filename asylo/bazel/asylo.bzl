@@ -17,7 +17,7 @@
 """Macro definitions for Asylo testing."""
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "EnclaveInfo")
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 # website-docs-metadata
@@ -46,68 +46,24 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 # The trusted_sgx target is SGX-only, so its only backend tag is asylo-sgx.
 ASYLO_ALL_BACKENDS = [
     "asylo-dlopen",
-    "asylo-sgx",
+    "asylo-sgx-hw",
+    "asylo-sgx-sim",
 ]
+
+INTERNAL_SHOULD_BE_ALL_BACKENDS = sgx.backend_labels
+
+DLOPEN_IMPLICIT_CC_BINARY_ATTRS = {
+    "_trusted_primitives": attr.label(default = "//asylo/platform/primitives:trusted_primitives"),
+    "_trusted_dlopen": attr.label(default = "//asylo/platform/primitives/dlopen:trusted_dlopen_generic"),
+}
+
+SGX_IMPLICIT_CC_BINARY_ATTRS = {
+    "_lds": attr.label(default = "@linux_sgx//:enclave_lds", allow_single_file = True),
+}
 
 ASYLO_ALL_BACKEND_TAGS = ASYLO_ALL_BACKENDS + [
     "manual",
 ]
-
-def _backend_tags(tags):
-    """Returns the sublist of tags containing Asylo backends.
-
-    Args:
-      tags: A list of strings for a targets `tags` field.
-
-    Returns:
-      list: The tags in `tags` that correspond to Asylo backends, in the same
-            order that they appeared in the input.
-    """
-    backend_tags = []
-    for backend in ASYLO_ALL_BACKENDS:
-        if backend in tags:
-            backend_tags.append(backend)
-    return backend_tags
-
-def asylo_tags(backend_tag = None):
-    """Returns appropriate tags for Asylo target.
-
-    Args:
-      backend_tag: String that indicates the backend technology used. Can be
-                   one of
-                   * "asylo-dlopen"
-                   * "asylo-sgx"
-                   * None
-    """
-    result = []
-    if backend_tag:
-        result += [backend_tag]
-        if backend_tag == "asylo-sgx":
-            return result + sgx.tags()
-    result += ["manual"]
-    return result
-
-def _extract_asylo_tags(tags):
-    """Returns all appropriate tags for each backend tag in tags.
-
-    Args:
-      tags: A target's `tags` field which may or may not contain a backend
-            tag.
-
-    Returns:
-      list: tags that indicate the backend choice and which tap tags to use for
-            testing with that backend.
-    """
-    backend_tags = _backend_tags(tags)
-    result = []
-    if backend_tags:
-        for backend_tag in backend_tags:
-            for tag in asylo_tags(backend_tag):
-                if tag not in result:
-                    result.append(tag)
-    else:
-        result = asylo_tags()
-    return result
 
 def _parse_label(label):
     """Parse a label into (package, name).
@@ -174,7 +130,6 @@ def copy_from_host(target, output, name = "", visibility = None):
         output_to_bindir = 1,
         tools = [target],
         testonly = 1,
-        tags = asylo_tags(),
         visibility = visibility,
     )
 
@@ -359,7 +314,7 @@ def _make_enclave_runner_rule(test = False):
             "data": attr.label_list(allow_files = True),
             "enclaves": attr.label_keyed_string_dict(
                 allow_files = True,
-                providers = [EnclaveInfo],
+                providers = [backend_tools.EnclaveInfo],
             ),
             "loader": attr.label(
                 executable = True,
@@ -445,6 +400,7 @@ def enclave_loader(
         embedded_enclaves = {},
         loader_args = [],
         remote_proxy = None,
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
         deprecation = None,
         **kwargs):
     """Wraps a cc_binary with a dependency on enclave availability at runtime.
@@ -476,6 +432,18 @@ def enclave_loader(
       remote_proxy: Host-side executable that is going to run remote enclave
         proxy server which will actually load the enclave(s). If empty, the
         enclave(s) are loaded locally.
+      backends: The asylo backend labels the binary uses. May be a list of
+          backend label strings, or a dictionary with backend label string keys
+          and struct values with fields "config_settings" and "tags". The
+          config_settings field is a list of labels to config_setting targets
+          that individually determine that the build configuration selects
+          that backend. The tags field is a list of tags that apply to targets
+          of that backend. Must specify at least one. Defaults to all supported
+          backends. If more than one, then name is an alias to a select on
+          backend value to backend-specialized targets. The loader sources
+          should be written such that backend-conditional compilation selects
+          the right loader code, or supported backends' enclaves can be
+          detected and loaded correctly ot run time.
       deprecation: A string deprecation message for uses of this macro that
           have been marked deprecated. Optional.
       **kwargs: cc_binary arguments.
@@ -506,7 +474,7 @@ def enclave_loader(
         loader_args = loader_args,
         enclaves = _invert_enclave_name_mapping(enclaves),
         remote_proxy = remote_proxy,
-        tags = kwargs.get("tags", []) + ["manual"],
+        tags = kwargs.get("tags", []) + backend_tools.tags(backends),
         deprecation = deprecation,
         visibility = kwargs.get("visibility", []),
         data = kwargs.get("data", []),
@@ -538,10 +506,6 @@ def dlopen_enclave_loader(
         enclave(s) are loaded locally.
       **kwargs: cc_binary arguments.
     """
-
-    if "manual" not in kwargs.get("tags", []):
-        kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
-
     enclave_loader(
         name,
         enclaves = enclaves,
@@ -549,6 +513,7 @@ def dlopen_enclave_loader(
         loader_args = loader_args,
         testonly = 1,
         remote_proxy = remote_proxy,
+        backends = ["//asylo/platform/primitives/dlopen"],
         deprecation =
             "asylo.bzl:dlopen_enclave_loader is deprecated and will go" +
             " away in the future. Please load from dlopen_enclave.bzl or use" +
@@ -556,6 +521,97 @@ def dlopen_enclave_loader(
             " backends = [\"//asylo/platform/primitives/dlopen\"]",
         **kwargs
     )
+
+def _cc_backend_unsigned_enclave_impl(ctx):
+    return ctx.attr.backend[backend_tools.AsyloBackendInfo].unsigned_enclave_implementation(ctx)
+
+def _backend_debug_sign_enclave_impl(ctx):
+    return ctx.attr.backend[backend_tools.AsyloBackendInfo].debug_sign_implementation(ctx)
+
+cc_backend_unsigned_enclave = rule(
+    doc = "Defines an unsigned enclave target in the provided backend.",
+    implementation = _cc_backend_unsigned_enclave_impl,
+    attrs = backend_tools.merge_dicts(
+        backend_tools.cc_binary_attrs,
+        {
+            "backend": attr.label(mandatory = True, providers = [backend_tools.AsyloBackendInfo]),
+        },
+        DLOPEN_IMPLICIT_CC_BINARY_ATTRS,
+        SGX_IMPLICIT_CC_BINARY_ATTRS,
+    ),
+    fragments = ["cpp"],
+)
+
+backend_debug_sign_enclave = rule(
+    executable = True,
+    doc = "Defines the 'signed' version of an unsigned enclave target in" +
+          " the provided backend.",
+    implementation = _backend_debug_sign_enclave_impl,
+    attrs = {
+        "backend": attr.label(mandatory = True, providers = [backend_tools.AsyloBackendInfo]),
+        "unsigned": attr.label(mandatory = True, allow_single_file = True),
+        "config": attr.label(
+            default = "//asylo/bazel:default_sign_config",
+            allow_single_file = True,
+        ),
+        "_key": attr.label(
+            default = "//asylo/bazel:debug_key",
+            allow_single_file = True,
+        ),
+        "_sign_tool": attr.label(
+            default = Label("//asylo/bazel:sign_tool"),
+            allow_single_file = True,
+            executable = True,
+            cfg = "host",
+        ),
+    },
+)
+
+def cc_unsigned_enclave(
+        name,
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        name_by_backend = {},
+        **kwargs):
+    """Creates a C++ unsigned enclave target in all or any backend.
+
+    Args:
+      name: The rule name.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
+      name_by_backend: An optional dictionary from backend label to backend-
+          specific target label.
+      **kwargs: Remainder arguments to the backend rule.
+    """
+    backend_tools.all_backends(cc_backend_unsigned_enclave, name, backends, name_by_backend, kwargs)
+
+def debug_sign_enclave(
+        name,
+        unsigned,
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        config = None,
+        testonly = 0,
+        name_by_backend = {}):
+    """Signs an unsigned enclave according the the backend's signing procedure.
+
+    Args:
+        name: The signed enclave target name.
+        unsigned: The label to the unsigned enclave.
+        backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
+        config: A label to a config target that the backend-specific signing
+            tool uses.
+        testonly: True if the target should only be used in tests.
+      name_by_backend: An optional dictionary from backend label to backend-
+          specific target label.
+    """
+    kwargs = {"unsigned": unsigned, "testonly": testonly}
+    if config:
+        kwargs["config"] = config
+    backend_tools.all_backends(backend_debug_sign_enclave, name, backends, name_by_backend, kwargs)
 
 # The section to embed the application enclave in.
 _APPLICATION_WRAPPER_ENCLAVE_SECTION = "enclave"
@@ -565,6 +621,9 @@ def cc_enclave_binary(
         application_enclave_config = "",
         enclave_build_config = "",
         application_library_linkstatic = True,
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        unsigned_name_by_backend = {},
+        signed_name_by_backend = {},
         **kwargs):
     """Creates a cc_binary that runs an application inside an enclave.
 
@@ -585,11 +644,19 @@ def cc_enclave_binary(
       application_enclave_config: A target that defines a function called
           ApplicationConfig() returning and EnclaveConfig. The returned config
           is passed to the application enclave. Optional.
-      enclave_build_config: An sgx.enclave_configuration target to be passed to
-          the enclave. Optional.
+      enclave_build_config: A backend-specific configuration target to be
+          passed to the enclave signer. Optional.
       application_library_linkstatic: When building the application as a
           library, whether to allow that library to be statically linked. See
           the `linkstatic` option on `cc_library`. Optional.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
+      unsigned_name_by_backend: An optional dictionary from backend label to backend-
+          specific target label for the defined unsigned enclaves.
+      signed_name_by_backend: An optional dictionary from backend label to backend-
+          specific target label for the defined signed enclaves.
       **kwargs: cc_binary arguments.
     """
     application_library_name = name + "_application_library"
@@ -644,26 +711,23 @@ def cc_enclave_binary(
     if not application_enclave_config:
         application_enclave_config = "//asylo/bazel/application_wrapper:default_config"
 
-    sgx.unsigned_enclave(
+    cc_unsigned_enclave(
         name = unsigned_enclave_name,
         copts = ASYLO_DEFAULT_COPTS,
-        tags = ["asylo-sgx"],
         deps = [
             ":" + application_library_name,
             "//asylo/bazel/application_wrapper:application_wrapper_enclave_core",
         ],
+        backends = backends,
+        name_by_backend = unsigned_name_by_backend,
         **enclave_kwargs
     )
-
-    debug_kwargs = {}
-    if enclave_build_config:
-        debug_kwargs["config"] = enclave_build_config
-
-    sgx.debug_enclave(
+    debug_sign_enclave(
         name = enclave_name,
         unsigned = unsigned_enclave_name,
-        tags = ["asylo-sgx"],
-        **debug_kwargs
+        config = enclave_build_config,
+        backends = backends,
+        name_by_backend = signed_name_by_backend,
     )
 
     enclave_loader(
@@ -677,6 +741,7 @@ def cc_enclave_binary(
             application_enclave_config,
             "//asylo/bazel/application_wrapper:application_wrapper_driver",
         ],
+        backends = backends,
         **loader_kwargs
     )
 
@@ -687,6 +752,7 @@ def enclave_test(
         test_args = [],
         remote_proxy = None,
         tags = [],
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
         deprecation = None,
         **kwargs):
     """Build target for testing one or more enclaves.
@@ -718,6 +784,10 @@ def enclave_test(
         proxy server which will actually load the enclave(s). If empty, the
         enclave(s) are loaded locally.
       tags: Label attached to this test to allow for querying.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
       deprecation: A string deprecation message for uses of this macro that
           have been marked deprecated. Optional.
       **kwargs: cc_test arguments.
@@ -736,7 +806,7 @@ def enclave_test(
         **_ensure_static_manual(kwargs)
     )
 
-    tags = _extract_asylo_tags(tags) + tags
+    extended_tags = tags + backend_tools.tags(backends)
 
     # embed_enclaves ensures that the test loader's ELF file is built with the
     # host toolchain, even when its enclaves argument is empty.
@@ -758,7 +828,7 @@ def enclave_test(
         remote_proxy = remote_proxy,
         testonly = 1,
         deprecation = deprecation,
-        tags = ["enclave_test"] + tags,
+        tags = ["enclave_test"] + extended_tags,
     )
 
 def dlopen_enclave_test(
@@ -789,9 +859,12 @@ def dlopen_enclave_test(
 def cc_test(
         name,
         enclave_test_name = "",
+        enclave_test_unsigned_name_by_backend = {},
+        enclave_test_signed_name_by_backend = {},
         enclave_test_config = "",
         srcs = [],
         deps = [],
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
         **kwargs):
     """Build macro that creates a cc_test target and a cc_enclave_test target.
 
@@ -802,10 +875,20 @@ def cc_test(
     Args:
       name: Same as native cc_test name.
       enclave_test_name: Name for the generated cc_enclave_test. Optional.
-      enclave_test_config: An sgx.enclave_configuration target to be passed to
-          the enclave. Optional.
+      enclave_test_unsigned_name_by_backend: Dictionary of backend label to
+          test name for backend-specific unsigned enclave targets generated by
+          cc_enclave_test. Optional.
+      enclave_test_signed_name_by_backend: Dictionary of backend label to
+          test name for backend-specific signed enclave targets generated by
+          cc_enclave_test. Optional.
+      enclave_test_config: A backend-specific configuration target to be passed
+          to the enclave signer for each backend. Optional.
       srcs: Same as native cc_test srcs.
       deps: Same as native cc_test deps.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
       **kwargs: cc_test arguments.
     """
     native.cc_test(
@@ -819,7 +902,10 @@ def cc_test(
         cc_enclave_test(
             name = enclave_test_name,
             srcs = srcs,
+            unsigned_name_by_backend = enclave_test_unsigned_name_by_backend,
+            signed_name_by_backend = enclave_test_signed_name_by_backend,
             enclave_config = enclave_test_config,
+            backends = backends,
             deps = deps,
             **kwargs
         )
@@ -830,6 +916,7 @@ def cc_test_and_cc_enclave_test(
         enclave_test_config = "",
         srcs = [],
         deps = [],
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
         **kwargs):
     """An alias for cc_test with a default enclave_test_name.
 
@@ -853,10 +940,14 @@ def cc_test_and_cc_enclave_test(
           If not provided and name ends with "_test", then defaults to name with
           "_test" replaced with "_enclave_test". If not provided and name does
           not end with "_test", then defaults to name appended with "_enclave".
-      enclave_test_config: An sgx.enclave_configuration target to be passed to
-          the enclave. Optional.
+      enclave_test_config: A backend-specific configuration target to be passed
+          to the signer. Optional.
       srcs: See documentation for srcs in native cc_test rule.
       deps: See documentation for deps in native cc_test rule.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
       **kwargs: See documentation for **kwargs in native cc_test rule.
     """
     if not enclave_test_name:
@@ -870,6 +961,7 @@ def cc_test_and_cc_enclave_test(
         enclave_test_config = enclave_test_config,
         srcs = srcs,
         deps = deps,
+        backends = backends,
         **kwargs
     )
 
@@ -881,17 +973,20 @@ def cc_enclave_test(
         tags = [],
         deps = [],
         test_in_initialize = False,
+        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        unsigned_name_by_backend = {},
+        signed_name_by_backend = {},
         **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
-    This macro creates two targets, one sgx.debug_enclave target with the test
+    This macro creates two targets, one debug_sign_enclave target with the test
     source. And another test runner application to launch the test enclave.
 
     Args:
       name: Target name for will be <name>_enclave.
       srcs: Same as cc_test srcs.
-      enclave_config: An sgx.enclave_configuration target to be passed to the
-          enclave. Optional.
+      enclave_config: A backend-specific configuration target to be passed to
+          the signer for each backend. Optional.
       remote_proxy: Host-side executable that is going to run remote enclave
           proxy server which will actually load the enclave(s). If empty, the
           enclave(s) are loaded locally.
@@ -900,6 +995,14 @@ def cc_enclave_test(
       test_in_initialize: If True, tests run in Initialize, rather than Run. This
           allows us to ensure the initialization and post-initialization execution
           environments provide the same runtime behavior and semantics.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets.
+      unsigned_name_by_backend: An optional dictionary from backend label to backend-
+          specific target label for the defined unsigned enclaves.
+      signed_name_by_backend: An optional dictionary from backend label to backend-
+          specific target label for the defined signed enclaves.
       **kwargs: cc_test arguments.
     """
 
@@ -926,28 +1029,26 @@ def cc_enclave_test(
     unsigned_enclave_name = name + "_unsigned.so"
     enclave_target = ":" + enclave_name
 
-    # Collect any arguments to sgx.unsigned_enclave that override the defaults
-    tags = ["asylo-sgx"] + tags
+    # Collect any arguments to cc_unsigned_enclave that override the defaults
     size = kwargs.pop("size", None)  # Meant for the test.
     data = kwargs.pop("data", [])  # Meant for the test.
-    sgx.unsigned_enclave(
+    cc_unsigned_enclave(
         name = unsigned_enclave_name,
         srcs = srcs,
         deps = deps + ["//asylo/bazel:test_shim_enclave"],
         testonly = 1,
         tags = tags,
+        backends = backends,
+        name_by_backend = unsigned_name_by_backend,
         **kwargs
     )
-    debug_kwargs = {}
-    if enclave_config:
-        debug_kwargs["config"] = enclave_config
-
-    sgx.debug_enclave(
+    debug_sign_enclave(
         name = enclave_name,
         unsigned = unsigned_enclave_name,
-        tags = tags,
+        backends = backends,
+        name_by_backend = signed_name_by_backend,
         testonly = 1,
-        **debug_kwargs
+        config = enclave_config,
     )
 
     # //asylo/bazel:test_shim_loader expects the path to
@@ -959,10 +1060,12 @@ def cc_enclave_test(
     else:
         loader_args.append("--notest_in_initialize")
 
-    if "asylo-sgx" not in tags:
-        tags = tags + ["asylo-sgx"]
+    extended_tags = list(tags)
 
-    tags = _extract_asylo_tags(tags) + tags
+    backend_tags = backend_tools.tags(backends)
+    for tag in backend_tags:
+        if tag not in tags:
+            extended_tags += [tag]
 
     # Execute the gtest enclave using the gtest enclave runner
     _enclave_runner_test(
@@ -974,7 +1077,7 @@ def cc_enclave_test(
         remote_proxy = remote_proxy,
         testonly = 1,
         size = size,
-        tags = ["enclave_test"] + tags,
+        tags = ["enclave_test"] + extended_tags,
     )
 
 def sgx_enclave_test(name, srcs, **kwargs):
@@ -987,14 +1090,10 @@ def sgx_enclave_test(name, srcs, **kwargs):
       srcs: Same as cc_test srcs.
       **kwargs: enclave_test arguments.
     """
-    tags = kwargs.pop("tags", [])
     enclave_test(
         name,
         srcs = srcs,
-        tags = tags + [
-            "asylo-sgx",
-            "manual",
-        ],
+        backends = sgx.backend_labels,
         deprecation =
             "asylo.bzl:sgx_enclave_test is deprecated and will go" +
             " away in the future. Please load from sgx_rules.bzl or use" +

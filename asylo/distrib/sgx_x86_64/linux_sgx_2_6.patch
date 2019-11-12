@@ -3278,7 +3278,7 @@ diff -Nur /dev/null BUILD
 @@ -0,0 +1,1337 @@
 +# linux-sgx is the Intel SGX SDK
 +
-+load(":sgx_sdk.bzl", "asylo_sgx_backend", "sgx", "enclave_lds")
++load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
 +
 +# "notice" licenses present:
 +# BSD (Intel SGX SDK, libunwind, libcxxrt),
@@ -4616,17 +4616,10 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,701 @@
+@@ -0,0 +1,702 @@
 +"""Build tools for supporting Intel's SDK."""
 +
-+load(
-+    "@com_google_asylo_backend_provider//:enclave_info.bzl",
-+    "AsyloBackendInfo",
-+    "CC_BINARY_ATTRS",
-+    "EnclaveInfo",
-+    "merge_dicts",
-+    "native_cc_binary",
-+)
++load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 +
 +# website-docs-metadata
 +# ---
@@ -4664,6 +4657,13 @@ diff -Nur /dev/null sgx_sdk.bzl
 +])
 +SGXSigstructInfo = provider(fields = ["config", "unsigned"])
 +
++_hw_backend_label = "@linux_sgx//:asylo_sgx_hw"
++_sim_backend_label = "@linux_sgx//:asylo_sgx_sim"
++SGX_BACKEND_LABELS = {
++    _hw_backend_label: backend_tools.all_labels[_hw_backend_label],
++    _sim_backend_label: backend_tools.all_labels[_sim_backend_label],
++}
++
 +def _enclave_lds_impl(ctx):
 +    output = ctx.actions.declare_file("enclave.lds")
 +    ctx.actions.expand_template(
@@ -4695,7 +4695,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        fail("linkshared must be nonzero")
 +    if not ctx.attr.linkstatic:
 +        fail("linkstatic must be nonzero")
-+    providers = native_cc_binary(
++    providers = backend_tools.cc_binary(
 +        ctx,
 +        basename = ctx.label.name.replace(".so", ""),
 +        extra_features = ["fully_static_link", "pie"],
@@ -4709,11 +4709,11 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        ],
 +        extra_linking_contexts = [ctx.attr._lds[CcInfo].linking_context],
 +    )
-+    return providers + [SGXEnclaveInfo(), EnclaveInfo()]
++    return providers + [SGXEnclaveInfo(), backend_tools.EnclaveInfo()]
 +
 +sgx_cc_unsigned_enclave = rule(
 +    implementation = _sgx_cc_unsigned_enclave_impl,
-+    attrs = merge_dicts(CC_BINARY_ATTRS, {
++    attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
 +        "_lds": attr.label(default = "@linux_sgx//:enclave_lds", allow_single_file = True),
 +    }),
 +    fragments = ["cpp"],
@@ -4959,7 +4959,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )
 +    return [
 +        DefaultInfo(files = depset([ctx.outputs.executable])),
-+        EnclaveInfo(),
++        backend_tools.EnclaveInfo(),
 +        SGXEnclaveInfo(),
 +    ]
 +
@@ -5179,7 +5179,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )
 +    return [
 +        DefaultInfo(files = depset([ctx.outputs.executable])),
-+        EnclaveInfo(),
++        backend_tools.EnclaveInfo(),
 +        SGXEnclaveInfo(),
 +    ]
 +
@@ -5296,8 +5296,8 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    return _extend_enclave_name(enclave, "_unsigned")
 +
 +def _asylo_sgx_backend_impl(ctx):
-+    return [AsyloBackendInfo(
-+        forward_providers = [EnclaveInfo, SGXEnclaveInfo, CcInfo],
++    return [backend_tools.AsyloBackendInfo(
++        forward_providers = [backend_tools.EnclaveInfo, SGXEnclaveInfo, CcInfo],
 +        unsigned_enclave_implementation = _sgx_cc_unsigned_enclave_impl,
 +        debug_sign_implementation = _sgx_debug_enclave_impl,
 +    )]
@@ -5309,6 +5309,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +# Export all rules and macros in one identifier to load.
 +sgx = struct(
++    backend_labels = SGX_BACKEND_LABELS,
 +    boringssl_sign_sigstruct = boringssl_sign_sigstruct,
 +    debug_enclave = sgx_debug_enclave,
 +    enclave_configuration = sgx_enclave_configuration,

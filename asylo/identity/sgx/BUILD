@@ -16,12 +16,15 @@
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 # Used to enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_test_and_cc_enclave_test",
+    "enclave_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 # This package defines sgx-specific portions of the enclave-identity and
 # key-management library.
@@ -303,6 +306,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "sgx_remote_assertion_generator_client_test",
     srcs = ["sgx_remote_assertion_generator_client_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":remote_assertion_cc_proto",
@@ -416,6 +420,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "attestation_key_certificate_impl_test",
     srcs = ["attestation_key_certificate_impl_test.cc"],
+    backends = sgx.backend_labels,
     deps = [
         ":attestation_key_cc_proto",
         ":attestation_key_certificate_cc_proto",
@@ -570,9 +575,10 @@ sgx.debug_enclave(
     config = ":remote_assertion_generator_enclave_config",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "remote_assertion_generator_enclave_test",
     srcs = ["remote_assertion_generator_enclave_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "assertion_generator_enclave": ":remote_assertion_generator_enclave.so",
@@ -636,6 +642,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "remote_assertion_util_test",
     srcs = ["remote_assertion_util_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":remote_assertion_cc_proto",
@@ -692,6 +699,7 @@ cc_test_and_cc_enclave_test(
         "sgx_local_assertion_generator.h",
         "sgx_local_assertion_generator_test.cc",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_constants",
@@ -749,6 +757,7 @@ cc_test_and_cc_enclave_test(
         "sgx_local_assertion_verifier.h",
         "sgx_local_assertion_verifier_test.cc",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_constants",
@@ -961,6 +970,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "attributes_util_test",
     srcs = ["attributes_util_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attributes_cc_proto",
@@ -1003,6 +1013,7 @@ cc_test_and_cc_enclave_test(
         "sgx_identity_expectation_matcher.h",
         "sgx_identity_expectation_matcher_test.cc",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":code_identity_cc_proto",
@@ -1052,6 +1063,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "secs_attributes_test",
     srcs = ["secs_attributes_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attributes_cc_proto",
@@ -1067,6 +1079,7 @@ cc_test_and_cc_enclave_test(
 cc_test_and_cc_enclave_test(
     name = "secs_miscselect_test",
     srcs = ["secs_miscselect_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
@@ -1153,6 +1166,7 @@ cc_test(
 cc_test_and_cc_enclave_test(
     name = "verify_hardware_report_test",
     srcs = ["verify_hardware_report_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_interface",
@@ -1184,6 +1198,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "platform_provisioning_test",
     srcs = ["platform_provisioning_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
@@ -1225,6 +1240,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "pce_util_test",
     srcs = ["pce_util_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
@@ -1282,6 +1298,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "pck_certificates_test",
     srcs = ["pck_certificates_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":pck_certificates",
@@ -1329,6 +1346,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "tcb_test",
     srcs = ["tcb_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":machine_configuration_cc_proto",
@@ -1371,6 +1389,7 @@ sgx.enclave_configuration(
 cc_test_and_cc_enclave_test(
     name = "tcb_container_util_test",
     srcs = ["tcb_container_util_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_config = ":tcb_container_util_enclave_test_config",
     deps = [
@@ -1416,6 +1435,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "tcb_info_from_json_test",
     srcs = ["tcb_info_from_json_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":platform_provisioning_cc_proto",
@@ -1457,6 +1477,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "provisioning_consistency_checker_test",
     srcs = ["provisioning_consistency_checker_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":provisioning_consistency_checker",
@@ -1576,9 +1597,10 @@ sgx.debug_enclave(
     config = ":report_oracle_enclave_config",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "dcap_intel_architectural_enclave_interface_e2e_test",
     srcs = ["dcap_intel_architectural_enclave_interface_e2e_test.cc"],
+    backends = ["@linux_sgx//:asylo_sgx_hw"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "report_oracle_enclave_path": ":report_oracle_enclave.so",
@@ -1898,6 +1920,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "proto_format_test",
     srcs = ["proto_format_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
@@ -1937,6 +1960,7 @@ cc_library(
 cc_test_and_cc_enclave_test(
     name = "signed_tcb_info_from_json_test",
     srcs = ["signed_tcb_info_from_json_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":sgx_pcs_client_cc_proto",

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+# Asylo Crypto library utilities.
 
 load(
     "//asylo/bazel:asylo.bzl",
@@ -22,7 +22,7 @@ load(
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-# Asylo Crypto library utilities.
+licenses(["notice"])
 
 cc_library(
     name = "bssl_util",

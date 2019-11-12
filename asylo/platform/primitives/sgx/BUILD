@@ -314,6 +314,7 @@ sgx.enclave_configuration(
 cc_enclave_test(
     name = "untrusted_cache_malloc_test",
     srcs = ["untrusted_cache_malloc_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclave_config = ":many_threads_enclave_config",
     deps = [

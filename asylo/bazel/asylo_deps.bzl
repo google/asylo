@@ -23,6 +23,19 @@ load(
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
 def _asylo_backend_deps_impl(repository_ctx):
+    """Provides all repository files for com_google_asylo_backend_provider.
+
+    While a local_repository would be easier for a single project, this
+    dependency has be be usable from external projects as well. A local
+    path is inadequate when "local" changes based on the calling project.
+
+    All the files are copied to the workspace's path with empty substitutions
+    on file "templates".
+
+    Args:
+        repository_ctx: A ctx object all repository rule implementation
+            functions are given.
+    """
     repository_ctx.template(
         "BUILD",
         Label("@com_google_asylo//asylo/distrib/backend:BUILD.tpl"),
@@ -38,6 +51,14 @@ def _asylo_backend_deps_impl(repository_ctx):
     repository_ctx.template(
         "WORKSPACE",
         Label("@com_google_asylo//asylo/distrib/backend:WORKSPACE.tpl"),
+    )
+    repository_ctx.template(
+        "empty.txt",
+        Label("@com_google_asylo//asylo/distrib/backend:empty.txt"),
+    )
+    repository_ctx.template(
+        "true.c",
+        Label("@com_google_asylo//asylo/distrib/backend:true.c"),
     )
     repository_ctx.template(
         "tools/whitelists/function_transition_whitelist/BUILD",

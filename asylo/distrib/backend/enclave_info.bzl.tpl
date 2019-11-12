@@ -50,6 +50,37 @@ AsyloBackendInfo = provider(
     ],
 )
 
+BACKEND_LABEL = "@com_google_asylo_backend_provider//:backend"
+
+# When a backend is unspecified, target all of the following backends.
+# The value type for this dictionary is named a "backend label struct"
+ALL_BACKEND_LABELS = {
+    "//asylo/platform/primitives/dlopen": struct(
+        config_settings = [
+            "//asylo/platform/primitives:asylo_dlopen",
+        ],
+        tags = [
+            "asylo-dlopen",
+            "manual",        ],
+    ),
+    "@linux_sgx//:asylo_sgx_sim": struct(
+        config_settings = [
+            "@linux_sgx//:sgx_sim",
+        ],
+        tags = [
+            "asylo-sgx-sim",
+            "manual",        ],
+    ),
+    "@linux_sgx//:asylo_sgx_hw": struct(
+        config_settings = [
+            "@linux_sgx//:sgx_hw",
+        ],
+        tags = [
+            "asylo-sgx-hw",
+            "manual",        ],
+    ),
+}
+
 def _asylo_backend_impl(ctx):
     return [AsyloBackendInfo(forward_providers = [EnclaveInfo, CcInfo])]
 
@@ -98,20 +129,25 @@ CC_BINARY_ATTRS = {
     # The data field is not allowed.
     "linkshared": attr.int(default = 1),
     "linkstatic": attr.int(default = 1),
+    # Attributes not in native.cc_binary.
     "additional_linker_inputs": attr.label_list(allow_files = [".lds"], allow_empty = True),
     "_cc_toolchain": attr.label(default = "@com_google_asylo_toolchain//toolchain:crosstool"),
 }
 
-def merge_dicts(base, extension):
-    """Returns a copy of base with all extension key/value pairs added.
+def merge_dicts(base, *extensions):
+    """Combines all dictionaries combined left to right.
 
     Args:
         base: The base dictionary to be extended.
-        extension: The dictionary whose key/value pairs are written to the copy
-            of base.
+        *extensions: The dictionaries whose key/value pairs are written to the
+            copy of base.
+
+    Returns:
+        A copy of base with all extension key/value pairs added.
     """
     result = dict(base)
-    result.update(extension)
+    for extension in extensions:
+        result.update(extension)
     return result
 
 def native_cc_binary(
@@ -208,3 +244,126 @@ def native_cc_binary(
         CcInfo(linking_context = _linking_context, compilation_context = compilation_context),
         DefaultInfo(files = depset(output_files)),
     ]
+
+def derived_name_from_backend(name, backend):
+    """Returns a valid name that is a combination of name and backend.
+
+    Args:
+        name: The basis for the derived name.
+        backend: The backend the derived name targets.
+
+    Returns:
+        A string.
+    """
+    mangled_backend = backend.replace("/", "_").replace(":", "_").replace("@", "")
+    return name + "_" + mangled_backend
+
+def _canonical_backend_dict(backends):
+    """Create a dictionary from a list of known backend labels.
+
+    If backends is already a dictionary, returns backends. If a backend label
+    is not in ALL_BACKEND_LABELS.keys(), then fails.
+    If the dictionary or label list is empty, then fails.
+
+    Args:
+        backends: A list of label strings or a dictionary of label strings to
+            backend label structs.
+
+    Returns:
+        A dictionary of label string keys and backend label struct values.
+    """
+    backend_dictionary = {}
+    if type(backends) == "list":
+        for backend in backends:
+            if backend not in ALL_BACKEND_LABELS:
+                fail(backend + " is not an Asylo-supported backend label. Please use a dictionary.")
+            backend_dictionary[backend] = ALL_BACKEND_LABELS[backend]
+    else:
+        backend_dictionary = dict(backends)
+
+    if not backend_dictionary:
+        fail("backends may not be empty")
+    return backend_dictionary
+
+def tags_from_backends(backends):
+    """Returns the associated tags with each backend label.
+
+    Args:
+        backends: A list of backend label strings or a dictionary with backend
+            label string keys and backend label struct values.
+
+    Returns:
+        A list of tag strings.
+    """
+    canonical_dict = _canonical_backend_dict(backends)
+    backend_tags = []
+    for label, info in canonical_dict.items():
+        backend_tags += info.tags
+    return backend_tags
+
+def all_backends(
+        rule_or_macro,
+        name,
+        backends,
+        name_by_backend,
+        kwargs):
+    """Creates many backend-specific targets and a selector target.
+
+    If backends is a singleton list or a dictionary with one key, then name
+    is not a selector target, but rather just the rule_or_macro called with
+    the one backend label and kwargs.
+
+    Otherwise, targets are created with rule_or_macro called on a name,
+    a backend, and spliced kwargs. The alias target's tags, visibility, and
+    testonly fields are copied from kwargs.
+
+    Args:
+        rule_or_macro: a Starlark rule or macro that defines a target.
+        name: The name of the selector target. Used as a basis for backend-
+            specific names.
+        backends: A list of supported asylo backend labels to use, or a
+            dictionary with backend label keys mapping to structs with fields
+            {config_setting, tags}. This allows all_backends to select on a
+            user-specified config_setting for the backend value and apply
+            backend-specific tags.
+        name_by_backend: An optional dictionary from backend label to backend-
+            specific target label.
+        kwargs: A dictionary of argument to pass to the given rule_or_macro.
+    """
+    backend_dictionary = _canonical_backend_dict(backends)
+    selections = {}
+    tags = kwargs.pop("tags", [])
+    overall_tags = list(tags)
+    testonly = kwargs.get("testonly", 0)
+    visibility = list(kwargs.get("visibility", ["//visibility:private"]))
+    for backend, info in backend_dictionary.items():
+        backend_name = name_by_backend.get(backend, derived_name_from_backend(name, backend))
+        for config_setting in info.config_settings:
+            selections[config_setting] = ":" + backend_name
+        target_tags = list(info.tags)
+        overall_tags += target_tags
+        rule_or_macro(name = backend_name, backend = backend, tags = tags + target_tags, **kwargs)
+    native.alias(
+        name = name,
+        actual = select(
+            selections,
+            no_match_error = "Must be build with a selected Asylo backend",
+        ),
+        tags = overall_tags,
+        testonly = testonly,
+        visibility = visibility,
+    )
+
+backend_tools = struct(
+    derived_name = derived_name_from_backend,
+    tags = tags_from_backends,
+    all_backends = all_backends,
+    cc_binary = native_cc_binary,
+    cc_binary_attrs = CC_BINARY_ATTRS,
+    asylo = asylo_backend,
+    all_labels = ALL_BACKEND_LABELS,
+    EnclaveInfo = EnclaveInfo,
+    AsyloBackendInfo = AsyloBackendInfo,
+    flag = BACKEND_LABEL,
+    merge_dicts = merge_dicts,
+)

@@ -54,6 +54,28 @@ label_flag(
     visibility = ["//visibility:public"],
 )
 
+# Empty library for "generic" selections to choose in default cases.
+# Useful for implicit attributes for generic rules that are only applicable for
+# a specific backend.
+cc_library(
+    name = "nothing",
+    visibility = ["//visibility:public"],
+)
+
+# Similarly empty is a single file meant for default file selections.
+filegroup(
+    name = "empty",
+    srcs = ["empty.txt"],
+    visibility = ["//visibility:public"],
+)
+
+# Similarly true is an executable that does nothing.
+cc_binary(
+    name = "true",
+    srcs = ["true.c"],
+    visibility = ["//visibility:public"],
+)
+
 bzl_library(
     name = "enclave_info_bzl",
     srcs = ["enclave_info.bzl"],

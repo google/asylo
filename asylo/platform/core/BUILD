@@ -182,6 +182,10 @@ cc_library(
 )
 
 # An untrusted mutex object which depends on host kernel resources.
+_untrusted_mutex_sgx_deps = [
+    "//asylo/platform/primitives/sgx:trusted_sgx",
+]
+
 cc_library(
     name = "untrusted_mutex",
     srcs = ["untrusted_mutex.cc"],
@@ -191,13 +195,16 @@ cc_library(
     deps = [":atomic"] + select(
         {
             "@com_google_asylo//asylo": [
-                "//asylo/platform/primitives/sgx:trusted_sgx",
                 "//asylo/platform/primitives:trusted_backend",
                 "//asylo/platform/primitives:trusted_primitives",
             ],
         },
         no_match_error = "Must be built with the Asylo toolchain",
-    ),
+    ) + select({
+        "@linux_sgx//:sgx_sim": _untrusted_mutex_sgx_deps,
+        "@linux_sgx//:sgx_hw": _untrusted_mutex_sgx_deps,
+        "//conditions:default": [],
+    }),
 )
 
 # An trusted spin lock object.

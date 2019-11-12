@@ -66,6 +66,17 @@ cc_library(
     alwayslink = 1,
 )
 
+# Allow backend mismatches for trusted_dlopen when it's used as an implicit
+# dependency to a backend-generic rule. All implicits have to be available at
+# rule definition time, but they will only be used by the appropriate backend.
+alias(
+    name = "trusted_dlopen_generic",
+    actual = select({
+        "//asylo/platform/primitives:asylo_dlopen": ":trusted_dlopen",
+        "//conditions:default": "@com_google_asylo_backend_provider//:nothing",
+    }),
+)
+
 cc_library(
     name = "untrusted_dlopen",
     srcs = [

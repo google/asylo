@@ -14,9 +14,17 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 # BUILD file needed to make bzl files available to load.
+
+load(
+    "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKEND_TAGS",
+    "cc_enclave_test",
+    "embed_enclaves",
+)
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])
 
 exports_files([
     "asylo.bzl",
@@ -27,14 +35,6 @@ exports_files([
     "sgx_deps.bzl",
     "sgx_rules.bzl",
 ])
-
-load(
-    "//asylo/bazel:asylo.bzl",
-    "ASYLO_ALL_BACKEND_TAGS",
-    "cc_enclave_test",
-    "embed_enclaves",
-)
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # This tests that gtest can work inside an enclave.
 cc_enclave_test(
@@ -126,4 +126,40 @@ sh_test(
     ],
     toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
     deps = ["//asylo/test/util:shell_testing"],
+)
+
+_sgx_key = "@linux_sgx//:enclave_test_private.pem"
+
+_sgx_sign_tool = "@linux_sgx//:sgx_sign_tool"
+
+_sgx_default_sign_config = "@linux_sgx//:enclave_debug_config"
+
+alias(
+    name = "debug_key",
+    actual = select({
+        "@linux_sgx//:sgx_sim": _sgx_key,
+        "@linux_sgx//:sgx_hw": _sgx_key,
+        "//conditions:default": "@com_google_asylo_backend_provider//:empty",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "sign_tool",
+    actual = select({
+        "@linux_sgx//:sgx_sim": _sgx_sign_tool,
+        "@linux_sgx//:sgx_hw": _sgx_sign_tool,
+        "//conditions:default": "@com_google_asylo_backend_provider//:true",
+    }),
+    visibility = ["//visibility:public"],
+)
+
+alias(
+    name = "default_sign_config",
+    actual = select({
+        "@linux_sgx//:sgx_sim": _sgx_default_sign_config,
+        "@linux_sgx//:sgx_hw": _sgx_default_sign_config,
+        "//conditions:default": "@com_google_asylo_backend_provider//:empty",
+    }),
+    visibility = ["//visibility:public"],
 )

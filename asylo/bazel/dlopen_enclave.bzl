@@ -17,14 +17,7 @@
 """Rule definitions for creating targets for dlopen Asylo enclaves."""
 
 load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
-load(
-    "@com_google_asylo_backend_provider//:enclave_info.bzl",
-    "AsyloBackendInfo",
-    "CC_BINARY_ATTRS",
-    "EnclaveInfo",
-    "merge_dicts",
-    "native_cc_binary",
-)
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 
 # website-docs-metadata
 # ---
@@ -47,54 +40,26 @@ load(
 DlopenEnclaveInfo = provider()
 
 def _primitives_dlopen_enclave_impl(ctx):
-    providers = native_cc_binary(
+    providers = backend_tools.cc_binary(
         ctx,
         ctx.label.name.replace(".so", ""),
         extra_linkopts = ["-Wl,-Bsymbolic"],
         extra_features = ["mostly_static_linking_mode"],
         extra_deps = [ctx.attr._trusted_primitives, ctx.attr._trusted_dlopen],
     )
-    return providers + [EnclaveInfo(), DlopenEnclaveInfo()]
+    return providers + [backend_tools.EnclaveInfo(), DlopenEnclaveInfo()]
 
 primitives_dlopen_enclave = rule(
     implementation = _primitives_dlopen_enclave_impl,
-    attrs = merge_dicts(CC_BINARY_ATTRS, {
-        "_trusted_primitives": attr.label(default = "//asylo/platform/primitives:trusted_primitives"),
-        "_trusted_dlopen": attr.label(default = "//asylo/platform/primitives/dlopen:trusted_dlopen"),
+    attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
+        "_trusted_primitives": attr.label(
+            default = "//asylo/platform/primitives:trusted_primitives",
+        ),
+        "_trusted_dlopen": attr.label(
+            default = "//asylo/platform/primitives/dlopen:trusted_dlopen",
+        ),
     }),
     fragments = ["cpp"],
-)
-
-def _forward_debug_sign(ctx):
-    # Signing is a no-op. Just copy the target through. There are no runfiles
-    # for enclave targets.
-    binary_output = ctx.actions.declare_file(ctx.label.name)
-    ctx.actions.run_shell(
-        inputs = [ctx.file.unsigned],
-        command = "cp {} {}".format(ctx.file.unsigned.path, binary_output.path),
-        outputs = [binary_output],
-    )
-    return [
-        DefaultInfo(
-            files = depset([binary_output]),
-            executable = binary_output,
-        ),
-        OutputGroupInfo(bin = depset([binary_output])),
-        EnclaveInfo(),
-        DlopenEnclaveInfo(),
-    ]
-
-def _asylo_dlopen_backend_impl(ctx):
-    return [AsyloBackendInfo(
-        forward_providers = [EnclaveInfo, DlopenEnclaveInfo, CcInfo],
-        unsigned_enclave_implementation = _primitives_dlopen_enclave_impl,
-        debug_sign_implementation = _forward_debug_sign,
-    )]
-
-asylo_dlopen_backend = rule(
-    doc = "Declares name of the Asylo dlopen backend. Used in backend transitions.",
-    implementation = _asylo_dlopen_backend_impl,
-    attrs = {},
 )
 
 def dlopen_enclave_loader(
@@ -123,15 +88,12 @@ def dlopen_enclave_loader(
         enclave(s) are loaded locally.
       **kwargs: cc_binary arguments.
     """
-
-    if "manual" not in kwargs.get("tags", []):
-        kwargs["tags"] = kwargs.get("tags", []) + ["manual"]
-
     enclave_loader(
         name,
         enclaves = enclaves,
         embedded_enclaves = embedded_enclaves,
         loader_args = loader_args,
+        backends = ["//asylo/platform/primitives/dlopen"],
         testonly = 1,
         remote_proxy = remote_proxy,
         **kwargs
@@ -146,13 +108,40 @@ def dlopen_enclave_test(
       name: enclave_test name
       **kwargs: same as enclave_test kwargs
     """
-
-    tags = kwargs.pop("tags", [])
-    if "asylo-dlopen" not in tags:
-        tags += ["asylo-dlopen"]
-
     enclave_test(
         name,
-        tags = tags,
+        backends = ["//asylo/platform/primitives/dlopen"],
         **kwargs
     )
+
+def _forward_debug_sign(ctx):
+    # Signing is a no-op. Just copy the target through. There are no runfiles
+    # for enclave targets.
+    binary_output = ctx.actions.declare_file(ctx.label.name)
+    ctx.actions.run_shell(
+        inputs = [ctx.file.unsigned],
+        command = "cp {} {}".format(ctx.file.unsigned.path, binary_output.path),
+        outputs = [binary_output],
+    )
+    return [
+        DefaultInfo(
+            files = depset([binary_output]),
+            executable = binary_output,
+        ),
+        OutputGroupInfo(bin = depset([binary_output])),
+        backend_tools.EnclaveInfo(),
+        DlopenEnclaveInfo(),
+    ]
+
+def _asylo_dlopen_backend_impl(ctx):
+    return [backend_tools.AsyloBackendInfo(
+        forward_providers = [backend_tools.EnclaveInfo, DlopenEnclaveInfo, CcInfo],
+        unsigned_enclave_implementation = _primitives_dlopen_enclave_impl,
+        debug_sign_implementation = _forward_debug_sign,
+    )]
+
+asylo_dlopen_backend = rule(
+    doc = "Declares name of the Asylo dlopen backend. Used in backend transitions.",
+    implementation = _asylo_dlopen_backend_impl,
+    attrs = {},
+)

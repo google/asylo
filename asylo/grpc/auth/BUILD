@@ -14,7 +14,14 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_test",
+)
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+
+licenses(["notice"])
 
 # Description:
 #   This package contains C++ components provided for users of the enclave gRPC
@@ -25,9 +32,6 @@ licenses(["notice"])  # Apache v2.0
 package(default_visibility = ["//asylo:__subpackages__"])
 
 exports_files(["LICENSE"])
-
-load("//asylo/bazel:asylo.bzl", "cc_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # gRPC channel and server credentials objects.
 cc_library(
@@ -148,10 +152,11 @@ cc_test(
 )
 
 cc_test(
-    name = "enclave_credentials_options_test",
+    name = "enclave_sgx_credentials_options_test",
     srcs = ["enclave_credentials_options_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "enclave_credentials_options_enclave_test",
+    enclave_test_name = "enclave_sgx_credentials_options_enclave_test",
     deps = [
         ":enclave_credentials_options",
         ":null_credentials_options",

@@ -23,4 +23,6 @@ exports_files([
     "enclave_info.bzl.tpl",
     "transitions.bzl.tpl",
     "WORKSPACE.tpl",
+    "empty.txt",
+    "true.c",
 ])

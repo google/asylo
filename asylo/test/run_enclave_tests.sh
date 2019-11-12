@@ -43,7 +43,8 @@ PKG="//asylo"
 # Query for all of the tests marked as regression tests excluding tests in
 # platform/primitives.
 ASYLO_TESTS="tests(${PKG}/...)"
-ASYLO_SGX_TESTS="attr(tags, \"asylo-sgx\", tests(${PKG}/...))"
+ASYLO_SGX_HW_TESTS="attr(tags, \"asylo-sgx-hw\", tests(${PKG}/...))"
+ASYLO_SGX_SIM_TESTS="attr(tags, \"asylo-sgx-sim\", tests(${PKG}/...))"
 ASYLO_DLOPEN_TESTS="attr(tags, \"asylo-dlopen\", tests(${PKG}/...))"
 ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(${PKG}/...))"
 
@@ -52,14 +53,17 @@ NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
 HOST_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
   (${NOREGRESSION_TESTS} union ${ENCLAVE_TESTS})")
 )
-SGX_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SGX_TESTS} except
+SGX_HW_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SGX_HW_TESTS} except
+  ${NOREGRESSION_TESTS}")
+)
+SGX_SIM_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SGX_SIM_TESTS} except
   ${NOREGRESSION_TESTS}")
 )
 DLOPEN_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_DLOPEN_TESTS} except
   ${NOREGRESSION_TESTS}")
 )
 UNTAGGED_TESTS=($(${BAZEL} query "${ENCLAVE_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_TESTS})"))
+  (${NOREGRESSION_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})"))
 
 STAT=0
 if [[ "${#UNTAGGED_TESTS[@]}" -ne 0 ]]; then
@@ -80,13 +84,13 @@ fi
 
 if [[ " ${TO_TEST[@]} " =~ " sgx-sim " ]]; then
   ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-    --config=sgx-sim "${SGX_REGRESSION_TESTS[@]}"
+    --config=sgx-sim "${SGX_SIM_REGRESSION_TESTS[@]}"
   STAT=$((${STAT} || $?))
 fi
 
 if [[ " ${TO_TEST[@]} " =~ " sgx " ]]; then
   ${BAZEL} test --test_strategy=local --test_tag_filters=+enclave_test \
-    --build_tests_only --config=sgx "${SGX_REGRESSION_TESTS[@]}"
+    --build_tests_only --config=sgx "${SGX_HW_REGRESSION_TESTS[@]}"
   STAT=$((${STAT} || $?))
 fi
 

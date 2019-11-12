@@ -17,7 +17,6 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
-    "asylo_tags",
     "cc_enclave_binary",
     "cc_test",
     "copy_from_host",
@@ -26,7 +25,7 @@ load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 # Build targets for the whole-application wrapper and its tests.
 
@@ -254,8 +253,9 @@ sh_test(
         ":test_host_application",
     ],
     tags = [
+        "asylo-sgx-hw",
+        "asylo-sgx-sim",
         "enclave_test",
-        "asylo-sgx",
-    ] + asylo_tags("asylo-sgx"),
+    ],
     deps = ["//asylo/test/util:shell_testing"],
 )

@@ -100,6 +100,7 @@ cc_library(
     ) + select({
         "@linux_sgx//:sgx_hw": _TRUSTED_BACKEND_SGX_DEPS,
         "@linux_sgx//:sgx_sim": _TRUSTED_BACKEND_SGX_DEPS,
+        ":asylo_dlopen": [],
         "//conditions:default": [],
     }),
 )
