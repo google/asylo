@@ -2488,6 +2488,21 @@ diff -Nur sdk/simulation/driver_api/driver_api.cpp sdk/simulation/driver_api/dri
  
      ce = reinterpret_cast<CEnclaveSim*>(DoECREATE_SW(&pinfo));
      if (ce == NULL) {
+diff -Nur sdk/simulation/uae_service_sim/licensing_sim.cpp sdk/simulation/uae_service_sim/licensing_sim.cpp
+--- sdk/simulation/uae_service_sim/licensing_sim.cpp
++++ sdk/simulation/uae_service_sim/licensing_sim.cpp
+@@ -143,11 +143,6 @@
+         return SGX_ERROR_INVALID_PARAMETER;
+     }
+ 
+-    if(((p_attribute->flags) & SGX_FLAGS_PROVISION_KEY) &&
+-        memcmp(PVE_PUBLIC_KEY, &p_signature->key.modulus,
+-        sizeof(PVE_PUBLIC_KEY)))
+-        return SGX_ERROR_SERVICE_INVALID_PRIVILEGE;
+-
+     return get_launch_token_internal(p_signature,
+         p_attribute,
+         (token_t *)p_launch_token);
 diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instructions.cpp
 --- sdk/simulation/uinst/u_instructions.cpp
 +++ sdk/simulation/uinst/u_instructions.cpp
