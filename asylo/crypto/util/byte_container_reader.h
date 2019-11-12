@@ -70,11 +70,11 @@ class ByteContainerReader {
   // INVALID_ARGUMENT if |count| objects is larger than the number of bytes
   // remaining.
   //
-  // ByteContainerT must have a value_type that is trivially copy-assignable,
+  // ObjContainerT must have a value_type that is trivially copy-assignable,
   // and must support push_back() and back().
-  template <typename ByteContainerT>
-  Status ReadMultiple(size_t count, ByteContainerT *output) {
-    using ValueType = typename ByteContainerT::value_type;
+  template <typename ObjContainerT>
+  Status ReadMultiple(size_t count, ObjContainerT *output) {
+    using ValueType = typename ObjContainerT::value_type;
     static_assert(std::is_trivially_copy_assignable<ValueType>::value,
                   "value_type is not trivally copy-assignable");
     const size_t size = count * sizeof(ValueType);
