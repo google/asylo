@@ -307,7 +307,7 @@ ABSL_FLAG(int32_t, server_max_lifetime, 300,
           "The longest amount of time (in seconds) that the server should be "
           "allowed to run");
 
-DEFINE_int32(port, 0, "Port number that server listens to");
+ABSL_FLAG(int32_t, port, 0, "Port that the server listens to");
 
 constexpr char kServerAddress[] = "[::1]";
 ```
@@ -479,7 +479,6 @@ cc_proto_library(
 sgx.unsigned_enclave(
     name = "grpc_server_enclave_unsigned.so",
     srcs = ["grpc_server_enclave.cc"],
-    config = "//asylo/grpc/util:grpc_enclave_config",
     deps = [
         ":grpc_server_config_cc_proto",
         ":translator_server_impl",
@@ -497,6 +496,7 @@ sgx.unsigned_enclave(
 sgx.debug_enclave(
     name = "grpc_server_enclave.so",
     unsigned = "grpc_server_enclave_unsigned.so",
+    config = "//asylo/grpc/util:grpc_enclave_config",
 )
 
 ```
@@ -513,8 +513,10 @@ enclave_loader(
         ":grpc_server_config_cc_proto",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
+        "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/util:logging",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
     ],
 )
 ```
