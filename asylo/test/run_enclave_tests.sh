@@ -46,6 +46,7 @@ ASYLO_TESTS="tests(${PKG}/...)"
 ASYLO_SGX_HW_TESTS="attr(tags, \"asylo-sgx-hw\", tests(${PKG}/...))"
 ASYLO_SGX_SIM_TESTS="attr(tags, \"asylo-sgx-sim\", tests(${PKG}/...))"
 ASYLO_DLOPEN_TESTS="attr(tags, \"asylo-dlopen\", tests(${PKG}/...))"
+ASYLO_REMOTE_TESTS="attr(tags, \"asylo-remote\", tests(${PKG}/...))"
 ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(${PKG}/...))"
 
 ASYLO_PRIMITIVES="tests(${PKG}/platform/primitives/...)"
@@ -54,13 +55,13 @@ HOST_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
   (${NOREGRESSION_TESTS} union ${ENCLAVE_TESTS})")
 )
 SGX_HW_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SGX_HW_TESTS} except
-  ${NOREGRESSION_TESTS}")
+  (${NOREGRESSION_TESTS} union ${ASYLO_REMOTE_TESTS})")
 )
 SGX_SIM_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_SGX_SIM_TESTS} except
   ${NOREGRESSION_TESTS}")
 )
 DLOPEN_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_DLOPEN_TESTS} except
-  ${NOREGRESSION_TESTS}")
+  (${NOREGRESSION_TESTS} union ${ASYLO_REMOTE_TESTS})")
 )
 UNTAGGED_TESTS=($(${BAZEL} query "${ENCLAVE_TESTS} except
   (${NOREGRESSION_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})"))
