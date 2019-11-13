@@ -16,6 +16,7 @@
 
 """Macro definitions for Asylo testing."""
 
+load("//asylo/bazel:asylo_internal.bzl", "internal")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
@@ -506,6 +507,7 @@ def dlopen_enclave_loader(
         enclave(s) are loaded locally.
       **kwargs: cc_binary arguments.
     """
+    asylo = internal.package()
     enclave_loader(
         name,
         enclaves = enclaves,
@@ -513,7 +515,7 @@ def dlopen_enclave_loader(
         loader_args = loader_args,
         testonly = 1,
         remote_proxy = remote_proxy,
-        backends = ["//asylo/platform/primitives/dlopen"],
+        backends = [asylo + "/platform/primitives/dlopen"],
         deprecation =
             "asylo.bzl:dlopen_enclave_loader is deprecated and will go" +
             " away in the future. Please load from dlopen_enclave.bzl or use" +
@@ -528,19 +530,26 @@ def _cc_backend_unsigned_enclave_impl(ctx):
 def _backend_debug_sign_enclave_impl(ctx):
     return ctx.attr.backend[backend_tools.AsyloBackendInfo].debug_sign_implementation(ctx)
 
-cc_backend_unsigned_enclave = rule(
-    doc = "Defines an unsigned enclave target in the provided backend.",
-    implementation = _cc_backend_unsigned_enclave_impl,
-    attrs = backend_tools.merge_dicts(
-        backend_tools.cc_binary_attrs,
-        {
-            "backend": attr.label(mandatory = True, providers = [backend_tools.AsyloBackendInfo]),
-        },
-        DLOPEN_IMPLICIT_CC_BINARY_ATTRS,
-        SGX_IMPLICIT_CC_BINARY_ATTRS,
-    ),
-    fragments = ["cpp"],
-)
+def _make_cc_backend_unsigned_enclave(experimental):
+    return rule(
+        doc = "Defines an unsigned enclave target in the provided backend.",
+        implementation = _cc_backend_unsigned_enclave_impl,
+        attrs = backend_tools.merge_dicts(
+            backend_tools.cc_binary_attrs,
+            {
+                "backend": attr.label(
+                    mandatory = True,
+                    providers = [backend_tools.AsyloBackendInfo],
+                ),
+            },
+            DLOPEN_IMPLICIT_CC_BINARY_ATTRS if experimental else {},
+            SGX_IMPLICIT_CC_BINARY_ATTRS,
+        ),
+        fragments = ["cpp"],
+    )
+
+cc_backend_unsigned_enclave = _make_cc_backend_unsigned_enclave(experimental = False)
+cc_backend_unsigned_enclave_experimental = _make_cc_backend_unsigned_enclave(experimental = True)
 
 backend_debug_sign_enclave = rule(
     executable = True,
@@ -584,7 +593,12 @@ def cc_unsigned_enclave(
           specific target label.
       **kwargs: Remainder arguments to the backend rule.
     """
-    backend_tools.all_backends(cc_backend_unsigned_enclave, name, backends, name_by_backend, kwargs)
+    enclave_rule = cc_backend_unsigned_enclave
+
+    asylo = "asylo"
+    if asylo in native.package_name():
+        enclave_rule = cc_backend_unsigned_enclave_experimental
+    backend_tools.all_backends(enclave_rule, name, backends, name_by_backend, kwargs)
 
 def debug_sign_enclave(
         name,
@@ -708,15 +722,16 @@ def cc_enclave_binary(
         **kwargs
     )
 
+    asylo = internal.package()
     if not application_enclave_config:
-        application_enclave_config = "//asylo/bazel/application_wrapper:default_config"
+        application_enclave_config = asylo + "/bazel/application_wrapper:default_config"
 
     cc_unsigned_enclave(
         name = unsigned_enclave_name,
         copts = ASYLO_DEFAULT_COPTS,
         deps = [
             ":" + application_library_name,
-            "//asylo/bazel/application_wrapper:application_wrapper_enclave_core",
+            asylo + "/bazel/application_wrapper:application_wrapper_enclave_core",
         ],
         backends = backends,
         name_by_backend = unsigned_name_by_backend,
@@ -739,7 +754,7 @@ def cc_enclave_binary(
         linkopts = ["-Wl,--undefined=GetApplicationConfig"],
         deps = [
             application_enclave_config,
-            "//asylo/bazel/application_wrapper:application_wrapper_driver",
+            asylo + "/bazel/application_wrapper:application_wrapper_driver",
         ],
         backends = backends,
         **loader_kwargs
@@ -1006,20 +1021,12 @@ def cc_enclave_test(
       **kwargs: cc_test arguments.
     """
 
-    # This is a temporary workaround to resolve conflicts in building Asylo
-    # directly and importing Asylo as a dependency. Currently when we import
-    # "com_google_asylo" from inside Asylo, bazel treats them as two different
-    # sources and generates conflict symbol errors. Therefore we need to
-    # differentiate the two cases based on the package name.
-    if "asylo" in native.package_name():
-        _workspace_name = "//asylo"
-    else:
-        _workspace_name = "@com_google_asylo//asylo"
+    asylo = internal.package()
 
     # Create a copy of the gtest enclave runner
     host_test_name = name + "_host_driver"
     copy_from_host(
-        target = "//asylo/bazel:test_shim_loader",
+        target = asylo + "/bazel:test_shim_loader",
         output = host_test_name,
         name = name + "_as_host",
     )
@@ -1035,7 +1042,7 @@ def cc_enclave_test(
     cc_unsigned_enclave(
         name = unsigned_enclave_name,
         srcs = srcs,
-        deps = deps + ["//asylo/bazel:test_shim_enclave"],
+        deps = deps + [asylo + "/bazel:test_shim_enclave"],
         testonly = 1,
         tags = tags,
         backends = backends,

@@ -17,6 +17,7 @@
 """Rule definitions for creating targets for dlopen Asylo enclaves."""
 
 load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
+load("//asylo/bazel:asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 
 # website-docs-metadata
@@ -88,12 +89,13 @@ def dlopen_enclave_loader(
         enclave(s) are loaded locally.
       **kwargs: cc_binary arguments.
     """
+    asylo = internal.package()
     enclave_loader(
         name,
         enclaves = enclaves,
         embedded_enclaves = embedded_enclaves,
         loader_args = loader_args,
-        backends = ["//asylo/platform/primitives/dlopen"],
+        backends = [asylo + "/platform/primitives/dlopen"],
         testonly = 1,
         remote_proxy = remote_proxy,
         **kwargs
@@ -108,9 +110,11 @@ def dlopen_enclave_test(
       name: enclave_test name
       **kwargs: same as enclave_test kwargs
     """
+
+    asylo = internal.package()
     enclave_test(
         name,
-        backends = ["//asylo/platform/primitives/dlopen"],
+        backends = [asylo + "/platform/primitives/dlopen"],
         **kwargs
     )
 
