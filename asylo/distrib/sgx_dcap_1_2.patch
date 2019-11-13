@@ -676,8 +676,8 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 +
 +extern const uint16_t QUOTE_VERSION = 3;
 +
-+extern const uint16_t ECDSA_256_WITH_P256_CURVE = 1;
-+extern const uint16_t ECDSA_384_WITH_P384_CURVE = 2;
++extern const uint16_t ECDSA_256_WITH_P256_CURVE = 2;
++extern const uint16_t ECDSA_384_WITH_P384_CURVE = 3;
 +extern const size_t ECDSA_P256_SIGNATURE_BYTE_LEN = 64;
 +extern const size_t ENCLAVE_REPORT_BYTE_LEN = 384;
 +
