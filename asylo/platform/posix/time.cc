@@ -23,13 +23,10 @@
 #include <cstring>
 
 #include "asylo/platform/common/time_util.h"
-#include "asylo/platform/core/shared_name.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
-#include "asylo/platform/primitives/trusted_runtime.h"
 
 using asylo::NanosecondsToTimeSpec;
 using asylo::NanosecondsToTimeVal;
-using asylo::SharedName;
 using asylo::TimeSpecToNanoseconds;
 
 namespace {

@@ -26,7 +26,6 @@ package(
 asylo_dlopen_backend(name = "dlopen")
 
 _TRUSTED_DLOPEN_SRCS = [
-    "malloc_lock.cc",
     "runtime_stubs.c",
     "runtime_syscalls.c",
     "shared_dlopen.h",

@@ -23,7 +23,6 @@
 #include <mutex>
 
 #include "absl/container/flat_hash_map.h"
-#include "absl/synchronization/mutex.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 #include "asylo/util/statusor.h"

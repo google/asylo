@@ -22,7 +22,6 @@
 //
 
 int access() { return 0; }
-int clock_gettime() { return 0; }
 int enclave_close() { return 0; }
 int enclave_execve() { return 0; }
 int enclave_exit() { return 0; }
@@ -30,7 +29,6 @@ int enclave_fcntl() { return 0; }
 int enclave_fork() { return 0; }
 int enclave_fstat() { return 0; }
 int enclave_getpid() { return 0; }
-int enclave_gettimeofday() { return 0; }
 int enclave_kill() { return 0; }
 int enclave_link() { return 0; }
 int enclave_lseek() { return 0; }
@@ -38,15 +36,8 @@ int enclave_mkdir() { return 0; }
 int enclave_open() { return 0; }
 int enclave_read() { return 0; }
 int enclave_stat() { return 0; }
-int enclave_times() { return 0; }
 int enclave_unlink() { return 0; }
-int enclave_wait() { return 0; }
 int geteuid() { return 0; }
-int getgrgid_r() { return 0; }
-int getgrnam_r() { return 0; }
-int getpwnam_r() { return 0; }
-int getpwuid_r() { return 0; }
-int nanosleep() { return 0; }
 int pthread_cond_broadcast() { return 0; }
 int pthread_cond_destroy() { return 0; }
 int pthread_cond_init() { return 0; }
