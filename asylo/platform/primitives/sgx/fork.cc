@@ -25,6 +25,7 @@
 #include "asylo/platform/primitives/sgx/fork.pb.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/util/status.h"
+#include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
 namespace {
@@ -105,14 +106,22 @@ int Restore(const char *snapshot_layout, size_t snapshot_layout_len,
   // deallocators using the same heap. Consequently, we wait to deserialize this
   // message until after switching heaps in RestoreForFork().
   status = RestoreForFork(snapshot_layout, snapshot_layout_len);
+  int ret = status_serializer.Serialize(status);
 
   if (!status.ok()) {
     // Finalize the enclave as this enclave shouldn't be entered again.
     ThreadManager *thread_manager = ThreadManager::GetInstance();
     thread_manager->Finalize();
+    // Rejects all entries if restore failed. The entries are blocked at this
+    // point because they were blocked when the snapshot is taken, and inherited
+    // during restoring. Reject and unblock them so they will stop waiting and
+    // return error.
+    // This needs to be done after the cleanup work, otherwise the restoring
+    // thread will be blocked from re-entering the enclave as well.
+    enc_reject_entries();
+    enc_unblock_entries();
   }
-
-  return status_serializer.Serialize(status);
+  return ret;
 }
 
 int TransferSecureSnapshotKey(const char *input, size_t input_len,

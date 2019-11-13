@@ -112,16 +112,22 @@ struct EnclaveMemoryLayout {
   size_t reserved_heap_size;
 };
 
-// Blocks all ecalls from entering the enclave.
-void enc_block_ecalls();
+// Blocks all entries into the enclave.
+void enc_block_entries();
 
-// Unblocks ecalls from entering the enclave.
-void enc_unblock_ecalls();
+// Unblocks all entries into the enclave.
+void enc_unblock_entries();
+
+// Rejects all entries into the enclave.
+void enc_reject_entries();
 
 void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout);
 
 // Returns the number of total active enclave entries.
-int get_active_enclave_entries();
+int active_entry_count();
+
+// Returns the number of total entries blocked from entering the enclave.
+int blocked_entry_count();
 
 // A macro expanding to an expression appropriate for use as the body of a busy
 // loop.

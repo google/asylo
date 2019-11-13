@@ -87,9 +87,11 @@ bool enc_is_outside_enclave(void const *address, size_t size) {
   return sgx_is_outside_enclave(address, size) == 1;
 }
 
-void enc_block_ecalls() { sgx_block_ecalls(); }
+void enc_block_entries() { sgx_block_entries(); }
 
-void enc_unblock_ecalls() { sgx_unblock_ecalls(); }
+void enc_unblock_entries() { sgx_unblock_entries(); }
+
+void enc_reject_entries() { sgx_reject_entries(); }
 
 void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
   if (!enclave_memory_layout) return;
@@ -115,6 +117,8 @@ void enc_get_memory_layout(struct EnclaveMemoryLayout *enclave_memory_layout) {
   enclave_memory_layout->reserved_heap_size = memory_layout.reserved_heap_size;
 }
 
-int get_active_enclave_entries() { return sgx_get_active_enclave_entries(); }
+int active_entry_count() { return sgx_active_entry_count(); }
+
+int blocked_entry_count() { return sgx_blocked_entry_count(); }
 
 }  //  extern "C"

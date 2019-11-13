@@ -167,7 +167,7 @@ void RegisterInternalHandlers() {
 
 void TrustedPrimitives::BestEffortAbort(const char *message) {
   DebugPuts(message);
-  enc_block_ecalls();
+  enc_reject_entries();
   MarkEnclaveAborted();
   abort();
 }

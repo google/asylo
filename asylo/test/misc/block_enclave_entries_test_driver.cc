@@ -72,28 +72,12 @@ TEST_F(BlockEnclaveEntriesTest, BlockUnblock) {
   buf[rc] = '\0';
   ASSERT_THAT(buf, testing::StrEq("Enclave entries blocked"));
 
-  // Verifies that enclave entries are blocked.
   enclave_input.MutableExtension(block_enclave_entries_test_input)
       ->set_thread_type(BlockEnclaveEntriesTestInput::CHECK);
 
   EXPECT_THAT(client_->EnterAndRun(enclave_input, /*output=*/nullptr),
-              Not(IsOk()));
+              IsOk());
 
-  // Informs the BLOCK thread to unblock enclave entries.
-  std::string message = "Ready to unblock enclave entries";
-  ASSERT_GT(write(check_socket, message.data(), message.size()), 0);
-
-  // Waits till the BLOCK thread finishes unblocking and writes to socket.
-  rc = read(check_socket, buf, sizeof(buf));
-  ASSERT_GT(rc, 0);
-  buf[rc] = '\0';
-  ASSERT_THAT(buf, testing::StrEq("Enclave entries unblocked"));
-
-  // Verifies that enclave entries are unblocked.
-  enclave_input.MutableExtension(block_enclave_entries_test_input)
-      ->set_thread_type(BlockEnclaveEntriesTestInput::CHECK);
-
-  EXPECT_THAT(client_->EnterAndRun(enclave_input, /*output=*/nullptr), IsOk());
   block_thread.join();
 }
 

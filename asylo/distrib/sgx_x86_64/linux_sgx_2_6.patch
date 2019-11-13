@@ -505,7 +505,7 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -82,6 +83,67 @@
+@@ -82,6 +83,77 @@
  */
  sgx_status_t SGXAPI sgx_read_rand(unsigned char *rand, size_t length_in_bytes);
  
@@ -556,19 +556,29 @@ diff -Nur common/inc/sgx_trts.h common/inc/sgx_trts.h
 +void SGXAPI sgx_memory_layout(struct SgxMemoryLayout *memory_layout);
 +
 +/* sgx_get_active_enclave_entries()
-+ * Return Value - the number of active ecalls inside the enclave.
++ * Return Value - the number of active entries inside the enclave.
 + */
-+int SGXAPI sgx_get_active_enclave_entries();
++int SGXAPI sgx_active_entry_count();
 +
-+/* sgx_block_ecalls()
-+ * Block all ecalls entering the enclave.
++/* sgx_block_entries()
++ * Block all entries into the enclave.
 + */
-+void SGXAPI sgx_block_ecalls();
++void SGXAPI sgx_block_entries();
 +
-+/* sgx_unblock_ecalls()
-+ * Unblock ecalls entering the enclave.
++/* sgx_unblock_entries()
++ * Unblock entries into the enclave.
 + */
-+void SGXAPI sgx_unblock_ecalls();
++void SGXAPI sgx_unblock_entries();
++
++/* sgx_blocked_entry_count()
++ * Return Value - tne number of entries blocked from reentering the enclave.
++ */
++int SGXAPI sgx_blocked_entry_count();
++
++/* sgx_reject_entries()
++ * Rejects all entries into the enclave.
++ */
++void SGXAPI sgx_reject_entries();
 +
  #ifdef __cplusplus
  }
@@ -2909,7 +2919,7 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
  
  #ifdef SE_SIM
  #include "t_instructions.h"    /* for `g_global_data_sim' */
-@@ -318,6 +320,35 @@
+@@ -318,6 +320,37 @@
      return 0;
  }
  
@@ -2917,13 +2927,15 @@ diff -Nur sdk/trts/trts.cpp sdk/trts/trts.cpp
 +  get_memory_layout(memory_layout);
 +}
 +
-+int sgx_get_active_enclave_entries() {
-+  return get_ecall_count();
-+}
++int sgx_active_entry_count() { return get_entry_count(); }
 +
-+void sgx_block_ecalls() { set_block_ecalls(/*block=*/true); }
++int sgx_blocked_entry_count() { return get_blocked_entry_count(); }
 +
-+void sgx_unblock_ecalls() { set_block_ecalls(/*block=*/false); }
++void sgx_block_entries() { set_block_entries(/*block=*/true); }
++
++void sgx_unblock_entries() { set_block_entries(/*block=*/false); }
++
++void sgx_reject_entries() { set_reject_entries(); }
 +
 +sgx_status_t egetkey_status_to_sgx_status(int egetkey_status) {
 +  switch ((egetkey_status_t)egetkey_status) {
@@ -3059,7 +3071,7 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
  
  extern "C" int enter_enclave(int index, void *ms, void *tcs, int cssa) __attribute__((section(".nipx")));
  
-@@ -87,13 +66,37 @@
+@@ -87,13 +66,47 @@
          return error;
      }
  
@@ -3067,9 +3079,9 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 +    // Increase the count if an ecall enters an enclave. The ocalls returning to
 +    // the enclave shouldn't be counted in, since the ecall that invokes them is
 +    // still active.
-+    if (index != ECMD_ORET && index != ECMD_EXCEPT)
++    if (index != ECMD_ORET)
 +    {
-+        increase_ecall_count();
++        increase_entry_count();
 +    }
 +
 +    // Check whether the incoming ecall is a user exception. If index is within
@@ -3079,9 +3091,19 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
 +        (index >= 0 && index < int(g_ecall_table.nr_ecall)) &&
 +        g_ecall_table.ecall_table[index].is_exception;
 +
-+    if (index != ECMD_ORET && index != ECMD_EXCEPT && get_block_ecalls()) {
-+      error = SGX_ERROR_ECALL_NOT_ALLOWED;
++   // If enclave entries are blocked, wait till it's unblocked.
++    if (get_block_entries())
++    {
++        increase_blocked_entry_count();
++        while (get_block_entries()) {}
++        decrease_blocked_entry_count();
 +    }
++
++    if (get_reject_entries())
++    {
++        error = SGX_ERROR_ECALL_NOT_ALLOWED;
++    }
++
 +    // For a user exception, call |do_ecall| to enter enclave and handle the
 +    // signal, in this case cssa could be 0 or 1 (which is likely to be 1 when
 +    // an enclave is interrupted by an exception).
@@ -3099,14 +3121,14 @@ diff -Nur sdk/trts/trts_nsp.cpp sdk/trts/trts_nsp.cpp
          }
          else if(index == ECMD_INIT_ENCLAVE)
          {
-@@ -124,5 +127,10 @@
+@@ -124,5 +137,10 @@
      {
          set_enclave_state(ENCLAVE_CRASHED);
      }
 +    // The ecall has finished and is leaving the enclave.
-+    if (index != ECMD_ORET && index != ECMD_EXCEPT)
++    if (index != ECMD_ORET)
 +    {
-+        decrease_ecall_count();
++        decrease_entry_count();
 +    }
      return error;
  }
@@ -3170,7 +3192,7 @@ diff -Nur sdk/trts/trts_shared_constants.h sdk/trts/trts_shared_constants.h
 diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
 --- sdk/trts/trts_util.cpp
 +++ sdk/trts/trts_util.cpp
-@@ -29,12 +29,24 @@
+@@ -29,12 +29,51 @@
   *
   */
  
@@ -3183,19 +3205,46 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  #include "trts_internal.h"
 +#include "sgx_trts.h"
 +
-+std::atomic<int> ecall_count(0);
-+std::atomic<bool> block_ecalls(false);
++// Number of active enclave entries.
++static std::atomic<int> entry_count(0);
++// Number of ocalls blocked from reentering the enclave.
++static std::atomic<int> blocked_entry_count(0);
++// The tcs that blocks other tcs from entering the enclave.
++static std::atomic<thread_data_t *> blocking_thread(0);
++// Reject all enclave entries if set to true.
++static std::atomic<bool> reject_entries(false);
 +
-+void increase_ecall_count() { ecall_count++; }
-+void decrease_ecall_count() { ecall_count--; }
-+int get_ecall_count() { return ecall_count; }
++void increase_entry_count() { entry_count++; }
++void decrease_entry_count() { entry_count--; }
++int get_entry_count() { return entry_count; }
 +
-+void set_block_ecalls(bool block) { block_ecalls = block; }
-+bool get_block_ecalls() { return block_ecalls; }
++void increase_blocked_entry_count() { blocked_entry_count++; }
++void decrease_blocked_entry_count() { blocked_entry_count--; }
++int get_blocked_entry_count() { return blocked_entry_count; }
++
++void set_block_entries(bool block)
++{
++    blocking_thread = block ? get_thread_data() : 0;
++}
++
++bool get_block_entries()
++{
++    return blocking_thread != 0 && get_thread_data() != blocking_thread;
++}
++
++void set_reject_entries()
++{
++    reject_entries = true;
++}
++
++bool get_reject_entries()
++{
++    return reject_entries;
++}
  
  // No need to check the state of enclave or thread.
  // The functions should be called within an ECALL, so the enclave and thread must be initialized at that time.
-@@ -123,6 +135,51 @@
+@@ -123,6 +162,51 @@
      return rsrv_size;
  }
  
@@ -3247,7 +3296,7 @@ diff -Nur sdk/trts/trts_util.cpp sdk/trts/trts_util.cpp
  int * get_errno_addr(void)
  {
      thread_data_t *thread_data = get_thread_data();
-@@ -179,4 +236,3 @@
+@@ -179,4 +263,3 @@
      return ( !(sp & (sizeof(uintptr_t) - 1))   // sp is expected to be 4/8 bytes aligned
             && is_stack_addr((void*)sp, 0) );   // sp points to the top/bottom of stack are accepted
  }
@@ -3263,16 +3312,21 @@ diff -Nur sdk/trts/trts_util.h sdk/trts/trts_util.h
  
  #ifdef __cplusplus
  extern "C" {
-@@ -50,6 +51,12 @@
+@@ -50,6 +51,17 @@
  size_t get_rsrv_end(void);
  size_t get_rsrv_size(void);
  size_t get_rsrv_min_size(void);
 +void get_memory_layout(struct SgxMemoryLayout *memory_layout);
-+void increase_ecall_count();
-+void decrease_ecall_count();
-+int get_ecall_count();
-+void set_block_ecalls(bool block);
-+bool get_block_ecalls();
++void increase_entry_count();
++void decrease_entry_count();
++int get_entry_count();
++void increase_blocked_entry_count();
++void decrease_blocked_entry_count();
++int get_blocked_entry_count();
++void set_block_entries(bool block);
++bool get_block_entries();
++void set_reject_entries();
++bool get_reject_entries();
  int * get_errno_addr(void);
  bool is_stack_addr(void *address, size_t size);
  bool is_valid_sp(uintptr_t sp);

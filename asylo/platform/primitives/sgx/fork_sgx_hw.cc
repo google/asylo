@@ -315,17 +315,17 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
                   "Snapshot is not allowed unless fork is requested");
   }
 
-  // Unblock all ecalls after taking snapshot finishes.
-  Cleanup unblock_ecalls(enc_unblock_ecalls);
+  // Unblock all entries after taking snapshot finishes.
+  Cleanup unblock_entries(enc_unblock_entries);
 
   // Block all other entries during snapshotting.
-  enc_block_ecalls();
+  enc_block_entries();
 
   // Check for other entries inside the enclave. Currently there should be two
-  // ecall entries inside the enclave: snapshot ecall and the run ecall which
-  // calls fork. Send a warning message if there are other threads running
-  // during snapshotting, as it could result in undefined behavior.
-  if (get_active_enclave_entries() > 2) {
+  // entries inside the enclave: snapshot ecall and the run ecall which calls
+  // fork. Send a warning message if there are other threads running during
+  // snapshotting, as it could result in undefined behavior.
+  if (active_entry_count() > 2) {
     LOG(WARNING) << "There are other threads running inside the enclave. Fork "
                     "in multithreaded environment may result "
                     "in undefined behavior or potential security issues.";
@@ -587,12 +587,13 @@ Status DecryptAndRestoreThreadStack(
 Status RestoreForFork(const char *input, size_t input_len) {
   Cleanup delete_snapshot_key(DeleteSnapshotKey);
 
-  // Block all other enclave entry calls.
-  enc_block_ecalls();
+  // Blocks all other enclave entry calls, as there shouldn't be any attempts
+  // to enter this enclave.
+  enc_block_entries();
 
   // There shouldn't be any other ecalls running inside the child enclave at
   // this moment.
-  if (get_active_enclave_entries() != 1) {
+  if (active_entry_count() != 1) {
     return Status(
         error::GoogleError::FAILED_PRECONDITION,
         "There are other enclave entries while restoring the enclave");
@@ -664,12 +665,8 @@ Status RestoreForFork(const char *input, size_t input_len) {
     return Status(error_code, error_message);
   }
 
-  // Only unblock other entries if restoring the child enclave succeeds.
-  // Otherwise this enclave blocks all entries. The entries are blocked at this
-  // point because they were blocked when the snapshot is taken, and inherited
-  // during restoring.
-  enc_unblock_ecalls();
-
+  // Only allow other entries if restoring the child enclave succeeds.
+  enc_unblock_entries();
   return Status::OkStatus();
 }
 

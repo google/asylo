@@ -29,6 +29,8 @@
 
 namespace asylo {
 
+static bool check_thread_entered = false;
+
 class BlockEnclaveEntriesTest : public EnclaveTestCase {
  public:
   BlockEnclaveEntriesTest() = default;
@@ -46,6 +48,7 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
     }
 
     if (test_input.thread_type() == BlockEnclaveEntriesTestInput::CHECK) {
+      check_thread_entered = true;
       // Check thread only checks whether it can enter the enclave. Return
       // success since it reaches here.
       return Status::OkStatus();
@@ -57,35 +60,40 @@ class BlockEnclaveEntriesTest : public EnclaveTestCase {
       }
       int socket = test_input.socket();
 
-      // Block ecalls and inform the untrusted thread to try entering the
+      if (blocked_entry_count() != 0) {
+        return Status(error::GoogleError::INTERNAL,
+                      "Found blocked entries while there shouldn't");
+      }
+
+      // Block entries and inform the untrusted thread to try entering the
       // enclave.
-      enc_block_ecalls();
+      enc_block_entries();
       std::string message = "Enclave entries blocked";
       if (enc_untrusted_write(socket, message.data(), message.size()) < 0) {
         return Status(static_cast<error::PosixError>(errno),
                       absl::StrCat("Write failed: ", strerror(errno)));
       }
 
-      // Wait for the check thread finished trying to enter the enclave before
-      // unblocking the entries.
-      char buf[64];
-      int rc = enc_untrusted_read(socket, buf, sizeof(buf));
-      if (rc <= 0) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("Read failed: ", strerror(errno)));
-      }
-      buf[rc] = '\0';
-      if (strncmp(buf, "Ready to unblock enclave entries", sizeof(buf)) != 0) {
-        return Status(error::GoogleError::INTERNAL, "Unexpected message");
+      struct timespec ts;
+      ts.tv_sec = 0;
+      ts.tv_nsec = 100000000;
+
+      // Wait till the enclave entry is blocked.
+      while (blocked_entry_count() == 0) {
+        nanosleep(&ts, /*rem=*/nullptr);
       }
 
-      // Unblock ecalls and inform the untrusted thread to try entering the
-      // enclave.
-      enc_unblock_ecalls();
-      message = "Enclave entries unblocked";
-      if (enc_untrusted_write(socket, message.data(), message.size()) < 0) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("Write failed: ", strerror(errno)));
+      if (check_thread_entered) {
+        return Status(error::GoogleError::INTERNAL,
+                      "Enclave entries detected while blocked");
+      }
+
+      // Unblock entries and allow entry to enter the enclave.
+      enc_unblock_entries();
+
+      // Wait till the CHECK thread is unblocked and enters the enclave.
+      while (!check_thread_entered) {
+        nanosleep(&ts, /*rem=*/nullptr);
       }
     } else {
       return Status(error::GoogleError::INVALID_ARGUMENT,

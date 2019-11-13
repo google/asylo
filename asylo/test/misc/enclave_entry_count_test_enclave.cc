@@ -87,7 +87,7 @@ class EnclaveEntryCountTest : public EnclaveTestCase {
         }
       }
       // Counts the total active enclave entries saved by the enclave.
-      output->SetExtension(number_entries, get_active_enclave_entries());
+      output->SetExtension(number_entries, active_entry_count());
       count_finished = true;
     } else {
       return Status(error::GoogleError::INVALID_ARGUMENT,
