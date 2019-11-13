@@ -27,7 +27,6 @@
 
 using ::testing::Eq;
 using ::testing::Gt;
-using ::testing::StrEq;
 
 namespace asylo {
 namespace system_call {
