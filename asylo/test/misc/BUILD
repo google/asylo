@@ -21,8 +21,8 @@ load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
     "cc_test",
-    "copy_from_host",
 )
+load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 

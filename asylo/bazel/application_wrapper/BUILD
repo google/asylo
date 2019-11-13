@@ -19,8 +19,8 @@ load(
     "ASYLO_ALL_BACKEND_TAGS",
     "cc_enclave_binary",
     "cc_test",
-    "copy_from_host",
 )
+load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
