@@ -24,6 +24,10 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+exports_files([
+    "enclave_loader.cc",
+])
+
 # A full-duplex gRPC Communicator for an Asylo backend proxy, connecting
 # a remote client to an enclave proxy server running elsewhere.
 proto_library(
@@ -133,6 +137,7 @@ dlopen_enclave_test(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     tags = [
+        "asylo-remote",
         "exclusive",  # test uses gMock on std::threads.
         "notsan",
     ],

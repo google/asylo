@@ -24,6 +24,10 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
+exports_files([
+    "enclave_loader.cc",
+])
+
 cc_library(
     name = "sgx_params",
     hdrs = ["sgx_params.h"],

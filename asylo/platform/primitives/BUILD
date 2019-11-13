@@ -38,29 +38,81 @@ cc_library(
     ],
 )
 
-# Primitive API headers for untrusted code.
+# Target exposing untrusted SGX backend-specific components for the build configuration.
+_UNTRUSTED_SGX_DEPS = [
+    "//asylo/platform/primitives/sgx:loader_cc_proto",
+    "//asylo/platform/primitives/sgx:untrusted_sgx",
+]
+
+# Target exposing untrusted remote backend-specific components for the build configuration.
+_UNTRUSTED_REMOTE_DEPS = [
+    "//asylo/platform/primitives/remote:proxy_client",
+    "//asylo/util/remote:remote_loader_cc_proto",
+    "//asylo/util/remote:remote_proxy_config",
+]
+
+# Loader for Asylo enclaves. The target selects the untrusted backend-specific components
+# based on the configuration passed by the user via the command line.
 cc_library(
     name = "enclave_loader",
-    srcs = [
-        "enclave_loader.cc",
-    ],
+    srcs = select(
+        {
+            "//asylo/platform/primitives:asylo_remote": [
+                "//asylo/platform/primitives/remote:enclave_loader.cc",
+            ],
+            "//conditions:default": [],
+        },
+    ),
     hdrs = [
         "enclave_loader.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        "//asylo:enclave_cc_proto",
+        ":untrusted_primitives",
+    ] + select({
+        "//asylo/platform/primitives:asylo_remote": _UNTRUSTED_REMOTE_DEPS + [
+            "//asylo/platform/primitives/util:dispatch_table",
+            "//asylo/platform/primitives/util:exit_log",
+            "//asylo/util:status",
+            "//asylo/util:status_macros",
+        ],
+        "//conditions:default": [":local_enclave_loader"],
+    }),
+)
+
+# Loader for locally loaded Asylo enclaves. No other target than :enclave_loader
+# should depend on this target directly.
+cc_library(
+    name = "local_enclave_loader",
+    srcs = select(
+        {
+            "@linux_sgx//:sgx_hw": [
+                "//asylo/platform/primitives/sgx:enclave_loader.cc",
+            ],
+            "@linux_sgx//:sgx_sim": [
+                "//asylo/platform/primitives/sgx:enclave_loader.cc",
+            ],
+            "//conditions:default": ["//asylo/platform/primitives:enclave_loader.cc"],
+        },
+    ),
+    hdrs = [
+        "enclave_loader.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:private"],
+    deps = [
         ":untrusted_primitives",
         "//asylo:enclave_cc_proto",
-        "//asylo/platform/primitives/remote:proxy_client",
-        "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/platform/primitives/sgx:untrusted_sgx",
         "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:exit_log",
         "//asylo/util:status",
         "//asylo/util:status_macros",
-        "//asylo/util/remote:remote_loader_cc_proto",
-        "//asylo/util/remote:remote_proxy_config",
-    ],
+    ] + select({
+        "@linux_sgx//:sgx_hw": _UNTRUSTED_SGX_DEPS,
+        "@linux_sgx//:sgx_sim": _UNTRUSTED_SGX_DEPS,
+        "//conditions:default": [],
+    }),
 )
 
 # Primitive API headers for untrusted code.

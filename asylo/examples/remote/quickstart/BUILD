@@ -112,6 +112,7 @@ sgx_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":demo_enclave_debug.so"},
     remote_proxy = "//asylo/util/remote:sgx_remote_proxy",
+    tags = ["asylo-remote"],
     test_args = [
         "--enclave_path='{enclave}'",
     ],
