@@ -137,6 +137,28 @@ bool GetSnapshotKey(CleansingVector<uint8_t> *key) {
   return true;
 }
 
+// Blocks all enclave entries and waits until all enclave entries have exited
+// the enclave and blocked from re-entry. During blocking the calling thread
+// uses |calling_thread_entry_count| entries, and blocking fails if |timeout|
+// expires.
+Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
+  enc_block_entries();
+  for (int i = 0; active_entry_count() >
+                      blocked_entry_count() + calling_thread_entry_count &&
+                  i < timeout;
+       ++i) {
+    sleep(1);
+  }
+
+  if (active_entry_count() >
+      blocked_entry_count() + calling_thread_entry_count) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Timeout while waiting for other TCS to exit the enclave");
+  }
+
+  return Status::OkStatus();
+}
+
 // Encrypts the enclave memory from |source_base| with |source_size| with
 // |cryptor|, and saves the encrypted data in untrusted memory |snapshot_entry|,
 // which includes both the ciphertext and nonce. |snapshot_entry| is a protobuf
@@ -318,17 +340,15 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // Unblock all entries after taking snapshot finishes.
   Cleanup unblock_entries(enc_unblock_entries);
 
-  // Block all other entries during snapshotting.
-  enc_block_entries();
-
-  // Check for other entries inside the enclave. Currently there should be two
-  // entries inside the enclave: snapshot ecall and the run ecall which calls
-  // fork. Send a warning message if there are other threads running during
-  // snapshotting, as it could result in undefined behavior.
-  if (active_entry_count() > 2) {
-    LOG(WARNING) << "There are other threads running inside the enclave. Fork "
-                    "in multithreaded environment may result "
-                    "in undefined behavior or potential security issues.";
+  // Block and check for other entries inside the enclave. Currently there
+  // should be two entries inside the enclave: snapshot ecall and the run ecall
+  // which calls fork. If other TCS are running inside the enclave, they may
+  // modify data/bss/heap and cause an inconsistent snapshot. In that case wait
+  // till all other TCS exit the enclave and get blocked from re-entering.
+  // Timeout at 5 seconds.
+  Status status = BlockAndWaitOnEntries(/*allowed_entries=*/2, /*timeout=*/5);
+  if (!status.ok()) {
+    return status;
   }
 
   if (!snapshot_layout) {
@@ -426,9 +446,9 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
         std::move(cryptor_result.ValueOrDie());
 
     // Allocate and encrypt reserved data section to an untrusted snapshot.
-    Status status = EncryptToSnapshot(
-        cryptor.get(), enclave_layout.reserved_data_base,
-        enclave_layout.data_size, tmp_snapshot_layout.mutable_data());
+    status = EncryptToSnapshot(cryptor.get(), enclave_layout.reserved_data_base,
+                               enclave_layout.data_size,
+                               tmp_snapshot_layout.mutable_data());
 
     if (!status.ok()) {
       CopyNonOkStatus(status, &error_code, error_message,
@@ -567,13 +587,13 @@ Status DecryptAndRestoreThreadStack(
   struct ThreadMemoryLayout thread_layout = GetThreadLayoutForSnapshot();
 
   // Decrypt and restore the thread information. Restore happens in a different
-  // tcs (enclave thread) from the thread that requests fork(). Therefore it is
+  // TCS (enclave thread) from the thread that requests fork(). Therefore it is
   // OK to overwrite the stack since we are using different stack now.
   ASYLO_RETURN_IF_ERROR(
       DecryptFromSnapshot(cryptor.get(), thread_layout.thread_base,
                           thread_layout.thread_size, snapshot_layout.thread()));
 
-  // are decrypting it in a different tcs from the thread that requests fork().
+  // are decrypting it in a different TCS from the thread that requests fork().
   size_t stack_size = reinterpret_cast<size_t>(thread_layout.stack_base) -
                       reinterpret_cast<size_t>(thread_layout.stack_limit);
   ASYLO_RETURN_IF_ERROR(
