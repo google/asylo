@@ -14,13 +14,13 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 licenses(["notice"])  # Apache v2.0
 
 package(
     default_visibility = ["//asylo:implementation"],
 )
-
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 # Utility functions for translating time values and units.
 cc_library(
@@ -112,23 +112,6 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":ring_buffer",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "spin_lock",
-    hdrs = ["spin_lock.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-)
-
-cc_test(
-    name = "spin_lock_test",
-    srcs = ["spin_lock_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":spin_lock",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],

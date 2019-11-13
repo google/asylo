@@ -23,7 +23,7 @@
 #include <stack>
 
 #include "absl/container/flat_hash_set.h"
-#include "asylo/platform/common/spin_lock.h"
+#include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 #include "asylo/platform/primitives/util/trusted_memory.h"
 
@@ -68,7 +68,7 @@ class UntrustedCacheMalloc {
     int count;
   };
 
-  SpinLock lock_;
+  TrustedSpinLock lock_ = TrustedSpinLock(/*is_recursive=*/true);
 
   // Number of entries added to the buffer pool when it's depleted.
   static constexpr size_t kPoolIncrement = 1024;

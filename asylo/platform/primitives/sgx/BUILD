@@ -294,7 +294,7 @@ cc_library(
         ":trusted_sgx",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/memory",
-        "//asylo/platform/common:spin_lock",
+        "//asylo/platform/core:trusted_spin_lock",
     ] + select(
         {
             "@com_google_asylo//asylo": [

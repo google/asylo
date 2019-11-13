@@ -86,7 +86,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
   bool is_pool_empty;
 
   {
-    ScopedSpinLock spin_lock(&lock_);
+    TrustedSpinLockGuard spin_lock(&lock_);
     is_pool_empty = buffer_pool_.empty();
     if (is_pool_empty) {
       buffers =
@@ -135,7 +135,7 @@ void UntrustedCacheMalloc::Free(void *buffer) {
     primitives::TrustedPrimitives::UntrustedLocalFree(buffer);
     return;
   }
-  ScopedSpinLock spin_lock(&lock_);
+  TrustedSpinLockGuard spin_lock(&lock_);
 
   // Add the buffer to the free list if it was not allocated from the buffer
   // pool and was allocated via UntrustedLocalAlloc. If the
