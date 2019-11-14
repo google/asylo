@@ -195,6 +195,26 @@ cc_test(
     ],
 )
 
+# A deleter struct that wraps a C function.
+cc_library(
+    name = "function_deleter",
+    hdrs = ["function_deleter.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+)
+
+cc_test(
+    name = "function_deleter_test",
+    srcs = ["function_deleter_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "function_deleter_enclave_test",
+    deps = [
+        ":function_deleter",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # Type checking for anonymous functions.
 cc_library(
     name = "function_traits",
