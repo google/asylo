@@ -35,6 +35,7 @@
 #include "asylo/platform/primitives/sgx/generated_bridge_t.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
+#include "asylo/platform/primitives/sgx/untrusted_cache_malloc.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
@@ -125,6 +126,9 @@ PrimitiveStatus FinalizeEnclave(void *context, MessageReader *in,
   if (in) {
     ASYLO_RETURN_IF_READER_NOT_EMPTY(*in);
   }
+  // Delete instance of the global memory pool singleton freeing all memory held
+  // by the pool.
+  delete UntrustedCacheMalloc::Instance();
   return asylo_enclave_fini();
 }
 
@@ -167,6 +171,7 @@ void RegisterInternalHandlers() {
 
 void TrustedPrimitives::BestEffortAbort(const char *message) {
   DebugPuts(message);
+  delete UntrustedCacheMalloc::Instance();
   enc_reject_entries();
   MarkEnclaveAborted();
   abort();
@@ -272,17 +277,18 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
                                                  MessageReader *output) {
   int ret;
 
-  SgxParams *const sgx_params = reinterpret_cast<SgxParams *>(
-      TrustedPrimitives::UntrustedLocalAlloc(sizeof(SgxParams)));
+  UntrustedCacheMalloc *untrusted_cache = UntrustedCacheMalloc::Instance();
+
+  SgxParams *const sgx_params =
+      reinterpret_cast<SgxParams *>(untrusted_cache->Malloc(sizeof(SgxParams)));
   Cleanup clean_up(
-      [sgx_params] { TrustedPrimitives::UntrustedLocalFree(sgx_params); });
+      [sgx_params, untrusted_cache] { untrusted_cache->Free(sgx_params); });
   sgx_params->input_size = 0;
   sgx_params->input = nullptr;
   if (input) {
     sgx_params->input_size = input->MessageSize();
     if (sgx_params->input_size > 0) {
-      sgx_params->input =
-          TrustedPrimitives::UntrustedLocalAlloc(sgx_params->input_size);
+      sgx_params->input = untrusted_cache->Malloc(sgx_params->input_size);
       // Copy data to |input_buffer|.
       input->Serialize(const_cast<void *>(sgx_params->input));
     }
@@ -291,6 +297,9 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
   sgx_params->output = nullptr;
   CHECK_OCALL(
       ocall_dispatch_untrusted_call(&ret, untrusted_selector, sgx_params));
+  if (sgx_params->input) {
+    untrusted_cache->Free(const_cast<void *>(sgx_params->input));
+  }
   if (sgx_params->output) {
     // For the results obtained in |output_buffer|, copy them to |output|
     // before freeing the buffer.

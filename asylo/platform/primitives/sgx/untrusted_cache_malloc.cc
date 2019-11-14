@@ -44,15 +44,15 @@ void untrusted_cache_free(void *buffer) {
 
 namespace asylo {
 
-bool UntrustedCacheMalloc::is_destroyed = false;
+bool UntrustedCacheMalloc::is_destroyed_ = false;
 
 UntrustedCacheMalloc *UntrustedCacheMalloc::Instance() {
-  static UntrustedCacheMalloc *instance = new UntrustedCacheMalloc();
+  static auto *instance = new UntrustedCacheMalloc();
   return instance;
 }
 
-UntrustedCacheMalloc::UntrustedCacheMalloc() {
-  if (is_destroyed) {
+UntrustedCacheMalloc::UntrustedCacheMalloc() : lock_(/*is_recursive=*/true) {
+  if (is_destroyed_) {
     return;
   }
   // Initialize a free list object in the trusted heap. The free list object
@@ -77,7 +77,7 @@ UntrustedCacheMalloc::~UntrustedCacheMalloc() {
     primitives::DeAllocateUntrustedBuffers(free_list_->buffers.get(),
                                            free_list_->count);
   }
-  is_destroyed = true;
+  is_destroyed_ = true;
 }
 
 void *UntrustedCacheMalloc::GetBuffer() {
@@ -113,7 +113,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
 }
 
 void *UntrustedCacheMalloc::Malloc(size_t size) {
-  if (is_destroyed || (size > kPoolEntrySize)) {
+  if (is_destroyed_ || (size > kPoolEntrySize)) {
     return primitives::TrustedPrimitives::UntrustedLocalAlloc(size);
   }
   return GetBuffer();
@@ -131,7 +131,7 @@ void UntrustedCacheMalloc::PushToFreeList(void *buffer) {
 }
 
 void UntrustedCacheMalloc::Free(void *buffer) {
-  if (is_destroyed) {
+  if (is_destroyed_) {
     primitives::TrustedPrimitives::UntrustedLocalFree(buffer);
     return;
   }

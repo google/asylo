@@ -21,11 +21,11 @@
 
 #include <cstddef>
 #include <stack>
+#include <unordered_set>
 
-#include "absl/container/flat_hash_set.h"
 #include "asylo/platform/core/trusted_spin_lock.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
-#include "asylo/platform/primitives/util/trusted_memory.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 
 namespace asylo {
 
@@ -64,11 +64,11 @@ class UntrustedCacheMalloc {
 
  private:
   struct FreeList {
-    UntrustedUniquePtr<void *> buffers;
+    primitives::UntrustedUniquePtr<void *> buffers;
     int count;
   };
 
-  TrustedSpinLock lock_ = TrustedSpinLock(/*is_recursive=*/true);
+  TrustedSpinLock lock_;
 
   // Number of entries added to the buffer pool when it's depleted.
   static constexpr size_t kPoolIncrement = 1024;
@@ -83,7 +83,7 @@ class UntrustedCacheMalloc {
   // Defaults to false. Set to true when the singleton class object is
   // destructed. The class will internally route all subsequent calls for memory
   // (de)allocation to the native malloc/free implementation.
-  static bool is_destroyed;
+  static bool is_destroyed_;
 
   UntrustedCacheMalloc();
 
@@ -108,7 +108,7 @@ class UntrustedCacheMalloc {
   std::stack<void *> buffer_pool_;
 
   // Set of buffers returned to and owned by buffer pool clients.
-  absl::flat_hash_set<void *> busy_buffers_;
+  std::unordered_set<void *> busy_buffers_;
 };
 
 }  // namespace asylo

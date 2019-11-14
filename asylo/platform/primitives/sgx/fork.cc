@@ -21,11 +21,12 @@
 #include "asylo/platform/core/status_serializer.h"
 #include "asylo/platform/core/trusted_global_state.h"
 #include "asylo/platform/posix/threading/thread_manager.h"
-#include "asylo/platform/primitives/sgx/fork_internal.h"
 #include "asylo/platform/primitives/sgx/fork.pb.h"
+#include "asylo/platform/primitives/sgx/fork_internal.h"
+#include "asylo/platform/primitives/sgx/untrusted_cache_malloc.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
-#include "asylo/util/status.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/util/status.h"
 
 namespace asylo {
 namespace {
@@ -109,6 +110,10 @@ int Restore(const char *snapshot_layout, size_t snapshot_layout_len,
   int ret = status_serializer.Serialize(status);
 
   if (!status.ok()) {
+    // Delete instance of the global memory pool singleton freeing all memory
+    // held by the pool.
+    delete UntrustedCacheMalloc::Instance();
+
     // Finalize the enclave as this enclave shouldn't be entered again.
     ThreadManager *thread_manager = ThreadManager::GetInstance();
     thread_manager->Finalize();

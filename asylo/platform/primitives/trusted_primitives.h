@@ -127,6 +127,17 @@ struct EntryHandler {
   void *context;
 };
 
+// Deleter for untrusted memory for use with std::unique_ptr. Calls
+// UntrustedLocalFree() internally.
+struct UntrustedDeleter {
+  inline void operator()(void *ptr) const {
+    TrustedPrimitives::UntrustedLocalFree(ptr);
+  }
+};
+
+template <typename T>
+using UntrustedUniquePtr = std::unique_ptr<T, UntrustedDeleter>;
+
 }  // namespace primitives
 }  // namespace asylo
 

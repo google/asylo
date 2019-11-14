@@ -511,7 +511,6 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
   ::asylo::primitives::MessageReader in;
   if (sgx_params->input) {
     in.Deserialize(sgx_params->input, sgx_params->input_size);
-    free(const_cast<void *>(sgx_params->input));
   }
   sgx_params->output_size = 0;
   sgx_params->output = nullptr;

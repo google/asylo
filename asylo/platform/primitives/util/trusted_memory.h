@@ -26,17 +26,6 @@
 
 namespace asylo {
 
-// Deleter for untrusted memory for use with std::unique_ptr. Calls
-// UntrustedLocalFree() internally.
-struct UntrustedDeleter {
-  inline void operator()(void *ptr) const {
-    asylo::primitives::TrustedPrimitives::UntrustedLocalFree(ptr);
-  }
-};
-
-template <typename T>
-using UntrustedUniquePtr = std::unique_ptr<T, UntrustedDeleter>;
-
 // Checks whether |pointer| is not nullptr and is within the enclave. Returns
 // true if the pointer is valid; false if not.
 template <typename T>

@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_enclave_test")
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
@@ -67,6 +67,7 @@ cc_library(
         "trusted_runtime.cc",
         "trusted_sgx.cc",
         "enclave_syscalls.cc",
+        "untrusted_cache_malloc.cc",
     ] + select(
         {
             "@linux_sgx//:sgx_hw": _TRUSTED_SGX_HW_SRCS,
@@ -74,7 +75,10 @@ cc_library(
         },
         no_match_error = "Expected an SGX backend configuration (e.g., --config=sgx)",
     ),
-    hdrs = ["trusted_sgx.h"],
+    hdrs = [
+        "trusted_sgx.h",
+        "untrusted_cache_malloc.h",
+    ],
     copts = select(
         {
             "@linux_sgx//:sgx_hw": [
@@ -83,7 +87,7 @@ cc_library(
             "@linux_sgx//:sgx_sim": [],
         },
         "Must be built for SGX hardware or simulation backend",
-    ) + ASYLO_DEFAULT_COPTS,
+    ) + ASYLO_DEFAULT_COPTS + ["-faligned-new"],
     tags = [
         "asylo-sgx",
         "manual",
@@ -94,6 +98,7 @@ cc_library(
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
                 "//asylo/platform/system_call/type_conversions",
+                "//asylo/platform/core:trusted_spin_lock",
             ],
         },
         no_match_error = "Must be built in the Asylo toolchain",
@@ -108,6 +113,7 @@ cc_library(
         "@com_google_absl//absl/strings",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:cleanup",
+        "@com_google_absl//absl/memory",
     ],
     alwayslink = 1,
 )
@@ -285,30 +291,6 @@ cc_library(
     }),
 )
 
-# Singleton class responsible for allocating shared buffers between trusted
-# and untrusted code.
-cc_library(
-    name = "untrusted_cache_malloc",
-    srcs = ["untrusted_cache_malloc.cc"],
-    hdrs = ["untrusted_cache_malloc.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    tags = ASYLO_ALL_BACKEND_TAGS,
-    deps = [
-        ":trusted_sgx",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/memory",
-        "//asylo/platform/core:trusted_spin_lock",
-    ] + select(
-        {
-            "@com_google_asylo//asylo": [
-                "//asylo/platform/primitives:trusted_backend",
-                "//asylo/platform/primitives:trusted_primitives",
-            ],
-        },
-        no_match_error = "Trusted components must be built with the Asylo toolchain",
-    ),
-)
-
 sgx.enclave_configuration(
     name = "many_threads_enclave_config",
     tcs_num = "1000",
@@ -321,7 +303,7 @@ cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_config = ":many_threads_enclave_config",
     deps = [
-        ":untrusted_cache_malloc",
+        ":trusted_sgx",
         "@com_google_googletest//:gtest",
     ],
 )
