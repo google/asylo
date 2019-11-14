@@ -1,0 +1,55 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package asylo.sgx;
+
+import "asylo/enclave.proto";
+import "asylo/identity/sgx/platform_provisioning.proto";
+
+extend EnclaveInput {
+  optional ReportOracleEnclaveInput report_oracle_enclave_input = 269438874;
+}
+
+extend EnclaveOutput {
+  optional ReportOracleEnclaveOutput report_oracle_enclave_output = 269438874;
+}
+
+// Input message type for the DCAP test enclave
+message ReportOracleEnclaveInput {
+  // Generates a REPORT structure over reportdata, targeting the enclave
+  // described by target_info.
+  message GetReport {
+    optional TargetInfoProto target_info = 1;
+    optional bytes reportdata = 2;  // Must be 64 bytes.
+  }
+
+  oneof input {
+    GetReport get_report = 1;
+  }
+}
+
+// Output message type for the DCAP test enclave
+message ReportOracleEnclaveOutput {
+  message GetReport {
+    optional ReportProto report = 1;
+  }
+
+  oneof output {
+    GetReport get_report = 1;
+  }
+}

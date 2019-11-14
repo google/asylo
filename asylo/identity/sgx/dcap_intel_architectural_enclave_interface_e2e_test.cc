@@ -45,7 +45,7 @@
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
 
-constexpr absl::string_view kTestEnclaveName = "DCAP Test Enclave";
+constexpr char kTestEnclaveName[] = "DCAP Test Enclave";
 constexpr uint16_t kPceId = 0;  // fixed value from intel_sgx sources
 
 ABSL_FLAG(

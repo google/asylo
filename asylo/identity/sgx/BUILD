@@ -1600,15 +1600,13 @@ sgx.debug_enclave(
 enclave_test(
     name = "dcap_intel_architectural_enclave_interface_e2e_test",
     srcs = ["dcap_intel_architectural_enclave_interface_e2e_test.cc"],
-    backends = ["@linux_sgx//:asylo_sgx_hw"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "report_oracle_enclave_path": ":report_oracle_enclave.so",
     },
     tags = ["noregression"],
-    test_args = [
-        "--report_oracle_enclave_path='{report_oracle_enclave_path}'",
-    ],
+    test_args = ["--report_oracle_enclave_path='{report_oracle_enclave_path}'"],
     deps = [
         ":dcap_intel_architectural_enclave_interface",
         ":hardware_types",
