@@ -85,17 +85,9 @@ cc_library(
 # should depend on this target directly.
 cc_library(
     name = "local_enclave_loader",
-    srcs = select(
-        {
-            "@linux_sgx//:sgx_hw": [
-                "//asylo/platform/primitives/sgx:enclave_loader.cc",
-            ],
-            "@linux_sgx//:sgx_sim": [
-                "//asylo/platform/primitives/sgx:enclave_loader.cc",
-            ],
-            "//conditions:default": ["//asylo/platform/primitives:enclave_loader.cc"],
-        },
-    ),
+    srcs = [
+        "//asylo/platform/primitives/sgx:enclave_loader.cc",
+    ],
     hdrs = [
         "enclave_loader.h",
     ],
@@ -108,11 +100,7 @@ cc_library(
         "//asylo/platform/primitives/util:exit_log",
         "//asylo/util:status",
         "//asylo/util:status_macros",
-    ] + select({
-        "@linux_sgx//:sgx_hw": _UNTRUSTED_SGX_DEPS,
-        "@linux_sgx//:sgx_sim": _UNTRUSTED_SGX_DEPS,
-        "//conditions:default": [],
-    }),
+    ] + _UNTRUSTED_SGX_DEPS,
 )
 
 # Primitive API headers for untrusted code.
@@ -150,10 +138,8 @@ cc_library(
         },
         no_match_error = "Must be built in the Asylo toolchain",
     ) + select({
-        "@linux_sgx//:sgx_hw": _TRUSTED_BACKEND_SGX_DEPS,
-        "@linux_sgx//:sgx_sim": _TRUSTED_BACKEND_SGX_DEPS,
         ":asylo_dlopen": [],
-        "//conditions:default": [],
+        "//conditions:default": _TRUSTED_BACKEND_SGX_DEPS,
     }),
 )
 
