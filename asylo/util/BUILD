@@ -200,6 +200,7 @@ cc_library(
     name = "function_deleter",
     hdrs = ["function_deleter.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
 )
 
 cc_test(
