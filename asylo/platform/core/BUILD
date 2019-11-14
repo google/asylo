@@ -264,22 +264,3 @@ cc_library(
         no_match_error = "Must be built with the Asylo toolchain.",
     ),
 )
-
-# Sanity check test for enclave clock variables.
-cc_test(
-    name = "enclave_clock_test",
-    srcs = ["enclave_clock_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    tags = [
-    ],
-    deps = [
-        ":shared_resource_manager",
-        ":untrusted_core",
-        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
-        "//asylo/platform/common:time_util",
-        "//asylo/test/util:test_main",
-        "//asylo/util:status",
-        "@com_google_absl//absl/time",
-        "@com_google_googletest//:gtest",
-    ],
-)
