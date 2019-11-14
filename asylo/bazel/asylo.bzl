@@ -16,8 +16,17 @@
 
 """Macro definitions for Asylo testing."""
 
-load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:asylo_internal.bzl", "internal")
+load(
+    "//asylo/bazel:asylo_copy_from_host.bzl",
+    _backend_debug_sign_enclave_old = "backend_debug_sign_enclave",
+    _cc_backend_unsigned_enclave_experimental_old = "cc_backend_unsigned_enclave_experimental",
+    _cc_backend_unsigned_enclave_old = "cc_backend_unsigned_enclave",
+    _cc_enclave_test_old = "cc_enclave_test",
+    _embed_enclaves_old = "embed_enclaves",
+    _enclave_runner_script_old = "enclave_runner_script",
+    _enclave_runner_test_old = "enclave_runner_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
@@ -52,17 +61,6 @@ ASYLO_ALL_BACKENDS = [
     "asylo-sgx-sim",
 ]
 
-INTERNAL_SHOULD_BE_ALL_BACKENDS = sgx.backend_labels
-
-DLOPEN_IMPLICIT_CC_BINARY_ATTRS = {
-    "_trusted_primitives": attr.label(default = "//asylo/platform/primitives:trusted_primitives"),
-    "_trusted_dlopen": attr.label(default = "//asylo/platform/primitives/dlopen:trusted_dlopen_generic"),
-}
-
-SGX_IMPLICIT_CC_BINARY_ATTRS = {
-    "_lds": attr.label(default = "@linux_sgx//:enclave_lds", allow_single_file = True),
-}
-
 ASYLO_ALL_BACKEND_TAGS = ASYLO_ALL_BACKENDS + [
     "manual",
 ]
@@ -81,214 +79,6 @@ def _ensure_static_manual(args):
     args["linkstatic"] = 1
     args["copts"] = ["-g0"] + args.get("copts", [])
     return args
-
-def _invert_enclave_name_mapping(names_to_targets):
-    """Inverts a name-to-target dict to target-to-name.
-
-    Skylark supports the `label_keyed_string_dict` attribute, which maps Targets
-    to strings. This attribute is used to associate enclave targets with enclave
-    names.
-
-    For macro users, it is more natural to declare mappings from enclave names to
-    enclave targets. As Skylark does not support an attribute that maps strings to
-    Targets, this function is used to invert user-supplied dictionaries such that
-    they can be passed to this file's custom Skylark rules.
-
-    This function will fail() if `enclaves` is not injective; no two names can map
-    to the same enclave target.
-
-    Args:
-      names_to_targets: {string: string} Dictionary from enclave names to targets.
-
-    Returns:
-      {string: string} Dictionary from enclave targets to names.
-    """
-    targets_to_names = {}
-
-    # It is an error if multiple names map to the same target. If this dict ends
-    # up non-empty this method will fail().
-    targets_with_multiple_names = {}
-
-    for name, target in names_to_targets.items():
-        existing_name = targets_to_names.get(target, None)
-        if existing_name:
-            targets_with_multiple_names[target] = \
-                targets_with_multiple_names.get(target, [existing_name]) + [name]
-        else:
-            targets_to_names[target] = name
-
-    if targets_with_multiple_names:
-        err_strs = [
-            'Enclave target "%s" mapped to by names %s' % (target, names)
-            for target, names in targets_with_multiple_names.items()
-        ]
-
-        fail("Cannot map multiple enclave names to the same enclave target.\n" +
-             "\n".join(err_strs))
-
-    return targets_to_names
-
-def _interpolate_enclave_paths(enclaves, args):
-    """Replaces {name}-style labels in `args` with enclave paths from `enclaves`.
-
-    `enclaves` maps enclave targets to names. `args` is a list of arguments,
-    which may contain the names in {name}-syntax. This function replaces
-    occurrences of {name} in `args` with the corresponding enclave's path.
-
-    Example: {Target_1: 'enclave_1'} turns ['--path={enclave_1}'] into
-    ['--path=<path/to/Target_1>']
-
-    Note that the paths are relative to the file's "root". In practice this is
-    beneath the "runfiles" directory.
-
-    Args:
-      enclaves: {Target: string} Mapping from enclave targets to names.
-      args: [string] List of arguments to the loader.
-
-    Returns:
-      [string] List of arguments to the loader, with names replaced with paths to
-        enclaves.
-    """
-
-    # It is assumed that `enclaves` is injective, that no two enclaves map to the
-    # same name. This is enforced by _invert_enclave_name_mapping.
-    names_to_paths = {
-        name: enclave.files.to_list()[0].short_path
-        for enclave, name in enclaves.items()
-    }
-
-    return [arg.format(**names_to_paths) for arg in args]
-
-def _enclave_runner_script_impl(ctx):
-    """Generates a runnable wrapper script around an enclave loader.
-
-    Given a loader and its enclave/data dependencies, call the loader with
-    user-provided arguments. Performs string interpolation over the arguments, to
-    populate paths to enclaves.
-
-    Args:
-      ctx: A bazel rule context
-
-    Returns:
-      The rule's providers. Indicates the data dependencies as runfiles.
-    """
-
-    # Braces in this string are doubled-up to escape them in str.format().
-    script_tmpl = """#!/bin/bash
-
-# Runfiles is hard. https://github.com/bazelbuild/bazel/issues/4054
-
-if [[ -z "${{RUNFILES}}" ]]; then
-  # Canonicalize the path to self.
-  pushd "$(dirname "$0")" > /dev/null
-  self="$(pwd -P)/$(basename "$0")"
-  popd > /dev/null
-
-  if [[ -e "${{self}}.runfiles" ]]; then
-    RUNFILES="${{self}}.runfiles"
-  elif [[ "${{self}}" == *".runfiles/"* ]]; then
-    # Runfiles dir found in self path, so select the nearest containing
-    # .runfiles directory.
-    RUNFILES="${{self%.runfiles/*}}.runfiles"
-  fi
-fi
-
-# The loader and argument paths are not relative to ${{RUNFILES}}. Rather, they
-# are relative to a directory in ${{RUNFILES}}. The name of this directory is
-# specified in "${{RUNFILES}}/MANIFEST", as the first path segment of any listed
-# file. For example, MANIFEST may have the contents
-# ```
-# foo/path/to/loader
-# foo/path/to/enclave
-# foo/path/to/data
-# ```
-# In this case, the loader and argument paths are relative to
-# "${{RUNFILES}}/foo".
-
-if [[ ! -z "${{RUNFILES}}" && -e "${{RUNFILES}}/MANIFEST" ]]; then
-  root_dir_name=$(head -n 1 "${{RUNFILES}}/MANIFEST" | cut -d "/" -f1)
-
-  # Test that the path to the loader is valid before cd'ing.
-  if [[ -e "${{RUNFILES}}/${{root_dir_name}}/{loader}" ]]; then
-    cd "${{RUNFILES}}/${{root_dir_name}}"
-  fi
-fi
-
-# This script will still function under `bazel run` even if the above algorithm
-# could not change to the proper root directory.
-
-exec "./{loader}" {args} "$@"
-"""
-
-    args = _interpolate_enclave_paths(ctx.attr.enclaves, ctx.attr.loader_args)
-    files = [ctx.executable.loader] + ctx.files.enclaves + ctx.files.data
-
-    if ctx.executable.remote_proxy:
-        args = args + ["--remote_proxy='" + ctx.executable.remote_proxy.short_path + "'"]
-        files = files + [ctx.executable.remote_proxy]
-
-    script_src = script_tmpl.format(
-        loader = ctx.executable.loader.short_path,
-        args = " ".join(args),
-    )
-
-    script_file = ctx.actions.declare_file(ctx.label.name)
-
-    ctx.actions.write(
-        content = script_src,
-        is_executable = True,
-        output = script_file,
-    )
-
-    return [DefaultInfo(
-        executable = script_file,
-        runfiles = ctx.runfiles(files = files),
-    )]
-
-def _make_enclave_runner_rule(test = False):
-    """Returns a rule that generates a script for executing enclave loaders.
-
-    Args:
-      test: Whether the rule should be executable as a test.
-
-    Returns:
-      The rule.
-    """
-
-    return rule(
-        implementation = _enclave_runner_script_impl,
-        executable = not test,
-        test = test,
-        attrs = {
-            "data": attr.label_list(allow_files = True),
-            "enclaves": attr.label_keyed_string_dict(
-                allow_files = True,
-                providers = [backend_tools.EnclaveInfo],
-            ),
-            "loader": attr.label(
-                executable = True,
-                # If the loader contains embedded enclaves, then it needs to be
-                # built with the enclave toolchain, since host-toolchain targets
-                # cannot depend on enclave-toolchain targets. As such, it is the
-                # responsiblity of the caller to ensure that the loader is built
-                # correctly.
-                cfg = "target",
-                mandatory = True,
-                allow_single_file = True,
-            ),
-            "remote_proxy": attr.label(
-                default = None,
-                executable = True,
-                cfg = "target",
-                mandatory = False,
-                allow_single_file = True,
-            ),
-            "loader_args": attr.string_list(),
-        },
-    )
-
-_enclave_runner_script = _make_enclave_runner_rule()
-_enclave_runner_test = _make_enclave_runner_rule(test = True)
 
 def embed_enclaves(name, elf_file, enclaves, **kwargs):
     """Build rule for embedding one or more enclaves into an ELF file.
@@ -311,35 +101,10 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
         the system.
       **kwargs: genrule arguments.
     """
-    genrule_name = name + "_rule"
-    elf_file_from_host = name + "_elf_file_from_host"
-
-    objcopy_flags = []
-    for section_name, enclave_file in enclaves.items():
-        if len(section_name) == 0:
-            fail("Section names must be non-empty")
-        if section_name[0] == ".":
-            fail("User-defined section names may not begin with \".\"")
-        objcopy_flags += [
-            "--add-section",
-            "\"{section_name}\"=\"$(location {enclave_file})\"".format(
-                section_name = section_name,
-                enclave_file = enclave_file,
-            ),
-        ]
-
-    copy_from_host(target = elf_file, output = elf_file_from_host)
-    native.genrule(
-        name = genrule_name,
-        srcs = enclaves.values() + [elf_file_from_host],
-        outs = [name],
-        output_to_bindir = 1,
-        cmd = "$(OBJCOPY) {objcopy_flags} $(location {elf_file}) $@".format(
-            objcopy_flags = " ".join(objcopy_flags),
-            elf_file = elf_file_from_host,
-        ),
-        tags = ["manual"],
-        toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
+    _embed_enclaves_old(
+        name = name,
+        elf_file = elf_file,
+        enclaves = enclaves,
         **kwargs
     )
 
@@ -349,7 +114,7 @@ def enclave_loader(
         embedded_enclaves = {},
         loader_args = [],
         remote_proxy = None,
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         deprecation = None,
         **kwargs):
     """Wraps a cc_binary with a dependency on enclave availability at runtime.
@@ -421,7 +186,7 @@ def enclave_loader(
         testonly = kwargs.get("testonly", 0),
         loader = loader_name,
         loader_args = loader_args,
-        enclaves = _invert_enclave_name_mapping(enclaves),
+        enclaves = internal.invert_enclave_name_mapping(enclaves),
         remote_proxy = remote_proxy,
         tags = kwargs.get("tags", []) + backend_tools.tags(backends),
         deprecation = deprecation,
@@ -472,61 +237,51 @@ def dlopen_enclave_loader(
         **kwargs
     )
 
-def _cc_backend_unsigned_enclave_impl(ctx):
-    return ctx.attr.backend[backend_tools.AsyloBackendInfo].unsigned_enclave_implementation(ctx)
+def cc_backend_unsigned_enclave(name, backend, **kwargs):
+    """Defines an unsigned enclave target in the provided backend.
 
-def _backend_debug_sign_enclave_impl(ctx):
-    return ctx.attr.backend[backend_tools.AsyloBackendInfo].debug_sign_implementation(ctx)
+    Args:
+        name: The rule name.
+        backend: An Asylo backend label.
+        **kwargs: Arguments to cc_binary.
+    """
+    _cc_backend_unsigned_enclave_old(name = name, backend = backend, **kwargs)
 
-def _make_cc_backend_unsigned_enclave(experimental):
-    return rule(
-        doc = "Defines an unsigned enclave target in the provided backend.",
-        implementation = _cc_backend_unsigned_enclave_impl,
-        attrs = backend_tools.merge_dicts(
-            backend_tools.cc_binary_attrs,
-            {
-                "backend": attr.label(
-                    mandatory = True,
-                    providers = [backend_tools.AsyloBackendInfo],
-                ),
-            },
-            DLOPEN_IMPLICIT_CC_BINARY_ATTRS if experimental else {},
-            SGX_IMPLICIT_CC_BINARY_ATTRS,
-        ),
-        fragments = ["cpp"],
+def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
+    """Defines an unsigned enclave target in the provided backend.
+
+    Args:
+        name: The rule name.
+        backend: An Asylo backend label.
+        **kwargs: Arguments to cc_binary.
+    """
+    _cc_backend_unsigned_enclave_experimental_old(name = name, backend = backend, **kwargs)
+
+def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs):
+    """Defines the 'signed' version of an unsigned enclave target.
+
+    The signer is backend-specific.
+
+    Args:
+        name: The rule name.
+        backend: An Asylo backend label.
+        unsigned: The label of the unsigned enclave target.
+        config: An enclave signer configuration label. Optional.
+        **kwargs: Generic rule arguments like tags and testonly.
+    """
+    kwargs = dict(kwargs)
+    if config:
+        kwargs["config"] = config
+    _backend_debug_sign_enclave_old(
+        name = name,
+        backend = backend,
+        unsigned = unsigned,
+        **kwargs
     )
-
-cc_backend_unsigned_enclave = _make_cc_backend_unsigned_enclave(experimental = False)
-cc_backend_unsigned_enclave_experimental = _make_cc_backend_unsigned_enclave(experimental = True)
-
-backend_debug_sign_enclave = rule(
-    executable = True,
-    doc = "Defines the 'signed' version of an unsigned enclave target in" +
-          " the provided backend.",
-    implementation = _backend_debug_sign_enclave_impl,
-    attrs = {
-        "backend": attr.label(mandatory = True, providers = [backend_tools.AsyloBackendInfo]),
-        "unsigned": attr.label(mandatory = True, allow_single_file = True),
-        "config": attr.label(
-            default = "//asylo/bazel:default_sign_config",
-            allow_single_file = True,
-        ),
-        "_key": attr.label(
-            default = "//asylo/bazel:debug_key",
-            allow_single_file = True,
-        ),
-        "_sign_tool": attr.label(
-            default = Label("//asylo/bazel:sign_tool"),
-            allow_single_file = True,
-            executable = True,
-            cfg = "host",
-        ),
-    },
-)
 
 def cc_unsigned_enclave(
         name,
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         name_by_backend = {},
         **kwargs):
     """Creates a C++ unsigned enclave target in all or any backend.
@@ -551,7 +306,7 @@ def cc_unsigned_enclave(
 def debug_sign_enclave(
         name,
         unsigned,
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         config = None,
         testonly = 0,
         name_by_backend = {}):
@@ -561,9 +316,9 @@ def debug_sign_enclave(
         name: The signed enclave target name.
         unsigned: The label to the unsigned enclave.
         backends: The asylo backend labels the binary uses. Must specify at least
-          one. Defaults to all supported backends. If more than one, then
-          name is an alias to a select on backend value to backend-specialized
-          targets.
+            one. Defaults to all supported backends. If more than one, then
+            name is an alias to a select on backend value to backend-specialized
+            targets.
         config: A label to a config target that the backend-specific signing
             tool uses.
         testonly: True if the target should only be used in tests.
@@ -583,7 +338,7 @@ def cc_enclave_binary(
         application_enclave_config = "",
         enclave_build_config = "",
         application_library_linkstatic = True,
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
         **kwargs):
@@ -708,6 +463,58 @@ def cc_enclave_binary(
         **loader_kwargs
     )
 
+def _enclave_runner_script(
+        name,
+        loader,
+        loader_args = [],
+        testonly = 0,
+        enclaves = {},
+        remote_proxy = None,
+        tags = [],
+        deprecation = None,
+        visibility = ["//visibility:private"],
+        data = []):
+    _enclave_runner_script_old(
+        name = name,
+        loader = loader,
+        loader_args = loader_args,
+        testonly = testonly,
+        enclaves = enclaves,
+        remote_proxy = remote_proxy,
+        tags = tags,
+        deprecation = deprecation,
+        visibility = visibility,
+        data = data,
+    )
+
+def _enclave_runner_test(
+        name,
+        loader,
+        loader_args = [],
+        enclaves = {},
+        data = [],
+        flaky = 0,
+        size = None,
+        remote_proxy = None,
+        testonly = 0,
+        deprecation = None,
+        tags = [],
+        backend = None):
+    _enclave_runner_test_old(
+        name = name,
+        loader = loader,
+        loader_args = loader_args,
+        enclaves = enclaves,
+        data = data,
+        flaky = flaky,
+        size = size,
+        remote_proxy = remote_proxy,
+        testonly = testonly,
+        deprecation = deprecation,
+        tags = tags,
+        backend = backend,
+    )
+
 def enclave_test(
         name,
         enclaves = {},
@@ -715,7 +522,7 @@ def enclave_test(
         test_args = [],
         remote_proxy = None,
         tags = [],
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         deprecation = None,
         **kwargs):
     """Build target for testing one or more enclaves.
@@ -784,7 +591,7 @@ def enclave_test(
         name = name,
         loader = loader_name,
         loader_args = test_args,
-        enclaves = _invert_enclave_name_mapping(enclaves),
+        enclaves = internal.invert_enclave_name_mapping(enclaves),
         data = data,
         flaky = flaky,
         size = size,
@@ -827,7 +634,7 @@ def cc_test(
         enclave_test_config = "",
         srcs = [],
         deps = [],
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         **kwargs):
     """Build macro that creates a cc_test target and a cc_enclave_test target.
 
@@ -879,7 +686,7 @@ def cc_test_and_cc_enclave_test(
         enclave_test_config = "",
         srcs = [],
         deps = [],
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         **kwargs):
     """An alias for cc_test with a default enclave_test_name.
 
@@ -936,9 +743,10 @@ def cc_enclave_test(
         tags = [],
         deps = [],
         test_in_initialize = False,
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = internal.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
+        test_name_by_backend = {},
         **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
@@ -966,73 +774,26 @@ def cc_enclave_test(
           specific target label for the defined unsigned enclaves.
       signed_name_by_backend: An optional dictionary from backend label to backend-
           specific target label for the defined signed enclaves.
+      test_name_by_backend: An optional dictionary from backend label to
+          backend-specific name for the test target.
       **kwargs: cc_test arguments.
     """
-
-    asylo = internal.package()
-
-    # Create a copy of the gtest enclave runner
-    host_test_name = name + "_host_driver"
-    copy_from_host(
-        target = asylo + "/bazel:test_shim_loader",
-        output = host_test_name,
-        name = name + "_as_host",
-    )
-
-    # Build the gtest enclave using the test file and gtest "main" enclave shim
-    enclave_name = name + ".so"
-    unsigned_enclave_name = name + "_unsigned.so"
-    enclave_target = ":" + enclave_name
-
-    # Collect any arguments to cc_unsigned_enclave that override the defaults
-    size = kwargs.pop("size", None)  # Meant for the test.
-    data = kwargs.pop("data", [])  # Meant for the test.
-    cc_unsigned_enclave(
-        name = unsigned_enclave_name,
-        srcs = srcs,
-        deps = deps + [asylo + "/bazel:test_shim_enclave"],
-        testonly = 1,
-        tags = tags,
-        backends = backends,
-        name_by_backend = unsigned_name_by_backend,
-        **kwargs
-    )
-    debug_sign_enclave(
-        name = enclave_name,
-        unsigned = unsigned_enclave_name,
-        backends = backends,
-        name_by_backend = signed_name_by_backend,
-        testonly = 1,
-        config = enclave_config,
-    )
-
-    # //asylo/bazel:test_shim_loader expects the path to
-    # :enclave_test_shim to be provided as the --enclave_path command-line flag.
-    enclaves = {"shim": enclave_target}
-    loader_args = ['--enclave_path="{shim}"']
-    if test_in_initialize:
-        loader_args.append("--test_in_initialize")
-    else:
-        loader_args.append("--notest_in_initialize")
-
-    extended_tags = list(tags)
-
-    backend_tags = backend_tools.tags(backends)
-    for tag in backend_tags:
-        if tag not in tags:
-            extended_tags += [tag]
-
-    # Execute the gtest enclave using the gtest enclave runner
-    _enclave_runner_test(
+    _cc_enclave_test_old(
         name = name,
-        loader = host_test_name,
-        loader_args = loader_args,
-        enclaves = _invert_enclave_name_mapping(enclaves),
-        data = data,
+        srcs = srcs,
+        cc_unsigned_enclave = cc_unsigned_enclave,
+        debug_sign_enclave = debug_sign_enclave,
+        enclave_runner_test = _enclave_runner_test,
+        enclave_config = enclave_config,
         remote_proxy = remote_proxy,
-        testonly = 1,
-        size = size,
-        tags = ["enclave_test"] + extended_tags,
+        tags = tags,
+        deps = deps,
+        test_in_initialize = test_in_initialize,
+        backends = backends,
+        unsigned_name_by_backend = unsigned_name_by_backend,
+        signed_name_by_backend = signed_name_by_backend,
+        test_name_by_backend = test_name_by_backend,
+        **kwargs
     )
 
 def sgx_enclave_test(name, srcs, **kwargs):
