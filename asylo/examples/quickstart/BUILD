@@ -17,7 +17,9 @@
 licenses(["notice"])  # Apache v2.0
 
 package(
-    default_visibility = ["//asylo:implementation"],
+    default_visibility = [
+        "//asylo:implementation",
+    ],
 )
 
 load("//asylo/bazel:asylo.bzl", "enclave_loader")
