@@ -476,10 +476,14 @@ export CXXFLAGS_FOR_TARGET="${CXXFLAGS}"
    sed -i 's^extra_opt_files=.*^& $(srcdir)/config/gnu-user.opt^' gcc/Makefile &&
    # GCC hard-codes what math functions newlib provides, but has a few missing.
    make configure-target-libstdc++-v3 &&
-   echo "#define HAVE_HYPOTF" >> x86_64-elf/libstdc++-v3/config.h &&
-   echo "#define HAVE_HYPOTL" >> x86_64-elf/libstdc++-v3/config.h &&
-   echo "#define HAVE_SQRTL" >> x86_64-elf/libstdc++-v3/config.h &&
-   echo "#define _GLIBCXX_USE_RANDOM_TR1" >> x86_64-elf/libstdc++-v3/config.h &&
+   echo "#define HAVE_HYPOTF 1" >> x86_64-elf/libstdc++-v3/config.h &&
+   echo "#define HAVE_HYPOTL 1" >> x86_64-elf/libstdc++-v3/config.h &&
+   echo "#define HAVE_SQRTL 1" >> x86_64-elf/libstdc++-v3/config.h &&
+   # GCC doesn't do GLIBCXX_CROSSCONFIG if specifying --with-newlib, so we
+   # need to manually tell libstdc++ that we have /dev/random and thread-local
+   # storage available.
+   echo "#define _GLIBCXX_USE_RANDOM_TR1 1" >> x86_64-elf/libstdc++-v3/config.h &&
+   echo "#define HAVE_TLS 1" >> x86_64-elf/libstdc++-v3/config.h &&
    # Use an extended version of libc++.
    echo "#define _GLIBCXX_USE_C99 1" >> x86_64-elf/libstdc++-v3/config.h &&
    make -j"${JOBS}" && make install &&
