@@ -134,7 +134,6 @@ bool EnsureDirectory(const char *path) {
 }
 
 bool InitLogging(const char *directory, const char *file_name, int level) {
-  tzset();  // For later use of localtime_r()
   set_vlog_level(level);
   std::string log_directory = directory ? std::string(directory) : "";
   if (!set_log_directory(log_directory)) {
