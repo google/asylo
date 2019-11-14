@@ -228,7 +228,36 @@ TEST(StatusMatchersTest, StatusIsMatchesStatusOrObjects) {
       "does not match error code OK");
   EXPECT_NONFATAL_FAILURE(
       EXPECT_THAT(kSuccess, Not(StatusIs(error::GoogleError::OK, ""))),
-      "does not match error message ''");
+      "does not have an error message");
+}
+
+// Tests that StatusIs only matches a Status or StatusOr if its message matches
+// the message matcher.
+TEST(StatusMatchersTest, StatusIsUsesMessageMatcherToCheckMessage) {
+  constexpr auto kErrorCode = error::GoogleError::FAILED_PRECONDITION;
+
+  EXPECT_THAT(Status(kErrorCode, "Foobar"),
+              StatusIs(kErrorCode, HasSubstr("Foo")));
+  EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "Foobar")),
+              StatusIs(kErrorCode, HasSubstr("Foo")));
+  EXPECT_THAT(Status(kErrorCode, ""), StatusIs(kErrorCode, IsEmpty()));
+  EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "")),
+              StatusIs(kErrorCode, IsEmpty()));
+
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(Status(kErrorCode, "Barbaz"),
+                                      StatusIs(kErrorCode, HasSubstr("Foo"))),
+                          "which has an error message");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "Barbaz")),
+                  StatusIs(kErrorCode, HasSubstr("Foo"))),
+      "which has an error message");
+  EXPECT_NONFATAL_FAILURE(EXPECT_THAT(Status(kErrorCode, "Barbaz"),
+                                      StatusIs(kErrorCode, IsEmpty())),
+                          "which has an error message");
+  EXPECT_NONFATAL_FAILURE(
+      EXPECT_THAT(StatusOr<int>(Status(kErrorCode, "Barbaz")),
+                  StatusIs(kErrorCode, IsEmpty())),
+      "which has an error message");
 }
 
 }  // namespace
