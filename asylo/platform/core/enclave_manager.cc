@@ -157,8 +157,6 @@ EnclaveManager::EnclaveManager() : host_config_(GetHostConfig()) {
   if (!rc.ok()) {
     LOG(FATAL) << "Could not register realtime clock resource.";
   }
-
-  SpawnWorkerThread();
 }
 
 Status EnclaveManager::DestroyEnclave(EnclaveClient *client,
@@ -438,30 +436,6 @@ void EnclaveManager::RemoveEnclaveReference(absl::string_view name) {
   EnclaveClient *client = client_by_name_[name].get();
   client_by_name_.erase(name);
   name_by_client_.erase(client);
-}
-
-void EnclaveManager::SpawnWorkerThread() {
-  // Tick() here is to prevent a race condition between the WorkLoop thread
-  // initializing and other threads accressing the resources.
-  Tick();
-  std::thread worker([this] { WorkerLoop(); });
-  worker.detach();
-}
-
-void EnclaveManager::Tick() {
-  clock_monotonic_ = MonotonicClock();
-  clock_realtime_ = RealTimeClock();
-}
-
-void EnclaveManager::WorkerLoop() {
-  // Tick each 70us ~ 14.29kHz
-  constexpr int64_t kClockPeriod = INT64_C(70000);
-  int64_t next_tick = MonotonicClock();
-  while (true) {
-    WaitUntil(next_tick);
-    Tick();
-    next_tick += kClockPeriod;
-  }
 }
 
 };  // namespace asylo

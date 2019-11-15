@@ -335,15 +335,6 @@ class EnclaveManager {
   void RemoveEnclaveReference(absl::string_view name)
       ABSL_LOCKS_EXCLUDED(client_table_lock_);
 
-  // Create a thread to periodically update logic.
-  void SpawnWorkerThread();
-
-  // Top level loop run by the background worker thread.
-  void WorkerLoop();
-
-  // Execute a single iteration of the work loop.
-  void Tick();
-
   // Manager object for untrusted resources shared with enclaves.
   SharedResourceManager shared_resource_manager_;
 
