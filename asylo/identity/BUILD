@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 licenses(["notice"])  # Apache v2.0
 
 # This package defines libraries used in enclave auth{N,Z}.
-
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 proto_library(
     name = "identity_proto",
@@ -124,7 +124,7 @@ cc_library(
     srcs = ["enclave_assertion_authority_configs.cc"],
     hdrs = ["enclave_assertion_authority_configs.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         ":descriptions",
         ":enclave_assertion_authority_config_cc_proto",
