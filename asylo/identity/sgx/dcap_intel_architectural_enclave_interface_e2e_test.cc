@@ -19,6 +19,7 @@
 #include <cstdint>
 #include <memory>
 #include <string>
+#include <vector>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -33,20 +34,28 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/sgx/dcap_intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/intel_ecdsa_quote.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/report_oracle_enclave.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
+#include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
+#include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
 constexpr char kTestEnclaveName[] = "DCAP Test Enclave";
-constexpr uint16_t kPceId = 0;  // fixed value from intel_sgx sources
+
+// These values must be updated along with PCE and QE releases. These are not
+// exposed via any Intel headers.
+constexpr uint16_t kExpectedPceId = 0;
+constexpr uint16_t kExpectedPceSvn = 7;
+constexpr uint16_t kExpectedQeSvn = 2;
 
 ABSL_FLAG(
     std::string, intel_enclave_dir, "",
@@ -59,6 +68,9 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+namespace constants = ::intel::sgx::qvl::constants;
+
+using ::testing::ElementsAreArray;
 using ::testing::Eq;
 
 class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
@@ -150,9 +162,6 @@ EnclaveManager
     *DcapIntelArchitecturalEnclaveInterfaceE2eTest::enclave_manager_ = nullptr;
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
-  // Expect the current latest PCE. This value will need to be updated along
-  // with PCE updates.
-  constexpr uint16_t kExpectedPceSvn = 7;
   SecsAttributeSet expected_attributes;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expected_attributes,
@@ -205,7 +214,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceInfo) {
       &ppid_encrypted, &pce_svn, &pce_id, &signature_scheme));
 
   EXPECT_FALSE(ppid_encrypted.empty());
-  EXPECT_THAT(pce_id, Eq(kPceId));
+  EXPECT_THAT(pce_id, Eq(kExpectedPceId));
   EXPECT_THAT(signature_scheme, Eq(SignatureScheme::ECDSA_P256_SHA256));
   EXPECT_THAT(pce_svn_from_get_target_info, Eq(pce_svn));
 
@@ -232,6 +241,32 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, PceSignReport) {
       report, pce_svn, report.body.cpusvn, &signature));
 
   ASSERT_THAT(signature.length(), Eq(kEcdsaP256SignatureSize));
+
+}
+
+TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetQeQuote) {
+  Targetinfo targetinfo;
+  ASYLO_ASSERT_OK_AND_ASSIGN(targetinfo, enclave_interface_.GetQeTargetinfo());
+
+  Reportdata reportdata = TrivialRandomObject<Reportdata>();
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, GetEnclaveReport(targetinfo, reportdata));
+
+  std::vector<uint8_t> packed_quote;
+  ASYLO_ASSERT_OK_AND_ASSIGN(packed_quote,
+                             enclave_interface_.GetQeQuote(report));
+
+  IntelQeQuote quote;
+  ASYLO_ASSERT_OK_AND_ASSIGN(quote, ParseDcapPackedQuote(packed_quote));
+
+  EXPECT_THAT(quote.header.version, Eq(constants::QUOTE_VERSION));
+  EXPECT_THAT(quote.header.algorithm, Eq(constants::ECDSA_256_WITH_P256_CURVE));
+  EXPECT_THAT(quote.header.qesvn, Eq(kExpectedQeSvn));
+  EXPECT_THAT(quote.header.pcesvn, Eq(kExpectedPceSvn));
+  EXPECT_THAT(quote.header.qe_vendor_id,
+              ElementsAreArray(constants::INTEL_QE_VENDOR_ID));
+
+  EXPECT_THAT(quote.body, TrivialObjectEq(report.body));
 
 }
 
