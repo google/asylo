@@ -28,6 +28,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <bitset>
 #include <cerrno>
 #include <climits>
@@ -41,6 +42,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/span.h"
+#include "asylo/test/util/memory_matchers.h"
 #include "asylo/util/cleanup.h"
 
 namespace asylo {
@@ -57,61 +59,6 @@ constexpr size_t kDefaultPipeSize = 16 * 4096;
 
 // Pipes cannot be made smaller than one memory page.
 constexpr int kSmallPipeSize = 4096;
-
-// A matcher for testing equality of two memory regions.
-class MemEqMatcher : public ::testing::MatcherInterface<const void *> {
- public:
-  // Creates a MeqEqMatcher that matches memory regions whose first |size| bytes
-  // match those at |buffer|. |buffer| must be valid for the lifetime of the
-  // MemEqMatcher.
-  MemEqMatcher(const void *buffer, size_t size)
-      : expected_buffer_(reinterpret_cast<const uint8_t *>(buffer), size) {}
-
-  // From ::testing::MatcherInterface.
-  void DescribeTo(std::ostream *os) const override {
-    *os << absl::StrCat("contains the same bytes as the buffer of size ",
-                        expected_buffer_.size(), " at address ",
-                        reinterpret_cast<uintptr_t>(expected_buffer_.data()));
-  }
-
-  // From ::testing::MatcherInterface.
-  void DescribeNegationTo(std::ostream *os) const override {
-    *os << absl::StrCat("contains different bytes from the buffer of size ",
-                        expected_buffer_.size(), " at address ",
-                        reinterpret_cast<uintptr_t>(expected_buffer_.data()));
-  }
-
-  // From ::testing::MatcherInterface.
-  bool MatchAndExplain(
-      const void *buffer,
-      ::testing::MatchResultListener *listener) const override {
-    const uint8_t *byte_buffer = reinterpret_cast<const uint8_t *>(buffer);
-    for (int i = 0; i < expected_buffer_.size(); ++i) {
-      if (byte_buffer[i] != expected_buffer_[i]) {
-        *listener << absl::StrFormat(
-            "which contains byte %x at position %d where byte %x was expected",
-            byte_buffer[i], i, expected_buffer_[i]);
-        return false;
-      }
-    }
-    return true;
-  }
-
- private:
-  absl::Span<const uint8_t> expected_buffer_;
-};
-
-// Returns a patcher that checks that a pointer points to a buffer of the given
-// size containing the same bytes as |buffer|. The pointer to be matched must
-// point to a region of at least |size| bytes. |buffer| must remain valid for
-// the lifetime of the returned matcher.
-//
-// Unlike other ways of matching between regions of memory, on failure, MemEq()
-// matchers report only the index of the first differing byte and the expected
-// and actual values of that byte.
-::testing::Matcher<const void *> MemEq(const void *buffer, size_t size) {
-  return ::testing::MakeMatcher(new MemEqMatcher(buffer, size));
-}
 
 class PipeTest : public ::testing::Test {
  public:

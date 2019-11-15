@@ -226,6 +226,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_config = ":pipe_test_config",
     deps = [
+        "//asylo/test/util:memory_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:cleanup",
         "@com_google_absl//absl/strings",

@@ -277,6 +277,33 @@ cc_test(
 )
 
 cc_library(
+    name = "memory_matchers",
+    testonly = 1,
+    hdrs = ["memory_matchers.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_test(
+    name = "memory_matchers_test",
+    srcs = ["memory_matchers_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "memory_matchers_enclave_test",
+    deps = [
+        ":memory_matchers",
+        ":test_main",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "finite_domain_fuzz",
     testonly = 1,
     srcs = ["finite_domain_fuzz.cc"],

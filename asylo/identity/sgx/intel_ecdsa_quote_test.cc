@@ -26,6 +26,7 @@
 #include <gtest/gtest.h>
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "QuoteVerification/Src/AttestationLibrary/include/QuoteVerification/QuoteConstants.h"
 
@@ -39,20 +40,6 @@ using ::testing::ContainerEq;
 using ::testing::Eq;
 using ::testing::HasSubstr;
 using ::testing::Test;
-
-template <typename T>
-constexpr void StaticAssertMemCopyable(const T &) {
-  static_assert(std::is_trivially_copy_assignable<T>::value,
-                "Type must be raw memory comparable.");
-}
-
-MATCHER_P(ObjEq, expected, "") {
-  StaticAssertMemCopyable(expected);
-  StaticAssertMemCopyable(arg);
-  static_assert(sizeof(expected) == sizeof(arg),
-                "Expected and actual sizes do not match");
-  return memcmp(&expected, &arg, sizeof(arg)) == 0;
-}
 
 class IntelEcdsaQuoteTest : public Test {
  protected:
@@ -103,10 +90,12 @@ class IntelEcdsaQuoteTest : public Test {
   void ExpectQuoteEquals(const StatusOr<IntelQeQuote> &actual_quote,
                          const IntelQeQuote &expected_quote) {
     ASYLO_ASSERT_OK(actual_quote);
-    EXPECT_THAT(actual_quote.ValueOrDie().header, ObjEq(expected_quote.header));
-    EXPECT_THAT(actual_quote.ValueOrDie().body, ObjEq(expected_quote.body));
+    EXPECT_THAT(actual_quote.ValueOrDie().header,
+                TrivialObjectEq(expected_quote.header));
+    EXPECT_THAT(actual_quote.ValueOrDie().body,
+                TrivialObjectEq(expected_quote.body));
     EXPECT_THAT(actual_quote.ValueOrDie().signature,
-                ObjEq(expected_quote.signature));
+                TrivialObjectEq(expected_quote.signature));
     EXPECT_THAT(actual_quote.ValueOrDie().qe_authn_data,
                 ContainerEq(expected_quote.qe_authn_data));
     EXPECT_THAT(actual_quote.ValueOrDie().cert_data.qe_cert_data_type,

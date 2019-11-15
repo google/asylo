@@ -32,6 +32,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/test/util/memory_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
@@ -92,34 +93,6 @@ class MockDcapLibraryInterface
               (const, override));
 };
 
-// Returns true if two buffers are the same size and contain the same bytes.
-bool buffer_eq(testing::MatchResultListener *listener, const void *expected,
-               size_t expected_size, const void *actual, size_t actual_size) {
-  if (expected_size != actual_size) {
-    *listener << "Size mismatch. expected: " << expected_size << ", "
-              << "actual: " << actual_size;
-    return false;
-  }
-  return memcmp(expected, actual, actual_size) == 0;
-}
-
-// Matches a struct by comparing bytes.
-MATCHER_P(StructEq, expected, "") {
-  return buffer_eq(result_listener, &expected, sizeof(expected), &arg,
-                   sizeof(arg));
-}
-
-// Matches a buffer by comparing bytes.
-MATCHER_P(BufferEq, expected, "") {
-  return buffer_eq(result_listener, expected, sizeof(*expected), arg,
-                   sizeof(*arg));
-}
-
-// Matches a buffer by comparing |size| bytes.
-MATCHER_P2(BufferEq, expected, size, "") {
-  return buffer_eq(result_listener, expected, size, arg, size);
-}
-
 // Copies |buffer| into buffer pointed to by arg number |k|.
 ACTION_TEMPLATE(SetArgBuffer, HAS_1_TEMPLATE_PARAMS(int, k),
                 AND_2_VALUE_PARAMS(buffer, size)) {
@@ -165,7 +138,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceTargetInfoSuccess) {
   Targetinfo actual_target;
   uint16_t actual_svn;
   EXPECT_THAT(dcap_.GetPceTargetinfo(&actual_target, &actual_svn), IsOk());
-  EXPECT_THAT(actual_target, StructEq(expected_target));
+  EXPECT_THAT(actual_target, TrivialObjectEq(expected_target));
   EXPECT_THAT(actual_svn, Eq(expected_svn));
 }
 
@@ -187,8 +160,8 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceInfoSuccess) {
   constexpr uint16_t kOutputPceId = 11235;
 
   EXPECT_CALL(*dcap_library_,
-              get_pce_info(BufferEq(&kInputReport),
-                           BufferEq(kInputPpidEk, sizeof(kInputPpidEk)),
+              get_pce_info(Pointee(TrivialObjectEq(kInputReport)),
+                           MemEq(kInputPpidEk, sizeof(kInputPpidEk)),
                            sizeof(kInputPpidEk), PCE_ALG_RSA_OAEP_3072,
                            /*p_encrypted_ppid=*/_, kRsa3072ModulusSize,
                            /*p_encrypted_ppid_out_size=*/_, /*p_pce_isvsvn=*/_,
@@ -255,8 +228,8 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SignReportSuccess) {
 
   EXPECT_CALL(
       *dcap_library_,
-      pce_sign_report(Pointee(kPceSvn), BufferEq(kCpuSvn.data(), kCpusvnSize),
-                      BufferEq(&kReport),
+      pce_sign_report(Pointee(kPceSvn), MemEq(kCpuSvn.data(), kCpusvnSize),
+                      Pointee(TrivialObjectEq(kReport)),
                       /*p_signature=*/_, kEcdsaP256SignatureSize,
                       /*p_signature_out_size=*/_))
       .WillOnce(DoAll(
@@ -303,8 +276,8 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
   std::iota(quote.begin(), quote.end(), 0);
   EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(quote.size()), Return(SGX_QL_SUCCESS)));
-  EXPECT_CALL(*dcap_library_,
-              qe_get_quote(BufferEq(&kReport), quote.size(), NotNull()))
+  EXPECT_CALL(*dcap_library_, qe_get_quote(Pointee(TrivialObjectEq(kReport)),
+                                           quote.size(), NotNull()))
       .WillOnce(DoAll(SetArgContainer<2>(quote), Return(SGX_QL_SUCCESS)));
 
   EXPECT_THAT(dcap_.GetQeQuote(kReport), IsOkAndHolds(quote));
