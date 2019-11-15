@@ -187,11 +187,16 @@ void LogMessage::Init(const char *file, int line, LogSeverity severity) {
   clock_gettime(CLOCK_REALTIME, &time_stamp);
 
   constexpr int kTimeMessageSize = 22;
-  char buffer[kTimeMessageSize];
   struct tm datetime;
-  strftime(buffer, kTimeMessageSize, "%Y-%m-%d %H:%M:%S  ",
-           localtime_r(&time_stamp.tv_sec, &datetime));
-  stream() << buffer;
+  memset(&datetime, 0, sizeof(datetime));
+  if (localtime_r(&time_stamp.tv_sec, &datetime)) {
+    char buffer[kTimeMessageSize];
+    strftime(buffer, kTimeMessageSize, "%Y-%m-%d %H:%M:%S  ", &datetime);
+    stream() << buffer;
+  } else {
+    // localtime_r returns error. Attach the errno message.
+    stream() << "Failed to get time:" << strerror(errno) << "  ";
+  }
   stream() << LogSeverityNames[severity_] << "  " << filename << " : " << line
            << " : ";
 }
