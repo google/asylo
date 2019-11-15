@@ -190,12 +190,12 @@ TEST_F(SgxIdentityUtilInternalTest, SetSgxLocalAssertionDescription) {
   EXPECT_EQ(description.authority_type(), kSgxLocalAssertionAuthority);
 }
 
-TEST_F(SgxIdentityUtilInternalTest, SetSgxRemoteAssertionDescription) {
+TEST_F(SgxIdentityUtilInternalTest, SetSgxAgeRemoteAssertionDescription) {
   AssertionDescription description;
-  SetSgxRemoteAssertionDescription(&description);
+  SetSgxAgeRemoteAssertionDescription(&description);
 
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
-  EXPECT_EQ(description.authority_type(), kSgxRemoteAssertionAuthority);
+  EXPECT_EQ(description.authority_type(), kSgxAgeRemoteAssertionAuthority);
 }
 
 // Tests to verify the correctness of IsValidSignerAssignedIdentity()

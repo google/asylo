@@ -52,13 +52,15 @@ inline void SetSgxLocalAssertionDescription(
   assertion_description->set_authority_type(sgx::kSgxLocalAssertionAuthority);
 }
 
-/// Sets `assertion_description` to describe an SGX remote assertion.
+/// Sets `assertion_description` to describe an SGX remote assertion generated
+/// by the Assertion Generator Enclave (AGE).
 ///
 /// \param assertion_description The `AssertionDescription` to populate.
-inline void SetSgxRemoteAssertionDescription(
+inline void SetSgxAgeRemoteAssertionDescription(
     AssertionDescription *assertion_description) {
   assertion_description->set_identity_type(EnclaveIdentityType::CODE_IDENTITY);
-  assertion_description->set_authority_type(sgx::kSgxRemoteAssertionAuthority);
+  assertion_description->set_authority_type(
+      sgx::kSgxAgeRemoteAssertionAuthority);
 }
 
 /// Sets `identity_description` to describe an SGX identity.

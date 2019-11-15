@@ -23,7 +23,7 @@ namespace sgx {
 
 const char *const kSgxLocalAssertionAuthority = "SGX Local";
 
-const char *const kSgxRemoteAssertionAuthority = "SGX Remote";
+const char *const kSgxAgeRemoteAssertionAuthority = "SGX AGE";
 
 const char *const kSgxAuthorizationAuthority = "SGX";
 
