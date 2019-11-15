@@ -96,7 +96,7 @@ class SnapshotDeleter {
 
 class ForkSecurityTest : public ::testing::Test {
  public:
-  ForkSecurityTest() : enclave_finalized_(false) {}
+  ForkSecurityTest() : enclave_finalized_(false), enclave_crashed_(false) {}
 
  protected:
   static void SetUpTestSuite() {
@@ -114,9 +114,11 @@ class ForkSecurityTest : public ::testing::Test {
     EnclaveFinal efinal;
     // Only finalize the enclave if it's not finalized already by a failed
     // restore.
-    EXPECT_THAT(manager_->DestroyEnclave(client_, efinal,
-                                         /*skip_finalize=*/enclave_finalized_),
-                IsOk());
+    if (!enclave_crashed_) {
+      EXPECT_THAT(manager_->DestroyEnclave(
+                      client_, efinal, /*skip_finalize=*/enclave_finalized_),
+                  IsOk());
+    }
   }
 
   Status LoadEnclaveAndTakeSnapshot(const std::string &enclave_name,
@@ -184,6 +186,7 @@ class ForkSecurityTest : public ::testing::Test {
   SnapshotLayout snapshot_layout_;
   SnapshotDeleter snapshot_deleter_;
   bool enclave_finalized_;
+  bool enclave_crashed_;
 };
 
 EnclaveManager *ForkSecurityTest::manager_ = nullptr;
@@ -329,7 +332,7 @@ TEST_F(ForkSecurityTest, RestoreWithModifyHeap) {
     // Restoring from modified heap should kill the enclave.
     EXPECT_EXIT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 ::testing::KilledBySignal(SIGSEGV), ".*");
-    enclave_finalized_ = true;
+    enclave_crashed_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.

@@ -152,6 +152,7 @@ Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
 
   if (active_entry_count() >
       blocked_entry_count() + calling_thread_entry_count) {
+    enc_unblock_entries();
     return Status(error::GoogleError::INTERNAL,
                   "Timeout while waiting for other TCS to exit the enclave");
   }
@@ -337,20 +338,6 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
                   "Snapshot is not allowed unless fork is requested");
   }
 
-  // Unblock all entries after taking snapshot finishes.
-  Cleanup unblock_entries(enc_unblock_entries);
-
-  // Block and check for other entries inside the enclave. Currently there
-  // should be two entries inside the enclave: snapshot ecall and the run ecall
-  // which calls fork. If other TCS are running inside the enclave, they may
-  // modify data/bss/heap and cause an inconsistent snapshot. In that case wait
-  // till all other TCS exit the enclave and get blocked from re-entering.
-  // Timeout at 5 seconds.
-  Status status = BlockAndWaitOnEntries(/*allowed_entries=*/2, /*timeout=*/5);
-  if (!status.ok()) {
-    return status;
-  }
-
   if (!snapshot_layout) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "Snapshot layout is nullptr");
@@ -402,6 +389,17 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   if (!SetSnapshotKey(snapshot_key)) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to save snapshot key inside enclave");
+  }
+
+  // Block and check for other entries inside the enclave. Currently there
+  // should be two entries inside the enclave: snapshot ecall and the run ecall
+  // which calls fork. If other TCS are running inside the enclave, they may
+  // modify data/bss/heap and cause an inconsistent snapshot. In that case wait
+  // till all other TCS exit the enclave and get blocked from re-entering.
+  // Timeout at 5 seconds.
+  Status status = BlockAndWaitOnEntries(/*allowed_entries=*/2, /*timeout=*/5);
+  if (!status.ok()) {
+    return status;
   }
 
   // Copy the data and bss section to reserved sections to avoid modifying
@@ -516,12 +514,17 @@ Status TakeSnapshotForFork(SnapshotLayout *snapshot_layout) {
   // Switch heap back before creating the return status.
   heap_switch(/*address=*/nullptr, /*size=*/0);
   if (error_code != error::GoogleError::OK) {
+    enc_unblock_entries();
     return Status(error_code, error_message);
   }
 
   // Request a snapshot key transfer to the child. This bit should only be set
   // after the snapshot is taken.
   SetSnapshotKeyTransferRequested();
+  // Do not unblock entries until fork() on the host is performed. So that the
+  // enclave snapshot and host fork() are consistent. Also to make sure other
+  // threads are not holding locks while entering/exiting the enclave when
+  // fork() is invoked on the host..
   return Status::OkStatus();
 }
 
@@ -902,6 +905,12 @@ Status TransferSecureSnapshotKey(
 
   bool is_parent = fork_handshake_config.is_parent();
 
+  // At this point both enclave snapshot and fork() on the host are done. It's
+  // safe to unblock other entries now.
+  if (is_parent) {
+    enc_unblock_entries();
+  }
+
   // The parent should only start a key transfer if it's requested by a fork
   // request inside an enclave.
   if (is_parent && !ClearSnapshotKeyTransferRequested()) {
@@ -962,8 +971,13 @@ pid_t enc_fork(const char *enclave_name) {
   // Set the fork requested bit.
   asylo::SetForkRequested();
 
-  return asylo::primitives::InvokeFork(
-      enclave_name, /*restore_snapshot=*/true);
+  pid_t pid =
+      asylo::primitives::InvokeFork(enclave_name, /*restore_snapshot=*/true);
+  // Make sure enclave entries are unblocked even if fork() failed.
+  if (pid < 0) {
+    enc_unblock_entries();
+  }
+  return pid;
 }
 
 }  // namespace asylo
