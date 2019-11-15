@@ -1975,3 +1975,51 @@ cc_test_and_cc_enclave_test(
         "@com_google_protobuf//:protobuf",
     ],
 )
+
+cc_library(
+    name = "pck_certs_from_json",
+    srcs = ["pck_certs_from_json.cc"],
+    hdrs = ["pck_certs_from_json.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":hardware_types",
+        ":machine_configuration_cc_proto",
+        ":pck_certificates_cc_proto",
+        ":platform_provisioning_cc_proto",
+        ":tcb_cc_proto",
+        ":tcb_info_from_json",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_util",
+        "//asylo/util:error_codes",
+        "//asylo/util:function_deleter",
+        "//asylo/util:hex_util",
+        "//asylo/util:proto_struct_util",
+        "//asylo/util:status",
+        "@com_github_curl_curl//:curl",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "pck_certs_from_json_test",
+    srcs = ["pck_certs_from_json_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":pck_certificates_cc_proto",
+        ":pck_certs_from_json",
+        "//asylo/test/util:output_collector",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:error_codes",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
