@@ -52,6 +52,51 @@ AsyloBackendInfo = provider(
 
 BACKEND_LABEL = "@com_google_asylo_backend_provider//:backend"
 
+def backend_label_struct(
+        config_settings = None,
+        tags = None,
+        name_derivation = None,
+        order = None,
+        base = None):
+    """Create a backend label struct with optional initial values from base.
+
+    If base is None, then all other arguments must be provided.
+
+    Args:
+        config_settings: A list of labels or None.
+        tags: A list of tag strings or None.
+        name_derivation: A string for adding a label name suffix.
+        order: A preference order int or None. The lowest order backend is made
+            the default for the all_backends's name's target.
+        base: A struct with the same fields as other arguments to this
+            function, or None. Used for struct values for fields given as None.
+
+    Returns:
+        A struct value with fields config_settings, tags, name_derivation, and
+        order.
+    """
+    if base == None:
+        if type(config_settings) != "list":
+            fail("base = None; config_settings must be a list of strings")
+        if type(tags) != "list":
+            fail("base = None; tags must be a list of strings")
+        if type(name_derivation) != "string":
+            fail("base = None; name_derivation must be a string")
+        if type(order) != "int" and type(order) != "float":
+            fail("base = None; order must be a number")
+        return struct(
+            config_settings = config_settings,
+            tags = tags,
+            name_derivation = name_derivation,
+            order = order,
+        )
+    return struct(
+        config_settings = config_settings if config_settings != None else base.config_settings,
+        tags = tags if tags != None else base.tags,
+        name_derivation = name_derivation if name_derivation != None else base.name_derivation,
+        order = order if order != None else base.order,
+    )
+
 # When a backend is unspecified, target all of the following backends.
 # The value type for this dictionary is named a "backend label struct"
 ALL_BACKEND_LABELS = {
@@ -62,6 +107,8 @@ ALL_BACKEND_LABELS = {
         tags = [
             "asylo-dlopen",
             "manual",        ],
+        name_derivation = "_dlopen",
+        order = 3,
     ),
     "@linux_sgx//:asylo_sgx_sim": struct(
         config_settings = [
@@ -70,6 +117,8 @@ ALL_BACKEND_LABELS = {
         tags = [
             "asylo-sgx-sim",
             "manual",        ],
+        name_derivation = "_sgx_sim",
+        order = 1,
     ),
     "@linux_sgx//:asylo_sgx_hw": struct(
         config_settings = [
@@ -78,6 +127,8 @@ ALL_BACKEND_LABELS = {
         tags = [
             "asylo-sgx-hw",
             "manual",        ],
+        name_derivation = "_sgx_hw",
+        order = 2,
     ),
 }
 
@@ -245,18 +296,38 @@ def native_cc_binary(
         DefaultInfo(files = depset(output_files)),
     ]
 
-def derived_name_from_backend(name, backend):
+def derived_name_from_backend(name, backend, info = None):
     """Returns a valid name that is a combination of name and backend.
 
     Args:
         name: The basis for the derived name.
         backend: The backend the derived name targets.
+        info: A backend info struct that contains a name_derivation field, or
+            None. Optional.
 
     Returns:
         A string.
     """
-    mangled_backend = backend.replace("/", "_").replace(":", "_").replace("@", "")
-    return name + "_" + mangled_backend
+    name_derivation = ""
+    if info and info.name_derivation:
+        name_derivation = info.name_derivation
+    else:
+        name_derivation = backend.replace("/", "_").replace(":", "_").replace("@", "")
+    suffix = ""
+
+    # Accumulate suffixes so that _test.so is the final suffix.
+    # Run a few times (can't write fixed-point loops in Starlark) to
+    # allow multiple suffixes to accumulate.
+    for _loop in [1, 2, 3, 4]:
+        changed = False
+        for tested_suffix in [".so", "_test"]:
+            if name.endswith(tested_suffix):
+                suffix = tested_suffix + suffix
+                name = name[:-len(tested_suffix)]
+                changed = True
+        if not changed:
+            break
+    return name + name_derivation + suffix
 
 def _canonical_backend_dict(backends):
     """Create a dictionary from a list of known backend labels.
@@ -274,10 +345,15 @@ def _canonical_backend_dict(backends):
     """
     backend_dictionary = {}
     if type(backends) == "list":
+        order = 1
         for backend in backends:
             if backend not in ALL_BACKEND_LABELS:
                 fail(backend + " is not an Asylo-supported backend label. Please use a dictionary.")
-            backend_dictionary[backend] = ALL_BACKEND_LABELS[backend]
+            backend_dictionary[backend] = backend_label_struct(
+                base = ALL_BACKEND_LABELS[backend],
+                order = order,
+            )
+            order = order + 1
     else:
         backend_dictionary = dict(backends)
 
@@ -301,12 +377,33 @@ def tags_from_backends(backends):
         backend_tags += info.tags
     return backend_tags
 
+def _preferred_backend(backend_dictionary):
+    default_backend = ""
+    best_order = None
+
+    # There must be at least one item in backend_dictionary, so default_backend
+    # will always be set to some key.
+    for backend, item in backend_dictionary.items():
+        if best_order == None or item.order < best_order:
+            default_backend = backend
+            best_order = item.order
+    return default_backend
+
+def _complete_backend_target_names(backend_dictionary, name, name_by_backend):
+    result = dict(name_by_backend)
+    for backend, info in backend_dictionary.items():
+        if backend not in name_by_backend:
+            result[backend] = derived_name_from_backend(name, backend, info)
+    return result
+
 def all_backends(
         rule_or_macro,
         name,
         backends,
         name_by_backend,
-        kwargs):
+        kwargs,
+        test = False,
+        ):
     """Creates many backend-specific targets and a selector target.
 
     If backends is a singleton list or a dictionary with one key, then name
@@ -323,36 +420,59 @@ def all_backends(
             specific names.
         backends: A list of supported asylo backend labels to use, or a
             dictionary with backend label keys mapping to structs with fields
-            {config_setting, tags}. This allows all_backends to select on a
-            user-specified config_setting for the backend value and apply
-            backend-specific tags.
+            {config_setting, tags, name_derivation, order}. This allows
+            all_backends to select a backend-name-derived target (if not
+            specified by name_by_backend) on a user-specified config_setting
+            for the backend value and apply backend-specific tags. The selected
+            backend has the smallest order value in the dictionary, or is the
+            first element of the backends list.
         name_by_backend: An optional dictionary from backend label to backend-
             specific target label.
         kwargs: A dictionary of argument to pass to the given rule_or_macro.
+        test: True if rule_or_macro defines a test target.
     """
     backend_dictionary = _canonical_backend_dict(backends)
-    selections = {}
+    name_by_backend = _complete_backend_target_names(
+        backend_dictionary,
+        name,
+        name_by_backend,
+    )
     tags = kwargs.pop("tags", [])
     overall_tags = list(tags)
+
     testonly = kwargs.get("testonly", 0)
     visibility = list(kwargs.get("visibility", ["//visibility:private"]))
+
+    default_backend = _preferred_backend(backend_dictionary)
+    default_target = "//" + native.package_name() + ":" + name_by_backend[default_backend]
+    selections = {"//conditions:default": default_target}
     for backend, info in backend_dictionary.items():
-        backend_name = name_by_backend.get(backend, derived_name_from_backend(name, backend))
+        backend_name = name_by_backend[backend]
         for config_setting in info.config_settings:
             selections[config_setting] = ":" + backend_name
         target_tags = list(info.tags)
+
+        # The alias target will select any of the backend targets, so its tags
+        # should include all the possible tags of its selections.
         overall_tags += target_tags
-        rule_or_macro(name = backend_name, backend = backend, tags = tags + target_tags, **kwargs)
-    native.alias(
-        name = name,
-        actual = select(
-            selections,
-            no_match_error = "Must be build with a selected Asylo backend",
-        ),
-        tags = overall_tags,
-        testonly = testonly,
-        visibility = visibility,
-    )
+        rule_or_macro(
+            name = backend_name,
+            backend = backend,
+            tags = tags + target_tags,
+            **kwargs
+        )
+    if test:
+        # The test suite doesn't get tags or visibility since it will only
+        # be manually run.
+        native.test_suite(name = name, tests = [default_target])
+    else:
+        native.alias(
+            name = name,
+            actual = select(selections),
+            tags = overall_tags,
+            testonly = testonly,
+            visibility = visibility,
+        )
 
 backend_tools = struct(
     derived_name = derived_name_from_backend,

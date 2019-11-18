@@ -19,6 +19,7 @@
 load("//asylo/bazel:asylo.bzl", "enclave_loader", "enclave_test")
 load("//asylo/bazel:asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 
 # website-docs-metadata
 # ---
@@ -50,18 +51,39 @@ def _primitives_dlopen_enclave_impl(ctx):
     )
     return providers + [backend_tools.EnclaveInfo(), DlopenEnclaveInfo()]
 
-primitives_dlopen_enclave = rule(
-    implementation = _primitives_dlopen_enclave_impl,
-    attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
-        "_trusted_primitives": attr.label(
-            default = "//asylo/platform/primitives:trusted_primitives",
+def _make_primitives_dlopen_enclave(transition):
+    transition_dict = {
+        "backend": attr.label(
+            default = "//asylo/platform/primitives/dlopen",
+            providers = [backend_tools.AsyloBackendInfo],
         ),
-        "_trusted_dlopen": attr.label(
-            default = "//asylo/platform/primitives/dlopen:trusted_dlopen",
+        "_whitelist_function_transition": attr.label(
+            default = "//tools/whitelists/function_transition_whitelist",
         ),
-    }),
-    fragments = ["cpp"],
-)
+    }
+    return rule(
+        doc = "Defines a DlOpen enclave binary, similar to cc_binary.",
+        implementation = _primitives_dlopen_enclave_impl,
+        cfg = transitions.toolchain if transition else None,
+        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
+            "_trusted_primitives": attr.label(
+                default = "//asylo/platform/primitives:trusted_primitives",
+            ),
+            "_trusted_dlopen": attr.label(
+                default = "//asylo/platform/primitives/dlopen:trusted_dlopen",
+            ),
+        }, transition_dict if transition else {}),
+        fragments = ["cpp"],
+    )
+
+_primitives_dlopen_enclave_old = _make_primitives_dlopen_enclave(False)
+_primitives_dlopen_enclave_new = _make_primitives_dlopen_enclave(True)
+
+def primitives_dlopen_enclave(name, **kwargs):
+    _impl = _primitives_dlopen_enclave_old
+    if transitions.supported(native.package_name()):
+        _impl = _primitives_dlopen_enclave_new
+    _impl(name = name, **kwargs)
 
 def dlopen_enclave_loader(
         name,

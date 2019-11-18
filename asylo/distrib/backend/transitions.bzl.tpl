@@ -27,6 +27,7 @@ def _asylo_toolchain_and_backend_transition_impl(settings, attr):
         "//command_line_option:host_crosstool_top": "//third_party/crosstool",
         BACKEND_LABEL: attr.backend or settings[BACKEND_LABEL],
     }
+    return result
 
 asylo_toolchain_transition = transition(
     implementation = _asylo_toolchain_and_backend_transition_impl,
@@ -195,16 +196,36 @@ def _make_asylo_backend_rule(executable = False, test = False):
         },
     )
 
+_SUPPORTED_PKGS = [
+    # Bazel (v1.0.1) does not support transitions from external dependencies,
+    # which com_google_asylo_backend_provider is, so no packages are supported
+    # yet.
+]
+
+def transitions_supported(package_name):
+    """Returns true if a given package has been converted to use transitions.
+
+    Args:
+        package_name: The package name that is using an enclave rule.
+
+    Returns:
+        True only if package_name is expected to work with transitions.
+    """
+    for pkg in _SUPPORTED_PKGS:
+        if package_name.startswith(pkg):
+            return True
+    return False
+
 def _placeholder(**kwargs):
     fail("Transition rules in external repositories are unsupported in Bazel.")
 
-with_asylo_binary = _placeholder  # make_asylo_toolchain_rule(executable = True)
-with_asylo_test = _placeholder  # make_asylo_toolchain_rule(test = True)
-with_asylo_library = _placeholder  # make_asylo_toolchain_rule()
+with_asylo_binary = _placeholder
+with_asylo_test = _placeholder
+with_asylo_library = _placeholder
 
-with_backend_binary = _placeholder  # make_asylo_backend_rule(executable = True)
-with_backend_test = _placeholder  # make_asylo_backend_rule(test = True)
-with_backend_library = _placeholder  # make_asylo_backend_rule()
+with_backend_binary = _placeholder
+with_backend_test = _placeholder
+with_backend_library = _placeholder
 
 transitions = struct(
     toolchain = asylo_toolchain_transition,
@@ -219,4 +240,5 @@ transitions = struct(
     empty_transition = empty_transition,
     make_rule = make_asylo_toolchain_rule,
     pre_tags = PRETRANSITION_TAGS,
+    supported = transitions_supported,
 )

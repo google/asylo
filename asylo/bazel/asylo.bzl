@@ -27,8 +27,18 @@ load(
     _enclave_runner_script_old = "enclave_runner_script",
     _enclave_runner_test_old = "enclave_runner_test",
 )
+load(
+    "//asylo/bazel:asylo_transitions.bzl",
+    _backend_debug_sign_enclave_new = "backend_debug_sign_enclave",
+    _cc_backend_unsigned_enclave_experimental_new = "cc_backend_unsigned_enclave_experimental",
+    _cc_backend_unsigned_enclave_new = "cc_backend_unsigned_enclave",
+    _cc_enclave_test_new = "cc_enclave_test",
+    _enclave_runner_script_new = "enclave_runner_script",
+    _enclave_runner_test_new = "enclave_runner_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 # website-docs-metadata
@@ -101,7 +111,10 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
         the system.
       **kwargs: genrule arguments.
     """
-    _embed_enclaves_old(
+    _impl = _embed_enclaves_old
+    if transitions.supported(native.package_name()):
+        _impl = internal.embed_enclaves
+    _impl(
         name = name,
         elf_file = elf_file,
         enclaves = enclaves,
@@ -115,6 +128,7 @@ def enclave_loader(
         loader_args = [],
         remote_proxy = None,
         backends = internal.should_be_all_backends,
+        name_by_backend = {},
         deprecation = None,
         **kwargs):
     """Wraps a cc_binary with a dependency on enclave availability at runtime.
@@ -122,6 +136,8 @@ def enclave_loader(
     Creates a loader for the given enclaves and containing the given embedded
     enclaves. Passes flags according to `loader_args`, which can contain
     references to targets from `enclaves`.
+
+    The loader is subject to a backend transition by the specified backends.
 
     This macro creates three build targets:
       1) name: shell script that runs `name_host_loader`.
@@ -136,7 +152,8 @@ def enclave_loader(
       enclaves: Dictionary from enclave names to target dependencies. The
         dictionary must be injective. This dictionary is used to format each
         string in `loader_args` after each enclave target is interpreted as the
-        path to its output binary.
+        path to its output binary. Enclaves are built under a backend
+        transition.
       embedded_enclaves: Dictionary from ELF section names (that do not start
         with '.') to target dependencies. Each target in the dictionary is
         embedded in the loader binary under the corresponding ELF section.
@@ -146,18 +163,12 @@ def enclave_loader(
       remote_proxy: Host-side executable that is going to run remote enclave
         proxy server which will actually load the enclave(s). If empty, the
         enclave(s) are loaded locally.
-      backends: The asylo backend labels the binary uses. May be a list of
-          backend label strings, or a dictionary with backend label string keys
-          and struct values with fields "config_settings" and "tags". The
-          config_settings field is a list of labels to config_setting targets
-          that individually determine that the build configuration selects
-          that backend. The tags field is a list of tags that apply to targets
-          of that backend. Must specify at least one. Defaults to all supported
-          backends. If more than one, then name is an alias to a select on
-          backend value to backend-specialized targets. The loader sources
-          should be written such that backend-conditional compilation selects
-          the right loader code, or supported backends' enclaves can be
-          detected and loaded correctly ot run time.
+      backends: The asylo backend labels the binary uses. Must specify at least
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets. See enclave_info.bzl:all_backends documentation for details.
+      name_by_backend: An optional dictionary from backend label to backend-
+          specific loader script name.
       deprecation: A string deprecation message for uses of this macro that
           have been marked deprecated. Optional.
       **kwargs: cc_binary arguments.
@@ -181,18 +192,27 @@ def enclave_loader(
         executable = 1,
     )
 
-    _enclave_runner_script(
-        name = name,
-        testonly = kwargs.get("testonly", 0),
-        loader = loader_name,
-        loader_args = loader_args,
-        enclaves = internal.invert_enclave_name_mapping(enclaves),
-        remote_proxy = remote_proxy,
-        tags = kwargs.get("tags", []) + backend_tools.tags(backends),
-        deprecation = deprecation,
-        visibility = kwargs.get("visibility", []),
-        data = kwargs.get("data", []),
-    )
+    script_kwargs = {
+        "testonly": kwargs.get("testonly", 0),
+        "loader": loader_name,
+        "loader_args": loader_args,
+        "enclaves": internal.invert_enclave_name_mapping(enclaves),
+        "remote_proxy": remote_proxy,
+        "tags": kwargs.get("tags", []),
+        "deprecation": deprecation,
+        "visibility": kwargs.get("visibility", []),
+        "data": kwargs.get("data", []),
+    }
+    if transitions.supported(native.package_name()):
+        backend_tools.all_backends(
+            rule_or_macro = _enclave_runner_script_new,
+            name = name,
+            backends = backends,
+            kwargs = script_kwargs,
+            name_by_backend = name_by_backend,
+        )
+    else:
+        _enclave_runner_script_old(name = name, **script_kwargs)
 
 def dlopen_enclave_loader(
         name,
@@ -245,7 +265,10 @@ def cc_backend_unsigned_enclave(name, backend, **kwargs):
         backend: An Asylo backend label.
         **kwargs: Arguments to cc_binary.
     """
-    _cc_backend_unsigned_enclave_old(name = name, backend = backend, **kwargs)
+    _impl = _cc_backend_unsigned_enclave_old
+    if transitions.supported(native.package_name()):
+        _impl = _cc_backend_unsigned_enclave_new
+    _impl(name = name, backend = backend, **kwargs)
 
 def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
     """Defines an unsigned enclave target in the provided backend.
@@ -255,7 +278,10 @@ def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
         backend: An Asylo backend label.
         **kwargs: Arguments to cc_binary.
     """
-    _cc_backend_unsigned_enclave_experimental_old(name = name, backend = backend, **kwargs)
+    _impl = _cc_backend_unsigned_enclave_experimental_old
+    if transitions.supported(native.package_name()):
+        _impl = _cc_backend_unsigned_enclave_experimental_new
+    _impl(name = name, backend = backend, **kwargs)
 
 def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs):
     """Defines the 'signed' version of an unsigned enclave target.
@@ -272,7 +298,10 @@ def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs)
     kwargs = dict(kwargs)
     if config:
         kwargs["config"] = config
-    _backend_debug_sign_enclave_old(
+    _impl = _backend_debug_sign_enclave_old
+    if transitions.supported(native.package_name()):
+        _impl = _backend_debug_sign_enclave_new
+    _impl(
         name = name,
         backend = backend,
         unsigned = unsigned,
@@ -291,7 +320,7 @@ def cc_unsigned_enclave(
       backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
-          targets.
+          targets. See enclave_info.bzl:all_backends documentation for details.
       name_by_backend: An optional dictionary from backend label to backend-
           specific target label.
       **kwargs: Remainder arguments to the backend rule.
@@ -318,7 +347,7 @@ def debug_sign_enclave(
         backends: The asylo backend labels the binary uses. Must specify at least
             one. Defaults to all supported backends. If more than one, then
             name is an alias to a select on backend value to backend-specialized
-            targets.
+            targets. See enclave_info.bzl:all_backends documentation for details.
         config: A label to a config target that the backend-specific signing
             tool uses.
         testonly: True if the target should only be used in tests.
@@ -328,7 +357,13 @@ def debug_sign_enclave(
     kwargs = {"unsigned": unsigned, "testonly": testonly}
     if config:
         kwargs["config"] = config
-    backend_tools.all_backends(backend_debug_sign_enclave, name, backends, name_by_backend, kwargs)
+    backend_tools.all_backends(
+        backend_debug_sign_enclave,
+        name,
+        backends,
+        name_by_backend,
+        kwargs,
+    )
 
 # The section to embed the application enclave in.
 _APPLICATION_WRAPPER_ENCLAVE_SECTION = "enclave"
@@ -369,7 +404,7 @@ def cc_enclave_binary(
       backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
-          targets.
+          targets. See enclave_info.bzl:all_backends documentation for details.
       unsigned_name_by_backend: An optional dictionary from backend label to backend-
           specific target label for the defined unsigned enclaves.
       signed_name_by_backend: An optional dictionary from backend label to backend-
@@ -471,10 +506,14 @@ def _enclave_runner_script(
         enclaves = {},
         remote_proxy = None,
         tags = [],
+        backend = None,
         deprecation = None,
         visibility = ["//visibility:private"],
         data = []):
-    _enclave_runner_script_old(
+    _impl = _enclave_runner_script_old
+    if transitions.supported(native.package_name()):
+        _impl = _enclave_runner_script_new
+    _impl(
         name = name,
         loader = loader,
         loader_args = loader_args,
@@ -482,6 +521,7 @@ def _enclave_runner_script(
         enclaves = enclaves,
         remote_proxy = remote_proxy,
         tags = tags,
+        backend = None,
         deprecation = deprecation,
         visibility = visibility,
         data = data,
@@ -500,7 +540,10 @@ def _enclave_runner_test(
         deprecation = None,
         tags = [],
         backend = None):
-    _enclave_runner_test_old(
+    _impl = _enclave_runner_test_old
+    if transitions.supported(native.package_name()):
+        _impl = _enclave_runner_test_new
+    _impl(
         name = name,
         loader = loader,
         loader_args = loader_args,
@@ -523,6 +566,7 @@ def enclave_test(
         remote_proxy = None,
         tags = [],
         backends = internal.should_be_all_backends,
+        test_name_by_backend = {},
         deprecation = None,
         **kwargs):
     """Build target for testing one or more enclaves.
@@ -557,7 +601,7 @@ def enclave_test(
       backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
-          targets.
+          targets. See enclave_info.bzl:all_backends documentation for details.
       deprecation: A string deprecation message for uses of this macro that
           have been marked deprecated. Optional.
       **kwargs: cc_test arguments.
@@ -576,8 +620,6 @@ def enclave_test(
         **_ensure_static_manual(kwargs)
     )
 
-    extended_tags = tags + backend_tools.tags(backends)
-
     # embed_enclaves ensures that the test loader's ELF file is built with the
     # host toolchain, even when its enclaves argument is empty.
     embed_enclaves(
@@ -587,18 +629,27 @@ def enclave_test(
         testonly = 1,
     )
 
-    _enclave_runner_test(
+    test_kwargs = {
+        "loader": loader_name,
+        "loader_args": test_args,
+        "enclaves": internal.invert_enclave_name_mapping(enclaves),
+        "data": data,
+        "flaky": flaky,
+        "size": size,
+        "remote_proxy": remote_proxy,
+        "testonly": 1,
+        "deprecation": deprecation,
+        "tags": ["enclave_test"] + tags,
+    }
+
+    # Create test targets for each backend.
+    backend_tools.all_backends(
+        rule_or_macro = _enclave_runner_test,
         name = name,
-        loader = loader_name,
-        loader_args = test_args,
-        enclaves = internal.invert_enclave_name_mapping(enclaves),
-        data = data,
-        flaky = flaky,
-        size = size,
-        remote_proxy = remote_proxy,
-        testonly = 1,
-        deprecation = deprecation,
-        tags = ["enclave_test"] + extended_tags,
+        name_by_backend = test_name_by_backend,
+        backends = backends,
+        kwargs = test_kwargs,
+        test = True,
     )
 
 def dlopen_enclave_test(
@@ -658,7 +709,7 @@ def cc_test(
       backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
-          targets.
+          targets. See enclave_info.bzl:all_backends documentation for details.
       **kwargs: cc_test arguments.
     """
     native.cc_test(
@@ -717,7 +768,7 @@ def cc_test_and_cc_enclave_test(
       backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
-          targets.
+          targets. See enclave_info.bzl:all_backends documentation for details.
       **kwargs: See documentation for **kwargs in native cc_test rule.
     """
     if not enclave_test_name:
@@ -769,7 +820,7 @@ def cc_enclave_test(
       backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
-          targets.
+          targets. See enclave_info.bzl:all_backends documentation for details.
       unsigned_name_by_backend: An optional dictionary from backend label to backend-
           specific target label for the defined unsigned enclaves.
       signed_name_by_backend: An optional dictionary from backend label to backend-
@@ -778,7 +829,10 @@ def cc_enclave_test(
           backend-specific name for the test target.
       **kwargs: cc_test arguments.
     """
-    _cc_enclave_test_old(
+    _impl = _cc_enclave_test_old
+    if transitions.supported(native.package_name()):
+        _impl = _cc_enclave_test_new
+    _impl(
         name = name,
         srcs = srcs,
         cc_unsigned_enclave = cc_unsigned_enclave,

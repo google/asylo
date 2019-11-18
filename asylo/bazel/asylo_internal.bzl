@@ -220,13 +220,6 @@ def internal_cc_enclave_test(
     else:
         loader_args.append("--notest_in_initialize")
 
-    extended_tags = list(tags)
-
-    backend_tags = backend_tools.tags(backends)
-    for tag in backend_tags:
-        if tag not in tags:
-            extended_tags += [tag]
-
     # Execute the gtest enclave using the gtest enclave runner
     test_kwargs = {
         "loader": host_test,
@@ -236,7 +229,7 @@ def internal_cc_enclave_test(
         "remote_proxy": remote_proxy,
         "testonly": 1,
         "size": size,
-        "tags": ["enclave_test"] + extended_tags,
+        "tags": ["enclave_test"] + tags,
     }
     backend_tools.all_backends(
         rule_or_macro = enclave_runner_test,
@@ -244,6 +237,7 @@ def internal_cc_enclave_test(
         backends = backends,
         kwargs = test_kwargs,
         name_by_backend = test_name_by_backend,
+        test = True,
     )
 
 internal_enclave_runner_script_template = """#!/bin/bash

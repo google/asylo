@@ -4685,10 +4685,11 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,702 @@
+@@ -0,0 +1,736 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
++load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 +
 +# website-docs-metadata
 +# ---
@@ -4780,31 +4781,64 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )
 +    return providers + [SGXEnclaveInfo(), backend_tools.EnclaveInfo()]
 +
-+sgx_cc_unsigned_enclave = rule(
-+    implementation = _sgx_cc_unsigned_enclave_impl,
-+    attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
-+        "_lds": attr.label(default = "@linux_sgx//:enclave_lds", allow_single_file = True),
-+    }),
-+    fragments = ["cpp"],
-+)
++def _make_sgx_cc_unsigned_enclave(transition):
++    transition_dict = {
++        "backend": attr.label(
++            mandatory = True,
++            providers = [backend_tools.AsyloBackendInfo],
++        ),
++        "_whitelist_function_transition": attr.label(
++            default = "//tools/whitelists/function_transition_whitelist",
++        ),
++    }
++    return rule(
++        implementation = _sgx_cc_unsigned_enclave_impl,
++        cfg = transitions.toolchain if transition else None,
++        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
++            "_lds": attr.label(
++                default = "@linux_sgx//:enclave_lds",
++                allow_single_file = True,
++            ),
++        }, transition_dict if transition else {}),
++        fragments = ["cpp"],
++    )
++
++sgx_cc_unsigned_enclave = _make_sgx_cc_unsigned_enclave(transition = False)
++
++sgx_cc_unsigned_enclave_transition = None
 +
 +def sgx_unsigned_enclave(
 +        name,
 +        stamp = 0,
++        backends = SGX_BACKEND_LABELS,
++        name_by_backend = {},
 +        **kwargs):
 +    """Build rule for creating an unsigned SGX enclave shared object file.
 +
 +    Args:
 +      name: The enclave target name.
 +      stamp: The cc_binary stamp argument, but with a default value 0.
++      backends: The Asylo backend labels to build with (:asylo_sgx_sim and/or
++          :asylo_sgx_hw)
++      name_by_backend: A dict from backend label to enclave target name.
++          Optional.
 +      **kwargs: cc_binary arguments.
 +    """
-+    sgx_cc_unsigned_enclave(
-+        name = name,
-+        stamp = not (not stamp),
-+        tags = kwargs.pop("tags", []) + sgx_tags(),
-+        **kwargs
-+    )
++    if not transitions.supported(native.package_name()):
++        sgx_cc_unsigned_enclave(
++            name = name,
++            stamp = stamp,
++            **kwargs
++        )
++    else:
++        kwargs = backend_tools.merge_dicts(kwargs, {"stamp": stamp})
++        backend_tools.all_backends(
++            rule_or_macro = sgx_cc_unsigned_enclave_transition,
++            name = name,
++            backends = backends,
++            name_by_backend = name_by_backend,
++            kwargs = kwargs,
++        )
 +
 +def _validate_kss_attribute(attribute, attribute_name, kss):
 +    "Validates a 16-byte hex-encoded KSS attribute."
