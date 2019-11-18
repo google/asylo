@@ -76,9 +76,10 @@ class RemoteAssertionGeneratorEnclave final : public TrustedApplication {
       const GeneratePceInfoSgxHardwareReportInput &input,
       GeneratePceInfoSgxHardwareReportOutput *output);
 
-  // Generates a new value for |attestation_key_|, an SGX hardware REPORT that
-  // is suitable for use in the PCE's SignReport protocol, and certificate
-  // signing requests for certificate authorities specified in |input|.
+  // Generates a new value for |attestation_key_|. If TARGETINFO is specified in
+  // |input|, this method also generates an SGX hardware REPORT that is suitable
+  // for use in the PCE's SignReport protocol. This function can also be used to
+  // generate certificate signing requests for certificate authorities.
   Status GenerateKeyAndCsr(const GenerateKeyAndCsrInput &input,
                            GenerateKeyAndCsrOutput *output);
 

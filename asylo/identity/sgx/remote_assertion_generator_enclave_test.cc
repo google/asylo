@@ -694,22 +694,6 @@ TEST_F(RemoteAssertionGeneratorEnclaveTest, GenerateKeyAndCsrSuccess) {
 }
 
 TEST_F(RemoteAssertionGeneratorEnclaveTest,
-       GenerateKeyAndCsrMissingTargetInfoProtoFails) {
-  ASYLO_ASSERT_OK(
-      InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());
-
-  EnclaveInput enclave_input;
-  EnclaveOutput enclave_output;
-  *enclave_input.MutableExtension(remote_assertion_generator_enclave_input)
-       ->mutable_generate_key_and_csr_input() =
-      GenerateKeyAndCsrInput::default_instance();
-  EXPECT_THAT(remote_assertion_generator_enclave_client_->EnterAndRun(
-                  enclave_input, &enclave_output),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT,
-                       "Input is missing pce_target_info"));
-}
-
-TEST_F(RemoteAssertionGeneratorEnclaveTest,
        UpdateCertsForServerRunningWithoutKeySuccess) {
   ASYLO_ASSERT_OK(
       InitializeRemoteAssertionGeneratorEnclaveWithRandomServerAddress());

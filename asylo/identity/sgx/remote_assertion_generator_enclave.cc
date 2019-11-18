@@ -172,32 +172,29 @@ Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
 
 Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
     const GenerateKeyAndCsrInput &input, GenerateKeyAndCsrOutput *output) {
-  if (!input.has_pce_target_info()) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input is missing pce_target_info");
-  }
-
   std::unique_ptr<EcdsaP256Sha256SigningKey> signing_key;
   ASYLO_ASSIGN_OR_RETURN(signing_key, EcdsaP256Sha256SigningKey::Create());
   std::unique_ptr<VerifyingKey> verifying_key;
   ASYLO_ASSIGN_OR_RETURN(verifying_key, signing_key->GetVerifyingKey());
 
-  ASYLO_ASSIGN_OR_RETURN(
-      *output->mutable_pce_sign_report_payload(),
-      CreateSerializedPceSignReportPayloadFromVerifyingKey(*verifying_key));
+  if (input.has_pce_target_info()) {
+    ASYLO_ASSIGN_OR_RETURN(
+        *output->mutable_pce_sign_report_payload(),
+        CreateSerializedPceSignReportPayloadFromVerifyingKey(*verifying_key));
 
-  AlignedReportdataPtr reportdata;
-  ASYLO_ASSIGN_OR_RETURN(*reportdata,
-                         GenerateReportdataForPceSignReportProtocol(
-                             output->pce_sign_report_payload()));
-  AlignedTargetinfoPtr targetinfo;
-  ASYLO_ASSIGN_OR_RETURN(
-      *targetinfo, ConvertTargetInfoProtoToTargetinfo(input.pce_target_info()));
-  AlignedReportPtr report;
-  ASYLO_RETURN_IF_ERROR(
-      GetHardwareReport(*targetinfo, *reportdata, report.get()));
-  output->mutable_report()->set_value(
-      ConvertTrivialObjectToBinaryString(*report));
+    AlignedReportdataPtr reportdata;
+    ASYLO_ASSIGN_OR_RETURN(*reportdata,
+                           GenerateReportdataForPceSignReportProtocol(
+                               output->pce_sign_report_payload()));
+    AlignedTargetinfoPtr targetinfo;
+    ASYLO_ASSIGN_OR_RETURN(*targetinfo, ConvertTargetInfoProtoToTargetinfo(
+                                            input.pce_target_info()));
+    AlignedReportPtr report;
+    ASYLO_RETURN_IF_ERROR(
+        GetHardwareReport(*targetinfo, *reportdata, report.get()));
+    output->mutable_report()->set_value(
+        ConvertTrivialObjectToBinaryString(*report));
+  }
 
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();
   attestation_key_certs_pair_locked->attestation_key = std::move(signing_key);

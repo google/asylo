@@ -86,7 +86,7 @@ message GeneratePceInfoSgxHardwareReportOutput {
 // certificate authority that should certify the attestation public key.
 message GenerateKeyAndCsrInput {
   // An SGX TARGETINFO structure from the PCE running on the same platform.
-  // Required.
+  // Optional.
   optional TargetInfoProto pce_target_info = 1;
 }
 
