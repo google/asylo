@@ -19,11 +19,6 @@
 #ifndef ASYLO_IDENTITY_SGX_PCK_CERTS_FROM_JSON_H_
 #define ASYLO_IDENTITY_SGX_PCK_CERTS_FROM_JSON_H_
 
-#ifdef __ASYLO__
-#warning The API PckCertificatesFromJson implementation depends on libcurl. \
-  It shouldn't be used in security-sensitive code.
-#endif  // __ASYLO__
-
 #include <string>
 
 #include "asylo/identity/sgx/pck_certificates.pb.h"
