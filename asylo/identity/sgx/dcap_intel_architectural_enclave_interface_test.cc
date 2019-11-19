@@ -65,28 +65,28 @@ using ::testing::Test;
 
 class MockDcapLibraryInterface : public DcapLibraryInterface {
  public:
-  MOCK_METHOD(quote3_error_t, qe_set_enclave_dirpath, (const char *),
+  MOCK_METHOD(quote3_error_t, QeSetEnclaveDirpath, (const char *),
               (const, override));
-  MOCK_METHOD(sgx_pce_error_t, pce_get_target,
+  MOCK_METHOD(sgx_pce_error_t, PceGetTarget,
               (sgx_target_info_t * p_pce_target, sgx_isv_svn_t *p_pce_isv_svn),
               (const, override));
-  MOCK_METHOD(sgx_pce_error_t, get_pce_info,
+  MOCK_METHOD(sgx_pce_error_t, GetPceInfo,
               (const sgx_report_t *p_report, const uint8_t *p_pek,
                uint32_t pek_size, uint8_t crypto_suite,
                uint8_t *p_encrypted_ppid, uint32_t encrypted_ppid_size,
                uint32_t *p_encrypted_ppid_out_size, sgx_isv_svn_t *p_pce_isvsvn,
                uint16_t *p_pce_id, uint8_t *p_signature_scheme),
               (const, override));
-  MOCK_METHOD(sgx_pce_error_t, pce_sign_report,
+  MOCK_METHOD(sgx_pce_error_t, PceSignReport,
               (const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
                const sgx_report_t *p_report, uint8_t *p_signature,
                uint32_t signature_buf_size, uint32_t *p_signature_out_size),
               (const, override));
-  MOCK_METHOD(quote3_error_t, qe_get_target_info,
+  MOCK_METHOD(quote3_error_t, QeGetTargetInfo,
               (sgx_target_info_t * p_qe_target_info), (const, override));
-  MOCK_METHOD(quote3_error_t, qe_get_quote_size, (uint32_t * p_quote_size),
+  MOCK_METHOD(quote3_error_t, QeGetQuoteSize, (uint32_t * p_quote_size),
               (const, override));
-  MOCK_METHOD(quote3_error_t, qe_get_quote,
+  MOCK_METHOD(quote3_error_t, QeGetQuote,
               (const sgx_report_t *p_app_report, uint32_t quote_size,
                uint8_t *p_quote),
               (const, override));
@@ -115,13 +115,13 @@ class DcapIntelArchitecturalEnclaveInterfaceTests : public Test {
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SetEnclaveDirSuccess) {
   const std::string kDir = "some directory";
-  EXPECT_CALL(*dcap_library_, qe_set_enclave_dirpath(Eq(kDir)))
+  EXPECT_CALL(*dcap_library_, QeSetEnclaveDirpath(Eq(kDir)))
       .WillOnce(Return(SGX_QL_SUCCESS));
   EXPECT_THAT(dcap_.SetEnclaveDir(kDir), IsOk());
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SetEnclaveDirFailure) {
-  EXPECT_CALL(*dcap_library_, qe_set_enclave_dirpath(_))
+  EXPECT_CALL(*dcap_library_, QeSetEnclaveDirpath(_))
       .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
   EXPECT_THAT(dcap_.SetEnclaveDir("something"), Not(IsOk()));
 }
@@ -130,7 +130,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceTargetInfoSuccess) {
   sgx_target_info_t expected_target = TrivialRandomObject<sgx_target_info_t>();
   sgx_isv_svn_t expected_svn = TrivialRandomObject<sgx_isv_svn_t>();
 
-  EXPECT_CALL(*dcap_library_, pce_get_target(_, _))
+  EXPECT_CALL(*dcap_library_, PceGetTarget(_, _))
       .WillOnce(DoAll(SetArgPointee<0>(expected_target),
                       SetArgPointee<1>(expected_svn), Return(SGX_PCE_SUCCESS)));
 
@@ -142,7 +142,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceTargetInfoSuccess) {
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceTargetInfoFailure) {
-  EXPECT_CALL(*dcap_library_, pce_get_target(_, _))
+  EXPECT_CALL(*dcap_library_, PceGetTarget(_, _))
       .WillOnce(Return(SGX_PCE_INVALID_PARAMETER));
 
   Targetinfo target;
@@ -159,12 +159,12 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceInfoSuccess) {
   constexpr uint16_t kOutputPceId = 11235;
 
   EXPECT_CALL(*dcap_library_,
-              get_pce_info(Pointee(TrivialObjectEq(kInputReport)),
-                           MemEq(kInputPpidEk, sizeof(kInputPpidEk)),
-                           sizeof(kInputPpidEk), PCE_ALG_RSA_OAEP_3072,
-                           /*p_encrypted_ppid=*/_, kRsa3072ModulusSize,
-                           /*p_encrypted_ppid_out_size=*/_, /*p_pce_isvsvn=*/_,
-                           /*p_pce_id=*/_, /*p_signature_scheme=*/_))
+              GetPceInfo(Pointee(TrivialObjectEq(kInputReport)),
+                         MemEq(kInputPpidEk, sizeof(kInputPpidEk)),
+                         sizeof(kInputPpidEk), PCE_ALG_RSA_OAEP_3072,
+                         /*p_encrypted_ppid=*/_, kRsa3072ModulusSize,
+                         /*p_encrypted_ppid_out_size=*/_, /*p_pce_isvsvn=*/_,
+                         /*p_pce_id=*/_, /*p_signature_scheme=*/_))
       .WillOnce(DoAll(SetArgBuffer<4>(kOutputPpidEncrypted.data(),
                                       kOutputPpidEncrypted.size()),
                       SetArgPointee<6>(kOutputPpidEncrypted.size()),
@@ -204,7 +204,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetPceInfoFailure) {
-  EXPECT_CALL(*dcap_library_, get_pce_info(_, _, _, _, _, _, _, _, _, _))
+  EXPECT_CALL(*dcap_library_, GetPceInfo(_, _, _, _, _, _, _, _, _, _))
       .WillOnce(Return(SGX_PCE_INVALID_PRIVILEGE));
 
   std::string ppid_encrypted;
@@ -227,10 +227,10 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SignReportSuccess) {
 
   EXPECT_CALL(
       *dcap_library_,
-      pce_sign_report(Pointee(kPceSvn), MemEq(kCpuSvn.data(), kCpusvnSize),
-                      Pointee(TrivialObjectEq(kReport)),
-                      /*p_signature=*/_, kEcdsaP256SignatureSize,
-                      /*p_signature_out_size=*/_))
+      PceSignReport(Pointee(kPceSvn), MemEq(kCpuSvn.data(), kCpusvnSize),
+                    Pointee(TrivialObjectEq(kReport)),
+                    /*p_signature=*/_, kEcdsaP256SignatureSize,
+                    /*p_signature_out_size=*/_))
       .WillOnce(DoAll(
           SetArgBuffer<3>(kOutputSignature.data(), kOutputSignature.size()),
           SetArgPointee<5>(kOutputSignature.size()), Return(SGX_PCE_SUCCESS)));
@@ -241,7 +241,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SignReportSuccess) {
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SignReportFailure) {
-  EXPECT_CALL(*dcap_library_, pce_sign_report(_, _, _, _, _, _))
+  EXPECT_CALL(*dcap_library_, PceSignReport(_, _, _, _, _, _))
       .WillOnce(Return(SGX_PCE_INVALID_PARAMETER));
 
   const auto kCpuSvn = TrivialRandomObject<UnsafeBytes<kCpusvnSize>>();
@@ -254,7 +254,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, SignReportFailure) {
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoSuccess) {
   const Targetinfo kExpectedTargetinfo = TrivialRandomObject<Targetinfo>();
 
-  EXPECT_CALL(*dcap_library_, qe_get_target_info(NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetTargetInfo(NotNull()))
       .WillOnce(DoAll(
           SetArgBuffer<0>(&kExpectedTargetinfo, sizeof(kExpectedTargetinfo)),
           Return(SGX_QL_SUCCESS)));
@@ -263,7 +263,7 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoSuccess) {
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, QeGetTargetinfoFailure) {
-  EXPECT_CALL(*dcap_library_, qe_get_target_info(NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetTargetInfo(NotNull()))
       .WillOnce(Return(SGX_QL_ERROR_UNEXPECTED));
   EXPECT_THAT(dcap_.GetQeTargetinfo(), StatusIs(error::GoogleError::INTERNAL));
 }
@@ -273,17 +273,17 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests,
   const Report kReport = TrivialRandomObject<Report>();
   std::vector<uint8_t> quote(4321);  // arbitrary quote size
   std::iota(quote.begin(), quote.end(), 0);
-  EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetQuoteSize(NotNull()))
       .WillOnce(DoAll(SetArgPointee<0>(quote.size()), Return(SGX_QL_SUCCESS)));
-  EXPECT_CALL(*dcap_library_, qe_get_quote(Pointee(TrivialObjectEq(kReport)),
-                                           quote.size(), NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetQuote(Pointee(TrivialObjectEq(kReport)),
+                                         quote.size(), NotNull()))
       .WillOnce(DoAll(SetArgContainer<2>(quote), Return(SGX_QL_SUCCESS)));
 
   EXPECT_THAT(dcap_.GetQeQuote(kReport), IsOkAndHolds(quote));
 }
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteSizeFailure) {
-  EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetQuoteSize(NotNull()))
       .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
   EXPECT_THAT(dcap_.GetQeQuote(Report{}),
               StatusIs(error::GoogleError::PERMISSION_DENIED));
@@ -291,11 +291,10 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteSizeFailure) {
 
 TEST_F(DcapIntelArchitecturalEnclaveInterfaceTests, GetQeQuoteFailure) {
   constexpr uint32_t kFakeQuoteSize = 32;  // size is arbitrary
-  EXPECT_CALL(*dcap_library_, qe_get_quote_size(NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetQuoteSize(NotNull()))
       .WillOnce(
           DoAll(SetArgPointee<0>(kFakeQuoteSize), Return(SGX_QL_SUCCESS)));
-  EXPECT_CALL(*dcap_library_,
-              qe_get_quote(NotNull(), kFakeQuoteSize, NotNull()))
+  EXPECT_CALL(*dcap_library_, QeGetQuote(NotNull(), kFakeQuoteSize, NotNull()))
       .WillOnce(Return(SGX_QL_ERROR_INVALID_PRIVILEGE));
   EXPECT_THAT(dcap_.GetQeQuote(Report{}),
               StatusIs(error::GoogleError::PERMISSION_DENIED));

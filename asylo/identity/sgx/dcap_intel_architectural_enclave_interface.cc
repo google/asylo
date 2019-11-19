@@ -179,13 +179,12 @@ DcapIntelArchitecturalEnclaveInterface::DcapIntelArchitecturalEnclaveInterface(
 
 Status DcapIntelArchitecturalEnclaveInterface::SetEnclaveDir(
     const std::string &path) {
-  return Quote3ErrorToStatus(
-      dcap_library_->qe_set_enclave_dirpath(path.c_str()));
+  return Quote3ErrorToStatus(dcap_library_->QeSetEnclaveDirpath(path.c_str()));
 }
 
 Status DcapIntelArchitecturalEnclaveInterface::GetPceTargetinfo(
     Targetinfo *targetinfo, uint16_t *pce_svn) {
-  sgx_pce_error_t result = dcap_library_->pce_get_target(
+  sgx_pce_error_t result = dcap_library_->PceGetTarget(
       CheckedPointerCast<sgx_target_info_t *>(targetinfo), pce_svn);
 
   return PceErrorToStatus(result);
@@ -212,7 +211,7 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
   std::vector<uint8_t> ppid_encrypted_tmp(max_ppid_out_size);
   uint32_t encrypted_ppid_out_size = 0;
   uint8_t pce_signature_scheme;
-  sgx_pce_error_t result = dcap_library_->get_pce_info(
+  sgx_pce_error_t result = dcap_library_->GetPceInfo(
       CheckedPointerCast<const sgx_report_t *>(&report),
       ppid_encryption_key.data(), ppid_encryption_key.size(),
       crypto_suite.value(), ppid_encrypted_tmp.data(),
@@ -234,7 +233,7 @@ Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
     UnsafeBytes<kCpusvnSize> target_cpu_svn, std::string *signature) {
   std::vector<uint8_t> signature_tmp(kEcdsaP256SignatureSize);
   uint32_t signature_out_size = 0;
-  sgx_pce_error_t result = dcap_library_->pce_sign_report(
+  sgx_pce_error_t result = dcap_library_->PceSignReport(
       &target_pce_svn, CheckedPointerCast<sgx_cpu_svn_t *>(&target_cpu_svn),
       CheckedPointerCast<const sgx_report_t *>(&report), signature_tmp.data(),
       signature_tmp.size(), &signature_out_size);
@@ -248,7 +247,7 @@ Status DcapIntelArchitecturalEnclaveInterface::PceSignReport(
 
 StatusOr<Targetinfo> DcapIntelArchitecturalEnclaveInterface::GetQeTargetinfo() {
   Targetinfo target_info;
-  quote3_error_t result = dcap_library_->qe_get_target_info(
+  quote3_error_t result = dcap_library_->QeGetTargetInfo(
       CheckedPointerCast<sgx_target_info_t *>(&target_info));
   if (result == SGX_QL_SUCCESS) {
     return target_info;
@@ -259,13 +258,13 @@ StatusOr<Targetinfo> DcapIntelArchitecturalEnclaveInterface::GetQeTargetinfo() {
 StatusOr<std::vector<uint8_t>>
 DcapIntelArchitecturalEnclaveInterface::GetQeQuote(const Report &report) {
   uint32_t quote_size;
-  quote3_error_t result = dcap_library_->qe_get_quote_size(&quote_size);
+  quote3_error_t result = dcap_library_->QeGetQuoteSize(&quote_size);
   if (result != SGX_QL_SUCCESS) {
     return Quote3ErrorToStatus(result);
   }
 
   std::vector<uint8_t> quote(quote_size);
-  result = dcap_library_->qe_get_quote(
+  result = dcap_library_->QeGetQuote(
       CheckedPointerCast<const sgx_report_t *>(&report), quote_size,
       quote.data());
   if (result != SGX_QL_SUCCESS) {

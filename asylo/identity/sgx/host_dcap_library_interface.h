@@ -40,33 +40,34 @@ class HostDcapLibraryInterface : public DcapLibraryInterface {
  public:
   ~HostDcapLibraryInterface() override = default;
 
-  quote3_error_t qe_set_enclave_dirpath(const char *dirpath) const override;
+  quote3_error_t QeSetEnclaveDirpath(const char *dirpath) const override;
 
-  sgx_pce_error_t pce_get_target(sgx_target_info_t *p_pce_target,
-                                 sgx_isv_svn_t *p_pce_isv_svn) const override;
+  sgx_pce_error_t PceGetTarget(sgx_target_info_t *p_pce_target,
+                               sgx_isv_svn_t *p_pce_isv_svn) const override;
 
-  sgx_pce_error_t get_pce_info(const sgx_report_t *p_report,
-                               const uint8_t *p_pek, uint32_t pek_size,
-                               uint8_t crypto_suite, uint8_t *p_encrypted_ppid,
-                               uint32_t encrypted_ppid_size,
-                               uint32_t *p_encrypted_ppid_out_size,
-                               sgx_isv_svn_t *p_pce_isvsvn, uint16_t *p_pce_id,
-                               uint8_t *p_signature_scheme) const override;
+  sgx_pce_error_t GetPceInfo(const sgx_report_t *p_report, const uint8_t *p_pek,
+                             uint32_t pek_size, uint8_t crypto_suite,
+                             uint8_t *p_encrypted_ppid,
+                             uint32_t encrypted_ppid_size,
+                             uint32_t *p_encrypted_ppid_out_size,
+                             sgx_isv_svn_t *p_pce_isvsvn, uint16_t *p_pce_id,
+                             uint8_t *p_signature_scheme) const override;
 
-  sgx_pce_error_t pce_sign_report(
-      const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
-      const sgx_report_t *p_report, uint8_t *p_signature,
-      uint32_t signature_buf_size,
-      uint32_t *p_signature_out_size) const override;
+  sgx_pce_error_t PceSignReport(const sgx_isv_svn_t *isv_svn,
+                                const sgx_cpu_svn_t *cpu_svn,
+                                const sgx_report_t *p_report,
+                                uint8_t *p_signature,
+                                uint32_t signature_buf_size,
+                                uint32_t *p_signature_out_size) const override;
 
-  quote3_error_t qe_get_target_info(
+  quote3_error_t QeGetTargetInfo(
       sgx_target_info_t *p_qe_target_info) const override;
 
-  quote3_error_t qe_get_quote_size(uint32_t *p_quote_size) const override;
+  quote3_error_t QeGetQuoteSize(uint32_t *p_quote_size) const override;
 
-  quote3_error_t qe_get_quote(const sgx_report_t *p_app_report,
-                              uint32_t quote_size,
-                              uint8_t *p_quote) const override;
+  quote3_error_t QeGetQuote(const sgx_report_t *p_app_report,
+                            uint32_t quote_size,
+                            uint8_t *p_quote) const override;
 };
 
 }  // namespace sgx

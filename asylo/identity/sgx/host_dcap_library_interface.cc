@@ -28,17 +28,17 @@
 namespace asylo {
 namespace sgx {
 
-quote3_error_t HostDcapLibraryInterface::qe_set_enclave_dirpath(
+quote3_error_t HostDcapLibraryInterface::QeSetEnclaveDirpath(
     const char *dirpath) const {
   return sgx_qe_set_enclave_dirpath(dirpath);
 }
 
-sgx_pce_error_t HostDcapLibraryInterface::pce_get_target(
+sgx_pce_error_t HostDcapLibraryInterface::PceGetTarget(
     sgx_target_info_t *p_pce_target, sgx_isv_svn_t *p_pce_isv_svn) const {
   return sgx_pce_get_target(p_pce_target, p_pce_isv_svn);
 }
 
-sgx_pce_error_t HostDcapLibraryInterface::get_pce_info(
+sgx_pce_error_t HostDcapLibraryInterface::GetPceInfo(
     const sgx_report_t *p_report, const uint8_t *p_pek, uint32_t pek_size,
     uint8_t crypto_suite, uint8_t *p_encrypted_ppid,
     uint32_t encrypted_ppid_size, uint32_t *p_encrypted_ppid_out_size,
@@ -50,7 +50,7 @@ sgx_pce_error_t HostDcapLibraryInterface::get_pce_info(
                           p_signature_scheme);
 }
 
-sgx_pce_error_t HostDcapLibraryInterface::pce_sign_report(
+sgx_pce_error_t HostDcapLibraryInterface::PceSignReport(
     const sgx_isv_svn_t *isv_svn, const sgx_cpu_svn_t *cpu_svn,
     const sgx_report_t *p_report, uint8_t *p_signature,
     uint32_t signature_buf_size, uint32_t *p_signature_out_size) const {
@@ -58,17 +58,17 @@ sgx_pce_error_t HostDcapLibraryInterface::pce_sign_report(
                              signature_buf_size, p_signature_out_size);
 }
 
-quote3_error_t HostDcapLibraryInterface::qe_get_target_info(
+quote3_error_t HostDcapLibraryInterface::QeGetTargetInfo(
     sgx_target_info_t *p_qe_target_info) const {
   return sgx_qe_get_target_info(p_qe_target_info);
 }
 
-quote3_error_t HostDcapLibraryInterface::qe_get_quote_size(
+quote3_error_t HostDcapLibraryInterface::QeGetQuoteSize(
     uint32_t *p_quote_size) const {
   return sgx_qe_get_quote_size(p_quote_size);
 }
 
-quote3_error_t HostDcapLibraryInterface::qe_get_quote(
+quote3_error_t HostDcapLibraryInterface::QeGetQuote(
     const sgx_report_t *p_app_report, uint32_t quote_size,
     uint8_t *p_quote) const {
   return sgx_qe_get_quote(p_app_report, quote_size, p_quote);
