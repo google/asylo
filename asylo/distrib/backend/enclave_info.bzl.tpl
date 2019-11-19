@@ -462,9 +462,11 @@ def all_backends(
             **kwargs
         )
     if test:
-        # The test suite doesn't get tags or visibility since it will only
-        # be manually run.
-        native.test_suite(name = name, tests = [default_target])
+        native.test_suite(
+            name = name,
+            tests = [default_target],
+            tags = backend_dictionary[default_backend].tags,
+        )
     else:
         native.alias(
             name = name,
