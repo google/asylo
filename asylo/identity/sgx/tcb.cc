@@ -28,6 +28,7 @@
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/tcb_container_util.h"
@@ -111,6 +112,26 @@ PartialOrder OrderCombine(PartialOrder lhs, PartialOrder rhs) {
   return PartialOrder::kIncomparable;
 }
 
+// Returns an error indicating that |tcb_info_version| is an unknown TCB info
+// version.
+Status UnknownTcbInfoVersionError(int tcb_info_version) {
+  return Status(error::GoogleError::INVALID_ARGUMENT,
+                absl::StrCat("Unknown TCB info version: ", tcb_info_version));
+}
+
+// Returns an error indicating the TCB info version |tcb_info_version| does not
+// support messages of type |message_name| satisfying |error_predicate|. The
+// |error_predicate| should start with a verb (e.g. "is too long", "has too many
+// \"repeated_field_elements\"").
+Status WrongTcbInfoVersionError(absl::string_view message_name,
+                                int tcb_info_version,
+                                absl::string_view error_predicate) {
+  return Status(
+      error::GoogleError::INVALID_ARGUMENT,
+      absl::StrFormat("%s is for TCB info version %d but %s", message_name,
+                      tcb_info_version, error_predicate));
+}
+
 // Validates a google.protobuf.Timestamp message. Returns an OK status if and
 // only if the message is valid.
 //
@@ -160,12 +181,17 @@ Status ValidateTcbStatus(const TcbStatus &tcb_status) {
   return Status::OkStatus();
 }
 
-// Validates a TcbLevel message. Returns an OK status if and only if the
-// message is valid.
+// Validates a TcbLevel message under |tcb_info_version|. Returns an OK status
+// if and only if the message is valid.
 //
-// A TcbLevel message is valid if and only if its |tcb| and |status| fields are
-// set and each is valid according to its respective validator.
-Status ValidateTcbLevel(const TcbLevel &tcb_level) {
+// A TcbLevel message is valid if and only if
+//
+//   * The |tcb| and |status| fields are set.
+//   * If the |tcb_info_version| is 1, then the |tcb_date| field is unset and
+//     the |advisority_ids| field is empty.
+//   * If the |tcb_info_version| is 2, then the |tcb_date| field is set.
+//   * Each set field is valid according to its respective validator.
+Status ValidateTcbLevel(const TcbLevel &tcb_level, int tcb_info_version) {
   if (!tcb_level.has_tcb()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "TcbLevel does not have a \"tcb\" field");
@@ -179,19 +205,44 @@ Status ValidateTcbLevel(const TcbLevel &tcb_level) {
   ASYLO_RETURN_IF_ERROR(ValidateTcb(tcb_level.tcb()));
   ASYLO_RETURN_IF_ERROR(ValidateTcbStatus(tcb_level.status()));
 
+  switch (tcb_info_version) {
+    case 1:
+      if (tcb_level.has_tcb_date()) {
+        return WrongTcbInfoVersionError("TcbLevel", tcb_info_version,
+                                        "has a \"tcb_date\" field");
+      }
+      if (!tcb_level.advisory_ids().empty()) {
+        return WrongTcbInfoVersionError(
+            "TcbLevel", tcb_info_version,
+            "has a non-empty \"advisory_ids\" field");
+      }
+      break;
+    case 2:
+      if (!tcb_level.has_tcb_date()) {
+        return WrongTcbInfoVersionError("TcbLevel", tcb_info_version,
+                                        "does not have a \"tcb_date\" field");
+      }
+      break;
+    default:
+      return UnknownTcbInfoVersionError(tcb_info_version);
+  }
+
   return Status::OkStatus();
 }
 
-// Validates a TcbInfoImpl message with a |version| of 1. Returns an OK status
-// if and only if the message is valid.
+// Validates a TcbInfoImpl message with a |version| of 1 or 2. Returns an OK
+// status if and only if the message is valid.
 //
-// A TcbInfoImpl message with a |version| of 1 is valid if and only if:
+// A TcbInfoImpl message with a |version| of 1 or 2 is valid if and only if:
 //
 //   * Its |issue_date|, |next_update|, |fmspc|, and |pce_id| fields are set.
-//   * Each of those fields is valid according its type's validator.
-//   * Each element of |tcb_levels| is valid according to ValidateTcbLevel().
+//   * Its |tcb_type| and |tcb_evaluation_data_number| fields are set if and
+//     only if its |version| is 2.
+//   * Each of the set fields is valid according its type's validator.
+//   * Each element of |tcb_levels| is valid according to ValidateTcbLevel()
+//     under |version|.
 //   * The |issue_date| is before the |next_update|.
-Status ValidateTcbInfoImplV1(const TcbInfoImpl &tcb_info_impl) {
+Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
   if (!tcb_info_impl.has_issue_date()) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   "TcbInfoImpl does not have a \"issue_date\" field");
@@ -224,9 +275,36 @@ Status ValidateTcbInfoImplV1(const TcbInfoImpl &tcb_info_impl) {
   ASYLO_RETURN_IF_ERROR(ValidateFmspc(tcb_info_impl.fmspc()));
   ASYLO_RETURN_IF_ERROR(ValidatePceId(tcb_info_impl.pce_id()));
 
+  switch (tcb_info_impl.version()) {
+    case 1:
+      if (tcb_info_impl.has_tcb_type()) {
+        return WrongTcbInfoVersionError("TcbInfoImpl", tcb_info_impl.version(),
+                                        "has a \"tcb_type\" field");
+      }
+      if (tcb_info_impl.has_tcb_evaluation_data_number()) {
+        return WrongTcbInfoVersionError(
+            "TcbInfoImpl", tcb_info_impl.version(),
+            "has a \"tcb_evaluation_data_number\" field");
+      }
+      break;
+    case 2:
+      if (!tcb_info_impl.has_tcb_type()) {
+        return WrongTcbInfoVersionError("TcbInfoImpl", tcb_info_impl.version(),
+                                        "does not have a \"tcb_type\" field");
+      }
+      if (!tcb_info_impl.has_tcb_evaluation_data_number()) {
+        return WrongTcbInfoVersionError(
+            "TcbInfoImpl", tcb_info_impl.version(),
+            "does not have a \"tcb_evaluation_data_number\" field");
+      }
+      break;
+    default:
+      return UnknownTcbInfoVersionError(tcb_info_impl.version());
+  }
+
   absl::flat_hash_map<Tcb, TcbStatus, TcbHash, TcbEqual> tcb_to_status_map;
   for (const TcbLevel &tcb_level : tcb_info_impl.tcb_levels()) {
-    ASYLO_RETURN_IF_ERROR(ValidateTcbLevel(tcb_level));
+    ASYLO_RETURN_IF_ERROR(ValidateTcbLevel(tcb_level, tcb_info_impl.version()));
     auto insert_pair =
         tcb_to_status_map.insert({tcb_level.tcb(), tcb_level.status()});
     if (!insert_pair.second &&
@@ -258,7 +336,8 @@ Status ValidateTcbInfoImpl(const TcbInfoImpl &tcb_info_impl) {
 
   switch (tcb_info_impl.version()) {
     case 1:
-      return ValidateTcbInfoImplV1(tcb_info_impl);
+    case 2:
+      return ValidateTcbInfoImplV1andV2(tcb_info_impl);
     default:
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     absl::StrCat("TcbInfoImpl has an unknown (Intel) version: ",
@@ -288,8 +367,6 @@ Status ValidateTcb(const Tcb &tcb) {
   }
 
   return ValidatePceSvn(tcb.pce_svn());
-
-  return Status::OkStatus();
 }
 
 Status ValidateRawTcb(const RawTcb &raw_tcb) {
@@ -318,18 +395,27 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info) {
   return ValidateTcbInfoImpl(tcb_info.impl());
 }
 
-PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs) {
+StatusOr<PartialOrder> CompareTcbs(int tcb_type, const Tcb &lhs,
+                                   const Tcb &rhs) {
   ByteContainerView lhs_bytes(lhs.components());
   ByteContainerView rhs_bytes(rhs.components());
-  PartialOrder current = PartialOrder::kEqual;
-  for (int i = 0; i < kTcbComponentsSize; ++i) {
-    current = OrderCombine(current, CompareTotal(lhs_bytes[i], rhs_bytes[i]));
-    if (current == PartialOrder::kIncomparable) {
-      return PartialOrder::kIncomparable;
-    }
+  PartialOrder current;
+  switch (tcb_type) {
+    case 0:
+      current = PartialOrder::kEqual;
+      for (int i = 0; i < kTcbComponentsSize; ++i) {
+        current =
+            OrderCombine(current, CompareTotal(lhs_bytes[i], rhs_bytes[i]));
+        if (current == PartialOrder::kIncomparable) {
+          return PartialOrder::kIncomparable;
+        }
+      }
+      return OrderCombine(
+          current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
+    default:
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    absl::StrCat("Unknown TCB type: ", tcb_type));
   }
-  return OrderCombine(
-      current, CompareTotal(lhs.pce_svn().value(), rhs.pce_svn().value()));
 }
 
 StatusOr<asylo::sgx::RawTcb> ParseRawTcbHex(absl::string_view raw_tcb_hex) {

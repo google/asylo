@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/tcb.h"
 
 #include <tuple>
+#include <vector>
 
 #include "google/protobuf/timestamp.pb.h"
 #include <gtest/gtest.h>
@@ -26,6 +27,8 @@
 #include "absl/strings/string_view.h"
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
+#include "absl/types/span.h"
+#include "asylo/util/logging.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
@@ -36,9 +39,6 @@
 namespace asylo {
 namespace sgx {
 namespace {
-
-using ::asylo::EqualsProto;
-using ::testing::Eq;
 
 // Returns a valid Tcb message.
 Tcb CreateValidTcb() {
@@ -56,8 +56,8 @@ RawTcb CreateValidRawTcb() {
   return raw_tcb;
 }
 
-// Returns a valid TcbInfo message with a single TCB level.
-TcbInfo CreateValidTcbInfo() {
+// Returns a valid TcbInfo message at version 1 with a single TCB level.
+TcbInfo CreateValidTcbInfoV1() {
   absl::Time now = absl::Now();
   absl::Time later = now + absl::Hours(24 * 30);
 
@@ -66,11 +66,11 @@ TcbInfo CreateValidTcbInfo() {
   impl->set_version(1);
 
   google::protobuf::Timestamp *issue_date = impl->mutable_issue_date();
-  issue_date->set_seconds((now - absl::UnixEpoch()) / absl::Seconds(1));
+  issue_date->set_seconds(absl::ToInt64Seconds(now - absl::UnixEpoch()));
   issue_date->set_nanos(0);
 
   google::protobuf::Timestamp *next_update = impl->mutable_next_update();
-  next_update->set_seconds((later - absl::UnixEpoch()) / absl::Seconds(1));
+  next_update->set_seconds(absl::ToInt64Seconds(later - absl::UnixEpoch()));
   next_update->set_nanos(0);
 
   impl->mutable_fmspc()->set_value("abcdef");
@@ -81,6 +81,41 @@ TcbInfo CreateValidTcbInfo() {
   tcb_level->mutable_status()->set_known_status(TcbStatus::UP_TO_DATE);
 
   return tcb_info;
+}
+
+// Returns a valid TcbInfo message at version 2 with a single TCB level.
+TcbInfo CreateValidTcbInfoV2() {
+  TcbInfo tcb_info = CreateValidTcbInfoV1();
+  TcbInfoImpl *impl = tcb_info.mutable_impl();
+  impl->set_version(2);
+  impl->set_tcb_type(0);
+  impl->set_tcb_evaluation_data_number(17);
+
+  TcbLevel *tcb_level = impl->mutable_tcb_levels(0);
+  google::protobuf::Timestamp *tcb_date = tcb_level->mutable_tcb_date();
+  tcb_date->set_seconds(absl::ToInt64Seconds(absl::Now() - absl::UnixEpoch()));
+  tcb_date->set_nanos(0);
+  *tcb_level->add_advisory_ids() = "Vulnerable to flattery";
+
+  return tcb_info;
+}
+
+// Returns a valid TcbInfo message of each version in |versions|.
+std::vector<TcbInfo> CreateTcbInfosOfVersions(absl::Span<const int> versions) {
+  std::vector<TcbInfo> tcb_infos;
+  for (int version : versions) {
+    switch (version) {
+      case 1:
+        tcb_infos.push_back(CreateValidTcbInfoV1());
+        break;
+      case 2:
+        tcb_infos.push_back(CreateValidTcbInfoV2());
+        break;
+      default:
+        LOG(FATAL) << "Unknown TCB info version: " << version;
+    }
+  }
+  return tcb_infos;
 }
 
 TEST(TcbTest, TcbWithoutComponentsFieldIsInvalid) {
@@ -152,140 +187,217 @@ TEST(TcbTest, TcbInfoWithoutValueVariantIsInvalid) {
 }
 
 TEST(TcbTest, TcbInfoImplWithoutVersionFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->clear_version();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->clear_version();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithoutIssueDateFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->clear_issue_date();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->clear_issue_date();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithoutNextUpdateFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->clear_next_update();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->clear_issue_date();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithoutFmspcFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->clear_fmspc();
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->clear_fmspc();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
+}
+
+TEST(TcbTest, TcbInfoImplWithoutPceIdFieldIsInvalid) {
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->clear_pce_id();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
+}
+
+TEST(TcbTest, TcbInfoImplV1WithTcbTypeFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV1();
+  tcb_info.mutable_impl()->set_tcb_type(0);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(TcbTest, TcbInfoImplWithoutPceIdFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->clear_pce_id();
+TEST(TcbTest, TcbInfoImplV2WithoutTcbTypeFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV2();
+  tcb_info.mutable_impl()->clear_tcb_type();
+  EXPECT_THAT(ValidateTcbInfo(tcb_info),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbTest, TcbInfoImplV1WithTcbDataEvaluationNumberFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV1();
+  tcb_info.mutable_impl()->set_tcb_evaluation_data_number(16);
+  EXPECT_THAT(ValidateTcbInfo(tcb_info),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbTest, TcbInfoImplV2WithoutTcbDataEvaluationNumberFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV2();
+  tcb_info.mutable_impl()->clear_tcb_evaluation_data_number();
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(TcbTest, TcbInfoImplWithUnknownVersionIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->set_version(12);
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->set_version(12);
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithInvalidIssueDateIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->mutable_issue_date()->set_seconds(-100000000000);
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->mutable_issue_date()->set_seconds(-100000000000);
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithInvalidNextUpdateIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->mutable_next_update()->set_seconds(-100000000000);
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->mutable_next_update()->set_seconds(-100000000000);
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithInvalidFmspcIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->mutable_fmspc()->clear_value();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->mutable_fmspc()->clear_value();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbInfoImplWithInvalidPceIdIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->mutable_pce_id()->clear_value();
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->mutable_pce_id()->clear_value();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
+}
+
+TEST(TcbTest, TcbLevelWithoutTcbFieldIsInvalid) {
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_tcb();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
+}
+
+TEST(TcbTest, TcbLevelInV1TcbInfoWithTcbDateFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV1();
+  google::protobuf::Timestamp *tcb_date =
+      tcb_info.mutable_impl()->mutable_tcb_levels(0)->mutable_tcb_date();
+  tcb_date->set_seconds(absl::ToInt64Seconds(absl::Now() - absl::UnixEpoch()));
+  tcb_date->set_nanos(0);
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(TcbTest, TcbLevelWithoutTcbFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_tcb();
+TEST(TcbTest, TcbLevelInV2TcbInfoWithoutTcbDateFieldIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV2();
+  tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_tcb_date();
+  EXPECT_THAT(ValidateTcbInfo(tcb_info),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(TcbTest, TcbLevelInV1TcbInfoWithNonEmptyAdvisoryIdsIsInvalid) {
+  TcbInfo tcb_info = CreateValidTcbInfoV1();
+  *tcb_info.mutable_impl()->mutable_tcb_levels(0)->add_advisory_ids() =
+      "This shouldn't be here";
   EXPECT_THAT(ValidateTcbInfo(tcb_info),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(TcbTest, TcbLevelWithoutStatusFieldIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_status();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()->mutable_tcb_levels(0)->clear_status();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbLevelWithInvalidTcbIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()
-      ->mutable_tcb_levels(0)
-      ->mutable_tcb()
-      ->clear_pce_svn();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()
+        ->mutable_tcb_levels(0)
+        ->mutable_tcb()
+        ->clear_pce_svn();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbStatusWithoutValueVariantIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()
-      ->mutable_tcb_levels(0)
-      ->mutable_status()
-      ->clear_value();
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()
+        ->mutable_tcb_levels(0)
+        ->mutable_status()
+        ->clear_value();
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, TcbStatusWithUnknownKnownStatusVariantIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  tcb_info.mutable_impl()
-      ->mutable_tcb_levels(0)
-      ->mutable_status()
-      ->set_known_status(TcbStatus::INVALID);
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    tcb_info.mutable_impl()
+        ->mutable_tcb_levels(0)
+        ->mutable_status()
+        ->set_known_status(TcbStatus::INVALID);
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest,
      TcbInfoImplWithMultipleTcbLevelsWithSameTcbButDifferentStatusesIsInvalid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
-  tcb_info.mutable_impl()
-      ->mutable_tcb_levels(1)
-      ->mutable_status()
-      ->set_known_status(TcbStatus::OUT_OF_DATE);
-  EXPECT_THAT(ValidateTcbInfo(tcb_info),
-              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
+    tcb_info.mutable_impl()
+        ->mutable_tcb_levels(1)
+        ->mutable_status()
+        ->set_known_status(TcbStatus::OUT_OF_DATE);
+    EXPECT_THAT(ValidateTcbInfo(tcb_info),
+                StatusIs(error::GoogleError::INVALID_ARGUMENT));
+  }
 }
 
 TEST(TcbTest, ValidTcbInfoIsValid) {
-  ASYLO_EXPECT_OK(ValidateTcbInfo(CreateValidTcbInfo()));
+  for (const auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    ASYLO_EXPECT_OK(ValidateTcbInfo(tcb_info));
+  }
 }
 
 TEST(TcbTest,
      TcbInfoImplWithMultipleTcbLevelsWithSameTcbAnsSameStatusesIsValid) {
-  TcbInfo tcb_info = CreateValidTcbInfo();
-  *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
-  ASYLO_EXPECT_OK(ValidateTcbInfo(tcb_info));
+  for (auto &tcb_info : CreateTcbInfosOfVersions({1, 2})) {
+    *tcb_info.mutable_impl()->add_tcb_levels() = tcb_info.impl().tcb_levels(0);
+    ASYLO_EXPECT_OK(ValidateTcbInfo(tcb_info));
+  }
+}
+
+TEST(TcbTest, CompareTcbsFailsWithUnknownTcbType) {
+  EXPECT_THAT(CompareTcbs(3, CreateValidTcb(), CreateValidTcb()),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
@@ -329,7 +441,8 @@ TEST(TcbTest, CompareTcbsComparesArgumentsCorrectly) {
     absl::string_view components = std::get<0>(test_cases[i]);
     lhs.set_components(components.data(), components.size());
     lhs.mutable_pce_svn()->set_value(std::get<1>(test_cases[i]));
-    EXPECT_THAT(CompareTcbs(lhs, rhs), Eq(std::get<2>(test_cases[i])));
+    EXPECT_THAT(CompareTcbs(/*tcb_type=*/0, lhs, rhs),
+                IsOkAndHolds(std::get<2>(test_cases[i])));
   }
 }
 

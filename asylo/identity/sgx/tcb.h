@@ -19,6 +19,9 @@
 #ifndef ASYLO_IDENTITY_SGX_TCB_H_
 #define ASYLO_IDENTITY_SGX_TCB_H_
 
+#include <cstddef>
+
+#include "absl/base/attributes.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/status.h"
@@ -75,15 +78,21 @@ Status ValidateRawTcb(const RawTcb &raw_tcb);
 //   * Its |version|, |issue_date|, |next_update|, |fmspc|, and |pce_id| fields
 //     are set.
 //   * Each of those fields is valid according its type's validator.
-//   * Each element of |tcb_levels| is valid (see below).
-//   * The |version| is a known value (currently just 1).
+//   * Each element of |tcb_levels| is valid under the |version| (see below).
+//   * The |version| is a known value (currently 1 or 2).
 //   * The |issue_date| is before the |next_update|.
 //   * Any contained TcbLevels with the same |tcb| also have the same |status|.
+//   * The |tcb_type| and |tcb_evaluation_data_number| fields are set if and
+//     only if the |version| is 2.
 //
-// Each TcbLevel is valid if and only if its |tcb| and |status| fields are both
-// set, the |tcb| field is valid according to ValidateTcb(), and either the
-// |status| is a |known_status| that is not INVALID or it is an
-// |unknown_status|.
+// Each TcbLevel is valid if and only if:
+//
+//   * Its |tcb| and |status| fields are both set.
+//   * The |tcb_date| field is set if and only if the TcbInfo's |version| is 2.
+//   * If the TcbInfo's |version| is 1, then the |advisory_ids| field is empty.
+//   * The |tcb| field is valid according to ValidateTcb().
+//   * Either the |status| is a |known_status| that is not INVALID or it is an
+//     |unknown_status|.
 //
 // A |status| is NOT considered invalid if it has an |unknown_status| string
 // that represents an existing StatusType value. This allows new cases to be
@@ -91,13 +100,15 @@ Status ValidateRawTcb(const RawTcb &raw_tcb);
 Status ValidateTcbInfo(const TcbInfo &tcb_info);
 
 // Returns the order between |lhs| and |rhs|. Both |lhs| and |rhs| must be valid
-// Tcb objects.
+// Tcb objects. Returns an error if |tcb_type| is not a recognized Intel TCB
+// type, as found in the TCB info structure.
 //
 // The algorithm used to determine the ordering of TCBs is inferred from the
 // instructions at
-// https://api.portal.trustedservices.intel.com/documentation#pcs-tcb-info.
+// https://api.portal.trustedservices.intel.com/documentation#pcs-tcb-info-v2
+// and depends on |tcb_type|.
 //
-// In brief, |lhs| is less than or equal to |rhs| if both:
+// For a |tcb_type| of 0, |lhs| is less than or equal to |rhs| if both:
 //
 //   * For each i in the range [0, kTcbComponentsSize), the following is true:
 //
@@ -112,12 +123,13 @@ Status ValidateTcbInfo(const TcbInfo &tcb_info);
 // actually equal to |rhs|, then it is strictly less or greater. If |lhs| is
 // neither less than or equal to nor greater than or equal to |rhs|, then |lhs|
 // and |rhs| are incomparable.
-PartialOrder CompareTcbs(const Tcb &lhs, const Tcb &rhs);
+StatusOr<PartialOrder> CompareTcbs(int tcb_type, const Tcb &lhs,
+                                   const Tcb &rhs);
 
 // Parses a hex-encoded string |raw_tcb_hex| into the RawTcb protobuf.
 // |raw_tcb_hex| can come from the "SGB-TCBm" JSON field in the response of
 // Intel PCS's GetPckCertificate API
-// (https://api.portal.trustedservices.intel.com/documentation#pcs-certificate).
+// (https://api.portal.trustedservices.intel.com/documentation#pcs-certificate-v2).
 // Returns a non-OK Status if |raw_tcb_hex| is not a hex string encoding an
 // 18-byte raw TCB.
 StatusOr<RawTcb> ParseRawTcbHex(absl::string_view raw_tcb_hex);
