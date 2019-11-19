@@ -34,6 +34,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/bignum_util.h"

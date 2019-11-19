@@ -28,7 +28,6 @@
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
-#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace primitives {

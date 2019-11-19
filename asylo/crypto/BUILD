@@ -14,13 +14,13 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load(
     "//asylo/bazel:asylo.bzl",
     cc_test = "cc_test_and_cc_enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
 
 # Asylo Crypto library
 
@@ -89,6 +89,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
     ],
 )
@@ -417,6 +418,7 @@ cc_library(
         "//asylo/crypto/util:bssl_util",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
     ],
@@ -544,6 +546,7 @@ cc_library(
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
     ],
 )
@@ -691,6 +694,7 @@ cc_library(
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
     ],
 )

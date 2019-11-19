@@ -23,6 +23,7 @@
 #include <cstdint>
 #include <memory>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/util/status.h"

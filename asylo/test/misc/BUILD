@@ -259,6 +259,7 @@ sgx.unsigned_enclave(
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )
 

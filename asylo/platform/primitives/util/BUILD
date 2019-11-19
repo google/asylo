@@ -14,6 +14,8 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 licenses(["notice"])  # Apache v2.0
 
 package(
@@ -24,8 +26,6 @@ exports_files([
     "trusted_memory.h",
 ])
 
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-
 # Utilities for conversions between Asylo Status and PrimitiveStatus.
 cc_library(
     name = "status_conversions",
@@ -35,6 +35,7 @@ cc_library(
     deps = [
         "//asylo/platform/primitives",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -45,6 +46,7 @@ cc_test(
     deps = [
         ":status_conversions",
         "//asylo/test/util:test_main",
+        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -63,7 +65,6 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/container:flat_hash_map",
     ],
 )
 

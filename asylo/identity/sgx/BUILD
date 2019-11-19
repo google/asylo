@@ -566,6 +566,7 @@ sgx.unsigned_enclave(
         "//asylo/util:logging",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
     ],
 )
 

@@ -18,6 +18,8 @@
 
 #include "asylo/platform/primitives/util/status_conversions.h"
 
+#include "absl/strings/str_cat.h"
+
 namespace asylo {
 namespace primitives {
 

@@ -20,11 +20,12 @@
 #define ASYLO_PLATFORM_STORAGE_SECURE_AEAD_HANDLER_H_
 
 #include <stdint.h>
+
 #include <memory>
 #include <string>
+#include <unordered_map>
 
 #include "absl/base/attributes.h"
-#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/platform/crypto/gcmlib/gcm_cryptor.h"
@@ -168,8 +169,8 @@ class AeadHandler {
   };
 
   AeadHandler();
-  AeadHandler(AeadHandler const&) = delete;
-  void operator=(AeadHandler const&) = delete;
+  AeadHandler(AeadHandler const &) = delete;
+  void operator=(AeadHandler const &) = delete;
 
   // Loads and validates integrity metadata, returns false on failure.
   bool Deserialize(FileControl *file_ctrl)
@@ -203,13 +204,17 @@ class AeadHandler {
       ABSL_EXCLUSIVE_LOCKS_REQUIRED(file_ctrl.mu);
 
   // Map of file (data set) controls for opened files keyed on int identity of
-  // files.
-  absl::flat_hash_map<int, std::shared_ptr<FileControl>> fmap_
+  // files. Avoid using absl based containers which may perform system calls, as
+  // this class is expected to be used in trusted primitives layer where
+  // system calls might not be available.
+  std::unordered_map<int, std::shared_ptr<FileControl>> fmap_
       ABSL_GUARDED_BY(mu_);
 
   // Map of file (data set) controls for opened files keyed on string paths of
-  // files.
-  absl::flat_hash_map<std::string, std::shared_ptr<FileControl>> opened_files_
+  // files. Avoid using absl based containers which may perform system calls, as
+  // this class is expected to be used in trusted primitives layer where system
+  // calls might not be available.
+  std::unordered_map<std::string, std::shared_ptr<FileControl>> opened_files_
       ABSL_GUARDED_BY(mu_);
 
   // An instance that performs operations on untrusted file offset.

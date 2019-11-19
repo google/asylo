@@ -142,7 +142,6 @@ cc_library(
         "//asylo/util:file_mapping",
         "//asylo/util:status",
         "//asylo/util:status_macros",
-        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",

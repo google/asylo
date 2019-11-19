@@ -259,6 +259,7 @@ sgx.unsigned_enclave(
         "//asylo/test/util:enclave_test_application",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/strings",
     ],
 )
 

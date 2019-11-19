@@ -316,7 +316,6 @@ cc_library(
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
         "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/meta:type_traits",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",

@@ -20,11 +20,12 @@
 #define ASYLO_PLATFORM_CRYPTO_GCMLIB_GCM_CRYPTOR_H_
 
 #include <openssl/evp.h>
+
 #include <memory>
 #include <string>
+#include <unordered_map>
 #include <vector>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/crypto/util/bytes.h"
 
@@ -134,8 +135,13 @@ class GcmCryptorRegistry {
   GcmCryptorRegistry() = default;
   GcmCryptorRegistry(GcmCryptorRegistry const &) = delete;
   void operator=(GcmCryptorRegistry const &) = delete;
-  absl::flat_hash_map<GcmCryptorKey, std::unique_ptr<GcmCryptor>,
-                      SafeBytesHasher>
+
+  // This class is expected to be used in context of trusted runtime in the
+  // primitives interface where system calls might not be available, so we use
+  // std::unordered_map instead of absl::flat_hash_map to prevent unsafe system
+  // calls made by absl based containers.
+  std::unordered_map<GcmCryptorKey, std::unique_ptr<GcmCryptor>,
+                     SafeBytesHasher>
       cryptor_registry_ ABSL_GUARDED_BY(mu_);
   absl::Mutex mu_;
 };

@@ -20,14 +20,14 @@
 #define ASYLO_PLATFORM_POSIX_THREADING_THREAD_MANAGER_H_
 
 #include <pthread.h>
+
 #include <atomic>
 #include <functional>
 #include <memory>
 #include <queue>
 #include <stack>
+#include <unordered_map>
 #include <utility>
-
-#include "absl/container/flat_hash_map.h"
 
 namespace asylo {
 
@@ -182,7 +182,10 @@ class ThreadManager {
   std::queue<std::shared_ptr<Thread>> queued_threads_;
 
   // List of currently running threads or threads waiting to be joined.
-  absl::flat_hash_map<pthread_t, std::shared_ptr<Thread>> threads_;
+  // ThreadManager is used in trusted contexts where system calls might not be
+  // available; avoid using absl based containers which may perform system
+  // calls.
+  std::unordered_map<pthread_t, std::shared_ptr<Thread>> threads_;
 };
 
 }  // namespace asylo

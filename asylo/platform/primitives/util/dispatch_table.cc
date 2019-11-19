@@ -35,7 +35,7 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
                                           const ExitHandler &handler) {
   // Ensure no handler is installed for untrusted_selector.
   auto locked_exit_table = exit_table_.Lock();
-  if (locked_exit_table->contains(untrusted_selector)) {
+  if (locked_exit_table->count(untrusted_selector)) {
     return {error::GoogleError::ALREADY_EXISTS,
             "Invalid selector in RegisterExitHandler."};
   }

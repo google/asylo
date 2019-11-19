@@ -20,8 +20,8 @@
 #define ASYLO_UTIL_ERROR_SPACE_H_
 
 #include <string>
+#include <unordered_map>
 
-#include "absl/container/flat_hash_map.h"
 #include "absl/strings/str_format.h"
 #include "asylo/platform/common/static_map.h"
 #include "asylo/util/error_codes.h"
@@ -148,8 +148,8 @@ struct error_enum_traits {
 /// intermediate template class called ErrorSpaceImplementationHelper, which is
 /// derived from the ErrorSpace abstract class. Any error-space implementation
 /// derived from this class is automatically tracked in the
-/// error-space singleton global map. The helper class also provides an
-/// absl::flat_hash_map-based implementation of the SpaceName() and String()
+/// error-space singleton global map. The helper class also provides a
+/// std::unordered_map-based implementation of the SpaceName() and String()
 /// methods, and as a result, error-space implementations derived from this
 /// class do not need to provide their own implementation of these methods. It
 /// is strongly recommended that all error-space implementations be derived from
@@ -314,7 +314,10 @@ class ErrorSpaceImplementationHelper : public ErrorSpace {
   using InserterType = error_internal::AsyloErrorSpaceStaticMap::ValueInserter;
   InserterType *DoNotOptimize(InserterType *inserter) { return inserter; }
   static InserterType inserter_;
-  absl::flat_hash_map<int, std::pair<std::string, GoogleError>>
+  // Since ErrorSpace is used in trusted primitives layer where system calls may
+  // not be available, avoid usage of absl containers which may make system
+  // calls.
+  std::unordered_map<int, std::pair<std::string, GoogleError>>
       code_translation_map_;
   const std::string space_name_;
   const std::string default_error_string_;

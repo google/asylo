@@ -34,6 +34,5 @@ cc_library(
     deps = [
         "//asylo/platform/posix:pthread_impl",
         "//asylo/platform/primitives:trusted_primitives",
-        "@com_google_absl//absl/container:flat_hash_map",
     ],
 )

@@ -50,14 +50,13 @@ cc_library(
     deps = select(
         {
             "@com_google_asylo//asylo": [
+                "//asylo/platform/core:trusted_spin_lock",
                 "//asylo/platform/primitives",
                 "//asylo/platform/primitives/util:message_reader_writer",
                 "//asylo/platform/primitives/util:trusted_runtime_helper",
                 "//asylo/platform/primitives:trusted_primitives",
                 "//asylo/platform/primitives:trusted_runtime",
-                "//asylo/util:status_macros",
                 "//asylo/platform/posix:backend_agnostic_posix",
-                "//asylo/platform/core:trusted_spin_lock",
             ],
         },
         "Trusted dlopen components must be built with Asylo toolchain",

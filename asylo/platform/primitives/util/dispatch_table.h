@@ -19,7 +19,8 @@
 #ifndef ASYLO_PLATFORM_PRIMITIVES_UTIL_DISPATCH_TABLE_H_
 #define ASYLO_PLATFORM_PRIMITIVES_UTIL_DISPATCH_TABLE_H_
 
-#include "absl/container/flat_hash_map.h"
+#include <unordered_map>
+
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/asylo_macros.h"
@@ -64,11 +65,11 @@ class DispatchTable : public Client::ExitCallProvider {
   };
 
   DispatchTable()
-      : exit_table_(absl::flat_hash_map<uint64_t, ExitHandler>()),
+      : exit_table_(std::unordered_map<uint64_t, ExitHandler>()),
         exit_hook_factory_() {}
 
   DispatchTable(std::unique_ptr<ExitHookFactory> exit_hook_factory)
-      : exit_table_(absl::flat_hash_map<uint64_t, ExitHandler>()),
+      : exit_table_(std::unordered_map<uint64_t, ExitHandler>()),
         exit_hook_factory_(std::move(exit_hook_factory)) {}
 
   // Registers a callback as the handler routine for an enclave exit point
@@ -88,7 +89,10 @@ class DispatchTable : public Client::ExitCallProvider {
   Status PerformExit(uint64_t untrusted_selector, MessageReader *input,
                      MessageWriter *output, Client *client);
 
-  MutexGuarded<absl::flat_hash_map<uint64_t, ExitHandler>> exit_table_;
+  // DispatchTable is used in trusted primitives layer where system calls might
+  // not be available; avoid using absl based containers which may perform
+  // system calls.
+  MutexGuarded<std::unordered_map<uint64_t, ExitHandler>> exit_table_;
   const std::unique_ptr<ExitHookFactory> exit_hook_factory_;
 };
 

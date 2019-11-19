@@ -24,9 +24,9 @@
 #include <cerrno>
 #include <cstdint>
 #include <memory>
+#include <unordered_set>
 
 #include "absl/algorithm/container.h"
-#include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/platform/host_call/trusted/host_calls.h"
@@ -329,8 +329,10 @@ int IOManager::Select(int nfds, fd_set *readfds, fd_set *writefds,
     return ret;
   }
 
-  // Add the returned fd_sets into absl::flat_hash_set.
-  absl::flat_hash_set<int> host_readfds_set, host_writefds_set,
+  // Add the returned fd_sets into an unordered set. IOManager is used in
+  // trusted contexts where system calls might not be available; avoid using
+  // absl based containers which may perform system calls.
+  std::unordered_set<int> host_readfds_set, host_writefds_set,
       host_exceptfds_set;
   for (int fd = 0; fd < nfds; ++fd) {
     std::shared_ptr<IOContext> context = fd_table_.Get(fd);
@@ -904,13 +906,12 @@ int IOManager::GetRLimit(int resource, struct rlimit *rlim) {
     return -1;
   }
   switch (resource) {
-    case RLIMIT_NOFILE:
-      {
-        absl::ReaderMutexLock lock(&fd_table_lock_);
-        rlim->rlim_cur = fd_table_.get_maximum_fd_soft_limit();
-        rlim->rlim_max = fd_table_.get_maximum_fd_hard_limit();
-        return 0;
-      }
+    case RLIMIT_NOFILE: {
+      absl::ReaderMutexLock lock(&fd_table_lock_);
+      rlim->rlim_cur = fd_table_.get_maximum_fd_soft_limit();
+      rlim->rlim_max = fd_table_.get_maximum_fd_hard_limit();
+      return 0;
+    }
     default:
       errno = ENOSYS;
       return -1;
@@ -927,14 +928,13 @@ int IOManager::SetRLimit(int resource, const struct rlimit *rlim) {
     return -1;
   }
   switch (resource) {
-    case RLIMIT_NOFILE:
-      {
-        absl::WriterMutexLock lock(&fd_table_lock_);
-        if (!fd_table_.SetFileDescriptorLimits(rlim)) {
-          return -1;
-        }
-        return 0;
+    case RLIMIT_NOFILE: {
+      absl::WriterMutexLock lock(&fd_table_lock_);
+      if (!fd_table_.SetFileDescriptorLimits(rlim)) {
+        return -1;
       }
+      return 0;
+    }
     default:
       errno = ENOSYS;
       return -1;

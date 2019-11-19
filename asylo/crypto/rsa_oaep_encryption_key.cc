@@ -26,6 +26,7 @@
 #include <openssl/pem.h>
 #include <openssl/rsa.h>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"

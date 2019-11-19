@@ -32,7 +32,6 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/platform/primitives/dlopen/shared_dlopen.h"
-#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"

@@ -20,9 +20,10 @@
 #define ASYLO_PLATFORM_PRIMITIVES_SGX_SIGNAL_DISPATCHER_H_
 
 #include <signal.h>
-#include <mutex>
 
-#include "absl/container/flat_hash_map.h"
+#include <mutex>
+#include <unordered_map>
+
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 #include "asylo/util/statusor.h"
@@ -61,7 +62,7 @@ class EnclaveSignalDispatcher {
   void operator=(EnclaveSignalDispatcher const &) = delete;
 
   // Mapping of signal number to the enclave client that registered it.
-  absl::flat_hash_map<int, SgxEnclaveClient *> signal_to_client_map_;
+  std::unordered_map<int, SgxEnclaveClient *> signal_to_client_map_;
 
   // A mutex that guards signal_to_client_map_ and client_to_signal_map_.
   // This is a recursive mutex so that a signal entering the enclave won't cause

@@ -31,6 +31,7 @@
 
 #include "absl/base/attributes.h"
 #include "absl/base/macros.h"
+#include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/types/optional.h"
 #include "absl/types/span.h"

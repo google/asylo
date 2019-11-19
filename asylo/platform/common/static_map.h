@@ -111,9 +111,9 @@
 
 #include <string>
 #include <type_traits>
+#include <unordered_map>
 
 #include "absl/base/thread_annotations.h"
-#include "absl/container/flat_hash_map.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/static_map_internal.h"
@@ -151,14 +151,18 @@ struct Namer;
 // a unique key for each element is generated using N.
 //
 // The map used internally is dynamically allocated and is never destroyed
-// during the lifetime of the program (i.e. it is intentionally leaked).
+// during the lifetime of the program (i.e. it is intentionally leaked). Since
+// StaticMap is used in the trusted the primitives interface where system calls
+// might not be available, we use std::unordered_map instead of
+// absl::flat_hash_map to prevent unsafe system calls made by absl based
+// containers.
 template <class MapName, class T, class N = Namer<T>>
 class StaticMap {
  public:
   using value_iterator = internal::ValueIterator<
-      T, typename absl::flat_hash_map<std::string, T *>::iterator>;
+      T, typename std::unordered_map<std::string, T *>::iterator>;
   using const_value_iterator = internal::ValueIterator<
-      const T, typename absl::flat_hash_map<std::string, T *>::const_iterator>;
+      const T, typename std::unordered_map<std::string, T *>::const_iterator>;
 
   // ValueInserter is a helper class whose constructor inserts a pointer to an
   // instance of T into the static map.
@@ -270,17 +274,17 @@ class StaticMap {
  private:
   static void Initialize() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_) {
     if (map_ == nullptr) {
-      map_ = new absl::flat_hash_map<std::string, T *>();
+      map_ = new std::unordered_map<std::string, T *>();
     }
   }
-  static absl::flat_hash_map<std::string, T *> *map_ ABSL_GUARDED_BY(mu_)
+  static std::unordered_map<std::string, T *> *map_ ABSL_GUARDED_BY(mu_)
       ABSL_PT_GUARDED_BY(mu_);
   static absl::Mutex mu_;
   static N namer_;
 };
 
 template <class MapName, class T, class N>
-absl::flat_hash_map<std::string, T *> *StaticMap<MapName, T, N>::map_ = nullptr;
+std::unordered_map<std::string, T *> *StaticMap<MapName, T, N>::map_ = nullptr;
 
 template <class MapName, class T, class N>
 absl::Mutex StaticMap<MapName, T, N>::mu_;

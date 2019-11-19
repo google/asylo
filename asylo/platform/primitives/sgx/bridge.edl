@@ -46,7 +46,7 @@ enclave {
     public int ecall_dispatch_trusted_call(uint64_t selector,
                                           [user_check] void *buffer);
 
-    // Intended for use by primitives enclave signal implementaion.
+    // Intended for use by primitives enclave signal implementation.
     // Invokes signal handling entry point.
     // WARNING: Do not add calls before ecall_deliver_signal, as callers
     // may assume this to be the second entry in the generated ecall table.

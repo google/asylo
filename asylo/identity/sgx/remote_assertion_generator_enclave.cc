@@ -20,6 +20,7 @@
 
 #include <utility>
 
+#include "absl/memory/memory.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/trivial_object_util.h"

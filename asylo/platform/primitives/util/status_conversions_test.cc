@@ -17,8 +17,10 @@
  */
 
 #include "asylo/platform/primitives/util/status_conversions.h"
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "absl/strings/str_cat.h"
 
 using ::testing::Eq;
 using ::testing::StrEq;

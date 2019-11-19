@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_cat.h"
 #include "asylo/crypto/random_nonce_generator.h"
 #include "asylo/util/status_macros.h"
 

@@ -19,6 +19,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "absl/strings/str_cat.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/test/util/enclave_test_application.h"
@@ -68,9 +69,9 @@ class ForkTest : public EnclaveTestCase {
       // normally.
       int status;
       if (wait(&status) == -1) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("Error waiting for child: ",
-                                   strerror(errno)));
+        return Status(
+            static_cast<error::PosixError>(errno),
+            absl::StrCat("Error waiting for child: ", strerror(errno)));
       }
       if (!WIFEXITED(status)) {
         return Status(error::GoogleError::INTERNAL, "child enclave aborted");
