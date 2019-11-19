@@ -21,8 +21,12 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "absl/strings/string_view.h"
+#include "tools/cpp/runfiles/runfiles.h"
 #include "asylo/test/util/enclave_test.h"  // enclave_path
 #include "asylo/test/util/exec_tester.h"
+
+using bazel::tools::cpp::runfiles::Runfiles;
 
 namespace asylo {
 namespace {
@@ -31,10 +35,14 @@ class ExceptionTest : public ::testing::Test {
  protected:
   // Return the status of the test subprocess.
   void RunTest(const std::string &input, int *status) {
-    experimental::ExecTester test(
-        {experimental::ExecTester::BuildSiblingPath(
-             absl::GetFlag(FLAGS_enclave_path), "exception_app_host_bin"),
-         absl::GetFlag(FLAGS_enclave_path), input});
+    std::string error;
+    std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
+    ASSERT_NE(runfiles, nullptr) << error;
+
+    std::string path = runfiles->Rlocation(
+        "com_google_asylo/asylo/test/misc/exception_app_host_bin");
+    experimental::ExecTester test({
+      path, absl::GetFlag(FLAGS_enclave_path), input});
     ASSERT_TRUE(test.Run("", status));
   }
 };

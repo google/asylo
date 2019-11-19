@@ -584,8 +584,11 @@ sgx_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     data = [":double_die_host_bin"],
     enclaves = {"enclave": ":die.so"},
-    test_args = ["--enclave_path='{enclave}'"],
+    test_args = [
+        "--enclave_path='{enclave}'",
+    ],
     deps = [
+        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
         "//asylo/test/util:exec_tester",
     ] + TEST_DEPS_COMMON,
@@ -613,10 +616,14 @@ sgx_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     data = [":exception_app_host_bin"],
     enclaves = {"enclave": ":exception.so"},
-    test_args = ["--enclave_path='{enclave}'"],
+    test_args = [
+        "--enclave_path='{enclave}'",
+    ],
     deps = [
         ":exception",
+        "@bazel_tools//tools/cpp/runfiles",
         "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
         "//asylo/test/util:exec_tester",
     ] + TEST_DEPS_COMMON,
 )

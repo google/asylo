@@ -137,13 +137,16 @@ sgx_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     data = [":grpc_server_host_loader"],
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},
-    test_args = ["--enclave_path='{server_enclave}'"],
+    test_args = [
+        "--enclave_path='{server_enclave}'",
+    ],
     deps = [
         ":translator_server",
         "//asylo/test/util:exec_tester",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
+        "@bazel_tools//tools/cpp/runfiles",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/flags:flag",

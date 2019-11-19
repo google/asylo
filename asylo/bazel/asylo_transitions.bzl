@@ -155,6 +155,7 @@ def _enclave_runner_script_impl(ctx):
       The rule's providers. Indicates the data dependencies as runfiles.
     """
     args = internal.interpolate_enclave_paths(ctx.attr.enclaves, ctx.attr.loader_args)
+    args = [ctx.expand_location(arg, ctx.attr.data) for arg in args]
     files = [ctx.file.loader] + ctx.files.enclaves + ctx.files.data
 
     if ctx.file.remote_proxy:

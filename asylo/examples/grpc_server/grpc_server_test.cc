@@ -36,6 +36,7 @@
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
 #include "asylo/examples/grpc_server/translator_server.grpc.pb.h"
+#include "tools/cpp/runfiles/runfiles.h"
 #include "asylo/test/util/exec_tester.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -51,6 +52,8 @@ ABSL_FLAG(int32_t, server_max_lifetime, 10,
 
 // A regex matching the log message that contains the port.
 constexpr char kPortMessageRegex[] = "Server started on port [0-9]+";
+
+using bazel::tools::cpp::runfiles::Runfiles;
 
 namespace examples {
 namespace grpc_server {
@@ -118,10 +121,14 @@ class GrpcServerTest : public ::testing::Test {
   // number. Fails if the log message is never seen.
   void SetUp() override ABSL_LOCKS_EXCLUDED(server_thread_state_mutex_) {
     ASSERT_NE(absl::GetFlag(FLAGS_enclave_path), "");
+    std::string error;
+    std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
+    ASSERT_NE(runfiles, nullptr) << error;
 
+    std::string loader_path = runfiles->Rlocation(
+        "com_google_asylo/asylo/examples/grpc_server/grpc_server_host_loader");
     const std::vector<std::string> argv({
-        asylo::experimental::ExecTester::BuildSiblingPath(
-            absl::GetFlag(FLAGS_enclave_path), "grpc_server_host_loader"),
+        loader_path,
         absl::StrCat("--enclave_path=", absl::GetFlag(FLAGS_enclave_path)),
         absl::StrCat("--server_max_lifetime=",
                      absl::GetFlag(FLAGS_server_max_lifetime)),

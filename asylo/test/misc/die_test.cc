@@ -20,17 +20,25 @@
 
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
+#include "tools/cpp/runfiles/runfiles.h"
 #include "asylo/test/util/enclave_test.h"
 #include "asylo/test/util/exec_tester.h"
+
+using bazel::tools::cpp::runfiles::Runfiles;
 
 namespace asylo {
 namespace {
 
 class DieTest : public ::testing::Test {
  public:
-  DieTest()
-      : app_(experimental::ExecTester::BuildSiblingPath(
-            absl::GetFlag(FLAGS_enclave_path), "double_die_host_bin")) {}
+  void SetUp() override {
+    std::string error;
+    std::unique_ptr<Runfiles> runfiles(Runfiles::CreateForTest(&error));
+    ASSERT_NE(runfiles, nullptr) << error;
+
+    app_ = runfiles->Rlocation(
+        "com_google_asylo/asylo/test/misc/double_die_host_bin");
+  }
 
  protected:
   std::string app_;

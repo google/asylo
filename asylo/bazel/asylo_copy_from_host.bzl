@@ -251,6 +251,7 @@ def _enclave_runner_script_impl(ctx):
         ctx.attr.enclaves,
         ctx.attr.loader_args,
     )
+    args = [ctx.expand_location(arg, ctx.attr.data) for arg in args]
     files = [ctx.executable.loader] + ctx.files.enclaves + ctx.files.data
 
     if ctx.executable.remote_proxy:
