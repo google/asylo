@@ -1264,9 +1264,9 @@ cc_test_and_cc_enclave_test(
 )
 
 cc_library(
-    name = "pck_certificates",
-    srcs = ["pck_certificates.cc"],
-    hdrs = ["pck_certificates.h"],
+    name = "pck_certificate_util",
+    srcs = ["pck_certificate_util.cc"],
+    hdrs = ["pck_certificate_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
@@ -1296,12 +1296,12 @@ cc_library(
 )
 
 cc_test_and_cc_enclave_test(
-    name = "pck_certificates_test",
-    srcs = ["pck_certificates_test.cc"],
+    name = "pck_certificate_util_test",
+    srcs = ["pck_certificate_util_test.cc"],
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":pck_certificates",
+        ":pck_certificate_util",
         ":pck_certificates_cc_proto",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
@@ -1463,7 +1463,6 @@ cc_library(
     hdrs = ["provisioning_consistency_checker.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":pck_certificates",
         ":pck_certificates_cc_proto",
         ":tcb",
         ":tcb_cc_proto",

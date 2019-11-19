@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PCK_CERTIFICATES_H_
-#define ASYLO_IDENTITY_SGX_PCK_CERTIFICATES_H_
+#ifndef ASYLO_IDENTITY_SGX_PCK_CERTIFICATE_UTIL_H_
+#define ASYLO_IDENTITY_SGX_PCK_CERTIFICATE_UTIL_H_
 
 #include "absl/types/optional.h"
 #include "asylo/crypto/asn1.h"
@@ -81,4 +81,4 @@ Status ValidatePckCertificates(const PckCertificates &pck_certificates);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PCK_CERTIFICATES_H_
+#endif  // ASYLO_IDENTITY_SGX_PCK_CERTIFICATE_UTIL_H_

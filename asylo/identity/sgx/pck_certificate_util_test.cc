@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/pck_certificates.h"
+#include "asylo/identity/sgx/pck_certificate_util.h"
 
 #include <algorithm>
 #include <bitset>
@@ -152,7 +152,7 @@ PckCertificates CreateValidPckCertificates(int length) {
   return pck_certificates;
 }
 
-TEST(PckCertificatesTest, SgxExtensionsMustBeOidAnyPairSequences) {
+TEST(PckCertificateUtilTest, SgxExtensionsMustBeOidAnyPairSequences) {
   for (const auto &bad_sgx_extensions :
        {Asn1Value::CreateBoolean(true),
         Asn1Value::CreateSequenceFromStatusOrs(
@@ -168,7 +168,7 @@ TEST(PckCertificatesTest, SgxExtensionsMustBeOidAnyPairSequences) {
   }
 }
 
-TEST(PckCertificatesTest,
+TEST(PckCertificateUtilTest,
      SgxExtensionsWithMissingRequiredElementsCannotBeRead) {
 
   Asn1Value extensions_asn1;
@@ -188,7 +188,7 @@ TEST(PckCertificatesTest,
   }
 }
 
-TEST(PckCertificatesTest, SgxExtensionsWithExtraElementsCannotBeRead) {
+TEST(PckCertificateUtilTest, SgxExtensionsWithExtraElementsCannotBeRead) {
   ObjectId oid;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       oid, ObjectId::CreateFromOidString("1.2.840.113549.2.5"));
@@ -213,7 +213,7 @@ TEST(PckCertificatesTest, SgxExtensionsWithExtraElementsCannotBeRead) {
   }
 }
 
-TEST(PckCertificatesTest, SgxExtensionsWithDuplicateElementsCannotBeRead) {
+TEST(PckCertificateUtilTest, SgxExtensionsWithDuplicateElementsCannotBeRead) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -230,7 +230,7 @@ TEST(PckCertificatesTest, SgxExtensionsWithDuplicateElementsCannotBeRead) {
   }
 }
 
-TEST(PckCertificatesTest, PpidsMustBeOctetStringsOfCorrectLength) {
+TEST(PckCertificateUtilTest, PpidsMustBeOctetStringsOfCorrectLength) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -253,7 +253,7 @@ TEST(PckCertificatesTest, PpidsMustBeOctetStringsOfCorrectLength) {
   }
 }
 
-TEST(PckCertificatesTest, TcbsMustBeOidAnyPairSequences) {
+TEST(PckCertificateUtilTest, TcbsMustBeOidAnyPairSequences) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -280,7 +280,7 @@ TEST(PckCertificatesTest, TcbsMustBeOidAnyPairSequences) {
   }
 }
 
-TEST(PckCertificatesTest, TcbsWithMissingElementsCannotBeRead) {
+TEST(PckCertificateUtilTest, TcbsWithMissingElementsCannotBeRead) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -305,7 +305,7 @@ TEST(PckCertificatesTest, TcbsWithMissingElementsCannotBeRead) {
   }
 }
 
-TEST(PckCertificatesTest, TcbsWithExtraElementsCannotBeRead) {
+TEST(PckCertificateUtilTest, TcbsWithExtraElementsCannotBeRead) {
   ObjectId oid;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       oid, ObjectId::CreateFromOidString("1.2.840.113549.2.5"));
@@ -338,7 +338,7 @@ TEST(PckCertificatesTest, TcbsWithExtraElementsCannotBeRead) {
   }
 }
 
-TEST(PckCertificatesTest, TcbsWithDuplicateElementsCannotBeRead) {
+TEST(PckCertificateUtilTest, TcbsWithDuplicateElementsCannotBeRead) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -363,7 +363,7 @@ TEST(PckCertificatesTest, TcbsWithDuplicateElementsCannotBeRead) {
   }
 }
 
-TEST(PckCertificatesTest, TcbComponentsMustBeIntegersInRange) {
+TEST(PckCertificateUtilTest, TcbComponentsMustBeIntegersInRange) {
   for (int i = 0; i < kTcbComponentsSize; ++i) {
     Asn1Value extensions_asn1;
     ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
@@ -405,7 +405,7 @@ TEST(PckCertificatesTest, TcbComponentsMustBeIntegersInRange) {
   }
 }
 
-TEST(PckCertificatesTest, PceSvnsMustBeIntegersInRange) {
+TEST(PckCertificateUtilTest, PceSvnsMustBeIntegersInRange) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -443,7 +443,7 @@ TEST(PckCertificatesTest, PceSvnsMustBeIntegersInRange) {
   }
 }
 
-TEST(PckCertificatesTest, CpuSvnsMustBeOctetStringsOfCorrectLength) {
+TEST(PckCertificateUtilTest, CpuSvnsMustBeOctetStringsOfCorrectLength) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -475,7 +475,7 @@ TEST(PckCertificatesTest, CpuSvnsMustBeOctetStringsOfCorrectLength) {
   }
 }
 
-TEST(PckCertificatesTest, PceIdsMustBeOctetStringsOfCorrectLength) {
+TEST(PckCertificateUtilTest, PceIdsMustBeOctetStringsOfCorrectLength) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -498,7 +498,7 @@ TEST(PckCertificatesTest, PceIdsMustBeOctetStringsOfCorrectLength) {
   }
 }
 
-TEST(PckCertificatesTest, FmspcsMustBeOctetStringsOfCorrectLength) {
+TEST(PckCertificateUtilTest, FmspcsMustBeOctetStringsOfCorrectLength) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -521,7 +521,7 @@ TEST(PckCertificatesTest, FmspcsMustBeOctetStringsOfCorrectLength) {
   }
 }
 
-TEST(PckCertificatesTest, SgxTypesMustBeEnumeratedValuesInRange) {
+TEST(PckCertificateUtilTest, SgxTypesMustBeEnumeratedValuesInRange) {
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1,
                              WriteSgxExtensions(CreateValidSgxExtensions()));
@@ -550,7 +550,7 @@ TEST(PckCertificatesTest, SgxTypesMustBeEnumeratedValuesInRange) {
   }
 }
 
-TEST(PckCertificatesTest, InvalidSgxExtensionsCannotBeWritten) {
+TEST(PckCertificateUtilTest, InvalidSgxExtensionsCannotBeWritten) {
   SgxExtensions extensions = CreateValidSgxExtensions();
   extensions.ppid.clear_value();
   EXPECT_THAT(WriteSgxExtensions(extensions),
@@ -582,7 +582,7 @@ TEST(PckCertificatesTest, InvalidSgxExtensionsCannotBeWritten) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, SgxExtensionsRoundtrip) {
+TEST(PckCertificateUtilTest, SgxExtensionsRoundtrip) {
   SgxExtensions extensions = CreateValidSgxExtensions();
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1, WriteSgxExtensions(extensions));
@@ -590,7 +590,7 @@ TEST(PckCertificatesTest, SgxExtensionsRoundtrip) {
               IsOkAndHolds(SgxExtensionsEquals(extensions)));
 }
 
-TEST(PckCertificatesTest, SgxExtensionsElementsCanBeInAnyOrder) {
+TEST(PckCertificateUtilTest, SgxExtensionsElementsCanBeInAnyOrder) {
   SgxExtensions extensions = CreateValidSgxExtensions();
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1, WriteSgxExtensions(extensions));
@@ -606,7 +606,7 @@ TEST(PckCertificatesTest, SgxExtensionsElementsCanBeInAnyOrder) {
   }
 }
 
-TEST(PckCertificatesTest, TcbElementsCanBeInAnyOrder) {
+TEST(PckCertificateUtilTest, TcbElementsCanBeInAnyOrder) {
   SgxExtensions extensions = CreateValidSgxExtensions();
   Asn1Value extensions_asn1;
   ASYLO_ASSERT_OK_AND_ASSIGN(extensions_asn1, WriteSgxExtensions(extensions));
@@ -630,42 +630,42 @@ TEST(PckCertificatesTest, TcbElementsCanBeInAnyOrder) {
   }
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithoutTcbLevelIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithoutTcbLevelIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->clear_tcb_level();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithInvalidTcbLevelIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidTcbLevelIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->mutable_tcb_level()->set_components("");
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithoutTcbmIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithoutTcbmIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->clear_tcbm();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithInvalidTcbmIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidTcbmIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->mutable_tcbm()->clear_cpu_svn();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithoutCertIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithoutCertIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->clear_cert();
   EXPECT_THAT(ValidatePckCertificates(pck_certificates),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithInvalidCertIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithInvalidCertIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)->mutable_cert()->set_format(
       asylo::Certificate::UNKNOWN);
@@ -673,7 +673,7 @@ TEST(PckCertificatesTest, PckCertificateInfoWithInvalidCertIsInvalid) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, PckCertificateInfoWithDifferingPceSvnsIsInvalid) {
+TEST(PckCertificateUtilTest, PckCertificateInfoWithDifferingPceSvnsIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   pck_certificates.mutable_certs(0)
       ->mutable_tcbm()
@@ -683,7 +683,7 @@ TEST(PckCertificatesTest, PckCertificateInfoWithDifferingPceSvnsIsInvalid) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest,
+TEST(PckCertificateUtilTest,
      PckCertificatesWithDistinctEntriesWithSameTcbLevelIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(2);
   *pck_certificates.mutable_certs(1)->mutable_tcb_level() =
@@ -692,7 +692,7 @@ TEST(PckCertificatesTest,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest,
+TEST(PckCertificateUtilTest,
      PckCertificatesWithDistinctEntriesWithSameTcbmIsInvalid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(2);
   *pck_certificates.mutable_certs(1)->mutable_tcbm() =
@@ -701,13 +701,13 @@ TEST(PckCertificatesTest,
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(PckCertificatesTest, ValidPckCertificatesIsValid) {
+TEST(PckCertificateUtilTest, ValidPckCertificatesIsValid) {
   ASYLO_EXPECT_OK(ValidatePckCertificates(CreateValidPckCertificates(0)));
   ASYLO_EXPECT_OK(ValidatePckCertificates(CreateValidPckCertificates(1)));
   ASYLO_EXPECT_OK(ValidatePckCertificates(CreateValidPckCertificates(74)));
 }
 
-TEST(PckCertificatesTest, PckCertificatesWithRepeatedEntriesIsValid) {
+TEST(PckCertificateUtilTest, PckCertificatesWithRepeatedEntriesIsValid) {
   PckCertificates pck_certificates = CreateValidPckCertificates(1);
   *pck_certificates.add_certs() = pck_certificates.certs(0);
   ASYLO_EXPECT_OK(ValidatePckCertificates(pck_certificates));
