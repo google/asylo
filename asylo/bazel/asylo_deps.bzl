@@ -360,35 +360,6 @@ cc_library(
         urls = ["https://github.com/madler/zlib/archive/v1.2.11.tar.gz"],
     )
 
-    # Jinja for code_generator.py
-    if not native.existing_rule("com_github_pallets_jinja"):
-        http_archive(
-            name = "com_github_pallets_jinja",
-            url = "https://github.com/pallets/jinja/archive/2.10.3.tar.gz",
-            build_file_content = """py_library(
-    name = "jinja2",
-    visibility = ["//visibility:public"],
-    srcs = glob(["jinja2/*.py"]),
-    deps = ["@com_github_pallets_markupsafe//:markupsafe"],
-)""",
-            sha256 = "db49236731373e4f3118af880eb91bb0aa6978bc0cf8b35760f6a026f1a9ffc4",
-            strip_prefix = "jinja-2.10.3",
-        )
-
-    # Markupsafe for Jinja
-    if not native.existing_rule("com_github_pallets_markupsafe"):
-        http_archive(
-            name = "com_github_pallets_markupsafe",
-            url = "https://github.com/pallets/markupsafe/archive/1.1.1.tar.gz",
-            build_file_content = """py_library(
-    name = "markupsafe",
-    visibility = ["//visibility:public"],
-    srcs = glob(["markupsafe/*.py"]),
-)""",
-            sha256 = "222a10e3237d92a9cd45ed5ea882626bc72bc5e0264d3ed0f2c9129fa69fc167",
-            strip_prefix = "markupsafe-1.1.1/src",
-        )
-
     # Libcurl for Intel PCS client
     if not native.existing_rule("com_github_curl_curl"):
         http_archive(
