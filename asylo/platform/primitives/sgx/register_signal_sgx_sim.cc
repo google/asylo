@@ -20,7 +20,6 @@
 
 #include "asylo/platform/posix/signal/signal_manager.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
-#include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
 namespace asylo {
@@ -51,8 +50,7 @@ void TranslateAndHandleSignal(int klinux_signum,
 
 }  // namespace asylo
 
-extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags,
-                                   const char *enclave_name) {
+extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags) {
   return asylo::primitives::RegisterSignalHandler(
-      signum, &asylo::TranslateAndHandleSignal, mask, flags, enclave_name);
+      signum, &asylo::TranslateAndHandleSignal, mask, flags);
 }

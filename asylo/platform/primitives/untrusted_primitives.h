@@ -147,6 +147,9 @@ class Client : public std::enable_shared_from_this<Client> {
   // entry point (like a fork from inside the enclave).
   void SetCurrentClient();
 
+  // Returns the static |current_client_| that is currently set.
+  static Client *GetCurrentClient();
+
   // Enters the enclave synchronously at an entry point to trusted code
   // designated by `selector`.
   // Input `input` is copied into the enclave, which occurs locally inside the

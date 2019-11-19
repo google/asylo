@@ -107,7 +107,6 @@ enclave {
         int klinux_signum,
         [user_check] void *sigaction_ptr,
         [in, size=klinux_mask_len] const void *klinux_mask, int klinux_mask_len,
-        int64_t flags,
-        [in, string] const char *name);
+        int64_t flags);
   };
 };

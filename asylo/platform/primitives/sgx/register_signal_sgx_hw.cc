@@ -16,12 +16,9 @@
  *
  */
 
-#include "asylo/platform/primitives/trusted_runtime.h"
-
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
 
-extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags,
-                                   const char *enclave_name) {
+extern "C" int enc_register_signal(int signum, const sigset_t mask, int flags) {
   return asylo::primitives::RegisterSignalHandler(
-      signum, /*bridge_sigaction=*/nullptr, mask, flags, enclave_name);
+      signum, /*klinux_sigaction=*/nullptr, mask, flags);
 }

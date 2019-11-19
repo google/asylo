@@ -78,10 +78,7 @@ int sigaction(int signum, const struct sigaction *act,
   if (flags & SA_RESETHAND) {
     signal_manager->SetResetOnHandle(signum);
   }
-  const std::string enclave_name = asylo::GetEnclaveName();
-  // Pass a C string because enc_register_signal has C linkage. This string is
-  // copied to untrusted memory when going across enclave boundary.
-  return enc_register_signal(signum, mask, flags, enclave_name.c_str());
+  return enc_register_signal(signum, mask, flags);
 }
 
 // Sets the signal mask with |set|.

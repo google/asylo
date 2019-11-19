@@ -37,14 +37,12 @@
 #include <iterator>
 #include <vector>
 
-#include "absl/memory/memory.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/futex.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/core/enclave_manager.h"
 #include "asylo/platform/core/generic_enclave_client.h"
-#include "asylo/platform/core/shared_name.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_u.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
@@ -120,8 +118,7 @@ void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
 }
 
 // Perform a snapshot key transfer from the parent to the child.
-asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveManager *manager,
-                                    asylo::EnclaveClient *client,
+asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveClient *client,
                                     int self_socket, int peer_socket,
                                     bool is_parent) {
   asylo::platform::storage::FdCloser self_socket_closer(self_socket);
@@ -201,35 +198,30 @@ void ocall_enc_untrusted_deallocate_free_list(void **free_list,
 //          signal.h                //
 //////////////////////////////////////
 
-int ocall_enc_untrusted_register_signal_handler(
-    int klinux_signum, void *sigaction_ptr, const void *klinux_mask,
-    int klinux_mask_len, int64_t flags, const char *name) {
-  std::string enclave_name(name);
+int ocall_enc_untrusted_register_signal_handler(int klinux_signum,
+                                                void *sigaction_ptr,
+                                                const void *klinux_mask,
+                                                int klinux_mask_len,
+                                                int64_t flags) {
   if (klinux_signum < 0) {
     errno = EINVAL;
     return -1;
   }
-  auto manager_result = asylo::EnclaveManager::Instance();
-  if (!manager_result.ok()) {
+
+  auto primitive_client = dynamic_cast<asylo::primitives::SgxEnclaveClient *>(
+      asylo::primitives::Client::GetCurrentClient());
+  if (!primitive_client) {
+    LOG(ERROR) << "Invalid primitive_client countered.";
     return -1;
   }
-  // Registers the signal with an enclave so when the signal arrives,
-  // EnclaveManager knows which enclave to enter to handle the signal.
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::EnclaveClient *client = manager->GetClient(enclave_name);
-  asylo::GenericEnclaveClient *generic_client =
-      dynamic_cast<asylo::GenericEnclaveClient *>(client);
-  std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
-      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-          generic_client->GetPrimitiveClient());
   const asylo::primitives::SgxEnclaveClient *old_client =
       asylo::primitives::EnclaveSignalDispatcher::GetInstance()->RegisterSignal(
-          klinux_signum, primitive_client.get());
+          klinux_signum, primitive_client);
   if (old_client) {
     LOG(WARNING) << "Overwriting the signal handler for signal: "
                  << klinux_signum << " registered by another enclave";
   }
-  struct sigaction newact;
+  struct sigaction newact {};
   if (!sigaction_ptr) {
     // Hardware mode: The registered signal handler triggers an ecall to enter
     // the enclave and handle the signal.
@@ -250,7 +242,7 @@ int ocall_enc_untrusted_register_signal_handler(
   newact.sa_flags |= SA_SIGINFO;
   newact.sa_mask = *reinterpret_cast<const sigset_t *>(klinux_mask);
 
-  struct sigaction oldact;
+  struct sigaction oldact {};
   return sigaction(klinux_signum, &newact, &oldact);
 }
 
@@ -401,7 +393,7 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
     // as the parent enclave.
     client = dynamic_cast<asylo::GenericEnclaveClient *>(
         manager->GetClient(enclave_name));
-    std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
+    primitive_client =
         std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
             client->GetPrimitiveClient());
 
@@ -419,8 +411,8 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
     primitive_client->SetCurrentClient();
 
     std::string child_result = "Child fork succeeded";
-    asylo::Status status = DoSnapshotKeyTransfer(
-        manager, client, socket_pair[0], socket_pair[1], /*is_parent=*/false);
+    status = DoSnapshotKeyTransfer(client, socket_pair[0], socket_pair[1],
+                                   /*is_parent=*/false);
     if (!status.ok()) {
       // Inform the parent process about the failure.
       child_result = "Child DoSnapshotKeyTransfer failed";
@@ -460,9 +452,9 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
       errno = EFAULT;
       return -1;
     }
-    asylo::Status status = DoSnapshotKeyTransfer(
-        manager, client, /*self_socket=*/socket_pair[1],
-        /*peer_socket=*/socket_pair[0], /*is_parent=*/true);
+    status = DoSnapshotKeyTransfer(client, /*self_socket=*/socket_pair[1],
+                                   /*peer_socket=*/socket_pair[0],
+                                   /*is_parent=*/true);
     if (!status.ok()) {
       LOG(ERROR) << "DoSnapshotKeyTransfer failed: " << status;
       errno = EFAULT;
@@ -474,7 +466,7 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
     fd_set read_fds;
     FD_ZERO(&read_fds);
     FD_SET(pipefd[0], &read_fds);
-    struct timeval timeout;
+    struct timeval timeout {};
     timeout.tv_sec = timeout_seconds;
     timeout.tv_usec = 0;
     int wait_result =

@@ -49,6 +49,8 @@ Client::ScopedCurrentClient::~ScopedCurrentClient() {
 
 void Client::SetCurrentClient() { current_client_ = this; }
 
+Client *Client::GetCurrentClient() { return current_client_; }
+
 Status Client::EnclaveCall(uint64_t selector, MessageWriter *input,
                            MessageReader *output) {
   if (IsClosed()) {

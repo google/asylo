@@ -43,9 +43,10 @@ pid_t InvokeFork(const char *enclave_name, bool restore_snapshot);
 // Sends the signal to registered signal handler through SignalManager.
 int DeliverSignal(const char *input, size_t input_len);
 
-int RegisterSignalHandler(
-    int signum, void (*klinux_sigaction)(int, klinux_siginfo_t *, void *),
-    const sigset_t mask, int flags, const char *enclave_name);
+int RegisterSignalHandler(int signum,
+                          void (*klinux_sigaction)(int, klinux_siginfo_t *,
+                                                   void *),
+                          const sigset_t mask, int flags);
 
 // Allocates |count| buffers of size |size| on the untrusted heap, returning a
 // pointer to an array of buffer pointers.
