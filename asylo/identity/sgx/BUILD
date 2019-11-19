@@ -1545,6 +1545,7 @@ cc_library(
     hdrs = ["dcap_intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":dcap_library_interface",
         ":hardware_types",
         ":intel_architectural_enclave_interface",
         ":pce_util",
@@ -1553,6 +1554,28 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",
+        "@linux_sgx//:public",
+        "@sgx_dcap//:quote_wrapper_common",
+    ],
+)
+
+cc_library(
+    name = "dcap_library_interface",
+    hdrs = ["dcap_library_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "@linux_sgx//:public",
+        "@sgx_dcap//:quote_wrapper_common",
+    ],
+)
+
+cc_library(
+    name = "host_dcap_library_interface",
+    srcs = ["host_dcap_library_interface.cc"],
+    hdrs = ["host_dcap_library_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":dcap_library_interface",
         "@linux_sgx//:public",
         "@sgx_dcap//:pce_wrapper",
         "@sgx_dcap//:quote_wrapper",
@@ -1611,6 +1634,7 @@ enclave_test(
     deps = [
         ":dcap_intel_architectural_enclave_interface",
         ":hardware_types",
+        ":host_dcap_library_interface",
         ":intel_ecdsa_quote",
         ":pce_util",
         ":platform_provisioning",
@@ -1644,6 +1668,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":dcap_intel_architectural_enclave_interface",
+        ":dcap_library_interface",
         ":hardware_types",
         ":pce_util",
         "//asylo/crypto:algorithms_cc_proto",

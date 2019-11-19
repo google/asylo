@@ -63,8 +63,7 @@ using ::testing::Return;
 using ::testing::SetArgPointee;
 using ::testing::Test;
 
-class MockDcapLibraryInterface
-    : public DcapIntelArchitecturalEnclaveInterface::DcapLibraryInterface {
+class MockDcapLibraryInterface : public DcapLibraryInterface {
  public:
   MOCK_METHOD(quote3_error_t, qe_set_enclave_dirpath, (const char *),
               (const, override));

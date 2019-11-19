@@ -764,7 +764,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,282 @@
+@@ -0,0 +1,284 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -887,7 +887,9 @@ diff -Nur /dev/null BUILD
 +        "-Iexternal/linux_sgx/include",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +    ],
-+    visibility = ["@linux_sgx//:__subpackages__"],
++    visibility = [
++        "//visibility:public",
++    ],
 +    deps = [
 +        ":pce_constants",
 +        "@linux_sgx//:public",

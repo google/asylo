@@ -33,6 +33,7 @@
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/sgx/dcap_intel_architectural_enclave_interface.h"
+#include "asylo/identity/sgx/host_dcap_library_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/intel_ecdsa_quote.h"
 #include "asylo/identity/sgx/pce_util.h"
@@ -77,7 +78,8 @@ class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
  public:
   static void SetUpTestSuite() {
     // The enclave path is global for all calls into the DCAP API.
-    DcapIntelArchitecturalEnclaveInterface enclave_interface;
+    DcapIntelArchitecturalEnclaveInterface enclave_interface(
+        absl::make_unique<HostDcapLibraryInterface>());
     std::string intel_dirpath = absl::GetFlag(FLAGS_intel_enclave_dir);
     ASSERT_FALSE(intel_dirpath.empty());
     ASYLO_ASSERT_OK(enclave_interface.SetEnclaveDir(intel_dirpath));
@@ -152,7 +154,8 @@ class DcapIntelArchitecturalEnclaveInterfaceE2eTest : public ::testing::Test {
 
   static EnclaveManager *enclave_manager_;
 
-  DcapIntelArchitecturalEnclaveInterface enclave_interface_;
+  DcapIntelArchitecturalEnclaveInterface enclave_interface_{
+      absl::make_unique<HostDcapLibraryInterface>()};
 
  private:
   EnclaveClient *enclave_client_ = nullptr;
