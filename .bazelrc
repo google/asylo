@@ -33,3 +33,6 @@ build:sgx-sim --define=SGX_SIM=1
 # However, this is subject to change and users of this config should not
 # make assumptions about it being related to SGX.
 build:enc-sim --config=sgx-sim
+
+build:asylo-dlopen --config=asylo
+build:asylo-dlopen --define=ASYLO_DLOPEN=1

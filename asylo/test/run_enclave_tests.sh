@@ -97,7 +97,7 @@ fi
 
 if [[ " ${TO_TEST[@]} " =~ " dlopen " ]]; then
   ${BAZEL} test --test_tag_filters=+enclave_test --build_tests_only \
-    --config=asylo --define=ASYLO_DLOPEN=1 "${DLOPEN_REGRESSION_TESTS[@]}"
+    --config=asylo-dlopen "${DLOPEN_REGRESSION_TESTS[@]}"
   STAT=$((${STAT} || $?))
 fi
 
