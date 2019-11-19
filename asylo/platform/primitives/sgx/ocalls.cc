@@ -118,8 +118,7 @@ void HandleSignalInSim(int signum, siginfo_t *info, void *ucontext) {
 }
 
 // Perform a snapshot key transfer from the parent to the child.
-asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveClient *client,
-                                    int self_socket, int peer_socket,
+asylo::Status DoSnapshotKeyTransfer(int self_socket, int peer_socket,
                                     bool is_parent) {
   asylo::platform::storage::FdCloser self_socket_closer(self_socket);
   // Close the socket for the other side, and enters the enclave to send the
@@ -132,11 +131,8 @@ asylo::Status DoSnapshotKeyTransfer(asylo::EnclaveClient *client,
   asylo::ForkHandshakeConfig fork_handshake_config;
   fork_handshake_config.set_is_parent(is_parent);
   fork_handshake_config.set_socket(self_socket);
-  asylo::GenericEnclaveClient *generic_client =
-      dynamic_cast<asylo::GenericEnclaveClient *>(client);
-  std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
-      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-          generic_client->GetPrimitiveClient());
+  auto primitive_client = dynamic_cast<asylo::primitives::SgxEnclaveClient *>(
+      asylo::primitives::Client::GetCurrentClient());
   ASYLO_RETURN_IF_ERROR(primitive_client->EnterAndTransferSecureSnapshotKey(
       fork_handshake_config));
 
@@ -411,7 +407,7 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
     primitive_client->SetCurrentClient();
 
     std::string child_result = "Child fork succeeded";
-    status = DoSnapshotKeyTransfer(client, socket_pair[0], socket_pair[1],
+    status = DoSnapshotKeyTransfer(socket_pair[0], socket_pair[1],
                                    /*is_parent=*/false);
     if (!status.ok()) {
       // Inform the parent process about the failure.
@@ -452,7 +448,7 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
       errno = EFAULT;
       return -1;
     }
-    status = DoSnapshotKeyTransfer(client, /*self_socket=*/socket_pair[1],
+    status = DoSnapshotKeyTransfer(/*self_socket=*/socket_pair[1],
                                    /*peer_socket=*/socket_pair[0],
                                    /*is_parent=*/true);
     if (!status.ok()) {

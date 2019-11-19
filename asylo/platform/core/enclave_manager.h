@@ -315,7 +315,7 @@ class EnclaveManager {
 
   // Retrieves and returns a HostConfig proto as specified by the
   // EnclaveManagerOptions which the EnclaveManager was configured when its
-  // sngleton instance was created.
+  // singleton instance was created.
   HostConfig GetHostConfig() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
 
   // Loads a fake enclave with custom enclave config settings and binds it to a
