@@ -49,6 +49,9 @@ struct timespec *NanosecondsToTimeSpec(struct timespec *ts, int64_t nanosecs);
 // Converts a time in nanoseconds since the epoch to a timeval value.
 struct timeval *NanosecondsToTimeVal(struct timeval *tv, int64_t nanosecs);
 
+// Converts a time in microseconds since the epoch to a timespec value.
+struct timespec *MicrosecondsToTimeSpec(struct timespec *ts, int64_t microsecs);
+
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_COMMON_TIME_UTIL_H_

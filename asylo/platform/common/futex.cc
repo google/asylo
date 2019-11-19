@@ -23,6 +23,8 @@
 #include <sys/time.h>
 #include <unistd.h>
 
+#include "asylo/platform/common/time_util.h"
+
 namespace asylo {
 
 namespace {
@@ -38,12 +40,19 @@ int sys_futex(int32_t *uaddr, int32_t futex_op, int32_t val,
 
 extern "C" {
 
-void sys_futex_wait(int32_t *futex, int32_t expected) {
-  sys_futex(futex, FUTEX_WAIT, expected, nullptr, nullptr, 0);
+void sys_futex_wait(int32_t *futex, int32_t expected,
+                    int64_t timeout_microsec) {
+  if (timeout_microsec != 0) {
+    struct timespec wait_time;
+    MicrosecondsToTimeSpec(&wait_time, timeout_microsec);
+    sys_futex(futex, FUTEX_WAIT, expected, &wait_time, nullptr, 0);
+  } else {
+    sys_futex(futex, FUTEX_WAIT, expected, nullptr, nullptr, 0);
+  }
 }
 
-void sys_futex_wake(int32_t *futex) {
-  sys_futex(futex, FUTEX_WAKE, 0, nullptr, nullptr, 0);
+void sys_futex_wake(int32_t *futex, int32_t num) {
+  sys_futex(futex, FUTEX_WAKE, num, nullptr, nullptr, 0);
 }
 }
 

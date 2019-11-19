@@ -99,8 +99,9 @@ void UntrustedMutex::Lock() {
       }
 
       // Unless another thread has released the futex already, suspend until the
-      // thread are awoken by a call to futex_wait.
-      primitives::enc_untrusted_sys_futex_wait(untrusted_futex_, kQueued);
+      // thread is awoken by a call to futex_wait.
+      primitives::enc_untrusted_sys_futex_wait(untrusted_futex_, kQueued,
+                                               /*timeout_microsec=*/0);
 
       // After returning from futex_wait, try to obtain it again. On success,
       // futex_value will be set to kUnlocked and the loop is finished. Note
@@ -174,7 +175,7 @@ void UntrustedMutex::Unlock() {
     // suspended threads.
     if (futex_value != kHeld) {
       AtomicRelease(untrusted_futex_);
-      primitives::enc_untrusted_sys_futex_wake(untrusted_futex_);
+      primitives::enc_untrusted_sys_futex_wake(untrusted_futex_, /*num=*/1);
     }
   }
 }

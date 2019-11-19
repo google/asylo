@@ -529,10 +529,11 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
 
 void ocall_untrusted_local_free(void *buffer) { free(buffer); }
 
-void ocall_enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected) {
-  return sys_futex_wait(futex, expected);
+void ocall_enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
+                                        int64_t timeout_microsec) {
+  return sys_futex_wait(futex, expected, timeout_microsec);
 }
 
-void ocall_enc_untrusted_sys_futex_wake(int32_t *futex) {
-  return sys_futex_wake(futex);
+void ocall_enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
+  return sys_futex_wake(futex, num);
 }

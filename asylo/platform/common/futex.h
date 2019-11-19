@@ -23,13 +23,17 @@
 
 extern "C" {
 
-// Tests that the memory location `futex` contains the value `expected` and, if
-// so, suspends the calling thread until `futex` is notified by a call to
-// `futex_wake`. Otherwise returns immediately.
-void sys_futex_wait(int32_t *futex, int32_t expected);
+// Tests that the memory location `futex` contains the value
+// `expected` and, if so, suspends the calling thread until `futex` is
+// notified by a call to `futex_wake`. Otherwise returns
+// immediately. If a timeout of more than 0 microseconds is provided,
+// the calling thread will wake after the given number of microseconds, if
+// not woken earlier. If a timeout of 0 microseconds is provided, the
+// calling thread will wait indefinitely, until woken by a
+// sys_futex_wake call.
+void sys_futex_wait(int32_t *futex, int32_t expected, int64_t timeout_microsec);
 
-// Wakes at most one of the threads waiting on `futex`.
-void sys_futex_wake(int32_t *futex);
-
+// Wakes at most `num` of the threads waiting on `futex`.
+void sys_futex_wake(int32_t *futex, int32_t num);
 }
 #endif  // ASYLO_PLATFORM_COMMON_FUTEX_H_

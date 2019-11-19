@@ -100,9 +100,9 @@ enclave {
 	      bool restore_snapshot)
 	      allow(ecall_take_snapshot, ecall_restore) propagate_errno;
     void ocall_enc_untrusted_sys_futex_wait([user_check] int32_t * futex,
-        int32_t expected) propagate_errno;
-    void ocall_enc_untrusted_sys_futex_wake([user_check] int32_t * futex)
-        propagate_errno;
+        int32_t expected, int64_t timeout_microsec) propagate_errno;
+    void ocall_enc_untrusted_sys_futex_wake([user_check] int32_t * futex,
+        int32_t num) propagate_errno;
     int ocall_enc_untrusted_register_signal_handler(
         int klinux_signum,
         [user_check] void *sigaction_ptr,

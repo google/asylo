@@ -130,4 +130,7 @@ cc_library(
     srcs = ["futex.cc"],
     hdrs = ["futex.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":time_util",
+    ],
 )

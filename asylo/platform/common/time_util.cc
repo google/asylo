@@ -84,4 +84,11 @@ timeval *NanosecondsToTimeVal(timeval *tv, int64_t nanosecs) {
   return tv;
 }
 
+timespec *MicrosecondsToTimeSpec(timespec *ts, int64_t microsecs) {
+  ts->tv_sec = microsecs / kMicrosecondsPerSecond;
+  ts->tv_nsec =
+      (microsecs % kMicrosecondsPerSecond) * kNanosecondsPerMicrosecond;
+  return ts;
+}
+
 }  // namespace asylo
