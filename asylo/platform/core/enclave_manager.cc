@@ -30,13 +30,13 @@
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
 #include "asylo/platform/core/generic_enclave_client.h"
-#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/enclave_loader.h"
+#include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
 #include "asylo/util/status.h"
-#include "asylo/util/statusor.h"
 #include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace {
@@ -366,6 +366,8 @@ Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
   void *base_address = nullptr;
   if (load_config.HasExtension(sgx_load_config)) {
     SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
+    primitives::SgxEnclaveClient::SetForkedEnclaveLoader(
+        LoadEnclaveInChildProcess);
     if (sgx_config.has_fork_config()) {
       SgxLoadConfig::ForkConfig fork_config = sgx_config.fork_config();
       base_address = reinterpret_cast<void *>(fork_config.base_address());
@@ -436,6 +438,53 @@ void EnclaveManager::RemoveEnclaveReference(absl::string_view name) {
   EnclaveClient *client = client_by_name_[name].get();
   client_by_name_.erase(name);
   name_by_client_.erase(client);
+}
+
+primitives::Client *LoadEnclaveInChildProcess(absl::string_view enclave_name,
+                                              void *enclave_base_address,
+                                              size_t enclave_size) {
+  auto manager_result = EnclaveManager::Instance();
+  if (!manager_result.ok()) {
+    errno = EFAULT;
+    return nullptr;
+  }
+  EnclaveManager *manager = manager_result.ValueOrDie();
+  auto *client =
+      dynamic_cast<GenericEnclaveClient *>(manager->GetClient(enclave_name));
+  EnclaveLoadConfig load_config = manager->GetLoadConfigFromClient(client);
+
+  // Fork is currently only supported for local SGX. The child enclave should
+  // use the same loader as the parent. It loads by an SGX loader or SGX
+  // embedded loader depending on the parent enclave.
+  if (!load_config.HasExtension(sgx_load_config)) {
+    LOG(ERROR) << "Failed to get the loader for the enclave to fork.";
+    errno = EFAULT;
+    return nullptr;
+  }
+
+  // Load an enclave at the same virtual space as the parent.
+  load_config.set_name(enclave_name.data(), enclave_name.size());
+  SgxLoadConfig sgx_config = load_config.GetExtension(sgx_load_config);
+  SgxLoadConfig::ForkConfig fork_config;
+  fork_config.set_base_address(
+      reinterpret_cast<uint64_t>(enclave_base_address));
+  fork_config.set_enclave_size(enclave_size);
+  *sgx_config.mutable_fork_config() = fork_config;
+  *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
+  auto status = manager->LoadEnclave(load_config);
+  if (!status.ok()) {
+    LOG(ERROR) << "LoadEnclaveInChildProcess: Load new enclave failed:"
+               << status;
+    errno = ENOMEM;
+    return nullptr;
+  }
+
+  // Fetch the client corresponding to enclave_name, which should now point to
+  // the child enclave.
+  client = dynamic_cast<asylo::GenericEnclaveClient *>(
+      manager->GetClient(enclave_name));
+  auto primitive_client = client->GetPrimitiveClient();
+  return primitive_client.get();
 }
 
 };  // namespace asylo

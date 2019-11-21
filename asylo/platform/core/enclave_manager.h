@@ -36,6 +36,7 @@
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"
 #include "asylo/platform/primitives/enclave_type.h"
+#include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"  // IWYU pragma: export
 #include "asylo/util/statusor.h"
@@ -323,8 +324,7 @@ class EnclaveManager {
   // backend technology and is strictly meant to be used for testing only. The
   // actual work of opening the enclave is delegated to the passed loader
   // object.
-  Status LoadFakeEnclave(absl::string_view name,
-                         const EnclaveLoader &loader,
+  Status LoadFakeEnclave(absl::string_view name, const EnclaveLoader &loader,
                          const EnclaveConfig &config,
                          void *base_address = nullptr,
                          const size_t enclave_size = 0)
@@ -407,6 +407,18 @@ class EnclaveLoader {
 
   virtual EnclaveLoadConfig GetEnclaveLoadConfig() const = 0;
 };
+
+// Loads a new enclave with the provided parent enclave name, base virtual
+// address and enclave size, as part of servicing a trusted fork() call inside
+// the enclave. Returns a pointer to the primitives Client of the enclave
+// loaded. The method does not set the current_client of the primitives Client
+// with the Client it returns. That is the responsibility of the caller, if
+// desired.
+// This method currently only supports SGX, since fork is only supported for
+// local SGX.
+primitives::Client *LoadEnclaveInChildProcess(absl::string_view enclave_name,
+                                              void *enclave_base_address,
+                                              size_t enclave_size);
 
 }  // namespace asylo
 

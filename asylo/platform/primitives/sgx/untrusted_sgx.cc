@@ -56,6 +56,16 @@ namespace {
 
 constexpr absl::string_view kCallingProcessBinaryFile = "/proc/self/exe";
 
+// |forked_loader_callback| allows to statically store a callback function that
+// is responsible for creating a new enclave in the forked child process. The
+// callback should load the enclave with the provided enclave name, enclave size
+// and virtual base address, which should be the same as the parent enclave. The
+// child enclave's primitive client should not set the current_client to itself;
+// that is the responsibility of the caller.
+// We prefer a C-style function pointer for forked_loader_callback_t since it is
+// trivially destructible when used statically.
+forked_loader_callback_t forked_loader_callback;
+
 constexpr int kMaxEnclaveCreateAttempts = 5;
 
 // Edger8r-generated primitives ecall marshalling struct.
@@ -491,6 +501,15 @@ Status SgxEnclaveClient::EnterAndTransferSecureSnapshotKey(
 bool SgxEnclaveClient::IsTcsActive() { return (sgx_is_tcs_active(id_) != 0); }
 
 void SgxEnclaveClient::SetProcessId() { sgx_set_process_id(id_); }
+
+void SgxEnclaveClient::SetForkedEnclaveLoader(
+    forked_loader_callback_t callback) {
+  forked_loader_callback = callback;
+}
+
+forked_loader_callback_t SgxEnclaveClient::GetForkedEnclaveLoader() {
+  return forked_loader_callback;
+}
 
 }  // namespace primitives
 }  // namespace asylo

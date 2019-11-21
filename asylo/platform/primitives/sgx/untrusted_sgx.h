@@ -34,6 +34,10 @@
 namespace asylo {
 namespace primitives {
 
+typedef Client *(*forked_loader_callback_t)(absl::string_view enclave_name,
+                                            void *enclave_base_address,
+                                            size_t enclave_size);
+
 // Implementation of the generic "EnclaveBackend" concept for Intel Software
 // Guard Extensions (SGX) based enclaves located in shared object files read
 // from the file system.
@@ -106,6 +110,14 @@ class SgxEnclaveClient : public Client {
 
   // Sets a new expected process ID for an existing SGX enclave.
   void SetProcessId();
+
+  // Sets the callback function which loads a new child enclave based on the
+  // parent when fork() is called.
+  static void SetForkedEnclaveLoader(forked_loader_callback_t callback);
+
+  // Gets the callback function which loads a new child enclave based on the
+  // parent when fork() is called.
+  static forked_loader_callback_t GetForkedEnclaveLoader();
 
  protected:
   Status EnclaveCallInternal(uint64_t selector, MessageWriter *input,

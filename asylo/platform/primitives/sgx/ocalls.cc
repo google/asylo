@@ -37,14 +37,10 @@
 #include <iterator>
 #include <vector>
 
-#include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/futex.h"
 #include "asylo/platform/common/memory.h"
-#include "asylo/platform/core/enclave_manager.h"
-#include "asylo/platform/core/generic_enclave_client.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_u.h"
-#include "asylo/platform/primitives/sgx/loader.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
 #include "asylo/platform/primitives/sgx/signal_dispatcher.h"
 #include "asylo/platform/primitives/sgx/untrusted_sgx.h"
@@ -249,17 +245,11 @@ int ocall_enc_untrusted_register_signal_handler(int klinux_signum,
 
 int32_t ocall_enc_untrusted_fork(const char *enclave_name,
                                  bool restore_snapshot) {
-  auto manager_result = asylo::EnclaveManager::Instance();
-  if (!manager_result.ok()) {
+  auto primitive_client = dynamic_cast<asylo::primitives::SgxEnclaveClient *>(
+      asylo::primitives::Client::GetCurrentClient());
+  if (!primitive_client) {
     return -1;
   }
-  asylo::EnclaveManager *manager = manager_result.ValueOrDie();
-  asylo::GenericEnclaveClient *client =
-      dynamic_cast<asylo::GenericEnclaveClient *>(
-          manager->GetClient(enclave_name));
-  std::shared_ptr<asylo::primitives::SgxEnclaveClient> primitive_client =
-      std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-          client->GetPrimitiveClient());
 
   if (!restore_snapshot) {
     // No need to take and restore a snapshot, just set indication that the new
@@ -325,17 +315,6 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
                    return SnapshotDataDeleter(entry);
                  });
 
-  asylo::EnclaveLoadConfig load_config =
-      manager->GetLoadConfigFromClient(client);
-
-  // The child enclave should use the same loader as the parent. It loads by an
-  // SGX loader or SGX embedded loader depending on the parent enclave.
-  if (!load_config.HasExtension(asylo::sgx_load_config)) {
-    LOG(ERROR) << "Failed to get the loader for the enclave to fork";
-    errno = EFAULT;
-    return -1;
-  }
-
   // Create a socket pair used for communication between the parent and child
   // enclave. |socket_pair[0]| is used by the parent enclave and
   // |socket_pair[1]| is used by the child enclave.
@@ -361,40 +340,32 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
     return pid;
   }
 
-  size_t enclave_size = primitive_client->GetEnclaveSize();
-
   if (pid == 0) {
     if (close(pipefd[0]) < 0) {
       LOG(ERROR) << "failed to close pipefd: " << strerror(errno);
       errno = EFAULT;
       return -1;
     }
-    // Load an enclave at the same virtual space as the parent.
-    load_config.set_name(enclave_name);
-    asylo::SgxLoadConfig sgx_config =
-        load_config.GetExtension(asylo::sgx_load_config);
-    asylo::SgxLoadConfig::ForkConfig fork_config;
-    fork_config.set_base_address(
-        reinterpret_cast<uint64_t>(enclave_base_address));
-    fork_config.set_enclave_size(enclave_size);
-    *sgx_config.mutable_fork_config() = fork_config;
-    *load_config.MutableExtension(asylo::sgx_load_config) = sgx_config;
-    status = manager->LoadEnclave(load_config);
-    if (!status.ok()) {
-      LOG(ERROR) << "Load new enclave failed:" << status;
-      errno = ENOMEM;
+
+    auto callback =
+        asylo::primitives::SgxEnclaveClient::GetForkedEnclaveLoader();
+    if (!callback) {
+      LOG(ERROR) << "forked_loader_callback not set.";
+      errno = EFAULT;
+      return -1;
+    }
+    auto child_primitive_client =
+        dynamic_cast<asylo::primitives::SgxEnclaveClient *>(
+            callback(enclave_name, enclave_base_address,
+                     primitive_client->GetEnclaveSize()));
+    if (!child_primitive_client) {
+      // errno should be already set by ForkedEnclaveLoader.
       return -1;
     }
 
     // Verifies that the new enclave is loaded at the same virtual address space
     // as the parent enclave.
-    client = dynamic_cast<asylo::GenericEnclaveClient *>(
-        manager->GetClient(enclave_name));
-    primitive_client =
-        std::static_pointer_cast<asylo::primitives::SgxEnclaveClient>(
-            client->GetPrimitiveClient());
-
-    void *child_enclave_base_address = primitive_client->GetBaseAddress();
+    void *child_enclave_base_address = child_primitive_client->GetBaseAddress();
     if (child_enclave_base_address != enclave_base_address) {
       LOG(ERROR) << "New enclave address: " << child_enclave_base_address
                  << " is different from the parent enclave address: "
@@ -405,7 +376,7 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
 
     // Sets |current_client_| to the new client pointing to the child enclave,
     // instead of the one to the parent.
-    primitive_client->SetCurrentClient();
+    child_primitive_client->SetCurrentClient();
 
     std::string child_result = "Child fork succeeded";
     status = DoSnapshotKeyTransfer(socket_pair[0], socket_pair[1],
@@ -424,7 +395,7 @@ int32_t ocall_enc_untrusted_fork(const char *enclave_name,
     }
 
     // Enters the child enclave and restore the enclave memory.
-    status = primitive_client->EnterAndRestore(snapshot_layout);
+    status = child_primitive_client->EnterAndRestore(snapshot_layout);
     if (!status.ok()) {
       // Inform the parent process about the failure.
       child_result = "Child EnterAndRestore failed";
