@@ -30,6 +30,9 @@ namespace sgx {
 
 // DcapLibraryInterface provides an interface allowing unit tests to inject
 // mocks when constructing DcapIntelArchitecturalEnclaveInterface.
+//
+// Use of this interface is documented in
+// https://download.01.org/intel-sgx/dcap-1.2/linux/docs/Intel_SGX_ECDSA_QuoteGenReference_DCAP_API_Linux_1.2.pdf
 class DcapLibraryInterface {
  public:
   virtual ~DcapLibraryInterface() = default;

@@ -26,6 +26,7 @@
 #include <cstdint>
 
 #include "asylo/platform/system_call/type_conversions/types.h"
+#include "include/sgx_report.h"
 
 namespace asylo {
 namespace primitives {
@@ -64,6 +65,29 @@ void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
 
 // Exits the enclave and wakes a suspended thread blocked on |futex|.
 void enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num);
+
+// Exits the enclave and calls into the Intel Data Center Attestation Primitives
+// library to get the target info required to build a report targeting the Intel
+// Quoting enclave. This function is expected to be called before generating the
+// `sgx_report_t` to be passed to `enc_untrusted_qe_get_quote`, as SGX requires
+// reports to be targeted to specific enclaves.
+uint32_t enc_untrusted_qe_get_target_info(sgx_target_info_t *qe_target_info);
+
+// Exits the enclave and calls into the Intel Data Center Attestation Primitives
+// library to get the size of the buffer required to hold a quote. This function
+// is expected to be called to get the appropriate quote buffer size before
+// calling `enc_untrusted_qe_get_quote`.
+uint32_t enc_untrusted_qe_get_quote_size(uint32_t *quote_size);
+
+// Exits the enclave and calls into the Intel Data Center Attestation Primitives
+// library to get a remotely verifiable |quote| of an enclave's identity. The
+// enclave to be attested must first generate |app_report|, a locally-verifiable
+// attestation, then pass it to this function. The Intel quoting enclave will
+// verify |app_report| and generate a remotely verifiable attestation which is
+// stored in |quote|. |quote_size| must be large enough to hold the full
+// |quote|, or the function will fail with an error.
+uint32_t enc_untrusted_qe_get_quote(const sgx_report_t *app_report,
+                                    uint32_t quote_size, uint8_t *quote);
 
 }  // namespace primitives
 }  // namespace asylo

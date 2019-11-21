@@ -39,6 +39,8 @@ enclave {
       sgx_thread_set_multiple_untrusted_events_ocall;
   from "../../../platform/primitives/sgx/errno.edl" import *;
 
+  include "include/sgx_report.h"
+
   trusted {
     // Invokes the trusted entry point designated by `selector`.
     // WARNING: Do not add calls before ecall_displatch_trusted_call, as callers
@@ -108,5 +110,16 @@ enclave {
         [user_check] void *sigaction_ptr,
         [in, size=klinux_mask_len] const void *klinux_mask, int klinux_mask_len,
         int64_t flags);
+
+    // The following functions invoke the Intel DCAP library. These functions
+    // support getting remotely verifiable quotes of an enclave's identity.
+    uint32_t ocall_enc_untrusted_qe_get_target_info(
+        [out] sgx_target_info_t *qe_target_info);
+    uint32_t ocall_enc_untrusted_qe_get_quote_size(
+        [out] uint32_t *quote_size);
+    uint32_t ocall_enc_untrusted_qe_get_quote(
+        [in] const sgx_report_t *app_report,
+	uint32_t quote_size,
+	[out, size=quote_size] uint8_t *quote);
   };
 };

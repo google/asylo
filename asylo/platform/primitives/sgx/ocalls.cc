@@ -55,6 +55,7 @@
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
+#include "QuoteGeneration/quote_wrapper/ql/inc/sgx_dcap_ql_wrapper.h"
 
 namespace {
 
@@ -519,9 +520,23 @@ void ocall_untrusted_local_free(void *buffer) { free(buffer); }
 
 void ocall_enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
                                         int64_t timeout_microsec) {
-  return sys_futex_wait(futex, expected, timeout_microsec);
+  sys_futex_wait(futex, expected, timeout_microsec);
 }
 
 void ocall_enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
-  return sys_futex_wake(futex, num);
+  sys_futex_wake(futex, num);
+}
+
+uint32_t ocall_enc_untrusted_qe_get_target_info(
+    sgx_target_info_t *qe_target_info) {
+  return sgx_qe_get_target_info(qe_target_info);
+}
+
+uint32_t ocall_enc_untrusted_qe_get_quote_size(uint32_t *quote_size) {
+  return sgx_qe_get_quote_size(quote_size);
+}
+
+uint32_t ocall_enc_untrusted_qe_get_quote(const sgx_report_t *app_report,
+                                          uint32_t quote_size, uint8_t *quote) {
+  return sgx_qe_get_quote(app_report, quote_size, quote);
 }

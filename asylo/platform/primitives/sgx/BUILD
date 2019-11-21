@@ -393,6 +393,8 @@ cc_library(
         "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
+        "@sgx_dcap//:pce_wrapper",
+        "@sgx_dcap//:quote_wrapper",
     ],
 )
 

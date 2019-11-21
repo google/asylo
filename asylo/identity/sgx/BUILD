@@ -1585,6 +1585,20 @@ cc_library(
     ],
 )
 
+cc_library(
+    name = "enclave_dcap_library_interface",
+    srcs = ["enclave_dcap_library_interface.cc"],
+    hdrs = ["enclave_dcap_library_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    tags = [
+        "manual",
+    ],
+    deps = [
+        ":dcap_library_interface",
+        "//asylo/platform/primitives/sgx:trusted_sgx",
+    ],
+)
+
 proto_library(
     name = "report_oracle_enclave_proto",
     srcs = ["report_oracle_enclave.proto"],

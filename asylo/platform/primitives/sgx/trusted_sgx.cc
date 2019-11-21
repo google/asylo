@@ -355,5 +355,25 @@ void enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
   CHECK_OCALL(ocall_enc_untrusted_sys_futex_wake(futex, num));
 }
 
+uint32_t enc_untrusted_qe_get_target_info(sgx_target_info_t *qe_target_info) {
+  uint32_t result;
+  CHECK_OCALL(ocall_enc_untrusted_qe_get_target_info(&result, qe_target_info));
+  return result;
+}
+
+uint32_t enc_untrusted_qe_get_quote_size(uint32_t *quote_size) {
+  uint32_t result;
+  CHECK_OCALL(ocall_enc_untrusted_qe_get_quote_size(&result, quote_size));
+  return result;
+}
+
+uint32_t enc_untrusted_qe_get_quote(const sgx_report_t *app_report,
+                                    uint32_t quote_size, uint8_t *quote) {
+  uint32_t result;
+  CHECK_OCALL(
+      ocall_enc_untrusted_qe_get_quote(&result, app_report, quote_size, quote));
+  return result;
+}
+
 }  // namespace primitives
 }  // namespace asylo
