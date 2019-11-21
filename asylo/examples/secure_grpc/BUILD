@@ -17,6 +17,7 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
+    "enclave_loader",
     "enclave_test",
 )
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
@@ -163,6 +164,26 @@ cc_library(
     ],
 )
 
+# The driver for the gRPC server enclave.
+enclave_loader(
+    name = "grpc_server",
+    srcs = ["grpc_server_main.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": ":grpc_server_enclave.so"},
+    loader_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        ":grpc_server_util",
+        "//asylo:enclave_client",
+        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/time",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
 cc_library(
     name = "grpc_client_util",
     srcs = ["grpc_client_util.cc"],
@@ -186,6 +207,25 @@ cc_library(
     name = "attestation_domain",
     srcs = ["attestation_domain.cc"],
     hdrs = ["attestation_domain.h"],
+)
+
+enclave_loader(
+    name = "grpc_client",
+    srcs = ["grpc_client_main.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": ":grpc_client_enclave.so"},
+    loader_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        ":grpc_client_enclave_cc_proto",
+        ":grpc_client_util",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
 )
 
 # A test of the example using the client enclave and the server enclave.
