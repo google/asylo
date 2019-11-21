@@ -133,7 +133,7 @@ The three rules have the following purposes:
     Asylo toolchain. This binary will be used to produce the signed release
     enclave.
 *   `sgx_generate_sigstruct` extracts the SGX sigstruct (see
-    [Intel documentation](https://software.intel.com/en-us/node/702979) from
+    [Intel documentation](https://software.intel.com/en-us/node/702979)) from
     `enclave_unsigned.so` and the provided config. This material is produced
     using the `gendata` command of
     [Intel's enclave signing tool](https://software.intel.com/en-us/sgx-sdk-dev-reference-the-enclave-signing-tool).
