@@ -29,8 +29,8 @@ namespace asylo {
 EnclaveAssertionAuthorityConfig GetNullAssertionAuthorityTestConfig();
 
 // Creates a suitable test configuration for the SGX local assertion authority.
-// This configuration is required when using the SgxLocalAssertionGenerator or
-// SgxLocalAssertionVerifier.
+// This configuration is required when using the SgxLocalAssertionGenerator,
+// SgxLocalAssertionVerifier, or SgxRemoteAssertionGenerator.
 EnclaveAssertionAuthorityConfig GetSgxLocalAssertionAuthorityTestConfig();
 
 }  // namespace asylo
