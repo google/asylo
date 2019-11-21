@@ -4685,7 +4685,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,736 @@
+@@ -0,0 +1,774 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4827,7 +4827,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    if not transitions.supported(native.package_name()):
 +        sgx_cc_unsigned_enclave(
 +            name = name,
-+            stamp = stamp,
++            stamp = not (not stamp),
 +            **kwargs
 +        )
 +    else:
@@ -5133,19 +5133,19 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        testonly = testonly,
 +    )
 +
-+def _sgx_generate_sigstruct_impl(ctx):
++def _sgx_generate_enclave_signing_material_impl(ctx):
 +    """Implementation of the sign_tool's gendata command for sigstructs."""
-+    sigstruct = ctx.outputs.sigstruct
-+    if not sigstruct:
-+        sigstruct = ctx.actions.declare_file(ctx.label.name + ".dat")
++    signing_material = ctx.outputs.signing_material
++    if not signing_material:
++        signing_material = ctx.actions.declare_file(ctx.label.name + ".dat")
 +    ctx.actions.run_shell(
 +        inputs = [
 +            ctx.file.unsigned,
 +            ctx.file.config,
 +        ],
 +        tools = [ctx.executable._sign_tool],
-+        outputs = [sigstruct],
-+        progress_message = "Generating SIGSTRUCT material for: //{pkg}:{name}".format(
++        outputs = [signing_material],
++        progress_message = "Generating enclave signing material for: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
 +            name = ctx.attr.unsigned.label.name,
 +        ),
@@ -5158,19 +5158,21 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            "-config",
 +            ctx.file.config.path,
 +            "-out",
-+            sigstruct.path,
++            signing_material.path,
 +        ],
 +    )
 +    return [
-+        DefaultInfo(files = depset([sigstruct])),
++        DefaultInfo(files = depset([signing_material])),
 +        SGXSigstructInfo(
 +            config = ctx.file.config,
 +            unsigned = ctx.attr.unsigned,
 +        ),
 +    ]
 +
-+sgx_generate_sigstruct = rule(
-+    implementation = _sgx_generate_sigstruct_impl,
++sgx_generate_enclave_signing_material = rule(
++    implementation = _sgx_generate_enclave_signing_material_impl,
++    doc = ("Creates a file that contains the parts of the enclave SIGSTRUCT" +
++           " that must be signed."),
 +    attrs = {
 +        "config": attr.label(
 +            mandatory = True,
@@ -5185,7 +5187,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            doc = ("The label of the unsigned enclave binary to be measured " +
 +                   "and hashed as a SIGSTRUCT field"),
 +        ),
-+        "sigstruct": attr.output(
++        "signing_material": attr.output(
 +            doc = "The name of the output file. Default is \"<name>.dat\".",
 +        ),
 +        "_sign_tool": attr.label(
@@ -5197,37 +5199,54 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    },
 +)
 +
-+def _sign_sigstruct_impl(ctx):
++def sgx_generate_sigstruct(name, sigstruct = None, **kwargs):
++    """Creates a file that contains parts of the enclave SIGSTRUCT.
++
++    Args:
++        name: The rule name.
++        sigstruct: The name of the output file. Default is "<name>.dat".
++        **kwargs: The arguments passed to sgx_generate_enclave_signing_material.
++    """
++    sgx_generate_enclave_signing_material(
++        name = name,
++        deprecation = ("Please use sgx_generate_enclave_signing_material " +
++                       "because this macro may be removed or change meaning " +
++                       "in the future."),
++        signing_material = sigstruct,
++        **kwargs
++    )
++
++def _sign_signing_material_impl(ctx):
 +    signature = ctx.attr.signature or ctx.actions.declare_file(ctx.label.name + ".sig")
 +    ctx.actions.run_shell(
 +        outputs = [signature],
-+        inputs = [ctx.file.private_key, ctx.file.sigstruct],
++        inputs = [ctx.file.private_key, ctx.file.signing_material],
 +        tools = [ctx.executable._bssl],
-+        command = "{bssl} {args} < {sigstruct} > {signature}".format(
++        command = "{bssl} {args} < {signing_material} > {signature}".format(
 +            bssl = ctx.file._bssl.path,
 +            args = " ".join(["sign", "-digest", "sha256", "-key", ctx.file.private_key.path]),
-+            sigstruct = ctx.file.sigstruct.path,
++            signing_material = ctx.file.signing_material.path,
 +            signature = signature.path,
 +        ),
 +    )
 +    return [DefaultInfo(files = depset([signature]))]
 +
-+boringssl_sign_sigstruct = rule(
-+    implementation = _sign_sigstruct_impl,
-+    doc = ("Signs a sigstruct file with a given private key for use in " +
-+           "sgx_signed_enclave."),
++boringssl_sign_enclave_signing_material = rule(
++    implementation = _sign_signing_material_impl,
++    doc = ("Signs an enclave signing material file with a given private " +
++           "key for use in sgx_signed_enclave."),
 +    attrs = {
-+        "sigstruct": attr.label(
++        "signing_material": attr.label(
 +            mandatory = True,
 +            allow_single_file = True,
 +            providers = [SGXSigstructInfo],
-+            doc = "A target defined by sgx_generate_sigstruct.",
++            doc = "A target defined by sgx_generate_enclave_signing_material.",
 +        ),
 +        "private_key": attr.label(
 +            mandatory = True,
 +            allow_single_file = True,
 +            doc = ("The RSA-3072 private key with public exponent 3 in PEM " +
-+                   "format used to sign the input sigstruct."),
++                   "format used to sign the input enclave signing material."),
 +        ),
 +        "signature": attr.output(
 +            doc = "The output signature file name [default: <name>.sig].",
@@ -5241,10 +5260,27 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    },
 +)
 +
++def boringssl_sign_sigstruct(name, sigstruct, **kwargs):
++    """Signs enclave signing material with a given private key.
++
++    Args:
++        name: The rule name.
++        sigstruct: A target defined by sgx_generate_enclave_signing_material.
++        **kwargs: The arguments passed to boringssl_sign_enclave_signing_material.
++    """
++    boringssl_sign_enclave_signing_material(
++        name = name,
++        signing_material = sigstruct,
++        deprecation = ("Please use boringssl_sign_enclave_signing_material " +
++                       "as boringssl_sign_sigstruct is deprecated and will " +
++                       "be removed in the future."),
++        **kwargs
++    )
++
 +def _sgx_signed_enclave_impl(ctx):
 +    """Implementation of incorporating a signature into an enclave binary."""
-+    config = ctx.attr.sigstruct[SGXSigstructInfo].config
-+    unsigned = ctx.attr.sigstruct[SGXSigstructInfo].unsigned
++    config = ctx.attr.signing_material[SGXSigstructInfo].config
++    unsigned = ctx.attr.signing_material[SGXSigstructInfo].unsigned
 +    if SGXEnclaveInfo not in unsigned:
 +        fail("Unsigned enclave referenced in config does not have SGXEnclaveInfo provider")
 +    unsigned_file = unsigned.files.to_list()[0]
@@ -5253,7 +5289,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            config,
 +            ctx.file.public_key,
 +            ctx.file.signature,
-+            ctx.file.sigstruct,
++            ctx.file.signing_material,
 +            unsigned_file,
 +        ],
 +        tools = [ctx.executable._sign_tool],
@@ -5275,7 +5311,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            "-config",
 +            config.path,
 +            "-unsigned",
-+            ctx.file.sigstruct.path,
++            ctx.file.signing_material.path,
 +            "-out",
 +            ctx.outputs.executable.path,
 +        ],
@@ -5300,14 +5336,14 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        "signature": attr.label(
 +            mandatory = True,
 +            allow_single_file = True,
-+            doc = "The sha256 digest of the sigstruct signed by the " +
-+                  "RSA-3072 private key with public exponent 3.",
++            doc = "The sha256 digest of the enclave signing material signed " +
++                  "by the RSA-3072 private key with public exponent 3.",
 +        ),
-+        "sigstruct": attr.label(
++        "signing_material": attr.label(
 +            mandatory = True,
 +            allow_single_file = True,
 +            providers = [SGXSigstructInfo],
-+            doc = ("The label of a sgx_generate_sigstruct target that " +
++            doc = ("The label of a sgx_generate_enclave_signing_material target that " +
 +                   "includes both the unsigned enclave and its config."),
 +        ),
 +        "_sign_tool": attr.label(
@@ -5414,9 +5450,11 @@ diff -Nur /dev/null sgx_sdk.bzl
 +sgx = struct(
 +    backend_labels = SGX_BACKEND_LABELS,
 +    boringssl_sign_sigstruct = boringssl_sign_sigstruct,
++    boringssl_sign_enclave_signing_material = boringssl_sign_enclave_signing_material,
 +    debug_enclave = sgx_debug_enclave,
 +    enclave_configuration = sgx_enclave_configuration,
 +    full_enclave_configuration = sgx_full_enclave_configuration,
++    generate_enclave_signing_material = sgx_generate_enclave_signing_material,
 +    generate_sigstruct = sgx_generate_sigstruct,
 +    signed_enclave = sgx_signed_enclave,
 +    tags = sgx_tags,
