@@ -1,0 +1,45 @@
+//
+// Copyright 2019 Asylo authors
+//
+// Licensed under the Apache License, Version 2.0 (the "License");
+// you may not use this file except in compliance with the License.
+// You may obtain a copy of the License at
+//
+//     http://www.apache.org/licenses/LICENSE-2.0
+//
+// Unless required by applicable law or agreed to in writing, software
+// distributed under the License is distributed on an "AS IS" BASIS,
+// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+// See the License for the specific language governing permissions and
+// limitations under the License.
+//
+
+syntax = "proto2";
+
+package examples.secure_grpc;
+
+import "asylo/enclave.proto";
+import "asylo/examples/grpc_server/translator_server.proto";
+
+extend asylo.EnclaveInput {
+  optional GrpcClientEnclaveInput client_enclave_input = 277829866;
+}
+
+extend asylo.EnclaveOutput {
+  optional GrpcClientEnclaveOutput client_enclave_output = 277829866;
+}
+
+// Input for a GrpcClientEnclave.
+message GrpcClientEnclaveInput {
+  // The address of the server to contact.
+  optional string server_address = 1;
+
+  // The request for the GetTranslation RPC.
+  optional examples.grpc_server.GetTranslationRequest translation_request = 2;
+}
+
+// Output for a GrpcClientEnclave.
+message GrpcClientEnclaveOutput {
+  // The response from the GetTranslation RPC.
+  optional examples.grpc_server.GetTranslationResponse translation_response = 1;
+}

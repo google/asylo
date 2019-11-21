@@ -1,0 +1,33 @@
+# Message type: asylo.SgxIdentityExpectation
+reference_identity: {
+  code_identity: {
+    signer_assigned_identity: {
+      mrsigner: {
+        # This value corresponds to the Asylo debug signing key.
+        hash: "\x83\xd7\x19\xe7\x7d\xea\xca\x14\x70\xf6\xba\xf6\x2a\x4d\x77\x43\x03\xc8\x99\xdb\x69\x02\x0f\x9c\x70\xee\x1d\xfc\x08\xc7\xce\x9e"
+      }
+      isvprodid: 2
+      isvsvn: 1
+    }
+    miscselect: 0
+    attributes: {
+      flags: 0x0
+      xfrm: 0x0
+    }
+  }
+}
+match_spec: {
+  machine_configuration_match_spec: {
+    is_cpu_svn_match_required: false
+    is_sgx_type_match_required: false
+  }
+  code_identity_match_spec: {
+    is_mrenclave_match_required: false
+    is_mrsigner_match_required: true
+    miscselect_match_mask: 0x0
+    attributes_match_mask: {
+      flags: 0x0
+      xfrm: 0x0
+    }
+  }
+}
