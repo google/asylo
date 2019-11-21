@@ -42,7 +42,7 @@
 #include "asylo/util/proto_struct_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
-#include <curl/curl.h>
+#include "asylo/util/url_util.h"
 
 namespace asylo {
 namespace sgx {
@@ -54,20 +54,6 @@ constexpr uint32_t kPcesvnSize = 2;
 
 // Size of the RawTcb in bytes.
 constexpr uint32_t kRawTcbSize = kCpusvnSize + kPcesvnSize;
-
-StatusOr<std::string> UrlDecode(absl::string_view url) {
-  std::unique_ptr<CURL, TypedFunctionDeleter<CURL, &curl_easy_cleanup>> curl(
-      curl_easy_init());
-  int out_size = 0;
-  std::unique_ptr<char[], FunctionDeleter<&curl_free>> result_url(
-      curl_easy_unescape(curl.get(), url.data(), url.size(), &out_size));
-  if (result_url == nullptr) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Url cannot be decoded: ", url));
-  }
-  std::string return_str(result_url.get(), out_size);
-  return return_str;
-}
 
 // Parses a Certificate proto from JSON string |cert_json|.
 StatusOr<Certificate> CertificateFromJsonValue(

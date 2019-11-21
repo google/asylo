@@ -588,3 +588,33 @@ cc_test(
         "@com_google_googletest//:gtest",
     ],
 )
+
+cc_library(
+    name = "url_util",
+    srcs = ["url_util.cc"],
+    hdrs = ["url_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":error_codes",
+        ":function_deleter",
+        ":status",
+        "@com_google_absl//absl/strings",
+    ] + select({
+        # Prevent accidentally inserting libcurl into enclave depedencies.
+        "@com_google_asylo//asylo": [],
+        "//conditions:default": ["@com_github_curl_curl//:curl"],
+    }),
+)
+
+cc_test(
+    name = "url_util_test",
+    srcs = ["url_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":url_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)

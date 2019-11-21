@@ -2032,10 +2032,6 @@ cc_library(
         ":platform_provisioning_cc_proto",
         ":tcb_cc_proto",
         ":tcb_info_from_json",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:certificate_util",
         "//asylo/util:error_codes",
@@ -2043,11 +2039,12 @@ cc_library(
         "//asylo/util:hex_util",
         "//asylo/util:proto_struct_util",
         "//asylo/util:status",
-    ] + select({
-        # Prevent accidentally inserting libcurl into enclave depedencies.
-        "@com_google_asylo//asylo": [],
-        "//conditions:default": ["@com_github_curl_curl//:curl"],
-    }),
+        "//asylo/util:url_util",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
 )
 
 cc_test(
