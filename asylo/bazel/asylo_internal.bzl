@@ -70,7 +70,7 @@ def internal_embed_enclaves(name, elf_file, enclaves, **kwargs):
             objcopy_flags = " ".join(objcopy_flags),
             elf_file = elf_file,
         ),
-        tags = ["manual"],
+        tags = ["manual"] + kwargs.pop("tags", []),
         toolchains = ["@bazel_tools//tools/cpp:current_cc_toolchain"],
         **kwargs
     )

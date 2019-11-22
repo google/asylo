@@ -81,8 +81,12 @@ _primitives_dlopen_enclave_new = _make_primitives_dlopen_enclave(True)
 
 def primitives_dlopen_enclave(name, **kwargs):
     _impl = _primitives_dlopen_enclave_old
+    kwargs = dict(kwargs)
     if transitions.supported(native.package_name()):
         _impl = _primitives_dlopen_enclave_new
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
+    else:
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(name = name, **kwargs)
 
 def dlopen_enclave_loader(

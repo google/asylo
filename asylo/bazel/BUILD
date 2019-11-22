@@ -18,6 +18,7 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKENDS",
     "ASYLO_ALL_BACKEND_TAGS",
     "cc_enclave_test",
     "embed_enclaves",
@@ -32,6 +33,7 @@ exports_files([
     "copts.bzl",
     "dlopen_enclave.bzl",
     "installation_path.bzl",
+    "passing_test.sh",
     "sgx_deps.bzl",
     "sgx_rules.bzl",
 ])
@@ -161,5 +163,17 @@ alias(
         "@linux_sgx//:sgx_hw": _sgx_default_sign_config,
         "//conditions:default": "@com_google_asylo_backend_provider//:empty",
     }),
+    visibility = ["//visibility:public"],
+)
+
+# A trivially passing test for build tests and populating tags meant for
+# refactoring migrations.
+sh_test(
+    name = "passing_test",
+    srcs = ["passing_test.sh"],
+    tags = ASYLO_ALL_BACKENDS + [
+        "asylo-cfh",
+        "asylo-transition",
+    ],
     visibility = ["//visibility:public"],
 )

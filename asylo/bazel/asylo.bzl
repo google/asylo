@@ -112,8 +112,12 @@ def embed_enclaves(name, elf_file, enclaves, **kwargs):
       **kwargs: genrule arguments.
     """
     _impl = _embed_enclaves_old
+    kwargs = dict(kwargs)
     if transitions.supported(native.package_name()):
         _impl = internal.embed_enclaves
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
+    else:
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(
         name = name,
         elf_file = elf_file,
@@ -204,6 +208,7 @@ def enclave_loader(
         "data": kwargs.get("data", []),
     }
     if transitions.supported(native.package_name()):
+        script_kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
         backend_tools.all_backends(
             rule_or_macro = _enclave_runner_script_new,
             name = name,
@@ -212,6 +217,7 @@ def enclave_loader(
             name_by_backend = name_by_backend,
         )
     else:
+        script_kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"] + backend_tools.tags(backends)
         _enclave_runner_script_old(name = name, **script_kwargs)
 
 def dlopen_enclave_loader(
@@ -266,8 +272,12 @@ def cc_backend_unsigned_enclave(name, backend, **kwargs):
         **kwargs: Arguments to cc_binary.
     """
     _impl = _cc_backend_unsigned_enclave_old
+    kwargs = dict(kwargs)
     if transitions.supported(native.package_name()):
         _impl = _cc_backend_unsigned_enclave_new
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
+    else:
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(name = name, backend = backend, **kwargs)
 
 def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
@@ -279,8 +289,12 @@ def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
         **kwargs: Arguments to cc_binary.
     """
     _impl = _cc_backend_unsigned_enclave_experimental_old
+    kwargs = dict(kwargs)
     if transitions.supported(native.package_name()):
         _impl = _cc_backend_unsigned_enclave_experimental_new
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
+    else:
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(name = name, backend = backend, **kwargs)
 
 def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs):
@@ -301,6 +315,9 @@ def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs)
     _impl = _backend_debug_sign_enclave_old
     if transitions.supported(native.package_name()):
         _impl = _backend_debug_sign_enclave_new
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
+    else:
+        kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(
         name = name,
         backend = backend,
@@ -513,6 +530,9 @@ def _enclave_runner_script(
     _impl = _enclave_runner_script_old
     if transitions.supported(native.package_name()):
         _impl = _enclave_runner_script_new
+        tags = tags + ["asylo-transition"]
+    else:
+        tags = tags + ["asylo-cfh"]
     _impl(
         name = name,
         loader = loader,
@@ -543,6 +563,9 @@ def _enclave_runner_test(
     _impl = _enclave_runner_test_old
     if transitions.supported(native.package_name()):
         _impl = _enclave_runner_test_new
+        tags = tags + ["asylo-transition"]
+    else:
+        tags = tags + ["asylo-cfh"]
     _impl(
         name = name,
         loader = loader,
@@ -832,6 +855,9 @@ def cc_enclave_test(
     _impl = _cc_enclave_test_old
     if transitions.supported(native.package_name()):
         _impl = _cc_enclave_test_new
+        tags = tags + ["asylo-transition"]
+    else:
+        tags = tags + ["asylo-cfh"]
     _impl(
         name = name,
         srcs = srcs,
