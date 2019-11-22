@@ -128,7 +128,9 @@ cc_library(
     deps = [
         ":descriptions",
         ":enclave_assertion_authority_config_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
         "//asylo/daemon/identity:attestation_domain",
+        "//asylo/identity/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
         "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
@@ -144,6 +146,7 @@ cc_test(
         ":enclave_assertion_authority_config_cc_proto",
         ":enclave_assertion_authority_configs",
         ":identity_cc_proto",
+        "//asylo/identity/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
         "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",

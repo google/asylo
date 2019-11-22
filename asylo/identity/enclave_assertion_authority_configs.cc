@@ -24,6 +24,7 @@
 #include "asylo/daemon/identity/attestation_domain.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
+#include "asylo/identity/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -54,6 +55,33 @@ CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain) {
   if (!config.SerializeToString(authority_config.mutable_config())) {
     return Status(error::GoogleError::INTERNAL,
                   "Failed to serialize SgxLocalAssertionAuthorityConfig");
+  }
+
+  return authority_config;
+}
+
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxAgeRemoteAssertionAuthorityConfig(
+    std::vector<Certificate> certificates, std::string server_address) {
+  EnclaveAssertionAuthorityConfig authority_config;
+  SetSgxAgeRemoteAssertionDescription(authority_config.mutable_description());
+
+  if (certificates.empty()) {
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        "SGX AGE remote authority config must have at least one certificate");
+  }
+
+  SgxAgeRemoteAssertionAuthorityConfig config;
+  for (auto &certificate : certificates) {
+    *config.add_root_ca_certificates() = std::move(certificate);
+  }
+
+  config.set_server_address(std::move(server_address));
+
+  if (!config.SerializeToString(authority_config.mutable_config())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to serialize SgxAgeRemoteAssertionAuthorityConfig");
   }
 
   return authority_config;
