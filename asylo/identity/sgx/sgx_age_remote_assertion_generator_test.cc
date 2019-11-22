@@ -76,6 +76,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     ASYLO_ASSERT_OK(EnclaveManager::Configure(EnclaveManagerOptions()));
     ASYLO_ASSERT_OK_AND_ASSIGN(enclave_manager_, EnclaveManager::Instance());
     ASYLO_ASSERT_OK(InitializeAssertionGeneratorEnclave());
+    ASYLO_ASSERT_OK(LoadTestEnclave());
   }
 
   static void TearDownTestSuite() {
@@ -84,9 +85,16 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
           assertion_generator_enclave_client_, EnclaveFinal(),
           /*skip_finalize=*/false));
     }
+    if (test_enclave_client_) {
+      ASYLO_EXPECT_OK(
+          enclave_manager_->DestroyEnclave(test_enclave_client_, EnclaveFinal(),
+                                           /*skip_finalize=*/false));
+    }
   }
 
   void SetUp() override {
+    EnclaveResetGenerator();
+
     SgxAgeRemoteAssertionAuthorityConfig authority_config;
     authority_config.set_server_address(*server_address_);
     for (auto certificate : *root_ca_certificates_) {
@@ -94,15 +102,6 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     }
 
     ASSERT_TRUE(authority_config.SerializeToString(&config_));
-    ASYLO_ASSERT_OK(LoadTestEnclave());
-  }
-
-  void TearDown() override {
-    if (test_enclave_client_) {
-      ASYLO_EXPECT_OK(
-          enclave_manager_->DestroyEnclave(test_enclave_client_, EnclaveFinal(),
-                                           /*skip_finalize=*/false));
-    }
   }
 
   // Loads the AGE, generating a key, and launching its gRPC service on a random
@@ -192,14 +191,15 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
 
   // Loads the SgxAgeRemoteAssertionGeneratorTestEnclave, which is used to
   // proxy calls to the SgxAgeRemoteAssertionGenerator in this test suite.
-  Status LoadTestEnclave() {
-    *test_enclave_config_.add_enclave_assertion_authority_configs() =
+  static Status LoadTestEnclave() {
+    test_enclave_config_ = new EnclaveConfig;
+    *test_enclave_config_->add_enclave_assertion_authority_configs() =
         GetSgxLocalAssertionAuthorityTestConfig();
 
     // Create an EnclaveLoadConfig object.
     EnclaveLoadConfig load_config;
     load_config.set_name(kTestEnclaveName);
-    *load_config.mutable_config() = test_enclave_config_;
+    *load_config.mutable_config() = *test_enclave_config_;
 
     // Create an SgxLoadConfig object.
     SgxLoadConfig sgx_config;
@@ -256,6 +256,18 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
             sgx::sgx_age_remote_assertion_generator_test_enclave_output)
         .sgx_self_identity_output()
         .identity();
+  }
+
+  // Resets the SgxAgeRemoteAssertionGenerator instance in the test enclave.
+  Status EnclaveResetGenerator() {
+    EnclaveInput enclave_input;
+    EnclaveOutput enclave_output;
+    *enclave_input
+         .MutableExtension(
+             sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+         ->mutable_reset_generator_input() = sgx::ResetGeneratorInput();
+
+    return test_enclave_client_->EnterAndRun(enclave_input, &enclave_output);
   }
 
   // Returns |generator->IsInitialized()| from within the test enclave.
@@ -349,14 +361,13 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
   }
 
   static EnclaveManager *enclave_manager_;
-
   static EnclaveConfig *assertion_generator_enclave_config_;
   static EnclaveClient *assertion_generator_enclave_client_;
+  static EnclaveConfig *test_enclave_config_;
+  static EnclaveClient *test_enclave_client_;
+
   static std::string *server_address_;
   static std::vector<Certificate> *root_ca_certificates_;
-
-  EnclaveConfig test_enclave_config_;
-  EnclaveClient *test_enclave_client_;
 
   std::string config_;
 };
@@ -366,6 +377,8 @@ EnclaveConfig
     *SgxAgeRemoteAssertionGeneratorTest::assertion_generator_enclave_config_;
 EnclaveClient
     *SgxAgeRemoteAssertionGeneratorTest::assertion_generator_enclave_client_;
+EnclaveConfig *SgxAgeRemoteAssertionGeneratorTest::test_enclave_config_;
+EnclaveClient *SgxAgeRemoteAssertionGeneratorTest::test_enclave_client_;
 std::string *SgxAgeRemoteAssertionGeneratorTest::server_address_;
 std::vector<Certificate>
     *SgxAgeRemoteAssertionGeneratorTest::root_ca_certificates_;

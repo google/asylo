@@ -53,6 +53,11 @@ class SgxAgeRemoteAssertionGeneratorTestEnclave final
             GetSelfSgxIdentity();
         return Status::OkStatus();
 
+      case SgxAgeRemoteAssertionGeneratorTestEnclaveInput::
+          kResetGeneratorInput:
+        generator_ = SgxAgeRemoteAssertionGenerator();
+        return Status::OkStatus();
+
       case SgxAgeRemoteAssertionGeneratorTestEnclaveInput::kInitializeInput:
         return generator_.Initialize(input.initialize_input().config());
 

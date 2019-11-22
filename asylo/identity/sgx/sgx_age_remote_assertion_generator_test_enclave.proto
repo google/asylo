@@ -39,6 +39,10 @@ message SgxSelfIdentityOutput {
   optional SgxIdentity identity = 1;
 }
 
+message ResetGeneratorInput {}
+
+message ResetGeneratorOutput {}
+
 message InitializeInput {
   optional string config = 1;
 }
@@ -78,21 +82,23 @@ message GenerateOutput {
 message SgxAgeRemoteAssertionGeneratorTestEnclaveInput {
   oneof input {
     SgxSelfIdentityInput sgx_self_identity_input = 1;
-    InitializeInput initialize_input = 2;
-    IsInitializedInput is_initialized_input = 3;
-    CreateAssertionOfferInput create_assertion_offer_input = 4;
-    CanGenerateInput can_generate_input = 5;
-    GenerateInput generate_input = 6;
+    ResetGeneratorInput reset_generator_input = 2;
+    InitializeInput initialize_input = 3;
+    IsInitializedInput is_initialized_input = 4;
+    CreateAssertionOfferInput create_assertion_offer_input = 5;
+    CanGenerateInput can_generate_input = 6;
+    GenerateInput generate_input = 7;
   }
 }
 
 message SgxAgeRemoteAssertionGeneratorTestEnclaveOutput {
   oneof output {
     SgxSelfIdentityOutput sgx_self_identity_output = 1;
-    InitializeOutput initialize_output = 2;
-    IsInitializedOutput is_initialized_output = 3;
-    CreateAssertionOfferOutput create_assertion_offer_output = 4;
-    CanGenerateOutput can_generate_output = 5;
-    GenerateOutput generate_output = 6;
+    ResetGeneratorOutput reset_generator_output = 2;
+    InitializeOutput initialize_output = 3;
+    IsInitializedOutput is_initialized_output = 4;
+    CreateAssertionOfferOutput create_assertion_offer_output = 5;
+    CanGenerateOutput can_generate_output = 6;
+    GenerateOutput generate_output = 7;
   }
 }
