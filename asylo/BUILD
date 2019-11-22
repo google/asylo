@@ -84,7 +84,7 @@ cc_library(
                 "//asylo/platform/system",
             ],
         },
-        no_match_error = "Must build in the Asylo toolchain",
+        no_match_error = "Must build in the Asylo toolchain (e.g., --config=sgx-sim)",
     ),
     alwayslink = 1,
 )
