@@ -8,15 +8,14 @@ PRETRANSITION_TAGS = [
     "manual",
 ]
 
+def _placeholder(**kwargs):
+    fail("Transition rules in external repositories are unsupported in Bazel.")
+
 def _empty_transition_impl(settings, attr):
     _ignore = (settings, attr)
     return {}
 
-empty_transition = transition(
-    implementation = _empty_transition_impl,
-    inputs = [],
-    outputs = [],
-)
+empty_transition = _placeholder
 
 def _asylo_toolchain_and_backend_transition_impl(settings, attr):
     """Returns the configuration to use the Asylo toolchain."""
@@ -29,36 +28,13 @@ def _asylo_toolchain_and_backend_transition_impl(settings, attr):
     }
     return result
 
-asylo_toolchain_transition = transition(
-    implementation = _asylo_toolchain_and_backend_transition_impl,
-    inputs = [BACKEND_LABEL],
-    outputs = [
-        "//command_line_option:crosstool_top",
-        "//command_line_option:custom_malloc",
-        "//command_line_option:dynamic_mode",
-        "//command_line_option:host_crosstool_top",
-        BACKEND_LABEL,
-    ],
-)
+asylo_toolchain_transition = _placeholder
 
 def _asylo_backend_transition_impl(settings, attr):
     _ignore = (settings)
     return {BACKEND_LABEL: attr.backend}
 
-asylo_backend_transition = transition(
-    implementation = _asylo_backend_transition_impl,
-    inputs = [],
-    outputs = [BACKEND_LABEL],
-)
-
-def _asylo_maybe_backend_transition_impl(settings, attr):
-    return {BACKEND_LABEL: attr.backend or settings[BACKEND_LABEL]}
-
-asylo_maybe_backend_transition = transition(
-    implementation = _asylo_maybe_backend_transition_impl,
-    inputs = [BACKEND_LABEL],
-    outputs = [BACKEND_LABEL],
-)
+asylo_backend_transition = _placeholder
 
 def _forward_target_transition(ctx, executable):
     """Copies cc_target output from a transitioned toolchain to the host.
@@ -102,7 +78,7 @@ def _forward_target_transition(ctx, executable):
     if ctx.attr.backend:
         for provider in ctx.attr.backend[AsyloBackendInfo].forward_providers:
             if provider in split_target:
-                result += [split_target[provider]]
+                result.append(split_target[provider])
     return result
 
 # All of the following function definitions are to work around starlark's lack
@@ -216,9 +192,6 @@ def transitions_supported(package_name):
             return True
     return False
 
-def _placeholder(**kwargs):
-    fail("Transition rules in external repositories are unsupported in Bazel.")
-
 with_asylo_binary = _placeholder
 with_asylo_test = _placeholder
 with_asylo_library = _placeholder
@@ -230,7 +203,6 @@ with_backend_library = _placeholder
 transitions = struct(
     toolchain = asylo_toolchain_transition,
     backend = asylo_backend_transition,
-    maybe_backend = asylo_maybe_backend_transition,
     asylo_binary = with_asylo_binary,
     asylo_test = with_asylo_test,
     asylo_library = with_asylo_library,

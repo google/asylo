@@ -4,6 +4,9 @@ load(":asylo_internal.bzl", "internal")
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 
+def _placeholder(**kwargs):
+    fail("Asylo's transition rules are not currently supported in Bazel.")
+
 def _cc_backend_unsigned_enclave_impl(ctx):
     return ctx.attr.backend[backend_tools.AsyloBackendInfo].unsigned_enclave_implementation(ctx)
 
@@ -29,45 +32,13 @@ def _make_cc_backend_unsigned_enclave(experimental):
         fragments = ["cpp"],
     )
 
-cc_backend_unsigned_enclave = _make_cc_backend_unsigned_enclave(experimental = False)
-cc_backend_unsigned_enclave_experimental = _make_cc_backend_unsigned_enclave(experimental = True)
+cc_backend_unsigned_enclave = _placeholder
+cc_backend_unsigned_enclave_experimental = _placeholder
 
 def _backend_debug_sign_enclave_impl(ctx):
     return ctx.attr.backend[backend_tools.AsyloBackendInfo].debug_sign_implementation(ctx)
 
-backend_debug_sign_enclave = rule(
-    executable = True,
-    doc = "Defines the 'signed' version of an unsigned enclave target in" +
-          " the provided backend.",
-    implementation = _backend_debug_sign_enclave_impl,
-    attrs = {
-        "backend": attr.label(
-            mandatory = True,
-            providers = [backend_tools.AsyloBackendInfo],
-        ),
-        "unsigned": attr.label(
-            mandatory = True,
-            allow_single_file = True,
-        ),
-        "config": attr.label(
-            default = "//asylo/bazel:default_sign_config",
-            allow_single_file = True,
-        ),
-        "_key": attr.label(
-            default = "//asylo/bazel:debug_key",
-            allow_single_file = True,
-        ),
-        "_sign_tool": attr.label(
-            default = Label("//asylo/bazel:sign_tool"),
-            allow_single_file = True,
-            executable = True,
-            cfg = transitions.empty_transition,
-        ),
-        "_whitelist_function_transition": attr.label(
-            default = "//tools/whitelists/function_transition_whitelist",
-        ),
-    },
-)
+backend_debug_sign_enclave = _placeholder
 
 def cc_enclave_test(
         name,
@@ -221,5 +192,5 @@ def _make_enclave_runner_rule(test = False):
         },
     )
 
-enclave_runner_script = _make_enclave_runner_rule()
-enclave_runner_test = _make_enclave_runner_rule(test = True)
+enclave_runner_script = _placeholder
+enclave_runner_test = _placeholder
