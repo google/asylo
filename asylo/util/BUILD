@@ -590,6 +590,18 @@ cc_test(
 )
 
 cc_library(
+    name = "http_fetcher",
+    hdrs = ["http_fetcher.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":status",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+    ],
+)
+
+cc_library(
     name = "url_util",
     srcs = ["url_util.cc"],
     hdrs = ["url_util.h"],
