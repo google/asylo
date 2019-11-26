@@ -148,15 +148,11 @@ StatusOr<Certificate> ModifyAndSerializeAkCert(
   Report report;
   ASYLO_ASSIGN_OR_RETURN(report,
                          ConvertReportProtoToHardwareReport(ak_cert.report()));
-  std::unique_ptr<AdditionalAuthenticatedDataGenerator> data_generator;
+  std::unique_ptr<AdditionalAuthenticatedDataGenerator> data_generator =
+      AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator();
   ASYLO_ASSIGN_OR_RETURN(
-      data_generator,
-      AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator());
-  std::string generated_aad;
-  ASYLO_ASSIGN_OR_RETURN(
-      generated_aad,
+      report.body.reportdata.data,
       data_generator->Generate(pce_sign_report_payload.SerializeAsString()));
-  report.body.reportdata.data = generated_aad;
   ak_cert.mutable_report()->set_value(
       ConvertTrivialObjectToBinaryString(report));
 

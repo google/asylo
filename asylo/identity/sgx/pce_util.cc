@@ -251,20 +251,13 @@ StatusOr<Reportdata> CreateReportdataForGetPceInfo(
   uint8_t crypto_suite =
       AsymmetricEncryptionSchemeToPceCryptoSuite(ppidek.encryption_scheme())
           .value();
-
   data_collector.insert(data_collector.begin(), crypto_suite);
-  std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator;
-  ASYLO_ASSIGN_OR_RETURN(
-      aad_generator,
-      AdditionalAuthenticatedDataGenerator::CreateGetPceInfoAadGenerator());
-  std::string aad_generate_input(data_collector.cbegin(),
-                                 data_collector.cend());
-  std::string aad;
-  ASYLO_ASSIGN_OR_RETURN(aad, aad_generator->Generate(aad_generate_input));
 
+  std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator =
+      AdditionalAuthenticatedDataGenerator::CreateGetPceInfoAadGenerator();
   Reportdata reportdata;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromBinaryString(aad, &reportdata.data));
+  ASYLO_ASSIGN_OR_RETURN(reportdata.data,
+                         aad_generator->Generate(data_collector));
   return reportdata;
 }
 

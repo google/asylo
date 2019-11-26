@@ -22,8 +22,6 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/escaping.h"
-#include "absl/strings/string_view.h"
 #include "asylo/crypto/sha256_hash.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/bytes.h"
@@ -34,16 +32,27 @@
 namespace asylo {
 namespace {
 
-constexpr int kAdditionalAuthenticatedDataSize = 64;
+constexpr uint8_t kGetPceInfoUuid[kAdditionalAuthenticatedDataUuidSize] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+constexpr uint8_t kGetPceInfoPurpose[kAdditionalAuthenticatedDataPurposeSize] =
+    {0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-const char kGetPceInfoUuidHex[] = "00000000000000000000000000000000";
-const char kGetPceInfoPurposeHex[] = "00000000000000000000000000000000";
+constexpr uint8_t kPceSignReportUuid[kAdditionalAuthenticatedDataUuidSize] = {
+    0x41, 0x53, 0x59, 0x4c, 0x4f, 0x20, 0x53, 0x49,
+    0x47, 0x4e, 0x52, 0x45, 0x50, 0x4f, 0x52, 0x54};
+constexpr uint8_t
+    kPceSignReportPurpose[kAdditionalAuthenticatedDataPurposeSize] = {
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
-const char kPceSignReportUuidHex[] = "4153594c4f205349474e5245504f5254";
-const char kPceSignReportPurposeHex[] = "00000000000000000000000000000000";
-
-const char kEkepUuidHex[] = "4153594c4f20454b4550000000000000";
-const char kEkepPurposeHex[] = "00000000000000000000000000000000";
+constexpr uint8_t kEkepUuid[kAdditionalAuthenticatedDataUuidSize] = {
+    0x41, 0x53, 0x59, 0x4c, 0x4f, 0x20, 0x45, 0x4b,
+    0x45, 0x50, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+constexpr uint8_t kEkepPurpose[kAdditionalAuthenticatedDataPurposeSize] = {
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
 
 }  // namespace
 
@@ -52,40 +61,26 @@ AdditionalAuthenticatedDataGenerator::AdditionalAuthenticatedDataGenerator(
     UnsafeBytes<kAdditionalAuthenticatedDataPurposeSize> purpose)
     : uuid_(uuid), purpose_(purpose) {}
 
-StatusOr<std::unique_ptr<AdditionalAuthenticatedDataGenerator>>
+std::unique_ptr<AdditionalAuthenticatedDataGenerator>
 AdditionalAuthenticatedDataGenerator::CreateGetPceInfoAadGenerator() {
-  UnsafeBytes<kAdditionalAuthenticatedDataUuidSize> uuid;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(kGetPceInfoUuidHex, &uuid));
-  UnsafeBytes<kAdditionalAuthenticatedDataPurposeSize> purpose;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(kGetPceInfoPurposeHex, &purpose));
-  return absl::make_unique<AdditionalAuthenticatedDataGenerator>(uuid, purpose);
+  return absl::make_unique<AdditionalAuthenticatedDataGenerator>(
+      kGetPceInfoUuid, kGetPceInfoPurpose);
 }
 
-StatusOr<std::unique_ptr<AdditionalAuthenticatedDataGenerator>>
+std::unique_ptr<AdditionalAuthenticatedDataGenerator>
 AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator() {
-  UnsafeBytes<kAdditionalAuthenticatedDataUuidSize> uuid;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(kPceSignReportUuidHex, &uuid));
-  UnsafeBytes<kAdditionalAuthenticatedDataPurposeSize> purpose;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(kPceSignReportPurposeHex, &purpose));
-  return absl::make_unique<AdditionalAuthenticatedDataGenerator>(uuid, purpose);
+  return absl::make_unique<AdditionalAuthenticatedDataGenerator>(
+      kPceSignReportUuid, kPceSignReportPurpose);
 }
 
-StatusOr<std::unique_ptr<AdditionalAuthenticatedDataGenerator>>
+std::unique_ptr<AdditionalAuthenticatedDataGenerator>
 AdditionalAuthenticatedDataGenerator::CreateEkepAadGenerator() {
-  UnsafeBytes<kAdditionalAuthenticatedDataUuidSize> uuid;
-  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromHexString(kEkepUuidHex, &uuid));
-  UnsafeBytes<kAdditionalAuthenticatedDataPurposeSize> purpose;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromHexString(kEkepPurposeHex, &purpose));
-  return absl::make_unique<AdditionalAuthenticatedDataGenerator>(uuid, purpose);
+  return absl::make_unique<AdditionalAuthenticatedDataGenerator>(kEkepUuid,
+                                                                 kEkepPurpose);
 }
 
-StatusOr<std::string> AdditionalAuthenticatedDataGenerator::Generate(
-    absl::string_view data) {
+StatusOr<UnsafeBytes<kAdditionalAuthenticatedDataSize>>
+AdditionalAuthenticatedDataGenerator::Generate(ByteContainerView data) const {
   Sha256Hash hasher;
   hasher.Init();
   hasher.Update(data);
@@ -103,7 +98,7 @@ StatusOr<std::string> AdditionalAuthenticatedDataGenerator::Generate(
                   uuid_) != kAdditionalAuthenticatedDataUuidSize) {
     return Status(error::GoogleError::INTERNAL, "Setting UUID data failed");
   }
-  return CopyToByteContainer<std::string>(aad);
+  return aad;
 }
 
 }  // namespace asylo

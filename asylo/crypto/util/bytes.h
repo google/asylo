@@ -262,9 +262,16 @@ class Bytes {
   // The default constructor is defaulted so that Bytes is a trivial class.
   Bytes() = default;
 
-  // Instantiates a new object and copy the input data. If the input data is
-  // larger than the value of the Size template parameter on the class, then
-  // only Size bytes are copied.
+  // Instantiates a new object and copies the input |data|. The size of |data|
+  // must be the same as the |Size| template parameter.
+  explicit Bytes(const uint8_t (&data)[Size]) {
+    PerformStaticChecks();
+    assign(data, Size);
+  }
+
+  // Instantiates a new object and copies the input |data|. If |size| is
+  // larger than the value of the |Size| template parameter on the class, then
+  // only |Size| bytes are copied.
   Bytes(const uint8_t *data, size_t size) {
     PerformStaticChecks();
     assign(data, size);

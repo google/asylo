@@ -21,10 +21,12 @@
 
 #include <openssl/aes.h>
 #include <openssl/sha.h>
+
 #include <type_traits>
 
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
+#include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/util/aligned_object_ptr.h"
 
@@ -295,6 +297,9 @@ using AlignedTargetinfoPtr = AlignedObjectPtr<Targetinfo, 512>;
 
 // Size of REPORTDATA field in the REPORT and REPORTDATA structs defined below.
 constexpr int kReportdataSize = 64;
+
+static_assert(kReportdataSize == kAdditionalAuthenticatedDataSize,
+              "Report data must be able to hold additional authenticated data");
 
 // Defines the REPORTDATA architectural structure, which holds kReportdataSize
 // bytes of unstructured data. A REPORTDATA is one of the inputs that is

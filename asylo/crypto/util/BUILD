@@ -144,6 +144,7 @@ cc_test(
     srcs = ["bytes_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":byte_container_view",
         ":bytes",
         ":trivial_object_util",
         "//asylo/test/util:test_main",

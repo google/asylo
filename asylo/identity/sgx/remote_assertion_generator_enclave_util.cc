@@ -220,18 +220,13 @@ StatusOr<std::string> CreateSerializedPceSignReportPayloadFromVerifyingKey(
 
 StatusOr<Reportdata> GenerateReportdataForPceSignReportProtocol(
     absl::string_view serialized_pce_sign_report_payload) {
-  std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator;
-  ASYLO_ASSIGN_OR_RETURN(
-      aad_generator,
-      AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator());
-
-  std::string aad_data;
-  ASYLO_ASSIGN_OR_RETURN(
-      aad_data, aad_generator->Generate(serialized_pce_sign_report_payload));
+  std::unique_ptr<AdditionalAuthenticatedDataGenerator> aad_generator =
+      AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator();
 
   Reportdata reportdata;
-  ASYLO_RETURN_IF_ERROR(
-      SetTrivialObjectFromBinaryString(aad_data, &reportdata));
+  ASYLO_ASSIGN_OR_RETURN(
+      reportdata.data,
+      aad_generator->Generate(serialized_pce_sign_report_payload));
   return reportdata;
 }
 

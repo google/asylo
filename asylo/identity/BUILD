@@ -241,12 +241,12 @@ cc_library(
     deps = [
         "//asylo/crypto:sha256_hash",
         "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -256,6 +256,7 @@ cc_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":additional_authenticated_data_generator",
+        "//asylo/crypto/util:bytes",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@boringssl//:crypto",

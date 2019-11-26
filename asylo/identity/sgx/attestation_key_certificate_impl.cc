@@ -23,7 +23,6 @@
 #include <utility>
 
 #include "absl/memory/memory.h"
-#include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/algorithms.pb.h"
@@ -31,6 +30,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
@@ -174,27 +174,24 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
   }
 
   // Verify the report data matches the generated AAD.
-  std::unique_ptr<AdditionalAuthenticatedDataGenerator> data_generator;
-  ASYLO_ASSIGN_OR_RETURN(
-      data_generator,
-      AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator());
-  std::string expected_aad;
+  std::unique_ptr<AdditionalAuthenticatedDataGenerator> data_generator =
+      AdditionalAuthenticatedDataGenerator::CreatePceSignReportAadGenerator();
+  UnsafeBytes<kAdditionalAuthenticatedDataSize> expected_aad;
   ASYLO_ASSIGN_OR_RETURN(
       expected_aad,
       data_generator->Generate(attestation_key_cert.pce_sign_report_payload()));
   Report report;
   ASYLO_ASSIGN_OR_RETURN(report, ConvertReportProtoToHardwareReport(
                                      attestation_key_cert.report()));
-  std::string report_data =
-      ConvertTrivialObjectToBinaryString(report.body.reportdata.data);
-  if (report_data != expected_aad) {
+  if (report.body.reportdata.data != expected_aad) {
     return Status(
         error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat("Additional authenticated data generated from the PCE "
-                        "Sign Report payload (%s) should be consistent with "
-                        "the REPORTDATA section (%s)",
-                        absl::BytesToHexString(expected_aad),
-                        absl::BytesToHexString(report_data)));
+        absl::StrFormat(
+            "Additional authenticated data generated from the PCE "
+            "Sign Report payload (%s) should be consistent with "
+            "the REPORTDATA section (%s)",
+            ConvertTrivialObjectToHexString(expected_aad),
+            ConvertTrivialObjectToHexString(report.body.reportdata.data)));
   }
 
   return absl::WrapUnique<AttestationKeyCertificateImpl>(

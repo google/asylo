@@ -24,6 +24,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 
 namespace asylo {
@@ -52,29 +53,29 @@ typedef ::testing::Types<SafeBytes<kSize>, UnsafeBytes<kSize>> MyTypes;
 TYPED_TEST_SUITE(TypedBytesTest, MyTypes);
 
 TYPED_TEST(TypedBytesTest, EqualityOperatorPositive1) {
-  TypeParam bytes1(kValue1, kSize);
-  TypeParam bytes2(kValue1, kSize);
+  TypeParam bytes1(kValue1);
+  TypeParam bytes2(kValue1);
 
   EXPECT_TRUE(bytes1 == bytes2);
 }
 
 TYPED_TEST(TypedBytesTest, EqualityOperatorNegative2) {
-  TypeParam bytes1(kValue1, kSize);
-  TypeParam bytes2(kValue2, kSize);
+  TypeParam bytes1(kValue1);
+  TypeParam bytes2(kValue2);
 
   EXPECT_FALSE(bytes1 == bytes2);
 }
 
 TYPED_TEST(TypedBytesTest, InequalityOperatorNegative1) {
   TypeParam bytes1(kValue1, kSize);
-  TypeParam bytes2(kValue1, kSize);
+  TypeParam bytes2(kValue1);
 
   EXPECT_FALSE(bytes1 != bytes2);
 }
 
 TYPED_TEST(TypedBytesTest, InequalityOperatorPositive2) {
   TypeParam bytes1(kValue1, kSize);
-  TypeParam bytes2(kValue2, kSize);
+  TypeParam bytes2(kValue2);
 
   EXPECT_TRUE(bytes1 != bytes2);
 }
@@ -100,8 +101,12 @@ TYPED_TEST(TypedBytesTest, EqualsNegative2) {
 TYPED_TEST(TypedBytesTest, Constructors) {
   TypeParam bytes1(kValue1, kSize);
   TypeParam bytes2(kValue1, kValue1 + kSize);
+  TypeParam bytes3(kValue1);
+  TypeParam bytes4{ByteContainerView(bytes1)};
 
   EXPECT_TRUE(bytes1 == bytes2);
+  EXPECT_TRUE(bytes1 == bytes3);
+  EXPECT_TRUE(bytes1 == bytes4);
 }
 
 TYPED_TEST(TypedBytesTest, Traits) {
