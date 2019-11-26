@@ -45,6 +45,7 @@
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/tcb.h"
