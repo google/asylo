@@ -7,7 +7,7 @@ overview: Demonstrate multiple enclaves running remotely
 
 location: /_docs/guides/bouncing_circles.md
 
-order: 62
+order: 55
 
 layout: docs
 

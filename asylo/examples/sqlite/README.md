@@ -7,7 +7,7 @@ overview: Wrap an entire application in an enclave.
 
 location: /_docs/guides/sqlite.md
 
-order: 50
+order: 35
 
 layout: docs
 

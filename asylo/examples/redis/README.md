@@ -7,7 +7,7 @@ overview: Wrap an entire application in an enclave.
 
 location: /_docs/guides/redis.md
 
-order: 50
+order: 30
 
 layout: docs
 

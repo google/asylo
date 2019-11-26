@@ -7,7 +7,7 @@ overview: Build, sign and launch an Intel SGX enclave in release mode.
 
 location: /_docs/guides/sgx_release_enclaves.md
 
-order: 30
+order: 90
 
 layout: docs
 

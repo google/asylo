@@ -7,7 +7,7 @@ overview: A code example illustrating how to use Asylo's secure gRPC support.
 
 location: /_docs/guides/secure_grpc/README.md
 
-order: 15
+order: 25
 
 layout: docs
 

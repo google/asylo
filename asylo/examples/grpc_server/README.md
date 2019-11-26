@@ -7,7 +7,7 @@ overview: Run a gRPC server inside an enclave.
 
 location: /_docs/guides/grpc_server.md
 
-order: 10
+order: 20
 
 layout: docs
 

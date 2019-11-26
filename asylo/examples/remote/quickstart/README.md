@@ -7,7 +7,7 @@ overview: Learn how to utilize Asylo Remote Backend
 
 location: /_docs/guides/remote_quickstart.md
 
-order: 60
+order: 50
 
 layout: docs
 
