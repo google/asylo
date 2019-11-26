@@ -208,7 +208,7 @@ signer-assigned identity:
 ```bash
 $ bazel run --config=sgx-sim \
    //asylo/examples/secure_grpc:grpc_server -- \
-   --acl="$(cat asylo/examples/secure_grpc/acl_isvprodid_3.textproto.txt)"
+   --acl="$(cat asylo/examples/secure_grpc/acl_isvprodid_3.textproto)"
 ```
 
 Now, run the client enclave using the same command as before:
@@ -291,7 +291,7 @@ match_spec: {
 ```bash
 $ bazel run --config=sgx-sim \
    //asylo/examples/secure_grpc:grpc_server -- \
-   --acl="$(cat asylo/examples/secure_grpc/acl_non_debug.textproto.txt)"
+   --acl="$(cat asylo/examples/secure_grpc/acl_non_debug.textproto)"
 ```
 
 As expected, the RPC fails in this case due to the peer’s DEBUG bit being set.
@@ -335,7 +335,7 @@ with the `--config=sgx` option and then re-run the example.
 ```bash
 $ bazel run --config=sgx \
    //asylo/examples/secure_grpc:grpc_server -- \
-   --acl="$(cat asylo/examples/secure_grpc/acl_non_debug.textproto.txt)"
+   --acl="$(cat asylo/examples/secure_grpc/acl_non_debug.textproto)"
 ```
 
 ```bash
