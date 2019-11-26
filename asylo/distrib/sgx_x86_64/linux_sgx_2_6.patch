@@ -211,6 +211,8 @@ Contains headers, functions, and symbols needed by SGX SDK and PSW.
   `trts_nsp_internal` to allow for `-fno-stack-protector` to apply to just the
   one function for compilers that don't support
   `__attribute__((optimize(...)))`.
+* Add support for accessing thread local storage (TLS) when registering
+  signal handlers in `sdk/simulation/uinst/u_instructions.cpp`.
 
 --
 diff -Nur common/inc/internal/elfheader/elf_common.h common/inc/internal/elfheader/elf_common.h
@@ -2533,23 +2535,25 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
  #include <stdio.h>
  #include <stdlib.h>
  
-@@ -71,6 +78,119 @@
+@@ -71,6 +78,121 @@
  
  #define mcp_same_size(dst_ptr, src_ptr, size) memcpy_s(dst_ptr, size, src_ptr, size)
  
 +// A map that stores all the signal handlers registered prior to entering the
 +// enclave.
 +static std::unordered_map<int, std::unique_ptr<struct sigaction>>
-+    registered_signal_handlers;
++    *registered_signal_handlers =
++        new std::unordered_map<int, std::unique_ptr<struct sigaction>>;
 +
 +// A lock that protects |registered_signal_handlers| map.
-+static std::mutex registered_signal_handlers_lock;
++static std::mutex *registered_signal_handlers_lock = new std::mutex;
 +
 +// A map that stores the pthread ids with their corresponding tcs.
-+static std::unordered_map<pthread_t, tcs_t *> thread_to_tcs;
++static std::unordered_map<pthread_t, tcs_t *> *thread_to_tcs =
++    new std::unordered_map<pthread_t, tcs_t *>;
 +
 +// A lock that protects |thread_to_tcs| map.
-+static std::mutex thread_to_tcs_lock;
++static std::mutex *thread_to_tcs_lock = new std::mutex;
 +
 +// If a signal arrives in simulation mode while the thread is running inside the
 +// enclave, the handler does not have access to the thread local variables, as
@@ -2560,9 +2564,9 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 +{
 +    tcs_t *tcs = NULL;
 +    {
-+        std::lock_guard<std::mutex> lock(thread_to_tcs_lock);
-+        auto it = thread_to_tcs.find(pthread_self());
-+        if (it != thread_to_tcs.end())
++        std::lock_guard<std::mutex> lock(*thread_to_tcs_lock);
++        auto it = thread_to_tcs->find(pthread_self());
++        if (it != thread_to_tcs->end())
 +        {
 +            tcs = it->second;
 +            tcs_sim_t *tcs_sim = reinterpret_cast<tcs_sim_t *>(tcs->reserved);
@@ -2576,9 +2580,9 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 +
 +    // Invoke the registered signal handler.
 +    {
-+        std::lock_guard<std::mutex> lock(registered_signal_handlers_lock);
-+        const auto it = registered_signal_handlers.find(signum);
-+        if (it != registered_signal_handlers.end())
++        std::lock_guard<std::mutex> lock(*registered_signal_handlers_lock);
++        const auto it = registered_signal_handlers->find(signum);
++        if (it != registered_signal_handlers->end())
 +        {
 +            struct sigaction *act = it->second.get();
 +            if ((!(act->sa_flags & SA_SIGINFO)) && act->sa_handler)
@@ -2615,7 +2619,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 +        SIGBUS, SIGFPE, SIGUSR1, SIGSEGV, SIGUSR2, SIGPIPE, SIGALRM, SIGTERM,
 +        SIGCHLD, SIGCONT, SIGSTOP, SIGTTIN, SIGTTOU, SIGURG, SIGXCPU, SIGXFSZ,
 +        SIGVTALRM, SIGWINCH, SIGSYS};
-+    std::lock_guard<std::mutex> lock(registered_signal_handlers_lock);
++    std::lock_guard<std::mutex> lock(*registered_signal_handlers_lock);
 +    for (int signum : signals)
 +    {
 +        struct sigaction oldact;
@@ -2627,14 +2631,14 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
 +        // Stores the registered handler in |registered_signal_handlers| map,
 +        // and registers |switch_tls_and_handle_signal| as the handler, which
 +        // switches the thread register and invokes the registered handler.
-+        if (registered_signal_handlers.find(signum)
-+            == registered_signal_handlers.end())
++        if (registered_signal_handlers->find(signum)
++            == registered_signal_handlers->end())
 +        {
 +            if (((oldact.sa_flags & SA_SIGINFO) && oldact.sa_sigaction)
 +                || ((!(oldact.sa_flags & SA_SIGINFO)) && oldact.sa_handler
 +                    && oldact.sa_handler != SIG_DFL))
 +            {
-+                registered_signal_handlers[signum] =
++                (*registered_signal_handlers)[signum] =
 +                    std::unique_ptr<struct sigaction>(new struct sigaction(oldact));
 +                struct sigaction act;
 +                act.sa_flags = oldact.sa_flags;
@@ -2653,7 +2657,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
  uintptr_t _EINIT(secs_t* secs, enclave_css_t *css, token_t *launch)
  {
      CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
-@@ -129,6 +249,8 @@
+@@ -129,6 +251,8 @@
          }
      }
  
@@ -2662,7 +2666,7 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      // Mark it initialized
      this_secs->attributes.flags |= SGX_FLAGS_INITTED;
  
-@@ -154,7 +276,7 @@
+@@ -154,7 +278,7 @@
  
      // `ce' is not checked against NULL, since it is not
      // allocated with new(std::no_throw).
@@ -2671,25 +2675,25 @@ diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instruc
      if (addr == NULL) {
          delete ce;
          return 0;
-@@ -195,6 +317,11 @@
+@@ -195,6 +319,11 @@
  
  uintptr_t _EREMOVE(const void *epc_lin_addr)
  {
 +    {
-+        std::lock_guard<std::mutex> lock(thread_to_tcs_lock);
-+        thread_to_tcs.clear();
++        std::lock_guard<std::mutex> lock(*thread_to_tcs_lock);
++        thread_to_tcs->clear();
 +    }
 +
      CEnclaveMngr *mngr = CEnclaveMngr::get_instance();
      CEnclaveSim *ce = mngr->get_enclave(epc_lin_addr);
  
-@@ -232,6 +359,11 @@
+@@ -232,6 +361,11 @@
          // xbx contains the address of a TCS
          tcs = reinterpret_cast<tcs_t*>(xbx);
  
 +        {
-+            std::lock_guard<std::mutex> lock(thread_to_tcs_lock);
-+            thread_to_tcs[pthread_self()] = tcs;
++            std::lock_guard<std::mutex> lock(*thread_to_tcs_lock);
++            (*thread_to_tcs)[pthread_self()] = tcs;
 +        }
 +
          // Is TCS pointer page-aligned?
