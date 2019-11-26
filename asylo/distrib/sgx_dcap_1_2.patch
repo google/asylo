@@ -12,6 +12,61 @@
   * Added sgx_qe_set_enclave_dirpath to set the directory paths for both the
     PCE and QE.
 --
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/inc/internal/se_map.h QuoteGeneration/common/inc/internal/se_map.h
+--- QuoteGeneration/common/inc/internal/se_map.h
++++ QuoteGeneration/common/inc/internal/se_map.h
+@@ -71,10 +71,10 @@
+ #endif
+ 
+ /* Map a file to memory and get its size. */
+-map_handle_t* map_file(se_file_handle_t fd, uint32_t *size);
++map_handle_t* dcap_internal_map_file(se_file_handle_t fd, uint32_t *size);
+ 
+ /* Unmap a mapped file. */
+-void unmap_file(map_handle_t* mh);
++void dcap_internal_unmap_file(map_handle_t* mh);
+ 
+ #ifdef __cplusplus
+ }
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/common/src/se_map.c QuoteGeneration/common/src/se_map.c
+--- QuoteGeneration/common/src/se_map.c
++++ QuoteGeneration/common/src/se_map.c
+@@ -36,7 +36,7 @@
+ 
+ #if defined(_MSC_VER)
+ 
+-map_handle_t* map_file(se_file_handle_t file, uint32_t *size)
++map_handle_t* dcap_internal_map_file(se_file_handle_t file, uint32_t *size)
+ {
+     map_handle_t* mh = (map_handle_t *)calloc(1, sizeof(map_handle_t));
+     if (mh == NULL || size == NULL)
+@@ -74,7 +74,7 @@
+     return mh;
+ }
+ 
+-void unmap_file(map_handle_t* mh)
++void dcap_internal_unmap_file(map_handle_t* mh)
+ {
+     UnmapViewOfFile(mh->base_addr);
+     CloseHandle(mh->maph);
+@@ -82,7 +82,7 @@
+ }
+ 
+ #elif defined(__GNUC__)
+-map_handle_t* map_file(se_file_handle_t fd, uint32_t *size)
++map_handle_t* dcap_internal_map_file(se_file_handle_t fd, uint32_t *size)
+ {
+     struct stat st;
+     memset(&st, 0, sizeof(st));
+@@ -107,7 +107,7 @@
+     return mh;
+ }
+ 
+-void unmap_file(map_handle_t* mh)
++void dcap_internal_unmap_file(map_handle_t* mh)
+ {
+     munmap(mh->base_addr, mh->length);
+     free(mh);
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
 --- QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
 +++ QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h
@@ -86,7 +141,38 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/inc/sg
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/pce_wrapper/linux/pce_parser.cpp QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
 --- QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
 +++ QuoteGeneration/pce_wrapper/linux/pce_parser.cpp
-@@ -144,6 +144,7 @@
+@@ -115,7 +115,7 @@
+     }
+     
+     
+-    mh = map_file(fd, &file_size);
++    mh = dcap_internal_map_file(fd, &file_size);
+     if (!mh)
+     {
+         close(fd);
+@@ -125,25 +125,26 @@
+     PARSER parser(const_cast<uint8_t *>(mh->base_addr), (uint64_t)(file_size));
+     if(SGX_SUCCESS != parser.run_parser())
+     {
+-        unmap_file(mh);
++        dcap_internal_unmap_file(mh);
+         close(fd);
+         return false;
+     }
+ 
+     if(true != get_metadata(&parser, &p_metadata))
+     {
+-        unmap_file(mh);
++        dcap_internal_unmap_file(mh);
+         close(fd);
+         return false;
+     }
+     memcpy(metadata, p_metadata, sizeof(metadata_t));
+-    unmap_file(mh);
++    dcap_internal_unmap_file(mh);
+     close(fd);
+     return true;
+ }
  
  #define PCE_ENCLAVE_NAME "libsgx_pce.signed.so"
  bool get_pce_path(
