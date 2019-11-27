@@ -21,7 +21,6 @@
 
 #include <string>
 
-#include "google/protobuf/struct.pb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/statusor.h"
 
@@ -45,7 +44,7 @@ StatusOr<Tcb> TcbFromJson(const std::string &json_string);
 // then TcbInfoFromJson() returns an error.
 //
 // Currently, TcbInfoFromJson() only supports TCB info JSON objects with a
-// version of 1.
+// version of 1 or 2.
 //
 // If unrecognized fields are encountered, then TcbInfoFromJson() logs warnings
 // but does not return an error.

@@ -20,6 +20,7 @@
 
 #include <endian.h>
 
+#include <cmath>
 #include <cstdint>
 #include <limits>
 #include <memory>
@@ -38,6 +39,7 @@
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
+#include "absl/strings/string_view.h"
 #include "absl/time/civil_time.h"
 #include "absl/time/time.h"
 #include "asylo/util/logging.h"
@@ -94,6 +96,51 @@ const absl::flat_hash_map<std::string, TcbStatus::StatusType>
     });
   });
   return *map;
+}
+
+// Returns the value of |int32_json| if |int32_json| is a number value within
+// the range of a 32-bit integer. Otherwise, returns an error, using
+// |value_name| to name the value.
+StatusOr<int32_t> Int32FromJson(const google::protobuf::Value &int32_json,
+                                absl::string_view value_name) {
+  ASYLO_RETURN_IF_ERROR(JsonGetNumber(int32_json));
+
+  double value = int32_json.number_value();
+  if (value < static_cast<double>(std::numeric_limits<int32_t>::min()) ||
+      value > static_cast<double>(std::numeric_limits<int32_t>::max()) ||
+      round(value) != value) {
+    return Status(
+        error::GoogleError::OUT_OF_RANGE,
+        absl::StrFormat("%s JSON %f cannot be represented as a 32-bit integer",
+                        value_name, value));
+  }
+  return value;
+}
+
+// Parses a valid google.protobuf.Timestamp from |timestamp_json|. The
+// |timestamp_json| must be in ISO 8601 format.
+StatusOr<google::protobuf::Timestamp> TimestampFromJson(
+    const google::protobuf::Value &timestamp_json) {
+  const std::string *timestamp_string;
+  ASYLO_ASSIGN_OR_RETURN(timestamp_string, JsonGetString(timestamp_json));
+
+  absl::Time time;
+  ASYLO_ASSIGN_OR_RETURN(time, ParseIso8601TimeString(*timestamp_string));
+  if (!CanBeTimestampProto(time)) {
+    return Status(
+        error::GoogleError::OUT_OF_RANGE,
+        absl::StrFormat(
+            "Timestamp %s cannot be represented as a google.protobuf.Timestamp",
+            *timestamp_string));
+  }
+
+  google::protobuf::Timestamp timestamp;
+  absl::Duration remainder;
+  int64_t num_seconds = absl::IDivDuration(time - absl::UnixEpoch(),
+                                           absl::Seconds(1), &remainder);
+  timestamp.set_seconds(num_seconds);
+  timestamp.set_nanos(absl::ToInt64Nanoseconds(remainder));
+  return timestamp;
 }
 
 // Parses a valid SGX TCB component SVN from |component_json|.
@@ -172,12 +219,35 @@ StatusOr<TcbStatus> TcbStatusFromJson(
   return status;
 }
 
-// Parses a valid TcbLevel from |tcb_level_json|.
+// Parses a list of advisory IDs from |advisory_ids_json|.
+StatusOr<google::protobuf::RepeatedPtrField<std::string>> AdvisoryIdsFromJson(
+    const google::protobuf::Value &advisory_ids_json) {
+  const google::protobuf::ListValue *advisory_ids_array;
+  ASYLO_ASSIGN_OR_RETURN(advisory_ids_array, JsonGetArray(advisory_ids_json));
+  if (advisory_ids_array->values().empty()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "\"advisoryIDs\" array may not be empty");
+  }
+  google::protobuf::RepeatedPtrField<std::string> advisory_ids;
+  advisory_ids.Reserve(advisory_ids_array->values_size());
+  for (const google::protobuf::Value &advisory_id_json :
+       advisory_ids_array->values()) {
+    const std::string *advisory_id;
+    ASYLO_ASSIGN_OR_RETURN(advisory_id, JsonGetString(advisory_id_json));
+    advisory_ids.Add(std::string(*advisory_id));
+  }
+  return advisory_ids;
+}
+
+// Parses a valid TcbLevel from |tcb_level_json|. Assumes that the TCB level
+// comes from a TCB info structure with version |tcb_info_version|, which must
+// be either 1 or 2.
 StatusOr<TcbLevel> TcbLevelFromJson(
-    const google::protobuf::Value &tcb_level_json) {
+    int32_t tcb_info_version, const google::protobuf::Value &tcb_level_json) {
   const google::protobuf::Struct *tcb_level_object;
   ASYLO_ASSIGN_OR_RETURN(tcb_level_object, JsonGetObject(tcb_level_json));
   TcbLevel tcb_level;
+  bool has_advisory_ids = false;
 
   const google::protobuf::Value *tcb_json;
   ASYLO_ASSIGN_OR_RETURN(tcb_json,
@@ -185,13 +255,47 @@ StatusOr<TcbLevel> TcbLevelFromJson(
   ASYLO_ASSIGN_OR_RETURN(*tcb_level.mutable_tcb(), TcbFromJsonValue(*tcb_json));
 
   const google::protobuf::Value *status_json;
-  ASYLO_ASSIGN_OR_RETURN(status_json,
-                         JsonObjectGetField(*tcb_level_object, "status"));
+  ASYLO_ASSIGN_OR_RETURN(
+      status_json,
+      JsonObjectGetField(*tcb_level_object,
+                         tcb_info_version == 2 ? "tcbStatus" : "status"));
   ASYLO_ASSIGN_OR_RETURN(*tcb_level.mutable_status(),
                          TcbStatusFromJson(*status_json));
 
+  if (tcb_info_version == 2) {
+    const google::protobuf::Value *tcb_date_json;
+    ASYLO_ASSIGN_OR_RETURN(tcb_date_json,
+                           JsonObjectGetField(*tcb_level_object, "tcbDate"));
+    ASYLO_ASSIGN_OR_RETURN(*tcb_level.mutable_tcb_date(),
+                           TimestampFromJson(*tcb_date_json));
+
+    // The "advisoryIDs" field is optional.
+    auto get_advisory_ids_result =
+        JsonObjectGetField(*tcb_level_object, "advisoryIDs");
+    if (get_advisory_ids_result.ok()) {
+      has_advisory_ids = true;
+      ASYLO_ASSIGN_OR_RETURN(
+          *tcb_level.mutable_advisory_ids(),
+          AdvisoryIdsFromJson(*get_advisory_ids_result.ValueOrDie()));
+    }
+  }
+
   // Each TCB level JSON object should have two fields: "tcb" and "status".
-  if (tcb_level_json.struct_value().fields().size() > 2) {
+  int expected_num_fields = -1;
+  switch (tcb_info_version) {
+    case 1:
+      // A TCB level from a version 1 TCB info JSON object should have two top-
+      // level fields: "tcb" and "status".
+      expected_num_fields = 2;
+      break;
+    case 2:
+      // A TCB level from a version 1 TCB info JSON object should have three or
+      // four top-level fields: "tcb", "tcbDate", "tcbStatus", and optionally
+      // "advisoryIDs".
+      expected_num_fields = 3 + (has_advisory_ids ? 1 : 0);
+      break;
+  }
+  if (tcb_level_json.struct_value().fields().size() > expected_num_fields) {
     std::string json_string;
     if (!google::protobuf::util::MessageToJsonString(tcb_level_json, &json_string).ok()) {
       json_string = "TCB level JSON";
@@ -201,44 +305,6 @@ StatusOr<TcbLevel> TcbLevelFromJson(
   }
 
   return tcb_level;
-}
-
-// Parses a valid Intel TCB info version number from |version_json|.
-StatusOr<int> VersionFromJson(const google::protobuf::Value &version_json) {
-  ASYLO_RETURN_IF_ERROR(JsonGetNumber(version_json));
-
-  double version = version_json.number_value();
-  if (version < static_cast<double>(std::numeric_limits<int32_t>::min()) ||
-      version > static_cast<double>(std::numeric_limits<int32_t>::max())) {
-    return Status(error::GoogleError::OUT_OF_RANGE,
-                  "Version of TCB info JSON cannot be represented");
-  }
-  return version;
-}
-
-// Parses a valid google.protobuf.Timestamp from |timestamp_json|. The
-// |timestamp_json| must be in ISO 8601 format.
-StatusOr<google::protobuf::Timestamp> TimestampFromJson(
-    const google::protobuf::Value &timestamp_json) {
-  const std::string *timestamp_string;
-  ASYLO_ASSIGN_OR_RETURN(timestamp_string, JsonGetString(timestamp_json));
-
-  absl::Time time;
-  ASYLO_ASSIGN_OR_RETURN(time, ParseIso8601TimeString(*timestamp_string));
-  if (!CanBeTimestampProto(time)) {
-    return Status(
-        error::GoogleError::OUT_OF_RANGE,
-        "Timestamp cannot be represented as a google.protobuf.Timestamp");
-  }
-
-  google::protobuf::Timestamp timestamp;
-  absl::Duration from_unix_epoch = time - absl::UnixEpoch();
-  int64_t num_seconds = from_unix_epoch / absl::Seconds(1);
-  int64_t num_nanos =
-      (from_unix_epoch - num_seconds * absl::Seconds(1)) / absl::Nanoseconds(1);
-  timestamp.set_seconds(num_seconds);
-  timestamp.set_nanos(num_nanos);
-  return timestamp;
 }
 
 // Parses a valid Fmspc from |fmspc_json|.
@@ -286,9 +352,11 @@ StatusOr<PceId> PceIdFromJson(const google::protobuf::Value &pce_id_json) {
   return pce_id;
 }
 
-// Parses a valid list of TcbLevels from |tcb_levels_json|.
+// Parses a valid list of TcbLevels from |tcb_levels_json|. Assumes that the TCB
+// levels come from a TCB info structure with version |tcb_info_version|, which
+// must be either 1 or 2.
 StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
-    const google::protobuf::Value &tcb_levels_json) {
+    int32_t tcb_info_version, const google::protobuf::Value &tcb_levels_json) {
   const google::protobuf::ListValue *tcb_levels_array;
   ASYLO_ASSIGN_OR_RETURN(tcb_levels_array, JsonGetArray(tcb_levels_json));
 
@@ -296,7 +364,8 @@ StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
   google::protobuf::RepeatedPtrField<TcbLevel> tcb_levels;
   for (const auto &tcb_level_json : tcb_levels_array->values()) {
     TcbLevel tcb_level;
-    ASYLO_ASSIGN_OR_RETURN(tcb_level, TcbLevelFromJson(tcb_level_json));
+    ASYLO_ASSIGN_OR_RETURN(tcb_level,
+                           TcbLevelFromJson(tcb_info_version, tcb_level_json));
     auto insert_pair =
         tcb_to_status_map.insert({tcb_level.tcb(), tcb_level.status()});
     if (!insert_pair.second) {
@@ -322,14 +391,14 @@ StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
   return tcb_levels;
 }
 
-// Parses a valid TcbInfo from |tcb_info_object|, whose "version" field must be
-// equal to 1.
-StatusOr<TcbInfo> TcbInfoFromJsonV1(
-    const google::protobuf::Struct &tcb_info_object) {
+// Parses a valid TcbInfo from |tcb_info_object| with a "version" of |version|.
+// The |version| must be equal to 1 or 2.
+StatusOr<TcbInfo> TcbInfoFromJsonV1and2(
+    int32_t version, const google::protobuf::Struct &tcb_info_object) {
   TcbInfo tcb_info;
   TcbInfoImpl *tcb_info_impl = tcb_info.mutable_impl();
 
-  tcb_info_impl->set_version(1);
+  tcb_info_impl->set_version(version);
 
   const google::protobuf::Value *issue_date_json;
   ASYLO_ASSIGN_OR_RETURN(issue_date_json,
@@ -360,15 +429,47 @@ StatusOr<TcbInfo> TcbInfoFromJsonV1(
   ASYLO_ASSIGN_OR_RETURN(*tcb_info_impl->mutable_pce_id(),
                          PceIdFromJson(*pce_id_json));
 
+  if (version == 2) {
+    const google::protobuf::Value *tcb_type_json;
+    ASYLO_ASSIGN_OR_RETURN(tcb_type_json,
+                           JsonObjectGetField(tcb_info_object, "tcbType"));
+    int32_t tcb_type;
+    ASYLO_ASSIGN_OR_RETURN(tcb_type, Int32FromJson(*tcb_type_json, "TCB type"));
+    tcb_info_impl->set_tcb_type(tcb_type);
+
+    const google::protobuf::Value *tcb_evaluation_data_number_json;
+    ASYLO_ASSIGN_OR_RETURN(
+        tcb_evaluation_data_number_json,
+        JsonObjectGetField(tcb_info_object, "tcbEvaluationDataNumber"));
+    int32_t tcb_evaluation_data_number;
+    ASYLO_ASSIGN_OR_RETURN(tcb_evaluation_data_number,
+                           Int32FromJson(*tcb_evaluation_data_number_json,
+                                         "TCB evaluation data number"));
+    tcb_info_impl->set_tcb_evaluation_data_number(tcb_evaluation_data_number);
+  }
+
   const google::protobuf::Value *tcb_levels_json;
   ASYLO_ASSIGN_OR_RETURN(tcb_levels_json,
                          JsonObjectGetField(tcb_info_object, "tcbLevels"));
   ASYLO_ASSIGN_OR_RETURN(*tcb_info_impl->mutable_tcb_levels(),
-                         TcbLevelsFromJson(*tcb_levels_json));
+                         TcbLevelsFromJson(version, *tcb_levels_json));
 
-  // The TCB info JSON object should have six top-level fields: "version",
-  // "issueDate", "nextUpdate", "fmspc", "pceId", and "tcbLevels".
-  if (tcb_info_object.fields().size() > 6) {
+  int expected_num_fields = -1;
+  switch (version) {
+    case 1:
+      // A version 1 TCB info JSON object should have six top-level fields:
+      // "version", "issueDate", "nextUpdate", "fmspc", "pceId", and
+      // "tcbLevels".
+      expected_num_fields = 6;
+      break;
+    case 2:
+      // A version 2 TCB info JSON object should have six top-level fields:
+      // "version", "issueDate", "nextUpdate", "fmspc", "pceId", "tcbType",
+      // "tcbEvaluationDataNumber", and "tcbLevels".
+      expected_num_fields = 8;
+      break;
+  }
+  if (tcb_info_object.fields().size() > expected_num_fields) {
     std::string json_string;
     if (!google::protobuf::util::MessageToJsonString(tcb_info_object, &json_string)
              .ok()) {
@@ -401,14 +502,17 @@ StatusOr<TcbInfo> TcbInfoFromJson(const std::string &json_string) {
   const google::protobuf::Value *version_json;
   ASYLO_ASSIGN_OR_RETURN(version_json,
                          JsonObjectGetField(*tcb_info_object, "version"));
-  int version;
-  ASYLO_ASSIGN_OR_RETURN(version, VersionFromJson(*version_json));
+  int32_t version;
+  ASYLO_ASSIGN_OR_RETURN(version,
+                         Int32FromJson(*version_json, "TCB info version"));
   switch (version) {
     case 1:
-      return TcbInfoFromJsonV1(*tcb_info_object);
+    case 2:
+      return TcbInfoFromJsonV1and2(version, *tcb_info_object);
     default:
-      return Status(error::GoogleError::INVALID_ARGUMENT,
-                    "Unrecognized version of TCB info JSON");
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("Unrecognized version of TCB info JSON: ", version));
   }
 }
 
