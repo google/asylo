@@ -145,7 +145,7 @@ The `config` field for the latter two rules specifies security-critical
 configuration bits for the enclave, and thus must be signed. For example, the
 configuration can disallow running the enclave in debug mode (i.e.
 `disable_debug = true`). A custom configuration can be defined with the
-[`sgx_enclave_configuration`](https://asylo.dev/docs/reference/api/bazel/sgx_sdk.bzl.v1.html#sgx_enclave_configuration)
+[`sgx_enclave_configuration`](https://asylo.dev/docs/reference/api/bazel/sgx_sdk_bzl.html#sgx_enclave_configuration)
 rule, a Bazel wrapper around the _Enclave Configuration File_ detailed in
 Intel's
 [developer reference materials](https://01.org/sites/default/files/documentation/intel_sgx_sdk_developer_reference_for_linux_os_pdf.pdf).
