@@ -206,6 +206,16 @@ LogMessage::~LogMessage() {
   SendToLog(message_text);
 }
 
+LogMessageFatal::~LogMessageFatal() {
+  std::string message_text = stream_.str();
+  SendToLog(message_text);
+  // if FATAL occurs, abort enclave.
+  if (severity_ == FATAL) {
+    abort();
+  }
+  _exit(1);
+}
+
 void LogMessage::SendToLog(const std::string &message_text) {
   std::string log_path = get_log_directory() + get_log_basename();
 
@@ -228,14 +238,6 @@ void LogMessage::SendToLog(const std::string &message_text) {
   }
   printf("%s\n", message_text.c_str());
   fflush(stdout);
-
-  // if FATAL occurs, abort enclave.
-  if (severity_ == FATAL) {
-    abort();
-  }
-  if (severity_ == QFATAL) {
-    _exit(1);
-  }
 }
 
 CheckOpMessageBuilder::CheckOpMessageBuilder(const char *exprtext)

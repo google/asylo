@@ -25,6 +25,7 @@
 #include <sstream>
 #include <string>
 
+#include "absl/base/attributes.h"
 #include "absl/base/optimization.h"
 
 /// \cond Internal
@@ -32,8 +33,10 @@
 #define COMPACT_ASYLO_LOG_WARNING \
   ::asylo::LogMessage(__FILE__, __LINE__, WARNING)
 #define COMPACT_ASYLO_LOG_ERROR ::asylo::LogMessage(__FILE__, __LINE__, ERROR)
-#define COMPACT_ASYLO_LOG_FATAL ::asylo::LogMessage(__FILE__, __LINE__, FATAL)
-#define COMPACT_ASYLO_LOG_QFATAL ::asylo::LogMessage(__FILE__, __LINE__, QFATAL)
+#define COMPACT_ASYLO_LOG_FATAL \
+  ::asylo::LogMessageFatal(__FILE__, __LINE__, FATAL)
+#define COMPACT_ASYLO_LOG_QFATAL \
+  ::asylo::LogMessageFatal(__FILE__, __LINE__, QFATAL)
 
 #ifdef NDEBUG
 #define COMPACT_ASYLO_LOG_DFATAL COMPACT_ASYLO_LOG_ERROR
@@ -355,16 +358,18 @@ class LogMessage {
   /// \return A reference to the underlying string stream.
   std::ostringstream &stream() { return stream_; }
 
- private:
-  void Init(const char *file, int line, LogSeverity severity);
-
+ protected:
   // Sends the message to print.
   void SendToLog(const std::string &message_text);
+
+  LogSeverity severity_;
 
   // stream_ reads all the input messages into a stringstream, then it's
   // converted into a string in the destructor for printing.
   std::ostringstream stream_;
-  LogSeverity severity_;
+
+ private:
+  void Init(const char *file, int line, LogSeverity severity);
 
   LogMessage(const LogMessage &) = delete;
   void operator=(const LogMessage &) = delete;
@@ -379,14 +384,21 @@ class LogMessageVoidify {
   void operator&(const std::ostream &) {}
 };
 
-/// Default LogSeverity FATAL version of LogMessage.
+/// A LogSeverity FATAL (or QFATAL) version of LogMessage that the compiler can
+/// interpret as noreturn.
 class LogMessageFatal : public LogMessage {
  public:
+  /// The destructor flushes the message and does not return.
+  ABSL_ATTRIBUTE_NORETURN ~LogMessageFatal();
+
   /// Constructs a new message with FATAL severity.
   ///
   /// \param file The source file that produced the log.
   /// \param line The source code line that produced the log.
-  LogMessageFatal(const char *file, int line) : LogMessage(file, line, FATAL) {}
+  /// \param severity The severity for the message (FATAL or QFATAL).
+  LogMessageFatal(const char *file, int line, LogSeverity severity)
+      : LogMessage(file, line, severity) {}
+
   /// Constructs a message with FATAL severity for use by CHECK macros.
   ///
   /// \param file The source file that produced the log.
