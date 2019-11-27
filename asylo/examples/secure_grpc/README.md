@@ -5,7 +5,7 @@ title: Secure gRPC Example
 
 overview: A code example illustrating how to use Asylo's secure gRPC support.
 
-location: /_docs/guides/secure_grpc/README.md
+location: /_docs/guides/secure_grpc.md
 
 order: 25
 
