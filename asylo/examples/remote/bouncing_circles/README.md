@@ -49,7 +49,7 @@ To build the application and the enclaves:
 
 ```bash
 export CONFIG_TYPE=sgx # Or sgx-sim if not running on SGX-enabled hardware.
-bazel build :web_application --config=${CONFIG_TYPE}
+bazel build :web_application --config=${CONFIG_TYPE} --define=ASYLO_REMOTE=1
 ```
 
 Note: The `CONFIG_TYPE=sgx` flag selects our enclave cross compiler toolchain,

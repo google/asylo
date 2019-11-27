@@ -354,7 +354,7 @@ docker run -it --net=host \
     -e CONFIG_TYPE=${CONFIG_TYPE} \
     -w /opt/asylo/examples \
     gcr.io/asylo-framework/asylo:latest \
-    sh -c 'bazel run --config=${CONFIG_TYPE} //remote/quickstart -- --message="${MESSAGE}"'
+    sh -c 'bazel run --config=${CONFIG_TYPE} --define=ASYLO_REMOTE=1 //remote/quickstart -- --message="${MESSAGE}"'
 ```
 
 It will then print an encrypted message similar to the following:
