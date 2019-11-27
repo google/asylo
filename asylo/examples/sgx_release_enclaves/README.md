@@ -44,11 +44,11 @@ with the signature are broken into separate steps.
 
 The high-level steps of this process are:
 
-1.  Define your enclave targets to explicitly produce a sigstruct and
+1.  Define your enclave targets to explicitly produce their signing material and
     incorporate a signature (made in step 3) of it into a final signed enclave
     binary.
 
-2.  Build the sigstruct target to get the file to sign.
+2.  Build the enclave signing material target to get the file to sign.
 
 3.  Sign the enclave material with an enclave-signing key.
 
@@ -91,28 +91,27 @@ MY_PROJECT=...
 ### Step 1: Define the enclave and release configuration
 
 Define the enclave in your BUILD file using the `sgx_unsigned_enclave`,
-`sgx_generate_sigstruct`, and `sgx_signed_enclave` rules.
+`sgx_generate_enclave_signing_material`, and `sgx_signed_enclave` rules.
 
 ```python
-load("@linux_sgx//:sgx_sdk.bzl",
-     "sgx_unsigned_enclave", "sgx_generate_sigstruct", "sgx_signed_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
-sgx_unsigned_enclave(
+sgx.unsigned_enclave(
   name = "enclave_unsigned.so",
   ...
 )
 
-sgx_generate_sigstruct(
-    name = "enclave_sigstruct",
+sgx.generate_enclave_signing_material(
+    name = "enclave_signing_material",
     config = ":release_config",
     unsigned = ":enclave_unsigned.so",
 )
 
-sgx_signed_enclave(
+sgx.signed_enclave(
     name = "enclave.so",
     public_key = "my_public_key.pub",
-    signature = "enclave_sigstruct.dat.sig",
-    sigstruct = ":enclave_sigstruct",
+    signature = "enclave_signing_material.dat.sig",
+    signing_material = ":enclave_signing_material",
 )
 ```
 
@@ -122,24 +121,26 @@ files:
 1.  Your public key (example `my_public_key.pub`) must be in your source tree as
     a PEM file or a Bazel target that produces a PEM file.
 
-2.  The file containing a signature over your enclave's sigstruct. The file must
-    be present within this package. See [step 3](#step-3-sign-the-release-data)
-    for how to generate this file. This allows the signed enclave binary to be
-    fully reproducible from the specific code snapshot at which it was signed.
+2.  The file containing a signature over your enclave's signing material. The
+    file must be present within this package. See
+    [step 3](#step-3-sign-the-release-data) for how to generate this file. This
+    allows the signed enclave binary to be fully reproducible from the specific
+    code snapshot at which it was signed.
 
 The three rules have the following purposes:
 
-*   `sgx_unsigned_enclave` produces a `cc_binary` library object built with the
+*   `sgx.unsigned_enclave` produces a `cc_binary` library object built with the
     Asylo toolchain. This binary will be used to produce the signed release
     enclave.
-*   `sgx_generate_sigstruct` extracts the SGX sigstruct (see
-    [Intel documentation](https://software.intel.com/en-us/node/702979)) from
-    `enclave_unsigned.so` and the provided config. This material is produced
-    using the `gendata` command of
+*   `sgx.generate_enclave_signing_material` extracts the parts of the SGX
+    sigstruct (see
+    [Intel documentation](https://software.intel.com/en-us/node/702979)) that
+    must be signed from `enclave_unsigned.so` and the provided config. This
+    material is produced using the `gendata` command of
     [Intel's enclave signing tool](https://software.intel.com/en-us/sgx-sdk-dev-reference-the-enclave-signing-tool).
-*   `sgx_signed_enclave` integrates the unsigned enclave with the config,
-    sigstruct, and signature of the sigstruct to produce a signed enclave. The
-    public key is required for validation of the final signature.
+*   `sgx.signed_enclave` integrates the unsigned enclave with the config,
+    signing material, and signature of the signing material to produce a signed
+    enclave. The public key is required for validation of the final signature.
 
 The `config` field for the latter two rules specifies security-critical
 configuration bits for the enclave, and thus must be signed. For example, the
@@ -152,9 +153,9 @@ Intel's
 Below is a sample configuration that disallows running an enclave in debug mode:
 
 ```python
-load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
-sgx_enclave_configuration(
+sgx.enclave_configuration(
   name = "release_config",
   disable_debug = "1",
   prodid = "0",
@@ -166,15 +167,17 @@ Refer to Intel's [developer guide](https://software.intel.com/en-us/node/702979)
 for information on the _ISVPRODID_ and _ISVSVN_ values, which are denoted by the
 `prodid` and `isvsvn` parameters respectively in the configuration above.
 
-### Step 2: Get the sigstruct of the unsigned enclave built using the Asylo toolchain
+### Step 2: Get the unsigned enclave's signing material built using the Asylo toolchain
 
-When you build the sigstruct target with the appropriate build flags, it will
-build the unsigned enclave target and extract the sigstruct into a file.
+When you build the signing material target with the appropriate build flags, it
+will build the unsigned enclave target and extract the signing material into a
+file.
 
-The following commands illustrate how to produce a sigstruct (in this case
-`//package/path:enclave_sigstruct`). The enclave build command can be invoked
-with any additional desired flags (e.g., `-c opt` for optimization). Your
-project's `.bazelrc` is required to contain the Asylo config aliases from
+The following commands illustrate how to produce enclave signing material (in
+this case `//package/path:enclave_signing_material`). The enclave build command
+can be invoked with any additional desired flags (e.g., `-c opt` for
+optimization). Your project's `.bazelrc` is required to contain the Asylo config
+aliases from
 [Asylo's .bazelrc](https://github.com/google/asylo/blob/v0.3.0/.bazelrc).
 
 ```shell
@@ -196,28 +199,28 @@ CP="${DOCKER} cp"
 BAZEL=bazel
 CP=cp
 
-# Build the sigstruct target.
-${BAZEL} build --config=sgx //package/path:enclave_sigstruct
+# Build the signing material target.
+${BAZEL} build --config=sgx //package/path:enclave_signing_material
 
-# Copy out the generated sigstruct in order to sign it.
-${CP} "$(${BAZEL} info bazel-bin)/package/path/enclave_sigstruct.dat" "${RELEASE_DIR}"
+# Copy out the generated signing material in order to sign it.
+${CP} "$(${BAZEL} info bazel-bin)/package/path/enclave_signing_material.dat" "${RELEASE_DIR}"
 ```
 
 ### Step 3: Sign the release data
 
-Bring a copy of `"${RELEASE_DIR}/enclave_sigstruct.dat"` to your offline signing
-facility and sign it with your whitelisted private key. The exact steps required
-to produce the signature will depend on your key storage facility (e.g., an
-HSM). For OpenSSL usage, refer to Intel's
+Bring a copy of `"${RELEASE_DIR}/enclave_signing_material.dat"` to your offline
+signing facility and sign it with your whitelisted private key. The exact steps
+required to produce the signature will depend on your key storage facility
+(e.g., an HSM). For OpenSSL usage, refer to Intel's
 [OpenSSL examples](https://software.intel.com/en-us/sgx-sdk-dev-reference-openssl-examples)
 guide.
 
 ### Step 4: Reincorporate the signed release data into the enclave binary
 
 The final enclave binary, `enclave.so`, can be produced once you have the signed
-sigstruct in your code tree. The example signature file is named
-`enclave_sigstruct.dat.sig`. The `sgx_signed_enclave` rule combines all the
-necessary components for a signed enclave.
+signing material in your code tree. The example signature file is named
+`enclave_signing_material.dat.sig`. The `sgx.signed_enclave` rule combines all
+the necessary components for a signed enclave.
 
 ```shell
 ${BAZEL} build --config=sgx :enclave.so
@@ -233,11 +236,12 @@ untrusted application.
 
 The following example shows an invocation of a loader,
 `//package/path:enclave_loader`, that accepts the path of the enclave binary via
-a command-line flag (`--enclave_path`). Note that `--define=SGX_SIM=0` must be
-passed to the Bazel command that builds the loader so that the SGX SDK is built
-for hardware mode. If using the Asylo Docker image on an SGX-enabled host, note
-that you can propagate the SGX capabilities from the host with the following
-Docker flags:
+a command-line flag (`--enclave_path`). Note that
+`--@com_google_asylo_backend_provider//:backend=//third_party/linux_sgx:asylo_sgx_hw`
+must be passed to the Bazel command that builds the loader so that the SGX SDK
+is built for hardware mode. If using the Asylo Docker image on an SGX-enabled
+host, note that you can propagate the SGX capabilities from the host with the
+following Docker flags:
 
 *   `--device=/dev/isgx`
 *   `-v /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket`
@@ -254,8 +258,8 @@ DOCKER="docker run --rm --device=/dev/isgx \
   gcr.io/asylo-framework/asylo"
 BAZEL="${DOCKER} bazel"
 
-${BAZEL} run --define=SGX_SIM=0 //package/path:enclave_loader \
-  -- --enclave_path="${RELEASE_DIR}/enclave.so"
+${BAZEL} run --@com_google_asylo_backend_provider//:backend=//third_party/linux_sgx:asylo_sgx_hw \
+  //package/path:enclave_loader -- --enclave_path="${RELEASE_DIR}/enclave.so"
 ```
 
 ## Notes
