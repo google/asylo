@@ -876,6 +876,94 @@ def cc_enclave_test(
         **kwargs
     )
 
+def _enclave_build_test_impl(ctx):
+    script = ctx.actions.declare_file(ctx.label.name + "_test_script")
+    ctx.actions.write(
+        output = script,
+        content = "#!/bin/bash\necho \"PASS\"\n",
+        is_executable = True,
+    )
+    return [DefaultInfo(
+        files = depset([script]),
+        executable = script,
+        runfiles = ctx.runfiles(ctx.files.enclaves),
+    )]
+
+def _make_enclave_build_test(transition):
+    transition_dict = {
+        "backend": attr.label(
+            mandatory = True,
+            providers = [backend_tools.AsyloBackendInfo],
+        ),
+        "_whitelist_function_transition": attr.label(
+            default = "//tools/whitelists/function_transition_whitelist",
+        ),
+    }
+    old_dict = {
+        # Ignored, provided for symmetry.
+        "backend": attr.label(
+            default = "@com_google_asylo_backend_provider//:nothing",
+        ),
+    }
+    return rule(
+        implementation = _enclave_build_test_impl,
+        test = True,
+        attrs = backend_tools.merge_dicts(
+            {
+                "enclaves": attr.label_list(
+                    cfg = transitions.backend if transition else None,
+                    allow_files = True,
+                ),
+            },
+            transition_dict if transition else old_dict,
+        ),
+    )
+
+_enclave_build_test = _make_enclave_build_test(False)
+
+def _placeholder(**kwargs):
+    fail("Asylo's transition rules are not currently supported in Bazel.")
+
+_enclave_build_transition_test = _placeholder
+
+def enclave_build_test(
+        name,
+        enclaves = [],
+        tap = False,
+        tags = [],
+        name_by_backend = {},
+        backends = internal.should_be_all_backends):
+    """Tests that the given enclaves build in the specified backends.
+
+    Args:
+        name: The rule name and base name for backend-specific name
+            derivations.
+        enclaves: A list of enclave labels.
+        tags: Tags to apply to the test targets.
+        name_by_backend: An optional dictionary from backend label to backend-
+            specific test name.
+        backends: A list of Asylo backend labels.
+    """
+    kwargs = {
+        "enclaves": enclaves,
+        "tags": tags,
+    }
+    build_rule = _enclave_build_test
+    if transitions.supported(native.package_name()):
+        build_rule = _enclave_build_transition_test
+        kwargs = backend_tools.merge_dicts(
+            kwargs,
+            {"tags": kwargs.get("tags", []) + ["asylo-transition"]},
+        )
+    backend_tools.all_backends(
+        rule_or_macro = build_rule,
+        name = name,
+        name_by_backend = name_by_backend,
+        backends = backends,
+        kwargs = kwargs,
+        test = True,
+    )
+
 def sgx_enclave_test(name, srcs, **kwargs):
     """Build target for testing one or more instances of 'sgx.debug_enclave'.
 
