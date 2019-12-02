@@ -18,6 +18,24 @@
 
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 
+# website-docs-metadata
+# ---
+#
+# title:  //asylo/bazel:sgx_deps.bzl
+#
+# overview: Repository rules for importing dependencies needed for the SGX backends
+#
+# location: /_docs/reference/api/bazel/sgx_deps_bzl.md
+#
+# layout: docs
+#
+# type: markdown
+#
+# toc: true
+#
+# ---
+# {% include home.html %}
+
 def sgx_deps():
     """Macro to include Asylo's SGX backend dependencies in a WORKSPACE."""
 

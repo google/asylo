@@ -23,7 +23,19 @@ load("@bazel_skylib//:bzl_library.bzl", "bzl_library")
 
 bzl_library(
     name = "asylo_bzl_internal_dependendency",
-    srcs = ["//asylo/bazel:copts.bzl"],
+    srcs = [
+        "//asylo/bazel:asylo_copy_from_host.bzl",
+        "//asylo/bazel:asylo_internal.bzl",
+        "//asylo/bazel:asylo_transitions.bzl",
+        "//asylo/bazel:copts.bzl",
+    ],
+    deps = ["//asylo/docs/linux_sgx:sgx_sdk_bzl"],
+)
+
+bzl_library(
+    name = "asylo_bzl",
+    srcs = ["//asylo/bazel:asylo.bzl"],
+    deps = [":asylo_bzl_internal_dependendency"],
 )
 
 stardoc(
@@ -34,7 +46,7 @@ stardoc(
     deps = [
         ":asylo_bzl_internal_dependendency",
         "//asylo/docs/linux_sgx:sgx_sdk_bzl",
-        "@com_google_asylo_backend_provider//:enclave_info_bzl",
+        "@com_google_asylo_backend_provider//:bzl_srcs",
     ],
 )
 
@@ -43,7 +55,37 @@ stardoc(
     out = "dlopen_enclave_bzl.md",
     func_template = "bzl_function.vm",
     input = "//asylo/bazel:dlopen_enclave.bzl",
-    deps = ["@com_google_asylo_backend_provider//:enclave_info_bzl"],
+    deps = [
+        ":asylo_bzl",
+        "@com_google_asylo_backend_provider//:bzl_srcs",
+    ],
+)
+
+bzl_library(
+    name = "tool_srcs",
+    srcs = ["@bazel_tools//tools:bzl_srcs"],
+)
+
+stardoc(
+    name = "asylo_deps_bzl-docs",
+    out = "asylo_deps_bzl.md",
+    func_template = "bzl_function.vm",
+    input = "//asylo/bazel:asylo_deps.bzl",
+    deps = [
+        ":asylo_deps_internal_dependency",
+        ":tool_srcs",
+    ],
+)
+
+stardoc(
+    name = "sgx_deps_bzl-docs",
+    out = "sgx_deps_bzl.md",
+    func_template = "bzl_function.vm",
+    input = "//asylo/bazel:sgx_deps.bzl",
+    deps = [
+        ":asylo_deps_internal_dependency",
+        ":tool_srcs",
+    ],
 )
 
 bzl_library(

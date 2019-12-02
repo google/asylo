@@ -19,6 +19,24 @@
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 load("@com_github_grpc_grpc//bazel:grpc_deps.bzl", "grpc_deps")
 
+# website-docs-metadata
+# ---
+#
+# title:  //asylo/bazel:remote_deps.bzl
+#
+# overview: Repository rules for importing dependencies needed for the remote backend
+#
+# location: /_docs/reference/api/bazel/remote_deps_bzl.md
+#
+# layout: docs
+#
+# type: markdown
+#
+# toc: true
+#
+# ---
+# {% include home.html %}
+
 def remote_deps():
     """Macro to include Asylo remote backend dependencies in a WORKSPACE."""
 

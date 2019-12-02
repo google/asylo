@@ -16,8 +16,6 @@
 
 """Starlark support for Asylo backends."""
 
-load("@bazel_tools//tools/cpp:toolchain_utils.bzl", "find_cpp_toolchain")
-
 # This provider is accessible to all enclave backends to label their targets as
 # enclaves specifically. The enclave_binary and enclave_test macros then use
 # this information to understand data dependencies and generate command-line
@@ -169,19 +167,30 @@ def _cc_private_sources(srcs):
 DEFAULT_MALLOC = Label("@com_google_asylo_toolchain//toolchain:malloc")
 
 CC_BINARY_ATTRS = {
-    "srcs": attr.label_list(allow_files = True),
-    "deps": attr.label_list(),
-    "linkopts": attr.string_list(),
-    "copts": attr.string_list(),
-    "stamp": attr.bool(default = False),
-    "defines": attr.string_list(),
-    "malloc": attr.label(default = DEFAULT_MALLOC),
-    "includes": attr.string_list(),
+    "srcs": attr.label_list(allow_files = True, doc = "srcs for cc_binary."),
+    "deps": attr.label_list(doc = "deps for cc_binary."),
+    "linkopts": attr.string_list(doc = "linkopts for cc_binary."),
+    "copts": attr.string_list(doc = "copts for cc_binary."),
+    "stamp": attr.bool(
+        default = False,
+        doc = "stamp for cc_binary, not supported. Must be false.",
+    ),
+    "defines": attr.string_list(doc = "defines for cc_binary."),
+    "malloc": attr.label(
+        default = DEFAULT_MALLOC,
+        doc = ("Custom malloc for cc_binary. Not supported. Must be the " +
+               "default malloc."),
+    ),
+    "includes": attr.string_list(doc = "includes for cc_binary."),
     # The data field is not allowed.
-    "linkshared": attr.int(default = 1),
-    "linkstatic": attr.int(default = 1),
+    "linkshared": attr.int(default = 1, doc = "linkshared for cc_binary."),
+    "linkstatic": attr.int(default = 1, doc = "linkstatic for cc_binary."),
     # Attributes not in native.cc_binary.
-    "additional_linker_inputs": attr.label_list(allow_files = [".lds"], allow_empty = True),
+    "additional_linker_inputs": attr.label_list(
+        allow_files = [".lds"],
+        allow_empty = True,
+        doc = "Version scripts to pass to the linker.",
+    ),
     "_cc_toolchain": attr.label(default = "@com_google_asylo_toolchain//toolchain:crosstool"),
 }
 
@@ -233,7 +242,7 @@ def native_cc_binary(
         fail("Linkstamping is not supported")
     if ctx.attr.malloc.label != DEFAULT_MALLOC:
         fail("Custom malloc is not supported")
-    cc_toolchain = find_cpp_toolchain(ctx)
+    cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     features = ctx.attr.features + extra_features
     feature_configuration = cc_common.configure_features(
         ctx = ctx,

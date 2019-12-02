@@ -25,7 +25,7 @@ stardoc(
     name = "sgx_sdk_bzl-docs",
     out = "sgx_sdk_bzl.md",
     input = "@linux_sgx//:sgx_sdk.bzl",
-    deps = ["@com_google_asylo_backend_provider//:enclave_info_bzl"],
+    deps = ["@com_google_asylo_backend_provider//:bzl_srcs"],
 )
 
 bzl_library(

@@ -24,7 +24,7 @@ load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 # website-docs-metadata
 # ---
 #
-# title:  Asylo dlopen backend build rules
+# title:  //asylo/bazel:dlopen_enclave.bzl
 #
 # overview: Build rules for the process-separated dlopen enclave backend.
 #
@@ -39,7 +39,10 @@ load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 # ---
 # {% include home.html %}
 
-DlopenEnclaveInfo = provider()
+DlopenEnclaveInfo = provider(
+    doc = ("A provider attached to a dlopen enclave target for compile-time " +
+           "type-checking purposes"),
+)
 
 def _primitives_dlopen_enclave_impl(ctx):
     providers = backend_tools.cc_binary(

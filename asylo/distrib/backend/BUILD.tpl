@@ -77,13 +77,10 @@ cc_binary(
 )
 
 bzl_library(
-    name = "enclave_info_bzl",
-    srcs = ["enclave_info.bzl"],
-    visibility = ["//visibility:public"],
-)
-
-bzl_library(
-    name = "transitions_bzl",
-    srcs = ["transitions.bzl"],
+    name = "bzl_srcs",
+    srcs = [
+        "enclave_info.bzl",
+        "transitions.bzl",
+    ],
     visibility = ["//visibility:public"],
 )

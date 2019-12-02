@@ -16,11 +16,26 @@
 
 """Repository rule implementations for WORKSPACE to use."""
 
-load(
-    "@com_google_asylo//asylo/bazel:installation_path.bzl",
-    "installation_path",
-)
+load("//asylo/bazel:installation_path.bzl", "installation_path")
 load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
+
+# website-docs-metadata
+# ---
+#
+# title:  //asylo/bazel:asylo_deps.bzl
+#
+# overview: Repository rules for importing dependencies needed for Asylo
+#
+# location: /_docs/reference/api/bazel/asylo_deps_bzl.md
+#
+# layout: docs
+#
+# type: markdown
+#
+# toc: true
+#
+# ---
+# {% include home.html %}
 
 def _asylo_backend_deps_impl(repository_ctx):
     """Provides all repository files for com_google_asylo_backend_provider.

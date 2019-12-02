@@ -44,7 +44,7 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 # website-docs-metadata
 # ---
 #
-# title:  Asylo C++ build rules
+# title:  //asylo/bazel:asylo.bzl
 #
 # overview: Build rules for defining enclaves and tests.
 #
@@ -264,7 +264,7 @@ def dlopen_enclave_loader(
     )
 
 def cc_backend_unsigned_enclave(name, backend, **kwargs):
-    """Defines an unsigned enclave target in the provided backend.
+    """Defines a C++ unsigned enclave target in the provided backend.
 
     Args:
         name: The rule name.
@@ -281,7 +281,7 @@ def cc_backend_unsigned_enclave(name, backend, **kwargs):
     _impl(name = name, backend = backend, **kwargs)
 
 def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
-    """Defines an unsigned enclave target in the provided backend.
+    """Defines a C++ unsigned enclave target in the provided backend.
 
     Args:
         name: The rule name.
@@ -335,11 +335,11 @@ def cc_unsigned_enclave(
     Args:
       name: The rule name.
       backends: The asylo backend labels the binary uses. Must specify at least
-          one. Defaults to all supported backends. If more than one, then
-          name is an alias to a select on backend value to backend-specialized
-          targets. See enclave_info.bzl:all_backends documentation for details.
+        one. Defaults to all supported backends. If more than one, then
+        name is an alias to a select on backend value to backend-specialized
+        targets. See enclave_info.bzl:all_backends documentation for details.
       name_by_backend: An optional dictionary from backend label to backend-
-          specific target label.
+        specific target label.
       **kwargs: Remainder arguments to the backend rule.
     """
     enclave_rule = cc_backend_unsigned_enclave
@@ -362,13 +362,13 @@ def debug_sign_enclave(
         name: The signed enclave target name.
         unsigned: The label to the unsigned enclave.
         backends: The asylo backend labels the binary uses. Must specify at least
-            one. Defaults to all supported backends. If more than one, then
-            name is an alias to a select on backend value to backend-specialized
-            targets. See enclave_info.bzl:all_backends documentation for details.
+          one. Defaults to all supported backends. If more than one, then
+          name is an alias to a select on backend value to backend-specialized
+          targets. See enclave_info.bzl:all_backends documentation for details.
         config: A label to a config target that the backend-specific signing
-            tool uses.
+          tool uses.
         testonly: True if the target should only be used in tests.
-      name_by_backend: An optional dictionary from backend label to backend-
+        name_by_backend: An optional dictionary from backend label to backend-
           specific target label.
     """
     kwargs = {"unsigned": unsigned, "testonly": testonly}
@@ -411,21 +411,21 @@ def cc_enclave_binary(
     Args:
       name: Name for the build target.
       application_enclave_config: A target that defines a function called
-          ApplicationConfig() returning and EnclaveConfig. The returned config
-          is passed to the application enclave. Optional.
+        ApplicationConfig() returning and EnclaveConfig. The returned config
+        is passed to the application enclave. Optional.
       enclave_build_config: A backend-specific configuration target to be
-          passed to the enclave signer. Optional.
+        passed to the enclave signer. Optional.
       application_library_linkstatic: When building the application as a
-          library, whether to allow that library to be statically linked. See
-          the `linkstatic` option on `cc_library`. Optional.
+        library, whether to allow that library to be statically linked. See
+        the `linkstatic` option on `cc_library`. Optional.
       backends: The asylo backend labels the binary uses. Must specify at least
-          one. Defaults to all supported backends. If more than one, then
-          name is an alias to a select on backend value to backend-specialized
-          targets. See enclave_info.bzl:all_backends documentation for details.
+        one. Defaults to all supported backends. If more than one, then
+        name is an alias to a select on backend value to backend-specialized
+        targets. See enclave_info.bzl:all_backends documentation for details.
       unsigned_name_by_backend: An optional dictionary from backend label to backend-
-          specific target label for the defined unsigned enclaves.
+        specific target label for the defined unsigned enclaves.
       signed_name_by_backend: An optional dictionary from backend label to backend-
-          specific target label for the defined signed enclaves.
+        specific target label for the defined signed enclaves.
       **kwargs: cc_binary arguments.
     """
     application_library_name = name + "_application_library"
@@ -622,11 +622,11 @@ def enclave_test(
         enclave(s) are loaded locally.
       tags: Label attached to this test to allow for querying.
       backends: The asylo backend labels the binary uses. Must specify at least
-          one. Defaults to all supported backends. If more than one, then
-          name is an alias to a select on backend value to backend-specialized
-          targets. See enclave_info.bzl:all_backends documentation for details.
+        one. Defaults to all supported backends. If more than one, then
+        name is an alias to a select on backend value to backend-specialized
+        targets. See enclave_info.bzl:all_backends documentation for details.
       deprecation: A string deprecation message for uses of this macro that
-          have been marked deprecated. Optional.
+        have been marked deprecated. Optional.
       **kwargs: cc_test arguments.
     """
 
@@ -720,19 +720,19 @@ def cc_test(
       name: Same as native cc_test name.
       enclave_test_name: Name for the generated cc_enclave_test. Optional.
       enclave_test_unsigned_name_by_backend: Dictionary of backend label to
-          test name for backend-specific unsigned enclave targets generated by
-          cc_enclave_test. Optional.
+        test name for backend-specific unsigned enclave targets generated by
+        cc_enclave_test. Optional.
       enclave_test_signed_name_by_backend: Dictionary of backend label to
-          test name for backend-specific signed enclave targets generated by
-          cc_enclave_test. Optional.
+        test name for backend-specific signed enclave targets generated by
+        cc_enclave_test. Optional.
       enclave_test_config: A backend-specific configuration target to be passed
-          to the enclave signer for each backend. Optional.
+        to the enclave signer for each backend. Optional.
       srcs: Same as native cc_test srcs.
       deps: Same as native cc_test deps.
       backends: The asylo backend labels the binary uses. Must specify at least
-          one. Defaults to all supported backends. If more than one, then
-          name is an alias to a select on backend value to backend-specialized
-          targets. See enclave_info.bzl:all_backends documentation for details.
+        one. Defaults to all supported backends. If more than one, then
+        name is an alias to a select on backend value to backend-specialized
+        targets. See enclave_info.bzl:all_backends documentation for details.
       **kwargs: cc_test arguments.
     """
     native.cc_test(

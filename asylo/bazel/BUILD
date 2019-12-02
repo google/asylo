@@ -34,9 +34,19 @@ exports_files([
     "dlopen_enclave.bzl",
     "installation_path.bzl",
     "passing_test.sh",
+    "remote_deps.bzl",
     "sgx_deps.bzl",
     "sgx_rules.bzl",
 ])
+
+exports_files(
+    [
+        "asylo_copy_from_host.bzl",
+        "asylo_internal.bzl",
+        "asylo_transitions.bzl",
+    ],
+    visibility = ["//asylo/docs:__pkg__"],
+)
 
 # This tests that gtest can work inside an enclave.
 cc_enclave_test(

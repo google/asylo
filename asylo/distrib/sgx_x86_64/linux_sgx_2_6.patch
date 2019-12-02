@@ -4698,7 +4698,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,774 @@
+@@ -0,0 +1,773 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4707,7 +4707,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +# website-docs-metadata
 +# ---
 +#
-+# title: Asylo SGX backend build rules
++# title: "@linux_sgx//:sgx_sdk.bzl"
 +#
 +# overview: Build rules for defining SGX enclaves.
 +#
@@ -4722,23 +4722,52 @@ diff -Nur /dev/null sgx_sdk.bzl
 +# ---
 +# {% include home.html %}
 +
-+SGXEnclaveInfo = provider()
-+SGXEnclaveConfigInfo = provider(fields = [
-+    "disable_debug",
-+    "heap_max_size",
-+    "isvsvn",
-+    "misc_mask",
-+    "misc_select",
-+    "prodid",
-+    "provision_key",
-+    "kss",
-+    "isvextprodid",
-+    "isvfamilyid",
-+    "stack_max_size",
-+    "tcs_num",
-+    "tcs_policy",
-+])
-+SGXSigstructInfo = provider(fields = ["config", "unsigned"])
++SGXEnclaveInfo = provider(
++    doc = ("A provider attached to an SGX enclave target for compile-time " +
++           "type-checking purposes"),
++)
++
++# Documentation is duplicated between the provider and the rule that populates
++# the provider
++_config_fields = {
++    "disable_debug": ("Indicates whether launching the enclave in debug " +
++                      "mode is disabled"),
++    "heap_max_size": "The enclave's maximum heap size in bytes (4KB aligned)",
++    "isvsvn": ("The enclave's ISV (Independent Software Vendor) assigned " +
++               "Security Version Number"),
++    "misc_mask": "A mask indicating which bits in misc_select are enforced",
++    "misc_select": "The desired Extended SSA frame feature (must be 0)",
++    "prodid": ("The enclave's ISV (Independent Software Vendor) assigned " +
++               "Product ID"),
++    "provision_key": ("Indicates whether the enclave has access to the " +
++                      "Provisioning Key and the Provisioning Seal Key"),
++    "kss": ("A boolean that indicates whether the enclave can use Key " +
++            "Sharing and Separation (KSS)"),
++    "isvextprodid": ("The enclave's 16-byte extended ISVPRODID value. It is an " +
++                     "error to set this attribute if 'kss' is set to False"),
++    "isvfamilyid": ("The enclave's 16-byte extended ISV Family ID. It is an " +
++                    "error to set this attribute if 'kss' is set to False"),
++    "stack_max_size": "The enclave's maximum stack size in bytes (4KB aligned)",
++    "tcs_num": ("The number of Thread Control Structures allocated for " +
++                "the enclave"),
++    "tcs_policy": ("The TCS management policy (" +
++                   "0 - The TCS is bound to the untrusted thread, " +
++                   "1 - The TCS is unbound to the untrusted thread)"),
++}
++
++SGXEnclaveConfigInfo = provider(
++    doc = "Stores an enclave configuration for enclave signing",
++    fields = _config_fields,
++)
++SGXSigstructInfo = provider(
++    doc = ("A provider on enclave signing material that carries the enclave " +
++           "and configuration targets that generate it."),
++    fields = {
++        "config": ("An SGXEnclaveConfigInfo provider that represents the " +
++                   "configuration options"),
++        "unsigned": "A target created by sgx_cc_unsigned_enclave",
++    },
++)
 +
 +_hw_backend_label = "@linux_sgx//:asylo_sgx_hw"
 +_sim_backend_label = "@linux_sgx//:asylo_sgx_sim"
@@ -4805,6 +4834,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        ),
 +    }
 +    return rule(
++        doc = "Defines a C++ unsigned enclave in an SGX backend",
 +        implementation = _sgx_cc_unsigned_enclave_impl,
 +        cfg = transitions.toolchain if transition else None,
 +        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
@@ -4826,7 +4856,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        backends = SGX_BACKEND_LABELS,
 +        name_by_backend = {},
 +        **kwargs):
-+    """Build rule for creating an unsigned SGX enclave shared object file.
++    """Build rule for creating a C++ unsigned SGX enclave shared object file.
 +
 +    Args:
 +      name: The enclave target name.
@@ -4979,55 +5009,19 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            providers = [SGXEnclaveConfigInfo],
 +        ),
 +        # "1" for release enclaves.
-+        "disable_debug": attr.string(
-+            doc = ("Indicates whether launching the enclave in debug mode is " +
-+                   "disabled"),
-+        ),
-+        "heap_max_size": attr.string(
-+            doc = "The enclave's maximum heap size in bytes (4KB aligned)",
-+        ),
-+        "isvsvn": attr.string(
-+            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
-+                   "Security Version Number"),
-+        ),
-+        "misc_mask": attr.string(
-+            doc = "A mask indicating which bits in misc_select are enforced",
-+        ),
-+        "misc_select": attr.string(
-+            doc = "The desired Extended SSA frame feature (must be 0)",
-+        ),
-+        "prodid": attr.string(
-+            doc = ("The enclave's ISV (Independent Software Vendor) assigned " +
-+                   "Product ID"),
-+        ),
-+        "provision_key": attr.string(
-+            doc = ("Indicates whether the enclave has access to the " +
-+                   "Provisioning Key and the Provisioning Seal Key"),
-+        ),
-+        "kss": attr.bool(
-+            doc = ("Indicates whether the enclave can use Key Sharing and " +
-+                   "Separation (KSS)"),
-+        ),
-+        "isvextprodid": attr.string(
-+            doc = ("The enclave's 16-byte extended ISVPRODID value. It is an " +
-+                   "error to set this attribute if 'kss' is set to False"),
-+        ),
-+        "isvfamilyid": attr.string(
-+            doc = ("The enclave's 16-byte extended ISV Family ID. It is an " +
-+                   "error to set this attribute if 'kss' is set to False"),
-+        ),
-+        "stack_max_size": attr.string(
-+            doc = "The enclave's maximum stack size in bytes (4KB aligned)",
-+        ),
-+        "tcs_num": attr.string(
-+            doc = ("The number of Thread Control Structures allocated for " +
-+                   "the enclave"),
-+        ),
-+        "tcs_policy": attr.string(
-+            doc = ("The TCS management policy (" +
-+                   "0 - The TCS is bound to the untrusted thread, " +
-+                   "1 - The TCS is unbound to the untrusted thread)"),
-+        ),
++        "disable_debug": attr.string(doc = _config_fields["disable_debug"]),
++        "heap_max_size": attr.string(doc = _config_fields["heap_max_size"]),
++        "isvsvn": attr.string(doc = _config_fields["isvsvn"]),
++        "misc_mask": attr.string(doc = _config_fields["misc_mask"]),
++        "misc_select": attr.string(doc = _config_fields["misc_select"]),
++        "prodid": attr.string(doc = _config_fields["prodid"]),
++        "provision_key": attr.string(doc = _config_fields["provision_key"]),
++        "kss": attr.bool(doc = _config_fields["kss"]),
++        "isvextprodid": attr.string(doc = _config_fields["isvextprodid"]),
++        "isvfamilyid": attr.string(doc = _config_fields["isvfamilyid"]),
++        "stack_max_size": attr.string(doc = _config_fields["stack_max_size"]),
++        "tcs_num": attr.string(doc = _config_fields["tcs_num"]),
++        "tcs_policy": attr.string(doc = _config_fields["tcs_policy"]),
 +    },
 +)
 +
@@ -5455,6 +5449,8 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )]
 +
 +asylo_sgx_backend = rule(
++    doc = ("Defines an Asylo backend label for the SGX backend. Should only " +
++           "be used by @linux_sgx."),
 +    implementation = _asylo_sgx_backend_impl,
 +    attrs = {},
 +)
