@@ -78,7 +78,6 @@ dlopen_enclave_test(
         "--enclave_binary='{hello}'",
     ],
     deps = [
-        "//asylo:enclave_client",
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
@@ -135,7 +134,6 @@ sgx_enclave_test(
         "--enclave_binary='{hello}'",
     ],
     deps = [
-        "//asylo:enclave_client",
         "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",
