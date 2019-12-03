@@ -18,6 +18,7 @@
 
 #include <cstdint>
 
+#include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/examples/remote/bouncing_circles/circles.pb.h"

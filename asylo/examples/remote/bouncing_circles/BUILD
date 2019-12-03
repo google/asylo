@@ -88,6 +88,7 @@ sgx_unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -114,6 +115,7 @@ sgx_unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -140,6 +142,7 @@ sgx_unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -166,6 +169,7 @@ sgx_unsigned_enclave(
         "//asylo:enclave_runtime",
         "//asylo/util:logging",
         "//asylo/util:status",
+        "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
     ],
 )
