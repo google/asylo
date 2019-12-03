@@ -422,11 +422,13 @@ cc_library(
     srcs = ["attestation_key_certificate_impl.cc"],
     hdrs = ["attestation_key_certificate_impl.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = [
         ":attestation_key_cc_proto",
         ":attestation_key_certificate_cc_proto",
         ":hardware_types",
         ":platform_provisioning",
+        ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_constants",
         ":sgx_identity_cc_proto",
         ":sgx_identity_util_internal",

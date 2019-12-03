@@ -30,6 +30,7 @@
 #include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/attestation_key_certificate.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -77,6 +78,11 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
 
   const Report report_;
 };
+
+// Creates a Certificate containing an embedded AttestationKeyCertificate.
+StatusOr<Certificate> CreateAttestationKeyCertificate(
+    ReportProto report, Signature signature,
+    std::string pce_sign_report_payload);
 
 }  // namespace sgx
 }  // namespace asylo

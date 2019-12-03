@@ -248,5 +248,24 @@ AttestationKeyCertificateImpl::AttestationKeyCertificateImpl(
       subject_key_(std::move(subject_key)),
       report_(report) {}
 
+StatusOr<Certificate> CreateAttestationKeyCertificate(
+    ReportProto report, Signature signature,
+    std::string pce_sign_report_payload) {
+  AttestationKeyCertificate attestation_key_certificate;
+  attestation_key_certificate.set_pce_sign_report_payload(
+      std::move(pce_sign_report_payload));
+  *attestation_key_certificate.mutable_report() = std::move(report);
+  *attestation_key_certificate.mutable_signature() = std::move(signature);
+
+  Certificate certificate;
+  certificate.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  if (!attestation_key_certificate.SerializeToString(
+          certificate.mutable_data())) {
+    return Status(asylo::error::GoogleError::INTERNAL,
+                  "Failed to serialize attestation key certificate");
+  }
+  return certificate;
+}
+
 }  // namespace sgx
 }  // namespace asylo

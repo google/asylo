@@ -46,6 +46,8 @@ namespace asylo {
 namespace sgx {
 namespace {
 
+using ::testing::Eq;
+
 constexpr char kTestSigningIssuerKeyDerHex[] =
     "3077020101042058074ece9f20068fba38b3dd32febed75e9a3c54c7cd320d4d47ca45c9f2"
     "7d60a00a06082a8648ce3d030107a144034200049093de86699e3953f3cfe3107f6f8808cf"
@@ -164,13 +166,27 @@ StatusOr<Certificate> ModifyAndSerializeAkCert(
   ASYLO_RETURN_IF_ERROR(
       signing_key->Sign(ak_cert.report().value(), ak_cert.mutable_signature()));
 
+  return CreateAttestationKeyCertificate(
+      std::move(*ak_cert.mutable_report()),
+      std::move(*ak_cert.mutable_signature()),
+      std::move(*ak_cert.mutable_pce_sign_report_payload()));
+}
+
+TEST(AttestationKeyCertificateImplTest, CreateAttestationKeyCertificate) {
+  AttestationKeyCertificate ak_cert;
+  ASSERT_TRUE(ak_cert.ParseFromString(
+      absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex)));
+
   Certificate cert;
-  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
-  if (!ak_cert.SerializeToString(cert.mutable_data())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Could not serialize Attestation Key certificate");
-  }
-  return cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(cert, CreateAttestationKeyCertificate(
+                                       ak_cert.report(), ak_cert.signature(),
+                                       ak_cert.pce_sign_report_payload()));
+
+  EXPECT_THAT(cert.format(), Eq(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE));
+
+  AttestationKeyCertificate actual_ak_cert;
+  ASSERT_TRUE(actual_ak_cert.ParseFromString(cert.data()));
+  EXPECT_THAT(actual_ak_cert, EqualsProto(ak_cert));
 }
 
 TEST(AttestationKeyCertificateImplTest, CreateFailsWithMalformedData) {
@@ -249,7 +265,7 @@ TEST(AttestationKeyCertificateImplTest, CreatePcePayloadVersionFailure) {
 
   Certificate cert;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      cert, ModifyAndSerializeAkCert(pce_sign_report, ak_cert));
+      cert, ModifyAndSerializeAkCert(pce_sign_report, std::move(ak_cert)));
 
   EXPECT_THAT(AttestationKeyCertificateImpl::Create(cert),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
@@ -268,7 +284,7 @@ TEST(AttestationKeyCertificateImplTest, CreateKeyProtoVersionFailure) {
 
   Certificate cert;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      cert, ModifyAndSerializeAkCert(pce_sign_report, ak_cert));
+      cert, ModifyAndSerializeAkCert(pce_sign_report, std::move(ak_cert)));
 
   EXPECT_THAT(AttestationKeyCertificateImpl::Create(cert),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
@@ -287,7 +303,7 @@ TEST(AttestationKeyCertificateImplTest, CreateKeyProtoPurposeFailure) {
 
   Certificate cert;
   ASYLO_ASSERT_OK_AND_ASSIGN(
-      cert, ModifyAndSerializeAkCert(pce_sign_report, ak_cert));
+      cert, ModifyAndSerializeAkCert(pce_sign_report, std::move(ak_cert)));
 
   EXPECT_THAT(AttestationKeyCertificateImpl::Create(cert),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
