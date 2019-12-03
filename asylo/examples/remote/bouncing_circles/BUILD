@@ -81,7 +81,7 @@ sgx_unsigned_enclave(
         "SPEED_X=5",
         "SPEED_Y=3",
         "CIRCLE_RADIUS=5",
-        "CIRCLE_COLOR=\\\"rgb(66,133,244)\\\"",
+        "CIRCLE_COLOR=\"rgb(66,133,244)\"",
     ],
     deps = [
         ":circles_cc_proto",
@@ -107,7 +107,7 @@ sgx_unsigned_enclave(
         "SPEED_X=5",
         "SPEED_Y=5",
         "CIRCLE_RADIUS=10",
-        "CIRCLE_COLOR=\\\"rgb(234,67,53)\\\"",
+        "CIRCLE_COLOR=\"rgb(234,67,53)\"",
     ],
     deps = [
         ":circles_cc_proto",
@@ -133,7 +133,7 @@ sgx_unsigned_enclave(
         "SPEED_X=3",
         "SPEED_Y=5",
         "CIRCLE_RADIUS=20",
-        "CIRCLE_COLOR=\\\"rgb(250,187,5)\\\"",
+        "CIRCLE_COLOR=\"rgb(250,187,5)\"",
     ],
     deps = [
         ":circles_cc_proto",
@@ -159,7 +159,7 @@ sgx_unsigned_enclave(
         "SPEED_X=3",
         "SPEED_Y=3",
         "CIRCLE_RADIUS=15",
-        "CIRCLE_COLOR=\\\"rgb(52,168,82)\\\"",
+        "CIRCLE_COLOR=\"rgb(52,168,82)\"",
     ],
     deps = [
         ":circles_cc_proto",
