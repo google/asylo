@@ -14,23 +14,12 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
-# Contains libraries related to null identity and null assertion.
-
 load("//asylo/bazel:asylo.bzl", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-# Definition of a null assertion.
-proto_library(
-    name = "null_assertion_proto",
-    srcs = ["null_assertion.proto"],
-)
+licenses(["notice"])  # Apache v2.0
 
-cc_proto_library(
-    name = "null_assertion_cc_proto",
-    deps = [":null_assertion_proto"],
-)
+# Contains libraries related to null identity and null assertion.
 
 # Implementation of the EnclaveAssertionGenerator interface for null
 # assertions. This library is provided by default with the enclave gRPC stack.
@@ -43,9 +32,9 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":null_assertion_cc_proto",
         ":null_identity_constants",
         "//asylo/identity:enclave_assertion_generator",
+        "//asylo/identity/attestation/null/internal:null_assertion_cc_proto",
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
         "@com_google_absl//absl/synchronization",
@@ -64,10 +53,10 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:public"],
     deps = [
-        ":null_assertion_cc_proto",
         ":null_identity_constants",
         ":null_identity_util",
         "//asylo/identity:enclave_assertion_verifier",
+        "//asylo/identity/attestation/null/internal:null_assertion_cc_proto",
         "//asylo/platform/common:static_map",
         "//asylo/util:logging",
         "@com_google_absl//absl/synchronization",
