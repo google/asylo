@@ -1,0 +1,7 @@
+steps:
+  - label: ":hammer: SGX Simulator"
+    command: "ASYLO_SDK=${BUILDKITE_BUILD_CHECKOUT_PATH} buildkite/docker-test.sh"
+
+  - label: ":hammer: SGX"
+    command: "ASYLO_SDK=${BUILDKITE_BUILD_CHECKOUT_PATH} ASYLO_TO_TEST='--sgx' buildkite/docker-test.sh"
+
