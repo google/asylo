@@ -73,6 +73,7 @@ alias(
         "//asylo/platform/primitives:asylo_dlopen": ":trusted_dlopen",
         "//conditions:default": "@com_google_asylo_backend_provider//:nothing",
     }),
+    visibility = ["//visibility:public"],
 )
 
 cc_library(

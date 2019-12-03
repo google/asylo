@@ -238,7 +238,8 @@ TAB_SIZE               = 4
 # "Side Effects:". You can put \n's in the value part of an alias to insert
 # newlines.
 
-ALIASES                =
+ALIASES                = \
+  trusted_primitives=asylo/platform/primitives/trusted_primitives.h
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
@@ -821,6 +822,7 @@ asylo/platform/core/shared_name.h \
 asylo/platform/core/shared_name_kind.h \
 asylo/platform/core/shared_resource_manager.h \
 asylo/platform/core/trusted_application.h \
+asylo/platform/primitives/trusted_primitives.h \
 asylo/test/util/exec_tester.h \
 asylo/util/cleansing_types.h \
 asylo/util/error_space.h \
