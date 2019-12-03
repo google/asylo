@@ -289,8 +289,8 @@ PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
   if (input) {
     sgx_params->input_size = input->MessageSize();
     if (sgx_params->input_size > 0) {
+      // Allocate and copy data to |input_buffer|.
       sgx_params->input = untrusted_cache->Malloc(sgx_params->input_size);
-      // Copy data to |input_buffer|.
       input->Serialize(const_cast<void *>(sgx_params->input));
     }
   }
