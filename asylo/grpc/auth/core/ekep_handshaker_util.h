@@ -22,8 +22,8 @@
 #include <string>
 #include <vector>
 
-#include "asylo/identity/enclave_assertion_generator.h"
-#include "asylo/identity/enclave_assertion_verifier.h"
+#include "asylo/identity/attestation/enclave_assertion_generator.h"
+#include "asylo/identity/attestation/enclave_assertion_verifier.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/util/status.h"
 

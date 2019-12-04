@@ -14,15 +14,15 @@
 # limitations under the License.
 #
 
+# Used to selectively enable gtest tests to run inside an enclave.
+load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
 licenses(["notice"])  # Apache v2.0
 
 # Description:
 #   This package provides an implementation of gRPC security components for the
 #   enclave gRPC security stack.
-
-# Used to selectively enable gtest tests to run inside an enclave.
-load("//asylo/bazel:asylo.bzl", "cc_test")
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 package(default_visibility = [
     "//asylo/grpc/auth:__subpackages__",
@@ -282,9 +282,9 @@ cc_library(
     deps = [
         ":ekep_handshaker",
         "//asylo/identity:enclave_assertion_authority",
-        "//asylo/identity:enclave_assertion_generator",
-        "//asylo/identity:enclave_assertion_verifier",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
     ],

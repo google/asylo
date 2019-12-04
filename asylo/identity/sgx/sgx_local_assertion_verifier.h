@@ -19,9 +19,8 @@
 #ifndef ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_VERIFIER_H_
 #define ASYLO_IDENTITY_SGX_SGX_LOCAL_ASSERTION_VERIFIER_H_
 
-#include "asylo/identity/enclave_assertion_verifier.h"
-
 #include "absl/synchronization/mutex.h"
+#include "asylo/identity/attestation/enclave_assertion_verifier.h"
 
 namespace asylo {
 

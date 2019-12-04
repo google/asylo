@@ -22,10 +22,10 @@
 #include <string>
 
 #include "asylo/util/logging.h"
+#include "asylo/identity/attestation/enclave_assertion_generator.h"
+#include "asylo/identity/attestation/enclave_assertion_verifier.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
-#include "asylo/identity/enclave_assertion_generator.h"
-#include "asylo/identity/enclave_assertion_verifier.h"
 #include "asylo/identity/init_internal.h"
 #include "asylo/util/status.h"
 

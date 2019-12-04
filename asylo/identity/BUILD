@@ -84,8 +84,8 @@ cc_library(
     deps = [
         ":enclave_assertion_authority",
         ":enclave_assertion_authority_config_cc_proto",
-        ":enclave_assertion_generator",
-        ":enclave_assertion_verifier",
+        "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/util:logging",
         "//asylo/util:status",
     ],
@@ -309,24 +309,16 @@ cc_library(
     name = "enclave_assertion_generator",
     hdrs = ["enclave_assertion_generator.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/identity/attestation:enclave_assertion_generator",
     visibility = ["//visibility:public"],
-    deps = [
-        ":enclave_assertion_authority",
-        ":identity_cc_proto",
-        "//asylo/platform/common:static_map",
-        "//asylo/util:status",
-    ],
+    deps = ["//asylo/identity/attestation:enclave_assertion_generator"],
 )
 
 cc_library(
     name = "enclave_assertion_verifier",
     hdrs = ["enclave_assertion_verifier.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/identity/attestation:enclave_assertion_verifier",
     visibility = ["//visibility:public"],
-    deps = [
-        ":enclave_assertion_authority",
-        ":identity_cc_proto",
-        "//asylo/platform/common:static_map",
-        "//asylo/util:status",
-    ],
+    deps = ["//asylo/identity/attestation:enclave_assertion_verifier"],
 )

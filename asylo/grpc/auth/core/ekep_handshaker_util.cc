@@ -21,9 +21,9 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "asylo/grpc/auth/core/ekep_handshaker.h"
+#include "asylo/identity/attestation/enclave_assertion_generator.h"
+#include "asylo/identity/attestation/enclave_assertion_verifier.h"
 #include "asylo/identity/enclave_assertion_authority.h"
-#include "asylo/identity/enclave_assertion_generator.h"
-#include "asylo/identity/enclave_assertion_verifier.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

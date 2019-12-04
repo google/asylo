@@ -22,7 +22,7 @@
 #include <string>
 
 #include "absl/synchronization/mutex.h"
-#include "asylo/identity/enclave_assertion_generator.h"
+#include "asylo/identity/attestation/enclave_assertion_generator.h"
 
 namespace asylo {
 
