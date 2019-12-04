@@ -24,7 +24,7 @@ SGX_IMPLICIT_CC_BINARY_ATTRS = {
 def asylo_package():
     """Returns an appropriate-to-caller package name for Asylo."""
 
-    return "//asylo" if "asylo" in native.package_name() else "@com_google_asylo//asylo"
+    return "//asylo" if native.package_name().startswith("asylo") else "@com_google_asylo//asylo"
 
 def internal_embed_enclaves(name, elf_file, enclaves, **kwargs):
     """Build rule for embedding one or more enclaves into an ELF file.
