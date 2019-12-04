@@ -4698,7 +4698,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,773 @@
+@@ -0,0 +1,777 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -5119,6 +5119,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        config = None,
 +        tags = [],
 +        deprecation = None,
++        visibility = None,
 +        testonly = False):
 +    """Creates a signed enclave binary by using a debug key.
 +
@@ -5128,6 +5129,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        config: The enclave configuration label to use.
 +        tags: Bazel tags to add to name.
 +        deprecation: An optional deprecation message that issues a warning.
++        visibility: The optional visibility of the enclave binary.
 +        testonly: True if the target should only be used in tests.
 +    """
 +
@@ -5137,6 +5139,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        unsigned = unsigned,
 +        tags = tags + sgx_tags(),
 +        deprecation = deprecation,
++        visibility = visibility,
 +        testonly = testonly,
 +    )
 +
