@@ -346,26 +346,6 @@ cc_library(
             strip_prefix = "bazel-skylib-1.0.2",
         )
 
-    # Required by protobuf_python
-    if not native.existing_rule("six_archive"):
-        http_archive(
-            name = "six_archive",
-            build_file = "@com_google_protobuf//:six.BUILD",
-            url = "https://pypi.python.org/packages/source/s/six/six-1.10.0.tar.gz",
-            sha256 = "105f8d68616f8248e24bf0e9372ef04d3cc10104f1980f54d57b2ce73a5ad56a",
-        )
-
-    native.bind(
-        name = "six",
-        actual = "@six_archive//:six",
-    )
-
-    # Required by protobuf_python
-    native.bind(
-        name = "python_headers",
-        actual = "@com_google_protobuf//util/python:python_headers",
-    )
-
     # Required by protobuf and gRPC
     http_archive(
         name = "zlib",
