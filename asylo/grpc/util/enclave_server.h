@@ -76,7 +76,7 @@ class EnclaveServer final : public TrustedApplication {
 
   // From TrustedApplication.
 
-  Status Initialize(const EnclaveConfig &config) {
+  Status Initialize(const EnclaveConfig &config) override {
     const ServerConfig &config_server_proto =
         config.GetExtension(server_input_config);
     if (!config_server_proto.has_host()) {
@@ -98,12 +98,12 @@ class EnclaveServer final : public TrustedApplication {
     return InitializeServer();
   }
 
-  Status Run(const EnclaveInput &input, EnclaveOutput *output) {
+  Status Run(const EnclaveInput &input, EnclaveOutput *output) override {
     GetServerAddress(output);
     return Status::OkStatus();
   }
 
-  Status Finalize(const EnclaveFinal &enclave_final) {
+  Status Finalize(const EnclaveFinal &enclave_final) override {
     FinalizeServer();
     return Status::OkStatus();
   }
