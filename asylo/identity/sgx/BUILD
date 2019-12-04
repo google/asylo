@@ -30,6 +30,23 @@ licenses(["notice"])
 # This package defines sgx-specific portions of the enclave-identity and
 # key-management library.
 
+# This package group contains all packages related to SGX identity. It exists
+# to aid in the transition period of moving files from this package to more
+# granular packages.
+package_group(
+    name = "identity_sgx",
+    packages = [
+        "//asylo/identity/attestation/sgx/...",
+        "//asylo/identity/platform/sgx/...",
+        "//asylo/identity/provisioning/sgx/...",
+        "//asylo/identity/sealing/sgx/...",
+    ],
+)
+
+package(
+    default_visibility = [":identity_sgx"],
+)
+
 proto_library(
     name = "attributes_proto",
     srcs = ["attributes.proto"],
