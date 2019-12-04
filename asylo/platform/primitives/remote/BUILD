@@ -24,9 +24,24 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-exports_files([
-    "enclave_loader.cc",
-])
+# Enclave loader for remotely loaded enclaves.
+cc_library(
+    name = "enclave_loader",
+    srcs = ["enclave_loader.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives:enclave_loader_hdr",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/remote:proxy_client",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/primitives/util:exit_log",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "//asylo/util/remote:remote_loader_cc_proto",
+        "//asylo/util/remote:remote_proxy_config",
+    ],
+)
 
 # A full-duplex gRPC Communicator for an Asylo backend proxy, connecting
 # a remote client to an enclave proxy server running elsewhere.

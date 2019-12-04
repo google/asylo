@@ -44,25 +44,10 @@ _UNTRUSTED_SGX_DEPS = [
     "//asylo/platform/primitives/sgx:untrusted_sgx",
 ]
 
-# Target exposing untrusted remote backend-specific components for the build configuration.
-_UNTRUSTED_REMOTE_DEPS = [
-    "//asylo/platform/primitives/remote:proxy_client",
-    "//asylo/util/remote:remote_loader_cc_proto",
-    "//asylo/util/remote:remote_proxy_config",
-]
-
 # Loader for Asylo enclaves. The target selects the untrusted backend-specific components
 # based on the configuration passed by the user via the command line.
 cc_library(
     name = "enclave_loader",
-    srcs = select(
-        {
-            "//asylo/platform/primitives:asylo_remote": [
-                "//asylo/platform/primitives/remote:enclave_loader.cc",
-            ],
-            "//conditions:default": [],
-        },
-    ),
     hdrs = [
         "enclave_loader.h",
     ],
@@ -71,11 +56,8 @@ cc_library(
         "//asylo:enclave_cc_proto",
         ":untrusted_primitives",
     ] + select({
-        "//asylo/platform/primitives:asylo_remote": _UNTRUSTED_REMOTE_DEPS + [
-            "//asylo/platform/primitives/util:dispatch_table",
-            "//asylo/platform/primitives/util:exit_log",
-            "//asylo/util:status",
-            "//asylo/util:status_macros",
+        "//asylo/platform/primitives:asylo_remote": [
+            "//asylo/platform/primitives/remote:enclave_loader",
         ],
         "//conditions:default": [":local_enclave_loader"],
     }),
@@ -101,6 +83,17 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util:status_macros",
     ] + _UNTRUSTED_SGX_DEPS,
+)
+
+# Primitive API enclave loader header.
+cc_library(
+    name = "enclave_loader_hdr",
+    hdrs = ["enclave_loader.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":untrusted_primitives",
+        "//asylo:enclave_cc_proto",
+    ],
 )
 
 # Primitive API headers for untrusted code.
