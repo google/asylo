@@ -260,7 +260,7 @@ TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRun) {
 // threads.
 TEST_F(ApplicationWrapperEnclaveTest, NoMultipleRunFromMultipleThreads) {
   // The number of threads to use for the test.
-  constexpr int kNumTestThreads = 25;
+  constexpr int kNumTestThreads = 256;
 
   // A dummy Status used to initialize run_statuses so that if a thread does not
   // not update its corresponding entry in run_statuses, the un-updated Status
