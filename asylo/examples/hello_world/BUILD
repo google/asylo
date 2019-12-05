@@ -14,13 +14,13 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 # Hello World project for Asylo.
 
 load("//asylo/bazel:asylo.bzl", "enclave_loader")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
 
 package(
     default_visibility = ["//visibility:public"],

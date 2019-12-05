@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 # This package defines utility libraries that are used by the identity libraries.
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
 
 cc_library(
     name = "aligned_object_ptr",

@@ -14,10 +14,10 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
 
 proto_library(
     name = "attestation_domain_service_proto",

@@ -14,11 +14,11 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx_enclave_configuration")
+
+licenses(["notice"])  # Apache v2.0
 
 # An enclave configuration that should keep up with gRPC's resource usage.
 sgx_enclave_configuration(
