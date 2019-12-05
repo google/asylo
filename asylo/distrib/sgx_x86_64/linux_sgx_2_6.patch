@@ -850,6 +850,105 @@ diff -Nur psw/enclave_common/sgx_enclave_common.cpp psw/enclave_common/sgx_encla
      std::map<void*, bool>::iterator it = s_enclave_init.find(base_address);
      if (it != s_enclave_init.end() && it->second) {
          se_mutex_unlock(&s_enclave_mutex);
+diff -Nur psw/urts/cpu_features.cpp psw/urts/cpu_features.cpp
+--- psw/urts/cpu_features.cpp
++++ psw/urts/cpu_features.cpp
+@@ -76,17 +76,18 @@
+     unsigned int cpuid7_eax, cpuid7_ebx, cpuid7_ecx, cpuid7_edx;
+     unsigned int ecpuid1_eax, ecpuid1_ebx, ecpuid1_ecx, ecpuid1_edx;
+     uint64_t cpu_feature_indicator = CPU_FEATURE_GENERIC_IA32;
++    bool is_intel;
+ 
+     sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
+-    if(cpuid0_eax == 0 ||
+-            !(cpuid0_ebx == CPU_GENU_VAL &&
+-              cpuid0_edx == CPU_INEI_VAL &&
+-              cpuid0_ecx == CPU_NTEL_VAL))
++    if(cpuid0_eax == 0)
+     {
+         *__intel_cpu_feature_indicator = cpu_feature_indicator;
+         return;
+     }
+ 
++    is_intel = (cpuid0_ebx == CPU_GENU_VAL && cpuid0_edx == CPU_INEI_VAL &&
++                cpuid0_ecx == CPU_NTEL_VAL);
++
+     sgx_cpuid(1, &cpuid1_eax, &cpuid1_ebx, &cpuid1_ecx, &cpuid1_edx);
+     if (CPU_MODEL(cpuid1_eax) == CPU_ATOM1 ||
+             CPU_MODEL(cpuid1_eax) == CPU_ATOM2 ||
+@@ -162,16 +163,16 @@
+     if (CPU_HAS_BMI(cpuid7_ebx)) {
+         cpu_feature_indicator |= CPU_FEATURE_BMI;
+     }
+-    if (CPU_HAS_LZCNT(ecpuid1_ecx)) {
++    if (is_intel && CPU_HAS_LZCNT(ecpuid1_ecx)) {
+         cpu_feature_indicator |= CPU_FEATURE_LZCNT;
+     }
+     if (CPU_HAS_PREFETCHW(ecpuid1_ecx)) {
+         cpu_feature_indicator |= CPU_FEATURE_PREFETCHW;
+     }
+-    if (CPU_HAS_HLE(cpuid7_ebx)) {
++    if (is_intel && CPU_HAS_HLE(cpuid7_ebx)) {
+         cpu_feature_indicator |= CPU_FEATURE_HLE;
+     }
+-    if (CPU_HAS_RTM(cpuid7_ebx)) {
++    if (is_intel && CPU_HAS_RTM(cpuid7_ebx)) {
+         cpu_feature_indicator |= CPU_FEATURE_RTM;
+     }
+     if (CPU_HAS_RDSEED(cpuid7_ebx)) {
+diff -Nur psw/urts/cpu_features_ext.cpp psw/urts/cpu_features_ext.cpp
+--- psw/urts/cpu_features_ext.cpp
++++ psw/urts/cpu_features_ext.cpp
+@@ -63,20 +63,22 @@
+     bool ecpuid14_initialized = false;
+     uint64_t xfeature_mask = 0;
+     bool xfeature_initialized = false;
++    bool is_intel = false;
+     FeatureId curr_feature;
+ 
+ 	uint64_t cpu_feature_indicator = get_bit_from_feature_id(c_feature_generic_ia32);
+ 
+ 	sgx_cpuid(0, &cpuid0_eax, &cpuid0_ebx, &cpuid0_ecx, &cpuid0_edx);
+-	if (cpuid0_eax == 0 ||
+-		!(cpuid0_ebx == CPU_GENU_VAL &&
+-			cpuid0_edx == CPU_INEI_VAL &&
+-			cpuid0_ecx == CPU_NTEL_VAL))
++	if (cpuid0_eax == 0)
+ 	{
+ 		*__intel_cpu_feature_indicator = cpu_feature_indicator;
+ 		return;
+ 	}
+ 
++
++    is_intel = (cpuid0_ebx == CPU_GENU_VAL && cpuid0_edx == CPU_INEI_VAL &&
++                cpuid0_ecx == CPU_NTEL_VAL);
++
+ #define BEGIN_FEATURE(value) \
+     curr_feature = c_feature_##value;
+ 
+@@ -191,14 +193,18 @@
+ 
+     BEGIN_FEATURE(rdrnd)     CPUID_EAX1_ECX_VALUE(1 << 30)   END_FEATURE
+     BEGIN_FEATURE(bmi)       CPUID_EAX7_ECX0_EBX_VALUE((1 << 3) | (1 << 8)) END_FEATURE
+-    BEGIN_FEATURE(sgx)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 2)   END_FEATURE
+-    BEGIN_FEATURE(hle)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 4)   END_FEATURE
+-    BEGIN_FEATURE(rtm)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 11)  END_FEATURE
++    if (is_intel) {
++        BEGIN_FEATURE(sgx)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 2)   END_FEATURE
++        BEGIN_FEATURE(hle)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 4)   END_FEATURE
++        BEGIN_FEATURE(rtm)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 11)  END_FEATURE
++    }
+     BEGIN_FEATURE(adx)       CPUID_EAX7_ECX0_EBX_VALUE(1 << 19)  END_FEATURE
+     BEGIN_FEATURE(rdseed)    CPUID_EAX7_ECX0_EBX_VALUE(1 << 18)  END_FEATURE
+     BEGIN_FEATURE(clwb)      CPUID_EAX7_ECX0_EBX_VALUE(1 << 24)  END_FEATURE
+ 
+-    BEGIN_FEATURE(lzcnt)     CPUID_EAX80000001_ECX_VALUE(1 << 5) END_FEATURE
++    if (is_intel) {
++        BEGIN_FEATURE(lzcnt)     CPUID_EAX80000001_ECX_VALUE(1 << 5) END_FEATURE
++    }
+     BEGIN_FEATURE(wbnoinvd)  CPUID_EAX80000008_EBX_VALUE(1 << 9) END_FEATURE
+ 
+     BEGIN_FEATURE(gfni)      CPUID_EAX7_ECX0_ECX_VALUE(1 << 8)   END_FEATURE
 diff -Nur psw/urts/cpu_features.h psw/urts/cpu_features.h
 --- psw/urts/cpu_features.h
 +++ psw/urts/cpu_features.h
@@ -2722,6 +2821,15 @@ diff -Nur sdk/simulation/urtssim/enclave_creator_sim.cpp sdk/simulation/urtssim/
      //free the tcs used by initialization;
      enclave->get_thread_pool()->reset();
      if(SGX_SUCCESS == status)
+@@ -239,7 +241,7 @@
+     }
+     else
+     {
+-        SE_TRACE(SE_TRACE_WARNING, "initialize enclave failed\n");
++        SE_TRACE(SE_TRACE_WARNING, "initialize enclave failed: 0x%0x\n", status);
+         return SGX_ERROR_UNEXPECTED;
+     }
+ }
 diff -Nur sdk/simulation/urtssim/get_state.cpp sdk/simulation/urtssim/get_state.cpp
 --- sdk/simulation/urtssim/get_state.cpp
 +++ sdk/simulation/urtssim/get_state.cpp
