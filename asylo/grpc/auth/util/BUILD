@@ -14,6 +14,9 @@
 # limitations under the License.
 #
 
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("//asylo/bazel:asylo.bzl", "cc_test")
+
 licenses(["notice"])  # Apache v2.0
 
 # Description:
@@ -22,9 +25,6 @@ licenses(["notice"])  # Apache v2.0
 package(
     default_visibility = ["//asylo/grpc/auth:__subpackages__"],
 )
-
-load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:asylo.bzl", "cc_test")
 
 # A safe_string C utility.
 cc_library(
