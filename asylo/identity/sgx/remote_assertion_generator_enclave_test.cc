@@ -34,7 +34,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"

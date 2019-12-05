@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_local_secret_sealer.h"
+#include "asylo/identity/sealing/sgx/sgx_local_secret_sealer.h"
 
 #include <memory>
 #include <vector>
@@ -28,9 +28,9 @@
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/sealing/sgx/internal/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/local_secret_sealer_helpers.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/util/status_macros.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_local_secret_sealer.h"
+#include "asylo/identity/sealing/sgx/sgx_local_secret_sealer.h"
 
 #include <fcntl.h>
 #include <sys/stat.h>
@@ -35,13 +35,13 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
+#include "asylo/identity/sealing/sgx/internal/local_secret_sealer_helpers.h"
+#include "asylo/identity/sealing/sgx/internal/local_secret_sealer_test_data.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/local_sealed_secret.pb.h"
-#include "asylo/identity/sgx/local_secret_sealer_helpers.h"
-#include "asylo/identity/sgx/local_secret_sealer_test_data.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
@@ -771,7 +771,7 @@ TEST_F(SgxLocalSecretSealerTest,
 // golden data can be unsealed correctly.
 TEST_F(SgxLocalSecretSealerTest, BackwardCompatibility) {
   std::string data_path =
-      "asylo/identity/sgx/testdata/local_secret_sealer_test_data";
+      "asylo/identity/sealing/sgx/testdata/local_secret_sealer_test_data";
 
   int fd = open(data_path.c_str(), O_RDONLY);
   ASSERT_GT(fd, 0);

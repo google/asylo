@@ -198,16 +198,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "local_sealed_secret_proto",
-    srcs = ["local_sealed_secret.proto"],
-)
-
-cc_proto_library(
-    name = "local_sealed_secret_cc_proto",
-    deps = [":local_sealed_secret_proto"],
-)
-
-proto_library(
     name = "sgx_local_assertion_authority_config_proto",
     srcs = ["sgx_local_assertion_authority_config.proto"],
     visibility = ["//visibility:public"],
@@ -288,7 +278,7 @@ proto_library(
         "//asylo/crypto:certificate_proto",
         "//asylo/crypto:keys_proto",
         "//asylo/identity:identity_proto",
-        "//asylo/identity:sealed_secret_proto",
+        "//asylo/identity/sealing:sealed_secret_proto",
     ],
 )
 
@@ -307,7 +297,7 @@ proto_library(
         "//asylo:enclave_proto",
         "//asylo/crypto:certificate_proto",
         "//asylo/crypto:keys_proto",
-        "//asylo/identity:sealed_secret_proto",
+        "//asylo/identity/sealing:sealed_secret_proto",
     ],
 )
 
@@ -506,7 +496,6 @@ cc_library(
         ":hardware_types",
         ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
-        ":sgx_local_secret_sealer",
         ":sgx_remote_assertion_generator_impl",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
@@ -518,7 +507,8 @@ cc_library(
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:additional_authenticated_data_generator",
-        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
+        "//asylo/identity/sealing/sgx:sgx_local_secret_sealer",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
@@ -536,12 +526,12 @@ cc_test(
         ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
         ":remote_assertion_generator_enclave_util",
-        ":sgx_local_secret_sealer",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
+        "//asylo/identity/sealing/sgx:sgx_local_secret_sealer",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -657,7 +647,7 @@ enclave_test(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/crypto:keys_cc_proto",
-        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:enclave_assertion_authority_configs",
         "//asylo/test/util:status_matchers",
@@ -1891,7 +1881,7 @@ cc_library(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/strings",
@@ -1916,7 +1906,7 @@ cc_test(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/test/util:mock_enclave_client",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
@@ -1945,149 +1935,19 @@ cc_library(
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
-        "//asylo/identity:sealed_secret_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "local_secret_sealer_helpers",
-    srcs = ["local_secret_sealer_helpers.cc"],
-    hdrs = ["local_secret_sealer_helpers.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//visibility:private"],
-    deps = [
-        ":code_identity_cc_proto",
-        ":hardware_interface",
-        ":hardware_types",
-        ":local_sealed_secret_cc_proto",
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":sgx_identity_cc_proto",
-        ":sgx_identity_util_internal",
-        "//asylo/crypto:aead_cryptor",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto:sha256_hash",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/crypto/util:bytes",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:identity_acl_cc_proto",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity:sealed_secret_cc_proto",
-        "//asylo/platform/common:singleton",
-        "//asylo/util:cleansing_types",
-        "//asylo/util:status",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
     ],
 )
 
 cc_library(
     name = "sgx_local_secret_sealer",
-    srcs = ["sgx_local_secret_sealer.cc"],
     hdrs = ["sgx_local_secret_sealer.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/identity/sealing/sgx:sgx_local_secret_sealer",
     visibility = ["//visibility:public"],
-    deps = [
-        ":code_identity_cc_proto",
-        ":hardware_types",
-        ":local_secret_sealer_helpers",
-        ":sgx_identity_cc_proto",
-        ":sgx_identity_util",
-        "//asylo/crypto:aead_cryptor",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/crypto/util:bytes",
-        "//asylo/identity:identity_acl_cc_proto",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity:sealed_secret_cc_proto",
-        "//asylo/identity:secret_sealer",
-        "//asylo/util:cleansing_types",
-        "//asylo/util:status",
-        "@com_google_absl//absl/memory",
-    ],
-)
-
-proto_library(
-    name = "local_secret_sealer_test_data_proto",
-    testonly = 1,
-    srcs = ["local_secret_sealer_test_data.proto"],
-    deps = [
-        ":code_identity_proto",
-        ":sgx_identity_proto",
-        "//asylo/identity:sealed_secret_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "local_secret_sealer_test_data_cc_proto",
-    testonly = 1,
-    deps = ["local_secret_sealer_test_data_proto"],
-)
-
-cc_binary(
-    name = "generate_local_secret_sealer_test_data",
-    testonly = 1,
-    srcs = ["generate_local_secret_sealer_test_data.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":code_identity_cc_proto",
-        ":fake_enclave",
-        ":hardware_types",
-        ":local_secret_sealer_test_data_cc_proto",
-        ":sgx_identity_util",
-        ":sgx_local_secret_sealer",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/time",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-# This test uses FakeEnclave to simulate different enclaves. Since FakeEnclave
-# should not be used inside a real enclave, this test is not a
-# "cc_test_and_cc_enclave_test" target.
-cc_test(
-    name = "sgx_local_secret_sealer_test",
-    srcs = ["sgx_local_secret_sealer_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    data = [":testdata/local_secret_sealer_test_data"],
-    deps = [
-        ":code_identity_cc_proto",
-        ":fake_enclave",
-        ":hardware_types",
-        ":local_sealed_secret_cc_proto",
-        ":local_secret_sealer_helpers",
-        ":local_secret_sealer_test_data_cc_proto",
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":proto_format",
-        ":sgx_identity_util_internal",
-        ":sgx_local_secret_sealer",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/crypto/util:bytes",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/identity:identity_acl_cc_proto",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/identity:sealed_secret_cc_proto",
-        "//asylo/platform/common:singleton",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:path",
-        "//asylo/util:status",
-        "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:protobuf",
-    ],
+    deps = ["//asylo/identity/sealing/sgx:sgx_local_secret_sealer"],
 )
 
 cc_library(

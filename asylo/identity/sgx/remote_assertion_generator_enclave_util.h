@@ -29,7 +29,7 @@
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"

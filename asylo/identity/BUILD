@@ -61,16 +61,15 @@ cc_proto_library(
 proto_library(
     name = "sealed_secret_proto",
     srcs = ["sealed_secret.proto"],
+    deprecation = "Use //asylo/identity/sealing:sealed_secret_proto",
     visibility = ["//visibility:public"],
-    deps = [
-        ":identity_acl_proto",
-        ":identity_proto",
-        "//asylo/crypto:algorithms_proto",
-    ],
+    exports = ["//asylo/identity/sealing:sealed_secret_proto"],
+    deps = ["//asylo/identity/sealing:sealed_secret_proto"],
 )
 
 cc_proto_library(
     name = "sealed_secret_cc_proto",
+    deprecation = "Use //asylo/identity/sealing:sealed_secret_cc_proto",
     visibility = ["//visibility:public"],
     deps = [":sealed_secret_proto"],
 )
@@ -157,19 +156,11 @@ cc_test(
 
 cc_library(
     name = "secret_sealer",
-    srcs = ["secret_sealer.cc"],
     hdrs = ["secret_sealer.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/identity/sealing:secret_sealer",
     visibility = ["//visibility:public"],
-    deps = [
-        ":identity_cc_proto",
-        ":sealed_secret_cc_proto",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/platform/common:static_map",
-        "//asylo/util:cleansing_types",
-        "//asylo/util:status",
-    ],
+    deps = ["//asylo/identity/sealing:secret_sealer"],
 )
 
 cc_library(

@@ -31,7 +31,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/mock_intel_architectural_enclave_interface.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/secret_sealer.h"
+#include "asylo/identity/sealing/secret_sealer.h"
 
 #include <cstdint>
 #include <string>

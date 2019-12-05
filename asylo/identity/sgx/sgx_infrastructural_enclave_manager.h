@@ -26,7 +26,7 @@
 #include "asylo/client.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/keys.pb.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"

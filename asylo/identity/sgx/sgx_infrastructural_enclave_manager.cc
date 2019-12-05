@@ -23,7 +23,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/local_secret_sealer_helpers.h"
+#include "asylo/identity/sealing/sgx/internal/local_secret_sealer_helpers.h"
 
 #include <cstdint>
 #include <string>
@@ -31,9 +31,9 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
-#include "asylo/identity/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sealed_secret.pb.h"
+#include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
-#include "asylo/identity/sgx/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/self_identity.h"

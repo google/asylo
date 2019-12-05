@@ -21,7 +21,7 @@ package asylo.sgx;
 import "asylo/crypto/certificate.proto";
 import "asylo/crypto/keys.proto";
 import "asylo/enclave.proto";
-import "asylo/identity/sealed_secret.proto";
+import "asylo/identity/sealing/sealed_secret.proto";
 import "asylo/identity/sgx/platform_provisioning.proto";
 import "asylo/identity/sgx/sgx_identity.proto";
 
