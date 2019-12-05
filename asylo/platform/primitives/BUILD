@@ -84,6 +84,7 @@ cc_library(
     srcs = ["untrusted_primitives.cc"],
     hdrs = ["untrusted_primitives.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
         ":primitives",
         "//asylo/platform/primitives/util:message_reader_writer",
