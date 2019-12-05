@@ -18,6 +18,7 @@
 
 #include "asylo/crypto/util/byte_container_view.h"
 
+#include <cstdint>
 #include <iterator>
 #include <string>
 #include <vector>
@@ -31,6 +32,8 @@
 
 namespace asylo {
 namespace {
+
+using ::testing::ElementsAreArray;
 
 constexpr char kData1[] =
     "Mary had a little lamb, its fleece was white as snow";
@@ -62,6 +65,30 @@ TYPED_TEST(TypedByteContainerViewTest, SizeMethod) {
   ByteContainerView view(container);
 
   EXPECT_EQ(view.size(), container.size());
+}
+
+// Verify that all ByteContainerView constructors result in equivalent objects.
+TEST(ByteContainerViewTest, Constructors) {
+  uint8_t data_array[kSize1];
+  memcpy(data_array, kData1, sizeof(data_array));
+
+  ByteContainerView from_buffer_with_size(kData1, kSize1);
+  ByteContainerView from_string_view(absl::string_view{kData1});
+  ByteContainerView from_c_string(kData1);
+  ByteContainerView from_array(data_array);
+
+  EXPECT_THAT(from_buffer_with_size, ElementsAreArray(data_array));
+  EXPECT_THAT(from_string_view, ElementsAreArray(data_array));
+  EXPECT_THAT(from_c_string, ElementsAreArray(data_array));
+  EXPECT_THAT(from_array, ElementsAreArray(data_array));
+}
+
+// Verify that any constructors declared as constexpr function as expected.
+TEST(ByteContainerViewTest, ConstexprConstructors) {
+  static constexpr uint8_t kData[] = "cool test data";
+
+  constexpr ByteContainerView from_array(kData);
+  EXPECT_THAT(from_array, ElementsAreArray(kData));
 }
 
 // The following tests verify the various methods defined by the

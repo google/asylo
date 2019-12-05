@@ -72,7 +72,7 @@ class ByteContainerView {
 
   ByteContainerView() = delete;
 
-  ByteContainerView(void const *data, size_t size)
+  ByteContainerView(const void *data, size_t size)
       : data_{reinterpret_cast<const uint8_t *>(data)}, size_{size} {}
 
   ByteContainerView(absl::string_view v)
@@ -81,6 +81,10 @@ class ByteContainerView {
   ByteContainerView(const char *cstr)
       : data_{reinterpret_cast<const uint8_t *>(cstr)},
         size_{cstr ? strlen(cstr) : 0} {}
+
+  template <size_t kSize>
+  constexpr ByteContainerView(const uint8_t (&data)[kSize])
+      : data_{data}, size_{kSize} {}
 
   template <
       typename ByteContainerT,
