@@ -38,14 +38,10 @@ cc_library(
     ],
 )
 
-# Target exposing untrusted SGX backend-specific components for the build configuration.
-_UNTRUSTED_SGX_DEPS = [
-    "//asylo/platform/primitives/sgx:loader_cc_proto",
-    "//asylo/platform/primitives/sgx:untrusted_sgx",
-]
-
-# Loader for Asylo enclaves. The target selects the untrusted backend-specific components
-# based on the configuration passed by the user via the command line.
+# Loader for Asylo enclaves. The target conditionally selects remote enclave
+# loader targets contingent on the user passing the config setting for remote
+# enclaves. Else, the `local_enclave_loader` target conditionally selects the
+# enclave loader targets for enclaves to be loaded locally.
 cc_library(
     name = "enclave_loader",
     hdrs = [
@@ -67,22 +63,9 @@ cc_library(
 # should depend on this target directly.
 cc_library(
     name = "local_enclave_loader",
-    srcs = [
-        "//asylo/platform/primitives/sgx:enclave_loader.cc",
-    ],
-    hdrs = [
-        "enclave_loader.h",
-    ],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//visibility:private"],
-    deps = [
-        ":untrusted_primitives",
-        "//asylo:enclave_cc_proto",
-        "//asylo/platform/primitives/util:dispatch_table",
-        "//asylo/platform/primitives/util:exit_log",
-        "//asylo/util:status",
-        "//asylo/util:status_macros",
-    ] + _UNTRUSTED_SGX_DEPS,
+    deps = ["//asylo/platform/primitives/sgx:enclave_loader"],
 )
 
 # Primitive API enclave loader header.

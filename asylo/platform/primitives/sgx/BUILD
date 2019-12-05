@@ -24,9 +24,23 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-exports_files([
-    "enclave_loader.cc",
-])
+# Enclave loader for locally loaded SGX enclaves.
+cc_library(
+    name = "enclave_loader",
+    srcs = ["enclave_loader.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo:enclave_cc_proto",
+        "//asylo/platform/primitives:enclave_loader_hdr",
+        "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/platform/primitives/sgx:untrusted_sgx",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/primitives/util:exit_log",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+    ],
+)
 
 cc_library(
     name = "sgx_params",
