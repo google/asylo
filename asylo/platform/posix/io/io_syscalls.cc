@@ -36,11 +36,7 @@ extern "C" {
 
 int enclave_close(int fd) { return IOManager::GetInstance().Close(fd); }
 
-#ifdef ASYLO_ENCLAVE_SYSCALL_TRANSITION
 int enclave_open(const char *path_name, int flags, int mode) {
-#else
-int enclave_open(char *path_name, int flags, int mode) {
-#endif
   return IOManager::GetInstance().Open(path_name, flags, mode);
 }
 
@@ -48,11 +44,7 @@ int enclave_read(int fd, char *buf, int count) {
   return IOManager::GetInstance().Read(fd, static_cast<char *>(buf), count);
 }
 
-#ifdef ASYLO_ENCLAVE_SYSCALL_TRANSITION
 int enclave_write(int fd, const char *buf, int count) {
-#else
-int enclave_write(int fd, char *buf, int count) {
-#endif
   return IOManager::GetInstance().Write(fd, buf, count);
 }
 
@@ -64,11 +56,7 @@ int enclave_lseek(int fd, int ptr, int dir) {
   return IOManager::GetInstance().LSeek(fd, ptr, dir);
 }
 
-#ifdef ASYLO_ENCLAVE_SYSCALL_TRANSITION
 int enclave_link(const char *existing, const char *new_link) {
-#else
-int enclave_link(char *existing, char *new_link) {
-#endif
   return IOManager::GetInstance().Link(existing, new_link);
 }
 

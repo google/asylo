@@ -73,7 +73,6 @@ cc_library(
         "if.cc",
         "ifaddrs.cc",
         "malloc_lock.cc",
-        "mman.cc",
         "nl_types.cc",
         "pwd.cc",
         "sched.cc",

@@ -4544,7 +4544,7 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave.specs ./libgloss/en
 diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libgloss/enclave/enclave_syscalls.h
 --- ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h
 +++ ./libgloss/enclave/enclave_syscalls.h
-@@ -0,0 +1,47 @@
+@@ -0,0 +1,40 @@
 +#ifndef THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
 +#define THIRD_PARTY_NEWLIB_SRC_LIBGLOSS_ENCLAVE_ENCLAVE_SYSCALLS_H_
 +
@@ -4553,13 +4553,6 @@ diff -Naur ../newlib-2.5.0.20170922/libgloss/enclave/enclave_syscalls.h ./libglo
 +#include <sys/time.h>
 +#include <sys/times.h>
 +#include <sys/types.h>
-+
-+
-+// The changed signatures need to match immediately and in the container, but
-+// the container is behind until the next release. This define allows manual
-+// installs to use the new signatures (since the define is present) but the
-+// container to use the old signatures (since the define is not yet present).
-+#define ASYLO_ENCLAVE_SYSCALL_TRANSITION 1
 +
 +#if defined(__cplusplus)
 +extern "C" {
@@ -5298,22 +5291,6 @@ diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/_types.h ./newlib/li
  typedef	long		__suseconds_t;	/* microseconds (signed) */
  typedef	unsigned long	__useconds_t;	/* microseconds (unsigned) */
  
-diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/sys/types.h ./newlib/libc/include/sys/types.h
---- ../newlib-2.5.0.20170922/newlib/libc/include/sys/types.h
-+++ ./newlib/libc/include/sys/types.h
-@@ -21,6 +21,12 @@
- #include <sys/cdefs.h>
- #include <machine/_types.h>
- 
-+/* Asylo toolchain transitional defines to allow smooth changes to libc between
-+ * releases to the container, and manual toolchain installations. */
-+
-+
-+#define ASYLO_MMAN_MOVE_TRANSITION 1
-+
- /* BSD types permitted by POSIX and always exposed as in Glibc.  Only provided
-    for backward compatibility with BSD code.  The uintN_t standard types should
-    be preferred in new code. */
 diff -Naur ../newlib-2.5.0.20170922/newlib/libc/include/time.h ./newlib/libc/include/time.h
 --- ../newlib-2.5.0.20170922/newlib/libc/include/time.h
 +++ ./newlib/libc/include/time.h
