@@ -22,9 +22,9 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/daemon/identity/attestation_domain.h"
+#include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
-#include "asylo/identity/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"

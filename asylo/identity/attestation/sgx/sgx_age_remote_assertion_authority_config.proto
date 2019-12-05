@@ -18,4 +18,13 @@ syntax = "proto2";
 
 package asylo;
 
-import public "third_party/asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.proto";
+import "asylo/crypto/certificate.proto";
+
+// Configuration for an SGX AGE remote assertion authority.
+message SgxAgeRemoteAssertionAuthorityConfig {
+  // The root CAs' certificates in X.509 format. Must not be empty.
+  repeated Certificate root_ca_certificates = 1;
+
+  // The address and port of the remote assertion generator. Required.
+  optional string server_address = 2;
+}

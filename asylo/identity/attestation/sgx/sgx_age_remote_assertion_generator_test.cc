@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_age_remote_assertion_generator.h"
+#include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator.h"
 
 #include <cerrno>
 #include <cstring>
@@ -29,14 +29,14 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator_test_enclave.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/init.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
-#include "asylo/identity/sgx/sgx_age_remote_assertion_authority_config.pb.h"
-#include "asylo/identity/sgx/sgx_age_remote_assertion_generator_test_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/platform/primitives/sgx/loader.pb.h"
