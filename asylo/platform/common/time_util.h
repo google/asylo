@@ -24,6 +24,12 @@
 
 namespace asylo {
 
+constexpr int64_t kMicrosecondsPerSecond = INT64_C(1000000);
+constexpr int64_t kNanosecondsPerMicrosecond = INT64_C(1000);
+constexpr int64_t kNanosecondsPerSecond = INT64_C(1000000000);
+constexpr int64_t kFirstRepresentableSecond = INT64_MIN / kNanosecondsPerSecond;
+constexpr int64_t kLastRepresentableSecond = INT64_MAX / kNanosecondsPerSecond;
+
 // Returns true if |ts| is representable by a signed 64-bit offset from the
 // epoch. (+/- ~290 years)
 bool IsRepresentableAsNanoseconds(const struct timespec *ts);
@@ -51,6 +57,12 @@ struct timeval *NanosecondsToTimeVal(struct timeval *tv, int64_t nanosecs);
 
 // Converts a time in microseconds since the epoch to a timespec value.
 struct timespec *MicrosecondsToTimeSpec(struct timespec *ts, int64_t microsecs);
+
+// Returns the time difference between two timevals in microseconds.
+int64_t TimeValDiffInMicroseconds(const timeval *end, const timeval *start);
+
+// Returns the time difference between two timespecs in nanoseconds.
+int64_t TimeSpecDiffInNanoseconds(const timespec *end, const timespec *start);
 
 }  // namespace asylo
 

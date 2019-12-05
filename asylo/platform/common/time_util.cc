@@ -20,16 +20,6 @@
 
 namespace asylo {
 
-namespace {
-
-constexpr int64_t kMicrosecondsPerSecond = INT64_C(1000000);
-constexpr int64_t kNanosecondsPerMicrosecond = INT64_C(1000);
-constexpr int64_t kNanosecondsPerSecond = INT64_C(1000000000);
-constexpr int64_t kFirstRepresentableSecond = INT64_MIN / kNanosecondsPerSecond;
-constexpr int64_t kLastRepresentableSecond = INT64_MAX / kNanosecondsPerSecond;
-
-}  // namespace
-
 bool IsRepresentableAsNanoseconds(const struct timespec *ts) {
   return ts->tv_sec > kFirstRepresentableSecond &&
          ts->tv_sec < kLastRepresentableSecond;
@@ -89,6 +79,16 @@ timespec *MicrosecondsToTimeSpec(timespec *ts, int64_t microsecs) {
   ts->tv_nsec =
       (microsecs % kMicrosecondsPerSecond) * kNanosecondsPerMicrosecond;
   return ts;
+}
+
+int64_t TimeValDiffInMicroseconds(const timeval *end, const timeval *start) {
+  return kMicrosecondsPerSecond * (end->tv_sec - start->tv_sec) + end->tv_usec -
+         end->tv_usec;
+}
+
+int64_t TimeSpecDiffInNanoseconds(const timespec *end, const timespec *start) {
+  return kNanosecondsPerSecond * (end->tv_sec - start->tv_sec) + end->tv_nsec -
+         start->tv_nsec;
 }
 
 }  // namespace asylo

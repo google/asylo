@@ -44,6 +44,7 @@
 #include "absl/time/clock.h"
 #include "absl/time/time.h"
 #include "asylo/enclave_manager.h"
+#include "asylo/platform/common/time_util.h"
 #include "asylo/platform/host_call/test/enclave_test_selectors.h"
 #include "asylo/platform/host_call/untrusted/host_call_handlers_initializer.h"
 #include "asylo/platform/primitives/extent.h"
@@ -63,9 +64,6 @@ using ::testing::StrEq;
 using asylo::primitives::Extent;
 using asylo::primitives::MessageReader;
 using asylo::primitives::MessageWriter;
-
-constexpr int64_t kMicroSecondsPerSecond = 1000000L;
-constexpr int64_t kNanosecondsPerSecond = 1000000000L;
 
 namespace asylo {
 namespace host_call {
@@ -1971,8 +1969,7 @@ TEST_F(HostCallTest, TestClockGettimeMonotonicDifference) {
 
   end = out2.next<struct timespec>();
 
-  uint64_t diff = kNanosecondsPerSecond * (end.tv_sec - start.tv_sec) +
-                  end.tv_nsec - start.tv_nsec;
+  uint64_t diff = TimeSpecDiffInNanoseconds(&end, &start);
   EXPECT_GE(diff, kNanosecondsPerSecond);
   EXPECT_LE(diff, kNanosecondsPerSecond * 1.6);
 }
@@ -1992,7 +1989,7 @@ TEST_F(HostCallTest, TestClockGettimeRealTimeVsHost) {
   EXPECT_THAT(out.next<int>(), Eq(0));
 
   ts = out.next<struct timespec>();
-  uint64_t enc_time_ns = ts.tv_sec * kNanosecondsPerSecond + ts.tv_nsec;
+  uint64_t enc_time_ns = TimeSpecToNanoseconds(&ts);
   EXPECT_LT(kNanosecondsPerSecond, enc_time_ns);
 
   int64_t delta = enc_time_ns - host_time_ns;
@@ -2388,17 +2385,13 @@ TEST_F(HostCallTest, GetRusageTest) {
 
   struct rusage usage_actual = out.next<struct rusage>();
 
-  uint64_t diff_utime =
-      kMicroSecondsPerSecond *
-          (usage_actual.ru_utime.tv_sec - usage_expected.ru_utime.tv_sec) +
-      usage_actual.ru_utime.tv_usec - usage_expected.ru_utime.tv_usec;
-  EXPECT_LE(diff_utime, kMicroSecondsPerSecond);
+  uint64_t diff_utime = TimeValDiffInMicroseconds(&usage_actual.ru_utime,
+                                                  &usage_expected.ru_utime);
+  EXPECT_LE(diff_utime, kMicrosecondsPerSecond);
 
-  uint64_t diff_stime =
-      kMicroSecondsPerSecond *
-          (usage_actual.ru_stime.tv_sec - usage_expected.ru_stime.tv_sec) +
-      usage_actual.ru_stime.tv_usec - usage_expected.ru_stime.tv_usec;
-  EXPECT_LE(diff_stime, kMicroSecondsPerSecond);
+  uint64_t diff_stime = TimeValDiffInMicroseconds(&usage_actual.ru_stime,
+                                                  &usage_expected.ru_stime);
+  EXPECT_LE(diff_stime, kMicrosecondsPerSecond);
 }
 
 }  // namespace
