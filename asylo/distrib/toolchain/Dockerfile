@@ -16,7 +16,7 @@
 
 # Use fixed snapshot of Debian to create a deterministic environment.
 # Snapshot tags can be found at https://hub.docker.com/r/debian/snapshot/tags
-ARG debian_snapshot=buster-20190708
+ARG debian_snapshot=buster-20191118
 
 # Start with a temporary image just for building the toolchain.
 FROM debian/snapshot:${debian_snapshot} as toolchain
@@ -46,8 +46,8 @@ RUN /opt/asylo/distrib/toolchain/install-toolchain \
 FROM debian/snapshot:${debian_snapshot}
 
 # Use a fixed version of Bazel.
-ARG bazel_version=1.1.0
-ARG bazel_sha=138b47ffd54924e3c0264c65d31d3927803fb9025db4d5b18107df79ee3bda95
+ARG bazel_version=1.2.1
+ARG bazel_sha=4bbb2718d451db5922223fda3aed3810c4ca50f431481e86a7fec4c585f18b1f
 ARG bazel_url=https://storage.googleapis.com/bazel-apt/pool/jdk1.8/b/bazel/bazel_${bazel_version}_amd64.deb
 
 # Install development tools
@@ -58,12 +58,15 @@ RUN apt-get update && \
     sha256sum --check bazel.sha256 && \
     apt-get install -y \
         ./bazel.deb \
+        bash-completion \
         build-essential \
         git \
         libfl2 \
         ocaml-nox \
         ocamlbuild \
-        python3 \
+        python-dev \
+        python2.7-dev \
+        python3-dev \
         vim \
         && \
     rm bazel.deb bazel.sha256 && \
