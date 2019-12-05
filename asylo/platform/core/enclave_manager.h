@@ -35,7 +35,6 @@
 #include "asylo/platform/core/enclave_client.h"
 #include "asylo/platform/core/enclave_config_util.h"
 #include "asylo/platform/core/shared_resource_manager.h"
-#include "asylo/platform/primitives/enclave_type.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"  // IWYU pragma: export

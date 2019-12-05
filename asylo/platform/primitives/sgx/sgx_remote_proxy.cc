@@ -20,7 +20,6 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
-#include "asylo/platform/primitives/enclave_type.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/remote/util/remote_proxy_lib.h"
