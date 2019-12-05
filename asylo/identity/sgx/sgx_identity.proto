@@ -18,9 +18,10 @@ syntax = "proto2";
 
 // $title: SGX Identity
 // $overview: Protobuf definition for SgxIdentity and related submessages.
-// $location: https://asylo.dev/docs/reference/proto/asylo.sgx_identity.v1.html
-// $front_matter: redirect_from: /docs/reference/proto/sgx_identity.html
+// $location: https://asylo.dev/docs/reference/proto/identity/asylo.sgx_identity.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/identity/sgx_identity.html
 
+// This package defines messages for SGX identity and identity expectations.
 package asylo;
 
 import "asylo/identity/sgx/code_identity.proto";
@@ -31,13 +32,21 @@ import "asylo/identity/sgx/machine_configuration.proto";
 // security-relevant properties of its execution environment
 // (`sgx.MachineConfiguration`).
 message SgxIdentity {
-  optional sgx.CodeIdentity code_identity = 1;                  // Required.
-  optional sgx.MachineConfiguration machine_configuration = 2;  // Required.
+  // The enclave's code identity properties. Required.
+  optional sgx.CodeIdentity code_identity = 1;
+
+  // Describes the security-relevant configuration of the machine on which the
+  // enclave is running. Required.
+  optional sgx.MachineConfiguration machine_configuration = 2;
 }
 
 // Specification of which fields from `SgxIdentity` to match.
 message SgxIdentityMatchSpec {
-  optional sgx.CodeIdentityMatchSpec code_identity_match_spec = 1;  // Required.
+  // A specification of which fields from `CodeIdentity` to match. Required.
+  optional sgx.CodeIdentityMatchSpec code_identity_match_spec = 1;
+
+  // A specification of which fields from `MachineConfiguration` to match.
+  // Required.
   optional sgx.MachineConfigurationMatchSpec machine_configuration_match_spec =
       2;  // Required.
 }

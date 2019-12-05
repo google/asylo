@@ -21,6 +21,8 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/identity/asylo.identity.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/identity/identity.html
 
+// This package defines the core building blocks of identity, identity
+// expectations, and assertions of identity.
 package asylo;
 
 // A categorization class of identity.

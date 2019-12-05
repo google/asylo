@@ -21,6 +21,8 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/grpc/asylo.enclave_server.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/grpc/enclave_server.html
 
+// This package defines messages and extensions used by the EnclaveServer
+// utility.
 package asylo;
 
 import "asylo/enclave.proto";

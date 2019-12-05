@@ -18,9 +18,11 @@ syntax = "proto2";
 
 // $title: SGX Local Assertion Authority Config
 // $overview: Protobuf definition for SGX Local Assertion Authority Config.
-// $location: https://asylo.dev/docs/reference/proto/asylo.sgx_local_assertion_authority_config.v1.html
-// $front_matter: redirect_from: /docs/reference/proto/sgx_local_assertion_authority_config.html
+// $location: https://asylo.dev/docs/reference/proto/identity/asylo.sgx_local_assertion_authority_config.v1.html
+// $front_matter: redirect_from: /docs/reference/proto/identity/sgx_local_assertion_authority_config.html
 
+// This package defines the configuration for an SGX local assertion authority,
+// which is included in an EnclaveAssertionAuthorityConfig message.
 package asylo;
 
 // Configuration for an SGX local assertion authority.

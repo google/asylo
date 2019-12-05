@@ -21,12 +21,15 @@ syntax = "proto2";
 // $location: https://asylo.dev/docs/reference/proto/identity/asylo.enclave_assertion_authority_config.v1.html
 // $front_matter: redirect_from: /docs/reference/proto/identity/enclave_assertion_authority_config.html
 
+// This package defines EnclaveAssertionAuthorityConfig, which is used to
+// initialize an assertion authority (an assertion generator or an assertion
+// verifier).
 package asylo;
 
 import "asylo/identity/identity.proto";
 
-// Configuration for an enclave assertion authority (i.e. an assertion generator
-// or an assertion verifier).
+// Configuration used to initialize an enclave assertion authority (an assertion
+// generator or an assertion verifier).
 message EnclaveAssertionAuthorityConfig {
   // Describes the target enclave assertion authority.
   optional AssertionDescription description = 1;
