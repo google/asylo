@@ -262,7 +262,6 @@ cc_library(
         "deps/lua/src",
         "src",
     ],
-    nocopts = "-Wframe-larger-than=16384",
     textual_hdrs = ["src/ae_select.c"],
     deps = [
         ":hiredis_lib",
@@ -317,7 +316,7 @@ cc_library(
         "src/zipmap.h",
     ],
     copts = ZCALLOC_COPT,
-    nocopts = "-Wframe-larger-than=16384",
+    alwayslink = 1,
     deps = [":redis_lib"],
 )
 
@@ -325,7 +324,6 @@ cc_library(
     name = "redis_benchmark",
     srcs = ["src/redis-benchmark.c"],
     copts = ZCALLOC_COPT,
-    nocopts = "-Wframe-larger-than=16384",
     deps = [":redis_lib"],
 )
 
@@ -337,13 +335,11 @@ cc_library(
         "src/redis-cli.c",
     ],
     copts = ZCALLOC_COPT,
-    nocopts = "-Wframe-larger-than=16384",
     deps = [":redis_lib"],
 )
 
 cc_library(
     name = "redis_check_aof",
     srcs = ["src/redis-check-aof.c"],
-    nocopts = "-Wframe-larger-than=16384",
     deps = [":redis_lib"],
 )

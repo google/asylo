@@ -59,6 +59,7 @@ cc_library(
     name = "sqlite3_shell",
     srcs = ["shell.c"],
     copts = SQLITE_COPTS,
+    alwayslink = 1,
     deps = [":org_sqlite"],
     visibility = ["//visibility:public"],
 )
