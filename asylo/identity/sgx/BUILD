@@ -1089,7 +1089,7 @@ cc_library(
         ":miscselect_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/identity:additional_authenticated_data_generator",
-        "//asylo/identity/util:aligned_object_ptr",
+        "//asylo/util:aligned_object_ptr",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",

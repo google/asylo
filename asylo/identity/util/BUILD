@@ -20,26 +20,6 @@ load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
 
-cc_library(
-    name = "aligned_object_ptr",
-    hdrs = ["aligned_object_ptr.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-)
-
-cc_test(
-    name = "aligned_object_ptr_test",
-    srcs = ["aligned_object_ptr_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":aligned_object_ptr",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 proto_library(
     name = "sha256_hash_proto",
     srcs = ["sha256_hash.proto"],

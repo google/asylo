@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/util/aligned_object_ptr.h"
+#include "asylo/util/aligned_object_ptr.h"
 
 #include <string>
 

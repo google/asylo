@@ -28,7 +28,7 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
 #include "asylo/identity/sgx/secs_attributes.h"
-#include "asylo/identity/util/aligned_object_ptr.h"
+#include "asylo/util/aligned_object_ptr.h"
 
 // This file defines SGX architectural structures that pertain to the identity
 // and key-management portions of the SGX architecture. These structures are

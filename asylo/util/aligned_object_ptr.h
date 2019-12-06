@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_UTIL_ALIGNED_OBJECT_PTR_H_
-#define ASYLO_IDENTITY_UTIL_ALIGNED_OBJECT_PTR_H_
+#ifndef ASYLO_UTIL_ALIGNED_OBJECT_PTR_H_
+#define ASYLO_UTIL_ALIGNED_OBJECT_PTR_H_
 
 #include <cstdint>
 #include <cstdlib>
@@ -112,4 +112,4 @@ class AlignedObjectPtr {
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_UTIL_ALIGNED_OBJECT_PTR_H_
+#endif  // ASYLO_UTIL_ALIGNED_OBJECT_PTR_H_
