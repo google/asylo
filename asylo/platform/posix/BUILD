@@ -287,6 +287,43 @@ sgx_enclave_test(
     ],
 )
 
+sgx.debug_enclave(
+    name = "fork_consistency_test.so",
+    unsigned = "fork_consistency_test_unsigned.so",
+)
+
+sgx.unsigned_enclave(
+    name = "fork_consistency_test_unsigned.so",
+    srcs = ["fork_consistency_test_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/test/util:enclave_test_application",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+    ],
+)
+
+sgx_enclave_test(
+    name = "fork_consistency_test",
+    srcs = ["fork_test_driver.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {"enclave": "fork_consistency_test.so"},
+    test_args = ["--enclave_path='{enclave}'"],
+    deps = [
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:enclave_test",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 proto_library(
     name = "fork_security_test_proto",
     srcs = ["fork_security_test.proto"],
