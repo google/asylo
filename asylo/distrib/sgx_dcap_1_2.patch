@@ -4,6 +4,9 @@
   * Added `BUILD` file for Bazel support
 
 ## Modifications to v1.2
+  * Renamed `map_file` and `unmap_file` to `dcap_internal_map_file` and
+    `dcap_internal_unmap_file` to prevent linking conflicts with the linux-sgx
+    which also defines `map_file` and `unmap_file`.
   * Moved PCE constants out of sgx_pce.h to sgx_pce_constants.h
   * Moved quote constants out of QuoteVerification src and into include dir.
     moved non-constexpr definitions into QuoteConstants.cpp so as not to violate
@@ -850,7 +853,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,284 @@
+@@ -0,0 +1,269 @@
 +# Description: sgx_data_center_attestation_primitives is the Intel SGX Data
 +# Center Attestation Primitives library for linux.
 +
@@ -882,7 +885,6 @@ diff -Nur /dev/null BUILD
 +    ],
 +    hdrs = ["QuoteGeneration/pce_wrapper/generated/pce_u.h"],
 +    copts = [
-+        "-Iexternal/linux_sgx/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc/internal",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
 +    ],
@@ -922,16 +924,11 @@ diff -Nur /dev/null BUILD
 +        "QuoteGeneration/pce_wrapper/inc/sgx_pce.h",
 +    ],
 +    copts = [
-+        "-Iexternal/linux_sgx/common/inc",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/linux",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/common",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/ae/inc/internal",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/parser",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/parser/linux",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +    ],
 +    visibility = ["//visibility:public"],
 +    deps = [
@@ -969,15 +966,19 @@ diff -Nur /dev/null BUILD
 +        "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_quote.h",
 +        "QuoteGeneration/quote_wrapper/common/inc/sgx_quote_3.h",
 +    ],
-+    copts = [
-+        "-Iexternal/linux_sgx/include",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
++    includes = [
++        "QuoteGeneration/common/inc",
++        "QuoteGeneration/pce_wrapper/inc",
++        "QuoteGeneration/quote_wrapper/common/inc",
++        "QuoteGeneration/quote_wrapper/ql/inc",
++        "QuoteGeneration/quote_wrapper/quote/inc",
 +    ],
 +    visibility = [
 +        "//visibility:public",
 +    ],
 +    deps = [
 +        ":pce_constants",
++        "@linux_sgx//:common_inc",
 +        "@linux_sgx//:public",
 +    ],
 +)
@@ -992,19 +993,15 @@ diff -Nur /dev/null BUILD
 +    ],
 +    hdrs = ["QuoteGeneration/quote_wrapper/generated/qe3_u.h"],
 +    copts = [
-+        "-Iexternal/linux_sgx/include",
-+        "-Iexternal/linux_sgx/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/inc",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/pce_wrapper/inc",
 +    ],
 +    # Allow the header to be included as a global "qe3_u.h".
 +    strip_include_prefix = "QuoteGeneration/quote_wrapper/generated/",
 +    deps = [
 +        ":common_inc_internal",
 +        ":quote_wrapper_common",
++        "@linux_sgx//:common_inc",
 +        "@linux_sgx//:public",
 +    ],
 +)
@@ -1029,20 +1026,11 @@ diff -Nur /dev/null BUILD
 +        "QuoteGeneration/quote_wrapper/quote/inc/sgx_ql_core_wrapper.h",
 +    ],
 +    copts = [
-+        "-Iexternal/linux_sgx/common/inc",  # Must be first for sgx_urts.h
-+        "-Iexternal/linux_sgx/include",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/generated",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/ql/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/enclave",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/quote_wrapper/quote/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
 +        "-Wno-address",
-+    ],
-+    # The DCAP code doesn't qualify header paths.
-+    includes = [
-+        "QuoteGeneration/pce_wrapper/inc",
-+        "QuoteGeneration/quote_wrapper/common/inc",
 +    ],
 +    # The linker option below works around a linker issue. The PCE interface is
 +    # implemented twice in both SGX DCAP and SGX SDK. The latter is used to
@@ -1079,11 +1067,12 @@ diff -Nur /dev/null BUILD
 +        "QuoteGeneration/parser/section.h",
 +    ],
 +    copts = [
-+        "-Iexternal/linux_sgx/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/linux",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/parser",
-+        "-Iexternal/sgx_dcap/QuoteGeneration/parser/linux",
++    ],
++    includes = [
++        "QuoteGeneration/parser",
++        "QuoteGeneration/parser/linux",
 +    ],
 +    textual_hdrs = [
 +        "QuoteGeneration/parser/linux/update_global_data.hxx",
@@ -1124,7 +1113,6 @@ diff -Nur /dev/null BUILD
 +        "QuoteGeneration/common/inc/internal/util.h",
 +    ],
 +    copts = [
-+        "-Iexternal/linux_sgx/common/inc",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/linux",
 +        "-Iexternal/sgx_dcap/QuoteGeneration/common/inc/internal/elfheader",
