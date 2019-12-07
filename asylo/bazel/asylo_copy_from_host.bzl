@@ -252,14 +252,14 @@ def _enclave_runner_script_impl(ctx):
         ctx.attr.loader_args,
     )
     args = [ctx.expand_location(arg, ctx.attr.data) for arg in args]
-    files = [ctx.executable.loader] + ctx.files.enclaves + ctx.files.data
+    files = [ctx.file.loader] + ctx.files.enclaves + ctx.files.data
 
-    if ctx.executable.remote_proxy:
-        args = args + ["--remote_proxy='" + ctx.executable.remote_proxy.short_path + "'"]
-        files = files + [ctx.executable.remote_proxy]
+    if ctx.file.remote_proxy:
+        args = args + ["--remote_proxy='" + ctx.file.remote_proxy.short_path + "'"]
+        files = files + [ctx.file.remote_proxy]
 
     script_src = internal.enclave_runner_script_template.format(
-        loader = ctx.executable.loader.short_path,
+        loader = ctx.file.loader.short_path,
         args = " ".join(args),
     )
 
@@ -297,23 +297,15 @@ def _make_enclave_runner_rule(test = False):
                 providers = [backend_tools.EnclaveInfo],
             ),
             "loader": attr.label(
-                executable = True,
                 # If the loader contains embedded enclaves, then it needs to be
                 # built with the enclave toolchain, since host-toolchain targets
                 # cannot depend on enclave-toolchain targets. As such, it is the
                 # responsiblity of the caller to ensure that the loader is built
                 # correctly.
-                cfg = "target",
                 mandatory = True,
                 allow_single_file = True,
             ),
-            "remote_proxy": attr.label(
-                default = None,
-                executable = True,
-                cfg = "target",
-                mandatory = False,
-                allow_single_file = True,
-            ),
+            "remote_proxy": attr.label(allow_single_file = True),
             "loader_args": attr.string_list(),
             # Ignored. Added for compatibility with transition rules.
             "backend": attr.label(
