@@ -60,6 +60,14 @@ import re
 import sys
 
 
+class ParseError(Exception):
+  pass
+
+
+class UserError(Exception):
+  pass
+
+
 class SystemCallTable(object):
   """A collection of Linux system call descriptions."""
 
@@ -112,7 +120,7 @@ class SystemCallTable(object):
       # offsets into the list. Check here that its length is odd as a sanity
       # check.
       if len(split) % 2 != 1:
-        raise 'Could not parse definition: ' + definition
+        raise ParseError('Could not parse definition: ' + definition)
 
       name = split[0]
       self.parameter_count[name] = arity
@@ -126,10 +134,8 @@ class SystemCallTable(object):
         parameter_type = parameters[i].strip()
         parameter_name = parameters[i + 1].strip()
 
-        # The Linux kernel defines a macro __user to mark a type as referring to
-        # user-controlled data. Rather than define a similar macro, remove this
-        # in the preprocessor.
-        parameter_type = re.sub('__user', '', parameter_type)
+        if parameter_type.find('__user') != -1:
+          raise UserError('Type includes __user marker: ' + parameter_type)
 
         # Translate kernel types which are not directly available in user space.
         parameter_type = re.sub('umode_t', 'unsigned short', parameter_type)
