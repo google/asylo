@@ -434,6 +434,38 @@ cc_test(
     ],
 )
 
+cc_library(
+    name = "proto_enum_util",
+    hdrs = ["proto_enum_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = ["@com_google_protobuf//:protobuf"],
+)
+
+proto_library(
+    name = "proto_enum_util_test_proto",
+    testonly = 1,
+    srcs = ["proto_enum_util_test.proto"],
+)
+
+cc_proto_library(
+    name = "proto_enum_util_test_cc_proto",
+    testonly = 1,
+    deps = ["proto_enum_util_test_proto"],
+)
+
+cc_test(
+    name = "proto_enum_util_test",
+    srcs = ["proto_enum_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "proto_enum_util_enclave_test",
+    deps = [
+        ":proto_enum_util",
+        ":proto_enum_util_test_cc_proto",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 # A library to help with the google.protobuf.Value representation of JSON.
 cc_library(
     name = "proto_struct_util",
