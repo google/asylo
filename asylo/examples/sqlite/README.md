@@ -31,12 +31,12 @@ even a user running with root privileges.
 ### Asylo support to run SQLite
 
 Asylo is an open source framework for developing enclave applications. Asylo
-provides support for full-featured applications, such as SQLite 3.28.0, to run
+provides support for full-featured applications, such as SQLite 3.30.1, to run
 inside an enclave. We also provide an application-wrapper to make it easy to run
 an application in an enclave without any source code changes, along with a BUILD
 file that allows external sources to be built with Bazel.
 
-## Build SQLite 3.28.0 with Asylo
+## Build SQLite 3.30.1 with Asylo
 
 ### Setting up the environment in Docker
 
@@ -63,18 +63,18 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Asylo
 http_archive(
     name = "com_google_asylo",
-    urls = ["https://github.com/google/asylo/archive/v0.4.0.tar.gz"],
-    sha256 = "9dd8063d1a8002f6cc729f0115e2140a2eb1b14a10c111411f6b554e14ee739c",
-    strip_prefix = "asylo-0.4.0",
+    urls = ["https://github.com/google/asylo/archive/v0.4.1.tar.gz"],
+    sha256 = "6eb3f8ae4dd87a43d337286896874b47674aad1eff5c3568bd69a3d0bc5b26c0",
+    strip_prefix = "asylo-0.4.1",
 )
 
 # SQLite
 http_archive(
     name = "org_sqlite",
     build_file = "//asylo/distrib:sqlite.BUILD",
-    urls = ["https://www.sqlite.org/2019/sqlite-autoconf-3280000.tar.gz"],
-    sha256 = "d61b5286f062adfce5125eaf544d495300656908e61fca143517afcc0a89b7c3",
-    strip_prefix = "sqlite-autoconf-3280000",
+    urls = ["https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz"],
+    sha256 = "8c5a50db089bd2a1b08dbc5b00d2027602ca7ff238ba7658fabca454d4298e60",
+    strip_prefix = "sqlite-autoconf-3300100",
 )
 
 load("//asylo/bazel:asylo_deps.bzl", "asylo_deps")
@@ -85,7 +85,7 @@ sgx_deps()
 ```
 
 This bazel rule imports Asylo and SQLite. To build SQLite with Bazel, Asylo
-provides the BUILD file for SQLite 3.28.0, located at
+provides the BUILD file for SQLite 3.30.1, located at
 `@com_google_asylo/asylo/distrib/sqlite.BUILD`.
 
 #### Add .bazelrc
@@ -96,7 +96,7 @@ Next, in the same workspace, create a `.bazelrc` file by copying from
 This file specifies the toolchain and configurations used to build Asylo
 targets.
 
-#### Build target for SQLite 3.28.0 with application wrapper
+#### Build target for SQLite 3.30.1 with application wrapper
 
 Asylo provides an application wrapper which makes it easy to run external user
 applications in Asylo. To make use of it, create a BUILD file in your workspace,
@@ -128,7 +128,7 @@ docker run -it --rm \
     -v ${PWD}:/opt/my-project \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
-    gcr.io/asylo-framework/asylo
+    gcr.io/asylo-framework/asylo:buildenv-v0.4.1
 ```
 
 Here `-v` maps the current workspace to the directory in Docker, and `-w` sets
@@ -145,7 +145,7 @@ After finishing building, you should be able to see SQLite up and messages
 similar as following:
 
 ```shell
-SQLite version 3.28.0 2019-04-16 19:49:53
+SQLite version 3.30.1 2019-10-10 20:19:45
 Enter ".help" for usage hints.
 Connected to a transient in-memory database.
 Use ".open FILENAME" to reopen on a persistent database.
@@ -156,9 +156,9 @@ Now we can run SQLite inside an enclave with some simple examples, such as:
 
 ```shell
 sqlite> create table mytable(one varchar(10), two smallint);
-sqlite> insert into mytable values('Asylo', 040);
-sqlite> insert into mytable values('SQLite', 3280);
+sqlite> insert into mytable values('Asylo', 050);
+sqlite> insert into mytable values('SQLite', 33001);
 sqlite> select * from mytable;
-Asylo|40
-SQLite|3280
+Asylo|50
+SQLite|33001
 ```

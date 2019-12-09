@@ -31,12 +31,12 @@ even a user running with root privileges.
 ### Asylo support to run Redis
 
 Asylo is an open source framework for developing enclave applications. Asylo
-provides support for full-featured applications, such as Redis 5.0.5, to run
+provides support for full-featured applications, such as Redis 5.0.7, to run
 inside an enclave. We also provide an application-wrapper to make it easy to run
 an application in an enclave without any source code changes, along with a BUILD
 file that allows external sources to be built with Bazel.
 
-## Build Redis 5.0.5 with Asylo
+## Build Redis 5.0.7 with Asylo
 
 ### Setting up the environment in Docker
 
@@ -63,18 +63,18 @@ load("@bazel_tools//tools/build_defs/repo:http.bzl", "http_archive")
 # Asylo
 http_archive(
     name = "com_google_asylo",
-    urls = ["https://github.com/google/asylo/archive/v0.4.0.tar.gz"],
-    sha256 = "9dd8063d1a8002f6cc729f0115e2140a2eb1b14a10c111411f6b554e14ee739c",
-    strip_prefix = "asylo-0.4.0",
+    urls = ["https://github.com/google/asylo/archive/v0.4.1.tar.gz"],
+    sha256 = "6eb3f8ae4dd87a43d337286896874b47674aad1eff5c3568bd69a3d0bc5b26c0",
+    strip_prefix = "asylo-0.4.1",
 )
 
 # Redis
 http_archive(
     name = "com_github_antirez_redis",
     build_file = "@com_google_asylo//asylo/distrib:redis.BUILD",
-    urls = ["https://github.com/antirez/redis/archive/5.0.5.tar.gz"],
-    sha256 = "3313d5e09938dc6e16c6911efa4a24b1c494bacb5a917a8e7925ebd55e56be85",
-    strip_prefix = "redis-5.0.5",
+    urls = ["https://github.com/antirez/redis/archive/5.0.7.tar.gz"],
+    sha256 = "2761422599f8969559e66797cd7f606c16e907bf82d962345a7d366c5d1278df",
+    strip_prefix = "redis-5.0.7",
 )
 
 load("@com_google_asylo//asylo/bazel:asylo_deps.bzl", "asylo_deps")
@@ -85,7 +85,7 @@ sgx_deps()
 ```
 
 This bazel rule imports Asylo and Redis. To build Redis with Bazel, Asylo
-provides the BUILD file for Redis 5.0.5, located at
+provides the BUILD file for Redis 5.0.7, located at
 `@com_google_asylo/asylo/distrib/redis.BUILD`.
 
 #### Add .bazelrc
@@ -96,7 +96,7 @@ Next, in the same workspace, create a `.bazelrc` file by copying from
 This file specifies the toolchain and configurations used to build Asylo
 targets.
 
-#### Build target for Redis 5.0.5 in SGX Simulation mode
+#### Build target for Redis 5.0.7 in SGX Simulation mode
 
 Asylo provides an application wrapper which makes it easy to run external user
 applications in Asylo. To make use of it, create a BUILD file in your workspace,
@@ -140,7 +140,7 @@ docker run -it --rm \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
     --network host \
-    gcr.io/asylo-framework/asylo
+    gcr.io/asylo-framework/asylo:buildenv-v0.4.1
 ```
 
 Here `-v` maps the current workspace to the directory in Docker, and `-w` sets
@@ -185,10 +185,10 @@ setting/getting keys:
 ```shell
 192.168.9.2:6379> ping
 PONG
-192.168.9.2:6379> set redis 5.0.5
+192.168.9.2:6379> set redis 5.0.7
 OK
 192.168.9.2:6379> get redis
-"5.0.5"
+"5.0.7"
 ```
 
 To enable snapshotting (if it's not automatically enabled by the config file),
@@ -260,7 +260,7 @@ docker run -it --rm \
     --tmpfs /root/.cache/bazel:exec \
     -w /opt/my-project \
     --network host \
-    gcr.io/asylo-framework/asylo
+    gcr.io/asylo-framework/asylo:buildenv-v0.4.1
 ```
 
 The SGX capabilities are propagated by the docker flags `--device=/dev/isgx` and
