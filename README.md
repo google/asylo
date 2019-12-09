@@ -263,7 +263,7 @@ The following packages contain source code that may be of particular interest to
 users of the Asylo framework as well as those looking to contribute to Asylo
 development.
 
-+   [asylo](/asylo)
++   [asylo/](/asylo)
     +   [crypto/](/asylo/crypto)
         -   Crypto utilities and wrappers around BoringSSL.
     +   [distrib/](/asylo/distrib)
