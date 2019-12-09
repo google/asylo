@@ -438,6 +438,7 @@ cc_library(
     name = "proto_enum_util",
     hdrs = ["proto_enum_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
     deps = ["@com_google_protobuf//:protobuf"],
 )
 
