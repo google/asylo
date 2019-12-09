@@ -16,15 +16,15 @@
  *
  */
 
-#include "asylo/identity/util/sha256_hash_util.h"
+#include "asylo/crypto/sha256_hash_util.h"
 
 #include <string>
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/strings/escaping.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
-#include "asylo/identity/util/sha256_hash.pb.h"
 
 namespace asylo {
 

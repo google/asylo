@@ -28,6 +28,7 @@
 
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_join.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
@@ -38,7 +39,6 @@
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/secs_miscselect.h"
-#include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 
 namespace asylo {

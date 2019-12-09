@@ -24,6 +24,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
@@ -31,7 +32,6 @@
 #include "asylo/identity/sgx/secs_miscselect.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
-#include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {

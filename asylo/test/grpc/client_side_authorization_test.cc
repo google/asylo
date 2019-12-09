@@ -23,6 +23,7 @@
 #include <gtest/gtest.h>
 #include "absl/flags/flag.h"
 #include "asylo/client.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/enclave_manager.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
@@ -32,7 +33,6 @@
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
-#include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/test/grpc/client_enclave.pb.h"
 #include "asylo/test/grpc/messenger_server_impl.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"

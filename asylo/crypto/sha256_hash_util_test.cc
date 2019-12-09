@@ -16,13 +16,13 @@
  *
  */
 
-#include "asylo/identity/util/sha256_hash_util.h"
+#include "asylo/crypto/sha256_hash_util.h"
 
 #include <string>
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/identity/util/sha256_hash.pb.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 
 namespace asylo {
 namespace {

@@ -74,6 +74,18 @@ cc_proto_library(
     deps = [":fake_certificate_proto"],
 )
 
+proto_library(
+    name = "sha256_hash_proto",
+    srcs = ["sha256_hash.proto"],
+    visibility = ["//visibility:public"],
+)
+
+cc_proto_library(
+    name = "sha256_hash_cc_proto",
+    visibility = ["//visibility:public"],
+    deps = ["sha256_hash_proto"],
+)
+
 # A generic cryptor wrapping an AEAD key and a NonceGeneratorInterface.
 cc_library(
     name = "aead_cryptor",
@@ -717,6 +729,34 @@ cc_test(
         "//asylo/util:status_macros",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "sha256_hash_util",
+    srcs = ["sha256_hash_util.cc"],
+    hdrs = ["sha256_hash_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":sha256_hash_cc_proto",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "sha256_hash_util_test",
+    srcs = ["sha256_hash_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sha256_hash_cc_proto",
+        ":sha256_hash_util",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "@com_google_googletest//:gtest",
     ],
 )

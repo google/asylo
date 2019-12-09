@@ -18,6 +18,7 @@
 
 #include "asylo/identity/sgx/sgx_identity_test_util.h"
 
+#include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/descriptions.h"
@@ -29,7 +30,6 @@
 #include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
-#include "asylo/identity/util/sha256_hash.pb.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

@@ -16,13 +16,13 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_UTIL_SHA256_HASH_UTIL_H_
-#define ASYLO_IDENTITY_UTIL_SHA256_HASH_UTIL_H_
+#ifndef ASYLO_CRYPTO_SHA256_HASH_UTIL_H_
+#define ASYLO_CRYPTO_SHA256_HASH_UTIL_H_
 
 #include <cstdint>
 #include <string>
 
-#include "asylo/identity/util/sha256_hash.pb.h"
+#include "asylo/crypto/sha256_hash.pb.h"
 
 namespace asylo {
 constexpr uint32_t kSha256Size = 32;
@@ -42,4 +42,4 @@ bool operator!=(const Sha256HashProto &lhs, const Sha256HashProto &rhs);
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_UTIL_SHA256_HASH_UTIL_H_
+#endif  // ASYLO_CRYPTO_SHA256_HASH_UTIL_H_
