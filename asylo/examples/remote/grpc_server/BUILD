@@ -18,10 +18,6 @@ load(
     "//asylo/bazel:asylo.bzl",
     "enclave_loader",
 )
-load(
-    "@linux_sgx//:sgx_sdk.bzl",
-    "sgx",
-)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
@@ -32,38 +28,12 @@ package(
     default_visibility = ["//visibility:public"],
 )
 
-# The enclave hosting gRPC server.
-sgx.unsigned_enclave(
-    name = "grpc_server_enclave_unsigned.so",
-    srcs = ["grpc_server_enclave.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo:enclave_runtime",
-        "//asylo/examples/grpc_server:grpc_server_config_cc_proto",
-        "//asylo/examples/grpc_server:translator_server_impl",
-        "//asylo/util:status",
-        "@com_github_grpc_grpc//:grpc++",
-        "@com_github_grpc_grpc//:grpc++_reflection",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
-        "@com_google_absl//absl/time",
-    ],
-)
-
-sgx.debug_enclave(
-    name = "grpc_server_enclave.so",
-    unsigned = "grpc_server_enclave_unsigned.so",
-    config = "//asylo/grpc/util:grpc_enclave_config",
-)
-
 # The driver for the gRPC server enclave.
 enclave_loader(
     name = "grpc_server",
     srcs = ["grpc_server_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {"enclave": ":grpc_server_enclave.so"},
+    enclaves = {"enclave": "//asylo/examples/grpc_server:grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     remote_proxy = "//asylo/util/remote:sgx_remote_proxy",
     deps = [
