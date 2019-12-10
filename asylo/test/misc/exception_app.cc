@@ -17,10 +17,10 @@
  */
 
 #include <cstdlib>
-#include <iostream>
 #include <string>
 
 #include "asylo/client.h"
+#include "asylo/util/logging.h"
 #include "asylo/test/util/enclave_test_launcher.h"
 
 namespace asylo {
@@ -33,7 +33,7 @@ class ExceptionTest {
   void Initialize(const std::string &enclave_path) {
     ::asylo::Status status = test_launcher_.SetUp(enclave_path, {}, "");
     if (!status.ok()) {
-      std::cerr << "Setup failed: " << status << std::endl;
+      LOG(ERROR) << "Setup failed: " << status;
       exit(EXIT_FAILURE);
     }
     client_ = test_launcher_.mutable_client();
@@ -66,9 +66,9 @@ class ExceptionTest {
 
 int main(int argc, char *argv[]) {
   if (argc != 3) {
-    std::cerr << "Expected usage: " << argv[0] << " <enclave-path>\nGiven: ";
+    LOG(ERROR) << "Expected usage: " << argv[0] << " <enclave-path>\nGiven: ";
     for (int i = 0; i < argc; ++i) {
-      std::cerr << argv[i] << std::endl;
+      LOG(ERROR) << argv[i];
     }
     abort();
   }

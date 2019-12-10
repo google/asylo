@@ -602,6 +602,7 @@ cc_binary(
     deps = [
         "//asylo:enclave_client",
         "//asylo/test/util:enclave_test_launcher",
+        "//asylo/util:logging",
     ],
 )
 

@@ -16,16 +16,19 @@
  *
  */
 
-#include <iostream>
 #include <string>
 
 #include "absl/flags/parse.h"
+#include "absl/strings/str_cat.h"
+#include "asylo/util/logging.h"
 #include "asylo/platform/primitives/examples/hello_enclave.h"
 #include "asylo/platform/primitives/extent.h"
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 namespace primitives {
@@ -57,16 +60,17 @@ Status call_enclave() {
       kExternalHelloHandler, ExitHandler{hello_handler});
 
   MessageReader out;
-  status = client->EnclaveCall(kHelloEnclaveSelector, nullptr, &out);
-  if (status.ok()) {
-    if (out.size() != 1) {
-      std::cerr << "Incorrect output parameters received" << std::endl;
-    } else {
-      std::cerr << out.next().As<char>() << std::endl;
-    }
-  } else {
-    std::cerr << status.ToString() << std::endl;
+  ASYLO_RETURN_IF_ERROR(
+      client->EnclaveCall(kHelloEnclaveSelector, /*input=*/nullptr, &out));
+
+  if (out.size() != 1) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Incorrect output parameter count received."
+                               " Expecting 1, got: ",
+                               out.size()));
   }
+
+  LOG(INFO) << out.next().As<char>();
   return Status::OkStatus();
 }
 
@@ -76,6 +80,6 @@ Status call_enclave() {
 int main(int argc, char *argv[]) {
   absl::ParseCommandLine(argc, argv);
   auto status = ::asylo::primitives::call_enclave();
-  std::cout << status.ToString() << std::endl;
+  LOG_IF(ERROR, !status.ok()) << status;
   return 0;
 }
