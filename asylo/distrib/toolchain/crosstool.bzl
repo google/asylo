@@ -102,7 +102,7 @@ def _impl(ctx):
     else:
         fail("Unreachable")
 
-    host_system_name = "x86_64-grtev4-linux-gnu"
+    host_system_name = "x86_64-local-linux-gnu"
 
     target_system_name = "x86_64-newlib-asylo"
 
