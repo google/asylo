@@ -1169,7 +1169,18 @@ diff -Nur psw/urts/file.h psw/urts/file.h
 diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_hw.cpp
 --- psw/urts/linux/enclave_creator_hw.cpp
 +++ psw/urts/linux/enclave_creator_hw.cpp
-@@ -174,10 +174,10 @@
+@@ -52,9 +52,7 @@
+ 
+ #define POINTER_TO_U64(A) ((__u64)((uintptr_t)(A)))
+   
+-static EnclaveCreatorHW g_enclave_creator_hw;
+-
+-EnclaveCreator* g_enclave_creator = &g_enclave_creator_hw;
++EnclaveCreator* g_enclave_creator = new EnclaveCreatorHW;
+ static uint64_t g_eid = 0x1;
+ 
+ 
+@@ -174,10 +172,10 @@
  
      enclave_create_sgx_t enclave_create_sgx = {0};
      if (0 != memcpy_s(enclave_create_sgx.secs, SECS_SIZE, secs, SECS_SIZE))
@@ -1182,7 +1193,7 @@ diff -Nur psw/urts/linux/enclave_creator_hw.cpp psw/urts/linux/enclave_creator_h
  
      if (enclave_error)
          return error_api2urts(enclave_error);
-@@ -211,7 +211,7 @@
+@@ -211,7 +209,7 @@
  
      enclave_init_sgx_t enclave_init_sgx = {0};
      if (0 != memcpy_s(enclave_init_sgx.sigstruct, SIGSTRUCT_SIZE, enclave_css, SIGSTRUCT_SIZE))
@@ -2623,6 +2634,20 @@ diff -Nur sdk/simulation/uae_service_sim/licensing_sim.cpp sdk/simulation/uae_se
      return get_launch_token_internal(p_signature,
          p_attribute,
          (token_t *)p_launch_token);
+diff -Nur sdk/simulation/uinst/enclave_mngr.cpp sdk/simulation/uinst/enclave_mngr.cpp
+--- sdk/simulation/uinst/enclave_mngr.cpp
++++ sdk/simulation/uinst/enclave_mngr.cpp
+@@ -173,8 +173,8 @@
+ // Note: this singleton implemenation is not multi-threading safe.
+ CEnclaveMngr* CEnclaveMngr::get_instance()
+ {
+-    static CEnclaveMngr mngr;
+-    return &mngr;
++    static CEnclaveMngr *mngr = new CEnclaveMngr;
++    return mngr;
+ }
+ 
+ // Use constructor attribute to make sure that the later calling of 
 diff -Nur sdk/simulation/uinst/u_instructions.cpp sdk/simulation/uinst/u_instructions.cpp
 --- sdk/simulation/uinst/u_instructions.cpp
 +++ sdk/simulation/uinst/u_instructions.cpp

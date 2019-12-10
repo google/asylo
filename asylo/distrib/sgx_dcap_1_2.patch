@@ -482,7 +482,19 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          m_eid(0),
          m_pencryptedppid(NULL)
      {
-@@ -429,24 +432,38 @@
+@@ -193,7 +196,10 @@
+     }
+ };
+ 
+-static ql_global_data g_ql_global_data;
++// We prefer a reference to a heap allocated static object here to prevent its clean-up when destroying the object.
++// This allows references by other objects which may need this object, say during ecall for enclave destruction.
++// A reference is also preferable to keep allowing the existing usage of . operator instead of ->
++static ql_global_data &g_ql_global_data = *new ql_global_data;
+ 
+ #ifdef ENABLE_QE3_LOGGING
+ /* OCall functions for debug */
+@@ -429,24 +435,38 @@
      if(!p_file_name || !p_file_path) {
          return false;
      }
@@ -535,7 +547,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      }
  
      char* p_last_slash = strrchr(p_file_path, '/' );
-@@ -463,16 +480,18 @@
+@@ -463,16 +483,18 @@
      }
      (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
      #else
@@ -562,7 +574,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
      TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
      if (p_last_slash != NULL)
-@@ -1028,6 +1047,52 @@
+@@ -1028,6 +1050,52 @@
      return(refqt_ret);
  }
  
@@ -850,6 +862,18 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationL
 -}}}} // namespace intel { namespace sgx { namespace qvl { namespace constants {
 -
 -#endif
+diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp
+--- QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp
++++ QuoteVerification/Src/AttestationLibrary/src/QuoteVerification.cpp
+@@ -77,7 +77,7 @@
+     OpensslGuard& operator=(OpensslGuard&&) = delete;
+ };
+ 
+-static const OpensslGuard opensslGuard;
++static const OpensslGuard *opensslGuard = new OpensslGuard;
+ 
+ const char* sgxAttestationGetVersion()
+ {
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
