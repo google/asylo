@@ -4827,7 +4827,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,777 @@
+@@ -0,0 +1,720 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -5493,59 +5493,6 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        ),
 +    },
 +)
-+
-+def sgx_enclave(
-+        name,
-+        config = "@linux_sgx//:enclave_debug_config",
-+        testonly = 0,
-+        **kwargs):
-+    """Build rule for creating SGX enclave shared object files signed for testing.
-+
-+    The enclave is signed with test key stored in
-+    @linux_sgx//:enclave_test_private.pem.
-+
-+    This macro creates two build targets:
-+      1) name_unsigned.so: cc_binary that builds the unsigned enclave.
-+      2) name: internal signing rule that (debug) signs name_unsigned.so.
-+
-+    Args:
-+      name: The debug-signed enclave target name.
-+      config: An sgx_enclave_configuration rule.
-+      testonly: 0 or 1, set to 1 if the target is only used in tests.
-+      **kwargs: cc_binary arguments.
-+
-+    Returns:
-+      string: The name of the signed enclave.
-+
-+    Deprecated:
-+      Use sgx_unsigned_enclave and sgx_debug_enclave/sgx_signed_enclave.
-+    """
-+    unsigned_name = _unsigned_enclave_name(name)
-+
-+    has_deprecation = "deprecation" in kwargs
-+    if not has_deprecation:
-+        kwargs["deprecation"] = "Use sgx_unsigned_enclave."
-+
-+    sgx_unsigned_enclave(
-+        name = unsigned_name,
-+        testonly = testonly,
-+        **kwargs
-+    )
-+
-+    kwargs = {k: v for k, v in kwargs.items() if k in ["visibility"]}
-+    if config:
-+        kwargs["config"] = config
-+    if not has_deprecation:
-+        kwargs["deprecation"] = "Use sgx_debug_enclave."
-+    sgx_debug_enclave(
-+        name = name,
-+        unsigned = unsigned_name,
-+        tags = sgx_tags(),
-+        testonly = testonly,
-+        **kwargs
-+    )
-+
-+    return name
 +
 +
 +def sgx_tags():
