@@ -117,7 +117,7 @@ The `cc_enclave_binary` is the build rule that uses the application wrapper. By
 claiming SQLite as a dependency (`sqlite3_shell` is defined by our `BUILD.bazel`
 file), it will wrap SQLite and run it in Asylo.
 
-## Run SQLite
+## Run SQLite in SGX Simulation Mode
 
 Now we are ready to build and run SQLite. First, we load a Docker container that
 imports the current workspace by running the following Docker command from the
@@ -141,6 +141,8 @@ As the SQLite build target is created, now it can be run with the following
 bazel run --config=sgx-sim :asylo_sqlite
 ```
 
+Specifying `--config=sgx-sim` runs SQLite in SGX simulation mode.
+
 After finishing building, you should be able to see SQLite up and messages
 similar as following:
 
@@ -162,3 +164,39 @@ sqlite> select * from mytable;
 Asylo|50
 SQLite|33001
 ```
+
+## Run SQLite in SGX Hardware Mode
+
+The following steps show how to run enclavized SQLite on SGX hardware.
+
+NOTE: The following steps only work on real SGX hardware.
+
+Similar as SGX simulation case, run the following docker command from the root
+of your project:
+
+```
+docker run -it --rm \
+    --device=/dev/isgx \
+    -v ${PWD}:/opt/my-project \
+    -v /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket \
+    --tmpfs /root/.cache/bazel:exec \
+    -w /opt/my-project \
+    gcr.io/asylo-framework/asylo:buildenv-v0.4.1
+```
+
+The SGX capabilities are propagated by the docker flags `--device=/dev/isgx` and
+`-v /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket`. More details can be
+found on the
+[Asylo website](https://asylo.dev/docs/guides/sgx_release_enclaves.html).
+
+Now we can run with the following `bazel` command from the Docker container to
+run SQLite in SGX hardware mode:
+
+```shell
+bazel run --config=sgx :asylo_sqlite
+```
+
+Specifying `--config=sgx` runs SQLite in SGX hardware mode.
+
+SQLite should be running now in SGX hardware mode. Please follow the same steps
+above to create an example table.
