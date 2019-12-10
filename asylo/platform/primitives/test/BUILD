@@ -91,6 +91,7 @@ cc_library(
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/dlopen:untrusted_dlopen",
         "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/util:error_codes",
         "//asylo/util:status",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",

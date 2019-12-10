@@ -53,6 +53,9 @@ dlopen_enclave_loader(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"hello": ":hello_dlopen_enclave.so"},
+    loader_args = [
+        "--enclave_binary='{hello}'",
+    ],
     deps = [
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",

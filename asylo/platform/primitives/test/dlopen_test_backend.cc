@@ -27,6 +27,8 @@
 #include "asylo/platform/primitives/test/test_backend.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
 #include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/util/error_codes.h"
+#include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -40,9 +42,13 @@ namespace test {
 StatusOr<std::shared_ptr<Client>> DlopenTestBackend::LoadTestEnclave(
     const absl::string_view enclave_name,
     std::unique_ptr<Client::ExitCallProvider> exit_call_provider) {
-  return LoadEnclave<DlopenBackend>(enclave_name,
-                                 absl::GetFlag(FLAGS_enclave_binary),
-                                 std::move(exit_call_provider));
+  const std::string binary_path = absl::GetFlag(FLAGS_enclave_binary);
+  if (binary_path.empty()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  "--enclave_binary must be set");
+  }
+  return LoadEnclave<DlopenBackend>(enclave_name, binary_path,
+                                    std::move(exit_call_provider));
 }
 
 TestBackend *TestBackend::Get() {
