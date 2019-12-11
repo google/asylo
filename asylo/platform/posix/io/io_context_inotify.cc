@@ -60,7 +60,9 @@ ssize_t IOContextInotify::Read(void *buf, size_t count) {
   char *buf_ptr = static_cast<char *>(buf);
   size_t num_bytes_written = TransferFromQueueToBuffer(buf_ptr, count);
   buf_ptr += num_bytes_written;
-  count -= num_bytes_written;  if (!event_queue_.empty() && (num_bytes_written == 0)) {
+  count -= num_bytes_written;
+  // Check if the buffer was too small.
+  if (!event_queue_.empty() && (num_bytes_written == 0)) {
     errno = EINVAL;
     return -1;
   } else if (!event_queue_.empty() || count == 0) {
