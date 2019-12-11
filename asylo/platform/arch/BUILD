@@ -55,7 +55,6 @@ cc_library(
         "//asylo/platform/primitives/sgx:fork_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/platform/primitives/sgx:untrusted_sgx",
-        "//asylo/platform/primitives/sgx:untrusted_sgx_ocalls",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/types:span",

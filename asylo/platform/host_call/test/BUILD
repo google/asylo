@@ -153,7 +153,6 @@ sgx_enclave_test(
     deps = [
         ":enclave_test_selectors",
         "//asylo:enclave_client",
-        "//asylo/platform/arch:untrusted_arch",  # ocall_table_bridge symbol linkage
         "//asylo/platform/common:time_util",
         "//asylo/platform/host_call:host_call_handlers_initializer",
         "//asylo/platform/primitives",

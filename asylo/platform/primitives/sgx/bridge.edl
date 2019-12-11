@@ -26,10 +26,8 @@
 // See generate_bridge.sh for build instruction.
 //
 // In addition, new function definitions must be added to
-// arch/untrusted/ocalls.cc and to arch/trusted/ecalls.cc for untrusted and
+// primitives/sgx/ocalls.cc and to primitives/sgx/ecalls.cc for untrusted and
 // trusted functions respectively.
-// Once new functions are defined and generated, user-friendly wrappers need to
-// be added to untrusted/enclave_calls.* and trusted/host_calls.* respectively.
 enclave {
   from "../../../third_party/intel/sgx_tstdc.edl" import
       sgx_thread_wait_untrusted_event_ocall,
@@ -43,31 +41,23 @@ enclave {
 
   trusted {
     // Invokes the trusted entry point designated by `selector`.
-    // WARNING: Do not add calls before ecall_displatch_trusted_call, as callers
-    // may assume this to be the first entry in the generated ecall table.
     public int ecall_dispatch_trusted_call(uint64_t selector,
                                           [user_check] void *buffer);
 
     // Intended for use by primitives enclave signal implementation.
     // Invokes signal handling entry point.
-    // WARNING: Do not add calls before ecall_deliver_signal, as callers
-    // may assume this to be the second entry in the generated ecall table.
     exception_handler public int ecall_deliver_signal(
         [user_check] const char *input, uint64_t input_len);
 
     // Invokes a utility ecall that enters the enclave to take a snapshot.
     // This is a private ecall because it should only be invoked by an
     // ocall(fork).
-    // WARNING: Do not add calls before ecall_take_snapshot, as callers
-    // may assume this to be the third entry in the generated ecall table.
     utility_tcs public int ecall_take_snapshot(
 	      [out] char **output,
 	      [out] uint64_t *output_len);
 
     // Invokes a utility ecall that enters the enclave to restore it from a
     // snapshot.
-    // WARNING: Do not add calls before ecall_restore, as callers may assume
-    // this to be the fourth entry in the generated ecall table.
     utility_tcs public int ecall_restore(
         [user_check] const char *input,
         uint64_t input_len,
@@ -76,9 +66,6 @@ enclave {
 
     // Invokes a utility ecall that enters the enclave to encrypt and transfer
     // the snapshot key.
-    // WARNING: Do not add calls before ecall_transfer_secure_snapshot_key, as
-    // callers may assume this to be the fifth entry in the generated ecall
-    // table.
     utility_tcs public int ecall_transfer_secure_snapshot_key(
         [in, size=input_len] const char *input,
         uint64_t input_len,

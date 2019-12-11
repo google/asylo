@@ -135,10 +135,13 @@ cc_library(
 cc_library(
     name = "untrusted_sgx",
     srcs = [
+        "generated_bridge_u.c",
+        "ocalls.cc",
         "signal_dispatcher.cc",
         "untrusted_sgx.cc",
     ],
     hdrs = [
+        "generated_bridge_u.h",
         "signal_dispatcher.h",
         "untrusted_sgx.h",
     ],
@@ -146,19 +149,29 @@ cc_library(
     deps = [
         ":exit_handlers",
         ":fork_cc_proto",
+        ":loader_cc_proto",
         ":sgx_error_space",
         ":sgx_params",
         "//asylo:enclave_cc_proto",
+        "//asylo/platform/common:futex",
+        "//asylo/platform/common:memory",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:dispatch_table",
         "//asylo/platform/primitives/util:message_reader_writer",
+        "//asylo/platform/storage/utils:fd_closer",
+        "//asylo/platform/system_call/type_conversions",
         "//asylo/util:cleanup",
         "//asylo/util:elf_reader",
         "//asylo/util:file_mapping",
+        "//asylo/util:logging",
         "//asylo/util:status",
         "//asylo/util:status_macros",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
         "@linux_sgx//:public",
         "@linux_sgx//:urts",
+        "@sgx_dcap//:pce_wrapper",
+        "@sgx_dcap//:quote_wrapper",
     ],
 )
 
@@ -371,43 +384,6 @@ genrule(
     ],
     cmd = (SGX_EDGER8R_COMMAND + " && " + UPDATE_SDK_DEPS_COMMAND),
     tools = ["@linux_sgx//:sgx_edger8r"],
-)
-
-cc_library(
-    name = "untrusted_sgx_ocalls",
-    srcs = [
-        "generated_bridge_u.c",
-        "generated_bridge_u.h",
-        "ocalls.cc",
-    ],
-    copts = ASYLO_DEFAULT_COPTS,
-    # This option prevents the linker from discarding the definition of
-    # ocall_table_bridge before it encounters a reference to it.
-    linkopts = ["-Wl,--undefined=ocall_table_bridge"],
-    deps = [
-        ":fork_cc_proto",
-        ":loader_cc_proto",
-        ":sgx_error_space",
-        ":sgx_params",
-        ":untrusted_sgx",
-        "//asylo/platform/common:futex",
-        "//asylo/platform/common:memory",
-        "//asylo/platform/primitives:untrusted_primitives",
-        "//asylo/platform/primitives/util:dispatch_table",
-        "//asylo/platform/primitives/util:message_reader_writer",
-        "//asylo/platform/storage/utils:fd_closer",
-        "//asylo/platform/system_call/type_conversions",
-        "//asylo/util:elf_reader",
-        "//asylo/util:file_mapping",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/strings",
-        "@linux_sgx//:public",
-        "@linux_sgx//:urts",
-        "@sgx_dcap//:pce_wrapper",
-        "@sgx_dcap//:quote_wrapper",
-    ],
 )
 
 cc_library(
