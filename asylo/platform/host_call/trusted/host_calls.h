@@ -124,7 +124,6 @@ int enc_untrusted_utimes(const char *filename, const struct timeval times[2]);
 int enc_untrusted_utime(const char *filename, const struct utimbuf *times);
 int enc_untrusted_getrusage(int who, struct rusage *usage);
 int enc_untrusted_uname(struct utsname *buf);
-void enc_untrusted_exit_group(int status);
 void enc_untrusted_syslog(int priority, const char *message, int len);
 
 // Calls to library functions delegated to the host are defined below.

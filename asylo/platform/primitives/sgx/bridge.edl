@@ -97,6 +97,7 @@ enclave {
         uint64_t size);
     void ocall_enc_untrusted_deallocate_free_list([user_check] void **free_list,
         uint64_t count);
+    void ocall_enc_untrusted__exit(int rc);
     int32_t ocall_enc_untrusted_fork(
         [in, string]const char *enclave_name,
 	      bool restore_snapshot)

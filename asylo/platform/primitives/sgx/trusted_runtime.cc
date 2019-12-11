@@ -22,6 +22,7 @@
 #include <stdlib.h>
 #include <sys/types.h>
 
+#include "asylo/platform/primitives/sgx/generated_bridge_t.h"
 #include "include/sgx_thread.h"
 #include "include/sgx_trts.h"
 
@@ -66,6 +67,10 @@ void *enclave_sbrk(intptr_t increment) {
   uintptr_t prev_heap_end = reinterpret_cast<uintptr_t>(heap_base) + heap_size;
   heap_size = new_heap_size;
   return reinterpret_cast<void *>(prev_heap_end);
+}
+
+void enc_exit(int rc) {
+  ocall_enc_untrusted__exit(rc);
 }
 
 // The SGX SDK function sgx_thread_self() returns nullptr during early

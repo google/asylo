@@ -243,6 +243,8 @@ int ocall_enc_untrusted_register_signal_handler(int klinux_signum,
 //            unistd.h              //
 //////////////////////////////////////
 
+void ocall_enc_untrusted__exit(int rc) { _exit(rc); }
+
 int32_t ocall_enc_untrusted_fork(const char *enclave_name,
                                  bool restore_snapshot) {
   auto primitive_client = dynamic_cast<asylo::primitives::SgxEnclaveClient *>(

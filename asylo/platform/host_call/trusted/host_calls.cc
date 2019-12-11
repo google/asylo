@@ -1504,11 +1504,6 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
   CheckStatusAndParamCount(status, output, "enc_untrusted_hex_dump", 2);
 }
 
-void enc_untrusted_exit_group(int status) {
-  EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_exit_group,
-                                      status);
-}
-
 void enc_untrusted_syslog(int priority, const char *message, int len) {
   EnsureInitializedAndDispatchSyscall(asylo::system_call::kSYS_syslog,
                                       TokLinuxSyslogPriority(priority), message,

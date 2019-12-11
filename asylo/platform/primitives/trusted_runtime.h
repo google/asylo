@@ -39,6 +39,9 @@ pid_t enc_fork(const char *enclave_name);
 extern "C" {
 #endif
 
+// Exit the current process.
+void enc_exit(int rc);
+
 ssize_t enc_hardware_random(uint8_t *buf, size_t count);
 
 // Registers a signal handler on the host.

@@ -126,8 +126,6 @@ SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void * [bound:count],
 SYSCALL_DEFINE0(getpid)
 SYSCALL_DEFINE0(getppid)
 SYSCALL_DEFINE0(setsid)
-SYSCALL_DEFINE1(exit, int, error_code)
-SYSCALL_DEFINE1(exit_group, int, status)
 SYSCALL_DEFINE4(wait4, pid_t, upid, \out int *, stat_addr, int, options,
                 \out struct rusage *, ru)
 

@@ -49,6 +49,8 @@ bool enc_is_outside_enclave(void const *address, size_t size) {
                                                                    size);
 }
 
+void enc_exit(int rc) { abort(); }
+
 uint64_t enc_thread_self() {
   static thread_local int thread_identity;
   return reinterpret_cast<uint64_t>(&thread_identity);

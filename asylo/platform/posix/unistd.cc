@@ -279,7 +279,7 @@ int enclave_unlink(const char *pathname) {
 
 void enclave_exit(int rc) {
   while (true) {
-    enc_untrusted_exit_group(rc);
+    enc_exit(rc);
   }
 }
 
