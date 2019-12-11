@@ -66,6 +66,17 @@ StatusOr<std::unique_ptr<FakeCertificate>> FakeCertificate::Create(
       fake_cert.subject_key(), fake_cert.issuer_key(), is_ca, pathlength);
 }
 
+bool FakeCertificate::operator==(const CertificateInterface &other) const {
+  const FakeCertificate *other_cert =
+      dynamic_cast<FakeCertificate const *>(&other);
+  if (other_cert == nullptr) {
+    return false;
+  }
+  return subject_key_ == other_cert->subject_key_ &&
+         issuer_key_ == other_cert->issuer_key_ &&
+         is_ca_ == other_cert->is_ca_ && pathlength_ == other_cert->pathlength_;
+}
+
 Status FakeCertificate::Verify(const CertificateInterface &issuer_certificate,
                                const VerificationConfig &config) const {
   std::string issuer_subject_key;

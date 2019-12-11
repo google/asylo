@@ -80,6 +80,48 @@ TEST(FakeCertificateTest, CreateSucceedsWithCorrectOptionalData) {
   EXPECT_THAT(fake_cert->IsCa(), Eq(absl::nullopt));
 }
 
+TEST(FakeCertificateTest, EqualsSuccess) {
+  const std::string subject_key = "Subject key";
+  const std::string issuer_key = "Issuer key";
+  const absl::optional<bool> is_ca = true;
+  const absl::optional<int64_t> pathlength = absl::nullopt;
+
+  FakeCertificate lhs(subject_key, issuer_key, is_ca, pathlength);
+  FakeCertificate rhs(subject_key, issuer_key, is_ca, pathlength);
+
+  EXPECT_TRUE(lhs == rhs);
+}
+
+TEST(FakeCertificateTest, EqualsFailure) {
+  FakeCertificate lhs(/*subject_key=*/"c0ff33", /*issuer_key=*/"f00d",
+                      /*is_ca=*/absl::nullopt, /*pathlength=*/absl::nullopt);
+  FakeCertificate rhs(/*subject_key=*/"c0c0a", /*issuer_key=*/"sm0r3s",
+                      /*is_ca=*/absl::nullopt, /*pathlength=*/absl::nullopt);
+
+  EXPECT_FALSE(lhs == rhs);
+}
+
+TEST(FakeCertificateTest, NotEqualsSuccess) {
+  FakeCertificate lhs(/*subject_key=*/"c0ff33", /*issuer_key=*/"f00d",
+                      /*is_ca=*/absl::nullopt, /*pathlength=*/absl::nullopt);
+  FakeCertificate rhs(/*subject_key=*/"c0c0a", /*issuer_key=*/"sm0r3s",
+                      /*is_ca=*/absl::nullopt, /*pathlength=*/absl::nullopt);
+
+  EXPECT_TRUE(lhs != rhs);
+}
+
+TEST(FakeCertificateTest, NotEqualsFailure) {
+  const std::string subject_key = "Subject key";
+  const std::string issuer_key = "Issuer key";
+  const absl::optional<bool> is_ca = true;
+  const absl::optional<int64_t> pathlength = absl::nullopt;
+
+  FakeCertificate lhs(subject_key, issuer_key, is_ca, pathlength);
+  FakeCertificate rhs(subject_key, issuer_key, is_ca, pathlength);
+
+  EXPECT_FALSE(lhs != rhs);
+}
+
 TEST(FakeCertificateTest, VerifySuccess) {
   const std::string issuer_subject_key = "c0c0a";
 

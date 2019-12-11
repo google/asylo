@@ -379,6 +379,7 @@ cc_test(
         ":certificate_cc_proto",
         ":certificate_interface",
         ":ecdsa_p256_sha256_signing_key",
+        ":fake_certificate",
         ":x509_certificate",
         "//asylo/crypto/util:byte_container_util",
         "//asylo/test/util:status_matchers",

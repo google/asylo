@@ -43,6 +43,7 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
+#include "asylo/crypto/fake_certificate.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/test/util/string_matchers.h"
@@ -82,7 +83,7 @@ constexpr char kTestRootCertPem[] =
     "B/zAKBggqhkjOPQQDAgNHADBEAiAcTIfVdk3xKvgka85I96uGdWSDYWYlShzXaUDB04crYAIgB"
     "tdS1WkwPDgfyWZcUO+ImDG38iEOwuPXSk18GRwMrFY=\n-----END CERTIFICATE-----";
 
-// The DER-encoded ppublic key in the root certificates and CSRs.
+// The DER-encoded public key in the root certificates and CSRs.
 constexpr char kTestRootPublicKeyDerHex[] =
     "3059301306072a8648ce3d020106082a8648ce3d03010703420004eaeda5103e89194f43bf"
     "e0d844f3e79f000957fc3c9237c7ea8ddcd67e22c75cd75119ea9aa02f76cecacbbf1b2fe6"
@@ -107,7 +108,21 @@ constexpr char kTestIntermediateCertDerHex[] =
     "742866a01f9c86c9e43792889ff998f7911633feb5adb902200dcedad82ef2fd10f6ad8720"
     "0a918793545d986e6bbbef3ae62f9837954950de";
 
-// A cert signed by the intermediate cert above. No extensions are set.
+// Same as kTestIntermediateCertDerHex but PEM-encoded.
+constexpr char kTestIntermediateCertPem[] =
+    R"(-----BEGIN CERTIFICATE-----
+MIIBpzCCAU4CFA2VFTA4Zr7JFVJCi3pY0SOCCdO7MAoGCCqGSM49BAMCMFQxCzAJ
+BgNVBAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UEBwwIS2lya2xhbmQxDjAMBgNV
+BAsMBUFzeWxvMRUwEwYDVQQDDAxUZXN0IFJvb3QgQ0EwHhcNMTkwNTA3MTkxMTQ5
+WhcNMTkwNjA2MTkxMTQ5WjBZMQswCQYDVQQGEwJVUzELMAkGA1UECAwCV0ExETAP
+BgNVBAcMCEtpcmtsYW5kMQ4wDAYDVQQLDAVBc3lsbzEaMBgGA1UEAwwRVGVzdCBJ
+bnRlcm1lZGlhdGUwWTATBgcqhkjOPQIBBggqhkjOPQMBBwNCAAQAeZRSJGNpEEUs
+CI09eR7OP9p1RmA+FP52/K/N11/Lfn1jv7MqiUeQv28Sj+affaL4U5TS+sQggwUQ
+AhLBDyLZMAoGCCqGSM49BAMCA0cAMEQCIBjabAR3EHqV/HQoZqAfnIbJ5DeSiJ/5
+mPeRFjP+ta25AiANztrYLvL9EPathyAKkYeTVF2Ybmu77zrmL5g3lUlQ3g==
+-----END CERTIFICATE-----)";
+
+// A cert signed by kTestIntermediateCertPem. No extensions are set.
 constexpr char kTestEndUserCertPem[] =
     R"(-----BEGIN CERTIFICATE-----
 MIIBsTCCAVcCFANGO/7xEmkKZTrRmnVs6ChLYYbqMAoGCCqGSM49BAMCMFkxCzAJ
@@ -356,6 +371,44 @@ TEST_F(X509CertificateTest, CreateAndToPemCertificateSuccess) {
   EXPECT_THAT(pem_formatted_cert.format(), Eq(Certificate::X509_PEM));
   EXPECT_THAT(pem_formatted_cert.data(),
               EqualIgnoreWhiteSpace(kTestRootCertPem));
+}
+
+TEST_F(X509CertificateTest, EqualsSuccess) {
+  std::unique_ptr<X509Certificate> x509_cert_from_der;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_cert_from_der, X509Certificate::CreateFromDer(absl::HexStringToBytes(
+                              kTestIntermediateCertDerHex)));
+
+  std::unique_ptr<X509Certificate> x509_cert_from_pem;
+  ASYLO_ASSERT_OK_AND_ASSIGN(x509_cert_from_pem, X509Certificate::CreateFromPem(
+                                                     kTestIntermediateCertPem));
+
+  EXPECT_TRUE(*x509_cert_from_der == *x509_cert_from_pem);
+}
+
+TEST_F(X509CertificateTest, EqualsX509CertFailure) {
+  std::unique_ptr<X509Certificate> x509_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_cert, X509Certificate::CreateFromPem(kTestIntermediateCertPem));
+
+  std::unique_ptr<X509Certificate> other_x509_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(other_x509_cert, X509Certificate::CreateFromPem(
+                                                  kOtherIntermediateCertPem));
+
+  EXPECT_FALSE(*x509_cert == *other_x509_cert);
+}
+
+TEST_F(X509CertificateTest, EqualsNonX509Failure) {
+  std::unique_ptr<X509Certificate> x509_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_cert, X509Certificate::CreateFromPem(kTestIntermediateCertPem));
+
+  FakeCertificate fake_cert(/*subject_key=*/"Subject key",
+                            /*issuer_key=*/"Issuer key",
+                            /*is_ca=*/absl::nullopt,
+                            /*pathlength=*/absl::nullopt);
+
+  EXPECT_FALSE(*x509_cert == fake_cert);
 }
 
 // Verifies that CertificateSigningRequestToX509Req returns an error with

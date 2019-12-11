@@ -69,6 +69,12 @@ class CertificateInterface {
  public:
   virtual ~CertificateInterface() = default;
 
+  virtual bool operator==(const CertificateInterface &other) const = 0;
+
+  virtual bool operator!=(const CertificateInterface &other) const {
+    return !(*this == other);
+  }
+
   // Checks if this object can be verified by |issuer_certificate|, with the
   // additional requirements set by |config| and used as relevant by the
   // different certificate interface implementations. Returns an error if a

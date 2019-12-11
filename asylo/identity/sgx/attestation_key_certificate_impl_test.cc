@@ -234,6 +234,58 @@ TEST(AttestationKeyCertificateImplTest, GetAssertedIdentitySuccess) {
               IsOkAndHolds(EqualsProto(identity)));
 }
 
+TEST(AttestationKeyCertificateImplTest, EqualsSuccess) {
+  Certificate cert;
+  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl,
+                             AttestationKeyCertificateImpl::Create(cert));
+
+  EXPECT_TRUE(*ak_cert_impl == *ak_cert_impl);
+}
+
+TEST(AttestationKeyCertificateImplTest, EqualsNonAkCertFailure) {
+  Certificate cert;
+  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl,
+                             AttestationKeyCertificateImpl::Create(cert));
+
+  FakeCertificate fake_cert(/*subject_key=*/"Subject key",
+                            /*issuer_key=*/"Issuer key", /*is_ca=*/false,
+                            /*pathlength=*/absl::nullopt);
+
+  EXPECT_FALSE(*ak_cert_impl == fake_cert);
+}
+
+TEST(AttestationKeyCertificateImplTest, EqualsAkCertFailure) {
+  Certificate lhs_cert;
+  lhs_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  lhs_cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificateDerKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl_lhs;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl_lhs,
+                             AttestationKeyCertificateImpl::Create(lhs_cert));
+
+  Certificate rhs_cert;
+  rhs_cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  rhs_cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificatePemKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl_rhs;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl_rhs,
+                             AttestationKeyCertificateImpl::Create(rhs_cert));
+
+  EXPECT_FALSE(*ak_cert_impl_lhs == *ak_cert_impl_rhs);
+}
+
 TEST(AttestationKeyCertificateImplTest, VerifySignatureFailure) {
   Certificate cert;
   cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);

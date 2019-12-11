@@ -56,6 +56,11 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
 
   // From CertificateInterface.
 
+  // Compares the underlying proto message representations of the certificates.
+  // Returns false if the signatures are different, even if the rest of the data
+  // is the same.
+  bool operator==(const CertificateInterface &other) const override;
+
   Status Verify(const CertificateInterface &issuer_certificate,
                 const VerificationConfig &config) const override;
 

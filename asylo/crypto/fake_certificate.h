@@ -46,6 +46,8 @@ class FakeCertificate : public CertificateInterface {
 
   // From CertificateInterface.
 
+  bool operator==(const CertificateInterface &other) const override;
+
   // Returns an OK Status if |issuer_certificate|.SubjectKeyDer() = issuer_key_.
   Status Verify(const CertificateInterface &issuer_certificate,
                 const VerificationConfig &config) const override;

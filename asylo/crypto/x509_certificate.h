@@ -205,6 +205,11 @@ class X509Certificate : public CertificateInterface {
 
   // From CertificateInterface.
 
+  // Checks that the DER-encoded versions of this object and |other| are
+  // equal. Returns false if the signatures are not equal, even if the
+  // certificate data and signing key used to generate the signature are equal.
+  bool operator==(const CertificateInterface &other) const override;
+
   // Based on |config|, checks if |issuer_certificate| is a CA certificate with
   // key usage for certificate signing. It is not an authentication failure if
   // either of these extensions are not set.

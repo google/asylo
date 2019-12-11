@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include <google/protobuf/util/message_differencer.h>
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
@@ -208,6 +209,18 @@ StatusOr<SgxIdentity> AttestationKeyCertificateImpl::GetAssertedSgxIdentity()
   ASYLO_RETURN_IF_ERROR(
       ParseIdentityFromHardwareReport(report_, &sgx_identity));
   return sgx_identity;
+}
+
+bool AttestationKeyCertificateImpl::operator==(
+    const CertificateInterface &other) const {
+  const AttestationKeyCertificateImpl *other_cert =
+      dynamic_cast<AttestationKeyCertificateImpl const *>(&other);
+  if (other_cert == nullptr) {
+    return false;
+  }
+
+  return google::protobuf::util::MessageDifferencer::Equals(
+      attestation_key_cert_, other_cert->attestation_key_cert_);
 }
 
 Status AttestationKeyCertificateImpl::Verify(

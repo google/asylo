@@ -697,6 +697,16 @@ StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::CreateFromDer(
       new X509Certificate(std::move(x509)));
 }
 
+bool X509Certificate::operator==(const CertificateInterface &other) const {
+  X509Certificate const *other_cert =
+      dynamic_cast<X509Certificate const *>(&other);
+  if (other_cert == nullptr) {
+    return false;
+  }
+
+  return X509_cmp(x509_.get(), other_cert->x509_.get()) == 0;
+}
+
 StatusOr<Certificate> X509Certificate::ToPemCertificate() const {
   bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
   if (!PEM_write_bio_X509(bio.get(), x509_.get())) {
