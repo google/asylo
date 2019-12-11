@@ -636,6 +636,54 @@ cc_library(
 )
 
 cc_library(
+    name = "time_conversions",
+    srcs = [
+        "time_conversions_internal.cc",
+        "time_conversions_internal.h",
+    ],
+    hdrs = ["time_conversions.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":status",
+        "@com_github_grpc_grpc//:grpc",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/time",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "time_conversions_test",
+    srcs = [
+        "time_conversions_internal.h",
+        "time_conversions_test.cc",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_test_name = "time_conversions_enclave_test",
+    deps = [
+        ":binary_search",
+        ":status",
+        ":time_conversions",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:logging",
+        "@com_github_grpc_grpc//:grpc",
+        "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:cc_wkt_protos",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
     name = "url_util",
     srcs = ["url_util.cc"],
     hdrs = ["url_util.h"],
