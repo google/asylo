@@ -69,85 +69,32 @@ class SyscallsEnclave : public EnclaveTestCase {
     }
 
     SyscallsTestOutput output_ret;
-    if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_CONF)") {
-      return RunSysconfTest(output, _SC_NPROCESSORS_CONF);
-    } else if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_ONLN)") {
-      return RunSysconfTest(output, _SC_NPROCESSORS_ONLN);
-    } else if (test_input.test_target() == "sysconf(_SC_PAGESIZE)") {
-      return RunSysconfTest(output, _SC_PAGESIZE);
-    } else if (test_input.test_target() == "getpid") {
-      return RunGetPidTest(output);
-    } else if (test_input.test_target() == "unlink") {
-      return RunUnlinkTest(test_input.path_name());
-    } else if (test_input.test_target() == "fcntl") {
+    if (test_input.test_target() == "fcntl") {
       return RunFcntlTest(test_input.path_name());
-    } else if (test_input.test_target() == "mkdir") {
-      return RunMkdirTest(test_input.path_name());
-    } else if (test_input.test_target() == "rmdir") {
-      return RunRmDirTest(test_input.path_name());
-    } else if (test_input.test_target() == "dup") {
-      return RunDupTest(test_input.path_name());
-    } else if (test_input.test_target() == "gethostname") {
-      return RunGetHostNameTest(output);
-    } else if (test_input.test_target() == "link") {
-      return RunLinkTest(test_input.path_name());
-    } else if (test_input.test_target() == "getcwd") {
-      return RunGetCwdTest(test_input.provide_buffer(),
-                           test_input.buffer_size(), output);
-    } else if (test_input.test_target() == "umask") {
-      return RunUmaskTest(test_input.path_name());
-    } else if (test_input.test_target() == "getuid") {
-      return RunGetUidTest(output);
-    } else if (test_input.test_target() == "geteuid") {
-      return RunGetEuidTest(output);
-    } else if (test_input.test_target() == "getgid") {
-      return RunGetGidTest(output);
-    } else if (test_input.test_target() == "getegid") {
-      return RunGetEgidTest(output);
-    } else if (test_input.test_target() == "getppid") {
-      return RunGetPpidTest(output);
+    } else if (test_input.test_target() == "getifaddrs") {
+      return RunGetIfAddrsTest(output);
+    } else if (test_input.test_target() == "if_indextoname") {
+      return RunIfIndexToNameTest();
+    } else if (test_input.test_target() == "if_nametoindex") {
+      return RunIfNameToIndexTest();
+    } else if (test_input.test_target() == "getpwuid") {
+      return RunGetPWUidTest(output);
+    } else if (test_input.test_target() == "CPU_SET macros") {
+      return RunCpuSetMacrosTest(output);
     } else if (test_input.test_target() == "sched_getaffinity") {
       return RunSchedGetAffinityTest(output);
     } else if (test_input.test_target() == "sched_getaffinity failure") {
       return RunSchedGetAffinityFailureTest(output);
-    } else if (test_input.test_target() == "CPU_SET macros") {
-      return RunCpuSetMacrosTest(output);
-    } else if (test_input.test_target() == "stat") {
-      return RunStatTest(test_input.path_name(), output);
-    } else if (test_input.test_target() == "fstat") {
-      return RunFStatTest(test_input.path_name(), output);
-    } else if (test_input.test_target() == "lstat") {
-      return RunLStatTest(test_input.path_name(), output);
-    } else if (test_input.test_target() == "uname") {
-      return RunUnameTest(output);
-    } else if (test_input.test_target() == "writev") {
-      return RunWritevTest(test_input.path_name());
-    } else if (test_input.test_target() == "readv") {
-      return RunReadvTest(test_input.path_name());
-    } else if (test_input.test_target() == "pread") {
-      return RunPReadTest(test_input.path_name());
+    } else if (test_input.test_target() == "rename") {
+      return RunRenameTest(test_input.path_name());
+    } else if (test_input.test_target() == "mmap") {
+      return RunMmapTest();
     } else if (test_input.test_target() == "rlimit nofile") {
       return RunRlimitNoFileTest(test_input.path_name());
     } else if (test_input.test_target() == "rlimit low nofile") {
       return RunRlimitLowNoFileTest(test_input.path_name());
     } else if (test_input.test_target() == "rlimit invalid nofile") {
       return RunRlimitInvalidNoFileTest(test_input.path_name());
-    } else if (test_input.test_target() == "chmod") {
-      return RunChModTest(test_input.path_name());
-    } else if (test_input.test_target() == "fchmod") {
-      return RunFChModTest(test_input.path_name());
-    } else if (test_input.test_target() == "getifaddrs") {
-      return RunGetIfAddrsTest(output);
-    } else if (test_input.test_target() == "getsockname_success") {
-      return RunGetSocknameTest_SUCCESS();
-    } else if (test_input.test_target() == "getsockname_ebadf") {
-      return RunGetSocknameFailureTest_EBADF();
-    } else if (test_input.test_target() == "getsockname_efault") {
-      return RunGetSocknameFailureTest_EFAULT();
-    } else if (test_input.test_target() == "getsockname_einval") {
-      return RunGetSocknameFailureTest_EINVAL();
-    } else if (test_input.test_target() == "getsockname_enotsock") {
-      return RunGetSocknameFailureTest_ENOTSOCK();
     } else if (test_input.test_target() == "getpeername_ebadf") {
       return RunGetPeernameFailureTest_EBADF();
     } else if (test_input.test_target() == "getpeername_efault") {
@@ -158,22 +105,75 @@ class SyscallsEnclave : public EnclaveTestCase {
       return RunGetPeernameFailureTest_ENOTSOCK();
     } else if (test_input.test_target() == "getpeername_enotconn") {
       return RunGetPeernameFailureTest_ENOTCONN();
-    } else if (test_input.test_target() == "truncate") {
-      return RunTruncateTest(test_input.path_name());
-    } else if (test_input.test_target() == "mmap") {
-      return RunMmapTest();
+    } else if (test_input.test_target() == "getsockname_success") {
+      return RunGetSocknameTest_SUCCESS();
+    } else if (test_input.test_target() == "getsockname_ebadf") {
+      return RunGetSocknameFailureTest_EBADF();
+    } else if (test_input.test_target() == "getsockname_efault") {
+      return RunGetSocknameFailureTest_EFAULT();
+    } else if (test_input.test_target() == "getsockname_einval") {
+      return RunGetSocknameFailureTest_EINVAL();
+    } else if (test_input.test_target() == "getsockname_enotsock") {
+      return RunGetSocknameFailureTest_ENOTSOCK();
+    } else if (test_input.test_target() == "chmod") {
+      return RunChModTest(test_input.path_name());
+    } else if (test_input.test_target() == "fchmod") {
+      return RunFChModTest(test_input.path_name());
+    } else if (test_input.test_target() == "fstat") {
+      return RunFStatTest(test_input.path_name(), output);
+    } else if (test_input.test_target() == "lstat") {
+      return RunLStatTest(test_input.path_name(), output);
+    } else if (test_input.test_target() == "mkdir") {
+      return RunMkdirTest(test_input.path_name());
+    } else if (test_input.test_target() == "stat") {
+      return RunStatTest(test_input.path_name(), output);
+    } else if (test_input.test_target() == "umask") {
+      return RunUmaskTest(test_input.path_name());
     } else if (test_input.test_target() == "itimer") {
       return RunItimerTest();
-    } else if (test_input.test_target() == "rename") {
-      return RunRenameTest(test_input.path_name());
+    } else if (test_input.test_target() == "readv") {
+      return RunReadvTest(test_input.path_name());
+    } else if (test_input.test_target() == "writev") {
+      return RunWritevTest(test_input.path_name());
+    } else if (test_input.test_target() == "uname") {
+      return RunUnameTest(output);
+    } else if (test_input.test_target() == "dup") {
+      return RunDupTest(test_input.path_name());
+    } else if (test_input.test_target() == "getcwd") {
+      return RunGetCwdTest(test_input.provide_buffer(),
+                           test_input.buffer_size(), output);
+    } else if (test_input.test_target() == "getegid") {
+      return RunGetEgidTest(output);
+    } else if (test_input.test_target() == "geteuid") {
+      return RunGetEuidTest(output);
+    } else if (test_input.test_target() == "gethostname") {
+      return RunGetHostNameTest(output);
+    } else if (test_input.test_target() == "getgid") {
+      return RunGetGidTest(output);
+    } else if (test_input.test_target() == "getpid") {
+      return RunGetPidTest(output);
+    } else if (test_input.test_target() == "getppid") {
+      return RunGetPpidTest(output);
+    } else if (test_input.test_target() == "getuid") {
+      return RunGetUidTest(output);
+    } else if (test_input.test_target() == "link") {
+      return RunLinkTest(test_input.path_name());
+    } else if (test_input.test_target() == "pread") {
+      return RunPReadTest(test_input.path_name());
+    } else if (test_input.test_target() == "rmdir") {
+      return RunRmDirTest(test_input.path_name());
+    } else if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_CONF)") {
+      return RunSysconfTest(output, _SC_NPROCESSORS_CONF);
+    } else if (test_input.test_target() == "sysconf(_SC_NPROCESSORS_ONLN)") {
+      return RunSysconfTest(output, _SC_NPROCESSORS_ONLN);
+    } else if (test_input.test_target() == "sysconf(_SC_PAGESIZE)") {
+      return RunSysconfTest(output, _SC_PAGESIZE);
+    } else if (test_input.test_target() == "truncate") {
+      return RunTruncateTest(test_input.path_name());
+    } else if (test_input.test_target() == "unlink") {
+      return RunUnlinkTest(test_input.path_name());
     } else if (test_input.test_target() == "utimes") {
       return RunUtimesTest(test_input.path_name());
-    } else if (test_input.test_target() == "getpwuid") {
-      return RunGetPWUidTest(output);
-    } else if (test_input.test_target() == "if_nametoindex") {
-      return RunIfNameToIndexTest();
-    } else if (test_input.test_target() == "if_indextoname") {
-      return RunIfIndexToNameTest();
     }
 
     LOG(ERROR) << "Failed to identify test to execute.";
@@ -323,42 +323,34 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunSysconfTest(EnclaveOutput *output, int name) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(sysconf(name));
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+  Status CompareFiles(int fd1, int fd2, int size) {
+    if (lseek(fd1, 0, SEEK_SET) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("Moving to beginning of fd:", fd1,
+                                 " failed: ", strerror(errno)));
     }
-    return Status::OkStatus();
-  }
+    char buf1[1024];
+    ASYLO_RETURN_IF_ERROR(ReadFile(fd1, buf1, size));
 
-  Status RunGetPidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(getpid());
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    if (lseek(fd2, 0, SEEK_SET) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("Moving to beginning of fd:", fd2,
+                                 " failed: ", strerror(errno)));
     }
-    return Status::OkStatus();
-  }
+    char buf2[1024];
+    ASYLO_RETURN_IF_ERROR(ReadFile(fd2, buf2, size));
 
-  Status RunUnlinkTest(const std::string &path) {
-    int fd;
-    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
-    close(fd);
-    if (unlink(path.c_str()) == -1) {
-      return Status(
-          static_cast<error::PosixError>(errno),
-          absl::StrCat("Unlink file ", path, "failed: ", strerror(errno)));
-    }
-    fd = open(path.c_str(), O_RDWR);
-    if (fd >= 0) {
-      close(fd);
+    if (memcmp(buf1, buf2, size) != 0) {
       return Status(
           error::GoogleError::INTERNAL,
-          absl::StrCat("File ", path, " is still available after unlink"));
+          absl::StrCat("Fd:", fd1, " and fd:", fd2, " are different"));
     }
     return Status::OkStatus();
   }
+
+  //////////////////////////////////////
+  //            fcntl.h               //
+  //////////////////////////////////////
 
   Status RunFcntlTest(const std::string &path) {
     int fd;
@@ -430,281 +422,113 @@ class SyscallsEnclave : public EnclaveTestCase {
     return CompareFiles(fd, dup_fd, message.size());
   }
 
-  Status RunMkdirTest(const std::string &path) {
-    if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
-    }
+  //////////////////////////////////////
+  //            ifaddr.h              //
+  //////////////////////////////////////
 
-    // Test that trying to mkdir() in registered random path fails.
-    std::string random_path = "/dev/random";
-    if (mkdir(random_path.c_str(), 0644) != -1) {
+  Status RunGetIfAddrsTest(EnclaveOutput *output) {
+    struct ifaddrs *front = nullptr;
+    int ret = getifaddrs(&front);
+
+    primitives::MessageWriter writer;
+    ASYLO_RETURN_IF_ERROR(
+        primitives::MakeStatus(asylo::host_call::SerializeIfAddrs(
+            &writer, front, primitives::TrustedPrimitives::BestEffortAbort,
+            /*explicit_klinux_conversion=*/true)));
+
+    const size_t message_len = writer.MessageSize();
+    auto message_buffer = absl::make_unique<char[]>(message_len);
+    writer.Serialize(message_buffer.get());
+
+    freeifaddrs(front);
+    SyscallsTestOutput output_ret;
+    output_ret.set_serialized_proto_return(
+        std::string(message_buffer.get(), message_len));
+    output_ret.set_int_syscall_return(ret);
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status ExpectErrno(int expected_errno, int retval) {
+    int saved_errno = errno;
+
+    if (retval != -1) {
       return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Mkdir in registered random path:",
-                                 random_path, "should be forbidden."));
+                    absl::StrCat("Expected retval of -1, got ", retval));
     }
 
-    if (mkdir(path.c_str(), 0644) == -1) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Mkdir:", path, " failed: ", strerror(errno)));
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunRmDirTest(const std::string &path) {
-    if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
-    }
-
-    if (rmdir(path.c_str()) != 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Rmdir:", path, " failed: ", strerror(errno)));
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunDupTest(const std::string &path) {
-    const std::string message = path;
-    int fd;
-    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
-    platform::storage::FdCloser fd_closer(fd);
-    ssize_t rc = write(fd, message.c_str(), message.size());
-    if (rc != message.size()) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("Write to file:", path, " failed: ", strerror(errno)));
-    }
-
-    // Test dup.
-    int dup_fd = dup(fd);
-    if (dup_fd == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("dup fd:", fd, " failed: ", strerror(errno)));
-    }
-    if (dup_fd == fd) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("dup fd:", dup_fd, " is the same as original fd:", fd));
-    }
-    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup_fd, message.size()));
-
-    // Test dup2 with a used file descriptor.
-    int dup2_fd = dup2(fd, dup_fd);
-    if (dup2_fd != dup_fd) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("dup2 fd:", fd, " to fd:", dup_fd,
-                                 " failed: ", strerror(errno)));
-    }
-    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
-
-    // Test dup2 with a different file descriptor.
-    int newfd = 1000;
-    dup2_fd = dup2(fd, newfd);
-    if (dup2_fd != newfd) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("dup2 fd:", fd, " to fd:", newfd,
-                                 " failed: ", strerror(errno)));
-    }
-    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
-
-    // Test whether we can still read from one of the file descriptors after
-    // closing the other.
-    if (close(fd) == -1) {
-      return Status(
-          static_cast<error::GoogleError>(errno),
-          absl::StrCat("close fd:", fd, " failed: ", strerror(errno)));
-    }
-    char buf[1024];
-    rc = read(newfd, buf, sizeof(buf));
-    if (rc >= sizeof(buf) || rc < 0) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("Read from newfd:", newfd,
-                                 " failed after closing fd: ", fd,
-                                 " error:", strerror(errno)));
-    }
-
-    return Status::OkStatus();
-  }
-
-  Status CompareFiles(int fd1, int fd2, int size) {
-    if (lseek(fd1, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("Moving to beginning of fd:", fd1,
-                                 " failed: ", strerror(errno)));
-    }
-    char buf1[1024];
-    ASYLO_RETURN_IF_ERROR(ReadFile(fd1, buf1, size));
-
-    if (lseek(fd2, 0, SEEK_SET) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("Moving to beginning of fd:", fd2,
-                                 " failed: ", strerror(errno)));
-    }
-    char buf2[1024];
-    ASYLO_RETURN_IF_ERROR(ReadFile(fd2, buf2, size));
-
-    if (memcmp(buf1, buf2, size) != 0) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("Fd:", fd1, " and fd:", fd2, " are different"));
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunGetHostNameTest(EnclaveOutput *output) {
-    char buf[1024];
-    if (gethostname(buf, sizeof(buf)) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("gethostname failed:", strerror(errno)));
-    }
-    SyscallsTestOutput output_ret;
-    output_ret.set_string_syscall_return(std::string(buf));
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunLinkTest(const std::string &path) {
-    if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
-    }
-    const std::string from_path = std::string(path) + "from";
-    const std::string to_path = std::string(path) + "to";
-    int from_fd;
-    ASYLO_ASSIGN_OR_RETURN(from_fd,
-                           OpenFile(from_path, O_CREAT | O_RDWR, 0644));
-
-    platform::storage::FdCloser from_fd_closer(from_fd);
-    size_t rc = write(from_fd, path.c_str(), path.size());
-    if (rc != path.size()) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Failed to write to file:", from_path,
-                                 " error:", strerror(errno)));
-    }
-    if (link(from_path.c_str(), to_path.c_str()) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("Link path ", from_path, " to ", to_path,
-                                 " failed: ", strerror(errno)));
-    }
-    int to_fd;
-    ASYLO_ASSIGN_OR_RETURN(to_fd, OpenFile(to_path, O_RDWR, 0));
-    platform::storage::FdCloser to_fd_closer(to_fd);
-
-    char buf[1024];
-    ASYLO_RETURN_IF_ERROR(ReadFile(to_fd, buf, path.size()));
-    if (memcmp(buf, path.c_str(), path.size()) != 0) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("The content:", buf, " from linked path:", to_path,
-                       " is different from the original path:", from_path));
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunGetCwdTest(bool provide_buffer, int32_t buffer_size,
-                       EnclaveOutput *output) {
-    char stack_buffer[PATH_MAX];
-    char *buf = getcwd(provide_buffer ? stack_buffer : nullptr,
-                       std::min(buffer_size, PATH_MAX));
-    if (!buf) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("getcwd failed:", strerror(errno)));
-    }
-    SyscallsTestOutput output_ret;
-    output_ret.set_string_syscall_return(std::string(buf));
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunUmaskTest(const std::string &path) {
-    umask(S_IWGRP | S_IWOTH);
-    if (mkdir(path.c_str(), 0777) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("mkdir failed:", strerror(errno)));
-    }
-    struct stat st;
-    if (stat(path.c_str(), &st) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("stat failed:", strerror(errno)));
-    }
-    if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
+    if (saved_errno != expected_errno) {
       return Status(error::GoogleError::INTERNAL,
-                    "Mkdir creates a directory with masked file modes");
+                    absl::StrCat("Expected errno of ", expected_errno, "; got ",
+                                 saved_errno));
     }
-    const std::string file_path = path + "OpenWithUmask";
-    int fd;
-    ASYLO_ASSIGN_OR_RETURN(fd,
-                           OpenFile(file_path.c_str(), O_CREAT | O_RDWR, 0777));
-    platform::storage::FdCloser fd_closer(fd);
-    if (fstat(fd, &st) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("fstat failed:", strerror(errno)));
+
+    return Status::OkStatus();
+  }
+
+  //////////////////////////////////////
+  //            net/if.h              //
+  //////////////////////////////////////
+
+  Status RunIfIndexToNameTest() {
+    struct ifaddrs *addrs, *addr;
+    if (getifaddrs(&addrs) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getifaddrs failed: ", strerror(errno)));
     }
-    if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
+
+    for (addr = addrs; addr != nullptr; addr = addr->ifa_next) {
+      unsigned int ifindex = if_nametoindex(addr->ifa_name);
+      if (ifindex == 0) {
+        return Status(static_cast<error::PosixError>(errno),
+                      absl::StrCat("if_nametoindex failed: ", strerror(errno)));
+      }
+      char ifname[IF_NAMESIZE];
+      if (!if_indextoname(ifindex, ifname)) {
+        return Status(static_cast<error::PosixError>(errno),
+                      absl::StrCat("if_indextoname failed: ", strerror(errno)));
+      }
+      if (memcmp(addr->ifa_name, ifname, strlen(ifname)) != 0) {
+        return Status(
+            error::GoogleError::INTERNAL,
+            "The ifname from if_indextoname does not match original value");
+      }
+    }
+    freeifaddrs(addrs);
+
+    return Status::OkStatus();
+  }
+
+  Status RunIfNameToIndexTest() {
+    struct ifaddrs *addrs, *addr;
+    if (getifaddrs(&addrs) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("getifaddrs failed: ", strerror(errno)));
+    }
+
+    for (addr = addrs; addr != nullptr; addr = addr->ifa_next) {
+      if (if_nametoindex(addr->ifa_name) == 0) {
+        return Status(static_cast<error::PosixError>(errno),
+                      absl::StrCat("if_nametoindex failed: ", strerror(errno)));
+      }
+    }
+    freeifaddrs(addrs);
+
+    return Status::OkStatus();
+  }
+
+  //////////////////////////////////////
+  //              pwd.h               //
+  //////////////////////////////////////
+
+  Status RunGetPWUidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    if (!EncodePassWdInTestOutput(getpwuid(getuid()), &output_ret)) {
       return Status(error::GoogleError::INTERNAL,
-                    "Open creates a file with masked file modes");
+                    "Failed to encode passwd into proto");
     }
-    return Status::OkStatus();
-  }
-
-  Status RunGetUidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(getuid());
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunGetEuidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(geteuid());
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunGetGidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(getgid());
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunGetEgidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(getegid());
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunGetPpidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    output_ret.set_int_syscall_return(getppid());
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunSchedGetAffinityTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    pid_t my_pid = getpid();
-    cpu_set_t mask;
-
-    output_ret.set_int_syscall_return(
-        sched_getaffinity(my_pid, sizeof(cpu_set_t), &mask));
-    output_ret.clear_bit_mask_syscall_outptr();
-
-    // Translate from enclave cpu_set_t to bit_mask_syscall_outptr.
-    EncodeCpuSetInTestOutput(mask, &output_ret);
 
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
@@ -712,22 +536,9 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunSchedGetAffinityFailureTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    pid_t my_pid = getpid();
-    cpu_set_t mask;
-    size_t bad_cpu_set_size = sizeof(uint64_t) - 1;
-
-    output_ret.set_int_syscall_return(
-        sched_getaffinity(my_pid, bad_cpu_set_size, &mask));
-
-    EncodeErrnoValueInTestOutput(errno, &output_ret);
-
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
+  //////////////////////////////////////
+  //            sched.h               //
+  //////////////////////////////////////
 
   Status RunCpuSetMacrosTest(EnclaveOutput *output) {
     SyscallsTestOutput output_ret;
@@ -853,13 +664,17 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunStatTest(const std::string &path, EnclaveOutput *output) {
+  Status RunSchedGetAffinityTest(EnclaveOutput *output) {
     SyscallsTestOutput output_ret;
+    pid_t my_pid = getpid();
+    cpu_set_t mask;
 
-    struct stat stat_buffer;
-    output_ret.set_int_syscall_return(stat(path.c_str(), &stat_buffer));
+    output_ret.set_int_syscall_return(
+        sched_getaffinity(my_pid, sizeof(cpu_set_t), &mask));
+    output_ret.clear_bit_mask_syscall_outptr();
 
-    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+    // Translate from enclave cpu_set_t to bit_mask_syscall_outptr.
+    EncodeCpuSetInTestOutput(mask, &output_ret);
 
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
@@ -867,24 +682,16 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunFStatTest(const std::string &path, EnclaveOutput *output) {
+  Status RunSchedGetAffinityFailureTest(EnclaveOutput *output) {
     SyscallsTestOutput output_ret;
+    pid_t my_pid = getpid();
+    cpu_set_t mask;
+    size_t bad_cpu_set_size = sizeof(uint64_t) - 1;
 
-    int fd = open(path.c_str(), O_RDONLY);
-    if (fd == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("open failed:", strerror(errno)));
-    }
+    output_ret.set_int_syscall_return(
+        sched_getaffinity(my_pid, bad_cpu_set_size, &mask));
 
-    struct stat stat_buffer;
-    output_ret.set_int_syscall_return(fstat(fd, &stat_buffer));
-
-    if (close(fd) == -1) {
-      return Status(static_cast<error::GoogleError>(errno),
-                    absl::StrCat("close failed:", strerror(errno)));
-    }
-
-    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+    EncodeErrnoValueInTestOutput(errno, &output_ret);
 
     if (output) {
       output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
@@ -892,151 +699,63 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunLStatTest(const std::string &path, EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
+  //////////////////////////////////////
+  //            stdio.h               //
+  //////////////////////////////////////
 
-    struct stat stat_buffer;
-    output_ret.set_int_syscall_return(lstat(path.c_str(), &stat_buffer));
-
-    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
-
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunUnameTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    struct utsname utsname_buf;
-
-    int ret = uname(&utsname_buf);
-    output_ret.set_int_syscall_return(ret);
-
-    if (ret == 0) {
-      EncodeUtsNameInTestOutput(utsname_buf, &output_ret);
-    } else {
-      EncodeErrnoValueInTestOutput(errno, &output_ret);
+  Status RunRenameTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
     }
 
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunWritevTest(const std::string &path) {
-    int fd;
-    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
-    platform::storage::FdCloser fd_closer(fd);
-    constexpr int num_messages = 2;
-    const std::string message1 = "First writev message";
-    const std::string message2 = "Second writev message";
-    const std::string message = message1 + message2;
-    struct iovec iov[num_messages];
-    memset(iov, 0, sizeof(iov));
-    iov[0].iov_base = const_cast<char *>(message1.c_str());
-    iov[1].iov_base = const_cast<char *>(message2.c_str());
-    iov[0].iov_len = message1.size();
-    iov[1].iov_len = message2.size();
-    int size = message.size();
-    ssize_t rc = writev(fd, iov, num_messages);
-    if (rc != size) {
+    // Create a file and rename it.
+    int fd = open((path + "/oldname").c_str(), O_RDWR | O_CREAT, 0777);
+    if (fd < 0) {
       return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("writev return:", rc,
-                                 " does not match message size:", size));
+                    absl::StrCat("failed to create file in: ", path,
+                                 ", error: ", strerror(errno)));
     }
-
-    if (lseek(fd, 0, SEEK_SET) == -1) {
+    close(fd);
+    if (rename((path + "/oldname").c_str(), (path + "/rename").c_str()) < 0) {
       return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Moving to beginning of fd:", fd,
-                                 " failed: ", strerror(errno)));
+                    absl::StrCat("failed to rename file in: ", path,
+                                 ", error: ", strerror(errno)));
     }
 
-    char buf[1024];
-    ASYLO_RETURN_IF_ERROR(ReadFile(fd, buf, size));
-    if (memcmp(buf, message.c_str(), message.size()) != 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Message read from fd:", fd, ":", buf,
-                                 " is different from the message of writev."));
-    }
     return Status::OkStatus();
   }
 
-  Status RunReadvTest(const std::string &path) {
-    int fd;
-    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
-    platform::storage::FdCloser fd_closer(fd);
-    constexpr int num_messages = 2;
-    const std::string message1 = "First readv message";
-    const std::string message2 = "Second readv message";
-    const std::string message = message1 + message2;
-    ssize_t rc = write(fd, message.c_str(), message.size());
-    if (rc != message.size()) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Bytes written to file does not match message size");
-    }
-    if (lseek(fd, 0, SEEK_SET) == -1) {
+  //////////////////////////////////////
+  //           sys/mman.h             //
+  //////////////////////////////////////
+
+  Status RunMmapTest() {
+    // use mmap to allocate an aligned block of 10000 bytes.
+    void *ptr = mmap(nullptr, 10000, PROT_READ | PROT_WRITE,
+                     MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
+    if (ptr == MAP_FAILED) {
       return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("Moving to beginning of fd:", fd,
-                                 " failed: ", strerror(errno)));
+                    "mmap(MAP_ANONYMOUS) failed");
     }
-    struct iovec iov[num_messages];
-    memset(iov, 0, sizeof(iov));
-    std::vector<char> buf1(message1.size());
-    std::vector<char> buf2(message2.size());
-    iov[0].iov_base = reinterpret_cast<void *>(buf1.data());
-    iov[1].iov_base = reinterpret_cast<void *>(buf2.data());
-    iov[0].iov_len = message1.size();
-    iov[1].iov_len = message2.size();
-    rc = readv(fd, iov, num_messages);
-    if (rc != message.size()) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("readv return:", rc,
-                       " does not match message size:", message.size()));
-    }
-    if (memcmp(reinterpret_cast<char *>(iov[0].iov_base), message1.c_str(),
-               iov[0].iov_len) ||
-        memcmp(reinterpret_cast<char *>(iov[1].iov_base), message2.c_str(),
-               iov[1].iov_len)) {
+    intptr_t address = reinterpret_cast<intptr_t>(ptr);
+    if ((address & 4095) != 0) {
       return Status(error::GoogleError::INTERNAL,
-                    "Messages from readv do not match the expected message.");
+                    "mmap(MAP_ANONYMOUS) returned non-page-aligned memory");
+    }
+    char *cptr = static_cast<char *>(ptr);
+    if (std::count(cptr, cptr + 10000, '\0') != 10000) {
+      return Status(error::GoogleError::INTERNAL,
+                    "mmap(MAP_ANONYMOUS) returned uninitialized memory");
+    }
+    if (munmap(ptr, 10000) != 0) {
+      return Status(static_cast<error::PosixError>(errno), "munmap() failed");
     }
     return Status::OkStatus();
   }
 
-  Status RunPReadTest(const std::string &path) {
-    int fd;
-    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
-    platform::storage::FdCloser fd_closer(fd);
-    const std::string message1 = "First pread message";
-    const std::string message2 = "Second pread message";
-    const std::string message = message1 + message2;
-    ssize_t rc = write(fd, message.c_str(), message.size());
-    if (rc != message.size()) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Bytes written to file does not match message size");
-    }
-
-    std::vector<char> buf(message2.size());
-    ssize_t bytes_read =
-        pread(fd, buf.data(), message2.size(), message1.size());
-    if (bytes_read != message2.size()) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("pread returns: ", bytes_read,
-                       " does not match message size: ", message2.size()));
-    }
-    if (!std::equal(buf.begin(), buf.end(), message2.begin())) {
-      return Status(
-          error::GoogleError::INTERNAL,
-          absl::StrCat("Message from pread: ", buf.data(),
-                       " does not match expected: ", message2.data()));
-    }
-
-    return Status::OkStatus();
-  }
+  //////////////////////////////////////
+  //         sys/resource.h           //
+  //////////////////////////////////////
 
   Status RunRlimitNoFileTest(const std::string &path) {
     constexpr int soft_limit = 100;
@@ -1157,68 +876,75 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunChModTest(const std::string &path) {
-    if (chmod(path.c_str(), 0644) != 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("chmod failed: ", strerror(errno)));
-    }
-    return Status::OkStatus();
+  //////////////////////////////////////
+  //          sys/socket.h            //
+  //////////////////////////////////////
+
+  // getpeername()
+
+  // EBADF: Returned if you pass an invalid file descriptor.
+  Status RunGetPeernameFailureTest_EBADF() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+
+    return ExpectErrno(EBADF, getpeername(-1, &sa, &sa_len));
   }
 
-  Status RunFChModTest(const std::string &path) {
-    int fd = open(path.c_str(), O_RDWR | O_CREAT, 0777);
+  // EFAULT: Returned if you pass a bad pointer.
+  Status RunGetPeernameFailureTest_EFAULT() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
+
     if (fd < 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("failed to open file: ", strerror(errno)));
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
     }
 
-    if (fchmod(fd, 0644) != 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("fchmod failed: ", strerror(errno)));
-    }
-    return Status::OkStatus();
+    return ExpectErrno(EFAULT, getpeername(fd, nullptr, &sa_len));
   }
 
-  Status RunGetIfAddrsTest(EnclaveOutput *output) {
-    struct ifaddrs *front = nullptr;
-    int ret = getifaddrs(&front);
+  // EINVAL: Returned if you give an invalid (negative) sockaddr length.
+  Status RunGetPeernameFailureTest_EINVAL() {
+    sockaddr sa;
+    socklen_t sa_len = -1;
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
-    primitives::MessageWriter writer;
-    ASYLO_RETURN_IF_ERROR(
-        primitives::MakeStatus(asylo::host_call::SerializeIfAddrs(
-            &writer, front, primitives::TrustedPrimitives::BestEffortAbort,
-            /*explicit_klinux_conversion=*/true)));
-
-    const size_t message_len = writer.MessageSize();
-    auto message_buffer = absl::make_unique<char[]>(message_len);
-    writer.Serialize(message_buffer.get());
-
-    freeifaddrs(front);
-    SyscallsTestOutput output_ret;
-    output_ret.set_serialized_proto_return(
-        std::string(message_buffer.get(), message_len));
-    output_ret.set_int_syscall_return(ret);
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    if (fd < 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("couldn't create socket, errno ", errno));
     }
-    return Status::OkStatus();
+
+    return ExpectErrno(EINVAL, getpeername(fd, &sa, &sa_len));
   }
 
-  Status ExpectErrno(int expected_errno, int retval) {
-    int saved_errno = errno;
+  // ENOTCONN: Returned if you pass a socket that is not yet connected.
+  Status RunGetPeernameFailureTest_ENOTCONN() {
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+    int fd = socket(AF_INET6, SOCK_STREAM, 0);
 
-    if (retval != -1) {
+    if (fd < 0) {
       return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Expected retval of -1, got ", retval));
+                    absl::StrCat("couldn't create socket, errno ", errno));
     }
 
-    if (saved_errno != expected_errno) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("Expected errno of ", expected_errno, "; got ",
-                                 saved_errno));
+    return ExpectErrno(ENOTCONN, getpeername(fd, &sa, &sa_len));
+  }
+
+  // ENOTSOCK: Returned if you pass an FD of something other than a socket.
+  Status RunGetPeernameFailureTest_ENOTSOCK() {
+    int fds[2];
+    int ret = pipe(fds);
+    if (ret != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    "couldn't create pipe");
     }
 
-    return Status::OkStatus();
+    sockaddr sa;
+    socklen_t sa_len = sizeof(sa);
+    return ExpectErrno(ENOTSOCK, getpeername(fds[0], &sa, &sa_len));
   }
 
   // getsockname()
@@ -1291,71 +1017,529 @@ class SyscallsEnclave : public EnclaveTestCase {
     return ExpectErrno(ENOTSOCK, getsockname(fds[0], &sa, &sa_len));
   }
 
-  // getpeername()
+  //////////////////////////////////////
+  //           sys/stat.h             //
+  //////////////////////////////////////
 
-  // EBADF: Returned if you pass an invalid file descriptor.
-  Status RunGetPeernameFailureTest_EBADF() {
-    sockaddr sa;
-    socklen_t sa_len = sizeof(sa);
-
-    return ExpectErrno(EBADF, getpeername(-1, &sa, &sa_len));
-  }
-
-  // EFAULT: Returned if you pass a bad pointer.
-  Status RunGetPeernameFailureTest_EFAULT() {
-    sockaddr sa;
-    socklen_t sa_len = sizeof(sa);
-
-    int fd = socket(AF_INET6, SOCK_STREAM, 0);
-
-    if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("couldn't create socket, errno ", errno));
-    }
-
-    return ExpectErrno(EFAULT, getpeername(fd, nullptr, &sa_len));
-  }
-
-  // EINVAL: Returned if you give an invalid (negative) sockaddr length.
-  Status RunGetPeernameFailureTest_EINVAL() {
-    sockaddr sa;
-    socklen_t sa_len = -1;
-    int fd = socket(AF_INET6, SOCK_STREAM, 0);
-
-    if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("couldn't create socket, errno ", errno));
-    }
-
-    return ExpectErrno(EINVAL, getpeername(fd, &sa, &sa_len));
-  }
-
-  // ENOTCONN: Returned if you pass a socket that is not yet connected.
-  Status RunGetPeernameFailureTest_ENOTCONN() {
-    sockaddr sa;
-    socklen_t sa_len = sizeof(sa);
-    int fd = socket(AF_INET6, SOCK_STREAM, 0);
-
-    if (fd < 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    absl::StrCat("couldn't create socket, errno ", errno));
-    }
-
-    return ExpectErrno(ENOTCONN, getpeername(fd, &sa, &sa_len));
-  }
-
-  // ENOTSOCK: Returned if you pass an FD of something other than a socket.
-  Status RunGetPeernameFailureTest_ENOTSOCK() {
-    int fds[2];
-    int ret = pipe(fds);
-    if (ret != 0) {
+  Status RunChModTest(const std::string &path) {
+    if (chmod(path.c_str(), 0644) != 0) {
       return Status(static_cast<error::PosixError>(errno),
-                    "couldn't create pipe");
+                    absl::StrCat("chmod failed: ", strerror(errno)));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunFChModTest(const std::string &path) {
+    int fd = open(path.c_str(), O_RDWR | O_CREAT, 0777);
+    if (fd < 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("failed to open file: ", strerror(errno)));
     }
 
-    sockaddr sa;
-    socklen_t sa_len = sizeof(sa);
-    return ExpectErrno(ENOTSOCK, getpeername(fds[0], &sa, &sa_len));
+    if (fchmod(fd, 0644) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("fchmod failed: ", strerror(errno)));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunFStatTest(const std::string &path, EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+
+    int fd = open(path.c_str(), O_RDONLY);
+    if (fd == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("open failed:", strerror(errno)));
+    }
+
+    struct stat stat_buffer;
+    output_ret.set_int_syscall_return(fstat(fd, &stat_buffer));
+
+    if (close(fd) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("close failed:", strerror(errno)));
+    }
+
+    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunLStatTest(const std::string &path, EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+
+    struct stat stat_buffer;
+    output_ret.set_int_syscall_return(lstat(path.c_str(), &stat_buffer));
+
+    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunMkdirTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+    }
+
+    // Test that trying to mkdir() in registered random path fails.
+    std::string random_path = "/dev/random";
+    if (mkdir(random_path.c_str(), 0644) != -1) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("Mkdir in registered random path:",
+                                 random_path, "should be forbidden."));
+    }
+
+    if (mkdir(path.c_str(), 0644) == -1) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("Mkdir:", path, " failed: ", strerror(errno)));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunStatTest(const std::string &path, EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+
+    struct stat stat_buffer;
+    output_ret.set_int_syscall_return(stat(path.c_str(), &stat_buffer));
+
+    EncodeStatBufferInTestOutput(stat_buffer, &output_ret);
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunUmaskTest(const std::string &path) {
+    umask(S_IWGRP | S_IWOTH);
+    if (mkdir(path.c_str(), 0777) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("mkdir failed:", strerror(errno)));
+    }
+    struct stat st;
+    if (stat(path.c_str(), &st) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("stat failed:", strerror(errno)));
+    }
+    if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Mkdir creates a directory with masked file modes");
+    }
+    const std::string file_path = path + "OpenWithUmask";
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd,
+                           OpenFile(file_path.c_str(), O_CREAT | O_RDWR, 0777));
+    platform::storage::FdCloser fd_closer(fd);
+    if (fstat(fd, &st) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("fstat failed:", strerror(errno)));
+    }
+    if (st.st_mode & S_IWGRP || st.st_mode & S_IWOTH) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Open creates a file with masked file modes");
+    }
+    return Status::OkStatus();
+  }
+
+  //////////////////////////////////////
+  //            sys/time.h            //
+  //////////////////////////////////////
+
+  Status RunItimerTest() {
+    itimerval timer_val;
+    timer_val.it_interval.tv_sec = 100;
+    timer_val.it_interval.tv_usec = 12;
+    timer_val.it_value.tv_sec = 100;
+    timer_val.it_value.tv_usec = 0;
+
+    // Set a timer value.
+    if (setitimer(ITIMER_REAL, &timer_val, nullptr) != 0) {
+      perror("setitimer");
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 1");
+    }
+
+    // Call setitimer again and make sure the old value was returned with the
+    // correct interval and a decreased time-till-next-fire.
+    itimerval time_till_next;
+    if (setitimer(ITIMER_REAL, &timer_val, &time_till_next) != 0) {
+      perror("setitimer");
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 2");
+    }
+    if (time_till_next.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
+        time_till_next.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 3");
+    }
+    if (time_till_next.it_value.tv_sec >= timer_val.it_interval.tv_sec) {
+      return Status(error::GoogleError::INTERNAL, "setitimer failure 4");
+    }
+
+    // Make sure getitimer works too.
+    itimerval curr_val;
+    if (getitimer(ITIMER_REAL, &curr_val) != 0) {
+      return Status(error::GoogleError::INTERNAL, "getitimer failure 1");
+    }
+    if (curr_val.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
+        curr_val.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
+      return Status(error::GoogleError::INTERNAL, "getitimer failure 2");
+    }
+
+    return Status::OkStatus();
+  }
+
+  //////////////////////////////////////
+  //            sys/uio.h             //
+  //////////////////////////////////////
+
+  Status RunReadvTest(const std::string &path) {
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
+    platform::storage::FdCloser fd_closer(fd);
+    constexpr int num_messages = 2;
+    const std::string message1 = "First readv message";
+    const std::string message2 = "Second readv message";
+    const std::string message = message1 + message2;
+    ssize_t rc = write(fd, message.c_str(), message.size());
+    if (rc != message.size()) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Bytes written to file does not match message size");
+    }
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("Moving to beginning of fd:", fd,
+                                 " failed: ", strerror(errno)));
+    }
+    struct iovec iov[num_messages];
+    memset(iov, 0, sizeof(iov));
+    std::vector<char> buf1(message1.size());
+    std::vector<char> buf2(message2.size());
+    iov[0].iov_base = reinterpret_cast<void *>(buf1.data());
+    iov[1].iov_base = reinterpret_cast<void *>(buf2.data());
+    iov[0].iov_len = message1.size();
+    iov[1].iov_len = message2.size();
+    rc = readv(fd, iov, num_messages);
+    if (rc != message.size()) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("readv return:", rc,
+                       " does not match message size:", message.size()));
+    }
+    if (memcmp(reinterpret_cast<char *>(iov[0].iov_base), message1.c_str(),
+               iov[0].iov_len) ||
+        memcmp(reinterpret_cast<char *>(iov[1].iov_base), message2.c_str(),
+               iov[1].iov_len)) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Messages from readv do not match the expected message.");
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunWritevTest(const std::string &path) {
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
+    platform::storage::FdCloser fd_closer(fd);
+    constexpr int num_messages = 2;
+    const std::string message1 = "First writev message";
+    const std::string message2 = "Second writev message";
+    const std::string message = message1 + message2;
+    struct iovec iov[num_messages];
+    memset(iov, 0, sizeof(iov));
+    iov[0].iov_base = const_cast<char *>(message1.c_str());
+    iov[1].iov_base = const_cast<char *>(message2.c_str());
+    iov[0].iov_len = message1.size();
+    iov[1].iov_len = message2.size();
+    int size = message.size();
+    ssize_t rc = writev(fd, iov, num_messages);
+    if (rc != size) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("writev return:", rc,
+                                 " does not match message size:", size));
+    }
+
+    if (lseek(fd, 0, SEEK_SET) == -1) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("Moving to beginning of fd:", fd,
+                                 " failed: ", strerror(errno)));
+    }
+
+    char buf[1024];
+    ASYLO_RETURN_IF_ERROR(ReadFile(fd, buf, size));
+    if (memcmp(buf, message.c_str(), message.size()) != 0) {
+      return Status(error::GoogleError::INTERNAL,
+                    absl::StrCat("Message read from fd:", fd, ":", buf,
+                                 " is different from the message of writev."));
+    }
+    return Status::OkStatus();
+  }
+
+  //////////////////////////////////////
+  //          sys/utsname.h           //
+  //////////////////////////////////////
+
+  Status RunUnameTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    struct utsname utsname_buf;
+
+    int ret = uname(&utsname_buf);
+    output_ret.set_int_syscall_return(ret);
+
+    if (ret == 0) {
+      EncodeUtsNameInTestOutput(utsname_buf, &output_ret);
+    } else {
+      EncodeErrnoValueInTestOutput(errno, &output_ret);
+    }
+
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  //////////////////////////////////////
+  //            unistd.h              //
+  //////////////////////////////////////
+
+  Status RunDupTest(const std::string &path) {
+    const std::string message = path;
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
+    platform::storage::FdCloser fd_closer(fd);
+    ssize_t rc = write(fd, message.c_str(), message.size());
+    if (rc != message.size()) {
+      return Status(
+          static_cast<error::GoogleError>(errno),
+          absl::StrCat("Write to file:", path, " failed: ", strerror(errno)));
+    }
+
+    // Test dup.
+    int dup_fd = dup(fd);
+    if (dup_fd == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("dup fd:", fd, " failed: ", strerror(errno)));
+    }
+    if (dup_fd == fd) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("dup fd:", dup_fd, " is the same as original fd:", fd));
+    }
+    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup_fd, message.size()));
+
+    // Test dup2 with a used file descriptor.
+    int dup2_fd = dup2(fd, dup_fd);
+    if (dup2_fd != dup_fd) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("dup2 fd:", fd, " to fd:", dup_fd,
+                                 " failed: ", strerror(errno)));
+    }
+    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
+
+    // Test dup2 with a different file descriptor.
+    int newfd = 1000;
+    dup2_fd = dup2(fd, newfd);
+    if (dup2_fd != newfd) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("dup2 fd:", fd, " to fd:", newfd,
+                                 " failed: ", strerror(errno)));
+    }
+    ASYLO_RETURN_IF_ERROR(CompareFiles(fd, dup2_fd, message.size()));
+
+    // Test whether we can still read from one of the file descriptors after
+    // closing the other.
+    if (close(fd) == -1) {
+      return Status(
+          static_cast<error::GoogleError>(errno),
+          absl::StrCat("close fd:", fd, " failed: ", strerror(errno)));
+    }
+    char buf[1024];
+    rc = read(newfd, buf, sizeof(buf));
+    if (rc >= sizeof(buf) || rc < 0) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("Read from newfd:", newfd,
+                                 " failed after closing fd: ", fd,
+                                 " error:", strerror(errno)));
+    }
+
+    return Status::OkStatus();
+  }
+
+  Status RunGetCwdTest(bool provide_buffer, int32_t buffer_size,
+                       EnclaveOutput *output) {
+    char stack_buffer[PATH_MAX];
+    char *buf = getcwd(provide_buffer ? stack_buffer : nullptr,
+                       std::min(buffer_size, PATH_MAX));
+    if (!buf) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("getcwd failed:", strerror(errno)));
+    }
+    SyscallsTestOutput output_ret;
+    output_ret.set_string_syscall_return(std::string(buf));
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetEgidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(getegid());
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetEuidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(geteuid());
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetHostNameTest(EnclaveOutput *output) {
+    char buf[1024];
+    if (gethostname(buf, sizeof(buf)) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("gethostname failed:", strerror(errno)));
+    }
+    SyscallsTestOutput output_ret;
+    output_ret.set_string_syscall_return(std::string(buf));
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetGidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(getgid());
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetPidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(getpid());
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetPpidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(getppid());
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunGetUidTest(EnclaveOutput *output) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(getuid());
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunLinkTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+    }
+    const std::string from_path = std::string(path) + "from";
+    const std::string to_path = std::string(path) + "to";
+    int from_fd;
+    ASYLO_ASSIGN_OR_RETURN(from_fd,
+                           OpenFile(from_path, O_CREAT | O_RDWR, 0644));
+
+    platform::storage::FdCloser from_fd_closer(from_fd);
+    size_t rc = write(from_fd, path.c_str(), path.size());
+    if (rc != path.size()) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("Failed to write to file:", from_path,
+                                 " error:", strerror(errno)));
+    }
+    if (link(from_path.c_str(), to_path.c_str()) == -1) {
+      return Status(static_cast<error::GoogleError>(errno),
+                    absl::StrCat("Link path ", from_path, " to ", to_path,
+                                 " failed: ", strerror(errno)));
+    }
+    int to_fd;
+    ASYLO_ASSIGN_OR_RETURN(to_fd, OpenFile(to_path, O_RDWR, 0));
+    platform::storage::FdCloser to_fd_closer(to_fd);
+
+    char buf[1024];
+    ASYLO_RETURN_IF_ERROR(ReadFile(to_fd, buf, path.size()));
+    if (memcmp(buf, path.c_str(), path.size()) != 0) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("The content:", buf, " from linked path:", to_path,
+                       " is different from the original path:", from_path));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunPReadTest(const std::string &path) {
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
+    platform::storage::FdCloser fd_closer(fd);
+    const std::string message1 = "First pread message";
+    const std::string message2 = "Second pread message";
+    const std::string message = message1 + message2;
+    ssize_t rc = write(fd, message.c_str(), message.size());
+    if (rc != message.size()) {
+      return Status(error::GoogleError::INTERNAL,
+                    "Bytes written to file does not match message size");
+    }
+
+    std::vector<char> buf(message2.size());
+    ssize_t bytes_read =
+        pread(fd, buf.data(), message2.size(), message1.size());
+    if (bytes_read != message2.size()) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("pread returns: ", bytes_read,
+                       " does not match message size: ", message2.size()));
+    }
+    if (!std::equal(buf.begin(), buf.end(), message2.begin())) {
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("Message from pread: ", buf.data(),
+                       " does not match expected: ", message2.data()));
+    }
+
+    return Status::OkStatus();
+  }
+
+  Status RunRmDirTest(const std::string &path) {
+    if (path.empty()) {
+      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
+    }
+
+    if (rmdir(path.c_str()) != 0) {
+      return Status(static_cast<error::PosixError>(errno),
+                    absl::StrCat("Rmdir:", path, " failed: ", strerror(errno)));
+    }
+    return Status::OkStatus();
+  }
+
+  Status RunSysconfTest(EnclaveOutput *output, int name) {
+    SyscallsTestOutput output_ret;
+    output_ret.set_int_syscall_return(sysconf(name));
+    if (output) {
+      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
+    }
+    return Status::OkStatus();
   }
 
   Status RunTruncateTest(const std::string &path) {
@@ -1423,90 +1607,22 @@ class SyscallsEnclave : public EnclaveTestCase {
     return Status::OkStatus();
   }
 
-  Status RunMmapTest() {
-    // use mmap to allocate an aligned block of 10000 bytes.
-    void *ptr = mmap(nullptr, 10000, PROT_READ | PROT_WRITE,
-                     MAP_ANONYMOUS | MAP_PRIVATE, -1, 0);
-    if (ptr == MAP_FAILED) {
-      return Status(static_cast<error::PosixError>(errno),
-                    "mmap(MAP_ANONYMOUS) failed");
-    }
-    intptr_t address = reinterpret_cast<intptr_t>(ptr);
-    if ((address & 4095) != 0) {
-      return Status(error::GoogleError::INTERNAL,
-                    "mmap(MAP_ANONYMOUS) returned non-page-aligned memory");
-    }
-    char *cptr = static_cast<char *>(ptr);
-    if (std::count(cptr, cptr + 10000, '\0') != 10000) {
-      return Status(error::GoogleError::INTERNAL,
-                    "mmap(MAP_ANONYMOUS) returned uninitialized memory");
-    }
-    if (munmap(ptr, 10000) != 0) {
-      return Status(static_cast<error::PosixError>(errno), "munmap() failed");
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunItimerTest() {
-    itimerval timer_val;
-    timer_val.it_interval.tv_sec = 100;
-    timer_val.it_interval.tv_usec = 12;
-    timer_val.it_value.tv_sec = 100;
-    timer_val.it_value.tv_usec = 0;
-
-    // Set a timer value.
-    if (setitimer(ITIMER_REAL, &timer_val, nullptr) != 0) {
-      perror("setitimer");
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 1");
-    }
-
-    // Call setitimer again and make sure the old value was returned with the
-    // correct interval and a decreased time-till-next-fire.
-    itimerval time_till_next;
-    if (setitimer(ITIMER_REAL, &timer_val, &time_till_next) != 0) {
-      perror("setitimer");
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 2");
-    }
-    if (time_till_next.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
-        time_till_next.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 3");
-    }
-    if (time_till_next.it_value.tv_sec >= timer_val.it_interval.tv_sec) {
-      return Status(error::GoogleError::INTERNAL, "setitimer failure 4");
-    }
-
-    // Make sure getitimer works too.
-    itimerval curr_val;
-    if (getitimer(ITIMER_REAL, &curr_val) != 0) {
-      return Status(error::GoogleError::INTERNAL, "getitimer failure 1");
-    }
-    if (curr_val.it_interval.tv_sec != timer_val.it_interval.tv_sec ||
-        curr_val.it_interval.tv_usec != timer_val.it_interval.tv_usec) {
-      return Status(error::GoogleError::INTERNAL, "getitimer failure 2");
-    }
-
-    return Status::OkStatus();
-  }
-
-  Status RunRenameTest(const std::string &path) {
-    if (path.empty()) {
-      return Status(error::GoogleError::INVALID_ARGUMENT, "File path not set");
-    }
-
-    // Create a file and rename it.
-    int fd = open((path + "/oldname").c_str(), O_RDWR | O_CREAT, 0777);
-    if (fd < 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("failed to create file in: ", path,
-                                 ", error: ", strerror(errno)));
-    }
+  Status RunUnlinkTest(const std::string &path) {
+    int fd;
+    ASYLO_ASSIGN_OR_RETURN(fd, OpenFile(path, O_CREAT | O_RDWR, 0644));
     close(fd);
-    if (rename((path + "/oldname").c_str(), (path + "/rename").c_str()) < 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("failed to rename file in: ", path,
-                                 ", error: ", strerror(errno)));
+    if (unlink(path.c_str()) == -1) {
+      return Status(
+          static_cast<error::PosixError>(errno),
+          absl::StrCat("Unlink file ", path, "failed: ", strerror(errno)));
     }
-
+    fd = open(path.c_str(), O_RDWR);
+    if (fd >= 0) {
+      close(fd);
+      return Status(
+          error::GoogleError::INTERNAL,
+          absl::StrCat("File ", path, " is still available after unlink"));
+    }
     return Status::OkStatus();
   }
 
@@ -1556,66 +1672,6 @@ class SyscallsEnclave : public EnclaveTestCase {
       return Status(error::GoogleError::INTERNAL,
                     "Modification time is not set correctly");
     }
-
-    return Status::OkStatus();
-  }
-
-  Status RunGetPWUidTest(EnclaveOutput *output) {
-    SyscallsTestOutput output_ret;
-    if (!EncodePassWdInTestOutput(getpwuid(getuid()), &output_ret)) {
-      return Status(error::GoogleError::INTERNAL,
-                    "Failed to encode passwd into proto");
-    }
-
-    if (output) {
-      output->MutableExtension(syscalls_test_output)->CopyFrom(output_ret);
-    }
-    return Status::OkStatus();
-  }
-
-  Status RunIfNameToIndexTest() {
-    struct ifaddrs *addrs, *addr;
-    if (getifaddrs(&addrs) != 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("getifaddrs failed: ", strerror(errno)));
-    }
-
-    for (addr = addrs; addr != nullptr; addr = addr->ifa_next) {
-      if (if_nametoindex(addr->ifa_name) == 0) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("if_nametoindex failed: ", strerror(errno)));
-      }
-    }
-    freeifaddrs(addrs);
-
-    return Status::OkStatus();
-  }
-
-  Status RunIfIndexToNameTest() {
-    struct ifaddrs *addrs, *addr;
-    if (getifaddrs(&addrs) != 0) {
-      return Status(static_cast<error::PosixError>(errno),
-                    absl::StrCat("getifaddrs failed: ", strerror(errno)));
-    }
-
-    for (addr = addrs; addr != nullptr; addr = addr->ifa_next) {
-      unsigned int ifindex = if_nametoindex(addr->ifa_name);
-      if (ifindex == 0) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("if_nametoindex failed: ", strerror(errno)));
-      }
-      char ifname[IF_NAMESIZE];
-      if (!if_indextoname(ifindex, ifname)) {
-        return Status(static_cast<error::PosixError>(errno),
-                      absl::StrCat("if_indextoname failed: ", strerror(errno)));
-      }
-      if (memcmp(addr->ifa_name, ifname, strlen(ifname)) != 0) {
-        return Status(
-            error::GoogleError::INTERNAL,
-            "The ifname from if_indextoname does not match original value");
-      }
-    }
-    freeifaddrs(addrs);
 
     return Status::OkStatus();
   }
