@@ -955,6 +955,11 @@ def enclave_build_test(
             kwargs,
             {"tags": kwargs.get("tags", []) + ["asylo-transition"]},
         )
+    else:
+        kwargs = backend_tools.merge_dicts(
+            kwargs,
+            {"tags": kwargs.get("tags", []) + ["asylo-cfh"]},
+        )
     backend_tools.all_backends(
         rule_or_macro = build_rule,
         name = name,

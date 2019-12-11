@@ -4827,7 +4827,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,720 @@
+@@ -0,0 +1,722 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4997,9 +4997,11 @@ diff -Nur /dev/null sgx_sdk.bzl
 +      **kwargs: cc_binary arguments.
 +    """
 +    if not transitions.supported(native.package_name()):
++        tags = kwargs.pop("tags", []) + ["asylo-cfh"]
 +        sgx_cc_unsigned_enclave(
 +            name = name,
 +            stamp = not (not stamp),
++            tags = tags,
 +            **kwargs
 +        )
 +    else:
