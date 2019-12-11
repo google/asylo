@@ -221,6 +221,7 @@ cc_library(
     name = "function_traits",
     hdrs = ["function_traits.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
 )
 
 cc_test(

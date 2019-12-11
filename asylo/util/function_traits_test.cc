@@ -134,6 +134,23 @@ TEST(FunctionTraitsWeirdTypesTest, ReferenceTest) {
   TypecheckFunctionReturn<int>(fn_A_ref);
 }
 
+TEST(FunctionTraitsWeirdTypesTest, ReturnVoidTest) {
+  auto fn_int = [](int x) {};
+  TypecheckFunctionArguments<int>(fn_int);
+  TypecheckFunctionReturn<void>(fn_int);
+  static_assert(
+      FunctionTraits<decltype(
+          &FunClass<void>::MemberFun)>::template CheckReturnType<void>::value,
+      "expected void return type");
+  static_assert(FunctionTraits<decltype(&FunClass<void>::ConstMemberFun)>::
+                    template CheckReturnType<void>::value,
+                "expected void return type");
+  static_assert(
+      FunctionTraits<decltype(
+          &FunClass<void>::StaticFun)>::template CheckReturnType<void>::value,
+      "expected void return type");
+}
+
 class NoCopyOrMove {
  public:
   NoCopyOrMove(const NoCopyOrMove &) = delete;
@@ -171,7 +188,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, LambdaReturnType) {
   TypecheckFunctionReturn<TypeParam>(fn0);
   auto fn1 = [](int x) { return TypeParam(); };
   TypecheckFunctionReturn<TypeParam>(fn1);
-  auto fn11 = [](TypeParam x) { return x; };
+  auto fn11 = [](TypeParam *x) { return TypeParam(); };
   TypecheckFunctionReturn<TypeParam>(fn11);
   auto fn2 = [](char x, double y) { return TypeParam(); };
   TypecheckFunctionReturn<TypeParam>(fn2);
@@ -186,7 +203,9 @@ TYPED_TEST_P(FunctionTraitsTestReturn, StdFunctionReturnType) {
   TypecheckFunctionReturn<TypeParam>(fn0);
   std::function<TypeParam(int)> fn1 = [](int x) { return TypeParam(); };
   TypecheckFunctionReturn<TypeParam>(fn1);
-  std::function<TypeParam(TypeParam)> fn11 = [](TypeParam x) { return x; };
+  std::function<TypeParam(TypeParam *)> fn11 = [](TypeParam *x) {
+    return TypeParam();
+  };
   TypecheckFunctionReturn<TypeParam>(fn11);
   std::function<TypeParam(char, double)> fn2 = [](char x, double y) {
     return TypeParam();
@@ -202,7 +221,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, CallableReturnType) {
   TypecheckFunctionReturn<TypeParam>(fn0);
   FunClass<TypeParam, int> fn1;
   TypecheckFunctionReturn<TypeParam>(fn1);
-  FunClass<TypeParam, TypeParam> fn11;
+  FunClass<TypeParam, TypeParam *> fn11;
   TypecheckFunctionReturn<TypeParam>(fn11);
   FunClass<TypeParam, char, double> fn2;
   TypecheckFunctionReturn<TypeParam>(fn2);
@@ -215,7 +234,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, FunctionPointerReturnType) {
   TypecheckFunctionReturn<TypeParam>(fn0);
   TypeParam (*fn1)(int) = Fun<TypeParam, int>;
   TypecheckFunctionReturn<TypeParam>(fn1);
-  TypeParam (*fn11)(TypeParam) = Fun<TypeParam, TypeParam>;
+  TypeParam (*fn11)(TypeParam *) = Fun<TypeParam, TypeParam *>;
   TypecheckFunctionReturn<TypeParam>(fn11);
   TypeParam (*fn2)(char, double) = Fun<TypeParam, char, double>;
   TypecheckFunctionReturn<TypeParam>(fn2);
@@ -229,7 +248,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, ConstFunctionPointerReturnType) {
   TypecheckFunctionReturn<TypeParam>(fn0);
   TypeParam (*const fn1)(int) = Fun<TypeParam, int>;
   TypecheckFunctionReturn<TypeParam>(fn1);
-  TypeParam (*const fn11)(TypeParam) = Fun<TypeParam, TypeParam>;
+  TypeParam (*const fn11)(TypeParam *) = Fun<TypeParam, TypeParam *>;
   TypecheckFunctionReturn<TypeParam>(fn11);
   TypeParam (*const fn2)(char, double) = Fun<TypeParam, char, double>;
   TypecheckFunctionReturn<TypeParam>(fn2);
@@ -242,7 +261,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, StaticMemberFunctionPointerReturnType) {
   TypecheckFunctionReturn<TypeParam>(&FunClass<TypeParam>::StaticFun);
   TypecheckFunctionReturn<TypeParam>(&FunClass<TypeParam, int>::StaticFun);
   TypecheckFunctionReturn<TypeParam>(
-      &FunClass<TypeParam, TypeParam>::StaticFun);
+      &FunClass<TypeParam, TypeParam *>::StaticFun);
   TypecheckFunctionReturn<TypeParam>(
       &FunClass<TypeParam, char, double>::StaticFun);
   TypecheckFunctionReturn<TypeParam>(
@@ -253,7 +272,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, MemberFunctionPointerReturnType) {
   TypecheckFunctionReturn<TypeParam>(&FunClass<TypeParam>::MemberFun);
   TypecheckFunctionReturn<TypeParam>(&FunClass<TypeParam, int>::MemberFun);
   TypecheckFunctionReturn<TypeParam>(
-      &FunClass<TypeParam, TypeParam>::MemberFun);
+      &FunClass<TypeParam, TypeParam *>::MemberFun);
   TypecheckFunctionReturn<TypeParam>(
       &FunClass<TypeParam, char, double>::MemberFun);
   TypecheckFunctionReturn<TypeParam>(
@@ -264,7 +283,7 @@ TYPED_TEST_P(FunctionTraitsTestReturn, ConstMemberFunctionPointerReturnType) {
   TypecheckFunctionReturn<TypeParam>(&FunClass<TypeParam>::ConstMemberFun);
   TypecheckFunctionReturn<TypeParam>(&FunClass<TypeParam, int>::ConstMemberFun);
   TypecheckFunctionReturn<TypeParam>(
-      &FunClass<TypeParam, TypeParam>::ConstMemberFun);
+      &FunClass<TypeParam, TypeParam *>::ConstMemberFun);
   TypecheckFunctionReturn<TypeParam>(
       &FunClass<TypeParam, char, double>::ConstMemberFun);
   TypecheckFunctionReturn<TypeParam>(
@@ -423,6 +442,7 @@ typedef testing::Types<int, char, bool, int16_t, int64_t, double, float>
 typedef testing::Types<A *, B *, C *, D *> PointerTypeList;
 typedef testing::Types<const A *, const B *, const C *, const D *>
     ConstPointerTypeList;
+typedef testing::Types<void> VoidTypeList;
 
 INSTANTIATE_TYPED_TEST_SUITE_P(FunctionTraitsReturn, FunctionTraitsTestReturn,
                                TypeList);
@@ -432,6 +452,9 @@ INSTANTIATE_TYPED_TEST_SUITE_P(FunctionTraitsBaseReturn,
 
 INSTANTIATE_TYPED_TEST_SUITE_P(FunctionTraitsPointerReturn,
                                FunctionTraitsTestReturn, PointerTypeList);
+
+INSTANTIATE_TYPED_TEST_SUITE_P(FunctionTraitsVoidReturn,
+                               FunctionTraitsTestReturn, VoidTypeList);
 
 INSTANTIATE_TYPED_TEST_SUITE_P(FunctionTraitsArguments,
                                FunctionTraitsTestArguments, TypeList);
