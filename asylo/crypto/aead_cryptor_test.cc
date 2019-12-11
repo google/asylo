@@ -26,7 +26,6 @@
 #include "asylo/util/cleansing_types.h"
 
 namespace asylo {
-namespace experimental {
 namespace {
 
 // Test vector for AES-GCM with a 256-bit key from example test case 14 on
@@ -159,5 +158,4 @@ INSTANTIATE_TEST_SUITE_P(
                                          kAesGcmSivTagHex128)})));
 
 }  // namespace
-}  // namespace experimental
 }  // namespace asylo

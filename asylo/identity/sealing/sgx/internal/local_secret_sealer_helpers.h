@@ -54,16 +54,15 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
 
 // Creates a cryptor that uses |key| and the algorithm denoted by
 // |aead_scheme|. Returns a non-OK status if a cryptor cannot be generated.
-StatusOr<std::unique_ptr<experimental::AeadCryptor>> MakeCryptor(
+StatusOr<std::unique_ptr<AeadCryptor>> MakeCryptor(
     AeadScheme aead_scheme, ByteContainerView key);
 
 // Seals |secret| and |additional_data| into |sealed_secret|, using |cryptor|.
-Status Seal(experimental::AeadCryptor *cryptor, ByteContainerView secret,
+Status Seal(AeadCryptor *cryptor, ByteContainerView secret,
             ByteContainerView additional_data, SealedSecret *sealed_secret);
 
 // Opens |sealed_secret| into |secret|, using |cryptor| with |additional_data|.
-Status Open(experimental::AeadCryptor *cryptor,
-            const SealedSecret &sealed_secret,
+Status Open(AeadCryptor *cryptor, const SealedSecret &sealed_secret,
             ByteContainerView additional_data,
             CleansingVector<uint8_t> *secret);
 

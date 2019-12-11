@@ -48,8 +48,6 @@
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 
-using AeadCryptor = asylo::experimental::AeadCryptor;
-
 namespace asylo {
 namespace {
 

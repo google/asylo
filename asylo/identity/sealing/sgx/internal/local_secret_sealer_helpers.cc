@@ -67,8 +67,6 @@ bool IsLegacySealedSecret(const SealedSecretHeader &header) {
 
 namespace internal {
 
-using experimental::AeadCryptor;
-
 const char *const kSgxLocalSecretSealerRootName = "SGX";
 
 Status ParseKeyGenerationParamsFromSealedSecretHeader(
