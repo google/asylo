@@ -187,3 +187,14 @@ sh_test(
     ],
     visibility = ["//visibility:public"],
 )
+
+sh_test(
+    name = "passing_perf_test",
+    srcs = ["passing_test.sh"],
+    tags = ASYLO_ALL_BACKENDS + [
+        "asylo-cfh",
+        "asylo-transition",
+        "perf",
+    ],
+    visibility = ["//visibility:public"],
+)
