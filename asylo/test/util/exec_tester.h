@@ -61,6 +61,7 @@ class ExecTester {
   /// specified by `path`. This utility helps find binaries in common use cases
   /// in Asylo.
   ///
+  /// \deprecated Use Bazel's runfiles library for file paths.
   /// \param path A path to a file.
   /// \param file_name A path to a file relative to the directory containing
   ///                  `path`.

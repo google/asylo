@@ -56,10 +56,12 @@ TEST_F(DieTest, NoEntryAfterDie) {
   experimental::ExecTester run({app_, absl::GetFlag(FLAGS_enclave_path)});
   int status = 0;
   EXPECT_TRUE(run.Run("", &status));
-  EXPECT_FALSE(WIFSIGNALED(status)) << "Terminated by signal "
-      << WTERMSIG(status);
-  ASSERT_TRUE(WIFEXITED(status));
-  EXPECT_EQ(EXIT_FAILURE, WEXITSTATUS(status));
+  // The exit can come either from the GP_ON_EENTER call to exit(EXIT_FAILURE)
+  // or from segfault due to a trts_pic.S swapped stack that doesn't get
+  // unswapped upon an assertion violation.
+  EXPECT_FALSE(!WIFSIGNALED(status) && !WIFEXITED(status));
+  ASSERT_TRUE(!WIFEXITED(status) || EXIT_FAILURE == WEXITSTATUS(status));
+  ASSERT_TRUE(!WIFSIGNALED(status) || SIGSEGV == WTERMSIG(status));
 }
 
 TEST_F(DieTest, CheckSIGILL) {

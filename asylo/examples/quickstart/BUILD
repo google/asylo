@@ -67,11 +67,16 @@ enclave_loader(
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
         ":demo_cc_proto",
-        "//asylo:enclave_cc_proto",
-        "//asylo:enclave_client",
-        "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/util:logging",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/flags:parse",
-    ],
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": ["//asylo/platform/primitives/sgx:loader_cc_proto"],
+            "@linux_sgx//:sgx_sim": ["//asylo/platform/primitives/sgx:loader_cc_proto"],
+        },
+        no_match_error = "quickstart is only configured to use the SGX backends",
+    ),
 )

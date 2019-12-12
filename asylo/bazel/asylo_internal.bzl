@@ -1,18 +1,28 @@
 """Shared rules and macros within the Asylo implementation."""
 
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 INTERNAL_SHOULD_BE_ALL_BACKENDS = sgx.backend_labels
 
-DLOPEN_IMPLICIT_CC_BINARY_ATTRS = {
-    "_trusted_primitives": attr.label(
-        default = "//asylo/platform/primitives:trusted_primitives",
-    ),
-    "_trusted_dlopen": attr.label(
-        default = "//asylo/platform/primitives/dlopen:trusted_dlopen_generic",
-    ),
-}
+def dlopen_implicit_cc_binary_attrs(transition):
+    """Returns the implicit rule attributes to include for dlopen backend.
+
+    Args:
+        transition: True if the implicit labels should be considered after
+            transitioning the backend and toolchain.
+    """
+    return {
+        "_trusted_primitives": attr.label(
+            cfg = transitions.toolchain if transition else None,
+            default = "//asylo/platform/primitives:trusted_primitives",
+        ),
+        "_trusted_dlopen": attr.label(
+            cfg = transitions.toolchain if transition else None,
+            default = "//asylo/platform/primitives/dlopen:trusted_dlopen_generic",
+        ),
+    }
 
 SGX_IMPLICIT_CC_BINARY_ATTRS = {
     "_lds": attr.label(
@@ -319,7 +329,7 @@ def internal_interpolate_enclave_paths(enclaves, args):
 
 internal = struct(
     cc_enclave_test = internal_cc_enclave_test,
-    dlopen_implicit_cc_binary_attrs = DLOPEN_IMPLICIT_CC_BINARY_ATTRS,
+    dlopen_implicit_cc_binary_attrs = dlopen_implicit_cc_binary_attrs,
     embed_enclaves = internal_embed_enclaves,
     enclave_runner_script_template = internal_enclave_runner_script_template,
     interpolate_enclave_paths = internal_interpolate_enclave_paths,

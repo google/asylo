@@ -239,6 +239,7 @@ cc_binary(
 # A test enclave-wrapped application.
 cc_enclave_binary(
     name = "test_enclave_application",
+    testonly = 1,
     srcs = ["test_application.cc"],
     application_enclave_config = ":test_config",
     copts = ASYLO_DEFAULT_COPTS,
@@ -259,6 +260,7 @@ sh_test(
         ":test_host_application",
     ],
     tags = [
+        "asylo-cfh",
         "asylo-sgx-hw",
         "asylo-sgx-sim",
         "enclave_test",

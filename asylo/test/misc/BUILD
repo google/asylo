@@ -495,6 +495,7 @@ cc_test(
 enclave_test(
     name = "enclave_entry_count_test",
     srcs = ["enclave_entry_count_test_driver.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "enclave_entry_count_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
@@ -596,7 +597,7 @@ sgx_enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-cc_binary(
+transitions.cc_binary(
     name = "exception_app",
     testonly = 1,
     srcs = ["exception_app.cc"],
@@ -616,8 +617,8 @@ copy_from_host(
 enclave_test(
     name = "exception_test",
     srcs = ["exception_test.cc"],
+    backend_dependent_data = [":exception_app_host_bin"],
     copts = ASYLO_DEFAULT_COPTS,
-    data = [":exception_app_host_bin"],
     enclaves = {"enclave": ":exception.so"},
     test_args = [
         "--enclave_path='{enclave}'",

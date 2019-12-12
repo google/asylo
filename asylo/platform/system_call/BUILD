@@ -174,6 +174,7 @@ cc_library(
 
 cc_test(
     name = "system_call_test",
+    size = "medium",
     srcs = ["system_call_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [

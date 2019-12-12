@@ -225,7 +225,7 @@ def _make_cc_backend_unsigned_enclave(experimental):
                     providers = [backend_tools.AsyloBackendInfo],
                 ),
             },
-            internal.dlopen_implicit_cc_binary_attrs if experimental else {},
+            internal.dlopen_implicit_cc_binary_attrs(False) if experimental else {},
             internal.sgx_implicit_cc_binary_attrs,
         ),
         fragments = ["cpp"],

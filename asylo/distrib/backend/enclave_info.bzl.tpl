@@ -150,7 +150,7 @@ def _static_libraries_to_link_from_contexts(linking_contexts):
             lib_list = lib_list.to_list()
         for lib in lib_list:
             if lib and lib.static_library:
-                libraries_to_link += [lib.static_library]
+                libraries_to_link.append(lib.static_library)
     return libraries_to_link
 
 def _cc_private_sources(srcs):
@@ -161,9 +161,9 @@ def _cc_private_sources(srcs):
     headers = []
     for file in srcs:
         if any([file.path.endswith(suffix) for suffix in source_suffixes]):
-            sources += [file]
+            sources.append(file)
         elif any([file.path.endswith(suffix) for suffix in header_suffixes]):
-            headers += [file]
+            headers.append(file)
         else:
             fail("{} has wrong extension for a C/C++ source file".format(file.path))
     return sources, headers
@@ -256,8 +256,15 @@ def native_cc_binary(
     )
 
     deps = ctx.attr.deps + extra_deps
-    compilation_contexts = [dep[CcInfo].compilation_context for dep in deps]
-    linking_contexts = [dep[CcInfo].linking_context for dep in deps]
+    compilation_contexts = []
+    linking_contexts = []
+    for dep in deps:
+        # Split transitions on the rule make each dep a list of deps. We use
+        # a single transition, so take the 0th element.
+        if type(dep) == "list":
+            dep = dep[0]
+        compilation_contexts.append(dep[CcInfo].compilation_context)
+        linking_contexts.append(dep[CcInfo].linking_context)
 
     # Link in all dependencies' static libraries.
     libraries_to_link = _static_libraries_to_link_from_contexts(linking_contexts)
@@ -296,9 +303,9 @@ def native_cc_binary(
     _to_link = _linking_outputs.library_to_link
     if _to_link:
         if ctx.attr.linkshared and _to_link.dynamic_library:
-            output_files += [_to_link.dynamic_library]
+            output_files.append(_to_link.dynamic_library)
         elif not ctx.attr.linkshared and _to_link.static_pic_library:
-            output_files += [_to_link.static_pic_library]
+            output_files.append(_to_link.static_pic_library)
     _linking_context = cc_common.create_linking_context(
         libraries_to_link = libraries_to_link + output_files,
         user_link_flags = ctx.attr.linkopts,

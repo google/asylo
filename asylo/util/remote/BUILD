@@ -127,6 +127,7 @@ copy_from_host(
 cc_binary(
     name = "dlopen_remote_proxy_bin",
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo/platform/primitives/dlopen:dlopen_remote_proxy_lib",
         "//asylo/platform/primitives/remote/util:remote_proxy_lib",
@@ -148,6 +149,7 @@ copy_from_host(
 cc_binary(
     name = "sgx_remote_proxy_bin",
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo/platform/primitives/remote/util:remote_proxy_lib",
         "//asylo/platform/primitives/sgx:sgx_remote_proxy_lib",

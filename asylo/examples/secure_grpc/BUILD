@@ -80,6 +80,12 @@ cc_proto_library(
     deps = [":grpc_client_enclave_proto"],
 )
 
+_grpc_server_sgx_deps = [
+    "//asylo/identity/sgx:sgx_identity_cc_proto",
+    "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",
+    "//asylo/identity/sgx:sgx_identity_util",
+]
+
 # The enclave hosting the translation server.
 cc_unsigned_enclave(
     name = "grpc_server_enclave_unsigned.so",
@@ -89,22 +95,25 @@ cc_unsigned_enclave(
     deps = [
         ":grpc_server_config_cc_proto",
         ":translator_server_impl",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
         "//asylo:enclave_runtime",
         "//asylo/examples/grpc_server:grpc_server_config_cc_proto",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:identity_acl_cc_proto",
-        "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",
-        "//asylo/identity/sgx:sgx_identity_cc_proto",
-        "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc++_reflection",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
-    ],
+    ] + select(
+        {
+            "@linux_sgx//:sgx_hw": _grpc_server_sgx_deps,
+            "@linux_sgx//:sgx_sim": _grpc_server_sgx_deps,
+        },
+        no_match_error = "The grpc server enclave is only configured for SGX backends",
+    ),
 )
 
 sgx.enclave_configuration(

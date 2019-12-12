@@ -26,7 +26,7 @@ def _make_cc_backend_unsigned_enclave(experimental):
                     default = "//tools/whitelists/function_transition_whitelist",
                 ),
             },
-            internal.dlopen_implicit_cc_binary_attrs if experimental else {},
+            internal.dlopen_implicit_cc_binary_attrs(True) if experimental else {},
             internal.sgx_implicit_cc_binary_attrs,
         ),
         fragments = ["cpp"],

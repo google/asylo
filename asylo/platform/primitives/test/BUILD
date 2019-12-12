@@ -209,7 +209,7 @@ cc_library(
 
 dlopen_enclave_test(
     name = "dlopen_proxy_primitives_test",
-    size = "small",
+    size = "medium",  # Can run more than a minute.
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "enclave_binary": ":dlopen_test_enclave.so",
