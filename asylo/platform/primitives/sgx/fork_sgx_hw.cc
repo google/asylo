@@ -141,13 +141,18 @@ bool GetSnapshotKey(CleansingVector<uint8_t> *key) {
 // expires.
 Status BlockAndWaitOnEntries(int calling_thread_entry_count, int timeout) {
   enc_block_entries();
-  for (int i = 0; active_entry_count() >
-                      blocked_entry_count() + calling_thread_entry_count &&
-                  i < timeout;
+  constexpr uint64_t kNanoSecondsPerSecond = 1000000000;
+  // Check for blocked threads every 100 ms.
+  constexpr uint64_t kStep = 100000000;
+  struct timespec ts;
+  ts.tv_sec = 0;
+  ts.tv_nsec = kStep;
+  for (int i = 0; i < timeout * kNanoSecondsPerSecond / kStep &&
+                  active_entry_count() >
+                      blocked_entry_count() + calling_thread_entry_count;
        ++i) {
-    sleep(1);
+    nanosleep(&ts, /*rem=*/nullptr);
   }
-
   if (active_entry_count() >
       blocked_entry_count() + calling_thread_entry_count) {
     enc_unblock_entries();

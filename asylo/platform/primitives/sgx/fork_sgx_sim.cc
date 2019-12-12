@@ -63,10 +63,18 @@ pid_t enc_fork(const char *enclave_name) {
   // calling thread itself.
   // Timeout at 5 seconds.
   constexpr int timeout = 5;
-  for (int i = 0;
-       active_entry_count() > blocked_entry_count() + 1 && i < timeout; ++i) {
-    sleep(1);
+  constexpr uint64_t kNanoSecondsPerSecond = 1000000000;
+  // Check for blocked threads every 100 ms.
+  constexpr uint64_t kStep = 100000000;
+  struct timespec ts;
+  ts.tv_sec = 0;
+  ts.tv_nsec = kStep;
+  for (int i = 0; i < timeout * kNanoSecondsPerSecond / kStep &&
+                  active_entry_count() > blocked_entry_count() + 1;
+       ++i) {
+    nanosleep(&ts, /*rem=*/nullptr);
   }
+
   if (active_entry_count() > blocked_entry_count() + 1) {
     enc_unblock_entries();
     errno = EAGAIN;
