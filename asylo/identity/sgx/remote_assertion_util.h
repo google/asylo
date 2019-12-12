@@ -22,8 +22,10 @@
 #include <string>
 #include <vector>
 
+#include "absl/strings/string_view.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
+#include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/sgx/remote_assertion.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
@@ -43,16 +45,21 @@ Status MakeRemoteAssertion(const std::string &user_data,
 
 // Verifies |assertion| by verifying the following:
 //   * |assertion| is cryptographically-bound to |user_data|
-//   * The payload in |assertion| is signed by |verifying_key|
-//   * |assertion| provides a certificate chain for |verifying_key| for each
-//   root certificate in |root_certificates|.
+//   * The payload in |assertion| is signed by |assertion|.verifying_key()
+//   * |assertion| provides a certificate chain for |assertion|.verifying_key()
+//     for each root certificate in |additional_root_certificates|.
+//   * Asserts that there is an Intel certificate chain using
+//     |intel_root_verifying_key_der| and checks that the chain asserts an
+//     identity matching |age_identity_expectation|. The Intel root certificate
+//     should not be included in |additional_root_certificates|.
 //
-// On success, extracts the peer's verified CodeIdentity to |identity|.
-Status VerifyRemoteAssertion(const std::string &user_data,
-                             const VerifyingKey &verifying_key,
-                             const std::vector<Certificate> &root_certificates,
-                             const RemoteAssertion &assertion,
-                             SgxIdentity *identity);
+// On success, extracts the peer's verified SgxIdentity to |identity|.
+Status VerifyRemoteAssertion(
+    const std::string &user_data, const RemoteAssertion &assertion,
+    absl::string_view intel_root_verifying_key_der,
+    const std::vector<Certificate> &additional_root_certificates,
+    const IdentityAclPredicate &age_identity_expectation,
+    SgxIdentity *identity);
 
 }  // namespace sgx
 }  // namespace asylo
