@@ -1905,14 +1905,16 @@ TEST_F(HostCallTest, TestSleep) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSleep, &in, &out));
   absl::Time end = absl::Now();
 
-  auto duration = absl::ToInt64Milliseconds(end - start);
+  auto duration = absl::ToInt64Nanoseconds(end - start);
 
   ASSERT_THAT(out, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out.next<int>(), Eq(0));
-  EXPECT_GE(duration, 999);
+  EXPECT_GE(duration, 1 * kNanosecondsPerSecond);
   EXPECT_LE(duration,
-            1600);  // Allow sufficient time padding for EnclaveCall to perform
-                    // enc_untrusted_sleep() and return from the enclave.
+            1.6 * kNanosecondsPerSecond);  // Allow sufficient time padding for
+                                           // EnclaveCall to perform
+                                           // enc_untrusted_sleep() and return
+                                           // from the enclave.
 }
 
 // Tests enc_untrusted_nanosleep() by sleeping for 0.5 seconds, ensuring that
@@ -1932,14 +1934,16 @@ TEST_F(HostCallTest, TestNanosleep) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestNanosleep, &in, &out));
   absl::Time end = absl::Now();
 
-  auto duration = absl::ToInt64Milliseconds(end - start);
+  auto duration = absl::ToInt64Nanoseconds(end - start);
 
   ASSERT_THAT(out, SizeIs(2));  // Should contain return value and klinux_rem.
   EXPECT_THAT(out.next<int>(), Eq(0));
-  EXPECT_GE(duration, 499);
+  EXPECT_GE(duration, 0.5 * kNanosecondsPerSecond);
   EXPECT_LE(duration,
-            1100);  // Allow sufficient time padding for EnclaveCall to perform
-                    // enc_untrusted_nanosleep() and return from the enclave.
+            1.1 * kNanosecondsPerSecond);  // Allow sufficient time padding for
+                                           // EnclaveCall to perform
+                                           // enc_untrusted_nanosleep() and
+                                           // return from the enclave.
 
   struct timespec klinux_rem = out.next<struct timespec>();
   EXPECT_THAT(klinux_rem.tv_sec, Eq(0));
