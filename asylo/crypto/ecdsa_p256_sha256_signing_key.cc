@@ -43,6 +43,7 @@
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -79,11 +80,10 @@ Status CheckKeyProtoValues(const AsymmetricSigningKeyProto &key_proto,
   if (key_proto.key_type() != expected_type) {
     return Status(
         error::GoogleError::INVALID_ARGUMENT,
-        absl::StrFormat(
-            "Key type of the key (%s) does not match the expected "
-            "key type (%s)",
-            AsymmetricSigningKeyProto_KeyType_Name(key_proto.key_type()),
-            AsymmetricSigningKeyProto_KeyType_Name(expected_type)));
+        absl::StrFormat("Key type of the key (%s) does not match the expected "
+                        "key type (%s)",
+                        ProtoEnumValueName(key_proto.key_type()),
+                        ProtoEnumValueName(expected_type)));
   }
 
   if (key_proto.signature_scheme() != ECDSA_P256_SHA256) {
@@ -91,8 +91,8 @@ Status CheckKeyProtoValues(const AsymmetricSigningKeyProto &key_proto,
         error::GoogleError::INVALID_ARGUMENT,
         absl::StrFormat("Signature scheme of the key (%s) does not match the "
                         "expected signature scheme (%s)",
-                        SignatureScheme_Name(key_proto.signature_scheme()),
-                        SignatureScheme_Name(ECDSA_P256_SHA256)));
+                        ProtoEnumValueName(key_proto.signature_scheme()),
+                        ProtoEnumValueName(ECDSA_P256_SHA256)));
   }
   return Status::OkStatus();
 }
@@ -145,15 +145,12 @@ EcdsaP256Sha256VerifyingKey::CreateFromProto(
       return CreateFromDer(key_proto.key());
     case ASYMMETRIC_KEY_PEM:
       return CreateFromPem(key_proto.key());
-    case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
-      return Status(
-          error::GoogleError::UNIMPLEMENTED,
-          absl::StrFormat("Asymmetric key encoding (%s) unsupported",
-                          AsymmetricKeyEncoding_Name(key_proto.encoding())));
+    default:
+      break;
   }
   return Status(error::GoogleError::UNIMPLEMENTED,
-                absl::StrFormat("Asymmetric key encoding (%d) unsupported",
-                                key_proto.encoding()));
+                absl::StrFormat("Asymmetric key encoding (%s) unsupported",
+                                ProtoEnumValueName(key_proto.encoding())));
 }
 
 StatusOr<std::unique_ptr<EcdsaP256Sha256VerifyingKey>>
@@ -235,8 +232,8 @@ Status EcdsaP256Sha256VerifyingKey::Verify(ByteContainerView message,
     return Status(
         error::GoogleError::INVALID_ARGUMENT,
         absl::StrFormat("Signature scheme should be %s, instead is %s",
-                        SignatureScheme_Name(GetSignatureScheme()),
-                        SignatureScheme_Name(signature.signature_scheme())));
+                        ProtoEnumValueName(GetSignatureScheme()),
+                        ProtoEnumValueName(signature.signature_scheme())));
   }
 
   if (!signature.has_ecdsa_signature()) {
@@ -353,10 +350,9 @@ EcdsaP256Sha256SigningKey::CreateFromProto(
     case ASYMMETRIC_KEY_PEM:
       return CreateFromPem(key_proto.key());
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
-      return Status(
-          error::GoogleError::UNIMPLEMENTED,
-          absl::StrFormat("Asymmetric key encoding (%s) unsupported",
-                          AsymmetricKeyEncoding_Name(key_proto.encoding())));
+      return Status(error::GoogleError::UNIMPLEMENTED,
+                    absl::StrFormat("Asymmetric key encoding (%s) unsupported",
+                                    ProtoEnumValueName(key_proto.encoding())));
   }
   return Status(error::GoogleError::UNIMPLEMENTED,
                 absl::StrFormat("Asymmetric key encoding (%d) unsupported",

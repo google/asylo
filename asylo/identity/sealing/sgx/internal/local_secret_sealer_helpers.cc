@@ -40,6 +40,7 @@
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/platform/common/singleton.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -281,9 +282,9 @@ StatusOr<AeadScheme> ParseAeadSchemeFromSealedSecretHeader(
   }
 
   if (aead_scheme != AeadScheme::AES256_GCM_SIV) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat("Unsupported AeadScheme ", AeadScheme_Name(aead_scheme)));
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Unsupported AeadScheme ",
+                               ProtoEnumValueName(aead_scheme)));
   }
 
   return aead_scheme;

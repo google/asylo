@@ -49,6 +49,7 @@
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -248,7 +249,7 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
         asylo::error::GoogleError::INVALID_ARGUMENT,
         absl::StrCat(
             "Invalid identity_type: Expected = CODE_IDENTITY, Actual = ",
-            EnclaveIdentityType_Name(description.identity_type())));
+            ProtoEnumValueName(description.identity_type())));
   }
   if (description.authority_type() != kSgxAuthorizationAuthority) {
     return Status(asylo::error::GoogleError::INVALID_ARGUMENT,
@@ -360,8 +361,8 @@ StatusOr<bool> MatchIdentityToExpectation(
       actual_config.sgx_type() != expected_config.sgx_type()) {
     explanations.emplace_back(
         absl::StrFormat("SGX Type %s does not match expected SGX Type %s",
-                        SgxType_Name(actual_config.sgx_type()),
-                        SgxType_Name(expected_config.sgx_type())));
+                        ProtoEnumValueName(actual_config.sgx_type()),
+                        ProtoEnumValueName(expected_config.sgx_type())));
   }
 
   // Perform checks for the CodeIdentity component of SgxIdentity.
@@ -560,7 +561,7 @@ Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,
         error::GoogleError::INVALID_ARGUMENT,
         absl::StrCat(
             "Invalid identity_type: Expected = CODE_IDENTITY, Actual = ",
-            EnclaveIdentityType_Name(description.identity_type())));
+            ProtoEnumValueName(description.identity_type())));
   }
   if (description.authority_type() != kSgxAuthorizationAuthority) {
     return Status(error::GoogleError::INVALID_ARGUMENT,

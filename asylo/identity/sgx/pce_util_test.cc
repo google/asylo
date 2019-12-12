@@ -42,6 +42,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce_constants.h"
 
@@ -480,7 +481,7 @@ TEST_F(PceUtilTest,
       CreateReportdataForGetPceInfo(ppidek),
       StatusIs(error::GoogleError::INVALID_ARGUMENT,
                absl::StrCat("Unsupported encryption scheme: ",
-                            AsymmetricEncryptionScheme_Name(
+                            ProtoEnumValueName(
                                 AsymmetricEncryptionScheme::RSA2048_OAEP))));
 }
 
@@ -503,7 +504,7 @@ TEST_F(PceUtilTest, CreateReportdataForGetPceInfoInvalidEncodingFails) {
           error::GoogleError::INVALID_ARGUMENT,
           absl::StrCat(
               "Unsupported key encoding: ",
-              AsymmetricKeyEncoding_Name(
+              ProtoEnumValueName(
                   AsymmetricKeyEncoding::UNKNOWN_ASYMMETRIC_KEY_ENCODING))));
 }
 

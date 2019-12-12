@@ -38,6 +38,7 @@
 #include "asylo/identity/sgx/tcb.h"
 #include "asylo/util/function_deleter.h"
 #include "asylo/util/hex_util.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 #include "asylo/util/url_util.h"
@@ -262,7 +263,7 @@ StatusOr<std::unique_ptr<SgxPcsClient>> SgxPcsClientImpl::Create(
         absl::StrFormat(
             "ppid_enc_key has an invalid encryption scheme: %s (%d). Expected "
             "RSA3072_OAEP.",
-            AsymmetricEncryptionScheme_Name(enc_scheme), enc_scheme));
+            ProtoEnumValueName(enc_scheme), enc_scheme));
   }
   // Using `new` to access a non-public constructor.
   return absl::WrapUnique(new SgxPcsClientImpl(

@@ -42,6 +42,7 @@
 #include "asylo/identity/sgx/tcb.h"
 #include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/test/util/status_matchers.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -71,7 +72,7 @@ sgx_type: %s
 )",
       PrintMessage(extensions.ppid), PrintMessage(extensions.tcb),
       PrintMessage(extensions.cpu_svn), PrintMessage(extensions.pce_id),
-  PrintMessage(extensions.fmspc), SgxType_Name(extensions.sgx_type));
+  PrintMessage(extensions.fmspc), ProtoEnumValueName(extensions.sgx_type));
 }
 
 // Matches an SgxExtensions equal to |extensions|.

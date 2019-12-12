@@ -70,6 +70,7 @@ cc_library(
         "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/platform/common:singleton",
         "//asylo/util:cleansing_types",
+        "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/types:span",

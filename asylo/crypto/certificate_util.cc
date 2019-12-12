@@ -114,7 +114,7 @@ StatusOr<CertificateInterfaceVector> CreateCertificateChain(
           error::GoogleError::INVALID_ARGUMENT,
           absl::StrCat("At index ", i,
                        " no mapping from format to factory for format ",
-                       Certificate_CertificateFormat_Name(cert.format())));
+                       ProtoEnumValueName(cert.format())));
     }
     auto certificate_result = (factory_iter->second)(cert);
     if (!certificate_result.ok()) {

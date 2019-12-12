@@ -31,6 +31,7 @@
 #include "asylo/grpc/auth/core/handshake.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -177,7 +178,7 @@ ServerEkepHandshaker::Result ServerEkepHandshaker::HandleHandshakeMessage(
 
 void ServerEkepHandshaker::HandleAbortMessage(const Abort *abort_message) {
   if (abort_message) {
-    LOG(ERROR) << "Received " << Abort_ErrorCode_Name(abort_message->code())
+    LOG(ERROR) << "Received " << ProtoEnumValueName(abort_message->code())
                << " from client: " << abort_message->message();
   }
 
@@ -213,7 +214,7 @@ Status ServerEkepHandshaker::HandleClientPrecommit(
       break;
     default:
       LOG(ERROR) << "Server handshaker has bad cipher suite configuration"
-                 << HandshakeCipher_Name(selected_cipher_suite_);
+                 << ProtoEnumValueName(selected_cipher_suite_);
       return Status(Abort::INTERNAL_ERROR, "Error using selected cipher suite");
   }
 

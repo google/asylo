@@ -32,6 +32,7 @@
 #include "asylo/util/logging.h"
 #include "asylo/grpc/auth/core/ekep_crypto.h"
 #include "asylo/grpc/auth/core/ekep_error_space.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 
@@ -264,8 +265,7 @@ EkepHandshaker::Result EkepHandshaker::DecodeAndHandleFrame(
     return Result::ABORTED;
   }
 
-  VLOG(2) << "Received " << HandshakeMessageType_Name(message_type)
-          << " from peer";
+  VLOG(2) << "Received " << ProtoEnumValueName(message_type) << " from peer";
 
   if ((message_type != GetExpectedMessageType()) && (message_type != ABORT)) {
     // Don't bother decoding an unexpected message, unless it's an ABORT.

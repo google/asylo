@@ -61,7 +61,7 @@ StatusOr<std::unique_ptr<VerifyingKey>> CreateVerifyingKey(
   }
   return Status(error::GoogleError::INVALID_ARGUMENT,
                 absl::StrCat("Signature scheme unsupported: ",
-                             SignatureScheme_Name(signature_scheme)));
+                             ProtoEnumValueName(signature_scheme)));
 }
 
 StatusOr<std::string> VerifyingKeyToDer(
@@ -72,7 +72,7 @@ StatusOr<std::string> VerifyingKeyToDer(
         absl::StrFormat(
             "Key type of the attestation public key (%s) does not match "
             "expected key type (VERIFYING_KEY)",
-            AsymmetricSigningKeyProto_KeyType_Name(asymmetric_key.key_type())));
+            ProtoEnumValueName(asymmetric_key.key_type())));
   }
 
   switch (asymmetric_key.encoding()) {
@@ -109,7 +109,7 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
         absl::StrFormat(
             "The certificate format (%s) does not match the expected format "
             "(SGX_ATTESTATION_KEY_CERTIFICATE)",
-            Certificate_CertificateFormat_Name(certificate.format())));
+            ProtoEnumValueName(certificate.format())));
   }
 
   AttestationKeyCertificate attestation_key_cert;
@@ -155,8 +155,8 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
         absl::StrFormat(
             "Signature scheme of signature (%s) does not match the signature "
             "scheme used by the PCE implementation (%s)",
-            SignatureScheme_Name(signature.signature_scheme()),
-            SignatureScheme_Name(kExpectedSignatureScheme)));
+            ProtoEnumValueName(signature.signature_scheme()),
+            ProtoEnumValueName(kExpectedSignatureScheme)));
   }
 
   // Check the purpose and version values of the AttestationPublicKey.

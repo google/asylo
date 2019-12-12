@@ -36,6 +36,7 @@
 #include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "include/grpcpp/security/server_credentials.h"
@@ -169,7 +170,7 @@ ExtractAttestationKeyFromAsymmetricSigningKeyProto(
       AsymmetricSigningKeyProto::SIGNING_KEY) {
     return Status(error::GoogleError::INVALID_ARGUMENT,
                   absl::StrCat("The sealed secret key has invalid key type: ",
-                               AsymmetricSigningKeyProto_KeyType_Name(
+                               ProtoEnumValueName(
                                    asymmetric_signing_key_proto.key_type())));
   }
   switch (asymmetric_signing_key_proto.encoding()) {

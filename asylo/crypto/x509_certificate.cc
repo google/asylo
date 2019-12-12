@@ -695,9 +695,8 @@ StatusOr<std::unique_ptr<X509Certificate>> X509Certificate::Create(
     default:
       return Status(
           error::GoogleError::INVALID_ARGUMENT,
-          absl::StrCat(
-              "Transformation to X509 is not supported for: ",
-              Certificate_CertificateFormat_Name(certificate.format())));
+          absl::StrCat("Transformation to X509 is not supported for: ",
+                       ProtoEnumValueName(certificate.format())));
   }
 }
 
@@ -779,10 +778,8 @@ StatusOr<bssl::UniquePtr<X509_REQ>> CertificateSigningRequestToX509Req(
     default:
       return Status(
           error::GoogleError::INVALID_ARGUMENT,
-          absl::StrCat(
-              "Transformation to X509_REQ not suported for: ",
-              CertificateSigningRequest_CertificateSigningRequestFormat_Name(
-                  csr.format())));
+          absl::StrCat("Transformation to X509_REQ not suported for: ",
+                       ProtoEnumValueName(csr.format())));
   }
   if (req == nullptr) {
     return Status(error::GoogleError::INTERNAL, BsslLastErrorString());

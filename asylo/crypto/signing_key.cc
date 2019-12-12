@@ -25,6 +25,7 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -51,7 +52,7 @@ StatusOr<AsymmetricSigningKeyProto> VerifyingKey::SerializeToKeyProto(
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     absl::StrFormat("Encoding (%s) is unsupported",
-                                    AsymmetricKeyEncoding_Name(encoding)));
+                                    ProtoEnumValueName(encoding)));
   }
 
   return key_proto;
@@ -80,7 +81,7 @@ StatusOr<AsymmetricSigningKeyProto> SigningKey::SerializeToKeyProto(
     case UNKNOWN_ASYMMETRIC_KEY_ENCODING:
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     absl::StrFormat("Encoding (%s) is unsupported",
-                                    AsymmetricKeyEncoding_Name(encoding)));
+                                    ProtoEnumValueName(encoding)));
   }
 
   return key_proto;

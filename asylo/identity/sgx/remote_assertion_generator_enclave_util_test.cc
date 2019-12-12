@@ -37,6 +37,7 @@
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/cleansing_types.h"
+#include "asylo/util/proto_enum_util.h"
 
 namespace asylo {
 namespace sgx {
@@ -140,10 +141,10 @@ TEST(RemoteAssertionGeneratorEnclaveUtilTest,
   EXPECT_THAT(
       ExtractAttestationKeyFromAsymmetricSigningKeyProto(
           asymmetric_signing_key),
-      StatusIs(error::GoogleError::INVALID_ARGUMENT,
-               absl::StrCat("The sealed secret key has invalid key type: ",
-                            AsymmetricSigningKeyProto_KeyType_Name(
-                                asymmetric_signing_key.key_type()))));
+      StatusIs(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrCat("The sealed secret key has invalid key type: ",
+                       ProtoEnumValueName(asymmetric_signing_key.key_type()))));
 }
 
 TEST(RemoteAssertionGeneratorEnclaveUtilTest,

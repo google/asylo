@@ -27,6 +27,7 @@
 #include "asylo/identity/sgx/dcap_library_interface.h"
 #include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/pce_util.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -198,10 +199,9 @@ Status DcapIntelArchitecturalEnclaveInterface::GetPceInfo(
   absl::optional<uint8_t> crypto_suite =
       AsymmetricEncryptionSchemeToPceCryptoSuite(ppid_encryption_scheme);
   if (!crypto_suite.has_value()) {
-    return Status(
-        error::GoogleError::INVALID_ARGUMENT,
-        absl::StrCat("Invalid ppid_encryption_scheme: ",
-                     AsymmetricEncryptionScheme_Name(ppid_encryption_scheme)));
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("Invalid ppid_encryption_scheme: ",
+                               ProtoEnumValueName(ppid_encryption_scheme)));
   }
 
   uint32_t max_ppid_out_size;
