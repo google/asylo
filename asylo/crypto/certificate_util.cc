@@ -180,7 +180,7 @@ Status VerifyCertificateChain(CertificateInterfaceSpan certificate_chain,
 StatusOr<Certificate> GetCertificateFromPem(absl::string_view pem_cert) {
   std::unique_ptr<X509Certificate> cert;
   ASYLO_ASSIGN_OR_RETURN(cert, X509Certificate::CreateFromPem(pem_cert));
-  return cert->ToPemCertificate();
+  return cert->ToCertificateProto(Certificate::X509_PEM);
 }
 
 StatusOr<CertificateChain> GetCertificateChainFromPem(

@@ -103,4 +103,10 @@ absl::optional<KeyUsageInformation> FakeCertificate::KeyUsage() const {
   return absl::nullopt;
 }
 
+StatusOr<Certificate> FakeCertificate::ToCertificateProto(
+    Certificate::CertificateFormat encoding) const {
+  return Status(error::GoogleError::UNIMPLEMENTED,
+                "ToCertificateProto not implemented");
+}
+
 }  // namespace asylo

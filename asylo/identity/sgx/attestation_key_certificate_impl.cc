@@ -39,6 +39,7 @@
 #include "asylo/identity/sgx/platform_provisioning.h"
 #include "asylo/identity/sgx/remote_assertion_generator_constants.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
@@ -252,6 +253,20 @@ absl::optional<int64_t> AttestationKeyCertificateImpl::CertPathLength() const {
 absl::optional<KeyUsageInformation> AttestationKeyCertificateImpl::KeyUsage()
     const {
   return absl::nullopt;
+}
+
+StatusOr<Certificate> AttestationKeyCertificateImpl::ToCertificateProto(
+    Certificate::CertificateFormat encoding) const {
+  if (encoding != Certificate::SGX_ATTESTATION_KEY_CERTIFICATE) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrFormat("Certificate format (%s) unsupported",
+                                  ProtoEnumValueName(encoding)));
+  }
+
+  Certificate cert;
+  cert.set_format(encoding);
+  attestation_key_cert_.SerializeToString(cert.mutable_data());
+  return cert;
 }
 
 AttestationKeyCertificateImpl::AttestationKeyCertificateImpl(

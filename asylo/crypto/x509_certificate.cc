@@ -43,9 +43,11 @@
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/util/bssl_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
 #include "asylo/util/logging.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
@@ -208,6 +210,34 @@ StatusOr<std::string> EvpPkeyToDer(const EVP_PKEY &evp_key) {
   }
 
   return std::string(public_key_data, public_key_length);
+}
+
+StatusOr<std::string> ToPemEncoding(X509 *x509) {
+  bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
+  if (!PEM_write_bio_X509(bio.get(), x509)) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  char *data;
+  long length = BIO_get_mem_data(bio.get(), &data);
+  if (length <= 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+  return std::string(data, length);
+}
+
+StatusOr<std::string> ToDerEncoding(X509 *x509) {
+  bssl::UniquePtr<BIO> x509_bio(BIO_new(BIO_s_mem()));
+  if (i2d_X509_bio(x509_bio.get(), x509) != 1) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  char *data;
+  long length = BIO_get_mem_data(x509_bio.get(), &data);
+  if (length <= 0) {
+    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
+  }
+
+  return std::string(data, length);
 }
 
 // Returns a std::vector<char> with the same contents as |str|. This is useful
@@ -707,21 +737,29 @@ bool X509Certificate::operator==(const CertificateInterface &other) const {
   return X509_cmp(x509_.get(), other_cert->x509_.get()) == 0;
 }
 
-StatusOr<Certificate> X509Certificate::ToPemCertificate() const {
-  bssl::UniquePtr<BIO> bio(BIO_new(BIO_s_mem()));
-  if (!PEM_write_bio_X509(bio.get(), x509_.get())) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-  char *data;
-  long length = BIO_get_mem_data(bio.get(), &data);
-  if (length <= 0) {
-    return Status(error::GoogleError::INTERNAL, BsslLastErrorString());
-  }
-
+StatusOr<Certificate> X509Certificate::ToCertificateProto(
+    Certificate::CertificateFormat encoding) const {
   Certificate cert;
-  cert.set_format(Certificate::X509_PEM);
-  cert.set_data(data, length);
-  return cert;
+  cert.set_format(encoding);
+  switch (encoding) {
+    case Certificate::X509_DER:
+      ASYLO_ASSIGN_OR_RETURN(*cert.mutable_data(), ToDerEncoding(x509_.get()));
+      return cert;
+    case Certificate::X509_PEM:
+      ASYLO_ASSIGN_OR_RETURN(*cert.mutable_data(), ToPemEncoding(x509_.get()));
+      return cert;
+    case Certificate::SGX_ATTESTATION_KEY_CERTIFICATE:
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrFormat("Certificate format (%s) is not a valid encoding for "
+                          "an X.509 certificate",
+                          Certificate_CertificateFormat_Name(encoding)));
+    case Certificate::UNKNOWN:
+      break;
+  }
+  return Status(error::GoogleError::INVALID_ARGUMENT,
+                absl::StrFormat("Certificate format (%s) unknown",
+                                ProtoEnumValueName(encoding)));
 }
 
 StatusOr<bssl::UniquePtr<X509_REQ>> CertificateSigningRequestToX509Req(

@@ -61,6 +61,9 @@ class FakeCertificate : public CertificateInterface {
   // Returns absl::nullopt.
   absl::optional<KeyUsageInformation> KeyUsage() const override;
 
+  StatusOr<Certificate> ToCertificateProto(
+      Certificate::CertificateFormat encoding) const override;
+
  private:
   std::string subject_key_;
   std::string issuer_key_;

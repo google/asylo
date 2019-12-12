@@ -198,11 +198,6 @@ class X509Certificate : public CertificateInterface {
   static StatusOr<std::unique_ptr<X509Certificate>> CreateFromDer(
       absl::string_view der_encoded_cert);
 
-  // Creates and returns a PEM-formatted certificate equivalent to the data in
-  // this object. Returns a non-OK Status if the object could not be
-  // transformed.
-  StatusOr<Certificate> ToPemCertificate() const;
-
   // From CertificateInterface.
 
   // Checks that the DER-encoded versions of this object and |other| are
@@ -223,6 +218,9 @@ class X509Certificate : public CertificateInterface {
   absl::optional<int64_t> CertPathLength() const override;
 
   absl::optional<KeyUsageInformation> KeyUsage() const override;
+
+  StatusOr<Certificate> ToCertificateProto(
+      Certificate::CertificateFormat encoding) const override;
 
   // Returns this certificate's X.509 version.
   X509Version GetVersion() const;

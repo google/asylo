@@ -23,6 +23,7 @@
 #include <string>
 
 #include "absl/types/optional.h"
+#include "asylo/crypto/certificate.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -96,6 +97,12 @@ class CertificateInterface {
 
   // Returns the allowed uses of a key certified by this object.
   virtual absl::optional<KeyUsageInformation> KeyUsage() const = 0;
+
+  // Creates and returns a certificate with |encoding| equivalent to the data in
+  // this object. Returns a non-OK Status if the object could not be
+  // transformed.
+  virtual StatusOr<Certificate> ToCertificateProto(
+      Certificate::CertificateFormat encoding) const = 0;
 };
 
 }  // namespace asylo

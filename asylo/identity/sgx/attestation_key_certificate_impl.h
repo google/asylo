@@ -72,6 +72,9 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
 
   absl::optional<KeyUsageInformation> KeyUsage() const override;
 
+  StatusOr<Certificate> ToCertificateProto(
+      Certificate::CertificateFormat encoding) const override;
+
  private:
   explicit AttestationKeyCertificateImpl(
       AttestationKeyCertificate attestation_key_cert,

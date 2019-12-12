@@ -445,6 +445,35 @@ TEST(AttestationKeyCertificateImplTest, SubjectKeyDerCorrectValueFromPem) {
       IsOkAndHolds(absl::HexStringToBytes(kTestVerifyingSubjectKeyDerHex)));
 }
 
+TEST(AttestationKeyCertificateImplTest, ToCertificateProtoSuccess) {
+  Certificate cert;
+  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificatePemKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl,
+                             AttestationKeyCertificateImpl::Create(cert));
+
+  EXPECT_THAT(ak_cert_impl->ToCertificateProto(
+                  Certificate::SGX_ATTESTATION_KEY_CERTIFICATE),
+              IsOkAndHolds(EqualsProto(cert)));
+}
+
+TEST(AttestationKeyCertificateImplTest, ToCertificateProtoFailure) {
+  Certificate cert;
+  cert.set_format(Certificate::SGX_ATTESTATION_KEY_CERTIFICATE);
+  cert.set_data(
+      absl::HexStringToBytes(kTestAttestationKeyCertificatePemKeyHex));
+
+  std::unique_ptr<AttestationKeyCertificateImpl> ak_cert_impl;
+  ASYLO_ASSERT_OK_AND_ASSIGN(ak_cert_impl,
+                             AttestationKeyCertificateImpl::Create(cert));
+
+  EXPECT_THAT(ak_cert_impl->ToCertificateProto(Certificate::X509_PEM),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
 }  // namespace
 }  // namespace sgx
 }  // namespace asylo

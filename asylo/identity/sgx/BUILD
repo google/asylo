@@ -438,6 +438,7 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",

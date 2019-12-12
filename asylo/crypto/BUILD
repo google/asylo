@@ -338,6 +338,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":certificate_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/types:optional",
     ],
@@ -358,6 +359,7 @@ cc_library(
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/util:logging",
+        "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/base",

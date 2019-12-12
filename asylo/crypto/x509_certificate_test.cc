@@ -358,19 +358,58 @@ TEST_F(X509CertificateTest, CreateFromDerFailure) {
   EXPECT_THAT(X509Certificate::CreateFromDer(kTestRootCertPem),
               StatusIs(error::GoogleError::INTERNAL));
 }
-// Verifies that Create followed by ToPemCertificate returns the
-// original PEM-encoded certificate.
+
+TEST_F(X509CertificateTest, CreateAndToDerCertificateSuccess) {
+  std::unique_ptr<X509Certificate> x509_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_cert,
+      CreateX509Cert(Certificate::X509_DER,
+                     absl::HexStringToBytes(kTestIntermediateCertDerHex)));
+
+  Certificate der_formatted_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      der_formatted_cert, x509_cert->ToCertificateProto(Certificate::X509_DER));
+
+  EXPECT_THAT(der_formatted_cert.format(), Eq(Certificate::X509_DER));
+  EXPECT_EQ(der_formatted_cert.data(),
+            absl::HexStringToBytes(kTestIntermediateCertDerHex));
+}
+
 TEST_F(X509CertificateTest, CreateAndToPemCertificateSuccess) {
   std::unique_ptr<X509Certificate> x509_cert;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       x509_cert, CreateX509Cert(Certificate::X509_PEM, kTestRootCertPem));
 
   Certificate pem_formatted_cert;
-  ASYLO_ASSERT_OK_AND_ASSIGN(pem_formatted_cert, x509_cert->ToPemCertificate());
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      pem_formatted_cert, x509_cert->ToCertificateProto(Certificate::X509_PEM));
 
   EXPECT_THAT(pem_formatted_cert.format(), Eq(Certificate::X509_PEM));
   EXPECT_THAT(pem_formatted_cert.data(),
               EqualIgnoreWhiteSpace(kTestRootCertPem));
+}
+
+TEST_F(X509CertificateTest, ToCertificateProtoInvalidEncodingFailure) {
+  std::unique_ptr<X509Certificate> x509_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_cert,
+      CreateX509Cert(Certificate::X509_DER,
+                     absl::HexStringToBytes(kTestIntermediateCertDerHex)));
+
+  EXPECT_THAT(x509_cert->ToCertificateProto(
+                  Certificate::SGX_ATTESTATION_KEY_CERTIFICATE),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(X509CertificateTest, ToCertificateProtoUnknownFailure) {
+  std::unique_ptr<X509Certificate> x509_cert;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      x509_cert,
+      CreateX509Cert(Certificate::X509_DER,
+                     absl::HexStringToBytes(kTestIntermediateCertDerHex)));
+
+  EXPECT_THAT(x509_cert->ToCertificateProto(Certificate::UNKNOWN),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST_F(X509CertificateTest, EqualsSuccess) {
