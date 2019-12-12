@@ -19,6 +19,7 @@
 #ifndef ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_INTERNAL_H_
 #define ASYLO_CRYPTO_UTIL_BYTE_CONTAINER_UTIL_INTERNAL_H_
 
+#include <endian.h>
 #include <algorithm>
 #include <cstdint>
 #include <iterator>
@@ -31,20 +32,6 @@
 
 namespace asylo {
 namespace internal {
-
-// Appends |value| as a 32-bit little-endian-encoded integer to |buffer|.
-// |value| must not exceed the max value of uint32_t.
-template <class ByteContainerT>
-inline void AppendLittleEndianInt(size_t value, ByteContainerT *buffer) {
-// The following check is sufficient for both Clang and GCC.
-#ifdef __x86_64__
-  std::uint32_t size = value;
-  std::copy(reinterpret_cast<char *>(&size),
-            reinterpret_cast<char *>(&size + 1), std::back_inserter(*buffer));
-#else
-#error "Only supported on x86_64 architecture"
-#endif
-}
 
 // Creates a unique serialization of the views in the |views| vector and appends
 // the result to |serialized|. No view in |views| may have a length that exceeds
@@ -69,7 +56,12 @@ Status AppendSerializedByteContainers(
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     "Container size exceeds max size");
     }
-    internal::AppendLittleEndianInt(view.size(), serialized);
+
+    // Write the size as a little-endian 32-bit integer.
+    uint32_t size_le = htole32(view.size());
+    std::copy(reinterpret_cast<char *>(&size_le),
+              reinterpret_cast<char *>(&size_le + 1),
+              std::back_inserter(*serialized));
     std::copy(view.cbegin(), view.cend(), std::back_inserter(*serialized));
   }
 
