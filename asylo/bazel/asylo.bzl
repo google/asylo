@@ -297,7 +297,7 @@ def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
         kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(name = name, backend = backend, **kwargs)
 
-def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs):
+def backend_debug_sign_enclave(name, backend, unsigned, config = None, backend_label_struct = None, **kwargs):
     """Defines the 'signed' version of an unsigned enclave target.
 
     The signer is backend-specific.
@@ -307,17 +307,23 @@ def backend_debug_sign_enclave(name, backend, unsigned, config = None, **kwargs)
         backend: An Asylo backend label.
         unsigned: The label of the unsigned enclave target.
         config: An enclave signer configuration label. Optional.
+        backend_label_struct: Optional backend label struct (details in
+            enclave_info.bzl)
         **kwargs: Generic rule arguments like tags and testonly.
     """
     kwargs = dict(kwargs)
-    if config:
-        kwargs["config"] = config
     _impl = _backend_debug_sign_enclave_old
     if transitions.supported(native.package_name()):
         _impl = _backend_debug_sign_enclave_new
         kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
     else:
         kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
+    if backend_label_struct:
+        kwargs["key"] = kwargs.get("key", None) or backend_label_struct.debug_private_key
+        kwargs["config"] = config or backend_label_struct.debug_default_config
+        kwargs["sign_tool"] = kwargs.get("sign_tool", None) or backend_label_struct.sign_tool
+    elif config:
+        kwargs["config"] = config
     _impl(
         name = name,
         backend = backend,
@@ -386,6 +392,7 @@ def debug_sign_enclave(
         backends,
         name_by_backend,
         kwargs,
+        include_info = True,
     )
 
 # The section to embed the application enclave in.
@@ -432,14 +439,14 @@ def cc_enclave_binary(
       unsigned_name_by_backend: An optional dictionary from backend label to backend-
         specific target label for the defined unsigned enclaves.
       signed_name_by_backend: An optional dictionary from backend label to backend-
-        specific target label for the defined signed enclaves.
+          specific target label for the defined signed enclaves.
+      testonly: True if the targets should only be used in tests.
       **kwargs: cc_binary arguments.
     """
     application_library_name = name + "_application_library"
     unsigned_enclave_name = name + "_application_enclave_unsigned.so"
     enclave_name = name + "_application_enclave.so"
 
-    enclave_kwargs = {}
     loader_kwargs = {}
 
     # The "args" attribute should be moved to the loader since cc_library does
@@ -470,10 +477,6 @@ def cc_enclave_binary(
     if "stamp" in kwargs:
         fail("stamp option not supported in cc_enclave_binary")
 
-    if "testonly" in kwargs:
-        enclave_kwargs["testonly"] = kwargs["testonly"]
-        loader_kwargs["testonly"] = kwargs["testonly"]
-
     # The user probably wants their tags applied to the loader.
     loader_kwargs["tags"] = kwargs.pop("tags", [])
 
@@ -498,7 +501,7 @@ def cc_enclave_binary(
         ],
         backends = backends,
         name_by_backend = unsigned_name_by_backend,
-        **enclave_kwargs
+        testonly = testonly,
     )
     debug_sign_enclave(
         name = enclave_name,

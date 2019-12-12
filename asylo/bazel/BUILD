@@ -140,42 +140,6 @@ sh_test(
     deps = ["//asylo/test/util:shell_testing"],
 )
 
-_sgx_key = "@linux_sgx//:enclave_test_private.pem"
-
-_sgx_sign_tool = "@linux_sgx//:sgx_sign_tool"
-
-_sgx_default_sign_config = "@linux_sgx//:enclave_debug_config"
-
-alias(
-    name = "debug_key",
-    actual = select({
-        "@linux_sgx//:sgx_sim": _sgx_key,
-        "@linux_sgx//:sgx_hw": _sgx_key,
-        "//conditions:default": "@com_google_asylo_backend_provider//:empty",
-    }),
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "sign_tool",
-    actual = select({
-        "@linux_sgx//:sgx_sim": _sgx_sign_tool,
-        "@linux_sgx//:sgx_hw": _sgx_sign_tool,
-        "//conditions:default": "@com_google_asylo_backend_provider//:true",
-    }),
-    visibility = ["//visibility:public"],
-)
-
-alias(
-    name = "default_sign_config",
-    actual = select({
-        "@linux_sgx//:sgx_sim": _sgx_default_sign_config,
-        "@linux_sgx//:sgx_hw": _sgx_default_sign_config,
-        "//conditions:default": "@com_google_asylo_backend_provider//:empty",
-    }),
-    visibility = ["//visibility:public"],
-)
-
 # A trivially passing test for build tests and populating tags meant for
 # refactoring migrations.
 sh_test(

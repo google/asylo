@@ -194,18 +194,18 @@ backend_debug_sign_enclave = rule(
         ),
         "config": attr.label(
             doc = "An enclave signer configuration label.",
-            default = "//asylo/bazel:default_sign_config",
+            mandatory = True,
             allow_single_file = True,
         ),
-        "_key": attr.label(
-            default = "//asylo/bazel:debug_key",
+        "key": attr.label(
+            mandatory = True,
             allow_single_file = True,
         ),
-        "_sign_tool": attr.label(
-            default = Label("//asylo/bazel:sign_tool"),
+        "sign_tool": attr.label(
+            mandatory = True,
             allow_single_file = True,
             executable = True,
-            cfg = "host",
+            cfg = "exec",
         ),
     },
 )

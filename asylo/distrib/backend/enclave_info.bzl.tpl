@@ -106,26 +106,30 @@ ALL_BACKEND_LABELS = {
             "asylo-dlopen",
             "manual",        ],
         name_derivation = "_dlopen",
+        sign_tool = "@com_google_asylo_backend_provider//:true",
+        debug_default_config = "@com_google_asylo_backend_provider//:empty",
         order = 3,
     ),
     "@linux_sgx//:asylo_sgx_sim": struct(
-        config_settings = [
-            "@linux_sgx//:sgx_sim",
-        ],
+        config_settings = ["@linux_sgx//:sgx_sim"],
         tags = [
             "asylo-sgx-sim",
             "manual",        ],
         name_derivation = "_sgx_sim",
+        sign_tool = "@linux_sgx//:sgx_sign_tool",
+        debug_private_key = "@linux_sgx//:enclave_test_private.pem",
+        debug_default_config = "@linux_sgx//:enclave_debug_config",
         order = 1,
     ),
     "@linux_sgx//:asylo_sgx_hw": struct(
-        config_settings = [
-            "@linux_sgx//:sgx_hw",
-        ],
+        config_settings = ["@linux_sgx//:sgx_hw"],
         tags = [
             "asylo-sgx-hw",
             "manual",        ],
         name_derivation = "_sgx_hw",
+        sign_tool = "@linux_sgx//:sgx_sign_tool",
+        debug_private_key = "@linux_sgx//:enclave_test_private.pem",
+        debug_default_config = "@linux_sgx//:enclave_debug_config",
         order = 2,
     ),
 }
@@ -412,6 +416,7 @@ def all_backends(
         name_by_backend,
         kwargs,
         test = False,
+        include_info = False,
         ):
     """Creates many backend-specific targets and a selector target.
 
@@ -439,6 +444,8 @@ def all_backends(
             specific target label.
         kwargs: A dictionary of argument to pass to the given rule_or_macro.
         test: True if rule_or_macro defines a test target.
+        include_info: True if rule_or_macro accepts a backend_label_struct
+            argument.
     """
     backend_dictionary = _canonical_backend_dict(backends)
     name_by_backend = _complete_backend_target_names(
@@ -466,6 +473,8 @@ def all_backends(
         # The alias target will select any of the backend targets, so its tags
         # should include all the possible tags of its selections.
         overall_tags += target_tags
+        if include_info:
+            kwargs["backend_label_struct"] = info
         rule_or_macro(
             name = backend_name,
             backend = backend,

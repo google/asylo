@@ -97,42 +97,51 @@ def _with_transition_impl(executable):
 
 _BACKEND_DOC = "The Asylo backend label"
 
-def make_asylo_toolchain_rule(executable = False, test = False, backend_attr = ""):
-    """Returns a rule that transitions to the Asylo toolchain and optional backend.
+def _make_transition_forwarding_rule(
+        executable = False,
+        test = False,
+        cfg = asylo_toolchain_transition,
+        transition_doc = "an Asylo toolchain and optional backend transition",
+        extra_attrs = {}):
+    """Returns a rule that applies a transition to a cc_target and copies it through.
 
     Args:
         executable: True iff the rule defines an executable.
         test: True iff the rule defines a test.
-        backend_attr: The "backend" attribute's default value.
+        cfg: The transition to use for cc_target.
+        transition_doc: A piece of documentation text for the rule about the
+            kind of transition applied on cc_target.
+        extra_attrs: A dictionary of argument name to attribute, used to extend
+            the attributes provided by the defined rule. Base attributes are
+            cc_target, backend, and _whitelist_function_transition.
 
     Returns:
         A starlark rule object.
     """
     attrs = {
         "cc_target": attr.label(
-            doc = "The target to forward through the transition" +
-                  ("s" if backend_attr else ""),  # Pluralize as necessary.
-            cfg = asylo_toolchain_transition,
+            doc = "The target to forward through the transition",
+            cfg = cfg,
             allow_single_file = True,
             providers = [DefaultInfo],
             mandatory = True,
         ),
+        "_whitelist_function_transition": attr.label(
+            default = "//tools/whitelists/function_transition_whitelist",
+        ),
     }
     attrs["backend"] = attr.label(
         doc = _BACKEND_DOC,
-        default = None if not backend_attr else backend_attr,
         providers = [AsyloBackendInfo],
     )
+    attrs.update(**extra_attrs)
 
     has_executable = executable or test
     kind_doc = "cc_library"
-    transition_doc = "an Asylo toolchain transition"
     if test:
         kind_doc = "cc_test"
     elif executable:
         kind_doc = "cc_binary"
-    if backend_attr:
-        transition_doc += " and {} backend transition".format(backend_attr)
     return rule(
         doc = "Copies a {} target through {}".format(kind_doc, transition_doc) +
               (" and forwards runfile info and" + " backend-relevant providers."),
@@ -143,33 +152,11 @@ def make_asylo_toolchain_rule(executable = False, test = False, backend_attr = "
     )
 
 def _make_asylo_backend_rule(executable = False, test = False):
-    has_executable = executable or test
-    kind_doc = "cc_library"
-    if test:
-        kind_doc = "cc_test"
-    elif executable:
-        kind_doc = "cc_binary"
-    return rule(
-        doc = "Copies a {} target through an explicit backend".format(kind_doc) +
-              " transition and forwards runfile info and backend-relevant" +
-              " providers.",
-        implementation = _with_transition_impl(has_executable),
-        executable = has_executable,
+    return _make_transition_forwarding_rule(
+        executable = executable,
         test = test,
-        attrs = {
-            "cc_target": attr.label(
-                doc = "The target to forward through the backend transition",
-                cfg = asylo_backend_transition,
-                allow_single_file = True,
-                mandatory = True,
-                providers = [DefaultInfo],
-            ),
-            "backend": attr.label(
-                doc = _BACKEND_DOC,
-                providers = [AsyloBackendInfo],
-                mandatory = True,
-            ),
-        },
+        cfg = asylo_backend_transition,
+        transition_doc = "an explicit backend transition",
     )
 
 _SUPPORTED_PKGS = [
@@ -210,7 +197,7 @@ transitions = struct(
     backend_test = with_backend_test,
     backend_library = with_backend_library,
     empty_transition = empty_transition,
-    make_rule = make_asylo_toolchain_rule,
+    make_rule = _make_transition_forwarding_rule,
     pre_tags = PRETRANSITION_TAGS,
     supported = transitions_supported,
 )

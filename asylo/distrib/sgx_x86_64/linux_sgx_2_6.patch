@@ -3490,7 +3490,7 @@ diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1333 @@
+@@ -0,0 +1,1337 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
@@ -4801,12 +4801,16 @@ diff -Nur /dev/null BUILD
 +# support hardware enclaves.
 +asylo_sgx_backend(
 +    name = "asylo_sgx_hw",
-+    visibility = ["//visibility:public"],
++    visibility = [
++        "//visibility:public",
++    ],
 +)
 +
 +asylo_sgx_backend(
 +    name = "asylo_sgx_sim",
-+    visibility = ["//visibility:public"],
++    visibility = [
++        "//visibility:public",
++    ],
 +)
 +
 +config_setting(
@@ -4827,7 +4831,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,730 @@
+@@ -0,0 +1,736 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -5013,7 +5017,13 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            **kwargs
 +        )
 +    else:
-+        kwargs = backend_tools.merge_dicts(kwargs, {"stamp": stamp})
++        kwargs = backend_tools.merge_dicts(
++            kwargs,
++            {
++                "stamp": stamp,
++                "tags": kwargs.get("tags", []) + ["asylo-transition"],
++            },
++        )
 +        backend_tools.all_backends(
 +            rule_or_macro = _sgx_cc_unsigned_enclave_transition,
 +            name = name,
@@ -5182,10 +5192,10 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    ctx.actions.run_shell(
 +        inputs = [
 +            ctx.file.unsigned,
-+            ctx.file._key,
++            ctx.file.key,
 +            ctx.file.config,
 +        ],
-+        tools = [ctx.executable._sign_tool],
++        tools = [ctx.executable.sign_tool],
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Signing for debug: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
@@ -5193,13 +5203,13 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        ),
 +        # Suppresses tool output on success.
 +        command = "output=`%s $@ 2>&1` || echo $output" %
-+                  ctx.executable._sign_tool.path,
++                  ctx.executable.sign_tool.path,
 +        arguments = [
 +            "sign",
 +            "-enclave",
 +            ctx.file.unsigned.path,
 +            "-key",
-+            ctx.file._key.path,
++            ctx.file.key.path,
 +            "-config",
 +            ctx.file.config.path,
 +            "-out",
@@ -5237,13 +5247,13 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            doc = "The label of the unsigned enclave to sign.",
 +            providers = [SGXEnclaveInfo],
 +        ),
-+        "_key": attr.label(
++        "key": attr.label(
 +            default = Label(
 +                "@linux_sgx//:enclave_test_private.pem",
 +            ),
 +            allow_single_file = True,
 +        ),
-+        "_sign_tool": attr.label(
++        "sign_tool": attr.label(
 +            default = Label("@linux_sgx//:sgx_sign_tool"),
 +            allow_single_file = True,
 +            executable = True,
@@ -5292,14 +5302,14 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            ctx.file.unsigned,
 +            ctx.file.config,
 +        ],
-+        tools = [ctx.executable._sign_tool],
++        tools = [ctx.executable.sign_tool],
 +        outputs = [signing_material],
 +        progress_message = "Generating enclave signing material for: //{pkg}:{name}".format(
 +            pkg = ctx.attr.unsigned.label.package,
 +            name = ctx.attr.unsigned.label.name,
 +        ),
 +        command = "output=`%s $@ 2>&1` || echo $output" %
-+                  ctx.executable._sign_tool.path,
++                  ctx.executable.sign_tool.path,
 +        arguments = [
 +            "gendata",
 +            "-enclave",
@@ -5339,7 +5349,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        "signing_material": attr.output(
 +            doc = "The name of the output file. Default is \"<name>.dat\".",
 +        ),
-+        "_sign_tool": attr.label(
++        "sign_tool": attr.label(
 +            default = Label("@linux_sgx//:sgx_sign_tool"),
 +            allow_single_file = True,
 +            executable = True,
@@ -5441,14 +5451,14 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            ctx.file.signing_material,
 +            unsigned_file,
 +        ],
-+        tools = [ctx.executable._sign_tool],
++        tools = [ctx.executable.sign_tool],
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Integrating signature into: //{pkg}:{name}".format(
 +            pkg = unsigned.label.package,
 +            name = unsigned.label.name,
 +        ),
 +        command = "output=`%s $@ 2>&1` || echo $output" %
-+                  ctx.executable._sign_tool.path,
++                  ctx.executable.sign_tool.path,
 +        arguments = [
 +            "catsig",
 +            "-enclave",
@@ -5495,7 +5505,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            doc = ("The label of a sgx_generate_enclave_signing_material target that " +
 +                   "includes both the unsigned enclave and its config."),
 +        ),
-+        "_sign_tool": attr.label(
++        "sign_tool": attr.label(
 +            default = Label("@linux_sgx//:sgx_sign_tool"),
 +            allow_single_file = True,
 +            executable = True,
@@ -5558,6 +5568,36 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    tags = sgx_tags,
 +    unsigned_enclave = sgx_unsigned_enclave,
 +)
+diff -Nur /dev/null internal.bzl
+--- /dev/null
++++ internal.bzl
+@@ -0,0 +1,26 @@
++"""Build rules and settings internal to the linux_sgx library."""
++
++load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
++
++_internal_simulation_label = "@linux_sgx//:internal_is_simulation"
++
++_sgx_is_simulation = provider(fields = {
++    "simulation": ("Boolean for internal selection of simulation or " +
++                   "hardware backends."),
++})
++
++def _is_simulation_impl(ctx):
++    return [_sgx_is_simulation(simulation = ctx.build_setting_value)]
++
++internal_is_simulation = rule(
++    doc = ("Defines a build setting for whether the internal backend is set," +
++           " and if it is set to simulation or hardware (0, 1, 2 " +
++           "respectively)"),
++    implementation = _is_simulation_impl,
++    build_setting = config.int(),
++)
++
++def _internal_simulation_transition_impl(settings, attrs):
++    _ignore = (settings, attrs)
++    return {_internal_simulation_label: 1 if attrs.simulation else 2}
++
 diff -Nur /dev/null debug_key_mrsigner.cc
 --- /dev/null
 +++ debug_key_mrsigner.cc
