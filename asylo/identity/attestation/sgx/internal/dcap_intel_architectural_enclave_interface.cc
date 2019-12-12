@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/dcap_intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_intel_architectural_enclave_interface.h"
 
 #include <memory>
 #include <type_traits>
@@ -24,8 +24,8 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/algorithms.pb.h"
-#include "asylo/identity/sgx/dcap_library_interface.h"
-#include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
+#include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/pce_util.h"
 #include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status.h"

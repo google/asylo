@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_HOST_DCAP_LIBRARY_INTERFACE_H_
-#define ASYLO_IDENTITY_SGX_HOST_DCAP_LIBRARY_INTERFACE_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_HOST_DCAP_LIBRARY_INTERFACE_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_HOST_DCAP_LIBRARY_INTERFACE_H_
 
 #include <cstdint>
 
-#include "asylo/identity/sgx/dcap_library_interface.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
 #include "include/sgx_report.h"
 #include "QuoteGeneration/pce_wrapper/inc/sgx_pce.h"
 #include "QuoteGeneration/quote_wrapper/common/inc/sgx_ql_lib_common.h"
@@ -73,4 +73,4 @@ class HostDcapLibraryInterface : public DcapLibraryInterface {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_HOST_DCAP_LIBRARY_INTERFACE_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_HOST_DCAP_LIBRARY_INTERFACE_H_

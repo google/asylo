@@ -1603,202 +1603,6 @@ cc_test_and_cc_enclave_test(
     ],
 )
 
-# Defines an interface for interacting with Intel Architectural Enclaves.
-cc_library(
-    name = "intel_architectural_enclave_interface",
-    hdrs = ["intel_architectural_enclave_interface.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":hardware_types",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:bytes",
-        "//asylo/util:status",
-        "@com_google_absl//absl/types:span",
-    ],
-)
-
-# Implementation of IntelArchitecturalEnclaveInterface using Intel's SGX Data
-# Center Attestation Primitives (DCAP) library.
-cc_library(
-    name = "dcap_intel_architectural_enclave_interface",
-    srcs = ["dcap_intel_architectural_enclave_interface.cc"],
-    hdrs = ["dcap_intel_architectural_enclave_interface.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":dcap_library_interface",
-        ":hardware_types",
-        ":intel_architectural_enclave_interface",
-        ":pce_util",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:bytes",
-        "//asylo/util:proto_enum_util",
-        "//asylo/util:status",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
-        "@linux_sgx//:public",
-        "@sgx_dcap//:quote_wrapper_common",
-    ],
-)
-
-cc_library(
-    name = "dcap_library_interface",
-    hdrs = ["dcap_library_interface.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "@linux_sgx//:public",
-        "@sgx_dcap//:quote_wrapper_common",
-    ],
-)
-
-cc_library(
-    name = "host_dcap_library_interface",
-    srcs = ["host_dcap_library_interface.cc"],
-    hdrs = ["host_dcap_library_interface.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":dcap_library_interface",
-        "@linux_sgx//:public",
-        "@sgx_dcap//:pce_wrapper",
-        "@sgx_dcap//:quote_wrapper",
-    ],
-)
-
-cc_library(
-    name = "enclave_dcap_library_interface",
-    srcs = ["enclave_dcap_library_interface.cc"],
-    hdrs = ["enclave_dcap_library_interface.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    tags = [
-        "manual",
-    ],
-    deps = [
-        ":dcap_library_interface",
-        "//asylo/platform/primitives/sgx:trusted_sgx",
-    ],
-)
-
-proto_library(
-    name = "report_oracle_enclave_proto",
-    srcs = ["report_oracle_enclave.proto"],
-    deps = [
-        ":platform_provisioning_proto",
-        "//asylo:enclave_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "report_oracle_enclave_cc_proto",
-    deps = ["report_oracle_enclave_proto"],
-)
-
-sgx_cc_unsigned_enclave(
-    name = "report_oracle_enclave_unsigned.so",
-    srcs = ["report_oracle_enclave.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":hardware_interface",
-        ":platform_provisioning",
-        ":report_oracle_enclave_cc_proto",
-        "//asylo:enclave_cc_proto",
-        "//asylo:enclave_runtime",
-        "//asylo/util:status",
-    ],
-)
-
-sgx.enclave_configuration(
-    name = "report_oracle_enclave_config",
-    provision_key = "1",
-)
-
-sgx_debug_sign_enclave(
-    name = "report_oracle_enclave.so",
-    config = ":report_oracle_enclave_config",
-    unsigned = "report_oracle_enclave_unsigned.so",
-)
-
-sgx_enclave_test(
-    name = "dcap_intel_architectural_enclave_interface_e2e_test",
-    srcs = ["dcap_intel_architectural_enclave_interface_e2e_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    enclaves = {
-        "report_oracle_enclave_path": ":report_oracle_enclave.so",
-    },
-    tags = ["noregression"],
-    test_args = ["--report_oracle_enclave_path='{report_oracle_enclave_path}'"],
-    deps = [
-        ":dcap_intel_architectural_enclave_interface",
-        ":hardware_types",
-        ":host_dcap_library_interface",
-        ":intel_ecdsa_quote",
-        ":pce_util",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":report_oracle_enclave_cc_proto",
-        "//asylo:enclave_cc_proto",
-        "//asylo:enclave_client",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto:keys_cc_proto",
-        "//asylo/crypto:rsa_oaep_encryption_key",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/test/util:memory_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:cleansing_types",
-        "//asylo/util:status",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest",
-        "@sgx_dcap//:pce_constants",
-        "@sgx_dcap//:quote_constants",
-    ],
-)
-
-# Since the DCAP interface is never used in an enclave, this test is not a
-# "cc_test_and_cc_enclave_test" target.
-cc_test(
-    name = "dcap_intel_architectural_enclave_interface_test",
-    srcs = ["dcap_intel_architectural_enclave_interface_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":dcap_intel_architectural_enclave_interface",
-        ":dcap_library_interface",
-        ":hardware_types",
-        ":pce_util",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/crypto/util:bytes",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/test/util:memory_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:status",
-        "@com_google_absl//absl/memory",
-        "@com_google_googletest//:gtest",
-        "@linux_sgx//:public",
-        "@sgx_dcap//:pce_constants",
-        "@sgx_dcap//:pce_wrapper",
-        "@sgx_dcap//:quote_wrapper",
-    ],
-)
-
-cc_library(
-    name = "mock_intel_architectural_enclave_interface",
-    testonly = 1,
-    hdrs = ["mock_intel_architectural_enclave_interface.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":hardware_types",
-        ":intel_architectural_enclave_interface",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:bytes",
-        "//asylo/util:status",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 cc_library(
     name = "sgx_infrastructural_enclave_manager",
     srcs = ["sgx_infrastructural_enclave_manager.cc"],
@@ -1806,7 +1610,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":intel_architectural_enclave_interface",
         ":machine_configuration_cc_proto",
         ":pce_util",
         ":platform_provisioning",
@@ -1818,6 +1621,7 @@ cc_library(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/util:status",
         "//asylo/util:status_macros",
@@ -1832,7 +1636,6 @@ cc_test(
     deps = [
         ":hardware_types",
         ":machine_configuration_cc_proto",
-        ":mock_intel_architectural_enclave_interface",
         ":pce_util",
         ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
@@ -1843,6 +1646,7 @@ cc_test(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/attestation/sgx/internal:mock_intel_architectural_enclave_interface",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/test/util:mock_enclave_client",
         "//asylo/test/util:proto_matchers",
@@ -1864,7 +1668,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":intel_architectural_enclave_interface",
         ":machine_configuration_cc_proto",
         ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
@@ -1872,6 +1675,7 @@ cc_library(
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
+        "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",

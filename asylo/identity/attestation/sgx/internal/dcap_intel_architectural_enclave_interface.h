@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_
-#define ASYLO_IDENTITY_SGX_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_
 
 #include <cstdint>
 #include <functional>
@@ -28,9 +28,9 @@
 #include "absl/types/span.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/bytes.h"
-#include "asylo/identity/sgx/dcap_library_interface.h"
+#include "asylo/identity/attestation/sgx/internal/dcap_library_interface.h"
+#include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/intel_architectural_enclave_interface.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -79,4 +79,4 @@ class DcapIntelArchitecturalEnclaveInterface
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_DCAP_INTEL_ARCHITECTURAL_ENCLAVE_INTERFACE_H_

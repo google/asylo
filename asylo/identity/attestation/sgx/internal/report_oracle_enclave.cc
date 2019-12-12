@@ -20,10 +20,10 @@
 
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/attestation/sgx/internal/report_oracle_enclave.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/platform_provisioning.h"
-#include "asylo/identity/sgx/report_oracle_enclave.pb.h"
 #include "asylo/platform/core/trusted_application.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"

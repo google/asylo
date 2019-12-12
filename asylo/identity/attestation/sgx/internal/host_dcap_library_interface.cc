@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/host_dcap_library_interface.h"
+#include "asylo/identity/attestation/sgx/internal/host_dcap_library_interface.h"
 
 #include <cstdint>
 
