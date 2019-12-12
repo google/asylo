@@ -300,6 +300,7 @@ cc_library(
         ":certificate_cc_proto",
         ":certificate_interface",
         ":x509_certificate",
+        "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/strings",

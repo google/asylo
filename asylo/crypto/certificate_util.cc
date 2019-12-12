@@ -21,9 +21,11 @@
 #include <cstdint>
 #include <utility>
 
+#include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
 #include "asylo/crypto/x509_certificate.h"
+#include "asylo/util/proto_enum_util.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -87,6 +89,17 @@ Status ValidateCertificateRevocationList(const CertificateRevocationList &crl) {
   }
 
   return Status::OkStatus();
+}
+
+StatusOr<std::unique_ptr<CertificateInterface>> CreateCertificateInterface(
+    const CertificateFactoryMap &factory_map, const Certificate &certificate) {
+  auto factory_iter = factory_map.find(certificate.format());
+  if (factory_iter == factory_map.end()) {
+    return Status(error::GoogleError::INVALID_ARGUMENT,
+                  absl::StrCat("No mapping from format to factory for format ",
+                               ProtoEnumValueName(certificate.format())));
+  }
+  return (factory_iter->second)(certificate);
 }
 
 StatusOr<CertificateInterfaceVector> CreateCertificateChain(

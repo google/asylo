@@ -76,6 +76,13 @@ Status ValidateCertificateChain(const CertificateChain &certificate_chain);
 // |format| and |data| fields are set and its |format| is not UNKNOWN.
 Status ValidateCertificateRevocationList(const CertificateRevocationList &crl);
 
+// Parses |certificate| and returns a CertificateInterface. Uses |factory_map|
+// to determine which CertificateInterface factory to use for
+// |certificate|.format(). Returns a non-OK Status if there were errors while
+// parsing or if the format was unknown.
+StatusOr<std::unique_ptr<CertificateInterface>> CreateCertificateInterface(
+    const CertificateFactoryMap &factory_map, const Certificate &certificate);
+
 // Parses |chain| and returns a CertificateInterfaceVector. Uses |factory_map|
 // to determine which CertificateInterface factory to use for each format.
 // Returns a non-OK Status if there were errors while parsing or if any format

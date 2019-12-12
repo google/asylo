@@ -18,6 +18,7 @@
 
 #include "asylo/crypto/certificate_util.h"
 
+#include <memory>
 #include <vector>
 
 #include <google/protobuf/text_format.h>
@@ -572,6 +573,52 @@ TEST(CertificateUtilTest, VerifyCertificateChainCaValuesSet) {
 
   VerificationConfig config(/*all_fields=*/true);
   ASYLO_EXPECT_OK(VerifyCertificateChain(absl::MakeConstSpan(chain), config));
+}
+
+TEST(CertificateUtilTest, CreateCertificateInterfaceMissingFormat) {
+  FakeCertificateProto cert_proto;
+  cert_proto.set_subject_key(kRootKey);
+  cert_proto.set_issuer_key(kRootKey);
+
+  Certificate cert;
+  cert.set_format(Certificate::X509_PEM);
+  cert_proto.SerializeToString(cert.mutable_data());
+
+  CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_DER});
+
+  EXPECT_THAT(CreateCertificateInterface(factory_map, cert),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(CertificateUtilTest, CreateCertificateInterfaceMalformedCertificate) {
+  Certificate cert;
+  cert.set_format(Certificate::X509_PEM);
+  cert.set_data(kMalformedCertData);
+
+  CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_DER});
+
+  EXPECT_THAT(CreateCertificateInterface(factory_map, cert),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST(CertificateUtilTest, CreateCertificateInterfaceSuccess) {
+  FakeCertificate expected_cert(kRootKey, kRootKey, /*is_ca=*/absl::nullopt,
+                                /*pathlength=*/absl::nullopt);
+
+  FakeCertificateProto cert_proto;
+  cert_proto.set_subject_key(kRootKey);
+  cert_proto.set_issuer_key(kRootKey);
+
+  Certificate cert;
+  cert.set_format(Certificate::X509_PEM);
+  cert_proto.SerializeToString(cert.mutable_data());
+
+  CertificateFactoryMap factory_map = CreateFactoryMap({Certificate::X509_PEM});
+
+  std::unique_ptr<CertificateInterface> certificate_interface;
+  ASYLO_ASSERT_OK_AND_ASSIGN(certificate_interface,
+                             CreateCertificateInterface(factory_map, cert));
+  EXPECT_EQ(*certificate_interface, expected_cert);
 }
 
 TEST(CertificateUtilTest, CreateCertificateChainMissingFormat) {
