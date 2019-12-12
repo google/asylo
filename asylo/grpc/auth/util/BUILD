@@ -15,7 +15,6 @@
 #
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:asylo.bzl", "cc_test")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -24,59 +23,6 @@ licenses(["notice"])  # Apache v2.0
 
 package(
     default_visibility = ["//asylo/grpc/auth:__subpackages__"],
-)
-
-# A safe_string C utility.
-cc_library(
-    name = "safe_string",
-    srcs = ["safe_string.cc"],
-    hdrs = ["safe_string.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = ["@com_github_grpc_grpc//:gpr_base"],
-)
-
-# Tests for the safe_string C utility.
-cc_test(
-    name = "safe_string_test",
-    srcs = ["safe_string_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/grpc/auth/util:safe_string",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-# Bridge utilities between the C++ and C layers of gRPC.
-cc_library(
-    name = "bridge_cpp_to_c",
-    srcs = ["bridge_cpp_to_c.cc"],
-    hdrs = ["bridge_cpp_to_c.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/grpc/auth:enclave_credentials_options",
-        "//asylo/grpc/auth/core:assertion_description",
-        "//asylo/grpc/auth/core:enclave_credentials_options",
-        "//asylo/identity:assertion_description_util",
-        "//asylo/identity:identity_cc_proto",
-    ],
-)
-
-# Tests for functions in the C++ to C bridge library.
-cc_test(
-    name = "bridge_cpp_to_c_test",
-    srcs = ["bridge_cpp_to_c_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "bridge_cpp_to_c_enclave_test",
-    deps = [
-        ":bridge_cpp_to_c",
-        "//asylo/grpc/auth:enclave_credentials_options",
-        "//asylo/grpc/auth:null_credentials_options",
-        "//asylo/identity:assertion_description_util",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
 )
 
 # Implementation of ZeroCopyInputStream that manages an internal list of

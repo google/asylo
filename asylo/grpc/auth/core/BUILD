@@ -72,45 +72,6 @@ cc_library(
     ],
 )
 
-# Channel and server credentials options.
-cc_library(
-    name = "enclave_credentials_options",
-    srcs = ["enclave_credentials_options.cc"],
-    hdrs = ["enclave_credentials_options.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":assertion_description",
-        "//asylo/grpc/auth/util:safe_string",
-        "//asylo/identity:identity_acl_cc_proto",
-        "@com_google_absl//absl/types:optional",
-    ],
-)
-
-# Defines a C structure analogous to the AssertionDescription proto.
-cc_library(
-    name = "assertion_description",
-    srcs = ["assertion_description.cc"],
-    hdrs = ["assertion_description.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo/grpc/auth/util:safe_string",
-        "@com_github_grpc_grpc//:gpr_base",
-    ],
-)
-
-cc_test(
-    name = "assertion_description_test",
-    srcs = ["assertion_description_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_name = "assertion_description_enclave_test",
-    deps = [
-        ":assertion_description",
-        "//asylo/identity:identity_cc_proto",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 # Utility for managing hashed EKEP transcripts.
 cc_library(
     name = "transcript",
