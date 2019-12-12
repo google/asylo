@@ -23,14 +23,14 @@
 #include <gtest/gtest.h>
 #include "asylo/identity/attestation/enclave_assertion_generator.h"
 #include "asylo/identity/attestation/enclave_assertion_verifier.h"
+#include "asylo/identity/attestation/null/null_assertion_generator.h"
+#include "asylo/identity/attestation/null/null_assertion_verifier.h"
+#include "asylo/identity/attestation/null/null_identity_constants.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/init.h"
-#include "asylo/identity/null_identity/null_assertion_generator.h"
-#include "asylo/identity/null_identity/null_assertion_verifier.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/test/util/enclave_assertion_authority_configs.h"
 #include "asylo/test/util/status_matchers.h"
 

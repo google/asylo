@@ -19,8 +19,8 @@
 #ifndef ASYLO_IDENTITY_DESCRIPTIONS_H_
 #define ASYLO_IDENTITY_DESCRIPTIONS_H_
 
+#include "asylo/identity/attestation/null/null_identity_constants.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 
 namespace asylo {

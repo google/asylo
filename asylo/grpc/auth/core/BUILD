@@ -265,7 +265,7 @@ cc_test(
         ":ekep_handshaker",
         ":ekep_handshaker_util",
         "//asylo/identity:identity_cc_proto",
-        "//asylo/identity/null_identity:null_identity_util",
+        "//asylo/identity/attestation/null:null_identity_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

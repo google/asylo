@@ -21,8 +21,8 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/grpc/auth/core/ekep_handshaker.h"
+#include "asylo/identity/attestation/null/null_identity_util.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/null_identity/null_identity_util.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {

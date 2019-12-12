@@ -16,14 +16,14 @@
  *
  */
 
-#include "asylo/identity/null_identity/null_identity_expectation_matcher.h"
+#include "asylo/identity/attestation/null/null_identity_expectation_matcher.h"
 
 #include <string>
 
 #include <gtest/gtest.h>
+#include "asylo/identity/attestation/null/null_identity_constants.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/named_identity_expectation_matcher.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"

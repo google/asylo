@@ -29,6 +29,5 @@ proto_library(
 
 cc_proto_library(
     name = "null_assertion_cc_proto",
-    visibility = ["//asylo/identity/null_identity:__subpackages__"],
     deps = [":null_assertion_proto"],
 )

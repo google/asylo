@@ -16,11 +16,11 @@
  *
  */
 
-#include "asylo/identity/null_identity/null_identity_expectation_matcher.h"
+#include "asylo/identity/attestation/null/null_identity_expectation_matcher.h"
 
 #include <google/protobuf/util/message_differencer.h>
 #include "absl/strings/str_format.h"
-#include "asylo/identity/null_identity/null_identity_util.h"
+#include "asylo/identity/attestation/null/null_identity_util.h"
 
 namespace asylo {
 

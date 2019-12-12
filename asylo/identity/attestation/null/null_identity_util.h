@@ -16,13 +16,12 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_NULL_IDENTITY_NULL_IDENTITY_UTIL_H_
-#define ASYLO_IDENTITY_NULL_IDENTITY_NULL_IDENTITY_UTIL_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_NULL_NULL_IDENTITY_UTIL_H_
+#define ASYLO_IDENTITY_ATTESTATION_NULL_NULL_IDENTITY_UTIL_H_
 
-#include "asylo/identity/identity.pb.h"
-
+#include "asylo/identity/attestation/null/null_identity_constants.h"
 #include "asylo/identity/descriptions.h"
-#include "asylo/identity/null_identity/null_identity_constants.h"
+#include "asylo/identity/identity.pb.h"
 
 namespace asylo {
 
@@ -47,4 +46,4 @@ inline void SetNullIdentityExpectation(
 
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_NULL_IDENTITY_NULL_IDENTITY_UTIL_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_NULL_NULL_IDENTITY_UTIL_H_
