@@ -19,8 +19,9 @@
 #ifndef ASYLO_GRPC_AUTH_ENCLAVE_CHANNEL_CREDENTIALS_H_
 #define ASYLO_GRPC_AUTH_ENCLAVE_CHANNEL_CREDENTIALS_H_
 
-#include "asylo/grpc/auth/core/enclave_credentials.h"
+#include <memory>
 
+#include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "include/grpcpp/security/credentials.h"
 
@@ -40,7 +41,7 @@ namespace asylo {
 /// \param options Options for configuring the credentials.
 /// \return A gRPC channel credentials object.
 std::shared_ptr<::grpc::ChannelCredentials> EnclaveChannelCredentials(
-    const EnclaveCredentialsOptions &options);
+    EnclaveCredentialsOptions options);
 
 }  // namespace asylo
 

@@ -25,7 +25,9 @@
 
 #include <google/protobuf/io/coded_stream.h>
 #include "absl/memory/memory.h"
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "asylo/grpc/auth/core/client_ekep_handshaker.h"
 #include "asylo/grpc/auth/core/ekep_handshaker.h"
 #include "asylo/grpc/auth/core/ekep_handshaker_util.h"
@@ -47,27 +49,6 @@ namespace asylo {
 namespace {
 
 constexpr int kEnclavePeerPropertyCount = 3;
-
-// Converts an assertion_description_array to a vector of AssertionDescriptions.
-std::vector<AssertionDescription> CreateAssertionDescriptionVector(
-    const assertion_description_array &descriptions_array) {
-  std::vector<AssertionDescription> descriptions_vector;
-  for (int i = 0; i < descriptions_array.count; ++i) {
-    descriptions_vector.emplace_back();
-
-    // Set identity type.
-    descriptions_vector.back().set_identity_type(
-        static_cast<EnclaveIdentityType>(
-            descriptions_array.descriptions[i].identity_type));
-
-    // Set authority type.
-    const safe_string &authority_type_raw =
-        descriptions_array.descriptions[i].authority_type;
-    descriptions_vector.back().set_authority_type(authority_type_raw.data,
-                                                  authority_type_raw.size);
-  }
-  return descriptions_vector;
-}
 
 }  // namespace
 
@@ -412,9 +393,9 @@ tsi_result tsi_enclave_handshaker::evaluate_acl(
 }  // namespace asylo
 
 tsi_result tsi_enclave_handshaker_create(
-    int is_client, const assertion_description_array *self_assertions,
-    const assertion_description_array *accepted_peer_assertions,
-    const safe_string *additional_authenticated_data,
+    bool is_client, absl::Span<asylo::AssertionDescription> self_assertions,
+    absl::Span<asylo::AssertionDescription> accepted_peer_assertions,
+    absl::string_view additional_authenticated_data,
     const absl::optional<asylo::IdentityAclPredicate> &peer_acl,
     tsi_handshaker **handshaker) {
   GRPC_API_TRACE(
@@ -422,17 +403,16 @@ tsi_result tsi_enclave_handshaker_create(
       "accepted_peer_assertions=%p, additional_authenticated_data=%p, "
       "peer_acl=%d, handshaker=%p)",
       6,
-      (is_client, self_assertions, accepted_peer_assertions,
-       additional_authenticated_data, peer_acl.has_value(), handshaker));
+      (is_client, self_assertions.data(), accepted_peer_assertions.data(),
+       additional_authenticated_data.data(), peer_acl.has_value(), handshaker));
 
   // Convert arguments to handshaker options.
   asylo::EkepHandshakerOptions options;
-  options.additional_authenticated_data = std::string(
-      additional_authenticated_data->data, additional_authenticated_data->size);
-  options.self_assertions =
-      asylo::CreateAssertionDescriptionVector(*self_assertions);
-  options.accepted_peer_assertions =
-      asylo::CreateAssertionDescriptionVector(*accepted_peer_assertions);
+  options.additional_authenticated_data =
+      std::string(additional_authenticated_data);
+  options.self_assertions = {self_assertions.cbegin(), self_assertions.cend()};
+  options.accepted_peer_assertions = {accepted_peer_assertions.cbegin(),
+                                      accepted_peer_assertions.cend()};
 
   if (!options.additional_authenticated_data.empty()) {
     gpr_log(GPR_DEBUG, "additional authenticated data: %s",

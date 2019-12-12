@@ -22,12 +22,11 @@
 #include <string.h>
 
 #include "absl/types/optional.h"
+#include "absl/types/span.h"
 #include "asylo/util/logging.h"
-#include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 #include "asylo/grpc/auth/core/enclave_grpc_security_constants.h"
 #include "asylo/grpc/auth/core/enclave_transport_security.h"
-#include "asylo/grpc/auth/util/safe_string.h"
 #include "include/grpc/support/alloc.h"
 #include "include/grpc/support/log.h"
 #include "include/grpc/support/string_util.h"
@@ -170,10 +169,10 @@ class grpc_enclave_channel_security_connector final
         CHECK_NOTNULL(dynamic_cast<grpc_enclave_channel_credentials *>(
             this->mutable_channel_creds()));
     tsi_result result = tsi_enclave_handshaker_create(
-        /*is_client=*/true, channel_creds->mutable_self_assertions(),
-        channel_creds->mutable_accepted_peer_assertions(),
-        channel_creds->mutable_additional_authenticated_data(),
-        channel_creds->peer_acl(), &tsi_handshaker);
+        /*is_client=*/true, absl::MakeSpan(channel_creds->self_assertions),
+        absl::MakeSpan(channel_creds->accepted_peer_assertions),
+        channel_creds->additional_authenticated_data, channel_creds->peer_acl,
+        &tsi_handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
               tsi_result_to_string(result));
@@ -219,10 +218,10 @@ class grpc_enclave_server_security_connector final
         CHECK_NOTNULL(dynamic_cast<grpc_enclave_server_credentials *>(
             this->mutable_server_creds()));
     tsi_result result = tsi_enclave_handshaker_create(
-        /*is_client=*/false, server_creds->mutable_self_assertions(),
-        server_creds->mutable_accepted_peer_assertions(),
-        server_creds->mutable_additional_authenticated_data(),
-        server_creds->peer_acl(), &tsi_handshaker);
+        /*is_client=*/false, absl::MakeSpan(server_creds->self_assertions),
+        absl::MakeSpan(server_creds->accepted_peer_assertions),
+        server_creds->additional_authenticated_data, server_creds->peer_acl,
+        &tsi_handshaker);
     if (result != TSI_OK) {
       gpr_log(GPR_ERROR, "Enclave handshaker creation failed with error %s.",
               tsi_result_to_string(result));

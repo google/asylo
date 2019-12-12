@@ -49,7 +49,6 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/grpc/auth/core:grpc_security_enclave",
-        "//asylo/grpc/auth/util:bridge_cpp_to_c",
         "//asylo/identity:assertion_description_util",
         "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",

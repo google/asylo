@@ -19,9 +19,8 @@
 #ifndef ASYLO_GRPC_AUTH_CORE_ENCLAVE_SECURITY_CONNECTOR_H_
 #define ASYLO_GRPC_AUTH_CORE_ENCLAVE_SECURITY_CONNECTOR_H_
 
-#include "asylo/grpc/auth/core/assertion_description.h"
-#include "asylo/grpc/auth/util/safe_string.h"
 #include "include/grpc/grpc_security.h"
+#include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/security_connector/security_connector.h"
 
 /* --- Enclave security connectors. --- */

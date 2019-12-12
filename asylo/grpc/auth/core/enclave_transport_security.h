@@ -19,9 +19,10 @@
 #ifndef ASYLO_GRPC_AUTH_CORE_ENCLAVE_TRANSPORT_SECURITY_H_
 #define ASYLO_GRPC_AUTH_CORE_ENCLAVE_TRANSPORT_SECURITY_H_
 
+#include "absl/strings/string_view.h"
 #include "absl/types/optional.h"
-#include "asylo/grpc/auth/core/assertion_description.h"
-#include "asylo/grpc/auth/util/safe_string.h"
+#include "absl/types/span.h"
+#include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "src/core/tsi/transport_security_interface.h"
 
@@ -47,9 +48,9 @@
 //   * |peer_acl| is the ACL evaluated using the authenticated peer's
 //   identities.
 tsi_result tsi_enclave_handshaker_create(
-    int is_client, const assertion_description_array *self_assertions,
-    const assertion_description_array *accepted_peer_assertions,
-    const safe_string *additional_authenticated_data,
+    bool is_client, absl::Span<asylo::AssertionDescription> self_assertions,
+    absl::Span<asylo::AssertionDescription> accepted_peer_assertions,
+    absl::string_view additional_authenticated_data,
     const absl::optional<asylo::IdentityAclPredicate> &peer_acl,
     tsi_handshaker **handshaker);
 

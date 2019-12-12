@@ -16,14 +16,12 @@
  *
  */
 
-#include <string.h>
+#include <utility>
 
 #include "asylo/grpc/auth/core/enclave_credentials.h"
-#include "asylo/grpc/auth/core/enclave_credentials_options.h"
 #include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "asylo/grpc/auth/null_credentials_options.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
-#include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/init.h"
@@ -113,16 +111,6 @@ grpc_end2end_test_fixture CreateFixtureSecureFullstack(
   return f;
 }
 
-// Uses |options| to construct gRPC enclave channel credentials. Returns the
-// resulting credentials object.
-grpc_core::RefCountedPtr<grpc_channel_credentials> InitClientEnclaveCredentials(
-    const EnclaveCredentialsOptions &options) {
-  grpc_enclave_credentials_options c_options;
-  grpc_enclave_credentials_options_init(&c_options);
-  CopyEnclaveCredentialsOptions(options, &c_options);
-  return grpc_enclave_channel_credentials_create(&c_options);
-}
-
 // Initializes the channel in fixture |f| using |client_args| and |options|.
 void InitClientChannel(EnclaveCredentialsOptions options,
                        grpc_end2end_test_fixture *f,
@@ -131,8 +119,9 @@ void InitClientChannel(EnclaveCredentialsOptions options,
   options.additional_authenticated_data = kClientAdditionalAuthenticatedData;
 
   // Create enclave gRPC channel credentials.
-  grpc_core::RefCountedPtr<grpc_channel_credentials> creds =
-      InitClientEnclaveCredentials(options);
+  grpc_core::RefCountedPtr<grpc_enclave_channel_credentials> creds =
+      grpc_core::MakeRefCounted<grpc_enclave_channel_credentials>(
+          std::move(options));
   GPR_ASSERT(creds != nullptr);
 
   EnclaveFullStackFixtureData *fixture_data =
@@ -202,18 +191,6 @@ void InitClientEnclaveSelfNullPeerSgxLocalWithAcl(
   InitClientChannel(creds, f, client_args);
 }
 
-// Uses |options| to construct gRPC enclave server credentials. Returns the
-// resulting credentials object.
-grpc_core::RefCountedPtr<grpc_server_credentials> InitServerEnclaveCredentials(
-    const EnclaveCredentialsOptions &options) {
-  grpc_enclave_credentials_options c_options;
-  grpc_enclave_credentials_options_init(&c_options);
-  CopyEnclaveCredentialsOptions(options, &c_options);
-
-  // Create enclave gRPC server credentials.
-  return grpc_enclave_server_credentials_create(&c_options);
-}
-
 // Initializes the server in fixture |f| using |server_args| and |options|.
 void InitServer(EnclaveCredentialsOptions options, grpc_end2end_test_fixture *f,
                 grpc_channel_args *server_args) {
@@ -221,8 +198,9 @@ void InitServer(EnclaveCredentialsOptions options, grpc_end2end_test_fixture *f,
   options.additional_authenticated_data = kServerAdditionalAuthenticatedData;
 
   // Create enclave gRPC server credentials.
-  grpc_core::RefCountedPtr<grpc_server_credentials> creds =
-      InitServerEnclaveCredentials(options);
+  grpc_core::RefCountedPtr<grpc_enclave_server_credentials> creds =
+      grpc_core::MakeRefCounted<grpc_enclave_server_credentials>(
+          std::move(options));
   GPR_ASSERT(creds != nullptr);
 
   EnclaveFullStackFixtureData *fixture_data =

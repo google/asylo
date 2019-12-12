@@ -18,25 +18,20 @@
 
 #include "asylo/grpc/auth/enclave_server_credentials.h"
 
+#include <memory>
+#include <utility>
+
 #include "asylo/grpc/auth/enclave_credentials_options.h"
-#include "asylo/grpc/auth/util/bridge_cpp_to_c.h"
+#include "include/grpcpp/security/server_credentials.h"
 #include "src/cpp/server/secure_server_credentials.h"
 
 namespace asylo {
 
 std::shared_ptr<::grpc::ServerCredentials> EnclaveServerCredentials(
-    const EnclaveCredentialsOptions &options) {
-  // Translate C++ options struct to C options struct.
-  grpc_enclave_credentials_options c_opts;
-  grpc_enclave_credentials_options_init(&c_opts);
-  CopyEnclaveCredentialsOptions(options, &c_opts);
-
+    EnclaveCredentialsOptions options) {
   // Create a server credentials objects using the options.
-  auto creds = std::shared_ptr<::grpc::ServerCredentials>(
-      new ::grpc::SecureServerCredentials(
-          grpc_enclave_server_credentials_create(&c_opts).release()));
-  grpc_enclave_credentials_options_destroy(&c_opts);
-  return creds;
+  return std::make_shared<::grpc::SecureServerCredentials>(
+      new grpc_enclave_server_credentials(std::move(options)));
 }
 
 }  // namespace asylo

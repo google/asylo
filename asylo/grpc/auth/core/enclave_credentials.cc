@@ -18,42 +18,14 @@
 
 #include "asylo/grpc/auth/core/enclave_credentials.h"
 
-#include <string.h>
+#include <iterator>
+#include <utility>
 
-#include "asylo/grpc/auth/core/assertion_description.h"
 #include "asylo/grpc/auth/core/enclave_security_connector.h"
-#include "asylo/grpc/auth/util/safe_string.h"
-#include "include/grpc/support/alloc.h"
-#include "include/grpc/support/log.h"
+#include "asylo/grpc/auth/enclave_credentials_options.h"
 #include "src/core/lib/channel/channel_args.h"
 #include "src/core/lib/gprpp/ref_counted_ptr.h"
 #include "src/core/lib/security/credentials/credentials.h"
-
-grpc_core::RefCountedPtr<grpc_channel_credentials>
-grpc_enclave_channel_credentials_create(
-    const grpc_enclave_credentials_options *options) {
-  return grpc_core::MakeRefCounted<grpc_enclave_channel_credentials>(*options);
-}
-
-grpc_core::RefCountedPtr<grpc_server_credentials>
-grpc_enclave_server_credentials_create(
-    const grpc_enclave_credentials_options *options) {
-  return grpc_core::MakeRefCounted<grpc_enclave_server_credentials>(*options);
-}
-
-// Frees any memory allocated by this channel credentials object.
-grpc_enclave_channel_credentials::~grpc_enclave_channel_credentials() {
-  safe_string_free(&additional_authenticated_data_);
-  assertion_description_array_free(&self_assertions_);
-  assertion_description_array_free(&accepted_peer_assertions_);
-}
-
-// Frees any memory allocated by this server credentials object.
-grpc_enclave_server_credentials::~grpc_enclave_server_credentials() {
-  safe_string_free(&additional_authenticated_data_);
-  assertion_description_array_free(&self_assertions_);
-  assertion_description_array_free(&accepted_peer_assertions_);
-}
 
 // Creates a grpc_enclave_channel_security_connector object.
 grpc_core::RefCountedPtr<grpc_channel_security_connector>
@@ -72,41 +44,25 @@ grpc_enclave_server_credentials::create_security_connector() {
 }
 
 grpc_enclave_channel_credentials::grpc_enclave_channel_credentials(
-    const grpc_enclave_credentials_options &options)
-    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_ENCLAVE) {
-  // Initialize all members.
-  safe_string_init(&additional_authenticated_data_);
-  assertion_description_array_init(/*count=*/0, &self_assertions_);
-  assertion_description_array_init(/*count=*/0, &accepted_peer_assertions_);
-
-  // Copy parameters.
-  safe_string_copy(/*dest=*/&additional_authenticated_data_,
-                   /*src=*/&options.additional_authenticated_data);
-  assertion_description_array_copy(/*src=*/&options.self_assertions,
-                                   /*dest=*/&self_assertions_);
-  assertion_description_array_copy(
-      /*src=*/&options.accepted_peer_assertions,
-      /*dest=*/&accepted_peer_assertions_);
-
-  peer_acl_ = options.peer_acl;
-}
+    asylo::EnclaveCredentialsOptions options)
+    : grpc_channel_credentials(GRPC_CREDENTIALS_TYPE_ENCLAVE),
+      additional_authenticated_data(
+          std::move(options.additional_authenticated_data)),
+      self_assertions(std::make_move_iterator(options.self_assertions.begin()),
+                      std::make_move_iterator(options.self_assertions.end())),
+      accepted_peer_assertions(
+          std::make_move_iterator(options.accepted_peer_assertions.begin()),
+          std::make_move_iterator(options.accepted_peer_assertions.end())),
+      peer_acl(std::move(options.peer_acl)) {}
 
 grpc_enclave_server_credentials::grpc_enclave_server_credentials(
-    const grpc_enclave_credentials_options &options)
-    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_ENCLAVE) {
-  // Initialize all members.
-  safe_string_init(&additional_authenticated_data_);
-  assertion_description_array_init(/*count=*/0, &self_assertions_);
-  assertion_description_array_init(/*count=*/0, &accepted_peer_assertions_);
-
-  // Copy parameters.
-  safe_string_copy(/*dest=*/&additional_authenticated_data_,
-                   /*src=*/&options.additional_authenticated_data);
-  assertion_description_array_copy(/*src=*/&options.self_assertions,
-                                   /*dest=*/&self_assertions_);
-  assertion_description_array_copy(
-      /*src=*/&options.accepted_peer_assertions,
-      /*dest=*/&accepted_peer_assertions_);
-
-  peer_acl_ = options.peer_acl;
-}
+    asylo::EnclaveCredentialsOptions options)
+    : grpc_server_credentials(GRPC_CREDENTIALS_TYPE_ENCLAVE),
+      additional_authenticated_data(
+          std::move(options.additional_authenticated_data)),
+      self_assertions(std::make_move_iterator(options.self_assertions.begin()),
+                      std::make_move_iterator(options.self_assertions.end())),
+      accepted_peer_assertions(
+          std::make_move_iterator(options.accepted_peer_assertions.begin()),
+          std::make_move_iterator(options.accepted_peer_assertions.end())),
+      peer_acl(std::move(options.peer_acl)) {}
