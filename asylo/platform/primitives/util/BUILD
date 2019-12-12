@@ -22,9 +22,11 @@ package(
     default_visibility = ["//asylo:implementation"],
 )
 
-exports_files([
-    "trusted_memory.h",
-])
+cc_library(
+    name = "trusted_memory",
+    hdrs = ["trusted_memory.h"],
+    deps = ["//asylo/platform/primitives:trusted_primitives"],
+)
 
 # Utilities for conversions between Asylo Status and PrimitiveStatus.
 cc_library(

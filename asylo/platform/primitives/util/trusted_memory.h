@@ -24,18 +24,27 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 
 namespace asylo {
+namespace primitives {
 
-// Checks whether |pointer| is not nullptr and is within the enclave. Returns
-// true if the pointer is valid; false if not.
+// Checks whether |pointer| is not nullptr and points to an object located in
+// memory inside the enclave. Returns true if the pointer is valid; false if
+// not.
 template <typename T>
 bool IsValidEnclaveAddress(const T *pointer) {
-  if (pointer == nullptr || !primitives::TrustedPrimitives::IsInsideEnclave(
-                                pointer, sizeof(*pointer))) {
-    return false;
-  }
-  return true;
+  return pointer != nullptr &&
+         primitives::TrustedPrimitives::IsInsideEnclave(pointer, sizeof(T));
 }
 
+// Checks whether |pointer| is not nullptr and points to an object located in
+// memory outside the enclave. Returns true if the pointer is valid; false if
+// not.
+template <typename T>
+bool IsValidUntrustedAddress(const T *pointer) {
+  return pointer != nullptr &&
+         primitives::TrustedPrimitives::IsOutsideEnclave(pointer, sizeof(T));
+}
+
+}  // namespace primitives
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_PRIMITIVES_UTIL_TRUSTED_MEMORY_H_

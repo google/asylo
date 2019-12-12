@@ -39,6 +39,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/platform/primitives/util/trusted_memory.h"
 #include "asylo/platform/primitives/util/trusted_runtime_helper.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 #include "asylo/util/cleanup.h"
@@ -185,6 +186,11 @@ PrimitiveStatus TrustedPrimitives::RegisterEntryHandler(
 
 int asylo_enclave_call(uint64_t selector, void *buffer) {
   SgxParams *const sgx_params = reinterpret_cast<SgxParams *>(buffer);
+  if (!IsValidUntrustedAddress(sgx_params)) {
+    PrimitiveStatus status{error::GoogleError::INVALID_ARGUMENT,
+                           "input should lie within untrusted memory."};
+    return status.error_code();
+  }
 
   const void *input = sgx_params->input;
   size_t input_size = sgx_params->input_size;

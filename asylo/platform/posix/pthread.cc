@@ -99,7 +99,7 @@ __pthread_list_node_t *alloc_list_node(pthread_t thread_id) {
 void free_list_node(__pthread_list_node_t *node) { delete node; }
 
 int pthread_mutex_check_parameter(pthread_mutex_t *mutex) {
-  if (!asylo::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
     return EFAULT;
   }
 
@@ -228,7 +228,7 @@ asylo::ThreadManager::ThreadOptions CreateOptions(
 // pthread_rwlock_trywrlock_internal() respectively.
 template <int(TryLockFunc)(pthread_rwlock_t *)>
 int pthread_rwlock_lock(pthread_rwlock_t *rwlock) {
-  if (!asylo::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -435,7 +435,7 @@ int pthread_setspecific(pthread_key_t key, const void *value) {
 // Initializes |mutex|, |attr| is unused.
 int pthread_mutex_init(pthread_mutex_t *mutex,
                        const pthread_mutexattr_t *attr) {
-  if (!asylo::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
     return EFAULT;
   }
 
@@ -445,7 +445,7 @@ int pthread_mutex_init(pthread_mutex_t *mutex,
 
 // Destroys |mutex|, returns error if there are threads waiting on |mutex|.
 int pthread_mutex_destroy(pthread_mutex_t *mutex) {
-  if (!asylo::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
     return EFAULT;
   }
 
@@ -535,7 +535,7 @@ int pthread_once(pthread_once_t *once, void (*init_routine)(void)) {
 
 // Initializes |cond|, |attr| is unused.
 int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
-  if (!asylo::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
     return EFAULT;
   }
 
@@ -545,7 +545,7 @@ int pthread_cond_init(pthread_cond_t *cond, const pthread_condattr_t *attr) {
 
 // Destroys |cond|, errors if there are threads waiting on |cond|.
 int pthread_cond_destroy(pthread_cond_t *cond) {
-  if (!asylo::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
     return EFAULT;
   }
 
@@ -569,14 +569,14 @@ int pthread_cond_destroy(pthread_cond_t *cond) {
 // never time out, acting like pthread_cond_wait().
 int pthread_cond_timedwait(pthread_cond_t *cond, pthread_mutex_t *mutex,
                            const struct timespec *deadline) {
-  if (!asylo::IsValidEnclaveAddress<pthread_cond_t>(cond) ||
-      !asylo::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond) ||
+      !asylo::primitives::IsValidEnclaveAddress<pthread_mutex_t>(mutex)) {
     return EFAULT;
   }
 
   // If a deadline has been specified, ensure it is valid.
   if (deadline != nullptr &&
-      !asylo::IsValidEnclaveAddress<timespec>(deadline)) {
+      !asylo::primitives::IsValidEnclaveAddress<timespec>(deadline)) {
     return EFAULT;
   }
 
@@ -645,7 +645,7 @@ int pthread_condattr_destroy(pthread_condattr_t *attr) { return 0; }
 
 // Wakes the first waiting thread on |cond|.
 int pthread_cond_signal(pthread_cond_t *cond) {
-  if (!asylo::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
     return EFAULT;
   }
 
@@ -662,7 +662,7 @@ int pthread_cond_signal(pthread_cond_t *cond) {
 
 // Wakes all the waiting threads on |cond|.
 int pthread_cond_broadcast(pthread_cond_t *cond) {
-  if (!asylo::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_cond_t>(cond)) {
     return EFAULT;
   }
 
@@ -678,7 +678,7 @@ int pthread_cond_broadcast(pthread_cond_t *cond) {
 // Initialize |sem| with an initial semaphore value of |value|. |pshared| must
 // be 0; shared semaphores are not supported.
 int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
-  if (!asylo::IsValidEnclaveAddress<sem_t>(sem)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<sem_t>(sem)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -704,8 +704,8 @@ int sem_init(sem_t *sem, const int pshared, const unsigned int value) {
 
 // Get the current value of |sem| and write it to |sval|.
 int sem_getvalue(sem_t *sem, int *sval) {
-  if (!asylo::IsValidEnclaveAddress<sem_t>(sem) ||
-      !asylo::IsValidEnclaveAddress<int>(sval)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<sem_t>(sem) ||
+      !asylo::primitives::IsValidEnclaveAddress<int>(sval)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -716,7 +716,7 @@ int sem_getvalue(sem_t *sem, int *sval) {
 
 // Unlock |sem|, unblocking a thread that might be waiting for it.
 int sem_post(sem_t *sem) {
-  if (!asylo::IsValidEnclaveAddress<sem_t>(sem)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<sem_t>(sem)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -730,12 +730,12 @@ int sem_post(sem_t *sem) {
 // been unlocked. Returns -1 on err. errno will be set to ETIMEDOUT if the
 // failure is due to a timeout.
 int sem_timedwait(sem_t *sem, const timespec *abs_timeout) {
-  if (!asylo::IsValidEnclaveAddress<sem_t>(sem)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<sem_t>(sem)) {
     return ConvertToErrno(EFAULT);
   }
 
   if (abs_timeout != nullptr &&
-      !asylo::IsValidEnclaveAddress<timespec>(abs_timeout)) {
+      !asylo::primitives::IsValidEnclaveAddress<timespec>(abs_timeout)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -776,7 +776,7 @@ int sem_trywait(sem_t *sem) {
 }
 
 int sem_destroy(sem_t *sem) {
-  if (!asylo::IsValidEnclaveAddress<sem_t>(sem)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<sem_t>(sem)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -795,7 +795,7 @@ int sem_destroy(sem_t *sem) {
 
 int pthread_rwlock_init(pthread_rwlock_t *rwlock,
                         const pthread_rwlockattr_t *attr) {
-  if (!asylo::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -805,7 +805,7 @@ int pthread_rwlock_init(pthread_rwlock_t *rwlock,
 }
 
 int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
-  if (!asylo::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -814,7 +814,7 @@ int pthread_rwlock_tryrdlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_rwlock_trywrlock(pthread_rwlock_t *rwlock) {
-  if (!asylo::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -831,7 +831,7 @@ int pthread_rwlock_wrlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
-  if (!asylo::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -848,7 +848,7 @@ int pthread_rwlock_unlock(pthread_rwlock_t *rwlock) {
 }
 
 int pthread_rwlock_destroy(pthread_rwlock_t *rwlock) {
-  if (!asylo::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_rwlock_t>(rwlock)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -889,7 +889,7 @@ int pthread_mutexattr_settype(pthread_mutexattr_t *mutexattr, int type) {
 }
 
 int pthread_attr_init(pthread_attr_t *attr) {
-  if (!asylo::IsValidEnclaveAddress<pthread_attr_t>(attr)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_attr_t>(attr)) {
     return ConvertToErrno(EFAULT);
   }
 
@@ -898,14 +898,14 @@ int pthread_attr_init(pthread_attr_t *attr) {
 }
 
 int pthread_attr_destroy(pthread_attr_t *attr) {
-  if (!asylo::IsValidEnclaveAddress<pthread_attr_t>(attr)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_attr_t>(attr)) {
     return ConvertToErrno(EFAULT);
   }
   return 0;
 }
 
 int pthread_attr_setdetachstate(pthread_attr_t *attr, int type) {
-  if (!asylo::IsValidEnclaveAddress<pthread_attr_t>(attr)) {
+  if (!asylo::primitives::IsValidEnclaveAddress<pthread_attr_t>(attr)) {
     return ConvertToErrno(EFAULT);
   }
 

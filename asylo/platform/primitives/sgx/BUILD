@@ -113,6 +113,7 @@ cc_library(
                 "//asylo/platform/primitives:trusted_runtime",
                 "//asylo/platform/system_call/type_conversions",
                 "//asylo/platform/core:trusted_spin_lock",
+                "//asylo/platform/primitives/util:trusted_memory",
             ],
         },
         no_match_error = "Must be built in the Asylo toolchain",

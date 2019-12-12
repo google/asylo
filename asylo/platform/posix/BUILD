@@ -153,6 +153,7 @@ cc_library(
         "//asylo/platform/posix/sockets",
         "//asylo/platform/posix/signal:signal_manager",
         "//asylo/platform/posix/threading:thread_manager",
+        "//asylo/platform/primitives/util:trusted_memory",
         "//asylo/platform/system",
         "//asylo/util:status",
     ] + select(

@@ -104,7 +104,6 @@ cc_library(
     name = "trusted_backend",
     hdrs = [
         "trusted_runtime.h",
-        "//asylo/platform/primitives/util:trusted_memory.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
     tags = ASYLO_ALL_BACKEND_TAGS,
