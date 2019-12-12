@@ -22,7 +22,6 @@
 #include <memory>
 
 #include "asylo/platform/primitives/trusted_primitives.h"
-#include "asylo/platform/primitives/trusted_runtime.h"
 
 namespace asylo {
 
@@ -30,7 +29,8 @@ namespace asylo {
 // true if the pointer is valid; false if not.
 template <typename T>
 bool IsValidEnclaveAddress(const T *pointer) {
-  if (pointer == nullptr || !enc_is_within_enclave(pointer, sizeof(*pointer))) {
+  if (pointer == nullptr || !primitives::TrustedPrimitives::IsInsideEnclave(
+                                pointer, sizeof(*pointer))) {
     return false;
   }
   return true;

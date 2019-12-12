@@ -44,6 +44,8 @@ void untrusted_cache_free(void *buffer) {
 
 namespace asylo {
 
+using primitives::TrustedPrimitives;
+
 bool UntrustedCacheMalloc::is_destroyed_ = false;
 
 UntrustedCacheMalloc *UntrustedCacheMalloc::Instance() {
@@ -93,7 +95,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
           primitives::AllocateUntrustedBuffers(kPoolIncrement, kPoolEntrySize);
       for (int i = 0; i < kPoolIncrement; i++) {
         if (!buffers[i] ||
-            !enc_is_outside_enclave(buffers[i], kPoolEntrySize)) {
+            !TrustedPrimitives::IsOutsideEnclave(buffers[i], kPoolEntrySize)) {
           abort();
         }
         buffer_pool_.push(buffers[i]);

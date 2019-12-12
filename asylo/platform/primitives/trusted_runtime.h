@@ -65,14 +65,6 @@ uint64_t enc_thread_self();
 // enc_thread_self.
 constexpr uint64_t kInvalidThread = 0;
 
-// Validates that the address-range [|address|, |address| +|size|) is fully
-// contained within the enclave.
-bool enc_is_within_enclave(const void *address, size_t size);
-
-// Validates that the address-range [|address|, |address| +|size|) is fully
-// contained outside of the enclave.
-bool enc_is_outside_enclave(void const *address, size_t size);
-
 struct EnclaveMemoryLayout {
   // Enclave base load address.
   void *base;

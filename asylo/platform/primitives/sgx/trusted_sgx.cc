@@ -239,7 +239,7 @@ void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
   void *result;
   CHECK_OCALL(
       ocall_untrusted_local_alloc(&result, static_cast<uint64_t>(size)));
-  if (result && !enc_is_outside_enclave(result, static_cast<uint64_t>(size))) {
+  if (result && !IsOutsideEnclave(result, static_cast<uint64_t>(size))) {
     abort();
   }
 
@@ -258,11 +258,11 @@ void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
 }
 
 bool TrustedPrimitives::IsInsideEnclave(const void *addr, size_t size) {
-  return enc_is_within_enclave(addr, size);
+  return sgx_is_within_enclave(addr, size) == 1;
 }
 
 bool TrustedPrimitives::IsOutsideEnclave(const void *addr, size_t size) {
-  return enc_is_outside_enclave(addr, size);
+  return sgx_is_outside_enclave(addr, size) == 1;
 }
 
 void TrustedPrimitives::DebugPuts(const char *message) {

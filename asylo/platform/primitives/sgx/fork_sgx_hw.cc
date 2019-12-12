@@ -217,13 +217,15 @@ Status DecryptFromUntrustedMemory(AeadCryptor *cryptor,
   void *source_base =
       reinterpret_cast<void *>(snapshot_entry.ciphertext_base());
   size_t source_size = static_cast<size_t>(snapshot_entry.ciphertext_size());
-  if (!enc_is_outside_enclave(source_base, source_size)) {
+  if (!primitives::TrustedPrimitives::IsOutsideEnclave(source_base,
+                                                       source_size)) {
     return Status(error::GoogleError::INTERNAL,
                   "snapshot is not outside the enclave");
   }
   void *nonce_base = reinterpret_cast<void *>(snapshot_entry.nonce_base());
   size_t nonce_size = static_cast<size_t>(snapshot_entry.nonce_size());
-  if (!enc_is_outside_enclave(nonce_base, nonce_size)) {
+  if (!primitives::TrustedPrimitives::IsOutsideEnclave(nonce_base,
+                                                       nonce_size)) {
     return Status(error::GoogleError::INTERNAL,
                   "snapshot nonce is not outside the enclave");
   }
@@ -288,8 +290,8 @@ Status DecryptFromSnapshot(
     size_t expected_plaintext_size =
         std::min(cryptor->MaxMessageSize(), bytes_left);
     // We should not decrypt to any untrusted memory.
-    if (!current_position ||
-        !enc_is_within_enclave(current_position, expected_plaintext_size)) {
+    if (!current_position || !primitives::TrustedPrimitives::IsInsideEnclave(
+                                 current_position, expected_plaintext_size)) {
       return Status(error::GoogleError::INTERNAL,
                     "enclave memory is not found or unexpected");
     }

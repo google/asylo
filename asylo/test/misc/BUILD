@@ -476,6 +476,7 @@ cc_enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
         "@com_google_absl//absl/memory",
         "@com_google_googletest//:gtest",
     ],

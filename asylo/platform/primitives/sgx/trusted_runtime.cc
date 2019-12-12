@@ -84,14 +84,6 @@ uint64_t enc_thread_self() {
   return reinterpret_cast<uint64_t>(&thread_identity);
 }
 
-bool enc_is_within_enclave(void const *address, size_t size) {
-  return sgx_is_within_enclave(address, size) == 1;
-}
-
-bool enc_is_outside_enclave(void const *address, size_t size) {
-  return sgx_is_outside_enclave(address, size) == 1;
-}
-
 void enc_block_entries() { sgx_block_entries(); }
 
 void enc_unblock_entries() { sgx_unblock_entries(); }

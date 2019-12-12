@@ -77,7 +77,7 @@ void LogError(const Status &status) {
 // Validates that the address-range [|address|, |address| + |size|) is fully
 // contained in enclave trusted memory.
 PrimitiveStatus VerifyTrustedAddressRange(void *address, size_t size) {
-  if (!enc_is_within_enclave(address, size)) {
+  if (!TrustedPrimitives::IsInsideEnclave(address, size)) {
     return PrimitiveStatus(
         error::GoogleError::INVALID_ARGUMENT,
         "Unexpected reference to resource outside the enclave trusted memory.");
