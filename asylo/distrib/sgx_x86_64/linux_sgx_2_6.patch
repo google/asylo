@@ -4827,7 +4827,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,722 @@
+@@ -0,0 +1,730 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4894,7 +4894,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    fields = {
 +        "config": ("An SGXEnclaveConfigInfo provider that represents the " +
 +                   "configuration options"),
-+        "unsigned": "A target created by sgx_cc_unsigned_enclave",
++        "unsigned": "A cc_unsigned_enclave in an SGX backend",
 +    },
 +)
 +
@@ -4975,9 +4975,16 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        fragments = ["cpp"],
 +    )
 +
-+sgx_cc_unsigned_enclave = _make_sgx_cc_unsigned_enclave(transition = False)
++_unsigned_enclave_deprecation = (
++    "sgx_unsigned_enclave is replaced by sgx_cc_unsigned_enclave in " +
++    "sgx_rules.bzl, or its more generic form, cc_unsigned_enclave in " +
++    "asylo.bzl."
++)
++_sgx_cc_unsigned_enclave = _make_sgx_cc_unsigned_enclave(
++    transition = False,
++)
 +
-+sgx_cc_unsigned_enclave_transition = None
++_sgx_cc_unsigned_enclave_transition = None
 +
 +def sgx_unsigned_enclave(
 +        name,
@@ -4996,9 +5003,10 @@ diff -Nur /dev/null sgx_sdk.bzl
 +          Optional.
 +      **kwargs: cc_binary arguments.
 +    """
++    kwargs["deprecation"] = _unsigned_enclave_deprecation
 +    if not transitions.supported(native.package_name()):
 +        tags = kwargs.pop("tags", []) + ["asylo-cfh"]
-+        sgx_cc_unsigned_enclave(
++        _sgx_cc_unsigned_enclave(
 +            name = name,
 +            stamp = not (not stamp),
 +            tags = tags,
@@ -5007,7 +5015,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    else:
 +        kwargs = backend_tools.merge_dicts(kwargs, {"stamp": stamp})
 +        backend_tools.all_backends(
-+            rule_or_macro = sgx_cc_unsigned_enclave_transition,
++            rule_or_macro = _sgx_cc_unsigned_enclave_transition,
 +            name = name,
 +            backends = backends,
 +            name_by_backend = name_by_backend,

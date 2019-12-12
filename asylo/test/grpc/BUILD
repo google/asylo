@@ -15,10 +15,10 @@
 #
 
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
-load("//asylo/bazel:asylo.bzl", "cc_test")
+load("//asylo/bazel:asylo.bzl", "cc_test", "cc_unsigned_enclave", "debug_sign_enclave")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx", "sgx_enclave_configuration")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -87,10 +87,11 @@ cc_library(
 )
 
 # Enclave with a service_proto server running.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "enclave_insecure_server_unsigned.so",
     testonly = 1,
     srcs = ["enclave_insecure_server.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
@@ -102,18 +103,20 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "enclave_insecure_server.so",
-    unsigned = "enclave_insecure_server_unsigned.so",
     testonly = 1,
+    backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "enclave_insecure_server_unsigned.so",
 )
 
 # Enclave running a gRPC server backed by enclave gRPC security.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "enclave_secure_server_unsigned.so",
     testonly = 1,
     srcs = ["enclave_secure_server.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
@@ -127,17 +130,19 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "enclave_secure_server.so",
-    unsigned = "enclave_secure_server_unsigned.so",
     testonly = 1,
+    backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "enclave_secure_server_unsigned.so",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "server_enclave_unsigned.so",
     testonly = 1,
     srcs = ["server_enclave.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":messenger_server_impl",
@@ -149,20 +154,22 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "server_enclave.so",
-    unsigned = "server_enclave_unsigned.so",
     testonly = 1,
+    backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "server_enclave_unsigned.so",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "client_enclave_unsigned.so",
     testonly = 1,
     srcs = [
         "client_enclave.cc",
         "client_enclave.h",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
@@ -182,11 +189,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "client_enclave.so",
-    unsigned = "client_enclave_unsigned.so",
     testonly = 1,
+    backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "client_enclave_unsigned.so",
 )
 
 # Test for gRPC in Asylo.
@@ -295,16 +303,17 @@ sgx_enclave_test(
     ],
 )
 
-sgx_enclave_configuration(
+sgx.enclave_configuration(
     name = "client_side_auth_test_enclave_config",
     base = "//asylo/grpc/util:grpc_enclave_config",
     isvsvn = "2",
     prodid = "1",
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "client_side_auth_server_enclave.so",
     testonly = 1,
+    backends = sgx.backend_labels,
     config = ":client_side_auth_test_enclave_config",
     unsigned = ":server_enclave_unsigned.so",
 )

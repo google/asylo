@@ -16,12 +16,14 @@
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
 # Used to enable gtest tests to run inside an enclave.
-load(
-    "//asylo/bazel:asylo.bzl",
-    "cc_test_and_cc_enclave_test",
-    "enclave_test",
-)
+load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load(
+    "//asylo/bazel:sgx_rules.bzl",
+    "sgx_cc_unsigned_enclave",
+    "sgx_debug_sign_enclave",
+    "sgx_enclave_test",
+)
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
@@ -529,7 +531,7 @@ cc_test(
     ],
 )
 
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "remote_assertion_generator_test_util_enclave_unsigned.so",
     testonly = 1,
     srcs = ["remote_assertion_generator_test_util_enclave.cc"],
@@ -554,11 +556,11 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "remote_assertion_generator_test_util_enclave.so",
-    unsigned = "remote_assertion_generator_test_util_enclave_unsigned.so",
-    config = "//asylo/grpc/util:grpc_enclave_config",
     testonly = 1,
+    config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "remote_assertion_generator_test_util_enclave_unsigned.so",
 )
 
 sgx.enclave_configuration(
@@ -567,7 +569,7 @@ sgx.enclave_configuration(
     tcs_num = "50",
 )
 
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "remote_assertion_generator_enclave_unsigned.so",
     srcs = [
         "remote_assertion_generator_enclave.cc",
@@ -598,16 +600,15 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "remote_assertion_generator_enclave.so",
-    unsigned = "remote_assertion_generator_enclave_unsigned.so",
     config = ":remote_assertion_generator_enclave_config",
+    unsigned = "remote_assertion_generator_enclave_unsigned.so",
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "remote_assertion_generator_enclave_test",
     srcs = ["remote_assertion_generator_enclave_test.cc"],
-    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "assertion_generator_enclave": ":remote_assertion_generator_enclave.so",
@@ -1652,7 +1653,7 @@ cc_proto_library(
     deps = ["report_oracle_enclave_proto"],
 )
 
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "report_oracle_enclave_unsigned.so",
     srcs = ["report_oracle_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -1671,16 +1672,15 @@ sgx.enclave_configuration(
     provision_key = "1",
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "report_oracle_enclave.so",
-    unsigned = "report_oracle_enclave_unsigned.so",
     config = ":report_oracle_enclave_config",
+    unsigned = "report_oracle_enclave_unsigned.so",
 )
 
-enclave_test(
+sgx_enclave_test(
     name = "dcap_intel_architectural_enclave_interface_e2e_test",
     srcs = ["dcap_intel_architectural_enclave_interface_e2e_test.cc"],
-    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "report_oracle_enclave_path": ":report_oracle_enclave.so",

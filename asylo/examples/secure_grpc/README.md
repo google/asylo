@@ -192,10 +192,10 @@ sgx_enclave_configuration(
 
 WARNING: This ACL specifies an MRSIGNER value corresponding to Asylo’s RSA-3072
 debug signing key. This key is used to sign all enclaves defined as
-`sgx.debug_enclave` targets, like the ones used in this example. The private key
-is distributed in plaintext within Asylo. As such, the key is not trustworthy
-and enclaves signed with this key should not be used within production systems.
-We recommend following
+`debug_sign_enclave` targets, like the ones used in this example. The private
+key is distributed in plaintext within Asylo. As such, the key is not
+trustworthy and enclaves signed with this key should not be used within
+production systems. We recommend following
 [Intel’s suggested key stewardship practices](https://software.intel.com/en-us/node/702980)
 for safeguarding enclave-signing keys.
 

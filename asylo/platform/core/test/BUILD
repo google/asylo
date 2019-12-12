@@ -17,9 +17,11 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_test",
 )
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
@@ -51,7 +53,7 @@ cc_enclave_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "test_proto_unsigned.so",
     srcs = ["proto_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -64,12 +66,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "test_proto.so",
     unsigned = "test_proto_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "proto_test",
     srcs = ["proto_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -85,7 +87,7 @@ sgx_enclave_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "getenv_test_enclave_unsigned.so",
     srcs = ["getenv_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -98,12 +100,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "getenv_test_enclave.so",
     unsigned = "getenv_test_enclave_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "getenv_test",
     srcs = ["getenv_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -120,7 +122,7 @@ sgx_enclave_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "enclave_api_test_proto_unsigned.so",
     srcs = ["enclave_api_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -133,12 +135,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "enclave_api_test_proto.so",
     unsigned = "enclave_api_test_proto_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "enclave_api_test",
     srcs = ["enclave_api_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -174,6 +176,7 @@ sgx.enclave_configuration(
 cc_enclave_test(
     name = "lock_test",
     srcs = ["lock_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclave_config = ":many_threads_enclave_config",
     deps = [

@@ -18,9 +18,10 @@ load(
     "//asylo/bazel:asylo.bzl",
     "enclave_loader",
 )
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 # Example demonstrating gRPC in Asylo for remote SGX backend.
 
@@ -32,6 +33,7 @@ package(
 enclave_loader(
     name = "grpc_server",
     srcs = ["grpc_server_driver.cc"],
+    backends = sgx.backend_labels,  # Has SGX loader dependencies
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "//asylo/examples/grpc_server:grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],

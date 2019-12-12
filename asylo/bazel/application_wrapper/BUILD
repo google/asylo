@@ -21,7 +21,12 @@ load(
     "cc_test",
 )
 load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load(
+    "//asylo/bazel:sgx_rules.bzl",
+    "sgx_cc_unsigned_enclave",
+    "sgx_debug_sign_enclave",
+    "sgx_enclave_test",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
@@ -148,7 +153,7 @@ sgx.enclave_configuration(
 )
 
 # An application enclave wrapping :test_application.
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "application_wrapper_enclave_test_enclave_unsigned.so",
     testonly = 1,
     copts = ASYLO_DEFAULT_COPTS,
@@ -158,11 +163,11 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "application_wrapper_enclave_test_enclave.so",
-    unsigned = "application_wrapper_enclave_test_enclave_unsigned.so",
-    config = ":application_wrapper_enclave_test_configuration",
     testonly = 1,
+    config = ":application_wrapper_enclave_test_configuration",
+    unsigned = "application_wrapper_enclave_test_enclave_unsigned.so",
 )
 
 # A test of ApplicationWrapperEnclave.
@@ -225,6 +230,7 @@ cc_library(
 # A test application.
 cc_binary(
     name = "test_application",
+    testonly = 1,
     srcs = ["test_application.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo/util:logging"],

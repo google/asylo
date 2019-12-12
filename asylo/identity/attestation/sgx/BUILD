@@ -14,8 +14,7 @@
 # limitations under the License.
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave", "sgx_enclave_test")
 
 licenses(["notice"])
 
@@ -75,7 +74,7 @@ cc_library(
     alwayslink = 1,
 )
 
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "sgx_age_remote_assertion_generator_test_enclave_unsigned.so",
     testonly = 1,
     srcs = ["sgx_age_remote_assertion_generator_test_enclave.cc"],
@@ -90,11 +89,11 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "sgx_age_remote_assertion_generator_test_enclave.so",
-    unsigned = "sgx_age_remote_assertion_generator_test_enclave_unsigned.so",
-    config = "//asylo/grpc/util:grpc_enclave_config",
     testonly = 1,
+    config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "sgx_age_remote_assertion_generator_test_enclave_unsigned.so",
 )
 
 sgx_enclave_test(

@@ -16,13 +16,14 @@
 
 # Socket implementation, tests, and perf measurement tools.
 
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
     "cc_test",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_test",
 )
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])
@@ -153,7 +154,7 @@ cc_proto_library(
 )
 
 # Enclave for UNIX domain-socket test.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "domain_socket_test_enclave_unsigned.so",
     srcs = ["domain_socket_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -167,13 +168,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "domain_socket_test_enclave.so",
     unsigned = "domain_socket_test_enclave_unsigned.so",
 )
 
 # Driver for UNIX domain-socket test.
-sgx_enclave_test(
+enclave_test(
     name = "domain_socket_test",
     size = "small",
     srcs = ["domain_socket_test_driver.cc"],
@@ -198,7 +199,7 @@ sgx_enclave_test(
 )
 
 # Enclave for INET6 socket test.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "inet6_socket_test_enclave_unsigned.so",
     srcs = ["inet6_socket_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -212,13 +213,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "inet6_socket_test_enclave.so",
     unsigned = "inet6_socket_test_enclave_unsigned.so",
 )
 
 # Driver for INET6 socket test.
-sgx_enclave_test(
+enclave_test(
     name = "inet6_socket_test",
     srcs = ["inet6_socket_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -238,7 +239,7 @@ sgx_enclave_test(
 )
 
 # Enclave for getaddrinfo and freeaddrinfo tests.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "addrinfo_test_enclave_unsigned.so",
     srcs = ["addrinfo_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -248,13 +249,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "addrinfo_test_enclave.so",
     unsigned = "addrinfo_test_enclave_unsigned.so",
 )
 
 # Driver for getaddrinfo and freeaddrinfo tests.
-sgx_enclave_test(
+enclave_test(
     name = "addrinfo_test",
     srcs = ["addrinfo_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,

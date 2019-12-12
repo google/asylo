@@ -94,9 +94,10 @@ Define the enclave in your BUILD file using the `sgx_unsigned_enclave`,
 `sgx_generate_enclave_signing_material`, and `sgx_signed_enclave` rules.
 
 ```python
+load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
   name = "enclave_unsigned.so",
   ...
 )
@@ -129,8 +130,8 @@ files:
 
 The three rules have the following purposes:
 
-*   `sgx.unsigned_enclave` produces a `cc_binary` library object built with the
-    Asylo toolchain. This binary will be used to produce the signed release
+*   `sgx_cc_unsigned_enclave` produces a `cc_binary` library object built with
+    the Asylo toolchain. This binary will be used to produce the signed release
     enclave.
 *   `sgx.generate_enclave_signing_material` extracts the parts of the SGX
     sigstruct (see

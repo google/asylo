@@ -17,6 +17,8 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
     "enclave_loader",
     "enclave_test",
 )
@@ -79,9 +81,10 @@ cc_proto_library(
 )
 
 # The enclave hosting the translation server.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "grpc_server_enclave_unsigned.so",
     srcs = ["grpc_server_enclave.cc"],
+    backends = sgx.backend_labels,  # Has SGX identity dependencies
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":grpc_server_config_cc_proto",
@@ -111,13 +114,14 @@ sgx.enclave_configuration(
     prodid = "2",
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "grpc_server_enclave.so",
-    unsigned = ":grpc_server_enclave_unsigned.so",
+    backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = ":grpc_server_enclave_unsigned.so",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "grpc_client_enclave_unsigned.so",
     srcs = [
         "grpc_client_enclave.cc",
@@ -137,10 +141,11 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "grpc_client_enclave.so",
-    unsigned = ":grpc_client_enclave_unsigned.so",
+    backends = sgx.backend_labels,
     config = ":grpc_client_config",
+    unsigned = ":grpc_client_enclave_unsigned.so",
 )
 
 cc_library(

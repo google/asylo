@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "enclave_loader")
+load("//asylo/bazel:asylo.bzl", "cc_unsigned_enclave", "debug_sign_enclave", "enclave_loader")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -38,7 +38,7 @@ cc_proto_library(
     deps = [":demo_proto"],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "demo_enclave_unsigned.so",
     srcs = ["demo_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -53,7 +53,7 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "demo_enclave.so",
     unsigned = "demo_enclave_unsigned.so",
 )
@@ -61,6 +61,7 @@ sgx.debug_enclave(
 enclave_loader(
     name = "quickstart",
     srcs = ["demo_driver.cc"],
+    backends = sgx.backend_labels,  # Has SGX loader dependencies
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":demo_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],

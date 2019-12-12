@@ -450,7 +450,9 @@ def all_backends(
     overall_tags = list(tags)
 
     testonly = kwargs.get("testonly", 0)
-    visibility = list(kwargs.get("visibility", ["//visibility:private"]))
+    visibility = kwargs.get("visibility", None)
+    if visibility:
+        visibility = list(kwargs["visibility"])
 
     default_backend = _preferred_backend(backend_dictionary)
     default_target = "//" + native.package_name() + ":" + name_by_backend[default_backend]

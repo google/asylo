@@ -17,17 +17,16 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
     "enclave_loader",
+    "enclave_test",
 )
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
-load(
-    "@linux_sgx//:sgx_sdk.bzl",
-    "sgx",
-)
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
-licenses(["notice"])  # Apache v2.0
+licenses(["notice"])
 
 # Example demonstrating gRPC in Asylo.
 
@@ -86,9 +85,10 @@ cc_proto_library(
 )
 
 # The enclave hosting the translation server.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "grpc_server_enclave_unsigned.so",
     srcs = ["grpc_server_enclave.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":grpc_server_config_cc_proto",
@@ -105,10 +105,11 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "grpc_server_enclave.so",
-    unsigned = "grpc_server_enclave_unsigned.so",
+    backends = sgx.backend_labels,
     config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "grpc_server_enclave_unsigned.so",
 )
 
 # The driver for the gRPC server enclave.
@@ -131,9 +132,10 @@ enclave_loader(
 
 # A test of the example using the generated client stubs rather than the gRPC
 # command-line interface.
-sgx_enclave_test(
+enclave_test(
     name = "grpc_server_test",
     srcs = ["grpc_server_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     data = [":grpc_server_host_loader"],
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},

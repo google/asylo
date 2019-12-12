@@ -21,7 +21,7 @@ load(
     "dlopen_enclave_test",
     "primitives_dlopen_enclave",
 )
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load("//asylo/bazel:asylo.bzl", "cc_unsigned_enclave", "debug_sign_enclave", "enclave_test")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
@@ -98,7 +98,7 @@ dlopen_enclave_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "hello_sgx_enclave_unsigned.so",
     srcs = [
         "hello_enclave.cc",
@@ -121,18 +121,19 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "hello_sgx_enclave.so",
     unsigned = "hello_sgx_enclave_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "hello_sgx_test",
     size = "small",
     srcs = [
         "hello_enclave.h",
         "hello_test.cc",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"hello": ":hello_sgx_enclave.so"},
     test_args = [

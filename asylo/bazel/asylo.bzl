@@ -347,7 +347,13 @@ def cc_unsigned_enclave(
     asylo = "asylo"
     if asylo in native.package_name():
         enclave_rule = cc_backend_unsigned_enclave_experimental
-    backend_tools.all_backends(enclave_rule, name, backends, name_by_backend, kwargs)
+    backend_tools.all_backends(
+        enclave_rule,
+        name,
+        backends,
+        name_by_backend,
+        kwargs,
+    )
 
 def debug_sign_enclave(
         name,
@@ -393,6 +399,7 @@ def cc_enclave_binary(
         backends = internal.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
+        testonly = 0,
         **kwargs):
     """Creates a cc_binary that runs an application inside an enclave.
 
@@ -474,6 +481,7 @@ def cc_enclave_binary(
         name = application_library_name,
         linkstatic = application_library_linkstatic,
         alwayslink = application_library_linkstatic,
+        testonly = testonly,
         **kwargs
     )
 
@@ -498,6 +506,7 @@ def cc_enclave_binary(
         config = enclave_build_config,
         backends = backends,
         name_by_backend = signed_name_by_backend,
+        testonly = testonly,
     )
 
     enclave_loader(
@@ -512,6 +521,7 @@ def cc_enclave_binary(
             asylo + "/bazel/application_wrapper:application_wrapper_driver",
         ],
         backends = backends,
+        testonly = testonly,
         **loader_kwargs
     )
 
@@ -970,7 +980,7 @@ def enclave_build_test(
     )
 
 def sgx_enclave_test(name, srcs, **kwargs):
-    """Build target for testing one or more instances of 'sgx.debug_enclave'.
+    """Build target for testing one or more instances of 'debug_sign_enclave'.
 
     This macro invokes enclave_test with the "asylo-sgx" tag added.
 

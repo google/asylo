@@ -455,14 +455,15 @@ The enclave requires the following additional targets:
     definitions.
 *   A `cc_proto_library` target that contains the C++ language specific
     extension to the enclave proto definitions.
-*   A `sgx.unsigned_enclave` target that contains the enclave behavior without
-    the configuration and signer identity metadata. This enclave is configured
-    with `grpc_enclave_config`, which expands the heap size and maximum number
-    of threads to accommodate gRPC's resource requirements.
-*   A `sgx.debug_enclave` target is a signed enclave that Asylo can load and run
-    in debug mode. This rule adds the enclave configuration and a signature of
-    the bits in `sgx.unsigned_enclave` to the unsigned enclave. The signing key
-    is a debug key that is distributed with the Asylo source code.
+*   A `sgx_cc_unsigned_enclave` target that contains the enclave behavior
+    without the configuration and signer identity metadata. This enclave is
+    configured with `grpc_enclave_config`, which expands the heap size and
+    maximum number of threads to accommodate gRPC's resource requirements.
+*   A `sgx_debug_sign_enclave` target is a signed enclave that Asylo can load
+    and run in debug mode. This rule adds the enclave configuration and a
+    signature of the bits in `sgx_cc_unsigned_enclave` to the unsigned enclave.
+    The signing key is a debug key that is distributed with the Asylo source
+    code.
 
 ```python
 proto_library(
@@ -476,7 +477,7 @@ cc_proto_library(
     deps = [":grpc_server_config_proto"],
 )
 
-sgx.unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "grpc_server_enclave_unsigned.so",
     srcs = ["grpc_server_enclave.cc"],
     deps = [
@@ -493,7 +494,7 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "grpc_server_enclave.so",
     unsigned = "grpc_server_enclave_unsigned.so",
     config = "//asylo/grpc/util:grpc_enclave_config",

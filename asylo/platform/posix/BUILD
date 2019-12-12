@@ -17,9 +17,11 @@
 load(
     "//asylo/bazel:asylo.bzl",
     "ASYLO_ALL_BACKEND_TAGS",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_test",
     cc_test = "cc_test_and_cc_enclave_test",
 )
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
@@ -222,6 +224,7 @@ sgx.enclave_configuration(
 cc_test(
     name = "pipe_test",
     srcs = ["pipe_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclave_test_config = ":pipe_test_config",
     deps = [
@@ -249,7 +252,7 @@ cc_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "fork_test_unsigned.so",
     srcs = ["fork_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -262,14 +265,15 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "fork_test.so",
     unsigned = "fork_test_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "fork_test",
     srcs = ["fork_test_driver.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "fork_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
@@ -287,12 +291,12 @@ sgx_enclave_test(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "fork_consistency_test.so",
     unsigned = "fork_consistency_test_unsigned.so",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "fork_consistency_test_unsigned.so",
     srcs = ["fork_consistency_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -304,9 +308,10 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "fork_consistency_test",
     srcs = ["fork_test_driver.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "fork_consistency_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
@@ -335,9 +340,10 @@ cc_proto_library(
     deps = [":fork_security_test_proto"],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "fork_security_test_unsigned.so",
     srcs = ["fork_security_test_enclave.cc"],
+    backends = sgx.backend_labels,  # Uses sgx:trusted_fork.
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":fork_security_test_cc_proto",
@@ -347,14 +353,15 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "fork_security_test.so",
     unsigned = "fork_security_test_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "fork_security_test",
     srcs = ["fork_security_test_driver.cc"],
+    backends = sgx.backend_labels,  # Has SGX loader dependencies
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": "fork_security_test.so"},
     test_args = ["--enclave_path='{enclave}'"],
@@ -389,8 +396,8 @@ cc_proto_library(
     deps = ["syscalls_test_proto"],
 )
 
-# SGX enclave used to test different syscalls.
-sgx.unsigned_enclave(
+# Enclave used to test different syscalls.
+cc_unsigned_enclave(
     name = "syscalls_test_unsigned.so",
     srcs = ["syscalls_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -410,12 +417,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "syscalls_test.so",
     unsigned = "syscalls_test_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "syscalls_test",
     srcs = ["syscalls_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -469,7 +476,7 @@ cc_proto_library(
     deps = ["in6_macro_test_proto"],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "in6_macro_test_unsigned.so",
     srcs = ["in6_macro_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -480,12 +487,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "in6_macro_test.so",
     unsigned = "in6_macro_test_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "in6_macro_test",
     srcs = ["in6_macro_test_loader.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -513,7 +520,7 @@ cc_proto_library(
     deps = ["clock_time_test_proto"],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "clock_time_test_unsigned.so",
     srcs = ["clock_time_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -525,12 +532,12 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "clock_time_test.so",
     unsigned = "clock_time_test_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "clock_time_test",
     srcs = ["clock_time_test_loader.cc"],
     copts = ASYLO_DEFAULT_COPTS,

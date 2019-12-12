@@ -14,7 +14,12 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_test",
+)
 load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test", "primitives_dlopen_enclave")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
@@ -107,12 +112,13 @@ dlopen_enclave_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "sgx_test_enclave_unsigned.so",
     testonly = 1,
     srcs = [
         "test_enclave.cc",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
@@ -135,16 +141,17 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "sgx_test_enclave.so",
-    unsigned = "sgx_test_enclave_unsigned.so",
     testonly = 1,
+    unsigned = "sgx_test_enclave_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "sgx_host_call_test",
     size = "medium",
     srcs = ["host_call_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS + ["-D_GNU_SOURCE"],
     enclaves = {"sgx": "sgx_test_enclave.so"},
     test_args = [

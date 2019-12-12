@@ -372,7 +372,7 @@ cc_proto_library(
     deps = [":demo_proto"],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "demo_enclave_unsigned.so",
     srcs = ["demo_enclave.cc"],
     deps = [
@@ -386,7 +386,7 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "demo_enclave.so",
     unsigned = "demo_enclave_unsigned.so",
 )
@@ -407,11 +407,11 @@ enclave_loader(
 ```
 
 The [Bazel](https://bazel.build) BUILD file shown above defines our enclave's
-logic in a `sgx.unsigned_enclave` called `demo_enclave_unsigned.so`. This target
+logic in a `cc_unsigned_enclave` called `demo_enclave_unsigned.so`. This target
 contains our implementation of `TrustedApplication` and is linked against the
-Asylo runtime. We use a `sgx.debug_enclave` rule to generate an enclave that has
-been signed with a debug key, and can be run in SGX simulation mode or on SGX
-hardware in debug mode.
+Asylo runtime. We use a `debug_sign_enclave` rule to generate an enclave that
+has been signed with a debug key, and can be run in supported backends (e.g.,
+SGX simulation mode or on SGX hardware in debug mode).
 
 The untrusted component is the target `:quickstart`, which contains code to
 handle the logic of initializing, running, and finalizing the enclave, as well

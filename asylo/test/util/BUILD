@@ -14,7 +14,13 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "ASYLO_ALL_BACKEND_TAGS", "cc_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "ASYLO_ALL_BACKEND_TAGS",
+    "cc_test",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+)
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
@@ -411,15 +417,17 @@ sh_library(
 
 # An enclave for testing purposes. All entry points use the default
 # implementations.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "do_nothing_enclave_unsigned.so",
     srcs = ["do_nothing_enclave.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo:enclave_runtime"],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "do_nothing_enclave.so",
+    backends = sgx.backend_labels,
     unsigned = "do_nothing_enclave_unsigned.so",
 )
 

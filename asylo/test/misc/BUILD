@@ -21,9 +21,12 @@ load(
     "//asylo/bazel:asylo.bzl",
     "cc_enclave_test",
     "cc_test",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_test",
 )
 load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_debug_sign_enclave", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])
@@ -68,8 +71,8 @@ cc_proto_library(
     deps = [":enclave_entry_count_test_proto"],
 )
 
-# Trivial SGX enclave.
-sgx.unsigned_enclave(
+# Trivial enclave.
+cc_unsigned_enclave(
     name = "hello_world_unsigned.so",
     srcs = ["hello_world.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -78,19 +81,19 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "hello_world.so",
     unsigned = ":hello_world_unsigned.so",
 )
 
 # Enclave that attempts to forcibly create a global constructor/destructor; if
 # this fails to build, then our compiler's behaving improperly.
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "initfini.so",
     unsigned = ":initfini_unsigned.so",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "initfini_unsigned.so",
     srcs = ["initfini.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -99,13 +102,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-# SGX enclave used to test enclave entry counting.
-sgx.debug_enclave(
+# Enclave used to test enclave entry counting.
+debug_sign_enclave(
     name = "enclave_entry_count_test.so",
     unsigned = ":enclave_entry_count_test_unsigned.so",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "enclave_entry_count_test_unsigned.so",
     srcs = ["enclave_entry_count_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -118,8 +121,8 @@ sgx.unsigned_enclave(
     ],
 )
 
-# SGX enclave used to test signal handling inside an enclave with an active TCS.
-sgx.unsigned_enclave(
+# Enclave used to test signal handling inside an enclave with an active TCS.
+cc_unsigned_enclave(
     name = "active_enclave_signal_test_unsigned.so",
     srcs = ["active_enclave_signal_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -130,13 +133,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "active_enclave_signal_test.so",
     unsigned = ":active_enclave_signal_test_unsigned.so",
 )
 
-# SGX enclave used to test signal handling inside an enclave with no active TCS.
-sgx.unsigned_enclave(
+# Enclave used to test signal handling inside an enclave with no active TCS.
+cc_unsigned_enclave(
     name = "inactive_enclave_signal_test_unsigned.so",
     srcs = ["inactive_enclave_signal_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -147,29 +150,26 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "inactive_enclave_signal_test.so",
     unsigned = ":inactive_enclave_signal_test_unsigned.so",
 )
 
-# SGX enclave linked against the sgx_runtime that calls abort().
-sgx.unsigned_enclave(
+# Enclave that calls abort().
+cc_unsigned_enclave(
     name = "die_unsigned.so",
     srcs = ["die.cc"],
     copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        "//asylo:enclave_runtime",
-        "@linux_sgx//:trts",
-    ],
+    deps = ["//asylo:enclave_runtime"],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "die.so",
     unsigned = ":die_unsigned.so",
 )
 
-# SGX enclave throws exception.
-sgx.unsigned_enclave(
+# Enclave throws exception.
+cc_unsigned_enclave(
     name = "exception_unsigned.so",
     srcs = ["exception_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -185,13 +185,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "exception.so",
     unsigned = ":exception_unsigned.so",
 )
 
-# SGX enclave testing logging.
-sgx.unsigned_enclave(
+# Enclave testing logging.
+cc_unsigned_enclave(
     name = "logging_unsigned.so",
     srcs = ["logging_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -202,7 +202,7 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "logging.so",
     unsigned = ":logging_unsigned.so",
 )
@@ -216,7 +216,7 @@ cc_library(
 )
 
 # Smoke tests for enclaves; currently identical to hello_world.so.
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "test_enclave_smoke_unsigned.so",
     srcs = ["hello_world.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -226,13 +226,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "test_enclave_smoke.so",
     unsigned = ":test_enclave_smoke_unsigned.so",
 )
 
-# SGX enclave that returns various errors across the enclave boundary.
-sgx.unsigned_enclave(
+# Enclave that returns various errors across the enclave boundary.
+cc_unsigned_enclave(
     name = "error_propagation_enclave_unsigned.so",
     srcs = ["error_propagation_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -243,13 +243,13 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "error_propagation_enclave.so",
     unsigned = ":error_propagation_enclave_unsigned.so",
 )
 
-# SGX enclave used to test blocking enclave entries.
-sgx.unsigned_enclave(
+# Enclave used to test blocking enclave entries.
+cc_unsigned_enclave(
     name = "block_enclave_entries_test_unsigned.so",
     srcs = ["block_enclave_entries_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -263,7 +263,7 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "block_enclave_entries_test.so",
     unsigned = ":block_enclave_entries_test_unsigned.so",
 )
@@ -280,7 +280,7 @@ TEST_DEPS_COMMON = [
 ]
 
 # Smoke tests for enclaves; currently identical to hello_world_test.
-sgx_enclave_test(
+enclave_test(
     name = "enclave_smoke_test",
     srcs = ["hello_world_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -297,6 +297,7 @@ sgx.enclave_configuration(
 cc_enclave_test(
     name = "threaded_test",
     srcs = ["threaded_test.cc"],
+    backends = sgx.backend_labels,  # Uses SGX-specific configuration.
     copts = ASYLO_DEFAULT_COPTS,
     enclave_config = ":threaded_test_config",
     deps = [
@@ -313,10 +314,11 @@ sgx.enclave_configuration(
     tcs_num = "3",
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "exhaust_sgx_tcs_unsigned.so",
     testonly = 1,
     srcs = ["exhaust_sgx_tcs.cc"],
+    backends = sgx.backend_labels,  # Uses SGX-specific configuration.
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         "//asylo/test/util:enclave_test_application",
@@ -326,11 +328,11 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+sgx_debug_sign_enclave(
     name = "exhaust_sgx_tcs.so",
-    unsigned = ":exhaust_sgx_tcs_unsigned.so",
-    config = ":exhaust_sgx_tcs_config",
     testonly = 1,
+    config = ":exhaust_sgx_tcs_config",
+    unsigned = ":exhaust_sgx_tcs_unsigned.so",
 )
 
 # Note that a naive enclave simulator that does not respect the enclave
@@ -490,7 +492,7 @@ cc_test(
     ],
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "enclave_entry_count_test",
     srcs = ["enclave_entry_count_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -501,7 +503,7 @@ sgx_enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "active_enclave_signal_test",
     srcs = ["active_enclave_signal_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -515,7 +517,7 @@ sgx_enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "inactive_enclave_signal_test",
     srcs = ["inactive_enclave_signal_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -526,7 +528,7 @@ sgx_enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "error_propagation_test",
     srcs = ["error_propagation_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -535,7 +537,7 @@ sgx_enclave_test(
     deps = TEST_DEPS_COMMON,
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "logging_test",
     srcs = ["logging_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -547,7 +549,7 @@ sgx_enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "block_enclave_entries_test",
     srcs = ["block_enclave_entries_test_driver.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -611,7 +613,7 @@ copy_from_host(
     target = "exception_app",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "exception_test",
     srcs = ["exception_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -653,7 +655,7 @@ sgx_enclave_test(
     ],
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "threaded_finalize_unsigned.so",
     srcs = ["threaded_finalize.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -665,7 +667,7 @@ sgx.unsigned_enclave(
     ],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "threaded_finalize.so",
     unsigned = ":threaded_finalize_unsigned.so",
 )
@@ -679,14 +681,14 @@ sgx_enclave_test(
     deps = TEST_DEPS_COMMON,
 )
 
-sgx.unsigned_enclave(
+cc_unsigned_enclave(
     name = "fail_finalize_enclave_unsigned.so",
     srcs = ["fail_finalize_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = ["//asylo:enclave_runtime"],
 )
 
-sgx.debug_enclave(
+debug_sign_enclave(
     name = "fail_finalize_enclave.so",
     unsigned = ":fail_finalize_enclave_unsigned.so",
 )
