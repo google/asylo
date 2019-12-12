@@ -15,12 +15,7 @@
 #
 
 load("//asylo/bazel:asylo.bzl", "enclave_loader")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_enclave_test")
-load(
-    "@linux_sgx//:sgx_sdk.bzl",
-    "sgx_debug_enclave",
-    "sgx_unsigned_enclave",
-)
+load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
@@ -37,7 +32,7 @@ cc_proto_library(
     deps = [":demo_proto"],
 )
 
-sgx_unsigned_enclave(
+sgx_cc_unsigned_enclave(
     name = "demo_enclave_unsigned.so",
     srcs = ["demo_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -52,7 +47,7 @@ sgx_unsigned_enclave(
     ],
 )
 
-sgx_debug_enclave(
+sgx_debug_sign_enclave(
     name = "demo_enclave_debug.so",
     unsigned = ":demo_enclave_unsigned.so",
 )
