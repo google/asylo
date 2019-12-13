@@ -34,12 +34,12 @@ namespace {
 
 using ::testing::Eq;
 
-TEST(ProvisioningPlatformTest, PpidWithoutValueFieldIsInvalid) {
+TEST(PlatformProvisioningTest, PpidWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidatePpid(Ppid()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(ProvisioningPlatformTest, PpidWithValueFieldOfBadLengthIsInvalid) {
+TEST(PlatformProvisioningTest, PpidWithValueFieldOfBadLengthIsInvalid) {
   Ppid ppid;
   *ppid.mutable_value() = "short";
   EXPECT_THAT(ValidatePpid(ppid),
@@ -50,18 +50,18 @@ TEST(ProvisioningPlatformTest, PpidWithValueFieldOfBadLengthIsInvalid) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(ProvisioningPlatformTest, ValidPpidIsValid) {
+TEST(PlatformProvisioningTest, ValidPpidIsValid) {
   Ppid ppid;
   *ppid.mutable_value() = "0123456789abcdef";
   ASYLO_EXPECT_OK(ValidatePpid(ppid));
 }
 
-TEST(ProvisioningPlatformTest, CpuSvnWithoutValueFieldIsInvalid) {
+TEST(PlatformProvisioningTest, CpuSvnWithoutValueFieldIsInvalid) {
   EXPECT_THAT(ValidateCpuSvn(CpuSvn()),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(ProvisioningPlatformTest, CpuSvnWithValueFieldOfBadLengthIsInvalid) {
+TEST(PlatformProvisioningTest, CpuSvnWithValueFieldOfBadLengthIsInvalid) {
   CpuSvn cpu_svn;
   *cpu_svn.mutable_value() = "short";
   EXPECT_THAT(ValidateCpuSvn(cpu_svn),
@@ -72,7 +72,7 @@ TEST(ProvisioningPlatformTest, CpuSvnWithValueFieldOfBadLengthIsInvalid) {
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
-TEST(ProvisioningPlatformTest, ValidCpuSvnIsValid) {
+TEST(PlatformProvisioningTest, ValidCpuSvnIsValid) {
   CpuSvn cpu_svn;
   *cpu_svn.mutable_value() = "0123456789abcdef";
   ASYLO_EXPECT_OK(ValidateCpuSvn(cpu_svn));
