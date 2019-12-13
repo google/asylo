@@ -84,7 +84,7 @@ if [ -c /dev/isgx ] && [ -S /var/run/aesmd/aesm.socket ]; then
   echo :information_source: \
   SGX device has been detected and will be passed to docker.
   SGX_HW_ARGS+=("--device=/dev/isgx")
-  SGX_HW_ARGS+=("--volume /var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
+  SGX_HW_ARGS+=("--volume=/var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
 else
   echo :information_source: SGX has not been detected.
   if [[ "${ASYLO_TO_TEST}" =~ --sgx[^-] ]];
