@@ -94,6 +94,10 @@ else
   fi
 fi
 
+# Pull the latest Asylo image
+ASYLO_IMAGE="gcr.io/asylo-framework/asylo"
+docker pull ${ASYLO_IMAGE}
+
 # Start Asylo Docker Container
 # Note how we map home directory for the user to tmpfs to speed up build time.
 # We also mount /artifacts volume so that we can copy files we want to preserve.
@@ -108,7 +112,7 @@ docker run \
     --rm \
     --name ${CONTAINER_NAME} \
     --detach \
-    gcr.io/asylo-framework/asylo
+    ${ASYLO_IMAGE}
 
 # Stop container on EXIT or on SIGNIT no matter what happens
 trap 'docker stop ${CONTAINER_NAME} >/dev/null' EXIT SIGINT
