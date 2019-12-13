@@ -39,7 +39,7 @@ sgx_cc_unsigned_enclave(
     deps = [
         ":demo_cc_proto",
         "//asylo:enclave_runtime",
-        "//asylo/crypto:aes_gcm_siv",
+        "//asylo/crypto:aead_cryptor",
         "//asylo/util:cleansing_types",
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",

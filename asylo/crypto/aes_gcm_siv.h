@@ -24,6 +24,7 @@
 #include <memory>
 #include <vector>
 
+#include "absl/base/macros.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/nonce_generator.h"
 #include "asylo/crypto/util/bssl_util.h"
@@ -70,6 +71,9 @@ class AesGcmSivNonceGenerator : public NonceGenerator<kAesGcmSivNonceSize> {
 ///
 /// A byte container of type T is considered to be self-cleansing if
 /// `T::allocator_type` is same as `CleansingAllocator<typename T::value_type>`.
+///
+/// \deprecated Do not use. This class will be removed in a future release.
+ABSL_DEPRECATED("AesGcmSivCryptor will be removed in a future release")
 class AesGcmSivCryptor {
  public:
   /// Constructs an AES GCM SIV cryptor that enforces the input
@@ -82,7 +86,10 @@ class AesGcmSivCryptor {
   AesGcmSivCryptor(size_t message_size_limit,
                    NonceGenerator<kAesGcmSivNonceSize> *nonce_generator)
       : message_size_limit_{message_size_limit},
-        nonce_generator_{nonce_generator} {}
+        nonce_generator_{nonce_generator} {
+    LOG(ERROR) << "The AesGcmSivCryptor is deprecated and will be removed. "
+               << "Please migrate to AeadCryptor instead.";
+  }
   ~AesGcmSivCryptor() = default;
 
   /// Implements AEAD Authenticated Encryption (a.k.a.\ seal) functionality.

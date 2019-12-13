@@ -498,6 +498,7 @@ cc_library(
         "nonce_generator.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
+    deprecation = "Use //asylo/crypto:aead_cryptor instead.",
     visibility = ["//visibility:public"],
     deps = [
         "//asylo/crypto/util:bssl_util",
@@ -506,6 +507,7 @@ cc_library(
         "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
+        "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
     ],
 )
