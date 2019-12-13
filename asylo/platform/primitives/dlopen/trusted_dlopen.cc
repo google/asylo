@@ -114,44 +114,27 @@ extern "C" PrimitiveStatus asylo_enclave_call(uint64_t selector,
     return PrimitiveStatus::OkStatus();
   }
 
-  if (input) {
-    if (!TrustedPrimitives::IsOutsideEnclave(input, input_len)) {
-      return {error::GoogleError::INVALID_ARGUMENT,
-              "input should lie in untrusted memory"};
-    }
-    if (input_len > 0) {
-      // Copy untrusted |input| to trusted memory and pass that as input.
-      void *trusted_input = malloc(input_len);
-      memcpy(trusted_input, input, input_len);
-      TrustedPrimitives::UntrustedLocalFree(const_cast<void *>(input));
-      input = trusted_input;
-    } else {
-      input = nullptr;
-    }
+  MessageReader in;
+  MessageWriter out;
+  // Copy untrusted input to a trusted buffer before deserializing to prevent
+  // TOC/TOU attacks.
+  auto trusted_input = CopyFromUntrusted(input, input_len);
+  if (trusted_input) {
+    in.Deserialize(trusted_input.get(), input_len);
   }
 
-  size_t output_size = 0;
-  PrimitiveStatus status = InvokeEntryHandler(
-      selector, input, static_cast<size_t>(input_len), output, &output_size);
+  PrimitiveStatus status = InvokeEntryHandler(selector, &in, &out);
+  size_t output_size = out.MessageSize();
+
+  if (output && output_size > 0) {
+    // Serialize |out| to untrusted memory. The untrusted caller is still
+    // responsible for freeing |*output|. Serialize to a trusted output buffer
+    // first to prevent TOC/TOU attacks.
+    std::unique_ptr<char[]> trusted_output(new char[out.MessageSize()]);
+    out.Serialize(trusted_output.get());
+    *output = CopyToUntrusted(trusted_output.get(), output_size);
+  }
   *output_len = output_size;
-
-  if (*output) {
-    if (!TrustedPrimitives::IsInsideEnclave(*output, output_size)) {
-      return {error::GoogleError::INVALID_ARGUMENT,
-              "output should lie in trusted memory"};
-    }
-
-    // Copy trusted |*output| to untrusted memory and pass that as
-    // output. We also free trusted |*output| after it is copied to untrusted
-    // side. The untrusted caller is still responsible for freeing |*output|,
-    // which now points to untrusted memory.
-    void *untrusted_output =
-        TrustedPrimitives::UntrustedLocalAlloc(output_size);
-    memcpy(untrusted_output, *output, output_size);
-    free(*output);
-    *output = untrusted_output;
-  }
-
   return status;
 }
 

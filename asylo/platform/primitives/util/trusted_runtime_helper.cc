@@ -113,17 +113,8 @@ PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
   return PrimitiveStatus::OkStatus();
 }
 
-PrimitiveStatus InvokeEntryHandler(uint64_t selector, const void *input,
-                                   size_t input_size, void **output,
-                                   size_t *output_size) {
-  MessageReader in;
-  if (input) {
-    // Deserialize buffer to input parameters.
-    in.Deserialize(input, input_size);
-    free(const_cast<void *>(input));
-    input = nullptr;
-  }
-
+PrimitiveStatus InvokeEntryHandler(uint64_t selector, MessageReader *in,
+                                   MessageWriter *out) {
   // Initialize the enclave if necessary.
   EnsureInitialized();
 
@@ -142,24 +133,40 @@ PrimitiveStatus InvokeEntryHandler(uint64_t selector, const void *input,
   // Invoke the entry point handler.
   auto &handler = enclave_state.entry_table[selector];
 
-  MessageWriter out;
-  ASYLO_RETURN_IF_ERROR(handler.callback(handler.context, &in, &out));
-
-  // Serialize results out to buffer.
-  *output_size = out.MessageSize();
-  if (*output_size > 0) {
-    *output = malloc(*output_size);
-    out.Serialize(*output);
-  } else {
-    *output = nullptr;
-  }
-
+  ASYLO_RETURN_IF_ERROR(handler.callback(handler.context, in, out));
   return PrimitiveStatus::OkStatus();
 }
 
 void MarkEnclaveInitialized() { UpdateEnclaveState(Flag::kInitialized); }
 
 void MarkEnclaveAborted() { UpdateEnclaveState(Flag::kAborted); }
+
+std::unique_ptr<char[]> CopyFromUntrusted(const void *untrusted_data,
+                                          size_t size) {
+  if (untrusted_data && size > 0) {
+    if (!TrustedPrimitives::IsOutsideEnclave(untrusted_data, size)) {
+      TrustedPrimitives::BestEffortAbort(
+          "Input should lie within untrusted memory.");
+    }
+    std::unique_ptr<char[]> trusted_input(new char[size]);
+    memcpy(trusted_input.get(), untrusted_data, size);
+    return trusted_input;
+  }
+  return nullptr;
+}
+
+void *CopyToUntrusted(void *trusted_data, size_t size) {
+  if (trusted_data && size > 0) {
+    if (!TrustedPrimitives::IsInsideEnclave(trusted_data, size)) {
+      TrustedPrimitives::BestEffortAbort(
+          "Input should lie within trusted memory.");
+    }
+    void *untrusted_data = TrustedPrimitives::UntrustedLocalAlloc(size);
+    memcpy(untrusted_data, trusted_data, size);
+    return untrusted_data;
+  }
+  return nullptr;
+}
 
 }  // namespace primitives
 }  // namespace asylo

@@ -174,17 +174,17 @@ Status DlopenEnclaveClient::EnclaveCallInternal(uint64_t selector,
   }
 
   size_t input_size = 0;
-  void *input_buffer = nullptr;
+  std::unique_ptr<char[]> input_buffer;
   if (input) {
     input_size = input->MessageSize();
     if (input_size > 0) {
-      input_buffer = malloc(input_size);
-      input->Serialize(input_buffer);
+      input_buffer = absl::make_unique<char[]>(input_size);
+      input->Serialize(input_buffer.get());
     }
   }
   size_t output_size = 0;
   void *output_buffer = nullptr;
-  const auto status = enclave_call_(selector, input_buffer, input_size,
+  const auto status = enclave_call_(selector, input_buffer.get(), input_size,
                                     &output_buffer, &output_size);
   if (output_buffer) {
     output->Deserialize(output_buffer, output_size);
