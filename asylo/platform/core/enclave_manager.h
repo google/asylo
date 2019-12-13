@@ -43,114 +43,23 @@
 namespace asylo {
 class EnclaveLoader;
 
+/// \deprecated
 /// Enclave Manager configuration.
-class EnclaveManagerOptions {
- public:
-  /// Configuration server connection attributes.
-  ///
-  /// A part of an enclave's configuration is expected to be the same across all
-  /// enclaves running under a single instance of an OS. An Enclave manager can
-  /// obtain such configuration from the Asylo daemon running on the system.
-  /// Alternately, the creator of the enclave manager can directly provide such
-  /// configuration to the enclave manager. To this end, an
-  /// EnclaveManagerOptions instance either holds the information necessary for
-  /// connecting to the config server, or holds a HostConfig proto. If the
-  /// enclave manager is configured with an options object containing the
-  /// server-connection information, the enclave manager obtains the necessary
-  /// information by contacting the Asylo daemon. Else, the enclave manager
-  /// directly uses the HostConfig info stored within the options structure.
-  ///
-  /// The ConfigServerConnectionAttributes struct holds information necessary
-  /// for contacting the config server running inside the Asylo daemon.
-  struct ConfigServerConnectionAttributes {
-    ConfigServerConnectionAttributes(absl::string_view address,
-                                     absl::Duration timeout)
-        : server_address(address), connection_timeout(std::move(timeout)) {}
-
-    std::string server_address;
-    absl::Duration connection_timeout;
-  };
-
-  /// Constructs a default EnclaveManagerOptions object.
-  EnclaveManagerOptions();
-
-  /// Configures a connection to the config server.
-  ///
-  /// Sets the information necessary for contacting the config server within the
-  /// Asylo daemon.
-  ///
-  /// \return A reference to this EnclaveManagerOptions object.
-  EnclaveManagerOptions &set_config_server_connection_attributes(
-      absl::string_view address, absl::Duration timeout);
-
-  /// Sets the HostConfig proto within this object.
-  ///
-  /// \return A reference to this EnclaveManagerOptions object.
-  EnclaveManagerOptions &set_host_config(HostConfig config);
-
-  /// Returns the address of the configuration server.
-  ///
-  /// \return The address of the server from which the HostConfig information
-  ///         can be obtained. Returns an error if
-  ///         ConfigServerConnectionAttributes are not set.
-  StatusOr<absl::string_view> get_config_server_address() const;
-
-  /// Returns the configuration server connection timeout.
-  ///
-  /// \return The connection timeout for the server from which the HostConfig
-  ///         information can be obtained, or an error if
-  ///         ConfigServerConnectionAttributes are not set.
-  StatusOr<absl::Duration> get_config_server_connection_timeout() const;
-
-  /// Returns the embedded HostConfig object.
-  ///
-  /// \return The HostConfig information embedded within this object, or an
-  ///         error if such information is not embedded within the object.
-  StatusOr<HostConfig> get_host_config() const;
-
-  /// Returns true if a HostConfig instance is embedded in this object.
-  bool holds_host_config() const;
-
- private:
-  // A variant that either holds information necessary for connecting to the
-  // config server or a HostConfig proto.
-  absl::variant<ConfigServerConnectionAttributes, HostConfig> host_config_info_;
-};
+ABSL_DEPRECATED("EnclaveManager no longer needs to be configured")
+class EnclaveManagerOptions {};
 
 /// A manager object responsible for creating and managing enclave instances.
 ///
 /// EnclaveManager is a singleton class that tracks the status of enclaves
-/// within a process. Users of this class first supply a configuration using the
+/// within a process. Users can get a pointer to the singleton instance by
+/// calling the static Instance() method.
+///
+/// NOTE: Configuring the EnclaveManager with Configure() is no longer required
+/// before obtaining a pointer to the singleton instance.
+///
+/// \deprecated Users of this class first supply a configuration using the
 /// static Configure() method, and then get a pointer to the singleton instance
 /// as specified by this configuration by calling the static Instance() method.
-/// Note that the EnclaveManager class must be configured before the instance
-/// pointer can be obtained.
-///
-/// The EnclaveManager::Configure() method takes an instance of the
-/// EnclaveManagerOptions as its only input. This instance can be configured by
-/// calling its public setter methods. Note that these setter methods return an
-/// instance of the EnclaveManagerOptions() by reference so that the various
-/// setters could be chained together.
-///
-/// Example Usage:
-/// ```
-///   EnclaveManager::Configure(
-///     EnclaveManagerOptions()
-///         .set_config_server_connection_attributes(
-///             "[::]:8000",
-///             absl::Milliseconds(100)));
-///   auto manager_result = EnclaveManager::Instance();
-///   if (!manager_result.ok()) {
-///     LOG(QFATAL) << manager_result.status();
-///   }
-///   EnclaveManager *manager = manager_result.ValueOrDie();
-///   ...
-/// ```
-///
-/// One of the responsibilities of the EnclaveManager class is to provide sane
-/// initial configuration to the enclaves it launches. The contents of the
-/// EnclaveManagerOptions instance control how the default values for the
-/// configuration are chosen.
 class EnclaveManager {
  public:
   /// Fetches the EnclaveManager singleton instance.
@@ -159,10 +68,12 @@ class EnclaveManager {
   ///         an error describing why it could not be returned.
   static StatusOr<EnclaveManager *> Instance();
 
+  /// \deprecated
   /// Configures the enclave manager.
   ///
   /// \param options Configuration options as described in
   ///                EnclaveManagerOptions.
+  ABSL_DEPRECATED("EnclaveManager no longer needs to be configured")
   static Status Configure(const EnclaveManagerOptions &options);
 
   /// Loads an enclave.
@@ -355,19 +266,8 @@ class EnclaveManager {
   absl::flat_hash_map<const EnclaveClient *, EnclaveLoadConfig>
       load_config_by_client_ ABSL_GUARDED_BY(client_table_lock_);
 
-  // A part of the configuration for enclaves launched by the enclave manager
-  // comes from the Asylo daemon. This member caches such configuration.
-  HostConfig host_config_;
-
   // Mutex guarding the static state of this class.
   static absl::Mutex mu_;
-
-  // Indication whether the class has been configured so that an instance could
-  // be created.
-  static bool configured_ ABSL_GUARDED_BY(mu_);
-
-  // Configuration options for this class.
-  static EnclaveManagerOptions *options_ ABSL_GUARDED_BY(mu_);
 
   // Singleton instance of this class.
   static EnclaveManager *instance_ ABSL_GUARDED_BY(mu_);

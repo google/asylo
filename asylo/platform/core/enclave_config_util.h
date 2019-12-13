@@ -23,21 +23,36 @@
 
 namespace asylo {
 
-/// Sets uninitialized fields in #config to default values.
+/// \deprecated
+/// Sets critical uninitialized fields in `config` to default values.
 ///
-/// \param host_config Values to set in the host_config field of #config.
+/// \param host_config Values to set in the `host_config` field of
+///                    `config`.
 /// \param config[out] EnclaveConfig object to populate.
 void SetEnclaveConfigDefaults(const HostConfig &host_config,
                               EnclaveConfig *config);
 
+/// Sets critical uninitialized fields in `config` to default values.
+///
+/// \param config[out] EnclaveConfig object to populate.
+void SetEnclaveConfigDefaults(EnclaveConfig *config);
+
+/// \deprecated
 /// Returns an EnclaveConfig proto with critical fields initialized to default
 /// values.
 ///
-/// \param host_config Input used to fill in the host_config field of the
-///                    returned EnclaveConfig.
+/// \param host_config Input used to fill in the host_config field
+///                    of the returned EnclaveConfig.
 /// \return An EnclaveConfig proto with critical fields initialized to their
 ///         default values.
 EnclaveConfig CreateDefaultEnclaveConfig(const HostConfig &host_config);
+
+/// Returns an EnclaveConfig proto with critical fields initialize to default
+/// values.
+///
+/// \return An EnclaveConfig proto with critical fields initialized to their
+///         default values.
+EnclaveConfig CreateDefaultEnclaveConfig();
 
 }  // namespace asylo
 

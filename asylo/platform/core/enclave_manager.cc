@@ -25,7 +25,7 @@
 #include <thread>
 
 #include "absl/strings/str_cat.h"
-
+#include "absl/strings/string_view.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/common/time_util.h"
@@ -74,78 +74,10 @@ void WaitUntil(int64_t deadline) {
 }  // namespace
 
 absl::Mutex EnclaveManager::mu_;
-bool EnclaveManager::configured_ = false;
-EnclaveManagerOptions *EnclaveManager::options_ = nullptr;
+
 EnclaveManager *EnclaveManager::instance_ = nullptr;
 
-// By default, the options object holds an empty HostConfig proto.
-EnclaveManagerOptions::EnclaveManagerOptions()
-    : host_config_info_(absl::in_place_type_t<HostConfig>()) {}
-
-EnclaveManagerOptions &
-EnclaveManagerOptions::set_config_server_connection_attributes(
-    absl::string_view address, absl::Duration timeout) {
-  host_config_info_.emplace<ConfigServerConnectionAttributes>(address, timeout);
-  return *this;
-}
-
-EnclaveManagerOptions &EnclaveManagerOptions::set_host_config(
-    HostConfig config) {
-  host_config_info_.emplace<HostConfig>(std::move(config));
-  return *this;
-}
-
-StatusOr<absl::string_view> EnclaveManagerOptions::get_config_server_address()
-    const {
-  const ConfigServerConnectionAttributes *attributes =
-      absl::get_if<ConfigServerConnectionAttributes>(&host_config_info_);
-  if (!attributes) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Options object does not hold config-server address");
-  }
-  return attributes->server_address;
-}
-
-StatusOr<absl::Duration>
-EnclaveManagerOptions::get_config_server_connection_timeout() const {
-  const ConfigServerConnectionAttributes *attributes =
-      absl::get_if<ConfigServerConnectionAttributes>(&host_config_info_);
-  if (!attributes) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Options object does not hold server-connection timeout");
-  }
-  return attributes->connection_timeout;
-}
-
-StatusOr<HostConfig> EnclaveManagerOptions::get_host_config() const {
-  const HostConfig *config = absl::get_if<HostConfig>(&host_config_info_);
-  if (!config) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Options object does not contain a HostConfig");
-  }
-  return *config;
-}
-
-bool EnclaveManagerOptions::holds_host_config() const {
-  return absl::holds_alternative<HostConfig>(host_config_info_);
-}
-
-HostConfig EnclaveManager::GetHostConfig() {
-  if (options_->holds_host_config()) {
-    StatusOr<HostConfig> config_result = options_->get_host_config();
-    if (!config_result.ok()) {
-      LOG(ERROR) << config_result.status();
-      return HostConfig();
-    }
-    return config_result.ValueOrDie();
-  }
-
-  HostConfig config;
-  LOG(ERROR) << "Not implemented";
-  return config;
-}
-
-EnclaveManager::EnclaveManager() : host_config_(GetHostConfig()) {
+EnclaveManager::EnclaveManager() {
   Status rc = shared_resource_manager_.RegisterUnmanagedResource(
       SharedName::Address("clock_monotonic"), &clock_monotonic_);
   if (!rc.ok()) {
@@ -215,32 +147,11 @@ EnclaveLoadConfig EnclaveManager::GetLoadConfigFromClient(
   return load_config_by_client_[client];
 }
 
-Status EnclaveManager::Configure(const EnclaveManagerOptions &options) {
-  absl::MutexLock lock(&mu_);
-
-  if (instance_) {
-    return Status(error::GoogleError::FAILED_PRECONDITION,
-                  "Cannot configure the enclave manager after an instance has "
-                  "been created");
-  }
-
-  delete options_;
-  options_ = new EnclaveManagerOptions(options);
-  configured_ = true;
-  return Status::OkStatus();
-}
-
 StatusOr<EnclaveManager *> EnclaveManager::Instance() {
   absl::MutexLock lock(&mu_);
 
   if (instance_) {
     return instance_;
-  }
-
-  if (!configured_) {
-    return Status(
-        error::GoogleError::FAILED_PRECONDITION,
-        "Cannot create enclave manager instance before it is configured");
   }
 
   instance_ = new EnclaveManager();
@@ -250,6 +161,10 @@ StatusOr<EnclaveManager *> EnclaveManager::Instance() {
   }
 
   return instance_;
+}
+
+Status EnclaveManager::Configure(const EnclaveManagerOptions & /*options*/) {
+  return Status::OkStatus();
 }
 
 Status EnclaveManager::LoadEnclave(absl::string_view name,
@@ -271,8 +186,7 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
     }
     return LoadEnclave(load_config);
   } else {
-    return LoadFakeEnclave(name, loader,
-                           CreateDefaultEnclaveConfig(host_config_),
+    return LoadFakeEnclave(name, loader, CreateDefaultEnclaveConfig(),
                            base_address, enclave_size);
   }
 }
@@ -298,7 +212,7 @@ Status EnclaveManager::LoadEnclave(absl::string_view name,
     return LoadEnclave(load_config);
   } else {
     EnclaveConfig sanitized_config = std::move(config);
-    SetEnclaveConfigDefaults(host_config_, &sanitized_config);
+    SetEnclaveConfigDefaults(&sanitized_config);
     return LoadFakeEnclave(name, loader, sanitized_config, base_address,
                            enclave_size);
   }
@@ -358,9 +272,9 @@ Status EnclaveManager::LoadEnclave(const EnclaveLoadConfig &load_config) {
   EnclaveConfig config;
   if (load_config.has_config()) {
     config = load_config.config();
-    SetEnclaveConfigDefaults(host_config_, &config);
+    SetEnclaveConfigDefaults(&config);
   } else {
-    config = CreateDefaultEnclaveConfig(host_config_);
+    config = CreateDefaultEnclaveConfig();
   }
 
   void *base_address = nullptr;

@@ -103,7 +103,7 @@ message EnclaveConfig {
 
   // System-specific enclave configuration. This configuration is expected to be
   // the same for all enclaves running under the same instance of an OS.
-  optional HostConfig host_config = 8;
+  optional HostConfig host_config = 8 [deprecated = true];
 
   // Enclave assertion authority configuration. If the enclave makes use of an
   // assertion authority that requires configuration, a config should be listed

@@ -78,9 +78,20 @@ void SetEnclaveConfigDefaults(const HostConfig &host_config,
   SetHostConfig(host_config, config);
 }
 
+void SetEnclaveConfigDefaults(EnclaveConfig *config) {
+  SetDefaultHostName(config);
+  SetDefaultCurrentWorkingDirectory(config);
+}
+
 EnclaveConfig CreateDefaultEnclaveConfig(const HostConfig &host_config) {
   EnclaveConfig config;
   SetEnclaveConfigDefaults(host_config, &config);
+  return config;
+}
+
+EnclaveConfig CreateDefaultEnclaveConfig() {
+  EnclaveConfig config;
+  SetEnclaveConfigDefaults(&config);
   return config;
 }
 
