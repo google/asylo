@@ -1,4 +1,4 @@
-# Asylo ([asylo.dev](https://asylo.dev))
+# Asylo ([asylo.dev](https://asylo.dev)) [![Build status](https://badge.buildkite.com/34525fbee9a2289bba7f3ac74df984c8916e5e1725f45941fa.svg)](https://buildkite.com/asylo/asylo-docker-test-for-master-branch)
 
 Asylo is an open and flexible framework for developing enclave applications.
 Asylo lets you take advantage of a range of emerging trusted execution
