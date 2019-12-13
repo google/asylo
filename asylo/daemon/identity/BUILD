@@ -54,20 +54,6 @@ cc_library(
     ],
 )
 
-# Implementation of AttestationDomainService.
-cc_library(
-    name = "attestation_domain_service_impl",
-    srcs = ["attestation_domain_service_impl.cc"],
-    hdrs = ["attestation_domain_service_impl.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":attestation_domain",
-        ":attestation_domain_service",
-        "@com_github_grpc_grpc//:grpc++",
-    ],
-)
-
 # Implementation of the AttestationDomainService client.
 cc_library(
     name = "attestation_domain_client",
@@ -112,24 +98,6 @@ cc_test(
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/synchronization",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-# Tests for the attestation_domain_service_impl library.
-cc_test(
-    name = "attestation_domain_service_impl_test",
-    srcs = ["attestation_domain_service_impl_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":attestation_domain",
-        ":attestation_domain_service_impl",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_flags",
-        "//asylo/test/util:test_main",
-        "@com_github_grpc_grpc//:grpc++",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],
 )
