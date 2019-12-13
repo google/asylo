@@ -16,15 +16,15 @@
  *
  */
 
-#include "asylo/identity/sgx/tcb_container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 
 #include <cstdint>
 
 #include <google/protobuf/util/message_differencer.h>
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/util/status.h"
 
 namespace asylo {

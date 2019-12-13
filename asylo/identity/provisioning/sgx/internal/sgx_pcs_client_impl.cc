@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_pcs_client_impl.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client_impl.h"
 
 #include <algorithm>
 #include <memory>
@@ -29,13 +29,14 @@
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/certificate_util.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/signed_tcb_info_from_json.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/pck_certs_from_json.h"
-#include "asylo/identity/sgx/platform_provisioning.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/sgx_pcs_client.pb.h"
-#include "asylo/identity/sgx/signed_tcb_info_from_json.h"
-#include "asylo/identity/sgx/tcb.h"
 #include "asylo/util/function_deleter.h"
 #include "asylo/util/hex_util.h"
 #include "asylo/util/proto_enum_util.h"

@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SIGNED_TCB_INFO_FROM_JSON_H_
-#define ASYLO_IDENTITY_SGX_SIGNED_TCB_INFO_FROM_JSON_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SIGNED_TCB_INFO_FROM_JSON_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SIGNED_TCB_INFO_FROM_JSON_H_
 
 #include <string>
 
-#include "asylo/identity/sgx/sgx_pcs_client.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -41,4 +41,4 @@ StatusOr<SignedTcbInfo> SignedTcbInfoFromJson(const std::string &json_string);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SIGNED_TCB_INFO_FROM_JSON_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SIGNED_TCB_INFO_FROM_JSON_H_

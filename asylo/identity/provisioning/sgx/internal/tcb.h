@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_TCB_H_
-#define ASYLO_IDENTITY_SGX_TCB_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_H_
 
 #include <cstddef>
 
 #include "absl/base/attributes.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -142,4 +142,4 @@ StatusOr<std::string> TcbStatusToString(const TcbStatus &status);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_TCB_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_H_

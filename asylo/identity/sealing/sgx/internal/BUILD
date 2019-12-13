@@ -65,7 +65,6 @@ cc_library(
         "//asylo/identity/sgx:hardware_interface",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:machine_configuration_cc_proto",
-        "//asylo/identity/sgx:platform_provisioning_cc_proto",
         "//asylo/identity/sgx:sgx_identity_cc_proto",
         "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/platform/common:singleton",

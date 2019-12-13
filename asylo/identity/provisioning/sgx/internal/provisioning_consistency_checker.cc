@@ -16,13 +16,14 @@
  *
  */
 
-#include "asylo/identity/sgx/provisioning_consistency_checker.h"
+#include "asylo/identity/provisioning/sgx/internal/provisioning_consistency_checker.h"
 
 #include <functional>
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/strings/str_cat.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 
 namespace asylo {
 namespace sgx {

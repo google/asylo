@@ -27,7 +27,6 @@
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/util/status_macros.h"

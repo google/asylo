@@ -105,19 +105,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "platform_provisioning_proto",
-    srcs = ["platform_provisioning.proto"],
-    visibility = ["//asylo:implementation"],
-    deps = ["//asylo/crypto:algorithms_proto"],
-)
-
-cc_proto_library(
-    name = "platform_provisioning_cc_proto",
-    visibility = ["//asylo:implementation"],
-    deps = [":platform_provisioning_proto"],
-)
-
-proto_library(
     name = "attestation_key_proto",
     srcs = ["attestation_key.proto"],
     deps = ["//asylo/crypto:keys_proto"],
@@ -133,8 +120,8 @@ proto_library(
     srcs = ["attestation_key_certificate.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":platform_provisioning_proto",
         "//asylo/crypto:keys_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
     ],
 )
 
@@ -149,8 +136,8 @@ proto_library(
     srcs = ["pck_certificates.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":tcb_proto",
         "//asylo/crypto:certificate_proto",
+        "//asylo/identity/provisioning/sgx/internal:tcb_proto",
     ],
 )
 
@@ -211,23 +198,6 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "tcb_proto",
-    srcs = ["tcb.proto"],
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":machine_configuration_proto",
-        ":platform_provisioning_proto",
-        "@com_google_protobuf//:timestamp_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "tcb_cc_proto",
-    visibility = ["//asylo:implementation"],
-    deps = [":tcb_proto"],
-)
-
-proto_library(
     name = "sgx_age_remote_assertion_authority_config_proto",
     srcs = ["sgx_age_remote_assertion_authority_config.proto"],
     deprecation = "Use //asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_proto",
@@ -260,13 +230,13 @@ proto_library(
     srcs = ["remote_assertion_generator_enclave.proto"],
     visibility = ["//asylo:implementation"],
     deps = [
-        ":platform_provisioning_proto",
         ":remote_assertion_proto",
         ":sgx_identity_proto",
         "//asylo:enclave_proto",
         "//asylo/crypto:certificate_proto",
         "//asylo/crypto:keys_proto",
         "//asylo/identity:identity_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
         "//asylo/identity/sealing:sealed_secret_proto",
     ],
 )
@@ -281,11 +251,11 @@ proto_library(
     name = "remote_assertion_generator_test_util_enclave_proto",
     srcs = ["remote_assertion_generator_test_util_enclave.proto"],
     deps = [
-        ":platform_provisioning_proto",
         ":remote_assertion_proto",
         "//asylo:enclave_proto",
         "//asylo/crypto:certificate_proto",
         "//asylo/crypto:keys_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
         "//asylo/identity/sealing:sealed_secret_proto",
     ],
 )
@@ -293,18 +263,6 @@ proto_library(
 cc_proto_library(
     name = "remote_assertion_generator_test_util_enclave_cc_proto",
     deps = [":remote_assertion_generator_test_util_enclave_proto"],
-)
-
-proto_library(
-    name = "sgx_pcs_client_proto",
-    srcs = ["sgx_pcs_client.proto"],
-    visibility = ["//asylo:implementation"],
-)
-
-cc_proto_library(
-    name = "sgx_pcs_client_cc_proto",
-    visibility = ["//asylo:implementation"],
-    deps = [":sgx_pcs_client_proto"],
 )
 
 cc_grpc_library(
@@ -423,8 +381,6 @@ cc_library(
         ":attestation_key_cc_proto",
         ":attestation_key_certificate_cc_proto",
         ":hardware_types",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_constants",
         ":sgx_identity_cc_proto",
         ":sgx_identity_util_internal",
@@ -438,6 +394,8 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/util:proto_enum_util",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
@@ -457,7 +415,6 @@ cc_test_and_cc_enclave_test(
         ":attestation_key_certificate_cc_proto",
         ":attestation_key_certificate_impl",
         ":hardware_types",
-        ":platform_provisioning",
         ":sgx_identity_cc_proto",
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto:certificate_cc_proto",
@@ -467,6 +424,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
@@ -541,7 +499,6 @@ sgx_cc_unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
-        ":platform_provisioning",
         ":remote_assertion_cc_proto",
         ":remote_assertion_generator_enclave_util",
         ":remote_assertion_generator_test_util_enclave_cc_proto",
@@ -552,6 +509,7 @@ sgx_cc_unsigned_enclave(
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/grpc/auth:grpc++_security_enclave",
         "//asylo/grpc/auth:sgx_local_credentials_options",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/util:status",
         "@com_github_grpc_grpc//:grpc++",
         "@com_github_grpc_grpc//:grpc_secure",
@@ -584,7 +542,6 @@ sgx_cc_unsigned_enclave(
         ":hardware_interface",
         ":hardware_types",
         ":pce_util",
-        ":platform_provisioning",
         ":remote_assertion_generator_enclave_cc_proto",
         ":remote_assertion_generator_enclave_util",
         ":sgx_identity_util_internal",
@@ -596,6 +553,7 @@ sgx_cc_unsigned_enclave(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:signing_key",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/util:logging",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
@@ -625,8 +583,6 @@ sgx_enclave_test(
         ":attestation_key_cc_proto",
         ":code_identity_cc_proto",
         ":pce_util",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
         ":remote_assertion_cc_proto",
         ":remote_assertion_generator_constants",
         ":remote_assertion_generator_enclave_cc_proto",
@@ -639,6 +595,8 @@ sgx_enclave_test(
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:ecdsa_p256_sha256_signing_key",
         "//asylo/crypto:keys_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:enclave_assertion_authority_configs",
@@ -901,7 +859,6 @@ cc_library(
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
         ":sgx_identity_cc_proto",
         ":sgx_identity_util_internal",
         "//asylo/crypto:sha256_hash_cc_proto",
@@ -935,8 +892,6 @@ cc_library(
         ":hardware_interface",
         ":hardware_types",
         ":machine_configuration_cc_proto",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
@@ -947,6 +902,8 @@ cc_library(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/util:logging",
         "//asylo/util:proto_enum_util",
         "//asylo/util:status",
@@ -972,7 +929,6 @@ cc_test(
         ":hardware_interface",
         ":hardware_types",
         ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
         ":sgx_identity_expectation_matcher",
@@ -984,6 +940,7 @@ cc_test(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/platform/common:singleton",
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
@@ -1176,13 +1133,13 @@ cc_library(
         ":attributes_cc_proto",
         ":hardware_types",
         ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/crypto/util:bssl_util",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/util:logging",
         "//asylo/util:status",
@@ -1253,39 +1210,6 @@ cc_test_and_cc_enclave_test(
     ],
 )
 
-cc_library(
-    name = "platform_provisioning",
-    srcs = ["platform_provisioning.cc"],
-    hdrs = ["platform_provisioning.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":hardware_types",
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/util:status",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "platform_provisioning_test",
-    srcs = ["platform_provisioning_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":hardware_types",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        "//asylo/crypto/util:trivial_object_util",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:status",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
 # A utility library associated with SGX PCE protocols.
 cc_library(
     name = "pce_util",
@@ -1349,16 +1273,16 @@ cc_library(
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":pck_certificates_cc_proto",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        ":tcb_container_util",
         "//asylo/crypto:asn1",
         "//asylo/crypto:asn1_schema",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:certificate_util",
         "//asylo/crypto/util:byte_container_view",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:tcb",
+        "//asylo/identity/provisioning/sgx/internal:tcb_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:tcb_container_util",
         "//asylo/util:logging",
         "//asylo/util:status",
         "@com_google_absl//absl/base",
@@ -1379,12 +1303,12 @@ cc_test_and_cc_enclave_test(
     deps = [
         ":pck_certificate_util",
         ":pck_certificates_cc_proto",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
         "//asylo/crypto:asn1",
         "//asylo/crypto:certificate_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:tcb",
+        "//asylo/identity/provisioning/sgx/internal:tcb_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:logging",
@@ -1398,176 +1322,9 @@ cc_test_and_cc_enclave_test(
     ],
 )
 
-cc_library(
-    name = "tcb",
-    srcs = ["tcb.cc"],
-    hdrs = ["tcb.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":hardware_types",
-        ":platform_provisioning",
-        ":tcb_cc_proto",
-        ":tcb_container_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/util:hex_util",
-        "//asylo/util:status",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "tcb_test",
-    srcs = ["tcb_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/time",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:cc_wkt_protos",
-    ],
-)
-
-cc_library(
-    name = "tcb_container_util",
-    srcs = ["tcb_container_util.cc"],
-    hdrs = ["tcb_container_util.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":tcb_cc_proto",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/util:status",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
 sgx.enclave_configuration(
     name = "tcb_container_util_enclave_test_config",
     heap_max_size = "0x1000000",
-)
-
-cc_test_and_cc_enclave_test(
-    name = "tcb_container_util_test",
-    srcs = ["tcb_container_util_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    enclave_test_config = ":tcb_container_util_enclave_test_config",
-    deps = [
-        ":hardware_types",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        ":tcb_container_util",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/random",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "tcb_info_from_json",
-    srcs = ["tcb_info_from_json.cc"],
-    hdrs = ["tcb_info_from_json.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        ":tcb_container_util",
-        "//asylo/util:hex_util",
-        "//asylo/util:logging",
-        "//asylo/util:proto_struct_util",
-        "//asylo/util:status",
-        "@com_google_absl//absl/base",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
-        "@com_google_absl//absl/time",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "tcb_info_from_json_test",
-    srcs = ["tcb_info_from_json_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        ":tcb_info_from_json",
-        "//asylo/test/util:output_collector",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:logging",
-        "//asylo/util:status",
-        "@com_google_absl//absl/base:core_headers",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/time",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_library(
-    name = "provisioning_consistency_checker",
-    srcs = ["provisioning_consistency_checker.cc"],
-    hdrs = ["provisioning_consistency_checker.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":pck_certificates_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        ":tcb_container_util",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "provisioning_consistency_checker_test",
-    srcs = ["provisioning_consistency_checker_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":provisioning_consistency_checker",
-        ":tcb_cc_proto",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:span",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:protobuf",
-    ],
 )
 
 cc_library(
@@ -1612,8 +1369,6 @@ cc_library(
     deps = [
         ":machine_configuration_cc_proto",
         ":pce_util",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
         ":sgx_identity_cc_proto",
         "//asylo:enclave_cc_proto",
@@ -1622,6 +1377,8 @@ cc_library(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/util:status",
         "//asylo/util:status_macros",
@@ -1637,7 +1394,6 @@ cc_test(
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":pce_util",
-        ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
         ":sgx_identity_test_util",
         ":sgx_infrastructural_enclave_manager",
@@ -1647,6 +1403,7 @@ cc_test(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/attestation/sgx/internal:mock_intel_architectural_enclave_interface",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/test/util:mock_enclave_client",
         "//asylo/test/util:proto_matchers",
@@ -1669,13 +1426,13 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
         ":remote_assertion_generator_enclave_cc_proto",
         ":sgx_identity_cc_proto",
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:keys_cc_proto",
         "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",
@@ -1703,8 +1460,8 @@ cc_library(
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
-        ":platform_provisioning_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
         "@com_google_protobuf//:protobuf",
@@ -1720,53 +1477,15 @@ cc_test_and_cc_enclave_test(
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
-        ":platform_provisioning_cc_proto",
         ":proto_format",
         ":sgx_identity_cc_proto",
         ":sgx_identity_util",
         "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "signed_tcb_info_from_json",
-    srcs = ["signed_tcb_info_from_json.cc"],
-    hdrs = ["signed_tcb_info_from_json.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":sgx_pcs_client_cc_proto",
-        "//asylo/util:error_codes",
-        "//asylo/util:hex_util",
-        "//asylo/util:proto_struct_util",
-        "//asylo/util:status",
-        "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@com_google_protobuf//:protobuf",
-        "@com_googlesource_code_re2//:re2",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "signed_tcb_info_from_json_test",
-    srcs = ["signed_tcb_info_from_json_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":sgx_pcs_client_cc_proto",
-        ":signed_tcb_info_from_json",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:error_codes",
-        "//asylo/util:status",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:cc_wkt_protos",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -1780,11 +1499,11 @@ cc_library(
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":pck_certificates_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":tcb_cc_proto",
-        ":tcb_info_from_json",
         "//asylo/crypto:certificate_cc_proto",
         "//asylo/crypto:certificate_util",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:tcb_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:tcb_info_from_json",
         "//asylo/util:error_codes",
         "//asylo/util:function_deleter",
         "//asylo/util:hex_util",
@@ -1815,91 +1534,5 @@ cc_test(
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:cc_wkt_protos",
         "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_library(
-    name = "sgx_pcs_client",
-    hdrs = ["sgx_pcs_client.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":machine_configuration_cc_proto",
-        ":pck_certificates_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":sgx_pcs_client_cc_proto",
-        ":tcb_cc_proto",
-        "//asylo/crypto:certificate_cc_proto",
-        "//asylo/util:status",
-    ],
-)
-
-cc_library(
-    name = "sgx_pcs_client_impl",
-    srcs = ["sgx_pcs_client_impl.cc"],
-    hdrs = ["sgx_pcs_client_impl.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":machine_configuration_cc_proto",
-        ":pck_certs_from_json",
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":sgx_pcs_client",
-        ":sgx_pcs_client_cc_proto",
-        ":signed_tcb_info_from_json",
-        ":tcb",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto:asymmetric_encryption_key",
-        "//asylo/crypto:certificate_util",
-        "//asylo/util:function_deleter",
-        "//asylo/util:hex_util",
-        "//asylo/util:http_fetcher",
-        "//asylo/util:logging",
-        "//asylo/util:proto_enum_util",
-        "//asylo/util:status",
-        "//asylo/util:url_util",
-        "@com_github_curl_curl//:curl",
-        "@com_google_absl//absl/container:flat_hash_map",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/strings:str_format",
-    ],
-)
-
-cc_test(
-    name = "sgx_pcs_client_impl_test",
-    srcs = ["sgx_pcs_client_impl_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":sgx_pcs_client_cc_proto",
-        ":sgx_pcs_client_impl",
-        "//asylo/crypto:algorithms_cc_proto",
-        "//asylo/crypto/util:byte_container_view",
-        "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "//asylo/util:error_codes",
-        "//asylo/util:status",
-        "@com_google_absl//absl/memory",
-        "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
-        "@com_google_protobuf//:protobuf",
-    ],
-)
-
-cc_library(
-    name = "mock_sgx_pcs_client",
-    testonly = 1,
-    hdrs = ["mock_sgx_pcs_client.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
-    deps = [
-        ":machine_configuration_cc_proto",
-        ":platform_provisioning_cc_proto",
-        ":sgx_pcs_client",
-        "//asylo/util:status",
-        "@com_google_googletest//:gtest",
     ],
 )

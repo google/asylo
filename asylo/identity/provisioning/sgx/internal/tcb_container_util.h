@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_TCB_CONTAINER_UTIL_H_
-#define ASYLO_IDENTITY_SGX_TCB_CONTAINER_UTIL_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_CONTAINER_UTIL_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_CONTAINER_UTIL_H_
 
 #include <cstddef>
 #include <functional>
 #include <string>
 
-#include "asylo/identity/sgx/tcb.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 
 namespace asylo {
 namespace sgx {
@@ -62,4 +62,4 @@ struct RawTcbEqual {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_TCB_CONTAINER_UTIL_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_CONTAINER_UTIL_H_

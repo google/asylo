@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/signed_tcb_info_from_json.h"
+#include "asylo/identity/provisioning/sgx/internal/signed_tcb_info_from_json.h"
 
 #include <string>
 #include <utility>
@@ -25,7 +25,7 @@
 #include <google/protobuf/util/json_util.h>
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_replace.h"
-#include "asylo/identity/sgx/sgx_pcs_client.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/util/error_codes.h"
 #include "asylo/util/hex_util.h"
 #include "asylo/util/proto_struct_util.h"

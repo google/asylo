@@ -35,7 +35,6 @@
 #include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/platform/common/singleton.h"

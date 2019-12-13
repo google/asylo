@@ -108,7 +108,7 @@ proto_library(
     srcs = ["report_oracle_enclave.proto"],
     deps = [
         "//asylo:enclave_proto",
-        "//asylo/identity/sgx:platform_provisioning_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
     ],
 )
 
@@ -125,8 +125,8 @@ sgx_cc_unsigned_enclave(
         ":report_oracle_enclave_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/identity/sgx:hardware_interface",
-        "//asylo/identity/sgx:platform_provisioning",
         "//asylo/util:status",
     ],
 )
@@ -161,11 +161,11 @@ sgx_enclave_test(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:rsa_oaep_encryption_key",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:intel_ecdsa_quote",
         "//asylo/identity/sgx:pce_util",
-        "//asylo/identity/sgx:platform_provisioning",
-        "//asylo/identity/sgx:platform_provisioning_cc_proto",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
         "//asylo/test/util:memory_matchers",
         "//asylo/test/util:status_matchers",

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/platform_provisioning.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 
 #include <limits>
 

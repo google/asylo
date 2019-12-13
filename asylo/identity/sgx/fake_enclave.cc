@@ -35,7 +35,6 @@
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/secs_miscselect.h"

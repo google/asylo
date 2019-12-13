@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PROVISIONING_CONSISTENCY_CHECKER_H_
-#define ASYLO_IDENTITY_SGX_PROVISIONING_CONSISTENCY_CHECKER_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PROVISIONING_CONSISTENCY_CHECKER_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PROVISIONING_CONSISTENCY_CHECKER_H_
 
 #include <string>
 
 #include "absl/container/flat_hash_set.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
-#include "asylo/identity/sgx/tcb.pb.h"
-#include "asylo/identity/sgx/tcb_container_util.h"
 
 namespace asylo {
 namespace sgx {
@@ -76,4 +76,4 @@ class ProvisioningConsistencyChecker {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PROVISIONING_CONSISTENCY_CHECKER_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PROVISIONING_CONSISTENCY_CHECKER_H_

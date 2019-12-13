@@ -16,15 +16,15 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SGX_PCS_CLIENT_H_
-#define ASYLO_IDENTITY_SGX_SGX_PCS_CLIENT_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SGX_PCS_CLIENT_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SGX_PCS_CLIENT_H_
 
 #include "asylo/crypto/certificate.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/sgx_pcs_client.pb.h"
-#include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -92,4 +92,4 @@ class SgxPcsClient {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SGX_PCS_CLIENT_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SGX_PCS_CLIENT_H_

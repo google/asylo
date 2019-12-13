@@ -20,8 +20,8 @@ package asylo.sgx;
 
 import "asylo/crypto/certificate.proto";
 import "asylo/enclave.proto";
+import "asylo/identity/provisioning/sgx/internal/platform_provisioning.proto";
 import "asylo/identity/sealing/sealed_secret.proto";
-import "asylo/identity/sgx/platform_provisioning.proto";
 import "asylo/identity/sgx/remote_assertion.proto";
 
 extend EnclaveInput {

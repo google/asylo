@@ -16,14 +16,14 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
-#define ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PLATFORM_PROVISIONING_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PLATFORM_PROVISIONING_H_
 
 #include <cstdint>
 
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 
@@ -77,4 +77,4 @@ StatusOr<Targetinfo> ConvertTargetInfoProtoToTargetinfo(
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_PLATFORM_PROVISIONING_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_PLATFORM_PROVISIONING_H_

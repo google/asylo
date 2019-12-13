@@ -21,10 +21,10 @@
 
 #include "absl/types/optional.h"
 #include "asylo/crypto/asn1.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/tcb.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
 

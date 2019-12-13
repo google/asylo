@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/tcb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.h"
 
 #include <endian.h>
 
@@ -30,8 +30,8 @@
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/util/byte_container_view.h"
-#include "asylo/identity/sgx/platform_provisioning.h"
-#include "asylo/identity/sgx/tcb_container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 #include "asylo/util/hex_util.h"
 #include "asylo/util/status_macros.h"
 

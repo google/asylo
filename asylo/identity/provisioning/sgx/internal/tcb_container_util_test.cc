@@ -16,17 +16,17 @@
  *
  */
 
-#include "asylo/identity/sgx/tcb_container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/container/flat_hash_set.h"
 #include "absl/random/random.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/platform_provisioning.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/tcb.h"
-#include "asylo/identity/sgx/tcb.pb.h"
 
 namespace asylo {
 namespace sgx {

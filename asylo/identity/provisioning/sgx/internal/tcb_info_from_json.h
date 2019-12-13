@@ -16,12 +16,12 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_TCB_INFO_FROM_JSON_H_
-#define ASYLO_IDENTITY_SGX_TCB_INFO_FROM_JSON_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_INFO_FROM_JSON_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_INFO_FROM_JSON_H_
 
 #include <string>
 
-#include "asylo/identity/sgx/tcb.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -58,4 +58,4 @@ StatusOr<TcbInfo> TcbInfoFromJson(const std::string &json_string);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_TCB_INFO_FROM_JSON_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_TCB_INFO_FROM_JSON_H_

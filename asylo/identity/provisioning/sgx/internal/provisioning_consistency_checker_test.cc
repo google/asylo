@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/provisioning_consistency_checker.h"
+#include "asylo/identity/provisioning/sgx/internal/provisioning_consistency_checker.h"
 
 #include <string>
 #include <tuple>

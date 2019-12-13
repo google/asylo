@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/sgx_pcs_client_impl.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client_impl.h"
 
 #include <algorithm>
 #include <vector>
@@ -28,9 +28,10 @@
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/algorithms.pb.h"
 #include "asylo/crypto/util/byte_container_view.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/sgx_pcs_client.pb.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/error_codes.h"

@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/tcb_info_from_json.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb_info_from_json.h"
 
 #include <endian.h>
 
@@ -36,9 +36,9 @@
 #include "absl/time/time.h"
 #include "absl/types/span.h"
 #include "asylo/util/logging.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/tcb.h"
-#include "asylo/identity/sgx/tcb.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.h"
+#include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/test/util/output_collector.h"
 #include "asylo/test/util/proto_matchers.h"
 #include "asylo/test/util/status_matchers.h"

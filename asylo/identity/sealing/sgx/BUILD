@@ -70,7 +70,6 @@ cc_test(
         "//asylo/identity/sgx:fake_enclave",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:machine_configuration_cc_proto",
-        "//asylo/identity/sgx:platform_provisioning_cc_proto",
         "//asylo/identity/sgx:proto_format",
         "//asylo/identity/sgx:sgx_identity_util_internal",
         "//asylo/platform/common:singleton",

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_SGX_PCS_CLIENT_IMPL_H_
-#define ASYLO_IDENTITY_SGX_SGX_PCS_CLIENT_IMPL_H_
+#ifndef ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SGX_PCS_CLIENT_IMPL_H_
+#define ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SGX_PCS_CLIENT_IMPL_H_
 
 #include <memory>
 #include <string>
@@ -25,10 +25,10 @@
 
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/asymmetric_encryption_key.h"
+#include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.h"
+#include "asylo/identity/provisioning/sgx/internal/sgx_pcs_client.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
-#include "asylo/identity/sgx/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/sgx_pcs_client.h"
-#include "asylo/identity/sgx/sgx_pcs_client.pb.h"
 #include "asylo/util/http_fetcher.h"
 
 namespace asylo {
@@ -74,4 +74,4 @@ class SgxPcsClientImpl : public SgxPcsClient {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_SGX_PCS_CLIENT_IMPL_H_
+#endif  // ASYLO_IDENTITY_PROVISIONING_SGX_INTERNAL_SGX_PCS_CLIENT_IMPL_H_

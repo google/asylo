@@ -3,8 +3,8 @@ syntax = "proto2";
 package asylo.sgx;
 
 import "google/protobuf/timestamp.proto";
+import "asylo/identity/provisioning/sgx/internal/platform_provisioning.proto";
 import "asylo/identity/sgx/machine_configuration.proto";
-import "asylo/identity/sgx/platform_provisioning.proto";
 
 // This file defines the messages representing information about an SGX
 // platform's Trusted Computing Base (TCB).
