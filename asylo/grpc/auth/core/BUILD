@@ -252,6 +252,7 @@ cc_library(
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
