@@ -113,7 +113,7 @@ cc_library(
     visibility = ["//visibility:public"],
     deps = [
         ":identity_cc_proto",
-        "//asylo/identity/attestation/null:null_identity_constants",
+        "//asylo/identity/attestation/null/internal:null_identity_constants",
         "//asylo/identity/sgx:code_identity_constants",
     ],
 )

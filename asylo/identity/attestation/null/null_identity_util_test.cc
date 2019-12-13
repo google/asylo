@@ -20,7 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "asylo/identity/attestation/null/null_identity_constants.h"
+#include "asylo/identity/attestation/null/internal/null_identity_constants.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
 

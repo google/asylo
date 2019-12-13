@@ -21,7 +21,7 @@
 #include "absl/synchronization/mutex.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/attestation/null/internal/null_assertion.pb.h"
-#include "asylo/identity/attestation/null/null_identity_constants.h"
+#include "asylo/identity/attestation/null/internal/null_identity_constants.h"
 #include "asylo/platform/common/static_map.h"
 
 namespace asylo {

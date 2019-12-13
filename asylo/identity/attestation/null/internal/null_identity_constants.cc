@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/attestation/null/null_identity_constants.h"
+#include "asylo/identity/attestation/null/internal/null_identity_constants.h"
 
 namespace asylo {
 

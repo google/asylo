@@ -12,6 +12,9 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+#
+
+load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -30,4 +33,13 @@ proto_library(
 cc_proto_library(
     name = "null_assertion_cc_proto",
     deps = [":null_assertion_proto"],
+)
+
+# String constants related to null identity and assertions.
+cc_library(
+    name = "null_identity_constants",
+    srcs = ["null_identity_constants.cc"],
+    hdrs = ["null_identity_constants.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo/identity:__subpackages__"],
 )
