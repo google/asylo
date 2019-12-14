@@ -37,14 +37,37 @@ class ForkSecurityTest : public EnclaveTestCase {
     }
     ForkSecurityTestInput test_input =
         input.GetExtension(fork_security_test_input);
-    if (!test_input.has_request_fork()) {
+    if (!test_input.has_thread_type()) {
       return Status(error::GoogleError::INVALID_ARGUMENT,
                     "Missing thread type");
     }
-    if (test_input.request_fork()) {
-      SetForkRequested();
+    if (test_input.thread_type() == ForkSecurityTestInput::SETREQUEST) {
+      if (!test_input.has_request_fork()) {
+        return Status(error::GoogleError::INVALID_ARGUMENT,
+                      "Missing request fork");
+      }
+      if (test_input.request_fork()) {
+        SetForkRequested();
+      }
+      SaveThreadLayoutForSnapshot();
+    } else if (test_input.thread_type() == ForkSecurityTestInput::WAIT) {
+      if (!test_input.has_wait_thread_inside() ||
+          test_input.wait_thread_inside() == 0) {
+        return Status(error::GoogleError::INVALID_ARGUMENT,
+                      "Missing wait thread inside");
+      }
+      // Set the untrusted bit to inform the untrusted side the wait thread has
+      // entered the enclave.
+      volatile bool *wait_thread_inside =
+          reinterpret_cast<bool *>(test_input.wait_thread_inside());
+      *wait_thread_inside = true;
+      // Stay inside the enclave until the untrusted side finished verifying and
+      // reset the bit.
+      while (*wait_thread_inside) {}
+    } else {
+      return Status(error::GoogleError::INVALID_ARGUMENT,
+                    "Unrecognized thread type");
     }
-    SaveThreadLayoutForSnapshot();
     return Status::OkStatus();
   }
 };

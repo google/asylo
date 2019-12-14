@@ -19,6 +19,7 @@
 #include <openssl/rand.h>
 
 #include <string>
+#include <thread>
 #include <vector>
 
 #include <gtest/gtest.h>
@@ -96,7 +97,10 @@ class SnapshotDeleter {
 
 class ForkSecurityTest : public ::testing::Test {
  public:
-  ForkSecurityTest() : enclave_finalized_(false), enclave_crashed_(false) {}
+  ForkSecurityTest()
+      : enclave_finalized_(false),
+        enclave_crashed_(false),
+        wait_thread_inside_(false) {}
 
  protected:
   static void SetUpTestSuite() {
@@ -150,6 +154,8 @@ class ForkSecurityTest : public ::testing::Test {
     // snapshotting.
     EnclaveInput input;
     input.MutableExtension(fork_security_test_input)
+        ->set_thread_type(ForkSecurityTestInput::SETREQUEST);
+    input.MutableExtension(fork_security_test_input)
         ->set_request_fork(request_fork);
     ASYLO_RETURN_IF_ERROR(client_->EnterAndRun(input, /*output=*/nullptr));
 
@@ -187,9 +193,21 @@ class ForkSecurityTest : public ::testing::Test {
   SnapshotDeleter snapshot_deleter_;
   bool enclave_finalized_;
   bool enclave_crashed_;
+  volatile bool wait_thread_inside_;
 };
 
 EnclaveManager *ForkSecurityTest::manager_ = nullptr;
+
+// Enters the enclave and stay inside until being notified to exit.
+void EnterEnclaveAndWait(GenericEnclaveClient *client,
+                         volatile bool *wait_thread_inside) {
+  EnclaveInput input;
+  input.MutableExtension(fork_security_test_input)
+      ->set_thread_type(ForkSecurityTestInput::WAIT);
+  input.MutableExtension(fork_security_test_input)
+      ->set_wait_thread_inside(reinterpret_cast<uint64_t>(wait_thread_inside));
+  client->EnterAndRun(input, /*output=*/nullptr);
+}
 
 // Tests that trying to take a snapshot or initialize a key transfer without
 // setting the fork requested bit fails.
@@ -222,6 +240,42 @@ TEST_F(ForkSecurityTest, RestoreSucceed) {
   if (status.ok()) {
     // SGX hardware mode. Enter the enclave and restore it.
     ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_), IsOk());
+    // Confirms that further calls can enter the enclave after restore
+    // succeeded.
+    EnclaveInput input;
+    input.MutableExtension(fork_security_test_input)
+        ->set_thread_type(ForkSecurityTestInput::SETREQUEST);
+    input.MutableExtension(fork_security_test_input)->set_request_fork(false);
+    EXPECT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), IsOk());
+  } else {
+    // No need to do security test for non-hardware mode. Snapshotting/restoring
+    // are not supported.
+    EXPECT_THAT(status,
+                StatusIs(error::GoogleError::UNAVAILABLE,
+                         "Secure fork not supported in non SGX hardware mode"));
+  }
+}
+
+// Tests that RestoreEnclave should fail if other threads are running inside the
+// enclave.
+TEST_F(ForkSecurityTest, RestoreWithOtherThreadsRunning) {
+  Status status =
+      LoadEnclaveAndTakeSnapshot("Restore with other threads running",
+                                 /*request_fork=*/true);
+  if (status.ok()) {
+    // Confirms that Restore succeeds without other threads running.
+    ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_), IsOk());
+    // Create a thread to enter the enclave and busy wait.
+    std::thread wait_thread(EnterEnclaveAndWait, client_, &wait_thread_inside_);
+    // Wait till the wait thread enters the enclave.
+    while (!wait_thread_inside_) {}
+    // Restore should fail if other threads are running inside the enclave.
+    EXPECT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
+                Not(IsOk()));
+    // Set the bit back so that the wait thread will exit.
+    wait_thread_inside_ = false;
+    wait_thread.join();
+    enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
     // are not supported.
@@ -243,6 +297,12 @@ TEST_F(ForkSecurityTest, RestoreWithModifyData) {
     // an error.
     ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 Not(IsOk()));
+    // If restore fails, no further entries should be allowed.
+    EnclaveInput input;
+    input.MutableExtension(fork_security_test_input)
+        ->set_thread_type(ForkSecurityTestInput::SETREQUEST);
+    input.MutableExtension(fork_security_test_input)->set_request_fork(false);
+    EXPECT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -265,6 +325,12 @@ TEST_F(ForkSecurityTest, RestoreWithModifyBss) {
     // error.
     ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 Not(IsOk()));
+    // If restore fails, no further entries should be allowed.
+    EnclaveInput input;
+    input.MutableExtension(fork_security_test_input)
+        ->set_thread_type(ForkSecurityTestInput::SETREQUEST);
+    input.MutableExtension(fork_security_test_input)->set_request_fork(false);
+    EXPECT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -288,6 +354,12 @@ TEST_F(ForkSecurityTest, RestoreWithModifyThread) {
     // return an error.
     ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 Not(IsOk()));
+    // If restore fails, no further entries should be allowed.
+    EnclaveInput input;
+    input.MutableExtension(fork_security_test_input)
+        ->set_thread_type(ForkSecurityTestInput::SETREQUEST);
+    input.MutableExtension(fork_security_test_input)->set_request_fork(false);
+    EXPECT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring
@@ -310,6 +382,12 @@ TEST_F(ForkSecurityTest, RestoreWithModifyStack) {
     // error.
     ASSERT_THAT(primitive_client_->EnterAndRestore(snapshot_layout_),
                 Not(IsOk()));
+    // If restore fails, no further entries should be allowed.
+    EnclaveInput input;
+    input.MutableExtension(fork_security_test_input)
+        ->set_thread_type(ForkSecurityTestInput::SETREQUEST);
+    input.MutableExtension(fork_security_test_input)->set_request_fork(false);
+    EXPECT_THAT(client_->EnterAndRun(input, /*output=*/nullptr), Not(IsOk()));
     enclave_finalized_ = true;
   } else {
     // No need to do security test for non-hardware mode. Snapshotting/restoring

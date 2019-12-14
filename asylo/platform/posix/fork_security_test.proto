@@ -25,6 +25,18 @@ import "asylo/enclave.proto";
 message ForkSecurityTestInput {
   // Whether request a snapshot inside the enclave.
   optional bool request_fork = 1;
+  enum ThreadType {
+    UNSUPPORTED = 0;
+    // Enters the enclave to set |request_fork| bit.
+    SETREQUEST = 1;
+    // Enters the enclave and busy wait.
+    WAIT = 2;
+  }
+  optional ThreadType thread_type = 2;
+
+  // An untrusted address that specifies whether the wait thread is staying
+  // inside the enclave.
+  optional uint64 wait_thread_inside = 3;
 }
 
 extend EnclaveInput {
