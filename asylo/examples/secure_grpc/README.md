@@ -28,6 +28,9 @@ Specifically, the guide demonstrates how to configure the authentication
 policies on two gRPC endpoints, and how to enforce a per-call authorization
 policy based on enclave identity in the gRPC server.
 
+The source files for this example are located in the
+[asylo/examples/secure_grpc](/asylo/examples/secure_grpc) folder.
+
 This guide builds on the concepts introduced in the
 [Asylo gRPC Server Example](https://asylo.dev/docs/guides/grpc_server.html).
 Readers are recommended to first review that guide before starting on this one.
@@ -127,7 +130,8 @@ Translation for "asylo" is "sanctuary"
 ## Server ACL
 
 In the above [command](#running-the-server-enclave) for running the server, the
-server uses ACL defined in `acl_isvprodid_2.textproto`:
+server uses ACL defined in
+[`acl_isvprodid_2.textproto`](/asylo/examples/secure_grpc/acl_isvprodid_2.textproto):
 
 ```textproto
 # Message type: asylo.SgxIdentityExpectation
@@ -201,7 +205,8 @@ for safeguarding enclave-signing keys.
 
 ## Authorization Failure: Wrong ISVPRODID
 
-Let’s try running the server with a different ACL. The `acl_isvprodid_3.proto`
+Let’s try running the server with a different ACL. The
+[`acl_isvprodid_3.proto`](/asylo/examples/secure_grpc/acl_isvprodid_3.textproto):
 file specifies an ACL for an ISVPRODID of `3`, which does not match the client’s
 signer-assigned identity:
 
@@ -252,10 +257,11 @@ contains bits about the enclave’s execution environment. The DEBUG bit is
 
 We can enforce that the peer is a non-debug enclave by setting an expectation on
 the peer’s SGX ATTRIBUTES in the server’s ACL. This is shown in
-`acl_non_debug.textproto`, which sets ATTRIBUTES to `0x0` in the reference
-identity, and the ATTRIBUTES match mask to `0x2`. This indicates that the DEBUG
-bit in the peer’s identity _must_ match the value of the DEBUG bit the reference
-identity (i.e., the peer must *not* be a DEBUG enclave).
+[`acl_non_debug.textproto`](/asylo/examples/secure_grpc/acl_non_debug.textproto),
+which sets ATTRIBUTES to `0x0` in the reference identity, and the ATTRIBUTES
+match mask to `0x2`. This indicates that the DEBUG bit in the peer’s identity
+_must_ match the value of the DEBUG bit the reference identity (i.e., the peer
+must *not* be a DEBUG enclave).
 
 ```textproto
 # Message type: asylo.SgxIdentityExpectation
