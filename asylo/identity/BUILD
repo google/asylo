@@ -97,8 +97,8 @@ cc_test(
     deps = [
         ":enclave_assertion_authority_config_cc_proto",
         ":init",
-        "//asylo/identity/null_identity:null_assertion_generator",
-        "//asylo/identity/null_identity:null_assertion_verifier",
+        "//asylo/identity/attestation/null:null_assertion_generator",
+        "//asylo/identity/attestation/null:null_assertion_verifier",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",

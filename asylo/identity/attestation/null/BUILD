@@ -24,7 +24,7 @@ licenses(["notice"])  # Apache v2.0
 package(default_visibility = ["//visibility:public"])
 
 # Implementation of the EnclaveAssertionGenerator interface for null
-# assertions. This library is provided by default with the enclave gRPC stack.
+# assertions.
 cc_library(
     name = "null_assertion_generator",
     srcs = [
@@ -44,7 +44,6 @@ cc_library(
 )
 
 # Implementation of the EnclaveAssertionVerifier interface for null assertions.
-# This library is provided by default with the enclave gRPC stack.
 cc_library(
     name = "null_assertion_verifier",
     srcs = [

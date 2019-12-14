@@ -21,7 +21,7 @@ licenses(["notice"])  # Apache v2.0
 # Contains libraries related to null identity and null assertion.
 
 # Implementation of the EnclaveAssertionGenerator interface for null
-# assertions. This library is provided by default with the enclave gRPC stack.
+# assertions.
 cc_library(
     name = "null_assertion_generator",
     copts = ASYLO_DEFAULT_COPTS,
@@ -32,7 +32,6 @@ cc_library(
 )
 
 # Implementation of the EnclaveAssertionVerifier interface for null assertions.
-# This library is provided by default with the enclave gRPC stack.
 cc_library(
     name = "null_assertion_verifier",
     copts = ASYLO_DEFAULT_COPTS,

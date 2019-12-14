@@ -81,9 +81,9 @@ cc_library(
     deps = [
         ":grpc++_security_enclave",
         "//asylo/identity:descriptions",
-        "//asylo/identity/null_identity:null_assertion_generator",  # alwayslink = 1
-        "//asylo/identity/null_identity:null_assertion_verifier",  # alwayslink = 1
-        "//asylo/identity/null_identity:null_identity_expectation_matcher",  # alwayslink = 1
+        "//asylo/identity/attestation/null:null_assertion_generator",  # alwayslink = 1
+        "//asylo/identity/attestation/null:null_assertion_verifier",  # alwayslink = 1
+        "//asylo/identity/attestation/null:null_identity_expectation_matcher",  # alwayslink = 1
     ],
 )
 
