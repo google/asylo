@@ -25,39 +25,40 @@
 namespace asylo {
 namespace primitives {
 
-// This file declares types and constants used by both trusted and untrusted
-// code, but which are not passed across the enclave boundary.
+/// \file This file declares types and constants used by both trusted and
+/// untrusted code, but which are not passed across the enclave boundary.
 
 //////////////////////////////////////
 //      Entry handler selectors     //
 //////////////////////////////////////
 
-// Invalid entry point selector.
+/// Invalid entry point selector.
 static constexpr uint64_t kSelectorAsyloInvalid = 0;
 
-// Enclave enter and donate thread entry point selector.
+/// Enclave enter and donate thread entry point selector.
 static constexpr uint64_t kSelectorAsyloDonateThread = 2;
 
-// Enclave finalization entry point selector.
+/// Enclave finalization entry point selector.
 static constexpr uint64_t kSelectorAsyloFini = 3;
 
 //////////////////////////////////////
 //      Exit handler selectors      //
 //////////////////////////////////////
 
-// Selector for thread creation handler.
+/// Selector for thread creation handler.
 static constexpr uint64_t kSelectorCreateThread = 87;
 
-// Selector values in [kSelectorHostCall, kSelectorRemote) range are reserved
-// for untrusted host call handlers and cannot be used by any other component.
+/// Selector values in [`kSelectorHostCall`, `kSelectorRemote`) range are
+/// reserved for untrusted host call handlers and cannot be used by any other
+/// component.
 static constexpr uint64_t kSelectorHostCall = 88;
 
-// Selector values in [kSelectorRemote, kSelectorUser) range are reserved for
-// remote backend needs and cannot be used by any other component.
+/// Selector values in [`kSelectorRemote`, `kSelectorUser`) range are reserved
+/// for remote backend needs and cannot be used by any other component.
 static constexpr uint64_t kSelectorRemote = 120;
 
-// Selector values less than `kSelectorUser` are reserved by the runtime and may
-// not be registered by the applications.
+/// Selector values less than `kSelectorUser` are reserved by the runtime and
+/// may not be registered by the applications.
 static constexpr uint64_t kSelectorUser = 128;
 
 }  // namespace primitives

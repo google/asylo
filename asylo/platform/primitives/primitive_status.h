@@ -55,29 +55,42 @@ namespace primitives {
 // Ensure common width for implementation-defined types.
 static_assert(sizeof(size_t) == 8, "Unexpected size for type size_t");
 
-// Shared representation of a status code. PrimitiveStatus does not include an
-// error space and always refers to a google::GoogleError value.
+/// \class PrimitiveStatus primitive_status.h @primitive_status
+/// Shared representation of a status code across the enclave boundary.
+///
+/// PrimitiveStatus does not include an error space and always refers to a
+/// google::GoogleError value.
 class PrimitiveStatus {
  public:
-  // Maximum error string length in characters.
+  /// Maximum error string length in characters.
   static constexpr size_t kMessageMax = 1024;
 
-  // Builds an OK status.
-  PrimitiveStatus() : error_code_(error::GoogleError::OK) {
-    message_[0] = '\0';
-  }
+  /// Builds an OK status.
+  PrimitiveStatus() : PrimitiveStatus(error::GoogleError::OK) {}
 
-  // Builds a status with an error code and an empty message.
-  PrimitiveStatus(int code) : error_code_(code) { message_[0] = '\0'; }
+  /// Builds a status with an error code and an empty message.
+  ///
+  /// \param code An error code that is interpreted as a google::GoogleError
+  ///    value.
+  explicit PrimitiveStatus(int code) : error_code_(code) { message_[0] = '\0'; }
 
-  // Builds a status with an error code and error message.
-  PrimitiveStatus(int code, const char *message) : error_code_(code) {
-    size_t size = std::min(strlen(message), kMessageMax - 1);
-    memcpy(message_, message, size);
-    message_[size] = '\0';
-  }
+  /// Builds a status with an error code and error message.
+  ///
+  /// \param code An error code that is interpreted as a google::GoogleError
+  ///    value.
+  /// \param message A message string that is truncated if longer than
+  ///    `kMessageMax - 1` characters. The length is computed with strlen.
+  PrimitiveStatus(int code, const char *message)
+      : PrimitiveStatus(code, message, strlen(message)) {}
 
-  // Builds a status with an error code and a message of size `message_size`.
+  /// Builds a status with an error code and a message of size `message_size`.
+  ///
+  /// \param code An error code that is interpreted as a google::GoogleError
+  ///    value.
+  /// \param message A message string that is truncated if longer than
+  ///    `kMessageMax - 1` characters.
+  /// \param message_size The size of the `message` to copy, which will not
+  ///    exceed `kMessageMax - 1` characters.
   PrimitiveStatus(int code, const char *message, size_t message_size)
       : error_code_(code) {
     message_size = std::min(message_size, kMessageMax - 1);
@@ -85,19 +98,15 @@ class PrimitiveStatus {
     message_[message_size] = '\0';
   }
 
-  // Builds a status with an error code and a message in string format.
-  PrimitiveStatus(int code, const std::string &message) : error_code_(code) {
-    size_t size = std::min(message.length(), kMessageMax - 1);
-    memcpy(message_, message.data(), size);
-    message_[size] = '\0';
-  }
+  /// Builds a status with an error code and a message in string format.
+  PrimitiveStatus(int code, const std::string &message)
+        : PrimitiveStatus(code, message.data(), message.length()) {}
 
-  PrimitiveStatus(const PrimitiveStatus &other) {
-    error_code_ = other.error_code_;
-    size_t size = std::min(strlen(other.message_), kMessageMax - 1);
-    memcpy(message_, other.message_, size);
-    message_[size] = '\0';
-  }
+  /// Copy constructor.
+  ///
+  /// \param other The status to copy. Strings are memcpy'd.
+  PrimitiveStatus(const PrimitiveStatus &other)
+        : PrimitiveStatus(other.error_code_, other.message_) {}
 
   PrimitiveStatus &operator=(const PrimitiveStatus &other) {
     error_code_ = other.error_code_;
@@ -106,16 +115,23 @@ class PrimitiveStatus {
     return *this;
   }
 
-  // Constructs an OK status object.
+  /// PrimitiveStatus::OkStatus() is the canonical name for an OK status.
+  /// \returns An OK status object.
   static PrimitiveStatus OkStatus() { return PrimitiveStatus{}; }
 
-  // Gets the integer error code for this object.
+  /// Getter for this object's error code.
+  ///
+  /// \returns The integer error code for this object.
   int error_code() const { return error_code_; }
 
-  // Gets the string error message for this object.
+  /// Getter for this object's error message.
+  ///
+  /// returns The string error message for this object.
   const char *error_message() const { return message_; }
 
-  // Indicates whether this object is OK (indicates no error).
+  /// Predicate for non-error status.
+  ///
+  /// \returns True if and only if this object is OK (indicates no error).
   bool ok() const { return error_code_ == error::GoogleError::OK; }
 
  private:

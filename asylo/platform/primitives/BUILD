@@ -32,6 +32,7 @@ cc_library(
         "primitives.h",
     ],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo/util:error_codes",
     ],

@@ -28,53 +28,76 @@
 namespace asylo {
 namespace primitives {
 
-// A extent object suitable for sharing address ranges between trusted and
-// untrusted code.
+/// \class Extent extent.h asylo/platform/primitives/extent.h
+/// A extent object suitable for sharing address ranges between trusted and
+/// untrusted code.
 class Extent {
  public:
-  // Initializes an empty extent.
-  constexpr Extent() : data_(nullptr), size_(0) {}
+  /// Initializes an empty extent.
+  constexpr Extent() : Extent(/*data=*/nullptr, /*size=*/0) {}
 
-  // Initializes a extent with a void pointer
-  explicit constexpr Extent(void *data, size_t bytes)
-      : data_(data), size_(bytes) {}
+  /// Initializes an extent with a void pointer.
+  ///
+  /// \param data A pointer to the start of the extent of memory.
+  /// \param size The number of bytes in the extent.
+  constexpr Extent(void *data, size_t size)
+      : data_(data), size_(size) {}
 
-  // Initializes a extent with a pointer to a value.
+  /// Initializes an extent with a pointer to a value.
+  ///
+  /// The number of bytes stored for the extent is sizeof(T).
+  ///
+  /// \param data A pointer to an object of type T
   template <typename T>
   explicit constexpr Extent(T *data)
       : data_(raw_pointer(data)), size_(sizeof(T)) {}
 
-  // Initializes a extent with a pointer to an array of |count| objects of type
-  // T.
+  /// Initializes an extent with a pointer to an array of `count` objects of
+  /// type T.
+  ///
+  /// The size of the extent is `count * sizeof(T)`.
+  ///
+  /// \param data A pointer to the start of the array slice.
+  /// \param count The number of elements included in the extent.
   template <typename T>
   constexpr Extent(T *data, size_t count)
       : data_(raw_pointer(data)), size_(count * sizeof(T)) {}
 
-  // Returns the size of the extent in bytes.
+  /// \returns The size of the extent in bytes.
   size_t size() const { return size_; }
 
-  // Returns the extent data as a pointer to an array of bytes.
+  /// \returns The extent data as a pointer to an array of bytes.
   void *data() { return data_; }
 
-  // Const overload of Extent::data().
+  /// \returns The extent data as a constant pointer to an array of bytes.
   const void *data() const { return data_; }
 
-  // Returns true if the extent is empty.
+  /// A predicate for whether the extent is empty.
+  /// \returns True if and only if either the extent data is null or the size
+  ///    is 0.
   bool empty() const { return data_ == nullptr || size_ == 0; }
 
-  // Copies the contents of the extent to |out|. The caller is responsible for
-  // allocating and freeing |out| correctly.
+  /// Copies the contents of the extent to `out`. The caller is responsible for
+  /// allocating and freeing `out` correctly.
+  ///
+  /// \param out A pointer to a mutable array of bytes.
   void CopyTo(char *out) const {
     memcpy(out, data_, size_);
   }
 
-  // Returns the extent data as a pointer to an object of type T, or nullptr if
-  // the extent is smaller than sizeof(T).
+  /// A size-aware reinterpret_cast for a mutable pointer.
+  ///
+  /// \returns The extent data as a pointer to an object of type T, or nullptr
+  ///    if the extent is smaller than sizeof(T).
   template <typename T>
   T *As() {
     return size_ >= sizeof(T) ? reinterpret_cast<T *>(data_) : nullptr;
   }
 
+  /// A size-aware reinterpret_cast for a constant pointer.
+  ///
+  /// \returns The extent data as a constant pointer to an object of type T, or
+  ///    nullptr if the extent is smaller than sizeof(T).
   template <typename T>
   const T *As() const {
     return size_ >= sizeof(T) ? reinterpret_cast<const T *>(data_) : nullptr;
@@ -110,8 +133,8 @@ class Extent {
   size_t size_;
 };
 
-// Callback signature for a function which performs custom allocation of
-// an Extent.
+/// The callback signature for a function which performs custom allocation of
+/// an Extent.
 using ExtentAllocator = std::function<primitives::Extent(size_t)>;
 
 }  // namespace primitives

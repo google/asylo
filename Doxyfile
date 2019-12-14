@@ -240,7 +240,9 @@ TAB_SIZE               = 4
 
 ALIASES                = \
   trusted_primitives=asylo/platform/primitives/trusted_primitives.h \
-  untrusted_primitives=asylo/platform/primitives/untrusted_primitives.h
+  untrusted_primitives=asylo/platform/primitives/untrusted_primitives.h \
+  primitives=asylo/platform/primitives/primitives.h \
+  primitive_status=asylo/platform/primitives/primitive_status.h
 
 # This tag can be used to specify a number of word-keyword mappings (TCL only).
 # A mapping has the form "name=value". For example adding "class=itcl::class"
@@ -824,6 +826,9 @@ asylo/platform/core/shared_name.h \
 asylo/platform/core/shared_name_kind.h \
 asylo/platform/core/shared_resource_manager.h \
 asylo/platform/core/trusted_application.h \
+asylo/platform/primitives/extent.h \
+asylo/platform/primitives/primitive_status.h \
+asylo/platform/primitives/primitives.h \
 asylo/platform/primitives/trusted_primitives.h \
 asylo/platform/primitives/untrusted_primitives.h \
 asylo/test/util/exec_tester.h \
