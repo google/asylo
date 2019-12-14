@@ -139,9 +139,9 @@ VerifyCertificateChainsAndExtractIntelCertificateChain(
                                factory_map, required_root_certificate_proto));
     if (!std::any_of(verified_root_certificates.begin(),
                      verified_root_certificates.end(),
-                     [&required_root_cert = *required_root_certificate](
+                     [&required_root_certificate](
                          const std::unique_ptr<CertificateInterface> &other) {
-                       return required_root_cert == *other;
+                       return *required_root_certificate == *other;
                      })) {
       return Status(
           error::GoogleError::INVALID_ARGUMENT,
