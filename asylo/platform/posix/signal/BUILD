@@ -14,9 +14,9 @@
 # limitations under the License.
 #
 
-licenses(["notice"])  # Apache v2.0
-
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+
+licenses(["notice"])  # Apache v2.0
 
 package(
     default_visibility = [
@@ -31,6 +31,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS + ["-faligned-new"],
     deps = [
         "//asylo/platform/core:trusted_spin_lock",
+        "//asylo/util:lock_guard",
         "//asylo/util:status",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",

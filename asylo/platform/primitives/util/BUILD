@@ -114,6 +114,7 @@ cc_library(
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:trusted_primitives",
         "//asylo/platform/primitives:trusted_runtime",
+        "//asylo/util:lock_guard",
         "//asylo/util:status_macros",
     ],
 )

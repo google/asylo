@@ -29,6 +29,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
 #include "asylo/platform/primitives/util/message.h"
+#include "asylo/util/lock_guard.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {
@@ -63,7 +64,7 @@ struct {
 
 // Updates the state of the enclave.
 void UpdateEnclaveState(const Flag &flag) {
-  TrustedSpinLockGuard lock(&enclave_state.flags_write_lock);
+  LockGuard lock(&enclave_state.flags_write_lock);
   enclave_state.flags |= flag;
 }
 
@@ -74,7 +75,7 @@ PrimitiveStatus ReservedEntry(void *context, MessageReader *in,
 
 // Initializes the enclave if it has not been initialized already.
 void EnsureInitialized() {
-  TrustedSpinLockGuard lock(&enclave_state.initialization_lock);
+  LockGuard lock(&enclave_state.initialization_lock);
   if (!(enclave_state.flags & Flag::kInitialized)) {
     // Register placeholder handlers for reserved entry points.
     for (uint64_t i = kSelectorAsyloFini + 1; i < kSelectorUser; i++) {
@@ -102,7 +103,7 @@ void EnsureInitialized() {
 
 PrimitiveStatus RegisterEntryHandler(uint64_t trusted_selector,
                                      const EntryHandler &handler) {
-  TrustedSpinLockGuard lock(&enclave_state.entry_table_lock);
+  LockGuard lock(&enclave_state.entry_table_lock);
   if (trusted_selector >= kEntryPointMax ||
       !enclave_state.entry_table[trusted_selector].IsNull()) {
     return {error::GoogleError::OUT_OF_RANGE,

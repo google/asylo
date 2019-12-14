@@ -93,19 +93,6 @@ class alignas(kCacheLineSize) TrustedSpinLock {
 static_assert(sizeof(TrustedSpinLock) == kCacheLineSize,
               "TrustedSpinLock must be sizeof a cache line.");
 
-// An RAII wrapper for a TrustedSpinLock.
-class TrustedSpinLockGuard {
- public:
-  explicit TrustedSpinLockGuard(TrustedSpinLock *lock) : lock_(lock) {
-    lock->Lock();
-  }
-
-  ~TrustedSpinLockGuard() { lock_->Unlock(); }
-
- private:
-  TrustedSpinLock *const lock_;
-};
-
 }  // namespace asylo
 
 #endif  // ASYLO_PLATFORM_CORE_TRUSTED_SPIN_LOCK_H_

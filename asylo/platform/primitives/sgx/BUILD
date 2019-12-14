@@ -126,6 +126,7 @@ cc_library(
     ) + [
         ":sgx_params",
         "@com_google_absl//absl/strings",
+        "//asylo/util:lock_guard",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:cleanup",
         "@com_google_absl//absl/memory",

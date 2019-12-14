@@ -16,12 +16,14 @@
  *
  */
 
+#include "asylo/platform/posix/signal/signal_manager.h"
+
 #include <signal.h>
 
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/synchronization/mutex.h"
-#include "asylo/platform/posix/signal/signal_manager.h"
+#include "asylo/util/lock_guard.h"
 
 namespace asylo {
 namespace {
@@ -74,7 +76,7 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
   sigset_t old_mask;
   sigprocmask(SIG_SETMASK, &mask, &old_mask);
   {
-    TrustedSpinLockGuard lock(&signal_maps_lock_);
+    LockGuard lock(&signal_maps_lock_);
     signal_to_sigaction_[signum] = absl::make_unique<struct sigaction>(act);
   }
   // Set the signal mask back to the original one to unblock the signals.
@@ -82,7 +84,7 @@ void SignalManager::SetSigAction(int signum, const struct sigaction &act) {
 }
 
 bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
-  TrustedSpinLockGuard lock(&signal_maps_lock_);
+  LockGuard lock(&signal_maps_lock_);
   auto sigaction_iterator = signal_to_sigaction_.find(signum);
   if (sigaction_iterator == signal_to_sigaction_.end()) {
     return false;
@@ -92,7 +94,7 @@ bool SignalManager::GetSigAction(int signum, struct sigaction *act) {
 }
 
 void SignalManager::ClearSigAction(int signum) {
-  TrustedSpinLockGuard lock(&signal_maps_lock_);
+  LockGuard lock(&signal_maps_lock_);
   signal_to_sigaction_.erase(signum);
 }
 
@@ -128,14 +130,13 @@ sigset_t SignalManager::GetUnblockedSet(const sigset_t &set) {
 }
 
 void SignalManager::SetResetOnHandle(int signum) {
-  TrustedSpinLockGuard lock(&signal_maps_lock_);
+  LockGuard lock(&signal_maps_lock_);
   signal_to_reset_.insert(signum);
 }
 
 bool SignalManager::IsResetOnHandle(int signum) {
-  TrustedSpinLockGuard lock(&signal_maps_lock_);
+  LockGuard lock(&signal_maps_lock_);
   return signal_to_reset_.find(signum) != signal_to_reset_.end();
 }
 
 }  // namespace asylo
-

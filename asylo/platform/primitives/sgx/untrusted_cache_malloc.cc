@@ -23,6 +23,7 @@
 #include "absl/memory/memory.h"
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/primitives/trusted_runtime.h"
+#include "asylo/util/lock_guard.h"
 
 extern "C" {
 // Expose the untrusted memory cache via a C API. This interface allows C code
@@ -88,7 +89,7 @@ void *UntrustedCacheMalloc::GetBuffer() {
   bool is_pool_empty;
 
   {
-    TrustedSpinLockGuard spin_lock(&lock_);
+    LockGuard spin_lock(&lock_);
     is_pool_empty = buffer_pool_.empty();
     if (is_pool_empty) {
       buffers =
@@ -137,7 +138,7 @@ void UntrustedCacheMalloc::Free(void *buffer) {
     primitives::TrustedPrimitives::UntrustedLocalFree(buffer);
     return;
   }
-  TrustedSpinLockGuard spin_lock(&lock_);
+  LockGuard spin_lock(&lock_);
 
   // Add the buffer to the free list if it was not allocated from the buffer
   // pool and was allocated via UntrustedLocalAlloc. If the
