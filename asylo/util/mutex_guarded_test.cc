@@ -35,10 +35,15 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::Gt;
-using ::testing::Ne;
+using ::testing::Not;
 
 constexpr int kNumThreads = 100;
 constexpr absl::Duration kLongEnoughForThreadSwitch = absl::Milliseconds(500);
+
+// A matcher that expects an absl::optional<> to have no value.
+MATCHER(Nullopt, negation ? "has a value" : "has no value") {
+  return !arg.has_value();
+}
 
 TEST(MutexGuardedTest, HeldReaderLocksDoNotPreventAcquiringOtherReaderLocks) {
   MutexGuarded<int> safe_int(0);
@@ -49,7 +54,7 @@ TEST(MutexGuardedTest, HeldReaderLocksDoNotPreventAcquiringOtherReaderLocks) {
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back([&barrier, &safe_int] {
       auto maybe_readable_view = safe_int.ReaderTryLock();
-      ASSERT_THAT(maybe_readable_view, Ne(absl::nullopt));
+      EXPECT_THAT(maybe_readable_view, Not(Nullopt()));
       barrier.Block();
     });
   }
@@ -75,7 +80,7 @@ TEST(MutexGuardedTest, HeldWriterLocksPreventAcquiringOtherWriterLocks) {
       if (maybe_writer_view.has_value()) {
         some_thread_acquired_lock.Notify();
       } else {
-        ASSERT_TRUE(some_thread_acquired_lock.WaitForNotificationWithTimeout(
+        EXPECT_TRUE(some_thread_acquired_lock.WaitForNotificationWithTimeout(
             kWaitForSomeThreadToAcquireLock));
       }
       barrier.Block();
@@ -93,7 +98,7 @@ TEST(MutexGuardedTest, HeldReaderLocksPreventAcquiringWriterLocks) {
   auto readable_view = safe_int.ReaderLock();
 
   std::thread try_writer_lock_thread(
-      [&safe_int] { EXPECT_THAT(safe_int.TryLock(), Eq(absl::nullopt)); });
+      [&safe_int] { EXPECT_THAT(safe_int.TryLock(), Nullopt()); });
   try_writer_lock_thread.join();
 }
 
@@ -103,7 +108,7 @@ TEST(MutexGuardedTest, HeldWriterLocksPreventAcquiringReaderLocks) {
   auto writeable_view = safe_int.Lock();
 
   std::thread try_reader_lock_thread([&safe_int] {
-    EXPECT_THAT(safe_int.ReaderTryLock(), Eq(absl::nullopt));
+    EXPECT_THAT(safe_int.ReaderTryLock(), Nullopt());
   });
   try_reader_lock_thread.join();
 }
