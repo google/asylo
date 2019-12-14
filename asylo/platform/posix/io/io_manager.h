@@ -66,61 +66,49 @@ class IOManager {
     virtual ~IOContext() = default;
 
    protected:
-    // Implements IOManager::Read.
     virtual ssize_t Read(void *buf, size_t count) = 0;
 
-    // Implements IOManager::Write.
     virtual ssize_t Write(const void *buf, size_t count) = 0;
 
-    // Implements IOManager::Close.
     virtual int Close() = 0;
 
-    // Implements IOManager::LSeek.
     virtual int LSeek(off_t offset, int whence) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::Fcntl
     virtual int FCntl(int cmd, int64_t arg) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::FSync.
     virtual int FSync() {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::FDataSync.
     virtual int FDataSync() { return FSync(); }
 
-    // Implements IOManager::FChOwn.
     virtual int FChOwn(uid_t owner, gid_t group) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::FStat.
     virtual int FStat(struct stat *st) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::FStatFs.
     virtual int FStatFs(struct statfs *statfs_buffer) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::Isatty.
     virtual int Isatty() {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::FLock.
     virtual int FLock(int operation) {
       errno = ENOSYS;
       return -1;
@@ -131,13 +119,11 @@ class IOManager {
       return -1;
     }
 
-    // Implements IOManager::Ioctl.
     virtual int Ioctl(int request, void *argp) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements IOManager::Writev.
     virtual ssize_t Writev(const struct iovec *iov, int iovcnt) {
       errno = ENOSYS;
       return -1;
@@ -158,88 +144,74 @@ class IOManager {
       return -1;
     }
 
-    // Implements setsockopt.
     virtual int SetSockOpt(int level, int option_name, const void *option_value,
                            socklen_t option_len) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements connect.
     virtual int Connect(const struct sockaddr *addr, socklen_t addrlen) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements shutdown.
     virtual int Shutdown(int how) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements send.
     virtual ssize_t Send(const void *buf, size_t len, int flags) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements getsockopt.
     virtual int GetSockOpt(int level, int optname, void *optval,
                            socklen_t *optlen) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements accept.
     virtual int Accept(struct sockaddr *addr, socklen_t *addrlen) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements bind.
     virtual int Bind(const struct sockaddr *addr, socklen_t addrlen) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements listen.
     virtual int Listen(int backlog) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements sendmsg.
     virtual ssize_t SendMsg(const struct msghdr *msg, int flags) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements recvmsg.
     virtual ssize_t RecvMsg(struct msghdr *msg, int flags) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements getsockname.
     virtual int GetSockName(struct sockaddr *addr, socklen_t *addrlen) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements getpeername.
     virtual int GetPeerName(struct sockaddr *addr, socklen_t *addrlen) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements epoll_ctl.
     virtual int EpollCtl(int op, int hostfd, struct epoll_event *event) {
       // EINVAL since file descriptors do not by default support epoll behavior.
       errno = EINVAL;
       return -1;
     }
 
-    // Implements epoll_wait.
     virtual int EpollWait(struct epoll_event *events, int maxevents,
                           int timeout) {
       // EINVAL since file descriptors do not by defualt support epoll behavior.
@@ -247,19 +219,16 @@ class IOManager {
       return -1;
     }
 
-    // Implements inotify_add_watch.
     virtual int InotifyAddWatch(const char *pathname, uint32_t mask) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements inotify_rm_watch.
     virtual int InotifyRmWatch(int wd) {
       errno = ENOSYS;
       return -1;
     }
 
-    // Implements recvfrom.
     virtual ssize_t RecvFrom(void *buf, size_t len, int flags,
                              struct sockaddr *src_addr, socklen_t *addrlen) {
       errno = ENOSYS;
