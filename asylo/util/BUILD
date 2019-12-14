@@ -14,7 +14,7 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "cc_test", "embed_enclaves")
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "cc_test", "embed_enclaves")
 load("//asylo/bazel:dlopen_enclave.bzl", "dlopen_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
@@ -728,6 +728,33 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "lock_guard",
+    hdrs = ["lock_guard.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":function_traits",
+        "@com_google_absl//absl/base:core_headers",
+    ],
+)
+
+cc_enclave_test(
+    name = "lock_guard_test",
+    srcs = ["lock_guard_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":lock_guard",
+        ":thread",
+        "//asylo/platform/core:trusted_mutex",
+        "//asylo/platform/core:trusted_spin_lock",
+        "//asylo/platform/core:untrusted_mutex",
+        "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
     ],
 )
