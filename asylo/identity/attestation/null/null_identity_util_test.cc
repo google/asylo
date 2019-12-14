@@ -27,12 +27,18 @@
 namespace asylo {
 namespace {
 
+bool IsNullIdentityDescription(
+    const EnclaveIdentityDescription &identity_description) {
+  return identity_description.identity_type() ==
+             EnclaveIdentityType::NULL_IDENTITY &&
+         identity_description.authority_type() == kNullAuthorizationAuthority;
+}
+
 TEST(NullIdentityUtilTest, SetNullIdentityDescription) {
   EnclaveIdentityDescription description;
   SetNullIdentityDescription(&description);
 
-  EXPECT_EQ(description.identity_type(), NULL_IDENTITY);
-  EXPECT_EQ(description.authority_type(), kNullAuthorizationAuthority);
+  EXPECT_TRUE(IsNullIdentityDescription(description));
 }
 
 TEST(NullIdentityUtilTest, SetNullAssertionDescription) {
@@ -43,18 +49,8 @@ TEST(NullIdentityUtilTest, SetNullAssertionDescription) {
   EXPECT_EQ(description.authority_type(), kNullAssertionAuthority);
 }
 
-TEST(NullIdentityUtilTest, IsNullIdentityDescription) {
-  EnclaveIdentityDescription description;
-  SetNullIdentityDescription(&description);
-  EXPECT_TRUE(IsNullIdentityDescription(description));
-
-  description.Clear();
-  EXPECT_FALSE(IsNullIdentityDescription(description));
-}
-
 TEST(NullIdentityUtilTest, SetNullIdentityExpectation) {
-  EnclaveIdentityExpectation expectation;
-  SetNullIdentityExpectation(&expectation);
+  EnclaveIdentityExpectation expectation = CreateNullIdentityExpectation();
 
   EXPECT_TRUE(IsNullIdentityDescription(
       expectation.reference_identity().description()));

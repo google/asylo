@@ -54,6 +54,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":null_identity_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity/attestation:enclave_assertion_verifier",
         "//asylo/identity/attestation/null/internal:null_assertion_cc_proto",
         "//asylo/identity/attestation/null/internal:null_identity_constants",
@@ -104,6 +105,7 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":null_identity_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:identity_expectation_matcher",
         "@com_google_absl//absl/strings:str_format",
@@ -136,9 +138,10 @@ cc_test(
 # Utility functions for operating on null identities and assertions.
 cc_library(
     name = "null_identity_util",
+    srcs = ["null_identity_util.cc"],
     hdrs = ["null_identity_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",

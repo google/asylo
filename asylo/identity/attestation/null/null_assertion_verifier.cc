@@ -23,6 +23,7 @@
 #include "asylo/identity/attestation/null/internal/null_assertion.pb.h"
 #include "asylo/identity/attestation/null/internal/null_identity_constants.h"
 #include "asylo/identity/attestation/null/null_identity_util.h"
+#include "asylo/identity/descriptions.h"
 #include "asylo/platform/common/static_map.h"
 
 namespace asylo {

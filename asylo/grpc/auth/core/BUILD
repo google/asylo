@@ -265,6 +265,7 @@ cc_test(
     deps = [
         ":ekep_handshaker",
         ":ekep_handshaker_util",
+        "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation/null:null_identity_util",
         "//asylo/test/util:status_matchers",

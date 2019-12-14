@@ -811,6 +811,7 @@ asylo/identity/identity_acl_evaluator.h \
 asylo/identity/identity_expectation_matcher.h \
 asylo/identity/null_identity/null_assertion_generator.h \
 asylo/identity/null_identity/null_assertion_verifier.h \
+asylo/identity/null_identity/null_identity_util.h \
 asylo/identity/secret_sealer.h \
 asylo/identity/sgx/sgx_identity_util.h \
 asylo/identity/sgx/sgx_local_assertion_generator.h \

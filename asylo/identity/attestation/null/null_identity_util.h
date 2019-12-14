@@ -19,30 +19,12 @@
 #ifndef ASYLO_IDENTITY_ATTESTATION_NULL_NULL_IDENTITY_UTIL_H_
 #define ASYLO_IDENTITY_ATTESTATION_NULL_NULL_IDENTITY_UTIL_H_
 
-#include "asylo/identity/attestation/null/internal/null_identity_constants.h"
-#include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
 
 namespace asylo {
 
-// Returns true if |identity_description| describes a null identity.
-inline bool IsNullIdentityDescription(
-    const EnclaveIdentityDescription &identity_description) {
-  return identity_description.identity_type() ==
-      EnclaveIdentityType::NULL_IDENTITY &&
-      identity_description.authority_type() == kNullAuthorizationAuthority;
-}
-
-// Sets |expectation| to a default null identity expectation.
-inline void SetNullIdentityExpectation(
-    EnclaveIdentityExpectation *expectation) {
-  SetNullIdentityDescription(
-      expectation->mutable_reference_identity()->mutable_description());
-  expectation->mutable_reference_identity()->set_identity(kNullIdentity);
-  // The match spec is not set because there are no additional fields to
-  // compare.
-  expectation->clear_match_spec();
-}
+/// Returns a default null identity expectation.
+EnclaveIdentityExpectation CreateNullIdentityExpectation();
 
 }  // namespace asylo
 
