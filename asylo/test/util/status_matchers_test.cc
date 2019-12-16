@@ -64,6 +64,18 @@ std::string MatchExplanation(const MatcherT &matcher, const MatcheeT &value) {
   return listener.str();
 }
 
+TEST(StatusMatchersTest, IsOkMatchesStatus) {
+  EXPECT_THAT(Status::OkStatus(), IsOk());
+  EXPECT_THAT(Status(error::GoogleError::UNKNOWN, "error"), Not(IsOk()));
+}
+
+TEST(StatusMatchersTest, IsOkMatchesStatusOr) {
+  EXPECT_THAT(StatusOr<int>(42), IsOk());
+  EXPECT_THAT(
+      StatusOr<std::string>(Status(error::GoogleError::UNKNOWN, "error")),
+      Not(IsOk()));
+}
+
 // Tests that IsOkAndHolds(value_matcher) matches an OK StatusOr<T> when the
 // contained value matches value_matcher.
 TEST(StatusMatchersTest, IsOkAndHoldsMatchesOkStatusWithMatchingValue) {

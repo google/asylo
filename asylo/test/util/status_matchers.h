@@ -185,56 +185,26 @@ class StatusMatcher {
 
 // Implements a gMock matcher that checks whether a status container (e.g.
 // asylo::Status or asylo::StatusOr<T>) has an OK status.
-template <class T>
-class IsOkMatcherImpl : public ::testing::MatcherInterface<T> {
+class IsOkMatcher {
  public:
-  IsOkMatcherImpl() = default;
+  IsOkMatcher() = default;
 
-  // From testing::MatcherInterface.
-  //
   // Describes the OK expectation.
-  void DescribeTo(std::ostream *os) const override { *os << "is OK"; }
+  void DescribeTo(std::ostream *os) const { *os << "is OK"; }
 
-  // From testing::MatcherInterface.
-  //
   // Describes the negative OK expectation.
-  void DescribeNegationTo(std::ostream *os) const override {
-    *os << "is not OK";
-  }
+  void DescribeNegationTo(std::ostream *os) const { *os << "is not OK"; }
 
-  // From testing::MatcherInterface.
-  //
   // Tests whether |status_container|'s OK value meets this matcher's
   // expectation.
-  bool MatchAndExplain(
-      const T &status_container,
-      ::testing::MatchResultListener *listener) const override {
+  template <class T>
+  bool MatchAndExplain(const T &status_container,
+                       ::testing::MatchResultListener *listener) const {
     if (!status_container.ok()) {
       *listener << "which is not OK";
       return false;
     }
     return true;
-  }
-};
-
-// IsOkMatcherGenerator is an intermediate object returned by asylo::IsOk().
-// It implements implicit type-cast operators to supported matcher types:
-// Matcher<const Status &> and Matcher<const StatusOr<T> &>. These typecast
-// operators create gMock matchers that test OK expectations on a status
-// container.
-class IsOkMatcherGenerator {
- public:
-  // Type-cast operator for Matcher<const asylo::Status &>.
-  operator ::testing::Matcher<const Status &>() const {
-    return ::testing::MakeMatcher(
-        new internal::IsOkMatcherImpl<const Status &>());
-  }
-
-  // Type-cast operator for Matcher<const asylo::StatusOr<T> &>.
-  template <class T>
-  operator ::testing::Matcher<const StatusOr<T> &>() const {
-    return ::testing::MakeMatcher(
-        new internal::IsOkMatcherImpl<const StatusOr<T> &>());
   }
 };
 
@@ -283,8 +253,8 @@ template <typename Enum, typename MessageMatcherT>
 // Returns an internal::IsOkMatcherGenerator, which may be typecast to a
 // Matcher<asylo::Status> or Matcher<asylo::StatusOr<T>>. These gMock
 // matchers test that a given status container has an OK status.
-inline internal::IsOkMatcherGenerator IsOk() {
-  return internal::IsOkMatcherGenerator();
+inline ::testing::PolymorphicMatcher<internal::IsOkMatcher> IsOk() {
+  return ::testing::MakePolymorphicMatcher(internal::IsOkMatcher());
 }
 
 // Macros for testing the results of functions that return asylo::Status or
