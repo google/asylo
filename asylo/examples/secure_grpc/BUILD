@@ -82,7 +82,7 @@ cc_proto_library(
 
 _grpc_server_sgx_deps = [
     "//asylo/identity/sgx:sgx_identity_cc_proto",
-    "//asylo/identity/sgx:sgx_code_identity_expectation_matcher",
+    "//asylo/identity/sgx:sgx_identity_expectation_matcher",
     "//asylo/identity/sgx:sgx_identity_util",
 ]
 
