@@ -322,24 +322,38 @@ void **AllocateUntrustedBuffers(size_t count, size_t size) {
   void **buffers;
   CHECK_OCALL(ocall_enc_untrusted_allocate_buffers(
       &buffers, static_cast<uint64_t>(count), static_cast<uint64_t>(size)));
-  if (!buffers || !sgx_is_outside_enclave(buffers, size)) {
-    abort();
+  if (!buffers || !TrustedPrimitives::IsOutsideEnclave(buffers, size)) {
+    TrustedPrimitives::BestEffortAbort(
+        "allocated buffers (for use by UntrustedCacheMalloc) found to not be "
+        "in untrusted memory.");
   }
   return buffers;
 }
 
 void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
+  if (!IsValidUntrustedAddress(free_list)) {
+    TrustedPrimitives::BestEffortAbort(
+        "free_list expected to be in untrusted memory.");
+  }
   CHECK_OCALL(ocall_enc_untrusted_deallocate_free_list(
       free_list, static_cast<uint64_t>(count)));
 }
 
 void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
                                   int64_t timeout_microsec) {
+  if (!IsValidUntrustedAddress(futex)) {
+    TrustedPrimitives::BestEffortAbort(
+        "futex word expected to be in untrusted memory.");
+  }
   CHECK_OCALL(
       ocall_enc_untrusted_sys_futex_wait(futex, expected, timeout_microsec));
 }
 
 void enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
+  if (!IsValidUntrustedAddress(futex)) {
+    TrustedPrimitives::BestEffortAbort(
+        "futex word expected to be in untrusted memory.");
+  }
   CHECK_OCALL(ocall_enc_untrusted_sys_futex_wake(futex, num));
 }
 

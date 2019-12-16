@@ -30,6 +30,7 @@
 #include "asylo/platform/primitives/sgx/fork.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_t.h"
 #include "asylo/platform/primitives/sgx/trusted_sgx.h"
+#include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/util/posix_error_space.h"
 #include "asylo/util/status.h"
 #include "include/sgx_trts.h"
@@ -60,6 +61,11 @@ int ecall_take_snapshot(char **output, uint64_t *output_len) {
 // failure.
 int ecall_restore(const char *input, uint64_t input_len, char **output,
                   uint64_t *output_len) {
+  if (!asylo::primitives::TrustedPrimitives::IsOutsideEnclave(input,
+                                                              input_len)) {
+    asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "ecall_restore: input found to not be in untrusted memory.");
+  }
   int result = 0;
   size_t tmp_output_len;
   try {
@@ -102,6 +108,11 @@ int ecall_dispatch_trusted_call(uint64_t selector, void *buffer) {
 // Invokes the enclave signal handling entry-point. Returns a non-zero error
 // code on failure.
 int ecall_deliver_signal(const char *input, size_t input_len) {
+  if (!asylo::primitives::TrustedPrimitives::IsOutsideEnclave(input,
+                                                              input_len)) {
+    asylo::primitives::TrustedPrimitives::BestEffortAbort(
+        "ecall_deliver_signal: input found to not be in untrusted memory.");
+  }
   int result = 0;
   try {
     result =
