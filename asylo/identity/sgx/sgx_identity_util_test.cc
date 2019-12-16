@@ -36,8 +36,7 @@ TEST(SgxIdentityUtilTest, GetSelfSgxIdentity) {
   sgx::FakeEnclave enclave;
   enclave.SetRandomIdentity();
   sgx::FakeEnclave::EnterEnclave(enclave);
-  EXPECT_THAT(GetSelfSgxIdentity(),
-              EqualsProto(enclave.GetIdentity().ValueOrDie()));
+  EXPECT_THAT(GetSelfSgxIdentity(), EqualsProto(enclave.GetIdentity()));
   sgx::FakeEnclave::ExitEnclave();
 }
 

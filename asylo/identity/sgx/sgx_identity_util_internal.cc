@@ -46,6 +46,7 @@
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
+#include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/proto_enum_util.h"
@@ -95,7 +96,7 @@ Status GetReportKey(const UnsafeBytes<kKeyrequestKeyidSize> &keyid,
   request->keypolicy = kKeypolicyMrenclaveBitMask;
   request->isvsvn = 0;
   request->cpusvn.fill(0);
-  ClearSecsAttributeSet(&request->attributemask);
+  request->attributemask.Clear();
   request->miscmask = 0;
 
   return GetHardwareKey(*request, key);
@@ -197,11 +198,7 @@ Status ParseIdentityFromHardwareReport(const Report &report,
   identity->mutable_signer_assigned_identity()->set_isvprodid(
       report.body.isvprodid);
   identity->mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
-  if (!ConvertSecsAttributeRepresentation(report.body.attributes,
-                                          identity->mutable_attributes())) {
-    return Status(::asylo::error::GoogleError::INTERNAL,
-                  "Cound not convert hardware attributes to Attributes proto");
-  }
+  *identity->mutable_attributes() = report.body.attributes.ToProtoAttributes();
   identity->set_miscselect(report.body.miscselect);
   return Status::OkStatus();
 }
@@ -222,7 +219,10 @@ Status SetDefaultCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
 
   // The default attributes_match_mask is a logical NOT of the default "DO NOT
   // CARE" attributes.
-  return SetDefaultSecsAttributesMask(spec->mutable_attributes_match_mask());
+  *spec->mutable_attributes_match_mask() =
+      SecsAttributeSet::GetDefaultMask().ToProtoAttributes();
+
+  return Status::OkStatus();
 }
 
 void SetStrictCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
@@ -236,7 +236,8 @@ void SetStrictCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
   spec->set_miscselect_match_mask(std::numeric_limits<uint32_t>::max());
 
   // Require a match for all ATTRIBUTES bits.
-  SetStrictSecsAttributesMask(spec->mutable_attributes_match_mask());
+  *spec->mutable_attributes_match_mask() =
+      SecsAttributeSet::GetStrictMask().ToProtoAttributes();
 }
 
 Status ParseSgxIdentity(const EnclaveIdentity &generic_identity,

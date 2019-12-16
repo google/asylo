@@ -21,11 +21,11 @@
 
 #include <cstdint>
 #include <cstring>
-#include <string>
 #include <vector>
 
 #include "absl/base/attributes.h"
 #include "absl/strings/string_view.h"
+#include "absl/types/span.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -81,18 +81,56 @@ enum class SecsAttributeBit {
   PKRU = 64 + 9  // Determines the behavior of the Page Protection Keys.
 };
 
-// A structure representing a set of SECS attributes.
+// A structure representing a set of the ATTRIBUTES field of the SECS structure,
+// as defined by the Intel SDM. This structure MUST be trivial, as it's expected
+// to match the SDM type, bit-for-bit.
 struct SecsAttributeSet {
+  // Gets all attributes defined by the SGX architecture in an SecsAttributeSet
+  // form.
+  static SecsAttributeSet GetAllSupportedBits();
+
+  // Gets attributes defined as must-be-set in an SecsAttributeSet form.
+  static SecsAttributeSet GetMustBeSetBits();
+
+  // Gets default "do not care" attributes in an SecsAttributeSet form.
+  static SecsAttributeSet GetDefaultDoNotCareBits();
+
+  // Gets the default attributes match mask, which is defined as the logical NOT
+  // of the default "do not care" attributes.
+  static SecsAttributeSet GetDefaultMask();
+
+  // Sets the strictest match mask, which has all possible bits set to 1.
+  static SecsAttributeSet GetStrictMask();
+
+  // Converts a collection of SecsAttributeBit to a SecsAttributeSet.
+  static StatusOr<SecsAttributeSet> FromBits(
+      absl::Span<const SecsAttributeBit> attribute_list);
+
+  SecsAttributeSet() = default;
+  SecsAttributeSet(const SecsAttributeSet &) = default;
+  SecsAttributeSet &operator=(const SecsAttributeSet &) = default;
+
+  // Constructs a SecsAttributeSet object from |attributes|.
+  explicit SecsAttributeSet(const Attributes &attributes);
+
+  constexpr SecsAttributeSet(uint64_t flags_arg, uint64_t xfrm_arg)
+      : flags(flags_arg), xfrm(xfrm_arg) {}
+
+  // Clears all bits.
+  void Clear();
+
+  // Tests if an attribute bit in an SecsAttributeSet is set.
+  bool IsSet(SecsAttributeBit attribute) const;
+
+  // Convert this object into a protobuf Attributes message.
+  Attributes ToProtoAttributes() const;
+
   uint64_t flags;
   uint64_t xfrm;
 } ABSL_ATTRIBUTE_PACKED;
 
-// Converts an SecsAttributeBit list to an SecsAttributeSet.
-StatusOr<SecsAttributeSet> MakeSecsAttributeSet(
-    const std::vector<SecsAttributeBit> &attribute_list);
-
-// Clears all bits of an SecsAttributeSet.
-void ClearSecsAttributeSet(SecsAttributeSet *attributes);
+// All valid SecsAttributeBit values defined in the enumeration.
+extern const SecsAttributeBit kAllSecsAttributeBits[15];
 
 // Computes bitwise OR of two SecsAttributeSet values.
 SecsAttributeSet operator|(const SecsAttributeSet &lhs,
@@ -130,88 +168,12 @@ bool operator==(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs);
 // Checks two SecsAttributeSet values for inequality.
 bool operator!=(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs);
 
-// Converts a list of SecsAttributeBit values to an SecsAttributeSet.
-bool ConvertSecsAttributeRepresentation(
-    const std::vector<SecsAttributeBit> &attribute_list,
-    SecsAttributeSet *attributes);
-
-// Converts an SecsAttributeSet to a list of SecsAttributeBit values.
-bool ConvertSecsAttributeRepresentation(
-    const SecsAttributeSet &attributes,
-    std::vector<SecsAttributeBit> *attribute_list);
-
-// Converts a list of SecsAttributeBit values to a
-// Attributes proto.
-bool ConvertSecsAttributeRepresentation(
-    const std::vector<SecsAttributeBit> &attribute_list,
-    Attributes *attributes);
-
-// Convert a Attributes proto to a list of
-// SecsAttributeBit values.
-bool ConvertSecsAttributeRepresentation(
-    const Attributes &attributes,
-    std::vector<SecsAttributeBit> *attribute_list);
-
-// Converts an SecsAttributeSet to a Attributes proto.
-bool ConvertSecsAttributeRepresentation(const SecsAttributeSet &attributes_set,
-                                        Attributes *attributes);
-
-// Converts a Attributes proto to an SecsAttributeSet.
-bool ConvertSecsAttributeRepresentation(const Attributes &attributes,
-                                        SecsAttributeSet *attributes_set);
-
-// Tests if an attribute bit in an SecsAttributeSet is set.
-bool TestAttribute(SecsAttributeBit attribute,
-                   const SecsAttributeSet &attributes_set);
-
-// Tests if an attribute bit in a Attributes proto
-// is set.
-bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes);
-
-// Gets all attributes defined by the SGX architecture in an SecsAttributeSet
-// form.
-bool GetAllSecsAttributes(SecsAttributeSet *attributes);
-
-// Gets all attributes defined by the SGX architectrure in a Attributes form.
-bool GetAllSecsAttributes(Attributes *attributes);
-
-// Gets attributes defined as must-be-set in an SecsAttributeSet form.
-bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes);
-
-// Gets attributes defined as must-be-set in a Attributes form.
-bool GetMustBeSetSecsAttributes(Attributes *attributes);
-
-// Gets default "do not care" attributes in a list form.
-bool GetDefaultDoNotCareSecsAttributes(
-    std::vector<SecsAttributeBit> *attribute_list);
-
-// Gets default "do not care" attributes in an SecsAttributeSet form.
-bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes);
-
-// Gets default "do not care" attributes in a Attributes form.
-bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes);
-
-// Sets |attributes_match_mask| to the default attributes match mask, which is
-// defined as the logical NOT of the default "do not care" attributes.
-Status SetDefaultSecsAttributesMask(Attributes *attributes_match_mask);
-
-// Sets |attributes_match_mask| to the strictest match mask, which sets all bits
-// in the mask.
-void SetStrictSecsAttributesMask(Attributes *attributes_match_mask);
-
-// Gets printable list of attributes from a list of SecsAttributeBit values.
-void GetPrintableAttributeList(
-    const std::vector<SecsAttributeBit> &attribute_list,
-    std::vector<absl::string_view> *printable_list);
+// Tests if an attribute bit in a Attributes proto is set.
+bool IsAttributeSet(SecsAttributeBit attribute, const Attributes &attributes);
 
 // Gets printable list of attributes from an SecsAttributeSet.
-void GetPrintableAttributeList(const SecsAttributeSet &attributes,
-                               std::vector<absl::string_view> *printable_list);
-
-// Gets printable list of attributes from a Attributes
-// proto.
-void GetPrintableAttributeList(const Attributes &attributes,
-                               std::vector<absl::string_view> *printable_list);
+std::vector<absl::string_view> GetPrintableAttributeList(
+    const Attributes &attributes);
 
 }  // namespace sgx
 }  // namespace asylo

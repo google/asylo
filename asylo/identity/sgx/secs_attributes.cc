@@ -27,6 +27,7 @@
 #include <vector>
 
 #include "absl/base/macros.h"
+#include "absl/strings/str_format.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 
@@ -83,17 +84,6 @@ constexpr SecsAttributeBit kDefaultDoNotCareSecsAttributes[] = {
     SecsAttributeBit::AVX,       SecsAttributeBit::OPMASK,
     SecsAttributeBit::ZMM_HI256, SecsAttributeBit::HI16_ZMM};
 
-// All attribute bits.
-constexpr SecsAttributeBit kAllSecsAttributes[] = {
-    SecsAttributeBit::INIT,         SecsAttributeBit::DEBUG,
-    SecsAttributeBit::MODE64BIT,    SecsAttributeBit::PROVISIONKEY,
-    SecsAttributeBit::INITTOKENKEY, SecsAttributeBit::KSS,
-    SecsAttributeBit::FPU,          SecsAttributeBit::SSE,
-    SecsAttributeBit::AVX,          SecsAttributeBit::BNDREG,
-    SecsAttributeBit::BNDCSR,       SecsAttributeBit::OPMASK,
-    SecsAttributeBit::ZMM_HI256,    SecsAttributeBit::HI16_ZMM,
-    SecsAttributeBit::PKRU};
-
 // Must-be-one attribute bits
 constexpr SecsAttributeBit kMustBeSetAttributes[] = {
     SecsAttributeBit::INIT, SecsAttributeBit::FPU, SecsAttributeBit::SSE};
@@ -131,19 +121,74 @@ absl::string_view GetAttributeName(SecsAttributeBit attribute) {
 
 }  // namespace
 
-StatusOr<SecsAttributeSet> MakeSecsAttributeSet(
-    const std::vector<SecsAttributeBit> &attribute_list) {
-  SecsAttributeSet attribute_set;
-  if (!ConvertSecsAttributeRepresentation(attribute_list, &attribute_set)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Input attribute list contains invalid attribute bits");
-  }
-  return attribute_set;
+const SecsAttributeBit kAllSecsAttributeBits[] = {
+    SecsAttributeBit::INIT,         SecsAttributeBit::DEBUG,
+    SecsAttributeBit::MODE64BIT,    SecsAttributeBit::PROVISIONKEY,
+    SecsAttributeBit::INITTOKENKEY, SecsAttributeBit::KSS,
+    SecsAttributeBit::FPU,          SecsAttributeBit::SSE,
+    SecsAttributeBit::AVX,          SecsAttributeBit::BNDREG,
+    SecsAttributeBit::BNDCSR,       SecsAttributeBit::OPMASK,
+    SecsAttributeBit::ZMM_HI256,    SecsAttributeBit::HI16_ZMM,
+    SecsAttributeBit::PKRU};
+
+SecsAttributeSet SecsAttributeSet::GetAllSupportedBits() {
+  static const SecsAttributeSet set =
+      SecsAttributeSet::FromBits(kAllSecsAttributeBits).ValueOrDie();
+  return set;
 }
 
-void ClearSecsAttributeSet(SecsAttributeSet *attributes) {
-  attributes->flags = 0;
-  attributes->xfrm = 0;
+SecsAttributeSet SecsAttributeSet::GetMustBeSetBits() {
+  static const SecsAttributeSet set =
+      SecsAttributeSet::FromBits(kMustBeSetAttributes).ValueOrDie();
+  return set;
+}
+
+SecsAttributeSet SecsAttributeSet::GetDefaultDoNotCareBits() {
+  static const SecsAttributeSet set =
+      SecsAttributeSet::FromBits(kDefaultDoNotCareSecsAttributes).ValueOrDie();
+  return set;
+}
+
+SecsAttributeSet SecsAttributeSet::GetDefaultMask() {
+  return ~GetDefaultDoNotCareBits();
+}
+
+SecsAttributeSet SecsAttributeSet::GetStrictMask() {
+  return {std::numeric_limits<uint64_t>::max(),
+          std::numeric_limits<uint64_t>::max()};
+}
+
+SecsAttributeSet::SecsAttributeSet(const Attributes &attributes)
+    : SecsAttributeSet(attributes.flags(), attributes.xfrm()) {}
+
+void SecsAttributeSet::Clear() {
+  flags = 0;
+  xfrm = 0;
+}
+
+bool SecsAttributeSet::IsSet(SecsAttributeBit attribute) const {
+  size_t bit_position = static_cast<size_t>(attribute);
+  if (bit_position >= kNumSecsAttributeBits) {
+    // The only way this can happen is if someone does some funny business with
+    // integer casting instead of using SecsAttributeBit values as an input.
+    LOG(ERROR) << "SecsAttributeBit specifies a bit position " << bit_position
+               << " that is larger than the max allowed value of "
+               << kNumSecsAttributeBits - 1;
+    return false;
+  }
+
+  if (bit_position < kNumFlagsBits) {
+    return (flags & (1ULL << bit_position)) != 0;
+  } else {
+    return (xfrm & (1ULL << (bit_position - kNumFlagsBits))) != 0;
+  }
+}
+
+Attributes SecsAttributeSet::ToProtoAttributes() const {
+  Attributes attributes;
+  attributes.set_flags(flags);
+  attributes.set_xfrm(xfrm);
+  return attributes;
 }
 
 SecsAttributeSet operator|(const SecsAttributeSet &lhs,
@@ -212,118 +257,28 @@ bool operator!=(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs) {
   return !(lhs == rhs);
 }
 
-bool ConvertSecsAttributeRepresentation(
-    const std::vector<SecsAttributeBit> &attribute_list,
-    SecsAttributeSet *attributes) {
-  ClearSecsAttributeSet(attributes);
+StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
+    absl::Span<const SecsAttributeBit> attribute_list) {
+  SecsAttributeSet attributes = {};
   for (SecsAttributeBit attribute : attribute_list) {
     size_t bit_position = static_cast<size_t>(attribute);
     if (bit_position >= kNumSecsAttributeBits) {
-      LOG(ERROR) << "SecsAttributeBit specifies a bit position " << bit_position
-                 << " that is larger than the max allowed value of "
-                 << kNumSecsAttributeBits - 1;
-      return false;
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrFormat("SecsAttributeBit specifies a bit position %d "
+                          " that is larger than the max allowed value of %d",
+                          bit_position, kNumSecsAttributeBits - 1));
     }
     if (bit_position < kNumFlagsBits) {
-      attributes->flags |= (1ULL << bit_position);
+      attributes.flags |= (1ULL << bit_position);
     } else {
-      attributes->xfrm |= (1ULL << (bit_position - kNumFlagsBits));
+      attributes.xfrm |= (1ULL << (bit_position - kNumFlagsBits));
     }
   }
-  return true;
+  return attributes;
 }
 
-bool ConvertSecsAttributeRepresentation(
-    const SecsAttributeSet &attributes,
-    std::vector<SecsAttributeBit> *attribute_list) {
-  attribute_list->clear();
-  for (uint32_t i = 0; i < kNumFlagsBits; i++) {
-    if (attributes.flags & (1ULL << i)) {
-      attribute_list->push_back(static_cast<SecsAttributeBit>(i));
-    }
-  }
-  for (uint32_t i = 0; i < kNumXfrmBits; i++) {
-    if (attributes.xfrm & (1ULL << i)) {
-      attribute_list->push_back(
-          static_cast<SecsAttributeBit>(i + kNumFlagsBits));
-    }
-  }
-  return true;
-}
-
-bool ConvertSecsAttributeRepresentation(
-    const std::vector<SecsAttributeBit> &attribute_list,
-    Attributes *attributes) {
-  attributes->Clear();
-  for (SecsAttributeBit attribute : attribute_list) {
-    size_t bit_position = static_cast<size_t>(attribute);
-    if (bit_position >= kNumSecsAttributeBits) {
-      LOG(ERROR) << "SecsAttributeBit specifies a bit position " << bit_position
-                 << " that is larger than the max allowed value of "
-                 << kNumSecsAttributeBits - 1;
-      return false;
-    }
-    if (bit_position < kNumFlagsBits) {
-      attributes->set_flags(attributes->flags() | (1ULL << bit_position));
-    } else {
-      attributes->set_xfrm(attributes->xfrm() |
-                           (1ULL << (bit_position - kNumFlagsBits)));
-    }
-  }
-  return true;
-}
-
-bool ConvertSecsAttributeRepresentation(
-    const Attributes &attributes,
-    std::vector<SecsAttributeBit> *attribute_list) {
-  attribute_list->clear();
-  for (uint32_t i = 0; i < kNumFlagsBits; i++) {
-    if (attributes.flags() & (1ULL << i)) {
-      attribute_list->push_back(static_cast<SecsAttributeBit>(i));
-    }
-  }
-  for (uint32_t i = 0; i < kNumXfrmBits; i++) {
-    if (attributes.xfrm() & (1ULL << i)) {
-      attribute_list->push_back(
-          static_cast<SecsAttributeBit>(i + kNumFlagsBits));
-    }
-  }
-  return true;
-}
-
-bool ConvertSecsAttributeRepresentation(const SecsAttributeSet &attributes_set,
-                                        Attributes *attributes) {
-  attributes->set_flags(attributes_set.flags);
-  attributes->set_xfrm(attributes_set.xfrm);
-  return true;
-}
-
-bool ConvertSecsAttributeRepresentation(const Attributes &attributes,
-                                        SecsAttributeSet *attributes_set) {
-  attributes_set->flags = attributes.flags();
-  attributes_set->xfrm = attributes.xfrm();
-  return true;
-}
-
-bool TestAttribute(SecsAttributeBit attribute,
-                   const SecsAttributeSet &attributes_set) {
-  size_t bit_position = static_cast<size_t>(attribute);
-  if (bit_position >= kNumSecsAttributeBits) {
-    LOG(INFO) << "SecsAttributeBit specifies a bit position " << bit_position
-              << " that is larger than the max allowed value of "
-              << kNumSecsAttributeBits - 1;
-    return false;
-  }
-
-  if (bit_position < kNumFlagsBits) {
-    return (attributes_set.flags & (1ULL << bit_position)) != 0;
-  } else {
-    return (attributes_set.xfrm & (1ULL << (bit_position - kNumFlagsBits))) !=
-           0;
-  }
-}
-
-bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes) {
+bool IsAttributeSet(SecsAttributeBit attribute, const Attributes &attributes) {
   size_t bit_position = static_cast<size_t>(attribute);
   if (bit_position >= kNumSecsAttributeBits) {
     LOG(INFO) << "SecsAttributeBit specifies a bit position " << bit_position
@@ -339,102 +294,15 @@ bool TestAttribute(SecsAttributeBit attribute, const Attributes &attributes) {
   }
 }
 
-bool GetAllSecsAttributes(SecsAttributeSet *attributes) {
-  std::vector<SecsAttributeBit> attribute_list(
-      kAllSecsAttributes,
-      kAllSecsAttributes + ABSL_ARRAYSIZE(kAllSecsAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
-}
-
-bool GetAllSecsAttributes(Attributes *attributes) {
-  std::vector<SecsAttributeBit> attribute_list(
-      kAllSecsAttributes,
-      kAllSecsAttributes + ABSL_ARRAYSIZE(kAllSecsAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
-}
-
-bool GetMustBeSetSecsAttributes(SecsAttributeSet *attributes) {
-  std::vector<SecsAttributeBit> attribute_list(
-      kMustBeSetAttributes,
-      kMustBeSetAttributes + ABSL_ARRAYSIZE(kMustBeSetAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
-}
-
-bool GetMustBeSetSecsAttributes(Attributes *attributes) {
-  std::vector<SecsAttributeBit> attribute_list(
-      kMustBeSetAttributes,
-      kMustBeSetAttributes + ABSL_ARRAYSIZE(kMustBeSetAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
-}
-
-bool GetDefaultDoNotCareSecsAttributes(
-    std::vector<SecsAttributeBit> *attribute_list) {
-  *attribute_list = std::vector<SecsAttributeBit>(
-      kDefaultDoNotCareSecsAttributes,
-      kDefaultDoNotCareSecsAttributes +
-          ABSL_ARRAYSIZE(kDefaultDoNotCareSecsAttributes));
-  return true;
-}
-
-bool GetDefaultDoNotCareSecsAttributes(SecsAttributeSet *attributes) {
-  std::vector<SecsAttributeBit> attribute_list(
-      kDefaultDoNotCareSecsAttributes,
-      kDefaultDoNotCareSecsAttributes +
-          ABSL_ARRAYSIZE(kDefaultDoNotCareSecsAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
-}
-
-bool GetDefaultDoNotCareSecsAttributes(Attributes *attributes) {
-  std::vector<SecsAttributeBit> attribute_list(
-      kDefaultDoNotCareSecsAttributes,
-      kDefaultDoNotCareSecsAttributes +
-          ABSL_ARRAYSIZE(kDefaultDoNotCareSecsAttributes));
-  return ConvertSecsAttributeRepresentation(attribute_list, attributes);
-}
-
-Status SetDefaultSecsAttributesMask(Attributes *attributes_match_mask) {
-  SecsAttributeSet attributes;
-  if (!GetDefaultDoNotCareSecsAttributes(&attributes)) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Could not determine default \"DO NOT CARE\" attributes");
+std::vector<absl::string_view> GetPrintableAttributeList(
+    const Attributes &attributes) {
+  std::vector<absl::string_view> printable_list;
+  for (SecsAttributeBit attribute : kAllSecsAttributeBits) {
+    if (IsAttributeSet(attribute, attributes)) {
+      printable_list.push_back(GetAttributeName(attribute));
+    }
   }
-  // The default attributes_match_mask is a logical NOT of the default "DO NOT
-  // CARE" attributes.
-  if (!ConvertSecsAttributeRepresentation(~attributes, attributes_match_mask)) {
-    return Status(
-        error::GoogleError::INTERNAL,
-        "Could not convert hardware SecsAttributeSet to Attributes");
-  }
-
-  return Status::OkStatus();
-}
-
-void SetStrictSecsAttributesMask(Attributes *attributes_match_mask) {
-  attributes_match_mask->set_flags(std::numeric_limits<uint64_t>::max());
-  attributes_match_mask->set_xfrm(std::numeric_limits<uint64_t>::max());
-}
-
-void GetPrintableAttributeList(
-    const std::vector<SecsAttributeBit> &attribute_list,
-    std::vector<absl::string_view> *printable_list) {
-  printable_list->clear();
-  for (SecsAttributeBit attribute : attribute_list) {
-    printable_list->push_back(GetAttributeName(attribute));
-  }
-}
-
-void GetPrintableAttributeList(const SecsAttributeSet &attributes,
-                               std::vector<absl::string_view> *printable_list) {
-  std::vector<SecsAttributeBit> attribute_list;
-  ConvertSecsAttributeRepresentation(attributes, &attribute_list);
-  GetPrintableAttributeList(attribute_list, printable_list);
-}
-
-void GetPrintableAttributeList(const Attributes &attributes,
-                               std::vector<absl::string_view> *printable_list) {
-  std::vector<SecsAttributeBit> attribute_list;
-  ConvertSecsAttributeRepresentation(attributes, &attribute_list);
-  GetPrintableAttributeList(attribute_list, printable_list);
+  return printable_list;
 }
 
 }  // namespace sgx

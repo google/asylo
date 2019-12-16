@@ -64,7 +64,7 @@ class FakeEnclaveTest : public ::testing::Test {
  protected:
   FakeEnclaveTest() {
     // Set the various SecsAttributeSet values.
-    GetDefaultDoNotCareSecsAttributes(&do_not_care_attributes_);
+    do_not_care_attributes_ = SecsAttributeSet::GetDefaultDoNotCareBits();
     always_care_attributes_ = kRequiredSealingAttributesMask;
 
     // Allow the enclave to set the KSS attribute.
@@ -100,7 +100,7 @@ class FakeEnclaveTest : public ::testing::Test {
   uint16_t GenerateRandomKeypolicy(const SecsAttributeSet &attributes) {
     uint16_t keypolicy_valid_bits =
         kKeypolicyMrenclaveBitMask | kKeypolicyMrsignerBitMask;
-    if (TestAttribute(SecsAttributeBit::KSS, attributes)) {
+    if (attributes.IsSet(SecsAttributeBit::KSS)) {
       keypolicy_valid_bits |= kKeypolicyKssBits;
     }
     return TrivialRandomObject<uint16_t>() & keypolicy_valid_bits;
@@ -175,9 +175,7 @@ TEST_F(FakeEnclaveTest, GetIdentity) {
   enclave1.remove_valid_attribute(SecsAttributeBit::KSS);
   enclave1.SetRandomIdentity();
 
-  auto identity_result = enclave1.GetIdentity();
-  ASYLO_ASSERT_OK(identity_result.status());
-  SgxIdentity identity = identity_result.ValueOrDie();
+  SgxIdentity identity = enclave1.GetIdentity();
 
   FakeEnclave::EnterEnclave(enclave1);
   EXPECT_THAT(identity, EqualsProto(GetSelfIdentity()->sgx_identity));
@@ -186,7 +184,7 @@ TEST_F(FakeEnclaveTest, GetIdentity) {
   FakeEnclave enclave2;
   enclave2.SetIdentity(identity);
 
-  EXPECT_THAT(enclave2.GetIdentity(), IsOkAndHolds(EqualsProto(identity)));
+  EXPECT_THAT(enclave2.GetIdentity(), EqualsProto(identity));
 
   FakeEnclave enclave3;
   enclave3.remove_valid_attribute(SecsAttributeBit::KSS);
@@ -195,7 +193,7 @@ TEST_F(FakeEnclaveTest, GetIdentity) {
   // The probability that the two identities are identical is exceedingly
   // unlikely. The probability of MRENCLAVE equality is 2^-256. The probability
   // of MRSIGNER equality is also 2^-256.
-  EXPECT_THAT(enclave3.GetIdentity(), IsOkAndHolds(Not(EqualsProto(identity))));
+  EXPECT_THAT(enclave3.GetIdentity(), Not(EqualsProto(identity)));
 }
 
 // Verify that key-generation actually writes something in its output

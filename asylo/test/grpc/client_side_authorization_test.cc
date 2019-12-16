@@ -129,12 +129,12 @@ class ClientSideAuthorizationTest : public Test {
     SgxIdentity sgx_identity;
     sgx::CodeIdentity *code_identity = sgx_identity.mutable_code_identity();
     code_identity->set_miscselect(0);
-    if (!ConvertSecsAttributeRepresentation(
-            {sgx::SecsAttributeBit::INIT, sgx::SecsAttributeBit::DEBUG,
-             sgx::SecsAttributeBit::MODE64BIT},
-            code_identity->mutable_attributes())) {
-      return Status(error::GoogleError::INTERNAL, "Could not set attributes");
-    }
+    sgx::SecsAttributeSet attributes;
+    ASYLO_ASSIGN_OR_RETURN(attributes, sgx::SecsAttributeSet::FromBits(
+                                           {sgx::SecsAttributeBit::INIT,
+                                            sgx::SecsAttributeBit::DEBUG,
+                                            sgx::SecsAttributeBit::MODE64BIT}));
+    *code_identity->mutable_attributes() = attributes.ToProtoAttributes();
 
     sgx::SignerAssignedIdentity *signer_assigned_identity =
         code_identity->mutable_signer_assigned_identity();

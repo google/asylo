@@ -168,8 +168,9 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
   SecsAttributeSet expected_attributes;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expected_attributes,
-      MakeSecsAttributeSet({SecsAttributeBit::INIT, SecsAttributeBit::MODE64BIT,
-                            SecsAttributeBit::PROVISIONKEY}));
+      SecsAttributeSet::FromBits({SecsAttributeBit::INIT,
+                                  SecsAttributeBit::MODE64BIT,
+                                  SecsAttributeBit::PROVISIONKEY}));
 
   Targetinfo targetinfo;
   uint16_t svn;

@@ -917,9 +917,7 @@ TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityFromHardwareReport) {
   EXPECT_EQ(report->body.isvsvn,
             code_identity.signer_assigned_identity().isvsvn());
 
-  SecsAttributeSet attributes;
-  EXPECT_TRUE(ConvertSecsAttributeRepresentation(code_identity.attributes(),
-                                                 &attributes));
+  SecsAttributeSet attributes(code_identity.attributes());
   EXPECT_EQ(report->body.attributes, attributes);
   EXPECT_EQ(report->body.miscselect, code_identity.miscselect());
 
@@ -936,13 +934,10 @@ TEST_F(SgxIdentityUtilInternalTest, SetDefaultLocalSgxMatchSpec) {
   EXPECT_FALSE(spec.code_identity_match_spec().is_mrenclave_match_required());
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
   EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
-  SecsAttributeSet attributes;
-  EXPECT_TRUE(GetDefaultDoNotCareSecsAttributes(&attributes));
+  SecsAttributeSet attributes = SecsAttributeSet::GetDefaultDoNotCareBits();
 
-  Attributes default_attributes_mask;
-  ConvertSecsAttributeRepresentation(~attributes, &default_attributes_mask);
   EXPECT_EQ(spec.code_identity_match_spec().attributes_match_mask(),
-            default_attributes_mask);
+            (~attributes).ToProtoAttributes());
 
   EXPECT_FALSE(
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
@@ -954,11 +949,8 @@ TEST_F(SgxIdentityUtilInternalTest, SetStrictLocalSgxMatchSpec) {
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrenclave_match_required());
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
   EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
-
-  Attributes expected_attributes;
-  SetStrictSecsAttributesMask(&expected_attributes);
   EXPECT_EQ(spec.code_identity_match_spec().attributes_match_mask(),
-            expected_attributes);
+            SecsAttributeSet::GetStrictMask().ToProtoAttributes());
 
   EXPECT_TRUE(
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
@@ -972,13 +964,10 @@ TEST_F(SgxIdentityUtilInternalTest, SetDefaultRemoteSgxMatchSpec) {
   EXPECT_FALSE(spec.code_identity_match_spec().is_mrenclave_match_required());
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
   EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
-  SecsAttributeSet attributes;
-  EXPECT_TRUE(GetDefaultDoNotCareSecsAttributes(&attributes));
+  SecsAttributeSet attributes = SecsAttributeSet::GetDefaultDoNotCareBits();
 
-  Attributes default_attributes_mask;
-  ConvertSecsAttributeRepresentation(~attributes, &default_attributes_mask);
   EXPECT_EQ(spec.code_identity_match_spec().attributes_match_mask(),
-            default_attributes_mask);
+            (~attributes).ToProtoAttributes());
 
   EXPECT_FALSE(
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
@@ -992,11 +981,8 @@ TEST_F(SgxIdentityUtilInternalTest, SetStrictRemoteSgxMatchSpec) {
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrenclave_match_required());
   EXPECT_TRUE(spec.code_identity_match_spec().is_mrsigner_match_required());
   EXPECT_EQ(spec.code_identity_match_spec().miscselect_match_mask(), kLongAllF);
-
-  Attributes expected_attributes;
-  SetStrictSecsAttributesMask(&expected_attributes);
   EXPECT_EQ(spec.code_identity_match_spec().attributes_match_mask(),
-            expected_attributes);
+            SecsAttributeSet::GetStrictMask().ToProtoAttributes());
 
   EXPECT_TRUE(
       spec.machine_configuration_match_spec().is_cpu_svn_match_required());
@@ -1026,9 +1012,7 @@ TEST_F(SgxIdentityUtilInternalTest, SetSelfSgxIdentity) {
   EXPECT_EQ(enclave_->get_isvsvn(),
             identity.code_identity().signer_assigned_identity().isvsvn());
 
-  SecsAttributeSet attributes;
-  ASSERT_TRUE(ConvertSecsAttributeRepresentation(
-      identity.code_identity().attributes(), &attributes));
+  SecsAttributeSet attributes(identity.code_identity().attributes());
   EXPECT_EQ(enclave_->get_attributes(), attributes);
   EXPECT_EQ(enclave_->get_miscselect(), identity.code_identity().miscselect());
 

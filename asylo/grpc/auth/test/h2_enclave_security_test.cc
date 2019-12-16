@@ -103,10 +103,7 @@ grpc_end2end_test_fixture CreateFixtureSecureFullstack(
     sgx::FakeEnclave::ExitEnclave();
   }
   sgx::FakeEnclave::EnterEnclave(enclave);
-  auto server_identity_result = enclave.GetIdentity();
-  GPR_ASSERT(server_identity_result.ok());
-  fixture_data->identity_acl =
-      CreateStrictPredicate(server_identity_result.ValueOrDie());
+  fixture_data->identity_acl = CreateStrictPredicate(enclave.GetIdentity());
 
   return f;
 }

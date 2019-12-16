@@ -1088,6 +1088,8 @@ cc_library(
         "@boringssl//:crypto",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:span",
     ],
 )
 
@@ -1102,6 +1104,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_googletest//:gtest",
     ],

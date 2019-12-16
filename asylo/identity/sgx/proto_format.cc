@@ -40,6 +40,14 @@ namespace {
 
 using google::protobuf::TextFormat;
 
+void PrintAttributes(const Attributes &attributes,
+                     TextFormat::BaseTextGenerator *generator) {
+  generator->PrintLiteral("[");
+  generator->PrintString(
+      absl::StrJoin(GetPrintableAttributeList(attributes), ", "));
+  generator->PrintLiteral("]");
+}
+
 // A FieldValuePrinter that prints a bytes field in hex.
 class BytesPrinter : public TextFormat::FastFieldValuePrinter {
  public:
@@ -59,14 +67,7 @@ class AttributesFlagsPrinter : public TextFormat::FastFieldValuePrinter {
     Attributes attributes;
     attributes.set_flags(value);
     attributes.set_xfrm(0);
-
-    generator->PrintLiteral("[");
-
-    std::vector<absl::string_view> printable_attributes;
-    GetPrintableAttributeList(attributes, &printable_attributes);
-    generator->PrintString(absl::StrJoin(printable_attributes, ", "));
-
-    generator->PrintLiteral("]");
+    PrintAttributes(attributes, generator);
   }
 };
 
@@ -79,14 +80,7 @@ class AttributesXfrmPrinter : public TextFormat::FastFieldValuePrinter {
     Attributes attributes;
     attributes.set_flags(0);
     attributes.set_xfrm(value);
-
-    generator->PrintLiteral("[");
-
-    std::vector<absl::string_view> printable_attributes;
-    GetPrintableAttributeList(attributes, &printable_attributes);
-    generator->PrintString(absl::StrJoin(printable_attributes, ", "));
-
-    generator->PrintLiteral("]");
+    PrintAttributes(attributes, generator);
   }
 };
 

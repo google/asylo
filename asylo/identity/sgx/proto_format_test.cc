@@ -46,9 +46,8 @@ TEST(ProtoFormatTest, SgxIdentityHasAttributesByName) {
   const SgxIdentity identity = GetSelfSgxIdentity();
   std::string text = FormatProto(identity);
 
-  std::vector<absl::string_view> named_attributes;
-  GetPrintableAttributeList(identity.code_identity().attributes(),
-                            &named_attributes);
+  std::vector<absl::string_view> named_attributes =
+      GetPrintableAttributeList(identity.code_identity().attributes());
   for (const auto attribute : named_attributes) {
     EXPECT_THAT(text, HasSubstr(std::string(attribute)));
   }
@@ -113,10 +112,8 @@ TEST(ProtoFormatTest, SgxIdentityMatchSpecHasAttributesByName) {
       CreateSgxIdentityMatchSpec(SgxIdentityMatchSpecOptions::DEFAULT));
   std::string text = FormatProto(match_spec);
 
-  std::vector<absl::string_view> named_attributes;
-  GetPrintableAttributeList(
-      match_spec.code_identity_match_spec().attributes_match_mask(),
-      &named_attributes);
+  std::vector<absl::string_view> named_attributes = GetPrintableAttributeList(
+      match_spec.code_identity_match_spec().attributes_match_mask());
   for (const auto attribute : named_attributes) {
     EXPECT_THAT(text, HasSubstr(std::string(attribute)));
   }

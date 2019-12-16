@@ -35,6 +35,7 @@
 #include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
+#include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/self_identity.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/platform/common/singleton.h"
@@ -180,10 +181,10 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
                                              .cpu_svn()
                                              .value());
 
-  ConvertSecsAttributeRepresentation(sgx_expectation.match_spec()
-                                         .code_identity_match_spec()
-                                         .attributes_match_mask(),
-                                     &req->attributemask);
+  req->attributemask = SecsAttributeSet(sgx_expectation.match_spec()
+                                            .code_identity_match_spec()
+                                            .attributes_match_mask());
+
   // req->keyid is populated uniquely on each call to GetHardwareKey().
   req->miscmask = sgx_expectation.match_spec()
                       .code_identity_match_spec()

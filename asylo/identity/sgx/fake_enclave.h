@@ -147,19 +147,19 @@ class FakeEnclave {
     valid_attributes_ = value;
   }
   void add_valid_attribute(SecsAttributeBit bit) {
-    valid_attributes_ |= MakeSecsAttributeSet({bit}).ValueOrDie();
+    valid_attributes_ |= SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
   void remove_valid_attribute(SecsAttributeBit bit) {
-    valid_attributes_ &= ~MakeSecsAttributeSet({bit}).ValueOrDie();
+    valid_attributes_ &= ~SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
   void set_required_attributes(const SecsAttributeSet &value) {
     required_attributes_ = value;
   }
   void add_required_attribute(SecsAttributeBit bit) {
-    required_attributes_ |= MakeSecsAttributeSet({bit}).ValueOrDie();
+    required_attributes_ |= SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
   void remove_required_attribute(SecsAttributeBit bit) {
-    required_attributes_ &= ~MakeSecsAttributeSet({bit}).ValueOrDie();
+    required_attributes_ &= ~SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
 
   // Accessors
@@ -211,7 +211,7 @@ class FakeEnclave {
   void SetIdentity(const SgxIdentity &sgx_identity);
 
   // Gets an SgxIdentity representation of this enclave's identity.
-  StatusOr<SgxIdentity> GetIdentity() const;
+  SgxIdentity GetIdentity() const;
 
   // Equality operator--only needed for testing purposes.
   bool operator==(const FakeEnclave &other) const;

@@ -59,11 +59,7 @@ constexpr char kHardcodedPkcs15PaddingHex[] =
     "003031300D060960864801650304020105000420";
 
 std::string FormatAttributeSet(const SecsAttributeSet &set) {
-  Attributes attributes;
-  // The following variant of ConvertSecsAttributeRepresentation() never fails,
-  // so the return value is ignored.
-  ConvertSecsAttributeRepresentation(set, &attributes);
-  return FormatProto(attributes);
+  return FormatProto(set.ToProtoAttributes());
 }
 
 }  // namespace
@@ -71,9 +67,9 @@ std::string FormatAttributeSet(const SecsAttributeSet &set) {
 FakeEnclave *FakeEnclave::current_ = nullptr;
 
 FakeEnclave::FakeEnclave() {
-  GetAllSecsAttributes(&valid_attributes_);
+  valid_attributes_ = SecsAttributeSet::GetAllSupportedBits();
   remove_valid_attribute(SecsAttributeBit::KSS);
-  GetMustBeSetSecsAttributes(&required_attributes_);
+  required_attributes_ = SecsAttributeSet::GetMustBeSetBits();
   mrenclave_.fill(0);
   mrsigner_.fill(0);
   isvprodid_ = 0;
@@ -129,7 +125,7 @@ void FakeEnclave::SetRandomIdentity() {
 
   // If ATTRIBUTES.KSS is zero, all KSS-related fields must be zero, else they
   // should be set randomly.
-  if (!TestAttribute(SecsAttributeBit::KSS, attributes_)) {
+  if (!attributes_.IsSet(SecsAttributeBit::KSS)) {
     configsvn_ = 0;
     isvextprodid_.fill(0);
     isvfamilyid_.fill(0);
@@ -164,10 +160,7 @@ void FakeEnclave::SetIdentity(const SgxIdentity &sgx_identity) {
   isvprodid_ = identity.signer_assigned_identity().isvprodid();
   isvsvn_ = identity.signer_assigned_identity().isvsvn();
 
-  if (!ConvertSecsAttributeRepresentation(identity.attributes(),
-                                          &attributes_)) {
-    LOG(FATAL) << "Error while reading attributes from identity.";
-  }
+  attributes_ = SecsAttributeSet(identity.attributes());
   if ((attributes_ & valid_attributes_) != attributes_) {
     LOG(FATAL) << "Identity contains illegal attributes. "
                << "Identity Attributes: " << FormatAttributeSet(attributes_)
@@ -189,16 +182,12 @@ void FakeEnclave::SetIdentity(const SgxIdentity &sgx_identity) {
   }
 }
 
-StatusOr<SgxIdentity> FakeEnclave::GetIdentity() const {
+SgxIdentity FakeEnclave::GetIdentity() const {
   SgxIdentity sgx_identity;
   CodeIdentity *code_identity = sgx_identity.mutable_code_identity();
 
 
-  if (!ConvertSecsAttributeRepresentation(
-          attributes_, code_identity->mutable_attributes())) {
-    return Status(error::GoogleError::INTERNAL,
-                  "Failed to convert attributes representation");
-  }
+  *code_identity->mutable_attributes() = attributes_.ToProtoAttributes();
 
   code_identity->mutable_mrenclave()->set_hash(
       ConvertTrivialObjectToBinaryString(mrenclave_));
@@ -263,7 +252,7 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
   // any of its KSS-related bits are set when the enclave's KSS SECS attribute
   // bit is not set.
   if ((request.keypolicy & kKeypolicyReservedBits) != 0 ||
-      (!TestAttribute(SecsAttributeBit::KSS, attributes_) &&
+      (!attributes_.IsSet(SecsAttributeBit::KSS) &&
        (request.keypolicy & kKeypolicyKssBits) != 0)) {
     LOG(FATAL) << "Input parameter KEYPOLICY is not valid.";
   }
@@ -351,7 +340,7 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
       dependencies->isvsvn = 0;
       dependencies->ownerepoch = ownerepoch_;
       dependencies->attributes = attributes_;
-      ClearSecsAttributeSet(&dependencies->attributemask);
+      dependencies->attributemask.Clear();
       dependencies->mrenclave = mrenclave_;
       dependencies->mrsigner.fill(0);
       dependencies->keyid = request.keyid;
@@ -392,9 +381,8 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   // if these fields are not zero. Lacking sufficient information,
   // this function invokes LOG(FATAL) to match the behavior of the
   // GetHardwareKey() function in such a scenario.
-  SecsAttributeSet all_attributes;
-  GetAllSecsAttributes(&all_attributes);
-  SecsAttributeSet reserved_attributes = ~all_attributes;
+  SecsAttributeSet reserved_attributes =
+      ~SecsAttributeSet::GetAllSupportedBits();
   uint32_t misc_select_reserved_bits = ~kMiscselectAllBits;
   if (tinfo.reserved1 != TrivialZeroObject<decltype(tinfo.reserved1)>() ||
       tinfo.reserved2 != TrivialZeroObject<decltype(tinfo.reserved2)>() ||
@@ -435,7 +423,7 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   dependencies->isvsvn = 0;
   dependencies->ownerepoch = ownerepoch_;
   dependencies->attributes = tinfo.attributes;
-  ClearSecsAttributeSet(&dependencies->attributemask);
+  dependencies->attributemask.Clear();
   dependencies->mrenclave = tinfo.measurement;
   dependencies->mrsigner.fill(0);
   dependencies->keyid = report_keyid_;
