@@ -68,7 +68,7 @@ def _make_primitives_dlopen_enclave(transition):
         doc = "Defines a DlOpen enclave binary, similar to cc_binary.",
         implementation = _primitives_dlopen_enclave_impl,
         cfg = transitions.toolchain if transition else None,
-        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
+        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs(), {
             "_trusted_primitives": attr.label(
                 default = "//asylo/platform/primitives:trusted_primitives",
             ),

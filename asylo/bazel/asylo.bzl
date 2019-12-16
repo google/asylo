@@ -131,7 +131,8 @@ def enclave_loader(
         embedded_enclaves = {},
         loader_args = [],
         remote_proxy = None,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
+        loader_name_by_backend = {},
         name_by_backend = {},
         deprecation = None,
         **kwargs):
@@ -171,6 +172,8 @@ def enclave_loader(
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
           targets. See enclave_info.bzl:all_backends documentation for details.
+      loader_name_by_backend: Dictionary of backend label to loader name for
+        backend-specific enclave driver. Optional.
       name_by_backend: An optional dictionary from backend label to backend-
           specific loader script name.
       deprecation: A string deprecation message for uses of this macro that
@@ -181,8 +184,10 @@ def enclave_loader(
     loader_plain_name = name + "_loader"
     loader_name = name + "_host_loader"
 
-    native.cc_binary(
+    transitions.cc_binary(
         name = loader_plain_name,
+        backends = backends,
+        name_by_backend = loader_name_by_backend,
         **_ensure_static_manual(kwargs)
     )
 
@@ -333,7 +338,7 @@ def backend_debug_sign_enclave(name, backend, unsigned, config = None, backend_l
 
 def cc_unsigned_enclave(
         name,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         name_by_backend = {},
         **kwargs):
     """Creates a C++ unsigned enclave target in all or any backend.
@@ -364,7 +369,7 @@ def cc_unsigned_enclave(
 def debug_sign_enclave(
         name,
         unsigned,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         config = None,
         testonly = 0,
         name_by_backend = {}):
@@ -403,7 +408,7 @@ def cc_enclave_binary(
         application_enclave_config = "",
         enclave_build_config = "",
         application_library_linkstatic = True,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
         testonly = 0,
@@ -566,6 +571,7 @@ def _enclave_runner_test(
         loader_args = [],
         enclaves = {},
         data = [],
+        backend_dependent_data = [],
         flaky = 0,
         size = None,
         remote_proxy = None,
@@ -585,6 +591,7 @@ def _enclave_runner_test(
         loader_args = loader_args,
         enclaves = enclaves,
         data = data,
+        backend_dependent_data = backend_dependent_data,
         flaky = flaky,
         size = size,
         remote_proxy = remote_proxy,
@@ -600,8 +607,10 @@ def enclave_test(
         embedded_enclaves = {},
         test_args = [],
         remote_proxy = None,
+        backend_dependent_data = [],
         tags = [],
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
+        loader_name_by_backend = {},
         test_name_by_backend = {},
         deprecation = None,
         **kwargs):
@@ -650,8 +659,10 @@ def enclave_test(
 
     flaky = kwargs.pop("flaky", None)
     size = kwargs.pop("size", None)
-    native.cc_binary(
+    transitions.cc_binary(
         name = test_name,
+        backends = backends,
+        name_by_backend = loader_name_by_backend,
         testonly = 1,
         **_ensure_static_manual(kwargs)
     )
@@ -670,6 +681,7 @@ def enclave_test(
         "loader_args": test_args,
         "enclaves": internal.invert_enclave_name_mapping(enclaves),
         "data": data,
+        "backend_dependent_data": backend_dependent_data,
         "flaky": flaky,
         "size": size,
         "remote_proxy": remote_proxy,
@@ -721,7 +733,7 @@ def cc_test(
         enclave_test_config = "",
         srcs = [],
         deps = [],
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         **kwargs):
     """Build macro that creates a cc_test target and a cc_enclave_test target.
 
@@ -773,7 +785,7 @@ def cc_test_and_cc_enclave_test(
         enclave_test_config = "",
         srcs = [],
         deps = [],
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         **kwargs):
     """An alias for cc_test with a default enclave_test_name.
 
@@ -830,7 +842,7 @@ def cc_enclave_test(
         tags = [],
         deps = [],
         test_in_initialize = False,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
         test_name_by_backend = {},
@@ -866,6 +878,7 @@ def cc_enclave_test(
       **kwargs: cc_test arguments.
     """
     _impl = _cc_enclave_test_old
+
     if transitions.supported(native.package_name()):
         _impl = _cc_enclave_test_new
         tags = tags + ["asylo-transition"]
@@ -945,7 +958,7 @@ def enclave_build_test(
         tap = False,
         tags = [],
         name_by_backend = {},
-        backends = internal.should_be_all_backends):
+        backends = backend_tools.should_be_all_backends):
     """Tests that the given enclaves build in the specified backends.
 
     Args:
@@ -959,7 +972,7 @@ def enclave_build_test(
     """
     kwargs = {
         "enclaves": enclaves,
-        "tags": tags,
+        "tags": tags + ["enclave_test"],
     }
     build_rule = _enclave_build_test
     if transitions.supported(native.package_name()):

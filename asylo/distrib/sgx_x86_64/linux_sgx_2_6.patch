@@ -4970,7 +4970,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        doc = "Defines a C++ unsigned enclave in an SGX backend",
 +        implementation = _sgx_cc_unsigned_enclave_impl,
 +        cfg = transitions.toolchain if transition else None,
-+        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs, {
++        attrs = backend_tools.merge_dicts(backend_tools.cc_binary_attrs(), {
 +            "_lds": attr.label(
 +                default = "@linux_sgx//:enclave_lds",
 +                allow_single_file = True,

@@ -1,6 +1,6 @@
 """Starlark support for backend and toolchain transitions."""
 
-load("@com_google_asylo_backend_provider//:enclave_info.bzl", "AsyloBackendInfo")
+load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 
 BACKEND_LABEL = "@com_google_asylo_backend_provider//:backend"
 PRETRANSITION_TAGS = [
@@ -76,7 +76,8 @@ def _forward_target_transition(ctx, executable):
     # Forward the EnclaveInfo provider to allow enclaves to flow to enclave
     # rule positions.
     if ctx.attr.backend:
-        for provider in ctx.attr.backend[AsyloBackendInfo].forward_providers:
+        backend_info = ctx.attr.backend[backend_tools.AsyloBackendInfo]
+        for provider in backend_info.forward_providers:
             if provider in split_target:
                 result.append(split_target[provider])
     return result
@@ -132,7 +133,7 @@ def _make_transition_forwarding_rule(
     }
     attrs["backend"] = attr.label(
         doc = _BACKEND_DOC,
-        providers = [AsyloBackendInfo],
+        providers = [backend_tools.AsyloBackendInfo],
     )
     attrs.update(**extra_attrs)
 
@@ -187,9 +188,31 @@ with_backend_binary = _placeholder
 with_backend_test = _placeholder
 with_backend_library = _placeholder
 
+def _cc_backend_binary_impl(ctx):
+    return backend_tools.cc_binary(
+        ctx,
+        ctx.label.name,
+        extra_deps = [ctx.attr._stl],
+    )
+
+_cc_backend_binary = _placeholder
+
+def _cc_binary(name, backends = backend_tools.should_be_all_backends, name_by_backend = {}, **kwargs):
+    if transitions_supported(native.package_name()):
+        backend_tools.all_backends(
+            rule_or_macro = _cc_backend_binary,
+            name = name,
+            name_by_backend = name_by_backend,
+            backends = backends,
+            kwargs = kwargs,
+        )
+    else:
+        native.cc_binary(name = name, **kwargs)
+
 transitions = struct(
     toolchain = asylo_toolchain_transition,
     backend = asylo_backend_transition,
+    cc_binary = _cc_binary,
     asylo_binary = with_asylo_binary,
     asylo_test = with_asylo_test,
     asylo_library = with_asylo_library,

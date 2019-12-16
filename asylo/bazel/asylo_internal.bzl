@@ -2,9 +2,6 @@
 
 load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
 load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
-load("@linux_sgx//:sgx_sdk.bzl", "sgx")
-
-INTERNAL_SHOULD_BE_ALL_BACKENDS = sgx.backend_labels
 
 def dlopen_implicit_cc_binary_attrs(transition):
     """Returns the implicit rule attributes to include for dlopen backend.
@@ -146,8 +143,9 @@ def internal_cc_enclave_test(
         remote_proxy = None,
         tags = [],
         deps = [],
+        backend_dependent_data = [],
         test_in_initialize = False,
-        backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
+        backends = backend_tools.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
         test_name_by_backend = {},
@@ -174,6 +172,8 @@ def internal_cc_enclave_test(
           enclave(s) are loaded locally.
       tags: Same as cc_test tags.
       deps: Same as cc_test deps.
+      backend_dependent_data: Like data, but first underdoes a backend
+          transition.
       test_in_initialize: If True, tests run in Initialize, rather than Run. This
           allows us to ensure the initialization and post-initialization execution
           environments provide the same runtime behavior and semantics.
@@ -236,6 +236,7 @@ def internal_cc_enclave_test(
         "loader_args": loader_args,
         "enclaves": internal_invert_enclave_name_mapping(enclaves),
         "data": data,
+        "backend_dependent_data": backend_dependent_data,
         "remote_proxy": remote_proxy,
         "testonly": 1,
         "size": size,
@@ -336,5 +337,4 @@ internal = struct(
     invert_enclave_name_mapping = internal_invert_enclave_name_mapping,
     package = asylo_package,
     sgx_implicit_cc_binary_attrs = SGX_IMPLICIT_CC_BINARY_ATTRS,
-    should_be_all_backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
 )

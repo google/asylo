@@ -16,7 +16,7 @@ def _make_cc_backend_unsigned_enclave(experimental):
         implementation = _cc_backend_unsigned_enclave_impl,
         cfg = transitions.toolchain,
         attrs = backend_tools.merge_dicts(
-            backend_tools.cc_binary_attrs,
+            backend_tools.cc_binary_attrs(),
             {
                 "backend": attr.label(
                     mandatory = True,
@@ -52,7 +52,7 @@ def cc_enclave_test(
         tags = [],
         deps = [],
         test_in_initialize = False,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
         test_name_by_backend = {},
@@ -125,9 +125,11 @@ def _enclave_runner_script_impl(ctx):
     Returns:
       The rule's providers. Indicates the data dependencies as runfiles.
     """
+    data = ctx.attr.data + ctx.attr.backend_dependent_data
+    data_files = ctx.files.data + ctx.files.backend_dependent_data
     args = internal.interpolate_enclave_paths(ctx.attr.enclaves, ctx.attr.loader_args)
-    args = [ctx.expand_location(arg, ctx.attr.data) for arg in args]
-    files = [ctx.file.loader] + ctx.files.enclaves + ctx.files.data
+    args = [ctx.expand_location(arg, data) for arg in args]
+    files = [ctx.file.loader] + ctx.files.enclaves + data_files
 
     if ctx.file.remote_proxy:
         args = args + ["--remote_proxy='" + ctx.file.remote_proxy.short_path + "'"]
@@ -185,6 +187,11 @@ def _make_enclave_runner_rule(test = False):
             "backend": attr.label(
                 mandatory = True,
                 providers = [backend_tools.AsyloBackendInfo],
+            ),
+            "backend_dependent_data": attr.label_list(
+                cfg = transitions.backend,
+                allow_files = True,
+                doc = "Like data, but undergoes a backend transition first.",
             ),
             "_whitelist_function_transition": attr.label(
                 default = "//tools/whitelists/function_transition_whitelist",

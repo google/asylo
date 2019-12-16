@@ -97,6 +97,8 @@ def backend_label_struct(
 
 # When a backend is unspecified, target all of the following backends.
 # The value type for this dictionary is named a "backend label struct"
+_sgx_hw_backend = "@linux_sgx//:asylo_sgx_hw"
+_sgx_sim_backend = "@linux_sgx//:asylo_sgx_sim"
 ALL_BACKEND_LABELS = {
     "//asylo/platform/primitives/dlopen": struct(
         config_settings = [
@@ -110,7 +112,7 @@ ALL_BACKEND_LABELS = {
         debug_default_config = "@com_google_asylo_backend_provider//:empty",
         order = 3,
     ),
-    "@linux_sgx//:asylo_sgx_sim": struct(
+    _sgx_sim_backend: struct(
         config_settings = ["@linux_sgx//:sgx_sim"],
         tags = [
             "asylo-sgx-sim",
@@ -121,7 +123,7 @@ ALL_BACKEND_LABELS = {
         debug_default_config = "@linux_sgx//:enclave_debug_config",
         order = 1,
     ),
-    "@linux_sgx//:asylo_sgx_hw": struct(
+    _sgx_hw_backend: struct(
         config_settings = ["@linux_sgx//:sgx_hw"],
         tags = [
             "asylo-sgx-hw",
@@ -132,6 +134,11 @@ ALL_BACKEND_LABELS = {
         debug_default_config = "@linux_sgx//:enclave_debug_config",
         order = 2,
     ),
+}
+
+INTERNAL_SHOULD_BE_ALL_BACKENDS = {
+    _sgx_hw_backend: ALL_BACKEND_LABELS[_sgx_hw_backend],
+    _sgx_sim_backend: ALL_BACKEND_LABELS[_sgx_sim_backend],
 }
 
 def _asylo_backend_impl(ctx):
@@ -169,34 +176,52 @@ def _cc_private_sources(srcs):
     return sources, headers
 
 DEFAULT_MALLOC = Label("@com_google_asylo_toolchain//toolchain:malloc")
+ASYLO_TOOLCHAIN = Label("@com_google_asylo_toolchain//toolchain:crosstool")
 
-CC_BINARY_ATTRS = {
-    "srcs": attr.label_list(allow_files = True, doc = "srcs for cc_binary."),
-    "deps": attr.label_list(doc = "deps for cc_binary."),
-    "linkopts": attr.string_list(doc = "linkopts for cc_binary."),
-    "copts": attr.string_list(doc = "copts for cc_binary."),
-    "stamp": attr.bool(
-        default = False,
-        doc = "stamp for cc_binary, not supported. Must be false.",
-    ),
-    "defines": attr.string_list(doc = "defines for cc_binary."),
-    "malloc": attr.label(
-        default = DEFAULT_MALLOC,
-        doc = ("Custom malloc for cc_binary. Not supported. Must be the " +
-               "default malloc."),
-    ),
-    "includes": attr.string_list(doc = "includes for cc_binary."),
-    # The data field is not allowed.
-    "linkshared": attr.int(default = 1, doc = "linkshared for cc_binary."),
-    "linkstatic": attr.int(default = 1, doc = "linkstatic for cc_binary."),
-    # Attributes not in native.cc_binary.
-    "additional_linker_inputs": attr.label_list(
-        allow_files = [".lds"],
-        allow_empty = True,
-        doc = "Version scripts to pass to the linker.",
-    ),
-    "_cc_toolchain": attr.label(default = "@com_google_asylo_toolchain//toolchain:crosstool"),
-}
+def _cc_binary_attrs(
+        executable = False,
+        malloc = DEFAULT_MALLOC,
+        toolchain = ASYLO_TOOLCHAIN):
+    """Returns attributes for cc_binary-like rules.
+
+    Used for both shared object binaries and executable binaries. Executables
+    have different defaults for linkshared and linkstatic.
+
+    Args:
+        executable: True if and only if the binary should be executable.
+        malloc: The malloc label to use.
+        toolchain: Which toolchain the binary should be built with.
+
+    Returns:
+        A dictionary of attribute name string to attribute.
+    """
+    return {
+        "srcs": attr.label_list(allow_files = True, doc = "srcs for cc_binary."),
+        "deps": attr.label_list(doc = "deps for cc_binary."),
+        "linkopts": attr.string_list(doc = "linkopts for cc_binary."),
+        "copts": attr.string_list(doc = "copts for cc_binary."),
+        "stamp": attr.bool(
+            default = False,
+            doc = "stamp for cc_binary, not supported. Must be false.",
+        ),
+        "defines": attr.string_list(doc = "defines for cc_binary."),
+        "malloc": attr.label(
+            doc = ("Custom malloc for cc_binary. Not supported. Must be the " +
+                   "default malloc."),
+        ),
+        "includes": attr.string_list(doc = "includes for cc_binary."),
+        # The data field is not allowed.
+        "linkshared": attr.int(default = 0 if executable else 1, doc = "linkshared for cc_binary."),
+        "linkstatic": attr.int(default = 0 if executable else 1, doc = "linkstatic for cc_binary."),
+        # Attributes not in native.cc_binary.
+        "_malloc": attr.label(default = malloc),  # The default malloc target.
+        "additional_linker_inputs": attr.label_list(
+            allow_files = [".lds"],
+            allow_empty = True,
+            doc = "Version scripts to pass to the linker.",
+        ),
+        "_cc_toolchain": attr.label(default = toolchain),
+    }
 
 def merge_dicts(base, *extensions):
     """Combines all dictionaries combined left to right.
@@ -244,8 +269,10 @@ def native_cc_binary(
     """
     if ctx.attr.stamp:
         fail("Linkstamping is not supported")
-    if ctx.attr.malloc.label != DEFAULT_MALLOC:
-        fail("Custom malloc is not supported")
+    if ctx.attr.malloc:
+        if ctx.attr.malloc.label not in [ctx.attr._malloc.label, DEFAULT_MALLOC]:
+            fail("Custom malloc is not supported")
+    extra_deps = extra_deps + [ctx.attr._malloc]
     cc_toolchain = ctx.attr._cc_toolchain[cc_common.CcToolchainInfo]
     features = ctx.attr.features + extra_features
     feature_configuration = cc_common.configure_features(
@@ -301,11 +328,16 @@ def native_cc_binary(
     output_files = []
 
     _to_link = _linking_outputs.library_to_link
+    executable = None
     if _to_link:
         if ctx.attr.linkshared and _to_link.dynamic_library:
             output_files.append(_to_link.dynamic_library)
         elif not ctx.attr.linkshared and _to_link.static_pic_library:
             output_files.append(_to_link.static_pic_library)
+    if _linking_outputs.executable:
+        executable = _linking_outputs.executable
+        output_files.append(executable)
+
     _linking_context = cc_common.create_linking_context(
         libraries_to_link = libraries_to_link + output_files,
         user_link_flags = ctx.attr.linkopts,
@@ -313,7 +345,7 @@ def native_cc_binary(
     )
     return [
         CcInfo(linking_context = _linking_context, compilation_context = compilation_context),
-        DefaultInfo(files = depset(output_files)),
+        DefaultInfo(files = depset(output_files), executable = executable),
     ]
 
 def derived_name_from_backend(name, backend, info = None):
@@ -470,6 +502,7 @@ def all_backends(
 
     default_backend = _preferred_backend(backend_dictionary)
     default_target = "//" + native.package_name() + ":" + name_by_backend[default_backend]
+
     selections = {"//conditions:default": default_target}
     for backend, info in backend_dictionary.items():
         backend_name = name_by_backend[backend]
@@ -507,12 +540,15 @@ backend_tools = struct(
     derived_name = derived_name_from_backend,
     tags = tags_from_backends,
     all_backends = all_backends,
+    should_be_all_backends = INTERNAL_SHOULD_BE_ALL_BACKENDS,
     cc_binary = native_cc_binary,
-    cc_binary_attrs = CC_BINARY_ATTRS,
+    cc_binary_attrs = _cc_binary_attrs,
     asylo = asylo_backend,
     all_labels = ALL_BACKEND_LABELS,
     EnclaveInfo = EnclaveInfo,
     AsyloBackendInfo = AsyloBackendInfo,
     flag = BACKEND_LABEL,
     merge_dicts = merge_dicts,
+    malloc_label = DEFAULT_MALLOC,
+    asylo_toolchain_label = ASYLO_TOOLCHAIN,
 )

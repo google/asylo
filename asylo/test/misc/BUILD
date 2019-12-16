@@ -28,6 +28,7 @@ load(
 load("//asylo/bazel:asylo_copy_from_host.bzl", "copy_from_host")
 load("//asylo/bazel:sgx_rules.bzl", "sgx_debug_sign_enclave", "sgx_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@com_google_asylo_backend_provider//:transitions.bzl", "transitions")
 
 licenses(["notice"])
 
@@ -563,11 +564,12 @@ enclave_test(
     ] + TEST_DEPS_COMMON,
 )
 
-cc_binary(
+transitions.cc_binary(
     name = "double_die",
     testonly = 1,
     srcs = ["double_die.cc"],
     copts = ASYLO_DEFAULT_COPTS,
+    linkstatic = 1,
     deps = [
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
@@ -585,8 +587,8 @@ copy_from_host(
 sgx_enclave_test(
     name = "die_test",
     srcs = ["die_test.cc"],
+    backend_dependent_data = [":double_die_host_bin"],
     copts = ASYLO_DEFAULT_COPTS,
-    data = [":double_die_host_bin"],
     enclaves = {"enclave": ":die.so"},
     test_args = [
         "--enclave_path='{enclave}'",

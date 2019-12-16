@@ -135,9 +135,9 @@ enclave_loader(
 enclave_test(
     name = "grpc_server_test",
     srcs = ["grpc_server_test.cc"],
+    backend_dependent_data = [":grpc_server_host_loader"],
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
-    data = [":grpc_server_host_loader"],
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},
     test_args = [
         "--enclave_path='{server_enclave}'",

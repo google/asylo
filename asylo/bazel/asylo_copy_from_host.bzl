@@ -104,7 +104,7 @@ def cc_enclave_test(
         tags = [],
         deps = [],
         test_in_initialize = False,
-        backends = internal.should_be_all_backends,
+        backends = backend_tools.should_be_all_backends,
         unsigned_name_by_backend = {},
         signed_name_by_backend = {},
         test_name_by_backend = {},
@@ -218,7 +218,7 @@ def _make_cc_backend_unsigned_enclave(experimental):
         doc = "Defines an unsigned enclave target in the provided backend.",
         implementation = _cc_backend_unsigned_enclave_impl,
         attrs = backend_tools.merge_dicts(
-            backend_tools.cc_binary_attrs,
+            backend_tools.cc_binary_attrs(),
             {
                 "backend": attr.label(
                     mandatory = True,
@@ -247,12 +247,15 @@ def _enclave_runner_script_impl(ctx):
     Returns:
       The rule's providers. Indicates the data dependencies as runfiles.
     """
+    data = ctx.attr.data + ctx.attr.backend_dependent_data
+    data_files = ctx.files.data + ctx.files.backend_dependent_data
+    loader_args = [ctx.expand_location(arg, data) for arg in ctx.attr.loader_args]
     args = internal.interpolate_enclave_paths(
         ctx.attr.enclaves,
         ctx.attr.loader_args,
     )
-    args = [ctx.expand_location(arg, ctx.attr.data) for arg in args]
-    files = [ctx.file.loader] + ctx.files.enclaves + ctx.files.data
+    args = [ctx.expand_location(arg, data) for arg in args]
+    files = [ctx.file.loader] + ctx.files.enclaves + data_files
 
     if ctx.file.remote_proxy:
         args = args + ["--remote_proxy='" + ctx.file.remote_proxy.short_path + "'"]
@@ -312,6 +315,7 @@ def _make_enclave_runner_rule(test = False):
                 doc = "Unused attribute.",
                 default = "@com_google_asylo_backend_provider//:nothing",
             ),
+            "backend_dependent_data": attr.label_list(allow_files = True, doc = "Same as data."),
         },
     )
 
