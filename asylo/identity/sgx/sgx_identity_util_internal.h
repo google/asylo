@@ -71,8 +71,7 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
 
 // Parses SgxIdentity from |report| and places the result in |identity|.
 // Does not verify |report|.
-Status ParseIdentityFromHardwareReport(const Report &report,
-                                       SgxIdentity *identity);
+SgxIdentity ParseSgxIdentityFromHardwareReport(const Report &report);
 
 // Sets |spec| to the default local SGX match spec, which requires a match on
 // MRSIGNER, all MISCSELECT bits, and all ATTRIBUTES bits that do not fall into

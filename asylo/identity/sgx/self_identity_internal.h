@@ -55,10 +55,7 @@ SelfIdentity::SelfIdentity() {
   isvprodid = report->body.isvprodid;
   isvsvn = report->body.isvsvn;
 
-  status = ParseIdentityFromHardwareReport(*report, &sgx_identity);
-  if (!status.ok()) {
-    LOG(FATAL) << status;
-  }
+  sgx_identity = ParseSgxIdentityFromHardwareReport(*report);
 }
 
 }  // namespace sgx

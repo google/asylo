@@ -204,12 +204,9 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
                                         report));
 }
 
-StatusOr<SgxIdentity> AttestationKeyCertificateImpl::GetAssertedSgxIdentity()
+SgxIdentity AttestationKeyCertificateImpl::GetAssertedSgxIdentity()
     const {
-  SgxIdentity sgx_identity;
-  ASYLO_RETURN_IF_ERROR(
-      ParseIdentityFromHardwareReport(report_, &sgx_identity));
-  return sgx_identity;
+  return ParseSgxIdentityFromHardwareReport(report_);
 }
 
 bool AttestationKeyCertificateImpl::operator==(

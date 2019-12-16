@@ -189,21 +189,21 @@ bool IsValidMatchSpec(const CodeIdentityMatchSpec &match_spec) {
          match_spec.has_attributes_match_mask();
 }
 
-Status ParseIdentityFromHardwareReport(const Report &report,
-                                       CodeIdentity *identity) {
-  identity->mutable_mrenclave()->set_hash(report.body.mrenclave.data(),
+CodeIdentity ParseCodeIdentityFromHardwareReport(const Report &report) {
+  CodeIdentity identity;
+  identity.mutable_mrenclave()->set_hash(report.body.mrenclave.data(),
                                           report.body.mrenclave.size());
-  identity->mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
+  identity.mutable_signer_assigned_identity()->mutable_mrsigner()->set_hash(
       report.body.mrsigner.data(), report.body.mrsigner.size());
-  identity->mutable_signer_assigned_identity()->set_isvprodid(
+  identity.mutable_signer_assigned_identity()->set_isvprodid(
       report.body.isvprodid);
-  identity->mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
-  *identity->mutable_attributes() = report.body.attributes.ToProtoAttributes();
-  identity->set_miscselect(report.body.miscselect);
-  return Status::OkStatus();
+  identity.mutable_signer_assigned_identity()->set_isvsvn(report.body.isvsvn);
+  *identity.mutable_attributes() = report.body.attributes.ToProtoAttributes();
+  identity.set_miscselect(report.body.miscselect);
+  return identity;
 }
 
-Status SetDefaultCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
+void SetDefaultCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
   // Do not require MRENCLAVE match, as the value of MRENCLAVE changes from one
   // version of the enclave to another.
   spec->set_is_mrenclave_match_required(false);
@@ -221,8 +221,6 @@ Status SetDefaultCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
   // CARE" attributes.
   *spec->mutable_attributes_match_mask() =
       SecsAttributeSet::GetDefaultMask().ToProtoAttributes();
-
-  return Status::OkStatus();
 }
 
 void SetStrictCodeIdentityMatchSpec(CodeIdentityMatchSpec *spec) {
@@ -449,13 +447,13 @@ bool IsValidExpectation(const SgxIdentityExpectation &expectation,
   return IsIdentityCompatibleWithMatchSpec(identity, spec, is_legacy);
 }
 
-Status ParseIdentityFromHardwareReport(const Report &report,
-                                       SgxIdentity *identity) {
-  identity->Clear();
-  identity->mutable_machine_configuration()->mutable_cpu_svn()->set_value(
+SgxIdentity ParseSgxIdentityFromHardwareReport(const Report &report) {
+  SgxIdentity identity;
+  identity.mutable_machine_configuration()->mutable_cpu_svn()->set_value(
       report.body.cpusvn.data(), report.body.cpusvn.size());
-  return ParseIdentityFromHardwareReport(report,
-                                         identity->mutable_code_identity());
+  *identity.mutable_code_identity() =
+      ParseCodeIdentityFromHardwareReport(report);
+  return identity;
 }
 
 void SetDefaultLocalSgxMatchSpec(SgxIdentityMatchSpec *spec) {

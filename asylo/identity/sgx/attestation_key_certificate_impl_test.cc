@@ -230,8 +230,7 @@ TEST(AttestationKeyCertificateImplTest, GetAssertedIdentitySuccess) {
   SgxIdentity identity;
   ASSERT_TRUE(google::protobuf::TextFormat::ParseFromString(
       kTestAttestationKeyAssertedIdentity, &identity));
-  EXPECT_THAT(ak_cert_impl->GetAssertedSgxIdentity(),
-              IsOkAndHolds(EqualsProto(identity)));
+  EXPECT_THAT(ak_cert_impl->GetAssertedSgxIdentity(), EqualsProto(identity));
 }
 
 TEST(AttestationKeyCertificateImplTest, EqualsSuccess) {

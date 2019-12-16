@@ -408,9 +408,7 @@ TEST_F(SgxLocalAssertionGeneratorTest, GenerateSuccess) {
   EXPECT_EQ(report->body.reportdata.data, expected_reportdata);
 
   // Verify that the asserted identity is the self identity.
-  SgxIdentity sgx_identity;
-  ASSERT_THAT(sgx::ParseIdentityFromHardwareReport(*report, &sgx_identity),
-              IsOk());
+  SgxIdentity sgx_identity = ParseSgxIdentityFromHardwareReport(*report);
 
   SgxIdentity expected_identity = sgx::GetSelfIdentity()->sgx_identity;
   EXPECT_THAT(sgx_identity, EqualsProto(expected_identity))

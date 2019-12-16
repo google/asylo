@@ -52,7 +52,7 @@ class AttestationKeyCertificateImpl : public CertificateInterface {
 
   // Extracts the SgxIdentity asserted by the serialized Report in the
   // certificate.
-  StatusOr<SgxIdentity> GetAssertedSgxIdentity() const;
+  SgxIdentity GetAssertedSgxIdentity() const;
 
   // From CertificateInterface.
 

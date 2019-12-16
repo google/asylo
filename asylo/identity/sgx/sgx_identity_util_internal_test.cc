@@ -899,8 +899,7 @@ TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityFromHardwareReport) {
 
   ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *reportdata, report.get()));
 
-  SgxIdentity identity;
-  ASYLO_ASSERT_OK(ParseIdentityFromHardwareReport(*report, &identity));
+  SgxIdentity identity = ParseSgxIdentityFromHardwareReport(*report);
   CodeIdentity code_identity = identity.code_identity();
   EXPECT_TRUE(std::equal(
       report->body.mrenclave.cbegin(), report->body.mrenclave.cend(),

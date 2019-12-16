@@ -164,10 +164,9 @@ Status VerifyAgeExpectation(const IdentityAclPredicate &age_expectation,
                   "Attestation key certificate not provided as part of the "
                   "Intel certificate chain");
   }
-  SgxIdentity age_sgx_identity;
-  ASYLO_ASSIGN_OR_RETURN(age_sgx_identity, ak_cert->GetAssertedSgxIdentity());
   EnclaveIdentity age_identity;
-  ASYLO_ASSIGN_OR_RETURN(age_identity, SerializeSgxIdentity(age_sgx_identity));
+  ASYLO_ASSIGN_OR_RETURN(
+      age_identity, SerializeSgxIdentity(ak_cert->GetAssertedSgxIdentity()));
   std::string explanation;
   SgxIdentityExpectationMatcher matcher;
   StatusOr<bool> age_match_result = EvaluateIdentityAcl(
