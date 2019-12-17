@@ -56,8 +56,9 @@ const StatusOr<std::string> EncryptMessage(const std::string &message) {
   std::vector<uint8_t> ciphertext(message.size() + cryptor->MaxSealOverhead());
   size_t ciphertext_size;
 
-  ASYLO_RETURN_IF_ERROR(cryptor->Seal(message, additional_authenticated_data,
-                                      &nonce, &ciphertext, &ciphertext_size));
+  ASYLO_RETURN_IF_ERROR(cryptor->Seal(
+      message, additional_authenticated_data, absl::MakeSpan(nonce),
+      absl::MakeSpan(ciphertext), &ciphertext_size));
 
   return absl::StrCat(BytesToHexString(nonce), BytesToHexString(ciphertext));
 }
@@ -92,7 +93,8 @@ const StatusOr<CleansingString> DecryptMessage(
   size_t plaintext_size;
 
   ASYLO_RETURN_IF_ERROR(cryptor->Open(ciphertext, additional_authenticated_data,
-                                      nonce, &plaintext, &plaintext_size));
+                                      nonce, absl::MakeSpan(plaintext),
+                                      &plaintext_size));
 
   return CleansingString(plaintext.begin(), plaintext.end());
 }
@@ -143,7 +145,7 @@ class EnclaveDemo : public TrustedApplication {
                                absl::string_view output_message) {
     guide::asylo::Demo *output =
         enclave_output->MutableExtension(guide::asylo::quickstart_output);
-    output->set_value(output_message);
+    output->set_value(std::string(output_message));
   }
 };
 
