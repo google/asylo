@@ -47,6 +47,7 @@ ASYLO_SGX_HW_TESTS="attr(tags, \"asylo-sgx-hw\", tests(${PKG}/...))"
 ASYLO_SGX_SIM_TESTS="attr(tags, \"asylo-sgx-sim\", tests(${PKG}/...))"
 ASYLO_DLOPEN_TESTS="attr(tags, \"asylo-dlopen\", tests(${PKG}/...))"
 ASYLO_REMOTE_TESTS="attr(tags, \"asylo-remote\", tests(${PKG}/...))"
+ASYLO_PERF_TESTS="attr(tags, \"perf\", tests(${PKG}/...))"
 # Use the Bazel configuration transitions backend-switching strategy:
 ASYLO_TRANSITION_TESTS="attr(tags, \"asylo-transition\", tests(${PKG}/...))"
 # Use the copy_from_host backend-switching strategy:
@@ -55,20 +56,21 @@ ENCLAVE_TESTS="attr(tags, \"enclave_test\", tests(${PKG}/...))"
 
 ASYLO_PRIMITIVES="tests(${PKG}/platform/primitives/...)"
 NOREGRESSION_TESTS="attr(tags, noregression, ${ASYLO_TESTS})"
+IGNORE_TESTS="${NOREGRESSION_TESTS} union ${ASYLO_PERF_TESTS}"
 HOST_REGRESSION_TESTS=($(${BAZEL} query "${ASYLO_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ENCLAVE_TESTS})")
+  (${IGNORE_TESTS} union ${ENCLAVE_TESTS})")
 )
 SGX_HW_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_SGX_HW_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_CFH_TESTS}")
+  (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_CFH_TESTS}")
 )
 SGX_SIM_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_SGX_SIM_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_CFH_TESTS}")
+  (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_CFH_TESTS}")
 )
 DLOPEN_REGRESSION_TESTS=($(${BAZEL} query "(${ASYLO_DLOPEN_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_CFH_TESTS}")
+  (${IGNORE_TESTS} union ${ASYLO_REMOTE_TESTS})) intersect ${ASYLO_CFH_TESTS}")
 )
 UNTAGGED_TESTS=($(${BAZEL} query "${ENCLAVE_TESTS} except
-  (${NOREGRESSION_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})"))
+  (${IGNORE_TESTS} union ${ASYLO_DLOPEN_TESTS} union ${ASYLO_SGX_HW_TESTS} union ${ASYLO_SGX_SIM_TESTS})"))
 
 STAT=0
 if [[ "${#UNTAGGED_TESTS[@]}" -ne 0 ]]; then
