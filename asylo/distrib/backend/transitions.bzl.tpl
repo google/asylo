@@ -192,6 +192,7 @@ def _cc_backend_binary_impl(ctx):
     return backend_tools.cc_binary(
         ctx,
         ctx.label.name,
+        extra_data = ctx.files.backend_dependent_data,
         extra_deps = [ctx.attr._stl],
     )
 
@@ -207,7 +208,11 @@ def _cc_binary(name, backends = backend_tools.should_be_all_backends, name_by_ba
             kwargs = kwargs,
         )
     else:
-        native.cc_binary(name = name, **kwargs)
+        native.cc_binary(
+            name = name,
+            data = kwargs.pop("data", []) + kwargs.pop("backend_dependent_data", []),
+            **kwargs
+        )
 
 transitions = struct(
     toolchain = asylo_toolchain_transition,

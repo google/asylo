@@ -664,6 +664,7 @@ def enclave_test(
         backends = backends,
         name_by_backend = loader_name_by_backend,
         testonly = 1,
+        backend_dependent_data = backend_dependent_data,
         **_ensure_static_manual(kwargs)
     )
 

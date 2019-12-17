@@ -145,7 +145,6 @@ sgx_debug_sign_enclave(
 sgx_enclave_test(
     name = "dcap_intel_architectural_enclave_interface_e2e_test",
     srcs = ["dcap_intel_architectural_enclave_interface_e2e_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "report_oracle_enclave_path": ":report_oracle_enclave.so",
     },

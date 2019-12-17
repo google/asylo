@@ -245,6 +245,7 @@ def native_cc_binary(
         extra_features = [],
         extra_copts = [],
         extra_linkopts = [],
+        extra_data = [],
         extra_deps = [],
         extra_linking_contexts = []):
     """Returns the providers cc_binary would produce on the same attributes.
@@ -345,7 +346,11 @@ def native_cc_binary(
     )
     return [
         CcInfo(linking_context = _linking_context, compilation_context = compilation_context),
-        DefaultInfo(files = depset(output_files), executable = executable),
+        DefaultInfo(
+            files = depset(output_files),
+            runfiles = ctx.runfiles(extra_data),
+            executable = executable,
+        ),
     ]
 
 def derived_name_from_backend(name, backend, info = None):
