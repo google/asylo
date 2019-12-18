@@ -3490,7 +3490,7 @@ diff -Nur sdk/trts/trts_veh.cpp sdk/trts/trts_veh.cpp
 diff -Nur /dev/null BUILD
 --- /dev/null
 +++ BUILD
-@@ -0,0 +1,1337 @@
+@@ -0,0 +1,1339 @@
 +# linux-sgx is the Intel SGX SDK
 +
 +load(":sgx_sdk.bzl", "asylo_sgx_backend", "enclave_lds", "sgx")
@@ -3827,6 +3827,7 @@ diff -Nur /dev/null BUILD
 +        "-Iexternal/linux_sgx/psw/urts/linux",
 +        "-Iexternal/linux_sgx/psw/urts/parser",
 +        "-Iexternal/boringssl",
++        "-Wno-deprecated-declarations",
 +        "-Wno-unused-function",
 +        "-Wno-missing-braces",
 +    ],
@@ -4244,6 +4245,7 @@ diff -Nur /dev/null BUILD
 +        "-Iexternal/linux_sgx/sdk/simulation/tinst",
 +        "-Iexternal/linux_sgx/sdk/simulation/urtssim",
 +        "-Iexternal/linux_sgx/sdk/tseal",
++        "-Wno-deprecated-declarations",
 +    ],
 +    linkopts = [
 +        "-Wl,--no-as-needed -ldl",
