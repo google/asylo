@@ -256,14 +256,16 @@ following command:
 
 ## Repository Structure & Status
 
-This repository contains source code for the Asylo framework. The 0.3 release of
-the framework supports C++11 applications and a Bazel build environment.
+This repository contains source code for the Asylo framework. The framework
+supports C++17 applications (from release 0.4) and a Bazel build environment.
 
 The following packages contain source code that may be of particular interest to
 users of the Asylo framework as well as those looking to contribute to Asylo
 development.
 
 +   [asylo/](/asylo)
+    +   [bazel/](/asylo/bazel)
+        -   Libraries for Asylo development in the Bazel build system.
     +   [crypto/](/asylo/crypto)
         -   Crypto utilities and wrappers around BoringSSL.
     +   [distrib/](/asylo/distrib)
