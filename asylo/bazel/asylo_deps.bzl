@@ -389,16 +389,11 @@ load("@io_bazel_rules_go//go:def.bzl", "go_library")
 go_library(
     name = "curve25519",
     srcs = [
-        "curve25519/const_amd64.h",
-        "curve25519/const_amd64.s",
-        "curve25519/cswap_amd64.s",
         "curve25519/curve25519.go",
-        "curve25519/doc.go",
-        "curve25519/freeze_amd64.s",
-        "curve25519/ladderstep_amd64.s",
-        "curve25519/mont25519_amd64.go",
-        "curve25519/mul_amd64.s",
-        "curve25519/square_amd64.s",
+        "curve25519/curve25519_amd64.go",
+        "curve25519/curve25519_amd64.s",
+        "curve25519/curve25519_generic.go",
+        "curve25519/curve25519_noasm.go",
     ],
     importpath = "github.com/golang/crypto/curve25519",
     visibility = ["//visibility:public"],
@@ -410,8 +405,8 @@ go_library(
     visibility = ["//visibility:public"],
 )
 """,
-            # Commit from 2019 October 29
-            urls = ["https://github.com/golang/crypto/archive/8986dd9e96cf0a6f74da406c005ba3df38527c04.tar.gz"],
-            sha256 = "053ba0305ae2ccb8f3308c9ca12a6938333b0a6f023f161bbfc4879116ddd271",
-            strip_prefix = "crypto-8986dd9e96cf0a6f74da406c005ba3df38527c04",
+            # Commit from 2019 December 06
+            urls = ["https://github.com/golang/crypto/archive/e9b2fee46413994441b28dfca259d911d963dfed.tar.gz"],
+            sha256 = "9428990d92c404a401608794b89d79559357059c1efb1215223286cf0abc47a2",
+            strip_prefix = "crypto-e9b2fee46413994441b28dfca259d911d963dfed",
         )
