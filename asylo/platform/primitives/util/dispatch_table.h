@@ -68,7 +68,7 @@ class DispatchTable : public Client::ExitCallProvider {
       : exit_table_(std::unordered_map<uint64_t, ExitHandler>()),
         exit_hook_factory_() {}
 
-  DispatchTable(std::unique_ptr<ExitHookFactory> exit_hook_factory)
+  explicit DispatchTable(std::unique_ptr<ExitHookFactory> exit_hook_factory)
       : exit_table_(std::unordered_map<uint64_t, ExitHandler>()),
         exit_hook_factory_(std::move(exit_hook_factory)) {}
 
@@ -88,6 +88,13 @@ class DispatchTable : public Client::ExitCallProvider {
   // Internal helper to actually perform an exit call.
   Status PerformExit(uint64_t untrusted_selector, MessageReader *input,
                      MessageWriter *output, Client *client);
+
+  // Internal helper to perform an exit call that has no registered handler.
+  // In most cases will just return an error, but might be overridden to do
+  // something else.
+  virtual Status PerformUnknownExit(uint64_t untrusted_selector,
+                                    MessageReader *input, MessageWriter *output,
+                                    Client *client);
 
   // DispatchTable is used in trusted primitives layer where system calls might
   // not be available; avoid using absl based containers which may perform

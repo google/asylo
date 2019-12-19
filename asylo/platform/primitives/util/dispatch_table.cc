@@ -27,10 +27,6 @@
 namespace asylo {
 namespace primitives {
 
-// Registers a callback as the handler routine for an enclave exit point
-// `untrusted_selector`. Returns an error code if a handler has already been
-// registered for `trusted_selector` or if an invalid selector value is
-// passed.
 Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
                                           const ExitHandler &handler) {
   // Ensure no handler is installed for untrusted_selector.
@@ -43,6 +39,14 @@ Status DispatchTable::RegisterExitHandler(uint64_t untrusted_selector,
   return Status::OkStatus();
 }
 
+Status DispatchTable::PerformUnknownExit(uint64_t untrusted_selector,
+                                         MessageReader *input,
+                                         MessageWriter *output,
+                                         Client *client) {
+  return {error::GoogleError::OUT_OF_RANGE,
+          "Invalid selector in enclave exit."};
+}
+
 Status DispatchTable::PerformExit(uint64_t untrusted_selector,
                                   MessageReader *input, MessageWriter *output,
                                   Client *client) {
@@ -51,8 +55,7 @@ Status DispatchTable::PerformExit(uint64_t untrusted_selector,
     auto locked_exit_table = exit_table_.ReaderLock();
     auto it = locked_exit_table->find(untrusted_selector);
     if (it == locked_exit_table->end()) {
-      return {error::GoogleError::OUT_OF_RANGE,
-              "Invalid selector in enclave exit."};
+      return PerformUnknownExit(untrusted_selector, input, output, client);
     }
     handler = it->second;
   }
