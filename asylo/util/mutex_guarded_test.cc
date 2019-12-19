@@ -18,6 +18,7 @@
 
 #include "asylo/util/mutex_guarded.h"
 
+#include <atomic>
 #include <memory>
 #include <thread>
 #include <utility>
@@ -34,8 +35,8 @@ namespace asylo {
 namespace {
 
 using ::testing::Eq;
+using ::testing::Ge;
 using ::testing::Gt;
-using ::testing::Not;
 
 constexpr int kNumThreads = 100;
 constexpr absl::Duration kLongEnoughForThreadSwitch = absl::Milliseconds(500);
@@ -51,10 +52,13 @@ TEST(MutexGuardedTest, HeldReaderLocksDoNotPreventAcquiringOtherReaderLocks) {
 
   std::vector<std::thread> threads;
   threads.reserve(kNumThreads);
+  std::atomic<int> num_locks_obtained(0);
   for (int i = 0; i < kNumThreads; ++i) {
-    threads.emplace_back([&barrier, &safe_int] {
+    threads.emplace_back([&barrier, &num_locks_obtained, &safe_int] {
       auto maybe_readable_view = safe_int.ReaderTryLock();
-      EXPECT_THAT(maybe_readable_view, Not(Nullopt()));
+      if (maybe_readable_view.has_value()) {
+        ++num_locks_obtained;
+      }
       barrier.Block();
     });
   }
@@ -62,6 +66,10 @@ TEST(MutexGuardedTest, HeldReaderLocksDoNotPreventAcquiringOtherReaderLocks) {
   for (auto &thread : threads) {
     thread.join();
   }
+
+  // absl::Mutex allows ReaderTryLock() to fail occasionally even if no thread
+  // holds the lock exclusively.
+  EXPECT_THAT(num_locks_obtained.load(), Ge(0.9 * kNumThreads));
 }
 
 TEST(MutexGuardedTest, HeldWriterLocksPreventAcquiringOtherWriterLocks) {
