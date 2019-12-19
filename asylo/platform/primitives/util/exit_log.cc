@@ -43,7 +43,7 @@ std::ostream& operator<<(std::ostream& os, const ExitLogEntry& entry) {
 }
 
 ExitLogHook::ExitLogHook(std::function<void(ExitLogEntry)> store_log_entry)
-    : store_log_entry_(store_log_entry) {}
+    : store_log_entry_(std::move(store_log_entry)) {}
 
 Status ExitLogHook::PreExit(uint64_t untrusted_selector) {
   start_ = absl::Now();
@@ -56,8 +56,6 @@ Status ExitLogHook::PostExit(Status result) {
   store_log_entry_(ExitLogEntry(start_, duration, untrusted_selector_));
   return result;
 }
-
-ExitLogHook::~ExitLogHook() {}
 
 std::unique_ptr<DispatchTable::ExitHook> ExitLogHookFactory::CreateExitHook() {
   return absl::make_unique<ExitLogHook>(

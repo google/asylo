@@ -46,10 +46,9 @@ class ExitLogEntry {
 // A hook which will log a single exit call.
 class ExitLogHook : public DispatchTable::ExitHook {
  public:
-  ExitLogHook(std::function<void(ExitLogEntry)> store_log_entry);
+  explicit ExitLogHook(std::function<void(ExitLogEntry)> store_log_entry);
   Status PreExit(uint64_t untrusted_selector) override;
   Status PostExit(Status result) override;
-  ~ExitLogHook() override;
 
  private:
   absl::Time start_;
@@ -61,8 +60,7 @@ class ExitLogHook : public DispatchTable::ExitHook {
 class ExitLogHookFactory : public DispatchTable::ExitHookFactory {
  public:
   ExitLogHookFactory() = default;
-  std::unique_ptr<DispatchTable::ExitHook> CreateExitHook();
-  ~ExitLogHookFactory() = default;
+  std::unique_ptr<DispatchTable::ExitHook> CreateExitHook() override;
 };
 
 }  // namespace primitives
