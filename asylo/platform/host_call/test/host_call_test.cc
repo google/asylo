@@ -986,6 +986,17 @@ TEST_F(HostCallTest, TestSocket) {
   ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in2, &out2));
   ASSERT_THAT(out2, SizeIs(1));  // Should only contain return value.
   EXPECT_THAT(out2.next<int>(), Gt(0));
+
+  // Setup bidirectional IPv4 socket.
+  MessageWriter in3;
+  in3.Push<int>(/*value=domain=*/AF_INET);
+  in3.Push<int>(/*value=type=*/SOCK_STREAM);
+  in3.Push<int>(/*value=protocol=*/0);
+
+  MessageReader out3;
+  ASYLO_ASSERT_OK(client_->EnclaveCall(kTestSocket, &in3, &out3));
+  ASSERT_THAT(out3, SizeIs(1));  // Should only contain return value.
+  EXPECT_THAT(out3.next<int>(), Gt(0));
 }
 
 // Tests enc_untrusted_listen() by creating a local socket and calling
