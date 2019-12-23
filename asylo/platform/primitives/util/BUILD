@@ -67,6 +67,7 @@ cc_library(
         "//asylo/util:status",
         "//asylo/util:status_macros",
         "@com_google_absl//absl/base:core_headers",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 

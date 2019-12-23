@@ -51,7 +51,7 @@ class DispatchTable : public Client::ExitCallProvider {
     // through and return it.
     virtual Status PostExit(Status result) = 0;
 
-    virtual ~ExitHook() {}
+    virtual ~ExitHook() = default;
   };
 
   // A factory for hook objects. The factory pattern is used here in
@@ -61,7 +61,7 @@ class DispatchTable : public Client::ExitCallProvider {
   class ExitHookFactory {
    public:
     virtual std::unique_ptr<ExitHook> CreateExitHook() = 0;
-    virtual ~ExitHookFactory() {}
+    virtual ~ExitHookFactory() = default;
   };
 
   DispatchTable()

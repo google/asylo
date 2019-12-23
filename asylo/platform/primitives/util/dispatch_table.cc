@@ -20,6 +20,7 @@
 
 #include <memory>
 
+#include "absl/types/optional.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
@@ -50,17 +51,19 @@ Status DispatchTable::PerformUnknownExit(uint64_t untrusted_selector,
 Status DispatchTable::PerformExit(uint64_t untrusted_selector,
                                   MessageReader *input, MessageWriter *output,
                                   Client *client) {
-  ExitHandler handler;
+  absl::optional<ExitHandler> handler;
   {
     auto locked_exit_table = exit_table_.ReaderLock();
     auto it = locked_exit_table->find(untrusted_selector);
-    if (it == locked_exit_table->end()) {
-      return PerformUnknownExit(untrusted_selector, input, output, client);
+    if (it != locked_exit_table->end()) {
+      handler = it->second;
     }
-    handler = it->second;
   }
-  return handler.callback(client->shared_from_this(), handler.context, input,
-                          output);
+  if (!handler.has_value()) {
+    return PerformUnknownExit(untrusted_selector, input, output, client);
+  }
+  return handler.value().callback(client->shared_from_this(),
+                                  handler.value().context, input, output);
 }
 
 // Finds and invokes an exit handler, setting an error status on failure.

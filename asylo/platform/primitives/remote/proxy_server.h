@@ -37,6 +37,7 @@
 #include "asylo/util/remote/remote_proxy_config.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
+#include "asylo/util/statusor.h"
 #include "asylo/util/thread.h"
 #include "include/grpcpp/security/credentials.h"
 #include "include/grpcpp/security/server_credentials.h"
@@ -96,13 +97,12 @@ class RemoteEnclaveProxyServer {
   Status ExitCallForwarder(uint64_t exit_call_selector, MessageReader *input,
                            MessageWriter *output, Client *client) const;
 
-  // Constructs an exit call provider specific for remote proxy server:
-  // it accepts any exit call selector and forwards it over the wire to the
-  // remote proxy client.
-  std::unique_ptr<Client::ExitCallProvider> MakeLocalExitCallForwarder() const;
+  // Target side communicator.
+  Communicator *communicator() const { return communicator_.get(); }
 
  private:
-  RemoteEnclaveProxyServer(std::unique_ptr<RemoteProxyServerConfig> config);
+  explicit RemoteEnclaveProxyServer(
+      std::unique_ptr<RemoteProxyServerConfig> config);
 
   // Connects RemoteEnclaveProxyServer to the enclave proxy for the enclave
   // loaded locally. Returns a non-OK status on error.

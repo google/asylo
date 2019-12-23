@@ -30,8 +30,11 @@
 #include "asylo/platform/primitives/primitive_status.h"
 #include "asylo/platform/primitives/primitives.h"
 #include "asylo/platform/primitives/remote/communicator.h"
+#include "asylo/platform/primitives/remote/local_exit_calls.h"
 #include "asylo/platform/primitives/remote/proxy_selectors.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
+#include "asylo/platform/primitives/util/dispatch_table.h"
+#include "asylo/platform/primitives/util/exit_log.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/system_call/type_conversions/generated_types.h"
 #include "asylo/util/status_macros.h"
@@ -42,39 +45,6 @@
 
 namespace asylo {
 namespace primitives {
-
-namespace {
-
-// Remote backend specific implementation of ExitCallProvider, which sole
-// purpose is to forward exit call invoked by the enclave loaded by proxy server
-// over the remote connector to the untrusted host. Registration of exit
-// handlers with this provider is not allowed: actual handler registration
-// happens on the host and is not forwarded to the server. The server accepts
-// and forwards any exit call; if `untrusted_selector` is not registered by the
-// host, error status will be returned from there.
-class LocalExitCallForwarder : public Client::ExitCallProvider {
- public:
-  explicit LocalExitCallForwarder(const RemoteEnclaveProxyServer *server)
-      : server_(CHECK_NOTNULL(server)) {}
-
-  Status RegisterExitHandler(uint64_t untrusted_selector,
-                             const ExitHandler &handler) override {
-    return Status{error::GoogleError::INTERNAL,
-                  "RegisterExitHandler should never be called by "
-                  "RemoteEnclaveProxyServer"};
-  };
-
-  Status InvokeExitHandler(uint64_t untrusted_selector, MessageReader *input,
-                           MessageWriter *output, Client *client) override {
-    return server_->ExitCallForwarder(untrusted_selector, input, output,
-                                      client);
-  };
-
- private:
-  const RemoteEnclaveProxyServer *const server_;
-};
-
-}  // namespace
 
 StatusOr<std::unique_ptr<RemoteEnclaveProxyServer>>
 RemoteEnclaveProxyServer::Create(
@@ -142,13 +112,20 @@ Status RemoteEnclaveProxyServer::Start(
             while (invocation->reader.hasNext()) {
               in.PushByReference(invocation->reader.next());
             }
-            auto local_enclave_client_result = local_enclave_client_factory_(
-                &in, MakeLocalExitCallForwarder());
-            invocation->status = local_enclave_client_result.status();
-            if (invocation->status.ok()) {
-              local_enclave_client_ =
-                  std::move(local_enclave_client_result.ValueOrDie());
+            auto exit_call_forwarder_result =
+                LocalExitCallForwarder::Create(this);
+            if (!exit_call_forwarder_result.ok()) {
+              invocation->status = exit_call_forwarder_result.status();
+              return;
             }
+            auto local_enclave_client_result = local_enclave_client_factory_(
+                &in, std::move(exit_call_forwarder_result.ValueOrDie()));
+            if (!local_enclave_client_result.ok()) {
+              invocation->status = local_enclave_client_result.status();
+              return;
+            }
+            local_enclave_client_ =
+                std::move(local_enclave_client_result.ValueOrDie());
             return;
           }
           case kSelectorRemoteDisconnect:
@@ -187,26 +164,6 @@ Status RemoteEnclaveProxyServer::ExitCallForwarder(uint64_t exit_call_selector,
                                                    MessageReader *input,
                                                    MessageWriter *output,
                                                    Client *client) const {
-  // Process gettime selector locally.
-  if (exit_call_selector == host_call::kClockGettimeHandler &&
-      input->size() == 1 && input->peek<clockid_t>() == kLinux_CLOCK_REALTIME) {
-    const auto host_time_nanos = communicator_->last_host_time_nanos();
-    if (host_time_nanos.has_value()) {
-      input->next();  // analyzed above with peek()
-      constexpr int64_t kNanosecondsPerSecond = 1000000000L;
-      struct timespec host_time;
-      host_time.tv_sec = host_time_nanos.value() / kNanosecondsPerSecond;
-      host_time.tv_nsec = host_time_nanos.value() % kNanosecondsPerSecond;
-      output->Push<int32_t>(0);  // result
-      output->Push<int32_t>(0);  // errno
-      output->Push<struct timespec>(host_time);
-      return Status::OkStatus();
-    }
-    // Otherwise return no-value status.
-    return Status{error::GoogleError::NOT_FOUND,
-                  "Host time not received or expired"};
-  }
-
   // Invoke the exit handler, passing the registered handler.
   Status status;
   communicator_->Invoke(
@@ -229,11 +186,6 @@ Status RemoteEnclaveProxyServer::ExitCallForwarder(uint64_t exit_call_selector,
         }
       });
   return status;
-}
-
-std::unique_ptr<Client::ExitCallProvider>
-RemoteEnclaveProxyServer::MakeLocalExitCallForwarder() const {
-  return absl::make_unique<LocalExitCallForwarder>(this);
 }
 
 }  // namespace primitives

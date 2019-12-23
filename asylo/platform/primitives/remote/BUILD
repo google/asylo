@@ -185,6 +185,8 @@ dlopen_enclave_test(
 cc_library(
     name = "proxy_server",
     srcs = [
+        "local_exit_calls.cc",
+        "local_exit_calls.h",
         "proxy_selectors.h",
         "proxy_server.cc",
     ],
@@ -197,9 +199,12 @@ cc_library(
         "//asylo/platform/host_call:exit_handler_constants",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
+        "//asylo/platform/primitives/util:dispatch_table",
+        "//asylo/platform/primitives/util:exit_log",
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/system_call/type_conversions:types_definitions",
         "//asylo/util:logging",
+        "//asylo/util:mutex_guarded",
         "//asylo/util:status",
         "//asylo/util:thread",
         "//asylo/util/remote:remote_proxy_config",
@@ -207,6 +212,7 @@ cc_library(
         "@com_google_absl//absl/container:flat_hash_map",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
     ],
 )
 
