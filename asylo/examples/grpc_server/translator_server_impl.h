@@ -34,28 +34,16 @@ namespace grpc_server {
 
 class TranslatorServerImpl final : public Translator::Service {
  public:
-  explicit TranslatorServerImpl(absl::Notification *shutdown_requested);
+  // Configure the server.
+  explicit TranslatorServerImpl();
 
  private:
   ::grpc::Status GetTranslation(::grpc::ServerContext *context,
                                 const GetTranslationRequest *request,
                                 GetTranslationResponse *response) override;
 
-  ::grpc::Status Shutdown(::grpc::ServerContext *context,
-                          const ShutdownRequest *request,
-                          ShutdownResponse *response)
-      ABSL_LOCKS_EXCLUDED(shutdown_requested_mutex_) override;
-
   // A map from words to their translations.
   absl::flat_hash_map<std::string, std::string> translation_map_;
-
-  // A mutex to guard shutdown_requested_, in order to ensure that it only gets
-  // notified once.
-  absl::Mutex shutdown_requested_mutex_;
-
-  // A flag to set to trigger the shutdown of the enclave.
-  absl::Notification *shutdown_requested_
-      ABSL_GUARDED_BY(shutdown_requested_mutex_);
 };
 
 }  // namespace grpc_server

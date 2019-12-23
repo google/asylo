@@ -1,6 +1,6 @@
 /*
  *
- * Copyright 2018 Asylo authors
+ * Copyright 2019 Asylo authors
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -28,6 +28,7 @@
 #include "asylo/examples/grpc_server/translator_server_impl.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "include/grpcpp/grpcpp.h"
 #include "include/grpcpp/security/server_credentials.h"
 #include "include/grpcpp/server.h"
@@ -40,20 +41,10 @@ namespace grpc_server {
 // TrustedApplication as follows:
 //
 // * Initialize starts the gRPC server.
-// * Run waits for the server to receive the shutdown RPC or for the provided
-//   timeout to expire.
+// * Run retrieves the server port.
 // * Finalize shuts down the server.
-//
-// Note: Enclaves do not have a secure source of time information. Consequently,
-// enclaves should not rely on timing for security. For instance, the host can
-// make the server in this example run forever or shut down prematurely by
-// providing the enclave with incorrect time information. However, neither of
-// these possibilities would compromise the security of the server in this
-// example, so it is fine to rely on a non-secure source of time here.
 class GrpcServerEnclave final : public asylo::TrustedApplication {
  public:
-  GrpcServerEnclave() : service_(&shutdown_requested_) {}
-
   asylo::Status Initialize(const asylo::EnclaveConfig &enclave_config)
       LOCKS_EXCLUDED(server_mutex_) override;
 
@@ -71,14 +62,10 @@ class GrpcServerEnclave final : public asylo::TrustedApplication {
   std::unique_ptr<::grpc::Server> server_ GUARDED_BY(server_mutex_);
 
   // The translation service.
-  TranslatorServerImpl service_;
+  std::unique_ptr<TranslatorServerImpl> service_;
 
-  // An object that gets notified when the server receives a shutdown RPC.
-  absl::Notification shutdown_requested_;
-
-  // The amount of time that Finalize() should wait for the shutdown RPC before
-  // shutting down anyway.
-  absl::Duration shutdown_timeout_;
+  // The server's selected port.
+  int selected_port_;
 };
 
 asylo::Status GrpcServerEnclave::Initialize(
@@ -89,19 +76,10 @@ asylo::Status GrpcServerEnclave::Initialize(
                          "Expected a server_address extension on config.");
   }
 
-  // Fail if there is no server_max_lifetime available.
-  if (!enclave_config.HasExtension(server_max_lifetime)) {
-    return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
-                         "Expected a server_max_lifetime extension on config.");
-  }
-
   if (!enclave_config.HasExtension(port)) {
     return asylo::Status(asylo::error::GoogleError::INVALID_ARGUMENT,
                          "Expected a port extension on config.");
   }
-
-  shutdown_timeout_ =
-      absl::Seconds(enclave_config.GetExtension(server_max_lifetime));
 
   // Lock |server_mutex_| so that we can start setting up the server.
   absl::MutexLock lock(&server_mutex_);
@@ -115,20 +93,20 @@ asylo::Status GrpcServerEnclave::Initialize(
   // Create a ServerBuilder object to set up the server.
   ::grpc::ServerBuilder builder;
 
+  std::shared_ptr<::grpc::ServerCredentials> server_credentials =
+      ::grpc::InsecureServerCredentials();
+
   // Add a listening port to the server.
-  //
-  // Note: This gRPC server is hosted with InsecureServerCredentials. This
-  // means that no additional security is used for channel establishment.
-  // Neither the server nor its clients are authenticated, and no channels are
-  // secured. This configuration is not suitable for a production environment.
-  int selected_port;
   builder.AddListeningPort(
       absl::StrCat(enclave_config.GetExtension(server_address), ":",
                    enclave_config.GetExtension(port)),
-      ::grpc::InsecureServerCredentials(), &selected_port);
+      server_credentials, &selected_port_);
+
+  // Instantiate the translator service.
+  service_ = absl::make_unique<TranslatorServerImpl>();
 
   // Add the translator service to the server.
-  builder.RegisterService(&service_);
+  builder.RegisterService(service_.get());
 
   // Start the server.
   server_ = builder.BuildAndStart();
@@ -137,16 +115,12 @@ asylo::Status GrpcServerEnclave::Initialize(
                          "Failed to start server");
   }
 
-  LOG(INFO) << "Server started on port " << selected_port;
-
   return asylo::Status::OkStatus();
 }
 
 asylo::Status GrpcServerEnclave::Run(const asylo::EnclaveInput &enclave_input,
                                      asylo::EnclaveOutput *enclave_output) {
-  // Wait until the timeout runs out or the server receives a shutdown RPC.
-  shutdown_requested_.WaitForNotificationWithTimeout(shutdown_timeout_);
-
+  enclave_output->SetExtension(actual_server_port, selected_port_);
   return asylo::Status::OkStatus();
 }
 
@@ -174,6 +148,8 @@ asylo::Status GrpcServerEnclave::Finalize(
 
 namespace asylo {
 
+// Registers an instance of GrpcServerEnclave as the TrustedApplication. See
+// trusted_application.h for more information.
 TrustedApplication *BuildTrustedApplication() {
   return new examples::grpc_server::GrpcServerEnclave;
 }

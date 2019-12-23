@@ -36,8 +36,6 @@ ABSL_FLAG(std::string, enclave_path, "", "Path to enclave to load");
 ABSL_FLAG(int32_t, server_max_lifetime, 300,
           "The longest amount of time (in seconds) that the server should be "
           "allowed to run");
-ABSL_FLAG(int32_t, server_lifetime, -1,
-          "Deprecated alias for server_max_lifetime");
 
 // Default value 0 is used to indicate that the system should choose an
 // available port.
@@ -68,10 +66,6 @@ int main(int argc, char *argv[]) {
   // run on.
   asylo::EnclaveConfig config;
   config.SetExtension(examples::grpc_server::server_address, kServerAddress);
-  config.SetExtension(examples::grpc_server::server_max_lifetime,
-                      absl::GetFlag(FLAGS_server_lifetime) >= 0
-                          ? absl::GetFlag(FLAGS_server_lifetime)
-                          : absl::GetFlag(FLAGS_server_max_lifetime));
   config.SetExtension(examples::grpc_server::port, absl::GetFlag(FLAGS_port));
 
   // Prepare |load_config| message.

@@ -26,7 +26,7 @@ load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load("@com_github_grpc_grpc//bazel:cc_grpc_library.bzl", "cc_grpc_library")
 
-licenses(["notice"])
+licenses(["notice"])  # Apache v2.0
 
 # Example demonstrating gRPC in Asylo.
 
@@ -120,18 +120,33 @@ enclave_loader(
     enclaves = {"enclave": ":grpc_server_enclave.so"},
     loader_args = ["--enclave_path='{enclave}'"],
     deps = [
+        ":grpc_server_util",
+        "//asylo:enclave_client",
+        "//asylo/util:logging",
+        "//asylo/util:status",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/flags:parse",
+        "@com_google_absl//absl/time",
+    ],
+)
+
+cc_library(
+    name = "grpc_server_util",
+    srcs = ["grpc_server_util.cc"],
+    hdrs = ["grpc_server_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
         ":grpc_server_config_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/platform/primitives/sgx:loader_cc_proto",
-        "//asylo/util:logging",
-        "@com_google_absl//absl/flags:flag",
-        "@com_google_absl//absl/flags:parse",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
     ],
 )
 
-# A test of the example using the generated client stubs rather than the gRPC
-# command-line interface.
+# A test of the example using the server enclave.
 enclave_test(
     name = "grpc_server_test",
     srcs = ["grpc_server_test.cc"],
@@ -140,21 +155,40 @@ enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"server_enclave": ":grpc_server_enclave.so"},
     test_args = [
-        "--enclave_path='{server_enclave}'",
+        "--server_enclave_path='{server_enclave}'",
     ],
     deps = [
-        ":translator_server",
-        "//asylo/test/util:exec_tester",
+        ":grpc_server_util",
+        ":translator_client",
+        ":translator_server_impl",
+        "//asylo:enclave_client",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:path",
         "//asylo/util:status",
-        "@bazel_tools//tools/cpp/runfiles",
         "@com_github_grpc_grpc//:grpc++",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "translator_client",
+    testonly = 1,
+    srcs = ["translator_client.cc"],
+    hdrs = ["translator_client.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/examples/grpc_server:translator_server",
+        "//asylo/examples/grpc_server:translator_server_cc_proto",
+        "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
     ],
 )
