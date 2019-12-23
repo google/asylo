@@ -1,3 +1,5 @@
+env:
+  BUILDKITE_CLEAN_CHECKOUT: true
 steps:
   - label: ":hammer: SGX Simulator"
     command: "ASYLO_SDK=${BUILDKITE_BUILD_CHECKOUT_PATH} buildkite/docker-test.sh"

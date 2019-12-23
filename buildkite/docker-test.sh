@@ -22,7 +22,7 @@
 
 ensure() {
   if [[ -z "$1" ]]; then
-    [[ -z "$2" ]] || echo ERROR: $2
+    [[ -z "$2" ]] || echo "ERROR: $2"
     exit 1
   fi
 }
@@ -58,9 +58,9 @@ ${BUILD_DLOPEN_BEP}"
 ASYLO_BUILD_ROOT=/var/tmp/asylo-build
 # We check that ${ASYLO_BUILD_ROOT} is already writable by ${USER}.
 if [ -w "${ASYLO_BUILD_ROOT}" ]; then
-  echo ${ASYLO_BUILD_ROOT} is writable. Proceeding;
+  echo "${ASYLO_BUILD_ROOT} is writable. Proceeding;"
 else
-  echo ERROR: ${ASYLO_BUILD_ROOT} is not writable or does not exist!
+  echo "ERROR: ${ASYLO_BUILD_ROOT} is not writable or does not exist!"
   exit 1
 fi
 
@@ -74,23 +74,22 @@ mkdir -p ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifact
 # Generate random container name
 CONTAINER_NAME=asylo${RANDOM}
 
-echo --- :docker: Starting Docker Container ${CONTAINER_NAME}
+echo "--- :docker: Starting Docker Container ${CONTAINER_NAME}"
 
 # If SGX is present, we'll pass it into the container
 # so it can use it if it wants.
 # Note that we MUST have SGX when ${ASYLO_TO_TEST}==sgx
 SGX_HW_ARGS=()
 if [ -c /dev/isgx ] && [ -S /var/run/aesmd/aesm.socket ]; then
-  echo :information_source: \
-  SGX device has been detected and will be passed to docker.
+  echo "SGX device has been detected and will be passed to docker."
   SGX_HW_ARGS+=("--device=/dev/isgx")
   SGX_HW_ARGS+=("--volume=/var/run/aesmd/aesm.socket:/var/run/aesmd/aesm.socket")
 else
-  echo :information_source: SGX has not been detected.
-  if [[ "${ASYLO_TO_TEST}" =~ --sgx[^-] ]];
+  echo "SGX has not been detected."
+  if [[ " ${ASYLO_TO_TEST} " =~ --sgx[^-] ]];
   then
-    echo :warning: You are running tests that require SGX hardware, \
-    they will fail without SGX.
+    echo "WARNING: You are running tests that require SGX hardware," \
+    "they will fail without SGX."
   fi
 fi
 
@@ -134,11 +133,11 @@ DOCKER="docker exec -i \
 ${DOCKER_ROOT} useradd -u $(id -u) ${USER}
 
 # Remove output files
-echo --- :bazel: Cleaning previous artifacts, if any
+echo "--- :bazel: Cleaning previous artifacts, if any"
 ${DOCKER} bazel clean
 
 # Run Tests
-echo --- :gear: Running Tests ${ASYLO_TO_TEST}
+echo "--- :gear: Running Tests ${ASYLO_TO_TEST}"
 ${DOCKER} asylo/test/run_enclave_tests.sh ${ASYLO_TO_TEST}
 STAT=$(($STAT || $?))
 
@@ -149,7 +148,7 @@ STAT=$(($STAT || $?))
 # ${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts.
 # Our intent to use them as BuildKite artifacts
 # (see https://buildkite.com/docs/pipelines/artifacts)
-echo --- :package: Collecting Test Artifcats
+echo "--- :package: Collecting Test Artifcats"
 for t in "host" "dlopen" "sgx-sim" "sgx"
 do
   ${DOCKER} python3 buildkite/collect_artifacts.py \
@@ -157,8 +156,15 @@ do
             --destination=/artifacts
 done
 
+# Uploading Test Artifacts to Buildkite
+if [ -x "$(command -v buildkite-agent)" ]; then
+  echo "--- :package: Uploading Build Artifacts"
+  cd "${ASYLO_BUILD_ROOT}/${BUILDKITE_BUILD_ID}/${BUILDKITE_STEP_ID}/artifacts"
+  buildkite-agent artifact upload **/*.*
+fi
+
 # General cleanup: We don't want to run out of disc space
-echo --- :wastebasket: Cleaning up older build dirs
+echo "--- :wastebasket: Cleaning up older build dirs"
 find ${ASYLO_BUILD_ROOT}/* -type d -ctime +14 -exec rm -rf {} \;
 
 if [[ ${STAT} -eq 0 ]]; then
