@@ -23,6 +23,9 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/test/util/status_matchers.h"
+
+using ::testing::Eq;
 
 namespace asylo {
 namespace {
@@ -48,25 +51,15 @@ class Sha256HashUtilTest : public ::testing::Test {
 };
 
 TEST_F(Sha256HashUtilTest, SuccessfulConversionFromHexString) {
-  Sha256HashProto h;
+  Sha256HashProto hash_proto;
 
-  EXPECT_TRUE(Sha256HashFromHexString(kHashHex1, &h));
-  EXPECT_EQ(h.hash(), std::string(kHashBin1, sizeof(kHashBin1)));
+  ASYLO_ASSERT_OK_AND_ASSIGN(hash_proto, CreateSha256HashProto(kHashHex1));
+  EXPECT_THAT(hash_proto.hash(), Eq(std::string(kHashBin1, sizeof(kHashBin1))));
 }
 
 TEST_F(Sha256HashUtilTest, UnsuccessfulConversionFromHexString) {
-  Sha256HashProto h;
-
-  EXPECT_FALSE(Sha256HashFromHexString(kHashHexShort, &h));
-}
-
-TEST_F(Sha256HashUtilTest, ConversionToHexString) {
-  Sha256HashProto h;
-  h.set_hash(kHashBin1, sizeof(kHashBin1));
-  std::string str;
-
-  Sha256HashToHexString(h, &str);
-  EXPECT_EQ(str, std::string(kHashHex1));
+  EXPECT_THAT(CreateSha256HashProto(kHashHexShort),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST_F(Sha256HashUtilTest, EqualityOperatorPositive) {

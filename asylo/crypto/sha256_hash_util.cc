@@ -20,31 +20,27 @@
 
 #include <string>
 
-#include <google/protobuf/util/message_differencer.h>
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/sha256_hash.pb.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/util/status_macros.h"
 
 namespace asylo {
 
-bool Sha256HashFromHexString(const std::string &hex, Sha256HashProto *h) {
-  UnsafeBytes<kSha256Size> bytes;
+constexpr uint32_t kSha256DigestLength = 32;
 
-  if (!SetTrivialObjectFromHexString(hex, &bytes).ok()) {
-    return false;
-  }
+StatusOr<Sha256HashProto> CreateSha256HashProto(absl::string_view hash_hex) {
+  UnsafeBytes<kSha256DigestLength> bytes;
+  ASYLO_RETURN_IF_ERROR(SetTrivialObjectFromHexString(hash_hex, &bytes));
 
-  h->set_hash(reinterpret_cast<const char *>(bytes.data()), bytes.size());
-  return true;
-}
-
-void Sha256HashToHexString(const Sha256HashProto &h, std::string *str) {
-  *str = absl::BytesToHexString(h.hash());
+  Sha256HashProto hash;
+  hash.set_hash(reinterpret_cast<const char *>(bytes.data()), bytes.size());
+  return hash;
 }
 
 bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs) {
-  return ::google::protobuf::util::MessageDifferencer::Equivalent(lhs, rhs);
+  return lhs.hash() == rhs.hash();
 }
 
 bool operator!=(const Sha256HashProto &lhs, const Sha256HashProto &rhs) {

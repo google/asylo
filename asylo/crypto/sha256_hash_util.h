@@ -23,21 +23,18 @@
 #include <string>
 
 #include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/util/statusor.h"
 
 namespace asylo {
-constexpr uint32_t kSha256Size = 32;
 
-// Parses a Sha256Hash from a hex string. The hex string must be exactly
-// kSha256Size*2 characters long, and must consist of only hex digits.
-bool Sha256HashFromHexString(const std::string &hex, Sha256HashProto *h);
+/// Returns a `Sha256HashProto` with the hash of the given |hex_string|, or a
+/// non-OK Status if the provided string is an invalid hex-encoded SHA-256 hash.
+StatusOr<Sha256HashProto> CreateSha256HashProto(absl::string_view hash_hex);
 
-// Converts a Sha256Hash to a hex string.
-void Sha256HashToHexString(const Sha256HashProto &h, std::string *str);
-
-// Compares two Sha256Hash protobufs for equality.
+/// Compares two `Sha256HashProto` messages for equality.
 bool operator==(const Sha256HashProto &lhs, const Sha256HashProto &rhs);
 
-// Compares two Sha256Hash protobufs for inequality.
+/// Compares two `Sha256HashProto` messages for inequality.
 bool operator!=(const Sha256HashProto &lhs, const Sha256HashProto &rhs);
 
 }  // namespace asylo

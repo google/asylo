@@ -746,13 +746,13 @@ cc_library(
     srcs = ["sha256_hash_util.cc"],
     hdrs = ["sha256_hash_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo:implementation"],
+    visibility = ["//visibility:public"],
     deps = [
         ":sha256_hash_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/util:status",
         "@com_google_absl//absl/strings",
-        "@com_google_protobuf//:protobuf",
     ],
 )
 
@@ -763,6 +763,7 @@ cc_test(
     deps = [
         ":sha256_hash_cc_proto",
         ":sha256_hash_util",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_googletest//:gtest",

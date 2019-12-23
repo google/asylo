@@ -89,12 +89,12 @@ constexpr char kInvalidString[] = "Invalid String";
 class SgxIdentityUtilInternalTest : public ::testing::Test {
  protected:
   void SetUp() override {
-    Sha256HashFromHexString(
-        "acedfaceacedfaceacedfaceacedfaceacedfaceacedfaceacedfaceacedface",
-        &h_acedface_);
-    Sha256HashFromHexString(
-        "deadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeefdeadbeef",
-        &h_deadbeef_);
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        h_acedface_, CreateSha256HashProto("acedfaceacedfaceacedfaceacedface"
+                                           "acedfaceacedfaceacedfaceacedface"));
+    ASYLO_ASSERT_OK_AND_ASSIGN(
+        h_deadbeef_, CreateSha256HashProto("deadbeefdeadbeefdeadbeefdeadbeef"
+                                           "deadbeefdeadbeefdeadbeefdeadbeef"));
     attributes_all_f_.set_flags(kLongLongAllF);
     attributes_all_f_.set_xfrm(kLongLongAllF);
     attributes_all_5_.set_flags(kLongLongAll5);
