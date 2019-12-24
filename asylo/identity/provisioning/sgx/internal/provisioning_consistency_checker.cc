@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 
@@ -43,7 +44,8 @@ ProvisioningConsistency ProvisioningConsistencyChecker::GetConsistencyWith(
         return tcb_levels_.contains(cert_info.tcb_level());
       });
 
-  absl::flat_hash_set<Tcb, TcbHash, TcbEqual> tcbs_from_certificates;
+  absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual>
+      tcbs_from_certificates;
   tcbs_from_certificates.reserve(pck_certificates.certs().size());
   for (const auto &cert_info : pck_certificates.certs()) {
     tcbs_from_certificates.insert(cert_info.tcb_level());

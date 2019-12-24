@@ -35,6 +35,7 @@
 #include <google/protobuf/util/time_util.h>
 #include "absl/base/call_once.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
 #include "absl/strings/ascii.h"
 #include "absl/strings/escaping.h"
 #include "absl/strings/str_cat.h"
@@ -360,7 +361,8 @@ StatusOr<google::protobuf::RepeatedPtrField<TcbLevel>> TcbLevelsFromJson(
   const google::protobuf::ListValue *tcb_levels_array;
   ASYLO_ASSIGN_OR_RETURN(tcb_levels_array, JsonGetArray(tcb_levels_json));
 
-  absl::flat_hash_map<Tcb, TcbStatus, TcbHash, TcbEqual> tcb_to_status_map;
+  absl::flat_hash_map<Tcb, TcbStatus, absl::Hash<Tcb>, MessageEqual>
+      tcb_to_status_map;
   google::protobuf::RepeatedPtrField<TcbLevel> tcb_levels;
   for (const auto &tcb_level_json : tcb_levels_array->values()) {
     TcbLevel tcb_level;

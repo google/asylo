@@ -18,98 +18,101 @@
 
 #include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 
+#include <limits>
+#include <string>
+#include <vector>
+
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
-#include "absl/container/flat_hash_set.h"
-#include "absl/random/random.h"
+#include "absl/hash/hash_testing.h"
+#include "absl/strings/string_view.h"
+#include "absl/types/optional.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
+#include "asylo/identity/sgx/machine_configuration.pb.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
 
-using ::testing::SizeIs;
-
-Tcb RandomTcb() {
-  static absl::BitGen *tcb_generator = new absl::BitGen;
-
-  Tcb tcb;
-  tcb.mutable_components()->resize(kTcbComponentsSize);
-  for (auto &byte : *tcb.mutable_components()) {
-    uint8_t unsigned_byte = absl::Uniform<unsigned char>(*tcb_generator);
-    byte = *reinterpret_cast<char *>(&unsigned_byte);
+CpuSvn CreateCpuSvn(absl::optional<absl::string_view> value) {
+  CpuSvn cpu_svn;
+  if (value.has_value()) {
+    cpu_svn.set_value(value.value().data(), value.value().size());
   }
-  tcb.mutable_pce_svn()->set_value(absl::Uniform<uint32_t>(
-      absl::IntervalClosedClosed, *tcb_generator, 0, kPceSvnMaxValue));
+  return cpu_svn;
+}
+
+PceSvn CreatePceSvn(absl::optional<uint32_t> value) {
+  PceSvn pce_svn;
+  if (value.has_value()) {
+    pce_svn.set_value(value.value());
+  }
+  return pce_svn;
+}
+
+Tcb CreateTcb(absl::optional<absl::string_view> components,
+              absl::optional<PceSvn> pce_svn) {
+  Tcb tcb;
+  if (components.has_value()) {
+    tcb.set_components(components.value().data(), components.value().size());
+  }
+  if (pce_svn.has_value()) {
+    *tcb.mutable_pce_svn() = pce_svn.value();
+  }
   return tcb;
 }
 
-RawTcb RandomRawTcb() {
-  static absl::BitGen *raw_tcb_generator = new absl::BitGen;
-
+RawTcb CreateRawTcb(absl::optional<CpuSvn> cpu_svn,
+                    absl::optional<PceSvn> pce_svn) {
   RawTcb tcbm;
-  tcbm.mutable_cpu_svn()->mutable_value()->resize(kCpusvnSize);
-  for (auto &byte : *tcbm.mutable_cpu_svn()->mutable_value()) {
-    uint8_t unsigned_byte = absl::Uniform<unsigned char>(*raw_tcb_generator);
-    byte = *reinterpret_cast<char *>(&unsigned_byte);
+  if (cpu_svn.has_value()) {
+    *tcbm.mutable_cpu_svn() = cpu_svn.value();
   }
-  tcbm.mutable_pce_svn()->set_value(absl::Uniform<uint32_t>(
-      absl::IntervalClosedClosed, *raw_tcb_generator, 0, kPceSvnMaxValue));
+  if (pce_svn.has_value()) {
+    *tcbm.mutable_pce_svn() = pce_svn.value();
+  }
   return tcbm;
 }
 
-TEST(TcbHashersTest, TcbHashStressTest) {
-#ifndef __ASYLO__
-  constexpr int kNumItems = 100000;
-#else   // __ASYLO__
-  // Enclaves have a smaller heap.
-  constexpr int kNumItems = 10000;
-#endif  // __ASYLO__
+TEST(TcbHashersTest, TcbHashTest) {
+  const absl::optional<std::string> kComponents[] = {
+      absl::nullopt, "", "The quick brown fox jumped over the lazy dog"};
+  const absl::optional<PceSvn> kPceSvns[] = {
+      absl::nullopt, CreatePceSvn(absl::nullopt), CreatePceSvn(0),
+      CreatePceSvn(std::numeric_limits<uint32_t>::max())};
 
   std::vector<Tcb> tcbs;
-  tcbs.reserve(kNumItems);
-  for (int i = 0; i < kNumItems; ++i) {
-    tcbs.push_back(RandomTcb());
+  for (const auto &components : kComponents) {
+    for (const auto &pce_svn : kPceSvns) {
+      tcbs.push_back(CreateTcb(components, pce_svn));
+    }
   }
 
-  absl::flat_hash_set<Tcb, TcbHash, TcbEqual> tcbs_set;
-  for (const Tcb &tcb : tcbs) {
-    EXPECT_TRUE(tcbs_set.insert(tcb).second);
-  }
-  EXPECT_THAT(tcbs_set, SizeIs(kNumItems));
-
-  for (const Tcb &tcb : tcbs) {
-    EXPECT_TRUE(tcbs_set.contains(tcb));
-  }
+  EXPECT_TRUE(
+      absl::VerifyTypeImplementsAbslHashCorrectly(tcbs, MessageEqual()));
 }
 
-TEST(TcbHashersTest, RawTcbHashStressTest) {
-#ifndef __ASYLO__
-  constexpr int kNumItems = 100000;
-#else   // __ASYLO__
-  // Enclaves have a smaller heap.
-  constexpr int kNumItems = 10000;
-#endif  // __ASYLO__
+TEST(TcbHashersTest, RawTcbHashTest) {
+  const absl::optional<CpuSvn> kCpuSvns[] = {
+      absl::nullopt, CreateCpuSvn(""),
+      CreateCpuSvn("The quick brown fox jumped over the lazy dog")};
+  const absl::optional<PceSvn> kPceSvns[] = {
+      absl::nullopt, CreatePceSvn(absl::nullopt), CreatePceSvn(0),
+      CreatePceSvn(std::numeric_limits<uint32_t>::max())};
 
   std::vector<RawTcb> tcbms;
-  tcbms.reserve(kNumItems);
-  for (int i = 0; i < kNumItems; ++i) {
-    tcbms.push_back(RandomRawTcb());
+  for (const auto &cpu_svn : kCpuSvns) {
+    for (const auto &pce_svn : kPceSvns) {
+      tcbms.push_back(CreateRawTcb(cpu_svn, pce_svn));
+    }
   }
 
-  absl::flat_hash_set<RawTcb, RawTcbHash, RawTcbEqual> tcbms_set;
-  for (const RawTcb &tcbm : tcbms) {
-    EXPECT_TRUE(tcbms_set.insert(tcbm).second);
-  }
-  EXPECT_THAT(tcbms_set, SizeIs(kNumItems));
-
-  for (const RawTcb &tcbm : tcbms) {
-    EXPECT_TRUE(tcbms_set.contains(tcbm));
-  }
+  EXPECT_TRUE(
+      absl::VerifyTypeImplementsAbslHashCorrectly(tcbms, MessageEqual()));
 }
 
 }  // namespace

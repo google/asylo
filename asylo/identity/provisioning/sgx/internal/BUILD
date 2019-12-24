@@ -152,6 +152,7 @@ cc_library(
         ":tcb_container_util",
         "//asylo/identity/sgx:pck_certificates_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/hash",
         "@com_google_absl//absl/strings",
     ],
 )
@@ -297,6 +298,7 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/base:core_headers",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/hash",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_protobuf//:cc_wkt_protos",
@@ -329,18 +331,16 @@ cc_test_and_cc_enclave_test(
 
 cc_library(
     name = "tcb_container_util",
-    srcs = ["tcb_container_util.cc"],
     hdrs = ["tcb_container_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo/identity/sgx:__subpackages__"],
     deps = [
         ":platform_provisioning_cc_proto",
         ":tcb_cc_proto",
-        "//asylo/crypto/util:byte_container_util",
-        "//asylo/crypto/util:byte_container_view",
         "//asylo/identity/sgx:machine_configuration_cc_proto",
-        "//asylo/util:status",
+        "//asylo/util:logging",
         "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//:protobuf_lite",
     ],
 )
 
@@ -355,9 +355,11 @@ cc_test_and_cc_enclave_test(
         ":tcb_cc_proto",
         ":tcb_container_util",
         "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:machine_configuration_cc_proto",
         "//asylo/test/util:test_main",
-        "@com_google_absl//absl/container:flat_hash_set",
-        "@com_google_absl//absl/random",
+        "@com_google_absl//absl/hash:hash_testing",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -380,6 +382,7 @@ cc_library(
         "//asylo/util:status",
         "@com_google_absl//absl/base",
         "@com_google_absl//absl/container:flat_hash_map",
+        "@com_google_absl//absl/hash",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/strings:str_format",
         "@com_google_absl//absl/time",

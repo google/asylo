@@ -22,6 +22,7 @@
 #include <string>
 
 #include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
@@ -70,7 +71,7 @@ class ProvisioningConsistencyChecker {
 
  private:
   // The TCB levels from the TCB info.
-  absl::flat_hash_set<Tcb, TcbHash, TcbEqual> tcb_levels_;
+  absl::flat_hash_set<Tcb, absl::Hash<Tcb>, MessageEqual> tcb_levels_;
 };
 
 }  // namespace sgx

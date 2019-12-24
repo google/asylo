@@ -35,6 +35,7 @@
 #include "absl/base/call_once.h"
 #include "absl/container/flat_hash_map.h"
 #include "absl/container/flat_hash_set.h"
+#include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "absl/strings/str_join.h"
@@ -145,7 +146,7 @@ const SgxOidsStruct &GetSgxOids() {
 
 // If |asn1| is an OCTET STRING with size |expected_size|, returns its octets.
 // Otherwise, returns an error.
-StatusOr<std::vector<uint8_t>> ReadOctetStringWithSize(Asn1Value asn1,
+StatusOr<std::vector<uint8_t>> ReadOctetStringWithSize(const Asn1Value &asn1,
                                                        size_t expected_size) {
   std::vector<uint8_t> bytes;
   ASYLO_ASSIGN_OR_RETURN(bytes, asn1.GetOctetString());
@@ -425,10 +426,10 @@ StatusOr<Asn1Value> WriteSgxExtensions(const SgxExtensions &extensions) {
 }
 
 Status ValidatePckCertificates(const PckCertificates &pck_certificates) {
-  absl::flat_hash_map<Tcb, const PckCertificates::PckCertificateInfo *, TcbHash,
-                      TcbEqual>
+  absl::flat_hash_map<Tcb, const PckCertificates::PckCertificateInfo *,
+                      absl::Hash<Tcb>, MessageEqual>
       tcbs_to_certs;
-  absl::flat_hash_set<RawTcb, RawTcbHash, RawTcbEqual> tcbms;
+  absl::flat_hash_set<RawTcb, absl::Hash<RawTcb>, MessageEqual> tcbms;
   for (const auto &cert_info : pck_certificates.certs()) {
     ASYLO_RETURN_IF_ERROR(ValidatePckCertificateInfo(cert_info));
 

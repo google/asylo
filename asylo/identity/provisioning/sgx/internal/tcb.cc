@@ -27,6 +27,7 @@
 #include <google/protobuf/util/time_util.h>
 #include "absl/base/attributes.h"
 #include "absl/container/flat_hash_map.h"
+#include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/str_format.h"
 #include "asylo/crypto/util/byte_container_view.h"
@@ -302,7 +303,8 @@ Status ValidateTcbInfoImplV1andV2(const TcbInfoImpl &tcb_info_impl) {
       return UnknownTcbInfoVersionError(tcb_info_impl.version());
   }
 
-  absl::flat_hash_map<Tcb, TcbStatus, TcbHash, TcbEqual> tcb_to_status_map;
+  absl::flat_hash_map<Tcb, TcbStatus, absl::Hash<Tcb>, MessageEqual>
+      tcb_to_status_map;
   for (const TcbLevel &tcb_level : tcb_info_impl.tcb_levels()) {
     ASYLO_RETURN_IF_ERROR(ValidateTcbLevel(tcb_level, tcb_info_impl.version()));
     auto insert_pair =
