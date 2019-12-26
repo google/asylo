@@ -23,8 +23,8 @@
 
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
+#include "asylo/identity/provisioning/sgx/internal/container_util.h"
 #include "asylo/identity/provisioning/sgx/internal/tcb.pb.h"
-#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
 #include "asylo/identity/sgx/pck_certificates.pb.h"
 
 namespace asylo {

@@ -24,7 +24,7 @@
 #include "absl/container/flat_hash_set.h"
 #include "absl/hash/hash.h"
 #include "absl/strings/str_cat.h"
-#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/container_util.h"
 
 namespace asylo {
 namespace sgx {

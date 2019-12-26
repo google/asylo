@@ -62,6 +62,41 @@ cc_proto_library(
 )
 
 cc_library(
+    name = "container_util",
+    hdrs = ["container_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo/identity/sgx:__subpackages__"],
+    deps = [
+        ":platform_provisioning_cc_proto",
+        ":tcb_cc_proto",
+        "//asylo/identity/sgx:machine_configuration_cc_proto",
+        "//asylo/util:logging",
+        "@com_google_protobuf//:protobuf",
+        "@com_google_protobuf//:protobuf_lite",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "container_util_test",
+    srcs = ["container_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":container_util",
+        ":platform_provisioning",
+        ":platform_provisioning_cc_proto",
+        ":tcb",
+        ":tcb_cc_proto",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:machine_configuration_cc_proto",
+        "//asylo/test/util:test_main",
+        "@com_google_absl//absl/hash:hash_testing",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
     name = "fake_sgx_pki",
     testonly = 1,
     srcs = ["fake_sgx_pki.cc"],
@@ -148,8 +183,8 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":container_util",
         ":tcb_cc_proto",
-        ":tcb_container_util",
         "//asylo/identity/sgx:pck_certificates_cc_proto",
         "@com_google_absl//absl/container:flat_hash_set",
         "@com_google_absl//absl/hash",
@@ -289,9 +324,9 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":container_util",
         ":platform_provisioning",
         ":tcb_cc_proto",
-        ":tcb_container_util",
         "//asylo/crypto/util:byte_container_view",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/util:hex_util",
@@ -330,52 +365,17 @@ cc_test_and_cc_enclave_test(
 )
 
 cc_library(
-    name = "tcb_container_util",
-    hdrs = ["tcb_container_util.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/sgx:__subpackages__"],
-    deps = [
-        ":platform_provisioning_cc_proto",
-        ":tcb_cc_proto",
-        "//asylo/identity/sgx:machine_configuration_cc_proto",
-        "//asylo/util:logging",
-        "@com_google_protobuf//:protobuf",
-        "@com_google_protobuf//:protobuf_lite",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "tcb_container_util_test",
-    srcs = ["tcb_container_util_test.cc"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":platform_provisioning",
-        ":platform_provisioning_cc_proto",
-        ":tcb",
-        ":tcb_cc_proto",
-        ":tcb_container_util",
-        "//asylo/identity/sgx:hardware_types",
-        "//asylo/identity/sgx:machine_configuration_cc_proto",
-        "//asylo/test/util:test_main",
-        "@com_google_absl//absl/hash:hash_testing",
-        "@com_google_absl//absl/strings",
-        "@com_google_absl//absl/types:optional",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
     name = "tcb_info_from_json",
     srcs = ["tcb_info_from_json.cc"],
     hdrs = ["tcb_info_from_json.h"],
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
+        ":container_util",
         ":platform_provisioning",
         ":platform_provisioning_cc_proto",
         ":tcb",
         ":tcb_cc_proto",
-        ":tcb_container_util",
         "//asylo/util:hex_util",
         "//asylo/util:logging",
         "//asylo/util:proto_struct_util",

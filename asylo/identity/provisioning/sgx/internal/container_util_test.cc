@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/provisioning/sgx/internal/tcb_container_util.h"
+#include "asylo/identity/provisioning/sgx/internal/container_util.h"
 
 #include <limits>
 #include <string>
@@ -78,7 +78,7 @@ RawTcb CreateRawTcb(absl::optional<CpuSvn> cpu_svn,
   return tcbm;
 }
 
-TEST(TcbHashersTest, TcbHashTest) {
+TEST(ContainerUtilTest, TcbHashTest) {
   const absl::optional<std::string> kComponents[] = {
       absl::nullopt, "", "The quick brown fox jumped over the lazy dog"};
   const absl::optional<PceSvn> kPceSvns[] = {
@@ -96,7 +96,7 @@ TEST(TcbHashersTest, TcbHashTest) {
       absl::VerifyTypeImplementsAbslHashCorrectly(tcbs, MessageEqual()));
 }
 
-TEST(TcbHashersTest, RawTcbHashTest) {
+TEST(ContainerUtilTest, RawTcbHashTest) {
   const absl::optional<CpuSvn> kCpuSvns[] = {
       absl::nullopt, CreateCpuSvn(""),
       CreateCpuSvn("The quick brown fox jumped over the lazy dog")};
