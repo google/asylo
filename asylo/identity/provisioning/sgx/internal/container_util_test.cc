@@ -46,6 +46,14 @@ CpuSvn CreateCpuSvn(absl::optional<absl::string_view> value) {
   return cpu_svn;
 }
 
+Fmspc CreateFmspc(absl::optional<absl::string_view> value) {
+  Fmspc fmspc;
+  if (value.has_value()) {
+    fmspc.set_value(value.value().data(), value.value().size());
+  }
+  return fmspc;
+}
+
 PceSvn CreatePceSvn(absl::optional<uint32_t> value) {
   PceSvn pce_svn;
   if (value.has_value()) {
@@ -76,6 +84,13 @@ RawTcb CreateRawTcb(absl::optional<CpuSvn> cpu_svn,
     *tcbm.mutable_pce_svn() = pce_svn.value();
   }
   return tcbm;
+}
+
+TEST(ContainerUtilTest, FmspcHashTest) {
+  EXPECT_TRUE(absl::VerifyTypeImplementsAbslHashCorrectly(
+      {CreateFmspc(absl::nullopt), CreateFmspc(""),
+       CreateFmspc("The quick brown fox jumped over the lazy dog")},
+      MessageEqual()));
 }
 
 TEST(ContainerUtilTest, TcbHashTest) {

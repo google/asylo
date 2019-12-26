@@ -42,7 +42,9 @@ template <typename MessageT>
 struct EnableMessageHashingByDeterministicSerialization;
 
 // Enables the determinstic serialization-based AbslHashValue() implementation
-// for Tcb and RawTcb messages.
+// for Fmspc, Tcb, and RawTcb messages.
+template <>
+struct EnableMessageHashingByDeterministicSerialization<Fmspc> {};
 template <>
 struct EnableMessageHashingByDeterministicSerialization<Tcb> {};
 template <>
