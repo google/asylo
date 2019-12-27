@@ -26,6 +26,8 @@ load(
 )
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
+package(default_visibility = ["//asylo/identity/attestation/sgx:__subpackages__"])
+
 licenses(["notice"])
 
 # Defines an interface for interacting with Intel Architectural Enclaves.
