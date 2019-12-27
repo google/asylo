@@ -59,7 +59,7 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::Gt;
-using ::testing::Le;
+using ::testing::Lt;
 using ::testing::Test;
 
 // Matches a TcbStatus if it is a known status and is UP_TO_DATE.
@@ -134,7 +134,7 @@ class FakeSgxPcsClientTest : public Test {
     ASYLO_ASSERT_OK(ValidateTcbInfo(actual_tcb_info));
     google::protobuf::Timestamp now = google::protobuf::util::TimeUtil::GetCurrentTime();
     EXPECT_THAT(actual_tcb_info.impl().issue_date(), Gt(now - NowMaxError()));
-    EXPECT_THAT(actual_tcb_info.impl().issue_date(), Le(now));
+    EXPECT_THAT(actual_tcb_info.impl().issue_date(), Lt(now + NowMaxError()));
     EXPECT_THAT(
         actual_tcb_info.impl().next_update(),
         Eq(actual_tcb_info.impl().issue_date() + TcbInfoUpdatePeriod()));
