@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_INTEL_ECDSA_QUOTE_H_
-#define ASYLO_IDENTITY_SGX_INTEL_ECDSA_QUOTE_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_INTEL_ECDSA_QUOTE_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_INTEL_ECDSA_QUOTE_H_
 
 #include <cstdint>
 #include <vector>
@@ -121,4 +121,4 @@ StatusOr<IntelQeQuote> ParseDcapPackedQuote(ByteContainerView packed_quote);
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_INTEL_ECDSA_QUOTE_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_INTEL_ECDSA_QUOTE_H_

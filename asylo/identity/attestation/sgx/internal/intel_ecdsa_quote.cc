@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/intel_ecdsa_quote.h"
+#include "asylo/identity/attestation/sgx/internal/intel_ecdsa_quote.h"
 
 #include <algorithm>
 
