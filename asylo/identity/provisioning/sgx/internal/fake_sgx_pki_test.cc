@@ -86,7 +86,7 @@ TEST_P(FakeSgxPkiTest, CertsIsForVerifyingKeyOfGivenSigningKey) {
 
 INSTANTIATE_TEST_SUITE_P(AllCertsAndSigningKeys, FakeSgxPkiTest,
                          Values(&kFakeSgxRootCa, &kFakeSgxPlatformCa,
-                                &kFakeSgxTcbSigner));
+                                &kFakeSgxProcessorCa, &kFakeSgxTcbSigner));
 
 // A test fixture for a chain of CertificateAndPrivateKeys.
 class FakeSgxPkiChainsTest
@@ -116,11 +116,18 @@ TEST_P(FakeSgxPkiChainsTest, ChainIsValid) {
 
 const CertificateAndPrivateKey *kPlatformCaChain[] = {&kFakeSgxPlatformCa,
                                                       &kFakeSgxRootCa};
+const CertificateAndPrivateKey *kProcessorCaChain[] = {&kFakeSgxProcessorCa,
+                                                       &kFakeSgxRootCa};
 const CertificateAndPrivateKey *kTcbSignerChain[] = {&kFakeSgxTcbSigner,
                                                      &kFakeSgxRootCa};
 INSTANTIATE_TEST_SUITE_P(AllChains, FakeSgxPkiChainsTest,
                          Values(absl::MakeSpan(kPlatformCaChain),
+                                absl::MakeSpan(kProcessorCaChain),
                                 absl::MakeSpan(kTcbSignerChain)));
+
+TEST(FakeSgxPkiKeyTest, FakePckIsValid) {
+  ASYLO_ASSERT_OK(EcdsaP256Sha256SigningKey::CreateFromPem(kFakePckPem));
+}
 
 }  // namespace
 }  // namespace sgx

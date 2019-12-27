@@ -41,8 +41,15 @@ extern const CertificateAndPrivateKey kFakeSgxRootCa;
 // The fake SGX Platform CA certificate and private key.
 extern const CertificateAndPrivateKey kFakeSgxPlatformCa;
 
+// The fake SGX Processor CA certificate and private key.
+extern const CertificateAndPrivateKey kFakeSgxProcessorCa;
+
 // The fake SGX TCB Signing certificate and private key.
 extern const CertificateAndPrivateKey kFakeSgxTcbSigner;
+
+// A PEM-encoded ECDSA-P256 private key that can be used as the PCK for fake
+// SGX platforms in tests.
+extern const absl::string_view kFakePckPem;
 
 }  // namespace sgx
 }  // namespace asylo
