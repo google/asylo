@@ -479,8 +479,13 @@ int IOManager::InotifyInit(bool non_block) {
 
 int IOManager::InotifyAddWatch(int fd, const char *pathname, uint32_t mask) {
   return CallWithContext(
-      fd, [pathname, mask](std::shared_ptr<IOContext> inotify_context) {
-        return inotify_context->InotifyAddWatch(pathname, mask);
+      fd, [this, pathname, mask](std::shared_ptr<IOContext> inotify_context) {
+        return CallWithHandler(
+            pathname, [inotify_context, mask](VirtualPathHandler *handler,
+                                              const char *canonical_path) {
+              return handler->InotifyAddWatch(inotify_context, canonical_path,
+                                              mask);
+            });
       });
 }
 

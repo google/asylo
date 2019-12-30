@@ -25,6 +25,7 @@
 
 #include "asylo/platform/host_call/trusted/host_calls.h"
 #include "asylo/platform/posix/io/secure_paths.h"
+#include "asylo/platform/posix/io/io_context_inotify.h"
 
 namespace asylo {
 namespace io {
@@ -272,6 +273,18 @@ int NativePathHandler::Utime(const char *filename,
 int NativePathHandler::Utimes(const char *filename,
                               const struct timeval times[2]) {
   return enc_untrusted_utimes(filename, times);
+}
+
+int NativePathHandler::InotifyAddWatch(
+    std::shared_ptr<IOManager::IOContext> context, const char *pathname,
+    uint32_t mask) {
+  auto inotify_context = std::dynamic_pointer_cast<IOContextInotify>(context);
+  if (inotify_context) {
+    return context->InotifyAddWatch(pathname, mask);
+  } else {
+    errno = EACCES;
+    return -1;
+  }
 }
 
 }  // namespace io

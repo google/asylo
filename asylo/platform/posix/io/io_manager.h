@@ -239,6 +239,7 @@ class IOManager {
 
    private:
     friend class IOManager;
+    friend class NativePathHandler;
   };
 
   // A VirtualPathHandler maps file paths to appropriate behavior
@@ -328,6 +329,12 @@ class IOManager {
 
     virtual int Utimes(const char *filename, const struct timeval times[2]) {
       errno = ENOSYS;
+      return -1;
+    }
+
+    virtual int InotifyAddWatch(std::shared_ptr<IOContext> context,
+                                const char *pathname, uint32_t mask) {
+      errno = ENOENT;
       return -1;
     }
 
