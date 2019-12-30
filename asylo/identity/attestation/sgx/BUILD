@@ -61,8 +61,8 @@ cc_library(
         "//asylo/grpc/auth:sgx_local_credentials_options",
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_cc_proto",
         "//asylo/identity/sgx:code_identity_constants",
-        "//asylo/identity/sgx:remote_assertion_cc_proto",
         "//asylo/identity/sgx:sgx_remote_assertion_generator_client",
         "//asylo/util:mutex_guarded",
         "//asylo/util:status",
@@ -104,7 +104,7 @@ sgx_enclave_test(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
-        "assertion_generator_enclave": "//asylo/identity/sgx:remote_assertion_generator_enclave.so",
+        "assertion_generator_enclave": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave.so",
         "sgx_age_remote_assertion_generator_test_enclave": ":sgx_age_remote_assertion_generator_test_enclave.so",
     },
     test_args = [
@@ -123,8 +123,8 @@ sgx_enclave_test(
         "//asylo/identity:identity_cc_proto",
         "//asylo/identity:init",
         "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_cc_proto",
         "//asylo/identity/sgx:code_identity_constants",
-        "//asylo/identity/sgx:remote_assertion_generator_enclave_cc_proto",
         "//asylo/identity/sgx:sgx_identity_cc_proto",
         "//asylo/identity/sgx:sgx_identity_util",
         "//asylo/identity/sgx:sgx_remote_assertion_generator_client",

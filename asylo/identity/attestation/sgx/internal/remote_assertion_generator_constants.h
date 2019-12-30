@@ -16,16 +16,17 @@
  *
  */
 
-#include "asylo/identity/sgx/remote_assertion_generator_constants.h"
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_CONSTANTS_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_CONSTANTS_H_
 
 namespace asylo {
 namespace sgx {
 
-const char *const kAttestationPublicKeyVersion =
-    "Assertion Generator Enclave Attestation Key v0.1";
-const char *const kAttestationPublicKeyPurpose =
-    "Assertion Generator Enclave Attestation Key";
-const char *const kPceSignReportPayloadVersion = "PCE Sign Report v0.1";
+extern const char *const kAttestationPublicKeyVersion;
+extern const char *const kAttestationPublicKeyPurpose;
+extern const char *const kPceSignReportPayloadVersion;
 
 }  // namespace sgx
 }  // namespace asylo
+
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_CONSTANTS_H_

@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_H_
-#define ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_H_
 
 #include <memory>
 #include <vector>
@@ -25,7 +25,7 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/enclave.pb.h"
-#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
 #include "asylo/trusted_application.h"
 #include "asylo/util/mutex_guarded.h"
@@ -106,4 +106,4 @@ class RemoteAssertionGeneratorEnclave final : public TrustedApplication {
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_H_

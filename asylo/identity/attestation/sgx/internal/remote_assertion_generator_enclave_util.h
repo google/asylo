@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_
-#define ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_
 
 #include <memory>
 #include <string>
@@ -29,10 +29,10 @@
 #include "asylo/crypto/ecdsa_p256_sha256_signing_key.h"
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
-#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
 #include "asylo/util/status.h"
 #include "asylo/util/statusor.h"
@@ -99,4 +99,4 @@ StatusOr<std::unique_ptr<::grpc::Server>> CreateAndStartServer(
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_GENERATOR_ENCLAVE_UTIL_H_

@@ -18,7 +18,7 @@ syntax = "proto2";
 
 package asylo;
 
-import "asylo/identity/sgx/remote_assertion.proto";
+import "asylo/identity/attestation/sgx/internal/remote_assertion.proto";
 
 // A request message containing user-data that should be bound to the generated
 // assertion.

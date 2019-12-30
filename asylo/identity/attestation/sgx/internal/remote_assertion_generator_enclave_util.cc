@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/remote_assertion_generator_enclave_util.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave_util.h"
 
 #include <utility>
 
@@ -29,11 +29,11 @@
 #include "asylo/grpc/auth/enclave_server_credentials.h"
 #include "asylo/grpc/auth/sgx_local_credentials_options.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_constants.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sealing/sgx/sgx_local_secret_sealer.h"
 #include "asylo/identity/sgx/attestation_key.pb.h"
-#include "asylo/identity/sgx/remote_assertion_generator_constants.h"
-#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator_impl.h"
 #include "asylo/util/cleansing_types.h"
 #include "asylo/util/proto_enum_util.h"

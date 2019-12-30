@@ -24,10 +24,10 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/enclave.pb.h"
 #include "asylo/identity/attestation/sgx/internal/intel_architectural_enclave_interface.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sgx/pce_util.h"
-#include "asylo/identity/sgx/remote_assertion_generator_enclave.pb.h"
 #include "asylo/util/status_macros.h"
 
 namespace asylo {

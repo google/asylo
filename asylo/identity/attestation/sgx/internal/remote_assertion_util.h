@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_UTIL_H_
-#define ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_UTIL_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_UTIL_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_UTIL_H_
 
 #include <string>
 #include <vector>
@@ -25,8 +25,8 @@
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/signing_key.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
-#include "asylo/identity/sgx/remote_assertion.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
 
@@ -64,4 +64,4 @@ Status VerifyRemoteAssertion(
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_REMOTE_ASSERTION_UTIL_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_REMOTE_ASSERTION_UTIL_H_

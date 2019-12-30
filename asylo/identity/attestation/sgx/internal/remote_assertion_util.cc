@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/remote_assertion_util.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_util.h"
 
 #include <cstdint>
 #include <functional>
@@ -40,13 +40,13 @@
 #include "asylo/crypto/signing_key.h"
 #include "asylo/crypto/util/byte_container_util.h"
 #include "asylo/crypto/x509_certificate.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/identity_acl_evaluator.h"
 #include "asylo/identity/sgx/attestation_key_certificate_impl.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/pck_certificate_util.h"
-#include "asylo/identity/sgx/remote_assertion.pb.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/identity/sgx/sgx_identity_expectation_matcher.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"

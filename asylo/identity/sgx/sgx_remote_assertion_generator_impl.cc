@@ -22,8 +22,8 @@
 #include <vector>
 
 #include "asylo/grpc/auth/enclave_auth_context.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion_util.h"
 #include "asylo/identity/descriptions.h"
-#include "asylo/identity/sgx/remote_assertion_util.h"
 #include "asylo/identity/sgx/sgx_identity_util.h"
 #include "asylo/util/mutex_guarded.h"
 #include "asylo/util/status.h"

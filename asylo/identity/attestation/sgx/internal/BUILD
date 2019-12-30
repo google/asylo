@@ -17,6 +17,7 @@
 # This packages contains libraries used to implement SGX local and remote
 # attestation.
 
+load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 load(
     "//asylo/bazel:sgx_rules.bzl",
@@ -26,9 +27,87 @@ load(
 )
 load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
+licenses(["notice"])
+
 package(default_visibility = ["//asylo/identity/attestation/sgx:__subpackages__"])
 
-licenses(["notice"])
+proto_library(
+    name = "remote_assertion_proto",
+    srcs = ["remote_assertion.proto"],
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/sgx:__subpackages__",
+    ],
+    deps = [
+        "//asylo/crypto:algorithms_proto",
+        "//asylo/crypto:certificate_proto",
+        "//asylo/crypto:keys_proto",
+        "//asylo/identity/sgx:sgx_identity_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "remote_assertion_cc_proto",
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/sgx:__subpackages__",
+    ],
+    deps = [":remote_assertion_proto"],
+)
+
+proto_library(
+    name = "remote_assertion_generator_enclave_proto",
+    srcs = ["remote_assertion_generator_enclave.proto"],
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":remote_assertion_proto",
+        "//asylo:enclave_proto",
+        "//asylo/crypto:certificate_proto",
+        "//asylo/crypto:keys_proto",
+        "//asylo/identity:identity_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
+        "//asylo/identity/sealing:sealed_secret_proto",
+        "//asylo/identity/sgx:sgx_identity_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "remote_assertion_generator_enclave_cc_proto",
+    visibility = ["//asylo:implementation"],
+    deps = ["remote_assertion_generator_enclave_proto"],
+)
+
+proto_library(
+    name = "remote_assertion_generator_test_util_enclave_proto",
+    srcs = ["remote_assertion_generator_test_util_enclave.proto"],
+    deps = [
+        ":remote_assertion_proto",
+        "//asylo:enclave_proto",
+        "//asylo/crypto:certificate_proto",
+        "//asylo/crypto:keys_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
+        "//asylo/identity/sealing:sealed_secret_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "remote_assertion_generator_test_util_enclave_cc_proto",
+    deps = [":remote_assertion_generator_test_util_enclave_proto"],
+)
+
+proto_library(
+    name = "report_oracle_enclave_proto",
+    srcs = ["report_oracle_enclave.proto"],
+    deps = [
+        "//asylo:enclave_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
+    ],
+)
+
+cc_proto_library(
+    name = "report_oracle_enclave_cc_proto",
+    deps = ["report_oracle_enclave_proto"],
+)
 
 # Defines an interface for interacting with Intel Architectural Enclaves.
 cc_library(
@@ -100,23 +179,9 @@ cc_library(
         "manual",
     ],
     deps = [
-        "//asylo/identity/attestation/sgx/internal:dcap_library_interface",
+        ":dcap_library_interface",
         "//asylo/platform/primitives/sgx:trusted_sgx",
     ],
-)
-
-proto_library(
-    name = "report_oracle_enclave_proto",
-    srcs = ["report_oracle_enclave.proto"],
-    deps = [
-        "//asylo:enclave_proto",
-        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_proto",
-    ],
-)
-
-cc_proto_library(
-    name = "report_oracle_enclave_cc_proto",
-    deps = ["report_oracle_enclave_proto"],
 )
 
 sgx_cc_unsigned_enclave(
@@ -255,5 +320,267 @@ cc_test(
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
         "@sgx_dcap//:quote_constants",
+    ],
+)
+
+cc_library(
+    name = "remote_assertion_generator_constants",
+    srcs = ["remote_assertion_generator_constants.cc"],
+    hdrs = ["remote_assertion_generator_constants.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/sgx:__subpackages__",
+    ],
+)
+
+cc_library(
+    name = "remote_assertion_generator_enclave_util",
+    srcs = ["remote_assertion_generator_enclave_util.cc"],
+    hdrs = ["remote_assertion_generator_enclave_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_assertion_generator_constants",
+        ":remote_assertion_generator_enclave_cc_proto",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/grpc/auth:grpc++_security_enclave",
+        "//asylo/grpc/auth:sgx_local_credentials_options",
+        "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
+        "//asylo/identity/sealing/sgx:sgx_local_secret_sealer",
+        "//asylo/identity/sgx:attestation_key_cc_proto",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:sgx_remote_assertion_generator_impl",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:proto_enum_util",
+        "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_google_absl//absl/strings",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test(
+    name = "remote_assertion_generator_enclave_util_test",
+    srcs = ["remote_assertion_generator_enclave_util_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_assertion_generator_constants",
+        ":remote_assertion_generator_enclave_cc_proto",
+        ":remote_assertion_generator_enclave_util",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
+        "//asylo/identity/sealing/sgx:sgx_local_secret_sealer",
+        "//asylo/identity/sgx:attestation_key_cc_proto",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:cleansing_types",
+        "//asylo/util:proto_enum_util",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+sgx_cc_unsigned_enclave(
+    name = "remote_assertion_generator_test_util_enclave_unsigned.so",
+    testonly = 1,
+    srcs = ["remote_assertion_generator_test_util_enclave.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_assertion_cc_proto",
+        ":remote_assertion_generator_enclave_util",
+        ":remote_assertion_generator_test_util_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_runtime",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/grpc/auth:grpc++_security_enclave",
+        "//asylo/grpc/auth:sgx_local_credentials_options",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:sgx_identity_util_internal",
+        "//asylo/identity/sgx:sgx_remote_assertion_generator_client",
+        "//asylo/util:status",
+        "@com_github_grpc_grpc//:grpc++",
+        "@com_github_grpc_grpc//:grpc_secure",
+        "@com_google_protobuf//:protobuf_lite",
+    ],
+)
+
+sgx_debug_sign_enclave(
+    name = "remote_assertion_generator_test_util_enclave.so",
+    testonly = 1,
+    config = "//asylo/grpc/util:grpc_enclave_config",
+    unsigned = "remote_assertion_generator_test_util_enclave_unsigned.so",
+)
+
+sgx.enclave_configuration(
+    name = "remote_assertion_generator_enclave_config",
+    heap_max_size = "0x6400000",  # ~100 MB
+    tcs_num = "50",
+)
+
+sgx_cc_unsigned_enclave(
+    name = "remote_assertion_generator_enclave_unsigned.so",
+    srcs = [
+        "remote_assertion_generator_enclave.cc",
+        "remote_assertion_generator_enclave.h",
+    ],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_assertion_generator_enclave_cc_proto",
+        ":remote_assertion_generator_enclave_util",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_runtime",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/sgx:code_identity_cc_proto",
+        "//asylo/identity/sgx:hardware_interface",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:pce_util",
+        "//asylo/identity/sgx:sgx_identity_util_internal",
+        "//asylo/identity/sgx:sgx_remote_assertion_generator_impl",
+        "//asylo/util:logging",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+    ],
+)
+
+sgx_debug_sign_enclave(
+    name = "remote_assertion_generator_enclave.so",
+    config = ":remote_assertion_generator_enclave_config",
+    unsigned = "remote_assertion_generator_enclave_unsigned.so",
+)
+
+sgx_enclave_test(
+    name = "remote_assertion_generator_enclave_test",
+    srcs = ["remote_assertion_generator_enclave_test.cc"],
+    copts = ASYLO_DEFAULT_COPTS,
+    enclaves = {
+        "assertion_generator_enclave": ":remote_assertion_generator_enclave.so",
+        "test_util_enclave": ":remote_assertion_generator_test_util_enclave.so",
+    },
+    test_args = [
+        "--remote_assertion_generator_enclave_path='{assertion_generator_enclave}'",
+        "--remote_assertion_generator_test_util_enclave_path='{test_util_enclave}'",
+    ],
+    deps = [
+        ":remote_assertion_cc_proto",
+        ":remote_assertion_generator_constants",
+        ":remote_assertion_generator_enclave_cc_proto",
+        ":remote_assertion_generator_enclave_util",
+        ":remote_assertion_generator_test_util_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
+        "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
+        "//asylo/identity/sealing:sealed_secret_cc_proto",
+        "//asylo/identity/sgx:attestation_key_cc_proto",
+        "//asylo/identity/sgx:code_identity_cc_proto",
+        "//asylo/identity/sgx:pce_util",
+        "//asylo/identity/sgx:sgx_identity_util_internal",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "//asylo/util:thread",
+        "@com_google_absl//absl/flags:flag",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+cc_library(
+    name = "remote_assertion_util",
+    srcs = ["remote_assertion_util.cc"],
+    hdrs = ["remote_assertion_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = [
+        "//asylo/identity/attestation/sgx:__subpackages__",
+        "//asylo/identity/sgx:__subpackages__",
+    ],
+    deps = [
+        ":remote_assertion_cc_proto",
+        "//asylo/crypto:algorithms_cc_proto",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:certificate_util",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto:x509_certificate",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity:identity_acl_evaluator",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity:identity_expectation_matcher",
+        "//asylo/identity/sgx:attestation_key_certificate_impl",
+        "//asylo/identity/sgx:machine_configuration_cc_proto",
+        "//asylo/identity/sgx:pck_certificate_util",
+        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/sgx:sgx_identity_expectation_matcher",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/util:status",
+        "@com_google_absl//absl/container:flat_hash_set",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/types:optional",
+        "@com_google_absl//absl/types:span",
+        "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "remote_assertion_util_test",
+    srcs = ["remote_assertion_util_test.cc"],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":remote_assertion_cc_proto",
+        ":remote_assertion_util",
+        "//asylo/crypto:asn1",
+        "//asylo/crypto:certificate_cc_proto",
+        "//asylo/crypto:ecdsa_p256_sha256_signing_key",
+        "//asylo/crypto:fake_signing_key",
+        "//asylo/crypto:keys_cc_proto",
+        "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/crypto:signing_key",
+        "//asylo/crypto:x509_certificate",
+        "//asylo/crypto/util:bssl_util",
+        "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity/sgx:code_identity_cc_proto",
+        "//asylo/identity/sgx:machine_configuration_cc_proto",
+        "//asylo/identity/sgx:pck_certificate_util",
+        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/identity/sgx:sgx_identity_util",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "//asylo/util:status_macros",
+        "@boringssl//:crypto",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+        "@com_google_protobuf//:protobuf",
     ],
 )

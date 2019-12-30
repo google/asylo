@@ -22,7 +22,7 @@
 #include <memory>
 
 #include "asylo/crypto/util/byte_container_view.h"
-#include "asylo/identity/sgx/remote_assertion.pb.h"
+#include "asylo/identity/attestation/sgx/internal/remote_assertion.pb.h"
 #include "asylo/identity/sgx/sgx_remote_assertion_generator.grpc.pb.h"
 #include "asylo/util/statusor.h"
 #include "include/grpcpp/grpcpp.h"
