@@ -36,6 +36,7 @@
 #include <cstddef>
 #include <cstdint>
 
+#include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/system_call/sysno.h"
 #include "asylo/platform/system_call/system_call.h"
 
@@ -43,6 +44,13 @@
 // syscall to enc_untrusted_syscall.
 template <class... Ts>
 int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args);
+
+// Verifies the return status of the host call and checks if the expected number
+// of parameters are received on the MessageReader.
+void CheckStatusAndParamCount(const asylo::primitives::PrimitiveStatus &status,
+                              const asylo::primitives::MessageReader &output,
+                              const char *name, int expected_params,
+                              bool match_exact_params = true);
 
 #ifdef __cplusplus
 extern "C" {
@@ -164,6 +172,13 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes);
 void enc_untrusted_openlog(const char *ident, int option, int facility);
 int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
                                size_t *serialized_events_len);
+
+// Untrusted futex host calls, where the futex word |*futex| lies in the
+// untrusted local memory. Callers must not assume access to the untrusted futex
+// word.
+int enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
+                                 int64_t timeout_microsec);
+int enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num);
 
 // Calls that are not delegated to the host are defined below.
 void enc_freeaddrinfo(struct addrinfo *res);

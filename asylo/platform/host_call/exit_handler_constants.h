@@ -127,9 +127,17 @@ static constexpr uint64_t kInotifyReadHandler =
 static constexpr uint64_t kClockGettimeHandler =
     primitives::kSelectorHostCall + 27;
 
+// Exit handler constant for |SysFutexWaitHandler|.
+static constexpr uint64_t kSysFutexWaitHandler =
+    primitives::kSelectorHostCall + 28;
+
+// Exit handler constant for |SysFutexWakeHandler|.
+static constexpr uint64_t kSysFutexWakeHandler =
+    primitives::kSelectorHostCall + 29;
+
 // Assert that the largest host call handler lies in
 // [kSelectorHostCall, kSelectorRemote).
-static_assert(kOpenLogHandler < primitives::kSelectorRemote,
+static_assert(kSysFutexWakeHandler < primitives::kSelectorRemote,
               "Cannot have host call handler constant spill over into "
               "|kSelectorRemote|.");
 

@@ -190,19 +190,12 @@ cc_library(
     hdrs = ["untrusted_mutex.h"],
     copts = ASYLO_DEFAULT_COPTS,
     tags = ASYLO_ALL_BACKEND_TAGS,
-    deps = [":atomic"] + select(
-        {
-            "@com_google_asylo//asylo": [
-                "//asylo/platform/primitives:trusted_backend",
-                "//asylo/platform/primitives:trusted_primitives",
-            ],
-        },
-        no_match_error = "Must be built with the Asylo toolchain",
-    ) + select({
-        "@linux_sgx//:sgx_sim": _untrusted_mutex_sgx_deps,
-        "@linux_sgx//:sgx_hw": _untrusted_mutex_sgx_deps,
-        "//conditions:default": [],
-    }),
+    deps = [
+        ":atomic",
+        "//asylo/platform/host_call",
+        "//asylo/platform/primitives:trusted_backend",
+        "//asylo/platform/primitives:trusted_primitives",
+    ],
 )
 
 # An trusted spin lock object.

@@ -197,6 +197,7 @@ cc_library(
     deps = [
         ":communicator",
         "//asylo/platform/host_call:exit_handler_constants",
+        "//asylo/platform/host_call:host_call_handlers_util",
         "//asylo/platform/primitives",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:dispatch_table",

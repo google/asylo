@@ -33,6 +33,7 @@
 #include "asylo/platform/primitives/trusted_primitives.h"
 #include "asylo/platform/system_call/type_conversions/types_functions.h"
 
+using ::asylo::host_call::NonSystemCallDispatcher;
 using ::asylo::primitives::Extent;
 using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
@@ -47,6 +48,31 @@ int64_t EnsureInitializedAndDispatchSyscall(int sysno, Ts... args) {
     enc_set_error_handler(TrustedPrimitives::BestEffortAbort);
   }
   return enc_untrusted_syscall(sysno, args...);
+}
+
+void CheckStatusAndParamCount(const asylo::primitives::PrimitiveStatus &status,
+                              const MessageReader &output, const char *name,
+                              int expected_params, bool match_exact_params) {
+  if (!status.ok()) {
+    std::string message = absl::StrCat("Host call '", name, "' failed.");
+    TrustedPrimitives::BestEffortAbort(message.c_str());
+  }
+
+  if (!match_exact_params) {
+    if (output.size() < expected_params) {
+      std::string message = absl::StrCat(
+          "Host call '", name, "': Expected at least ", expected_params,
+          " parameters on the MessageReader, found ", output.size());
+      TrustedPrimitives::BestEffortAbort(message.c_str());
+    }
+  } else {
+    if (output.size() != expected_params) {
+      std::string message = absl::StrCat(
+          "Host call '", name, "': Expected ", expected_params,
+          " parameters on the MessageReader, found ", output.size());
+      TrustedPrimitives::BestEffortAbort(message.c_str());
+    }
+  }
 }
 
 namespace {
@@ -120,32 +146,6 @@ bool PasswdHolderToPasswd(struct passwd_holder *passwd_in,
   passwd_out->pw_dir = passwd_in->pw_dir;
   passwd_out->pw_shell = passwd_in->pw_shell;
   return true;
-}
-
-void CheckStatusAndParamCount(const asylo::primitives::PrimitiveStatus &status,
-                              const MessageReader &output, const char *name,
-                              int expected_params,
-                              bool match_exact_params = true) {
-  if (!status.ok()) {
-    std::string message = absl::StrCat("Host call '", name, "' failed.");
-    TrustedPrimitives::BestEffortAbort(message.c_str());
-  }
-
-  if (!match_exact_params) {
-    if (output.size() < expected_params) {
-      std::string message = absl::StrCat(
-          "Host call '", name, "': Expected at least ", expected_params,
-          " parameters on the MessageReader, found ", output.size());
-      TrustedPrimitives::BestEffortAbort(message.c_str());
-    }
-  } else {
-    if (output.size() != expected_params) {
-      std::string message = absl::StrCat(
-          "Host call '", name, "': Expected ", expected_params,
-          " parameters on the MessageReader, found ", output.size());
-      TrustedPrimitives::BestEffortAbort(message.c_str());
-    }
-  }
 }
 
 }  // namespace
@@ -465,7 +465,7 @@ int enc_untrusted_isatty(int fd) {
   MessageWriter input;
   input.Push(fd);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kIsAttyHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_isatty", 2);
 
@@ -739,7 +739,7 @@ ssize_t enc_untrusted_sendmsg(int sockfd, const struct msghdr *msg, int flags) {
   input.Push(flags);
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kSendMsgHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_sendmsg", 2);
 
@@ -766,7 +766,7 @@ ssize_t enc_untrusted_recvmsg(int sockfd, struct msghdr *msg, int flags) {
 
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kRecvMsgHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_recvmsg", 2,
                            /*match_exact_params=*/false);
@@ -820,7 +820,7 @@ int enc_untrusted_getsockname(int sockfd, struct sockaddr *addr,
   MessageWriter input;
   input.Push<int>(sockfd);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kGetSocknameHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_getsockname", 3);
 
@@ -850,7 +850,7 @@ int enc_untrusted_accept(int sockfd, struct sockaddr *addr,
   MessageWriter input;
   input.Push<int>(sockfd);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kAcceptHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_accept", 3);
 
@@ -886,7 +886,7 @@ int enc_untrusted_getpeername(int sockfd, struct sockaddr *addr,
   MessageWriter input;
   input.Push<int>(sockfd);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kGetPeernameHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_getpeername", 3);
 
@@ -921,7 +921,7 @@ ssize_t enc_untrusted_recvfrom(int sockfd, void *buf, size_t len, int flags,
   input.Push<uint64_t>(len);
   input.Push<int>(klinux_flags);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kRecvFromHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_recvfrom", 4);
 
@@ -1000,8 +1000,8 @@ int enc_untrusted_raise(int sig) {
   MessageWriter input;
   input.Push<int>(klinux_sig);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
-      ::asylo::host_call::kRaiseHandler, &input, &output);
+  const auto status = NonSystemCallDispatcher(::asylo::host_call::kRaiseHandler,
+                                              &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_raise", 2);
 
   int result = output.next<int>();
@@ -1025,7 +1025,7 @@ int enc_untrusted_getsockopt(int sockfd, int level, int optname, void *optval,
   input.Push<int>(TokLinuxOptionName(level, optname));
   input.PushByReference(Extent{reinterpret_cast<char *>(optval), *optlen});
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kGetSockOptHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_getsockopt", 3);
 
@@ -1104,7 +1104,7 @@ int enc_untrusted_getaddrinfo(const char *node, const char *service,
   }
 
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kGetAddrInfoHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_getaddrinfo", 3,
                            /*match_exact_params=*/false);
@@ -1199,7 +1199,7 @@ int enc_untrusted_inet_pton(int af, const char *src, void *dst) {
       src, std::min(strlen(src) + 1, static_cast<size_t>(INET6_ADDRSTRLEN))});
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kInetPtonHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_inet_pton", 3);
 
@@ -1233,7 +1233,7 @@ const char *enc_untrusted_inet_ntop(int af, const void *src, char *dst,
   input.Push(size);
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kInetNtopHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_inet_ntop", 2);
 
@@ -1267,7 +1267,7 @@ int enc_untrusted_sigprocmask(int how, const sigset_t *set, sigset_t *oldset) {
   input.Push<int>(klinux_how);
   input.Push<klinux_sigset_t>(klinux_set);
   MessageReader output;
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kSigprocmaskHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_sigprocmask", 3);
 
@@ -1295,7 +1295,7 @@ unsigned int enc_untrusted_if_nametoindex(const char *ifname) {
   input.PushString(ifname);
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kIfNameToIndexHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_nametoindex", 2);
 
@@ -1312,7 +1312,7 @@ char *enc_untrusted_if_indextoname(unsigned int ifindex, char *ifname) {
   input.Push(ifindex);
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kIfIndexToNameHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_indextoname", 2);
 
@@ -1382,7 +1382,7 @@ int enc_untrusted_getifaddrs(struct ifaddrs **ifap) {
   MessageWriter input;
   MessageReader output;
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kGetIfAddrsHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_getifaddrs", 3,
                            /*match_exact_params=*/false);
@@ -1472,7 +1472,7 @@ struct passwd *enc_untrusted_getpwuid(uid_t uid) {
   MessageWriter input;
   MessageReader output;
   input.Push<uid_t>(uid);
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kGetPwUidHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_getpwuid", 1,
                            /*match_exact_params=*/false);
@@ -1499,7 +1499,7 @@ void enc_untrusted_hex_dump(const void *buf, size_t nbytes) {
   MessageWriter input;
   MessageReader output;
   input.PushByReference(Extent{reinterpret_cast<const char *>(buf), nbytes});
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kHexDumpHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_hex_dump", 2);
 }
@@ -1517,7 +1517,7 @@ void enc_untrusted_openlog(const char *ident, int option, int facility) {
   input.Push<int>(TokLinuxSyslogOption(option));
   input.Push<int>(TokLinuxSyslogFacility(facility));
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kOpenLogHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_openlog", 1);
 }
@@ -1529,7 +1529,7 @@ int enc_untrusted_inotify_read(int fd, size_t count, char **serialized_events,
   input.Push<int>(fd);
   input.Push<uint64_t>(count);
 
-  const auto status = ::asylo::host_call::NonSystemCallDispatcher(
+  const auto status = NonSystemCallDispatcher(
       ::asylo::host_call::kInotifyReadHandler, &input, &output);
   CheckStatusAndParamCount(status, output, "enc_untrusted_inotify_read", 2,
                            /*match_exact_params=*/false);

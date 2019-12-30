@@ -215,6 +215,20 @@ Status ClockGettimeHandler(const std::shared_ptr<primitives::Client> &client,
                            void *context, primitives::MessageReader *input,
                            primitives::MessageWriter *output);
 
+// Handler for host call enc_untrusted_sys_futex_wait(). Expects [int32_t
+// *futex, int32_t expected, int64_t timeout_microsec] and returns [int result,
+// int errno] on the MessageWriter.
+Status SysFutexWaitHandler(const std::shared_ptr<primitives::Client> &client,
+                           void *context, primitives::MessageReader *input,
+                           primitives::MessageWriter *output);
+
+// Handler for host call enc_untrusted_sys_futex_wake(). Expects [int32_t
+// *futex, int32_t num] and returns [int result, int errno] on the
+// MessageWriter.
+Status SysFutexWakeHandler(const std::shared_ptr<primitives::Client> &client,
+                           void *context, primitives::MessageReader *input,
+                           primitives::MessageWriter *output);
+
 }  // namespace host_call
 }  // namespace asylo
 

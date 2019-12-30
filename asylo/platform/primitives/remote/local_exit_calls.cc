@@ -21,6 +21,7 @@
 #include "absl/memory/memory.h"
 #include "absl/types/optional.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
+#include "asylo/platform/host_call/untrusted/host_call_handlers_util.h"
 #include "asylo/platform/primitives/remote/communicator.h"
 #include "asylo/platform/primitives/remote/proxy_server.h"
 #include "asylo/platform/primitives/untrusted_primitives.h"
@@ -74,6 +75,34 @@ class GetTimeExitCallHandler
   Communicator *const communicator_;
 };
 
+class SysFutexWaitExitCallHandler
+    : public LocalExitCallForwarder::LocalExitCallHandler {
+ public:
+  explicit SysFutexWaitExitCallHandler(LocalExitCallForwarder *forwarder)
+      : LocalExitCallForwarder::LocalExitCallHandler(
+            host_call::kSysFutexWaitHandler, forwarder) {}
+
+  absl::optional<Status> AttemptExecute(MessageReader *input,
+                                        MessageWriter *output) override {
+    // Process futex_wait selector locally.
+    return host_call::SysFutexWaitHelper(input, output);
+  }
+};
+
+class SysFutexWakeExitCallHandler
+    : public LocalExitCallForwarder::LocalExitCallHandler {
+ public:
+  explicit SysFutexWakeExitCallHandler(LocalExitCallForwarder *forwarder)
+      : LocalExitCallForwarder::LocalExitCallHandler(
+            host_call::kSysFutexWakeHandler, forwarder) {}
+
+  absl::optional<Status> AttemptExecute(MessageReader *input,
+                                        MessageWriter *output) override {
+    // Process futex_wake selector locally.
+    return host_call::SysFutexWakeHelper(input, output);
+  }
+};
+
 }  // namespace
 
 Status LocalExitCallForwarder::PerformUnknownExit(uint64_t untrusted_selector,
@@ -114,6 +143,13 @@ LocalExitCallForwarder::Create(const RemoteEnclaveProxyServer *server) {
   exit_call_forwarder->handlers_.emplace_back(
       absl::make_unique<GetTimeExitCallHandler>(server->communicator(),
                                                 exit_call_forwarder.get()));
+  exit_call_forwarder->handlers_.emplace_back(
+      absl::make_unique<SysFutexWaitExitCallHandler>(
+          exit_call_forwarder.get()));
+
+  exit_call_forwarder->handlers_.emplace_back(
+      absl::make_unique<SysFutexWakeExitCallHandler>(
+          exit_call_forwarder.get()));
 
   // Register all exit call handlers.
   for (const auto &handler : exit_call_forwarder->handlers_) {

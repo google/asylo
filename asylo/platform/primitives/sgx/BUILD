@@ -155,7 +155,6 @@ cc_library(
         ":sgx_error_space",
         ":sgx_params",
         "//asylo:enclave_cc_proto",
-        "//asylo/platform/common:futex",
         "//asylo/platform/common:memory",
         "//asylo/platform/primitives:untrusted_primitives",
         "//asylo/platform/primitives/util:dispatch_table",

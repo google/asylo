@@ -38,7 +38,6 @@
 #include <vector>
 
 #include "asylo/util/logging.h"
-#include "asylo/platform/common/futex.h"
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/primitives/sgx/generated_bridge_u.h"
 #include "asylo/platform/primitives/sgx/sgx_params.h"
@@ -490,15 +489,6 @@ int ocall_dispatch_untrusted_call(uint64_t selector, void *buffer) {
 }
 
 void ocall_untrusted_local_free(void *buffer) { free(buffer); }
-
-void ocall_enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
-                                        int64_t timeout_microsec) {
-  sys_futex_wait(futex, expected, timeout_microsec);
-}
-
-void ocall_enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
-  sys_futex_wake(futex, num);
-}
 
 uint32_t ocall_enc_untrusted_qe_get_target_info(
     sgx_target_info_t *qe_target_info) {

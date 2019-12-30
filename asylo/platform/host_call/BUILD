@@ -25,7 +25,10 @@ package(
 # Library for making host calls to the untrusted side.
 cc_library(
     name = "host_call",
-    srcs = ["trusted/host_calls.cc"],
+    srcs = [
+        "trusted/concurrency.cc",
+        "trusted/host_calls.cc",
+    ],
     hdrs = [
         "trusted/host_calls.h",
     ],
@@ -47,6 +50,7 @@ cc_library(
     hdrs = ["untrusted/host_call_handlers.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":host_call_handlers_util",
         ":serializer_functions",
         "//asylo/platform/common:memory",
         "//asylo/platform/primitives:untrusted_primitives",
@@ -54,6 +58,20 @@ cc_library(
         "//asylo/platform/primitives/util:status_conversions",
         "//asylo/platform/system_call:untrusted_invoke",
         "//asylo/util:hex_util",
+        "//asylo/util:status",
+    ],
+)
+
+# Helper library containing common logic for handling host calls locally or
+# remotely.
+cc_library(
+    name = "host_call_handlers_util",
+    srcs = ["untrusted/host_call_handlers_util.cc"],
+    hdrs = ["untrusted/host_call_handlers_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        "//asylo/platform/common:futex",
+        "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/util:status",
     ],
 )

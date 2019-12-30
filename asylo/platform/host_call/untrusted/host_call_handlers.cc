@@ -33,6 +33,7 @@
 
 #include "asylo/platform/common/memory.h"
 #include "asylo/platform/host_call/serializer_functions.h"
+#include "asylo/platform/host_call/untrusted/host_call_handlers_util.h"
 #include "asylo/platform/primitives/util/message.h"
 #include "asylo/platform/primitives/util/status_conversions.h"
 #include "asylo/platform/system_call/untrusted_invoke.h"
@@ -562,6 +563,18 @@ Status ClockGettimeHandler(const std::shared_ptr<primitives::Client> &client,
   output->Push<struct timespec>(tp);
 
   return Status::OkStatus();
+}
+
+Status SysFutexWaitHandler(const std::shared_ptr<primitives::Client> &client,
+                           void *context, primitives::MessageReader *input,
+                           primitives::MessageWriter *output) {
+  return SysFutexWaitHelper(input, output);
+}
+
+Status SysFutexWakeHandler(const std::shared_ptr<primitives::Client> &client,
+                           void *context, primitives::MessageReader *input,
+                           primitives::MessageWriter *output) {
+  return SysFutexWakeHelper(input, output);
 }
 
 }  // namespace host_call

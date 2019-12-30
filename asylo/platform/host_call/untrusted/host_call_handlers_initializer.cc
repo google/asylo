@@ -109,6 +109,12 @@ Status AddHostCallHandlersToExitCallProvider(
   ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
       kClockGettimeHandler, primitives::ExitHandler{ClockGettimeHandler}));
 
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kSysFutexWaitHandler, primitives::ExitHandler{SysFutexWaitHandler}));
+
+  ASYLO_RETURN_IF_ERROR(exit_call_provider->RegisterExitHandler(
+      kSysFutexWakeHandler, primitives::ExitHandler{SysFutexWakeHandler}));
+
   return Status::OkStatus();
 }
 

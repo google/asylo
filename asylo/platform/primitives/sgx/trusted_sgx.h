@@ -57,15 +57,6 @@ void **AllocateUntrustedBuffers(size_t count, size_t size);
 // |free_list|.
 void DeAllocateUntrustedBuffers(void **free_list, size_t count);
 
-// Exits the enclave and, if the value stored at |futex| equals |expected|,
-// suspends the calling thread until it is resumed by a call to
-// enc_untrusted_sys_futex_wake. Otherwise returns immediately.
-void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
-                                  int64_t timeout_microsec);
-
-// Exits the enclave and wakes a suspended thread blocked on |futex|.
-void enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num);
-
 // Exits the enclave and calls into the Intel Data Center Attestation Primitives
 // library to get the target info required to build a report targeting the Intel
 // Quoting enclave. This function is expected to be called before generating the

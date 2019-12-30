@@ -339,24 +339,6 @@ void DeAllocateUntrustedBuffers(void **free_list, size_t count) {
       free_list, static_cast<uint64_t>(count)));
 }
 
-void enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
-                                  int64_t timeout_microsec) {
-  if (!IsValidUntrustedAddress(futex)) {
-    TrustedPrimitives::BestEffortAbort(
-        "futex word expected to be in untrusted memory.");
-  }
-  CHECK_OCALL(
-      ocall_enc_untrusted_sys_futex_wait(futex, expected, timeout_microsec));
-}
-
-void enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
-  if (!IsValidUntrustedAddress(futex)) {
-    TrustedPrimitives::BestEffortAbort(
-        "futex word expected to be in untrusted memory.");
-  }
-  CHECK_OCALL(ocall_enc_untrusted_sys_futex_wake(futex, num));
-}
-
 uint32_t enc_untrusted_qe_get_target_info(sgx_target_info_t *qe_target_info) {
   uint32_t result;
   CHECK_OCALL(ocall_enc_untrusted_qe_get_target_info(&result, qe_target_info));
