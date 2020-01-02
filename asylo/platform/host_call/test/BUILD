@@ -16,6 +16,7 @@
 
 load(
     "//asylo/bazel:asylo.bzl",
+    "cc_enclave_test",
     "cc_unsigned_enclave",
     "debug_sign_enclave",
     "enclave_test",
@@ -179,6 +180,24 @@ enclave_test(
         "@com_google_absl//absl/flags:flag",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/time",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
+sgx.enclave_configuration(
+    name = "many_threads_enclave_config",
+    tcs_num = "1000",
+)
+
+cc_enclave_test(
+    name = "wait_queue_test",
+    srcs = ["wait_queue_test.cc"],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    enclave_config = ":many_threads_enclave_config",
+    deps = [
+        "//asylo/platform/host_call",
+        "//asylo/util:thread",
         "@com_google_googletest//:gtest",
     ],
 )

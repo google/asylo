@@ -29,6 +29,9 @@ using ::asylo::primitives::MessageReader;
 using ::asylo::primitives::MessageWriter;
 using ::asylo::primitives::TrustedPrimitives;
 
+static constexpr int32_t kWaitQueueEnabled = 0;
+static constexpr int32_t kWaitQueueDisabled = 1;
+
 extern "C" {
 
 int enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
@@ -79,6 +82,36 @@ int enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num) {
     errno = FromkLinuxErrorNumber(klinux_errno);
   }
   return result;
+}
+
+int32_t *enc_untrusted_create_wait_queue() {
+  int32_t *queue = static_cast<int32_t *>(
+      TrustedPrimitives::UntrustedLocalAlloc(sizeof(int32_t)));
+  TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueDisabled,
+                                          sizeof(int32_t));
+  return queue;
+}
+
+void enc_untrusted_destroy_wait_queue(int32_t *queue) {
+  TrustedPrimitives::UntrustedLocalFree(queue);
+}
+
+void enc_untrusted_thread_wait(int32_t *queue, uint64_t timeout_microsec) {
+  enc_untrusted_sys_futex_wait(queue, kWaitQueueEnabled, timeout_microsec);
+}
+
+void enc_untrusted_notify(int32_t *queue, int32_t num_threads) {
+  enc_untrusted_sys_futex_wake(queue, num_threads);
+}
+
+void enc_untrusted_disable_waiting(int32_t *queue) {
+  TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueDisabled,
+                                          sizeof(int32_t));
+}
+
+void enc_untrusted_enable_waiting(int32_t *queue) {
+  TrustedPrimitives::UntrustedLocalMemcpy(queue, &kWaitQueueEnabled,
+                                          sizeof(int32_t));
 }
 
 }  // extern "C"

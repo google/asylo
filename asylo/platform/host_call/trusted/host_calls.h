@@ -180,9 +180,31 @@ int enc_untrusted_sys_futex_wait(int32_t *futex, int32_t expected,
                                  int64_t timeout_microsec);
 int enc_untrusted_sys_futex_wake(int32_t *futex, int32_t num);
 
-// Calls that are not delegated to the host are defined below.
+// Calls that are not delegated to the host or depend on other host calls are
+// defined below.
 void enc_freeaddrinfo(struct addrinfo *res);
 void enc_freeifaddrs(struct ifaddrs *ifa);
+
+// Returns a new, empty wait queue. The queue will reside in untrusted memory.
+// The queue will have waiting disabled when it’s created.
+int32_t *enc_untrusted_create_wait_queue();
+
+// Destroys a wait queue, and releases all corresponding resources. All threads
+// currently waiting will remain asleep indefinitely.
+void enc_untrusted_destroy_wait_queue(int32_t *queue);
+
+// Enqueues the calling thread in the given queue, and wakes it up after
+// `timeout_microsec` microseconds if it hasn't been woken earlier.
+void enc_untrusted_thread_wait(int32_t *queue, uint64_t timeout_microsec = 0);
+
+// Wake one or more threads currently waiting on the wait queue.
+void enc_untrusted_notify(int32_t *queue, int32_t num_threads = 1);
+
+// Disable waiting on the given wait queue.
+void enc_untrusted_disable_waiting(int32_t *queue);
+
+// Enable waiting on the given wait queue.
+void enc_untrusted_enable_waiting(int32_t *queue);
 
 #ifdef __cplusplus
 }  // extern "C"
