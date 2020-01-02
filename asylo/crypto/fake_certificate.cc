@@ -105,8 +105,24 @@ absl::optional<KeyUsageInformation> FakeCertificate::KeyUsage() const {
 
 StatusOr<Certificate> FakeCertificate::ToCertificateProto(
     Certificate::CertificateFormat encoding) const {
-  return Status(error::GoogleError::UNIMPLEMENTED,
-                "ToCertificateProto not implemented");
+  FakeCertificateProto fake_cert;
+  fake_cert.set_subject_key(subject_key_);
+  fake_cert.set_issuer_key(issuer_key_);
+  if (is_ca_.has_value()) {
+    fake_cert.set_is_ca(is_ca_.value());
+  }
+  if (pathlength_.has_value()) {
+    fake_cert.set_pathlength(pathlength_.value());
+  }
+
+  Certificate cert;
+  cert.set_format(encoding);
+  if (!fake_cert.SerializeToString(cert.mutable_data())) {
+    return Status(error::GoogleError::INTERNAL,
+                  "Failed to serialize FakeCertificateProto");
+  }
+
+  return cert;
 }
 
 }  // namespace asylo

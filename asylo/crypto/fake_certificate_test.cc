@@ -34,6 +34,7 @@ namespace {
 
 using ::testing::Eq;
 using ::testing::Optional;
+using ::testing::Pointee;
 
 TEST(FakeCertificateTest, CreateFailsWithMalformedData) {
   Certificate cert;
@@ -145,6 +146,17 @@ TEST(FakeCertificateTest, VerifyFailure) {
   VerificationConfig config(/*all_fields=*/true);
   EXPECT_THAT(subject.Verify(subject, config),
               StatusIs(error::GoogleError::UNAUTHENTICATED));
+}
+
+TEST(FakeCertificateTest, ToCertificateProtoCreateRoundTrip) {
+  FakeCertificate src(/*subject_key=*/"c0ff33", /*issuer_key=*/"c0c0a",
+                      /*is_ca=*/true, /*pathlength=*/5);
+
+  Certificate certificate;
+  ASYLO_ASSERT_OK_AND_ASSIGN(certificate,
+                             src.ToCertificateProto(Certificate::X509_PEM));
+
+  EXPECT_THAT(FakeCertificate::Create(certificate), IsOkAndHolds(Pointee(src)));
 }
 
 }  // namespace
