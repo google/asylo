@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/attestation_key_certificate_impl.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 
 #include <memory>
 #include <string>
@@ -33,9 +33,9 @@
 #include "asylo/crypto/keys.pb.h"
 #include "asylo/crypto/signing_key.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key.pb.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
-#include "asylo/identity/sgx/attestation_key.pb.h"
-#include "asylo/identity/sgx/attestation_key_certificate.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/test/util/proto_matchers.h"

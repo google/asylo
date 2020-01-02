@@ -16,7 +16,7 @@
  *
  */
 
-#include "asylo/identity/sgx/attestation_key_certificate_impl.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate_impl.h"
 
 #include <memory>
 #include <string>
@@ -34,9 +34,9 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/additional_authenticated_data_generator.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key.pb.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_constants.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
-#include "asylo/identity/sgx/attestation_key.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 #include "asylo/util/proto_enum_util.h"
@@ -204,8 +204,7 @@ AttestationKeyCertificateImpl::Create(const Certificate &certificate) {
                                         report));
 }
 
-SgxIdentity AttestationKeyCertificateImpl::GetAssertedSgxIdentity()
-    const {
+SgxIdentity AttestationKeyCertificateImpl::GetAssertedSgxIdentity() const {
   return ParseSgxIdentityFromHardwareReport(report_);
 }
 

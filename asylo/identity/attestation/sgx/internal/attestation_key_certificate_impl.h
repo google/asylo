@@ -16,8 +16,8 @@
  *
  */
 
-#ifndef ASYLO_IDENTITY_SGX_ATTESTATION_KEY_CERTIFICATE_IMPL_H_
-#define ASYLO_IDENTITY_SGX_ATTESTATION_KEY_CERTIFICATE_IMPL_H_
+#ifndef ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_ATTESTATION_KEY_CERTIFICATE_IMPL_H_
+#define ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_ATTESTATION_KEY_CERTIFICATE_IMPL_H_
 
 #include <cstdint>
 #include <memory>
@@ -27,9 +27,9 @@
 #include "asylo/crypto/certificate.pb.h"
 #include "asylo/crypto/certificate_interface.h"
 #include "asylo/crypto/keys.pb.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key.pb.h"
+#include "asylo/identity/attestation/sgx/internal/attestation_key_certificate.pb.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
-#include "asylo/identity/sgx/attestation_key.pb.h"
-#include "asylo/identity/sgx/attestation_key_certificate.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
@@ -95,4 +95,4 @@ StatusOr<Certificate> CreateAttestationKeyCertificate(
 }  // namespace sgx
 }  // namespace asylo
 
-#endif  // ASYLO_IDENTITY_SGX_ATTESTATION_KEY_CERTIFICATE_IMPL_H_
+#endif  // ASYLO_IDENTITY_ATTESTATION_SGX_INTERNAL_ATTESTATION_KEY_CERTIFICATE_IMPL_H_
