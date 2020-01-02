@@ -174,6 +174,11 @@ void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   GetDlopenTrampoline()->asylo_local_free_handler(ptr);
 }
 
+void *TrustedPrimitives::UntrustedLocalMemcpy(void *dest, const void *src,
+                                              size_t size) noexcept {
+  return memcpy(dest, src, size);
+}
+
 PrimitiveStatus TrustedPrimitives::UntrustedCall(uint64_t untrusted_selector,
                                                  MessageWriter *input,
                                                  MessageReader *output) {

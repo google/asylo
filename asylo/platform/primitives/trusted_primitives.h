@@ -102,6 +102,19 @@ class TrustedPrimitives {
   /// \param ptr The pointer to untrusted memory to free.
   static void UntrustedLocalFree(void *ptr) noexcept;
 
+  /// Copies `size` bytes of memory from `src` to `dest`.
+  ///
+  /// Backends seeking to access or copy untrusted local memory should not
+  /// assume direct memory access, and instead use this function to copy to/from
+  /// the untrusted local memory.
+  ///
+  /// \param dest The trusted or untrusted local destination memory.
+  /// \param src The trusted or untrusted local source memory.
+  /// \param size The number of bytes to be copied.
+  /// \return The pointer to destination buffer where memory got copied.
+  static void *UntrustedLocalMemcpy(void *dest, const void *src,
+                                    size_t size) noexcept;
+
   /// Exits the enclave synchronously at an entry point to untrusted code
   /// designated by `untrusted_selector`. Inputs must be pushed into `input`.
   /// Results are returned in `output`. All extent data in `input` and `output`

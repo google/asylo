@@ -228,7 +228,8 @@ void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
   CHECK_OCALL(
       ocall_untrusted_local_alloc(&result, static_cast<uint64_t>(size)));
   if (result && !IsOutsideEnclave(result, static_cast<uint64_t>(size))) {
-    abort();
+    TrustedPrimitives::BestEffortAbort(
+        "Allocated memory not found to be outside the enclave.");
   }
 
   // On error, malloc returns nullptr and sets errno to ENOMEM.
@@ -243,6 +244,13 @@ void *TrustedPrimitives::UntrustedLocalAlloc(size_t size) noexcept {
 // memory allocated by UntrustedLocalAlloc.
 void TrustedPrimitives::UntrustedLocalFree(void *ptr) noexcept {
   CHECK_OCALL(ocall_untrusted_local_free(ptr));
+}
+
+// Since untrusted memory is directly accessible in SGX, we perform no pointer
+// validation before copying the memory.
+void *TrustedPrimitives::UntrustedLocalMemcpy(void *dest, const void *src,
+                                              size_t size) noexcept {
+  return memcpy(dest, src, size);
 }
 
 bool TrustedPrimitives::IsInsideEnclave(const void *addr, size_t size) {
