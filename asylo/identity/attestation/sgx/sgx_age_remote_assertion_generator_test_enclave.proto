@@ -43,7 +43,7 @@ message ResetGeneratorInput {}
 message ResetGeneratorOutput {}
 
 message InitializeInput {
-  optional string config = 1;
+  optional bytes config = 1;
 }
 
 message InitializeOutput {}
