@@ -28,6 +28,7 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -131,9 +132,9 @@ class ClientSideAuthorizationTest : public Test {
     code_identity->set_miscselect(0);
     sgx::SecsAttributeSet attributes;
     ASYLO_ASSIGN_OR_RETURN(attributes, sgx::SecsAttributeSet::FromBits(
-                                           {sgx::SecsAttributeBit::INIT,
-                                            sgx::SecsAttributeBit::DEBUG,
-                                            sgx::SecsAttributeBit::MODE64BIT}));
+                                           {sgx::AttributeBit::INIT,
+                                            sgx::AttributeBit::DEBUG,
+                                            sgx::AttributeBit::MODE64BIT}));
     *code_identity->mutable_attributes() = attributes.ToProtoAttributes();
 
     sgx::SignerAssignedIdentity *signer_assigned_identity =

@@ -26,6 +26,7 @@
 #include "absl/base/attributes.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"
 #include "asylo/util/status.h"
@@ -146,19 +147,19 @@ class FakeEnclave {
   void set_valid_attributes(const SecsAttributeSet &value) {
     valid_attributes_ = value;
   }
-  void add_valid_attribute(SecsAttributeBit bit) {
+  void add_valid_attribute(AttributeBit bit) {
     valid_attributes_ |= SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
-  void remove_valid_attribute(SecsAttributeBit bit) {
+  void remove_valid_attribute(AttributeBit bit) {
     valid_attributes_ &= ~SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
   void set_required_attributes(const SecsAttributeSet &value) {
     required_attributes_ = value;
   }
-  void add_required_attribute(SecsAttributeBit bit) {
+  void add_required_attribute(AttributeBit bit) {
     required_attributes_ |= SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
-  void remove_required_attribute(SecsAttributeBit bit) {
+  void remove_required_attribute(AttributeBit bit) {
     required_attributes_ &= ~SecsAttributeSet::FromBits({bit}).ValueOrDie();
   }
 

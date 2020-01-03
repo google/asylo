@@ -18,6 +18,7 @@
 
 #include "asylo/identity/sgx/secs_miscselect.h"
 
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/util/status.h"
 
 namespace asylo {
@@ -25,14 +26,13 @@ namespace sgx {
 namespace {
 
 // All bits in the MISCSELECT bit vector.
-constexpr SecsMiscselectBit kAllSecsMiscselectBits[] = {
-    SecsMiscselectBit::EXINFO};
+constexpr MiscselectBit kAllSecsMiscselectBits[] = {MiscselectBit::EXINFO};
 
-absl::string_view GetMiscselectBitName(SecsMiscselectBit miscselect_bit) {
+absl::string_view GetMiscselectBitName(MiscselectBit miscselect_bit) {
   static constexpr absl::string_view kExinfo = "EXINFO";
   static constexpr absl::string_view kUnknown = "UNKNOWN";
   switch (miscselect_bit) {
-    case SecsMiscselectBit::EXINFO:
+    case MiscselectBit::EXINFO:
       return kExinfo;
     default:
       return kUnknown;
@@ -41,7 +41,7 @@ absl::string_view GetMiscselectBitName(SecsMiscselectBit miscselect_bit) {
 
 }  // namespace
 
-StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
+StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
                                  uint32_t miscselect) {
   size_t bit_position = static_cast<size_t>(miscselect_bit);
   if (bit_position >= 32) {
@@ -53,14 +53,14 @@ StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
   return (miscselect & (UINT32_C(1) << bit_position)) != 0;
 }
 
-StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
+StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
                                  const Miscselect &miscselect) {
   return TestMiscselectBit(miscselect_bit, miscselect.value());
 }
 
 std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect) {
   std::vector<absl::string_view> printable_miscselect_list;
-  for (SecsMiscselectBit miscselect_bit : kAllSecsMiscselectBits) {
+  for (MiscselectBit miscselect_bit : kAllSecsMiscselectBits) {
     size_t bit_position = static_cast<size_t>(miscselect_bit);
     if ((miscselect & (UINT32_C(1) << bit_position)) != 0) {
       printable_miscselect_list.push_back(

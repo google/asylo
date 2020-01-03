@@ -37,6 +37,7 @@
 #include "asylo/identity/attestation/sgx/internal/host_dcap_library_interface.h"
 #include "asylo/identity/attestation/sgx/internal/intel_ecdsa_quote.h"
 #include "asylo/identity/attestation/sgx/internal/report_oracle_enclave.pb.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.h"
 #include "asylo/identity/provisioning/sgx/internal/platform_provisioning.pb.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
@@ -158,9 +159,9 @@ TEST_F(DcapIntelArchitecturalEnclaveInterfaceE2eTest, GetPceTargetinfo) {
   SecsAttributeSet expected_attributes;
   ASYLO_ASSERT_OK_AND_ASSIGN(
       expected_attributes,
-      SecsAttributeSet::FromBits({SecsAttributeBit::INIT,
-                                  SecsAttributeBit::MODE64BIT,
-                                  SecsAttributeBit::PROVISIONKEY}));
+      SecsAttributeSet::FromBits({AttributeBit::INIT,
+                                  AttributeBit::MODE64BIT,
+                                  AttributeBit::PROVISIONKEY}));
 
   Targetinfo targetinfo;
   uint16_t svn;

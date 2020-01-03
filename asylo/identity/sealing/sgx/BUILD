@@ -62,6 +62,7 @@ cc_test(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/platform/sgx:architecture_bits",
         "//asylo/identity/sealing:sealed_secret_cc_proto",
         "//asylo/identity/sealing/sgx/internal:local_sealed_secret_cc_proto",
         "//asylo/identity/sealing/sgx/internal:local_secret_sealer_helpers",

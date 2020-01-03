@@ -33,6 +33,7 @@
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
@@ -68,7 +69,7 @@ FakeEnclave *FakeEnclave::current_ = nullptr;
 
 FakeEnclave::FakeEnclave() {
   valid_attributes_ = SecsAttributeSet::GetAllSupportedBits();
-  remove_valid_attribute(SecsAttributeBit::KSS);
+  remove_valid_attribute(AttributeBit::KSS);
   required_attributes_ = SecsAttributeSet::GetMustBeSetBits();
   mrenclave_.fill(0);
   mrsigner_.fill(0);
@@ -125,7 +126,7 @@ void FakeEnclave::SetRandomIdentity() {
 
   // If ATTRIBUTES.KSS is zero, all KSS-related fields must be zero, else they
   // should be set randomly.
-  if (!attributes_.IsSet(SecsAttributeBit::KSS)) {
+  if (!attributes_.IsSet(AttributeBit::KSS)) {
     configsvn_ = 0;
     isvextprodid_.fill(0);
     isvfamilyid_.fill(0);
@@ -247,7 +248,7 @@ Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
   // any of its KSS-related bits are set when the enclave's KSS SECS attribute
   // bit is not set.
   if ((request.keypolicy & kKeypolicyReservedBits) != 0 ||
-      (!attributes_.IsSet(SecsAttributeBit::KSS) &&
+      (!attributes_.IsSet(AttributeBit::KSS) &&
        (request.keypolicy & kKeypolicyKssBits) != 0)) {
     LOG(FATAL) << "Input parameter KEYPOLICY is not valid.";
   }

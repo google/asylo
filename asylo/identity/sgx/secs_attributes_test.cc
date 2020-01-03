@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/test/util/status_matchers.h"
 #include "asylo/util/status.h"
@@ -43,26 +44,26 @@ class SecsAttributesTest : public ::testing::Test {
 
   // Independently define all the attribute bits so that any error
   // introduced in this part of the header file is caught.
-  const std::vector<SecsAttributeBit> attributes_ = {
-      static_cast<SecsAttributeBit>(0),  // FLAG_ATTRIBUTE_INIT
-      static_cast<SecsAttributeBit>(1),  // FLAG_ATTRIBUTE_DEBUG
-      static_cast<SecsAttributeBit>(2),  // FLAG_ATTRIBUTE_MODE64BIT
-                                         // Unused bit
-      static_cast<SecsAttributeBit>(4),  // FLAG_ATTRIBUTE_PROVISIONKEY
-      static_cast<SecsAttributeBit>(5),  // FLAG_ATTRIBUTE_INITTOKENKEY
-                                         // Unused bit
-      static_cast<SecsAttributeBit>(7),  // FLAG_ATTRIBUTE_KSS
+  const std::vector<AttributeBit> attributes_ = {
+      static_cast<AttributeBit>(0),  // FLAG_ATTRIBUTE_INIT
+      static_cast<AttributeBit>(1),  // FLAG_ATTRIBUTE_DEBUG
+      static_cast<AttributeBit>(2),  // FLAG_ATTRIBUTE_MODE64BIT
+                                     // Unused bit
+      static_cast<AttributeBit>(4),  // FLAG_ATTRIBUTE_PROVISIONKEY
+      static_cast<AttributeBit>(5),  // FLAG_ATTRIBUTE_INITTOKENKEY
+                                     // Unused bit
+      static_cast<AttributeBit>(7),  // FLAG_ATTRIBUTE_KSS
 
-      static_cast<SecsAttributeBit>(64),  // XFRM_ATTRIBUTE_FPU,
-      static_cast<SecsAttributeBit>(65),  // XFRM_ATTRIBUTE_SSE,
-      static_cast<SecsAttributeBit>(66),  // XFRM_ATTRIBUTE_AVX,
-      static_cast<SecsAttributeBit>(67),  // XFRM_ATTRIBUTE_BNDREG,
-      static_cast<SecsAttributeBit>(68),  // XFRM_ATTRIBUTE_BNDCSR,
-      static_cast<SecsAttributeBit>(69),  // XFRM_ATTRIBUTE_OPMASK,
-      static_cast<SecsAttributeBit>(70),  // XFRM_ATTRIBUTE_ZMM_HI256,
-      static_cast<SecsAttributeBit>(71),  // XFRM_ATTRIBUTE_HI16_ZMM,
-                                          // Unused bit
-      static_cast<SecsAttributeBit>(73)   // XFRM_ATTRIBUTE_PKRU
+      static_cast<AttributeBit>(64),  // XFRM_ATTRIBUTE_FPU,
+      static_cast<AttributeBit>(65),  // XFRM_ATTRIBUTE_SSE,
+      static_cast<AttributeBit>(66),  // XFRM_ATTRIBUTE_AVX,
+      static_cast<AttributeBit>(67),  // XFRM_ATTRIBUTE_BNDREG,
+      static_cast<AttributeBit>(68),  // XFRM_ATTRIBUTE_BNDCSR,
+      static_cast<AttributeBit>(69),  // XFRM_ATTRIBUTE_OPMASK,
+      static_cast<AttributeBit>(70),  // XFRM_ATTRIBUTE_ZMM_HI256,
+      static_cast<AttributeBit>(71),  // XFRM_ATTRIBUTE_HI16_ZMM,
+                                      // Unused bit
+      static_cast<AttributeBit>(73)   // XFRM_ATTRIBUTE_PKRU
   };
   const std::vector<std::string> attribute_names_ = {
       "INIT",   "DEBUG",  "MODE64BIT", "PROVISIONKEY", "INITTOKENKEY",
@@ -87,7 +88,7 @@ class SecsAttributesTest : public ::testing::Test {
       {0x0, 0x200},  // PKRU
   };
   const SecsAttributeSet all_attributes_ = {0xb7, 0x2FF};
-  const SecsAttributeBit bad_attribute_ = static_cast<SecsAttributeBit>(129);
+  const AttributeBit bad_attribute_ = static_cast<AttributeBit>(129);
 };
 
 #define EXPECT_LOG(TYPE, MESSAGE)
@@ -267,7 +268,7 @@ TEST_F(SecsAttributesTest, BitwiseNegation) {
 // Verify the correctness of conversion from attribute list to attribute set.
 TEST_F(SecsAttributesTest, ListToSet) {
   for (int i = 0; i < attributes_.size(); i++) {
-    std::vector<SecsAttributeBit> v{attributes_[i]};
+    std::vector<AttributeBit> v{attributes_[i]};
 
     SecsAttributeSet set;
     ASYLO_ASSERT_OK_AND_ASSIGN(set, SecsAttributeSet::FromBits(v));
@@ -283,7 +284,7 @@ TEST_F(SecsAttributesTest, ListToSet) {
 
 // Verify error condition for conversion from attribute list to attribute set.
 TEST_F(SecsAttributesTest, ListToSetError) {
-  std::vector<SecsAttributeBit> v{bad_attribute_};
+  std::vector<AttributeBit> v{bad_attribute_};
   std::string str =
       absl::StrCat("SecsAttributeBit specifies a bit position ",
                    static_cast<size_t>(bad_attribute_),
@@ -304,7 +305,7 @@ TEST_F(SecsAttributesTest, SetToAttributes) {
 
 // Verify the correctness of conversion from Attributes to AttributeSet.
 TEST_F(SecsAttributesTest, AttributesToSet) {
-  std::vector<SecsAttributeBit> list;
+  std::vector<AttributeBit> list;
   Attributes attributes;
 
   for (int i = 0; i < attribute_sets_.size(); i++) {

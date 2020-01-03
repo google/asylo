@@ -320,6 +320,7 @@ sgx_enclave_test(
         "//asylo/crypto:keys_cc_proto",
         "//asylo/crypto:rsa_oaep_encryption_key",
         "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity/platform/sgx:architecture_bits",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/identity/sgx:hardware_types",

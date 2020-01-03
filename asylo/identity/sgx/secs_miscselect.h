@@ -24,25 +24,16 @@
 #include <vector>
 
 #include "absl/strings/string_view.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
 
-// The following enum defines the various MISCSELECT bits and assigns them a
-// value that is same as their bit position in the SECS MISCSELECT bit vector.
-// The names of these bits are taken verbatim from the Intel SDM (Software
-// Developer's Manual).
-enum class SecsMiscselectBit {
-  // Indicates that information about page faults and GP exceptions that
-  // occurred inside an enclave will be saved upon an asynchronous exit.
-  EXINFO = 0,
-};
-
 // Masks for various MISCSELECT bits.
 constexpr uint32_t kMiscselectExinfoMask =
-    static_cast<uint32_t>(1) << static_cast<size_t>(SecsMiscselectBit::EXINFO);
+    static_cast<uint32_t>(1) << static_cast<size_t>(MiscselectBit::EXINFO);
 
 // MISCSELECT bit groupings.
 constexpr uint32_t kMiscselectAllBits = kMiscselectExinfoMask;
@@ -50,12 +41,12 @@ constexpr uint32_t kMiscselectReservedBits = ~kMiscselectAllBits;
 
 // Tests if |miscselect_bit| is set in the |miscselect| bit vector
 // representation of MISCSELECT.
-StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
+StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
                                  uint32_t miscselect);
 
 // Tests if |miscselect_bit| is set in the |miscselect| proto representation of
 // MISCSELECT.
-StatusOr<bool> TestMiscselectBit(SecsMiscselectBit miscselect_bit,
+StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
                                  const Miscselect &miscselect);
 
 // Returns a printable list of MISCSELECT bits from the given |miscselect| bit

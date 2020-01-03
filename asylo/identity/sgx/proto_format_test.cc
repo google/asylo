@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 #include "absl/strings/escaping.h"
 #include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
@@ -68,7 +69,7 @@ TEST(ProtoFormatTest, SgxIdentityHasCpuSvnAsHexString) {
 TEST(ProtoFormatTest, MiscselectBitsByName) {
   Miscselect miscselect;
   miscselect.set_value(UINT32_C(1)
-                       << static_cast<size_t>(SecsMiscselectBit::EXINFO));
+                       << static_cast<size_t>(MiscselectBit::EXINFO));
   std::string text = FormatProto(miscselect);
 
   std::vector<absl::string_view> named_miscselect_bits =

@@ -28,6 +28,7 @@
 #include "absl/strings/str_cat.h"
 #include "asylo/crypto/util/bytes.h"
 #include "asylo/crypto/util/trivial_object_util.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/fake_enclave.h"
 #include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
@@ -69,7 +70,7 @@ class FakeEnclaveTest : public ::testing::Test {
     always_care_attributes_ = kRequiredSealingAttributesMask;
 
     // Allow the enclave to set the KSS attribute.
-    enclave_.add_valid_attribute(SecsAttributeBit::KSS);
+    enclave_.add_valid_attribute(AttributeBit::KSS);
 
     // Set up a fake enclave. All tests use this enclave either directly,
     // or tweaked copies of it as needed.
@@ -101,7 +102,7 @@ class FakeEnclaveTest : public ::testing::Test {
   uint16_t GenerateRandomKeypolicy(const SecsAttributeSet &attributes) {
     uint16_t keypolicy_valid_bits =
         kKeypolicyMrenclaveBitMask | kKeypolicyMrsignerBitMask;
-    if (attributes.IsSet(SecsAttributeBit::KSS)) {
+    if (attributes.IsSet(AttributeBit::KSS)) {
       keypolicy_valid_bits |= kKeypolicyKssBits;
     }
     return TrivialRandomObject<uint16_t>() & keypolicy_valid_bits;
@@ -139,7 +140,7 @@ TEST_F(FakeEnclaveTest, CurrentEnclave) {
 
 // Verify that FakeEnclave's identity can be set correctly from an SgxIdentity.
 TEST_F(FakeEnclaveTest, SetIdentity) {
-  enclave_.remove_valid_attribute(SecsAttributeBit::KSS);
+  enclave_.remove_valid_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
   FakeEnclave::EnterEnclave(enclave_);
   SgxIdentity identity = GetSelfIdentity()->sgx_identity;
@@ -157,7 +158,7 @@ TEST_F(FakeEnclaveTest, SetIdentity) {
 
 TEST_F(FakeEnclaveTest, GetIdentity) {
   FakeEnclave enclave1;
-  enclave1.remove_valid_attribute(SecsAttributeBit::KSS);
+  enclave1.remove_valid_attribute(AttributeBit::KSS);
   enclave1.SetRandomIdentity();
 
   SgxIdentity identity = enclave1.GetIdentity();
@@ -172,7 +173,7 @@ TEST_F(FakeEnclaveTest, GetIdentity) {
   EXPECT_THAT(enclave2.GetIdentity(), EqualsProto(identity));
 
   FakeEnclave enclave3;
-  enclave3.remove_valid_attribute(SecsAttributeBit::KSS);
+  enclave3.remove_valid_attribute(AttributeBit::KSS);
   enclave3.SetRandomIdentity();
 
   // The probability that the two identities are identical is exceedingly
@@ -272,7 +273,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithMrsigner) {
 TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvprodid) {
   // This test requires that the KSS attribute bit is set. So add this bit to
   // the "required" bits of this enclave, and generate a new random identity.
-  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.add_required_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
   FakeEnclave::EnterEnclave(enclave_);
@@ -412,7 +413,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithMiscselect) {
 TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvfamilyid) {
   // This test requires that the KSS attribute bit is set. So add this bit to
   // the "required" bits of this enclave, and generate a new random identity.
-  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.add_required_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
   FakeEnclave::EnterEnclave(enclave_);
@@ -452,7 +453,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvfamilyid) {
 TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvextprodid) {
   // This test requires that the KSS attribute bit is set. So add this bit to
   // the "required" bits of this enclave, and generate a new random identity.
-  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.add_required_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
   FakeEnclave::EnterEnclave(enclave_);
@@ -493,7 +494,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithIsvextprodid) {
 TEST_F(FakeEnclaveTest, SealKeyChangesWithConfigid) {
   // This test requires that the KSS attribute bit is set. So add this bit to
   // the "required" bits of this enclave, and generate a new random identity.
-  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.add_required_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
   FakeEnclave::EnterEnclave(enclave_);
@@ -533,7 +534,7 @@ TEST_F(FakeEnclaveTest, SealKeyChangesWithConfigid) {
 TEST_F(FakeEnclaveTest, SealKeyChangesWithConfigsvn) {
   // This test requires that the KSS attribute bit is set. So add this bit to
   // the "required" bits of this enclave, and generate a new random identity.
-  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.add_required_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
   FakeEnclave::EnterEnclave(enclave_);
@@ -603,7 +604,7 @@ TEST_F(FakeEnclaveTest, SealKeyIsvsvnAccessControl) {
 TEST_F(FakeEnclaveTest, SealKeyConfigsvnAccessControl) {
   // This test requires that the KSS attribute bit is set. So add this bit to
   // the "required" bits of this enclave, and generate a new random identity.
-  enclave_.add_required_attribute(SecsAttributeBit::KSS);
+  enclave_.add_required_attribute(AttributeBit::KSS);
   enclave_.SetRandomIdentity();
 
   FakeEnclave::EnterEnclave(enclave_);

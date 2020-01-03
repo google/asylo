@@ -22,6 +22,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -34,36 +35,36 @@ using ::testing::IsEmpty;
 
 TEST(SecsMiscselectTest, TestMiscselectBitInvalid) {
   uint32_t miscselect = 0;
-  EXPECT_THAT(TestMiscselectBit(static_cast<SecsMiscselectBit>(32), miscselect),
+  EXPECT_THAT(TestMiscselectBit(static_cast<MiscselectBit>(32), miscselect),
               StatusIs(asylo::error::INVALID_ARGUMENT));
 
   Miscselect miscselect_proto;
   miscselect_proto.set_value(miscselect);
   EXPECT_THAT(
-      TestMiscselectBit(static_cast<SecsMiscselectBit>(32), miscselect_proto),
+      TestMiscselectBit(static_cast<MiscselectBit>(32), miscselect_proto),
       StatusIs(asylo::error::INVALID_ARGUMENT));
 }
 
 TEST(SecsMiscselectTest, TestMiscselectBitFalse) {
   uint32_t miscselect = 0;
-  EXPECT_THAT(TestMiscselectBit(SecsMiscselectBit::EXINFO, miscselect),
+  EXPECT_THAT(TestMiscselectBit(MiscselectBit::EXINFO, miscselect),
               IsOkAndHolds(false));
 
   Miscselect miscselect_proto;
   miscselect_proto.set_value(miscselect);
-  EXPECT_THAT(TestMiscselectBit(SecsMiscselectBit::EXINFO, miscselect_proto),
+  EXPECT_THAT(TestMiscselectBit(MiscselectBit::EXINFO, miscselect_proto),
               IsOkAndHolds(false));
 }
 
 TEST(SecsMiscselectTest, TestMiscselectBitTrue) {
   uint32_t miscselect = UINT32_C(1)
-                        << static_cast<size_t>(SecsMiscselectBit::EXINFO);
-  EXPECT_THAT(TestMiscselectBit(SecsMiscselectBit::EXINFO, miscselect),
+                        << static_cast<size_t>(MiscselectBit::EXINFO);
+  EXPECT_THAT(TestMiscselectBit(MiscselectBit::EXINFO, miscselect),
               IsOkAndHolds(true));
 
   Miscselect miscselect_proto;
   miscselect_proto.set_value(miscselect);
-  EXPECT_THAT(TestMiscselectBit(SecsMiscselectBit::EXINFO, miscselect_proto),
+  EXPECT_THAT(TestMiscselectBit(MiscselectBit::EXINFO, miscselect_proto),
               IsOkAndHolds(true));
 }
 
@@ -78,7 +79,7 @@ TEST(SecsMiscselectTest, GetPrintableMiscselectListEmpty) {
 
 TEST(SecsMiscselectTest, GetPrintableMiscselectListNonempty) {
   uint32_t miscselect = UINT32_C(1)
-                        << static_cast<size_t>(SecsMiscselectBit::EXINFO);
+                        << static_cast<size_t>(MiscselectBit::EXINFO);
   EXPECT_THAT(GetPrintableMiscselectList(miscselect), ElementsAre("EXINFO"));
 
   Miscselect miscselect_proto;

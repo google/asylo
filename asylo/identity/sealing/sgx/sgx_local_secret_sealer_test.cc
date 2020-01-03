@@ -35,6 +35,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/identity.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sealing/sealed_secret.pb.h"
 #include "asylo/identity/sealing/sgx/internal/local_sealed_secret.pb.h"
 #include "asylo/identity/sealing/sgx/internal/local_secret_sealer_helpers.h"
@@ -659,7 +660,7 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealFailureAttributesMismatch) {
   // An enclave whose identity only varies in one of the |can_vary_attributes|
   // bits should *not* be able to unseal the secret.
   sgx::FakeEnclave enclave_with_mismatched_attributes(*enclave_);
-  for (sgx::SecsAttributeBit bit : sgx::kAllSecsAttributeBits) {
+  for (sgx::AttributeBit bit : sgx::kAllSecsAttributeBits) {
     if (!can_vary_attributes.IsSet(bit)) {
       continue;
     }
@@ -729,7 +730,7 @@ TEST_F(SgxLocalSecretSealerTest,
   // An enclave whose identity only varies in one of the |can_vary_attributes|
   // bits should be able to unseal the secret successfully.
   sgx::FakeEnclave enclave_with_mismatched_attributes(*enclave_);
-  for (sgx::SecsAttributeBit bit : sgx::kAllSecsAttributeBits) {
+  for (sgx::AttributeBit bit : sgx::kAllSecsAttributeBits) {
     if (!can_vary_attributes.IsSet(bit)) {
       continue;
     }

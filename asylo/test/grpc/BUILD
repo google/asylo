@@ -339,6 +339,7 @@ sgx_enclave_test(
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/grpc/util:enclave_server_cc_proto",
         "//asylo/identity:identity_acl_cc_proto",
+        "//asylo/identity/platform/sgx:architecture_bits",
         "//asylo/identity/sgx:attributes_cc_proto",
         "//asylo/identity/sgx:code_identity_cc_proto",
         "//asylo/identity/sgx:hardware_types",

@@ -29,6 +29,7 @@
 #include "absl/base/macros.h"
 #include "absl/strings/str_format.h"
 #include "asylo/util/logging.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
 
 namespace asylo {
@@ -79,38 +80,37 @@ constexpr size_t kNumSecsAttributeBits = kNumFlagsBits + kNumXfrmBits;
 // writer may want to consider code paths that use AVX to be more trustworthy
 // than those that do not use AVX). In such situations, enclave writers can
 // override this list through the enclave-identity library.
-constexpr SecsAttributeBit kDefaultDoNotCareSecsAttributes[] = {
-    SecsAttributeBit::FPU,       SecsAttributeBit::SSE,
-    SecsAttributeBit::AVX,       SecsAttributeBit::OPMASK,
-    SecsAttributeBit::ZMM_HI256, SecsAttributeBit::HI16_ZMM};
+constexpr AttributeBit kDefaultDoNotCareSecsAttributes[] = {
+    AttributeBit::FPU,    AttributeBit::SSE,       AttributeBit::AVX,
+    AttributeBit::OPMASK, AttributeBit::ZMM_HI256, AttributeBit::HI16_ZMM};
 
 // Must-be-one attribute bits
-constexpr SecsAttributeBit kMustBeSetAttributes[] = {
-    SecsAttributeBit::INIT, SecsAttributeBit::FPU, SecsAttributeBit::SSE};
+constexpr AttributeBit kMustBeSetAttributes[] = {
+    AttributeBit::INIT, AttributeBit::FPU, AttributeBit::SSE};
 
-std::pair<SecsAttributeBit, const char *> kPrintableSecsAttributeBitNames[] = {
-    {SecsAttributeBit::INIT, "INIT"},
-    {SecsAttributeBit::DEBUG, "DEBUG"},
-    {SecsAttributeBit::MODE64BIT, "MODE64BIT"},
+std::pair<AttributeBit, const char *> kPrintableSecsAttributeBitNames[] = {
+    {AttributeBit::INIT, "INIT"},
+    {AttributeBit::DEBUG, "DEBUG"},
+    {AttributeBit::MODE64BIT, "MODE64BIT"},
     // Bit 3 is an unused bit.
-    {SecsAttributeBit::PROVISIONKEY, "PROVISIONKEY"},
-    {SecsAttributeBit::INITTOKENKEY, "INITTOKENKEY"},
+    {AttributeBit::PROVISIONKEY, "PROVISIONKEY"},
+    {AttributeBit::INITTOKENKEY, "INITTOKENKEY"},
     // Bit 6 is an unused bit.
-    {SecsAttributeBit::KSS, "KSS"},
+    {AttributeBit::KSS, "KSS"},
     // Bits 8 through 63 are unused.
-    {SecsAttributeBit::FPU, "FPU"},
-    {SecsAttributeBit::SSE, "SSE"},
-    {SecsAttributeBit::AVX, "AVX"},
-    {SecsAttributeBit::BNDREG, "BNDREG"},
-    {SecsAttributeBit::BNDCSR, "BNDCSR"},
-    {SecsAttributeBit::OPMASK, "OPMASK"},
-    {SecsAttributeBit::ZMM_HI256, "ZMM_HI256"},
-    {SecsAttributeBit::HI16_ZMM, "HI16_ZMM"},
-    {SecsAttributeBit::PKRU, "PKRU"}};
+    {AttributeBit::FPU, "FPU"},
+    {AttributeBit::SSE, "SSE"},
+    {AttributeBit::AVX, "AVX"},
+    {AttributeBit::BNDREG, "BNDREG"},
+    {AttributeBit::BNDCSR, "BNDCSR"},
+    {AttributeBit::OPMASK, "OPMASK"},
+    {AttributeBit::ZMM_HI256, "ZMM_HI256"},
+    {AttributeBit::HI16_ZMM, "HI16_ZMM"},
+    {AttributeBit::PKRU, "PKRU"}};
 
-absl::string_view GetAttributeName(SecsAttributeBit attribute) {
+absl::string_view GetAttributeName(AttributeBit attribute) {
   static constexpr absl::string_view kUnknown = "UNKNOWN";
-  for (const std::pair<SecsAttributeBit, const char *> &attribute_name_pair :
+  for (const std::pair<AttributeBit, const char *> &attribute_name_pair :
        kPrintableSecsAttributeBitNames) {
     if (attribute_name_pair.first == attribute) {
       return attribute_name_pair.second;
@@ -121,15 +121,15 @@ absl::string_view GetAttributeName(SecsAttributeBit attribute) {
 
 }  // namespace
 
-const SecsAttributeBit kAllSecsAttributeBits[] = {
-    SecsAttributeBit::INIT,         SecsAttributeBit::DEBUG,
-    SecsAttributeBit::MODE64BIT,    SecsAttributeBit::PROVISIONKEY,
-    SecsAttributeBit::INITTOKENKEY, SecsAttributeBit::KSS,
-    SecsAttributeBit::FPU,          SecsAttributeBit::SSE,
-    SecsAttributeBit::AVX,          SecsAttributeBit::BNDREG,
-    SecsAttributeBit::BNDCSR,       SecsAttributeBit::OPMASK,
-    SecsAttributeBit::ZMM_HI256,    SecsAttributeBit::HI16_ZMM,
-    SecsAttributeBit::PKRU};
+const AttributeBit kAllSecsAttributeBits[] = {
+    AttributeBit::INIT,         AttributeBit::DEBUG,
+    AttributeBit::MODE64BIT,    AttributeBit::PROVISIONKEY,
+    AttributeBit::INITTOKENKEY, AttributeBit::KSS,
+    AttributeBit::FPU,          AttributeBit::SSE,
+    AttributeBit::AVX,          AttributeBit::BNDREG,
+    AttributeBit::BNDCSR,       AttributeBit::OPMASK,
+    AttributeBit::ZMM_HI256,    AttributeBit::HI16_ZMM,
+    AttributeBit::PKRU};
 
 SecsAttributeSet SecsAttributeSet::GetAllSupportedBits() {
   static const SecsAttributeSet set =
@@ -166,7 +166,7 @@ void SecsAttributeSet::Clear() {
   xfrm = 0;
 }
 
-bool SecsAttributeSet::IsSet(SecsAttributeBit attribute) const {
+bool SecsAttributeSet::IsSet(AttributeBit attribute) const {
   size_t bit_position = static_cast<size_t>(attribute);
   if (bit_position >= kNumSecsAttributeBits) {
     // The only way this can happen is if someone does some funny business with
@@ -258,9 +258,9 @@ bool operator!=(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs) {
 }
 
 StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
-    absl::Span<const SecsAttributeBit> attribute_list) {
+    absl::Span<const AttributeBit> attribute_list) {
   SecsAttributeSet attributes = {};
-  for (SecsAttributeBit attribute : attribute_list) {
+  for (AttributeBit attribute : attribute_list) {
     size_t bit_position = static_cast<size_t>(attribute);
     if (bit_position >= kNumSecsAttributeBits) {
       return Status(
@@ -278,7 +278,7 @@ StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
   return attributes;
 }
 
-bool IsAttributeSet(SecsAttributeBit attribute, const Attributes &attributes) {
+bool IsAttributeSet(AttributeBit attribute, const Attributes &attributes) {
   size_t bit_position = static_cast<size_t>(attribute);
   if (bit_position >= kNumSecsAttributeBits) {
     LOG(INFO) << "SecsAttributeBit specifies a bit position " << bit_position
@@ -297,7 +297,7 @@ bool IsAttributeSet(SecsAttributeBit attribute, const Attributes &attributes) {
 std::vector<absl::string_view> GetPrintableAttributeList(
     const Attributes &attributes) {
   std::vector<absl::string_view> printable_list;
-  for (SecsAttributeBit attribute : kAllSecsAttributeBits) {
+  for (AttributeBit attribute : kAllSecsAttributeBits) {
     if (IsAttributeSet(attribute, attributes)) {
       printable_list.push_back(GetAttributeName(attribute));
     }
