@@ -16,12 +16,9 @@
  *
  */
 
-// fake_hardware_interface.cc is one implementation of the interface defined
-// in hardware_interface.h, and consequently it is included as the related
-// header and not a general, unrelated header.
-#include "asylo/identity/sgx/hardware_interface.h"
-
+#include "absl/memory/memory.h"
 #include "asylo/identity/sgx/fake_enclave.h"
+#include "asylo/identity/sgx/hardware_interface.h"
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 
 #ifdef __ASYLO__
@@ -39,26 +36,39 @@ FakeEnclave *SetNewRandomEnclave() {
   return FakeEnclave::GetCurrentEnclave();
 }
 
+class FakeHardwareInterface : public HardwareInterface {
+ public:
+  StatusOr<HardwareKey> GetKey(const Keyrequest &request) const override {
+    FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+    if (enclave == nullptr) {
+      enclave = SetNewRandomEnclave();
+    }
+
+    AlignedHardwareKeyPtr key;
+    ASYLO_RETURN_IF_ERROR(enclave->GetHardwareKey(request, key.get()));
+    return *key;
+  }
+
+  StatusOr<Report> GetReport(const Targetinfo &tinfo,
+                             const Reportdata &reportdata) const override {
+    FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
+
+    if (enclave == nullptr) {
+      enclave = SetNewRandomEnclave();
+    }
+
+    AlignedReportPtr report;
+    ASYLO_RETURN_IF_ERROR(
+        enclave->GetHardwareReport(tinfo, reportdata, report.get()));
+    return *report;
+  }
+};
+
 }  // namespace
 
-Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
-  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
-
-  if (enclave == nullptr) {
-    enclave = SetNewRandomEnclave();
-  }
-  return enclave->GetHardwareKey(request, key);
-}
-
-Status GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
-                         Report *report) {
-  FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
-
-  if (enclave == nullptr) {
-    enclave = SetNewRandomEnclave();
-  }
-
-  return enclave->GetHardwareReport(tinfo, reportdata, report);
+std::unique_ptr<HardwareInterface> HardwareInterface::CreateDefault() {
+  return absl::make_unique<FakeHardwareInterface>();
 }
 
 }  // namespace sgx

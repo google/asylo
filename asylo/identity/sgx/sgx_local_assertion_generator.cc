@@ -165,9 +165,10 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
 
   // Generate a REPORT that is bound to the provided |user_data| and is targeted
   // at the enclave described in the request.
-  sgx::AlignedReportPtr report;
-  ASYLO_RETURN_IF_ERROR(
-      sgx::GetHardwareReport(*tinfo, *reportdata, report.get()));
+  sgx::Report report;
+  ASYLO_ASSIGN_OR_RETURN(
+      report,
+      sgx::HardwareInterface::CreateDefault()->GetReport(*tinfo, *reportdata));
 
   // As explained above, the REPORT structure can be copied byte-for-byte into
   // the report field of the assertion because the layout and endianness of the
@@ -176,7 +177,7 @@ Status SgxLocalAssertionGenerator::Generate(const std::string &user_data,
   // between two SGX-enabled machines. An SGX-enabled assertion verifier should
   // be able to restore these bytes into a valid REPORT structure.
   sgx::LocalAssertion local_assertion;
-  local_assertion.set_report(ConvertTrivialObjectToBinaryString(*report));
+  local_assertion.set_report(ConvertTrivialObjectToBinaryString(report));
 
   if (!local_assertion.SerializeToString(assertion->mutable_assertion())) {
     return Status(error::GoogleError::INTERNAL,

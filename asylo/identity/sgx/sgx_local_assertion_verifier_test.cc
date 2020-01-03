@@ -19,6 +19,7 @@
 #include "asylo/identity/sgx/sgx_local_assertion_verifier.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 #include <google/protobuf/util/message_differencer.h>
@@ -102,6 +103,8 @@ class SgxLocalAssertionVerifierTest : public ::testing::Test {
 
   // The config used to initialize a SgxLocalAssertionVerifier.
   std::string config_;
+  std::unique_ptr<sgx::HardwareInterface> hardware_ =
+      sgx::HardwareInterface::CreateDefault();
 };
 
 // Verify that the SgxLocalAssertionVerifier can be found in the
@@ -306,12 +309,12 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifyFailsIfReportIsUnverifiable) {
   sgx::AlignedTargetinfoPtr targetinfo;
   *targetinfo = TrivialZeroObject<sgx::Targetinfo>();
 
-  sgx::AlignedReportPtr report;
-  ASYLO_ASSERT_OK(
-      sgx::GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  sgx::Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report,
+                             hardware_->GetReport(*targetinfo, *reportdata));
   sgx::LocalAssertion local_assertion;
-  local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
-                             sizeof(*report));
+  local_assertion.set_report(reinterpret_cast<const char *>(&report),
+                             sizeof(report));
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
 
   EnclaveIdentity identity;
@@ -336,12 +339,12 @@ TEST_F(SgxLocalAssertionVerifierTest,
   sgx::AlignedTargetinfoPtr targetinfo;
   sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());
 
-  sgx::AlignedReportPtr report;
-  ASYLO_ASSERT_OK(
-      sgx::GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  sgx::Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report,
+                             hardware_->GetReport(*targetinfo, *reportdata));
   sgx::LocalAssertion local_assertion;
-  local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
-                             sizeof(*report));
+  local_assertion.set_report(reinterpret_cast<const char *>(&report),
+                             sizeof(report));
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
 
   EnclaveIdentity identity;
@@ -368,12 +371,12 @@ TEST_F(SgxLocalAssertionVerifierTest, VerifySuccess) {
   sgx::AlignedTargetinfoPtr targetinfo;
   sgx::SetTargetinfoFromSelfIdentity(targetinfo.get());
 
-  sgx::AlignedReportPtr report;
-  ASYLO_ASSERT_OK(
-      sgx::GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  sgx::Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report,
+                             hardware_->GetReport(*targetinfo, *reportdata));
   sgx::LocalAssertion local_assertion;
-  local_assertion.set_report(reinterpret_cast<const char *>(report.get()),
-                             sizeof(*report));
+  local_assertion.set_report(reinterpret_cast<const char *>(&report),
+                             sizeof(report));
   ASSERT_TRUE(local_assertion.SerializeToString(assertion.mutable_assertion()));
 
   EnclaveIdentity identity;

@@ -18,6 +18,7 @@
 
 #include "asylo/identity/sgx/sgx_identity_util_internal.h"
 
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -171,6 +172,8 @@ class SgxIdentityUtilInternalTest : public ::testing::Test {
   Attributes attributes_all_5_;
   Attributes attributes_all_a_;
   FakeEnclave *enclave_;
+  std::unique_ptr<HardwareInterface> hardware_ =
+      HardwareInterface::CreateDefault();
 };
 
 TEST_F(SgxIdentityUtilInternalTest, SetSgxIdentityDescription) {
@@ -892,37 +895,35 @@ TEST_F(SgxIdentityUtilInternalTest,
 TEST_F(SgxIdentityUtilInternalTest, ParseSgxIdentityFromHardwareReport) {
   AlignedTargetinfoPtr tinfo;
   AlignedReportdataPtr reportdata;
-  AlignedReportPtr report;
 
   *tinfo = TrivialZeroObject<Targetinfo>();
   *reportdata = TrivialZeroObject<Reportdata>();
 
-  ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *reportdata, report.get()));
-
-  SgxIdentity identity = ParseSgxIdentityFromHardwareReport(*report);
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *reportdata));
+  SgxIdentity identity = ParseSgxIdentityFromHardwareReport(report);
   CodeIdentity code_identity = identity.code_identity();
   EXPECT_TRUE(std::equal(
-      report->body.mrenclave.cbegin(), report->body.mrenclave.cend(),
+      report.body.mrenclave.cbegin(), report.body.mrenclave.cend(),
       code_identity.mrenclave().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
   EXPECT_TRUE(std::equal(
-      report->body.mrsigner.cbegin(), report->body.mrsigner.cend(),
+      report.body.mrsigner.cbegin(), report.body.mrsigner.cend(),
       code_identity.signer_assigned_identity().mrsigner().hash().cbegin(),
       // Cast char to unsigned char before checking for equality.
       [](const uint8_t a, const unsigned char b) { return a == b; }));
-  EXPECT_EQ(report->body.isvprodid,
+  EXPECT_EQ(report.body.isvprodid,
             code_identity.signer_assigned_identity().isvprodid());
-  EXPECT_EQ(report->body.isvsvn,
+  EXPECT_EQ(report.body.isvsvn,
             code_identity.signer_assigned_identity().isvsvn());
 
   SecsAttributeSet attributes(code_identity.attributes());
-  EXPECT_EQ(report->body.attributes, attributes);
-  EXPECT_EQ(report->body.miscselect, code_identity.miscselect());
+  EXPECT_EQ(report.body.attributes, attributes);
+  EXPECT_EQ(report.body.miscselect, code_identity.miscselect());
 
   CpuSvn report_cpusvn;
-  report_cpusvn.set_value(report->body.cpusvn.data(),
-                          report->body.cpusvn.size());
+  report_cpusvn.set_value(report.body.cpusvn.data(), report.body.cpusvn.size());
   EXPECT_THAT(identity.machine_configuration().cpu_svn(),
               EqualsProto(report_cpusvn));
 }
@@ -1334,37 +1335,37 @@ TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportPositive) {
   AlignedTargetinfoPtr tinfo;
   SetTargetinfoFromSelfIdentity(tinfo.get());
 
-  AlignedReportPtr report;
   AlignedReportdataPtr data;
   *data = TrivialRandomObject<Reportdata>();
-  ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *data, report.get()));
-  ASYLO_EXPECT_OK(VerifyHardwareReport(*report));
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *data));
+  ASYLO_EXPECT_OK(VerifyHardwareReport(report));
 }
 
 TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportWrongTarget) {
   AlignedTargetinfoPtr tinfo;
-  AlignedReportPtr report;
   AlignedReportdataPtr data;
   *data = TrivialRandomObject<Reportdata>();
 
   // Verify that corrupting MEASUREMENT results in an unverifiable report.
   SetTargetinfoFromSelfIdentity(tinfo.get());
   tinfo->measurement[0] ^= 0xFFFF;
-  ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *data, report.get()));
-  EXPECT_THAT(VerifyHardwareReport(*report), Not(IsOk()));
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *data));
+  EXPECT_THAT(VerifyHardwareReport(report), Not(IsOk()));
 }
 
 TEST_F(SgxIdentityUtilInternalTest, VerifyHardwareReportBadReport) {
   AlignedTargetinfoPtr tinfo;
   SetTargetinfoFromSelfIdentity(tinfo.get());
 
-  AlignedReportPtr report;
   AlignedReportdataPtr data;
   *data = TrivialRandomObject<Reportdata>();
-  ASYLO_ASSERT_OK(GetHardwareReport(*tinfo, *data, report.get()));
+  Report report;
+  ASYLO_ASSERT_OK_AND_ASSIGN(report, hardware_->GetReport(*tinfo, *data));
   // Corrupt the REPORT by flipping the first byte of MRENCLAVE.
-  report->body.mrenclave[0] ^= 0xFFFF;
-  EXPECT_THAT(VerifyHardwareReport(*report), Not(IsOk()));
+  report.body.mrenclave[0] ^= 0xFFFF;
+  EXPECT_THAT(VerifyHardwareReport(report), Not(IsOk()));
 }
 
 }  // namespace

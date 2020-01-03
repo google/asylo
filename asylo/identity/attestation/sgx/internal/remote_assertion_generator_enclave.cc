@@ -162,11 +162,11 @@ Status RemoteAssertionGeneratorEnclave::GeneratePceInfoSgxHardwareReport(
   ASYLO_ASSIGN_OR_RETURN(
       *targetinfo, ConvertTargetInfoProtoToTargetinfo(input.pce_target_info()));
 
-  AlignedReportPtr report;
-  ASYLO_RETURN_IF_ERROR(
-      GetHardwareReport(*targetinfo, *reportdata, report.get()));
+  Report report;
+  ASYLO_ASSIGN_OR_RETURN(report, HardwareInterface::CreateDefault()->GetReport(
+                                     *targetinfo, *reportdata));
   output->mutable_report()->set_value(
-      ConvertTrivialObjectToBinaryString(*report));
+      ConvertTrivialObjectToBinaryString(report));
 
   return Status::OkStatus();
 }
@@ -190,11 +190,12 @@ Status RemoteAssertionGeneratorEnclave::GenerateKeyAndCsr(
     AlignedTargetinfoPtr targetinfo;
     ASYLO_ASSIGN_OR_RETURN(*targetinfo, ConvertTargetInfoProtoToTargetinfo(
                                             input.pce_target_info()));
-    AlignedReportPtr report;
-    ASYLO_RETURN_IF_ERROR(
-        GetHardwareReport(*targetinfo, *reportdata, report.get()));
+    Report report;
+    ASYLO_ASSIGN_OR_RETURN(
+        report, HardwareInterface::CreateDefault()->GetReport(*targetinfo,
+                                                              *reportdata));
     output->mutable_report()->set_value(
-        ConvertTrivialObjectToBinaryString(*report));
+        ConvertTrivialObjectToBinaryString(report));
   }
 
   auto attestation_key_certs_pair_locked = attestation_key_certs_pair_.Lock();

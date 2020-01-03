@@ -77,12 +77,13 @@ class ReportOracleEnclave : public TrustedApplication {
                     "Error copying data into to report data container");
     }
 
-    AlignedReportPtr report;
-    ASYLO_RETURN_IF_ERROR(
-        GetHardwareReport(*target_info, *reportdata, report.get()));
+    Report report;
+    ASYLO_ASSIGN_OR_RETURN(
+        report, HardwareInterface::CreateDefault()->GetReport(*target_info,
+                                                              *reportdata));
 
     output->mutable_report()->set_value(
-        ConvertTrivialObjectToBinaryString(*report));
+        ConvertTrivialObjectToBinaryString(report));
 
     return Status::OkStatus();
   }

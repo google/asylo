@@ -37,25 +37,23 @@ namespace sgx {
 SelfIdentity::SelfIdentity() {
   AlignedTargetinfoPtr tinfo;
   AlignedReportdataPtr reportdata;
-  AlignedReportPtr report;
 
   *tinfo = TrivialZeroObject<Targetinfo>();
   *reportdata = TrivialZeroObject<Reportdata>();
 
-  Status status = GetHardwareReport(*tinfo, *reportdata, report.get());
-  if (!status.ok()) {
-    LOG(FATAL) << "GetHardwareReport() failed: " << status;
-  }
+  Report report = HardwareInterface::CreateDefault()
+                      ->GetReport(*tinfo, *reportdata)
+                      .ValueOrDie();
 
-  cpusvn = report->body.cpusvn;
-  miscselect = report->body.miscselect;
-  attributes = report->body.attributes;
-  mrenclave = report->body.mrenclave;
-  mrsigner = report->body.mrsigner;
-  isvprodid = report->body.isvprodid;
-  isvsvn = report->body.isvsvn;
+  cpusvn = report.body.cpusvn;
+  miscselect = report.body.miscselect;
+  attributes = report.body.attributes;
+  mrenclave = report.body.mrenclave;
+  mrsigner = report.body.mrsigner;
+  isvprodid = report.body.isvprodid;
+  isvsvn = report.body.isvsvn;
 
-  sgx_identity = ParseSgxIdentityFromHardwareReport(*report);
+  sgx_identity = ParseSgxIdentityFromHardwareReport(report);
 }
 
 }  // namespace sgx

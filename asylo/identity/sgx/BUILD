@@ -391,6 +391,7 @@ cc_test_and_cc_enclave_test(
         "//asylo/test/util:proto_matchers",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
+        "//asylo/util:status",
         "@com_google_absl//absl/strings",
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
@@ -748,17 +749,15 @@ cc_library(
 cc_library(
     name = "hardware_interface",
     srcs = select({
-        "@com_google_asylo//asylo": ["hardware_interface.cc"],
+        "@com_google_asylo//asylo": ["real_hardware_interface.cc"],
         "//conditions:default": ["fake_hardware_interface.cc"],
     }),
     hdrs = ["hardware_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":hardware_types",
-        "@com_google_absl//absl/base:core_headers",
-        "//asylo/crypto/util:bytes",
+        "@com_google_absl//absl/memory",
         "//asylo/util:status",
-        "@boringssl//:crypto",
     ] + select({
         "@com_google_asylo//asylo": [
             "//asylo/platform/primitives/sgx:sgx_error_space",

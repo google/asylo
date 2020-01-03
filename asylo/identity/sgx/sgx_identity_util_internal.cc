@@ -73,13 +73,8 @@ std::string WithAppendedExplanations(
 
 // Retrieves the report key associated with |keyid| for the current enclave and
 // writes it to |key|.
-Status GetReportKey(const UnsafeBytes<kKeyrequestKeyidSize> &keyid,
-                    HardwareKey *key) {
-  if (!AlignedHardwareKeyPtr::IsAligned(key)) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  "Output parameter |key| is not properly aligned");
-  }
-
+StatusOr<HardwareKey> GetReportKey(
+    const UnsafeBytes<kKeyrequestKeyidSize> &keyid) {
   // Set KEYREQUEST to request the REPORT_KEY with the KEYID value specified in
   // the report to be verified.
   AlignedKeyrequestPtr request;
@@ -99,7 +94,7 @@ Status GetReportKey(const UnsafeBytes<kKeyrequestKeyidSize> &keyid,
   request->attributemask.Clear();
   request->miscmask = 0;
 
-  return GetHardwareKey(*request, key);
+  return HardwareInterface::CreateDefault()->GetKey(*request);
 }
 
 StatusOr<bool> MatchIdentityToExpectation(const CodeIdentity &identity,
@@ -705,9 +700,8 @@ void SetTargetinfoFromSelfIdentity(Targetinfo *tinfo) {
 }
 
 Status VerifyHardwareReport(const Report &report) {
-  AlignedHardwareKeyPtr report_key;
-
-  ASYLO_RETURN_IF_ERROR(GetReportKey(report.keyid, report_key.get()));
+  HardwareKey report_key;
+  ASYLO_ASSIGN_OR_RETURN(report_key, GetReportKey(report.keyid));
 
   // Compute the report MAC. SGX uses CMAC to MAC the contents of the report.
   // The last two fields (KEYID and MAC) from the REPORT struct are not
@@ -716,8 +710,8 @@ Status VerifyHardwareReport(const Report &report) {
   static_assert(kReportMacSize == AES_BLOCK_SIZE,
                 "Size of the mac field in the REPORT structure is incorrect.");
   SafeBytes<kReportMacSize> actual_mac;
-  if (AES_CMAC(/*out=*/actual_mac.data(), /*key=*/report_key->data(),
-               /*key_len=*/report_key->size(),
+  if (AES_CMAC(/*out=*/actual_mac.data(), /*key=*/report_key.data(),
+               /*key_len=*/report_key.size(),
                /*in=*/reinterpret_cast<const uint8_t *>(&report.body),
                /*in_len=*/sizeof(report.body)) != 1) {
     return Status(

@@ -157,12 +157,11 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
                           size_t key_size, CleansingVector<uint8_t> *key) {
   // The function generates the |key_size| number of bytes by concatenating
   // bytes from one or more hardware-generated "subkeys." Each of the subkeys
-  // is obtained by calling the GetHardwareKey() function. Except for the last
-  // subkey, all bytes from all other subkeys are utilized. If more than one
-  // subkey is used, each subkey is generated using a different value of
-  // the KEYID field of the KEYREQUEST input to the GetHardwareKey() function.
-  // All the other fields of the KEYREQUEST structure stay unchanged across
-  // the GetHardwareKey() calls.
+  // is obtained by calling the GetKey() function. Except for the last subkey,
+  // all bytes from all other subkeys are utilized. If more than one subkey is
+  // used, each subkey is generated using a different value of the KEYID field
+  // of the KEYREQUEST input to the GetKey() function. All the other fields of
+  // the KEYREQUEST structure stay unchanged across the areKey() calls.
 
   // Create and populate an aligned KEYREQUEST structure.
   AlignedKeyrequestPtr req;
@@ -185,7 +184,7 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
                                             .code_identity_match_spec()
                                             .attributes_match_mask());
 
-  // req->keyid is populated uniquely on each call to GetHardwareKey().
+  // req->keyid is populated uniquely on each call to GetKey().
   req->miscmask = sgx_expectation.match_spec()
                       .code_identity_match_spec()
                       .miscselect_match_mask();
@@ -215,11 +214,12 @@ Status GenerateCryptorKey(AeadScheme aead_scheme, const std::string &key_id,
     hasher.CumulativeHash(&digest);
     req->keyid.assign(digest);
 
-    AlignedHardwareKeyPtr hardware_key;
-    ASYLO_RETURN_IF_ERROR(GetHardwareKey(*req, hardware_key.get()));
-    size_t copy_size = std::min(hardware_key->size(), remaining_key_bytes);
+    HardwareKey hardware_key;
+    ASYLO_ASSIGN_OR_RETURN(hardware_key,
+                           HardwareInterface::CreateDefault()->GetKey(*req));
+    size_t copy_size = std::min(hardware_key.size(), remaining_key_bytes);
     remaining_key_bytes -= copy_size;
-    std::copy(hardware_key->cbegin(), hardware_key->cbegin() + copy_size,
+    std::copy(hardware_key.cbegin(), hardware_key.cbegin() + copy_size,
               std::back_inserter(*key));
     ++key_subscript;
   }

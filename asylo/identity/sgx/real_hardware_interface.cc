@@ -16,8 +16,8 @@
  *
  */
 
+#include "absl/memory/memory.h"
 #include "asylo/identity/sgx/hardware_interface.h"
-
 #include "asylo/identity/sgx/identity_key_management_structs.h"
 #include "asylo/platform/primitives/sgx/sgx_error_space.h"
 #include "include/sgx.h"
@@ -57,20 +57,41 @@ sgx_status_t egetkey_status_to_sgx_status(int egetkey_status);
 
 namespace asylo {
 namespace sgx {
+namespace {
 
-Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
-  return Status(egetkey_status_to_sgx_status(do_egetkey(
-                    reinterpret_cast<const sgx_key_request_t *>(&request),
-                    reinterpret_cast<sgx_key_128bit_t *>(key))),
-                "Call to do_egetkey failed.");
-}
+class RealHardwareInterface : public HardwareInterface {
+ public:
+  StatusOr<HardwareKey> GetKey(const Keyrequest &request) const override {
+    CHECK(AlignedKeyrequestPtr::IsAligned(&request))
+        << "KEYREQUEST must be properly aligned";
+    AlignedHardwareKeyPtr key;
+    int rc = do_egetkey(reinterpret_cast<const sgx_key_request_t *>(&request),
+                        reinterpret_cast<sgx_key_128bit_t *>(key.get()));
+    if (rc != 0) {
+      return Status(egetkey_status_to_sgx_status(rc),
+                    "Call to do_egetkey failed.");
+    }
+    return *key;
+  }
 
-Status GetHardwareReport(const Targetinfo &tinfo, const Reportdata &reportdata,
-                         Report *report) {
-  do_ereport(reinterpret_cast<const sgx_target_info_t *>(&tinfo),
-             reinterpret_cast<const sgx_report_data_t *>(&reportdata),
-             reinterpret_cast<sgx_report_t *>(report));
-  return Status::OkStatus();
+  StatusOr<Report> GetReport(const Targetinfo &tinfo,
+                             const Reportdata &reportdata) const override {
+    CHECK(AlignedTargetinfoPtr::IsAligned(&tinfo))
+        << "TARGETINFO must be properly aligned";
+    CHECK(AlignedReportdataPtr::IsAligned(&reportdata))
+        << "REPORTDATA must be properly aligned";
+    AlignedReportPtr report;
+    do_ereport(reinterpret_cast<const sgx_target_info_t *>(&tinfo),
+               reinterpret_cast<const sgx_report_data_t *>(&reportdata),
+               reinterpret_cast<sgx_report_t *>(report.get()));
+    return *report;
+  }
+};
+
+}  // namespace
+
+std::unique_ptr<HardwareInterface> HardwareInterface::CreateDefault() {
+  return absl::make_unique<RealHardwareInterface>();
 }
 
 }  // namespace sgx
