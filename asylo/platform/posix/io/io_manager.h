@@ -457,7 +457,7 @@ class IOManager {
   }
 
   // Returns 0 if |path| can be opened, otherwise -1.
-  int Access(const char *path, int mode);
+  virtual int Access(const char *path, int mode);
 
   // Change owner and group of a file. Returns 0 if completed successfully,
   // otherwise returns -1.
@@ -491,23 +491,23 @@ class IOManager {
   char *RealPath(const char *path, char *resolved_path);
 
   // Opens |path|, returning an enclave file descriptor or -1 on failure.
-  int Open(const char *path, int flags, mode_t mode);
+  virtual int Open(const char *path, int flags, mode_t mode);
 
   // Creates a copy of the file descriptor |oldfd| using the next available file
   // descriptor. Returns the new file descriptors on success, and -1 on error.
-  int Dup(int oldfd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
+  virtual int Dup(int oldfd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Creates a copy of the file descriptor |oldfd| using the file descriptor
   // specified by |newfd|. Returns the new file descriptor on success, and -1 on
   // error.
-  int Dup2(int oldfd, int newfd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
+  virtual int Dup2(int oldfd, int newfd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Creates a pipe with the given |flags|, which must be a bitwise-or of any
   // combination of O_CLOEXEC, O_DIRECT, and O_NONBLOCK. The array |pipefd| is
   // used to return two file descriptors referring to the ends of the pipe.
   // |pipefd[0]| refers to the read end while |pipefd[1]| refers to the write
   // end.
-  int Pipe(int pipefd[2], int flags);
+  virtual int Pipe(int pipefd[2], int flags);
 
   // Reads up to |count| bytes from the stream into |buf|, returning the number
   // of bytes read on success or -1 on error.
@@ -518,7 +518,7 @@ class IOManager {
   int Write(int fd, const char *buf, size_t count);
 
   // Closes and finalizes the stream, returning 0 on success or -1 on error.
-  int Close(int fd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
+  virtual int Close(int fd) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements fchown(2).
   int FChOwn(int fd, uid_t owner, gid_t group);
@@ -566,22 +566,22 @@ class IOManager {
   int FTruncate(int fd, off_t length);
 
   // Implements select(2).
-  int Select(int nfds, fd_set *readfds, fd_set *writefds, fd_set *exceptfds,
-             struct timeval *timeout);
+  virtual int Select(int nfds, fd_set *readfds, fd_set *writefds,
+                     fd_set *exceptfds, struct timeval *timeout);
 
   // Implements poll(2).
-  int Poll(struct pollfd *fds, nfds_t nfds, int timeout)
+  virtual int Poll(struct pollfd *fds, nfds_t nfds, int timeout)
       ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements epoll_create(2).
-  int EpollCreate(int size) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
+  virtual int EpollCreate(int size) ABSL_LOCKS_EXCLUDED(fd_table_lock_);
 
   // Implements epoll_ctl(2);
-  int EpollCtl(int epfd, int op, int fd, struct epoll_event *event);
+  virtual int EpollCtl(int epfd, int op, int fd, struct epoll_event *event);
 
   // Implements epoll_wait(2);
-  int EpollWait(int epfd, struct epoll_event *events, int maxevents,
-                int timeout);
+  virtual int EpollWait(int epfd, struct epoll_event *events, int maxevents,
+                        int timeout);
 
   // Implements mkdir(2).
   int Mkdir(const char *pathname, mode_t mode);
@@ -700,8 +700,10 @@ class IOManager {
   Status SetCurrentWorkingDirectory(absl::string_view path);
   std::string GetCurrentWorkingDirectory() const;
 
+ protected:
+  IOManager() = default;
+
  private:
-  IOManager() {}
   IOManager(IOManager const &) = delete;
   void operator=(IOManager const &) = delete;
 

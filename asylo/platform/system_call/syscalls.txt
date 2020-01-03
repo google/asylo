@@ -60,7 +60,9 @@ INCLUDE("utime.h")
 // ================
 
 SYSCALL_DEFINE1(dup, unsigned int, fildes)
+SYSCALL_DEFINE1(eventfd, unsigned int, count)
 SYSCALL_DEFINE2(dup2, unsigned int, oldfd, unsigned int, newfd)
+SYSCALL_DEFINE2(eventfd2, unsigned int, count, int, flags)
 SYSCALL_DEFINE3(dup3, unsigned int, oldfd, unsigned int, newfd, int, flags)
 
 // File System
@@ -96,6 +98,8 @@ SYSCALL_DEFINE5(select, int, nfds, \in_out fd_set *, readfds,
 SYSCALL_DEFINE1(chdir, const char *, filename)
 SYSCALL_DEFINE1(close, unsigned int, fd)
 SYSCALL_DEFINE1(fsync, unsigned int, fd)
+SYSCALL_DEFINE1(fdatasync, unsigned int, fd)
+SYSCALL_DEFINE1(pipe, \out int * [count:2], fildes);
 SYSCALL_DEFINE2(access, const char *, filename, int, mode)
 SYSCALL_DEFINE2(fstat, unsigned int, fd, \out struct stat *, statbuf)
 SYSCALL_DEFINE2(fstatfs, int, fd, \out struct statfs *, statbuf)
@@ -107,14 +111,19 @@ SYSCALL_DEFINE2(statfs, const char *, filename, \out struct statfs *, statbuf)
 SYSCALL_DEFINE3(fcntl, unsigned int, fd, unsigned int, cmd, unsigned int, arg)
 SYSCALL_DEFINE3(chown, const char *, filename, uid_t, user, gid_t, group)
 SYSCALL_DEFINE3(fchown, unsigned int, fd, uid_t, user, gid_t, group)
+SYSCALL_DEFINE3(ioctl, unsigned int, fd, unsigned int, cmd, unsigned long, arg)
 SYSCALL_DEFINE3(lseek, unsigned int, fd, off_t, offset, unsigned int, whence)
 SYSCALL_DEFINE3(open, const char *, filename, int, flags, umode_t, mode)
 SYSCALL_DEFINE3(read, unsigned int, fd, \out void * [bound:count], buf, size_t,
                 count)
+SYSCALL_DEFINE3(readv, unsigned long, fd, const struct iovec *, vec,
+		            unsigned long, vlen)
 SYSCALL_DEFINE3(readlink, const char *, path, \out char * [bound:bufsiz], buf,
                 int, bufsiz)
 SYSCALL_DEFINE3(write, unsigned int, fd, \in const void * [bound:count], buf,
                 size_t, count)
+SYSCALL_DEFINE3(writev, unsigned long, fd, const struct iovec *, vec,
+		            unsigned long, vlen)
 SYSCALL_DEFINE4(pread64, unsigned int, fd, \out void * [bound:count], buf,
                 size_t, count, off_t, offset)
 SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void * [bound:count],
@@ -126,6 +135,8 @@ SYSCALL_DEFINE4(pwrite64, unsigned int, fd, \in const void * [bound:count],
 SYSCALL_DEFINE0(getpid)
 SYSCALL_DEFINE0(getppid)
 SYSCALL_DEFINE0(setsid)
+SYSCALL_DEFINE1(exit, int, error_code)
+SYSCALL_DEFINE1(exit_group, int, status)
 SYSCALL_DEFINE4(wait4, pid_t, upid, \out int *, stat_addr, int, options,
                 \out struct rusage *, ru)
 
@@ -137,23 +148,41 @@ SYSCALL_DEFINE2(kill, pid_t, pid, int, sig)
 // Networking
 // ==========
 
+SYSCALL_DEFINE3(accept, int, fd, struct sockaddr *, upeer_sockaddr,
+		            int *, upeer_addrlen)
+
 SYSCALL_DEFINE3(bind, int, fd, \in void * [bound:addrlen], umyaddr,
                 int, addrlen)
 
 SYSCALL_DEFINE3(connect, int, fd, \in void * [bound:addrlen], uservaddr,
                 int, addrlen)
 
+SYSCALL_DEFINE3(getpeername, int, fd, struct sockaddr *, usockaddr,
+		            int *, usockaddr_len)
+
 SYSCALL_DEFINE3(getsockname, int, fd, struct sockaddr *, usockaddr, int *,
                 usockaddr_len)
 
-SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname,
-                \in const void * [bound:optlen], optval, socklen_t, optlen)
+SYSCALL_DEFINE5(getsockopt, int, fd, int, level, int, optname,
+		            char *, optval, int *, optlen)
 
 SYSCALL_DEFINE2(listen, int, fd, int, backlog)
+
+SYSCALL_DEFINE6(recvfrom, int, fd, void *, ubuf, size_t, size,
+                unsigned int, flags, struct sockaddr *, addr, int *, addr_len)
+
+SYSCALL_DEFINE3(recvmsg, int, fd, struct msghdr *, msg,
+		            unsigned int, flags)
+
+SYSCALL_DEFINE3(sendmsg, int, fd, struct msghdr *, msg,
+                unsigned int, flags)
 
 SYSCALL_DEFINE6(sendto, int, fd, \in void * [bound:len], buff, size_t, len,
                 unsigned int, flags, \in void * [bound:addr_len], addr,
                 int, addr_len)
+
+SYSCALL_DEFINE5(setsockopt, int, fd, int, level, int, optname,
+                \in const void * [bound:optlen], optval, socklen_t, optlen)
 
 SYSCALL_DEFINE2(shutdown, int, fd, int, how)
 
@@ -197,6 +226,7 @@ SYSCALL_DEFINE0(getegid)
 // INotify
 // =======
 
+SYSCALL_DEFINE0(inotify_init)
 SYSCALL_DEFINE1(inotify_init1, int, flags)
 SYSCALL_DEFINE2(inotify_rm_watch, int, fd, int, wd)
 SYSCALL_DEFINE3(inotify_add_watch, int, fd, const char *, pathname,
@@ -221,7 +251,9 @@ SYSCALL_DEFINE2(utime, const char *, filename,
 // Resource
 // ========
 
+SYSCALL_DEFINE2(getrlimit, unsigned int, resource, struct rlimit *, rlim)
 SYSCALL_DEFINE2(getrusage, int, who, \out struct rusage *, usage)
+SYSCALL_DEFINE2(setrlimit, unsigned int, resource, struct rlimit *, rlim)
 
 // utsname.h
 // =========
