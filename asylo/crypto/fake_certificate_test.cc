@@ -136,6 +136,19 @@ TEST(FakeCertificateTest, VerifySuccess) {
   ASYLO_EXPECT_OK(subject.Verify(issuer, config));
 }
 
+TEST(FakeCertificateTest, VerifySuccessWithRootCert) {
+  const std::string issuer_subject_key = "c0c0a";
+
+  FakeCertificate subject(/*subject_key=*/"c0ff33", issuer_subject_key,
+                          /*is_ca=*/absl::nullopt,
+                          /*pathlength=*/absl::nullopt);
+  FakeCertificate issuer(issuer_subject_key, issuer_subject_key,
+                         /*is_ca=*/true, /*pathlength=*/0);
+
+  VerificationConfig config(/*all_fields=*/true);
+  ASYLO_EXPECT_OK(subject.Verify(issuer, config));
+}
+
 TEST(FakeCertificateTest, VerifyFailure) {
   FakeCertificate subject(/*subject_key=*/"c0ff33", /*issuer_key=*/"c0c0a",
                           /*is_ca=*/absl::nullopt,

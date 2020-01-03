@@ -22,6 +22,7 @@
 #include <vector>
 
 #include "absl/memory/memory.h"
+#include "absl/strings/str_format.h"
 #include "asylo/crypto/fake_certificate.pb.h"
 #include "asylo/util/status_macros.h"
 
@@ -83,7 +84,10 @@ Status FakeCertificate::Verify(const CertificateInterface &issuer_certificate,
   ASYLO_ASSIGN_OR_RETURN(issuer_subject_key,
                          issuer_certificate.SubjectKeyDer());
   if (issuer_key_ != issuer_subject_key) {
-    return Status(error::GoogleError::UNAUTHENTICATED, "Verification failed");
+    return Status(error::GoogleError::UNAUTHENTICATED,
+                  absl::StrFormat("Verification failed: issuer's subject key "
+                                  "(%s) is not the issuer key (%s)",
+                                  issuer_subject_key, issuer_key_));
   }
 
   return Status::OkStatus();
