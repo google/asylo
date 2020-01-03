@@ -224,11 +224,6 @@ class EnclaveManager {
   EnclaveManager(EnclaveManager const &) = delete;
   EnclaveManager &operator=(EnclaveManager const &) = delete;
 
-  // Retrieves and returns a HostConfig proto as specified by the
-  // EnclaveManagerOptions which the EnclaveManager was configured when its
-  // singleton instance was created.
-  HostConfig GetHostConfig() ABSL_EXCLUSIVE_LOCKS_REQUIRED(mu_);
-
   // Loads a fake enclave with custom enclave config settings and binds it to a
   // name. An enclave loaded using this interface doesn't build on any Asylo
   // backend technology and is strictly meant to be used for testing only. The

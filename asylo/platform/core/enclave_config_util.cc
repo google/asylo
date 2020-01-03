@@ -58,24 +58,12 @@ void SetDefaultCurrentWorkingDirectory(EnclaveConfig *config) {
   config->set_current_working_directory(buf);
 }
 
-// Sets uninitialized fields in the HostConfig of |config| to values from
-// |host_config|, if those are set.
-void SetHostConfig(const HostConfig &host_config, EnclaveConfig *config) {
-  HostConfig *mutable_host_config = config->mutable_host_config();
-  if (!mutable_host_config->has_local_attestation_domain() &&
-      host_config.has_local_attestation_domain()) {
-    mutable_host_config->set_local_attestation_domain(
-        host_config.local_attestation_domain());
-  }
-}
-
 }  // namespace
 
-void SetEnclaveConfigDefaults(const HostConfig &host_config,
+void SetEnclaveConfigDefaults(const HostConfig &/*host_config*/,
                               EnclaveConfig *config) {
   SetDefaultHostName(config);
   SetDefaultCurrentWorkingDirectory(config);
-  SetHostConfig(host_config, config);
 }
 
 void SetEnclaveConfigDefaults(EnclaveConfig *config) {

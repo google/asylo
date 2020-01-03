@@ -33,6 +33,8 @@ import "asylo/util/status.proto";
 // A configuration message for the EnclaveManager to communicate with the
 // attestation daemon.
 message HostConfig {
+  option deprecated = true;
+
   // Local attestation domain of the enclave.
   optional string local_attestation_domain = 1;
 }

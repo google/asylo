@@ -41,8 +41,7 @@ void SetEnclaveConfigDefaults(EnclaveConfig *config);
 /// Returns an EnclaveConfig proto with critical fields initialized to default
 /// values.
 ///
-/// \param host_config Input used to fill in the host_config field
-///                    of the returned EnclaveConfig.
+/// \param host_config This parameter is ignored.
 /// \return An EnclaveConfig proto with critical fields initialized to their
 ///         default values.
 EnclaveConfig CreateDefaultEnclaveConfig(const HostConfig &host_config);
