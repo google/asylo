@@ -66,11 +66,11 @@ constexpr SecsAttributeSet kRequiredSealingAttributesMask = {0x3, 0x0};
 // pointer to the currently executing FakeEnclave by calling the
 // FakeEnclave::GetCurrentEnclave static method.
 //
-// The FakeEnclave class provides three public methods, GetHardwareRand64,
-// GetHardwareKey, and GetHardwareReport. These methods are utilized by the fake
-// hardware-interface implementation. Specifically, the fake hardware-interface
-// implementation in fake_hardware_interface.cc relies on the enclave pointer in
-// current_ to get enclave-specific hardware key and enclave-specific report.
+// The FakeEnclave class provides two public methods, GetHardwareKey and
+// GetHardwareReport. These methods are utilized by the fake hardware-interface
+// implementation. Specifically, the fake hardware-interface implementation in
+// fake_hardware_interface.cc relies on the enclave pointer in current_ to get
+// enclave-specific hardware key and enclave-specific report.
 //
 // None of the SGX identity libraries directly use the FakeEnclave
 // functionality. Those libraries instead utilize the hardware interface
@@ -218,9 +218,6 @@ class FakeEnclave {
 
   // Equality operator--only needed for testing purposes.
   bool operator!=(const FakeEnclave &other) const;
-
-  // Fake implementation of RdRand64.
-  static Status GetHardwareRand64(uint64_t *value);
 
   // Fake implementation of the SGX EGETKEY instruction.
   Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) const;

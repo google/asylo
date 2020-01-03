@@ -135,23 +135,6 @@ TEST_F(FakeEnclaveTest, CurrentEnclave) {
   EXPECT_EQ(FakeEnclave::GetCurrentEnclave(), nullptr);
 }
 
-// Verify that the GetHardwareRand64 does not return the same
-// value four times in a row. This is just a smoke test to ensure that
-// the random-number generator is not utterly broken.
-TEST_F(FakeEnclaveTest, GetHardwareRand) {
-  uint64_t first_value = 0;
-  ASYLO_ASSERT_OK(GetHardwareRand64(&first_value));
-  int collision_count = 0;
-  for (int i = 0; i < 3; i++) {
-    uint64_t new_value = 0;
-    ASYLO_ASSERT_OK(GetHardwareRand64(&new_value));
-    if (first_value == new_value) {
-      collision_count++;
-    }
-  }
-  EXPECT_NE(collision_count, 3);
-}
-
 // Verify that FakeEnclave's identity can be set correctly from an SgxIdentity.
 TEST_F(FakeEnclaveTest, SetIdentity) {
   enclave_.remove_valid_attribute(SecsAttributeBit::KSS);

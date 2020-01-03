@@ -223,11 +223,6 @@ bool FakeEnclave::operator!=(const FakeEnclave &other) const {
   return !(*this == other);
 }
 
-Status FakeEnclave::GetHardwareRand64(uint64_t *value) {
-  RAND_bytes(reinterpret_cast<uint8_t *>(value), sizeof(*value));
-  return Status::OkStatus();
-}
-
 Status FakeEnclave::GetHardwareKey(const Keyrequest &request,
                                    HardwareKey *key) const {
   // Check the alignment of the input parameters. If the parameters are

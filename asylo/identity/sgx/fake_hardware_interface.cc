@@ -41,10 +41,6 @@ FakeEnclave *SetNewRandomEnclave() {
 
 }  // namespace
 
-Status GetHardwareRand64(uint64_t *value) {
-  return FakeEnclave::GetHardwareRand64(value);
-}
-
 Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
   FakeEnclave *enclave = FakeEnclave::GetCurrentEnclave();
 

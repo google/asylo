@@ -58,11 +58,6 @@ sgx_status_t egetkey_status_to_sgx_status(int egetkey_status);
 namespace asylo {
 namespace sgx {
 
-Status GetHardwareRand64(uint64_t *value) {
-  return Status(error::GoogleError::UNIMPLEMENTED,
-                "This function is not yet implemented.");
-}
-
 Status GetHardwareKey(const Keyrequest &request, HardwareKey *key) {
   return Status(egetkey_status_to_sgx_status(do_egetkey(
                     reinterpret_cast<const sgx_key_request_t *>(&request),
