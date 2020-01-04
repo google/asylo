@@ -516,10 +516,18 @@ sgx_debug_sign_enclave(
     unsigned = "remote_assertion_generator_test_util_enclave_unsigned.so",
 )
 
+# AGE configuration for tests running on non-FLC hardware.
+sgx.enclave_configuration(
+    name = "remote_assertion_generator_enclave_no_flc_config",
+    base = "//asylo/grpc/util:grpc_enclave_config",
+)
+
+# AGE configuration for tests running on FLC hardware. Flexible Launch Control
+# (FLC) provides access to the PROVISION_KEY.
 sgx.enclave_configuration(
     name = "remote_assertion_generator_enclave_config",
-    heap_max_size = "0x6400000",  # ~100 MB
-    tcs_num = "50",
+    base = ":remote_assertion_generator_enclave_no_flc_config",
+    provision_key = "1",
 )
 
 sgx_cc_unsigned_enclave(
@@ -553,6 +561,18 @@ sgx_cc_unsigned_enclave(
     ],
 )
 
+# The AGE without the PROVISION_KEY bit. Suitable for use in tests that do not
+# utilize Flexible Launch Control (i.e., tests that do not test interactions
+# between the AGE and the PCE).
+sgx_debug_sign_enclave(
+    name = "remote_assertion_generator_enclave_no_flc.so",
+    config = ":remote_assertion_generator_enclave_no_flc_config",
+    unsigned = "remote_assertion_generator_enclave_unsigned.so",
+)
+
+# The AGE with the PROVISION_KEY bit. Suitable for use in tests and deployments
+# that utilize Flexible Launch Control (i.e., the PCE is used to certify the
+# AGE).
 sgx_debug_sign_enclave(
     name = "remote_assertion_generator_enclave.so",
     config = ":remote_assertion_generator_enclave_config",
@@ -564,7 +584,7 @@ sgx_enclave_test(
     srcs = ["remote_assertion_generator_enclave_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
-        "assertion_generator_enclave": ":remote_assertion_generator_enclave.so",
+        "assertion_generator_enclave": ":remote_assertion_generator_enclave_no_flc.so",
         "test_util_enclave": ":remote_assertion_generator_test_util_enclave.so",
     },
     test_args = [
