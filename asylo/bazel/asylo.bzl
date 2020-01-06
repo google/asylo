@@ -199,6 +199,7 @@ def enclave_loader(
         elf_file = loader_plain_name,
         enclaves = embedded_enclaves,
         executable = 1,
+        visibility = kwargs.get("visibility", None),
     )
 
     script_kwargs = {
@@ -209,7 +210,7 @@ def enclave_loader(
         "remote_proxy": remote_proxy,
         "tags": kwargs.get("tags", []),
         "deprecation": deprecation,
-        "visibility": kwargs.get("visibility", []),
+        "visibility": kwargs.get("visibility", None),
         "data": kwargs.get("data", []),
     }
     if transitions.supported(native.package_name()):
@@ -543,7 +544,7 @@ def _enclave_runner_script(
         tags = [],
         backend = None,
         deprecation = None,
-        visibility = ["//visibility:private"],
+        visibility = None,
         data = []):
     _impl = _enclave_runner_script_old
     if transitions.supported(native.package_name()):
