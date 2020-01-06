@@ -66,8 +66,5 @@ class SgxEmbeddedLoader : public EnclaveLoader {
   const bool debug_;
 };
 
-/// SgxLoader alias for backwards compatibility.
-using SGXLoader ABSL_DEPRECATED("Use SgxLoader instead") = SgxLoader;
-
 }  //  namespace asylo
 #endif  // ASYLO_PLATFORM_ARCH_SGX_UNTRUSTED_SGX_CLIENT_H_
