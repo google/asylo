@@ -660,7 +660,7 @@ TEST_F(SgxLocalSecretSealerTest, SealUnsealFailureAttributesMismatch) {
   // An enclave whose identity only varies in one of the |can_vary_attributes|
   // bits should *not* be able to unseal the secret.
   sgx::FakeEnclave enclave_with_mismatched_attributes(*enclave_);
-  for (sgx::AttributeBit bit : sgx::kAllSecsAttributeBits) {
+  for (sgx::AttributeBit bit : sgx::kAllAttributeBits) {
     if (!can_vary_attributes.IsSet(bit)) {
       continue;
     }
@@ -730,7 +730,7 @@ TEST_F(SgxLocalSecretSealerTest,
   // An enclave whose identity only varies in one of the |can_vary_attributes|
   // bits should be able to unseal the secret successfully.
   sgx::FakeEnclave enclave_with_mismatched_attributes(*enclave_);
-  for (sgx::AttributeBit bit : sgx::kAllSecsAttributeBits) {
+  for (sgx::AttributeBit bit : sgx::kAllAttributeBits) {
     if (!can_vary_attributes.IsSet(bit)) {
       continue;
     }

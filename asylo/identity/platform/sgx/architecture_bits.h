@@ -100,6 +100,9 @@ enum class AttributeBit {
   PKRU = 64 + 9
 };
 
+/// All valid bit positions in the ATTRIBUTES bit vector.
+extern const AttributeBit kAllAttributeBits[15];
+
 /// The following enum defines the various MISCSELECT bits and assigns them a
 /// value that is same as their bit position in the SECS MISCSELECT bit vector.
 /// The names of these bits are taken verbatim from the Intel SDM (Software
@@ -109,6 +112,9 @@ enum class MiscselectBit {
   /// occurred inside an enclave will be saved upon an asynchronous exit.
   EXINFO = 0,
 };
+
+/// All valid bit positions in the MISCSELECT bit vector.
+extern const MiscselectBit kAllMiscselectBits[1];
 
 }  // namespace sgx
 }  // namespace asylo

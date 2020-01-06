@@ -25,8 +25,6 @@ namespace asylo {
 namespace sgx {
 namespace {
 
-// All bits in the MISCSELECT bit vector.
-constexpr MiscselectBit kAllSecsMiscselectBits[] = {MiscselectBit::EXINFO};
 
 absl::string_view GetMiscselectBitName(MiscselectBit miscselect_bit) {
   static constexpr absl::string_view kExinfo = "EXINFO";
@@ -60,7 +58,7 @@ StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
 
 std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect) {
   std::vector<absl::string_view> printable_miscselect_list;
-  for (MiscselectBit miscselect_bit : kAllSecsMiscselectBits) {
+  for (MiscselectBit miscselect_bit : kAllMiscselectBits) {
     size_t bit_position = static_cast<size_t>(miscselect_bit);
     if ((miscselect & (UINT32_C(1) << bit_position)) != 0) {
       printable_miscselect_list.push_back(

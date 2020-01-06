@@ -121,19 +121,9 @@ absl::string_view GetAttributeName(AttributeBit attribute) {
 
 }  // namespace
 
-const AttributeBit kAllSecsAttributeBits[] = {
-    AttributeBit::INIT,         AttributeBit::DEBUG,
-    AttributeBit::MODE64BIT,    AttributeBit::PROVISIONKEY,
-    AttributeBit::INITTOKENKEY, AttributeBit::KSS,
-    AttributeBit::FPU,          AttributeBit::SSE,
-    AttributeBit::AVX,          AttributeBit::BNDREG,
-    AttributeBit::BNDCSR,       AttributeBit::OPMASK,
-    AttributeBit::ZMM_HI256,    AttributeBit::HI16_ZMM,
-    AttributeBit::PKRU};
-
 SecsAttributeSet SecsAttributeSet::GetAllSupportedBits() {
   static const SecsAttributeSet set =
-      SecsAttributeSet::FromBits(kAllSecsAttributeBits).ValueOrDie();
+      SecsAttributeSet::FromBits(kAllAttributeBits).ValueOrDie();
   return set;
 }
 
@@ -297,7 +287,7 @@ bool IsAttributeSet(AttributeBit attribute, const Attributes &attributes) {
 std::vector<absl::string_view> GetPrintableAttributeList(
     const Attributes &attributes) {
   std::vector<absl::string_view> printable_list;
-  for (AttributeBit attribute : kAllSecsAttributeBits) {
+  for (AttributeBit attribute : kAllAttributeBits) {
     if (IsAttributeSet(attribute, attributes)) {
       printable_list.push_back(GetAttributeName(attribute));
     }

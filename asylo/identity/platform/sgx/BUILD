@@ -25,6 +25,7 @@ package(default_visibility = ["//visibility:public"])
 
 cc_library(
     name = "architecture_bits",
+    srcs = ["architecture_bits.cc"],
     hdrs = ["architecture_bits.h"],
     copts = ASYLO_DEFAULT_COPTS,
 )

@@ -82,9 +82,6 @@ struct SecsAttributeSet {
   uint64_t xfrm;
 } ABSL_ATTRIBUTE_PACKED;
 
-// All valid AttributeBit values defined in the enumeration.
-extern const AttributeBit kAllSecsAttributeBits[15];
-
 // Computes bitwise OR of two SecsAttributeSet values.
 SecsAttributeSet operator|(const SecsAttributeSet &lhs,
                            const SecsAttributeSet &rhs);
