@@ -38,6 +38,13 @@ inline T CompareAndSwap(volatile T *location, T expected, T desired) {
   return previous;
 }
 
+// Atomically increments the value at `location`, returning the value at
+// `location` prior to being incremented.
+template <typename T>
+inline T AtomicIncrement(volatile T *location) {
+  return __atomic_fetch_add(location, 1, __ATOMIC_SEQ_CST);
+}
+
 // Atomically decrements the value at `location`, returning the value at
 // `location` prior to being decremented.
 template <typename T>
