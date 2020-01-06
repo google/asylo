@@ -20,9 +20,9 @@
 
 #include <cstdint>
 #include <memory>
+#include <string>
 #include <vector>
 
-#include <google/protobuf/util/message_differencer.h>
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "absl/strings/string_view.h"

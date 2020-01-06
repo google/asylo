@@ -771,6 +771,20 @@ cc_library(
     }),
 )
 
+cc_library(
+    name = "mock_hardware_interface",
+    testonly = 1,
+    hdrs = ["mock_hardware_interface.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":hardware_interface",
+        ":hardware_types",
+        "//asylo/crypto/util:bytes",
+        "//asylo/util:status",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 cc_test(
     name = "fake_hardware_interface_test",
     srcs = ["fake_hardware_interface_test.cc"],

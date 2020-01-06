@@ -28,6 +28,9 @@ extern const char *const kSgxLocalAssertionAuthority;
 // Constant representing the SGX AGE remote assertion authority type.
 extern const char *const kSgxAgeRemoteAssertionAuthority;
 
+// Constant representing Intel ECDSA assertion authority type.
+extern const char *const kSgxIntelEcdsaQeRemoteAssertionAuthority;
+
 // Constant representing SGX authorization authority type.
 extern const char *const kSgxAuthorizationAuthority;
 

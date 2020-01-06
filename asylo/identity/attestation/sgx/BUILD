@@ -13,8 +13,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+load("//asylo/bazel:asylo.bzl", "cc_enclave_test", "enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave", "sgx_enclave_test")
+load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
 
@@ -96,12 +98,13 @@ sgx_debug_sign_enclave(
     unsigned = "sgx_age_remote_assertion_generator_test_enclave_unsigned.so",
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "sgx_age_remote_assertion_generator_test",
     srcs = [
         "sgx_age_remote_assertion_generator.h",
         "sgx_age_remote_assertion_generator_test.cc",
     ],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "assertion_generator_enclave": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_no_flc.so",
@@ -141,5 +144,63 @@ sgx_enclave_test(
         "@com_google_absl//absl/synchronization",
         "@com_google_googletest//:gtest",
         "@com_google_protobuf//:protobuf",
+    ],
+)
+
+cc_library(
+    name = "sgx_intel_ecdsa_qe_remote_assertion_generator",
+    srcs = ["sgx_intel_ecdsa_qe_remote_assertion_generator.cc"],
+    hdrs = ["sgx_intel_ecdsa_qe_remote_assertion_generator.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    tags = sgx.tags(),
+    deps = [
+        "//asylo/crypto:sha256_hash",
+        "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation:enclave_assertion_generator",
+        "//asylo/identity/attestation/sgx/internal:dcap_intel_architectural_enclave_interface",
+        "//asylo/identity/attestation/sgx/internal:dcap_library_interface",
+        "//asylo/identity/attestation/sgx/internal:enclave_dcap_library_interface",
+        "//asylo/identity/attestation/sgx/internal:intel_architectural_enclave_interface",
+        "//asylo/identity/sgx:code_identity_constants",
+        "//asylo/identity/sgx:hardware_interface",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/util:error_codes",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/synchronization",
+    ],
+)
+
+cc_enclave_test(
+    name = "sgx_intel_ecdsa_qe_remote_assertion_generator_test",
+    srcs = ["sgx_intel_ecdsa_qe_remote_assertion_generator_test.cc"],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    tags = sgx.tags(),
+    deps = [
+        ":sgx_intel_ecdsa_qe_remote_assertion_generator",
+        "//asylo/crypto/util:byte_container_util",
+        "//asylo/crypto/util:byte_container_view",
+        "//asylo/crypto/util:bytes",
+        "//asylo/crypto/util:trivial_object_util",
+        "//asylo/identity:additional_authenticated_data_generator",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/attestation/sgx/internal:mock_intel_architectural_enclave_interface",
+        "//asylo/identity/sgx:code_identity_constants",
+        "//asylo/identity/sgx:mock_hardware_interface",
+        "//asylo/test/util:memory_matchers",
+        "//asylo/test/util:proto_matchers",
+        "//asylo/test/util:status_matchers",
+        "//asylo/util:mutex_guarded",
+        "//asylo/util:status",
+        "//asylo/util:thread",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
+        "@com_google_absl//absl/synchronization",
+        "@com_google_googletest//:gtest",
     ],
 )

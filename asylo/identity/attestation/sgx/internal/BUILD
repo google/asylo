@@ -143,7 +143,10 @@ cc_library(
     name = "intel_architectural_enclave_interface",
     hdrs = ["intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/sgx:__pkg__"],
+    visibility = [
+        "//asylo/identity/attestation/sgx:__pkg__",
+        "//asylo/identity/sgx:__pkg__",
+    ],
     deps = [
         "//asylo/crypto:algorithms_cc_proto",
         "//asylo/crypto/util:bytes",
@@ -160,6 +163,7 @@ cc_library(
     srcs = ["dcap_intel_architectural_enclave_interface.cc"],
     hdrs = ["dcap_intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
     deps = [
         ":dcap_library_interface",
         ":intel_architectural_enclave_interface",
@@ -180,6 +184,7 @@ cc_library(
     name = "dcap_library_interface",
     hdrs = ["dcap_library_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
     deps = [
         "@linux_sgx//:public",
         "@sgx_dcap//:quote_wrapper_common",
@@ -207,6 +212,7 @@ cc_library(
     tags = [
         "manual",
     ],
+    visibility = ["//asylo/identity/attestation/sgx:__pkg__"],
     deps = [
         ":dcap_library_interface",
         "//asylo/platform/primitives/sgx:trusted_sgx",
@@ -371,7 +377,10 @@ cc_library(
     testonly = 1,
     hdrs = ["mock_intel_architectural_enclave_interface.h"],
     copts = ASYLO_DEFAULT_COPTS,
-    visibility = ["//asylo/identity/sgx:__pkg__"],
+    visibility = [
+        "//asylo/identity/attestation/sgx:__pkg__",
+        "//asylo/identity/sgx:__pkg__",
+    ],
     deps = [
         ":intel_architectural_enclave_interface",
         "//asylo/crypto:algorithms_cc_proto",

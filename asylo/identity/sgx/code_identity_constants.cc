@@ -25,6 +25,9 @@ const char *const kSgxLocalAssertionAuthority = "SGX Local";
 
 const char *const kSgxAgeRemoteAssertionAuthority = "SGX AGE";
 
+const char *const kSgxIntelEcdsaQeRemoteAssertionAuthority =
+    "SGX Intel ECDSA QE";
+
 const char *const kSgxAuthorizationAuthority = "SGX";
 
 const char *const kSgxIdentityVersionString = "SgxIdentity v0.1";
