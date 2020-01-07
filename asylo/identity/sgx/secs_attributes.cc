@@ -23,8 +23,6 @@
 #include <iostream>
 #include <limits>
 #include <string>
-#include <utility>
-#include <vector>
 
 #include "absl/base/macros.h"
 #include "absl/strings/str_format.h"
@@ -88,37 +86,6 @@ constexpr AttributeBit kDefaultDoNotCareSecsAttributes[] = {
 constexpr AttributeBit kMustBeSetAttributes[] = {
     AttributeBit::INIT, AttributeBit::FPU, AttributeBit::SSE};
 
-std::pair<AttributeBit, const char *> kPrintableSecsAttributeBitNames[] = {
-    {AttributeBit::INIT, "INIT"},
-    {AttributeBit::DEBUG, "DEBUG"},
-    {AttributeBit::MODE64BIT, "MODE64BIT"},
-    // Bit 3 is an unused bit.
-    {AttributeBit::PROVISIONKEY, "PROVISIONKEY"},
-    {AttributeBit::INITTOKENKEY, "INITTOKENKEY"},
-    // Bit 6 is an unused bit.
-    {AttributeBit::KSS, "KSS"},
-    // Bits 8 through 63 are unused.
-    {AttributeBit::FPU, "FPU"},
-    {AttributeBit::SSE, "SSE"},
-    {AttributeBit::AVX, "AVX"},
-    {AttributeBit::BNDREG, "BNDREG"},
-    {AttributeBit::BNDCSR, "BNDCSR"},
-    {AttributeBit::OPMASK, "OPMASK"},
-    {AttributeBit::ZMM_HI256, "ZMM_HI256"},
-    {AttributeBit::HI16_ZMM, "HI16_ZMM"},
-    {AttributeBit::PKRU, "PKRU"}};
-
-absl::string_view GetAttributeName(AttributeBit attribute) {
-  static constexpr absl::string_view kUnknown = "UNKNOWN";
-  for (const std::pair<AttributeBit, const char *> &attribute_name_pair :
-       kPrintableSecsAttributeBitNames) {
-    if (attribute_name_pair.first == attribute) {
-      return attribute_name_pair.second;
-    }
-  }
-  return kUnknown;
-}
-
 }  // namespace
 
 SecsAttributeSet SecsAttributeSet::GetAllSupportedBits() {
@@ -146,6 +113,27 @@ SecsAttributeSet SecsAttributeSet::GetDefaultMask() {
 SecsAttributeSet SecsAttributeSet::GetStrictMask() {
   return {std::numeric_limits<uint64_t>::max(),
           std::numeric_limits<uint64_t>::max()};
+}
+
+StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
+    absl::Span<const AttributeBit> attribute_list) {
+  SecsAttributeSet attributes = {};
+  for (AttributeBit attribute : attribute_list) {
+    size_t bit_position = static_cast<size_t>(attribute);
+    if (bit_position >= kNumSecsAttributeBits) {
+      return Status(
+          error::GoogleError::INVALID_ARGUMENT,
+          absl::StrFormat("SecsAttributeBit specifies a bit position %d "
+                          " that is larger than the max allowed value of %d",
+                          bit_position, kNumSecsAttributeBits - 1));
+    }
+    if (bit_position < kNumFlagsBits) {
+      attributes.flags |= (1ULL << bit_position);
+    } else {
+      attributes.xfrm |= (1ULL << (bit_position - kNumFlagsBits));
+    }
+  }
+  return attributes;
 }
 
 SecsAttributeSet::SecsAttributeSet(const Attributes &attributes)
@@ -245,54 +233,6 @@ bool operator==(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs) {
 
 bool operator!=(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs) {
   return !(lhs == rhs);
-}
-
-StatusOr<SecsAttributeSet> SecsAttributeSet::FromBits(
-    absl::Span<const AttributeBit> attribute_list) {
-  SecsAttributeSet attributes = {};
-  for (AttributeBit attribute : attribute_list) {
-    size_t bit_position = static_cast<size_t>(attribute);
-    if (bit_position >= kNumSecsAttributeBits) {
-      return Status(
-          error::GoogleError::INVALID_ARGUMENT,
-          absl::StrFormat("SecsAttributeBit specifies a bit position %d "
-                          " that is larger than the max allowed value of %d",
-                          bit_position, kNumSecsAttributeBits - 1));
-    }
-    if (bit_position < kNumFlagsBits) {
-      attributes.flags |= (1ULL << bit_position);
-    } else {
-      attributes.xfrm |= (1ULL << (bit_position - kNumFlagsBits));
-    }
-  }
-  return attributes;
-}
-
-bool IsAttributeSet(AttributeBit attribute, const Attributes &attributes) {
-  size_t bit_position = static_cast<size_t>(attribute);
-  if (bit_position >= kNumSecsAttributeBits) {
-    LOG(INFO) << "SecsAttributeBit specifies a bit position " << bit_position
-              << " that is larger than the max allowed value of "
-              << kNumSecsAttributeBits - 1;
-    return false;
-  }
-
-  if (bit_position < kNumFlagsBits) {
-    return (attributes.flags() & (1ULL << bit_position)) != 0;
-  } else {
-    return (attributes.xfrm() & (1ULL << (bit_position - kNumFlagsBits))) != 0;
-  }
-}
-
-std::vector<absl::string_view> GetPrintableAttributeList(
-    const Attributes &attributes) {
-  std::vector<absl::string_view> printable_list;
-  for (AttributeBit attribute : kAllAttributeBits) {
-    if (IsAttributeSet(attribute, attributes)) {
-      printable_list.push_back(GetAttributeName(attribute));
-    }
-  }
-  return printable_list;
 }
 
 }  // namespace sgx

@@ -19,7 +19,17 @@
 #ifndef ASYLO_IDENTITY_SGX_ATTRIBUTES_UTIL_H_
 #define ASYLO_IDENTITY_SGX_ATTRIBUTES_UTIL_H_
 
+#include <vector>
+
+#include "absl/strings/string_view.h"
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/util/status.h"
+#include "asylo/util/statusor.h"
+
+// This file implements bit-wise AND, equality, and inequality operations
+// for the Attributes message, as well as functions to set, clear, test, and
+// print the various bits of an Attributes message.
 
 namespace asylo {
 namespace sgx {
@@ -41,6 +51,23 @@ bool operator==(const Attributes &lhs, const Attributes &rhs);
 // The operator does not differentiate between unset fields and fields that have
 // been set to default values.
 bool operator!=(const Attributes &lhs, const Attributes &rhs);
+
+// Sets the given |bit| of |attributes| to true, or returns a non-OK Status if
+// the |bit| was invalid.
+Status SetAttributeBit(AttributeBit bit, Attributes *attributes);
+
+// Sets the given |bit| of |attributes| to false, or returns a non-OK Status if
+// the |bit| was invalid.
+Status ClearAttributeBit(AttributeBit bit, Attributes *attributes);
+
+// Returns whether the given |bit| of |attributes| is set, or a non-OK Status if
+// the |bit| was invalid.
+StatusOr<bool> IsAttributeBitSet(AttributeBit bit,
+                                 const Attributes &attributes);
+
+// Returns a printable list of the AttributeBits set in |attributes|.
+std::vector<absl::string_view> GetPrintableAttributeList(
+    const Attributes &attributes);
 
 }  // namespace sgx
 }  // namespace asylo

@@ -65,10 +65,6 @@ class SecsAttributesTest : public ::testing::Test {
                                       // Unused bit
       static_cast<AttributeBit>(73)   // XFRM_ATTRIBUTE_PKRU
   };
-  const std::vector<std::string> attribute_names_ = {
-      "INIT",   "DEBUG",  "MODE64BIT", "PROVISIONKEY", "INITTOKENKEY",
-      "KSS",    "FPU",    "SSE",       "AVX",          "BNDREG",
-      "BNDCSR", "OPMASK", "ZMM_HI256", "HI16_ZMM",     "PKRU"};
   const std::vector<SecsAttributeSet> attribute_sets_ = {
       {0x1, 0x0},   // INIT
       {0x2, 0x0},   // DEBUG
@@ -347,35 +343,6 @@ TEST_F(SecsAttributesTest, TestAttributeSetError) {
   EXPECT_FALSE(all_attributes_.IsSet(bad_attribute_));
 }
 
-// Verify the correctness of TestAttribute on Attributes.
-TEST_F(SecsAttributesTest, TestAttributeAttributes) {
-  Attributes attributes;
-  for (int i = 0; i < attribute_sets_.size(); i++) {
-    attributes = attribute_sets_[i].ToProtoAttributes();
-    for (int j = 0; j < attributes_.size(); j++) {
-      EXPECT_EQ(IsAttributeSet(attributes_[j], attributes), (i == j));
-    }
-  }
-  attributes = all_attributes_.ToProtoAttributes();
-  for (int j = 0; j < attributes_.size(); j++) {
-    EXPECT_TRUE(IsAttributeSet(attributes_[j], attributes));
-  }
-}
-
-// Verify the error-handling in TestAttribute on a set.
-TEST_F(SecsAttributesTest, TestAttributeAttributesError) {
-  std::string str =
-      absl::StrCat("SecsAttributeBit specifies a bit position ",
-                   static_cast<size_t>(bad_attribute_),
-                   " that is larger than the max allowed value of 127");
-
-  EXPECT_LOG(ERROR, str);
-
-  Attributes attributes =
-      SecsAttributeSet::GetDefaultMask().ToProtoAttributes();
-  EXPECT_FALSE(IsAttributeSet(bad_attribute_, attributes));
-}
-
 // Verify that SecsAttributeSet::FromBits fails for an invalid attribute bit.
 TEST_F(SecsAttributesTest, FromBitsNegative) {
   EXPECT_THAT(SecsAttributeSet::FromBits({bad_attribute_}),
@@ -401,26 +368,6 @@ TEST_F(SecsAttributesTest, GetStrictMask) {
 
   EXPECT_EQ(attributes_match_mask.flags(), kLongLongAllF);
   EXPECT_EQ(attributes_match_mask.xfrm(), kLongLongAllF);
-}
-
-// Verify the correctness of GetPrintableAttributeList on an attribute set.
-TEST_F(SecsAttributesTest, GetPrintableAttributeListFromSet) {
-  std::vector<absl::string_view> printable_list;
-  Attributes attributes;
-
-  for (int i = 0; i < attribute_sets_.size(); i++) {
-    attributes = attribute_sets_[i].ToProtoAttributes();
-    printable_list = GetPrintableAttributeList(attributes);
-    EXPECT_EQ(printable_list.size(), 1);
-    EXPECT_EQ(printable_list[0], attribute_names_[i]);
-  }
-
-  attributes = all_attributes_.ToProtoAttributes();
-  printable_list = GetPrintableAttributeList(attributes);
-  EXPECT_EQ(printable_list.size(), attributes_.size());
-  for (int i = 0; i < printable_list.size(); i++) {
-    EXPECT_EQ(printable_list[i], attribute_names_[i]);
-  }
 }
 
 }  // namespace

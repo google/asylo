@@ -18,21 +18,33 @@
 
 #include "asylo/identity/sgx/attributes_util.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
 namespace sgx {
 namespace {
 
+using ::testing::Contains;
+using ::testing::Eq;
+
 constexpr uint64_t kConstVal1 = 0x12345678;
 constexpr uint64_t kConstVal2 = 0x87654321;
 constexpr uint64_t kZero = 0x0;
+constexpr uint64_t kAllF = ~kZero;
+constexpr AttributeBit kBadAttribute = static_cast<AttributeBit>(129);
 
-// A test fixture is used to ensure naming correctness and future
-// expandability.
 class AttributesTest : public ::testing::Test {
  protected:
+  // Names of bits in the order in which they are defined in kAllAttributeBits.
+  const std::vector<std::string> attribute_names_ = {
+      "INIT",   "DEBUG",  "MODE64BIT", "PROVISIONKEY", "INITTOKENKEY",
+      "KSS",    "FPU",    "SSE",       "AVX",          "BNDREG",
+      "BNDCSR", "OPMASK", "ZMM_HI256", "HI16_ZMM",     "PKRU"};
 };
 
 TEST_F(AttributesTest, EqualityOperatorPositive) {
@@ -113,6 +125,65 @@ TEST_F(AttributesTest, BitwiseAndCorrectness6) {
   right.set_xfrm(kZero);
   result.set_xfrm(kZero);
   EXPECT_TRUE((left & right) == result);
+}
+
+TEST_F(AttributesTest, DefaultAttributesAllBitsUnset) {
+  Attributes attributes;
+  for (AttributeBit bit : kAllAttributeBits) {
+    EXPECT_THAT(IsAttributeBitSet(bit, attributes), IsOkAndHolds(false));
+  }
+}
+
+TEST_F(AttributesTest, AllSetAttributesAllBitsSet) {
+  Attributes attributes;
+  attributes.set_flags(kAllF);
+  attributes.set_xfrm(kAllF);
+
+  for (AttributeBit bit : kAllAttributeBits) {
+    EXPECT_THAT(IsAttributeBitSet(bit, attributes), IsOkAndHolds(true));
+  }
+}
+
+TEST_F(AttributesTest, SetAndClearValidAttributeBits) {
+  Attributes attributes;
+  for (AttributeBit bit : kAllAttributeBits) {
+    EXPECT_THAT(SetAttributeBit(bit, &attributes), IsOk());
+    EXPECT_THAT(IsAttributeBitSet(bit, attributes), IsOkAndHolds(true));
+    EXPECT_THAT(ClearAttributeBit(bit, &attributes), IsOk());
+    EXPECT_THAT(IsAttributeBitSet(bit, attributes), IsOkAndHolds(false));
+  }
+}
+
+TEST_F(AttributesTest, SetInvalidAttributeBit) {
+  Attributes attributes;
+  EXPECT_THAT(SetAttributeBit(kBadAttribute, &attributes),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(AttributesTest, ClearInvalidAttributeBit) {
+  Attributes attributes;
+  EXPECT_THAT(ClearAttributeBit(kBadAttribute, &attributes),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(AttributesTest, TestInvalidAttributeBit) {
+  Attributes attributes;
+  EXPECT_THAT(IsAttributeBitSet(kBadAttribute, attributes),
+              StatusIs(error::GoogleError::INVALID_ARGUMENT));
+}
+
+TEST_F(AttributesTest, GetPrintableAttributeListFromSet) {
+  std::vector<absl::string_view> printable_list;
+  Attributes attributes;
+
+  int i = 0;
+  for (AttributeBit bit : kAllAttributeBits) {
+    SetAttributeBit(bit, &attributes);
+    printable_list = GetPrintableAttributeList(attributes);
+    EXPECT_EQ(printable_list.size(), i + 1);
+    EXPECT_THAT(printable_list, Contains(Eq(attribute_names_[i])));
+    ++i;
+  }
 }
 
 }  // namespace

@@ -21,10 +21,8 @@
 
 #include <cstdint>
 #include <cstring>
-#include <vector>
 
 #include "absl/base/attributes.h"
-#include "absl/strings/string_view.h"
 #include "absl/types/span.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
 #include "asylo/identity/sgx/attributes.pb.h"
@@ -117,13 +115,6 @@ bool operator==(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs);
 
 // Checks two SecsAttributeSet values for inequality.
 bool operator!=(const SecsAttributeSet &lhs, const SecsAttributeSet &rhs);
-
-// Tests if an attribute bit in a Attributes proto is set.
-bool IsAttributeSet(AttributeBit attribute, const Attributes &attributes);
-
-// Gets printable list of attributes from an SecsAttributeSet.
-std::vector<absl::string_view> GetPrintableAttributeList(
-    const Attributes &attributes);
 
 }  // namespace sgx
 }  // namespace asylo

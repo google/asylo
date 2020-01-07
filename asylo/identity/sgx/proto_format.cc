@@ -31,7 +31,7 @@
 #include "asylo/identity/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
-#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/sgx/attributes_util.h"
 #include "asylo/identity/sgx/secs_miscselect.h"
 
 namespace asylo {

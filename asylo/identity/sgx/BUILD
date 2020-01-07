@@ -587,7 +587,10 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":attributes_cc_proto",
-        "@com_google_protobuf//:protobuf",
+        "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/strings",
     ],
 )
 
@@ -599,6 +602,9 @@ cc_test_and_cc_enclave_test(
     deps = [
         ":attributes_cc_proto",
         ":attributes_util",
+        ":hardware_types",
+        "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
@@ -1038,6 +1044,7 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_cc_proto",
+        ":attributes_util",
         ":code_identity_cc_proto",
         ":hardware_types",
         ":machine_configuration_cc_proto",
@@ -1056,6 +1063,7 @@ cc_test_and_cc_enclave_test(
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
+        ":attributes_util",
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
