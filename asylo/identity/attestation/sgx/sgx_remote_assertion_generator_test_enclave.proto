@@ -22,14 +22,19 @@ import "asylo/enclave.proto";
 import "asylo/identity/identity.proto";
 import "asylo/identity/sgx/sgx_identity.proto";
 
+extend EnclaveConfig {
+  optional SgxRemoteAssertionGeneratorTestEnclaveConfig
+      sgx_remote_assertion_generator_test_enclave_config = 282788784;
+}
+
 extend EnclaveInput {
-  optional SgxAgeRemoteAssertionGeneratorTestEnclaveInput
-      sgx_age_remote_assertion_generator_test_enclave_input = 272929870;
+  optional SgxRemoteAssertionGeneratorTestEnclaveInput
+      sgx_remote_assertion_generator_test_enclave_input = 282788784;
 }
 
 extend EnclaveOutput {
-  optional SgxAgeRemoteAssertionGeneratorTestEnclaveOutput
-      sgx_age_remote_assertion_generator_test_enclave_output = 272929870;
+  optional SgxRemoteAssertionGeneratorTestEnclaveOutput
+      sgx_remote_assertion_generator_test_enclave_output = 282788784;
 }
 
 message SgxSelfIdentityInput {}
@@ -77,8 +82,13 @@ message GenerateOutput {
   optional Assertion assertion = 1;
 }
 
+message SgxRemoteAssertionGeneratorTestEnclaveConfig {
+  // Describes the type of assertion generator to initialize for tests.
+  optional AssertionDescription description = 1;
+}
+
 // Declare which generator method to call from within the enclave.
-message SgxAgeRemoteAssertionGeneratorTestEnclaveInput {
+message SgxRemoteAssertionGeneratorTestEnclaveInput {
   oneof input {
     SgxSelfIdentityInput sgx_self_identity_input = 1;
     ResetGeneratorInput reset_generator_input = 2;
@@ -90,7 +100,7 @@ message SgxAgeRemoteAssertionGeneratorTestEnclaveInput {
   }
 }
 
-message SgxAgeRemoteAssertionGeneratorTestEnclaveOutput {
+message SgxRemoteAssertionGeneratorTestEnclaveOutput {
   oneof output {
     SgxSelfIdentityOutput sgx_self_identity_output = 1;
     ResetGeneratorOutput reset_generator_output = 2;

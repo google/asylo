@@ -34,8 +34,8 @@ cc_proto_library(
 )
 
 proto_library(
-    name = "sgx_age_remote_assertion_generator_test_enclave_proto",
-    srcs = ["sgx_age_remote_assertion_generator_test_enclave.proto"],
+    name = "sgx_remote_assertion_generator_test_enclave_proto",
+    srcs = ["sgx_remote_assertion_generator_test_enclave.proto"],
     deps = [
         "//asylo:enclave_proto",
         "//asylo/crypto:certificate_proto",
@@ -45,8 +45,8 @@ proto_library(
 )
 
 cc_proto_library(
-    name = "sgx_age_remote_assertion_generator_test_enclave_cc_proto",
-    deps = ["sgx_age_remote_assertion_generator_test_enclave_proto"],
+    name = "sgx_remote_assertion_generator_test_enclave_cc_proto",
+    deps = ["sgx_remote_assertion_generator_test_enclave_proto"],
 )
 
 cc_library(
@@ -77,13 +77,13 @@ cc_library(
 )
 
 sgx_cc_unsigned_enclave(
-    name = "sgx_age_remote_assertion_generator_test_enclave_unsigned.so",
+    name = "sgx_remote_assertion_generator_test_enclave_unsigned.so",
     testonly = 1,
-    srcs = ["sgx_age_remote_assertion_generator_test_enclave.cc"],
+    srcs = ["sgx_remote_assertion_generator_test_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":sgx_age_remote_assertion_generator",
-        ":sgx_age_remote_assertion_generator_test_enclave_cc_proto",
+        ":sgx_remote_assertion_generator_test_enclave_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_runtime",
         "//asylo/identity/sgx:sgx_identity_util",
@@ -92,10 +92,10 @@ sgx_cc_unsigned_enclave(
 )
 
 sgx_debug_sign_enclave(
-    name = "sgx_age_remote_assertion_generator_test_enclave.so",
+    name = "sgx_remote_assertion_generator_test_enclave.so",
     testonly = 1,
     config = "//asylo/grpc/util:grpc_enclave_config",
-    unsigned = "sgx_age_remote_assertion_generator_test_enclave_unsigned.so",
+    unsigned = "sgx_remote_assertion_generator_test_enclave_unsigned.so",
 )
 
 enclave_test(
@@ -108,16 +108,16 @@ enclave_test(
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "assertion_generator_enclave": "//asylo/identity/attestation/sgx/internal:remote_assertion_generator_enclave_no_flc.so",
-        "sgx_age_remote_assertion_generator_test_enclave": ":sgx_age_remote_assertion_generator_test_enclave.so",
+        "sgx_remote_assertion_generator_test_enclave": ":sgx_remote_assertion_generator_test_enclave.so",
     },
     test_args = [
         "--assertion_generator_enclave_path='{assertion_generator_enclave}'",
-        "--generator_test_enclave_path='{sgx_age_remote_assertion_generator_test_enclave}'",
+        "--generator_test_enclave_path='{sgx_remote_assertion_generator_test_enclave}'",
     ],
     deps = [
         ":sgx_age_remote_assertion_authority_config_cc_proto",
         ":sgx_age_remote_assertion_generator",
-        ":sgx_age_remote_assertion_generator_test_enclave_cc_proto",
+        ":sgx_remote_assertion_generator_test_enclave_cc_proto",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",

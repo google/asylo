@@ -31,7 +31,7 @@
 #include "asylo/enclave_manager.h"
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
-#include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_generator_test_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
@@ -195,6 +195,11 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     test_enclave_config_ = new EnclaveConfig;
     *test_enclave_config_->add_enclave_assertion_authority_configs() =
         GetSgxLocalAssertionAuthorityTestConfig();
+    SetSgxAgeRemoteAssertionDescription(
+        test_enclave_config_
+            ->MutableExtension(
+                sgx::sgx_remote_assertion_generator_test_enclave_config)
+            ->mutable_description());
 
     // Create an EnclaveLoadConfig object.
     EnclaveLoadConfig load_config;
@@ -246,14 +251,13 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     EnclaveOutput enclave_output;
     *enclave_input
          .MutableExtension(
-             sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+             sgx::sgx_remote_assertion_generator_test_enclave_input)
          ->mutable_sgx_self_identity_input() = sgx::SgxSelfIdentityInput();
 
     ASYLO_RETURN_IF_ERROR(
         test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
     return enclave_output
-        .GetExtension(
-            sgx::sgx_age_remote_assertion_generator_test_enclave_output)
+        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
         .sgx_self_identity_output()
         .identity();
   }
@@ -264,7 +268,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     EnclaveOutput enclave_output;
     *enclave_input
          .MutableExtension(
-             sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+             sgx::sgx_remote_assertion_generator_test_enclave_input)
          ->mutable_reset_generator_input() = sgx::ResetGeneratorInput();
 
     return test_enclave_client_->EnterAndRun(enclave_input, &enclave_output);
@@ -276,14 +280,13 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     EnclaveOutput enclave_output;
     *enclave_input
          .MutableExtension(
-             sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+             sgx::sgx_remote_assertion_generator_test_enclave_input)
          ->mutable_is_initialized_input() = sgx::IsInitializedInput();
 
     ASYLO_RETURN_IF_ERROR(
         test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
     return enclave_output
-        .GetExtension(
-            sgx::sgx_age_remote_assertion_generator_test_enclave_output)
+        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
         .is_initialized_output()
         .is_initialized();
   }
@@ -294,7 +297,7 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     EnclaveOutput enclave_output;
     enclave_input
         .MutableExtension(
-            sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+            sgx::sgx_remote_assertion_generator_test_enclave_input)
         ->mutable_initialize_input()
         ->set_config(config);
 
@@ -307,14 +310,13 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     EnclaveOutput enclave_output;
     *enclave_input
          .MutableExtension(
-             sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+             sgx::sgx_remote_assertion_generator_test_enclave_input)
          ->mutable_create_assertion_offer_input() =
         sgx::CreateAssertionOfferInput::default_instance();
     ASYLO_RETURN_IF_ERROR(
         test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
     return enclave_output
-        .GetExtension(
-            sgx::sgx_age_remote_assertion_generator_test_enclave_output)
+        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
         .create_assertion_offer_output()
         .offer();
   }
@@ -326,14 +328,13 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     sgx::CanGenerateInput *can_generate_input =
         enclave_input
             .MutableExtension(
-                sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+                sgx::sgx_remote_assertion_generator_test_enclave_input)
             ->mutable_can_generate_input();
     *can_generate_input->mutable_request() = request;
     ASYLO_RETURN_IF_ERROR(
         test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
     return enclave_output
-        .GetExtension(
-            sgx::sgx_age_remote_assertion_generator_test_enclave_output)
+        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
         .can_generate_output()
         .can_generate();
   }
@@ -347,15 +348,14 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     sgx::GenerateInput *generate_input =
         enclave_input
             .MutableExtension(
-                sgx::sgx_age_remote_assertion_generator_test_enclave_input)
+                sgx::sgx_remote_assertion_generator_test_enclave_input)
             ->mutable_generate_input();
     generate_input->set_user_data(user_data);
     *generate_input->mutable_request() = request;
     ASYLO_RETURN_IF_ERROR(
         test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
     return enclave_output
-        .GetExtension(
-            sgx::sgx_age_remote_assertion_generator_test_enclave_output)
+        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
         .generate_output()
         .assertion();
   }
