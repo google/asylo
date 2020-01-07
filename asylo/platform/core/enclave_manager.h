@@ -132,6 +132,7 @@ class EnclaveManager {
   /// \param base_address Start address to load enclave(optional).
   /// \param enclave_size The size of the enclave in memory(only needed if
   /// |base_address| is specified).
+  ABSL_DEPRECATED("LoadEnclave should accept an EnclaveLoadConfig")
   Status LoadEnclave(absl::string_view name, const EnclaveLoader &loader,
                      void *base_address = nullptr,
                      const size_t enclave_size = 0);
@@ -158,6 +159,7 @@ class EnclaveManager {
   /// \param base_address Start address to load enclave(optional).
   /// \param enclave_size The size of the enclave in memory(only needed if
   /// |base_address| is specified).
+  ABSL_DEPRECATED("LoadEnclave should accept an EnclaveLoadConfig")
   Status LoadEnclave(absl::string_view name, const EnclaveLoader &loader,
                      EnclaveConfig config, void *base_address = nullptr,
                      const size_t enclave_size = 0);
