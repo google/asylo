@@ -28,10 +28,10 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         "//asylo/crypto/util:bssl_util",
-        "//asylo/util:logging",
         "//asylo/util:status",
         "@boringssl//:crypto",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 
