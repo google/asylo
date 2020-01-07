@@ -180,7 +180,7 @@ def _asylo_dlopen_backend_impl(ctx):
     return [backend_tools.AsyloBackendInfo(
         forward_providers = [backend_tools.EnclaveInfo, DlopenEnclaveInfo, CcInfo],
         unsigned_enclave_implementation = _primitives_dlopen_enclave_impl,
-        debug_sign_implementation = _forward_debug_sign,
+        untrusted_sign_implementation = _forward_debug_sign,
     )]
 
 asylo_dlopen_backend = rule(

@@ -38,13 +38,13 @@ AsyloBackendInfo = provider(
           " Both EnclaveInfo and CcInfo are good baselines. The" +
           " unsigned_enclave_implementation field is a Starlark rule" +
           " implementation function that has common attributes to all" +
-          " unsigned enclave rules. The debug_sign_implementation field is a" +
+          " unsigned enclave rules. The untrusted_sign_implementation field is a" +
           " Starlark rule implementation function that has common attributes" +
           " to all debug sign rules (unsigned, enclave_build_configuration).",
     fields = [
         "forward_providers",
         "unsigned_enclave_implementation",
-        "debug_sign_implementation",
+        "untrusted_sign_implementation",
     ],
 )
 
@@ -109,6 +109,7 @@ ALL_BACKEND_LABELS = {
             "manual",        ],
         name_derivation = "_dlopen",
         sign_tool = "@com_google_asylo_backend_provider//:true",
+        debug_private_key = "@com_google_asylo_backend_provider//:empty",
         debug_default_config = "@com_google_asylo_backend_provider//:empty",
         order = 3,
     ),

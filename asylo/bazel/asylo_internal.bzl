@@ -136,7 +136,7 @@ def internal_cc_enclave_test(
         srcs,
         # Passed as an argument to avoid cyclic dependency on asylo.bzl.
         cc_unsigned_enclave,
-        debug_sign_enclave,
+        sign_enclave_with_untrusted_key,
         enclave_runner_test,
         host_test = "//asylo/bazel:test_shim_loader",
         enclave_config = "",
@@ -152,7 +152,7 @@ def internal_cc_enclave_test(
         **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
-    This macro creates two targets, one debug_sign_enclave target with the test
+    This macro creates two targets, one sign_enclave_with_untrusted_key target with the test
     source. And another test runner application to launch the test enclave.
 
     Args:
@@ -160,7 +160,7 @@ def internal_cc_enclave_test(
       srcs: Same as cc_test srcs.
       cc_unsigned_enclave: A Starlark macro or rule for defining a cc_binary-
           like target in the Asylo toolchain in any or all backends.
-      debug_sign_enclave: A Starlark macro or rule for signing an
+      sign_enclave_with_untrusted_key: A Starlark macro or rule for signing an
           unsigned enclave. Signing key not assumed secret.
       enclave_runner_test: A Starlark macro or rule for combining an enclave
           loader and an enclave to run as a test.
@@ -212,7 +212,7 @@ def internal_cc_enclave_test(
         name_by_backend = unsigned_name_by_backend,
         **kwargs
     )
-    debug_sign_enclave(
+    sign_enclave_with_untrusted_key(
         name = enclave_name,
         name_by_backend = signed_name_by_backend,
         unsigned = unsigned_enclave_name,

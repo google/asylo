@@ -35,17 +35,17 @@ def _make_cc_backend_unsigned_enclave(experimental):
 cc_backend_unsigned_enclave = _placeholder
 cc_backend_unsigned_enclave_experimental = _placeholder
 
-def _backend_debug_sign_enclave_impl(ctx):
-    return ctx.attr.backend[backend_tools.AsyloBackendInfo].debug_sign_implementation(ctx)
+def _backend_sign_enclave_with_untrusted_key_impl(ctx):
+    return ctx.attr.backend[backend_tools.AsyloBackendInfo].untrusted_sign_implementation(ctx)
 
-backend_debug_sign_enclave = _placeholder
+backend_sign_enclave_with_untrusted_key = _placeholder
 
 def cc_enclave_test(
         name,
         srcs,
         # Passed as an argument to avoid cyclic dependency on asylo.bzl.
         cc_unsigned_enclave,
-        debug_sign_enclave,
+        sign_enclave_with_untrusted_key,
         enclave_runner_test,
         enclave_config = "",
         remote_proxy = None,
@@ -59,7 +59,7 @@ def cc_enclave_test(
         **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
-    This macro creates two targets, one debug_sign_enclave target with the test
+    This macro creates two targets, one sign_enclave_with_untrusted_key target with the test
     source. And another test runner application to launch the test enclave.
 
     Args:
@@ -67,7 +67,7 @@ def cc_enclave_test(
       srcs: Same as cc_test srcs.
       cc_unsigned_enclave: A Starlark macro or rule for defining a cc_binary-
           like target in the Asylo toolchain in any or all backends.
-      debug_sign_enclave: A Starlark macro or rule for signing an
+      sign_enclave_with_untrusted_key: A Starlark macro or rule for signing an
           unsigned enclave. Signing key not assumed secret.
       enclave_runner_test: A Starlark macro or rule for combining an enclave
           loader and an enclave to run as a test.
@@ -97,7 +97,7 @@ def cc_enclave_test(
         name = name,
         srcs = srcs,
         cc_unsigned_enclave = cc_unsigned_enclave,
-        debug_sign_enclave = debug_sign_enclave,
+        sign_enclave_with_untrusted_key = sign_enclave_with_untrusted_key,
         enclave_runner_test = enclave_runner_test,
         host_test = internal.package() + "/bazel:test_shim_loader",
         enclave_config = enclave_config,

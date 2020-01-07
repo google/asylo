@@ -4833,7 +4833,7 @@ diff -Nur /dev/null BUILD
 diff -Nur /dev/null sgx_sdk.bzl
 --- /dev/null
 +++ sgx_sdk.bzl
-@@ -0,0 +1,736 @@
+@@ -0,0 +1,988 @@
 +"""Build tools for supporting Intel's SDK."""
 +
 +load("@com_google_asylo_backend_provider//:enclave_info.bzl", "backend_tools")
@@ -4958,16 +4958,17 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )
 +    return providers + [SGXEnclaveInfo(), backend_tools.EnclaveInfo()]
 +
++_transition_dict = {
++    "backend": attr.label(
++        mandatory = True,
++        providers = [backend_tools.AsyloBackendInfo],
++    ),
++    "_whitelist_function_transition": attr.label(
++        default = "//tools/whitelists/function_transition_whitelist",
++    ),
++}
++
 +def _make_sgx_cc_unsigned_enclave(transition):
-+    transition_dict = {
-+        "backend": attr.label(
-+            mandatory = True,
-+            providers = [backend_tools.AsyloBackendInfo],
-+        ),
-+        "_whitelist_function_transition": attr.label(
-+            default = "//tools/whitelists/function_transition_whitelist",
-+        ),
-+    }
 +    return rule(
 +        doc = "Defines a C++ unsigned enclave in an SGX backend",
 +        implementation = _sgx_cc_unsigned_enclave_impl,
@@ -4977,15 +4978,10 @@ diff -Nur /dev/null sgx_sdk.bzl
 +                default = "@linux_sgx//:enclave_lds",
 +                allow_single_file = True,
 +            ),
-+        }, transition_dict if transition else {}),
++        }, _transition_dict if transition else {}),
 +        fragments = ["cpp"],
 +    )
 +
-+_unsigned_enclave_deprecation = (
-+    "sgx_unsigned_enclave is replaced by sgx_cc_unsigned_enclave in " +
-+    "sgx_rules.bzl, or its more generic form, cc_unsigned_enclave in " +
-+    "asylo.bzl."
-+)
 +_sgx_cc_unsigned_enclave = _make_sgx_cc_unsigned_enclave(
 +    transition = False,
 +)
@@ -5009,7 +5005,6 @@ diff -Nur /dev/null sgx_sdk.bzl
 +          Optional.
 +      **kwargs: cc_binary arguments.
 +    """
-+    kwargs["deprecation"] = _unsigned_enclave_deprecation
 +    if not transitions.supported(native.package_name()):
 +        tags = kwargs.pop("tags", []) + ["asylo-cfh"]
 +        _sgx_cc_unsigned_enclave(
@@ -5189,19 +5184,25 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    """
 +    sgx_full_enclave_configuration(base = base, **kwargs)
 +
-+def _sgx_debug_enclave_impl(ctx):
++def _sgx_sign_enclave_with_untrusted_key_impl(ctx):
 +    """Implementation of an automated signing process of an unsigned enclave."""
++    unsigned = ctx.attr.unsigned
++    unsigned_file = ctx.file.unsigned
++    if type(unsigned) == "list":  # Split-n transitions use lists of targets.
++        # There is only one transition, no n-way split, but still the one is at
++        # the 0th index of the attribute.
++        unsigned = unsigned[0]
 +    ctx.actions.run_shell(
 +        inputs = [
-+            ctx.file.unsigned,
++            unsigned_file,
 +            ctx.file.key,
 +            ctx.file.config,
 +        ],
 +        tools = [ctx.executable.sign_tool],
 +        outputs = [ctx.outputs.executable],
 +        progress_message = "Signing for debug: //{pkg}:{name}".format(
-+            pkg = ctx.attr.unsigned.label.package,
-+            name = ctx.attr.unsigned.label.name,
++            pkg = unsigned.label.package,
++            name = unsigned.label.name,
 +        ),
 +        # Suppresses tool output on success.
 +        command = "output=`%s $@ 2>&1` || echo $output" %
@@ -5209,7 +5210,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        arguments = [
 +            "sign",
 +            "-enclave",
-+            ctx.file.unsigned.path,
++            unsigned_file.path,
 +            "-key",
 +            ctx.file.key.path,
 +            "-config",
@@ -5233,18 +5234,17 @@ diff -Nur /dev/null sgx_sdk.bzl
 +
 +# Skylark rule for the above implementation. Gives default debug arguments for
 +# private attributes for signing tool, signing key, and signing configuration.
-+_sgx_debug_enclave = rule(
-+    implementation = _sgx_debug_enclave_impl,
-+    executable = True,
-+    doc = "Creates a signed enclave binary by using a debug key.",
++def _make_sgx_sign_enclave_with_untrusted_key_rule(transition):
 +    attrs = {
 +        "config": attr.label(
-+            default = Label("@linux_sgx//:enclave_debug_config"),
++            default = None if transition else Label("@linux_sgx//:enclave_debug_config"),
++            mandatory = transition,
 +            doc = config_docstring,
 +            allow_single_file = True,
 +            providers = [SGXEnclaveConfigInfo],
 +        ),
 +        "unsigned": attr.label(
++            cfg = transitions.backend if transition else None,
 +            allow_single_file = True,
 +            doc = "The label of the unsigned enclave to sign.",
 +            providers = [SGXEnclaveInfo],
@@ -5256,19 +5256,45 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            allow_single_file = True,
 +        ),
 +        "sign_tool": attr.label(
-+            default = Label("@linux_sgx//:sgx_sign_tool"),
++            default = None if transition else Label("@linux_sgx//:sgx_sign_tool"),
++            mandatory = transition,
 +            allow_single_file = True,
 +            executable = True,
-+            cfg = "host",
++            cfg = "exec",
 +        ),
-+    },
-+)
++    }
++    return rule(
++        implementation = _sgx_sign_enclave_with_untrusted_key_impl,
++        executable = True,
++        doc = "Creates a signed enclave binary by using a debug key.",
++        attrs = backend_tools.merge_dicts(attrs, _transition_dict if transition else {}),
++    )
 +
-+def sgx_debug_enclave(
++_sgx_sign_enclave_with_untrusted_key = _make_sgx_sign_enclave_with_untrusted_key_rule(transition = False)
++
++
++def _placeholder(**kwargs):
++    fail("Transition support not implemented")
++
++_sgx_sign_enclave_with_untrusted_key_transition = _placeholder
++
++def _backend_sgx_sign_enclave_with_untrusted_key(name, backend_label_struct, **kwargs):
++    _sgx_sign_enclave_with_untrusted_key_transition(
++        name = name,
++        key = kwargs.pop("key", None) or backend_label_struct.debug_private_key,
++        config = kwargs.pop("config", None) or backend_label_struct.debug_default_config,
++        sign_tool = backend_label_struct.sign_tool,
++        **kwargs
++    )
++
++def sgx_sign_enclave_with_untrusted_key(
 +        name,
 +        unsigned,
 +        config = None,
++        key = None,
 +        tags = [],
++        backends = SGX_BACKEND_LABELS,
++        name_by_backend = {},
 +        deprecation = None,
 +        visibility = None,
 +        testonly = False):
@@ -5278,21 +5304,46 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        name: The target name
 +        unsigned: The label of the unsigned enclave binary.
 +        config: The enclave configuration label to use.
++        key: The untrusted key to use for signing.
 +        tags: Bazel tags to add to name.
++        backends: The list of backends to build against.
++        name_by_backend: A dictionary from backend label to target name for
++            user-specified target names when defining backend-specific targets.
 +        deprecation: An optional deprecation message that issues a warning.
 +        visibility: The optional visibility of the enclave binary.
 +        testonly: True if the target should only be used in tests.
 +    """
++    kwargs = {
++        "config": config,
++        "unsigned": unsigned,
++        "key": key,
++        "tags": tags,
++        "deprecation": deprecation,
++        "visibility": visibility,
++        "testonly": testonly,
++    }
++    if transitions.supported(native.package_name()):
++        backend_tools.all_backends(
++            rule_or_macro = _backend_sgx_sign_enclave_with_untrusted_key,
++            name = name,
++            name_by_backend = name_by_backend,
++            backends = backends,
++            include_info = True,
++            kwargs = kwargs,
++        )
++    else:
++        kwargs["tags"] = kwargs.get("tags", []) + sgx_tags()
++        _sgx_sign_enclave_with_untrusted_key(name = name, **kwargs)
 +
-+    _sgx_debug_enclave(
-+        name = name,
-+        config = config,
-+        unsigned = unsigned,
-+        tags = tags + sgx_tags(),
-+        deprecation = deprecation,
-+        visibility = visibility,
-+        testonly = testonly,
-+    )
++def sgx_debug_enclave(name, **kwargs):
++    """An alias for sgx_sign_enclave_with_untrusted_key.
++
++    Args:
++        name: The name of the rule.
++        **kwargs: The rest of the arguments to
++            sgx_sign_enclave_with_untrusted_key.
++    """
++    sgx_sign_enclave_with_untrusted_key(name = name, **kwargs)
 +
 +def _sgx_generate_enclave_signing_material_impl(ctx):
 +    """Implementation of the sign_tool's gendata command for sigstructs."""
@@ -5330,10 +5381,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +        ),
 +    ]
 +
-+sgx_generate_enclave_signing_material = rule(
-+    implementation = _sgx_generate_enclave_signing_material_impl,
-+    doc = ("Creates a file that contains the parts of the enclave SIGSTRUCT" +
-+           " that must be signed."),
++def _make_backend_sgx_generate_enclave_signing_material_rule(transition):
 +    attrs = {
 +        "config": attr.label(
 +            mandatory = True,
@@ -5352,13 +5400,94 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            doc = "The name of the output file. Default is \"<name>.dat\".",
 +        ),
 +        "sign_tool": attr.label(
-+            default = Label("@linux_sgx//:sgx_sign_tool"),
++            default = None if transition else Label("@linux_sgx//:sgx_sign_tool"),
++            mandatory = transition,
 +            allow_single_file = True,
 +            executable = True,
-+            cfg = "host",
++            cfg = "exec",
 +        ),
-+    },
++    }
++    if transition:
++        attrs["backend"] = attr.label(
++            mandatory = True,
++            providers = [backend_tools.AsyloBackendInfo],
++        )
++        attrs["_whitelist_function_transition"] = attr.label(
++            default = Label("//tools/whitelists/function_transition_whitelist"),
++        )
++    return rule(
++        implementation = _sgx_generate_enclave_signing_material_impl,
++        doc = ("Creates a file that contains the parts of the enclave SIGSTRUCT" +
++               " that must be signed."),
++        cfg = transitions.backend if transition else None,
++        attrs = backend_tools.merge_dicts(attrs, _transition_dict if transition else {}),
++    )
++
++_sgx_generate_enclave_signing_material = _make_backend_sgx_generate_enclave_signing_material_rule(
++    transition = False,
 +)
++
++_sgx_generate_enclave_signing_material_transition = _placeholder
++
++def _backend_sgx_generate_enclave_signing_material(
++        name,
++        backend,
++        backend_label_struct,
++        **kwargs):
++    _sgx_generate_enclave_signing_material_transition(
++        name = name,
++        backend = backend,
++        tags = kwargs.pop("tags", []) + backend_label_struct.tags,
++        sign_tool = backend_label_struct.sign_tool,
++        **kwargs
++    )
++
++def sgx_generate_enclave_signing_material(
++        name,
++        config,
++        unsigned,
++        backends = SGX_BACKEND_LABELS,
++        name_by_backend = {},
++        signing_material = None,
++        visibility = None,
++        tags = [],
++        testonly = 0):
++    """Builds the file to sign for creating a signed enclave binary.
++
++    Args:
++        name: The rule name, used in name derivations when transitions enabled.
++        backends: The list of backends to build against.
++        name_by_backend: A dictionary from backend label to target name for
++            user-specified target names when defining backend-specific targets.
++        config: An enclave_configuration target label.
++        unsigned: A label to an SGX unsigned enclave target. Should be generic
++            in the backends provided, so it is recommended to use an
++            sgx_cc_unsigned_enclave target.
++        signing_material: An optional output file name.
++        visibility: An optional visibility specification.
++        tags: Tags to apply to each target.
++        testonly: If true, the target may only be dependended on by testonly
++            and test targets.
++    """
++    kwargs = {
++        "config": config,
++        "unsigned": unsigned,
++        "signing_material": signing_material,
++        "visibility": visibility,
++        "testonly": testonly,
++        "tags": tags,
++    }
++    if transitions.supported(native.package_name()):
++        backend_tools.all_backends(
++            rule_or_macro = _backend_sgx_generate_enclave_signing_material,
++            name = name,
++            backends = backends,
++            name_by_backend = name_by_backend,
++            kwargs = kwargs,
++            include_info = True,
++        )
++    else:
++        _sgx_generate_enclave_signing_material(name = name, **kwargs)
 +
 +def sgx_generate_sigstruct(name, sigstruct = None, **kwargs):
 +    """Creates a file that contains parts of the enclave SIGSTRUCT.
@@ -5392,12 +5521,10 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    )
 +    return [DefaultInfo(files = depset([signature]))]
 +
-+boringssl_sign_enclave_signing_material = rule(
-+    implementation = _sign_signing_material_impl,
-+    doc = ("Signs an enclave signing material file with a given private " +
-+           "key for use in sgx_signed_enclave."),
++def _make_boringssl_sign_enclave_signing_material_rule(transition):
 +    attrs = {
 +        "signing_material": attr.label(
++            cfg = transitions.backend if transition else None,
 +            mandatory = True,
 +            allow_single_file = True,
 +            providers = [SGXSigstructInfo],
@@ -5416,10 +5543,71 @@ diff -Nur /dev/null sgx_sdk.bzl
 +            default = "//third_party/openssl:bssl",
 +            allow_single_file = True,
 +            executable = True,
-+            cfg = "host",
++            cfg = "exec",
 +        ),
-+    },
++    }
++    return rule(
++        implementation = _sign_signing_material_impl,
++        doc = ("Signs an enclave signing material file with a given private " +
++               "key for use in sgx_signed_enclave."),
++        attrs = backend_tools.merge_dicts(
++            attrs,
++            _transition_dict if transition else {},
++        ),
++    )
++
++_boringssl_sign_enclave_signing_material = _make_boringssl_sign_enclave_signing_material_rule(
++    transition = False,
 +)
++
++_boringssl_sign_enclave_signing_material_transition = _placeholder
++
++def boringssl_sign_enclave_signing_material(
++        name,
++        signing_material,
++        private_key,
++        signature = None,
++        backends = SGX_BACKEND_LABELS,
++        name_by_backend = {},
++        visibility = None,
++        tags = [],
++        testonly = 0):
++    """Signs signing material with a private key.
++
++    Signing is done in each backend if transitions enabled.
++
++    Args:
++        name: The rule name, used in name derivations if transitions enabled.
++        signing_material: The output of generate_enclave_signing_material.
++        private_key: A label to an RSA 3072 public exponent 3 private key in
++            PEM format.
++        signature: An optional output file name (default name + ".sig", where
++            name is backend-specific if transitions enabled).
++        backends: The list of backend labels to build signing_material against.
++        name_by_backend: An optional dictionary from backend label to name to
++            backend-specific target name.
++        visibility: An optional target visibility.
++        tags: Tags to apply to each target.
++        testonly: True if the target should only be used in tests.
++    """
++    kwargs = {
++        "signing_material": signing_material,
++        "private_key": private_key,
++        "signature": signature,
++        "visibility": visibility,
++        "testonly": testonly,
++        "tags": tags,
++    }
++    if transitions.supported(native.package_name()):
++        backend_tools.all_backends(
++            rule_or_macro = _boringssl_sign_enclave_signing_material_transition,
++            name = name,
++            name_by_backend = name_by_backend,
++            backends = backends,
++            kwargs = kwargs,
++        )
++    else:
++        _boringssl_sign_enclave_signing_material(name = name, **kwargs)
 +
 +def boringssl_sign_sigstruct(name, sigstruct, **kwargs):
 +    """Signs enclave signing material with a given private key.
@@ -5484,10 +5672,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    ]
 +
 +# Skylark rule for the above implementation.
-+sgx_signed_enclave = rule(
-+    implementation = _sgx_signed_enclave_impl,
-+    executable = True,
-+    doc = "Creates a signed enclave binary using a signature file.",
++def _make_sgx_signing_rule(transition):
 +    attrs = {
 +        "public_key": attr.label(
 +            mandatory = True,
@@ -5501,6 +5686,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +                  "by the RSA-3072 private key with public exponent 3.",
 +        ),
 +        "signing_material": attr.label(
++            cfg = transitions.backend if transition else None,
 +            mandatory = True,
 +            allow_single_file = True,
 +            providers = [SGXSigstructInfo],
@@ -5508,13 +5694,78 @@ diff -Nur /dev/null sgx_sdk.bzl
 +                   "includes both the unsigned enclave and its config."),
 +        ),
 +        "sign_tool": attr.label(
-+            default = Label("@linux_sgx//:sgx_sign_tool"),
++            default = None if transition else Label("@linux_sgx//:sgx_sign_tool"),
++            mandatory = transition,
 +            allow_single_file = True,
 +            executable = True,
-+            cfg = "host",
++            cfg = "exec",
 +        ),
-+    },
-+)
++    }
++    return rule(
++        implementation = _sgx_signed_enclave_impl,
++        executable = True,
++        doc = "Creates a signed enclave binary using a signature file.",
++        attrs = backend_tools.merge_dicts(attrs, _transition_dict if transition else {}),
++    )
++
++_sgx_signed_enclave = _make_sgx_signing_rule(transition = False)
++
++_sgx_signed_enclave_transition = _placeholder
++
++def _backend_sgx_signed_enclave(name, backend_label_struct, **kwargs):
++    _sgx_signed_enclave_transition(
++        name = name,
++        sign_tool = backend_label_struct.sign_tool,
++        tags = kwargs.pop("tags", []) + backend_label_struct.tags,
++        **kwargs
++    )
++
++def sgx_signed_enclave(
++        name,
++        public_key,
++        signature,
++        signing_material,
++        backends = SGX_BACKEND_LABELS,
++        name_by_backend = {},
++        visibility = None,
++        testonly = 0,
++        tags = []):
++    """Creates a signed enclave binary using a signature file.
++
++    Args:
++        name: The rule name, used in name derivations when transitions enabled.
++        public_key: The public key to verify the provided signature.
++        signature: The sha256 digest of the enclave signing material signed by
++            the RSA-3072 private key with public exponent 3.
++        signing_material: The label of a sgx_generate_enclave_signing_material
++            target that includes both the unsigned enclave and its config.
++        backends: The list of backends to build against.
++        name_by_backend: A dictionary from backend label to target name for
++            user-specified target names when defining backend-specific targets.
++        visibility: An optional visibility specification.
++        testonly: If true, the target may only be dependended on by testonly
++            and test targets.
++        tags: Tags to apply to each target.
++    """
++    kwargs = {
++        "public_key": public_key,
++        "signature": signature,
++        "signing_material": signing_material,
++        "visibility": visibility,
++        "testonly": testonly,
++        "tags": tags,
++    }
++    if transitions.supported(native.package_name()):
++        backend_tools.all_backends(
++            rule_or_macro = _backend_sgx_signed_enclave,
++            name = name,
++            backends = backends,
++            name_by_backend = name_by_backend,
++            include_info = True,
++            kwargs = kwargs,
++        )
++    else:
++        _sgx_signed_enclave(name = name, **kwargs)
 +
 +
 +def sgx_tags():
@@ -5546,7 +5797,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    return [backend_tools.AsyloBackendInfo(
 +        forward_providers = [backend_tools.EnclaveInfo, SGXEnclaveInfo, CcInfo],
 +        unsigned_enclave_implementation = _sgx_cc_unsigned_enclave_impl,
-+        debug_sign_implementation = _sgx_debug_enclave_impl,
++        untrusted_sign_implementation = _sgx_sign_enclave_with_untrusted_key_impl,
 +    )]
 +
 +asylo_sgx_backend = rule(
@@ -5562,6 +5813,7 @@ diff -Nur /dev/null sgx_sdk.bzl
 +    boringssl_sign_sigstruct = boringssl_sign_sigstruct,
 +    boringssl_sign_enclave_signing_material = boringssl_sign_enclave_signing_material,
 +    debug_enclave = sgx_debug_enclave,
++    sign_enclave_with_untrusted_key = sgx_sign_enclave_with_untrusted_key,
 +    enclave_configuration = sgx_enclave_configuration,
 +    full_enclave_configuration = sgx_full_enclave_configuration,
 +    generate_enclave_signing_material = sgx_generate_enclave_signing_material,

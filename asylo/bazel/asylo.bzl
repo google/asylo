@@ -19,7 +19,7 @@
 load("//asylo/bazel:asylo_internal.bzl", "internal")
 load(
     "//asylo/bazel:asylo_copy_from_host.bzl",
-    _backend_debug_sign_enclave_old = "backend_debug_sign_enclave",
+    _backend_sign_enclave_with_untrusted_key_old = "backend_sign_enclave_with_untrusted_key",
     _cc_backend_unsigned_enclave_experimental_old = "cc_backend_unsigned_enclave_experimental",
     _cc_backend_unsigned_enclave_old = "cc_backend_unsigned_enclave",
     _cc_enclave_test_old = "cc_enclave_test",
@@ -29,7 +29,7 @@ load(
 )
 load(
     "//asylo/bazel:asylo_transitions.bzl",
-    _backend_debug_sign_enclave_new = "backend_debug_sign_enclave",
+    _backend_sign_enclave_with_untrusted_key_new = "backend_sign_enclave_with_untrusted_key",
     _cc_backend_unsigned_enclave_experimental_new = "cc_backend_unsigned_enclave_experimental",
     _cc_backend_unsigned_enclave_new = "cc_backend_unsigned_enclave",
     _cc_enclave_test_new = "cc_enclave_test",
@@ -303,7 +303,13 @@ def cc_backend_unsigned_enclave_experimental(name, backend, **kwargs):
         kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
     _impl(name = name, backend = backend, **kwargs)
 
-def backend_debug_sign_enclave(name, backend, unsigned, config = None, backend_label_struct = None, **kwargs):
+def backend_sign_enclave_with_untrusted_key(
+        name,
+        backend,
+        unsigned,
+        config = None,
+        backend_label_struct = None,
+        **kwargs):
     """Defines the 'signed' version of an unsigned enclave target.
 
     The signer is backend-specific.
@@ -317,10 +323,10 @@ def backend_debug_sign_enclave(name, backend, unsigned, config = None, backend_l
             enclave_info.bzl)
         **kwargs: Generic rule arguments like tags and testonly.
     """
-    kwargs = dict(kwargs)
-    _impl = _backend_debug_sign_enclave_old
+    kwargs = dict(kwargs)  # Copy kwargs to allow mutation.
+    _impl = _backend_sign_enclave_with_untrusted_key_old
     if transitions.supported(native.package_name()):
-        _impl = _backend_debug_sign_enclave_new
+        _impl = _backend_sign_enclave_with_untrusted_key_new
         kwargs["tags"] = kwargs.get("tags", []) + ["asylo-transition"]
     else:
         kwargs["tags"] = kwargs.get("tags", []) + ["asylo-cfh"]
@@ -367,9 +373,10 @@ def cc_unsigned_enclave(
         kwargs,
     )
 
-def debug_sign_enclave(
+def sign_enclave_with_untrusted_key(
         name,
         unsigned,
+        key = None,
         backends = backend_tools.should_be_all_backends,
         config = None,
         testonly = 0,
@@ -379,6 +386,8 @@ def debug_sign_enclave(
     Args:
         name: The signed enclave target name.
         unsigned: The label to the unsigned enclave.
+        key: The untrusted private key for signing. Default value is defined by
+            the backend.
         backends: The asylo backend labels the binary uses. Must specify at least
           one. Defaults to all supported backends. If more than one, then
           name is an alias to a select on backend value to backend-specialized
@@ -392,14 +401,25 @@ def debug_sign_enclave(
     kwargs = {"unsigned": unsigned, "testonly": testonly}
     if config:
         kwargs["config"] = config
+    if key:
+        kwargs["key"] = key
     backend_tools.all_backends(
-        backend_debug_sign_enclave,
+        backend_sign_enclave_with_untrusted_key,
         name,
         backends,
         name_by_backend,
         kwargs,
         include_info = True,
     )
+
+def debug_sign_enclave(name, **kwargs):
+    """Alias for sign_enclave_with_untrusted_key.
+
+    Args:
+        name: The rule name,
+        **kwargs: The rest of the arguments to sign_enclave_with_untrusted_key.
+    """
+    sign_enclave_with_untrusted_key(name, **kwargs)
 
 # The section to embed the application enclave in.
 _APPLICATION_WRAPPER_ENCLAVE_SECTION = "enclave"
@@ -509,7 +529,7 @@ def cc_enclave_binary(
         name_by_backend = unsigned_name_by_backend,
         testonly = testonly,
     )
-    debug_sign_enclave(
+    sign_enclave_with_untrusted_key(
         name = enclave_name,
         unsigned = unsigned_enclave_name,
         config = enclave_build_config,
@@ -851,7 +871,7 @@ def cc_enclave_test(
         **kwargs):
     """Build target that runs a cc_test srcs inside of an enclave.
 
-    This macro creates two targets, one debug_sign_enclave target with the test
+    This macro creates two targets, one sign_enclave_with_untrusted_key target with the test
     source. And another test runner application to launch the test enclave.
 
     Args:
@@ -890,7 +910,7 @@ def cc_enclave_test(
         name = name,
         srcs = srcs,
         cc_unsigned_enclave = cc_unsigned_enclave,
-        debug_sign_enclave = debug_sign_enclave,
+        sign_enclave_with_untrusted_key = sign_enclave_with_untrusted_key,
         enclave_runner_test = _enclave_runner_test,
         enclave_config = enclave_config,
         remote_proxy = remote_proxy,
@@ -998,7 +1018,7 @@ def enclave_build_test(
     )
 
 def sgx_enclave_test(name, srcs, **kwargs):
-    """Build target for testing one or more instances of 'debug_sign_enclave'.
+    """Build target for testing one or more instances of 'sign_enclave_with_untrusted_key'.
 
     This macro invokes enclave_test with the "asylo-sgx" tag added.
 
