@@ -71,16 +71,16 @@ http_archive(
 # SQLite
 http_archive(
     name = "org_sqlite",
-    build_file = "//asylo/distrib:sqlite.BUILD",
+    build_file = "@com_google_asylo//asylo/distrib:sqlite.BUILD",
     urls = ["https://www.sqlite.org/2019/sqlite-autoconf-3300100.tar.gz"],
     sha256 = "8c5a50db089bd2a1b08dbc5b00d2027602ca7ff238ba7658fabca454d4298e60",
     strip_prefix = "sqlite-autoconf-3300100",
 )
 
-load("//asylo/bazel:asylo_deps.bzl", "asylo_deps")
+load("@com_google_asylo//asylo/bazel:asylo_deps.bzl", "asylo_deps")
 asylo_deps()
 
-load("//asylo/bazel:sgx_deps.bzl", "sgx_deps")
+load("@com_google_asylo//asylo/bazel:sgx_deps.bzl", "sgx_deps")
 sgx_deps()
 ```
 
@@ -105,7 +105,7 @@ and add the following lines to it.
 ```BUILD
 licenses(["notice"])
 
-load("//asylo/bazel:asylo.bzl", "cc_enclave_binary")
+load("@com_google_asylo//asylo/bazel:asylo.bzl", "cc_enclave_binary")
 
 cc_enclave_binary(
     name = "asylo_sqlite",
