@@ -295,7 +295,7 @@ constexpr char kServerAddress[] = "[::1]";
 The address `[::1]` indicates that the server should run locally. Default port
 value 0 indicates that the port will be chosen by the operating system.
 
-#### `grpc_server_util` module
+#### gRPC server util module
 
 The driver interacts with the enclave using the `grpc_server_util` module. This
 module contains the core logic for invoking the `GrpcServerEnclave`'s
