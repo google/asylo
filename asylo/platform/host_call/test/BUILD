@@ -123,7 +123,6 @@ cc_unsigned_enclave(
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
         ":enclave_test_selectors",
-        "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
         "//asylo/platform/host_call",
         "//asylo/platform/host_call:host_call_dispatcher",
         "//asylo/platform/posix:trusted_posix",
@@ -132,8 +131,6 @@ cc_unsigned_enclave(
         "//asylo/platform/primitives:trusted_runtime",
         "//asylo/platform/primitives/sgx:trusted_sgx",
         "//asylo/platform/primitives/util:message_reader_writer",
-        "//asylo/platform/storage/secure:trusted_secure",
-        "//asylo/platform/storage/utils:trusted_utils",
         "//asylo/platform/system",
         "//asylo/platform/system_call",
         "//asylo/platform/system_call/type_conversions",

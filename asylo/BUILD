@@ -64,7 +64,6 @@ cc_library(
 )
 
 # Runtime library for Asylo enclaves.
-#
 cc_library(
     name = "enclave_runtime",
     hdrs = ["trusted_application.h"],
@@ -75,16 +74,12 @@ cc_library(
     deps = select(
         {
             "@com_google_asylo//asylo": [
-                "//asylo/platform/arch:trusted_arch",
                 "//asylo/platform/core:trusted_application",
-                "//asylo/platform/crypto/gcmlib:trusted_gcmlib",
                 "//asylo/platform/posix:trusted_posix",
-                "//asylo/platform/storage/secure:trusted_secure",
-                "//asylo/platform/storage/utils:trusted_utils",
                 "//asylo/platform/system",
             ],
         },
-        no_match_error = "Must build in the Asylo toolchain (e.g., --config=sgx-sim)",
+        no_match_error = "Must build in the Asylo toolchain.",
     ),
     alwayslink = 1,
 )

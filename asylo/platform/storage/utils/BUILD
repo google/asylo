@@ -26,18 +26,6 @@ package(
 )
 
 cc_library(
-    name = "trusted_utils",
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = select({
-        "@com_google_asylo//asylo": [
-            "offset_translator",
-            "fd_closer",
-        ],
-        "//conditions:default": [],
-    }),
-)
-
-cc_library(
     name = "fd_closer",
     srcs = ["fd_closer.cc"],
     hdrs = ["fd_closer.h"],
