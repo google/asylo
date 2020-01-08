@@ -21,12 +21,14 @@
 #include <string>
 
 #include "absl/strings/str_cat.h"
+#include "absl/strings/str_format.h"
 #include "asylo/daemon/identity/attestation_domain.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
 #include "asylo/identity/sgx/sgx_local_assertion_authority_config.pb.h"
 #include "asylo/util/status.h"
+#include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"
 
 namespace asylo {
@@ -41,9 +43,11 @@ EnclaveAssertionAuthorityConfig CreateNullAssertionAuthorityConfig() {
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain) {
   if (attestation_domain.size() != kAttestationDomainNameSize) {
-    return Status(error::GoogleError::INVALID_ARGUMENT,
-                  absl::StrCat("Attestation domain must be ",
-                               kAttestationDomainNameSize, " bytes in size"));
+    return Status(
+        error::GoogleError::INVALID_ARGUMENT,
+        absl::StrFormat("Attestation domain must be %d bytes in size "
+                        "but was %d bytes in size",
+                        kAttestationDomainNameSize, attestation_domain.size()));
   }
 
   EnclaveAssertionAuthorityConfig authority_config;
@@ -58,6 +62,13 @@ CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain) {
   }
 
   return authority_config;
+}
+
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxLocalAssertionAuthorityConfig() {
+  std::string attestation_domain;
+  ASYLO_ASSIGN_OR_RETURN(attestation_domain, GetAttestationDomain());
+  return CreateSgxLocalAssertionAuthorityConfig(std::move(attestation_domain));
 }
 
 StatusOr<EnclaveAssertionAuthorityConfig>

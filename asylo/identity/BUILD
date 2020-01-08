@@ -133,6 +133,7 @@ cc_library(
         "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
+        "@com_google_absl//absl/strings:str_format",
     ],
 )
 
@@ -145,6 +146,7 @@ cc_test(
         ":enclave_assertion_authority_config_cc_proto",
         ":enclave_assertion_authority_configs",
         ":identity_cc_proto",
+        "//asylo/daemon/identity:attestation_domain",
         "//asylo/identity/attestation/sgx:sgx_age_remote_assertion_authority_config_cc_proto",
         "//asylo/identity/sgx:sgx_local_assertion_authority_config_cc_proto",
         "//asylo/test/util:proto_matchers",

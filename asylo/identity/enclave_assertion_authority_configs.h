@@ -79,6 +79,18 @@ EnclaveAssertionAuthorityConfig CreateNullAssertionAuthorityConfig();
 StatusOr<EnclaveAssertionAuthorityConfig>
 CreateSgxLocalAssertionAuthorityConfig(std::string attestation_domain);
 
+/// Creates a configuration for the SGX local assertion authority.
+///
+/// The attestation domain is derived from the per-boot machine UUID in
+/// /proc/sys/kernel/random/boot_id.
+///
+/// This configuration is required when using the SgxLocalAssertionGenerator or
+/// SgxLocalAssertionVerifier.
+///
+/// /return A config for the SGX local assertion authority.
+StatusOr<EnclaveAssertionAuthorityConfig>
+CreateSgxLocalAssertionAuthorityConfig();
+
 /// Creates a configuration for the SGX AGE remote assertion authority.
 ///
 /// This configuration is required when using the

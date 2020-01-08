@@ -20,6 +20,7 @@
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
+#include "asylo/daemon/identity/attestation_domain.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority_config.pb.h"
@@ -32,6 +33,7 @@ namespace asylo {
 namespace {
 
 using ::testing::ElementsAre;
+using ::testing::SizeIs;
 using ::testing::StrEq;
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
@@ -44,7 +46,7 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
-     CreateSgxLocalAssertionAuthorityConfigSuccess) {
+     CreateSgxLocalAssertionAuthorityConfigWithAttestationDomainSuccess) {
   constexpr char kAttestationDomain[] = "A 16-byte string";
 
   AssertionDescription description;
@@ -59,6 +61,22 @@ TEST(EnclaveAssertionAuthorityConfigsTest,
   SgxLocalAssertionAuthorityConfig sgx_config;
   ASSERT_TRUE(sgx_config.ParseFromString(config.config()));
   EXPECT_THAT(sgx_config.attestation_domain(), StrEq(kAttestationDomain));
+}
+
+TEST(EnclaveAssertionAuthorityConfigsTest,
+     CreateSgxLocalAssertionAuthorityConfigSuccess) {
+  AssertionDescription description;
+  SetSgxLocalAssertionDescription(&description);
+
+  EnclaveAssertionAuthorityConfig config;
+  ASYLO_ASSERT_OK_AND_ASSIGN(config, CreateSgxLocalAssertionAuthorityConfig());
+
+  EXPECT_THAT(config.description(), EqualsProto(description));
+
+  SgxLocalAssertionAuthorityConfig sgx_config;
+  ASSERT_TRUE(sgx_config.ParseFromString(config.config()));
+  EXPECT_THAT(sgx_config.attestation_domain(),
+              SizeIs(kAttestationDomainNameSize));
 }
 
 TEST(EnclaveAssertionAuthorityConfigsTest,
