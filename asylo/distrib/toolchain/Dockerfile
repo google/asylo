@@ -60,6 +60,7 @@ RUN apt-get update && \
         ./bazel.deb \
         bash-completion \
         build-essential \
+	default-jdk-headless \
         git \
         libfl2 \
         ocaml-nox \
