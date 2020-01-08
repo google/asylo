@@ -28,11 +28,11 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/identity/platform/sgx/miscselect_util.h"
 #include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/sgx/attributes_util.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
-#include "asylo/identity/sgx/attributes_util.h"
-#include "asylo/identity/sgx/secs_miscselect.h"
 
 namespace asylo {
 namespace sgx {
@@ -90,13 +90,10 @@ class MiscSelectPrinter : public TextFormat::FastFieldValuePrinter {
  public:
   void PrintUInt32(uint32_t value,
                    TextFormat::BaseTextGenerator *generator) const override {
-    generator->PrintLiteral("[");
-
-    std::vector<absl::string_view> printable_misc_select =
-        GetPrintableMiscselectList(value);
-    generator->PrintString(absl::StrJoin(printable_misc_select, ", "));
-
-    generator->PrintLiteral("]");
+  generator->PrintLiteral("[");
+  generator->PrintString(
+      absl::StrJoin(GetPrintableMiscselectList(value), ", "));
+  generator->PrintLiteral("]");
   }
 };
 

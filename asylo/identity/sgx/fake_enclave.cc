@@ -379,7 +379,7 @@ Status FakeEnclave::GetHardwareReport(const Targetinfo &tinfo,
   // GetHardwareKey() function in such a scenario.
   SecsAttributeSet reserved_attributes =
       ~SecsAttributeSet::GetAllSupportedBits();
-  uint32_t misc_select_reserved_bits = ~kMiscselectAllBits;
+  uint32_t misc_select_reserved_bits = kMiscselectReservedBits;
   if (tinfo.reserved1 != TrivialZeroObject<decltype(tinfo.reserved1)>() ||
       tinfo.reserved2 != TrivialZeroObject<decltype(tinfo.reserved2)>() ||
       (tinfo.miscselect & misc_select_reserved_bits) != 0 ||

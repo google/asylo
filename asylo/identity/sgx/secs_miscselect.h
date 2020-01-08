@@ -19,14 +19,10 @@
 #ifndef ASYLO_IDENTITY_SGX_SECS_MISCSELECT_H_
 #define ASYLO_IDENTITY_SGX_SECS_MISCSELECT_H_
 
+#include <cstddef>
 #include <cstdint>
-#include <string>
-#include <vector>
 
-#include "absl/strings/string_view.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/miscselect.pb.h"
-#include "asylo/util/statusor.h"
 
 namespace asylo {
 namespace sgx {
@@ -38,25 +34,6 @@ constexpr uint32_t kMiscselectExinfoMask =
 // MISCSELECT bit groupings.
 constexpr uint32_t kMiscselectAllBits = kMiscselectExinfoMask;
 constexpr uint32_t kMiscselectReservedBits = ~kMiscselectAllBits;
-
-// Tests if |miscselect_bit| is set in the |miscselect| bit vector
-// representation of MISCSELECT.
-StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
-                                 uint32_t miscselect);
-
-// Tests if |miscselect_bit| is set in the |miscselect| proto representation of
-// MISCSELECT.
-StatusOr<bool> TestMiscselectBit(MiscselectBit miscselect_bit,
-                                 const Miscselect &miscselect);
-
-// Returns a printable list of MISCSELECT bits from the given |miscselect| bit
-// vector representation of MISCSELECT.
-std::vector<absl::string_view> GetPrintableMiscselectList(uint32_t miscselect);
-
-// Returns a printable list of MISCSELECT bits from the given |miscselect| proto
-// representation of MISCSELECT.
-std::vector<absl::string_view> GetPrintableMiscselectList(
-    const Miscselect &miscselect);
 
 }  // namespace sgx
 }  // namespace asylo

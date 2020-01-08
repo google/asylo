@@ -666,10 +666,7 @@ cc_test_and_cc_enclave_test(
 
 cc_library(
     name = "hardware_types",
-    srcs = [
-        "secs_attributes.cc",
-        "secs_miscselect.cc",
-    ],
+    srcs = ["secs_attributes.cc"],
     hdrs = [
         "identity_key_management_structs.h",
         "secs_attributes.h",
@@ -679,7 +676,6 @@ cc_library(
     visibility = ["//asylo:implementation"],
     deps = [
         ":attributes_cc_proto",
-        ":miscselect_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity/platform/sgx:architecture_bits",
@@ -708,20 +704,6 @@ cc_test_and_cc_enclave_test(
         "//asylo/test/util:test_main",
         "//asylo/util:status",
         "@com_google_absl//absl/strings",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "secs_miscselect_test",
-    srcs = ["secs_miscselect_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":hardware_types",
-        "//asylo/identity/platform/sgx:architecture_bits",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
     ],
 )
@@ -1050,6 +1032,7 @@ cc_library(
         ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "@com_google_absl//absl/memory",
         "@com_google_absl//absl/strings",
@@ -1072,6 +1055,7 @@ cc_test_and_cc_enclave_test(
         ":sgx_identity_util",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",

@@ -17,7 +17,10 @@
 # This package contains libraries that define constants, types, and utilities
 # that are specific to the SGX platform.
 
+# Used to enable gtest tests to run inside an enclave.
+load("//asylo/bazel:asylo.bzl", "cc_test_and_cc_enclave_test")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])
 
@@ -28,4 +31,34 @@ cc_library(
     srcs = ["architecture_bits.cc"],
     hdrs = ["architecture_bits.h"],
     copts = ASYLO_DEFAULT_COPTS,
+)
+
+cc_library(
+    name = "miscselect_util",
+    srcs = ["miscselect_util.cc"],
+    hdrs = ["miscselect_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    visibility = ["//asylo:implementation"],
+    deps = [
+        ":architecture_bits",
+        "//asylo/identity/sgx:miscselect_cc_proto",
+        "//asylo/util:status",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "miscselect_util_test",
+    srcs = ["miscselect_util_test.cc"],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":architecture_bits",
+        ":miscselect_util",
+        "//asylo/identity/sgx:hardware_types",
+        "//asylo/identity/sgx:miscselect_cc_proto",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
 )
