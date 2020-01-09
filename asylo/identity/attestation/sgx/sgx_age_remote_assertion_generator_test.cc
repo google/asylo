@@ -20,6 +20,7 @@
 
 #include <cerrno>
 #include <cstring>
+#include <memory>
 #include <string>
 
 #include <google/protobuf/text_format.h>
@@ -32,6 +33,7 @@
 #include "asylo/identity/attestation/sgx/internal/remote_assertion_generator_enclave.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_age_remote_assertion_authority_config.pb.h"
 #include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave.pb.h"
+#include "asylo/identity/attestation/sgx/sgx_remote_assertion_generator_test_enclave_wrapper.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/enclave_assertion_authority.h"
 #include "asylo/identity/identity.pb.h"
@@ -55,7 +57,6 @@ namespace asylo {
 namespace {
 
 constexpr char kAgeName[] = "AGE";
-constexpr char kTestEnclaveName[] = "Test Generator Enclave";
 
 constexpr char kBadCertData[] = "bAD cErT";
 constexpr char kBadConfig[] = "baD cOnFig";
@@ -85,15 +86,12 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
           assertion_generator_enclave_client_, EnclaveFinal(),
           /*skip_finalize=*/false));
     }
-    if (test_enclave_client_) {
-      ASYLO_EXPECT_OK(
-          enclave_manager_->DestroyEnclave(test_enclave_client_, EnclaveFinal(),
-                                           /*skip_finalize=*/false));
-    }
+    delete assertion_generator_enclave_config_;
+    delete test_enclave_wrapper_;
   }
 
   void SetUp() override {
-    EnclaveResetGenerator();
+    ASYLO_ASSERT_OK(test_enclave_wrapper_->ResetGenerator());
 
     SgxAgeRemoteAssertionAuthorityConfig authority_config;
     authority_config.set_server_address(*server_address_);
@@ -192,33 +190,14 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
   // Loads the SgxAgeRemoteAssertionGeneratorTestEnclave, which is used to
   // proxy calls to the SgxAgeRemoteAssertionGenerator in this test suite.
   static Status LoadTestEnclave() {
-    test_enclave_config_ = new EnclaveConfig;
-    *test_enclave_config_->add_enclave_assertion_authority_configs() =
-        GetSgxLocalAssertionAuthorityTestConfig();
-    SetSgxAgeRemoteAssertionDescription(
-        test_enclave_config_
-            ->MutableExtension(
-                sgx::sgx_remote_assertion_generator_test_enclave_config)
-            ->mutable_description());
+    sgx::SgxRemoteAssertionGeneratorTestEnclaveConfig enclave_config;
+    SetSgxAgeRemoteAssertionDescription(enclave_config.mutable_description());
 
-    // Create an EnclaveLoadConfig object.
-    EnclaveLoadConfig load_config;
-    load_config.set_name(kTestEnclaveName);
-    *load_config.mutable_config() = *test_enclave_config_;
-
-    // Create an SgxLoadConfig object.
-    SgxLoadConfig sgx_config;
-    SgxLoadConfig::FileEnclaveConfig file_enclave_config;
-    file_enclave_config.set_enclave_path(
-        absl::GetFlag(FLAGS_generator_test_enclave_path));
-    *sgx_config.mutable_file_enclave_config() = file_enclave_config;
-    sgx_config.set_debug(true);
-
-    // Set an SGX message extension to load_config.
-    *load_config.MutableExtension(sgx_load_config) = sgx_config;
-
-    ASYLO_RETURN_IF_ERROR(enclave_manager_->LoadEnclave(load_config));
-    test_enclave_client_ = enclave_manager_->GetClient(kTestEnclaveName);
+    auto wrapper = SgxRemoteAssertionGeneratorTestEnclaveWrapper::Load(
+        enclave_manager_, absl::GetFlag(FLAGS_generator_test_enclave_path),
+        enclave_config);
+    ASYLO_RETURN_IF_ERROR(wrapper.status());
+    test_enclave_wrapper_ = wrapper.ValueOrDie().release();
 
     return Status::OkStatus();
   }
@@ -245,126 +224,10 @@ class SgxAgeRemoteAssertionGeneratorTest : public ::testing::Test {
     return assertion_request;
   }
 
-  // Returns the self identity of the test enclave.
-  StatusOr<SgxIdentity> EnclaveSgxSelfIdentity() {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    *enclave_input
-         .MutableExtension(
-             sgx::sgx_remote_assertion_generator_test_enclave_input)
-         ->mutable_sgx_self_identity_input() = sgx::SgxSelfIdentityInput();
-
-    ASYLO_RETURN_IF_ERROR(
-        test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
-    return enclave_output
-        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
-        .sgx_self_identity_output()
-        .identity();
-  }
-
-  // Resets the SgxAgeRemoteAssertionGenerator instance in the test enclave.
-  Status EnclaveResetGenerator() {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    *enclave_input
-         .MutableExtension(
-             sgx::sgx_remote_assertion_generator_test_enclave_input)
-         ->mutable_reset_generator_input() = sgx::ResetGeneratorInput();
-
-    return test_enclave_client_->EnterAndRun(enclave_input, &enclave_output);
-  }
-
-  // Returns |generator->IsInitialized()| from within the test enclave.
-  StatusOr<bool> EnclaveIsInitialized() {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    *enclave_input
-         .MutableExtension(
-             sgx::sgx_remote_assertion_generator_test_enclave_input)
-         ->mutable_is_initialized_input() = sgx::IsInitializedInput();
-
-    ASYLO_RETURN_IF_ERROR(
-        test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
-    return enclave_output
-        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
-        .is_initialized_output()
-        .is_initialized();
-  }
-
-  // Returns |generator->Initialize(config)| from within the test enclave.
-  Status EnclaveInitialize(const std::string config) {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    enclave_input
-        .MutableExtension(
-            sgx::sgx_remote_assertion_generator_test_enclave_input)
-        ->mutable_initialize_input()
-        ->set_config(config);
-
-    return test_enclave_client_->EnterAndRun(enclave_input, &enclave_output);
-  }
-
-  // Returns |generator->CreateAssertionOffer()| from within the test enclave.
-  StatusOr<AssertionOffer> EnclaveCreateAssertionOffer() {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    *enclave_input
-         .MutableExtension(
-             sgx::sgx_remote_assertion_generator_test_enclave_input)
-         ->mutable_create_assertion_offer_input() =
-        sgx::CreateAssertionOfferInput::default_instance();
-    ASYLO_RETURN_IF_ERROR(
-        test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
-    return enclave_output
-        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
-        .create_assertion_offer_output()
-        .offer();
-  }
-
-  // Returns |generator->CreateGenerate(request)| from within the test enclave.
-  StatusOr<bool> EnclaveCanGenerate(AssertionRequest request) {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    sgx::CanGenerateInput *can_generate_input =
-        enclave_input
-            .MutableExtension(
-                sgx::sgx_remote_assertion_generator_test_enclave_input)
-            ->mutable_can_generate_input();
-    *can_generate_input->mutable_request() = request;
-    ASYLO_RETURN_IF_ERROR(
-        test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
-    return enclave_output
-        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
-        .can_generate_output()
-        .can_generate();
-  }
-
-  // Returns the assertion produced by calling |generator->Generate(user_data,
-  // request)| from within the test enclave.
-  StatusOr<Assertion> EnclaveGenerate(std::string user_data,
-                                      AssertionRequest request) {
-    EnclaveInput enclave_input;
-    EnclaveOutput enclave_output;
-    sgx::GenerateInput *generate_input =
-        enclave_input
-            .MutableExtension(
-                sgx::sgx_remote_assertion_generator_test_enclave_input)
-            ->mutable_generate_input();
-    generate_input->set_user_data(user_data);
-    *generate_input->mutable_request() = request;
-    ASYLO_RETURN_IF_ERROR(
-        test_enclave_client_->EnterAndRun(enclave_input, &enclave_output));
-    return enclave_output
-        .GetExtension(sgx::sgx_remote_assertion_generator_test_enclave_output)
-        .generate_output()
-        .assertion();
-  }
-
   static EnclaveManager *enclave_manager_;
   static EnclaveConfig *assertion_generator_enclave_config_;
   static EnclaveClient *assertion_generator_enclave_client_;
-  static EnclaveConfig *test_enclave_config_;
-  static EnclaveClient *test_enclave_client_;
+  static SgxRemoteAssertionGeneratorTestEnclaveWrapper *test_enclave_wrapper_;
 
   static std::string *server_address_;
   static std::vector<Certificate> *root_ca_certificates_;
@@ -377,15 +240,15 @@ EnclaveConfig
     *SgxAgeRemoteAssertionGeneratorTest::assertion_generator_enclave_config_;
 EnclaveClient
     *SgxAgeRemoteAssertionGeneratorTest::assertion_generator_enclave_client_;
-EnclaveConfig *SgxAgeRemoteAssertionGeneratorTest::test_enclave_config_;
-EnclaveClient *SgxAgeRemoteAssertionGeneratorTest::test_enclave_client_;
+SgxRemoteAssertionGeneratorTestEnclaveWrapper
+    *SgxAgeRemoteAssertionGeneratorTest::test_enclave_wrapper_;
 std::string *SgxAgeRemoteAssertionGeneratorTest::server_address_;
 std::vector<Certificate>
     *SgxAgeRemoteAssertionGeneratorTest::root_ca_certificates_;
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest,
        InitializeFailsWithUnparsableConfig) {
-  EXPECT_THAT(EnclaveInitialize(kBadConfig),
+  EXPECT_THAT(test_enclave_wrapper_->Initialize(kBadConfig),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -405,7 +268,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoServerAddress) {
   std::string config;
   ASSERT_TRUE(authority_config.SerializeToString(&config));
 
-  EXPECT_THAT(EnclaveInitialize(config),
+  EXPECT_THAT(test_enclave_wrapper_->Initialize(config),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -416,7 +279,7 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithNoCerts) {
   std::string config;
   ASSERT_TRUE(authority_config.SerializeToString(&config));
 
-  EXPECT_THAT(EnclaveInitialize(config),
+  EXPECT_THAT(test_enclave_wrapper_->Initialize(config),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
@@ -432,13 +295,13 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, InitializeFailsWithBadCerts) {
   std::string config;
   ASSERT_TRUE(authority_config.SerializeToString(&config));
 
-  EXPECT_THAT(EnclaveInitialize(config),
+  EXPECT_THAT(test_enclave_wrapper_->Initialize(config),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, OneInitializationSingleThreaded) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
-  EXPECT_THAT(EnclaveInitialize(config_),
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
+  EXPECT_THAT(test_enclave_wrapper_->Initialize(config_),
               StatusIs(error::GoogleError::FAILED_PRECONDITION));
 }
 
@@ -451,7 +314,8 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, OneInitializationMultiThreaded) {
 
   for (int i = 0; i < kNumThreads; ++i) {
     threads.emplace_back([this, &num_initializations] {
-      num_initializations += EnclaveInitialize(config_).ok() ? 1 : 0;
+      num_initializations +=
+          test_enclave_wrapper_->Initialize(config_).ok() ? 1 : 0;
     });
   }
 
@@ -463,22 +327,24 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, OneInitializationMultiThreaded) {
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, IsInitializedState) {
-  EXPECT_THAT(EnclaveIsInitialized(), IsOkAndHolds(false));
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
-  EXPECT_THAT(EnclaveIsInitialized(), IsOkAndHolds(true));
+  EXPECT_THAT(test_enclave_wrapper_->IsInitialized(), IsOkAndHolds(false));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
+  EXPECT_THAT(test_enclave_wrapper_->IsInitialized(), IsOkAndHolds(true));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateFailsIfNotInitialized) {
-  EXPECT_THAT(EnclaveIsInitialized(), IsOkAndHolds(false));
-  EXPECT_THAT(EnclaveCanGenerate(AssertionRequest::default_instance()),
-              StatusIs(error::GoogleError::FAILED_PRECONDITION));
+  EXPECT_THAT(test_enclave_wrapper_->IsInitialized(), IsOkAndHolds(false));
+  EXPECT_THAT(
+      test_enclave_wrapper_->CanGenerate(AssertionRequest::default_instance()),
+      StatusIs(error::GoogleError::FAILED_PRECONDITION));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CreateAssertionOfferSuccess) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   AssertionOffer assertion_offer;
-  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_offer, EnclaveCreateAssertionOffer());
+  ASYLO_ASSERT_OK_AND_ASSIGN(assertion_offer,
+                             test_enclave_wrapper_->CreateAssertionOffer());
 
   const AssertionDescription &description = assertion_offer.description();
   EXPECT_EQ(description.identity_type(), CODE_IDENTITY);
@@ -493,16 +359,17 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CreateAssertionOfferSuccess) {
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccess) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   // Create a valid AssertionRequest.
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest());
-  EXPECT_THAT(EnclaveCanGenerate(assertion_request), IsOkAndHolds(true));
+  EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
+              IsOkAndHolds(true));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccessCertSubset) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   // Create an assertion request with only one of the two CAs contained within
   // the generator.
@@ -511,24 +378,25 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateSuccessCertSubset) {
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
                              MakeAssertionRequest(&certificates));
 
-  EXPECT_THAT(EnclaveCanGenerate(assertion_request), IsOkAndHolds(true));
+  EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
+              IsOkAndHolds(true));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, CanGenerateFailureNoCerts) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   std::vector<Certificate> certificates;
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
                              MakeAssertionRequest(&certificates));
 
-  EXPECT_THAT(EnclaveCanGenerate(assertion_request),
+  EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
               StatusIs(error::GoogleError::INVALID_ARGUMENT));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest,
        CanGenerateFailureExtraCertInRequest) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   std::vector<Certificate> certificates = *root_ca_certificates_;
 
@@ -543,11 +411,12 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest,
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request,
                              MakeAssertionRequest(&certificates));
 
-  EXPECT_THAT(EnclaveCanGenerate(assertion_request), IsOkAndHolds(false));
+  EXPECT_THAT(test_enclave_wrapper_->CanGenerate(assertion_request),
+              IsOkAndHolds(false));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateFailureBadAssertionRequest) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   // Create an AssertionRequest with bad |additional_info|.
   AssertionRequest assertion_request;
@@ -555,25 +424,26 @@ TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateFailureBadAssertionRequest) {
   assertion_request.set_additional_information(kBadAdditionalInfo);
 
   Assertion assertion;
-  EXPECT_THAT(EnclaveGenerate(kUserData, assertion_request),
+  EXPECT_THAT(test_enclave_wrapper_->Generate(kUserData, assertion_request),
               StatusIs(error::GoogleError::INTERNAL));
 }
 
 TEST_F(SgxAgeRemoteAssertionGeneratorTest, GenerateSuccess) {
-  ASYLO_EXPECT_OK(EnclaveInitialize(config_));
+  ASYLO_EXPECT_OK(test_enclave_wrapper_->Initialize(config_));
 
   AssertionRequest assertion_request;
   ASYLO_ASSERT_OK_AND_ASSIGN(assertion_request, MakeAssertionRequest());
 
   SgxIdentity enclave_identity;
-  ASYLO_ASSERT_OK_AND_ASSIGN(enclave_identity, EnclaveSgxSelfIdentity());
+  ASYLO_ASSERT_OK_AND_ASSIGN(enclave_identity,
+                             test_enclave_wrapper_->GetSgxSelfIdentity());
 
   // Attempt to generate an assertion 100 times to ensure that re-establishing
   // the gRPC channel to the AGE multiple times does not cause server failures.
   for (int i = 0; i < 100; ++i) {
     Assertion assertion;
-    ASYLO_ASSERT_OK_AND_ASSIGN(assertion,
-                               EnclaveGenerate(kUserData, assertion_request));
+    ASYLO_ASSERT_OK_AND_ASSIGN(assertion, test_enclave_wrapper_->Generate(
+                                              kUserData, assertion_request));
 
     const AssertionDescription &description = assertion.description();
     EXPECT_EQ(description.identity_type(), CODE_IDENTITY);

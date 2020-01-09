@@ -98,6 +98,27 @@ sgx_debug_sign_enclave(
     unsigned = "sgx_remote_assertion_generator_test_enclave_unsigned.so",
 )
 
+cc_library(
+    name = "sgx_remote_assertion_generator_test_enclave_wrapper",
+    testonly = 1,
+    srcs = ["sgx_remote_assertion_generator_test_enclave_wrapper.cc"],
+    hdrs = ["sgx_remote_assertion_generator_test_enclave_wrapper.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":sgx_remote_assertion_generator_test_enclave_cc_proto",
+        "//asylo:enclave_cc_proto",
+        "//asylo:enclave_client",
+        "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/sgx:sgx_identity_cc_proto",
+        "//asylo/platform/core:untrusted_core",
+        "//asylo/platform/primitives/sgx:loader_cc_proto",
+        "//asylo/test/util:enclave_assertion_authority_configs",
+        "//asylo/util:status",
+        "@com_google_absl//absl/memory",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
 enclave_test(
     name = "sgx_age_remote_assertion_generator_test",
     srcs = [
@@ -118,6 +139,7 @@ enclave_test(
         ":sgx_age_remote_assertion_authority_config_cc_proto",
         ":sgx_age_remote_assertion_generator",
         ":sgx_remote_assertion_generator_test_enclave_cc_proto",
+        ":sgx_remote_assertion_generator_test_enclave_wrapper",
         "//asylo:enclave_cc_proto",
         "//asylo:enclave_client",
         "//asylo/crypto:certificate_cc_proto",
