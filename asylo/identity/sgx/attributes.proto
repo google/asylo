@@ -1,5 +1,5 @@
 //
-// Copyright 2017 Asylo authors
+// Copyright 2020 Asylo authors
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
 // you may not use this file except in compliance with the License.
@@ -18,22 +18,4 @@ syntax = "proto2";
 
 package asylo.sgx;
 
-// 128-bit bit vector representing SGX ATTRIBUTES, which are reflected in the
-// SECS and REPORT structures, and used in the KEYREQUEST structure. The bit
-// vector is represented using two 64-bit integers.
-//
-// This protobuf is used for storing and comparing flags. The corresponding cc
-// util file implements operators for masking (&), equality testing (==), and
-// inequality testing (!=) for this proto.
-message Attributes {
-  // Least-significant 64 bits of the ATTRIBUTES bit vector. These bits
-  // represent various flags that can be set on an enclave by the enclave
-  // developer.
-  optional uint64 flags = 1;
-
-  // Most-significant 64 bits of the ATTRIBUTES bit vector. These bits represent
-  // the XSAVE Feature Request Mask (XFRM), and are set by software at the time
-  // of enclave creation according to features that are enabled by the operating
-  // system and approved by the enclave developer.
-  optional uint64 xfrm = 2;
-}
+import public "third_party/asylo/identity/platform/sgx/attributes.proto";

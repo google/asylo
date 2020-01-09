@@ -340,7 +340,7 @@ sgx_enclave_test(
         "//asylo/grpc/util:enclave_server_cc_proto",
         "//asylo/identity:identity_acl_cc_proto",
         "//asylo/identity/platform/sgx:architecture_bits",
-        "//asylo/identity/sgx:attributes_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/sgx:code_identity_cc_proto",
         "//asylo/identity/sgx:hardware_types",
         "//asylo/identity/sgx:sgx_identity_cc_proto",

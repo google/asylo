@@ -29,7 +29,7 @@
 #include "asylo/grpc/util/enclave_server.pb.h"
 #include "asylo/identity/identity_acl.pb.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/secs_attributes.h"
 #include "asylo/identity/sgx/sgx_identity.pb.h"

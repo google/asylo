@@ -28,9 +28,9 @@
 #include "absl/strings/str_join.h"
 #include "absl/strings/string_view.h"
 #include "asylo/crypto/sha256_hash.pb.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/attributes_util.h"
 #include "asylo/identity/platform/sgx/miscselect_util.h"
-#include "asylo/identity/sgx/attributes.pb.h"
-#include "asylo/identity/sgx/attributes_util.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/miscselect.pb.h"
 

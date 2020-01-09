@@ -23,7 +23,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/identity/descriptions.h"
 #include "asylo/identity/identity.pb.h"
-#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/code_identity.pb.h"
 #include "asylo/identity/sgx/code_identity_constants.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"

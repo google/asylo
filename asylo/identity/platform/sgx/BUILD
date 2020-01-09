@@ -26,6 +26,45 @@ licenses(["notice"])
 
 package(default_visibility = ["//visibility:public"])
 
+proto_library(
+    name = "attributes_proto",
+    srcs = ["attributes.proto"],
+)
+
+cc_proto_library(
+    name = "attributes_cc_proto",
+    deps = [":attributes_proto"],
+)
+
+cc_library(
+    name = "attributes_util",
+    srcs = ["attributes_util.cc"],
+    hdrs = ["attributes_util.h"],
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":architecture_bits",
+        ":attributes_cc_proto",
+        "//asylo/util:status",
+        "//asylo/util:status_macros",
+        "@com_google_absl//absl/strings",
+    ],
+)
+
+cc_test_and_cc_enclave_test(
+    name = "attributes_util_test",
+    srcs = ["attributes_util_test.cc"],
+    backends = sgx.backend_labels,
+    copts = ASYLO_DEFAULT_COPTS,
+    deps = [
+        ":architecture_bits",
+        ":attributes_cc_proto",
+        ":attributes_util",
+        "//asylo/test/util:status_matchers",
+        "//asylo/test/util:test_main",
+        "@com_google_googletest//:gtest",
+    ],
+)
+
 cc_library(
     name = "architecture_bits",
     srcs = ["architecture_bits.cc"],

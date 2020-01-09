@@ -45,11 +45,15 @@ package(
 proto_library(
     name = "attributes_proto",
     srcs = ["attributes.proto"],
+    deprecation = "Use //asylo/identity/platform/sgx:attributes_proto",
     visibility = ["//visibility:public"],
+    exports = ["//asylo/identity/platform/sgx:attributes_proto"],
+    deps = ["//asylo/identity/platform/sgx:attributes_proto"],
 )
 
 cc_proto_library(
     name = "attributes_cc_proto",
+    deprecation = "Use //asylo/identity/platform/sgx:attributes_cc_proto",
     visibility = ["//visibility:public"],
     deps = [":attributes_proto"],
 )
@@ -59,8 +63,8 @@ proto_library(
     srcs = ["code_identity.proto"],
     visibility = ["//visibility:public"],
     deps = [
-        ":attributes_proto",
         "//asylo/crypto:sha256_hash_proto",
+        "//asylo/identity/platform/sgx:attributes_proto",
     ],
 )
 
@@ -449,7 +453,6 @@ cc_library(
     hdrs = ["sgx_identity_test_util.h"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":attributes_cc_proto",
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":machine_configuration_cc_proto",
@@ -460,6 +463,7 @@ cc_library(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/util:status",
     ],
 )
@@ -479,8 +483,6 @@ cc_library(
     ],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":attributes_cc_proto",
-        ":attributes_util",
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":hardware_interface",
@@ -496,6 +498,8 @@ cc_library(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/util:logging",
@@ -515,8 +519,6 @@ cc_test(
     srcs = ["sgx_identity_util_internal_test.cc"],
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":attributes_cc_proto",
-        ":attributes_util",
         ":code_identity_cc_proto",
         ":code_identity_constants",
         ":fake_enclave",
@@ -534,6 +536,8 @@ cc_test(
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity:descriptions",
         "//asylo/identity:identity_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/platform/common:singleton",
         "//asylo/test/util:proto_matchers",
@@ -574,36 +578,6 @@ cc_test(
         ":sgx_identity_util",
         "//asylo/identity:identity_cc_proto",
         "//asylo/test/util:proto_matchers",
-        "//asylo/test/util:status_matchers",
-        "//asylo/test/util:test_main",
-        "@com_google_googletest//:gtest",
-    ],
-)
-
-cc_library(
-    name = "attributes_util",
-    srcs = ["attributes_util.cc"],
-    hdrs = ["attributes_util.h"],
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":attributes_cc_proto",
-        "//asylo/identity/platform/sgx:architecture_bits",
-        "//asylo/util:status",
-        "//asylo/util:status_macros",
-        "@com_google_absl//absl/strings",
-    ],
-)
-
-cc_test_and_cc_enclave_test(
-    name = "attributes_util_test",
-    srcs = ["attributes_util_test.cc"],
-    backends = sgx.backend_labels,
-    copts = ASYLO_DEFAULT_COPTS,
-    deps = [
-        ":attributes_cc_proto",
-        ":attributes_util",
-        ":hardware_types",
-        "//asylo/identity/platform/sgx:architecture_bits",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "@com_google_googletest//:gtest",
@@ -675,10 +649,10 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attributes_cc_proto",
         "//asylo/crypto/util:bytes",
         "//asylo/identity:additional_authenticated_data_generator",
         "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/util:aligned_object_ptr",
         "//asylo/util:logging",
         "//asylo/util:status",
@@ -696,10 +670,10 @@ cc_test_and_cc_enclave_test(
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":attributes_cc_proto",
         ":hardware_types",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/test/util:status_matchers",
         "//asylo/test/util:test_main",
         "//asylo/util:status",
@@ -718,7 +692,6 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attributes_cc_proto",
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":proto_format",
@@ -728,6 +701,7 @@ cc_library(
         "//asylo/crypto/util:bytes",
         "//asylo/crypto/util:trivial_object_util",
         "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/platform/primitives/sgx:sgx_error_space",
         "//asylo/util:logging",
@@ -1025,13 +999,13 @@ cc_library(
     copts = ASYLO_DEFAULT_COPTS,
     visibility = ["//asylo:implementation"],
     deps = [
-        ":attributes_cc_proto",
-        ":attributes_util",
         ":code_identity_cc_proto",
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
         "//asylo/crypto:sha256_hash_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_cc_proto",
+        "//asylo/identity/platform/sgx:attributes_util",
         "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "@com_google_absl//absl/memory",
@@ -1046,7 +1020,6 @@ cc_test_and_cc_enclave_test(
     backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     deps = [
-        ":attributes_util",
         ":hardware_types",
         ":machine_configuration_cc_proto",
         ":miscselect_cc_proto",
@@ -1055,6 +1028,7 @@ cc_test_and_cc_enclave_test(
         ":sgx_identity_util",
         "//asylo/crypto:sha256_hash_cc_proto",
         "//asylo/identity/platform/sgx:architecture_bits",
+        "//asylo/identity/platform/sgx:attributes_util",
         "//asylo/identity/platform/sgx:miscselect_util",
         "//asylo/identity/provisioning/sgx/internal:platform_provisioning_cc_proto",
         "//asylo/test/util:status_matchers",

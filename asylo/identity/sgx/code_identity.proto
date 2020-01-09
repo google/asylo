@@ -19,7 +19,7 @@ syntax = "proto2";
 package asylo.sgx;
 
 import "asylo/crypto/sha256_hash.proto";
-import "asylo/identity/sgx/attributes.proto";
+import "asylo/identity/platform/sgx/attributes.proto";
 
 // Signer-assigned identity of an enclave, as specified in SGX architecture.
 // Names of all fields come directly from the Intel Software Developer's Manual.

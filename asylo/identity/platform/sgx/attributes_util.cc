@@ -16,11 +16,11 @@
  *
  */
 
-#include "asylo/identity/sgx/attributes_util.h"
+#include "asylo/identity/platform/sgx/attributes_util.h"
 
 #include "absl/strings/str_cat.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/util/status.h"
 #include "asylo/util/status_macros.h"
 #include "asylo/util/statusor.h"

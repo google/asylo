@@ -16,13 +16,12 @@
  *
  */
 
-#include "asylo/identity/sgx/attributes_util.h"
+#include "asylo/identity/platform/sgx/attributes_util.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/attributes.pb.h"
-#include "asylo/identity/sgx/secs_attributes.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/test/util/status_matchers.h"
 
 namespace asylo {
@@ -48,83 +47,99 @@ class AttributesTest : public ::testing::Test {
 };
 
 TEST_F(AttributesTest, EqualityOperatorPositive) {
-  Attributes left, right;
-  left.set_xfrm(kConstVal1);
-  left.set_flags(kConstVal2);
-  right.set_xfrm(kConstVal1);
-  right.set_flags(kConstVal2);
-  EXPECT_TRUE(left == right);
+  Attributes lhs;
+  Attributes rhs;
+  lhs.set_xfrm(kConstVal1);
+  lhs.set_flags(kConstVal2);
+  rhs.set_xfrm(kConstVal1);
+  rhs.set_flags(kConstVal2);
+  EXPECT_TRUE(lhs == rhs);
 }
 
 TEST_F(AttributesTest, EqualityOperatorNegative) {
-  Attributes left, right;
-  left.set_xfrm(kConstVal1);
-  left.set_flags(kConstVal2);
-  EXPECT_FALSE(left == right);
+  Attributes lhs;
+  Attributes rhs;
+  lhs.set_xfrm(kConstVal1);
+  lhs.set_flags(kConstVal2);
+  EXPECT_FALSE(lhs == rhs);
 }
 
 TEST_F(AttributesTest, InequalityOperatorNegative) {
-  Attributes left, right;
-  left.set_xfrm(kConstVal1);
-  left.set_flags(kConstVal2);
-  right.set_xfrm(kConstVal1);
-  right.set_flags(kConstVal2);
-  EXPECT_FALSE(left != right);
+  Attributes lhs;
+  Attributes rhs;
+  lhs.set_xfrm(kConstVal1);
+  lhs.set_flags(kConstVal2);
+  rhs.set_xfrm(kConstVal1);
+  rhs.set_flags(kConstVal2);
+  EXPECT_FALSE(lhs != rhs);
 }
 
 TEST_F(AttributesTest, InequalityOperatorPositive) {
-  Attributes left, right;
-  left.set_flags(kConstVal2);
-  right.set_xfrm(kConstVal1);
-  EXPECT_TRUE(left != right);
+  Attributes lhs;
+  Attributes rhs;
+  lhs.set_flags(kConstVal2);
+  rhs.set_xfrm(kConstVal1);
+  EXPECT_TRUE(lhs != rhs);
 }
 
 TEST_F(AttributesTest, BitwiseAndCorrectness1) {
-  Attributes left, right, result;
-  left.set_xfrm(kConstVal1);
-  left.set_flags(kConstVal2);
-  EXPECT_TRUE((left & right) == result);
+  Attributes lhs;
+  Attributes rhs;
+  Attributes result;
+  lhs.set_xfrm(kConstVal1);
+  lhs.set_flags(kConstVal2);
+  EXPECT_TRUE((lhs & rhs) == result);
 }
 
 TEST_F(AttributesTest, BitwiseAndCorrectness2) {
-  Attributes left, right, result;
-  left.set_xfrm(kConstVal1);
-  left.set_flags(kConstVal2);
-  right.set_xfrm(kConstVal1);
-  right.set_flags(kConstVal2);
+  Attributes lhs;
+  Attributes rhs;
+  Attributes result;
+  lhs.set_xfrm(kConstVal1);
+  lhs.set_flags(kConstVal2);
+  rhs.set_xfrm(kConstVal1);
+  rhs.set_flags(kConstVal2);
   result.set_xfrm(kConstVal1);
   result.set_flags(kConstVal2);
-  EXPECT_TRUE((left & right) == result);
+  EXPECT_TRUE((lhs & rhs) == result);
 }
 
 TEST_F(AttributesTest, BitwiseAndCorrectness3) {
-  Attributes left, right, result;
-  left.set_xfrm(kConstVal1);
-  left.set_flags(kConstVal2);
-  right.set_xfrm(kConstVal1);
+  Attributes lhs;
+  Attributes rhs;
+  Attributes result;
+  lhs.set_xfrm(kConstVal1);
+  lhs.set_flags(kConstVal2);
+  rhs.set_xfrm(kConstVal1);
   result.set_xfrm(kConstVal1);
-  EXPECT_TRUE((left & right) == result);
+  EXPECT_TRUE((lhs & rhs) == result);
 }
 
 TEST_F(AttributesTest, BitwiseAndCorrectness4) {
-  Attributes left, right, result;
-  left.set_flags(kConstVal2);
-  right.set_xfrm(kConstVal1);
-  EXPECT_TRUE((left & right) == result);
+  Attributes lhs;
+  Attributes rhs;
+  Attributes result;
+  lhs.set_flags(kConstVal2);
+  rhs.set_xfrm(kConstVal1);
+  EXPECT_TRUE((lhs & rhs) == result);
 }
 
 TEST_F(AttributesTest, BitwiseAndCorrectness5) {
-  Attributes left, right, result;
-  right.set_xfrm(kConstVal1);
-  EXPECT_TRUE((left & right) == result);
+  Attributes lhs;
+  Attributes rhs;
+  Attributes result;
+  rhs.set_xfrm(kConstVal1);
+  EXPECT_TRUE((lhs & rhs) == result);
 }
 
 TEST_F(AttributesTest, BitwiseAndCorrectness6) {
-  Attributes left, right, result;
-  left.set_flags(kZero);
-  right.set_xfrm(kZero);
+  Attributes lhs;
+  Attributes rhs;
+  Attributes result;
+  lhs.set_flags(kZero);
+  rhs.set_xfrm(kZero);
   result.set_xfrm(kZero);
-  EXPECT_TRUE((left & right) == result);
+  EXPECT_TRUE((lhs & rhs) == result);
 }
 
 TEST_F(AttributesTest, DefaultAttributesAllBitsUnset) {

@@ -34,7 +34,7 @@
 #include "asylo/crypto/util/trivial_object_util.h"
 #include "asylo/util/logging.h"
 #include "asylo/identity/platform/sgx/architecture_bits.h"
-#include "asylo/identity/sgx/attributes.pb.h"
+#include "asylo/identity/platform/sgx/attributes.pb.h"
 #include "asylo/identity/sgx/machine_configuration.pb.h"
 #include "asylo/identity/sgx/proto_format.h"
 #include "asylo/identity/sgx/secs_attributes.h"
