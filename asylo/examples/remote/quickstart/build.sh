@@ -1,12 +1,5 @@
 #!/bin/bash
-set -e
-CONFIG_TYPE=${2:-sgx}
-
-# Script for building the quickstart example.
-#
-# Asylo toolchain has difficulties building with two --config types. This script
-# allows users to build the example enclaves with --config=sgx or sgx-sim, and
-# the rest of the application without the --config= designation.
+# Script for building the remote quickstart example.
 #
 # Instructions for use:
 # Set environment variables ASYLO_SDK, MY_PROJECT, MESSAGE, and CONFIG_TYPE.
@@ -25,21 +18,52 @@ CONFIG_TYPE=${2:-sgx}
 #   -v ${MY_PROJECT}:/opt/asylo/examples \
 #   -w /opt/asylo/examples/remote/quickstart \
 #   gcr.io/asylo-framework/asylo:latest \
-#   ./build.sh "${MESSAGE}" ${CONFIG_TYPE}
+#   ./build.sh ${CONFIG_TYPE} "${MESSAGE}"
 # ```
-bazel build --config=${CONFIG_TYPE} //remote/quickstart:demo_enclave_debug.so
 
+# If any command fails exit.
+set -e
+
+# Export all variables as environment variables.
+set -a
+
+# Command line argument: Allows selection of local backend, if one is not
+selected it defaults to sgx.
+CONFIG_TYPE=${1:-sgx}
+
+# Set the ENCLAVE_TAG based on the CONFIG_TYPE. ENCLAVE_TAG is used as part of
+# the ENCLAVE_TARGET.
+if [ "$CONFIG_TYPE" == "sgx" ]; then
+  ENCLAVE_TAG="sgx_hw";
+elif [ "$CONFIG_TYPE" == "sgx-sim" ]; then
+  ENCLAVE_TAG="sgx_sim";
+fi
+
+if [ -z "$ENCLAVE_TAG" ]; then
+  echo "CONFIG_TYPE must be one of sgx or sgx-sim";
+  exit;
+fi
+
+# Enclave to be used in the example.
+ENCLAVE_TARGET=demo_enclave_debug_${ENCLAVE_TAG}.so
+
+bazel build --config=${CONFIG_TYPE} //remote/quickstart:${ENCLAVE_TARGET}
+
+# Path where bazel puts built objects.
 BAZEL_BIN_PATH=$(bazel info bazel-bin)
 QUICK_PATH=${BAZEL_BIN_PATH}/remote/quickstart
 
+# Path where bazel puts generated files - can be but not always the same as
+# bazel-bin.
 BAZEL_GEN_PATH=$(bazel info bazel-genfiles)
-PROVISION_PATH=${BAZEL_GEN_PATH}/external/com_google_asylo/asylo/examples/remote/provision_server
+PROVISION_PATH=${BAZEL_GEN_PATH}/remote/provision_server
+
+# Run the quickstart_remote example.
 bazel run //remote/quickstart:quickstart_remote -- \
-          --message="$1" \
+          --message="$2" \
           --security_type=ssl \
           --ssl_key=${PROVISION_PATH}/server.key \
           --ssl_cert=${PROVISION_PATH}/server.crt \
-          --enclave_path=${QUICK_PATH}/demo_enclave_debug.so \
+          --enclave_path=${QUICK_PATH}/${ENCLAVE_TARGET} \
           --remote_provision_server=[::1]:4321 \
           --local_client_name=[::1]
-

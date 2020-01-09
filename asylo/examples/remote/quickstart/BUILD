@@ -14,8 +14,14 @@
 # limitations under the License.
 #
 
-load("//asylo/bazel:asylo.bzl", "enclave_loader")
-load("//asylo/bazel:sgx_rules.bzl", "sgx_cc_unsigned_enclave", "sgx_debug_sign_enclave", "sgx_enclave_test")
+load(
+    "//asylo/bazel:asylo.bzl",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_loader",
+    "enclave_test",
+)
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
 
 licenses(["notice"])  # Apache v2.0
@@ -32,7 +38,7 @@ cc_proto_library(
     deps = [":demo_proto"],
 )
 
-sgx_cc_unsigned_enclave(
+cc_unsigned_enclave(
     name = "demo_enclave_unsigned.so",
     srcs = ["demo_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -47,7 +53,7 @@ sgx_cc_unsigned_enclave(
     ],
 )
 
-sgx_debug_sign_enclave(
+debug_sign_enclave(
     name = "demo_enclave_debug.so",
     unsigned = ":demo_enclave_unsigned.so",
 )
@@ -55,6 +61,7 @@ sgx_debug_sign_enclave(
 enclave_loader(
     name = "quickstart",
     srcs = ["demo_driver.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":demo_enclave_debug.so"},
     loader_args = [
@@ -100,10 +107,11 @@ cc_binary(
     ],
 )
 
-sgx_enclave_test(
+enclave_test(
     name = "demo_enclave_remote_test",
     size = "small",
     srcs = ["demo_enclave_remote_test.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {"enclave": ":demo_enclave_debug.so"},
     remote_proxy = "//asylo/util/remote:sgx_remote_proxy",
