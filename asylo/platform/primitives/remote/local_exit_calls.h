@@ -102,8 +102,10 @@ class LocalExitCallForwarder : public DispatchTable {
 
   // Factory method creates a forwarder associated with the server and
   // registers all local exit handlers. Should only be called once.
+  // `exit_logging` parameter indicates whether enclave exit call logging is
+  // to be enabled or not.
   static StatusOr<std::unique_ptr<Client::ExitCallProvider>> Create(
-      const RemoteEnclaveProxyServer *server);
+      bool exit_logging, const RemoteEnclaveProxyServer *server);
 
   // Runs exit call handler.
   static Status Run(const std::shared_ptr<Client> &client, void *context,
@@ -114,7 +116,8 @@ class LocalExitCallForwarder : public DispatchTable {
                             MessageWriter *output, Client *client) override;
 
  private:
-  explicit LocalExitCallForwarder(const RemoteEnclaveProxyServer *server);
+  LocalExitCallForwarder(bool exit_logging,
+                         const RemoteEnclaveProxyServer *server);
 
   // Registered handlers.
   std::vector<std::unique_ptr<LocalExitCallHandler>> handlers_;

@@ -113,8 +113,9 @@ Status LocalExitCallForwarder::PerformUnknownExit(uint64_t untrusted_selector,
 }
 
 LocalExitCallForwarder::LocalExitCallForwarder(
-    const RemoteEnclaveProxyServer *server)
-    : DispatchTable(absl::make_unique<ExitLogHookFactory>()),
+    bool exit_logging, const RemoteEnclaveProxyServer *server)
+    : DispatchTable(exit_logging ? absl::make_unique<ExitLogHookFactory>()
+                                 : nullptr),
       server_(CHECK_NOTNULL(server)) {}
 
 Status LocalExitCallForwarder::Run(const std::shared_ptr<Client> &client,
@@ -134,10 +135,11 @@ Status LocalExitCallForwarder::Run(const std::shared_ptr<Client> &client,
 }
 
 StatusOr<std::unique_ptr<Client::ExitCallProvider>>
-LocalExitCallForwarder::Create(const RemoteEnclaveProxyServer *server) {
+LocalExitCallForwarder::Create(bool exit_logging,
+                               const RemoteEnclaveProxyServer *server) {
   // Create forwarder for all unregistered exit calls.
   auto exit_call_forwarder =
-      absl::WrapUnique(new LocalExitCallForwarder(server));
+      absl::WrapUnique(new LocalExitCallForwarder(exit_logging, server));
 
   // Create exit call handlers that could be handled locally.
   exit_call_forwarder->handlers_.emplace_back(

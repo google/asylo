@@ -24,6 +24,7 @@
 #include "absl/memory/memory.h"
 #include "absl/strings/str_cat.h"
 #include "absl/strings/string_view.h"
+#include "asylo/enclave.pb.h"
 #include "asylo/util/logging.h"
 #include "asylo/platform/host_call/exit_handler_constants.h"
 #include "asylo/platform/primitives/extent.h"
@@ -104,20 +105,40 @@ Status RemoteEnclaveProxyServer::Start(
           case kSelectorRemoteConnect: {
             // Load local client (exit calls possible during enclave loading).
             if (local_enclave_client_) {
-              invocation->status = Status(error::GoogleError::ALREADY_EXISTS,
-                                          "Local enclave already loaded");
+              invocation->status = Status{error::GoogleError::ALREADY_EXISTS,
+                                          "Local enclave already loaded"};
               return;
             }
-            MessageWriter in;
-            while (invocation->reader.hasNext()) {
-              in.PushByReference(invocation->reader.next());
+            // Retrieve enclave load config from the only input.
+            if (invocation->reader.size() != 1) {
+              invocation->status =
+                  Status{error::GoogleError::FAILED_PRECONDITION,
+                         "Remote connect must have 1 parameter only "
+                         "(serialized EnclaveLoadConfig)"};
+              return;
             }
-            auto exit_call_forwarder_result =
-                LocalExitCallForwarder::Create(this);
+            auto in_config = invocation->reader.next();
+            EnclaveLoadConfig provisioned_load_config;
+            if (!provisioned_load_config.ParseFromArray(in_config.data(),
+                                                        in_config.size())) {
+              invocation->status =
+                  Status{error::GoogleError::INTERNAL,
+                         "Unable to parse Remote Config from input parameter"};
+              return;
+            }
+
+            // Create local exit forwarder for the local enclave.
+            auto exit_call_forwarder_result = LocalExitCallForwarder::Create(
+                provisioned_load_config.exit_logging(), this);
             if (!exit_call_forwarder_result.ok()) {
               invocation->status = exit_call_forwarder_result.status();
               return;
             }
+
+            // Create local enclave client by calling factory. Both factory and
+            // exit call forwarder rely on provisioned load config.
+            MessageWriter in;
+            in.PushByReference(in_config);
             auto local_enclave_client_result = local_enclave_client_factory_(
                 &in, std::move(exit_call_forwarder_result.ValueOrDie()));
             if (!local_enclave_client_result.ok()) {

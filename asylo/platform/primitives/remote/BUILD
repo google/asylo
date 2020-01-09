@@ -196,6 +196,7 @@ cc_library(
     linkstatic = True,
     deps = [
         ":communicator",
+        "//asylo:enclave_cc_proto",
         "//asylo/platform/host_call:exit_handler_constants",
         "//asylo/platform/host_call:host_call_handlers_util",
         "//asylo/platform/primitives",
@@ -205,7 +206,6 @@ cc_library(
         "//asylo/platform/primitives/util:message_reader_writer",
         "//asylo/platform/system_call/type_conversions:types_definitions",
         "//asylo/util:logging",
-        "//asylo/util:mutex_guarded",
         "//asylo/util:status",
         "//asylo/util:thread",
         "//asylo/util/remote:remote_proxy_config",
