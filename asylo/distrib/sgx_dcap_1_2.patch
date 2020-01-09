@@ -465,7 +465,19 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quote/qe_logic.cpp QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
 --- QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
 +++ QuoteGeneration/quote_wrapper/quote/qe_logic.cpp
-@@ -162,6 +162,8 @@
+@@ -66,9 +66,11 @@
+     #define SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME "libdcap_quoteprov.so"
+     #define TCHAR char
+     #define _T(x) (x)
++    #define PATH_SEPARATOR '/'
+ #else
+     #define QE3_ENCLAVE_NAME _T("qe3.signed.dll")
+     #define SGX_QL_QUOTE_CONFIG_LIB_FILE_NAME "dcap_quoteprov.dll"
++    #define PATH_SEPARATOR '\\'
+ #endif
+ #define ECDSA_BLOB_LABEL "ecdsa_data.blob"
+ 
+@@ -162,6 +164,8 @@
      se_mutex_t m_ecdsa_blob_mutex;
  
      sgx_ql_request_policy_t m_load_policy;
@@ -474,7 +486,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      sgx_enclave_id_t m_eid;
      sgx_misc_attribute_t m_attributes;
      sgx_launch_token_t m_launch_token;
-@@ -170,6 +172,7 @@
+@@ -170,6 +174,7 @@
  
      ql_global_data():
          m_load_policy(SGX_QL_DEFAULT),
@@ -482,7 +494,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
          m_eid(0),
          m_pencryptedppid(NULL)
      {
-@@ -193,7 +196,10 @@
+@@ -193,7 +198,10 @@
      }
  };
  
@@ -494,7 +506,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
  #ifdef ENABLE_QE3_LOGGING
  /* OCall functions for debug */
-@@ -429,24 +435,38 @@
+@@ -429,24 +437,38 @@
      if(!p_file_name || !p_file_path) {
          return false;
      }
@@ -547,7 +559,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
      }
  
      char* p_last_slash = strrchr(p_file_path, '/' );
-@@ -463,16 +483,18 @@
+@@ -463,16 +485,18 @@
      }
      (void)strncat(p_file_path,p_file_name, strnlen(p_file_name,buf_size));
      #else
@@ -574,7 +586,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
  
      TCHAR *p_last_slash = _tcsrchr(p_file_path, _T('\\'));
      if (p_last_slash != NULL)
-@@ -1028,6 +1050,52 @@
+@@ -1028,6 +1052,62 @@
      return(refqt_ret);
  }
  
@@ -584,12 +596,22 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 +    sgx_pce_error_t pce_error;
 +    int rc = 0;
 +    size_t dirpath_len;
++    TCHAR dirpath_copy[MAX_PATH + 1];
 +
 +#ifndef _MSC_VER
 +    dirpath_len = strnlen(dirpath, MAX_PATH);
 +#else
 +    dirpath_len = _tcsnlen(dirpath, MAX_PATH);
 +#endif
++
++    // Ensure that the dirpath ends with a slash
++    memcpy(dirpath_copy, dirpath, dirpath_len);
++    if (dirpath_copy[dirpath_len-1] != PATH_SEPARATOR) {
++      dirpath_copy[dirpath_len] = PATH_SEPARATOR;
++
++      ++dirpath_len;
++      dirpath_copy[dirpath_len] = '\0';
++    }
 +
 +    if (dirpath_len >= sizeof(g_ql_global_data.m_qe_dirpath))
 +    {
@@ -604,7 +626,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 +        goto CLEANUP;
 +    }
 +
-+    memcpy(g_ql_global_data.m_qe_dirpath, dirpath, dirpath_len);
++    memcpy(g_ql_global_data.m_qe_dirpath, dirpath_copy, dirpath_len);
 +    g_ql_global_data.m_qe_dirpath[dirpath_len] = 0;
 +    g_ql_global_data.m_qe_dirpath_length = dirpath_len;
 +    refqt_ret = SGX_QL_SUCCESS;
@@ -614,7 +636,7 @@ diff -Nur -x '*.png' -x '*.gif' -x .gitignore QuoteGeneration/quote_wrapper/quot
 +        SE_TRACE(SE_TRACE_ERROR, "Failed to unlock mutex.\n");
 +        refqt_ret = SGX_QL_ERROR_UNEXPECTED;
 +    }
-+    pce_error = sgx_set_pce_enclave_dirpath(dirpath);
++    pce_error = sgx_set_pce_enclave_dirpath(dirpath_copy);
 +    if (SGX_PCE_SUCCESS != pce_error) {
 +        refqt_ret = translate_pce_errors(pce_error);
 +        goto CLEANUP;
