@@ -51,6 +51,9 @@ extern const CertificateAndPrivateKey kFakeSgxTcbSigner;
 // SGX platforms in tests.
 extern const absl::string_view kFakePckPem;
 
+// The PEM-encoded ECDSA-P256 public key corresponding to kFakePckPem.
+extern const absl::string_view kFakePckPublicPem;
+
 }  // namespace sgx
 }  // namespace asylo
 

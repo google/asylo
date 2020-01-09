@@ -125,8 +125,21 @@ INSTANTIATE_TEST_SUITE_P(AllChains, FakeSgxPkiChainsTest,
                                 absl::MakeSpan(kProcessorCaChain),
                                 absl::MakeSpan(kTcbSignerChain)));
 
-TEST(FakeSgxPkiKeyTest, FakePckIsValid) {
-  ASYLO_ASSERT_OK(EcdsaP256Sha256SigningKey::CreateFromPem(kFakePckPem));
+TEST(FakeSgxPkiKeyTest, FakePckPairIsValid) {
+  std::unique_ptr<SigningKey> signing_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      signing_key, EcdsaP256Sha256SigningKey::CreateFromPem(kFakePckPem));
+
+  std::unique_ptr<VerifyingKey> expected_verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(
+      expected_verifying_key,
+      EcdsaP256Sha256VerifyingKey::CreateFromPem(kFakePckPublicPem));
+
+  std::unique_ptr<VerifyingKey> actual_verifying_key;
+  ASYLO_ASSERT_OK_AND_ASSIGN(actual_verifying_key,
+                             signing_key->GetVerifyingKey());
+
+  EXPECT_TRUE(*actual_verifying_key == *expected_verifying_key);
 }
 
 }  // namespace

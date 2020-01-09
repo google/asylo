@@ -18,6 +18,8 @@
 
 #include "asylo/identity/provisioning/sgx/internal/fake_sgx_pki.h"
 
+#include "absl/strings/string_view.h"
+
 namespace asylo {
 namespace sgx {
 
@@ -123,6 +125,12 @@ MHcCAQEEIF0Z0yrz9NNVFQU1754rHRJs+Qt04mr3vEgNok8uyU8QoAoGCCqGSM49
 AwEHoUQDQgAE2M/ETD1FV9EFzZBB1+emBFJuB1eh2/XyY3ZdNrT8lq7FQ0Z6ENdm
 oG+ldQH94d6FPkRWOMwY+ppB+SQ8XnUFRA==
 -----END EC PRIVATE KEY-----)pem";
+
+const absl::string_view kFakePckPublicPem =
+    R"pem(-----BEGIN PUBLIC KEY-----
+MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE2M/ETD1FV9EFzZBB1+emBFJuB1eh
+2/XyY3ZdNrT8lq7FQ0Z6ENdmoG+ldQH94d6FPkRWOMwY+ppB+SQ8XnUFRA==
+-----END PUBLIC KEY-----)pem";
 
 }  // namespace sgx
 }  // namespace asylo
