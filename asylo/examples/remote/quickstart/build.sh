@@ -27,9 +27,12 @@ set -e
 # Export all variables as environment variables.
 set -a
 
+# Default configuration for CONFIG_TYPE.
+CONFIG_TYPE_DEFAULT=sgx
+
 # Command line argument: Allows selection of local backend, if one is not
-selected it defaults to sgx.
-CONFIG_TYPE=${1:-sgx}
+# selected it defaults to $CONFIG_DEFAULT
+CONFIG_TYPE=${1:-$CONFIG_TYPE_DEFAULT}
 
 # Set the ENCLAVE_TAG based on the CONFIG_TYPE. ENCLAVE_TAG is used as part of
 # the ENCLAVE_TARGET.

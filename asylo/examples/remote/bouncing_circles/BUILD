@@ -17,12 +17,13 @@
 # Various tests and test data
 
 load("//asylo/bazel:copts.bzl", "ASYLO_DEFAULT_COPTS")
-load("//asylo/bazel:asylo.bzl", "enclave_loader")
 load(
-    "@linux_sgx//:sgx_sdk.bzl",
-    "sgx_debug_enclave",
-    "sgx_unsigned_enclave",
+    "//asylo/bazel:asylo.bzl",
+    "cc_unsigned_enclave",
+    "debug_sign_enclave",
+    "enclave_loader",
 )
+load("@linux_sgx//:sgx_sdk.bzl", "sgx")
 
 licenses(["notice"])  # Apache v2.0
 
@@ -71,7 +72,7 @@ cc_proto_library(
     deps = [":circles_proto"],
 )
 
-sgx_unsigned_enclave(
+cc_unsigned_enclave(
     name = "circle_enclave_0_unsigned.so",
     srcs = ["circle_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -93,12 +94,12 @@ sgx_unsigned_enclave(
     ],
 )
 
-sgx_debug_enclave(
+debug_sign_enclave(
     name = "circle_enclave_0_debug.so",
     unsigned = ":circle_enclave_0_unsigned.so",
 )
 
-sgx_unsigned_enclave(
+cc_unsigned_enclave(
     name = "circle_enclave_1_unsigned.so",
     srcs = ["circle_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -120,12 +121,12 @@ sgx_unsigned_enclave(
     ],
 )
 
-sgx_debug_enclave(
+debug_sign_enclave(
     name = "circle_enclave_1_debug.so",
     unsigned = ":circle_enclave_1_unsigned.so",
 )
 
-sgx_unsigned_enclave(
+cc_unsigned_enclave(
     name = "circle_enclave_2_unsigned.so",
     srcs = ["circle_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -147,12 +148,12 @@ sgx_unsigned_enclave(
     ],
 )
 
-sgx_debug_enclave(
+debug_sign_enclave(
     name = "circle_enclave_2_debug.so",
     unsigned = ":circle_enclave_2_unsigned.so",
 )
 
-sgx_unsigned_enclave(
+cc_unsigned_enclave(
     name = "circle_enclave_3_unsigned.so",
     srcs = ["circle_enclave.cc"],
     copts = ASYLO_DEFAULT_COPTS,
@@ -174,7 +175,7 @@ sgx_unsigned_enclave(
     ],
 )
 
-sgx_debug_enclave(
+debug_sign_enclave(
     name = "circle_enclave_3_debug.so",
     unsigned = ":circle_enclave_3_unsigned.so",
 )
@@ -219,6 +220,7 @@ enclave_loader(
     name = "web_application",
     testonly = True,
     srcs = ["web_application.cc"],
+    backends = sgx.backend_labels,
     copts = ASYLO_DEFAULT_COPTS,
     enclaves = {
         "circle_enclave_0": ":circle_enclave_0_debug.so",
